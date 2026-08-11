@@ -72,16 +72,16 @@ export default function HomepageIntentEvidence() {
         aria-labelledby="homepage-intent-heading"
       >
         <div className="max-w-3xl">
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-cyan-200">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--ds-accent)]">
             Choose your workflow
           </p>
           <h2
             id="homepage-intent-heading"
-            className="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl"
+            className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-[var(--ds-text)] sm:text-4xl"
           >
             AI tools for the Roblox scripting task in front of you
           </h2>
-          <p className="mt-4 text-base font-semibold leading-7 text-zinc-400">
+          <p className="mt-4 text-base leading-7 text-[var(--ds-text-secondary)]">
             Start with a focused generator, repair existing code, or plan a coordinated
             multi-file change for Roblox Studio.
           </p>
@@ -92,15 +92,15 @@ export default function HomepageIntentEvidence() {
             <a
               key={page.href}
               href={page.href}
-              className="group rounded-2xl border border-white/10 bg-white/[0.035] p-5 transition hover:border-cyan-300/30 hover:bg-cyan-300/[0.06]"
+              className="group rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-1)] p-5 transition-[background-color,border-color,transform] hover:border-[var(--ds-accent-border)] hover:bg-[var(--ds-fill-hover)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)] motion-reduce:transform-none"
             >
-              <h3 className="text-lg font-black text-white group-hover:text-cyan-100">
+              <h3 className="text-lg font-semibold tracking-[-0.015em] text-[var(--ds-text)] group-hover:text-[var(--ds-accent)]">
                 {page.title}
               </h3>
-              <p className="mt-2 text-sm font-semibold leading-6 text-zinc-400">
+              <p className="mt-2 text-sm leading-6 text-[var(--ds-text-secondary)]">
                 {page.description}
               </p>
-              <span className="mt-4 inline-flex text-sm font-black text-cyan-200">
+              <span className="mt-4 inline-flex text-sm font-semibold text-[var(--ds-accent)]">
                 Explore this tool <span aria-hidden="true">&nbsp;→</span>
               </span>
             </a>
@@ -113,77 +113,77 @@ export default function HomepageIntentEvidence() {
         aria-labelledby="homepage-evidence-heading"
         data-evidence-example="homepage-round-timer"
       >
-        <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04]">
+        <div className="overflow-hidden rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-surface-1)] shadow-sm shadow-black/5">
           <div className="grid gap-0 lg:grid-cols-[0.9fr_1.1fr]">
             <div className="p-6 sm:p-8">
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-cyan-200">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--ds-accent)]">
                 Reviewable product evidence
               </p>
               <h2
                 id="homepage-evidence-heading"
-                className="mt-3 text-3xl font-black tracking-tight text-white"
+                className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-[var(--ds-text)]"
               >
                 A server round timer, from prompt to Studio placement
               </h2>
-              <p className="mt-4 inline-flex rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-xs font-black text-amber-100">
+              <p className="mt-4 inline-flex rounded-full border border-[var(--ds-warning)] bg-[var(--ds-fill-subtle)] px-3 py-1 text-xs font-semibold text-[var(--ds-warning)]">
                 Manual Studio verification required
               </p>
 
               <dl className="mt-7 space-y-5 text-sm">
                 <div>
-                  <dt className="font-black text-zinc-200">Prompt</dt>
-                  <dd className="mt-1 leading-6 text-zinc-400">
+                  <dt className="font-semibold text-[var(--ds-text)]">Prompt</dt>
+                  <dd className="mt-1 leading-6 text-[var(--ds-text-secondary)]">
                     Make a server round timer with a 10-second intermission, a 60-second
                     round, and updates clients can display.
                   </dd>
                 </div>
                 <div>
-                  <dt className="font-black text-zinc-200">File and class</dt>
-                  <dd className="mt-1 leading-6 text-zinc-400">
+                  <dt className="font-semibold text-[var(--ds-text)]">File and class</dt>
+                  <dd className="mt-1 leading-6 text-[var(--ds-text-secondary)]">
                     <code>RoundTimer.server.lua</code> — Roblox <code>Script</code>
                   </dd>
                 </div>
                 <div>
-                  <dt className="font-black text-zinc-200">Studio location</dt>
-                  <dd className="mt-1 leading-6 text-zinc-400">
+                  <dt className="font-semibold text-[var(--ds-text)]">Studio location</dt>
+                  <dd className="mt-1 leading-6 text-[var(--ds-text-secondary)]">
                     <code>ServerScriptService/RoundTimer</code>
                   </dd>
                 </div>
               </dl>
             </div>
 
-            <pre className="m-0 overflow-x-auto border-t border-white/10 bg-black/30 p-6 text-xs leading-6 text-zinc-200 lg:border-l lg:border-t-0">
+            <pre className="m-0 overflow-x-auto border-t border-[var(--ds-border-subtle)] bg-[var(--ds-surface-3)] p-6 text-xs leading-6 text-[var(--ds-text-secondary)] lg:border-l lg:border-t-0">
               <code>{roundTimerCode}</code>
             </pre>
           </div>
 
-          <div className="grid gap-5 border-t border-white/10 p-6 sm:p-8 md:grid-cols-2">
+          <div className="grid gap-5 border-t border-[var(--ds-border-subtle)] p-6 sm:p-8 md:grid-cols-2">
             <div>
-              <h3 className="font-black text-white">Setup</h3>
-              <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-zinc-400">
+              <h3 className="font-semibold text-[var(--ds-text)]">Setup</h3>
+              <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-[var(--ds-text-secondary)]">
                 <li>Create a Script named RoundTimer in ServerScriptService.</li>
                 <li>Paste the complete code above; the RemoteEvent is created automatically.</li>
                 <li>Add a client HUD listener if you want to show the timer on screen.</li>
               </ol>
             </div>
             <div>
-              <h3 className="font-black text-white">Verification checklist</h3>
-              <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-zinc-400">
+              <h3 className="font-semibold text-[var(--ds-text)]">Verification checklist</h3>
+              <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-[var(--ds-text-secondary)]">
                 <li>Run a two-player Studio test and inspect RoundTimerUpdate.</li>
                 <li>Confirm Intermission counts from 10 and Round counts from 60.</li>
                 <li>Confirm the waiting state appears when the server has no players.</li>
               </ol>
             </div>
             <div>
-              <h3 className="font-black text-white">Expected result</h3>
-              <p className="mt-3 text-sm leading-6 text-zinc-400">
+              <h3 className="font-semibold text-[var(--ds-text)]">Expected result</h3>
+              <p className="mt-3 text-sm leading-6 text-[var(--ds-text-secondary)]">
                 Every connected client receives the same phase and remaining-time payload
                 once per second.
               </p>
             </div>
             <div>
-              <h3 className="font-black text-white">Limitations</h3>
-              <p className="mt-3 text-sm leading-6 text-zinc-400">
+              <h3 className="font-semibold text-[var(--ds-text)]">Limitations</h3>
+              <p className="mt-3 text-sm leading-6 text-[var(--ds-text-secondary)]">
                 This example does not select maps, award winners, or render a HUD. Complete
                 manual verification in a test place before shipping it in a live experience.
               </p>

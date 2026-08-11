@@ -50,7 +50,6 @@ export default function NexusRBXPrivacyPageContainer() {
     />
   );
 }
-
 // UI Component
 function NexusRBXPrivacyPage({
   activeSection,
@@ -59,7 +58,7 @@ function NexusRBXPrivacyPage({
   handleSectionChange,
 }) {
   return (
-    <div className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col">
+    <div className="min-h-screen bg-[var(--ds-bg-canvas)] text-[var(--ds-text)] font-sans flex flex-col">
       <main className="flex-grow">
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row gap-8">
@@ -67,10 +66,10 @@ function NexusRBXPrivacyPage({
             <aside className="md:w-64 shrink-0">
               <div className="sticky top-24">
                 <div className="flex items-center mb-6">
-                  <Shield className="h-6 w-6 text-[#9b5de5] mr-3" />
+                  <Shield className="h-6 w-6 text-accent mr-3" />
                   <h2 className="text-xl font-bold">Privacy Policy</h2>
                 </div>
-                <p className="text-gray-400 text-sm mb-6">
+                <p className="text-[var(--ds-text-muted)] text-sm mb-6">
                   Last updated: {lastUpdated}
                 </p>
 
@@ -81,8 +80,8 @@ function NexusRBXPrivacyPage({
                       onClick={() => handleSectionChange(section.id)}
                       className={`focus-ring w-full flex items-center p-2.5 rounded-lg border transition-colors duration-200 text-sm ${
                         activeSection === section.id
-                          ? "bg-nexus-cyan/10 border-nexus-cyan/25 text-white"
-                          : "border-transparent text-gray-400 hover:bg-white/5 hover:text-white"
+                          ? "bg-[var(--ds-accent-soft)] border-[var(--ds-accent-border)] text-[var(--ds-text)]"
+                          : "border-transparent text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text)]"
                       }`}
                     >
                       <section.icon className="h-4 w-4 mr-3" />
@@ -93,15 +92,15 @@ function NexusRBXPrivacyPage({
 
                 <div className="nexus-page-card mt-8 p-4">
                   <h3 className="font-medium mb-2 flex items-center text-sm">
-                    <Mail className="h-4 w-4 mr-2 text-[#9b5de5]" />
+                    <Mail className="h-4 w-4 mr-2 text-accent" />
                     Privacy Support
                   </h3>
-                  <p className="text-xs text-gray-400 mb-3">
+                  <p className="text-xs text-[var(--ds-text-muted)] mb-3">
                     Questions about your data? Open a private support request.
                   </p>
                   <a
                     href="/contact?subject=security_privacy&message=I%20want%20to%20make%20a%20privacy%20request."
-                    className="focus-ring text-xs px-4 py-2 rounded-lg bg-nexus-cyan/10 border border-nexus-cyan/25 text-nexus-cyan hover:bg-nexus-cyan/15 hover:text-white transition-colors duration-200 inline-block w-full text-center font-semibold"
+                    className="focus-ring text-xs px-4 py-2 rounded-lg bg-[var(--ds-accent-soft)] border border-[var(--ds-accent-border)] text-accent hover:bg-[var(--ds-accent-soft)] hover:text-[var(--ds-text)] transition-colors duration-200 inline-block w-full text-center font-semibold"
                   >
                     Start privacy request
                   </a>
@@ -129,15 +128,15 @@ function NexusRBXPrivacyPage({
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 py-6 px-4 bg-black/40">
+      <footer className="border-t border-[var(--ds-border-subtle)] py-6 px-4 bg-[var(--ds-surface-overlay)]">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center">
           <div className="flex items-center mb-4 md:mb-0">
-            <div className="text-xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text mr-2">
+            <div className="text-xl font-bold text-accent mr-2">
               NexusRBX
             </div>
-            <div className="text-sm text-gray-400">Privacy Policy</div>
+            <div className="text-sm text-[var(--ds-text-muted)]">Privacy Policy</div>
           </div>
-          <div className="text-gray-500 text-sm">
+          <div className="text-[var(--ds-text-subtle)] text-sm">
             © 2026 NexusRBX. All rights reserved.
           </div>
         </div>
@@ -150,10 +149,10 @@ function IntroductionContent() {
   return (
     <div className="prose prose-invert max-w-none">
       <h1 className="text-3xl font-bold mb-6">Introduction</h1>
-      <p className="text-gray-300">
+      <p className="text-[var(--ds-text-secondary)]">
         At NexusRBX, we respect your privacy and are committed to protecting your personal information. This Privacy Policy explains what data we collect, how we use and share it, and your rights regarding your information when you use our website and AI-driven Roblox scripting platform (“Service”). By using the Service, you agree to the collection and use of information as outlined in this policy. If you do not agree, please discontinue use of the Service.
       </p>
-      <p className="text-gray-400 mt-4 italic">Last updated: January 12, 2026.</p>
+      <p className="text-[var(--ds-text-muted)] mt-4 italic">Last updated: January 12, 2026.</p>
     </div>
   );
 }
@@ -162,37 +161,37 @@ function CollectionContent() {
   return (
     <div className="prose prose-invert max-w-none">
       <h1 className="text-3xl font-bold mb-6">Information We Collect</h1>
-      <p className="text-gray-300 mb-6">We collect personal and usage information necessary to provide and improve our Service. This includes:</p>
+      <p className="text-[var(--ds-text-secondary)] mb-6">We collect personal and usage information necessary to provide and improve our Service. This includes:</p>
       
       <div className="space-y-8">
         <section>
-          <h2 className="text-xl font-bold mb-3 text-[#9b5de5]">Account Information</h2>
-          <p className="text-gray-400">When you create an account, we collect information like your username, email address, and a hashed password. If you sign in via a third-party OAuth provider (e.g. Google or GitHub), we receive basic profile details such as your email from that provider.</p>
+          <h2 className="text-xl font-bold mb-3 text-accent">Account Information</h2>
+          <p className="text-[var(--ds-text-muted)]">When you create an account, we collect information like your username, email address, and a hashed password. If you sign in via a third-party OAuth provider (e.g. Google or GitHub), we receive basic profile details such as your email from that provider.</p>
         </section>
 
         <section>
-          <h2 className="text-xl font-bold mb-3 text-[#9b5de5]">Content and Usage Data</h2>
-          <p className="text-gray-400">The prompts and scripts you generate (your “User Content”), and how you interact with the Service (e.g. features used, pages visited, click streams). We also collect log data including IP address, browser type, device information, and timestamps of requests.</p>
+          <h2 className="text-xl font-bold mb-3 text-accent">Content and Usage Data</h2>
+          <p className="text-[var(--ds-text-muted)]">The prompts and scripts you generate (your “User Content”), and how you interact with the Service (e.g. features used, pages visited, click streams). We also collect log data including IP address, browser type, device information, and timestamps of requests.</p>
         </section>
 
         <section>
-          <h2 className="text-xl font-bold mb-3 text-[#9b5de5]">Payment Information</h2>
-          <p className="text-gray-400">If you purchase a subscription or tokens, payments are processed by third-party payment processors (e.g. Stripe). We do not store your full credit card details on our servers. We may retain basic transaction identifiers and subscription status, while the payment provider handles sensitive financial details in compliance with PCI-DSS standards.</p>
+          <h2 className="text-xl font-bold mb-3 text-accent">Payment Information</h2>
+          <p className="text-[var(--ds-text-muted)]">If you purchase a subscription or tokens, payments are processed by third-party payment processors (e.g. Stripe). We do not store your full credit card details on our servers. We may retain basic transaction identifiers and subscription status, while the payment provider handles sensitive financial details in compliance with PCI-DSS standards.</p>
         </section>
 
         <section>
-          <h2 className="text-xl font-bold mb-3 text-[#9b5de5]">Cookies & Tracking</h2>
-          <p className="text-gray-400">We use cookies and similar technologies to operate and secure our Service, remember your preferences, and gather analytics on usage. See Cookies below for more details.</p>
+          <h2 className="text-xl font-bold mb-3 text-accent">Cookies & Tracking</h2>
+          <p className="text-[var(--ds-text-muted)]">We use cookies and similar technologies to operate and secure our Service, remember your preferences, and gather analytics on usage. See Cookies below for more details.</p>
         </section>
 
         <section>
-          <h2 className="text-xl font-bold mb-3 text-[#9b5de5]">Communications</h2>
-          <p className="text-gray-400">If you contact support or communicate with us (such as via email or chat), we may collect your name, email, and the content of your communications to respond to you and improve our Service.</p>
+          <h2 className="text-xl font-bold mb-3 text-accent">Communications</h2>
+          <p className="text-[var(--ds-text-muted)]">If you contact support or communicate with us (such as via email or chat), we may collect your name, email, and the content of your communications to respond to you and improve our Service.</p>
         </section>
       </div>
 
       <div className="mt-8 p-4 nexus-page-card">
-        <p className="text-sm text-gray-400">We do not knowingly collect personal information from children under 13. Our Service is not intended for users under 13, and if we learn we’ve collected information from a child under 13, we will delete it. (See “Children’s Privacy” below.)</p>
+        <p className="text-sm text-[var(--ds-text-muted)]">We do not knowingly collect personal information from children under 13. Our Service is not intended for users under 13, and if we learn we’ve collected information from a child under 13, we will delete it. (See “Children’s Privacy” below.)</p>
       </div>
     </div>
   );
@@ -202,41 +201,41 @@ function UseContent() {
   return (
     <div className="prose prose-invert max-w-none">
       <h1 className="text-3xl font-bold mb-6">How We Use Your Information</h1>
-      <p className="text-gray-300 mb-6">We use the collected information for the following purposes:</p>
+      <p className="text-[var(--ds-text-secondary)] mb-6">We use the collected information for the following purposes:</p>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="nexus-page-card p-5">
-          <h3 className="text-lg font-bold mb-3 text-[#9b5de5]">Provide and Improve</h3>
-          <p className="text-sm text-gray-400">To operate the NexusRBX platform and its features, including generating scripts via AI, maintaining your account, and optimizing performance. Usage analytics help us debug issues and improve product reliability without sending private prompt text or generated code payloads to analytics.</p>
+          <h3 className="text-lg font-bold mb-3 text-accent">Provide and Improve</h3>
+          <p className="text-sm text-[var(--ds-text-muted)]">To operate the NexusRBX platform and its features, including generating scripts via AI, maintaining your account, and optimizing performance. Usage analytics help us debug issues and improve product reliability without sending private prompt text or generated code payloads to analytics.</p>
         </div>
         
         <div className="nexus-page-card p-5">
-          <h3 className="text-lg font-bold mb-3 text-[#9b5de5]">Personalization</h3>
-          <p className="text-sm text-gray-400">To remember your settings and preferences (such as saved scripts or interface customizations) and provide a tailored user experience.</p>
+          <h3 className="text-lg font-bold mb-3 text-accent">Personalization</h3>
+          <p className="text-sm text-[var(--ds-text-muted)]">To remember your settings and preferences (such as saved scripts or interface customizations) and provide a tailored user experience.</p>
         </div>
 
         <div className="nexus-page-card p-5">
-          <h3 className="text-lg font-bold mb-3 text-[#9b5de5]">Communication</h3>
-          <p className="text-sm text-gray-400">To send service-related communications such as confirmations, technical and security notices, updates, and if you opt-in, occasional promotional emails. We may also respond to your inquiries or support requests.</p>
+          <h3 className="text-lg font-bold mb-3 text-accent">Communication</h3>
+          <p className="text-sm text-[var(--ds-text-muted)]">To send service-related communications such as confirmations, technical and security notices, updates, and if you opt-in, occasional promotional emails. We may also respond to your inquiries or support requests.</p>
         </div>
 
         <div className="nexus-page-card p-5">
-          <h3 className="text-lg font-bold mb-3 text-[#9b5de5]">Analytics and Research</h3>
-          <p className="text-sm text-gray-400">To understand aggregate usage trends and user engagement with our Service. This helps us improve usability and guide product development.</p>
+          <h3 className="text-lg font-bold mb-3 text-accent">Analytics and Research</h3>
+          <p className="text-sm text-[var(--ds-text-muted)]">To understand aggregate usage trends and user engagement with our Service. This helps us improve usability and guide product development.</p>
         </div>
 
         <div className="nexus-page-card p-5">
-          <h3 className="text-lg font-bold mb-3 text-[#9b5de5]">Security and Fraud</h3>
-          <p className="text-sm text-gray-400">To monitor, investigate, and prevent fraud, abuse, security incidents, and other malicious activities. For example, we may use automated tools to detect scripts that violate our policies or Roblox’s rules.</p>
+          <h3 className="text-lg font-bold mb-3 text-accent">Security and Fraud</h3>
+          <p className="text-sm text-[var(--ds-text-muted)]">To monitor, investigate, and prevent fraud, abuse, security incidents, and other malicious activities. For example, we may use automated tools to detect scripts that violate our policies or Roblox’s rules.</p>
         </div>
 
         <div className="nexus-page-card p-5">
-          <h3 className="text-lg font-bold mb-3 text-[#9b5de5]">Legal Compliance</h3>
-          <p className="text-sm text-gray-400">To comply with applicable laws and regulations, such as fulfilling lawful requests from authorities or enforcing our Terms and policies.</p>
+          <h3 className="text-lg font-bold mb-3 text-accent">Legal Compliance</h3>
+          <p className="text-sm text-[var(--ds-text-muted)]">To comply with applicable laws and regulations, such as fulfilling lawful requests from authorities or enforcing our Terms and policies.</p>
         </div>
       </div>
 
-      <p className="mt-8 text-gray-400 text-sm italic">We will not use your personal information for purposes incompatible with those above without your consent. We do not use personal data for automated decision-making that produces legal or similarly significant effects without human review.</p>
+      <p className="mt-8 text-[var(--ds-text-muted)] text-sm italic">We will not use your personal information for purposes incompatible with those above without your consent. We do not use personal data for automated decision-making that produces legal or similarly significant effects without human review.</p>
     </div>
   );
 }
@@ -245,36 +244,36 @@ function SharingContent() {
   return (
     <div className="prose prose-invert max-w-none">
       <h1 className="text-3xl font-bold mb-6">How We Share Information</h1>
-      <p className="text-gray-300 mb-6">We value your privacy – we do not sell your personal information. We only share information in the following circumstances:</p>
+      <p className="text-[var(--ds-text-secondary)] mb-6">We value your privacy – we do not sell your personal information. We only share information in the following circumstances:</p>
       
       <div className="space-y-6">
         <section className="nexus-page-card p-5">
-          <h3 className="text-lg font-bold mb-2 text-[#9b5de5]">Service Providers</h3>
-          <p className="text-sm text-gray-400">We share data with trusted third-party service providers as necessary to operate our business. For example, we use cloud hosting providers to store data, email/SMS services to send verification codes or notifications, payment processors (like Stripe) to handle billing, and analytics providers to help us understand usage. These providers only receive the information needed to perform their specific services on our behalf and are contractually obligated to protect it.</p>
+          <h3 className="text-lg font-bold mb-2 text-accent">Service Providers</h3>
+          <p className="text-sm text-[var(--ds-text-muted)]">We share data with trusted third-party service providers as necessary to operate our business. For example, we use cloud hosting providers to store data, email/SMS services to send verification codes or notifications, payment processors (like Stripe) to handle billing, and analytics providers to help us understand usage. These providers only receive the information needed to perform their specific services on our behalf and are contractually obligated to protect it.</p>
         </section>
 
         <section className="nexus-page-card p-5">
-          <h3 className="text-lg font-bold mb-2 text-[#9b5de5]">Business Transfers</h3>
-          <p className="text-sm text-gray-400">If NexusRBX is involved in a merger, acquisition, bankruptcy or asset sale, your information may be transferred to a successor or affiliate as part of that transaction. In such cases, we will ensure the new owner honors the commitments we’ve made in this Privacy Policy.</p>
+          <h3 className="text-lg font-bold mb-2 text-accent">Business Transfers</h3>
+          <p className="text-sm text-[var(--ds-text-muted)]">If NexusRBX is involved in a merger, acquisition, bankruptcy or asset sale, your information may be transferred to a successor or affiliate as part of that transaction. In such cases, we will ensure the new owner honors the commitments we’ve made in this Privacy Policy.</p>
         </section>
 
         <section className="nexus-page-card p-5">
-          <h3 className="text-lg font-bold mb-2 text-[#9b5de5]">Legal Requirements</h3>
-          <p className="text-sm text-gray-400">We may disclose your information if required to do so by law or in response to valid legal requests (e.g. subpoenas, court orders), or when we believe in good faith that disclosure is necessary to protect our rights, investigate fraud, or ensure the safety of our users or others.</p>
+          <h3 className="text-lg font-bold mb-2 text-accent">Legal Requirements</h3>
+          <p className="text-sm text-[var(--ds-text-muted)]">We may disclose your information if required to do so by law or in response to valid legal requests (e.g. subpoenas, court orders), or when we believe in good faith that disclosure is necessary to protect our rights, investigate fraud, or ensure the safety of our users or others.</p>
         </section>
 
         <section className="nexus-page-card p-5">
-          <h3 className="text-lg font-bold mb-2 text-[#9b5de5]">With Your Consent</h3>
-          <p className="text-sm text-gray-400">We will share your personal information with third parties in any other situation where you provide explicit consent. For instance, if you integrate a third-party tool with NexusRBX or request us to share data with another platform, we will do so only with your authorization.</p>
+          <h3 className="text-lg font-bold mb-2 text-accent">With Your Consent</h3>
+          <p className="text-sm text-[var(--ds-text-muted)]">We will share your personal information with third parties in any other situation where you provide explicit consent. For instance, if you integrate a third-party tool with NexusRBX or request us to share data with another platform, we will do so only with your authorization.</p>
         </section>
       </div>
 
       <div className="mt-8 space-y-4">
-        <h3 className="text-xl font-bold text-white">Anonymous or Aggregate Data</h3>
-        <p className="text-gray-400">We may share aggregated information or de-identified data that cannot reasonably be used to identify you. For example, publishing trends or statistics about script usage in a way that does not reveal personal details.</p>
+        <h3 className="text-xl font-bold text-[var(--ds-text)]">Anonymous or Aggregate Data</h3>
+        <p className="text-[var(--ds-text-muted)]">We may share aggregated information or de-identified data that cannot reasonably be used to identify you. For example, publishing trends or statistics about script usage in a way that does not reveal personal details.</p>
         
-        <h3 className="text-xl font-bold text-white">Third-Party Links</h3>
-        <p className="text-gray-400">The Service may include links to third-party websites or services (for example, a link to an external documentation site or community forum). If you click those links, you will be directed to sites we do not control. This Privacy Policy does not apply to third-party sites or services. We recommend reviewing the privacy policies of any third-party website or service you visit. We are not responsible for the content or privacy practices of other companies.</p>
+        <h3 className="text-xl font-bold text-[var(--ds-text)]">Third-Party Links</h3>
+        <p className="text-[var(--ds-text-muted)]">The Service may include links to third-party websites or services (for example, a link to an external documentation site or community forum). If you click those links, you will be directed to sites we do not control. This Privacy Policy does not apply to third-party sites or services. We recommend reviewing the privacy policies of any third-party website or service you visit. We are not responsible for the content or privacy practices of other companies.</p>
       </div>
     </div>
   );
@@ -284,29 +283,29 @@ function CookiesContent() {
   return (
     <div className="prose prose-invert max-w-none">
       <h1 className="text-3xl font-bold mb-6">Cookies and Tracking Technologies</h1>
-      <p className="text-gray-300 mb-6">Cookies are small text files placed on your device to store information. NexusRBX uses cookies and similar technologies for several reasons:</p>
+      <p className="text-[var(--ds-text-secondary)] mb-6">Cookies are small text files placed on your device to store information. NexusRBX uses cookies and similar technologies for several reasons:</p>
       
       <div className="space-y-4">
         <div className="p-4 nexus-page-card">
-          <h4 className="font-bold text-[#9b5de5]">Essential Cookies</h4>
-          <p className="text-sm text-gray-400">These are necessary for the Service to function. For example, they keep you logged in and protect against fraudulent use of your account. You cannot opt-out of essential cookies as the Service cannot run properly without them.</p>
+          <h4 className="font-bold text-accent">Essential Cookies</h4>
+          <p className="text-sm text-[var(--ds-text-muted)]">These are necessary for the Service to function. For example, they keep you logged in and protect against fraudulent use of your account. You cannot opt-out of essential cookies as the Service cannot run properly without them.</p>
         </div>
         <div className="p-4 nexus-page-card">
-          <h4 className="font-bold text-[#9b5de5]">Preference Cookies</h4>
-          <p className="text-sm text-gray-400">These remember your settings and preferences, such as theme choices or language, so we can personalize your experience.</p>
+          <h4 className="font-bold text-accent">Preference Cookies</h4>
+          <p className="text-sm text-[var(--ds-text-muted)]">These remember your settings and preferences, such as theme choices or language, so we can personalize your experience.</p>
         </div>
         <div className="p-4 nexus-page-card">
-          <h4 className="font-bold text-[#9b5de5]">Analytics Cookies</h4>
-          <p className="text-sm text-gray-400">These help us understand how users navigate and use our site, allowing us to improve functionality and user experience. We use tools like Google Analytics (which may set its own cookies) to collect non-identifying usage data in aggregate form.</p>
+          <h4 className="font-bold text-accent">Analytics Cookies</h4>
+          <p className="text-sm text-[var(--ds-text-muted)]">These help us understand how users navigate and use our site, allowing us to improve functionality and user experience. We use tools like Google Analytics (which may set its own cookies) to collect non-identifying usage data in aggregate form.</p>
         </div>
         <div className="p-4 nexus-page-card">
-          <h4 className="font-bold text-[#9b5de5]">Marketing Cookies</h4>
-          <p className="text-sm text-gray-400">(If applicable) We currently do not run third-party ads, but if we ever do, marketing or advertising cookies would be used to track effectiveness of campaigns and limit repetitive ads. Such cookies would only be used with your consent.</p>
+          <h4 className="font-bold text-accent">Marketing Cookies</h4>
+          <p className="text-sm text-[var(--ds-text-muted)]">(If applicable) We currently do not run third-party ads, but if we ever do, marketing or advertising cookies would be used to track effectiveness of campaigns and limit repetitive ads. Such cookies would only be used with your consent.</p>
         </div>
       </div>
 
-      <h3 className="text-xl font-bold mt-8 mb-4 text-white">Your Choices</h3>
-      <p className="text-gray-400">When you first visit NexusRBX, you may be presented with a cookie notice or settings. You have the option to accept or refuse non-essential cookies. You can also manage cookies through your browser settings – for example, you can set your browser to refuse all cookies or to alert you when a cookie is being set. Please note that if you disable certain cookies, some features of our Service (like staying logged in or saving preferences) may not function properly.</p>
+      <h3 className="text-xl font-bold mt-8 mb-4 text-[var(--ds-text)]">Your Choices</h3>
+      <p className="text-[var(--ds-text-muted)]">When you first visit NexusRBX, you may be presented with a cookie notice or settings. You have the option to accept or refuse non-essential cookies. You can also manage cookies through your browser settings – for example, you can set your browser to refuse all cookies or to alert you when a cookie is being set. Please note that if you disable certain cookies, some features of our Service (like staying logged in or saving preferences) may not function properly.</p>
     </div>
   );
 }
@@ -315,10 +314,10 @@ function SecurityContent() {
   return (
     <div className="prose prose-invert max-w-none">
       <h1 className="text-3xl font-bold mb-6">Data Storage and Security</h1>
-      <p className="text-gray-300 mb-6">We take security measures to safeguard your personal information. Data is transmitted over encrypted connections (HTTPS) and stored on secure servers. We implement organizational and technical safeguards such as access controls, encryption of sensitive data at rest, firewalls, and regular security reviews. We also limit employee and contractor access to personal information on a need-to-know basis, and all personnel are bound by confidentiality obligations.</p>
+      <p className="text-[var(--ds-text-secondary)] mb-6">We take security measures to safeguard your personal information. Data is transmitted over encrypted connections (HTTPS) and stored on secure servers. We implement organizational and technical safeguards such as access controls, encryption of sensitive data at rest, firewalls, and regular security reviews. We also limit employee and contractor access to personal information on a need-to-know basis, and all personnel are bound by confidentiality obligations.</p>
       
-      <div className="p-6 bg-[#9b5de5]/10 border border-[#9b5de5]/30 rounded-xl">
-        <p className="text-gray-300">Despite our efforts, no method of transmission or storage is 100% secure. Therefore, we cannot guarantee absolute security of your information. You share data with us at your own risk. In the event of a data breach that affects your personal information, we will notify you and the relevant authorities as required by law. We also encourage you to help keep your data safe by using a strong, unique password for NexusRBX and not sharing your account credentials with others.</p>
+      <div className="p-6 bg-[var(--ds-accent-soft)] border border-[var(--ds-accent-border)] rounded-xl">
+        <p className="text-[var(--ds-text-secondary)]">Despite our efforts, no method of transmission or storage is 100% secure. Therefore, we cannot guarantee absolute security of your information. You share data with us at your own risk. In the event of a data breach that affects your personal information, we will notify you and the relevant authorities as required by law. We also encourage you to help keep your data safe by using a strong, unique password for NexusRBX and not sharing your account credentials with others.</p>
       </div>
     </div>
   );
@@ -328,28 +327,28 @@ function RetentionContent() {
   return (
     <div className="prose prose-invert max-w-none">
       <h1 className="text-3xl font-bold mb-6">Data Retention</h1>
-      <p className="text-gray-300 mb-6">We retain personal information only for as long as necessary to fulfill the purposes outlined in this policy or as required by law. The retention period can vary depending on the type of data:</p>
+      <p className="text-[var(--ds-text-secondary)] mb-6">We retain personal information only for as long as necessary to fulfill the purposes outlined in this policy or as required by law. The retention period can vary depending on the type of data:</p>
       
       <div className="space-y-4">
         <div className="flex items-start p-4 nexus-page-card">
-          <div className="w-32 shrink-0 font-bold text-[#9b5de5]">Account Data</div>
-          <div className="text-sm text-gray-400">Information associated with your account (profile info, settings, generated content) is kept for as long as your account is active. If you delete your account or request deletion, we will remove or anonymize your personal data within a reasonable time frame, except where retention is required for legal obligations or legitimate business purposes.</div>
+          <div className="w-32 shrink-0 font-bold text-accent">Account Data</div>
+          <div className="text-sm text-[var(--ds-text-muted)]">Information associated with your account (profile info, settings, generated content) is kept for as long as your account is active. If you delete your account or request deletion, we will remove or anonymize your personal data within a reasonable time frame, except where retention is required for legal obligations or legitimate business purposes.</div>
         </div>
         <div className="flex items-start p-4 nexus-page-card">
-          <div className="w-32 shrink-0 font-bold text-[#9b5de5]">Usage Logs</div>
-          <div className="text-sm text-gray-400">Basic log data (IP addresses, device info, usage logs) is typically retained for a shorter period (e.g. 90 days to 1 year) for security, analysis, and improving the Service. Aggregate data derived from logs (that no longer identifies you) may be kept longer.</div>
+          <div className="w-32 shrink-0 font-bold text-accent">Usage Logs</div>
+          <div className="text-sm text-[var(--ds-text-muted)]">Basic log data (IP addresses, device info, usage logs) is typically retained for a shorter period (e.g. 90 days to 1 year) for security, analysis, and improving the Service. Aggregate data derived from logs (that no longer identifies you) may be kept longer.</div>
         </div>
         <div className="flex items-start p-4 nexus-page-card">
-          <div className="w-32 shrink-0 font-bold text-[#9b5de5]">Communications</div>
-          <div className="text-sm text-gray-400">Support emails or chat logs may be retained for a period of time to assist you with any further issues and for training/customer service improvements.</div>
+          <div className="w-32 shrink-0 font-bold text-accent">Communications</div>
+          <div className="text-sm text-[var(--ds-text-muted)]">Support emails or chat logs may be retained for a period of time to assist you with any further issues and for training/customer service improvements.</div>
         </div>
         <div className="flex items-start p-4 nexus-page-card">
-          <div className="w-32 shrink-0 font-bold text-[#9b5de5]">Payment Records</div>
-          <div className="text-sm text-gray-400">Transaction records are kept as long as needed for accounting and compliance (e.g. tax, financial reporting), typically at least 7 years or as mandated by law. Crucially, remember that full payment details (credit card numbers) are not stored by us directly.</div>
+          <div className="w-32 shrink-0 font-bold text-accent">Payment Records</div>
+          <div className="text-sm text-[var(--ds-text-muted)]">Transaction records are kept as long as needed for accounting and compliance (e.g. tax, financial reporting), typically at least 7 years or as mandated by law. Crucially, remember that full payment details (credit card numbers) are not stored by us directly.</div>
         </div>
       </div>
 
-      <p className="mt-8 text-gray-400">When we no longer need personal information, we will securely delete it or anonymize it so it can no longer be associated with you. If immediate deletion is not possible (for example, because the data is stored in backups), we will securely store it and isolate it from further use until deletion is feasible.</p>
+      <p className="mt-8 text-[var(--ds-text-muted)]">When we no longer need personal information, we will securely delete it or anonymize it so it can no longer be associated with you. If immediate deletion is not possible (for example, because the data is stored in backups), we will securely store it and isolate it from further use until deletion is feasible.</p>
     </div>
   );
 }
@@ -358,9 +357,9 @@ function RightsContent() {
   return (
     <div className="prose prose-invert max-w-none">
       <h1 className="text-3xl font-bold mb-6">Your Privacy Rights</h1>
-      <p className="text-gray-300 mb-6">Depending on your jurisdiction, you have certain rights regarding your personal information. We are committed to honoring applicable data rights and have processes in place to enable you to exercise them. These rights may include:</p>
+      <p className="text-[var(--ds-text-secondary)] mb-6">Depending on your jurisdiction, you have certain rights regarding your personal information. We are committed to honoring applicable data rights and have processes in place to enable you to exercise them. These rights may include:</p>
       
-      <ul className="list-disc list-inside text-gray-400 space-y-4 mb-8">
+      <ul className="list-disc list-inside text-[var(--ds-text-muted)] space-y-4 mb-8">
         <li><strong>Access and Portability:</strong> You can request a copy of the personal data we hold about you, and information about how it’s used. We will provide this in a readily usable format.</li>
         <li><strong>Correction:</strong> If any personal information is inaccurate or incomplete, you have the right to request that we correct or update it. You can also correct most basic profile info through your account settings.</li>
         <li><strong>Deletion:</strong> You may request that we delete your personal data. We will honor deletion requests to the extent we are not required to retain data for legal reasons.</li>
@@ -371,9 +370,9 @@ function RightsContent() {
 
       <div className="space-y-8">
         <section className="p-6 nexus-page-card">
-          <h3 className="text-xl font-bold mb-4 text-white">California Residents (CCPA/CPRA)</h3>
-          <p className="text-sm text-gray-400 mb-4">If you are a resident of California, you have specific rights under the California Consumer Privacy Act (CCPA) as amended by the CPRA:</p>
-          <ul className="text-xs text-gray-500 space-y-2 list-disc list-inside">
+          <h3 className="text-xl font-bold mb-4 text-[var(--ds-text)]">California Residents (CCPA/CPRA)</h3>
+          <p className="text-sm text-[var(--ds-text-muted)] mb-4">If you are a resident of California, you have specific rights under the California Consumer Privacy Act (CCPA) as amended by the CPRA:</p>
+          <ul className="text-xs text-[var(--ds-text-subtle)] space-y-2 list-disc list-inside">
             <li>The right to know the categories and specific pieces of personal information we have collected.</li>
             <li>The right to delete personal information we have collected from you.</li>
             <li>The right to opt-out of the “sale” of personal information. (Note: NexusRBX does not sell personal data).</li>
@@ -383,9 +382,9 @@ function RightsContent() {
         </section>
 
         <section className="p-6 nexus-page-card">
-          <h3 className="text-xl font-bold mb-4 text-white">EU/EEA Residents (GDPR)</h3>
-          <p className="text-sm text-gray-400 mb-4">If you are in the European Economic Area (or the UK or other jurisdictions with similar laws), you have the following additional rights under the General Data Protection Regulation (GDPR):</p>
-          <ul className="text-xs text-gray-500 space-y-2 list-disc list-inside">
+          <h3 className="text-xl font-bold mb-4 text-[var(--ds-text)]">EU/EEA Residents (GDPR)</h3>
+          <p className="text-sm text-[var(--ds-text-muted)] mb-4">If you are in the European Economic Area (or the UK or other jurisdictions with similar laws), you have the following additional rights under the General Data Protection Regulation (GDPR):</p>
+          <ul className="text-xs text-[var(--ds-text-subtle)] space-y-2 list-disc list-inside">
             <li>The right to lodge a complaint with a supervisory data protection authority.</li>
             <li>The right to data portability in a structured, machine-readable format.</li>
             <li>The right not to be subject to automated decision-making (including profiling).</li>
@@ -393,7 +392,7 @@ function RightsContent() {
         </section>
       </div>
 
-      <p className="mt-8 text-gray-400 text-sm italic">To exercise any of these rights, please see the next section on How to Exercise Your Rights. Note that these rights are subject to certain exemptions and limitations by law.</p>
+      <p className="mt-8 text-[var(--ds-text-muted)] text-sm italic">To exercise any of these rights, please see the next section on How to Exercise Your Rights. Note that these rights are subject to certain exemptions and limitations by law.</p>
     </div>
   );
 }
@@ -402,22 +401,22 @@ function ExerciseContent() {
   return (
     <div className="prose prose-invert max-w-none">
       <h1 className="text-3xl font-bold mb-6">How to Exercise Your Rights</h1>
-      <p className="text-gray-300 mb-6">If you wish to access, correct, or delete your personal information, or exercise another privacy right, <a href="/contact?subject=security_privacy&message=I%20want%20to%20make%20a%20privacy%20request." className="text-[#9b5de5]">open a security or privacy request</a>. Sign in with the account concerned so the request is tied to your verified identity.</p>
+      <p className="text-[var(--ds-text-secondary)] mb-6">If you wish to access, correct, or delete your personal information, or exercise another privacy right, <a href="/contact?subject=security_privacy&message=I%20want%20to%20make%20a%20privacy%20request." className="text-accent">open a security or privacy request</a>. Sign in with the account concerned so the request is tied to your verified identity.</p>
       
       <div className="space-y-6">
         <section>
-          <h3 className="text-xl font-bold text-white mb-2">Verification</h3>
-          <p className="text-gray-400">To protect your privacy, requests are submitted from a signed-in NexusRBX account. We may ask for additional information when it is necessary to verify the request.</p>
+          <h3 className="text-xl font-bold text-[var(--ds-text)] mb-2">Verification</h3>
+          <p className="text-[var(--ds-text-muted)]">To protect your privacy, requests are submitted from a signed-in NexusRBX account. We may ask for additional information when it is necessary to verify the request.</p>
         </section>
 
         <section>
-          <h3 className="text-xl font-bold text-white mb-2">Process and Timing</h3>
-          <p className="text-gray-400">Once a verifiable request is received, we will confirm receipt within 10 days (for CCPA) and aim to respond fully within 30 days. If we need more time (up to a total of 90 days), we will inform you of the reason and extension in writing. Access and portability requests will be fulfilled electronically in a portable format (e.g. a CSV or PDF file).</p>
+          <h3 className="text-xl font-bold text-[var(--ds-text)] mb-2">Process and Timing</h3>
+          <p className="text-[var(--ds-text-muted)]">Once a verifiable request is received, we will confirm receipt within 10 days (for CCPA) and aim to respond fully within 30 days. If we need more time (up to a total of 90 days), we will inform you of the reason and extension in writing. Access and portability requests will be fulfilled electronically in a portable format (e.g. a CSV or PDF file).</p>
         </section>
 
-        <section className="p-4 bg-[#9b5de5]/10 border border-[#9b5de5]/30 rounded-lg">
-          <h3 className="text-lg font-bold text-white mb-2">GDPR and regional requests</h3>
-          <p className="text-sm text-gray-300">Choose <strong>Security / privacy</strong> in the support form and state the right you want to exercise. The full conversation and its status remain available in your support history.</p>
+        <section className="p-4 bg-[var(--ds-accent-soft)] border border-[var(--ds-accent-border)] rounded-lg">
+          <h3 className="text-lg font-bold text-[var(--ds-text)] mb-2">GDPR and regional requests</h3>
+          <p className="text-sm text-[var(--ds-text-secondary)]">Choose <strong>Security / privacy</strong> in the support form and state the right you want to exercise. The full conversation and its status remain available in your support history.</p>
         </section>
       </div>
     </div>
@@ -428,10 +427,10 @@ function ChildrenContent() {
   return (
     <div className="prose prose-invert max-w-none">
       <h1 className="text-3xl font-bold mb-6">Children’s Privacy</h1>
-      <p className="text-gray-300 mb-6">NexusRBX is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If you are under 13, please do not use the Service or provide any information about yourself to us. In the event we learn that we have inadvertently collected personal data from a child under 13, we will take prompt action to delete such data from our records.</p>
+      <p className="text-[var(--ds-text-secondary)] mb-6">NexusRBX is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If you are under 13, please do not use the Service or provide any information about yourself to us. In the event we learn that we have inadvertently collected personal data from a child under 13, we will take prompt action to delete such data from our records.</p>
       
       <div className="p-6 nexus-page-card">
-        <p className="text-gray-400">If you are a parent or guardian and you believe that your child under 13 has provided us with personal information without your consent, please use the <a href="/contact?category=security_privacy" className="text-[#9b5de5]">contact form</a> immediately. We will then work with you to investigate and, if verified, delete the child’s information.</p>
+        <p className="text-[var(--ds-text-muted)]">If you are a parent or guardian and you believe that your child under 13 has provided us with personal information without your consent, please use the <a href="/contact?category=security_privacy" className="text-accent">contact form</a> immediately. We will then work with you to investigate and, if verified, delete the child’s information.</p>
       </div>
     </div>
   );
@@ -441,8 +440,8 @@ function ChangesContent() {
   return (
     <div className="prose prose-invert max-w-none">
       <h1 className="text-3xl font-bold mb-6">Changes to This Privacy Policy</h1>
-      <p className="text-gray-300 mb-6">We may update this Privacy Policy from time to time to reflect changes in our practices or for other operational, legal, or regulatory reasons. When we make material changes, we will post the updated Policy on our website and update the “Last updated” date at the top. We may also provide additional notice to you (such as by email or in-app notification) if the changes are significant.</p>
-      <p className="text-gray-400 italic">Please review this Privacy Policy periodically to stay informed about how we are protecting your information. Your continued use of the Service after any modifications to this Policy constitutes acceptance of those changes.</p>
+      <p className="text-[var(--ds-text-secondary)] mb-6">We may update this Privacy Policy from time to time to reflect changes in our practices or for other operational, legal, or regulatory reasons. When we make material changes, we will post the updated Policy on our website and update the “Last updated” date at the top. We may also provide additional notice to you (such as by email or in-app notification) if the changes are significant.</p>
+      <p className="text-[var(--ds-text-muted)] italic">Please review this Privacy Policy periodically to stay informed about how we are protecting your information. Your continued use of the Service after any modifications to this Policy constitutes acceptance of those changes.</p>
     </div>
   );
 }
@@ -451,14 +450,14 @@ function ContactContent() {
   return (
     <div className="prose prose-invert max-w-none">
       <h1 className="text-3xl font-bold mb-6">Contact Us</h1>
-      <p className="text-gray-300 mb-8">If you have any questions, concerns, or comments about this Privacy Policy or our data practices, please contact us:</p>
+      <p className="text-[var(--ds-text-secondary)] mb-8">If you have any questions, concerns, or comments about this Privacy Policy or our data practices, please contact us:</p>
       
       <div className="max-w-xl">
         <div className="nexus-page-card p-6 flex flex-col items-center text-center">
-          <Mail className="h-10 w-10 text-[#9b5de5] mb-4" />
+          <Mail className="h-10 w-10 text-accent mb-4" />
           <h3 className="text-xl font-bold mb-2">Private support request</h3>
-          <p className="text-sm text-gray-400 mb-4">Use the in-site support desk for privacy questions and requests. Do not include passwords, card numbers, or credentials.</p>
-          <a href="/contact?subject=security_privacy&message=I%20have%20a%20question%20about%20the%20Privacy%20Policy." className="text-[#9b5de5] font-bold hover:underline">Open privacy support</a>
+          <p className="text-sm text-[var(--ds-text-muted)] mb-4">Use the in-site support desk for privacy questions and requests. Do not include passwords, card numbers, or credentials.</p>
+          <a href="/contact?subject=security_privacy&message=I%20have%20a%20question%20about%20the%20Privacy%20Policy." className="text-accent font-bold hover:underline">Open privacy support</a>
         </div>
       </div>
     </div>

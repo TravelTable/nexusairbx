@@ -167,7 +167,7 @@ export default function LiveWorkStream({
       : "Starting work...";
 
   return (
-    <div className={embedded ? "overflow-hidden px-4 py-4" : "rounded-2xl border border-white/10 bg-[#0b0b0b]/90 shadow-2xl overflow-hidden px-4 py-4"}>
+    <div className={embedded ? "overflow-hidden px-4 py-4" : "rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] shadow-2xl overflow-hidden px-4 py-4"}>
       <ChainOfThought defaultOpen className="w-full space-y-3">
         <ChainOfThoughtHeader>
           {reconnecting ? (
@@ -223,7 +223,7 @@ export default function LiveWorkStream({
                       type="button"
                       onClick={() => onApproveStep(step)}
                       disabled={approvingStepId === step.id}
-                      className="mt-1 inline-flex items-center gap-1.5 rounded-md border border-amber-400/30 bg-amber-400/10 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-amber-100 transition-[background-color,border-color,transform,opacity] duration-150 ease-out active:scale-[0.98] disabled:opacity-40"
+                      className="mt-1 inline-flex items-center gap-1.5 rounded-md border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] px-2 py-1 text-[10px] font-black uppercase tracking-widest text-[var(--ds-warning)] transition-[background-color,border-color,transform,opacity] duration-150 ease-out active:scale-[0.98] disabled:opacity-40"
                     >
                       {approvingStepId === step.id ? (
                         <Loader2 className="w-3 h-3 motion-safe:animate-spin" />
@@ -234,7 +234,7 @@ export default function LiveWorkStream({
                     </button>
                   ) : null}
                   {isCode && item.code ? (
-                    <pre className="mt-1 max-h-52 overflow-auto rounded-lg border border-white/10 bg-black/40 p-3 text-[11px] leading-relaxed text-gray-300 whitespace-pre">
+                    <pre className="mt-1 max-h-52 overflow-auto rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-hover)] p-3 text-[11px] leading-relaxed text-[var(--ds-text-secondary)] whitespace-pre">
                       {codeTail(item.code)}
                     </pre>
                   ) : null}

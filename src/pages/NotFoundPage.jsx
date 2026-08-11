@@ -14,26 +14,26 @@ export default function NexusRBXNotFoundPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] text-white px-6 py-16">
+    <div className="min-h-screen bg-[var(--ds-bg-canvas)] px-6 py-16 text-[var(--ds-text)]">
       <Helmet>
         <title>Page Not Found | NexusRBX</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <main className="mx-auto flex min-h-[calc(100vh-8rem)] max-w-3xl flex-col justify-center">
-        <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-2xl border border-red-400/30 bg-red-500/10">
-          <AlertCircle className="h-7 w-7 text-red-300" aria-hidden="true" />
+        <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-[14px] border border-[color-mix(in_srgb,var(--ds-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-danger)_9%,transparent)]">
+          <AlertCircle className="h-7 w-7 text-[var(--ds-danger)]" aria-hidden="true" />
         </div>
-        <p className="mb-3 text-sm font-black uppercase tracking-[0.28em] text-[#00f5d4]">404</p>
-        <h1 className="mb-4 text-4xl font-black tracking-tight md:text-6xl">This NexusRBX page is not available.</h1>
-        <p className="mb-8 max-w-2xl text-base leading-7 text-gray-300 md:text-lg">
+        <p className="mb-3 text-sm font-semibold tracking-[0.08em] text-[var(--ds-accent)]">404</p>
+        <h1 className="mb-4 text-4xl font-semibold tracking-[-0.035em] md:text-6xl">This NexusRBX page is not available.</h1>
+        <p className="mb-8 max-w-2xl text-base leading-7 text-[var(--ds-text-secondary)] md:text-lg">
           The link may be outdated, private, or mistyped. Choose a tool below instead of starting over at a blank homepage.
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
           {links.map(({ to, label, icon: Icon, document }, index) => {
-            const className = `group inline-flex min-h-14 items-center justify-between rounded-lg border px-4 py-3 font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-[#00f5d4] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0D0D0D] ${
+            const className = `group inline-flex min-h-14 items-center justify-between rounded-[10px] border px-4 py-3 font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-bg-canvas)] ${
               index === 0
-                ? "border-[#00f5d4]/50 bg-[#00f5d4] text-[#071010] hover:bg-[#5fffe5]"
-                : "border-white/10 bg-white/[0.04] text-white hover:border-white/25 hover:bg-white/[0.08]"
+                ? "border-[var(--ds-accent)] bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] active:scale-[0.99]"
+                : "border-[var(--ds-border)] bg-[var(--ds-surface-1)] text-[var(--ds-text)] hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-fill-hover)] active:scale-[0.99]"
             }`;
             const content = (
               <>

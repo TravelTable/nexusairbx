@@ -30,7 +30,7 @@ function AssistantIdentity({ activeMode, working = false }) {
   return (
     <div className="flex h-7 items-center gap-2.5">
       <NexusRBXAvatar compact isThinking={working} mode={activeMode} />
-      <span className="text-[13px] font-semibold text-gray-300">Nexus</span>
+      <span className="text-[13px] font-semibold text-[var(--ds-text-secondary)]">Nexus</span>
     </div>
   );
 }
@@ -56,12 +56,12 @@ function LiveActivityHeader({ pendingMessage, generationStage, parsed, embedded 
   return (
     <div className={embedded ? "flex items-center gap-2 px-4 py-2.5" : "flex min-h-7 items-center gap-2"}>
       <span className="sr-only">Nexus is working</span>
-      <span className="shrink-0 text-sm text-[#00f5d4]" aria-hidden="true">
+      <span className="shrink-0 text-sm text-[var(--ds-accent)]" aria-hidden="true">
         {isRecovering ? <RotateCcw className="h-3.5 w-3.5 animate-spin" /> : "◌"}
       </span>
       <AnimatedStatusText
         value={stage}
-        className="min-w-0 break-words text-sm text-gray-300"
+        className="min-w-0 break-words text-sm text-[var(--ds-text-secondary)]"
       />
     </div>
   );
@@ -120,19 +120,19 @@ function CheckpointMarker({ checkpoint, onRestoreRun }) {
   if (!checkpoint?.runId || !onRestoreRun) return null;
   return (
     <div className="mb-3 flex items-center gap-2" data-chat-checkpoint={checkpoint.runId}>
-      <div className="h-px flex-1 bg-white/[0.06]" />
+      <div className="h-px flex-1 bg-[var(--ds-fill-hover)]" />
       <button
         type="button"
         onClick={() => onRestoreRun(checkpoint.runId, checkpoint.transcriptPivot)}
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.025] px-2.5 py-1 text-[11px] font-medium text-gray-500 transition hover:border-[#00f5d4]/25 hover:bg-[#00f5d4]/[0.05] hover:text-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5d4]/50"
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2.5 py-1 text-[11px] font-medium text-[var(--ds-text-muted)] transition hover:border-[var(--ds-accent-border)] hover:bg-[var(--ds-accent-soft)] hover:text-[var(--ds-text-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent-border)]"
         aria-label="Restore checkpoint before this Agent turn"
         title="Restore Studio and chat to before this Agent turn"
       >
         <RotateCcw className="h-3 w-3" />
         Checkpoint
-        <span className="hidden text-gray-600 sm:inline">· before this Agent turn</span>
+        <span className="hidden text-[var(--ds-text-muted)] sm:inline">· before this Agent turn</span>
       </button>
-      <div className="h-px flex-1 bg-white/[0.06]" />
+      <div className="h-px flex-1 bg-[var(--ds-fill-hover)]" />
     </div>
   );
 }
@@ -320,7 +320,7 @@ function SingleMessageList({
                 <RunContextBar decision={pendingMessage.decision} />
               ) : null}
               {showLiveWorkStream ? (
-                <div className="w-full max-w-[840px] overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.025]">
+                <div className="w-full max-w-[840px] overflow-hidden rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)]">
                   <div className="px-4 pt-3">
                     <ReasoningPanel
                       text={streamState?.rawReasoning}
@@ -328,7 +328,7 @@ function SingleMessageList({
                       requireRawReasoningFlag
                     />
                   </div>
-                  {hasRawReasoning ? <Separator className="bg-white/10" /> : null}
+                  {hasRawReasoning ? <Separator className="bg-[var(--ds-fill-hover)]" /> : null}
                   <LiveWorkStream
                     pendingMessage={pendingMessage}
                     generationStage={generationStage}
@@ -360,17 +360,17 @@ function SingleMessageList({
                   {pendingParsed.hasStructured ? (
                     <div className="space-y-4">
                       {pendingParsed.code && (
-                        <div className="rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
-                          <div className="px-3 py-2 border-b border-white/5 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                        <div className="rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-hover)] overflow-hidden">
+                          <div className="px-3 py-2 border-b border-[var(--ds-border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-muted)]">
                             Streaming Code
                           </div>
-                          <pre className="p-4 text-[12px] leading-relaxed text-gray-300 whitespace-pre overflow-x-auto scrollbar-subtle">
+                          <pre className="p-4 text-[12px] leading-relaxed text-[var(--ds-text-secondary)] whitespace-pre overflow-x-auto scrollbar-subtle">
                             {pendingParsed.code}
                           </pre>
                         </div>
                       )}
                       {pendingParsed.plain && (
-                        <MarkdownMessage text={pendingParsed.plain} className="text-gray-300" />
+                        <MarkdownMessage text={pendingParsed.plain} className="text-[var(--ds-text-secondary)]" />
                       )}
                     </div>
                   ) : (

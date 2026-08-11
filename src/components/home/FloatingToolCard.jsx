@@ -19,18 +19,18 @@ const FloatingToolCard = ({ tool }) => (
         delay: tool.delay
       }
     }}
-    className={`absolute ${tool.position} hidden lg:flex flex-col gap-3 p-4 rounded-xl bg-white/[0.02] backdrop-blur-xl border border-white/10 w-56 xl:w-64 z-20 hover:border-[#00f5d4]/40 transition-colors group shadow-2xl`}
+    className={`absolute ${tool.position} hidden lg:flex flex-col gap-3 p-4 rounded-xl bg-[color-mix(in_srgb,var(--ds-surface-overlay)_78%,transparent)] backdrop-blur-xl border border-[var(--ds-border-subtle)] w-56 xl:w-64 z-20 hover:border-[var(--ds-accent-border)] transition-colors group shadow-2xl`}
   >
     <div className="flex items-center gap-3">
-      <div className="p-2 rounded-lg bg-gradient-to-br from-[#9b5de5]/10 to-[#00f5d4]/10 group-hover:from-[#9b5de5]/20 group-hover:to-[#00f5d4]/20 transition-colors">
-        <tool.icon className="h-4 w-4 xl:h-5 xl:w-5 text-[#00f5d4]" />
+      <div className="p-2 rounded-lg bg-[var(--ds-accent-soft)] group-hover:bg-[var(--ds-fill-hover)] transition-colors">
+        <tool.icon className="h-4 w-4 xl:h-5 xl:w-5 text-accent" />
       </div>
-      <h3 className="font-bold text-xs xl:text-sm text-white tracking-tight">{tool.title}</h3>
+      <h3 className="font-bold text-xs xl:text-sm text-[var(--ds-text)] tracking-tight">{tool.title}</h3>
     </div>
-    <p className="text-[10px] xl:text-[11px] text-gray-400 leading-relaxed">
+    <p className="text-[10px] xl:text-[11px] text-[var(--ds-text-muted)] leading-relaxed">
       {tool.description}
     </p>
-    <div className="absolute -bottom-px left-4 right-4 h-px bg-gradient-to-r from-transparent via-[#00f5d4]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+    <div className="absolute -bottom-px left-4 right-4 h-px bg-gradient-to-r from-transparent via-accent/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
   </motion.div>
 );
 

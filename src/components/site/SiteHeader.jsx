@@ -55,24 +55,24 @@ function Brand({ compact = false }) {
     <Link
       to="/"
       aria-label="NexusRBX home"
-      className="inline-flex shrink-0 items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00e0c2]"
+      className="inline-flex min-h-11 shrink-0 items-center gap-2.5 rounded-lg px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)]"
     >
       <span className={cn(
-        "flex items-center justify-center overflow-hidden rounded-md border border-white/10 bg-[#11151d]",
+        "flex items-center justify-center overflow-hidden rounded-[10px] border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-2)]",
         compact ? "h-8 w-8" : "h-9 w-9"
       )}>
         <img src="/logo.png" alt="" className={cn("object-contain", compact ? "h-6 w-6" : "h-7 w-7")} />
       </span>
-      {!compact && <span className="text-[15px] font-semibold tracking-[-0.01em] text-white">NexusRBX</span>}
+      {!compact && <span className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--ds-text)]">NexusRBX</span>}
     </Link>
   );
 }
 
 function HeaderAvatar({ identity, className }) {
   return (
-    <Avatar className={cn("h-8 w-8 border border-white/10 bg-[#11151d]", className)}>
+    <Avatar className={cn("h-8 w-8 border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-2)]", className)}>
       {identity.avatar.src && <AvatarImage src={identity.avatar.src} alt="" />}
-      <AvatarFallback className="bg-[#111827] text-xs font-semibold text-[#00e0c2]">
+      <AvatarFallback className="bg-[var(--ds-surface-3)] text-xs font-semibold text-[var(--ds-accent)]">
         {identity.avatar.fallback}
       </AvatarFallback>
     </Avatar>
@@ -128,12 +128,12 @@ function NavDisclosure({ label, items, pathname }) {
           }
         }}
         className={cn(
-          "inline-flex h-10 items-center gap-1 rounded-md px-3 text-sm font-medium text-slate-300 transition-colors hover:bg-white/[0.05] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00e0c2]",
-          active && "text-white"
+          "inline-flex h-11 items-center gap-1 rounded-lg px-3 text-sm font-medium text-[var(--ds-text-secondary)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)]",
+          active && "bg-[var(--ds-fill-selected)] text-[var(--ds-text)]"
         )}
       >
         {label}
-        <ChevronDown className={cn("h-3.5 w-3.5 text-slate-500 transition-transform", open && "rotate-180")} />
+        <ChevronDown className={cn("h-3.5 w-3.5 text-[var(--ds-text-muted)] transition-transform", open && "rotate-180")} />
       </button>
       {open && (
         <div
@@ -149,7 +149,7 @@ function NavDisclosure({ label, items, pathname }) {
               links[(index + direction + links.length) % links.length]?.focus();
             }
           }}
-          className="absolute left-0 top-[calc(100%+8px)] z-50 w-56 rounded-lg border border-white/10 bg-[#0b0e14] p-1.5 shadow-2xl"
+          className="absolute left-0 top-[calc(100%+8px)] z-50 w-56 origin-top-left rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-1.5 text-[var(--ds-text)] shadow-[var(--ds-shadow-overlay)] backdrop-blur-xl"
         >
           {items.map((item) => (
             <DestinationLink
@@ -158,8 +158,8 @@ function NavDisclosure({ label, items, pathname }) {
               role="menuitem"
               onClick={() => setOpen(false)}
               className={cn(
-                "block rounded-md px-3 py-2.5 text-sm text-slate-300 hover:bg-white/[0.06] hover:text-white focus:bg-white/[0.06] focus:text-white focus:outline-none",
-                isActivePath(pathname, item.to) && "bg-white/[0.05] text-white"
+                "block min-h-11 rounded-lg px-3 py-3 text-sm text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus:bg-[var(--ds-fill-hover)] focus:text-[var(--ds-text)] focus:outline-none",
+                isActivePath(pathname, item.to) && "bg-[var(--ds-fill-selected)] text-[var(--ds-text)]"
               )}
             >
               {item.label}
@@ -181,8 +181,8 @@ function DesktopNavigation({ pathname }) {
           item={item}
           aria-current={isActivePath(pathname, item.to) ? "page" : undefined}
           className={cn(
-            "inline-flex h-10 items-center rounded-md px-3 text-sm font-medium text-slate-300 transition-colors hover:bg-white/[0.05] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00e0c2]",
-            isActivePath(pathname, item.to) && "text-white"
+            "inline-flex h-11 items-center rounded-lg px-3 text-sm font-medium text-[var(--ds-text-secondary)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)]",
+            isActivePath(pathname, item.to) && "bg-[var(--ds-fill-selected)] text-[var(--ds-text)]"
           )}
         >
           {item.label}
@@ -196,7 +196,7 @@ function DesktopNavigation({ pathname }) {
 function SupportCount({ count }) {
   if (!count) return null;
   return (
-    <span className="ml-auto min-w-5 rounded-full bg-[#00e0c2] px-1.5 py-0.5 text-center text-[11px] font-bold text-[#04100e]">
+    <span className="ml-auto min-w-5 rounded-full bg-[var(--ds-accent)] px-1.5 py-0.5 text-center text-[11px] font-bold text-[var(--ds-accent-foreground)]">
       {count > 99 ? "99+" : count}
     </span>
   );
@@ -208,7 +208,7 @@ function AccountMenu({ identity, compact = false }) {
   const menuRef = useRef(null);
   useDismissibleMenu(open, setOpen, buttonRef, menuRef);
 
-  if (!identity.authReady) return <Skeleton className="h-9 w-24 rounded-md bg-white/10" />;
+  if (!identity.authReady) return <Skeleton className="h-9 w-24 rounded-md bg-[var(--ds-fill-active)]" />;
   if (!identity.user) return null;
 
   const robloxLabel = identity.robloxLoading
@@ -216,7 +216,7 @@ function AccountMenu({ identity, compact = false }) {
     : identity.robloxConnected
       ? `Roblox: ${identity.robloxUsername || "connected"}`
       : "Roblox not connected";
-  const menuLinkClass = "flex min-h-10 items-center rounded-md px-3 text-sm text-slate-300 hover:bg-white/[0.06] hover:text-white focus:bg-white/[0.06] focus:text-white focus:outline-none";
+  const menuLinkClass = "flex min-h-11 items-center rounded-lg px-3 text-sm text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus:bg-[var(--ds-fill-hover)] focus:text-[var(--ds-text)] focus:outline-none";
 
   return (
     <div className="relative">
@@ -227,13 +227,13 @@ function AccountMenu({ identity, compact = false }) {
         aria-expanded={open}
         aria-label="Open account menu"
         onClick={() => setOpen((value) => !value)}
-        className="relative inline-flex h-10 items-center gap-2 rounded-md border border-white/10 bg-white/[0.035] px-1.5 text-sm text-slate-200 hover:border-white/20 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00e0c2]"
+        className="relative inline-flex h-11 items-center gap-2 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-1.5 text-sm text-[var(--ds-text-secondary)] hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-fill-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)]"
       >
         <HeaderAvatar identity={identity} />
         {!compact && <span className="hidden max-w-28 truncate pr-1 xl:block">{identity.displayName}</span>}
-        {!compact && <ChevronDown className={cn("hidden h-3.5 w-3.5 text-slate-500 xl:block", open && "rotate-180")} />}
+        {!compact && <ChevronDown className={cn("hidden h-3.5 w-3.5 text-[var(--ds-text-muted)] xl:block", open && "rotate-180")} />}
         {identity.supportUnreadCount > 0 && (
-          <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-[#07090d] bg-[#00e0c2]" aria-label={`${identity.supportUnreadCount} unread support messages`} />
+          <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-[var(--ds-surface-overlay)] bg-[var(--ds-accent)]" aria-label={`${identity.supportUnreadCount} unread support messages`} />
         )}
       </button>
       {open && (
@@ -241,16 +241,16 @@ function AccountMenu({ identity, compact = false }) {
           ref={menuRef}
           role="menu"
           aria-label="Account menu"
-          className="absolute right-0 top-[calc(100%+8px)] z-50 w-[min(21rem,calc(100vw-1.5rem))] rounded-lg border border-white/10 bg-[#0b0e14] p-2 shadow-2xl"
+          className="absolute right-0 top-[calc(100%+8px)] z-50 w-[min(21rem,calc(100vw-1.5rem))] origin-top-right rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-2 text-[var(--ds-text)] shadow-[var(--ds-shadow-overlay)] backdrop-blur-xl"
         >
           <div className="px-3 pb-3 pt-2">
-            <div className="truncate text-sm font-semibold text-white">{identity.displayName}</div>
-            <div className="mt-0.5 truncate text-xs text-slate-500">{identity.email}</div>
-            <div className="mt-3 text-xs text-slate-400">
+            <div className="truncate text-sm font-semibold text-[var(--ds-text)]">{identity.displayName}</div>
+            <div className="mt-0.5 truncate text-xs text-[var(--ds-text-muted)]">{identity.email}</div>
+            <div className="mt-3 text-xs text-[var(--ds-text-secondary)]">
               <span>{identity.planLabel} plan</span>
             </div>
           </div>
-          <Separator className="mb-1 bg-white/10" />
+          <Separator className="mb-1 bg-[var(--ds-border-subtle)]" />
           <Link role="menuitem" to="/billing" onClick={() => setOpen(false)} className={menuLinkClass}>Billing</Link>
           <Link role="menuitem" to="/settings" onClick={() => setOpen(false)} className={menuLinkClass}>Settings</Link>
           <Link role="menuitem" to="/support" onClick={() => setOpen(false)} className={menuLinkClass}>
@@ -259,27 +259,27 @@ function AccountMenu({ identity, compact = false }) {
           {identity.isSupportStaff && (
             <Link role="menuitem" to="/admin/support" onClick={() => setOpen(false)} className={menuLinkClass}>Staff support</Link>
           )}
-          <Separator className="my-1 bg-white/10" />
-          <div className="rounded-md px-3 py-2 text-xs text-slate-400">
+          <Separator className="my-1 bg-[var(--ds-border-subtle)]" />
+          <div className="rounded-md px-3 py-2 text-xs text-[var(--ds-text-secondary)]">
             <div className="flex items-center justify-between gap-3">
               <span>{robloxLabel}</span>
               <button
                 type="button"
                 disabled={Boolean(identity.robloxAction)}
                 onClick={identity.robloxConnected ? identity.reconnectRoblox : identity.connectRoblox}
-                className="shrink-0 font-medium text-[#00e0c2] hover:text-[#51efd9] disabled:opacity-50"
+                className="min-h-11 shrink-0 rounded-md px-2 font-medium text-[var(--ds-accent)] hover:text-[var(--ds-accent-hover)] disabled:opacity-50"
               >
                 {identity.robloxAction ? "Opening…" : identity.robloxConnected ? "Reconnect" : "Connect"}
               </button>
             </div>
             {identity.robloxError && (
-              <div className="mt-2 flex gap-2 text-amber-200">
+              <div className="mt-2 flex gap-2 text-[var(--ds-warning)]">
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <span>{identity.robloxError}</span>
               </div>
             )}
           </div>
-          <Separator className="my-1 bg-white/10" />
+          <Separator className="my-1 bg-[var(--ds-border-subtle)]" />
           <button
             role="menuitem"
             type="button"
@@ -287,7 +287,7 @@ function AccountMenu({ identity, compact = false }) {
               setOpen(false);
               void identity.signOutUser();
             }}
-            className="flex min-h-10 w-full items-center gap-2 rounded-md px-3 text-left text-sm text-red-200 hover:bg-red-500/10 focus:bg-red-500/10 focus:outline-none"
+            className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-sm text-[var(--ds-danger)] hover:bg-[color-mix(in_srgb,var(--ds-danger)_10%,transparent)] focus:bg-[color-mix(in_srgb,var(--ds-danger)_10%,transparent)] focus:outline-none"
           >
             <LogOut className="h-4 w-4" />
             Sign out
@@ -306,7 +306,7 @@ function DesktopIdentityActions({ identity, checkout = false }) {
     return (
       <div className="hidden items-center gap-2 lg:flex">
         {!checkout && (
-          <Button asChild size="sm" className="bg-[#00e0c2] text-[#04100e] hover:bg-[#51efd9]">
+          <Button asChild size="sm" className="min-h-11 bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] active:scale-[0.985]">
             <Link to="/ai">Open workspace</Link>
           </Button>
         )}
@@ -316,11 +316,11 @@ function DesktopIdentityActions({ identity, checkout = false }) {
   }
   return (
     <div className="hidden items-center gap-2 lg:flex">
-      <Button asChild size="sm" variant="ghost" className="text-slate-300 hover:bg-white/[0.05] hover:text-white">
+      <Button asChild size="sm" variant="ghost" className="min-h-11 text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]">
         <Link to="/signin">Sign in</Link>
       </Button>
       {!checkout && (
-        <Button asChild size="sm" className="bg-[#00e0c2] text-[#04100e] hover:bg-[#51efd9]">
+        <Button asChild size="sm" className="min-h-11 bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] active:scale-[0.985]">
           <Link to="/signup">Start free</Link>
         </Button>
       )}
@@ -330,8 +330,8 @@ function DesktopIdentityActions({ identity, checkout = false }) {
 
 function MobileDestination({ item, pathname }) {
   const className = cn(
-    "flex min-h-11 items-center rounded-md px-3 text-sm font-medium text-slate-200 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00e0c2]",
-    isActivePath(pathname, item.to) && "bg-white/[0.05] text-white"
+    "flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)]",
+    isActivePath(pathname, item.to) && "bg-[var(--ds-fill-selected)] text-[var(--ds-text)]"
   );
   return (
     <SheetClose asChild>
@@ -346,60 +346,60 @@ function MobileMenu({ identity, pathname, workspace = false, checkout = false })
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button type="button" variant="ghost" size="icon" className="h-11 w-11 text-slate-300 hover:bg-white/[0.06] hover:text-white lg:hidden" aria-label="Open navigation">
+        <Button type="button" variant="ghost" size="icon" className="h-11 w-11 text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] lg:hidden" aria-label="Open navigation">
           <Menu className="h-5 w-5" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-[88vw] max-w-sm overflow-y-auto border-white/10 bg-[#0b0e14] text-white">
+      <SheetContent side="right" className="w-[88vw] max-w-sm overflow-y-auto border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] text-[var(--ds-text)]">
         <SheetHeader className="pr-8 text-left">
-          <SheetTitle className="text-white">NexusRBX</SheetTitle>
-          <SheetDescription className="text-slate-400">{checkout ? "Secure checkout" : workspace ? "Workspace menu" : "Site navigation"}</SheetDescription>
+          <SheetTitle className="text-[var(--ds-text)]">NexusRBX</SheetTitle>
+          <SheetDescription className="text-[var(--ds-text-muted)]">{checkout ? "Secure checkout" : workspace ? "Workspace menu" : "Site navigation"}</SheetDescription>
         </SheetHeader>
 
         <div className="mt-6 space-y-5">
           {identity.authReady && identity.user ? (
-            <div className="flex items-center gap-3 border-b border-white/10 pb-5">
+            <div className="flex items-center gap-3 border-b border-[var(--ds-border-subtle)] pb-5">
               <HeaderAvatar identity={identity} className="h-10 w-10" />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-semibold">{identity.displayName}</div>
-                <div className="truncate text-xs text-slate-500">{identity.email}</div>
+                <div className="truncate text-xs text-[var(--ds-text-muted)]">{identity.email}</div>
               </div>
             </div>
           ) : identity.authReady ? (
             <div className="grid grid-cols-2 gap-2">
-              <SheetClose asChild><Button asChild variant="outline" className="border-white/10 bg-transparent text-white"><Link to="/signin">Sign in</Link></Button></SheetClose>
-              <SheetClose asChild><Button asChild className="bg-[#00e0c2] text-[#04100e]"><Link to="/signup">Start free</Link></Button></SheetClose>
+              <SheetClose asChild><Button asChild variant="outline" className="min-h-11 border-[var(--ds-border)] bg-transparent text-[var(--ds-text)]"><Link to="/signin">Sign in</Link></Button></SheetClose>
+              <SheetClose asChild><Button asChild className="min-h-11 bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)]"><Link to="/signup">Start free</Link></Button></SheetClose>
             </div>
           ) : <Skeleton className="h-12 w-full" />}
 
           {!workspace && !checkout && (
             <nav className="space-y-4" aria-label="Mobile navigation">
               <div>
-                <div className="px-3 pb-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Product</div>
+                <div className="px-3 pb-1 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ds-text-muted)]">Product</div>
                 {PRODUCT_LINKS.map((item) => <MobileDestination key={item.to} item={item} pathname={pathname} />)}
               </div>
               <div>
                 {PRIMARY_LINKS.map((item) => <MobileDestination key={item.to} item={item} pathname={pathname} />)}
               </div>
               <div>
-                <div className="px-3 pb-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Resources</div>
+                <div className="px-3 pb-1 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--ds-text-muted)]">Resources</div>
                 {RESOURCE_LINKS.map((item) => <MobileDestination key={item.to} item={item} pathname={pathname} />)}
               </div>
             </nav>
           )}
 
           {identity.user && (
-            <div className="border-t border-white/10 pt-4">
+            <div className="border-t border-[var(--ds-border-subtle)] pt-4">
               {!checkout && <MobileDestination item={{ to: "/ai", label: "Open workspace" }} pathname={pathname} />}
               <MobileDestination item={{ to: "/billing", label: "Billing" }} pathname={pathname} />
               <MobileDestination item={{ to: "/settings", label: "Settings" }} pathname={pathname} />
               <SheetClose asChild>
-                <Link to="/support" className="flex min-h-11 items-center rounded-md px-3 text-sm font-medium text-slate-200 hover:bg-white/[0.06]">
+                <Link to="/support" className="flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]">
                   Support <SupportCount count={identity.supportUnreadCount} />
                 </Link>
               </SheetClose>
               {identity.isSupportStaff && <MobileDestination item={{ to: "/admin/support", label: "Staff support" }} pathname={pathname} />}
-              <button type="button" onClick={() => void identity.signOutUser()} className="flex min-h-11 w-full items-center gap-2 rounded-md px-3 text-left text-sm font-medium text-red-200 hover:bg-red-500/10">
+              <button type="button" onClick={() => void identity.signOutUser()} className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-left text-sm font-medium text-[var(--ds-danger)] hover:bg-[color-mix(in_srgb,var(--ds-danger)_10%,transparent)]">
                 <LogOut className="h-4 w-4" /> Sign out
               </button>
             </div>
@@ -433,8 +433,8 @@ export default function SiteHeader({
 
   return (
     <header className={cn(
-      "z-50 border-b border-white/10 bg-[#07090d]/95 text-white",
-      isWorkspace ? "relative z-30 bg-[#080a10]" : "sticky top-0",
+      "z-50 border-b border-[var(--ds-border-subtle)] bg-[color-mix(in_srgb,var(--ds-surface-overlay)_88%,transparent)] text-[var(--ds-text)] backdrop-blur-xl",
+      isWorkspace ? "relative z-30 bg-[var(--ds-bg-workspace)]" : "sticky top-0",
       className
     )}>
       {location.pathname === "/" ? <SkipToMainContent /> : null}
@@ -453,7 +453,7 @@ export default function SiteHeader({
           <>
             <div className="flex min-w-0 items-center gap-4">
               <Brand />
-              <span className="hidden border-l border-white/10 pl-4 text-sm text-slate-400 sm:block">Review and checkout</span>
+              <span className="hidden border-l border-[var(--ds-border-subtle)] pl-4 text-sm text-[var(--ds-text-muted)] sm:block">Review and checkout</span>
             </div>
             <div className="flex items-center gap-2">
               <DesktopIdentityActions identity={identity} checkout />

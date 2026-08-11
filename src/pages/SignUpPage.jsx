@@ -473,7 +473,7 @@ function NexusRBXSignUpPage({
               describedBy={passwordsMismatch ? "confirm-password-error" : undefined}
             />
             {passwordsMismatch && (
-              <p id="confirm-password-error" className="mt-2 text-xs font-medium text-red-300">
+              <p id="confirm-password-error" className="mt-2 text-xs font-medium text-[var(--ds-danger)]">
                 Passwords do not match.
               </p>
             )}
@@ -531,24 +531,24 @@ function NexusRBXSignUpPage({
 function getPasswordStrengthTone(score) {
   if (score <= 1) {
     return {
-      bar: "bg-red-500",
-      text: "text-red-300",
+      bar: "bg-[var(--ds-danger)]",
+      text: "text-[var(--ds-danger)]",
     };
   }
   if (score === 2) {
     return {
-      bar: "bg-yellow-500",
-      text: "text-yellow-300",
+      bar: "bg-[var(--ds-warning)]",
+      text: "text-[var(--ds-warning)]",
     };
   }
   if (score === 3) {
     return {
-      bar: "bg-emerald-500",
-      text: "text-emerald-300",
+      bar: "bg-[var(--ds-success)]",
+      text: "text-[var(--ds-success)]",
     };
   }
   return {
-    bar: "bg-[#00f5d4]",
-    text: "text-[#00f5d4]",
+    bar: "bg-[var(--ds-success)]",
+    text: "text-[var(--ds-success)]",
   };
 }

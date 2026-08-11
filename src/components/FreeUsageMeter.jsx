@@ -5,7 +5,6 @@ function clampPercent(value) {
   if (!Number.isFinite(n)) return 0;
   return Math.max(0, Math.min(100, Math.round(n)));
 }
-
 function resetText(resetsAt) {
   if (!resetsAt) return "Reset time unavailable";
   const ms = new Date(resetsAt).getTime() - Date.now();
@@ -26,39 +25,39 @@ export default function FreeUsageMeter({ dailyUsage, fairUse, compact = false, c
 
   if (compact) {
     return (
-      <div className={`inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white ${className}`}>
+      <div className={`inline-flex items-center gap-2 rounded-full border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-3 py-1.5 text-xs font-bold text-[var(--ds-text)] ${className}`}>
         <span>Free</span>
-        <span className="text-gray-400">·</span>
+        <span className="text-[var(--ds-text-muted)]">·</span>
         <span>{used}% used today</span>
       </div>
     );
   }
 
   return (
-    <section className={`rounded-lg border border-white/10 bg-black/30 p-4 ${className}`}>
+    <section className={`rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] p-4 ${className}`}>
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-bold text-white">Daily Free Usage</h3>
-          {dailyUsage?.boostActive && <p className="mt-1 text-xs text-[#00f5d4]">New-user boost active</p>}
+          <h3 className="text-sm font-bold text-[var(--ds-text)]">Daily Free Usage</h3>
+          {dailyUsage?.boostActive && <p className="mt-1 text-xs text-[var(--ds-success)]">New-user boost active</p>}
         </div>
         <div className="text-right">
-          <div className="text-lg font-black text-white">{used}% used</div>
-          <div className="text-xs text-gray-400">{remaining}% remaining</div>
+          <div className="text-lg font-black text-[var(--ds-text)]">{used}% used</div>
+          <div className="text-xs text-[var(--ds-text-muted)]">{remaining}% remaining</div>
         </div>
       </div>
       <div
-        className="mt-3 h-2 overflow-hidden rounded-full bg-white/10"
+        className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--ds-fill-hover)]"
         role="progressbar"
         aria-label="Daily Free usage"
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={used}
       >
-        <div className="h-full rounded-full bg-[#00f5d4]" style={{ width: `${used}%` }} />
+        <div className="h-full rounded-full bg-accent" style={{ width: `${used}%` }} />
       </div>
       <div className="mt-3 flex items-center justify-between gap-3 text-xs">
-        <span className={warning ? "text-amber-300" : "text-gray-400"}>{warning || "Nexus Free Auto"}</span>
-        <span className="text-gray-500">{resetText(dailyUsage?.resetsAt)}</span>
+        <span className={warning ? "text-[var(--ds-warning)]" : "text-[var(--ds-text-muted)]"}>{warning || "Nexus Free Auto"}</span>
+        <span className="text-[var(--ds-text-subtle)]">{resetText(dailyUsage?.resetsAt)}</span>
       </div>
     </section>
   );

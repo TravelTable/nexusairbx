@@ -69,16 +69,16 @@ function readExpandedIds(storagePrefix) {
 function RunBadge({ status, generating = false }) {
   const normalized = String(status || "").toLowerCase();
   if (normalized === "failed" || normalized === "error") {
-    return <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-400" title="Run failed" />;
+    return <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--ds-danger)]" title="Run failed" />;
   }
   if (["completed", "complete", "succeeded", "done"].includes(normalized)) {
-    return <Check className="h-3 w-3 shrink-0 text-emerald-400/80" aria-label="Run complete" />;
+    return <Check className="h-3 w-3 shrink-0 text-[var(--ds-success)] " aria-label="Run complete" />;
   }
   if (generating || isActiveRunStatus(normalized)) {
     const waiting = normalized.includes("waiting") || normalized.includes("approval") || normalized.includes("input");
     return (
       <span
-        className={`h-1.5 w-1.5 shrink-0 rounded-full ${waiting ? "bg-amber-300" : "bg-[#00f5d4] shadow-[0_0_7px_rgba(0,245,212,.55)]"}`}
+        className={`h-1.5 w-1.5 shrink-0 rounded-full ${waiting ? "bg-[var(--ds-warning)]" : "bg-[var(--ds-accent)]"}`}
         title={waiting ? "Waiting" : "Running"}
       />
     );
@@ -109,7 +109,7 @@ function InlineRename({ value, onCommit, onCancel }) {
         if (event.key === "Enter") onCommit(draft);
         if (event.key === "Escape") onCancel();
       }}
-      className="min-w-0 flex-1 rounded border border-[#00f5d4]/50 bg-black/50 px-1.5 py-0.5 text-xs text-white outline-none"
+      className="min-w-0 flex-1 rounded border border-[var(--ds-accent-border)] bg-[var(--ds-surface-overlay)] px-1.5 py-0.5 text-xs text-[var(--ds-text)] outline-none"
     />
   );
 }
@@ -119,7 +119,7 @@ function EmptyChats({ onNewChat }) {
     <button
       type="button"
       onClick={onNewChat}
-      className="ml-7 flex h-8 items-center gap-2 rounded-md px-2 text-[11px] text-gray-600 transition hover:bg-white/[.035] hover:text-gray-300"
+      className="ml-7 flex h-8 items-center gap-2 rounded-md px-2 text-[11px] text-[var(--ds-text-muted)] transition hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text-secondary)]"
     >
       <Plus className="h-3 w-3" />
       Start a chat
@@ -493,7 +493,7 @@ export default function ProjectTreeSidebar({
       >
         {renamingThis ? (
           <div className="flex min-w-0 flex-1 items-center gap-2 self-stretch">
-            <MessageSquare className="h-3.5 w-3.5 shrink-0 text-gray-600" />
+            <MessageSquare className="h-3.5 w-3.5 shrink-0 text-[var(--ds-text-muted)]" />
             <InlineRename
               value={chat.title || "Untitled chat"}
               onCommit={(title) => commitRename("chat", chat.id, title)}
@@ -513,14 +513,14 @@ export default function ProjectTreeSidebar({
             className="flex min-w-0 flex-1 items-center gap-2 self-stretch text-left"
             title={chat.title || "Untitled chat"}
           >
-            <MessageSquare className="h-3.5 w-3.5 shrink-0 text-gray-600" />
+            <MessageSquare className="h-3.5 w-3.5 shrink-0 text-[var(--ds-text-muted)]" />
             <span className="min-w-0 flex-1 truncate">{chat.title || "Untitled chat"}</span>
             <RunBadge
               status={activeAgentStatusByChat[chat.id]}
               generating={generatingSet.has(chat.id)}
             />
-            {pinnedChatIds.has(chat.id) && <Bookmark className="h-3 w-3 shrink-0 text-gray-600" />}
-            <span className="hidden shrink-0 text-[10px] text-gray-600 group-hover:block">
+            {pinnedChatIds.has(chat.id) && <Bookmark className="h-3 w-3 shrink-0 text-[var(--ds-text-muted)]" />}
+            <span className="hidden shrink-0 text-[10px] text-[var(--ds-text-muted)] group-hover:block">
               {formatSidebarTimestamp(chat.updatedAt || chat.createdAt)}
             </span>
           </button>
@@ -529,7 +529,7 @@ export default function ProjectTreeSidebar({
           type="button"
           aria-label={`Actions for ${chat.title || "chat"}`}
           onClick={(event) => chatMenu(event, chat, projectId)}
-          className="nexus-tree-overflow rounded p-1 text-gray-600 hover:bg-white/[.06] hover:text-white"
+          className="nexus-tree-overflow rounded p-1 text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
         >
           <Menu className="h-3 w-3" />
         </button>
@@ -538,15 +538,15 @@ export default function ProjectTreeSidebar({
   };
 
   return (
-    <div className="nexus-project-tree flex h-full min-h-0 flex-col bg-[#0d0d0f] text-gray-300">
-      <div className="border-b border-white/[.06] px-3 pb-3 pt-2.5">
+    <div className="nexus-project-tree flex h-full min-h-0 flex-col bg-[var(--ds-bg-sidebar)] text-[var(--ds-text-secondary)]">
+      <div className="border-b border-[var(--ds-border-subtle)] px-3 pb-3 pt-2.5">
         <div className="mb-2.5 flex h-7 items-center justify-between">
-          <span className="text-sm font-semibold tracking-tight text-white">NexusRBX</span>
+          <span className="text-sm font-semibold tracking-tight text-[var(--ds-text)]">NexusRBX</span>
           <button
             type="button"
             onClick={onCollapse}
             aria-label="Collapse sidebar"
-            className="rounded-md p-1.5 text-gray-500 transition hover:bg-white/[.05] hover:text-white"
+            className="rounded-md p-1.5 text-[var(--ds-text-muted)] transition hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -554,21 +554,21 @@ export default function ProjectTreeSidebar({
         <button
           type="button"
           onClick={() => onNewChat(currentProjectId || null)}
-          className="mb-2 flex h-8 w-full items-center gap-2 rounded-md border border-white/[.07] bg-white/[.035] px-2.5 text-xs font-medium text-gray-200 transition hover:bg-white/[.065] hover:text-white"
+          className="mb-2 flex h-8 w-full items-center gap-2 rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2.5 text-xs font-medium text-[var(--ds-text)] transition hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
         >
-          <Plus className="h-3.5 w-3.5 text-[#00f5d4]" />
+          <Plus className="h-3.5 w-3.5 text-[var(--ds-accent)]" />
           <span className="flex-1 text-left">New chat</span>
-          <kbd className="text-[9px] font-normal text-gray-600">⌘N</kbd>
+          <kbd className="text-[9px] font-normal text-[var(--ds-text-muted)]">⌘N</kbd>
         </button>
         <div className="relative block">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-600" />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--ds-text-muted)]" />
           <input
             ref={searchRef}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             aria-label="Search projects and chats"
             placeholder="Search projects and chats"
-            className="h-8 w-full rounded-md border border-white/[.07] bg-black/25 pl-8 pr-14 text-xs text-white outline-none transition placeholder:text-gray-600 focus:border-[#00f5d4]/35 focus:bg-black/40"
+            className="h-8 w-full rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] pl-8 pr-14 text-xs text-[var(--ds-text)] outline-none transition placeholder:text-[var(--ds-text-muted)] focus:border-[var(--ds-accent-border)] focus:bg-[var(--ds-fill-hover)]"
           />
           {query ? (
             <button
@@ -578,22 +578,22 @@ export default function ProjectTreeSidebar({
                 setQuery("");
                 searchRef.current?.focus();
               }}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-gray-600 hover:text-white"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
             >
               <X className="h-3 w-3" />
             </button>
           ) : (
-            <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] text-gray-600">⌘K</kbd>
+            <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] text-[var(--ds-text-muted)]">⌘K</kbd>
           )}
         </div>
         {studioOptions.length > 0 && (
-          <div className="mt-2 rounded-md border border-[#00f5d4]/15 bg-[#00f5d4]/[.04] p-1">
+          <div className="mt-2 rounded-md border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] p-1">
             {studioOptions.map((option) => (
               <button
                 key={option.id || option.placeId}
                 type="button"
                 onClick={() => onChooseStudioOption(option)}
-                className="block h-7 w-full truncate rounded px-2 text-left text-[11px] text-gray-400 hover:bg-white/[.05] hover:text-white"
+                className="block h-7 w-full truncate rounded px-2 text-left text-[11px] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
               >
                 {option.label || option.placeName}
               </button>
@@ -619,7 +619,7 @@ export default function ProjectTreeSidebar({
             <div className="space-y-4" aria-label="Search results">
               {searchResults.projects.length > 0 && (
                 <section>
-                  <h2 className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-[.16em] text-gray-600">
+                  <h2 className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-[.16em] text-[var(--ds-text-muted)]">
                     Projects
                   </h2>
                   {searchResults.projects.map((project) => (
@@ -633,7 +633,7 @@ export default function ProjectTreeSidebar({
                       }}
                       className="nexus-tree-row h-[34px] px-2 text-xs"
                     >
-                      <Folder className="mr-2 h-3.5 w-3.5 text-gray-600" />
+                      <Folder className="mr-2 h-3.5 w-3.5 text-[var(--ds-text-muted)]" />
                       <span className="truncate">{project.title || "Untitled project"}</span>
                     </button>
                   ))}
@@ -641,7 +641,7 @@ export default function ProjectTreeSidebar({
               )}
               {searchResults.chats.length > 0 && (
                 <section>
-                  <h2 className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-[.16em] text-gray-600">
+                  <h2 className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-[.16em] text-[var(--ds-text-muted)]">
                     Chats
                   </h2>
                   {searchResults.chats.map((chat) => (
@@ -651,7 +651,7 @@ export default function ProjectTreeSidebar({
                       onClick={() => onOpenChat(chat.id)}
                       className="nexus-tree-row h-[34px] px-2 text-xs"
                     >
-                      <MessageSquare className="mr-2 h-3.5 w-3.5 shrink-0 text-gray-600" />
+                      <MessageSquare className="mr-2 h-3.5 w-3.5 shrink-0 text-[var(--ds-text-muted)]" />
                       <span className="min-w-0 flex-1 truncate text-left">{chat.title || "Untitled chat"}</span>
                     </button>
                   ))}
@@ -659,7 +659,7 @@ export default function ProjectTreeSidebar({
               )}
               {searchResults.creations.length > 0 && (
                 <section>
-                  <h2 className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-[.16em] text-gray-600">
+                  <h2 className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-[.16em] text-[var(--ds-text-muted)]">
                     Files &amp; creations
                   </h2>
                   {searchResults.creations.map((script) => (
@@ -669,14 +669,14 @@ export default function ProjectTreeSidebar({
                       onClick={() => onOpenCreation(script.id)}
                       className="nexus-tree-row h-[34px] px-2 text-xs"
                     >
-                      <FileCode className="mr-2 h-3.5 w-3.5 shrink-0 text-gray-600" />
+                      <FileCode className="mr-2 h-3.5 w-3.5 shrink-0 text-[var(--ds-text-muted)]" />
                       <span className="min-w-0 flex-1 truncate text-left">{script.title || script.name || "Untitled creation"}</span>
                     </button>
                   ))}
                 </section>
               )}
               {!searchResults.projects.length && !searchResults.chats.length && !searchResults.creations.length && (
-                <div className="px-3 py-10 text-center text-xs text-gray-600">
+                <div className="px-3 py-10 text-center text-xs text-[var(--ds-text-muted)]">
                   No projects, chats, or creations found.
                 </div>
               )}
@@ -698,12 +698,12 @@ export default function ProjectTreeSidebar({
                     className="flex min-w-0 flex-1 items-center self-stretch text-left"
                   >
                     <ChevronRight
-                      className="nexus-tree-chevron mr-1.5 h-3.5 w-3.5 text-gray-600"
+                      className="nexus-tree-chevron mr-1.5 h-3.5 w-3.5 text-[var(--ds-text-muted)]"
                       data-expanded={expandedIds.has(GENERAL_ROOT_ID)}
                     />
-                    <MessageSquare className="mr-2 h-3.5 w-3.5 text-gray-500" />
+                    <MessageSquare className="mr-2 h-3.5 w-3.5 text-[var(--ds-text-muted)]" />
                     <span className="flex-1">General</span>
-                    <span className="text-[10px] font-normal text-gray-600">{tree.generalChats.length}</span>
+                    <span className="text-[10px] font-normal text-[var(--ds-text-muted)]">{tree.generalChats.length}</span>
                   </button>
                 </div>
                 <div
@@ -717,10 +717,10 @@ export default function ProjectTreeSidebar({
                       <button
                         type="button"
                         onClick={() => setGeneralChatsLimit((current) => current + GENERAL_CHATS_PAGE_SIZE)}
-                        className="ml-7 flex h-8 w-[calc(100%-1.75rem)] items-center rounded-md px-2 text-[11px] text-gray-600 transition hover:bg-white/[.035] hover:text-gray-300"
+                        className="ml-7 flex h-8 w-[calc(100%-1.75rem)] items-center rounded-md px-2 text-[11px] text-[var(--ds-text-muted)] transition hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text-secondary)]"
                       >
                         Load more
-                        <span className="ml-auto text-[10px] text-gray-700">
+                        <span className="ml-auto text-[10px] text-[var(--ds-text-muted)]">
                           {tree.generalChats.length - generalChatsLimit} more
                         </span>
                       </button>
@@ -730,7 +730,7 @@ export default function ProjectTreeSidebar({
                 </div>
               </section>
 
-              <div className="my-3 h-px bg-white/[.055]" />
+              <div className="my-3 h-px bg-[var(--ds-fill-hover)]" />
 
               <section aria-label="Projects">
                 <div
@@ -747,12 +747,12 @@ export default function ProjectTreeSidebar({
                     className="flex min-w-0 flex-1 items-center self-stretch text-left"
                   >
                     <ChevronRight
-                      className="nexus-tree-chevron mr-1.5 h-3.5 w-3.5 text-gray-600"
+                      className="nexus-tree-chevron mr-1.5 h-3.5 w-3.5 text-[var(--ds-text-muted)]"
                       data-expanded={expandedIds.has(PROJECTS_ROOT_ID)}
                     />
-                    <FolderTree className="mr-2 h-3.5 w-3.5 text-gray-500" />
+                    <FolderTree className="mr-2 h-3.5 w-3.5 text-[var(--ds-text-muted)]" />
                     <span className="flex-1">Projects</span>
-                    <span className="text-[10px] font-normal text-gray-600">{tree.projects.length}</span>
+                    <span className="text-[10px] font-normal text-[var(--ds-text-muted)]">{tree.projects.length}</span>
                   </button>
                   <button
                     type="button"
@@ -760,7 +760,7 @@ export default function ProjectTreeSidebar({
                     disabled={creatingProject}
                     aria-label="Detect project from Studio"
                     title="Detect from Studio"
-                    className="ml-1 rounded p-1 text-gray-600 hover:bg-white/[.06] hover:text-[#00f5d4] disabled:opacity-40"
+                    className="ml-1 rounded p-1 text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-accent)] disabled:opacity-40"
                   >
                     <Link2 className="h-3.5 w-3.5" />
                   </button>
@@ -791,12 +791,12 @@ export default function ProjectTreeSidebar({
                             {renamingThis ? (
                               <div className="flex min-w-0 flex-1 items-center self-stretch">
                                 <ChevronRight
-                                  className="nexus-tree-chevron mr-1 h-3.5 w-3.5 shrink-0 text-gray-600"
+                                  className="nexus-tree-chevron mr-1 h-3.5 w-3.5 shrink-0 text-[var(--ds-text-muted)]"
                                   data-expanded={expanded}
                                 />
                                 {expanded
-                                  ? <FolderOpen className="mr-2 h-3.5 w-3.5 shrink-0 text-[#9b5de5]/80" />
-                                  : <Folder className="mr-2 h-3.5 w-3.5 shrink-0 text-[#9b5de5]/70" />}
+                                  ? <FolderOpen className="mr-2 h-3.5 w-3.5 shrink-0 text-[var(--ds-plan)]" />
+                                  : <Folder className="mr-2 h-3.5 w-3.5 shrink-0 text-[var(--ds-plan)]" />}
                                 <InlineRename
                                   value={project.title || "Untitled project"}
                                   onCommit={(title) => commitRename("project", project.projectId, title)}
@@ -813,32 +813,32 @@ export default function ProjectTreeSidebar({
                                 className="flex min-w-0 flex-1 items-center self-stretch text-left"
                               >
                               <ChevronRight
-                                className="nexus-tree-chevron mr-1 h-3.5 w-3.5 shrink-0 text-gray-600"
+                                className="nexus-tree-chevron mr-1 h-3.5 w-3.5 shrink-0 text-[var(--ds-text-muted)]"
                                 data-expanded={expanded}
                               />
                               {expanded
-                                ? <FolderOpen className="mr-2 h-3.5 w-3.5 shrink-0 text-[#9b5de5]/80" />
-                                : <Folder className="mr-2 h-3.5 w-3.5 shrink-0 text-[#9b5de5]/70" />}
+                                ? <FolderOpen className="mr-2 h-3.5 w-3.5 shrink-0 text-[var(--ds-plan)]" />
+                                : <Folder className="mr-2 h-3.5 w-3.5 shrink-0 text-[var(--ds-plan)]" />}
                               <span className="min-w-0 flex-1 truncate">{project.title || "Untitled project"}</span>
                               {project.isConnected && (
                                 <span
-                                  className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#00f5d4]"
+                                  className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--ds-accent)]"
                                   title="Connected to Studio"
                                 />
                               )}
                               {project.activeRunCount > 0 && (
-                                <span className="ml-1 rounded bg-[#00f5d4]/10 px-1.5 py-0.5 text-[9px] font-semibold text-[#00f5d4]">
+                                <span className="ml-1 rounded bg-[var(--ds-accent-soft)] px-1.5 py-0.5 text-[9px] font-semibold text-[var(--ds-accent)]">
                                   {project.activeRunCount}
                                 </span>
                               )}
-                              {project.isPinned && <Bookmark className="ml-1 h-3 w-3 shrink-0 text-gray-600" />}
+                              {project.isPinned && <Bookmark className="ml-1 h-3 w-3 shrink-0 text-[var(--ds-text-muted)]" />}
                               </button>
                             )}
                             <button
                               type="button"
                               aria-label={`Actions for ${project.title || "project"}`}
                               onClick={(event) => projectMenu(event, project)}
-                              className="nexus-tree-overflow rounded p-1 text-gray-600 hover:bg-white/[.06] hover:text-white"
+                              className="nexus-tree-overflow rounded p-1 text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
                             >
                               <Menu className="h-3 w-3" />
                             </button>
@@ -862,14 +862,14 @@ export default function ProjectTreeSidebar({
                       <button
                         type="button"
                         onClick={onDetectProject}
-                        className="ml-3 flex h-9 items-center gap-2 rounded-md px-2 text-[11px] text-gray-600 hover:bg-white/[.04] hover:text-gray-300"
+                        className="ml-3 flex h-9 items-center gap-2 rounded-md px-2 text-[11px] text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text-secondary)]"
                       >
                         <Link2 className="h-3 w-3" />
                         Detect a published Studio game
                       </button>
                     )}
                     {projectsLoading && (
-                      <p className="px-8 py-2 text-[11px] text-gray-600">Loading projects…</p>
+                      <p className="px-8 py-2 text-[11px] text-[var(--ds-text-muted)]">Loading projects…</p>
                     )}
                   </div>
                 </div>

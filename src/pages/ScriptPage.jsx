@@ -66,19 +66,19 @@ function lintScript(code) {
 function ListSection({ title, items, empty }) {
   const normalized = Array.isArray(items) ? items.filter(Boolean) : [];
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <h4 className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-500">{title}</h4>
+    <div className="rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-4">
+      <h4 className="text-[10px] font-semibold text-[var(--ds-text-muted)]">{title}</h4>
       {normalized.length ? (
-        <ul className="mt-2.5 space-y-1.5 text-xs leading-relaxed text-zinc-300">
+        <ul className="mt-2.5 space-y-1.5 text-xs leading-relaxed text-[var(--ds-text-secondary)]">
           {normalized.map((item, index) => (
             <li key={`${title}-${index}`} className="flex gap-2">
-              <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-nexus-cyan" aria-hidden="true" />
+              <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[var(--ds-accent)]" aria-hidden="true" />
               <span>{item}</span>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="mt-2.5 text-xs text-zinc-600">{empty}</p>
+        <p className="mt-2.5 text-xs text-[var(--ds-text-muted)]">{empty}</p>
       )}
     </div>
   );
@@ -174,11 +174,9 @@ export default function ScriptPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#050505] relative overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full bg-[#00f5d4]/5 pointer-events-none" />
-        <div className="absolute bottom-[-15%] right-[-10%] w-[45%] h-[45%] blur-[140px] rounded-full bg-[#9b5de5]/5 pointer-events-none" />
-        <div className="flex flex-col items-center gap-4 text-zinc-400">
-          <Loader className="h-8 w-8 animate-spin text-[#00f5d4]" />
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[var(--ds-bg-canvas)]">
+        <div className="flex flex-col items-center gap-4 text-[var(--ds-text-muted)]">
+          <Loader className="h-8 w-8 animate-spin text-[var(--ds-accent)]" />
           <p className="text-sm font-semibold">Loading script...</p>
         </div>
       </div>
@@ -187,14 +185,12 @@ export default function ScriptPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#050505] relative overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full bg-[#00f5d4]/5 pointer-events-none" />
-        <div className="absolute bottom-[-15%] right-[-10%] w-[45%] h-[45%] blur-[140px] rounded-full bg-[#9b5de5]/5 pointer-events-none" />
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[var(--ds-bg-canvas)]">
         <div className="flex flex-col items-center gap-4 text-center">
-          <p className="text-lg font-bold text-rose-400">{error}</p>
+          <p className="text-lg font-semibold text-[var(--ds-danger)]">{error}</p>
           <Link
             to="/ai"
-            className="text-sm font-semibold text-[#00f5d4] hover:underline"
+            className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold text-[var(--ds-accent)] hover:bg-[var(--ds-fill-hover)] hover:underline"
           >
             ← Back to AI Console
           </Link>
@@ -209,28 +205,24 @@ export default function ScriptPage() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-[100dvh] bg-[#050505] text-white flex flex-col relative overflow-hidden font-sans">
-        {/* Background Gradients */}
-        <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full bg-[#00f5d4]/5 pointer-events-none" />
-        <div className="fixed bottom-[-15%] right-[-10%] w-[45%] h-[45%] blur-[140px] rounded-full bg-[#9b5de5]/5 pointer-events-none" />
-
+      <div className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-[var(--ds-bg-canvas)] text-[var(--ds-text)]">
         {/* Script action bar */}
-        <div className="z-20 border-b border-white/5 bg-black/30 backdrop-blur-md shrink-0">
+        <div className="z-20 shrink-0 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] backdrop-blur-md">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
             <div className="flex items-center gap-3 min-w-0">
               <button
                 type="button"
                 onClick={() => navigate("/ai")}
-                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.22em] text-gray-300 transition hover:border-white/20 hover:text-white"
+                className="inline-flex min-h-11 items-center gap-2 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-3 py-2 text-[10px] font-semibold text-[var(--ds-text-secondary)] transition-colors hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
                 aria-label="Back to AI Console"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">AI Console</span>
               </button>
-              <div className="h-4 w-px bg-white/10 hidden sm:block animate-pulse" />
+              <div className="hidden h-4 w-px bg-[var(--ds-border)] sm:block" />
               <div className="flex items-center gap-2 min-w-0">
-                <FileCode2 className="h-4 w-4 text-[#00f5d4] shrink-0" />
-                <span className="font-display text-sm font-black uppercase tracking-[0.18em] text-white truncate max-w-[200px] sm:max-w-none">
+                <FileCode2 className="h-4 w-4 shrink-0 text-[var(--ds-accent)]" />
+                <span className="max-w-[200px] truncate text-sm font-semibold text-[var(--ds-text)] sm:max-w-none">
                   Quick Shared
                 </span>
               </div>
@@ -241,10 +233,10 @@ export default function ScriptPage() {
                 <TooltipTrigger asChild>
                   <button
                     onClick={handleShare}
-                    className="inline-flex items-center justify-center h-9 px-3.5 gap-2 rounded-xl border border-white/10 bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white transition-all text-xs font-bold"
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-3.5 text-xs font-semibold text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
                   >
                     {shareCopied ? (
-                      <Check className="h-3.5 w-3.5 text-[#00f5d4]" />
+                      <Check className="h-3.5 w-3.5 text-[var(--ds-success)]" />
                     ) : (
                       <Share2 className="h-3.5 w-3.5" />
                     )}
@@ -261,24 +253,24 @@ export default function ScriptPage() {
         <main className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-6 sm:px-6 lg:px-8">
           <motion.div
             className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]"
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, ease: "easeOut" }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
           >
             {/* Left Pane: Prompt, Metadata, AI Tools, Versions */}
             <div className="space-y-4">
               {/* Prompt Card */}
-              <Card className="p-4 border border-white/10">
-                <h3 className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400">Prompt</h3>
-                <p className="mt-2 text-sm text-zinc-300 leading-relaxed italic bg-black/20 border border-white/5 rounded-xl px-3 py-2.5">
+              <Card className="border border-[var(--ds-border-subtle)] p-4">
+                <h3 className="text-[11px] font-semibold text-[var(--ds-text-muted)]">Prompt</h3>
+                <p className="mt-2 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-3 py-2.5 text-sm italic leading-relaxed text-[var(--ds-text-secondary)]">
                   "{selectedVersion?.prompt || script?.prompt || "No prompt description"}"
                 </p>
               </Card>
 
               {/* Version History Card */}
               {allVersions.length > 1 && (
-                <Card className="p-4 border border-white/10">
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400 mb-2.5">Version History</h3>
+                <Card className="border border-[var(--ds-border-subtle)] p-4">
+                  <h3 className="mb-2.5 text-[11px] font-semibold text-[var(--ds-text-muted)]">Version History</h3>
                   <div className="flex flex-wrap gap-2">
                     {allVersions.map((ver) => {
                       const isActive =
@@ -291,10 +283,10 @@ export default function ScriptPage() {
                             setSelectedVersion(ver);
                             setTags(ver.tags || []);
                           }}
-                          className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                          className={`min-h-11 cursor-pointer rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
                             isActive
-                              ? "bg-[#00f5d4]/15 border-[#00f5d4]/40 text-[#00f5d4]"
-                              : "bg-white/5 border-white/10 text-zinc-400 hover:bg-white/10 hover:text-white"
+                              ? "border-[var(--ds-accent-border)] bg-[var(--ds-fill-selected)] text-[var(--ds-accent)]"
+                              : "border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
                           }`}
                         >
                           v{ver.version}
@@ -312,31 +304,31 @@ export default function ScriptPage() {
                   <TabsTrigger value="instructions">Instructions</TabsTrigger>
                 </TabsList>
                 <TabsContent value="details" className="space-y-3">
-                  <Card className="p-4 border border-white/10 space-y-4">
+                  <Card className="space-y-4 border border-[var(--ds-border-subtle)] p-4">
                     <div>
-                      <h4 className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-500">Description</h4>
-                      <p className="mt-1 text-sm text-zinc-300 leading-relaxed">
+                      <h4 className="text-[10px] font-semibold text-[var(--ds-text-muted)]">Description</h4>
+                      <p className="mt-1 text-sm leading-relaxed text-[var(--ds-text-secondary)]">
                         {script?.description || "No description provided."}
                       </p>
                     </div>
 
-                    <Separator className="bg-white/5" />
+                    <Separator className="bg-[var(--ds-border-subtle)]" />
 
                     <div>
-                      <h4 className="text-[10px] font-black uppercase tracking-[0.18em] text-gray-500 mb-2">Tags</h4>
+                      <h4 className="mb-2 text-[10px] font-semibold text-[var(--ds-text-muted)]">Tags</h4>
                       {tags.length ? (
                         <div className="flex flex-wrap gap-1.5">
                           {tags.map((tag, i) => (
                             <span
                               key={i}
-                              className="bg-[#00f5d4]/10 border border-[#00f5d4]/20 text-[#00f5d4] rounded-full px-3 py-0.5 text-xs font-semibold"
+                              className="rounded-full border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-3 py-0.5 text-xs font-semibold text-[var(--ds-accent)]"
                             >
                               {tag}
                             </span>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-xs text-zinc-600">No tags added.</p>
+                        <p className="text-xs text-[var(--ds-text-muted)]">No tags added.</p>
                       )}
                     </div>
                   </Card>
@@ -350,8 +342,8 @@ export default function ScriptPage() {
               </Tabs>
 
               {/* AI Tools Card */}
-              <Card className="p-4 border border-white/10">
-                <h3 className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400 mb-3">AI tools</h3>
+              <Card className="border border-[var(--ds-border-subtle)] p-4">
+                <h3 className="mb-3 text-[11px] font-semibold text-[var(--ds-text-muted)]">AI tools</h3>
                 <div className="grid grid-cols-3 gap-2">
                   <Button
                     variant="secondary"
@@ -361,9 +353,9 @@ export default function ScriptPage() {
                     className="flex-col gap-1 py-3 h-auto"
                   >
                     {aiLoading && aiType === "improve" ? (
-                      <Loader className="h-4 w-4 animate-spin text-[#9b5de5]" />
+                      <Loader className="h-4 w-4 animate-spin text-[var(--ds-plan)]" />
                     ) : (
-                      <Wand2 className="h-4 w-4 text-[#9b5de5]" />
+                      <Wand2 className="h-4 w-4 text-[var(--ds-plan)]" />
                     )}
                     <span className="text-[10px] uppercase font-bold tracking-wider">Improve</span>
                   </Button>
@@ -376,9 +368,9 @@ export default function ScriptPage() {
                     className="flex-col gap-1 py-3 h-auto"
                   >
                     {aiLoading && aiType === "explain" ? (
-                      <Loader className="h-4 w-4 animate-spin text-[#00f5d4]" />
+                      <Loader className="h-4 w-4 animate-spin text-[var(--ds-info)]" />
                     ) : (
-                      <Info className="h-4 w-4 text-[#00f5d4]" />
+                      <Info className="h-4 w-4 text-[var(--ds-info)]" />
                     )}
                     <span className="text-[10px] uppercase font-bold tracking-wider">Explain</span>
                   </Button>
@@ -391,9 +383,9 @@ export default function ScriptPage() {
                     className="flex-col gap-1 py-3 h-auto"
                   >
                     {aiLoading && aiType === "lint" ? (
-                      <Loader className="h-4 w-4 animate-spin text-[#fbbf24]" />
+                      <Loader className="h-4 w-4 animate-spin text-[var(--ds-warning)]" />
                     ) : (
-                      <ListChecks className="h-4 w-4 text-[#fbbf24]" />
+                      <ListChecks className="h-4 w-4 text-[var(--ds-warning)]" />
                     )}
                     <span className="text-[10px] uppercase font-bold tracking-wider">Lint</span>
                   </Button>
@@ -403,24 +395,24 @@ export default function ScriptPage() {
               {/* AI Result Card */}
               {aiResult && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.25 }}
                 >
-                  <Card className="p-4 border border-[#00f5d4]/20 bg-[#00f5d4]/5 relative">
+                  <Card className="relative border border-[color-mix(in_srgb,var(--ds-info)_28%,transparent)] bg-[color-mix(in_srgb,var(--ds-info)_7%,transparent)] p-4">
                     <button
                       onClick={() => {
                         setAiResult("");
                         setAiType("");
                       }}
-                      className="absolute top-3 right-3 text-gray-500 hover:text-white transition"
+                      className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
                     >
                       <X className="h-4 w-4" />
                     </button>
-                    <h3 className="text-[11px] font-black uppercase tracking-[0.18em] text-[#00f5d4] mb-2.5">
+                    <h3 className="mb-2.5 text-[11px] font-semibold text-[var(--ds-info)]">
                       {aiType} Analysis
                     </h3>
-                    <p className="whitespace-pre-line text-sm text-zinc-200 leading-relaxed font-mono bg-black/30 border border-white/5 rounded-xl px-3 py-2.5">
+                    <p className="whitespace-pre-line rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)] px-3 py-2.5 font-mono text-sm leading-relaxed text-[var(--ds-text-secondary)]">
                       {aiResult}
                     </p>
                   </Card>
@@ -431,20 +423,20 @@ export default function ScriptPage() {
             {/* Right Pane: Code Viewer & Actions */}
             <div className="space-y-4 min-w-0">
               {/* Code viewer card */}
-              <section className="rounded-xl border border-white/10 bg-[#111116]/95 shadow-panel overflow-hidden">
-                <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/10 px-4 py-3 bg-black/20">
+              <section className="overflow-hidden rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] shadow-[var(--ds-shadow-panel)]">
+                <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-4 py-3">
                   <div className="min-w-0">
-                    <h2 className="truncate text-base font-bold text-white">
+                    <h2 className="truncate text-base font-semibold text-[var(--ds-text)]">
                       {selectedVersion?.title || script?.title || "Quick"}
                     </h2>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      <span className="rounded-md border border-[#00f5d4]/20 bg-[#00f5d4]/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-[#00f5d4]">
+                      <span className="rounded-md border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 py-0.5 text-[9px] font-semibold text-[var(--ds-accent)]">
                         {selectedVersion?.scriptType || script?.scriptType || "Script"}
                       </span>
-                      <span className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-gray-300">
+                      <span className="rounded-md border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-2 py-0.5 text-[9px] font-semibold text-[var(--ds-text-secondary)]">
                         {selectedVersion?.studioLocation || script?.studioLocation || "ServerScriptService"}
                       </span>
-                      <span className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-gray-300">
+                      <span className="rounded-md border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-2 py-0.5 text-[9px] font-semibold text-[var(--ds-text-secondary)]">
                         Luau
                       </span>
                     </div>
@@ -456,9 +448,9 @@ export default function ScriptPage() {
                       <TooltipTrigger asChild>
                         <button
                           onClick={handleCopy}
-                          className="inline-flex items-center justify-center h-8 px-2.5 gap-1.5 rounded-lg border border-white/10 bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white transition-all text-xs font-bold"
+                          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-2.5 text-xs font-semibold text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
                         >
-                          {copied ? <Check className="h-3.5 w-3.5 text-[#00f5d4]" /> : <Copy className="h-3.5 w-3.5" />}
+                          {copied ? <Check className="h-3.5 w-3.5 text-[var(--ds-success)]" /> : <Copy className="h-3.5 w-3.5" />}
                           <span>Copy</span>
                         </button>
                       </TooltipTrigger>
@@ -469,7 +461,7 @@ export default function ScriptPage() {
                       <TooltipTrigger asChild>
                         <button
                           onClick={handleDownload}
-                          className="inline-flex items-center justify-center h-8 px-2.5 gap-1.5 rounded-lg border border-white/10 bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white transition-all text-xs font-bold"
+                          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-2.5 text-xs font-semibold text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
                         >
                           <Download className="h-3.5 w-3.5" />
                           <span>Export</span>
@@ -487,7 +479,7 @@ export default function ScriptPage() {
                   aria-label="Luau code container"
                 >
                   <Suspense fallback={
-                    <pre className="m-0 min-h-40 bg-black/40 p-4 text-sm text-gray-400">Loading code view...</pre>
+                    <pre className="m-0 min-h-40 bg-[var(--ds-bg-workspace)] p-4 text-sm text-[var(--ds-text-muted)]">Loading code view...</pre>
                   }>
                     <QuickScriptCodeBlock code={selectedVersion?.code || "-- No code found"} />
                   </Suspense>
@@ -495,9 +487,9 @@ export default function ScriptPage() {
               </section>
 
               {/* Agent Build Nudge */}
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-4">
-                <div className="flex items-center gap-2.5 text-xs text-gray-400">
-                  <ShieldCheck className="h-4 w-4 text-[#00f5d4]" />
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-4">
+                <div className="flex items-center gap-2.5 text-xs text-[var(--ds-text-muted)]">
+                  <ShieldCheck className="h-4 w-4 text-[var(--ds-success)]" />
                   <span>Agent Build supports complex workspaces and live Studio syncing.</span>
                 </div>
                 <div className="flex flex-wrap gap-2">

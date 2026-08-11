@@ -102,40 +102,40 @@ export default function ScriptLoadingBarContainer({
 
   return (
     <div className="sbc max-w-3xl mx-auto my-4 w-full px-2 sm:px-4" aria-busy={loading}>
-      <div className="bg-gray-900 bg-opacity-80 backdrop-blur-sm rounded-lg overflow-hidden border border-gray-700 shadow-lg">
+      <div className="bg-[color-mix(in_srgb,var(--ds-surface-overlay)_84%,transparent)] backdrop-blur-sm rounded-lg overflow-hidden border border-[var(--ds-border-subtle)] shadow-panel">
         <div className="relative">
           {/* Header */}
           <div className="flex flex-col gap-3 sm:gap-0 sm:flex-row sm:items-center sm:justify-between px-3 sm:px-4 py-3 z-10 relative">
             <div className="flex items-start w-full sm:w-auto min-w-0">
-              <div className="bg-gray-800 bg-opacity-70 p-1.5 rounded-md mr-3 border border-gray-700 flex-shrink-0 mt-0.5">
-                <FileCode className="w-5 h-5 text-white" />
+              <div className="bg-[var(--ds-surface-2)] p-1.5 rounded-md mr-3 border border-[var(--ds-border-subtle)] flex-shrink-0 mt-0.5">
+                <FileCode className="w-5 h-5 text-[var(--ds-text)]" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center flex-wrap">
-                  <span className="font-medium text-white truncate max-w-[160px] sm:max-w-none" title={prettyName}>
+                  <span className="font-medium text-[var(--ds-text)] truncate max-w-[160px] sm:max-w-none" title={prettyName}>
                     {prettyName}
                   </span>
                   {version && (
-                    <span className="ml-2 text-xs text-gray-300 border-l border-gray-600 pl-2" title={`Script Version: ${version}`}>
+                    <span className="ml-2 text-xs text-[var(--ds-text-secondary)] border-l border-[var(--ds-border-strong)] pl-2" title={`Script Version: ${version}`}>
                       {typeof version === "string" ? version : `v${version}`}
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-gray-300 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1" aria-live="polite">
+                <div className="text-xs text-[var(--ds-text-secondary)] mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1" aria-live="polite">
                   <span>
                     {canceled ? "Script generation canceled" : ready ? `${language.toUpperCase()} script generated` : `Generating ${language.toUpperCase()} script...`}
                   </span>
                   <span className="font-semibold">{progressLabelDisplay}</span>
-                  <span className="text-gray-400">• {stageLabel}</span>
-                  {estimatedLines != null && <span className="text-gray-400">• ~{estimatedLines} lines</span>}
-                  {effectiveEta != null && !ready && <span className="text-gray-400">• ~{Math.ceil(effectiveEta)}s</span>}
+                  <span className="text-[var(--ds-text-muted)]">• {stageLabel}</span>
+                  {estimatedLines != null && <span className="text-[var(--ds-text-muted)]">• ~{estimatedLines} lines</span>}
+                  {effectiveEta != null && !ready && <span className="text-[var(--ds-text-muted)]">• ~{Math.ceil(effectiveEta)}s</span>}
                   {!ready && !canceled && (
-                    <span className="text-yellow-400">This may take a few minutes depending on script complexity...</span>
+                    <span className="text-[var(--ds-warning)]">This may take a few minutes depending on script complexity...</span>
                   )}
-                  {canceled && <span className="text-red-400">Generation was canceled. No further progress.</span>}
+                  {canceled && <span className="text-[var(--ds-danger)]">Generation was canceled. No further progress.</span>}
                 </div>
                 {previewSnippet && ready && (
-                  <div className="mt-2 text-xs text-gray-400 font-mono whitespace-pre-wrap max-h-16 overflow-hidden">
+                  <div className="mt-2 text-xs text-[var(--ds-text-muted)] font-mono whitespace-pre-wrap max-h-16 overflow-hidden">
                     {previewSnippet}
                   </div>
                 )}
@@ -169,7 +169,7 @@ export default function ScriptLoadingBarContainer({
               }}
               disabled={!canView}
               aria-disabled={!canView}
-              className="relative z-10 flex items-center justify-center px-4 py-1.5 rounded-md text-sm bg-black text-white border border-transparent transition-all duration-300"
+              className="relative z-10 flex items-center justify-center px-4 py-1.5 rounded-md text-sm bg-accent text-accent-foreground border border-transparent transition-all duration-300 hover:bg-[var(--ds-accent-hover)] active:bg-[var(--ds-accent-pressed)] disabled:bg-[var(--ds-fill-subtle)] disabled:text-[var(--ds-text-disabled)]"
               title={canView ? "View script" : "No code available yet"}
               tabIndex={canView ? 0 : -1}
             >
@@ -183,7 +183,7 @@ export default function ScriptLoadingBarContainer({
                   <button
                     type="button"
                     onClick={handleCancel}
-                    className="relative flex items-center justify-center w-full sm:w-auto px-4 py-1.5 rounded-md text-sm bg-transparent text-gray-300 border border-gray-600 hover:bg-gray-800 hover:text-white transition-all duration-200"
+                    className="relative flex items-center justify-center w-full sm:w-auto px-4 py-1.5 rounded-md text-sm bg-transparent text-[var(--ds-text-secondary)] border border-[var(--ds-border-strong)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] transition-all duration-200"
                     title="Cancel script generation"
                   >
                     <XCircle className="w-4 h-4 mr-1.5" />
@@ -196,7 +196,7 @@ export default function ScriptLoadingBarContainer({
 
           {/* Progress Bar */}
           <div
-            className="absolute bottom-0 left-0 h-1 bg-gray-800 w-full overflow-hidden"
+            className="absolute bottom-0 left-0 h-1 bg-[var(--ds-fill-hover)] w-full overflow-hidden"
             role="progressbar"
             aria-valuenow={Math.round(pct)}
             aria-valuemin={0}
@@ -204,7 +204,7 @@ export default function ScriptLoadingBarContainer({
             aria-label="Script generation progress"
             aria-valuetext={`${Math.round(pct)}% ${stageLabel}`}
           >
-            <div className="h-full bg-gradient-to-r from-purple-600 via-blue-500 to-cyan-400 transition-all duration-300 ease-out" style={{ width: `${pct}%` }} />
+            <div className="h-full bg-gradient-to-r from-[var(--ds-plan)] via-accent to-[var(--ds-info)] transition-all duration-300 ease-out" style={{ width: `${pct}%` }} />
           </div>
         </div>
       </div>

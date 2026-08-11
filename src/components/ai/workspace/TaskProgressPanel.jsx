@@ -19,13 +19,13 @@ const COMPLETE_STEP_STATUSES = new Set(["succeeded", "skipped"]);
 const ACTIVE_STEP_STATUSES = new Set(["running", "waiting", "verifying"]);
 
 const CHECKLIST_PRESENTATION = Object.freeze({
-  pending: { label: "Pending", icon: Circle, className: "text-gray-400", iconClassName: "text-gray-500" },
-  in_progress: { label: "In progress", icon: Loader2, className: "text-[#b8fff3]", iconClassName: "animate-spin text-[#00f5d4]" },
-  waiting_studio: { label: "Waiting for Studio", icon: Clock, className: "text-amber-100", iconClassName: "text-amber-300" },
-  completed: { label: "Completed", icon: CheckCircle2, className: "text-emerald-100", iconClassName: "text-emerald-300" },
-  skipped: { label: "Skipped", icon: StopCircle, className: "text-gray-400", iconClassName: "text-gray-500" },
-  failed: { label: "Failed", icon: XCircle, className: "text-red-100", iconClassName: "text-red-300" },
-  needs_input: { label: "Needs user input", icon: AlertTriangle, className: "text-amber-100", iconClassName: "text-amber-300" },
+  pending: { label: "Pending", icon: Circle, className: "text-[var(--ds-text-secondary)]", iconClassName: "text-[var(--ds-text-muted)]" },
+  in_progress: { label: "In progress", icon: Loader2, className: "text-[var(--ds-accent)]", iconClassName: "animate-spin text-[var(--ds-accent)]" },
+  waiting_studio: { label: "Waiting for Studio", icon: Clock, className: " text-[var(--ds-warning)] ", iconClassName: " text-[var(--ds-warning)] " },
+  completed: { label: "Completed", icon: CheckCircle2, className: " text-[var(--ds-success)] ", iconClassName: " text-[var(--ds-success)] " },
+  skipped: { label: "Skipped", icon: StopCircle, className: "text-[var(--ds-text-secondary)]", iconClassName: "text-[var(--ds-text-muted)]" },
+  failed: { label: "Failed", icon: XCircle, className: " text-[var(--ds-danger)] ", iconClassName: " text-[var(--ds-danger)] " },
+  needs_input: { label: "Needs user input", icon: AlertTriangle, className: " text-[var(--ds-warning)] ", iconClassName: " text-[var(--ds-warning)] " },
 });
 
 const STATUS_COPY = Object.freeze({
@@ -110,11 +110,11 @@ const STATUS_COPY = Object.freeze({
 });
 
 const TONE_CLASSES = Object.freeze({
-  active: "border-[#00f5d4]/20 bg-[#00f5d4]/[0.06] text-[#b8fff3]",
-  waiting: "border-amber-400/20 bg-amber-400/10 text-amber-100",
-  success: "border-emerald-400/20 bg-emerald-400/10 text-emerald-100",
-  danger: "border-red-400/20 bg-red-400/10 text-red-100",
-  neutral: "border-white/10 bg-white/[0.04] text-gray-200",
+  active: "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]",
+  waiting: " border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)]  text-[var(--ds-warning)] ",
+  success: " border-[color-mix(in_srgb,var(--ds-success)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-success)_12%,transparent)]  text-[var(--ds-success)] ",
+  danger: " border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)]  text-[var(--ds-danger)] ",
+  neutral: "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text)]",
 });
 
 const STRUCTURED_STATUS_COPY = Object.freeze({
@@ -422,8 +422,8 @@ function DetailRow({ label, children }) {
   if (children === null || children === undefined || children === "") return null;
   return (
     <div className="grid grid-cols-[8rem_minmax(0,1fr)] gap-3 py-1.5 text-[11px]">
-      <dt className="text-gray-500">{label}</dt>
-      <dd className="min-w-0 break-words text-gray-300">{children}</dd>
+      <dt className="text-[var(--ds-text-muted)]">{label}</dt>
+      <dd className="min-w-0 break-words text-[var(--ds-text-secondary)]">{children}</dd>
     </div>
   );
 }
@@ -506,22 +506,22 @@ export default function TaskProgressPanel({
   return (
     <section
       aria-label="Task progress"
-      className={`rounded-2xl border border-white/5 bg-white/[0.02] p-4 space-y-3 ${className}`.trim()}
+      className={`rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-4 space-y-3 ${className}`.trim()}
     >
       <div className="flex items-center gap-2">
         {presentation.tone === "success" ? (
-          <CheckCircle2 className="h-4 w-4 text-emerald-300" />
+          <CheckCircle2 className="h-4 w-4 text-[var(--ds-success)] " />
         ) : presentation.tone === "danger" ? (
-          <AlertTriangle className="h-4 w-4 text-red-300" />
+          <AlertTriangle className="h-4 w-4 text-[var(--ds-danger)] " />
         ) : terminal ? (
-          <StopCircle className="h-4 w-4 text-gray-400" />
+          <StopCircle className="h-4 w-4 text-[var(--ds-text-secondary)]" />
         ) : (
-          <ListChecks className="h-4 w-4 text-[#00f5d4]" />
+          <ListChecks className="h-4 w-4 text-[var(--ds-accent)]" />
         )}
-        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Durable task</span>
+        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-secondary)]">Durable task</span>
         {!terminal && connectionState === "live" && (
-          <span className="ml-auto inline-flex items-center gap-1.5 text-[10px] font-bold text-[#8fffea]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#00f5d4]" aria-hidden="true" />
+          <span className="ml-auto inline-flex items-center gap-1.5 text-[10px] font-bold text-[var(--ds-accent)]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--ds-accent)]" aria-hidden="true" />
             Live
           </span>
         )}
@@ -534,26 +534,26 @@ export default function TaskProgressPanel({
       </div>
 
       {connectionMessage && (
-        <div className="flex items-start gap-2 rounded-xl border border-white/10 bg-black/10 px-3 py-2 text-xs text-gray-300">
-          <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-400" />
+        <div className="flex items-start gap-2 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-3 py-2 text-xs text-[var(--ds-text-secondary)]">
+          <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[var(--ds-text-secondary)]" />
           <span>{connectionMessage}</span>
         </div>
       )}
 
       {steps.length > 0 && (
         <div className="space-y-3" aria-label="Step progress">
-          <div className="flex items-center justify-between text-[11px] text-gray-400">
+          <div className="flex items-center justify-between text-[11px] text-[var(--ds-text-secondary)]">
             <span>{completedCount} of {steps.length} steps complete</span>
             <span>{progressPercent}%</span>
           </div>
           <div
-            className="h-1.5 overflow-hidden rounded-full bg-white/10"
+            className="h-1.5 overflow-hidden rounded-full bg-[var(--ds-fill-hover)]"
             role="progressbar"
             aria-valuemin="0"
             aria-valuemax="100"
             aria-valuenow={progressPercent}
           >
-            <div className="h-full rounded-full bg-[#00f5d4] transition-[width]" style={{ width: `${progressPercent}%` }} />
+            <div className="h-full rounded-full bg-[var(--ds-accent)] transition-[width]" style={{ width: `${progressPercent}%` }} />
           </div>
           <ol className="space-y-1.5" aria-label="Plan checklist">
             {steps.map((step, index) => {
@@ -564,12 +564,12 @@ export default function TaskProgressPanel({
               return (
                 <li
                   key={firstString(step?.planStepId, step?.stepId, step?.id) || `step-${index + 1}`}
-                  className="flex min-w-0 items-start gap-2.5 rounded-lg border border-white/[0.06] bg-black/10 px-2.5 py-2"
+                  className="flex min-w-0 items-start gap-2.5 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2.5 py-2"
                 >
                   <StepIcon className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${itemPresentation.iconClassName}`} aria-hidden="true" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium leading-snug text-gray-200">{checklistTitle(step, index)}</p>
-                    {detail && <p className="mt-0.5 text-[11px] leading-relaxed text-gray-500">{detail}</p>}
+                    <p className="text-xs font-medium leading-snug text-[var(--ds-text)]">{checklistTitle(step, index)}</p>
+                    {detail && <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--ds-text-muted)]">{detail}</p>}
                   </div>
                   <span className={`shrink-0 text-[10px] font-bold ${itemPresentation.className}`}>{itemPresentation.label}</span>
                 </li>
@@ -580,26 +580,26 @@ export default function TaskProgressPanel({
       )}
 
       {recentMessages.length > 0 && (
-        <div className="space-y-1.5 border-t border-white/5 pt-3">
-          <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Recent progress</div>
+        <div className="space-y-1.5 border-t border-[var(--ds-border-subtle)] pt-3">
+          <div className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-muted)]">Recent progress</div>
           {recentMessages.map((message) => (
-            <p key={message} className="text-xs leading-relaxed text-gray-300">{message}</p>
+            <p key={message} className="text-xs leading-relaxed text-[var(--ds-text-secondary)]">{message}</p>
           ))}
         </div>
       )}
 
       {displayedError && (
-        <div role="alert" className="rounded-xl border border-red-400/20 bg-red-400/10 px-3 py-2 text-xs text-red-100">
+        <div role="alert" className="rounded-xl border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] px-3 py-2 text-xs text-[var(--ds-danger)] ">
           {formatTaskRuntimeError(displayedError, "The task stopped at a recoverable error.")}
         </div>
       )}
 
       {failedSummary && (
-        <div className="rounded-xl border border-red-400/20 bg-red-400/[0.07] px-3 py-2.5" aria-label="Failed plan step">
-          <div className="text-[10px] font-black uppercase tracking-widest text-red-300">Failed step</div>
-          <p className="mt-1 text-xs font-semibold text-red-50">{failedSummary.title}</p>
-          <p className="mt-1 text-[11px] leading-relaxed text-red-100/80">{failedSummary.reason}</p>
-          <dl className="mt-2 space-y-1 text-[11px] text-red-100/75">
+        <div className="rounded-xl border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] px-3 py-2.5" aria-label="Failed plan step">
+          <div className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-danger)] ">Failed step</div>
+          <p className="mt-1 text-xs font-semibold text-[var(--ds-danger)] ">{failedSummary.title}</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-[var(--ds-danger)] ">{failedSummary.reason}</p>
+          <dl className="mt-2 space-y-1 text-[11px] text-[var(--ds-danger)] ">
             <div className="flex gap-1"><dt className="font-semibold">Completed:</dt><dd>{completedCount} of {steps.length} plan steps</dd></div>
             <div className="flex gap-1"><dt className="font-semibold">Retry:</dt><dd>{failedSummary.automaticRetry ? "NexusRBX scheduled an automatic retry." : failedSummary.retryable ? "A safe retry is available." : "NexusRBX cannot retry this automatically."}</dd></div>
             {failedSummary.recovery && <div className="flex gap-1"><dt className="font-semibold">Next action:</dt><dd>{failedSummary.recovery}</dd></div>}
@@ -609,29 +609,29 @@ export default function TaskProgressPanel({
 
       {terminal && structuredResult && (
         <div
-          className="space-y-3 rounded-xl border border-white/10 bg-black/10 px-3 py-3"
+          className="space-y-3 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-3 py-3"
           aria-label="Task outcome"
         >
           <div>
-            <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Understanding</div>
-            <p className="mt-1 text-xs text-gray-200">
+            <div className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-muted)]">Understanding</div>
+            <p className="mt-1 text-xs text-[var(--ds-text)]">
               Intent: {safeDisplayText(structuredResult.intent) || "Roblox development task"}
             </p>
           </div>
 
           {Array.isArray(structuredResult.acceptanceChecks) && structuredResult.acceptanceChecks.length > 0 && (
             <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Verification results</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-muted)]">Verification results</div>
               <ul className="mt-1.5 space-y-1">
                 {structuredResult.acceptanceChecks.slice(0, 8).map((check, index) => (
                   <li key={check?.id || `check-${index}`} className="flex items-start justify-between gap-3 text-[11px]">
-                    <span className="text-gray-300">{safeDisplayText(check?.description, check?.id) || `Check ${index + 1}`}</span>
+                    <span className="text-[var(--ds-text-secondary)]">{safeDisplayText(check?.description, check?.id) || `Check ${index + 1}`}</span>
                     <span className={`shrink-0 font-bold ${
                       ["passed", "not_applicable"].includes(normalizedStatus(check?.result))
-                        ? "text-emerald-300"
+                        ? " text-[var(--ds-success)] "
                         : normalizedStatus(check?.result) === "manual_required"
-                          ? "text-amber-300"
-                          : "text-red-300"
+                          ? " text-[var(--ds-warning)] "
+                          : " text-[var(--ds-danger)] "
                     }`}>
                       {normalizedStatus(check?.result).replaceAll("_", " ") || "pending"}
                     </span>
@@ -643,8 +643,8 @@ export default function TaskProgressPanel({
 
           {Array.isArray(structuredResult.findings) && structuredResult.findings.some(findingLabel) && (
             <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Problems found</div>
-              <ul className="mt-1.5 list-disc space-y-1 pl-4 text-[11px] text-gray-300">
+              <div className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-muted)]">Problems found</div>
+              <ul className="mt-1.5 list-disc space-y-1 pl-4 text-[11px] text-[var(--ds-text-secondary)]">
                 {structuredResult.findings.map(findingLabel).filter(Boolean).slice(0, 6).map((finding) => (
                   <li key={finding}>{finding}</li>
                 ))}
@@ -654,8 +654,8 @@ export default function TaskProgressPanel({
 
           {Array.isArray(structuredResult.changes) && structuredResult.changes.some(changeLabel) && (
             <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Changes made</div>
-              <ul className="mt-1.5 list-disc space-y-1 pl-4 text-[11px] text-gray-300">
+              <div className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-muted)]">Changes made</div>
+              <ul className="mt-1.5 list-disc space-y-1 pl-4 text-[11px] text-[var(--ds-text-secondary)]">
                 {structuredResult.changes.map(changeLabel).filter(Boolean).slice(0, 8).map((change) => (
                   <li key={change}>{change}</li>
                 ))}
@@ -665,7 +665,7 @@ export default function TaskProgressPanel({
 
           {Array.isArray(structuredResult.sources) && structuredResult.sources.length > 0 && (
             <div>
-              <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Sources used</div>
+              <div className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-muted)]">Sources used</div>
               <ul className="mt-1.5 space-y-1 text-[11px]">
                 {structuredResult.sources.slice(0, 8).map((source, index) => (
                   <li key={`${source?.documentId || "source"}-${source?.sectionId || index}`}>
@@ -673,12 +673,12 @@ export default function TaskProgressPanel({
                       href={source?.publicUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-[#8fffea] underline decoration-[#00f5d4]/30 underline-offset-2"
+                      className="text-[var(--ds-accent)] underline decoration-[var(--ds-accent-border)] underline-offset-2"
                     >
                       {safeDisplayText(source?.heading, source?.title) || `Roblox source ${index + 1}`}
                     </a>
                     {source?.sourceTier === "supplemental" && (
-                      <span className="ml-1 text-amber-300">(supplemental)</span>
+                      <span className="ml-1 text-[var(--ds-warning)] ">(supplemental)</span>
                     )}
                   </li>
                 ))}
@@ -689,11 +689,11 @@ export default function TaskProgressPanel({
           {Array.isArray(structuredResult.verification?.manualRequired)
             && structuredResult.verification.manualRequired.length > 0 && (
               <div>
-                <div className="text-[10px] font-black uppercase tracking-widest text-amber-300">Remaining manual steps</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-warning)] ">Remaining manual steps</div>
                 {structuredResult.verification.manualRequired.slice(0, 3).map((check, index) => (
                   <div key={check?.checkId || `manual-${index}`} className="mt-1.5">
-                    <p className="text-[11px] text-amber-100">{safeDisplayText(check?.description)}</p>
-                    <ol className="mt-1 list-decimal space-y-1 pl-4 text-[11px] text-amber-100/75">
+                    <p className="text-[11px] text-[var(--ds-warning)] ">{safeDisplayText(check?.description)}</p>
+                    <ol className="mt-1 list-decimal space-y-1 pl-4 text-[11px] text-[var(--ds-warning)] ">
                       {(Array.isArray(check?.steps) ? check.steps : []).slice(0, 10).map((step) => (
                         <li key={step}>{safeDisplayText(step)}</li>
                       ))}
@@ -706,25 +706,25 @@ export default function TaskProgressPanel({
       )}
 
       {normalizedStatus(task.status) === "succeeded" && !structuredResult && (
-        <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.07] px-3 py-2.5">
-          <div className="text-[10px] font-black uppercase tracking-widest text-emerald-300">Task summary</div>
-          <p className="mt-1 text-xs leading-relaxed text-emerald-50">
+        <div className="rounded-xl border border-[color-mix(in_srgb,var(--ds-success)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-success)_12%,transparent)] px-3 py-2.5">
+          <div className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-success)] ">Task summary</div>
+          <p className="mt-1 text-xs leading-relaxed text-[var(--ds-success)] ">
             {finalSummary || "The task stopped successfully. Review the recorded evidence before treating behavior as verified."}
           </p>
-          <p className="mt-1.5 text-[11px] text-emerald-200/70">
+          <p className="mt-1.5 text-[11px] text-[var(--ds-success)] ">
             {details.verificationCount} verification record{details.verificationCount === 1 ? "" : "s"}
           </p>
         </div>
       )}
 
       {(actions.approve && onApprove) || (actions.retry && onRetry) || (actions.amend && onAmend) || (actions.cancel && onCancel) ? (
-        <div className="flex flex-wrap items-center gap-2 border-t border-white/5 pt-3">
+        <div className="flex flex-wrap items-center gap-2 border-t border-[var(--ds-border-subtle)] pt-3">
           {actions.approve && onApprove && (
             <button
               type="button"
               onClick={submitApprove}
               disabled={actionBusy || (showPriceField && !hasValidPrice)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#00f5d4]/20 bg-[#00f5d4]/10 px-2.5 py-1.5 text-[11px] font-bold text-[#b8fff3] disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2.5 py-1.5 text-[11px] font-bold text-[var(--ds-accent)] disabled:opacity-40"
             >
               {busyAction === "approve" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
               {showPriceField ? "Confirm price & continue" : "Continue"}
@@ -735,7 +735,7 @@ export default function TaskProgressPanel({
               type="button"
               onClick={() => onRetry()}
               disabled={actionBusy}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/20 bg-amber-400/10 px-2.5 py-1.5 text-[11px] font-bold text-amber-100 disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] px-2.5 py-1.5 text-[11px] font-bold text-[var(--ds-warning)] disabled:opacity-40"
             >
               {busyAction === "retry" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCcw className="h-3.5 w-3.5" />}
               Retry step
@@ -747,7 +747,7 @@ export default function TaskProgressPanel({
               onClick={() => setShowAmendment((value) => !value)}
               disabled={actionBusy}
               aria-expanded={showAmendment}
-              className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] font-bold text-gray-200 disabled:opacity-40"
+              className="rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2.5 py-1.5 text-[11px] font-bold text-[var(--ds-text)] disabled:opacity-40"
             >
               Amend instructions
             </button>
@@ -757,7 +757,7 @@ export default function TaskProgressPanel({
               type="button"
               onClick={() => onCancel()}
               disabled={actionBusy}
-              className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-red-400/20 bg-red-400/10 px-2.5 py-1.5 text-[11px] font-bold text-red-100 disabled:opacity-40"
+              className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] px-2.5 py-1.5 text-[11px] font-bold text-[var(--ds-danger)] disabled:opacity-40"
             >
               {busyAction === "cancel" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <StopCircle className="h-3.5 w-3.5" />}
               Cancel task
@@ -767,8 +767,8 @@ export default function TaskProgressPanel({
       ) : null}
 
       {showPriceField && (actions.approve || actions.amend) && (
-        <div className="space-y-2 rounded-xl border border-amber-400/20 bg-amber-400/10 p-3">
-          <label htmlFor={`task-price-${task.taskId}`} className="block text-[11px] font-bold text-amber-100">
+        <div className="space-y-2 rounded-xl border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] p-3">
+          <label htmlFor={`task-price-${task.taskId}`} className="block text-[11px] font-bold text-[var(--ds-warning)] ">
             Confirm game pass price (Robux)
           </label>
           <input
@@ -779,18 +779,18 @@ export default function TaskProgressPanel({
             step={1}
             value={priceRobux}
             onChange={(event) => setPriceRobux(event.target.value)}
-            className="w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-white outline-none focus:border-[#00f5d4]/40"
+            className="w-full rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-3 py-2 text-xs text-[var(--ds-text)] outline-none focus:border-[var(--ds-accent-border)]"
             placeholder="e.g. 199"
           />
-          <p className="text-[11px] text-amber-100/70">
+          <p className="text-[11px] text-[var(--ds-warning)] ">
             Exact price confirmation is required. NexusRBX will not invent a default Robux price.
           </p>
         </div>
       )}
 
       {showAmendment && actions.amend && onAmend && (
-        <form onSubmit={submitAmendment} className="space-y-2 rounded-xl border border-white/10 bg-black/10 p-3">
-          <label htmlFor={`task-amend-${task.taskId}`} className="block text-[11px] font-bold text-gray-300">
+        <form onSubmit={submitAmendment} className="space-y-2 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-3">
+          <label htmlFor={`task-amend-${task.taskId}`} className="block text-[11px] font-bold text-[var(--ds-text-secondary)]">
             Updated instruction
           </label>
           <textarea
@@ -799,21 +799,21 @@ export default function TaskProgressPanel({
             onChange={(event) => setAmendment(event.target.value)}
             rows={3}
             maxLength={2000}
-            className="w-full resize-y rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-white outline-none focus:border-[#00f5d4]/40"
+            className="w-full resize-y rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-3 py-2 text-xs text-[var(--ds-text)] outline-none focus:border-[var(--ds-accent-border)]"
             placeholder="Describe what should change in the remaining plan."
           />
           <div className="flex justify-end gap-2">
             <button
               type="button"
               onClick={() => setShowAmendment(false)}
-              className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-gray-400"
+              className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-[var(--ds-text-secondary)]"
             >
               Keep current plan
             </button>
             <button
               type="submit"
               disabled={!canSubmitAmendment}
-              className="rounded-lg bg-[#00f5d4] px-2.5 py-1.5 text-[11px] font-black text-[#05110f] disabled:opacity-40"
+              className="rounded-lg bg-[var(--ds-accent)] px-2.5 py-1.5 text-[11px] font-semibold text-[var(--ds-accent-foreground)] disabled:opacity-40"
             >
               Save amendment
             </button>
@@ -821,12 +821,12 @@ export default function TaskProgressPanel({
         </form>
       )}
 
-      <details className="group border-t border-white/5 pt-3">
-        <summary className="flex cursor-pointer list-none items-center gap-2 text-[11px] font-bold text-gray-400 hover:text-gray-200">
+      <details className="group border-t border-[var(--ds-border-subtle)] pt-3">
+        <summary className="flex cursor-pointer list-none items-center gap-2 text-[11px] font-bold text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)]">
           <Terminal className="h-3.5 w-3.5" />
           Technical details
         </summary>
-        <dl className="mt-2 divide-y divide-white/5 rounded-xl border border-white/5 bg-black/10 px-3 py-1">
+        <dl className="mt-2 divide-y divide-[var(--ds-border-subtle)] rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-3 py-1">
           <DetailRow label="Task ID">{task.taskId}</DetailRow>
           <DetailRow label="Status">{normalizedStatus(task.status) || "accepted"}</DetailRow>
           <DetailRow label="Current step">{firstString(currentStep?.stepId, currentStep?.id, task.currentStepId) || "None"}</DetailRow>

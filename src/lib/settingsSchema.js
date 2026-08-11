@@ -9,7 +9,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   verbosity: "concise",
   codingStandards: "",
   gameSpec: "",
-  theme: "dark",
+  theme: "system",
   chatMode: "agent",
   showThinking: true,
   studioAutoPushEnabled: false,
@@ -33,7 +33,7 @@ const ALLOWED_KEYS = new Set(Object.keys(DEFAULT_SETTINGS));
 const ENUMS = {
   codeStyle: new Set(["optimized", "safe", "verbose"]),
   verbosity: new Set(["concise", "balanced", "detailed"]),
-  theme: new Set(["dark", "system"]),
+  theme: new Set(["system", "dark", "light"]),
   chatMode: new Set(["agent", "plan", "debug", "ask"]),
   studioAutoPushPolicy: new Set(["after_validation", "manual_review", "off"]),
   assetPublishingPreference: new Set([

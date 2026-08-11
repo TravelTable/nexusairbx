@@ -27,7 +27,7 @@ export default function WorkspaceAssetsPanel({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="shrink-0 border-b border-white/10 px-3 py-2">
+      <div className="shrink-0 border-b border-[var(--ds-border-subtle)] px-3 py-2">
         <Segmented
           fullWidth
           size="sm"
@@ -40,13 +40,13 @@ export default function WorkspaceAssetsPanel({
       <div className="min-h-0 flex-1 overflow-y-auto py-3 scrollbar-subtle">
         {view === "project" ? (
           <>
-            <section className="mx-3 mb-3 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+            <section className="mx-3 mb-3 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-3">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <h3 className="text-xs font-black uppercase tracking-wider text-gray-200">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-[var(--ds-text)]">
                     Project assets
                   </h3>
-                  <p className="mt-1 text-[11px] leading-relaxed text-gray-500">
+                  <p className="mt-1 text-[11px] leading-relaxed text-[var(--ds-text-muted)]">
                     Upload decals and manage assets attached to this project.
                   </p>
                 </div>
@@ -72,8 +72,8 @@ export default function WorkspaceAssetsPanel({
             />
             {!projectId ? (
               <div className="px-6 py-10 text-center">
-                <Boxes className="mx-auto h-8 w-8 text-gray-700" aria-hidden="true" />
-                <p className="mt-2 text-xs text-gray-500">
+                <Boxes className="mx-auto h-8 w-8 text-[var(--ds-text-muted)]" aria-hidden="true" />
+                <p className="mt-2 text-xs text-[var(--ds-text-muted)]">
                   Select or create a project to collect its assets here.
                 </p>
               </div>

@@ -160,16 +160,16 @@ export default function RobloxAssetTray({
 
   return (
     <section
-      className="mx-3 mb-2 rounded-lg border border-white/10 bg-black/35 backdrop-blur-xl overflow-hidden"
+      className="mx-3 mb-2 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-hover)] backdrop-blur-xl overflow-hidden"
       aria-labelledby="project-assets-heading"
       aria-busy={loading}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-b border-white/10">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-b border-[var(--ds-border-subtle)]">
         <div className="flex items-center gap-2 min-w-0">
-          <ImageIcon className="w-4 h-4 text-[#00bbf9]" aria-hidden="true" />
+          <ImageIcon className="w-4 h-4 text-[var(--ds-info)]" aria-hidden="true" />
           <div className="min-w-0">
-            <h2 id="project-assets-heading" className="text-[11px] font-black uppercase tracking-widest text-white">Project Assets</h2>
-            <div className="text-[10px] text-gray-500 truncate">{creatorLabel(selectedCreator)}</div>
+            <h2 id="project-assets-heading" className="text-[11px] font-black uppercase tracking-widest text-[var(--ds-text)]">Project Assets</h2>
+            <div className="text-[10px] text-[var(--ds-text-muted)] truncate">{creatorLabel(selectedCreator)}</div>
           </div>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-1.5">
@@ -177,7 +177,7 @@ export default function RobloxAssetTray({
             type="button"
             onClick={load}
             disabled={loading || Boolean(busy)}
-            className="p-1.5 rounded-md border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 disabled:opacity-40"
+            className="p-1.5 rounded-md border border-[var(--ds-border-subtle)] text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)] hover:bg-[var(--ds-fill-subtle)] disabled:opacity-40"
             title="Refresh asset library"
             aria-label="Refresh asset library"
           >
@@ -187,7 +187,7 @@ export default function RobloxAssetTray({
             type="button"
             onClick={publishAssets}
             disabled={!writesAuthorized || !retryableUploads.length || Boolean(busy)}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-[#00bbf9]/25 bg-[#00bbf9]/10 text-[10px] font-bold text-[#00bbf9] hover:bg-[#00bbf9]/20 disabled:opacity-40"
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-[color-mix(in_srgb,var(--ds-info)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-info)_10%,transparent)] text-[10px] font-bold text-[var(--ds-info)] hover:bg-[color-mix(in_srgb,var(--ds-info)_18%,transparent)] disabled:opacity-40"
             title="Retry eligible Roblox uploads"
           >
             {busy === "publish" ? <Loader2 className="w-3 h-3 animate-spin" /> : <CloudUpload className="w-3 h-3" />}
@@ -197,7 +197,7 @@ export default function RobloxAssetTray({
             type="button"
             onClick={pollUploads}
             disabled={!pendingUploads.length || Boolean(busy)}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-white/10 text-[10px] font-bold text-gray-300 hover:text-white hover:bg-white/5 disabled:opacity-40"
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-[var(--ds-border-subtle)] text-[10px] font-bold text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)] hover:bg-[var(--ds-fill-subtle)] disabled:opacity-40"
             title="Refresh pending Roblox operations"
           >
             {busy === "poll" ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
@@ -207,24 +207,24 @@ export default function RobloxAssetTray({
       </div>
 
       {!assetUploadsEnabled && retryableUploads.length > 0 && (
-        <div className="px-3 py-2 text-[11px] text-amber-100 bg-amber-400/10 border-b border-amber-300/15">
+        <div className="px-3 py-2 text-[11px] text-[var(--ds-warning)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] border-b border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)] ">
           Auto Upload Assets is off. Assets stay in NexusRBX until you enable it.
         </div>
       )}
       {assetUploadsEnabled && !robloxConnected && retryableUploads.length > 0 && (
-        <div className="px-3 py-2 text-[11px] text-amber-100 bg-amber-400/10 border-b border-amber-300/15">
+        <div className="px-3 py-2 text-[11px] text-[var(--ds-warning)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] border-b border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)] ">
           Reconnect Roblox to restore asset publishing.
         </div>
       )}
       {error && (
-        <div className="px-3 py-2 text-[11px] text-red-200 bg-red-500/10 border-b border-red-400/15 flex items-center gap-2" role="alert">
+        <div className="px-3 py-2 text-[11px] text-[var(--ds-danger)]  bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] border-b border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)] flex items-center gap-2" role="alert">
           <ShieldAlert className="w-3.5 h-3.5" aria-hidden="true" />
           {error}
         </div>
       )}
 
       {loading && assets.length === 0 && (
-        <div className="px-3 py-4 text-center text-[11px] text-gray-400" role="status">
+        <div className="px-3 py-4 text-center text-[11px] text-[var(--ds-text-secondary)]" role="status">
           Loading project assets…
         </div>
       )}
@@ -236,24 +236,24 @@ export default function RobloxAssetTray({
           const assetReference = /^[1-9]\d*$/.test(robloxAssetId) ? `rbxassetid://${robloxAssetId}` : "";
           const uploadError = asset?.failure?.message || asset?.failure?.summary || "";
           return (
-            <article key={asset.assetId} className="w-40 shrink-0 rounded-md border border-white/10 bg-white/[0.03] p-2">
+            <article key={asset.assetId} className="w-40 shrink-0 rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2">
               <CanonicalAssetPreview
                 asset={asset}
                 alt={`${assetLabel(asset)} preview`}
-                className="h-20 rounded-md bg-black/35 border border-white/10 overflow-hidden"
+                className="h-20 rounded-md bg-[var(--ds-fill-hover)] border border-[var(--ds-border-subtle)] overflow-hidden"
                 imageClassName="w-full h-full object-contain"
               />
               <div className="mt-2 min-w-0">
-                <div className="text-[11px] font-bold text-white truncate">{assetLabel(asset)}</div>
-                <div className="text-[9px] text-gray-500 truncate">{asset.kind || "asset"}</div>
+                <div className="text-[11px] font-bold text-[var(--ds-text)] truncate">{assetLabel(asset)}</div>
+                <div className="text-[9px] text-[var(--ds-text-muted)] truncate">{asset.kind || "asset"}</div>
               </div>
               <AssetLifecycleBadge status={lifecycle} className="mt-2" />
-              {uploadError && <div className="mt-2 text-[9px] leading-snug text-red-200">{uploadError}</div>}
+              {uploadError && <div className="mt-2 text-[9px] leading-snug text-[var(--ds-danger)] ">{uploadError}</div>}
               {assetReference && (
                 <button
                   type="button"
                   onClick={() => copyAssetReference(asset.assetId, assetReference)}
-                  className="mt-2 w-full inline-flex items-center justify-center gap-1 px-2 py-1 rounded-md bg-white/5 border border-white/10 text-[10px] font-bold text-gray-300 hover:text-white"
+                  className="mt-2 w-full inline-flex items-center justify-center gap-1 px-2 py-1 rounded-md bg-[var(--ds-fill-subtle)] border border-[var(--ds-border-subtle)] text-[10px] font-bold text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)]"
                   title={assetReference}
                   aria-label={copiedAssetId === asset.assetId
                     ? `${assetLabel(asset)} Roblox asset URI copied`

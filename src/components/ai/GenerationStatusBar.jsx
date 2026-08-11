@@ -15,10 +15,10 @@ export default function GenerationStatusBar({ currentStage }) {
     <div className="w-full card-surface rounded-xl p-4 mb-4 animate-fade-in-up">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Loader className="w-4 h-4 text-nexus-cyan animate-spin" />
-          <span className="font-display text-sm font-bold text-white">Nexus is working...</span>
+          <Loader className="w-4 h-4 text-[var(--ds-accent)] animate-spin" />
+          <span className="font-display text-sm font-bold text-[var(--ds-text)]">Nexus is working...</span>
         </div>
-        <span className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">{currentStage}</span>
+        <span className="text-[10px] font-mono text-[var(--ds-text-muted)] uppercase tracking-widest">{currentStage}</span>
       </div>
       
       <div className="flex items-center gap-2">
@@ -31,10 +31,10 @@ export default function GenerationStatusBar({ currentStage }) {
             <React.Fragment key={stage.id}>
               <div className="flex flex-col items-center gap-1 flex-1">
                 <div className={`h-1.5 w-full rounded-full transition-all duration-500 ${
-                  isCompleted ? "bg-[#00f5d4]" : isActive ? "bg-[#9b5de5] animate-pulse" : "bg-gray-800"
+                  isCompleted ? "bg-[var(--ds-success)]" : isActive ? "bg-[var(--ds-accent)] animate-pulse" : "bg-[var(--ds-surface-2)]"
                 }`} />
                 <span className={`text-[9px] uppercase tracking-tighter ${
-                  isActive ? "text-white font-bold" : "text-gray-600"
+                  isActive ? "text-[var(--ds-text)] font-bold" : "text-[var(--ds-text-muted)]"
                 }`}>{stage.label}</span>
               </div>
               {index < stages.length - 1 && <div className="w-2" />}

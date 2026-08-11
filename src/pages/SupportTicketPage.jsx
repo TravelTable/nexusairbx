@@ -89,78 +89,78 @@ export default function SupportTicketPage() {
   }
 
   if (!authReady) {
-    return <main className="min-h-[70vh] bg-[#07090d] grid place-items-center text-sm text-slate-400">Loading request…</main>;
+    return <main className="grid min-h-[70vh] place-items-center bg-[var(--ds-bg-canvas)] text-sm text-[var(--ds-text-muted)]">Loading request…</main>;
   }
 
   if (!user) {
     return (
-      <main className="min-h-[70vh] bg-[#07090d] px-4 py-20 text-white">
-        <div className="mx-auto max-w-xl border-t border-white/15 pt-10">
+      <main className="min-h-[70vh] bg-[var(--ds-bg-canvas)] px-4 py-20 text-[var(--ds-text)]">
+        <div className="mx-auto max-w-xl rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] p-8 sm:p-10">
           <h1 className="text-3xl font-semibold">Sign in to view this request.</h1>
-          <p className="mt-3 text-sm leading-6 text-slate-400">Only the verified requester and NexusRBX support staff can open this conversation.</p>
-          <Link to="/signin" state={{ from: { pathname: location.pathname } }} className="mt-7 inline-flex rounded-md bg-white px-4 py-2.5 text-sm font-semibold text-black">Sign in</Link>
+          <p className="mt-3 text-sm leading-6 text-[var(--ds-text-muted)]">Only the verified requester and NexusRBX support staff can open this conversation.</p>
+          <Link to="/signin" state={{ from: { pathname: location.pathname } }} className="mt-7 inline-flex min-h-11 items-center rounded-[10px] bg-[var(--ds-accent)] px-4 py-2.5 text-sm font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)]">Sign in</Link>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-[calc(100vh-4rem)] bg-[#07090d] px-4 py-10 text-white sm:px-6">
+    <main className="min-h-[calc(100vh-4rem)] bg-[var(--ds-bg-canvas)] px-4 py-10 text-[var(--ds-text)] sm:px-6">
       <div className="mx-auto max-w-4xl">
-        <Link to="/support" className="text-sm font-medium text-slate-400 hover:text-white">← All requests</Link>
+        <Link to="/support" className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]">← All requests</Link>
 
-        {state.error && <div role="alert" className="mt-6 border-l-2 border-red-400 bg-red-400/5 px-4 py-3 text-sm text-red-200">{state.error}</div>}
+        {state.error && <div role="alert" className="mt-6 rounded-lg border border-[color-mix(in_srgb,var(--ds-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-danger)_8%,transparent)] px-4 py-3 text-sm text-[var(--ds-danger)]">{state.error}</div>}
         {state.loading ? (
-          <p className="py-16 text-center text-sm text-slate-400">Loading conversation…</p>
+          <p className="py-16 text-center text-sm text-[var(--ds-text-muted)]">Loading conversation…</p>
         ) : !state.ticket ? (
-          <section className="mt-8 border-t border-white/10 pt-8">
+          <section className="mt-8 border-t border-[var(--ds-border-subtle)] pt-8">
             <h1 className="text-2xl font-semibold">Request unavailable</h1>
-            <p className="mt-3 text-sm text-slate-400">It may not exist, or it belongs to a different account.</p>
+            <p className="mt-3 text-sm text-[var(--ds-text-muted)]">It may not exist, or it belongs to a different account.</p>
           </section>
         ) : (
           <>
-            <header className="mt-6 border-b border-white/10 pb-7">
+            <header className="mt-6 border-b border-[var(--ds-border-subtle)] pb-7">
               <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">{supportCategoryLabel(state.ticket.category)}</p>
-                  <h1 className="mt-2 break-words text-3xl font-semibold tracking-tight">{state.ticket.subject}</h1>
-                  <p className="mt-2 text-xs text-slate-500">Opened {formatSupportDate(state.ticket.createdAt, { includeTime: true })} · Request {state.ticket.id}</p>
+                  <p className="text-xs font-semibold text-[var(--ds-accent)]">{supportCategoryLabel(state.ticket.category)}</p>
+                  <h1 className="mt-2 break-words text-3xl font-semibold tracking-[-0.025em]">{state.ticket.subject}</h1>
+                  <p className="mt-2 text-xs text-[var(--ds-text-muted)]">Opened {formatSupportDate(state.ticket.createdAt, { includeTime: true })} · Request {state.ticket.id}</p>
                 </div>
                 <span className={`w-fit rounded-full border px-2.5 py-1 text-xs font-medium ${supportStatusTone(state.ticket.status)}`}>{supportStatusLabel(state.ticket.status)}</span>
               </div>
             </header>
 
-            <section aria-label="Support conversation" className="divide-y divide-white/10">
+            <section aria-label="Support conversation" className="divide-y divide-[var(--ds-border-subtle)]">
               {(state.ticket.messages || []).map((message) => {
                 const fromCustomer = message.authorType === "customer";
                 return (
                   <article key={message.id} className="grid gap-3 py-6 sm:grid-cols-[150px_minmax(0,1fr)]">
                     <div>
-                      <p className="text-sm font-semibold text-white">{fromCustomer ? "You" : message.authorType === "system" ? "NexusRBX" : "Support"}</p>
-                      <time className="mt-1 block text-xs text-slate-500" dateTime={message.createdAt || undefined}>{formatSupportDate(message.createdAt, { includeTime: true })}</time>
+                      <p className="text-sm font-semibold text-[var(--ds-text)]">{fromCustomer ? "You" : message.authorType === "system" ? "NexusRBX" : "Support"}</p>
+                      <time className="mt-1 block text-xs text-[var(--ds-text-muted)]" dateTime={message.createdAt || undefined}>{formatSupportDate(message.createdAt, { includeTime: true })}</time>
                     </div>
-                    <p className="whitespace-pre-wrap break-words text-sm leading-7 text-slate-300">{message.body}</p>
+                    <p className="whitespace-pre-wrap break-words text-sm leading-7 text-[var(--ds-text-secondary)]">{message.body}</p>
                   </article>
                 );
               })}
             </section>
 
             {!["closed", "resolved"].includes(state.ticket.status) && (
-              <form onSubmit={submitReply} className="border-t border-white/10 pt-6">
+              <form onSubmit={submitReply} className="border-t border-[var(--ds-border-subtle)] pt-6">
                 <label htmlFor="support-reply" className="text-sm font-semibold">Reply</label>
-                <textarea id="support-reply" value={reply} onChange={(event) => setReply(event.target.value)} rows={6} maxLength={10000} required className="mt-3 w-full resize-y rounded-md border border-white/15 bg-[#0d1118] px-3 py-3 text-sm leading-6 text-white outline-none placeholder:text-slate-600 focus:border-cyan-300" placeholder="Add the details support needs to continue…" />
-                <p className="mt-2 text-xs text-slate-500">Do not include passwords, API keys, card numbers, or recovery codes.</p>
+                <textarea id="support-reply" value={reply} onChange={(event) => setReply(event.target.value)} rows={6} maxLength={10000} required className="mt-3 w-full resize-y rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-3 py-3 text-sm leading-6 text-[var(--ds-text)] outline-none placeholder:text-[var(--ds-text-muted)] focus:border-[var(--ds-accent-border)] focus:ring-2 focus:ring-[var(--ds-accent-soft)]" placeholder="Add the details support needs to continue…" />
+                <p className="mt-2 text-xs text-[var(--ds-text-muted)]">Do not include passwords, API keys, card numbers, or recovery codes.</p>
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                  <button type="button" disabled={Boolean(busy)} onClick={changeOpenState} className="rounded-md border border-white/15 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-white/[0.05] disabled:opacity-50">{busy === "close" ? "Closing…" : "Close request"}</button>
-                  <button type="submit" disabled={Boolean(busy) || !reply.trim()} className="rounded-md bg-cyan-300 px-5 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50">{busy === "reply" ? "Sending…" : "Send reply"}</button>
+                  <button type="button" disabled={Boolean(busy)} onClick={changeOpenState} className="min-h-11 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-4 py-2 text-sm font-medium text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] disabled:opacity-50">{busy === "close" ? "Closing…" : "Close request"}</button>
+                  <button type="submit" disabled={Boolean(busy) || !reply.trim()} className="min-h-11 rounded-[10px] bg-[var(--ds-accent)] px-5 py-2 text-sm font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50">{busy === "reply" ? "Sending…" : "Send reply"}</button>
                 </div>
               </form>
             )}
 
             {["closed", "resolved"].includes(state.ticket.status) && (
-              <div className="flex flex-col gap-4 border-t border-white/10 py-6 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-slate-400">This request is {state.ticket.status}. Reopen it if the same issue still needs attention.</p>
-                <button type="button" disabled={Boolean(busy)} onClick={changeOpenState} className="rounded-md border border-white/15 px-4 py-2 text-sm font-semibold hover:bg-white/[0.05]">{busy === "reopen" ? "Reopening…" : "Reopen request"}</button>
+              <div className="flex flex-col gap-4 border-t border-[var(--ds-border-subtle)] py-6 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm text-[var(--ds-text-muted)]">This request is {state.ticket.status}. Reopen it if the same issue still needs attention.</p>
+                <button type="button" disabled={Boolean(busy)} onClick={changeOpenState} className="min-h-11 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-4 py-2 text-sm font-semibold hover:bg-[var(--ds-fill-hover)]">{busy === "reopen" ? "Reopening…" : "Reopen request"}</button>
               </div>
             )}
           </>

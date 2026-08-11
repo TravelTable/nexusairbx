@@ -30,22 +30,22 @@ export default function TutorialTooltip({
   return (
     <div className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-[120] pointer-events-none sm:inset-x-auto sm:right-4 sm:bottom-4 sm:w-[360px]">
       <section
-        className="pointer-events-auto overflow-hidden rounded-2xl border border-white/10 bg-[#101015]/95 shadow-[0_24px_70px_rgba(0,0,0,0.52)] backdrop-blur-xl"
+        className="pointer-events-auto overflow-hidden rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] shadow-[var(--ds-shadow-overlay)] backdrop-blur-xl"
         role="dialog"
         aria-labelledby="tour-title"
         aria-describedby="tour-content"
       >
-        <div className="h-1 bg-white/5" aria-hidden="true">
-          <div className="h-full bg-[#00f5d4] transition-[width] duration-200" style={{ width: `${progress}%` }} />
+        <div className="h-1 bg-[var(--ds-fill-hover)]" aria-hidden="true">
+          <div className="h-full bg-accent transition-[width] duration-200" style={{ width: `${progress}%` }} />
         </div>
 
         <div className="p-4 sm:p-5">
           <div className="mb-3 flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#00f5d4]">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-accent">
                 Step {currentStepIndex + 1} of {totalSteps}
               </span>
-              <h4 id="tour-title" className="mt-1 text-base font-bold leading-tight text-white">
+              <h4 id="tour-title" className="mt-1 text-base font-bold leading-tight text-[var(--ds-text)]">
                 {title}
               </h4>
             </div>
@@ -53,7 +53,7 @@ export default function TutorialTooltip({
               ref={closeRef}
               type="button"
               onClick={onSkip}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-white/5 hover:text-white focus-ring"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[var(--ds-text-subtle)] transition-colors hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text)] focus-ring"
               title="Skip tour"
               aria-label="Skip onboarding tour"
             >
@@ -61,15 +61,15 @@ export default function TutorialTooltip({
             </button>
           </div>
 
-          <p id="tour-content" className="text-sm leading-relaxed text-zinc-300">
+          <p id="tour-content" className="text-sm leading-relaxed text-[var(--ds-text-secondary)]">
             {content}
           </p>
 
-          <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/5 pt-3">
+          <div className="mt-4 flex items-center justify-between gap-3 border-t border-[var(--ds-border-subtle)] pt-3">
             <button
               type="button"
               onClick={onSkip}
-              className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 transition-colors hover:text-zinc-300 focus-ring rounded-md px-1 py-1"
+              className="text-[10px] font-bold uppercase tracking-wider text-[var(--ds-text-subtle)] transition-colors hover:text-[var(--ds-text-secondary)] focus-ring rounded-md px-1 py-1"
             >
               Skip
             </button>

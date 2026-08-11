@@ -46,17 +46,17 @@ function SubscribeTabUI({
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center">
-            <div className="mr-2 rounded-lg border border-[#00f5d4]/20 bg-[#00f5d4]/10 p-1.5 text-[#00f5d4]">
+            <div className="mr-2 rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] p-1.5 text-accent">
               <Crown className="h-4 w-4" />
             </div>
-            <h3 className="text-base font-bold text-white">
+            <h3 className="text-base font-bold text-[var(--ds-text)]">
               {isSubscribed ? "Your Subscription" : "Premium Features"}
             </h3>
           </div>
           {!isSubscribed && (
             <div className="flex items-baseline">
-              <span className="text-lg font-bold text-white">$14.99</span>
-              <span className="text-gray-400 text-xs ml-1">/month</span>
+              <span className="text-lg font-bold text-[var(--ds-text)]">$14.99</span>
+              <span className="text-[var(--ds-text-muted)] text-xs ml-1">/month</span>
             </div>
           )}
         </div>
@@ -64,16 +64,16 @@ function SubscribeTabUI({
         {/* Features list - compact version */}
         <div className="space-y-2 mb-4">
           <div className="flex items-center gap-2">
-            <Check className="h-4 w-4 text-green-400 flex-shrink-0" />
-            <span className="text-gray-300 text-sm">Advanced AI script generation</span>
+            <Check className="h-4 w-4 text-[var(--ds-success)] flex-shrink-0" />
+            <span className="text-[var(--ds-text-secondary)] text-sm">Advanced AI script generation</span>
           </div>
           <div className="flex items-center gap-2">
-            <Check className="h-4 w-4 text-green-400 flex-shrink-0" />
-            <span className="text-gray-300 text-sm">High-limit script generations</span>
+            <Check className="h-4 w-4 text-[var(--ds-success)] flex-shrink-0" />
+            <span className="text-[var(--ds-text-secondary)] text-sm">High-limit script generations</span>
           </div>
           <div className="flex items-center gap-2">
-            <Check className="h-4 w-4 text-green-400 flex-shrink-0" />
-            <span className="text-gray-300 text-sm">Priority support & early access</span>
+            <Check className="h-4 w-4 text-[var(--ds-success)] flex-shrink-0" />
+            <span className="text-[var(--ds-text-secondary)] text-sm">Priority support & early access</span>
           </div>
         </div>
 
@@ -90,8 +90,8 @@ function SubscribeTabUI({
           </Button>
         ) : (
           <div className="space-y-3">
-            <div className="rounded-lg border border-emerald-400/25 bg-emerald-400/10 p-2 text-center">
-              <span className="text-green-400 text-sm font-medium flex items-center justify-center gap-1.5">
+            <div className="rounded-lg border border-[var(--ds-success-border)] bg-[var(--ds-success-soft)] p-2 text-center">
+              <span className="text-[var(--ds-success)] text-sm font-medium flex items-center justify-center gap-1.5">
                 <Check className="h-4 w-4" />
                 Active Subscription
               </span>
@@ -112,8 +112,8 @@ function SubscribeTabUI({
         )}
 
         {/* Terms - smaller text */}
-        <p className="text-gray-500 text-xs text-center mt-3">
-          Cancel anytime. <span className="text-[#00f5d4] hover:underline cursor-pointer">Terms apply</span>.
+        <p className="text-[var(--ds-text-subtle)] text-xs text-center mt-3">
+          Cancel anytime. <span className="text-accent hover:underline cursor-pointer">Terms apply</span>.
         </p>
       </div>
     </div>

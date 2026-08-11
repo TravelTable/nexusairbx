@@ -123,18 +123,18 @@ export default function CreatorStoreSearch({ notify, className = "mx-3 mb-2" }) 
   };
 
   return (
-    <section className={`${className} rounded-lg border border-white/10 bg-black/35 backdrop-blur-xl overflow-hidden`}>
-      <div className="flex flex-col gap-3 border-b border-white/10 px-3 py-3">
+    <section className={`${className} overflow-hidden rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)]`}>
+      <div className="flex flex-col gap-3 border-b border-[var(--ds-border-subtle)] px-3 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-[11px] font-black uppercase tracking-widest text-white">Creator Store</div>
-            <div className="text-[10px] text-gray-500 truncate">Search Roblox development assets</div>
+            <div className="text-[11px] font-black uppercase tracking-widest text-[var(--ds-text)]">Creator Store</div>
+            <div className="truncate text-[10px] text-[var(--ds-text-muted)]">Search Roblox development assets</div>
           </div>
           <button
             type="button"
             onClick={() => runSearch()}
             disabled={loading}
-            className="inline-flex items-center justify-center gap-1.5 rounded-md border border-[#00bbf9]/25 bg-[#00bbf9]/10 px-3 py-2 text-[11px] font-black text-[#00bbf9] hover:bg-[#00bbf9]/20 disabled:opacity-40"
+            className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-[color-mix(in_srgb,var(--ds-info)_28%,transparent)] bg-[color-mix(in_srgb,var(--ds-info)_8%,transparent)] px-3 py-2 text-[11px] font-semibold text-[var(--ds-info)] hover:bg-[color-mix(in_srgb,var(--ds-info)_14%,transparent)] disabled:opacity-40"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
             Search
@@ -154,7 +154,7 @@ export default function CreatorStoreSearch({ notify, className = "mx-3 mb-2" }) 
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="low poly medieval tree"
-            className="min-w-0 flex-1 rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none placeholder:text-gray-600 focus:border-[#00bbf9]/50"
+            className="min-h-11 min-w-0 flex-1 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-3 py-2 text-sm text-[var(--ds-text)] outline-none placeholder:text-[var(--ds-text-muted)] focus:border-[var(--ds-accent-border)] focus:ring-2 focus:ring-[var(--ds-accent-soft)]"
           />
           <button
             type="submit"
@@ -169,11 +169,11 @@ export default function CreatorStoreSearch({ notify, className = "mx-3 mb-2" }) 
           {DEFAULT_ASSET_TYPES.map((assetType) => (
             <label
               key={assetType}
-              className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] font-bold text-gray-200"
+              className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-2.5 py-1.5 text-[11px] font-semibold text-[var(--ds-text-secondary)]"
             >
               <input
                 type="checkbox"
-                className="h-3.5 w-3.5 accent-[#00bbf9]"
+                className="h-4 w-4 accent-[var(--ds-accent)]"
                 checked={assetTypes.includes(assetType)}
                 onChange={() => toggleAssetType(assetType)}
               />
@@ -185,7 +185,7 @@ export default function CreatorStoreSearch({ notify, className = "mx-3 mb-2" }) 
 
       {error && (
         reauthorizationRequired ? (
-          <div className="border-b border-amber-400/15 px-3 py-2">
+          <div className="border-b border-[color-mix(in_srgb,var(--ds-warning)_24%,transparent)] px-3 py-2">
             <RobloxAuthorizationRequired
               connected
               capabilityIds={CREATOR_STORE_READ_CAPABILITIES}
@@ -193,7 +193,7 @@ export default function CreatorStoreSearch({ notify, className = "mx-3 mb-2" }) 
             />
           </div>
         ) : (
-          <div className="border-b border-red-400/15 bg-red-500/10 px-3 py-2 text-[12px] text-red-100">
+          <div className="border-b border-[color-mix(in_srgb,var(--ds-danger)_24%,transparent)] bg-[color-mix(in_srgb,var(--ds-danger)_8%,transparent)] px-3 py-2 text-[12px] text-[var(--ds-danger)]">
             {errorMessage}
           </div>
         )
@@ -201,14 +201,14 @@ export default function CreatorStoreSearch({ notify, className = "mx-3 mb-2" }) 
 
       <div className="p-3">
         {loading && (
-          <div className="flex min-h-32 items-center justify-center gap-2 rounded-md border border-white/10 bg-white/[0.03] text-sm text-gray-400">
+          <div className="flex min-h-32 items-center justify-center gap-2 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-sm text-[var(--ds-text-secondary)]">
             <Loader2 className="h-4 w-4 animate-spin" />
             Searching Creator Store
           </div>
         )}
 
         {!loading && hasSearched && results.length === 0 && !error && (
-          <div className="flex min-h-32 items-center justify-center rounded-md border border-white/10 bg-white/[0.03] text-sm text-gray-500">
+          <div className="flex min-h-32 items-center justify-center rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-sm text-[var(--ds-text-muted)]">
             No Creator Store assets found.
           </div>
         )}
@@ -230,7 +230,7 @@ export default function CreatorStoreSearch({ notify, className = "mx-3 mb-2" }) 
                   type="button"
                   onClick={() => runSearch({ cursor: nextCursor, append: true })}
                   disabled={loadingMore}
-                  className="inline-flex items-center justify-center gap-2 rounded-md border border-white/10 bg-white/5 px-4 py-2 text-[12px] font-bold text-gray-200 hover:bg-white/10 hover:text-white disabled:opacity-40"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-4 py-2 text-[12px] font-semibold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] disabled:opacity-40"
                 >
                   {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                   Load more
@@ -253,7 +253,7 @@ export default function CreatorStoreSearch({ notify, className = "mx-3 mb-2" }) 
         />
       )}
       {detailsError && (
-        <div className="px-3 pb-3 text-[11px] text-red-200">{detailsError}</div>
+        <div className="px-3 pb-3 text-[11px] text-[var(--ds-danger)]">{detailsError}</div>
       )}
     </section>
   );

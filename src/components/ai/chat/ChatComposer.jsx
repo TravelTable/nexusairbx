@@ -97,7 +97,7 @@ function ModeSelector({ mode, onModeChange, disabled }) {
           });
         }}
         disabled={disabled}
-        className={`inline-flex h-7 items-center gap-1.5 rounded-md border border-white/10 px-2 text-[10px] font-bold uppercase tracking-wider transition-[border-color,background-color,color,opacity,transform] duration-150 ease-out active:scale-[0.98] focus-ring disabled:cursor-not-allowed disabled:opacity-40 ${current.bg} ${current.color} hover:bg-white/10`}
+        className={`inline-flex h-7 items-center gap-1.5 rounded-md border border-[var(--ds-border-subtle)] px-2 text-[10px] font-bold uppercase tracking-wider transition-[border-color,background-color,color,opacity,transform] duration-150 ease-out active:scale-[0.98] focus-ring disabled:cursor-not-allowed disabled:opacity-40 ${current.bg} ${current.color} hover:bg-[var(--ds-fill-hover)]`}
         title="Select mode"
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -111,7 +111,7 @@ function ModeSelector({ mode, onModeChange, disabled }) {
         ? createPortal(
             <div
               ref={menuRef}
-              className={`fixed z-[9999] overflow-y-auto rounded-2xl border border-white/10 bg-[#0D0D0D] p-1.5 shadow-2xl backdrop-blur-2xl scrollbar-subtle transition-[opacity,transform] duration-150 ${
+              className={`fixed z-[9999] overflow-y-auto rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] p-1.5 shadow-2xl backdrop-blur-2xl scrollbar-subtle transition-[opacity,transform] duration-150 ${
                 menuPresence.entering ? "opacity-100" : "pointer-events-none opacity-0"
               }`}
               style={{
@@ -141,17 +141,17 @@ function ModeSelector({ mode, onModeChange, disabled }) {
                     }}
                     className={`flex w-full items-start gap-2.5 rounded-xl border px-2.5 py-2 text-left transition-[border-color,background-color,color,opacity,transform] duration-150 hover:translate-x-0.5 ${
                       selected
-                        ? "border-white/10 bg-white/[0.07]"
-                        : "border-transparent hover:bg-white/5"
+                        ? "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-hover)]"
+                        : "border-transparent hover:bg-[var(--ds-fill-subtle)]"
                     }`}
                   >
                     <span className={`mt-0.5 ${item.color}`}>{item.icon}</span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-white">{item.label}</span>
-                        {selected && <Check className="h-3 w-3 text-[#00f5d4]" />}
+                        <span className="text-xs font-bold text-[var(--ds-text)]">{item.label}</span>
+                        {selected && <Check className="h-3 w-3 text-[var(--ds-accent)]" />}
                       </span>
-                      <span className="mt-0.5 block text-[10px] leading-snug text-gray-500">
+                      <span className="mt-0.5 block text-[10px] leading-snug text-[var(--ds-text-muted)]">
                         {item.description}
                       </span>
                     </span>
@@ -169,9 +169,9 @@ function ModeSelector({ mode, onModeChange, disabled }) {
 function ImageUploadChip({ upload }) {
   const name = upload?.fileName || "Image";
   return (
-    <div className="flex h-7 max-w-[140px] shrink-0 items-center gap-1.5 rounded-md border border-amber-400/25 bg-amber-400/10 px-2 transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
-      <Loader className="h-3 w-3 shrink-0 animate-spin text-amber-200" />
-      <span className="min-w-0 truncate text-[10px] font-bold text-amber-100">Uploading {name}</span>
+    <div className="flex h-7 max-w-[140px] shrink-0 items-center gap-1.5 rounded-md border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] px-2 transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
+      <Loader className="h-3 w-3 shrink-0 animate-spin text-[var(--ds-warning)] " />
+      <span className="min-w-0 truncate text-[10px] font-bold text-[var(--ds-warning)] ">Uploading {name}</span>
     </div>
   );
 }
@@ -179,12 +179,12 @@ function ImageUploadChip({ upload }) {
 function FileContextChip({ file, index, onRemove }) {
   const name = file?.name || "Attachment";
   return (
-    <div className="relative flex h-7 max-w-[140px] shrink-0 items-center rounded-md border border-white/10 bg-white/[0.045] pl-2 pr-7 transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
-      <span className="min-w-0 truncate text-[10px] font-bold text-gray-300">{name}</span>
+    <div className="relative flex h-7 max-w-[140px] shrink-0 items-center rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] pl-2 pr-7 transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
+      <span className="min-w-0 truncate text-[10px] font-bold text-[var(--ds-text-secondary)]">{name}</span>
       <button
         type="button"
         onClick={() => onRemove(index)}
-        className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-1 text-gray-500 transition-[background-color,color,opacity] duration-150 hover:bg-red-500/10 hover:text-red-300 focus-ring"
+        className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-1 text-[var(--ds-text-muted)] transition-[background-color,color,opacity] duration-150 hover:bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] hover:text-[var(--ds-danger)] focus-ring"
         aria-label={`Remove ${name}`}
         title={`Remove ${name}`}
       >
@@ -198,19 +198,19 @@ function RobloxAssetContextChip({ asset, onRemove }) {
   const name = asset?.name || `Asset ${asset?.assetId}`;
   const type = asset?.assetType || "Asset";
   return (
-    <div className="relative flex h-7 max-w-[140px] shrink-0 items-center gap-1.5 rounded-md border border-[#00f5d4]/20 bg-[#00f5d4]/10 pl-1 pr-7 transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
+    <div className="relative flex h-7 max-w-[140px] shrink-0 items-center gap-1.5 rounded-md border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] pl-1 pr-7 transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
       {asset?.thumbnailUrl ? (
         <img src={asset.thumbnailUrl} alt="" className="h-5 w-5 shrink-0 rounded object-cover" />
       ) : (
-        <span className="inline-flex h-5 max-w-[42px] shrink-0 items-center truncate rounded border border-[#00f5d4]/20 bg-black/30 px-1 text-[7px] font-black uppercase text-[#00f5d4]">
+        <span className="inline-flex h-5 max-w-[42px] shrink-0 items-center truncate rounded border border-[var(--ds-accent-border)] bg-[var(--ds-fill-subtle)] px-1 text-[7px] font-black uppercase text-[var(--ds-accent)]">
           {type}
         </span>
       )}
-      <span className="min-w-0 truncate text-[10px] font-bold text-[#d7fff8]">{name}</span>
+      <span className="min-w-0 truncate text-[10px] font-bold text-[var(--ds-text)]">{name}</span>
       <button
         type="button"
         onClick={() => onRemove?.(asset?.assetId)}
-        className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-1 text-[#00f5d4]/60 transition-[background-color,color,opacity] duration-150 hover:bg-red-500/10 hover:text-red-300 focus-ring"
+        className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-1 text-[var(--ds-accent)] transition-[background-color,color,opacity] duration-150 hover:bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] hover:text-[var(--ds-danger)] focus-ring"
         aria-label={`Remove ${name}`}
         title={`Remove ${name}`}
       >
@@ -585,21 +585,21 @@ export default function ChatComposer({
   );
 
   return (
-    <div className="border-t border-white/[0.06] bg-[#080a10] px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 sm:px-3">
-      <div className="relative z-20 mx-auto max-w-[768px] overflow-visible rounded-lg border border-white/10 bg-[#10131b] transition-colors duration-150 focus-within:border-[#00f5d4]/35">
+    <div className="border-t border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)] px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 sm:px-3">
+      <div className="relative z-20 mx-auto max-w-[768px] overflow-visible rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] transition-colors duration-150 focus-within:border-[var(--ds-accent-border)]">
         {(activeOperationStatus || queuedOperations.length > 0) && (
-          <div className="border-b border-white/[0.06] px-2 py-1.5" aria-label="Chat operation status">
+          <div className="border-b border-[var(--ds-border-subtle)] px-2 py-1.5" aria-label="Chat operation status">
             <div className="flex items-center gap-2 text-[10px]">
               {activeOperationStatus ? (
-                <span className="inline-flex items-center gap-1.5 font-bold text-gray-300">
+                <span className="inline-flex items-center gap-1.5 font-bold text-[var(--ds-text-secondary)]">
                   {(operationState?.isBusy || activeOperationStatus === "Stopping") && (
-                    <Loader className="h-3 w-3 animate-spin text-[#00f5d4]" />
+                    <Loader className="h-3 w-3 animate-spin text-[var(--ds-accent)]" />
                   )}
                   {activeOperationStatus}
                 </span>
               ) : null}
               {queuedOperations.length > 0 ? (
-                <span className="text-gray-500">
+                <span className="text-[var(--ds-text-muted)]">
                   {queuedOperations.length} queued
                 </span>
               ) : null}
@@ -608,14 +608,14 @@ export default function ChatComposer({
                   <button
                     type="button"
                     onClick={onSendNext}
-                    className="rounded-md border border-white/10 px-2 py-1 font-bold text-gray-300 hover:bg-white/10 hover:text-white focus-ring"
+                    className="rounded-md border border-[var(--ds-border-subtle)] px-2 py-1 font-bold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring"
                   >
                   {queuedOperations[0]?.status === "Failed" ? "Retry failed" : "Send next"}
                   </button>
                   <button
                     type="button"
                     onClick={onResumeQueue}
-                    className="rounded-md bg-[#00f5d4]/15 px-2 py-1 font-bold text-[#8effec] hover:bg-[#00f5d4]/25 focus-ring"
+                    className="rounded-md bg-[var(--ds-accent-soft)] px-2 py-1 font-bold text-[var(--ds-accent)] hover:bg-[var(--ds-accent-soft)] focus-ring"
                   >
                     Resume
                   </button>
@@ -627,14 +627,14 @@ export default function ChatComposer({
                 {queuedOperations.map((operation, index) => (
                   <div
                     key={operation.id}
-                    className="flex items-center gap-2 rounded-md bg-white/[0.035] px-2 py-1 text-[10px] text-gray-400"
+                    className="flex items-center gap-2 rounded-md bg-[var(--ds-fill-subtle)] px-2 py-1 text-[10px] text-[var(--ds-text-secondary)]"
                   >
-                    <span className="shrink-0 font-bold text-gray-500">{index + 1}</span>
+                    <span className="shrink-0 font-bold text-[var(--ds-text-muted)]">{index + 1}</span>
                     <span className="min-w-0 flex-1 truncate">{operation.prompt || operation.type}</span>
                     <button
                       type="button"
                       onClick={() => onRemoveQueued?.(operation.id)}
-                      className="rounded p-0.5 text-gray-600 hover:bg-red-500/10 hover:text-red-300 focus-ring"
+                      className="rounded p-0.5 text-[var(--ds-text-muted)] hover:bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] hover:text-[var(--ds-danger)] focus-ring"
                       aria-label={`Remove queued prompt ${index + 1}`}
                     >
                       <X className="h-3 w-3" />
@@ -646,9 +646,9 @@ export default function ChatComposer({
           </div>
         )}
         {(refineTarget || rewindTarget?.messageId || contextItems.length > 0) && (
-          <div className="flex min-h-9 items-center gap-1.5 overflow-visible border-b border-white/[0.06] px-2 py-1">
+          <div className="flex min-h-9 items-center gap-1.5 overflow-visible border-b border-[var(--ds-border-subtle)] px-2 py-1">
             {refineTarget && (
-              <div className="inline-flex h-7 max-w-[280px] shrink-0 items-center gap-1.5 rounded-md border border-[#00f5d4]/20 bg-[#00f5d4]/10 px-2 text-[10px] font-bold text-[#00f5d4] transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
+              <div className="inline-flex h-7 max-w-[280px] shrink-0 items-center gap-1.5 rounded-md border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 text-[10px] font-bold text-[var(--ds-accent)] transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
                 <Wand2 className="h-3 w-3 shrink-0" />
                 <span className="truncate">
                   {studioConnected ? "Refining in Studio: " : "Refining workspace: "}
@@ -663,7 +663,7 @@ export default function ChatComposer({
                 <button
                   type="button"
                   onClick={onCancelRefine}
-                  className="rounded p-0.5 text-[#00f5d4]/70 hover:bg-white/10 hover:text-white focus-ring"
+                  className="rounded p-0.5 text-[var(--ds-accent)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring"
                   aria-label="Cancel refine"
                   title="Cancel refine (Esc)"
                 >
@@ -672,13 +672,13 @@ export default function ChatComposer({
               </div>
             )}
             {rewindTarget?.messageId ? (
-              <div className="inline-flex h-7 max-w-[220px] shrink-0 items-center gap-1.5 rounded-md border border-amber-400/20 bg-amber-400/10 px-2 text-[10px] font-bold text-amber-200 transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
+              <div className="inline-flex h-7 max-w-[220px] shrink-0 items-center gap-1.5 rounded-md border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] px-2 text-[10px] font-bold text-[var(--ds-warning)] transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
                 <Edit className="h-3 w-3 shrink-0" />
                 <span className="truncate">Continuing from earlier message</span>
                 <button
                   type="button"
                   onClick={onCancelRewind}
-                  className="rounded p-0.5 text-amber-200/70 hover:bg-white/10 hover:text-white focus-ring"
+                  className="rounded p-0.5 text-[var(--ds-warning)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring"
                   aria-label="Cancel edit from earlier message"
                   title="Cancel edit from earlier message"
                 >
@@ -695,7 +695,7 @@ export default function ChatComposer({
                   ref={contextButtonRef}
                   type="button"
                   onClick={() => setContextOpen((value) => !value)}
-                  className="inline-flex h-7 items-center rounded-md border border-white/10 bg-white/[0.05] px-2 text-[10px] font-bold text-gray-300 transition-[border-color,background-color,color,opacity] duration-150 hover:bg-white/10 hover:text-white focus-ring"
+                  className="inline-flex h-7 items-center rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2 text-[10px] font-bold text-[var(--ds-text-secondary)] transition-[border-color,background-color,color,opacity] duration-150 hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring"
                   aria-expanded={contextOpen}
                   aria-haspopup="dialog"
                   aria-label={`Show ${hiddenContextCount} more context items`}
@@ -707,14 +707,14 @@ export default function ChatComposer({
                     ref={contextPanelRef}
                     role="dialog"
                     aria-label="All prompt context"
-                    className="absolute bottom-full right-0 z-30 mb-2 w-[min(24rem,calc(100vw-2rem))] rounded-xl border border-white/10 bg-[#0D0D0D] p-2 shadow-2xl"
+                    className="absolute bottom-full right-0 z-30 mb-2 w-[min(24rem,calc(100vw-2rem))] rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] p-2 shadow-2xl"
                   >
                     <div className="mb-2 flex items-center justify-between px-1">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Selected context</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--ds-text-muted)]">Selected context</span>
                       <button
                         type="button"
                         onClick={() => setContextOpen(false)}
-                        className="rounded-md p-1 text-gray-500 hover:bg-white/10 hover:text-white focus-ring"
+                        className="rounded-md p-1 text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring"
                         aria-label="Close context manager"
                       >
                         <X className="h-3.5 w-3.5" />
@@ -731,7 +731,7 @@ export default function ChatComposer({
         )}
 
         {refineTarget ? (
-          <div className="border-b border-white/[0.06] px-2 py-1.5">
+          <div className="border-b border-[var(--ds-border-subtle)] px-2 py-1.5">
             <RefineChips onRefine={submitQuickRefine} isRefining={isGenerating} />
           </div>
         ) : null}
@@ -751,7 +751,7 @@ export default function ChatComposer({
               ref={textareaRef}
               id="tour-prompt-box"
               data-tour="prompt-input"
-              className="min-h-[44px] w-full resize-none border-none bg-transparent px-0 py-1.5 text-[14px] leading-relaxed text-gray-100 outline-none transition-[height,color,opacity] duration-150 placeholder:text-gray-600 focus:ring-0 disabled:opacity-50 md:text-[15px]"
+              className="min-h-[44px] w-full resize-none border-none bg-transparent px-0 py-1.5 text-[14px] leading-relaxed text-[var(--ds-text)] outline-none transition-[height,color,opacity] duration-150 placeholder:text-[var(--ds-text-muted)] focus:ring-0 disabled:opacity-50 md:text-[15px]"
               rows={1}
               placeholder={placeholder}
               value={prompt}
@@ -782,7 +782,7 @@ export default function ChatComposer({
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={disabled || robloxImageUploading}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-500 transition-[background-color,color,opacity,transform] duration-150 hover:bg-white/10 hover:text-white active:scale-95 focus-ring disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[var(--ds-text-muted)] transition-[background-color,color,opacity,transform] duration-150 hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] active:scale-95 focus-ring disabled:cursor-not-allowed disabled:opacity-40"
                 title="Upload image to Roblox or attach a code/text file"
                 aria-label="Upload image to Roblox or attach a code/text file"
               >
@@ -798,8 +798,8 @@ export default function ChatComposer({
                 aria-pressed={planFirst}
                 className={`inline-flex h-7 items-center rounded-md px-2 text-[10px] font-bold transition-[background-color,color,opacity] duration-150 focus-ring disabled:opacity-40 ${
                   planFirst
-                    ? "bg-violet-400/10 text-violet-200"
-                    : "text-gray-500 hover:bg-white/[0.06] hover:text-gray-300"
+                    ? "bg-[color-mix(in_srgb,var(--ds-plan)_10%,transparent)] text-[var(--ds-plan)]"
+                    : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text-secondary)]"
                 }`}
                 title="Plan before making changes"
               >
@@ -812,8 +812,8 @@ export default function ChatComposer({
                   onClick={() => setUsageOpen((value) => !value)}
                   className={`inline-flex h-7 items-center gap-1 rounded-md px-2 text-[10px] font-bold transition-[background-color,color,opacity] duration-150 focus-ring ${
                     usageOpen
-                      ? "bg-white/10 text-white"
-                      : "text-gray-500 hover:bg-white/[0.06] hover:text-gray-300"
+                      ? "bg-[var(--ds-fill-hover)] text-[var(--ds-text)]"
+                      : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text-secondary)]"
                   }`}
                   aria-expanded={usageOpen}
                   aria-haspopup="dialog"
@@ -826,7 +826,7 @@ export default function ChatComposer({
                     ref={usagePanelRef}
                     role="dialog"
                     aria-label="Usage details"
-                    className="absolute bottom-full left-0 z-30 mb-2 w-64 rounded-xl border border-white/10 bg-[#0D0D0D] p-3 shadow-2xl"
+                    className="absolute bottom-full left-0 z-30 mb-2 w-64 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] p-3 shadow-2xl"
                   >
                     {usage}
                   </div>
@@ -842,8 +842,8 @@ export default function ChatComposer({
                   onClick={() => setControlsOpen((value) => !value)}
                   className={`flex h-7 w-7 items-center justify-center rounded-md transition-[background-color,color,opacity,transform] duration-150 active:scale-95 focus-ring ${
                     controlsOpen
-                      ? "bg-white/10 text-white"
-                      : "text-gray-500 hover:bg-white/10 hover:text-white"
+                      ? "bg-[var(--ds-fill-hover)] text-[var(--ds-text)]"
+                      : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
                   }`}
                   aria-expanded={controlsOpen}
                   aria-controls={controlsId}
@@ -859,15 +859,15 @@ export default function ChatComposer({
                     role="dialog"
                     aria-label="Studio and Roblox settings"
                     aria-hidden={!controlsOpen}
-                    className={`absolute bottom-full right-0 z-30 mb-2 w-80 max-w-[min(20rem,92vw)] origin-bottom-right rounded-xl border border-white/10 bg-[#0D0D0D] p-3 shadow-2xl transition-[opacity,transform] duration-[180ms] ${
+                    className={`absolute bottom-full right-0 z-30 mb-2 w-80 max-w-[min(20rem,92vw)] origin-bottom-right rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] p-3 shadow-2xl transition-[opacity,transform] duration-[180ms] ${
                       controlsPresence.entering
                         ? "translate-y-0 scale-100 opacity-100"
                         : "pointer-events-none translate-y-1 scale-95 opacity-0"
                     }`}
                   >
                     <div className="mb-3">
-                      <h2 className="text-sm font-bold text-white">Advanced setup</h2>
-                      <p className="text-[10px] text-gray-500">Studio and Roblox connections</p>
+                      <h2 className="text-sm font-bold text-[var(--ds-text)]">Advanced setup</h2>
+                      <p className="text-[10px] text-[var(--ds-text-muted)]">Studio and Roblox connections</p>
                     </div>
                     <div className="flex max-h-[min(24rem,50vh)] flex-col gap-3 overflow-y-auto scrollbar-subtle">
                       <StudioControls
@@ -888,7 +888,7 @@ export default function ChatComposer({
                       />
                       {studioConnected && Array.isArray(studioCollaborators) && studioCollaborators.length > 0 && (
                         <span
-                          className="inline-flex w-fit items-center gap-1 rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[11px] text-amber-200"
+                          className="inline-flex w-fit items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] px-2 py-0.5 text-[11px] text-[var(--ds-warning)] "
                           title={studioCollaborators
                             .map((collaborator) => `${collaborator.label || "collaborator"}${
                               Array.isArray(collaborator.activePaths) && collaborator.activePaths.length
@@ -923,7 +923,7 @@ export default function ChatComposer({
                   type="button"
                   onClick={(event) => submitDraft(event, { interrupt: true })}
                   disabled={disabled}
-                  className="inline-flex h-8 items-center rounded-md border border-amber-300/25 bg-amber-300/10 px-2 text-[10px] font-bold text-amber-100 transition-colors hover:bg-amber-300/20 focus-ring disabled:opacity-40"
+                  className="inline-flex h-8 items-center rounded-md border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] px-2 text-[10px] font-bold text-[var(--ds-warning)] transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_20%,transparent)] focus-ring disabled:opacity-40"
                   title="Stop the active operation, then send this prompt (Cmd/Ctrl+Enter)"
                 >
                   Stop &amp; send
@@ -937,8 +937,8 @@ export default function ChatComposer({
                 disabled={isGenerating ? disabled || !onStop : disabled || !canSendWithContext}
                 className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-[background-color,color,opacity,transform] duration-150 active:scale-95 focus-ring disabled:opacity-40 disabled:active:scale-100 ${
                   isGenerating
-                    ? "border border-red-300/25 bg-red-400/15 text-red-200 hover:bg-red-400/25"
-                    : "bg-nexus-cyan text-black hover:bg-[#25f7db]"
+                    ? "border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] text-[var(--ds-danger)] hover:bg-[color-mix(in_srgb,var(--ds-danger)_20%,transparent)]"
+                    : "bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)]"
                 }`}
                 aria-label={isGenerating ? "Stop generation" : "Send prompt"}
                 title={isGenerating ? "Stop generation" : "Send prompt"}

@@ -20,22 +20,22 @@ export default function QaScoreBadge({ score, issueCount = 0, onFix, disabled = 
   const tone =
     value >= 85
       ? {
-          text: "text-green-400",
-          bg: "bg-green-400/10",
-          border: "border-green-400/30",
+          text: " text-[var(--ds-success)] ",
+          bg: " bg-[color-mix(in_srgb,var(--ds-success)_12%,transparent)] ",
+          border: " border-[color-mix(in_srgb,var(--ds-success)_35%,transparent)] ",
           Icon: ShieldCheck,
         }
       : value >= 60
       ? {
-          text: "text-yellow-400",
-          bg: "bg-yellow-400/10",
-          border: "border-yellow-400/30",
+          text: " text-[var(--ds-warning)] ",
+          bg: " bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] ",
+          border: " border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)] ",
           Icon: ShieldAlert,
         }
       : {
-          text: "text-red-400",
-          bg: "bg-red-400/10",
-          border: "border-red-400/30",
+          text: " text-[var(--ds-danger)] ",
+          bg: " bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] ",
+          border: " border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)] ",
           Icon: ShieldAlert,
         };
 
@@ -63,7 +63,7 @@ export default function QaScoreBadge({ score, issueCount = 0, onFix, disabled = 
           type="button"
           onClick={onFix}
           disabled={disabled}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#9b5de5]/15 border border-[#9b5de5]/30 text-[#c4a5f5] text-[10px] font-black uppercase tracking-widest hover:bg-[#9b5de5]/25 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)] border border-[color-mix(in_srgb,var(--ds-plan)_35%,transparent)] text-[var(--ds-plan)] text-[10px] font-black uppercase tracking-widest hover:bg-[color-mix(in_srgb,var(--ds-plan)_18%,transparent)] hover:text-[var(--ds-text)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           title="Apply automated fixes to resolve the detected issues"
         >
           <Wrench className="w-3 h-3" />

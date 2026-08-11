@@ -65,8 +65,8 @@ const stepStatusStyles = {
   active: "text-foreground",
   complete: "text-muted-foreground",
   pending: "text-muted-foreground/50",
-  waiting: "text-amber-200",
-  error: "text-red-300",
+  waiting: "text-[var(--ds-warning)]",
+  error: "text-[var(--ds-danger)]",
 };
 
 export const ChainOfThoughtStep = memo(

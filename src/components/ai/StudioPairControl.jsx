@@ -104,32 +104,32 @@ function PairingCode({ code, expiresAt, now, copied, onCopy, onRegenerate, busy 
   const expired = Boolean(code) && expiresAt > 0 && remainingMs <= 0;
   return (
     <>
-      <div className="rounded-xl border border-white/10 bg-black/40 p-3">
+      <div className="rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-hover)] p-3">
         <div className="flex items-center justify-between gap-2">
-          <span className="font-mono text-2xl font-black tracking-[0.3em] text-white">{code}</span>
+          <span className="font-mono text-2xl font-black tracking-[0.3em] text-[var(--ds-text)]">{code}</span>
           <button
             type="button"
             onClick={onCopy}
-            className="shrink-0 rounded-lg bg-white/5 p-2 text-gray-300 transition-all hover:bg-white/10 hover:text-white"
+            className="shrink-0 rounded-lg bg-[var(--ds-fill-subtle)] p-2 text-[var(--ds-text-secondary)] transition-all hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
             title="Copy pairing code"
             aria-label="Copy pairing code"
           >
-            {copied ? <Check className="h-4 w-4 text-[#00f5d4]" /> : <Copy className="h-4 w-4" />}
+            {copied ? <Check className="h-4 w-4 text-[var(--ds-accent)]" /> : <Copy className="h-4 w-4" />}
           </button>
         </div>
         <div className="mt-1.5 text-[10px] font-bold uppercase tracking-widest">
           {expired ? (
-            <span className="text-rose-400">Code expired — generate a new one</span>
+            <span className=" text-[var(--ds-danger)] ">Code expired — generate a new one</span>
           ) : expiryKnown ? (
-            <span className="text-gray-500">Expires in {formatRemaining(remainingMs)}</span>
+            <span className="text-[var(--ds-text-muted)]">Expires in {formatRemaining(remainingMs)}</span>
           ) : (
-            <span className="text-gray-500">One-time pairing code</span>
+            <span className="text-[var(--ds-text-muted)]">One-time pairing code</span>
           )}
         </div>
       </div>
       {!expired && (
-        <div className="flex items-center gap-2 text-[11px] text-gray-500">
-          <Loader2 className="h-3.5 w-3.5 animate-spin text-[#00f5d4]" />
+        <div className="flex items-center gap-2 text-[11px] text-[var(--ds-text-muted)]">
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--ds-accent)]" />
           Waiting for the connection to claim this code…
         </div>
       )}
@@ -137,7 +137,7 @@ function PairingCode({ code, expiresAt, now, copied, onCopy, onRegenerate, busy 
         type="button"
         onClick={onRegenerate}
         disabled={busy}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white/5 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-gray-300 transition-all hover:bg-white/10 disabled:opacity-50"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--ds-fill-subtle)] px-3 py-2 text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-secondary)] transition-all hover:bg-[var(--ds-fill-hover)] disabled:opacity-50"
       >
         {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
         New code
@@ -148,9 +148,9 @@ function PairingCode({ code, expiresAt, now, copied, onCopy, onRegenerate, busy 
 
 function HealthRow({ label, healthy, waitingLabel = "Not detected" }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-lg bg-white/[0.03] px-2.5 py-2 text-[11px]">
-      <span className="text-gray-400">{label}</span>
-      <span className={`font-bold ${healthy ? "text-[#00f5d4]" : "text-amber-300"}`}>
+    <div className="flex items-center justify-between gap-4 rounded-lg bg-[var(--ds-fill-subtle)] px-2.5 py-2 text-[11px]">
+      <span className="text-[var(--ds-text-secondary)]">{label}</span>
+      <span className={`font-bold ${healthy ? "text-[var(--ds-accent)]" : " text-[var(--ds-warning)] "}`}>
         {healthy ? "Detected" : waitingLabel}
       </span>
     </div>
@@ -413,7 +413,7 @@ export default function StudioPairControl({
         <div
           id="studio-connection-dialog"
           ref={menuRef}
-          className="z-[9999] overflow-y-auto rounded-2xl border border-white/10 bg-[#0D0D0D]/95 p-4 shadow-2xl backdrop-blur-2xl scrollbar-subtle"
+          className="z-[9999] overflow-y-auto rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] p-4 shadow-2xl backdrop-blur-2xl scrollbar-subtle"
           style={{
             position: menuPosition?.strategy || "fixed",
             top: menuPosition?.top ?? 0,
@@ -429,17 +429,17 @@ export default function StudioPairControl({
             <div className="flex min-w-0 items-center gap-2.5">
               <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${
                 overallConnected
-                  ? "bg-[#00f5d4]/15 text-[#00f5d4]"
+                  ? "bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]"
                   : degraded
-                    ? "bg-amber-400/15 text-amber-300"
-                    : "bg-white/5 text-gray-400"
+                    ? " bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)]  text-[var(--ds-warning)] "
+                    : "bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)]"
               }`}>
                 {degraded && !overallConnected ? <AlertTriangle className="h-4 w-4" /> : <Radio className="h-4 w-4" />}
               </span>
               <div className="min-w-0">
-                <div className="text-sm font-bold leading-tight text-white">Connect Roblox Studio</div>
+                <div className="text-sm font-bold leading-tight text-[var(--ds-text)]">Connect Roblox Studio</div>
                 <div className={`mt-0.5 truncate text-[10px] font-black uppercase tracking-wider ${
-                  overallConnected ? "text-[#00f5d4]" : degraded ? "text-amber-300" : "text-gray-500"
+                  overallConnected ? "text-[var(--ds-accent)]" : degraded ? " text-[var(--ds-warning)] " : "text-[var(--ds-text-muted)]"
                 }`}>
                   {loading ? "Checking…" : statusCopy}
                 </div>
@@ -448,7 +448,7 @@ export default function StudioPairControl({
             <button
               type="button"
               onClick={() => refresh?.()}
-              className="rounded-lg bg-white/5 p-2 text-gray-400 transition-all hover:bg-white/10 hover:text-white"
+              className="rounded-lg bg-[var(--ds-fill-subtle)] p-2 text-[var(--ds-text-secondary)] transition-all hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
               title="Retry connection check"
               aria-label="Retry connection check"
             >
@@ -456,15 +456,15 @@ export default function StudioPairControl({
             </button>
           </div>
 
-          <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-black/40 p-1" role="tablist" aria-label="Studio connection method">
+          <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-[var(--ds-fill-hover)] p-1" role="tablist" aria-label="Studio connection method">
             <button
               type="button"
               role="tab"
               aria-selected={activeMethod === "plugin"}
               onClick={() => setActiveMethod("plugin")}
-              className={`rounded-lg px-3 py-2 text-left transition-all ${activeMethod === "plugin" ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300"}`}
+              className={`rounded-lg px-3 py-2 text-left transition-all ${activeMethod === "plugin" ? "bg-[var(--ds-fill-hover)] text-[var(--ds-text)]" : "text-[var(--ds-text-muted)] hover:text-[var(--ds-text-secondary)]"}`}
             >
-              <span className="block text-[10px] font-black uppercase tracking-widest text-[#00f5d4]">Direct apply</span>
+              <span className="block text-[10px] font-black uppercase tracking-widest text-[var(--ds-accent)]">Direct apply</span>
               <span className="block text-xs font-bold">Studio Plugin</span>
             </button>
             <button
@@ -472,25 +472,25 @@ export default function StudioPairControl({
               role="tab"
               aria-selected={activeMethod === "mcp"}
               onClick={() => setActiveMethod("mcp")}
-              className={`rounded-lg px-3 py-2 text-left transition-all ${activeMethod === "mcp" ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300"}`}
+              className={`rounded-lg px-3 py-2 text-left transition-all ${activeMethod === "mcp" ? "bg-[var(--ds-fill-hover)] text-[var(--ds-text)]" : "text-[var(--ds-text-muted)] hover:text-[var(--ds-text-secondary)]"}`}
             >
-              <span className="block text-[10px] font-black uppercase tracking-widest text-violet-300">Live tools</span>
+              <span className="block text-[10px] font-black uppercase tracking-widest text-[var(--ds-plan)]">Live tools</span>
               <span className="block text-xs font-bold">Roblox Studio MCP</span>
             </button>
           </div>
 
-          <div className="mb-4 grid grid-cols-2 gap-2 rounded-xl border border-white/10 bg-black/30 p-2.5 text-[10px]">
-            <div><span className="text-gray-500">Chat inspection</span><strong className="ml-1.5 text-gray-200">{transportLabel(transportSelection.chatInspection)}</strong></div>
-            <div><span className="text-gray-500">Full manifest</span><strong className="ml-1.5 text-gray-200">{transportLabel(transportSelection.manifestCollection)}</strong></div>
+          <div className="mb-4 grid grid-cols-2 gap-2 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2.5 text-[10px]">
+            <div><span className="text-[var(--ds-text-muted)]">Chat inspection</span><strong className="ml-1.5 text-[var(--ds-text)]">{transportLabel(transportSelection.chatInspection)}</strong></div>
+            <div><span className="text-[var(--ds-text-muted)]">Full manifest</span><strong className="ml-1.5 text-[var(--ds-text)]">{transportLabel(transportSelection.manifestCollection)}</strong></div>
           </div>
 
           {activeMethod === "plugin" ? (
             <div className="space-y-3">
-              <div className="rounded-xl border border-[#00f5d4]/15 bg-[#00f5d4]/5 p-3">
-                <div className="mb-1 flex items-center gap-2 text-xs font-bold text-white">
-                  <Radio className="h-4 w-4 text-[#00f5d4]" /> NexusRBX Studio Plugin
+              <div className="rounded-xl border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] p-3">
+                <div className="mb-1 flex items-center gap-2 text-xs font-bold text-[var(--ds-text)]">
+                  <Radio className="h-4 w-4 text-[var(--ds-accent)]" /> NexusRBX Studio Plugin
                 </div>
-                <p className="text-[11px] leading-relaxed text-gray-400">
+                <p className="text-[11px] leading-relaxed text-[var(--ds-text-secondary)]">
                   Best for most users. It connects directly to your open project and supports project context,
                   script editing, model workflows, validation, and safe recovery.
                 </p>
@@ -498,24 +498,24 @@ export default function StudioPairControl({
               {pluginConnected ? (
                 <>
                   {pluginUpdateRequired ? (
-                    <div className="rounded-xl border border-amber-400/25 bg-amber-400/10 p-3 text-xs leading-relaxed text-amber-100">
-                      <div className="mb-1 flex items-center gap-2 font-bold text-amber-300">
+                    <div className="rounded-xl border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] p-3 text-xs leading-relaxed text-[var(--ds-warning)] ">
+                      <div className="mb-1 flex items-center gap-2 font-bold text-[var(--ds-warning)] ">
                         <AlertTriangle className="h-4 w-4" /> Studio plugin update required
                       </div>
                       This plugin release is no longer supported. Reinstall the current generated
                       NexusRBXStudioBridge.plugin.lua artifact, then reconnect.
                     </div>
                   ) : pluginRepairing ? (
-                    <div className="rounded-xl border border-sky-400/25 bg-sky-400/10 p-3 text-xs leading-relaxed text-sky-100">
-                      <div className="mb-1 flex items-center gap-2 font-bold text-sky-300">
+                    <div className="rounded-xl border border-[color-mix(in_srgb,var(--ds-info)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-info)_12%,transparent)] p-3 text-xs leading-relaxed text-[var(--ds-info)] ">
+                      <div className="mb-1 flex items-center gap-2 font-bold text-[var(--ds-info)] ">
                         <Loader2 className="h-4 w-4 animate-spin" /> Restoring Studio connection
                       </div>
                       The plugin is repairing its saved session automatically. Keep Studio open; no reinstall,
                       restart, disconnect, or re-pair is needed.
                     </div>
                   ) : pluginMissingCreateInstance ? (
-                    <div className="rounded-xl border border-amber-400/25 bg-amber-400/10 p-3 text-xs leading-relaxed text-amber-100">
-                      <div className="mb-1 flex items-center gap-2 font-bold text-amber-300">
+                    <div className="rounded-xl border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] p-3 text-xs leading-relaxed text-[var(--ds-warning)] ">
+                      <div className="mb-1 flex items-center gap-2 font-bold text-[var(--ds-warning)] ">
                         <AlertTriangle className="h-4 w-4" /> Update Studio plugin to use Create Instance
                       </div>
                       This connected Studio plugin is missing Create Instance. Install the current
@@ -524,7 +524,7 @@ export default function StudioPairControl({
                       <div className="mt-3 flex flex-wrap gap-2">
                         <a
                           href="/docs/installation"
-                          className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-amber-300/30 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-amber-100 transition-colors hover:bg-amber-300/10"
+                          className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)] px-2.5 py-1.5 text-[10px] font-bold text-[var(--ds-warning)] transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)]"
                         >
                           View install steps <ExternalLink className="h-3 w-3" />
                         </a>
@@ -532,7 +532,7 @@ export default function StudioPairControl({
                           type="button"
                           onClick={() => refresh?.()}
                           disabled={loading}
-                          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-300/15 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-amber-100 transition-colors hover:bg-amber-300/25 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] px-2.5 py-1.5 text-[10px] font-bold text-[var(--ds-warning)] transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_20%,transparent)] disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
                           Refresh connection
@@ -540,15 +540,15 @@ export default function StudioPairControl({
                       </div>
                     </div>
                   ) : pluginDegraded ? (
-                    <div className="rounded-xl border border-amber-400/25 bg-amber-400/10 p-3 text-xs leading-relaxed text-amber-100">
-                      <div className="mb-1 flex items-center gap-2 font-bold text-amber-300">
+                    <div className="rounded-xl border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] p-3 text-xs leading-relaxed text-[var(--ds-warning)] ">
+                      <div className="mb-1 flex items-center gap-2 font-bold text-[var(--ds-warning)] ">
                         <AlertTriangle className="h-4 w-4" /> Feature unavailable
                       </div>
                       The connected plugin does not advertise {degradedFeature}. Other supported Studio features remain available.
                     </div>
                   ) : (
-                    <div className="rounded-xl border border-[#00f5d4]/20 bg-[#00f5d4]/5 p-3 text-xs text-gray-300">
-                      <span className="font-semibold text-[#00f5d4]">Plugin connected.</span> Push a generation to Studio,
+                    <div className="rounded-xl border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] p-3 text-xs text-[var(--ds-text-secondary)]">
+                      <span className="font-semibold text-[var(--ds-accent)]">Plugin connected.</span> Push a generation to Studio,
                       or enable Live Studio in the composer.
                     </div>
                   )}
@@ -556,7 +556,7 @@ export default function StudioPairControl({
                     type="button"
                     onClick={() => disconnect("plugin")}
                     disabled={disconnectingMethod === "plugin"}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-rose-300 transition-all hover:bg-rose-500/20 disabled:opacity-50"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] px-3 py-2 text-[10px] font-bold text-[var(--ds-danger)] transition-colors hover:bg-[color-mix(in_srgb,var(--ds-danger)_20%,transparent)] disabled:opacity-50"
                   >
                     {disconnectingMethod === "plugin" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Unlink className="h-3.5 w-3.5" />}
                     Disconnect plugin
@@ -574,14 +574,14 @@ export default function StudioPairControl({
                 />
               ) : (
                 <>
-                  <p className="text-xs leading-relaxed text-gray-400">
+                  <p className="text-xs leading-relaxed text-[var(--ds-text-secondary)]">
                     Generate a one-time code, then enter it in the installed NexusRBX plugin inside Roblox Studio.
                   </p>
                   <button
                     type="button"
                     onClick={() => generateCode("plugin")}
                     disabled={busyMethod === "plugin"}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#00f5d4]/30 bg-[#00f5d4]/10 px-3 py-2.5 text-xs font-black uppercase tracking-widest text-[#00f5d4] transition-all hover:bg-[#00f5d4]/20 disabled:opacity-50"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-3 py-2.5 text-xs font-black uppercase tracking-widest text-[var(--ds-accent)] transition-all hover:bg-[var(--ds-accent-soft)] disabled:opacity-50"
                   >
                     {busyMethod === "plugin" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
                     Connect with plugin
@@ -591,28 +591,28 @@ export default function StudioPairControl({
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="rounded-xl border border-violet-400/15 bg-violet-400/5 p-3">
-                <div className="mb-1 flex items-center gap-2 text-xs font-bold text-white">
-                  <Terminal className="h-4 w-4 text-violet-300" /> Roblox Studio MCP
+              <div className="rounded-xl border border-[color-mix(in_srgb,var(--ds-plan)_15%,transparent)] bg-[color-mix(in_srgb,var(--ds-plan)_5%,transparent)] p-3">
+                <div className="mb-1 flex items-center gap-2 text-xs font-bold text-[var(--ds-text)]">
+                  <Terminal className="h-4 w-4 text-[var(--ds-plan)]" /> Roblox Studio MCP
                 </div>
-                <p className="text-[11px] leading-relaxed text-gray-400">
+                <p className="text-[11px] leading-relaxed text-[var(--ds-text-secondary)]">
                   Connect through the optional NexusRBX Local Connector for advanced local AI workflows. The
                   connector runs on your computer and is separate from the Studio plugin.
                 </p>
               </div>
 
               {(latestMcpSession || connectorDetected) && (
-                <div className="space-y-1.5 rounded-xl border border-white/10 bg-black/30 p-2.5">
+                <div className="space-y-1.5 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2.5">
                   <HealthRow label="Local connector" healthy={connectorDetected} />
                   <HealthRow label="Roblox Studio MCP server" healthy={mcpConnected} />
                   {studioTargets.length > 1 && (
-                    <label className="block rounded-lg bg-white/[0.03] px-2.5 py-2 text-[11px] text-gray-400">
+                    <label className="block rounded-lg bg-[var(--ds-fill-subtle)] px-2.5 py-2 text-[11px] text-[var(--ds-text-secondary)]">
                       <span className="mb-1 block">Studio window</span>
                       <select
                         value={requestedStudioId}
                         onChange={(event) => selectMcpTarget(event.target.value)}
                         disabled={selectingTarget}
-                        className="w-full rounded-lg border border-white/10 bg-black/50 px-2 py-1.5 text-white outline-none focus:border-violet-400/60 disabled:opacity-50"
+                        className="w-full rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] px-2 py-1.5 text-[var(--ds-text)] outline-none focus:border-[var(--ds-plan)] disabled:opacity-50"
                         aria-label="Roblox Studio window"
                       >
                         <option value="" disabled>Choose a Studio window</option>
@@ -625,23 +625,23 @@ export default function StudioPairControl({
                     </label>
                   )}
                   {connectorDetected && !mcpConnected && (
-                    <div className="flex gap-2 rounded-lg border border-amber-400/20 bg-amber-400/5 p-2.5 text-[11px] leading-relaxed text-amber-200">
+                    <div className="flex gap-2 rounded-lg border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] p-2.5 text-[11px] leading-relaxed text-[var(--ds-warning)] ">
                       <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                       Connector connected, Roblox Studio MCP not detected. Open Studio and enable its MCP server.
                     </div>
                   )}
                   <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 px-1 pt-1 text-[10px]">
-                    <dt className="text-gray-500">Place</dt><dd className="truncate text-right text-gray-300">{mcpPlace}</dd>
-                    <dt className="text-gray-500">Last seen</dt><dd className="text-right text-gray-300">{formatLastSeen(latestMcpSession?.lastSeenAt)}</dd>
-                    <dt className="text-gray-500">Connector</dt><dd className="truncate text-right text-gray-300">{connectorVersion}</dd>
-                    <dt className="text-gray-500">MCP server</dt><dd className="truncate text-right text-gray-300">{mcpServerVersion}</dd>
+                    <dt className="text-[var(--ds-text-muted)]">Place</dt><dd className="truncate text-right text-[var(--ds-text-secondary)]">{mcpPlace}</dd>
+                    <dt className="text-[var(--ds-text-muted)]">Last seen</dt><dd className="text-right text-[var(--ds-text-secondary)]">{formatLastSeen(latestMcpSession?.lastSeenAt)}</dd>
+                    <dt className="text-[var(--ds-text-muted)]">Connector</dt><dd className="truncate text-right text-[var(--ds-text-secondary)]">{connectorVersion}</dd>
+                    <dt className="text-[var(--ds-text-muted)]">MCP server</dt><dd className="truncate text-right text-[var(--ds-text-secondary)]">{mcpServerVersion}</dd>
                   </dl>
                 </div>
               )}
 
               {(supportedCapabilities.length > 0 || unavailableCapabilities.length > 0) && (
-                <div className="rounded-xl border border-white/10 bg-black/30 p-2.5">
-                  <div className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                <div className="rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2.5">
+                  <div className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-secondary)]">
                     <Server className="h-3.5 w-3.5" /> Discovered capabilities
                   </div>
                   <div className="space-y-1">
@@ -654,8 +654,8 @@ export default function StudioPairControl({
                           className="flex items-center justify-between gap-3 text-[10px]"
                           title={available ? "Verified in this connector session" : detail.reasonCode || "Required MCP tools unavailable"}
                         >
-                          <span className="text-gray-400">{MCP_CAPABILITY_LABELS[capability] || capability}</span>
-                          <span className={available ? "font-bold text-[#00f5d4]" : "font-bold text-gray-600"}>
+                          <span className="text-[var(--ds-text-secondary)]">{MCP_CAPABILITY_LABELS[capability] || capability}</span>
+                          <span className={available ? "font-bold text-[var(--ds-accent)]" : "font-bold text-[var(--ds-text-muted)]"}>
                             {available ? "Supported" : "Unavailable"}
                           </span>
                         </div>
@@ -666,7 +666,7 @@ export default function StudioPairControl({
               )}
 
               {!mcpConnected && !pairing.mcp?.code && (
-                <ol className="list-inside list-decimal space-y-1 text-[11px] leading-relaxed text-gray-400">
+                <ol className="list-inside list-decimal space-y-1 text-[11px] leading-relaxed text-[var(--ds-text-secondary)]">
                   <li>Open the experience you want to edit in Roblox Studio.</li>
                   <li>Enable Roblox Studio MCP.</li>
                   <li>Run the NexusRBX Local Connector on this computer.</li>
@@ -690,7 +690,7 @@ export default function StudioPairControl({
                   type="button"
                   onClick={() => generateCode("mcp")}
                   disabled={busyMethod === "mcp"}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-violet-400/30 bg-violet-400/10 px-3 py-2.5 text-xs font-black uppercase tracking-widest text-violet-200 transition-all hover:bg-violet-400/20 disabled:opacity-50"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--ds-plan)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-plan)_10%,transparent)] px-3 py-2.5 text-xs font-black uppercase tracking-widest text-[var(--ds-plan)] transition-all hover:bg-[color-mix(in_srgb,var(--ds-plan)_20%,transparent)] disabled:opacity-50"
                 >
                   {busyMethod === "mcp" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
                   Connect with MCP
@@ -703,7 +703,7 @@ export default function StudioPairControl({
                     type="button"
                     onClick={testMcpConnection}
                     disabled={testing}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/5 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-gray-300 transition-all hover:bg-white/10 disabled:opacity-50"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--ds-fill-subtle)] px-3 py-2 text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-secondary)] transition-all hover:bg-[var(--ds-fill-hover)] disabled:opacity-50"
                   >
                     {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
                     Test connection
@@ -712,7 +712,7 @@ export default function StudioPairControl({
                     type="button"
                     onClick={() => disconnect("mcp")}
                     disabled={disconnectingMethod === "mcp"}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-rose-300 transition-all hover:bg-rose-500/20 disabled:opacity-50"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] px-3 py-2 text-[10px] font-bold text-[var(--ds-danger)] transition-colors hover:bg-[color-mix(in_srgb,var(--ds-danger)_20%,transparent)] disabled:opacity-50"
                   >
                     {disconnectingMethod === "mcp" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Unlink className="h-3.5 w-3.5" />}
                     Disconnect MCP
@@ -722,7 +722,7 @@ export default function StudioPairControl({
 
               <a
                 href="/downloads"
-                className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-500 transition-colors hover:text-gray-300"
+                className="inline-flex items-center gap-1 text-[10px] font-bold text-[var(--ds-text-muted)] transition-colors hover:text-[var(--ds-text-secondary)]"
               >
                 Download Connector {CURRENT_CONNECTOR_VERSION} <ExternalLink className="h-3 w-3" />
               </a>
@@ -760,16 +760,16 @@ export default function StudioPairControl({
         }}
         className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all sm:min-h-0 ${
           pluginUpdateRequired
-            ? "border-amber-400/30 bg-amber-400/10 text-amber-300 hover:bg-amber-400/20"
+            ? "border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] text-[var(--ds-warning)] hover:bg-[color-mix(in_srgb,var(--ds-warning)_20%,transparent)]"
             : pluginRepairing
-              ? "border-sky-400/30 bg-sky-400/10 text-sky-300 hover:bg-sky-400/20"
+              ? "border-[color-mix(in_srgb,var(--ds-info)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-info)_12%,transparent)] text-[var(--ds-info)] hover:bg-[color-mix(in_srgb,var(--ds-info)_20%,transparent)]"
               : pluginDegraded
-                ? "border-amber-400/30 bg-amber-400/10 text-amber-300 hover:bg-amber-400/20"
+                ? "border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] text-[var(--ds-warning)] hover:bg-[color-mix(in_srgb,var(--ds-warning)_20%,transparent)]"
             : overallConnected
-            ? "border-[#00f5d4]/30 bg-[#00f5d4]/10 text-[#00f5d4] hover:bg-[#00f5d4]/20"
+            ? "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] text-[var(--ds-accent)] hover:bg-[var(--ds-accent-soft)]"
             : degraded
-              ? "border-amber-400/30 bg-amber-400/10 text-amber-300 hover:bg-amber-400/20"
-              : "border-white/10 bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white"
+              ? "border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] text-[var(--ds-warning)] hover:bg-[color-mix(in_srgb,var(--ds-warning)_20%,transparent)]"
+              : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
         }`}
         title={statusCopy}
         aria-haspopup="dialog"
@@ -781,7 +781,7 @@ export default function StudioPairControl({
         ) : pluginUpdateRequired || pluginDegraded || (degraded && !overallConnected) ? (
           <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
         ) : (
-          <Radio className={`h-3.5 w-3.5 shrink-0 ${overallConnected ? "" : "text-gray-400"}`} />
+          <Radio className={`h-3.5 w-3.5 shrink-0 ${overallConnected ? "" : "text-[var(--ds-text-secondary)]"}`} />
         )}
         <span className="truncate">{buttonLabel}</span>
         <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />

@@ -4,7 +4,34 @@
     <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#050507" />
+    <script>
+      (() => {
+        const key = "nexusrbx:settings";
+        const allowed = new Set(["system", "dark", "light"]);
+        const read = () => {
+          try {
+            const value = JSON.parse(localStorage.getItem(key) || "{}").theme;
+            return allowed.has(value) ? value : "system";
+          } catch (_) {
+            return "system";
+          }
+        };
+        const resolve = (value) => value === "system"
+          ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+          : value;
+        const apply = () => {
+          const theme = resolve(read());
+          document.documentElement.dataset.theme = theme;
+          document.documentElement.style.colorScheme = theme;
+          document.querySelector('meta[name="theme-color"]')
+            ?.setAttribute("content", theme === "dark" ? "#050507" : "#f5f5f7");
+        };
+        apply();
+        matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", apply);
+        addEventListener("storage", (event) => { if (event.key === key) apply(); });
+      })();
+    </script>
     <meta
       name="description"
       content="NexusRBX is an AI-driven platform designed specifically for Roblox developers and enthusiasts."

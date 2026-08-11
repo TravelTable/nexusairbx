@@ -89,9 +89,9 @@ export default function ForgotPasswordPage() {
             successLabel="Email requested"
           />
 
-          <p className="text-center text-sm text-zinc-400">
+          <p className="text-center text-sm text-[var(--ds-text-muted)]">
             Remembered your password?{" "}
-            <Link to="/signin" className="focus-ring rounded px-1 font-semibold text-[#00f5d4] hover:underline">
+            <Link to="/signin" className="focus-ring rounded px-1 font-semibold text-[var(--ds-accent)] hover:text-[var(--ds-accent-hover)] hover:underline">
               Back to sign in
             </Link>
           </p>

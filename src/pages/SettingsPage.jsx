@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import {
   Activity,
@@ -14,6 +14,7 @@ import {
   Loader2,
   LogOut,
   Menu,
+  Palette,
   RefreshCcw,
   Save,
   Settings,
@@ -57,6 +58,7 @@ import BrutalAuditor from "../components/ai/BrutalAuditor";
 import FreeUsageMeter from "../components/FreeUsageMeter";
 import ProNudgeModal from "../components/ProNudgeModal";
 import SettingsSignInAction from "../components/settings/SettingsSignInAction";
+import AppearanceSelector from "../components/settings/AppearanceSelector";
 import { Alert, AlertDescription, AlertTitle } from "../components/shadcn/alert";
 import {
   AlertDialog,
@@ -95,9 +97,11 @@ import { Switch } from "../components/shadcn/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/shadcn/table";
 import { Textarea } from "../components/shadcn/textarea";
 import { cn } from "../lib/utils";
+import { resolveSettingsTab } from "../lib/settingsNavigation";
 
 const NAV_ITEMS = [
   { id: "overview", label: "Overview", icon: Activity },
+  { id: "appearance", label: "Appearance", icon: Palette },
   { id: "ai", label: "AI", icon: Bot },
   { id: "roblox", label: "Roblox + Studio", icon: Wand2 },
   { id: "billing", label: "Billing", icon: CreditCard },
@@ -110,6 +114,10 @@ const SECTION_META = {
   overview: {
     label: "Overview",
     description: "Check service readiness, recent usage, and the settings that affect your workspace.",
+  },
+  appearance: {
+    label: "Appearance",
+    description: "Choose how NexusRBX looks on this device. System follows your operating-system preference.",
   },
   ai: {
     label: "AI",
@@ -181,7 +189,6 @@ const STUDIO_POLICY_OPTIONS = [
   { value: "manual_review", label: "Manual review first" },
   { value: "off", label: "Never push automatically" },
 ];
-
 const Button = React.forwardRef(({ className, variant = "default", ...props }, ref) => (
   <BaseButton
     ref={ref}
@@ -461,6 +468,7 @@ function DataStateAlert({ state, onRetry, label }) {
 }
 
 export default function SettingsPage() {
+  const location = useLocation();
   const navigate = useNavigate();
   const {
     settings,
@@ -474,7 +482,7 @@ export default function SettingsPage() {
   } = useSettings();
   const billing = useBilling() || {};
   const isAdmin = Boolean(billing.isAdmin || billing.flags?.isAdmin);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState(() => (user ? "overview" : "appearance"));
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [proNudgeReason, setProNudgeReason] = useState("");
   const [usageState, setUsageState] = useState({ status: "idle", logs: [], chartData: [], error: "" });
@@ -491,7 +499,12 @@ export default function SettingsPage() {
     gameSpec: settings.gameSpec || "",
   });
 
-  const navItems = useMemo(() => (isAdmin ? [...NAV_ITEMS, ADMIN_ITEM] : NAV_ITEMS), [isAdmin]);
+  const navItems = useMemo(() => {
+    if (!user) return NAV_ITEMS.filter((item) => item.id === "appearance");
+    return isAdmin ? [...NAV_ITEMS, ADMIN_ITEM] : NAV_ITEMS;
+  }, [isAdmin, user]);
+  const fallbackTab = user ? "overview" : "appearance";
+  const permissionsReady = !user || billing.loading !== true;
   const activeSection = SECTION_META[activeTab] || SECTION_META.overview;
   const robloxStatus = robloxState.statusData;
   const robloxConnected = Boolean(robloxStatus?.connected);
@@ -531,16 +544,35 @@ export default function SettingsPage() {
   }, []);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    if (!permissionsReady) return;
+
+    const params = new URLSearchParams(location.search);
     const requestedTab = params.get("tab");
-    const allowedTabs = new Set([...NAV_ITEMS.map((item) => item.id), "admin"]);
-    if (requestedTab && allowedTabs.has(requestedTab)) {
-      setActiveTab(requestedTab);
+    const nextTab = resolveSettingsTab({
+      allowedTabs: navItems.map((item) => item.id),
+      requestedTab,
+      currentTab: activeTab,
+      fallbackTab,
+    });
+
+    if (!nextTab) return;
+    if (nextTab !== activeTab) setActiveTab(nextTab);
+
+    if (requestedTab !== nextTab) {
+      params.set("tab", nextTab);
+      navigate(
+        { pathname: location.pathname, search: `?${params.toString()}` },
+        { replace: true },
+      );
     }
+  }, [activeTab, fallbackTab, location.pathname, location.search, navigate, navItems, permissionsReady]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
     const robloxResult = params.get("roblox");
     if (robloxResult === "connected") setNotice("Roblox connection updated.");
     if (robloxResult === "error") setNotice(params.get("message") || "Roblox authorization failed.");
-  }, []);
+  }, [location.search]);
 
   useEffect(() => {
     if (!longFormDirty) {
@@ -552,10 +584,23 @@ export default function SettingsPage() {
   }, [longFormDirty, settings.codingStandards, settings.gameSpec]);
 
   const setTab = useCallback((tab) => {
-    setActiveTab(tab);
+    const nextTab = resolveSettingsTab({
+      allowedTabs: navItems.map((item) => item.id),
+      requestedTab: tab,
+      currentTab: activeTab,
+      fallbackTab,
+    });
+    if (!nextTab) return;
+
+    const params = new URLSearchParams(location.search);
+    params.set("tab", nextTab);
+    setActiveTab(nextTab);
     setMobileNavOpen(false);
-    navigate(`/settings?tab=${tab}`, { replace: true });
-  }, [navigate]);
+    navigate(
+      { pathname: location.pathname, search: `?${params.toString()}` },
+      { replace: true },
+    );
+  }, [activeTab, fallbackTab, location.pathname, location.search, navigate, navItems]);
 
   const loadUsage = useCallback(async () => {
     if (!user) return;
@@ -942,6 +987,27 @@ export default function SettingsPage() {
             />
           </div>
         </div>
+      </Panel>
+    </div>
+  );
+
+  const renderAppearance = () => (
+    <div className="space-y-6">
+      <Panel
+        title="Color appearance"
+        description="NexusRBX applies this choice before the page paints, including the public site and AI workspace."
+      >
+        <AppearanceSelector
+          value={settings.theme}
+          onChange={(theme) => updateSetting({ theme })}
+          disabled={saveStatus === "saving"}
+        />
+        <p className="mt-4 text-sm leading-6 text-muted-foreground">
+          {user
+            ? "Your appearance preference syncs with your NexusRBX account and remains available on this device."
+            : "This preference is saved on this device. Sign in when you want it synchronized with your account."}
+        </p>
+        {!user && <div className="mt-4"><SettingsSignInAction /></div>}
       </Panel>
     </div>
   );
@@ -1564,6 +1630,7 @@ export default function SettingsPage() {
 
   const renderActiveTab = () => {
     if (!isAdmin && activeTab === "admin") return renderAdmin();
+    if (activeTab === "appearance") return renderAppearance();
     if (activeTab === "ai") return renderAI();
     if (activeTab === "roblox") return renderRoblox();
     if (activeTab === "billing") return renderBilling();
@@ -1619,7 +1686,7 @@ export default function SettingsPage() {
           </Alert>
         )}
 
-        {!user && !settingsLoading ? (
+        {!user && activeTab !== "appearance" && !settingsLoading ? (
           <Panel title="Sign in required" description="Settings sync requires an authenticated account.">
             <EmptyState
               icon={Shield}

@@ -2,7 +2,7 @@ const path = require("path");
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: ["class"],
+  darkMode: ["selector", '[data-theme="dark"]'],
   content: [
     path.join(__dirname, "src/**/*.{js,jsx,ts,tsx}"),
     path.join(__dirname, "public-frontend/**/*.{js,jsx,ts,tsx}"),
@@ -43,25 +43,19 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        nexus: {
-          cyan: "#00f5d4",
-          purple: "#9b5de5",
-          pink: "#f15bb5",
-          blue: "#00bbf9",
-          yellow: "#fee440",
-        },
-        ink: {
-          950: "#070708",
-          900: "#0a0a0c",
-          850: "#0d0d10",
-          800: "#121216",
-          700: "#1a1a20",
-          600: "#24242c",
+        canvas: "var(--ds-bg-canvas)",
+        workspace: "var(--ds-bg-workspace)",
+        sidebar: "var(--ds-bg-sidebar)",
+        surface: {
+          1: "var(--ds-surface-1)",
+          2: "var(--ds-surface-2)",
+          3: "var(--ds-surface-3)",
+          overlay: "var(--ds-surface-overlay)",
         },
       },
       fontFamily: {
-        display: ["Sora", "ui-sans-serif", "system-ui", "sans-serif"],
-        sans: ["Manrope", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["-apple-system", "BlinkMacSystemFont", '"SF Pro Display"', '"Segoe UI"', "system-ui", "sans-serif"],
+        sans: ["-apple-system", "BlinkMacSystemFont", '"SF Pro Text"', '"Segoe UI"', "system-ui", "sans-serif"],
         mono: ['"JetBrains Mono"', "ui-monospace", "SFMono-Regular", "monospace"],
       },
       borderRadius: {
@@ -72,9 +66,7 @@ module.exports = {
         "2xl2": "1.25rem",
       },
       boxShadow: {
-        "glow-cyan": "0 0 0 1px rgba(0,245,212,0.18), 0 10px 34px -10px rgba(0,245,212,0.4)",
-        "glow-purple": "0 0 0 1px rgba(155,93,229,0.18), 0 10px 34px -10px rgba(155,93,229,0.4)",
-        panel: "0 16px 50px -16px rgba(0,0,0,0.7)",
+        panel: "var(--ds-shadow-panel)",
       },
       keyframes: {
         "fade-in-up": {

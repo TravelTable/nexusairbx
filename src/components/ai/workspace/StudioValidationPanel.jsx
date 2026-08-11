@@ -17,11 +17,11 @@ function title(value) {
 }
 
 function statusMeta(status) {
-  if (status === "passed") return { icon: CheckCircle2, color: "text-emerald-300" };
-  if (status === "passed_with_warnings") return { icon: AlertTriangle, color: "text-amber-200" };
-  if (status === "failed" || status === "validation_error" || status === "timed_out") return { icon: XCircle, color: "text-rose-300" };
-  if (status === "cancelled") return { icon: StopCircle, color: "text-gray-300" };
-  return { icon: Loader2, color: "text-cyan-300", spin: true };
+  if (status === "passed") return { icon: CheckCircle2, color: " text-[var(--ds-success)] " };
+  if (status === "passed_with_warnings") return { icon: AlertTriangle, color: " text-[var(--ds-warning)] " };
+  if (status === "failed" || status === "validation_error" || status === "timed_out") return { icon: XCircle, color: " text-[var(--ds-danger)] " };
+  if (status === "cancelled") return { icon: StopCircle, color: "text-[var(--ds-text-secondary)]" };
+  return { icon: Loader2, color: "text-[var(--ds-info)]", spin: true };
 }
 
 function formatVec(vec) {
@@ -176,14 +176,14 @@ export default function StudioValidationPanel({
   };
 
   return (
-    <section className="mt-3 rounded-lg border border-emerald-300/20 bg-emerald-300/[0.04] p-3 text-xs text-white">
+    <section className="mt-3 rounded-lg border border-[color-mix(in_srgb,var(--ds-success)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-success)_12%,transparent)] p-3 text-xs text-[var(--ds-text)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-sm font-black">
-            <ShieldCheck className="h-4 w-4 text-emerald-300" />
+            <ShieldCheck className="h-4 w-4 text-[var(--ds-success)] " />
             <span>{prepared?.targetName || report?.target?.name || "Studio validation"}</span>
           </div>
-          <div className="mt-1 text-white/55">
+          <div className="mt-1 text-[var(--ds-text-muted)]">
             {title(targetType)} · {prepared?.targetReference?.path || report?.target?.path || "Studio project"}
           </div>
         </div>
@@ -200,7 +200,7 @@ export default function StudioValidationPanel({
             type="button"
             onClick={() => setProfile(item)}
             disabled={busy}
-            className={`rounded-md border px-3 py-2 font-bold ${profile === item ? "border-emerald-300 bg-emerald-300/15 text-emerald-100" : "border-white/10 text-white/65 hover:bg-white/5"} disabled:opacity-50`}
+            className={`rounded-md border px-3 py-2 font-bold ${profile === item ? "border-[var(--ds-success)] bg-[color-mix(in_srgb,var(--ds-success)_12%,transparent)]  text-[var(--ds-success)] " : "border-[var(--ds-border-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-subtle)]"} disabled:opacity-50`}
           >
             {profileLabel(item)}
           </button>
@@ -208,33 +208,33 @@ export default function StudioValidationPanel({
       </div>
 
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <div className="rounded-md border border-white/10 bg-black/20 p-2">
-          <div className="font-bold text-white/80">Checks</div>
+        <div className="rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2">
+          <div className="font-bold text-[var(--ds-text)]">Checks</div>
           <div className="mt-1 flex flex-wrap gap-1">
             {checks.map((check) => (
-              <span key={check} className="rounded border border-white/10 px-2 py-1 text-white/60">{title(check)}</span>
+              <span key={check} className="rounded border border-[var(--ds-border-subtle)] px-2 py-1 text-[var(--ds-text-secondary)]">{title(check)}</span>
             ))}
           </div>
         </div>
-        <div className="rounded-md border border-white/10 bg-black/20 p-2">
-          <div className="font-bold text-white/80">Playtest</div>
-          <div className="mt-1 text-white/60">
+        <div className="rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2">
+          <div className="font-bold text-[var(--ds-text)]">Playtest</div>
+          <div className="mt-1 text-[var(--ds-text-secondary)]">
             {plan?.playtest?.enabled ? `Explicit approval required. Max ${plan.playtest.durationSeconds}s.` : "Not included in this profile."}
           </div>
           {plan?.playtest?.unavailableCode && (
-            <div className="mt-1 text-amber-200">Automation unavailable; report includes a manual playtest recommendation.</div>
+            <div className="mt-1 text-[var(--ds-warning)] ">Automation unavailable; report includes a manual playtest recommendation.</div>
           )}
         </div>
       </div>
 
       {needsPlaytestConfirm && (
-        <label className="mt-3 flex items-center gap-2 rounded-md border border-amber-300/25 bg-amber-300/10 p-2 text-amber-100">
+        <label className="mt-3 flex items-center gap-2 rounded-md border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] p-2 text-[var(--ds-warning)] ">
           <input type="checkbox" checked={playtestConfirmed} onChange={(event) => setPlaytestConfirmed(event.target.checked)} />
           Confirm the bounded playtest validation profile.
         </label>
       )}
 
-      {error && <div className="mt-3 rounded-md border border-rose-300/25 bg-rose-300/10 p-2 text-rose-100">{error}</div>}
+      {error && <div className="mt-3 rounded-md border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] p-2 text-[var(--ds-danger)] ">{error}</div>}
 
       {report && (
         <div className="mt-3 space-y-3">
@@ -255,7 +255,7 @@ export default function StudioValidationPanel({
                 key={item}
                 type="button"
                 onClick={() => setSeverity(item)}
-                className={`rounded border px-2 py-1 font-bold ${severity === item ? "border-white/40 text-white" : "border-white/10 text-white/55"}`}
+                className={`rounded border px-2 py-1 font-bold ${severity === item ? "border-[var(--ds-border-strong)] text-[var(--ds-text)]" : "border-[var(--ds-border-subtle)] text-[var(--ds-text-muted)]"}`}
               >
                 {item}
               </button>
@@ -263,20 +263,20 @@ export default function StudioValidationPanel({
           </div>
           <div className="max-h-56 space-y-2 overflow-auto">
             {issues.map((issue, index) => (
-              <div key={`${issue.code}-${index}`} className="rounded-md border border-white/10 bg-black/20 p-2">
-                <div className="font-black uppercase tracking-widest text-white/50">{issue.severity} · {issue.code}</div>
-                <div className="mt-1 text-white/85">{issue.message}</div>
-                {issue.targetPath && <div className="mt-1 text-white/45">{issue.targetPath}</div>}
-                {issue.recommendation && <div className="mt-1 text-emerald-100/80">{issue.recommendation}</div>}
+              <div key={`${issue.code}-${index}`} className="rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2">
+                <div className="font-black uppercase tracking-widest text-[var(--ds-text-muted)]">{issue.severity} · {issue.code}</div>
+                <div className="mt-1 text-[var(--ds-text)]">{issue.message}</div>
+                {issue.targetPath && <div className="mt-1 text-[var(--ds-text-muted)]">{issue.targetPath}</div>}
+                {issue.recommendation && <div className="mt-1 text-[var(--ds-success)] ">{issue.recommendation}</div>}
               </div>
             ))}
-            {!issues.length && <div className="rounded-md border border-white/10 p-2 text-white/55">No findings for this filter.</div>}
+            {!issues.length && <div className="rounded-md border border-[var(--ds-border-subtle)] p-2 text-[var(--ds-text-muted)]">No findings for this filter.</div>}
           </div>
-          <div className="text-white/45">Rules: {report.rulesVersion} · Completed: {report.completedAt || "pending"}</div>
+          <div className="text-[var(--ds-text-muted)]">Rules: {report.rulesVersion} · Completed: {report.completedAt || "pending"}</div>
           {session?.reportHistory?.length > 0 && (
-            <div className="rounded-md border border-white/10 bg-black/20 p-2">
-              <div className="font-bold text-white/80">History</div>
-              <div className="mt-1 space-y-1 text-white/55">
+            <div className="rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2">
+              <div className="font-bold text-[var(--ds-text)]">History</div>
+              <div className="mt-1 space-y-1 text-[var(--ds-text-muted)]">
                 {session.reportHistory.slice(-5).map((entry, index) => (
                   <div key={`${entry.executionId || index}-${entry.completedAt || index}`}>
                     {title(entry.status || "completed")} · {entry.completedAt || entry.executionId || "previous execution"}
@@ -293,22 +293,22 @@ export default function StudioValidationPanel({
           type="button"
           onClick={start}
           disabled={!canStart}
-          className="inline-flex items-center gap-2 rounded-md bg-emerald-300 px-3 py-2 font-black text-black disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex items-center gap-2 rounded-md bg-[var(--ds-success)] px-3 py-2 font-semibold text-[var(--ds-success-foreground)] disabled:cursor-not-allowed disabled:opacity-40"
         >
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
           Start validation
         </button>
-        <button type="button" onClick={copySummary} className="inline-flex items-center gap-2 rounded-md border border-white/10 px-3 py-2 font-bold text-white/70">
+        <button type="button" onClick={copySummary} className="inline-flex items-center gap-2 rounded-md border border-[var(--ds-border-subtle)] px-3 py-2 font-bold text-[var(--ds-text-secondary)]">
           <Clipboard className="h-3.5 w-3.5" />
           Copy summary
         </button>
         {FINAL_STATES.has(status) && (
-          <button type="button" onClick={rerun} disabled={rerunning} className="inline-flex items-center gap-2 rounded-md border border-white/10 px-3 py-2 font-bold text-white/70 disabled:opacity-40">
+          <button type="button" onClick={rerun} disabled={rerunning} className="inline-flex items-center gap-2 rounded-md border border-[var(--ds-border-subtle)] px-3 py-2 font-bold text-[var(--ds-text-secondary)] disabled:opacity-40">
             {rerunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
             Rerun
           </button>
         )}
-        <button type="button" onClick={cancel} className="inline-flex items-center gap-2 rounded-md border border-white/10 px-3 py-2 font-bold text-white/70">
+        <button type="button" onClick={cancel} className="inline-flex items-center gap-2 rounded-md border border-[var(--ds-border-subtle)] px-3 py-2 font-bold text-[var(--ds-text-secondary)]">
           <StopCircle className="h-3.5 w-3.5" />
           {RUNNING_STATES.has(status) ? "Cancel" : "Close"}
         </button>
@@ -319,9 +319,9 @@ export default function StudioValidationPanel({
 
 function Metric({ label, value }) {
   return (
-    <div className="rounded-md border border-white/10 bg-black/20 p-2">
-      <div className="text-white/45">{label}</div>
-      <div className="mt-1 font-black text-white">{value}</div>
+    <div className="rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2">
+      <div className="text-[var(--ds-text-muted)]">{label}</div>
+      <div className="mt-1 font-black text-[var(--ds-text)]">{value}</div>
     </div>
   );
 }

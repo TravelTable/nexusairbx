@@ -30,7 +30,7 @@ export default function SupportStaffRoute({ children }) {
   }, []);
 
   if (access.loading) {
-    return <div className="min-h-[60vh] bg-[#07090d] grid place-items-center text-sm text-slate-400">Checking staff access…</div>;
+    return <div className="grid min-h-[60vh] place-items-center bg-[var(--ds-bg-canvas)] text-sm text-[var(--ds-text-muted)]" role="status">Checking staff access…</div>;
   }
 
   if (!auth.currentUser) {

@@ -14,24 +14,24 @@ export default function GeneratedFileCard({ file, active, onSelect }) {
       type="button"
       onClick={onSelect}
       className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)] group ${
-        active ? "bg-white/[0.07] border border-white/10" : "border border-transparent hover:bg-white/[0.04]"
+        active ? "bg-[var(--ds-fill-hover)] border border-[var(--ds-border-subtle)]" : "border border-transparent hover:bg-[var(--ds-fill-subtle)]"
       }`}
       title={file.path}
     >
       <Icon className="w-4 h-4 shrink-0" style={{ color: meta.accent }} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          <span className={`text-[13px] font-semibold truncate ${active ? "text-white" : "text-gray-300 group-hover:text-white"}`}>
+          <span className={`text-[13px] font-semibold truncate ${active ? "text-[var(--ds-text)]" : "text-[var(--ds-text-secondary)] group-hover:text-[var(--ds-text)]"}`}>
             {file.name}
           </span>
-          {file.dirty && <span className="text-[#fee440] text-xs leading-none" title="Unsaved changes">●</span>}
+          {file.dirty && <span className="text-[var(--ds-warning)] text-xs leading-none" title="Unsaved changes">●</span>}
         </div>
-        <div className="text-[10px] text-gray-500 truncate">{meta.label}</div>
+        <div className="text-[10px] text-[var(--ds-text-muted)] truncate">{meta.label}</div>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
         {warningCount > 0 && (
           <AlertTriangle
-            className="w-3 h-3 text-yellow-400"
+            className="w-3 h-3 text-[var(--ds-warning)] "
             title={`${warningCount} warning${warningCount === 1 ? "" : "s"}`}
           />
         )}

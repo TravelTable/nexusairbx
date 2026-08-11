@@ -29,7 +29,7 @@
   display: inline-block;
   width: 0.45em;
   margin-left: 0.12em;
-  color: var(--nexus-cyan);
+  color: var(--ds-accent);
   content: "▍";
   animation: nexus-caret-blink 900ms steps(1, end) infinite;
 }
@@ -154,7 +154,7 @@
     background-color: transparent;
   }
   45% {
-    background-color: rgb(239 68 68 / 0.12);
+    background-color: color-mix(in srgb, var(--ds-danger) 12%, transparent);
   }
   100% {
     background-color: transparent;
@@ -166,7 +166,7 @@
     background-color: transparent;
   }
   45% {
-    background-color: rgb(0 245 212 / 0.08);
+    background-color: color-mix(in srgb, var(--ds-success) 8%, transparent);
   }
   100% {
     background-color: transparent;

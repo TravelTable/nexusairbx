@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+
+const PublicAccountContext = createContext(null);
 
 const focusClass =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5d4] focus-visible:ring-offset-2 focus-visible:ring-offset-[#10131b]";
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-surface-overlay)]";
 
-export default function PublicAccountState({ mobile = false }) {
+export function PublicAccountProvider({ children }) {
   const [account, setAccount] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [signOutState, setSignOutState] = useState("idle");
@@ -78,17 +80,32 @@ export default function PublicAccountState({ mobile = false }) {
     }
   }
 
+  return (
+    <PublicAccountContext.Provider
+      value={{ account, authReady, signOutState, supportUnreadCount, handleSignOut }}
+    >
+      {children}
+    </PublicAccountContext.Provider>
+  );
+}
+
+export default function PublicAccountState({ mobile = false }) {
+  const accountState = useContext(PublicAccountContext);
+  if (!accountState) return null;
+
+  const { account, authReady, signOutState, supportUnreadCount, handleSignOut } = accountState;
+
   const wrapperClass = mobile ? "grid gap-2" : "flex items-center gap-2";
   const controlHeightClass = mobile ? "h-11" : "h-10";
-  const primaryClass = `${focusClass} ${controlHeightClass} inline-flex items-center justify-center rounded-md bg-[#00f5d4] px-4 text-sm font-semibold text-[#06100e] transition-colors hover:bg-[#32f7dc]`;
-  const secondaryClass = `${focusClass} ${controlHeightClass} inline-flex items-center justify-center rounded-md border border-white/15 px-3.5 text-sm font-medium text-zinc-200 transition-colors hover:border-white/25 hover:bg-white/[0.06] hover:text-white`;
-  const menuItemClass = `${focusClass} flex min-h-11 items-center rounded-md px-3 text-sm text-zinc-200 hover:bg-white/[0.06] hover:text-white`;
+  const primaryClass = `${focusClass} ${controlHeightClass} inline-flex items-center justify-center rounded-lg bg-[var(--ds-accent)] px-4 text-sm font-semibold text-[var(--ds-accent-foreground)] transition-[background-color,transform] hover:bg-[var(--ds-accent-hover)] active:scale-[0.98] active:bg-[var(--ds-accent-pressed)] motion-reduce:transform-none`;
+  const secondaryClass = `${focusClass} ${controlHeightClass} inline-flex items-center justify-center rounded-lg border border-[var(--ds-border-strong)] bg-[var(--ds-fill-subtle)] px-3.5 text-sm font-medium text-[var(--ds-text-secondary)] transition-[background-color,border-color,color,transform] hover:border-[var(--ds-accent-border)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] active:scale-[0.98] motion-reduce:transform-none`;
+  const menuItemClass = `${focusClass} flex min-h-11 items-center rounded-lg px-3 text-sm text-[var(--ds-text-secondary)] transition-[background-color,color] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]`;
 
   if (!authReady) {
     return (
       <div className={wrapperClass} aria-label="Loading account controls">
-        <span className={`${controlHeightClass} w-20 animate-pulse rounded-md bg-white/[0.06]`} aria-hidden="true" />
-        <span className={`${controlHeightClass} w-28 animate-pulse rounded-md bg-white/[0.06]`} aria-hidden="true" />
+        <span className={`${controlHeightClass} w-20 animate-pulse rounded-lg bg-[var(--ds-fill-subtle)] motion-reduce:animate-none`} aria-hidden="true" />
+        <span className={`${controlHeightClass} w-28 animate-pulse rounded-lg bg-[var(--ds-fill-subtle)] motion-reduce:animate-none`} aria-hidden="true" />
       </div>
     );
   }
@@ -108,17 +125,17 @@ export default function PublicAccountState({ mobile = false }) {
         <summary className={`${secondaryClass} w-full cursor-pointer list-none gap-1.5 [&::-webkit-details-marker]:hidden`}>
           Account
           {supportUnreadCount > 0 ? (
-            <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[#00f5d4] px-1.5 text-[11px] font-bold text-[#06100e]" aria-label={`${supportUnreadCount} unread support ${supportUnreadCount === 1 ? "reply" : "replies"}`}>
+            <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--ds-accent)] px-1.5 text-[11px] font-bold text-[var(--ds-accent-foreground)]" aria-label={`${supportUnreadCount} unread support ${supportUnreadCount === 1 ? "reply" : "replies"}`}>
               {supportUnreadCount > 99 ? "99+" : supportUnreadCount}
             </span>
           ) : null}
-          <span aria-hidden="true" className="text-[10px] text-zinc-500 transition-transform group-open:rotate-180">▾</span>
+          <span aria-hidden="true" className="text-[10px] text-[var(--ds-text-muted)] transition-transform group-open:rotate-180 motion-reduce:transition-none">▾</span>
         </summary>
         <div className={mobile
-          ? "mt-2 rounded-md border border-white/10 bg-[#090b11] p-2"
-          : "absolute right-0 top-12 z-50 w-64 rounded-lg border border-white/10 bg-[#10131b] p-2 shadow-xl shadow-black/30"
+          ? "mt-2 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] p-2"
+          : "absolute right-0 top-12 z-50 w-64 origin-top-right rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-2 shadow-xl shadow-black/10"
         }>
-          <p className="truncate border-b border-white/10 px-3 pb-2 pt-1 text-xs text-zinc-500" title={account.email}>
+          <p className="truncate border-b border-[var(--ds-border-subtle)] px-3 pb-2 pt-1 text-xs text-[var(--ds-text-muted)]" title={account.email}>
             {account.email}
           </p>
           <a className={`${menuItemClass} mt-1`} href="/settings?tab=roblox">
@@ -133,13 +150,13 @@ export default function PublicAccountState({ mobile = false }) {
           <a className={`${menuItemClass} justify-between gap-3`} href="/support">
             <span>Support</span>
             {supportUnreadCount > 0 ? (
-              <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[#00f5d4] px-1.5 text-[11px] font-bold text-[#06100e]">
+              <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--ds-accent)] px-1.5 text-[11px] font-bold text-[var(--ds-accent-foreground)]">
                 {supportUnreadCount > 99 ? "99+" : supportUnreadCount}
               </span>
             ) : null}
           </a>
           <button
-            className={`${menuItemClass} w-full text-left disabled:cursor-wait disabled:text-zinc-500`}
+            className={`${menuItemClass} w-full text-left disabled:cursor-wait disabled:text-[var(--ds-text-muted)]`}
             type="button"
             onClick={handleSignOut}
             disabled={signOutState === "loading"}
@@ -147,7 +164,7 @@ export default function PublicAccountState({ mobile = false }) {
             {signOutState === "loading" ? "Signing out…" : "Sign out"}
           </button>
           {signOutState === "error" ? (
-            <p className="px-3 pb-1 pt-2 text-xs text-rose-300" role="status">
+            <p className="px-3 pb-1 pt-2 text-xs text-[var(--ds-danger)]" role="status">
               Could not sign out. Try again.
             </p>
           ) : null}

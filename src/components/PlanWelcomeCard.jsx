@@ -12,10 +12,10 @@ function PlanWelcomeCard({ isSubscriber, planKey, planInfo }) {
         <div className="mb-2">
           <PlanBadge plan={planKey} />
         </div>
-        <div className="text-2xl font-bold mb-2 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
+        <div className="text-2xl font-bold mb-2 bg-gradient-to-r from-[var(--ds-plan)] to-accent text-transparent bg-clip-text">
           {planInfo.welcome}
         </div>
-        <div className="text-gray-300 mb-4">{planInfo.welcomeTokens}</div>
+        <div className="text-[var(--ds-text-secondary)] mb-4">{planInfo.welcomeTokens}</div>
       </div>
     );
   }
@@ -24,10 +24,10 @@ function PlanWelcomeCard({ isSubscriber, planKey, planInfo }) {
       <div className="mb-2">
         <PlanBadge plan={planKey} />
       </div>
-      <div className="text-2xl font-bold mb-2 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
+      <div className="text-2xl font-bold mb-2 bg-gradient-to-r from-[var(--ds-plan)] to-accent text-transparent bg-clip-text">
         {planInfo.welcome}
       </div>
-      <div className="text-gray-300 mb-4">{planInfo.welcomeTokens}</div>
+      <div className="text-[var(--ds-text-secondary)] mb-4">{planInfo.welcomeTokens}</div>
       <Button
         type="button"
         onClick={() => navigate("/subscribe")}

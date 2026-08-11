@@ -48,20 +48,20 @@ function ModelRow({ model, selected, locked, onSelect }) {
       aria-selected={selected}
       onClick={() => onSelect(model)}
       className={`w-full flex items-center gap-2 px-2 py-2 rounded-xl text-left transition-all ${
-        selected ? "bg-[#00f5d4]/10 border border-[#00f5d4]/30" : "border border-transparent hover:bg-white/5"
+        selected ? "bg-[var(--ds-accent-soft)] border border-[var(--ds-accent-border)]" : "border border-transparent hover:bg-[var(--ds-fill-subtle)]"
       } ${locked ? "opacity-60" : ""}`}
     >
       <ModelProviderGlyph provider={model.provider} modelId={model.id} size={16} type="color" />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
-          <span className="text-xs font-bold text-white truncate">{model.name}</span>
-          {model.recommended && <Sparkles className="w-3 h-3 text-[#9b5de5] shrink-0" />}
+          <span className="text-xs font-bold text-[var(--ds-text)] truncate">{model.name}</span>
+          {model.recommended && <Sparkles className="w-3 h-3 text-[var(--ds-plan)] shrink-0" />}
         </div>
         <div className="flex items-center gap-2 mt-0.5">
-          {ctx && <span className="text-[9px] text-gray-500 font-mono">{ctx}</span>}
+          {ctx && <span className="text-[9px] text-[var(--ds-text-muted)] font-mono">{ctx}</span>}
           <span
             className={`text-[8px] font-black uppercase tracking-widest ${
-              billingCategory === "PREMIUM_DIRECT" ? "text-[#9b5de5]" : "text-[#00f5d4]"
+              billingCategory === "PREMIUM_DIRECT" ? "text-[var(--ds-plan)]" : "text-[var(--ds-accent)]"
             }`}
           >
             {billingLabel}
@@ -69,9 +69,9 @@ function ModelRow({ model, selected, locked, onSelect }) {
         </div>
       </div>
       {locked ? (
-        <Lock className="w-3.5 h-3.5 text-[#9b5de5] shrink-0" />
+        <Lock className="w-3.5 h-3.5 text-[var(--ds-plan)] shrink-0" />
       ) : selected ? (
-        <Check className="w-3.5 h-3.5 text-[#00f5d4] shrink-0" />
+        <Check className="w-3.5 h-3.5 text-[var(--ds-accent)] shrink-0" />
       ) : null}
     </button>
   );
@@ -201,7 +201,7 @@ export default function ModelSwitcher({
       ? createPortal(
           <div
             ref={menuRef}
-            className="z-[9999] overflow-y-auto rounded-2xl border border-white/10 bg-[#0D0D0D]/95 p-2 shadow-2xl backdrop-blur-2xl scrollbar-subtle"
+            className="z-[9999] overflow-y-auto rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] p-2 shadow-2xl backdrop-blur-2xl scrollbar-subtle"
             style={{
               position: menuPosition?.strategy || "fixed",
               width: menuPosition?.width ?? MENU_WIDTH,
@@ -214,7 +214,7 @@ export default function ModelSwitcher({
           >
             {suggestedModels.length > 0 && (
               <div className="mb-1">
-                <div className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-gray-600">
+                <div className="px-2 py-1.5 text-[9px] font-black uppercase tracking-widest text-[var(--ds-text-muted)]">
                   Suggested
                 </div>
                 {suggestedModels.map((model) => (
@@ -230,25 +230,25 @@ export default function ModelSwitcher({
             )}
 
             {sortedProviders.length > 0 && (
-              <div className="border-t border-white/5 pt-1 mt-1">
+              <div className="border-t border-[var(--ds-border-subtle)] pt-1 mt-1">
                 <button
                   type="button"
                   onClick={() => setBrowseOpen((prev) => !prev)}
-                  className="w-full flex items-center justify-between px-2 py-2 rounded-xl text-left hover:bg-white/5 transition-colors"
+                  className="w-full flex items-center justify-between px-2 py-2 rounded-xl text-left hover:bg-[var(--ds-fill-subtle)] transition-colors"
                   aria-expanded={browseOpen}
                 >
-                  <span className="text-[9px] font-black uppercase tracking-widest text-gray-600">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-[var(--ds-text-muted)]">
                     Browse all models
                   </span>
                   <ChevronDown
-                    className={`w-3.5 h-3.5 text-gray-500 transition-transform ${browseOpen ? "rotate-180" : ""}`}
+                    className={`w-3.5 h-3.5 text-[var(--ds-text-muted)] transition-transform ${browseOpen ? "rotate-180" : ""}`}
                   />
                 </button>
                 {browseOpen && (
                   <div className="mt-0.5">
                     {sortedProviders.map(([provider, list]) => (
                       <div key={provider} className="mb-1">
-                        <div className="px-2 py-1.5 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-gray-600">
+                        <div className="px-2 py-1.5 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-[var(--ds-text-muted)]">
                           <ModelProviderGlyph provider={provider} size={12} type="mono" />
                           {PROVIDER_LABELS[provider] || provider}
                         </div>
@@ -269,16 +269,16 @@ export default function ModelSwitcher({
             )}
 
             {suggestedModels.length === 0 && sortedProviders.length === 0 && (
-              <div className="px-3 py-4 text-xs text-gray-500 text-center">No models available.</div>
+              <div className="px-3 py-4 text-xs text-[var(--ds-text-muted)] text-center">No models available.</div>
             )}
 
             {!isStarterOrAbove && !isPremium && (
-              <p className="px-2 py-2 text-[10px] text-gray-500 text-center border-t border-white/5 mt-1">
+              <p className="px-2 py-2 text-[10px] text-[var(--ds-text-muted)] text-center border-t border-[var(--ds-border-subtle)] mt-1">
                 Upgrade to Starter to unlock model selection
               </p>
             )}
             {isStarterOrAbove && !isPremium && (
-              <p className="px-2 py-2 text-[10px] text-gray-500 text-center border-t border-white/5 mt-1">
+              <p className="px-2 py-2 text-[10px] text-[var(--ds-text-muted)] text-center border-t border-[var(--ds-border-subtle)] mt-1">
                 Premium Direct models require Pro
               </p>
             )}
@@ -296,7 +296,7 @@ export default function ModelSwitcher({
           updateMenuPosition();
           setOpen((o) => !o);
         }}
-        className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-gray-300 hover:text-white hover:bg-white/10 transition-all ${
+        className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--ds-fill-subtle)] border border-[var(--ds-border-subtle)] text-xs font-bold text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)] hover:bg-[var(--ds-fill-hover)] transition-all ${
           fullWidth ? "w-full justify-between" : "max-w-[240px]"
         }`}
         title="Select AI model"

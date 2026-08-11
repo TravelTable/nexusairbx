@@ -86,7 +86,7 @@ NexusRBX should feel:
 - dense without being cramped;
 - approachable without being childish.
 
-The interaction restraint may take cues from Cursor, VS Code, Linear, and Notion. Do not clone their visual styling. NexusRBX earns its identity through its Studio-aware workflow, exact state communication, typography, structure, and restrained cyan accent—not through decorative novelty.
+The interaction restraint may take cues from Apple, Cursor, VS Code, Linear, and Notion. Do not clone their visual styling. NexusRBX earns its identity through its Studio-aware workflow, exact state communication, typography, structure, and restrained blue accent—not through decorative novelty.
 
 ### 2.2 What NexusRBX is not
 
@@ -127,7 +127,7 @@ The product MUST prioritise:
 - stable pane geometry and predictable keyboard-driven navigation;
 - one canonical representation of each state, mode, target, and object.
 
-The product MUST NOT imitate Cursor through copied colours, icons, typography, component shapes, or proprietary interaction details. NexusRBX remains recognisable through its Studio-aware workflow, cyan accent, runtime truth model, terminology, and approval system.
+The product MUST NOT imitate Apple or Cursor through copied layouts, icons, proprietary interaction details, or platform-specific chrome. NexusRBX remains recognisable through its Studio-aware workflow, blue accent, runtime truth model, terminology, and approval system.
 
 ## 3. Scope and surface families
 
@@ -248,7 +248,7 @@ Legacy components may remain until they are touched. When a feature is materiall
 
 ## 6. Colour system
 
-NexusRBX is dark-first and currently dark-only. Do not add a partial light mode. A light theme requires complete semantic-token coverage and a deliberate product decision.
+NexusRBX supports complete dark and light appearances. The default `system` preference follows the operating system; explicit `dark` and `light` choices persist through settings. Every production web surface must consume semantic tokens so both resolved themes remain complete.
 
 ### 6.1 Canonical token direction
 
@@ -256,25 +256,24 @@ Raw palette values may appear in the central token definition. Product component
 
 ```css
 :root {
-  /* Brand */
-  --nexus-cyan: #00f5d4;
-  --nexus-purple: #9b5de5;
-  --nexus-pink: #f15bb5;
+  /* Brand and categorical colour */
+  --nexus-blue: #0a84ff;
+  --nexus-purple: #bf5af2;
 
   /* Base surfaces */
-  --ds-bg-canvas: #050505;
-  --ds-bg-workspace: #080a12;
-  --ds-bg-sidebar: #0b0d14;
-  --ds-surface-1: #0d0f15;
-  --ds-surface-2: #12151d;
-  --ds-surface-3: #171a23;
-  --ds-surface-overlay: rgba(13, 15, 21, 0.96);
+  --ds-bg-canvas: #050507;
+  --ds-bg-workspace: #08090d;
+  --ds-bg-sidebar: #0c0d12;
+  --ds-surface-1: #111217;
+  --ds-surface-2: #17181f;
+  --ds-surface-3: #1d1f27;
+  --ds-surface-overlay: rgba(17, 18, 23, 0.92);
 
   /* Interactive fills */
   --ds-fill-subtle: rgba(255, 255, 255, 0.035);
   --ds-fill-hover: rgba(255, 255, 255, 0.06);
   --ds-fill-active: rgba(255, 255, 255, 0.08);
-  --ds-fill-selected: rgba(255, 255, 255, 0.075);
+  --ds-fill-selected: rgba(10, 132, 255, 0.14);
 
   /* Borders */
   --ds-border-subtle: rgba(255, 255, 255, 0.07);
@@ -282,25 +281,46 @@ Raw palette values may appear in the central token definition. Product component
   --ds-border-strong: rgba(255, 255, 255, 0.16);
 
   /* Text */
-  --ds-text: #f8fafc;
-  --ds-text-secondary: #c5cad3;
-  --ds-text-muted: #9ca3af;
-  --ds-text-subtle: #6b7280;
-  --ds-text-disabled: #4b5563;
+  --ds-text: #f5f5f7;
+  --ds-text-secondary: #c7c7cc;
+  --ds-text-muted: #a1a1aa;
+  --ds-text-subtle: #71717a;
+  --ds-text-disabled: #52525b;
 
   /* Brand interaction */
-  --ds-accent: #00f5d4;
-  --ds-accent-hover: #36f7df;
-  --ds-accent-pressed: #00d8bc;
-  --ds-accent-foreground: #04100e;
-  --ds-accent-soft: rgba(0, 245, 212, 0.10);
-  --ds-accent-border: rgba(0, 245, 212, 0.28);
+  --ds-accent: #0a84ff;
+  --ds-accent-hover: #409cff;
+  --ds-accent-pressed: #0071e3;
+  --ds-accent-foreground: #ffffff;
+  --ds-accent-soft: rgba(10, 132, 255, 0.13);
+  --ds-accent-border: rgba(10, 132, 255, 0.38);
 
   /* Semantic state */
-  --ds-info: #00bbf9;
-  --ds-success: #34d399;
-  --ds-warning: #fbbf24;
-  --ds-danger: #fb7185;
+  --ds-info: #64d2ff;
+  --ds-success: #30d158;
+  --ds-warning: #ffd60a;
+  --ds-danger: #ff453a;
+  --ds-plan: #bf5af2;
+}
+
+:root[data-theme="light"] {
+  --ds-bg-canvas: #f5f5f7;
+  --ds-bg-workspace: #ffffff;
+  --ds-bg-sidebar: #f2f2f7;
+  --ds-surface-1: #ffffff;
+  --ds-surface-2: #f7f7f9;
+  --ds-surface-3: #ececf1;
+  --ds-text: #1d1d1f;
+  --ds-text-secondary: #48484a;
+  --ds-text-muted: #5e5e66;
+  --ds-accent: #007aff;
+  --ds-accent-hover: #0066d6;
+  --ds-accent-pressed: #0055b3;
+  --ds-info: #007a9e;
+  --ds-success: #248a3d;
+  --ds-warning: #9a6700;
+  --ds-danger: #d70015;
+  --ds-plan: #8e44ad;
 }
 ```
 
@@ -308,7 +328,7 @@ These names define the target semantics. Existing `--ai-*`, `--nexus-*`, HSL, an
 
 ### 6.2 Accent rules
 
-Cyan is the canonical NexusRBX interaction accent. It must be used sparingly so the workspace remains quiet. Use it for:
+Blue is the canonical NexusRBX interaction accent. It must be used sparingly so the workspace remains quiet. Use it for:
 
 - the primary action;
 - focus-visible rings;
@@ -317,25 +337,25 @@ Cyan is the canonical NexusRBX interaction accent. It must be used sparingly so 
 - live or actively running state;
 - restrained brand highlights.
 
-Do not use cyan as a general decorative border, glow, background wash, or persistent highlight around ordinary content.
+Do not use blue as a general decorative border, glow, background wash, or persistent highlight around ordinary content.
 
 Purple is secondary and categorical. Use it for Plan mode, selected model context, or a deliberate secondary AI category. It is not the default secondary-button colour.
 
-Pink is marketing-only unless a documented feature has a stable semantic reason for it. It must not become a third workspace accent.
+Decorative pink is retired. Do not introduce a third workspace accent without a documented semantic requirement.
 
 ### 6.3 Legacy colours
 
-- `#00e0c2` is a legacy cyan variant. New work uses `--ds-accent` / `#00f5d4`.
-- `#3855f6` is a legacy public CTA blue. Normal product CTAs use the canonical accent.
+- `#00e0c2`, `#00f5d4`, and cyan/teal utilities are legacy brand colours. New work uses `--ds-accent`.
+- `#3855f6` is a legacy blue variant. Normal product CTAs use the theme-resolved canonical accent.
 - Raw `#0D0D0D`, `#090b12`, `#0b0d14`, and similar values should be replaced by semantic surface tokens when the component is touched.
 
 ### 6.4 Semantic colour rules
 
-- Cyan: live, active, selected, primary action.
+- Blue: live, active, selected, primary action.
 - Green: completed, applied, verified success.
 - Amber: waiting, degraded, warning, user attention required.
 - Red: failed, invalid, destructive, target mismatch that prevents safe action.
-- Blue: information, queued external work, neutral connection detail.
+- Light blue: information, queued external work, neutral connection detail.
 - Purple: planning or AI mode category.
 - Grey: idle, cancelled, unavailable, secondary information.
 
@@ -402,11 +422,11 @@ Rules:
 
 ### 8.1 Font ownership
 
-- **Manrope** is the primary UI and body font.
-- **Sora** is the display font for public marketing headings and rare first-run or major empty-state headings.
+- The platform UI stack (`-apple-system`, `BlinkMacSystemFont`, `SF Pro`, `Segoe UI`, `system-ui`) owns UI, body, and display typography.
+- Marketing hierarchy comes from size, weight, optical tracking, and spacing rather than a separate decorative display family.
 - **JetBrains Mono** is for code, paths, identifiers, hashes, keyboard shortcuts, and fixed-width technical values.
 - LobeHub/model marks may use their supplied brand assets, but no new general UI font may be added.
-- Inter in the public frontend is legacy and should migrate to Manrope when touched.
+- Manrope, Sora, and Inter overrides are legacy and should migrate to the platform stack when touched.
 
 ### 8.2 Type scale
 
@@ -617,7 +637,7 @@ Disabled and loading are not interchangeable. A disabled control should not show
 
 #### Primary
 
-- Solid cyan background.
+- Solid blue background.
 - Dark foreground.
 - One dominant primary action per region.
 - Use a clear verb: “Apply to Studio”, “Create project”, “Save changes”.
@@ -651,7 +671,7 @@ Disabled and loading are not interchangeable. A disabled control should not show
 
 - Visible labels are required for settings, account, billing, and destructive forms. Placeholder text is not a label.
 - Workspace search may use an accessible label and placeholder when the context is unambiguous.
-- Inputs use a subtle surface, 1px border, and cyan focus treatment.
+- Inputs use a subtle surface, 1px border, and blue focus treatment.
 - Error copy appears adjacent to the field.
 - Helper text must be concise and remain visible when it explains a constraint.
 - Preserve user-entered text after an error.
@@ -823,7 +843,7 @@ Behaviour:
 - Preserve expanded state, pins, and scroll where practical.
 - Current project/chat selection expands into view.
 - Row height remains 31–34px.
-- Selected row uses a quiet fill plus a 2px cyan indicator.
+- Selected row uses a quiet fill plus a 2px blue indicator.
 - Overflow actions appear on hover, focus, or touch—not as permanent clutter.
 - Context-menu actions have an equivalent button/menu path.
 - Keyboard tree behaviour supports arrows, Home, End, Enter, and Space.
@@ -912,7 +932,7 @@ Required behaviour:
 - Enter submits.
 - Shift+Enter creates a new line.
 - IME composition must not accidentally submit.
-- Send is the primary cyan action.
+- Send is the primary blue action.
 - During generation, Send becomes a clear red Stop action only when stopping is available.
 - Prompt, attachments, selected context, mode, and target must not be silently lost after sign-in, upgrade, retry, or recoverable error.
 
@@ -1055,7 +1075,7 @@ The browser owns presentation and user intent. It does not advance or invent run
 | Idle | Muted | No active work |
 | Queued | Info | Accepted, waiting for an execution slot |
 | Planning | Purple | Preparing a plan, not yet applying changes |
-| Running | Cyan | Active backend/model/tool work |
+| Running | Blue | Active backend/model/tool work |
 | Waiting for user | Amber | A specific user decision or answer is required |
 | Waiting for Studio | Amber | Backend work may continue, but a Studio-dependent step is blocked |
 | Waiting for external service | Info | A named external dependency is pending |
@@ -1206,7 +1226,7 @@ Target WCAG 2.2 AA for all production product UI.
 
 ### 19.2 Focus
 
-Use a 2px cyan focus ring with sufficient offset and contrast against the current surface. Do not remove focus outlines without an equivalent visible replacement.
+Use a 2px theme-resolved blue focus ring with sufficient offset and contrast against the current surface. Do not remove focus outlines without an equivalent visible replacement.
 
 ### 19.3 Contrast
 
@@ -1280,8 +1300,8 @@ The public experience should look like a credible developer-tool company, not an
 
 ### 21.1 Public visual direction
 
-- Same Manrope/Sora/JetBrains Mono typography system.
-- Same canonical cyan accent.
+- Same platform UI/JetBrains Mono typography system.
+- Same canonical blue accent.
 - Dark neutral surfaces with more whitespace than the workspace.
 - Maximum content width around 1120–1200px.
 - Real product screenshots, diagrams, or verified examples over generic 3D decoration.
@@ -1299,7 +1319,7 @@ Avoid:
 - unsupported speed, safety, or quality claims;
 - invented customers, testimonials, ratings, or logos;
 - repeated “AI-powered” badges;
-- blue CTAs that create a second brand system.
+- CTA colours that create a second brand system.
 
 A single restrained gradient highlight may be used in the main marketing hero. It should not appear in normal product UI, docs, forms, or chat.
 
@@ -1364,7 +1384,7 @@ The plugin is part of the same product but follows native Studio conventions.
 
 The plugin’s subdued brand palette maps to the website semantics:
 
-- Primary/live cyan: pairing, selected tab, live state.
+- Primary/live blue: pairing, selected tab, live state.
 - Purple: working/planning.
 - Amber: connecting, reconnecting, confirming, warning.
 - Green: completed/success.
@@ -1535,12 +1555,12 @@ The following patterns are not part of NexusRBX:
 - Persistent explanatory copy where a tooltip, disclosure, or contextual status is sufficient.
 
 - Raw hex colours scattered through feature components.
-- New use of legacy `#00e0c2` or ordinary blue primary CTAs.
+- New use of legacy turquoise/cyan values or non-semantic primary CTA colours.
 - A different font on one page.
 - Direct imports from random icon packages.
 - Emoji used as controls.
 - Giant gradient headings inside the product workspace.
-- Cyan-to-purple gradient borders around normal cards.
+- Accent-to-purple gradient borders around normal cards.
 - Excessive glow, blur, or glass.
 - Cards around every section.
 - Cards nested repeatedly inside cards.
@@ -1572,9 +1592,9 @@ The repository currently contains valid product work alongside accumulated visua
 
 | Legacy pattern | Target |
 | --- | --- |
-| `#00e0c2` and `#00f5d4` both used as brand cyan | One canonical `--ds-accent` mapped to `#00f5d4` |
-| Public blue primary CTA | Canonical cyan primary action unless a documented campaign requires otherwise |
-| Inter in public frontend | Manrope |
+| `#00e0c2`, `#00f5d4`, cyan, and teal used as brand accents | One theme-resolved canonical `--ds-accent` |
+| Divergent public and product primary CTA colours | Canonical blue primary action |
+| Manrope, Sora, or Inter overrides | Platform UI font stack |
 | Raw dark hex values in JSX/CSS | Semantic surface tokens |
 | `font-black uppercase tracking-widest` on ordinary UI | Sentence case and 500–700 weight |
 | Custom local popovers and menus | Radix/shadcn behaviour with Nexus wrappers |

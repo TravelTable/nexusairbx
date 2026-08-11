@@ -37,7 +37,7 @@ const EMPTY_FORM = {
 };
 
 const FIELD_CLASS =
-  "mt-2 w-full rounded-md border border-white/15 bg-[#0a0d13] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-gray-600 focus:border-[#00f5d4] focus:ring-2 focus:ring-[#00f5d4]/20";
+  "mt-2 min-h-11 w-full rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-3 py-2.5 text-sm text-[var(--ds-text)] outline-none transition-colors placeholder:text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] focus:border-[var(--ds-accent-border)] focus:ring-2 focus:ring-[var(--ds-accent-soft)]";
 
 function buildTicketMessage(form) {
   const details = [];
@@ -53,9 +53,9 @@ function buildTicketMessage(form) {
 
 function Field({ label, hint, children }) {
   return (
-    <label className="block text-sm font-medium text-gray-200">
+    <label className="block text-sm font-medium text-[var(--ds-text-secondary)]">
       {label}
-      {hint && <span className="ml-2 font-normal text-gray-500">{hint}</span>}
+      {hint && <span className="ml-2 font-normal text-[var(--ds-text-muted)]">{hint}</span>}
       {children}
     </label>
   );
@@ -64,15 +64,15 @@ function Field({ label, hint, children }) {
 function SelfServiceLink({ href, icon: Icon, title, body, internal = false }) {
   const content = (
     <>
-      <Icon className="mt-0.5 h-5 w-5 shrink-0 text-[#00f5d4]" />
+      <Icon className="mt-0.5 h-5 w-5 shrink-0 text-[var(--ds-accent)]" />
       <span>
-        <span className="block font-semibold text-white">{title}</span>
-        <span className="mt-1 block text-sm leading-6 text-gray-400">{body}</span>
+        <span className="block font-semibold text-[var(--ds-text)]">{title}</span>
+        <span className="mt-1 block text-sm leading-6 text-[var(--ds-text-muted)]">{body}</span>
       </span>
     </>
   );
   const className =
-    "flex gap-3 border-b border-white/10 py-4 text-left transition first:pt-0 last:border-0 last:pb-0 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5d4]";
+    "flex min-h-11 gap-3 border-b border-[var(--ds-border-subtle)] py-4 text-left transition-colors first:pt-0 last:border-0 last:pb-0 hover:text-[var(--ds-text)] focus-visible:rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)]";
   return internal ? (
     <Link to={href} className={className}>{content}</Link>
   ) : (
@@ -155,14 +155,14 @@ export default function ContactPage() {
   const security = form.category === "security_privacy";
 
   return (
-    <main className="min-h-[calc(100vh-4rem)] bg-[#07090d] text-white">
-      <section className="border-b border-white/10">
+    <main className="min-h-[calc(100vh-4rem)] bg-[var(--ds-bg-canvas)] text-[var(--ds-text)]">
+      <section className="border-b border-[var(--ds-border-subtle)]">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#00f5d4]">Contact NexusRBX</p>
-          <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
+          <p className="text-sm font-semibold text-[var(--ds-accent)]">Contact NexusRBX</p>
+          <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">
             Tell us what happened. Keep the details in one place.
           </h1>
-          <p className="mt-5 max-w-2xl text-base leading-7 text-gray-400 sm:text-lg">
+          <p className="mt-5 max-w-2xl text-base leading-7 text-[var(--ds-text-muted)] sm:text-lg">
             You can read the form and prepare a request without an account. Sign in only when you are ready to send it and receive replies.
           </p>
         </div>
@@ -170,15 +170,15 @@ export default function ContactPage() {
 
       <section className="mx-auto grid max-w-6xl gap-12 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-8 lg:py-16">
         <form onSubmit={submit} className="min-w-0" noValidate>
-          <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-6">
+          <div className="flex items-start justify-between gap-4 border-b border-[var(--ds-border-subtle)] pb-6">
             <div>
               <h2 className="text-2xl font-semibold">New support request</h2>
-              <p className="mt-2 text-sm leading-6 text-gray-400">
+              <p className="mt-2 text-sm leading-6 text-[var(--ds-text-muted)]">
                 Requests are private to the signed-in account that creates them.
               </p>
             </div>
             {user && (
-              <span className="max-w-[220px] truncate text-xs text-gray-500" title={user.email || ""}>
+              <span className="max-w-[220px] truncate text-xs text-[var(--ds-text-muted)]" title={user.email || ""}>
                 {user.email}
               </span>
             )}
@@ -222,8 +222,8 @@ export default function ContactPage() {
             </Field>
 
             {technical && (
-              <fieldset className="grid gap-5 border-l-2 border-white/10 pl-5">
-                <legend className="mb-4 text-sm font-semibold text-white">Technical details</legend>
+              <fieldset className="grid gap-5 border-l-2 border-[var(--ds-border)] pl-5">
+                <legend className="mb-4 text-sm font-semibold text-[var(--ds-text)]">Technical details</legend>
                 <Field label="Error shown" hint="Optional">
                   <textarea className={FIELD_CLASS} rows={3} value={form.errorMessage} onChange={(event) => update("errorMessage", event.target.value)} />
                 </Field>
@@ -260,25 +260,25 @@ export default function ContactPage() {
               </Field>
             )}
 
-            <div className="flex gap-3 border border-amber-400/25 bg-amber-400/[0.06] p-4 text-sm leading-6 text-amber-100">
+            <div className="flex gap-3 rounded-lg border border-[color-mix(in_srgb,var(--ds-warning)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-warning)_7%,transparent)] p-4 text-sm leading-6 text-[var(--ds-warning)]">
               <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
               <p>Do not include passwords, API keys, login codes, card numbers, or Roblox credentials. NexusRBX staff will not ask for them in a ticket.</p>
             </div>
 
             {status.state === "error" && (
-              <div role="alert" className="border border-red-400/30 bg-red-400/[0.07] px-4 py-3 text-sm text-red-100">
+              <div role="alert" className="rounded-lg border border-[color-mix(in_srgb,var(--ds-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-danger)_7%,transparent)] px-4 py-3 text-sm text-[var(--ds-danger)]">
                 {status.message}
               </div>
             )}
 
-            <div className="flex flex-col gap-3 border-t border-white/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-gray-500">
+            <div className="flex flex-col gap-3 border-t border-[var(--ds-border-subtle)] pt-6 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-[var(--ds-text-muted)]">
                 {user ? `Replies will go to the verified account ${user.email}.` : "Your draft is kept in this tab while you sign in."}
               </p>
               <button
                 type="submit"
                 disabled={status.state === "submitting" || !authReady || form.subject.trim().length < 5 || !form.message.trim()}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#00f5d4] px-5 text-sm font-semibold text-black transition hover:bg-[#20e5cc] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-[var(--ds-accent)] px-5 text-sm font-semibold text-[var(--ds-accent-foreground)] transition hover:bg-[var(--ds-accent-hover)] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {status.state === "submitting" ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquare className="h-4 w-4" />}
                 {user ? "Create request" : "Sign in to send"}
@@ -298,12 +298,12 @@ export default function ContactPage() {
             </div>
           </section>
 
-          <section className="border-t border-white/10 pt-8">
+          <section className="border-t border-[var(--ds-border-subtle)] pt-8">
             <h2 className="text-base font-semibold">What happens next</h2>
-            <ol className="mt-5 space-y-5 text-sm leading-6 text-gray-400">
-              <li className="flex gap-3"><CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-[#00f5d4]" /><span>Your request appears immediately in <strong className="font-medium text-gray-200">Your requests</strong>.</span></li>
-              <li className="flex gap-3"><Shield className="mt-0.5 h-5 w-5 shrink-0 text-[#00f5d4]" /><span>Only you and authorized NexusRBX support staff can read the conversation.</span></li>
-              <li className="flex gap-3"><MessageSquare className="mt-0.5 h-5 w-5 shrink-0 text-[#00f5d4]" /><span>Return to the ticket to read and reply. You can close it when the issue is finished.</span></li>
+            <ol className="mt-5 space-y-5 text-sm leading-6 text-[var(--ds-text-muted)]">
+              <li className="flex gap-3"><CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--ds-success)]" /><span>Your request appears immediately in <strong className="font-medium text-[var(--ds-text-secondary)]">Your requests</strong>.</span></li>
+              <li className="flex gap-3"><Shield className="mt-0.5 h-5 w-5 shrink-0 text-[var(--ds-accent)]" /><span>Only you and authorized NexusRBX support staff can read the conversation.</span></li>
+              <li className="flex gap-3"><MessageSquare className="mt-0.5 h-5 w-5 shrink-0 text-[var(--ds-accent)]" /><span>Return to the ticket to read and reply. You can close it when the issue is finished.</span></li>
             </ol>
           </section>
         </aside>

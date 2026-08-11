@@ -9,6 +9,7 @@ import {
   normalizeSettings,
   sanitizeSettingsPatch,
 } from "../lib/settingsSchema";
+import { subscribeToAppearanceTheme } from "../lib/appearanceTheme";
 
 const SettingsContext = createContext(null);
 
@@ -50,6 +51,23 @@ export function SettingsProvider({ children }) {
     settingsRef.current = settings;
   }, [settings]);
 
+  useEffect(() => subscribeToAppearanceTheme(settings.theme), [settings.theme]);
+
+  useEffect(() => {
+    const handleStorage = (event) => {
+      if (event.key !== SETTINGS_STORAGE_KEY || !event.newValue) return;
+      try {
+        const normalized = normalizeSettings(JSON.parse(event.newValue));
+        settingsRef.current = normalized;
+        setSettings(normalized);
+      } catch {
+        // Ignore malformed writes from another tab and keep the current state.
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
   const reloadSettings = useCallback(async (providedUser) => {
     const activeUser = providedUser || userRef.current;
     if (!activeUser) {
@@ -70,6 +88,7 @@ export function SettingsProvider({ children }) {
       }
 
       const normalized = normalizeSettings(data);
+      settingsRef.current = normalized;
       setSettings(normalized);
       persistLocalSettings(normalized);
       setSaveStatus("saved");
@@ -117,6 +136,7 @@ export function SettingsProvider({ children }) {
     const requestId = saveRequestRef.current + 1;
     saveRequestRef.current = requestId;
 
+    settingsRef.current = optimistic;
     setSettings(optimistic);
     persistLocalSettings(optimistic);
     setSaveStatus("saving");
@@ -145,6 +165,7 @@ export function SettingsProvider({ children }) {
 
       const serverSettings = normalizeSettings(data?.settings || optimistic);
       if (saveRequestRef.current === requestId) {
+        settingsRef.current = serverSettings;
         setSettings(serverSettings);
         persistLocalSettings(serverSettings);
         setSaveStatus("saved");
@@ -155,6 +176,7 @@ export function SettingsProvider({ children }) {
     } catch (error) {
       const message = parseSettingsError(error);
       if (saveRequestRef.current === requestId) {
+        settingsRef.current = previous;
         setSettings(previous);
         persistLocalSettings(previous);
         setSaveStatus("error");

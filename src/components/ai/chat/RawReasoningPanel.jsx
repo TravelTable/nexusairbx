@@ -53,32 +53,32 @@ export default function RawReasoningPanel({ text = "", live = false, embedded = 
       onOpenChange={handleOpenChange}
       className={cn(
         "overflow-hidden",
-        !embedded && "rounded-2xl border border-white/10 bg-[#0b0b0b]/90"
+        !embedded && "rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)]"
       )}
     >
       <CollapsibleTrigger asChild>
         <button
           type="button"
-          className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-white/[0.03] transition-colors"
+          className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-[var(--ds-fill-subtle)] transition-colors"
           aria-expanded={open}
         >
-          <Brain className={`w-3.5 h-3.5 ${live ? "text-[#00f5d4] motion-safe:animate-pulse" : "text-[#9b5de5]"}`} />
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
+          <Brain className={`w-3.5 h-3.5 ${live ? "text-[var(--ds-accent)] motion-safe:animate-pulse" : "text-[var(--ds-plan)]"}`} />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--ds-text-muted)]">
             {live ? "Thinking" : "Thought process"}
           </span>
-          <ChevronDown className={`w-3.5 h-3.5 ml-auto text-gray-500 transition-transform ${open ? "rotate-180" : ""}`} />
+          <ChevronDown className={`w-3.5 h-3.5 ml-auto text-[var(--ds-text-muted)] transition-transform ${open ? "rotate-180" : ""}`} />
         </button>
       </CollapsibleTrigger>
       <CollapsibleContent>
         <div
           ref={scrollerRef}
           onScroll={handleScroll}
-          className="max-h-[24rem] overflow-y-auto px-4 pb-4 pt-2 border-t border-white/5 scrollbar-subtle"
+          className="max-h-[24rem] overflow-y-auto px-4 pb-4 pt-2 border-t border-[var(--ds-border-subtle)] scrollbar-subtle"
         >
-          <div className="text-[13px] leading-relaxed text-gray-400 whitespace-pre-wrap font-mono">
+          <div className="text-[13px] leading-relaxed text-[var(--ds-text-secondary)] whitespace-pre-wrap font-mono">
             {clean}
             {live ? (
-              <span className="ml-0.5 inline-block h-3.5 w-[2px] translate-y-0.5 bg-[#00f5d4] motion-safe:animate-pulse" />
+              <span className="ml-0.5 inline-block h-3.5 w-[2px] translate-y-0.5 bg-[var(--ds-accent)] motion-safe:animate-pulse" />
             ) : null}
           </div>
         </div>

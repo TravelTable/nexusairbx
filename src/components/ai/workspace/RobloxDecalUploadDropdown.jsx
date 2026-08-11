@@ -369,7 +369,7 @@ export default function RobloxDecalUploadDropdown({
         type="button"
         variant="ghost"
         size="icon"
-        className="h-9 w-9 rounded-md border border-white/10 bg-white/[0.03] text-white/80 hover:bg-white/[0.08] hover:text-white"
+        className="h-9 w-9 rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
         aria-label="Upload Roblox decals"
         title="Upload Roblox decals"
         aria-expanded={open}
@@ -380,7 +380,7 @@ export default function RobloxDecalUploadDropdown({
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent
-          className="max-w-[min(92vw,420px)] gap-0 border-white/10 bg-[#10141d] p-0 text-white shadow-2xl [&>button]:text-white/70 [&>button]:hover:text-white"
+          className="max-w-[min(92vw,420px)] gap-0 border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] p-0 text-[var(--ds-text)] shadow-2xl [&>button]:text-[var(--ds-text-secondary)] [&>button]:hover:text-[var(--ds-text)]"
           onCloseAutoFocus={(event) => event.preventDefault()}
           onInteractOutside={(event) => event.preventDefault()}
           onPointerDownOutside={(event) => event.preventDefault()}
@@ -390,23 +390,23 @@ export default function RobloxDecalUploadDropdown({
             <DialogHeader className="space-y-0 text-left">
               <div className="flex items-start justify-between gap-3 pr-2">
                 <div>
-                  <DialogTitle className="text-sm font-semibold text-white">Upload decals</DialogTitle>
-                  <DialogDescription className="mt-1 text-xs leading-5 text-white/60">
+                  <DialogTitle className="text-sm font-semibold text-[var(--ds-text)]">Upload decals</DialogTitle>
+                  <DialogDescription className="mt-1 text-xs leading-5 text-[var(--ds-text-secondary)]">
                     Review images before Roblox receives anything.
                   </DialogDescription>
                 </div>
-                <Badge variant="outline" className="shrink-0 border-white/15 bg-white/[0.04] text-[11px] text-white/70">
+                <Badge variant="outline" className="shrink-0 border-[var(--ds-border-strong)] bg-[var(--ds-fill-subtle)] text-[11px] text-[var(--ds-text-secondary)]">
                   {devOverride ? "Dev: Unlimited per batch" : `${planLabel}: ${limit} per batch`}
                 </Badge>
               </div>
             </DialogHeader>
 
-            <Separator className="my-3 bg-white/10" />
+            <Separator className="my-3 bg-[var(--ds-fill-hover)]" />
 
             {!user ? (
-              <Alert className="border-amber-400/30 bg-amber-400/10 text-amber-50">
+              <Alert className=" border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)]  text-[var(--ds-warning)] ">
                 <AlertTitle>Sign in required</AlertTitle>
-                <AlertDescription className="mt-2 space-y-3 text-xs text-amber-50/80">
+                <AlertDescription className="mt-2 space-y-3 text-xs text-[var(--ds-warning)] ">
                   <p>Sign in before uploading decals to your Roblox account.</p>
                   <Button type="button" size="sm" onClick={startConnect}>Sign in</Button>
                 </AlertDescription>
@@ -416,19 +416,19 @@ export default function RobloxDecalUploadDropdown({
                 connected
                 capabilityIds={ROBLOX_UPLOAD_ASSET_CAPABILITIES}
                 onAuthorize={startReauthorization}
-                className="border-amber-400/30 bg-amber-400/10 text-amber-50"
+                className=" border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)]  text-[var(--ds-warning)] "
               />
             ) : !connected ? (
               <RobloxAuthorizationRequired
                 capabilityIds={ROBLOX_UPLOAD_ASSET_CAPABILITIES}
                 onAuthorize={startConnect}
-                className="border-white/10 bg-white/[0.04] text-white"
+                className="border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text)]"
                 actionLabel="Connect Roblox"
               />
             ) : !selectedCreator ? (
-              <Alert className="border-amber-400/30 bg-amber-400/10 text-amber-50">
+              <Alert className=" border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)]  text-[var(--ds-warning)] ">
                 <AlertTitle>Choose a creator target</AlertTitle>
-                <AlertDescription className="mt-2 space-y-3 text-xs text-amber-50/80">
+                <AlertDescription className="mt-2 space-y-3 text-xs text-[var(--ds-warning)] ">
                   <p>Select a Roblox user or group target before uploading decals.</p>
                   <Button type="button" size="sm" asChild>
                     <a href="/settings?tab=roblox">Open Roblox settings</a>
@@ -440,7 +440,7 @@ export default function RobloxDecalUploadDropdown({
             <div
               className={cn(
                 "mt-3 rounded-lg border border-dashed p-4 text-center transition-colors",
-                dragActive ? "border-cyan-300 bg-cyan-300/10" : "border-white/15 bg-white/[0.03]",
+                dragActive ? "border-[var(--ds-info)] bg-[color-mix(in_srgb,var(--ds-info)_10%,transparent)]" : "border-[var(--ds-border-strong)] bg-[var(--ds-fill-subtle)]",
                 uploading && "opacity-60"
               )}
               onDragEnter={(event) => {
@@ -454,9 +454,9 @@ export default function RobloxDecalUploadDropdown({
               }}
               onDrop={handleDrop}
             >
-              <UploadCloud className="mx-auto h-5 w-5 text-white/55" />
-              <div className="mt-2 text-sm font-medium text-white">Drop decal images here</div>
-              <p className="mt-1 text-xs text-white/50">PNG, JPG, BMP, or TGA. Folder selection keeps only image files.</p>
+              <UploadCloud className="mx-auto h-5 w-5 text-[var(--ds-text-muted)]" />
+              <div className="mt-2 text-sm font-medium text-[var(--ds-text)]">Drop decal images here</div>
+              <p className="mt-1 text-xs text-[var(--ds-text-muted)]">PNG, JPG, BMP, or TGA. Folder selection keeps only image files.</p>
               <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:justify-center">
                 <Button type="button" size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
                   Choose files
@@ -491,7 +491,7 @@ export default function RobloxDecalUploadDropdown({
             </div>
 
             {error ? (
-              <Alert variant="destructive" className="mt-3 bg-red-500/10 text-red-100">
+              <Alert variant="destructive" className="mt-3 bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)]  text-[var(--ds-danger)] ">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Upload blocked</AlertTitle>
                 <AlertDescription className="text-xs">{error}</AlertDescription>
@@ -499,7 +499,7 @@ export default function RobloxDecalUploadDropdown({
             ) : null}
 
             {overLimit ? (
-              <Alert className="mt-3 border-red-400/30 bg-red-400/10 text-red-50">
+              <Alert className="mt-3 border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)]  text-[var(--ds-danger)] ">
                 <AlertTitle>Batch limit exceeded</AlertTitle>
                 <AlertDescription className="text-xs">
                   {planLabel} can upload {limit} decals at a time. Remove {validItems.length - limit} to continue.
@@ -508,21 +508,21 @@ export default function RobloxDecalUploadDropdown({
             ) : null}
 
             {invalidItems.length ? (
-              <Alert className="mt-3 border-amber-400/30 bg-amber-400/10 text-amber-50">
+              <Alert className="mt-3 border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)]  text-[var(--ds-warning)] ">
                 <AlertTitle>{invalidItems.length} file{invalidItems.length === 1 ? "" : "s"} skipped</AlertTitle>
                 <AlertDescription className="text-xs">Only PNG, JPG, BMP, and TGA files can be uploaded as decals.</AlertDescription>
               </Alert>
             ) : null}
 
             {uploading && uploadTargetCount > 0 ? (
-              <div className="mt-3 text-xs text-cyan-100/80">
+              <div className="mt-3 text-xs text-[var(--ds-info)]">
                 Uploading {finishedUploadCount} of {uploadTargetCount} to Roblox…
               </div>
             ) : null}
 
             <div className="mt-3 space-y-2" aria-live="polite">
               {items.length === 0 ? (
-                <div className="rounded-md border border-white/10 bg-white/[0.03] p-3 text-xs text-white/55">
+                <div className="rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-3 text-xs text-[var(--ds-text-muted)]">
                   No decal images selected.
                 </div>
               ) : (
@@ -541,7 +541,7 @@ export default function RobloxDecalUploadDropdown({
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="w-full justify-center text-xs text-cyan-200 hover:text-cyan-100"
+                      className="w-full justify-center text-xs text-[var(--ds-info)] hover:text-[var(--ds-info)]"
                       onClick={() => setAllItemsDialogOpen(true)}
                     >
                       Show {hiddenItemCount} more
@@ -552,16 +552,16 @@ export default function RobloxDecalUploadDropdown({
             </div>
 
             {batch && uploadedItems.length > 0 ? (
-              <div className="mt-3 flex items-start gap-2 rounded-md border border-emerald-400/25 bg-emerald-400/10 p-3 text-xs text-emerald-50">
+              <div className="mt-3 flex items-start gap-2 rounded-md border border-[color-mix(in_srgb,var(--ds-success)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-success)_12%,transparent)] p-3 text-xs text-[var(--ds-success)] ">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
                   <div className="font-semibold">{uploadedItems.length} decal{uploadedItems.length === 1 ? "" : "s"} uploaded</div>
-                  <div className="mt-1 text-emerald-50/70">Use the shown rbxassetid values in Studio or generated code.</div>
+                  <div className="mt-1 text-[var(--ds-success)] ">Use the shown rbxassetid values in Studio or generated code.</div>
                 </div>
               </div>
             ) : null}
 
-            <Separator className="my-3 bg-white/10" />
+            <Separator className="my-3 bg-[var(--ds-fill-hover)]" />
 
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
               <Button type="button" variant="ghost" size="sm" onClick={clearItems} disabled={uploading || items.length === 0}>

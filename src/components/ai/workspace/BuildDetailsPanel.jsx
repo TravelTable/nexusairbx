@@ -59,8 +59,8 @@ export default function BuildDetailsPanel({
   ) {
     return (
       <div className="px-4 py-10 text-center">
-        <ClipboardList className="w-8 h-8 text-gray-700 mx-auto mb-2" />
-        <p className="text-xs text-gray-500">
+        <ClipboardList className="w-8 h-8 text-[var(--ds-text-muted)] mx-auto mb-2" />
+        <p className="text-xs text-[var(--ds-text-muted)]">
           Setup, testing, and security notes appear here after the agent builds something.
         </p>
       </div>

@@ -119,13 +119,13 @@ export default function StudioRunBlockNotice({ value, className = "" }) {
     <div
       className={`rounded-xl border px-3 py-2.5 text-xs ${
         isTarget
-          ? "border-[#00bbf9]/25 bg-[#00bbf9]/[0.07] text-blue-100"
-          : "border-amber-400/25 bg-amber-400/10 text-amber-100"
+          ? "border-[color-mix(in_srgb,var(--ds-info)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-info)_10%,transparent)] text-[var(--ds-info)] "
+          : " border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)]  text-[var(--ds-warning)] "
       } ${className}`}
       role="status"
     >
       <div className="flex items-start gap-2">
-        {isTarget ? <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#7ddcff]" /> : <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />}
+        {isTarget ? <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[var(--ds-info)]" /> : <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-[var(--ds-warning)] " />}
         <div className="min-w-0">
           <div className="font-semibold">{block.title}</div>
           <p className="mt-0.5 leading-relaxed text-current/80">{block.message}</p>

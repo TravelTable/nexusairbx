@@ -88,7 +88,7 @@ export default function HomepagePrompt({
 
   return (
     <form
-      className={cn("mt-7 rounded-2xl border border-white/10 bg-white/[0.04] p-3 shadow-2xl shadow-black/25 backdrop-blur md:max-w-2xl", className)}
+      className={cn("mt-7 rounded-2xl border border-[var(--ds-border-strong)] bg-[var(--ds-surface-overlay)] p-3 shadow-xl shadow-black/10 backdrop-blur md:max-w-2xl", className)}
       onSubmit={handleSubmit}
       data-generation-intent-form="homepage"
       aria-busy={submitting}
@@ -108,7 +108,7 @@ export default function HomepagePrompt({
           disabled={submitting}
           aria-invalid={Boolean(error)}
           aria-describedby="homepage-prompt-message"
-          className="h-12 flex-none border-white/10 bg-black/30 px-4 text-base text-white placeholder:text-zinc-500 sm:flex-1"
+          className="h-12 flex-none rounded-lg border-[var(--ds-border-strong)] bg-[var(--ds-surface-2)] px-4 text-base text-[var(--ds-text)] placeholder:text-[var(--ds-text-muted)] focus-visible:ring-[var(--ds-accent)] sm:flex-1"
         />
         <Button
           type="submit"
@@ -116,17 +116,17 @@ export default function HomepagePrompt({
             methodRef.current = "button";
           }}
           disabled={!prompt.trim() || submitting}
-          className="h-12 px-6 text-base font-bold sm:min-w-32"
+          className="h-12 rounded-lg bg-[var(--ds-accent)] px-6 text-base font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] active:bg-[var(--ds-accent-pressed)] sm:min-w-32"
         >
           {submitting ? homepagePrompt.loadingLabel : ctaText}
         </Button>
       </div>
       {error ? (
-        <p id="homepage-prompt-message" className="mt-3 text-sm font-semibold text-rose-300" role="alert">
+        <p id="homepage-prompt-message" className="mt-3 text-sm font-medium text-[var(--ds-danger)]" role="alert">
           {error}
         </p>
       ) : (
-        <p id="homepage-prompt-message" className="mt-3 text-xs font-semibold text-zinc-500">
+        <p id="homepage-prompt-message" className="mt-3 text-xs text-[var(--ds-text-muted)]">
           Your prompt is saved locally as a generation intent before opening the AI workspace.
         </p>
       )}

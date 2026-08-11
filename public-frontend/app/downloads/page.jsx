@@ -13,7 +13,7 @@ export default function DownloadsPage() {
   return (
     <>
       <PublicHeader />
-      <div className="bg-[#07090f]">
+      <div className="bg-[var(--ds-bg-canvas)] text-[var(--ds-text)]">
         <DownloadsContent />
         <HomepageFooter />
       </div>

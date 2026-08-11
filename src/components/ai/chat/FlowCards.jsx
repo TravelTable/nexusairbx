@@ -121,14 +121,14 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
 
   if (answered) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-        <div className="flex items-center gap-2 mb-2 text-[10px] font-black uppercase tracking-widest text-gray-500">
-          <Check className="w-3.5 h-3.5 text-[#00f5d4]" /> Answers submitted
+      <div className="rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-4">
+        <div className="flex items-center gap-2 mb-2 text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-muted)]">
+          <Check className="w-3.5 h-3.5 text-[var(--ds-accent)]" /> Answers submitted
         </div>
         <div className="space-y-1">
           {Object.entries(message.answers || {}).map(([k, v]) => (
-            <div key={k} className="text-[13px] text-gray-300">
-              <span className="text-gray-500">{k}:</span> {Array.isArray(v) ? v.join(", ") : String(v)}
+            <div key={k} className="text-[13px] text-[var(--ds-text-secondary)]">
+              <span className="text-[var(--ds-text-muted)]">{k}:</span> {Array.isArray(v) ? v.join(", ") : String(v)}
             </div>
           ))}
         </div>
@@ -137,8 +137,8 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
   }
 
   return (
-    <div className="rounded-2xl border border-[#9b5de5]/25 bg-[#9b5de5]/5 p-4 space-y-4">
-      <div className="flex items-center gap-2 font-display text-sm font-bold text-[#9b5de5]">
+    <div className="rounded-2xl border border-[color-mix(in_srgb,var(--ds-plan)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)] p-4 space-y-4">
+      <div className="flex items-center gap-2 font-display text-sm font-bold text-[var(--ds-plan)]">
         <HelpCircle className="w-4 h-4" /> A few quick questions
       </div>
 
@@ -161,10 +161,10 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
               : "";
           return (
           <div key={questionId} className="space-y-2">
-            <div className="text-[14px] text-gray-100 font-medium">
+            <div className="text-[14px] text-[var(--ds-text)] font-medium">
               {q.question || q.prompt}
-              {q.required === false ? <span className="ml-1 text-[11px] font-normal text-gray-500">(optional)</span> : null}
-              {multiSelect ? <span className="ml-1 text-[11px] font-normal text-gray-500">(select all that apply)</span> : null}
+              {q.required === false ? <span className="ml-1 text-[11px] font-normal text-[var(--ds-text-muted)]">(optional)</span> : null}
+              {multiSelect ? <span className="ml-1 text-[11px] font-normal text-[var(--ds-text-muted)]">(select all that apply)</span> : null}
             </div>
             {options.length > 0 && (
               <div className="grid gap-2 sm:grid-cols-2">
@@ -193,20 +193,20 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
                       }}
                       className={`min-h-[44px] rounded-xl border px-3 py-2 text-left text-[12px] transition-colors ${
                         selected
-                          ? "bg-[#9b5de5] text-white border-[#9b5de5]"
-                          : "bg-white/5 text-gray-300 border-white/10 hover:bg-white/10"
+                          ? "bg-[var(--ds-plan)] text-[var(--ds-plan-foreground)] border-[var(--ds-plan)]"
+                          : "bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] border-[var(--ds-border-subtle)] hover:bg-[var(--ds-fill-hover)]"
                       }`}
                       aria-pressed={selected}
                     >
                       <span className="flex items-center justify-between gap-2 font-bold">
                         <span>{option.label}</span>
                         {option.recommended ? (
-                          <span className={`text-[9px] uppercase tracking-wider ${selected ? "text-white/80" : "text-[#00f5d4]"}`}>
+                          <span className={`text-[9px] uppercase tracking-wider ${selected ? "text-[var(--ds-text)]" : "text-[var(--ds-accent)]"}`}>
                             Recommended
                           </span>
                         ) : null}
                       </span>
-                      {option.description && <span className={`mt-0.5 block text-[11px] leading-snug ${selected ? "text-white/75" : "text-gray-500"}`}>{option.description}</span>}
+                      {option.description && <span className={`mt-0.5 block text-[11px] leading-snug ${selected ? "text-[var(--ds-text-secondary)]" : "text-[var(--ds-text-muted)]"}`}>{option.description}</span>}
                     </button>
                   );
                 })}
@@ -231,7 +231,7 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
                 }}
                 placeholder="Type an answer…"
                 aria-label={`Custom answer for ${q.question || q.prompt || `question ${questionIndex + 1}`}`}
-                className="w-full min-h-[44px] bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-[13px] text-gray-100 placeholder-gray-600 focus:outline-none focus:border-[#9b5de5]/50"
+                className="w-full min-h-[44px] bg-[var(--ds-fill-hover)] border border-[var(--ds-border-subtle)] rounded-xl px-3 py-2 text-[13px] text-[var(--ds-text)] placeholder-gray-600 focus:outline-none focus:border-[color-mix(in_srgb,var(--ds-plan)_45%,transparent)]"
               />
             ) : null}
           </div>
@@ -243,13 +243,13 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
         type="button"
         disabled={disabled || !canContinue}
         onClick={() => onSubmit?.(message, answers)}
-        className="w-full py-2.5 rounded-xl bg-[#9b5de5] text-white font-black text-sm flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-[background-color,color,opacity,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full py-2.5 rounded-xl bg-[var(--ds-plan)] text-[var(--ds-plan-foreground)] font-black text-sm flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-[background-color,color,opacity,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {disabled ? <Loader className="w-4 h-4" /> : <SendPrompt className="w-4 h-4" />}
         Continue
       </button>
       {!canContinue && (
-        <p className="text-[11px] text-gray-500 text-center">Answer every required question to continue.</p>
+        <p className="text-[11px] text-[var(--ds-text-muted)] text-center">Answer every required question to continue.</p>
       )}
     </div>
   );
@@ -270,14 +270,14 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
   const opensEditableWorkspace = typeof onApprove !== "function" && typeof onEdit === "function";
 
   return (
-    <Plan defaultOpen className="border-[#00f5d4]/25 bg-[#00f5d4]/5">
+    <Plan defaultOpen className="border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)]">
       <PlanHeader className="pb-4">
         <div className="space-y-1">
-          <PlanTitle className="flex items-center gap-2 text-sm font-bold text-[#00f5d4]">
+          <PlanTitle className="flex items-center gap-2 text-sm font-bold text-[var(--ds-accent)]">
             <ListChecks className="w-4 h-4" /> Implementation plan
           </PlanTitle>
           {message.aiSummary && !hasMarkdownPlan ? (
-            <PlanDescription className="text-gray-300">{message.aiSummary}</PlanDescription>
+            <PlanDescription className="text-[var(--ds-text-secondary)]">{message.aiSummary}</PlanDescription>
           ) : null}
         </div>
         <PlanAction className="flex items-center gap-1">
@@ -295,18 +295,18 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
           <>
             {message.aiSummary && (
               <div className="space-y-1">
-                <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Goal</div>
-                <div className="text-[14px] text-gray-100 leading-relaxed">{message.aiSummary}</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-muted)]">Goal</div>
+                <div className="text-[14px] text-[var(--ds-text)] leading-relaxed">{message.aiSummary}</div>
               </div>
             )}
 
             {steps.length > 0 && (
               <div className="space-y-2">
-                <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Implementation</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-muted)]">Implementation</div>
                 <ol className="space-y-2">
                   {steps.map((step, idx) => (
-                    <li key={idx} className="flex items-start gap-3 text-[13px] text-gray-300">
-                      <span className="mt-0.5 w-5 h-5 shrink-0 rounded-full bg-black/40 border border-white/10 flex items-center justify-center text-[10px] font-black text-[#00f5d4]">
+                    <li key={idx} className="flex items-start gap-3 text-[13px] text-[var(--ds-text-secondary)]">
+                      <span className="mt-0.5 w-5 h-5 shrink-0 rounded-full bg-[var(--ds-fill-hover)] border border-[var(--ds-border-subtle)] flex items-center justify-center text-[10px] font-black text-[var(--ds-accent)]">
                         {idx + 1}
                       </span>
                       <span>{step}</span>
@@ -318,10 +318,10 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
 
             {assumptions.length > 0 && (
               <div className="space-y-2">
-                <div className="text-[10px] font-black uppercase tracking-widest text-gray-500">Assumptions</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-muted)]">Assumptions</div>
                 <ul className="space-y-1.5">
                   {assumptions.map((assumption, idx) => (
-                    <li key={idx} className="text-[13px] text-gray-400 leading-relaxed">
+                    <li key={idx} className="text-[13px] text-[var(--ds-text-secondary)] leading-relaxed">
                       {assumption}
                     </li>
                   ))}
@@ -340,14 +340,14 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
                   <span
                     className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider border ${
                       done
-                        ? "bg-[#00f5d4]/10 border-[#00f5d4]/30 text-[#00f5d4]"
-                        : "bg-black/30 border-white/10 text-gray-500"
+                        ? "bg-[var(--ds-accent-soft)] border-[var(--ds-accent-border)] text-[var(--ds-accent)]"
+                        : "bg-[var(--ds-fill-subtle)] border-[var(--ds-border-subtle)] text-[var(--ds-text-muted)]"
                     }`}
                   >
                     {done && <Check className="w-2.5 h-2.5" />}
                     {s.label || s.id}
                   </span>
-                  {idx < lifecycle.length - 1 && <span className="text-gray-700 text-[10px]">→</span>}
+                  {idx < lifecycle.length - 1 && <span className="text-[var(--ds-text-muted)] text-[10px]">→</span>}
                 </React.Fragment>
               );
             })}
@@ -357,22 +357,22 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
 
       <PlanFooter className="flex-col items-stretch gap-3 pt-0">
         {approved ? (
-          <div className="w-full py-2.5 rounded-xl bg-black/30 border border-white/10 text-gray-400 font-bold text-sm flex items-center justify-center gap-2">
-            <Check className="w-4 h-4 text-[#00f5d4]" /> Approved — building…
+          <div className="w-full py-2.5 rounded-xl bg-[var(--ds-fill-subtle)] border border-[var(--ds-border-subtle)] text-[var(--ds-text-secondary)] font-bold text-sm flex items-center justify-center gap-2">
+            <Check className="w-4 h-4 text-[var(--ds-accent)]" /> Approved — building…
           </div>
         ) : (
           <>
-            <div className="text-[12px] text-gray-400 leading-relaxed">
+            <div className="text-[12px] text-[var(--ds-text-secondary)] leading-relaxed">
               {opensEditableWorkspace
                 ? "Review, edit, and check this plan before starting execution."
-                : <>Reply with <span className="font-bold text-gray-200">Start build</span> to approve this plan, or tell me what you want changed.</>}
+                : <>Reply with <span className="font-bold text-[var(--ds-text)]">Start build</span> to approve this plan, or tell me what you want changed.</>}
             </div>
             {opensEditableWorkspace ? (
               <Button
                 type="button"
                 disabled={disabled}
                 onClick={() => onEdit(message)}
-                className="flex-1 bg-[#00f5d4] text-black font-black hover:bg-[#00f5d4]/90"
+                className="flex-1 bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] font-black hover:bg-[var(--ds-accent-hover)]"
               >
                 {disabled ? <Loader className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
                 Review &amp; edit plan
@@ -383,7 +383,7 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
                   type="button"
                   disabled={disabled}
                   onClick={() => onApprove?.(message)}
-                  className="flex-1 bg-[#00f5d4] text-black font-black hover:bg-[#00f5d4]/90"
+                  className="flex-1 bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] font-black hover:bg-[var(--ds-accent-hover)]"
                 >
                   {disabled ? <Loader className="w-4 h-4" /> : <SendPrompt className="w-4 h-4" />}
                   Approve &amp; Build

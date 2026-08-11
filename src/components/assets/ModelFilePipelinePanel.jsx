@@ -603,18 +603,18 @@ export default function ModelFilePipelinePanel({ notify }) {
   };
 
   return (
-    <section className="border-t border-white/10 bg-[#080a12] px-3 py-3 text-xs text-white">
+    <section className="border-t border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)] px-3 py-3 text-xs text-[var(--ds-text)]">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
-          <FileArchive className="h-4 w-4 text-cyan-300" />
+          <FileArchive className="h-4 w-4 text-[var(--ds-info)]" />
           <div className="min-w-0">
             <div className="font-black">GLB model files</div>
-            <div className="truncate text-white/45">{activeLabel}</div>
+            <div className="truncate text-[var(--ds-text-muted)]">{activeLabel}</div>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <input ref={fileInputRef} type="file" accept=".glb,model/gltf-binary" className="hidden" onChange={handleFile} />
-          <button type="button" onClick={() => fileInputRef.current?.click()} className="inline-flex items-center gap-1 rounded-md border border-white/10 px-2 py-1 font-bold text-white/70 hover:bg-white/5">
+          <button type="button" onClick={() => fileInputRef.current?.click()} className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-[var(--ds-border)] px-2 py-1 font-semibold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]">
             {busy === "upload" || busy === "complete" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UploadCloud className="h-3.5 w-3.5" />}
             Upload GLB
           </button>
@@ -622,7 +622,7 @@ export default function ModelFilePipelinePanel({ notify }) {
             type="button"
             onClick={() => refresh().catch(() => {})}
             disabled={retryDisabled}
-            className="rounded-md border border-white/10 p-1.5 text-white/60 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+            className="rounded-lg border border-[var(--ds-border)] p-1.5 text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
             aria-label="Refresh model files"
           >
             <RefreshCw className="h-3.5 w-3.5" />
@@ -630,17 +630,17 @@ export default function ModelFilePipelinePanel({ notify }) {
         </div>
       </div>
 
-      <div className="mt-2 text-white/45">Limit: {formatBytes(sizeLimit)}</div>
+      <div className="mt-2 text-[var(--ds-text-muted)]">Limit: {formatBytes(sizeLimit)}</div>
       {progress && (
         <div className="mt-2">
-          <div className="h-1.5 overflow-hidden rounded bg-white/10">
-            <div className="h-full bg-cyan-300" style={{ width: `${progressPercent || 0}%` }} />
+          <div className="h-1.5 overflow-hidden rounded bg-[var(--ds-fill-active)]">
+            <div className="h-full bg-[var(--ds-accent)]" style={{ width: `${progressPercent || 0}%` }} />
           </div>
-          <div className="mt-1 text-white/45">{busy === "complete" ? "Verifying upload" : `${formatBytes(progress.loaded)} / ${formatBytes(progress.total)}`}</div>
+          <div className="mt-1 text-[var(--ds-text-muted)]">{busy === "complete" ? "Verifying upload" : `${formatBytes(progress.loaded)} / ${formatBytes(progress.total)}`}</div>
         </div>
       )}
       {error && (
-        <div className="mt-2 rounded-md border border-rose-300/25 bg-rose-300/10 p-2 text-rose-100">
+        <div className="mt-2 rounded-md border border-[var(--ds-danger-border)] bg-[var(--ds-danger-soft)] p-2 text-[var(--ds-danger)]">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <span>{error}</span>
             {retryableError && (
@@ -648,7 +648,7 @@ export default function ModelFilePipelinePanel({ notify }) {
                 type="button"
                 onClick={retryModelPipeline}
                 disabled={retryDisabled}
-                className="inline-flex items-center justify-center gap-1 rounded-md border border-rose-100/25 px-2 py-1 text-xs font-bold text-rose-50 hover:bg-rose-100/10 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-1 rounded-md border border-[var(--ds-danger-border)] px-2 py-1 text-xs font-bold text-[var(--ds-danger)] hover:bg-[var(--ds-danger-soft)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
                 {retryButtonLabel}
@@ -660,33 +660,33 @@ export default function ModelFilePipelinePanel({ notify }) {
 
       {active && (
         <div className="mt-3 flex flex-wrap gap-2">
-          <button type="button" onClick={() => openSourceUrl("preview")} disabled={!VALIDATED.has(active.status) || busy === "preview"} className="inline-flex items-center gap-1 rounded-md border border-white/10 px-2 py-1 font-bold text-white/70 disabled:opacity-40">
+          <button type="button" onClick={() => openSourceUrl("preview")} disabled={!VALIDATED.has(active.status) || busy === "preview"} className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-[var(--ds-border)] px-2 py-1 font-semibold text-[var(--ds-text-secondary)] disabled:opacity-40">
             <Eye className="h-3.5 w-3.5" /> Preview
           </button>
-          <button type="button" onClick={() => openSourceUrl("download")} disabled={!VALIDATED.has(active.status) || busy === "download"} className="inline-flex items-center gap-1 rounded-md border border-white/10 px-2 py-1 font-bold text-white/70 disabled:opacity-40">
+          <button type="button" onClick={() => openSourceUrl("download")} disabled={!VALIDATED.has(active.status) || busy === "download"} className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-[var(--ds-border)] px-2 py-1 font-semibold text-[var(--ds-text-secondary)] disabled:opacity-40">
             <Download className="h-3.5 w-3.5" /> Download
           </button>
-          <button type="button" onClick={cancelActive} disabled={!ACTIVE_MODEL.has(active.status) || busy === "cancel"} className="inline-flex items-center gap-1 rounded-md border border-white/10 px-2 py-1 font-bold text-white/70 disabled:opacity-40">
+          <button type="button" onClick={cancelActive} disabled={!ACTIVE_MODEL.has(active.status) || busy === "cancel"} className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-[var(--ds-border)] px-2 py-1 font-semibold text-[var(--ds-text-secondary)] disabled:opacity-40">
             <Square className="h-3.5 w-3.5" /> Cancel
           </button>
-          <button type="button" onClick={removeModel} disabled={busy === "delete"} className="rounded-md border border-white/10 p-1.5 text-white/50 hover:bg-white/5" aria-label="Delete model file">
+          <button type="button" onClick={removeModel} disabled={busy === "delete"} className="rounded-lg border border-[var(--ds-border)] p-1.5 text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-danger)]" aria-label="Delete model file">
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
       )}
 
       {report && (
-        <div className="mt-3 rounded-md border border-white/10 bg-black/20 p-2">
-          <div className="flex items-center gap-1 font-black text-emerald-100"><CheckCircle2 className="h-3.5 w-3.5" />Validation report</div>
-          <div className="mt-1 text-white/60">
+        <div className="mt-3 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2">
+          <div className="flex items-center gap-1 font-semibold text-[var(--ds-success)]"><CheckCircle2 className="h-3.5 w-3.5" />Validation report</div>
+          <div className="mt-1 text-[var(--ds-text-secondary)]">
             Status: {statusText(report.status)} · Errors: {report.summary?.errors ?? 0} · Warnings: {report.summary?.warnings ?? 0} · Triangles: {report.metrics?.triangles ?? report.summary?.triangles ?? 0}
           </div>
-          <div className="mt-1 truncate text-white/45">Rules: {report.rulesVersion} · SHA-256: {report.sourceSha256 || report.sha256 || "pending"}</div>
+          <div className="mt-1 truncate text-[var(--ds-text-muted)]">Rules: {report.rulesVersion} · SHA-256: {report.sourceSha256 || report.sha256 || "pending"}</div>
           {report.issues?.length > 0 && (
             <div className="mt-2 grid gap-1">
               {report.issues.slice(0, 4).map((issue, index) => (
-                <div key={`${issue.code}-${index}`} className="rounded border border-white/10 bg-white/[0.03] px-2 py-1 text-white/65">
-                  <span className="font-bold text-white/80">{issue.code}</span> · {issue.message}
+                <div key={`${issue.code}-${index}`} className="rounded border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2 py-1 text-[var(--ds-text-secondary)]">
+                  <span className="font-semibold text-[var(--ds-text)]">{issue.code}</span> · {issue.message}
                 </div>
               ))}
             </div>
@@ -695,22 +695,22 @@ export default function ModelFilePipelinePanel({ notify }) {
       )}
 
       {canPrepareRobloxUpload && (
-        <div className="mt-3 rounded-md border border-white/10 bg-black/20 p-2">
-          <div className="font-black text-white">Roblox upload</div>
+        <div className="mt-3 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2">
+          <div className="font-black text-[var(--ds-text)]">Roblox upload</div>
           <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
             <input
               value={uploadName}
               onChange={(event) => setUploadName(event.target.value.slice(0, 50))}
               placeholder={active.originalFilename || "Model name"}
-              className="rounded-md border border-white/10 bg-black px-2 py-1 text-white"
+              className="min-h-9 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-2 py-1 text-[var(--ds-text)]"
             />
             <input
               value={uploadDescription}
               onChange={(event) => setUploadDescription(event.target.value.slice(0, 1000))}
               placeholder="Description"
-              className="rounded-md border border-white/10 bg-black px-2 py-1 text-white"
+              className="min-h-9 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-2 py-1 text-[var(--ds-text)]"
             />
-            <button type="button" onClick={() => prepareRobloxUpload(null)} disabled={busy === "roblox_prepare"} className="rounded-md border border-cyan-300/30 px-2 py-1 font-bold text-cyan-100 disabled:opacity-40">
+            <button type="button" onClick={() => prepareRobloxUpload(null)} disabled={busy === "roblox_prepare"} className="min-h-9 rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 py-1 font-semibold text-[var(--ds-accent)] disabled:opacity-40">
               Prepare original
             </button>
           </div>
@@ -721,7 +721,7 @@ export default function ModelFilePipelinePanel({ notify }) {
                   key={`upload-${item.id || item.derivativeId}`}
                   type="button"
                   onClick={() => prepareRobloxUpload(item.id || item.derivativeId)}
-                  className="rounded border border-white/10 px-2 py-1 text-white/65 hover:bg-white/5"
+                  className="rounded-lg border border-[var(--ds-border)] px-2 py-1 text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]"
                 >
                   Prepare derivative {String(item.id || item.derivativeId).slice(0, 8)}
                 </button>
@@ -729,8 +729,8 @@ export default function ModelFilePipelinePanel({ notify }) {
             </div>
           )}
           {uploadPrep && (
-            <div className="mt-3 rounded border border-white/10 bg-white/[0.03] p-2 text-white/65">
-              <div className="font-bold text-white">Review {uploadPrep.uploadName}</div>
+            <div className="mt-3 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2 text-[var(--ds-text-secondary)]">
+              <div className="font-bold text-[var(--ds-text)]">Review {uploadPrep.uploadName}</div>
               <div className="mt-1">Source: {uploadPrep.sourceType} · {formatBytes(uploadPrep.sourceBytes)} · SHA-256 {uploadPrep.trustedSourceSha256}</div>
               <div>Creator: {uploadPrep.creator?.type} {uploadPrep.creator?.id} · File: {uploadPrep.expectedFilename} · {uploadPrep.expectedMimeType}</div>
               <label className="mt-2 flex items-start gap-2">
@@ -742,38 +742,38 @@ export default function ModelFilePipelinePanel({ notify }) {
                 <span>{uploadPrep.moderationWarning || "Roblox moderation/access can remain pending after upload."}</span>
               </label>
               <div className="mt-2 flex flex-wrap gap-2">
-                <button type="button" onClick={confirmRobloxUpload} disabled={!rightsConfirmed || !moderationAcknowledged || busy === "roblox_confirm"} className="rounded-md border border-cyan-300/30 px-2 py-1 font-bold text-cyan-100 disabled:opacity-40">
+                <button type="button" onClick={confirmRobloxUpload} disabled={!rightsConfirmed || !moderationAcknowledged || busy === "roblox_confirm"} className="min-h-9 rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 py-1 font-semibold text-[var(--ds-accent)] disabled:opacity-40">
                   Confirm upload
                 </button>
-                <button type="button" onClick={refreshRobloxUpload} disabled={busy === "roblox_refresh"} className="rounded-md border border-white/10 px-2 py-1 text-white/65 disabled:opacity-40">
+                <button type="button" onClick={refreshRobloxUpload} disabled={busy === "roblox_refresh"} className="min-h-9 rounded-lg border border-[var(--ds-border)] px-2 py-1 text-[var(--ds-text-secondary)] disabled:opacity-40">
                   Refresh
                 </button>
               </div>
             </div>
           )}
           {currentUpload && (
-            <div className="mt-2 rounded border border-white/10 bg-white/[0.03] p-2 text-white/65">
+            <div className="mt-2 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2 text-[var(--ds-text-secondary)]">
               <div>Status: {statusText(currentUpload.state || currentUpload.status)} · Moderation/access: {statusText(currentUpload.moderationState)}</div>
               {currentUpload.robloxAssetId && <div>Trusted asset ID: {currentUpload.robloxAssetId}</div>}
               {(currentUpload.state === "submission_unknown" || currentUpload.status === "submission_unknown") && (
-                <div className="mt-1 text-amber-100">The create request may have reached Roblox. Automatic retry is disabled; use Refresh to reconcile.</div>
+                <div className="mt-1 text-[var(--ds-warning)]">The create request may have reached Roblox. Automatic retry is disabled; use Refresh to reconcile.</div>
               )}
-              <button type="button" onClick={prepareInsertion} disabled={!currentUpload.robloxAssetId || busy === "insertion_prepare"} className="mt-2 rounded-md border border-white/10 px-2 py-1 font-bold text-white/70 disabled:opacity-40">
+              <button type="button" onClick={prepareInsertion} disabled={!currentUpload.robloxAssetId || busy === "insertion_prepare"} className="mt-2 min-h-9 rounded-lg border border-[var(--ds-border)] px-2 py-1 font-semibold text-[var(--ds-text-secondary)] disabled:opacity-40">
                 Prepare Studio insertion
               </button>
             </div>
           )}
           {insertionReview && (
-            <div className="mt-2 rounded border border-white/10 bg-white/[0.03] p-2 text-white/65">
+            <div className="mt-2 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2 text-[var(--ds-text-secondary)]">
               <div>Studio: {insertionReview.experience?.name || insertionReview.experience?.placeId || "paired session"} · Creator: {insertionReview.experience?.creator?.type} {insertionReview.experience?.creator?.id}</div>
               <div>Destination: {insertionReview.insertion?.targetParentPath} · Placement: {statusText(insertionReview.insertion?.placement?.mode)}</div>
-              <button type="button" onClick={confirmInsertion} disabled={busy === "insertion_confirm"} className="mt-2 rounded-md border border-cyan-300/30 px-2 py-1 font-bold text-cyan-100 disabled:opacity-40">
+              <button type="button" onClick={confirmInsertion} disabled={busy === "insertion_confirm"} className="mt-2 min-h-9 rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 py-1 font-semibold text-[var(--ds-accent)] disabled:opacity-40">
                 Confirm insertion
               </button>
             </div>
           )}
           {insertionReceipt && (
-            <div className="mt-2 rounded border border-emerald-300/20 bg-emerald-300/10 p-2 text-emerald-50">
+            <div className="mt-2 rounded-lg border border-[color-mix(in_srgb,var(--ds-success)_28%,transparent)] bg-[color-mix(in_srgb,var(--ds-success)_8%,transparent)] p-2 text-[var(--ds-success)]">
               Insertion {statusText(insertionReceipt.status)} · {insertionReceipt.commandId || insertionReceipt.insertionId}
             </div>
           )}
@@ -781,26 +781,26 @@ export default function ModelFilePipelinePanel({ notify }) {
       )}
 
       {canOptimize && (
-        <div className="mt-3 rounded-md border border-white/10 bg-black/20 p-2">
+        <div className="mt-3 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2">
           <div className="flex flex-wrap items-center gap-2">
-            <select value={profile} onChange={(event) => setProfile(event.target.value)} className="rounded-md border border-white/10 bg-black px-2 py-1 text-white">
+            <select value={profile} onChange={(event) => setProfile(event.target.value)} className="min-h-9 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-2 py-1 text-[var(--ds-text)]">
               <option value="conservative">Conservative</option>
               <option value="roblox_balanced">Roblox balanced</option>
               <option value="aggressive">Aggressive</option>
             </select>
-            <button type="button" onClick={createPlan} disabled={busy === "plan"} className="rounded-md border border-white/10 px-2 py-1 font-bold text-white/70 disabled:opacity-40">
+            <button type="button" onClick={createPlan} disabled={busy === "plan"} className="min-h-9 rounded-lg border border-[var(--ds-border)] px-2 py-1 font-semibold text-[var(--ds-text-secondary)] disabled:opacity-40">
               Review plan
             </button>
-            <button type="button" onClick={queueDerivative} disabled={!plan || (plan.confirmationRequired && !aggressiveConfirmed) || busy === "derivative"} className="rounded-md border border-cyan-300/30 px-2 py-1 font-bold text-cyan-100 disabled:opacity-40">
+            <button type="button" onClick={queueDerivative} disabled={!plan || (plan.confirmationRequired && !aggressiveConfirmed) || busy === "derivative"} className="min-h-9 rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 py-1 font-semibold text-[var(--ds-accent)] disabled:opacity-40">
               Queue derivative
             </button>
           </div>
           {plan && (
-            <div className="mt-2 text-white/60">
+            <div className="mt-2 text-[var(--ds-text-secondary)]">
               <div>Plan: {plan.planId} · Lossy: {(plan.lossyOperations || []).join(", ") || "none"}</div>
               <div>Tools: {Object.entries(plan.toolVersions || {}).map(([key, value]) => `${key} ${value}`).join(" · ") || "nexusrbx optimizer"}</div>
               {plan.confirmationRequired && (
-                <label className="mt-2 flex items-center gap-2 text-white/70">
+                <label className="mt-2 flex items-center gap-2 text-[var(--ds-text-secondary)]">
                   <input type="checkbox" checked={aggressiveConfirmed} onChange={(event) => setAggressiveConfirmed(event.target.checked)} />
                   Confirm aggressive lossy optimization
                 </label>
@@ -811,21 +811,21 @@ export default function ModelFilePipelinePanel({ notify }) {
       )}
 
       {derivatives.length > 0 && (
-        <div className="mt-3 rounded-md border border-white/10 bg-black/20 p-2">
+        <div className="mt-3 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2">
           <div className="font-black">Derivatives</div>
           <div className="mt-2 grid gap-2">
             {derivatives.slice(0, 5).map((item) => (
-              <div key={item.id || item.derivativeId} className="flex flex-wrap items-center justify-between gap-2 rounded border border-white/10 bg-white/[0.03] px-2 py-1">
+              <div key={item.id || item.derivativeId} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2 py-1">
                 <div className="min-w-0">
                   <div className="truncate font-bold">{item.id || item.derivativeId}</div>
-                  <div className="text-white/45">{statusText(item.status)}{item.stage ? ` · ${statusText(item.stage)}` : ""}</div>
+                  <div className="text-[var(--ds-text-muted)]">{statusText(item.status)}{item.stage ? ` · ${statusText(item.stage)}` : ""}</div>
                 </div>
                 <div className="flex gap-1">
-                  <button type="button" onClick={() => showDerivativeComparison(item.id || item.derivativeId)} disabled={!String(item.status).startsWith("completed")} className="rounded border border-white/10 px-2 py-1 text-white/60 disabled:opacity-40">Compare</button>
-                  <button type="button" onClick={() => openDerivativeUrl(item.id || item.derivativeId, "derivative_preview")} disabled={!String(item.status).startsWith("completed")} className="rounded border border-white/10 p-1.5 text-white/60 disabled:opacity-40" aria-label="Preview derivative"><Eye className="h-3.5 w-3.5" /></button>
-                  <button type="button" onClick={() => openDerivativeUrl(item.id || item.derivativeId, "derivative_download")} disabled={!String(item.status).startsWith("completed")} className="rounded border border-white/10 p-1.5 text-white/60 disabled:opacity-40" aria-label="Download derivative"><Download className="h-3.5 w-3.5" /></button>
-                  <button type="button" onClick={() => stopDerivative(item.id || item.derivativeId)} disabled={!ACTIVE_DERIVATIVE.has(item.status)} className="rounded border border-white/10 p-1.5 text-white/60 disabled:opacity-40" aria-label="Cancel derivative"><Square className="h-3.5 w-3.5" /></button>
-                  <button type="button" onClick={() => removeDerivative(item.id || item.derivativeId)} className="rounded border border-white/10 p-1.5 text-white/50" aria-label="Delete derivative"><Trash2 className="h-3.5 w-3.5" /></button>
+                  <button type="button" onClick={() => showDerivativeComparison(item.id || item.derivativeId)} disabled={!String(item.status).startsWith("completed")} className="rounded-lg border border-[var(--ds-border)] px-2 py-1 text-[var(--ds-text-muted)] disabled:opacity-40">Compare</button>
+                  <button type="button" onClick={() => openDerivativeUrl(item.id || item.derivativeId, "derivative_preview")} disabled={!String(item.status).startsWith("completed")} className="rounded-lg border border-[var(--ds-border)] p-1.5 text-[var(--ds-text-muted)] disabled:opacity-40" aria-label="Preview derivative"><Eye className="h-3.5 w-3.5" /></button>
+                  <button type="button" onClick={() => openDerivativeUrl(item.id || item.derivativeId, "derivative_download")} disabled={!String(item.status).startsWith("completed")} className="rounded-lg border border-[var(--ds-border)] p-1.5 text-[var(--ds-text-muted)] disabled:opacity-40" aria-label="Download derivative"><Download className="h-3.5 w-3.5" /></button>
+                  <button type="button" onClick={() => stopDerivative(item.id || item.derivativeId)} disabled={!ACTIVE_DERIVATIVE.has(item.status)} className="rounded-lg border border-[var(--ds-border)] p-1.5 text-[var(--ds-text-muted)] disabled:opacity-40" aria-label="Cancel derivative"><Square className="h-3.5 w-3.5" /></button>
+                  <button type="button" onClick={() => removeDerivative(item.id || item.derivativeId)} className="rounded-lg border border-[var(--ds-border)] p-1.5 text-[var(--ds-text-muted)] hover:text-[var(--ds-danger)]" aria-label="Delete derivative"><Trash2 className="h-3.5 w-3.5" /></button>
                 </div>
               </div>
             ))}
@@ -834,16 +834,16 @@ export default function ModelFilePipelinePanel({ notify }) {
       )}
 
       {comparison && (
-        <div className="mt-3 rounded-md border border-white/10 bg-black/20 p-2 text-white/60">
-          <div className="font-black text-white">Before / after</div>
+        <div className="mt-3 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2 text-[var(--ds-text-secondary)]">
+          <div className="font-black text-[var(--ds-text)]">Before / after</div>
           <div className="mt-1">Bytes: {formatBytes(comparison.sourceBytes)} to {formatBytes(comparison.derivativeBytes)} · {comparison.byteReductionPercent}% smaller</div>
           <div>Triangles: {comparison.source?.triangles ?? 0} to {comparison.derivative?.triangles ?? 0}</div>
           <div>Textures: {comparison.source?.textures ?? 0} to {comparison.derivative?.textures ?? 0}</div>
-          {(comparison.warnings || []).length > 0 && <div className="mt-1 text-amber-100">Warnings: {(comparison.warnings || []).map((warning) => warning.code || warning.message || warning).join(", ")}</div>}
+          {(comparison.warnings || []).length > 0 && <div className="mt-1 text-[var(--ds-warning)]">Warnings: {(comparison.warnings || []).map((warning) => warning.code || warning.message || warning).join(", ")}</div>}
         </div>
       )}
 
-      {link && <a href={link} target="_blank" rel="noreferrer" className="mt-2 block truncate text-cyan-200">{link}</a>}
+      {link && <a href={link} target="_blank" rel="noreferrer" className="mt-2 block truncate text-[var(--ds-info)] hover:underline">{link}</a>}
     </section>
   );
 }

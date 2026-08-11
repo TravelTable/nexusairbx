@@ -19,12 +19,12 @@ const ScriptRow = React.memo(function ScriptRow({
   // Extract system tags from script metadata or title
   const systemTags = useMemo(() => {
     const tags = [];
-    if (script.type === "ui") tags.push({ label: "UI", color: "text-[#00f5d4] bg-[#00f5d4]/10" });
-    else tags.push({ label: "Logic", color: "text-[#9b5de5] bg-[#9b5de5]/10" });
+    if (script.type === "ui") tags.push({ label: "UI", color: "text-[var(--ds-accent)] bg-[var(--ds-accent-soft)]" });
+    else tags.push({ label: "Logic", color: "text-[var(--ds-plan)] bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)]" });
     
     // Mocking some tags based on title for demo purposes
-    if (script.title?.toLowerCase().includes("mobile")) tags.push({ icon: Smartphone, color: "text-blue-400" });
-    if (script.title?.toLowerCase().includes("pc")) tags.push({ icon: Monitor, color: "text-gray-400" });
+    if (script.title?.toLowerCase().includes("mobile")) tags.push({ icon: Smartphone, color: " text-[var(--ds-info)] " });
+    if (script.title?.toLowerCase().includes("pc")) tags.push({ icon: Monitor, color: "text-[var(--ds-text-secondary)]" });
     
     return tags;
   }, [script]);
@@ -33,8 +33,8 @@ const ScriptRow = React.memo(function ScriptRow({
     <div
       className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border transition-all duration-300 text-left group cursor-pointer relative overflow-hidden ${
         isSelected
-          ? "border-[#00f5d4]/50 bg-[#00f5d4]/5 shadow-[0_0_20px_rgba(0,245,212,0.05)]"
-          : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10"
+          ? "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)]"
+          : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] hover:bg-[var(--ds-fill-subtle)] hover:border-[var(--ds-border-subtle)]"
       }`}
       tabIndex={0}
       role="row"
@@ -46,13 +46,13 @@ const ScriptRow = React.memo(function ScriptRow({
       onClick={onSelect}
     >
       {isSelected && (
-        <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#00f5d4] shadow-[0_0_10px_#00f5d4]" />
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--ds-accent)] shadow-none" />
       )}
 
       <div className="flex-1 min-w-0">
         {renaming ? (
           <input
-            className="bg-gray-800 border border-[#00f5d4] rounded-lg px-2 py-1 text-sm text-white w-full outline-none shadow-[0_0_10px_rgba(0,245,212,0.2)]"
+            className="w-full rounded-lg border border-[var(--ds-accent)] bg-[var(--ds-surface-2)] px-2 py-1 text-sm text-[var(--ds-text)] outline-none"
             value={renameValue}
             onChange={(e) => setRenameValue(e.target.value)}
             autoFocus
@@ -76,25 +76,25 @@ const ScriptRow = React.memo(function ScriptRow({
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
               <span
-                className={`font-bold truncate transition-colors ${isSelected ? "text-white" : "text-gray-300 group-hover:text-white"}`}
+                className={`font-bold truncate transition-colors ${isSelected ? "text-[var(--ds-text)]" : "text-[var(--ds-text-secondary)] group-hover:text-[var(--ds-text)]"}`}
                 title={script.title || "Untitled"}
               >
                 {script.title || "Untitled"}
               </span>
               {version && (
-                <span className="px-1.5 py-0.5 rounded bg-white/5 text-[10px] font-mono text-gray-500">
+                <span className="px-1.5 py-0.5 rounded bg-[var(--ds-fill-subtle)] text-[10px] font-mono text-[var(--ds-text-muted)]">
                   v{version}
                 </span>
               )}
             </div>
             
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-gray-500 font-medium">
+              <span className="text-[10px] text-[var(--ds-text-muted)] font-medium">
                 {fromNow(script.updatedAt)}
               </span>
               <div className="flex items-center gap-1">
                 {systemTags.map((tag, i) => (
-                  <div key={i} className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${tag.color || "bg-white/5 text-gray-500"}`}>
+                  <div key={i} className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${tag.color || "bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)]"}`}>
                     {tag.icon && <tag.icon className="w-2.5 h-2.5" />}
                     {tag.label}
                   </div>
@@ -108,7 +108,7 @@ const ScriptRow = React.memo(function ScriptRow({
       <div className="flex items-center gap-1 ml-2 opacity-70 transition-opacity hover:opacity-100 focus-within:opacity-100 md:opacity-60 md:group-hover:opacity-100">
         {!renaming && (
           <button
-            className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-white/5 transition-colors"
+            className="p-1.5 rounded-lg text-[var(--ds-text-muted)] hover:text-[var(--ds-text)] hover:bg-[var(--ds-fill-subtle)] transition-colors"
             title="Rename"
             aria-label="Rename script"
             onClick={(e) => {
@@ -121,7 +121,7 @@ const ScriptRow = React.memo(function ScriptRow({
         )}
         
         <button
-          className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-colors"
+          className="rounded-lg p-1.5 text-[var(--ds-text-muted)] transition-colors hover:bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] hover:text-[var(--ds-danger)]"
           title="Delete"
           aria-label="Delete script"
           onClick={(e) => {

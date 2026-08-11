@@ -298,19 +298,19 @@ const handleEditSave = async () => {
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.97 }}
           transition={{ duration: 0.25 }}
-          className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-2xl mx-auto p-0 flex flex-col"
+          className="bg-[var(--ds-surface-overlay)] border border-[var(--ds-border-subtle)] text-[var(--ds-text)] rounded-xl shadow-[var(--ds-shadow-overlay)] w-full max-w-2xl mx-auto p-0 flex flex-col"
           style={{ maxHeight: "90vh", overflow: "hidden" }}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--ds-border-subtle)]">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-lg text-[#9b5de5]">{selectedVersion?.title || "Script"}</span>
-                <span className="text-xs text-[#00f5d4]">v{selectedVersion?.version || 1}</span>
+                <span className="font-bold text-lg text-[var(--ds-text)]">{selectedVersion?.title || "Script"}</span>
+                <span className="text-xs text-accent">v{selectedVersion?.version || 1}</span>
               </div>
               <div className="flex flex-wrap gap-2 mt-1">
                 {tags.map(tag => (
-                  <span key={tag} className="bg-[#00f5d4]/20 text-[#00f5d4] px-2 py-1 rounded text-xs flex items-center">
+                  <span key={tag} className="bg-[var(--ds-accent-soft)] text-accent px-2 py-1 rounded text-xs flex items-center">
                     {tag}
                     {!readOnly && tagEdit && (
                       <button className="ml-1" onClick={() => handleRemoveTag(tag)}>
@@ -325,20 +325,20 @@ const handleEditSave = async () => {
   className="flex items-center"
 >
   <input
-    className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white w-20"
+    className="bg-[var(--ds-surface-2)] border border-[var(--ds-border-subtle)] rounded px-2 py-1 text-xs text-[var(--ds-text)] w-20"
     value={tagInput}
     onChange={e => setTagInput(e.target.value)}
     placeholder="Add tag"
     disabled={tagLoading}
   />
   <button type="submit" className="ml-1" disabled={tagLoading}>
-    {tagLoading ? <Loader className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 text-[#00f5d4]" />}
+    {tagLoading ? <Loader className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 text-accent" />}
   </button>
 </form>
                 )}
                 {!readOnly && (
                   <button
-                    className="ml-2 text-xs text-[#00f5d4] underline"
+                    className="ml-2 text-xs text-accent underline"
                     onClick={() => setTagEdit(e => !e)}
                   >
                     {tagEdit ? "Done" : "Edit Tags"}
@@ -346,25 +346,25 @@ const handleEditSave = async () => {
                 )}
               </div>
             </div>
-            <button className="p-2 rounded hover:bg-gray-800" onClick={onClose}>
-              <X className="h-6 w-6 text-gray-400" />
+            <button className="p-2 rounded hover:bg-[var(--ds-fill-hover)]" onClick={onClose}>
+              <X className="h-6 w-6 text-[var(--ds-text-muted)]" />
             </button>
           </div>
           {/* Version Switcher */}
           {versionLoading ? (
-            <div className="flex items-center px-6 py-2 text-gray-400 text-sm">
+            <div className="flex items-center px-6 py-2 text-[var(--ds-text-muted)] text-sm">
               <Loader className="h-4 w-4 animate-spin mr-2" /> Loading versions...
             </div>
           ) : allVersions.length > 1 && (
             <div className="flex items-center px-6 py-2 gap-2 overflow-x-auto">
-              <span className="text-xs text-gray-400">Versions:</span>
+              <span className="text-xs text-[var(--ds-text-muted)]">Versions:</span>
               {allVersions.map(ver => (
                 <button
                   key={ver.id}
                   className={`px-2 py-1 rounded text-xs font-bold border transition-colors duration-200 ${
                     selectedVersion.id === ver.id
-                      ? "bg-[#00f5d4]/20 border-[#00f5d4] text-[#00f5d4]"
-                      : "bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700"
+                      ? "bg-[var(--ds-accent-soft)] border-[var(--ds-accent-border)] text-accent"
+                      : "bg-[var(--ds-surface-2)] border-[var(--ds-border-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]"
                   }`}
                   onClick={() => handleVersionSwitch(ver)}
                 >
@@ -374,9 +374,9 @@ const handleEditSave = async () => {
             </div>
           )}
           {/* Actions */}
-<div className="flex flex-wrap gap-2 px-6 py-3 border-b border-gray-800">
+<div className="flex flex-wrap gap-2 px-6 py-3 border-b border-[var(--ds-border-subtle)]">
   <button
-    className="flex items-center gap-1 px-3 py-1 rounded bg-[#9b5de5]/20 hover:bg-[#9b5de5]/40 text-[#9b5de5] text-xs font-bold"
+    className="flex items-center gap-1 px-3 py-1 rounded bg-[var(--ds-accent-soft)] hover:bg-[var(--ds-fill-hover)] text-accent text-xs font-bold"
     onClick={handleCopy}
     disabled={loading}
   >
@@ -384,7 +384,7 @@ const handleEditSave = async () => {
     Copy
   </button>
   <button
-    className="flex items-center gap-1 px-3 py-1 rounded bg-[#00f5d4]/20 hover:bg-[#00f5d4]/40 text-[#00f5d4] text-xs font-bold"
+    className="flex items-center gap-1 px-3 py-1 rounded bg-[var(--ds-accent-soft)] hover:bg-[var(--ds-fill-hover)] text-accent text-xs font-bold"
     onClick={handleDownload}
     disabled={loading}
   >
@@ -392,7 +392,7 @@ const handleEditSave = async () => {
     Download
   </button>
   <button
-    className="flex items-center gap-1 px-3 py-1 rounded bg-[#fbbf24]/20 hover:bg-[#fbbf24]/40 text-[#fbbf24] text-xs font-bold"
+    className="flex items-center gap-1 px-3 py-1 rounded bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--ds-warning)_18%,transparent)] text-[var(--ds-warning)] text-xs font-bold"
     onClick={handleShare}
     disabled={loading}
   >
@@ -402,7 +402,7 @@ const handleEditSave = async () => {
   {!readOnly && (
     <>
       <button
-        className="flex items-center gap-1 px-3 py-1 rounded bg-gray-800 text-gray-400 hover:bg-gray-700 text-xs font-bold"
+        className="flex items-center gap-1 px-3 py-1 rounded bg-[var(--ds-surface-2)] text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] text-xs font-bold"
         onClick={handleEdit}
         disabled={editMode || loading}
       >
@@ -410,7 +410,7 @@ const handleEditSave = async () => {
         Edit
       </button>
       <button
-        className="flex items-center gap-1 px-3 py-1 rounded bg-red-800/20 hover:bg-red-800/40 text-red-400 text-xs font-bold"
+        className="flex items-center gap-1 px-3 py-1 rounded bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--ds-danger)_18%,transparent)] text-[var(--ds-danger)] text-xs font-bold"
         onClick={handleDelete}
         disabled={deleteLoading || loading}
       >
@@ -421,23 +421,23 @@ const handleEditSave = async () => {
   )}
 </div>
 {(actionError || actionSuccess) && (
-  <div className={`px-6 py-2 text-xs ${actionError ? "text-red-400" : "text-green-400"}`}>
+  <div className={`px-6 py-2 text-xs ${actionError ? "text-[var(--ds-danger)]" : "text-[var(--ds-success)]"}`}>
     {actionError || actionSuccess}
   </div>
 )}
           {/* Code */}
-          <div className="flex-1 overflow-y-auto px-6 py-4 bg-gray-950">
+          <div className="flex-1 overflow-y-auto px-6 py-4 bg-[var(--ds-bg-workspace)]">
             {loading ? (
-              <div className="flex items-center justify-center h-40 text-gray-400">
+              <div className="flex items-center justify-center h-40 text-[var(--ds-text-muted)]">
                 <Loader className="h-6 w-6 animate-spin mr-2" />
                 Loading script...
               </div>
             ) : error ? (
-              <div className="text-red-400 text-center">{error}</div>
+              <div className="text-[var(--ds-danger)] text-center">{error}</div>
             ) : editMode ? (
               <div>
                 <textarea
-                  className="w-full rounded bg-gray-800 border border-gray-700 px-3 py-2 text-white font-mono text-sm"
+                  className="w-full rounded bg-[var(--ds-surface-2)] border border-[var(--ds-border-subtle)] px-3 py-2 text-[var(--ds-text)] font-mono text-sm"
                   rows={12}
                   value={editCode}
                   onChange={e => setEditCode(e.target.value)}
@@ -445,7 +445,7 @@ const handleEditSave = async () => {
                 />
                 <div className="flex gap-2 mt-3">
                   <button
-                    className="flex items-center gap-1 px-4 py-2 rounded bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-bold"
+                    className="flex items-center gap-1 px-4 py-2 rounded bg-accent text-accent-foreground font-bold hover:bg-[var(--ds-accent-hover)] active:bg-[var(--ds-accent-pressed)]"
                     onClick={handleEditSave}
                     disabled={editSaving}
                   >
@@ -453,7 +453,7 @@ const handleEditSave = async () => {
                     Save
                   </button>
                   <button
-                    className="flex items-center gap-1 px-4 py-2 rounded bg-gray-800 text-gray-400 hover:bg-gray-700"
+                    className="flex items-center gap-1 px-4 py-2 rounded bg-[var(--ds-surface-2)] text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)]"
                     onClick={() => setEditMode(false)}
                     disabled={editSaving}
                   >
@@ -474,9 +474,9 @@ const handleEditSave = async () => {
           </div>
           {/* AI Actions */}
           {!editMode && !loading && !error && (
-            <div className="flex flex-wrap gap-2 px-6 py-3 border-t border-gray-800 bg-gray-950">
+            <div className="flex flex-wrap gap-2 px-6 py-3 border-t border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)]">
               <button
-                className="flex items-center gap-1 px-3 py-1 rounded bg-[#9b5de5]/20 hover:bg-[#9b5de5]/40 text-[#9b5de5] text-xs font-bold"
+                className="flex items-center gap-1 px-3 py-1 rounded bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--ds-plan)_18%,transparent)] text-[var(--ds-plan)] text-xs font-bold"
                 onClick={() => handleAI("improve")}
                 disabled={aiLoading}
               >
@@ -484,7 +484,7 @@ const handleEditSave = async () => {
                 Improve
               </button>
               <button
-                className="flex items-center gap-1 px-3 py-1 rounded bg-[#00f5d4]/20 hover:bg-[#00f5d4]/40 text-[#00f5d4] text-xs font-bold"
+                className="flex items-center gap-1 px-3 py-1 rounded bg-[color-mix(in_srgb,var(--ds-info)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--ds-info)_18%,transparent)] text-[var(--ds-info)] text-xs font-bold"
                 onClick={() => handleAI("explain")}
                 disabled={aiLoading}
               >
@@ -492,7 +492,7 @@ const handleEditSave = async () => {
                 Explain
               </button>
               <button
-                className="flex items-center gap-1 px-3 py-1 rounded bg-[#fbbf24]/20 hover:bg-[#fbbf24]/40 text-[#fbbf24] text-xs font-bold"
+                className="flex items-center gap-1 px-3 py-1 rounded bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--ds-warning)_18%,transparent)] text-[var(--ds-warning)] text-xs font-bold"
                 onClick={() => handleAI("lint")}
                 disabled={aiLoading}
               >
@@ -500,7 +500,7 @@ const handleEditSave = async () => {
                 Lint
               </button>
               {aiLoading && (
-                <span className="flex items-center gap-1 text-xs text-gray-400 ml-2">
+                <span className="flex items-center gap-1 text-xs text-[var(--ds-text-muted)] ml-2">
                   <Loader className="h-4 w-4 animate-spin" /> Running...
                 </span>
               )}
@@ -508,7 +508,7 @@ const handleEditSave = async () => {
           )}
           {/* AI Result */}
           {aiResult && (
-            <div className="px-6 py-3 bg-gray-950 border-t border-gray-800 text-sm text-gray-200 whitespace-pre-line">
+            <div className="px-6 py-3 bg-[var(--ds-bg-workspace)] border-t border-[var(--ds-border-subtle)] text-sm text-[var(--ds-text-secondary)] whitespace-pre-line">
               <b className="block mb-1 capitalize">{aiType} result:</b>
               {aiResult}
             </div>

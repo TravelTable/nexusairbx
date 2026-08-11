@@ -26,35 +26,30 @@ export default function HomepageV2Content({
   }, []);
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#07090f] pt-16 text-white">
-      <div className="pointer-events-none fixed inset-0 -z-10 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:56px_56px] opacity-50 [mask-image:linear-gradient(to_bottom,black,transparent_78%)]" />
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute -left-40 -top-40 h-[420px] w-[420px] rounded-full bg-[#00f5d4]/10 blur-[120px] animate-pulse" />
-        <div className="absolute -bottom-40 -right-40 h-[420px] w-[420px] rounded-full bg-[#9b5de5]/10 blur-[120px] animate-pulse" />
-      </div>
+    <div className="min-h-screen overflow-x-hidden bg-[var(--ds-bg-canvas)] pt-16 text-[var(--ds-text)]">
 
       <main id="main-content" tabIndex={-1} className="focus:outline-none">
-        <section className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center overflow-visible px-4 pt-20 pb-16">
-          <div className="relative mb-6 flex items-center justify-center">
-            <div className="absolute h-24 w-24 rounded-full bg-[#00f5d4]/20 blur-2xl" />
+        <section className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-7xl items-center gap-12 overflow-visible px-4 pb-16 pt-20 sm:px-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(420px,1.08fr)] lg:gap-14">
+          <div className="flex min-w-0 flex-col items-center lg:items-start">
+          <div className="relative mb-6 flex items-center justify-center rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-surface-1)] p-3 shadow-lg shadow-black/10">
             <img
               src="/logo.png"
               alt="NexusRBX logo"
               width={64}
               height={64}
-              className="relative h-16 w-16 rounded-xl object-contain"
+              className="h-16 w-16 rounded-xl object-contain"
             />
           </div>
 
-          <p className="mb-4 bg-gradient-to-r from-[#00f5d4] to-[#9b5de5] bg-clip-text text-lg font-black uppercase tracking-[0.18em] text-transparent">
+          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.14em] text-[var(--ds-accent)]">
             NexusRBX
           </p>
 
-          <h1 className="mb-3 text-center text-[clamp(2rem,5vw,3.5rem)] font-black leading-[1.1] tracking-tight text-white">
+          <h1 className="mb-3 text-center text-[clamp(2.35rem,5vw,4.25rem)] font-semibold leading-[1.04] tracking-[-0.04em] text-[var(--ds-text)] lg:text-left">
             AI Roblox Script Generator for Studio
           </h1>
 
-          <p className="mb-8 max-w-2xl text-center text-lg text-zinc-400">
+          <p className="mb-8 max-w-2xl text-center text-lg leading-8 text-[var(--ds-text-secondary)] lg:text-left">
             Generate a focused Luau script from one prompt, or use the Studio agent to plan
             coordinated changes across multiple files and Roblox services.
           </p>
@@ -70,11 +65,29 @@ export default function HomepageV2Content({
 
           <a
             href="/downloads"
-            className="mt-7 inline-flex min-h-11 items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-4 py-2 text-xs font-black text-zinc-300 transition hover:border-cyan-300/30 hover:bg-cyan-300/[0.06] hover:text-cyan-100"
+            className="mt-7 inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--ds-border-strong)] bg-[var(--ds-fill-subtle)] px-4 py-2 text-sm font-semibold text-[var(--ds-text-secondary)] transition-[background-color,border-color,color,transform] hover:border-[var(--ds-accent-border)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)] motion-reduce:transform-none"
           >
             Get the desktop connector
             <span aria-hidden="true">→</span>
           </a>
+          </div>
+
+          <div className="relative w-full">
+            <picture className="block">
+              <source media="(max-width: 767px)" srcSet="/assets/nexus-product-mock-960.webp" type="image/webp" />
+              <img
+                src="/assets/nexus-product-mock-1344.webp"
+                alt=""
+                aria-hidden="true"
+                width="1344"
+                height="752"
+                className="block h-auto w-full object-contain"
+                loading="eager"
+                fetchpriority="high"
+                decoding="async"
+              />
+            </picture>
+          </div>
         </section>
 
         <CompanionDownloadSection />

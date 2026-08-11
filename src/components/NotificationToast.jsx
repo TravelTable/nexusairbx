@@ -66,15 +66,15 @@ export default function NotificationToast({
     }, 200);
   };
 
-  let color = "#9b5de5";
-  if (type === "success") color = "#00f5d4";
-  if (type === "error") color = "#ff3860";
+  let color = "var(--ds-info)";
+  if (type === "success") color = "var(--ds-success)";
+  if (type === "error") color = "var(--ds-danger)";
   const isError = type === "error";
 
   return (
     <div
-      className={`nexus-toast relative min-w-[260px] max-w-xs px-5 py-4 rounded-lg shadow-xl border-l-4 bg-gray-900 text-white mb-4 transition-[opacity,transform] duration-[var(--motion-standard)] ease-[var(--ease-product)]
-        ${type === "success" ? "border-[#00f5d4]" : type === "error" ? "border-[#ff3860]" : "border-[#9b5de5]"}
+      className={`nexus-toast relative min-w-[260px] max-w-xs px-5 py-4 rounded-lg shadow-xl border-l-4 bg-[var(--ds-surface-overlay)] text-[var(--ds-text)] mb-4 transition-[opacity,transform] duration-[var(--motion-standard)] ease-[var(--ease-product)]
+        ${type === "success" ? "border-[var(--ds-success)]" : type === "error" ? "border-[var(--ds-danger)]" : "border-[var(--ds-info)]"}
         ${leaving ? "translate-y-1 opacity-0" : "translate-y-0 opacity-100"}
       `}
       style={{
@@ -86,7 +86,7 @@ export default function NotificationToast({
     >
       {!leaving && (
         <button
-          className="absolute right-0.5 top-0.5 flex h-11 w-11 items-center justify-center rounded-md text-lg font-bold text-gray-400 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[#00f5d4]"
+          className="absolute right-0.5 top-0.5 flex h-11 w-11 items-center justify-center rounded-md text-lg font-bold text-[var(--ds-text-muted)] hover:text-[var(--ds-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-accent"
           onClick={handleClose}
           aria-label="Close notification"
         >
@@ -99,10 +99,10 @@ export default function NotificationToast({
         <div className="mt-3 flex gap-2">
           {cta && (
             <button
-              className={`min-h-11 px-3 py-1.5 rounded font-semibold text-sm shadow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00f5d4] ${
+              className={`min-h-11 px-3 py-1.5 rounded font-semibold text-sm shadow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
                 cta.primary !== false
-                  ? "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:shadow-xl"
-                  : "bg-gray-800 text-gray-200 hover:bg-gray-700"
+                  ? "bg-accent text-accent-foreground hover:bg-[var(--ds-accent-hover)] active:bg-[var(--ds-accent-pressed)]"
+                  : "bg-[var(--ds-surface-2)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]"
               }`}
               onClick={() => {
                 if (cta.onClick) cta.onClick();
@@ -114,7 +114,7 @@ export default function NotificationToast({
           )}
           {secondary && (
             <button
-              className="min-h-11 rounded bg-gray-800 px-3 py-1.5 text-sm font-medium text-gray-200 hover:bg-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00f5d4]"
+              className="min-h-11 rounded bg-[var(--ds-surface-2)] px-3 py-1.5 text-sm font-medium text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
               onClick={() => {
                 if (secondary.onClick) secondary.onClick();
                 handleClose();

@@ -199,17 +199,17 @@ export default function SidebarContent({
         onClose={() => setDeleteChatId(null)}
         title="Delete chat?"
       >
-        <p className="text-sm text-gray-400">
+        <p className="text-sm text-muted-foreground">
           This removes the chat and all its messages. Saved creations will remain.
         </p>
         {isActiveRunStatus(activeAgentStatusByChat[deleteChatId]) && (
-          <p className="mt-3 text-sm text-amber-300">Finish or cancel the active run first.</p>
+          <p className="mt-3 text-sm text-[var(--ds-warning)]">Finish or cancel the active run first.</p>
         )}
         <div className="mt-6 flex justify-end gap-2">
           <button
             type="button"
             onClick={() => setDeleteChatId(null)}
-            className="rounded-lg px-4 py-2 text-sm text-gray-400"
+            className="min-h-11 rounded-lg px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             Cancel
           </button>
@@ -217,7 +217,7 @@ export default function SidebarContent({
             type="button"
             onClick={confirmChatDelete}
             disabled={deleting || isActiveRunStatus(activeAgentStatusByChat[deleteChatId])}
-            className="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+            className="min-h-11 rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground disabled:opacity-40"
           >
             Delete chat
           </button>
@@ -229,19 +229,19 @@ export default function SidebarContent({
         onClose={() => setDeleteProjectId(null)}
         title="Delete game project?"
       >
-        <p className="text-sm text-gray-300">
+        <p className="text-sm text-muted-foreground">
           This removes {projectCounts.chats} chats, {projectCounts.creations} creations,
           their messages, Nexus asset records, and Nexus-hosted files. It never deletes the
           Roblox experience or assets already uploaded to Roblox.
         </p>
-        <p className="mt-3 text-xs text-gray-500">
+        <p className="mt-3 text-xs text-muted-foreground">
           An active agent run must be finished or cancelled first. Partial failures can be retried.
         </p>
         <div className="mt-6 flex justify-end gap-2">
           <button
             type="button"
             onClick={() => setDeleteProjectId(null)}
-            className="rounded-lg px-4 py-2 text-sm text-gray-400"
+            className="min-h-11 rounded-lg px-4 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             Cancel
           </button>
@@ -249,7 +249,7 @@ export default function SidebarContent({
             type="button"
             onClick={confirmProjectDelete}
             disabled={deleting}
-            className="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+            className="min-h-11 rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground disabled:opacity-40"
           >
             Delete Nexus data
           </button>

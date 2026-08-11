@@ -38,15 +38,15 @@ function fileTypeChips(files) {
 }
 
 const RUN_STATE_META = {
-  applied: { label: "Applied to Studio", className: "border-[#00f5d4]/30 bg-[#00f5d4]/10 text-[#00f5d4]" },
-  ready_to_apply: { label: "Ready to push", className: "border-[#00f5d4]/25 bg-[#00f5d4]/5 text-[#00f5d4]" },
-  assets_pending: { label: "Icons uploading", className: "border-amber-400/30 bg-amber-400/10 text-amber-200" },
-  applying: { label: "Applying to Studio…", className: "border-amber-400/30 bg-amber-400/10 text-amber-200" },
-  push_skipped: { label: "Saved to workspace", className: "border-white/10 bg-white/5 text-gray-400" },
-  conflict: { label: "Studio conflict", className: "border-amber-400/30 bg-amber-400/10 text-amber-200" },
-  cancelled: { label: "Stopped", className: "border-white/15 bg-white/5 text-gray-300" },
-  canceled: { label: "Stopped", className: "border-white/15 bg-white/5 text-gray-300" },
-  failed: { label: "Failed", className: "border-red-400/30 bg-red-400/10 text-red-300" },
+  applied: { label: "Applied to Studio", className: "border-[color-mix(in_srgb,var(--ds-success)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-success)_12%,transparent)] text-[var(--ds-success)]" },
+  ready_to_apply: { label: "Ready to push", className: "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]" },
+  assets_pending: { label: "Icons uploading", className: " border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)]  text-[var(--ds-warning)] " },
+  applying: { label: "Applying to Studio…", className: " border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)]  text-[var(--ds-warning)] " },
+  push_skipped: { label: "Saved to workspace", className: "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)]" },
+  conflict: { label: "Studio conflict", className: " border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)]  text-[var(--ds-warning)] " },
+  cancelled: { label: "Stopped", className: "border-[var(--ds-border-strong)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)]" },
+  canceled: { label: "Stopped", className: "border-[var(--ds-border-strong)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)]" },
+  failed: { label: "Failed", className: " border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)]  text-[var(--ds-danger)] " },
 };
 
 function BubbleShell({ activeMode, grouped = false, children }) {
@@ -132,14 +132,14 @@ export default function AssistantBubble({
         )}
 
         {m.pending && !m.explanation && !m.content && (
-          <div className="flex items-center gap-2 text-sm text-gray-300">
-            <Loader2 className="w-4 h-4 animate-spin text-[#00f5d4]" />
+          <div className="flex items-center gap-2 text-sm text-[var(--ds-text-secondary)]">
+            <Loader2 className="w-4 h-4 animate-spin text-[var(--ds-accent)]" />
             <span>{m.stage || "Studio agent is working..."}</span>
           </div>
         )}
 
         {m.error && (
-          <div className="text-sm text-red-300">
+          <div className="text-sm text-[var(--ds-danger)] ">
             {formatUserFacingError(m.error)}
           </div>
         )}
@@ -155,7 +155,7 @@ export default function AssistantBubble({
         <div className="mt-5 w-full max-w-[1080px] space-y-4">
           {qaReport && Number.isFinite(Number(qaReport.score)) && (
             <div className="flex items-center justify-between gap-3 flex-wrap">
-              <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Quality &amp; Trust</span>
+              <span className="text-[10px] font-black text-[var(--ds-text-muted)] uppercase tracking-widest">Quality &amp; Trust</span>
               <QaScoreBadge score={qaReport.score} issueCount={qaIssueCount} disabled={isBusy} />
             </div>
           )}
@@ -164,7 +164,7 @@ export default function AssistantBubble({
             <Artifact>
               <ArtifactHeader>
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="p-2 rounded-lg text-red-400 bg-red-400/10 border border-red-400/20">
+                  <div className="p-2 rounded-lg text-[var(--ds-danger)]  bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)] ">
                     <ShieldAlert className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
@@ -184,7 +184,7 @@ export default function AssistantBubble({
             <Artifact>
               <ArtifactHeader>
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="p-2 rounded-lg text-[#00f5d4] bg-[#00f5d4]/10 border border-[#00f5d4]/20">
+                  <div className="p-2 rounded-lg text-[var(--ds-accent)] bg-[var(--ds-accent-soft)] border border-[var(--ds-accent-border)]">
                     <Activity className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
@@ -204,7 +204,7 @@ export default function AssistantBubble({
             <Artifact>
               <ArtifactHeader>
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="p-2 rounded-xl bg-nexus-cyan/10 text-nexus-cyan shrink-0">
+                  <div className="p-2 rounded-xl bg-[var(--ds-accent-soft)] text-[var(--ds-accent)] shrink-0">
                     <FileCode2 className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
@@ -224,7 +224,7 @@ export default function AssistantBubble({
                             <Badge
                               key={meta.label}
                               variant="outline"
-                              className="gap-1 rounded-md border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest"
+                              className="gap-1 rounded-md border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest"
                               style={{ color: meta.accent }}
                             >
                               {ChipIcon ? <ChipIcon className="w-3 h-3" /> : null}
@@ -247,7 +247,7 @@ export default function AssistantBubble({
                     type="button"
                     size="sm"
                     onClick={() => onViewUi?.(m)}
-                    className="bg-[#00f5d4] text-black font-black uppercase tracking-widest hover:bg-[#00f5d4]/90"
+                    className="bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] font-black uppercase tracking-widest hover:bg-[var(--ds-accent-hover)]"
                   >
                     <FolderOpen className="w-3.5 h-3.5" /> Open in editor
                   </Button>

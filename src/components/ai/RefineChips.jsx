@@ -30,8 +30,8 @@ export default function RefineChips({ onRefine, isRefining = false, className = 
       role="group"
       aria-label="Quick refine suggestions"
     >
-      <span className="shrink-0 inline-flex items-center gap-1 pr-1 text-[10px] font-bold uppercase tracking-widest text-gray-500">
-        <Wand2 className="w-3 h-3 text-[#00f5d4]" />
+      <span className="shrink-0 inline-flex items-center gap-1 pr-1 text-[10px] font-bold uppercase tracking-widest text-[var(--ds-text-muted)]">
+        <Wand2 className="w-3 h-3 text-[var(--ds-accent)]" />
         Quick
       </span>
       {REFINE_CHIPS.map(({ label, text, icon: Icon }) => (
@@ -41,9 +41,9 @@ export default function RefineChips({ onRefine, isRefining = false, className = 
           onClick={() => onRefine(text)}
           disabled={isRefining}
           title={text}
-          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[11px] font-semibold text-gray-300 whitespace-nowrap transition-all hover:text-white hover:border-[#00f5d4]/50 hover:bg-[#00f5d4]/10 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--ds-fill-subtle)] border border-[var(--ds-border-subtle)] text-[11px] font-semibold text-[var(--ds-text-secondary)] whitespace-nowrap transition-all hover:text-[var(--ds-text)] hover:border-[var(--ds-accent-border)] hover:bg-[var(--ds-accent-soft)] disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          <Icon className="w-3.5 h-3.5 text-[#00f5d4]" />
+          <Icon className="w-3.5 h-3.5 text-[var(--ds-accent)]" />
           {label}
         </button>
       ))}

@@ -36,11 +36,11 @@ export default function HeroSection({
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="text-center space-y-8 relative z-10"
         >
-          <h1 className="font-display text-4xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-[#9b5de5] via-[#f15bb5] to-[#00f5d4] text-transparent bg-clip-text leading-tight">
+          <h1 className="font-display text-4xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-[var(--ds-accent-pressed)] via-accent to-[var(--ds-info)] text-transparent bg-clip-text leading-tight">
             The Ultimate AI UI Builder <br className="hidden md:block" /> & Script Generator
           </h1>
-          <p className="text-lg md:text-2xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
-            Design stunning interfaces and complex game logic in seconds. NexusRBX turns your ideas into production-ready <a href="/ai" className="underline decoration-[#9b5de5]/60 hover:decoration-[#9b5de5] text-white">Lua code</a> for Roblox Studio.
+          <p className="text-lg md:text-2xl text-[var(--ds-text-muted)] max-w-3xl mx-auto leading-relaxed">
+            Design stunning interfaces and complex game logic in seconds. NexusRBX turns your ideas into production-ready <a href="/ai" className="underline decoration-accent/60 hover:decoration-accent text-[var(--ds-text)]">Lua code</a> for Roblox Studio.
           </p>
 
           {/* Social Proof Spot */}
@@ -52,15 +52,15 @@ export default function HeroSection({
           >
             <div className="flex -space-x-3">
               {randomUsers.map((u, i) => (
-                <div key={i} className={`w-10 h-10 rounded-full border-2 border-[#0D0D0D] bg-gradient-to-br ${u.color} flex items-center justify-center text-xs font-bold shadow-lg`}>
+                <div key={i} className={`w-10 h-10 rounded-full border-2 border-[var(--ds-bg-canvas)] bg-gradient-to-br ${u.color} flex items-center justify-center text-xs font-bold shadow-lg`}>
                   {u.letter}
                 </div>
               ))}
-              <div className="w-10 h-10 rounded-full border-2 border-[#0D0D0D] bg-gray-800 flex items-center justify-center text-[10px] font-bold text-gray-400 shadow-lg">
+              <div className="w-10 h-10 rounded-full border-2 border-[var(--ds-bg-canvas)] bg-[var(--ds-surface-2)] flex items-center justify-center text-[10px] font-bold text-[var(--ds-text-muted)] shadow-lg">
                 RBX
               </div>
             </div>
-            <p className="text-sm font-medium text-gray-400">
+            <p className="text-sm font-medium text-[var(--ds-text-muted)]">
               Built for Roblox creators shipping scripts, UI, and Studio workflows.
             </p>
           </motion.div>
@@ -71,11 +71,11 @@ export default function HeroSection({
             transition={{ delay: 0.3, duration: 0.8 }}
             className="max-w-4xl mx-auto mt-12 relative group"
           >
-            <div className="absolute -inset-1 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+            <div className="absolute -inset-1 bg-gradient-to-r from-[var(--ds-accent-pressed)] to-accent rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
             <img
               src="/ai-preview.png"
               alt="AI Generation Preview"
-              className="relative w-full rounded-2xl border border-white/10 shadow-2xl"
+              className="relative w-full rounded-2xl border border-[var(--ds-border-subtle)] shadow-2xl"
             />
           </motion.div>
           <form
@@ -119,9 +119,9 @@ export default function HeroSection({
             </Button>
           </form>
           {error && (
-            <div className="text-red-400 mt-2" role="alert">{error}</div>
+            <div className="text-[var(--ds-danger)] mt-2" role="alert">{error}</div>
           )}
-          <div className="text-sm text-gray-500 mt-2">
+          <div className="text-sm text-[var(--ds-text-subtle)] mt-2">
             <span>Describe your idea and press <b>Enter</b> or click "{ctaCopy}"</span>
           </div>
         </motion.div>

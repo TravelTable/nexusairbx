@@ -18,7 +18,7 @@ export default function DownloadsPage() {
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonicalUrl("/downloads")} />
       </Helmet>
-      <div className="bg-[#07090f]">
+      <div className="bg-[var(--ds-bg-canvas)] text-[var(--ds-text)]">
         <DownloadsContent />
         <HomepageFooter />
       </div>

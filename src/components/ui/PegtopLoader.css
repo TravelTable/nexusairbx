@@ -1,7 +1,7 @@
 /* Peg Top Loader — Uiverse.io by andrew-manzyk (MIT) */
 .pegtop-loader {
-  --pegtop-fill-color: #9b5de5;
-  --pegtop-shine-color: #9b5de533;
+  --pegtop-fill-color: var(--ds-accent);
+  --pegtop-shine-color: var(--ds-accent-soft);
   --pegtop-scale: 0.22;
   width: 100px;
   height: auto;

@@ -13,21 +13,21 @@ export default function ThinkingDisclosure({ text, live = false, defaultOpen = f
   if (!clean || settings.showThinking === false) return null;
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/30 overflow-hidden">
+    <div className="rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white/[0.03] transition-colors"
+        className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-[var(--ds-fill-subtle)] transition-colors"
         aria-expanded={open}
       >
-        <Brain className={`w-3.5 h-3.5 ${live ? "text-[#00f5d4] animate-pulse" : "text-[#9b5de5]"}`} />
-        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+        <Brain className={`w-3.5 h-3.5 ${live ? "text-[var(--ds-accent)] animate-pulse" : "text-[var(--ds-plan)]"}`} />
+        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-secondary)]">
           {label || (live ? "Thinking" : "Build log")}
         </span>
-        <ChevronDown className={`w-3.5 h-3.5 ml-auto text-gray-500 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`w-3.5 h-3.5 ml-auto text-[var(--ds-text-muted)] transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
-        <div className="px-3 pb-3 pt-2 border-t border-white/5 text-[12px] leading-relaxed text-gray-400 whitespace-pre-wrap">
+        <div className="px-3 pb-3 pt-2 border-t border-[var(--ds-border-subtle)] text-[12px] leading-relaxed text-[var(--ds-text-secondary)] whitespace-pre-wrap">
           {clean}
         </div>
       )}

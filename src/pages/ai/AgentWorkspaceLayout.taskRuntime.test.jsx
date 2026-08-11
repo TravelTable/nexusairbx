@@ -189,7 +189,7 @@ function makeController({
       proNudgeReason: "",
       codeDrawerOpen: false,
       codeDrawerData: {},
-      currentTheme: { primary: "#00f5d4", secondary: "#7c3aed" },
+      currentTheme: { primary: "var(--ds-accent)", secondary: "var(--ds-plan)" },
       currentToast: null,
       authReady: true,
     },

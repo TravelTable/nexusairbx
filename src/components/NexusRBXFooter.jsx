@@ -37,11 +37,11 @@ export default function NexusRBXFooter({
   const isDocumentRoute = (href) => DOCUMENT_ROUTES.has(href);
 
   return (
-    <footer className="border-t border-white/10 py-8 px-4 bg-gradient-to-t from-black/60 to-transparent">
+    <footer className="border-t border-[var(--ds-border-subtle)] py-8 px-4 bg-gradient-to-t from-[var(--ds-surface-1)] to-transparent">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center">
         <a
           href="/"
-          className="text-xl font-bold bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text mb-4 md:mb-0 cursor-pointer"
+          className="text-xl font-bold text-accent mb-4 md:mb-0 cursor-pointer"
           aria-label="Go to homepage"
         >
           NexusRBX
@@ -53,7 +53,7 @@ export default function NexusRBXFooter({
               <a
                 key={link.id}
                 href={link.href}
-                className="focus-ring rounded-lg px-1.5 py-1 text-gray-400 hover:text-white transition-colors duration-200"
+                className="focus-ring rounded-lg px-1.5 py-1 text-[var(--ds-text-muted)] hover:text-[var(--ds-text)] transition-colors duration-200"
                 rel="noopener noreferrer"
                 target="_blank"
               >
@@ -64,8 +64,8 @@ export default function NexusRBXFooter({
                 key={link.id}
                 href={link.href}
                 className={cx(
-                  "focus-ring rounded-lg px-1.5 py-1 text-gray-400 hover:text-white transition-colors duration-200",
-                  isActive(link.href) && "font-bold underline underline-offset-4 text-white"
+                  "focus-ring rounded-lg px-1.5 py-1 text-[var(--ds-text-muted)] hover:text-[var(--ds-text)] transition-colors duration-200",
+                  isActive(link.href) && "font-bold underline underline-offset-4 text-[var(--ds-text)]"
                 )}
                 aria-current={isActive(link.href) ? "page" : undefined}
               >
@@ -77,8 +77,8 @@ export default function NexusRBXFooter({
                 type="button"
                 onClick={() => navigate(link.href)}
                 className={cx(
-                  "focus-ring rounded-lg px-1.5 py-1 text-gray-400 hover:text-white transition-colors duration-200 bg-transparent border-none cursor-pointer font-sans text-base",
-                  isActive(link.href) && "font-bold underline underline-offset-4 text-white"
+                  "focus-ring rounded-lg px-1.5 py-1 text-[var(--ds-text-muted)] hover:text-[var(--ds-text)] transition-colors duration-200 bg-transparent border-none cursor-pointer font-sans text-base",
+                  isActive(link.href) && "font-bold underline underline-offset-4 text-[var(--ds-text)]"
                 )}
                 aria-current={isActive(link.href) ? "page" : undefined}
                 tabIndex={0}
@@ -89,7 +89,7 @@ export default function NexusRBXFooter({
           )}
           <a
             href="https://github.com/TravelTable/nexusairbx"
-            className="focus-ring rounded-lg px-1.5 py-1 text-gray-400 hover:text-white transition-colors duration-200 flex items-center gap-2"
+            className="focus-ring rounded-lg px-1.5 py-1 text-[var(--ds-text-muted)] hover:text-[var(--ds-text)] transition-colors duration-200 flex items-center gap-2"
             rel="noopener noreferrer"
             target="_blank"
           >
@@ -98,10 +98,10 @@ export default function NexusRBXFooter({
           </a>
         </div>
       </div>
-      <div className="max-w-6xl mx-auto mt-6 text-center text-gray-500 text-sm flex flex-col items-center gap-2">
+      <div className="max-w-6xl mx-auto mt-6 text-center text-[var(--ds-text-subtle)] text-sm flex flex-col items-center gap-2">
         <p>© 2026 NexusRBX. All rights reserved.</p>
         <p className="text-[10px] opacity-60 max-w-md">
-          NexusRBX is currently in <span className="text-[#9b5de5] font-bold">Beta</span>. Features and AI models are subject to frequent updates and improvements. We appreciate your feedback as we build the future of Roblox development.
+          NexusRBX is currently in <span className="text-accent font-bold">Beta</span>. Features and AI models are subject to frequent updates and improvements. We appreciate your feedback as we build the future of Roblox development.
         </p>
       </div>
     </footer>

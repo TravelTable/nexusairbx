@@ -38,7 +38,7 @@ export default function AnimatedPromptPlaceholder({
       aria-hidden="true"
     >
       <span
-        className={`text-[14px] leading-relaxed text-gray-500/70 transition-opacity duration-200 ease-out motion-reduce:transition-none md:text-[15px] ${
+        className={`text-[14px] leading-relaxed text-[var(--ds-text-muted)] transition-opacity duration-200 ease-out motion-reduce:transition-none md:text-[15px] ${
           fading ? "opacity-0" : "opacity-100"
         }`}
       >

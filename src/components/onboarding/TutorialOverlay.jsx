@@ -17,11 +17,11 @@ function ensureRingStyles() {
     .${TOUR_TARGET_CLASS} {
       position: relative !important;
       z-index: 70 !important;
-      outline: 2px solid rgba(0, 245, 212, 0.95) !important;
+      outline: 2px solid rgba(var(--ds-accent-rgb), 0.95) !important;
       outline-offset: 5px !important;
       box-shadow:
-        0 0 0 7px rgba(0, 245, 212, 0.14),
-        0 0 30px rgba(0, 245, 212, 0.26) !important;
+        0 0 0 7px rgba(var(--ds-accent-rgb), 0.14),
+        0 0 30px rgba(var(--ds-accent-rgb), 0.26) !important;
       border-radius: 12px !important;
       transition:
         outline-color 160ms ease,
@@ -35,10 +35,10 @@ function ensureRingStyles() {
       right: -6px;
       top: -6px;
       transform: translateY(-100%);
-      border: 1px solid rgba(0, 245, 212, 0.28);
+      border: 1px solid rgba(var(--ds-accent-rgb), 0.28);
       border-radius: 999px;
-      background: rgba(7, 7, 10, 0.96);
-      color: #a8fff4;
+      background: var(--ds-surface-overlay);
+      color: var(--ds-accent);
       font-size: 10px;
       font-weight: 800;
       letter-spacing: 0.08em;

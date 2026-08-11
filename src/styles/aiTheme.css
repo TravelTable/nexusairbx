@@ -1,10 +1,21 @@
-/* AI theme utility classes.
-   Variables are now defined globally in index.css :root.
-   This file provides convenience classes for AI-specific surfaces. */
+/* AI workspace compatibility layer.
+   Canonical --ds-* variables live in index.css. This file maps the older AI
+   vocabulary and dense Tailwind-era utilities onto those semantic tokens. */
 
 .ai-page {
-  background-color: var(--ai-bg);
-  color: var(--ai-text);
+  --ai-bg: var(--ds-bg-workspace);
+  --ai-surface: var(--ds-surface-1);
+  --ai-surface-muted: var(--ds-surface-2);
+  --ai-border: var(--ds-border-subtle);
+  --ai-text: var(--ds-text);
+  --ai-text-muted: var(--ds-text-muted);
+  --ai-accent: var(--ds-accent);
+  --ai-accent-2: var(--ds-plan);
+  --ai-info: var(--ds-info);
+  --ai-danger: var(--ds-danger);
+
+  background-color: var(--ds-bg-workspace);
+  color: var(--ds-text);
   width: 100%;
   height: 100%;
   min-height: 0;
@@ -21,17 +32,12 @@
   font-size: 0.75rem;
 }
 
-.ai-page [class~="text-gray-500"],
-.ai-page [class~="text-gray-600"] {
-  color: var(--ai-text-muted);
-}
-
 .ai-glow-primary {
-  background-color: color-mix(in srgb, var(--ai-accent) 12%, transparent);
+  background-color: var(--ds-accent-soft);
 }
 
 .ai-glow-secondary {
-  background-color: color-mix(in srgb, var(--ai-accent-2) 12%, transparent);
+  background-color: color-mix(in srgb, var(--ds-plan) 12%, transparent);
 }
 
 .ai-surface {
@@ -54,20 +60,39 @@
   color: var(--ai-accent-2);
 }
 
-/* Semantic design-system aliases (map to AI / nexus tokens). */
-:root {
-  --ds-bg: var(--ai-bg);
-  --ds-surface: var(--ai-surface);
-  --ds-surface-muted: var(--ai-surface-muted);
-  --ds-border: var(--ai-border);
-  --ds-text: var(--ai-text);
-  --ds-text-muted: var(--ai-text-muted);
-  --ds-accent: var(--ai-accent);
-  --ds-accent-2: var(--ai-accent-2);
-  --ds-info: var(--ai-info);
-  --ds-danger: var(--ai-danger);
-  --ds-radius-sm: var(--nexus-radius-sm);
-  --ds-radius-md: var(--nexus-radius-md);
-  --ds-radius-lg: var(--nexus-radius-lg);
-  --ds-shadow-panel: var(--nexus-shadow-panel);
+.ai-page button:not(:disabled):active,
+.ai-page [role="button"]:not([aria-disabled="true"]):active {
+  transform: scale(0.98);
+  transition-duration: 90ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-page *,
+  .ai-page *::before,
+  .ai-page *::after {
+    scroll-behavior: auto !important;
+  }
+
+  .ai-page button:not(:disabled):active,
+  .ai-page [role="button"]:not([aria-disabled="true"]):active {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .ai-page [class*="backdrop-blur"] {
+    background-color: var(--ds-surface-overlay);
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .ai-page {
+    --ai-border: var(--ds-border-strong);
+  }
+
+  .ai-page [class*="border-white"],
+  .ai-page [class*="border-[var(--ds-border-subtle)]"] {
+    border-color: var(--ds-border-strong);
+  }
 }

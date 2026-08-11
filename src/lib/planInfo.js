@@ -10,7 +10,7 @@ const PLAN_INFO = {
     upgradeLine: "Free includes Quick Script plus a daily Agent Build allowance. Starter adds more usage, model choice, and saved scripts.",
     upgradeCta: "Get Starter",
     upgradeDesc: "Subscribe to Starter for more Agent usage, model selection, saved scripts, and longer history.",
-    badgeClass: "border border-gray-400 text-gray-300 bg-transparent",
+    badgeClass: "border border-[var(--ds-border-strong)] text-[var(--ds-text-secondary)] bg-transparent",
     badgeFilled: false,
     planNudge: "Generated with Nexus Free",
     sidebarStrip: (
@@ -18,7 +18,7 @@ const PLAN_INFO = {
         Free —{" "}
         <a
           href="/subscribe?highlight=starter"
-          className="text-[#9b5de5] underline hover:text-[#00f5d4] transition-colors"
+          className="text-accent underline hover:text-[var(--ds-accent-hover)] transition-colors"
         >
           Get Starter
         </a>
@@ -32,14 +32,14 @@ const PLAN_INFO = {
     sidebarCta: "Subscribe",
     sidebarCtaLink: "/subscribe?highlight=starter",
     sidebarCtaDesc: "Starter adds more Agent usage, model choice, and saved scripts.",
-    sidebarCtaColor: "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white",
+    sidebarCtaColor: "bg-accent text-accent-foreground hover:bg-[var(--ds-accent-hover)]",
     sidebarCtaText: "Unlock Starter",
     sidebarCtaSub: "More usage, model choice, saved scripts.",
   },
   starter: {
     label: "Starter",
     badge: "filled",
-    color: "cyan",
+    color: "blue",
     cap: 75000,
     capText: "Included Usage",
     promptCap: 900,
@@ -47,7 +47,7 @@ const PLAN_INFO = {
     upgradeLine: "Pro unlocks Premium Direct, Icon Generator, and Studio Agent workflows.",
     upgradeCta: "Upgrade to Pro",
     upgradeDesc: "Upgrade to Pro for Premium Direct models, Icon Generator, and higher included usage.",
-    badgeClass: "bg-[#00f5d4]/20 text-[#00f5d4] border border-[#00f5d4]/40",
+    badgeClass: "bg-[var(--ds-accent-soft)] text-accent border border-[var(--ds-accent-border)]",
     badgeFilled: true,
     planNudge: "Generated with Starter Plan",
     sidebarStrip: (
@@ -55,7 +55,7 @@ const PLAN_INFO = {
         Starter —{" "}
         <button
           type="button"
-          className="text-[#00f5d4] underline hover:text-[#9b5de5] transition-colors"
+          className="text-accent underline hover:text-[var(--ds-plan)] transition-colors"
           onClick={() => window.portal && window.portal()}
         >
           Manage Billing
@@ -70,7 +70,7 @@ const PLAN_INFO = {
     sidebarCta: "Upgrade",
     sidebarCtaLink: "/subscribe",
     sidebarCtaDesc: "Upgrade to Pro for Premium Direct and Icon Generator.",
-    sidebarCtaColor: "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white",
+    sidebarCtaColor: "bg-gradient-to-r from-[var(--ds-plan)] to-accent text-white",
     sidebarCtaText: "Upgrade to Pro",
     sidebarCtaSub: "Premium Direct, Icon Generator, Studio Agent.",
   },
@@ -85,7 +85,7 @@ const PLAN_INFO = {
     upgradeLine: "Pro+ and Team unlock larger workflows and higher included usage.",
     upgradeCta: "Upgrade to Team",
     upgradeDesc: "Upgrade to Team for pooled usage, seats, collaboration, and priority support.",
-    badgeClass: "bg-[#9b5de5] text-white border border-[#9b5de5]",
+    badgeClass: "bg-[var(--ds-plan)] text-[var(--ds-plan-foreground)] border border-[var(--ds-plan)]",
     badgeFilled: true,
     planNudge: "Generated with Pro Plan",
     sidebarStrip: (
@@ -93,7 +93,7 @@ const PLAN_INFO = {
         Pro —{" "}
         <button
           type="button"
-          className="text-[#9b5de5] underline hover:text-[#00f5d4] transition-colors"
+          className="text-[var(--ds-plan)] underline hover:text-accent transition-colors"
           onClick={() => window.portal && window.portal()}
         >
           Manage Billing
@@ -108,14 +108,14 @@ const PLAN_INFO = {
     sidebarCta: "Team",
     sidebarCtaLink: "/subscribe",
     sidebarCtaDesc: "Explore Team features & seats.",
-    sidebarCtaColor: "bg-white/5 text-gray-400 hover:text-white border border-white/10",
+    sidebarCtaColor: "bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)] hover:text-[var(--ds-text)] border border-[var(--ds-border-subtle)]",
     sidebarCtaText: "Explore Team",
     sidebarCtaSub: "Pooled usage, seats, priority support.",
   },
   pro_plus: {
     label: "Pro+",
     badge: "filled",
-    color: "teal",
+    color: "purple",
     cap: 1000000,
     capText: "Higher Included Usage",
     promptCap: 2400,
@@ -123,7 +123,7 @@ const PLAN_INFO = {
     upgradeLine: "Team adds pooled usage, seats, and collaboration.",
     upgradeCta: "Upgrade to Team",
     upgradeDesc: "Upgrade to Team for pooled usage, seats, collaboration, and priority support.",
-    badgeClass: "bg-[#00f5d4] text-black border border-[#00f5d4]",
+    badgeClass: "bg-[var(--ds-plan)] text-[var(--ds-plan-foreground)] border border-[var(--ds-plan)]",
     badgeFilled: true,
     planNudge: "Generated with Pro+ Plan",
     sidebarStrip: (
@@ -131,7 +131,7 @@ const PLAN_INFO = {
         Pro+ —{" "}
         <button
           type="button"
-          className="text-[#00f5d4] underline hover:text-[#9b5de5] transition-colors"
+          className="text-[var(--ds-plan)] underline hover:text-accent transition-colors"
           onClick={() => window.portal && window.portal()}
         >
           Manage Billing
@@ -146,14 +146,14 @@ const PLAN_INFO = {
     sidebarCta: "Team",
     sidebarCtaLink: "/subscribe",
     sidebarCtaDesc: "Explore Team features & seats.",
-    sidebarCtaColor: "bg-white/5 text-gray-400 hover:text-white border border-white/10",
+    sidebarCtaColor: "bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)] hover:text-[var(--ds-text)] border border-[var(--ds-border-subtle)]",
     sidebarCtaText: "Explore Team",
     sidebarCtaSub: "Pooled usage, seats, priority support.",
   },
   team: {
     label: "Team",
     badge: "filled",
-    color: "teal",
+    color: "purple",
     cap: 1500000,
     capText: "Pooled Included Usage",
     promptCap: 3200,
@@ -161,7 +161,7 @@ const PLAN_INFO = {
     upgradeLine: "",
     upgradeCta: "",
     upgradeDesc: "",
-    badgeClass: "bg-[#00f5d4] text-black border border-[#00f5d4]",
+    badgeClass: "bg-gradient-to-r from-[var(--ds-plan)] to-accent text-white border border-[var(--ds-plan)]",
     badgeFilled: true,
     planNudge: "Generated with Team Plan",
     sidebarStrip: (
@@ -169,7 +169,7 @@ const PLAN_INFO = {
         Team —{" "}
         <button
           type="button"
-          className="text-[#00f5d4] underline hover:text-[#9b5de5] transition-colors"
+          className="text-[var(--ds-plan)] underline hover:text-accent transition-colors"
           onClick={() => window.portal && window.portal()}
         >
           Manage Billing

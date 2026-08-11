@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { 
   Search, 
   Filter, 
@@ -7,7 +6,6 @@ import {
   ExternalLink, 
   Loader2, 
   Grid, 
-  X,
   Info,
   ShieldCheck,
   Palette,
@@ -31,6 +29,7 @@ import { useBilling } from "../context/BillingContext";
 import { BACKEND_URL } from "../config";
 import { filterMarketplaceIcons } from "../lib/iconMarket";
 import IconMarketCard from "../components/icons/IconMarketCard";
+import Modal from "../components/Modal";
 
 const API_BASE = BACKEND_URL.replace(/\/+$/, "");
 
@@ -52,8 +51,12 @@ export default function IconsMarketPage() {
   const [activeMarketTab, setActiveMarketTab] = useState("browse"); // "browse" or "collections"
   const [showCreateCollection, setShowCreateCollection] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
+  const [collectionMenuOpen, setCollectionMenuOpen] = useState(false);
   
   const observer = useRef();
+  const collectionMenuRef = useRef(null);
+  const collectionMenuTriggerRef = useRef(null);
+  const newCollectionInputRef = useRef(null);
   const fetchIcons = useCallback(async (loadMore = false) => {
     setLoading(true);
     try {
@@ -125,6 +128,36 @@ export default function IconsMarketPage() {
     fetchCollections();
   }, [user, search, style, category, isPro, fetchIcons]);
 
+  useEffect(() => {
+    if (!collectionMenuOpen) return undefined;
+
+    const frame = window.requestAnimationFrame(() => {
+      collectionMenuRef.current?.querySelector("button")?.focus();
+    });
+    const closeCollectionMenu = ({ restoreFocus = true } = {}) => {
+      setCollectionMenuOpen(false);
+      if (restoreFocus) window.requestAnimationFrame(() => collectionMenuTriggerRef.current?.focus());
+    };
+    const handleKeyDown = (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      closeCollectionMenu();
+    };
+    const handlePointerDown = (event) => {
+      if (collectionMenuRef.current?.contains(event.target) || collectionMenuTriggerRef.current?.contains(event.target)) return;
+      closeCollectionMenu({ restoreFocus: false });
+    };
+
+    window.addEventListener("keydown", handleKeyDown, true);
+    document.addEventListener("pointerdown", handlePointerDown, true);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("keydown", handleKeyDown, true);
+      document.removeEventListener("pointerdown", handlePointerDown, true);
+    };
+  }, [collectionMenuOpen]);
+
   const fetchCollections = async () => {
     try {
       const token = await user.getIdToken();
@@ -159,6 +192,8 @@ export default function IconsMarketPage() {
 
   const handlePostToRoblox = async (icon) => {
     if (!isPremium) {
+      setSelectedIcon(null);
+      setCollectionMenuOpen(false);
       setShowProNudge(true);
       return;
     }
@@ -276,24 +311,19 @@ export default function IconsMarketPage() {
   const categories = ["Egg", "UI Element", "UI Component"];
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col relative overflow-hidden">
-      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[#9b5de5]/5 blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-[#00f5d4]/5 blur-[120px]" />
-      </div>
-
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-[var(--ds-bg-canvas)] text-[var(--ds-text)]">
       <main className="flex-grow flex relative z-10">
-        <aside className="w-72 border-r border-white/10 bg-black/20 backdrop-blur-xl p-8 hidden lg:block sticky top-16 h-[calc(100vh-64px)] overflow-y-auto">
-          <div className="flex border-b border-white/10 mb-8">
+        <aside className="sticky top-16 hidden h-[calc(100vh-64px)] w-72 overflow-y-auto border-r border-[var(--ds-border-subtle)] bg-[var(--ds-bg-sidebar)] p-8 lg:block">
+          <div className="mb-8 flex border-b border-[var(--ds-border-subtle)]">
             <button 
               onClick={() => setActiveMarketTab("browse")}
-              className={`flex-1 py-2 text-xs font-black uppercase tracking-widest transition-all ${activeMarketTab === "browse" ? 'text-[#00f5d4] border-b-2 border-[#00f5d4]' : 'text-gray-500 hover:text-gray-300'}`}
+              className={`min-h-11 flex-1 py-2 text-xs font-semibold transition-colors ${activeMarketTab === "browse" ? 'border-b-2 border-[var(--ds-accent)] text-[var(--ds-accent)]' : 'text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]'}`}
             >
               Browse
             </button>
             <button 
               onClick={() => setActiveMarketTab("collections")}
-              className={`flex-1 py-2 text-xs font-black uppercase tracking-widest transition-all ${activeMarketTab === "collections" ? 'text-[#9b5de5] border-b-2 border-[#9b5de5]' : 'text-gray-500 hover:text-gray-300'}`}
+              className={`min-h-11 flex-1 py-2 text-xs font-semibold transition-colors ${activeMarketTab === "collections" ? 'border-b-2 border-[var(--ds-accent)] text-[var(--ds-accent)]' : 'text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]'}`}
             >
               Collections
             </button>
@@ -303,7 +333,7 @@ export default function IconsMarketPage() {
             {activeMarketTab === "browse" ? (
               <>
                 <div>
-                  <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <h3 className="mb-4 flex items-center gap-2 text-xs font-semibold text-[var(--ds-text-muted)]">
                     <Filter className="h-3 w-3" /> Access
                   </h3>
                   <div className="space-y-2">
@@ -315,7 +345,7 @@ export default function IconsMarketPage() {
                       <button
                         key={opt.label}
                         onClick={() => setIsPro(opt.value)}
-                        className={`w-full text-left px-4 py-2 rounded-lg text-sm font-bold transition-all ${isPro === opt.value ? 'bg-[#9b5de5]/20 text-[#9b5de5]' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                        className={`min-h-11 w-full rounded-lg px-4 py-2 text-left text-sm font-semibold transition-colors ${isPro === opt.value ? 'bg-[var(--ds-fill-selected)] text-[var(--ds-accent)]' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]'}`}
                       >
                         {opt.label}
                       </button>
@@ -324,13 +354,13 @@ export default function IconsMarketPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <h3 className="mb-4 flex items-center gap-2 text-xs font-semibold text-[var(--ds-text-muted)]">
                     <Palette className="h-3 w-3" /> Visual Style
                   </h3>
                   <div className="space-y-2">
                     <button
                       onClick={() => setStyle("")}
-                      className={`w-full text-left px-4 py-2 rounded-lg text-sm font-bold transition-all ${style === "" ? 'bg-[#00f5d4]/20 text-[#00f5d4]' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                      className={`min-h-11 w-full rounded-lg px-4 py-2 text-left text-sm font-semibold transition-colors ${style === "" ? 'bg-[var(--ds-fill-selected)] text-[var(--ds-accent)]' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]'}`}
                     >
                       All Styles
                     </button>
@@ -338,7 +368,7 @@ export default function IconsMarketPage() {
                       <button
                         key={s}
                         onClick={() => setStyle(s)}
-                        className={`w-full text-left px-4 py-2 rounded-lg text-sm font-bold transition-all ${style === s ? 'bg-[#00f5d4]/20 text-[#00f5d4]' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                        className={`min-h-11 w-full rounded-lg px-4 py-2 text-left text-sm font-semibold transition-colors ${style === s ? 'bg-[var(--ds-fill-selected)] text-[var(--ds-accent)]' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]'}`}
                       >
                         {s}
                       </button>
@@ -347,13 +377,13 @@ export default function IconsMarketPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <h3 className="mb-4 flex items-center gap-2 text-xs font-semibold text-[var(--ds-text-muted)]">
                     <Box className="h-3 w-3" /> Category
                   </h3>
                   <div className="space-y-2">
                     <button
                       onClick={() => setCategory("")}
-                      className={`w-full text-left px-4 py-2 rounded-lg text-sm font-bold transition-all ${category === "" ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                      className={`min-h-11 w-full rounded-lg px-4 py-2 text-left text-sm font-semibold transition-colors ${category === "" ? 'bg-[var(--ds-fill-selected)] text-[var(--ds-accent)]' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]'}`}
                     >
                       All Categories
                     </button>
@@ -361,7 +391,7 @@ export default function IconsMarketPage() {
                       <button
                         key={c}
                         onClick={() => setCategory(c)}
-                        className={`w-full text-left px-4 py-2 rounded-lg text-sm font-bold transition-all ${category === c ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                        className={`min-h-11 w-full rounded-lg px-4 py-2 text-left text-sm font-semibold transition-colors ${category === c ? 'bg-[var(--ds-fill-selected)] text-[var(--ds-accent)]' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]'}`}
                       >
                         {c}
                       </button>
@@ -373,7 +403,7 @@ export default function IconsMarketPage() {
               <div className="space-y-6">
                 <button 
                   onClick={() => setShowCreateCollection(true)}
-                  className="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-bold flex items-center justify-center gap-2 hover:bg-white/10 transition-all"
+                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] py-3 text-xs font-semibold text-[var(--ds-text)] transition-colors hover:bg-[var(--ds-fill-hover)]"
                 >
                   <Plus className="h-4 w-4" /> Create Collection
                 </button>
@@ -382,24 +412,24 @@ export default function IconsMarketPage() {
                   {collections.map(c => (
                     <div
                       key={c.id}
-                      className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.02] border border-white/5 hover:border-[#9b5de5]/30 transition-all group"
+                      className="group flex w-full items-center justify-between rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-4 py-3 transition-colors hover:border-[var(--ds-border-strong)]"
                     >
                       <div className="flex-1 min-w-0">
-                        <span className="text-sm font-bold text-gray-300 group-hover:text-white block truncate">{c.name}</span>
-                        <span className="text-[10px] font-bold text-gray-500">{c.iconIds?.length || 0} items</span>
+                        <span className="block truncate text-sm font-semibold text-[var(--ds-text-secondary)] group-hover:text-[var(--ds-text)]">{c.name}</span>
+                        <span className="text-[10px] font-semibold text-[var(--ds-text-muted)]">{c.iconIds?.length || 0} items</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <button 
                           onClick={() => handleDownloadCollection(c)}
                           disabled={!c.iconIds || c.iconIds.length === 0}
-                          className="p-2 rounded-lg hover:bg-white/10 text-gray-500 hover:text-[#00f5d4] transition-all disabled:opacity-30"
+                          className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-accent)] disabled:opacity-30"
                           title="Download All (ZIP)"
                         >
                           <DownloadCloud className="h-4 w-4" />
                         </button>
                         <button 
                           onClick={() => handleDeleteCollection(c.id)}
-                          className="p-2 rounded-lg hover:bg-white/10 text-gray-500 hover:text-red-400 transition-all"
+                          className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-danger)]"
                           title="Delete Collection"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -418,19 +448,19 @@ export default function IconsMarketPage() {
             <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 rounded-lg bg-[#00f5d4]/20">
-                    <Grid className="h-6 w-6 text-[#00f5d4]" />
+                  <div className="rounded-[10px] bg-[var(--ds-accent-soft)] p-2">
+                    <Grid className="h-6 w-6 text-[var(--ds-accent)]" />
                   </div>
-                  <h1 className="text-4xl font-black tracking-tight">Icons Market</h1>
+                  <h1 className="text-4xl font-semibold tracking-[-0.035em]">Icons Market</h1>
                 </div>
-                <p className="text-gray-400 max-w-xl">
+                <p className="max-w-xl text-[var(--ds-text-muted)]">
                   Browse curated, game-ready icons. One-click export to Roblox Studio.
                 </p>
               </div>
 
               <div className="relative w-full md:w-96">
                 <label htmlFor="icon-market-search" className="sr-only">Search icons</label>
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" aria-hidden="true" />
+                <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--ds-text-muted)]" aria-hidden="true" />
                 <input 
                   id="icon-market-search"
                   type="text"
@@ -456,50 +486,40 @@ export default function IconsMarketPage() {
 
             {loading && (
               <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 text-[#9b5de5] animate-spin" />
+                <Loader2 className="h-8 w-8 animate-spin text-[var(--ds-accent)]" />
               </div>
             )}
 
             {!loading && icons.length === 0 && (
               <div className="text-center py-24">
-                <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-6">
-                  <Search className="h-8 w-8 text-gray-600" />
+                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-[14px] bg-[var(--ds-fill-subtle)]">
+                  <Search className="h-7 w-7 text-[var(--ds-text-muted)]" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-400">No icons found</h3>
-                <p className="text-gray-600">Try adjusting your search or filters.</p>
+                <h3 className="text-xl font-semibold text-[var(--ds-text-secondary)]">No icons found</h3>
+                <p className="text-[var(--ds-text-muted)]">Try adjusting your search or filters.</p>
               </div>
             )}
           </div>
         </div>
       </main>
 
-      <AnimatePresence>
-        {selectedIcon && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedIcon(null)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-md"
-            />
-            
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="nexus-page-card relative flex w-full max-w-4xl flex-col overflow-hidden md:flex-row"
-            >
-              <button 
-                onClick={() => setSelectedIcon(null)}
-                className="nexus-icon-button absolute right-6 top-6 z-50 rounded-full"
-              >
-                <X className="h-5 w-5 text-gray-400" />
-              </button>
-
-              <div className="w-full md:w-1/2 bg-black/40 p-12 flex items-center justify-center border-b md:border-b-0 md:border-r border-white/10">
+      {selectedIcon && (
+        <Modal
+          isOpen
+          title={selectedIcon.name}
+          titleClassName="sr-only"
+          onClose={() => {
+            setCollectionMenuOpen(false);
+            setSelectedIcon(null);
+          }}
+          panelClassName="max-w-4xl overflow-hidden p-0"
+          bodyClassName="flex flex-col text-[var(--ds-text)] md:flex-row"
+          overlayClassName="z-[100] bg-[color-mix(in_srgb,var(--ds-bg-canvas)_78%,transparent)] p-4 backdrop-blur-md md:p-8"
+          closeButtonClassName="right-6 top-6 rounded-full"
+          closeOnBackdrop
+        >
+              <div className="flex w-full items-center justify-center border-b border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)] p-12 md:w-1/2 md:border-b-0 md:border-r">
                 <div className="relative group">
-                  <div className="absolute -inset-8 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] rounded-full blur-3xl opacity-20" />
                   <img 
                     src={selectedIcon.imageUrl} 
                     alt={selectedIcon.name} 
@@ -511,38 +531,38 @@ export default function IconsMarketPage() {
               <div className="w-full md:w-1/2 p-12 flex flex-col">
                 <div className="mb-8">
                   <div className="flex items-center gap-3 mb-2">
-                    <h2 className="text-2xl font-black">{selectedIcon.name}</h2>
+                    <h2 className="text-2xl font-semibold tracking-[-0.02em]">{selectedIcon.name}</h2>
                     {selectedIcon.isPro && !isPremium && (
-                      <span className="px-2 py-0.5 rounded bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white text-[10px] font-black uppercase">Pro</span>
+                      <span className="rounded-md border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--ds-accent)]">Pro</span>
                     )}
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-gray-400">{selectedIcon.style}</span>
-                    <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-gray-400">{selectedIcon.category}</span>
+                    <span className="rounded-full border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-3 py-1 text-[10px] font-semibold text-[var(--ds-text-muted)]">{selectedIcon.style}</span>
+                    <span className="rounded-full border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-3 py-1 text-[10px] font-semibold text-[var(--ds-text-muted)]">{selectedIcon.category}</span>
                   </div>
                 </div>
 
                 <div className="space-y-6 mb-12">
-                  <div className="flex items-start gap-3 p-4 rounded-2xl bg-white/5 border border-white/10">
-                    <Info className="h-5 w-5 text-[#00f5d4] shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-3 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-4">
+                    <Info className="mt-0.5 h-5 w-5 shrink-0 text-[var(--ds-info)]" />
                     <div className="space-y-2">
-                      <p className="text-xs text-gray-400 leading-relaxed">
+                      <p className="text-xs leading-relaxed text-[var(--ds-text-secondary)]">
                         This icon is optimized for Roblox Studio. It features a centered composition and high-contrast lighting for maximum visibility in-game.
                       </p>
-                      <p className="text-[10px] text-gray-500 italic">
+                      <p className="text-[10px] italic text-[var(--ds-text-muted)]">
                         Click "Post to Roblox" to copy a Luau snippet. Paste it into a LocalScript in Studio to instantly preview the icon.
                       </p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-center">
-                      <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">Format</p>
-                      <p className="text-sm font-black">PNG</p>
+                    <div className="rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-4 text-center">
+                      <p className="mb-1 text-[10px] font-semibold text-[var(--ds-text-muted)]">Format</p>
+                      <p className="text-sm font-semibold">PNG</p>
                     </div>
-                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-center">
-                      <p className="text-[10px] font-bold text-gray-500 uppercase mb-1">Resolution</p>
-                      <p className="text-sm font-black">512x512</p>
+                    <div className="rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-4 text-center">
+                      <p className="mb-1 text-[10px] font-semibold text-[var(--ds-text-muted)]">Resolution</p>
+                      <p className="text-sm font-semibold">512x512</p>
                     </div>
                   </div>
                 </div>
@@ -551,7 +571,7 @@ export default function IconsMarketPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       onClick={() => handlePostToRoblox(selectedIcon)}
-                      className="focus-ring flex items-center justify-center gap-2 rounded-xl bg-[#00f5d4] py-4 text-sm font-black text-black shadow-[0_0_24px_rgba(0,245,212,0.28)] transition-all hover:shadow-[0_0_32px_rgba(0,245,212,0.42)] active:scale-[0.98]"
+                      className="focus-ring flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-[var(--ds-accent)] py-4 text-sm font-semibold text-[var(--ds-accent-foreground)] transition-colors hover:bg-[var(--ds-accent-hover)] active:scale-[0.985]"
                     >
                       {selectedIcon.isPro && !isPremium ? <ShieldCheck className="h-5 w-5" /> : <ExternalLink className="h-5 w-5" />}
                       {selectedIcon.isPro && !isPremium ? "Unlock" : (copied ? "Copied!" : "Post to Roblox")}
@@ -559,35 +579,55 @@ export default function IconsMarketPage() {
                     
                     <button
                       onClick={() => handleGenerateVariation(selectedIcon)}
-                      className="py-4 rounded-2xl bg-[#9b5de5]/10 border border-[#9b5de5]/20 text-[#9b5de5] font-black text-sm hover:bg-[#9b5de5]/20 transition-all flex items-center justify-center gap-2"
+                      className="flex min-h-11 items-center justify-center gap-2 rounded-[10px] border border-[color-mix(in_srgb,var(--ds-plan)_28%,transparent)] bg-[color-mix(in_srgb,var(--ds-plan)_9%,transparent)] py-4 text-sm font-semibold text-[var(--ds-plan)] transition-colors hover:bg-[color-mix(in_srgb,var(--ds-plan)_15%,transparent)]"
                     >
                       <Sparkles className="h-5 w-5" /> Variation
                     </button>
                   </div>
 
                   {collections.length > 0 && (
-                    <div className="relative group/coll">
-                      <button className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-sm hover:bg-white/10 transition-all flex items-center justify-center gap-2">
+                    <div className="relative">
+                      <button
+                        ref={collectionMenuTriggerRef}
+                        type="button"
+                        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] py-4 text-sm font-semibold text-[var(--ds-text)] transition-colors hover:bg-[var(--ds-fill-hover)]"
+                        aria-expanded={collectionMenuOpen}
+                        aria-controls="icon-collection-popover"
+                        onClick={() => setCollectionMenuOpen((open) => !open)}
+                      >
                         <FolderPlus className="h-5 w-5" /> Add to Collection
                       </button>
-                      <div className="nexus-menu-surface invisible absolute bottom-full left-0 z-50 mb-2 max-h-48 w-full overflow-y-auto p-2 opacity-0 transition-all group-hover/coll:visible group-hover/coll:opacity-100">
+                      {collectionMenuOpen ? (
+                        <div
+                          id="icon-collection-popover"
+                          ref={collectionMenuRef}
+                          className="nexus-menu-surface absolute bottom-full left-0 z-50 mb-2 max-h-48 w-full overflow-y-auto p-2"
+                          role="group"
+                          aria-label="Choose a collection"
+                        >
                         {collections.map(c => (
                           <button
                             key={c.id}
-                            onClick={() => handleAddToCollection(c.id, selectedIcon.id)}
+                            type="button"
+                            onClick={() => {
+                              setCollectionMenuOpen(false);
+                              collectionMenuTriggerRef.current?.focus();
+                              void handleAddToCollection(c.id, selectedIcon.id);
+                            }}
                             className="nexus-menu-item flex w-full items-center gap-2 text-left"
                           >
                             <Folder className="h-3 w-3" /> {c.name}
                           </button>
                         ))}
-                      </div>
+                        </div>
+                      ) : null}
                     </div>
                   )}
                   
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       onClick={() => handleDownload(selectedIcon)}
-                      className="py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-sm hover:bg-white/10 transition-all flex items-center justify-center gap-2"
+                      className="flex min-h-11 items-center justify-center gap-2 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] py-4 text-sm font-semibold text-[var(--ds-text)] transition-colors hover:bg-[var(--ds-fill-hover)]"
                     >
                       <Download className="h-5 w-5" /> Download
                     </button>
@@ -596,62 +636,51 @@ export default function IconsMarketPage() {
                       href="https://create.roblox.com/dashboard/creations?activeTab=Decal"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="py-4 rounded-2xl bg-[#00f5d4]/10 border border-[#00f5d4]/20 text-[#00f5d4] font-black text-sm hover:bg-[#00f5d4]/20 transition-all flex items-center justify-center gap-2"
+                      className="flex min-h-11 items-center justify-center gap-2 rounded-[10px] border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] py-4 text-sm font-semibold text-[var(--ds-accent)] transition-colors hover:bg-[var(--ds-fill-selected)]"
                     >
                       <Upload className="h-5 w-5" /> Get Asset ID
                     </a>
                   </div>
                 </div>
               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+        </Modal>
+      )}
 
-      <AnimatePresence>
-        {showCreateCollection && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowCreateCollection(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="nexus-page-card relative w-full max-w-md p-8"
-            >
-              <h3 className="text-xl font-black mb-6">New Collection</h3>
+      {showCreateCollection && (
+        <Modal
+          isOpen
+          title="New Collection"
+          onClose={() => setShowCreateCollection(false)}
+          panelClassName="max-w-md p-8"
+          overlayClassName="z-[110] bg-[color-mix(in_srgb,var(--ds-bg-canvas)_72%,transparent)] p-4 backdrop-blur-sm"
+          initialFocusRef={newCollectionInputRef}
+          closeOnBackdrop
+        >
               <input 
+                ref={newCollectionInputRef}
                 type="text"
                 value={newCollectionName}
                 onChange={(e) => setNewCollectionName(e.target.value)}
                 placeholder="Collection name (e.g. 'My RPG Project')"
                 className="nexus-input mb-6 w-full p-4"
-                autoFocus
               />
               <div className="flex gap-3">
                 <button 
                   onClick={() => setShowCreateCollection(false)}
-                  className="flex-1 py-3 rounded-xl bg-white/5 text-gray-400 font-bold text-sm hover:bg-white/10 transition-all"
+                  className="min-h-11 flex-1 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] py-3 text-sm font-semibold text-[var(--ds-text-secondary)] transition-colors hover:bg-[var(--ds-fill-hover)]"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={handleCreateCollection}
                   disabled={!newCollectionName}
-                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-black text-sm shadow-lg disabled:opacity-50"
+                  className="min-h-11 flex-1 rounded-[10px] bg-[var(--ds-accent)] py-3 text-sm font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] disabled:opacity-50"
                 >
                   Create
                 </button>
               </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+        </Modal>
+      )}
 
       <NexusRBXFooter />
 

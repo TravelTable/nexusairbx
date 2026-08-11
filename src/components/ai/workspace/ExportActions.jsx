@@ -195,11 +195,11 @@ export default function ExportActions({ artifact, activeFile, notify }) {
   const btn = "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)] disabled:opacity-40 disabled:cursor-not-allowed";
 
   return (
-    <div className="flex items-center gap-1.5 flex-wrap px-4 py-2.5 border-t border-white/5 bg-black/30">
-      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mr-0.5">Export</span>
+    <div className="flex items-center gap-1.5 flex-wrap px-4 py-2.5 border-t border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)]">
+      <span className="text-[10px] font-bold text-[var(--ds-text-muted)] uppercase tracking-wider mr-0.5">Export</span>
       <span
         className={`inline-flex items-center gap-1 px-2 py-1 rounded-md border text-[9px] font-black uppercase tracking-widest ${
-          studioConnected ? "border-[#00f5d4]/25 bg-[#00f5d4]/10 text-[#00f5d4]" : "border-white/10 bg-white/5 text-gray-500"
+          studioConnected ? "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]" : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)]"
         }`}
       >
         <Radio className="w-3 h-3" />
@@ -211,26 +211,26 @@ export default function ExportActions({ artifact, activeFile, notify }) {
         onClick={handleDownloadZip}
         disabled={bundling}
         title="Primary export: includes README_SETUP.md with Studio placement instructions"
-        className={`${btn} bg-[#00f5d4] text-black hover:bg-[#00f5d4]/90 shadow-lg shadow-[#00f5d4]/15`}
+        className={`${btn} bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] shadow-lg shadow-none`}
       >
         {bundling ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} Project ZIP
       </button>
-      <button type="button" onClick={handleCopyFile} disabled={!activeFile} className={`${btn} bg-white/5 text-gray-300 hover:bg-white/10`}>
-        {copied ? <Check className="w-3.5 h-3.5 text-[#00f5d4]" /> : <Copy className="w-3.5 h-3.5" />} File
+      <button type="button" onClick={handleCopyFile} disabled={!activeFile} className={`${btn} bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]`}>
+        {copied ? <Check className="w-3.5 h-3.5 text-[var(--ds-accent)]" /> : <Copy className="w-3.5 h-3.5" />} File
       </button>
-      <button type="button" onClick={handleCopyAll} className={`${btn} bg-white/5 text-gray-300 hover:bg-white/10`}>
-        {copiedAll ? <Check className="w-3.5 h-3.5 text-[#00f5d4]" /> : <Files className="w-3.5 h-3.5" />} All
+      <button type="button" onClick={handleCopyAll} className={`${btn} bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]`}>
+        {copiedAll ? <Check className="w-3.5 h-3.5 text-[var(--ds-accent)]" /> : <Files className="w-3.5 h-3.5" />} All
       </button>
-      <button type="button" onClick={handleDownloadFile} disabled={!activeFile} className={`${btn} bg-white/5 text-gray-300 hover:bg-white/10`}>
+      <button type="button" onClick={handleDownloadFile} disabled={!activeFile} className={`${btn} bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]`}>
         <FileDown className="w-3.5 h-3.5" /> .lua
       </button>
-      <button type="button" onClick={handleRojoExport} disabled={rojoBuilding} className={`${btn} bg-[#9b5de5]/10 text-[#9b5de5] hover:bg-[#9b5de5]/20`}>
+      <button type="button" onClick={handleRojoExport} disabled={rojoBuilding} className={`${btn} bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)] text-[var(--ds-plan)] hover:bg-[color-mix(in_srgb,var(--ds-plan)_18%,transparent)]`}>
         {rojoBuilding ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Boxes className="w-3.5 h-3.5" />} Rojo
       </button>
-      <button type="button" onClick={handleCopyLoader} className={`${btn} bg-[#00f5d4]/10 text-[#00f5d4] hover:bg-[#00f5d4]/20`}>
+      <button type="button" onClick={handleCopyLoader} className={`${btn} bg-[var(--ds-accent-soft)] text-[var(--ds-accent)] hover:bg-[var(--ds-accent-soft)]`}>
         {loaderCopied ? <Check className="w-3.5 h-3.5" /> : <Terminal className="w-3.5 h-3.5" />} Loader
       </button>
-      <button type="button" onClick={handleVerify} disabled={verifying || !activeFile} className={`${btn} bg-white/5 text-gray-300 hover:bg-white/10`}>
+      <button type="button" onClick={handleVerify} disabled={verifying || !activeFile} className={`${btn} bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]`}>
         {verifying ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />} Verify
       </button>
 
@@ -242,14 +242,14 @@ export default function ExportActions({ artifact, activeFile, notify }) {
             onClick={handlePushStudio}
             disabled={studioBusy}
             title="Apply this project in Roblox Studio"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-[background-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)] bg-[#00f5d4] text-black hover:bg-[#00f5d4]/90 shadow-lg shadow-[#00f5d4]/20 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-[background-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)] bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] shadow-lg shadow-none disabled:cursor-not-allowed"
           >
             {studioBusy ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
             Push to Studio
           </button>
         ) : (
           <span
-            className="text-[9px] font-bold uppercase tracking-widest text-gray-500"
+            className="text-[9px] font-bold uppercase tracking-widest text-[var(--ds-text-muted)]"
             title="Download the Project ZIP, then follow README_SETUP.md to place files in Roblox Studio"
           >
             Project ZIP includes Studio placement steps

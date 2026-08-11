@@ -27,11 +27,11 @@ export default function FancyLoadingOverlay({ visible }) {
 
   return (
     <div className="flex items-center justify-center mb-4">
-      <div className="flex items-center gap-3 px-5 py-3 rounded-lg bg-gray-900/90 border border-[#9b5de5] shadow-lg animate-fade-in">
+      <div className="flex items-center gap-3 rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-surface-overlay)] px-5 py-3 text-[var(--ds-accent)] shadow-panel animate-fade-in" role="status" aria-live="polite">
         <span className="w-5 h-5 mr-2 relative flex items-center justify-center">
-          <span className="absolute w-5 h-5 rounded-full border-2 border-[#9b5de5] border-t-transparent animate-spin"></span>
+          <span className="absolute h-5 w-5 animate-spin rounded-full border-2 border-[var(--ds-accent)] border-t-transparent"></span>
         </span>
-        <span className="text-base font-medium text-[#9b5de5] animate-blink">
+        <span className="text-base font-medium text-[var(--ds-accent)] animate-blink">
           {STATUS_MESSAGES[index]}
         </span>
       </div>

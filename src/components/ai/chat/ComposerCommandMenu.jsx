@@ -14,11 +14,11 @@ export default function ComposerCommandMenu({
 
   return (
     <div
-      className="absolute bottom-full left-0 right-0 z-30 mb-1.5 overflow-hidden rounded-xl border border-white/10 bg-[#0D0D0D] shadow-2xl"
+      className="absolute bottom-full left-0 right-0 z-30 mb-1.5 overflow-hidden rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] shadow-2xl"
       role="listbox"
       aria-label="Composer commands"
     >
-      <div className="flex items-center gap-1.5 border-b border-white/5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-500">
+      <div className="flex items-center gap-1.5 border-b border-[var(--ds-border-subtle)] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--ds-text-muted)]">
         <Hash className="h-3 w-3" />
         Commands
       </div>
@@ -37,13 +37,13 @@ export default function ComposerCommandMenu({
                   onSelect?.(command);
                 }}
                 className={`flex w-full items-start gap-2.5 px-3 py-2 text-left transition-colors ${
-                  active ? "bg-white/[0.08]" : "hover:bg-white/[0.04]"
+                  active ? "bg-[var(--ds-fill-hover)]" : "hover:bg-[var(--ds-fill-subtle)]"
                 }`}
               >
-                <span className="mt-0.5 font-mono text-[12px] font-semibold text-[#7ddcff]">
+                <span className="mt-0.5 font-mono text-[12px] font-semibold text-[var(--ds-info)]">
                   {command.label}
                 </span>
-                <span className="min-w-0 flex-1 text-[11px] leading-snug text-gray-400">
+                <span className="min-w-0 flex-1 text-[11px] leading-snug text-[var(--ds-text-secondary)]">
                   {command.description}
                 </span>
               </button>

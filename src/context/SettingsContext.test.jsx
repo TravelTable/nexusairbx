@@ -43,6 +43,10 @@ function renderSettings() {
 
 beforeEach(() => {
   localStorage.clear();
+  auth.currentUser = {
+    uid: "user_1",
+    getIdToken: jest.fn(async () => "token_1"),
+  };
   jest.clearAllMocks();
   global.fetch = jest.fn();
 });
@@ -76,6 +80,101 @@ test("updateSettings applies an optimistic value and rolls back when saving fail
   expect(result.current.saveError).toBe("No write access");
 });
 
+test("rapid setting updates merge against the latest optimistic state", async () => {
+  const firstSave = createDeferred();
+  const secondSave = createDeferred();
+  global.fetch
+    .mockReturnValueOnce(firstSave.promise)
+    .mockReturnValueOnce(secondSave.promise);
+  const { result } = renderSettings();
+
+  let firstUpdate;
+  let secondUpdate;
+  act(() => {
+    firstUpdate = result.current.updateSettings({ theme: "light" });
+    secondUpdate = result.current.updateSettings({ robloxAssetUploadsEnabled: true });
+  });
+
+  expect(result.current.settings.theme).toBe("light");
+  expect(result.current.settings.robloxAssetUploadsEnabled).toBe(true);
+
+  await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(2));
+
+  await act(async () => {
+    firstSave.resolve(jsonResponse({
+      settings: { ...DEFAULT_SETTINGS, theme: "light" },
+      updatedAt: "2026-08-12T00:00:00.000Z",
+    }));
+    await firstUpdate;
+  });
+
+  expect(result.current.settings.theme).toBe("light");
+  expect(result.current.settings.robloxAssetUploadsEnabled).toBe(true);
+
+  await act(async () => {
+    secondSave.resolve(jsonResponse({
+      settings: { ...DEFAULT_SETTINGS, theme: "light", robloxAssetUploadsEnabled: true },
+      updatedAt: "2026-08-12T00:00:01.000Z",
+    }));
+    await secondUpdate;
+  });
+
+  expect(result.current.settings.theme).toBe("light");
+  expect(result.current.settings.robloxAssetUploadsEnabled).toBe(true);
+  expect(result.current.saveStatus).toBe("saved");
+});
+
+test("a follow-up update merges from an accepted server state before effects flush", async () => {
+  const secondSave = createDeferred();
+  global.fetch
+    .mockResolvedValueOnce(jsonResponse({
+      settings: { ...DEFAULT_SETTINGS, theme: "dark" },
+      updatedAt: "2026-08-12T00:00:00.000Z",
+    }))
+    .mockReturnValueOnce(secondSave.promise);
+  const { result } = renderSettings();
+
+  let secondUpdate;
+  await act(async () => {
+    await result.current.updateSettings({ theme: "light" });
+    secondUpdate = result.current.updateSettings({ robloxAssetUploadsEnabled: true });
+  });
+
+  expect(result.current.settings.theme).toBe("dark");
+  expect(result.current.settings.robloxAssetUploadsEnabled).toBe(true);
+
+  await act(async () => {
+    secondSave.resolve(jsonResponse({
+      settings: { ...DEFAULT_SETTINGS, theme: "dark", robloxAssetUploadsEnabled: true },
+    }));
+    await secondUpdate;
+  });
+});
+
+test("a follow-up update merges from a rollback before effects flush", async () => {
+  const secondSave = createDeferred();
+  global.fetch
+    .mockResolvedValueOnce(jsonResponse({ error: "No write access" }, false))
+    .mockReturnValueOnce(secondSave.promise);
+  const { result } = renderSettings();
+
+  let secondUpdate;
+  await act(async () => {
+    await result.current.updateSettings({ theme: "light" });
+    secondUpdate = result.current.updateSettings({ robloxAssetUploadsEnabled: true });
+  });
+
+  expect(result.current.settings.theme).toBe(DEFAULT_SETTINGS.theme);
+  expect(result.current.settings.robloxAssetUploadsEnabled).toBe(true);
+
+  await act(async () => {
+    secondSave.resolve(jsonResponse({
+      settings: { ...DEFAULT_SETTINGS, robloxAssetUploadsEnabled: true },
+    }));
+    await secondUpdate;
+  });
+});
+
 test("reloadSettings normalizes stale backend settings before updating state", async () => {
   global.fetch.mockResolvedValueOnce(jsonResponse({
     modelVersion: "gpt-4.1-mini",
@@ -94,4 +193,33 @@ test("reloadSettings normalizes stale backend settings before updating state", a
   expect(result.current.settings.chatMode).toBe(DEFAULT_SETTINGS.chatMode);
   expect(result.current.settings.robloxAssetUploadsEnabled).toBe(true);
   expect(result.current.saveStatus).toBe("saved");
+});
+
+test("anonymous appearance changes persist locally without an API request", async () => {
+  auth.currentUser = null;
+  const { result } = renderSettings();
+
+  await act(async () => {
+    await result.current.updateSettings({ theme: "light" });
+  });
+
+  expect(result.current.settings.theme).toBe("light");
+  expect(result.current.saveStatus).toBe("saved");
+  expect(JSON.parse(localStorage.getItem("nexusrbx:settings")).theme).toBe("light");
+  expect(global.fetch).not.toHaveBeenCalled();
+});
+
+test("settings synchronize valid appearance changes from another browser tab", async () => {
+  auth.currentUser = null;
+  const { result } = renderSettings();
+  const nextSettings = { ...DEFAULT_SETTINGS, theme: "dark" };
+
+  act(() => {
+    window.dispatchEvent(new StorageEvent("storage", {
+      key: "nexusrbx:settings",
+      newValue: JSON.stringify(nextSettings),
+    }));
+  });
+
+  await waitFor(() => expect(result.current.settings.theme).toBe("dark"));
 });

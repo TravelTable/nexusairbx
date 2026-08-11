@@ -38,27 +38,27 @@ function normalizeForDisplay(raw) {
 function Section({ title, icon: Icon, children, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="border border-white/10 rounded-xl bg-white/5 overflow-hidden">
+    <div className="border border-[var(--ds-border-subtle)] rounded-xl bg-[var(--ds-fill-subtle)] overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center gap-2 px-4 py-3 text-left text-sm font-semibold text-gray-200 hover:bg-white/5 transition-colors"
+        className="w-full flex items-center gap-2 px-4 py-3 text-left text-sm font-semibold text-[var(--ds-text)] hover:bg-[var(--ds-fill-subtle)] transition-colors"
       >
-        {open ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
-        {Icon && <Icon className="w-4 h-4 text-[#00f5d4]" />}
+        {open ? <ChevronDown className="w-4 h-4 text-[var(--ds-text-secondary)]" /> : <ChevronRight className="w-4 h-4 text-[var(--ds-text-secondary)]" />}
+        {Icon && <Icon className="w-4 h-4 text-[var(--ds-accent)]" />}
         {title}
       </button>
-      {open && <div className="px-4 pb-3 border-t border-white/5">{children}</div>}
+      {open && <div className="px-4 pb-3 border-t border-[var(--ds-border-subtle)]">{children}</div>}
     </div>
   );
 }
 
 function ListItems({ items, renderItem, emptyMessage = "None" }) {
-  if (!items?.length) return <p className="text-xs text-gray-500 mt-1">{emptyMessage}</p>;
+  if (!items?.length) return <p className="text-xs text-[var(--ds-text-muted)] mt-1">{emptyMessage}</p>;
   return (
     <ul className="mt-2 space-y-1.5">
       {items.map((item, i) => (
-        <li key={i} className="text-xs text-gray-300 font-mono">
+        <li key={i} className="text-xs text-[var(--ds-text-secondary)] font-mono">
           {typeof renderItem === "function" ? renderItem(item, i) : String(item?.name ?? item ?? "")}
         </li>
       ))}
@@ -79,17 +79,17 @@ export default function ProjectArchitecturePanel({ context, onClose, onSync, emb
     (normalized.gameState && (normalized.gameState.events?.length || normalized.gameState.properties?.length));
 
   return (
-    <div className={`flex h-full flex-col ${embedded ? "bg-transparent" : "border-l border-white/10 bg-black/40 backdrop-blur-md"}`}>
+    <div className={`flex h-full flex-col ${embedded ? "bg-transparent" : "border-l border-[var(--ds-border-subtle)] bg-[var(--ds-fill-hover)] backdrop-blur-md"}`}>
       {!embedded ? (
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 shrink-0">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--ds-border-subtle)] shrink-0">
           <div className="flex items-center gap-2">
-            <Layout className="w-5 h-5 text-[#00f5d4]" />
-            <h2 className="text-sm font-bold text-white uppercase tracking-wider">Project Architecture</h2>
+            <Layout className="w-5 h-5 text-[var(--ds-accent)]" />
+            <h2 className="text-sm font-bold text-[var(--ds-text)] uppercase tracking-wider">Project Architecture</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+            className="p-2 rounded-lg hover:bg-[var(--ds-fill-hover)] text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)] transition-colors"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -99,14 +99,14 @@ export default function ProjectArchitecturePanel({ context, onClose, onSync, emb
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-subtle">
         {!hasAny ? (
-          <div className="rounded-xl bg-white/5 border border-white/10 p-6 text-center">
-            <p className="text-sm text-gray-400 mb-2">No project context yet.</p>
-            <p className="text-xs text-gray-500 mb-4">Add your game's Remotes, Modules, and services so the AI can generate code that fits your project.</p>
+          <div className="rounded-xl bg-[var(--ds-fill-subtle)] border border-[var(--ds-border-subtle)] p-6 text-center">
+            <p className="text-sm text-[var(--ds-text-secondary)] mb-2">No project context yet.</p>
+            <p className="text-xs text-[var(--ds-text-muted)] mb-4">Add your game's Remotes, Modules, and services so the AI can generate code that fits your project.</p>
             {onSync && (
               <button
                 type="button"
                 onClick={onSync}
-                className="px-4 py-2 rounded-lg bg-[#00f5d4]/10 text-[#00f5d4] text-xs font-semibold hover:bg-[#00f5d4]/20 transition-colors"
+                className="px-4 py-2 rounded-lg bg-[var(--ds-accent-soft)] text-[var(--ds-accent)] text-xs font-semibold hover:bg-[var(--ds-accent-soft)] transition-colors"
               >
                 Add Project Context
               </button>
@@ -116,7 +116,7 @@ export default function ProjectArchitecturePanel({ context, onClose, onSync, emb
           <>
             <Section title="ReplicatedStorage" icon={Folder} defaultOpen={true}>
               <div className="pt-2">
-                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Remote Events</span>
+                <span className="text-[10px] font-bold text-[var(--ds-text-muted)] uppercase tracking-wider">Remote Events</span>
                 <ListItems
                   items={normalized.remoteEvents}
                   renderItem={(e) => (
@@ -129,7 +129,7 @@ export default function ProjectArchitecturePanel({ context, onClose, onSync, emb
                 />
               </div>
               <div className="pt-3">
-                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Remote Functions</span>
+                <span className="text-[10px] font-bold text-[var(--ds-text-muted)] uppercase tracking-wider">Remote Functions</span>
                 <ListItems
                   items={normalized.remoteFunctions}
                   renderItem={(f) => (
@@ -142,7 +142,7 @@ export default function ProjectArchitecturePanel({ context, onClose, onSync, emb
                 />
               </div>
               <div className="pt-3">
-                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Modules</span>
+                <span className="text-[10px] font-bold text-[var(--ds-text-muted)] uppercase tracking-wider">Modules</span>
                 <ListItems
                   items={normalized.modules}
                   renderItem={(m) => (
@@ -183,7 +183,7 @@ export default function ProjectArchitecturePanel({ context, onClose, onSync, emb
                   {normalized.tags.map((t, i) => (
                     <span
                       key={i}
-                      className="px-2 py-0.5 rounded-md bg-[#9b5de5]/20 text-[#9b5de5] text-xs font-mono"
+                      className="px-2 py-0.5 rounded-md bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)] text-[var(--ds-plan)] text-xs font-mono"
                     >
                       {t}
                     </span>
@@ -196,13 +196,13 @@ export default function ProjectArchitecturePanel({ context, onClose, onSync, emb
               <Section title="Game State" icon={Zap} defaultOpen={true}>
                 {normalized.gameState.events?.length > 0 && (
                   <div className="pt-2">
-                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Events</span>
+                    <span className="text-[10px] font-bold text-[var(--ds-text-muted)] uppercase tracking-wider">Events</span>
                     <ListItems items={normalized.gameState.events} />
                   </div>
                 )}
                 {normalized.gameState.properties?.length > 0 && (
                   <div className="pt-3">
-                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Properties</span>
+                    <span className="text-[10px] font-bold text-[var(--ds-text-muted)] uppercase tracking-wider">Properties</span>
                     <ListItems items={normalized.gameState.properties} />
                   </div>
                 )}

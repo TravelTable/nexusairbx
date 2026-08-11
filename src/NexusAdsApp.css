@@ -1,15 +1,13 @@
-:root {
-  --ink: #132125;
-  --muted: #5c6b6f;
-  --accent: #e76f51;
-  --accent-soft: #f4b9a7;
-  --accent-dark: #c45137;
-  --teal: #2a9d8f;
-  --teal-soft: #bfe6e0;
-  --sand: #f6f2ea;
-  --card: #ffffff;
-  --border: rgba(19, 33, 37, 0.12);
-  --shadow: 0 20px 50px rgba(19, 33, 37, 0.12);
+.nexusads-app {
+  --nexusads-ink: var(--ds-text);
+  --nexusads-muted: var(--ds-text-muted);
+  --nexusads-accent: var(--ds-accent);
+  --nexusads-accent-soft: var(--ds-accent-soft);
+  --nexusads-accent-dark: var(--ds-accent-pressed);
+  --nexusads-sand: var(--ds-bg-canvas);
+  --nexusads-card: var(--ds-surface-1);
+  --nexusads-border: var(--ds-border-subtle);
+  --nexusads-shadow: var(--ds-shadow-panel);
   /* Design token layer for spacing, radius, typography */
   --spacing-s: 8px;
   --spacing-m: 16px;
@@ -18,17 +16,14 @@
   --radius-s: 4px;
   --radius-m: 8px;
   --radius-l: 12px;
-  --font-heading: "Bricolage Grotesque", sans-serif;
-  --font-body: "Rubik", sans-serif;
-}
-
-.nexusads-app {
-  color: var(--ink);
+  --font-heading: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  color: var(--nexusads-ink);
+  background: var(--nexusads-sand);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
-
 .topbar {
   position: sticky;
   top: 0;
@@ -38,8 +33,8 @@
   justify-content: space-between;
   padding: 20px 6vw;
   backdrop-filter: blur(12px);
-  background: rgba(246, 242, 234, 0.88);
-  border-bottom: 1px solid rgba(19, 33, 37, 0.08);
+  background: color-mix(in srgb, var(--ds-surface-overlay) 88%, transparent);
+  border-bottom: 1px solid var(--nexusads-border);
 }
 
 .brand {
@@ -57,8 +52,8 @@
   border-radius: var(--radius-l);
   display: grid;
   place-items: center;
-  background: var(--accent);
-  color: #fff;
+  background: var(--nexusads-accent);
+  color: var(--ds-accent-foreground);
   font-weight: 700;
 }
 
@@ -74,13 +69,13 @@
 
 .nav-links a {
   text-decoration: none;
-  color: var(--ink);
+  color: var(--nexusads-ink);
   position: relative;
   padding: var(--spacing-s) 0;
 }
 
 .nav-links a:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--nexusads-accent);
   outline-offset: 4px;
   border-radius: var(--radius-s);
 }
@@ -92,7 +87,7 @@
   bottom: -6px;
   width: 0;
   height: 2px;
-  background: var(--accent);
+  background: var(--nexusads-accent);
   transition: width 0.3s ease;
 }
 
@@ -101,19 +96,19 @@
 }
 
 .ghost-button {
-  border: 1px solid var(--border);
+  border: 1px solid var(--nexusads-border);
   background: transparent;
   min-height: 44px;
   padding: 10px 18px;
   border-radius: 999px;
   font-weight: 600;
-  color: var(--ink);
+  color: var(--nexusads-ink);
   cursor: pointer;
   font-family: var(--font-body);
 }
 
 .ghost-button:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--nexusads-accent);
   outline-offset: 2px;
 }
 
@@ -134,7 +129,7 @@ main {
   letter-spacing: 1.8px;
   font-size: 0.75rem;
   font-weight: 700;
-  color: var(--teal);
+  color: var(--nexusads-accent);
 }
 
 .hero h1 {
@@ -145,7 +140,7 @@ main {
 }
 
 .subhead {
-  color: var(--muted);
+  color: var(--nexusads-muted);
   font-size: 1.05rem;
   line-height: 1.7;
   margin-bottom: var(--spacing-l);
@@ -166,8 +161,8 @@ main {
   padding: var(--spacing-m);
   min-height: 44px;
   border-radius: 999px;
-  border: 1px solid var(--border);
-  background: #fff;
+  border: 1px solid var(--nexusads-border);
+  background: var(--nexusads-card);
   min-width: 240px;
   flex: 1;
 }
@@ -181,13 +176,13 @@ main {
 }
 
 .url-input:focus-within {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--nexusads-accent);
   outline-offset: 2px;
 }
 
 .primary-button {
-  background: var(--accent);
-  color: #fff;
+  background: var(--nexusads-accent);
+  color: var(--ds-accent-foreground);
   border: none;
   min-height: 44px;
   padding: 14px 22px;
@@ -195,18 +190,18 @@ main {
   font-weight: 700;
   cursor: pointer;
   font-family: var(--font-body);
-  box-shadow: 0 10px 24px rgba(231, 111, 81, 0.35);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--nexusads-accent) 28%, transparent);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .primary-button:focus-visible {
-  outline: 2px solid var(--ink);
+  outline: 2px solid var(--nexusads-ink);
   outline-offset: 2px;
 }
 
 .primary-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 30px rgba(231, 111, 81, 0.45);
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--nexusads-accent) 34%, transparent);
 }
 
 .tone-row {
@@ -230,21 +225,21 @@ main {
   align-items: center;
   padding: 6px 12px;
   border-radius: 999px;
-  background: var(--teal-soft);
-  color: #1d4e47;
+  background: var(--nexusads-accent-soft);
+  color: var(--nexusads-accent);
   font-size: 0.85rem;
   font-weight: 600;
   font-family: var(--font-body);
 }
 
 .chip:focus-visible {
-  outline: 2px solid var(--teal);
+  outline: 2px solid var(--nexusads-accent);
   outline-offset: 2px;
 }
 
 .chip-dark {
-  background: #1f3d3b;
-  color: #f6f2ea;
+  background: var(--ds-surface-3);
+  color: var(--nexusads-ink);
 }
 
 .hero-panel {
@@ -253,16 +248,16 @@ main {
 }
 
 .panel-card {
-  background: var(--card);
+  background: var(--nexusads-card);
   border-radius: 20px;
   padding: 20px;
-  border: 1px solid rgba(19, 33, 37, 0.08);
-  box-shadow: var(--shadow);
+  border: 1px solid var(--nexusads-border);
+  box-shadow: var(--nexusads-shadow);
   animation: floatIn 0.6s ease forwards;
 }
 
 .panel-primary {
-  border: 1px solid rgba(231, 111, 81, 0.3);
+  border: 1px solid var(--ds-accent-border);
 }
 
 .panel-secondary {
@@ -281,7 +276,7 @@ main {
 .panel-line {
   height: 6px;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--accent), var(--teal));
+  background: linear-gradient(90deg, var(--nexusads-accent), var(--nexusads-accent));
   margin-bottom: 14px;
 }
 
@@ -290,18 +285,18 @@ main {
   justify-content: space-between;
   align-items: center;
   font-size: 0.95rem;
-  color: var(--muted);
+  color: var(--nexusads-muted);
   margin-bottom: 10px;
 }
 
 .panel-metric strong {
-  color: var(--ink);
+  color: var(--nexusads-ink);
 }
 
 .panel-card ul {
   margin: 0;
   padding-left: 18px;
-  color: var(--muted);
+  color: var(--nexusads-muted);
   line-height: 1.6;
 }
 
@@ -324,7 +319,7 @@ main {
 }
 
 .section-head p {
-  color: var(--muted);
+  color: var(--nexusads-muted);
   line-height: 1.7;
 }
 
@@ -339,11 +334,11 @@ main {
 }
 
 .flow-card {
-  background: #fff;
+  background: var(--nexusads-card);
   border-radius: 18px;
   padding: 20px;
-  border: 1px solid var(--border);
-  box-shadow: 0 12px 30px rgba(19, 33, 37, 0.08);
+  border: 1px solid var(--nexusads-border);
+  box-shadow: var(--nexusads-shadow);
   transition: transform 0.2s ease;
 }
 
@@ -358,8 +353,8 @@ main {
   width: 36px;
   height: 36px;
   border-radius: 12px;
-  background: var(--teal);
-  color: #fff;
+  background: var(--nexusads-accent);
+  color: var(--ds-accent-foreground);
   font-weight: 700;
   margin-bottom: 12px;
 }
@@ -379,11 +374,11 @@ main {
 }
 
 .feature-card {
-  background: #fff;
+  background: var(--nexusads-card);
   border-radius: 20px;
   padding: 24px;
-  border: 1px solid rgba(19, 33, 37, 0.08);
-  box-shadow: 0 18px 40px rgba(19, 33, 37, 0.08);
+  border: 1px solid var(--nexusads-border);
+  box-shadow: var(--nexusads-shadow);
   position: relative;
   overflow: hidden;
 }
@@ -396,12 +391,12 @@ main {
   width: 80px;
   height: 80px;
   border-radius: 30%;
-  background: rgba(42, 157, 143, 0.12);
+  background: var(--ds-accent-soft);
 }
 
 .feature-label {
   font-weight: 700;
-  color: var(--accent);
+  color: var(--nexusads-accent);
   text-transform: uppercase;
   letter-spacing: 1.4px;
   font-size: 0.7rem;
@@ -411,7 +406,7 @@ main {
 .feature-card ul {
   padding-left: 18px;
   margin: 14px 0 0;
-  color: var(--muted);
+  color: var(--nexusads-muted);
   line-height: 1.6;
 }
 
@@ -426,10 +421,10 @@ main {
 }
 
 .guardrail-card {
-  background: #fff4ef;
+  background: var(--ds-warning-soft);
   border-radius: 18px;
   padding: 20px;
-  border: 1px solid rgba(231, 111, 81, 0.2);
+  border: 1px solid var(--ds-warning-border);
 }
 
 .quality-row {
@@ -440,10 +435,10 @@ main {
 }
 
 .quality-card {
-  background: #eff8f6;
+  background: var(--ds-success-soft);
   border-radius: 18px;
   padding: 20px;
-  border: 1px solid rgba(42, 157, 143, 0.2);
+  border: 1px solid var(--ds-success-border);
 }
 
 .consistency {
@@ -459,8 +454,8 @@ main {
 .consistency-item {
   padding: 18px 20px;
   border-radius: 999px;
-  background: #fff;
-  border: 1px dashed rgba(19, 33, 37, 0.18);
+  background: var(--nexusads-card);
+  border: 1px dashed var(--ds-border-strong);
   text-align: center;
   font-weight: 600;
 }
@@ -476,11 +471,11 @@ main {
 }
 
 .roadmap-item {
-  background: #fff;
+  background: var(--nexusads-card);
   border-radius: 14px;
   padding: 16px 18px;
-  border: 1px solid rgba(19, 33, 37, 0.08);
-  box-shadow: 0 10px 25px rgba(19, 33, 37, 0.08);
+  border: 1px solid var(--nexusads-border);
+  box-shadow: var(--nexusads-shadow);
 }
 
 .ux-decision {
@@ -488,8 +483,8 @@ main {
 }
 
 .ux-card {
-  background: linear-gradient(120deg, #1f3d3b, #2a9d8f);
-  color: #f6f2ea;
+  background: linear-gradient(120deg, var(--ds-surface-3), var(--nexusads-accent-dark));
+  color: var(--ds-accent-foreground);
   padding: 40px;
   border-radius: 26px;
   display: flex;
@@ -499,8 +494,8 @@ main {
 }
 
 .ux-card .primary-button {
-  background: #f4b9a7;
-  color: #1f3d3b;
+  background: var(--ds-surface-1);
+  color: var(--nexusads-accent);
   box-shadow: none;
 }
 
@@ -510,12 +505,12 @@ main {
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 20px;
-  border-top: 1px solid rgba(19, 33, 37, 0.08);
-  color: var(--muted);
+  border-top: 1px solid var(--nexusads-border);
+  color: var(--nexusads-muted);
 }
 
 .footer strong {
-  color: var(--ink);
+  color: var(--nexusads-ink);
   display: block;
   font-weight: 700;
   margin-bottom: 6px;

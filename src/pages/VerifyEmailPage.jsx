@@ -118,11 +118,11 @@ export default function VerifyEmailPage() {
   return (
     <NexusAuthShell title="Verify your email" description="Verification protects NexusRBX accounts and paid services from automated abuse.">
       <div className="space-y-4">
-        <p className="text-sm text-slate-300" role="status">{message}</p>
-        <button className="w-full rounded-md bg-cyan-500 px-4 py-2 font-medium text-slate-950 disabled:opacity-60" disabled={busy} onClick={checkVerification} type="button">
+        <p className="rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-4 py-3 text-sm leading-6 text-[var(--ds-text-secondary)]" role="status">{message}</p>
+        <button className="min-h-11 w-full rounded-[10px] bg-[var(--ds-accent)] px-4 py-2 font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-bg-canvas)] disabled:opacity-60" disabled={busy} onClick={checkVerification} type="button">
           I have verified my email
         </button>
-        <button className="w-full rounded-md border border-slate-600 px-4 py-2 text-slate-100 disabled:opacity-60" disabled={busy || cooldown > 0} onClick={resend} type="button">
+        <button className="min-h-11 w-full rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-4 py-2 font-semibold text-[var(--ds-text)] hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-fill-hover)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-bg-canvas)] disabled:opacity-60" disabled={busy || cooldown > 0} onClick={resend} type="button">
           {cooldown > 0 ? `Resend available in ${cooldown}s` : "Resend verification email"}
         </button>
       </div>

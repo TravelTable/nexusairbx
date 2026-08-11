@@ -18,17 +18,17 @@ export default function DecalUploadAllItemsDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg border-white/10 bg-[#10141d] text-white">
+      <DialogContent className="max-w-lg border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] text-[var(--ds-text)]">
         <DialogHeader>
-          <DialogTitle className="text-white">All decal images</DialogTitle>
-          <DialogDescription className="text-white/60">
+          <DialogTitle className="text-[var(--ds-text)]">All decal images</DialogTitle>
+          <DialogDescription className="text-[var(--ds-text-secondary)]">
             {items.length} image{items.length === 1 ? "" : "s"} selected
             {uploading ? " · uploads update live as Roblox finishes each file" : ""}
           </DialogDescription>
         </DialogHeader>
         <div className="h-[min(60vh,480px)] min-h-[240px] overflow-y-auto pr-1 scrollbar-subtle">
           {items.length === 0 ? (
-            <div className="rounded-md border border-white/10 bg-white/[0.03] p-3 text-xs text-white/55">
+            <div className="rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-3 text-xs text-[var(--ds-text-muted)]">
               No decal images selected.
             </div>
           ) : (

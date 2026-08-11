@@ -1178,14 +1178,14 @@ export default function AgentWorkspaceLayout({ controller }) {
           handleDockPanelChange("code");
         }}
       />
-      <div className="mt-4 border-t border-white/10 pt-3 space-y-2">
+      <div className="mt-4 border-t border-[var(--ds-border-subtle)] pt-3 space-y-2">
         <div className="flex items-center justify-between gap-2 px-1">
-          <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Studio Manifest</div>
+          <div className="text-[10px] font-bold text-[var(--ds-text-muted)] uppercase tracking-widest">Studio Manifest</div>
           <button
             type="button"
             onClick={() => refreshStudioManifest({ force: true })}
             disabled={studioBusy || !studioManifestSupported}
-            className="p-1.5 rounded-lg border border-white/10 bg-white/5 text-gray-400 hover:text-white disabled:opacity-40"
+            className="p-1.5 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)] disabled:opacity-40"
             title={studioManifestSupported
               ? "Rescan Studio project (re-index the live place)"
               : "Manifest rescan is unavailable for the selected MCP session"}
@@ -1193,13 +1193,13 @@ export default function AgentWorkspaceLayout({ controller }) {
             <RefreshCw className={`w-3.5 h-3.5 ${studioBusy ? "animate-spin" : ""}`} />
           </button>
         </div>
-        <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-2 py-1.5">
-          <Search className="w-3.5 h-3.5 text-gray-500" />
+        <label className="flex items-center gap-2 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2 py-1.5">
+          <Search className="w-3.5 h-3.5 text-[var(--ds-text-muted)]" />
           <input
             value={studioSearch}
             onChange={(e) => setStudioSearch(e.target.value)}
             placeholder="Search Studio paths..."
-            className="min-w-0 flex-1 bg-transparent text-xs text-gray-200 placeholder:text-gray-600 outline-none"
+            className="min-w-0 flex-1 bg-transparent text-xs text-[var(--ds-text)] placeholder:text-[var(--ds-text-muted)] outline-none"
           />
         </label>
         <div className="space-y-0.5 pr-1">
@@ -1217,18 +1217,18 @@ export default function AgentWorkspaceLayout({ controller }) {
                 disabled={!isScript || studioBusy}
                 className={`w-full text-left px-2 py-1.5 rounded-lg border text-[11px] transition-[border-color,background-color,color,opacity] ${
                   studioActiveFile?.path === (item.canonicalPath || item.path)
-                    ? "border-[#00f5d4]/40 bg-[#00f5d4]/10 text-[#00f5d4]"
-                    : "border-transparent bg-white/[0.03] text-gray-400 hover:text-white hover:bg-white/[0.06]"
+                    ? "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]"
+                    : "border-transparent bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)] hover:bg-[var(--ds-fill-hover)]"
                 } disabled:opacity-40`}
                 title={item.canonicalPath || item.path}
               >
                 <div className="truncate">{item.canonicalPath || item.path}</div>
-                <div className="text-[10px] text-gray-600">{item.className}{item.sourceHash ? ` · ${String(item.sourceHash).slice(0, 8)}` : ""}</div>
+                <div className="text-[10px] text-[var(--ds-text-muted)]">{item.className}{item.sourceHash ? ` · ${String(item.sourceHash).slice(0, 8)}` : ""}</div>
               </button>
             );
           })}
           {!studioResults.length && (
-            <div className="px-2 py-4 text-center text-xs text-gray-600">
+            <div className="px-2 py-4 text-center text-xs text-[var(--ds-text-muted)]">
               {studioManifestSupported
                 ? "No persisted Studio manifest yet."
                 : "No place index on MCP sessions — Ask uses live script search instead."}
@@ -1285,16 +1285,16 @@ export default function AgentWorkspaceLayout({ controller }) {
               return (
                 <section
                   key={agent.agentId || agent.id || agent.chatId}
-                  className="rounded-xl border border-white/10 bg-white/[0.03] p-3"
+                  className="rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-3"
                   aria-label={agent.title || "Active agent"}
                 >
                   <div className="flex items-center gap-2">
-                    <Bot className="h-4 w-4 shrink-0 text-[#00f5d4]" />
+                    <Bot className="h-4 w-4 shrink-0 text-[var(--ds-accent)]" />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-xs font-semibold text-gray-100">
+                      <div className="truncate text-xs font-semibold text-[var(--ds-text)]">
                         {agent.title || "Active agent"}
                       </div>
-                      <div className="text-[11px] capitalize text-[#00f5d4]">
+                      <div className="text-[11px] capitalize text-[var(--ds-accent)]">
                         {String(agent.status || "running").replaceAll("_", " ")}
                       </div>
                     </div>
@@ -1306,12 +1306,12 @@ export default function AgentWorkspaceLayout({ controller }) {
                         const status = String(run.status || run.state || agent.status || "running")
                           .replaceAll("_", " ");
                         return (
-                          <div key={runId} className="flex items-center justify-between gap-3 rounded-lg bg-black/20 px-2.5 py-2">
+                          <div key={runId} className="flex items-center justify-between gap-3 rounded-lg bg-[var(--ds-fill-subtle)] px-2.5 py-2">
                             <div className="min-w-0">
-                              <div className="truncate text-[11px] font-medium text-gray-200">
+                              <div className="truncate text-[11px] font-medium text-[var(--ds-text)]">
                                 Run {String(runId).slice(-8)}
                               </div>
-                              <div className="text-[11px] capitalize text-gray-400">{status}</div>
+                              <div className="text-[11px] capitalize text-[var(--ds-text-secondary)]">{status}</div>
                             </div>
                             {!isTerminalAgentRun(run) && (
                               <button
@@ -1324,7 +1324,7 @@ export default function AgentWorkspaceLayout({ controller }) {
                                       type: "error",
                                     });
                                   })}
-                                className="min-h-11 rounded-lg border border-red-300/20 px-3 text-[11px] font-semibold text-red-200 hover:bg-red-400/10 focus-ring"
+                                className="min-h-11 rounded-lg border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)] px-3 text-[11px] font-semibold text-[var(--ds-danger)] hover:bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] focus-ring"
                               >
                                 Stop
                               </button>
@@ -1334,7 +1334,7 @@ export default function AgentWorkspaceLayout({ controller }) {
                       })}
                     </div>
                   ) : (
-                    <p className="mt-2 text-[11px] text-gray-400">Preparing the authoritative run projection...</p>
+                    <p className="mt-2 text-[11px] text-[var(--ds-text-secondary)]">Preparing the authoritative run projection...</p>
                   )}
                 </section>
               );
@@ -1411,7 +1411,7 @@ export default function AgentWorkspaceLayout({ controller }) {
             <aside
               id="project-sidebar"
               ref={projectSidebarRef}
-              className="nexus-project-sidebar z-40 flex min-h-0 shrink-0 flex-col overflow-hidden border-r border-white/[.06] bg-[#0d0d0f]"
+              className="nexus-project-sidebar z-40 flex min-h-0 shrink-0 flex-col overflow-hidden border-r border-[var(--ds-border-subtle)] bg-[var(--ds-bg-sidebar)]"
               data-open={sidebarOpen}
               aria-label="Project sidebar"
               role={projectSidebarIsModal ? "dialog" : undefined}
@@ -1465,7 +1465,7 @@ export default function AgentWorkspaceLayout({ controller }) {
                       ref={sidebarToggleRef}
                       type="button"
                       onClick={() => (sidebarOpen ? closeProjectSidebar(true) : setSidebarOpen(true))}
-                      className={`grid h-11 w-11 shrink-0 place-items-center rounded-md transition-[background-color,color] focus-ring xl:h-8 xl:w-8 ${sidebarOpen ? "bg-[#00f5d4]/10 text-[#00f5d4]" : "text-gray-400 hover:bg-white/[0.05] hover:text-white"}`}
+                      className={`grid h-11 w-11 shrink-0 place-items-center rounded-md transition-[background-color,color] focus-ring xl:h-8 xl:w-8 ${sidebarOpen ? "bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]" : "text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text)]"}`}
                       title="Toggle sidebar"
                       aria-label="Toggle sidebar"
                       aria-controls="project-sidebar"
@@ -1473,7 +1473,7 @@ export default function AgentWorkspaceLayout({ controller }) {
                     >
                       <Menu className="h-4 w-4" />
                     </button>
-                    <div className="hidden h-4 w-px bg-white/10 xl:block" aria-hidden="true" />
+                    <div className="hidden h-4 w-px bg-[var(--ds-fill-hover)] xl:block" aria-hidden="true" />
                   </>
                 ) : null}
                 <div data-tour="mode-switcher" className="hidden shrink-0 md:inline-flex">
@@ -1487,7 +1487,7 @@ export default function AgentWorkspaceLayout({ controller }) {
                     onChange={(mode) => setGeneratorMode(mode, "mode_control")}
                   />
                 </div>
-                <div className="hidden h-4 w-px bg-white/10 xl:block" aria-hidden="true" />
+                <div className="hidden h-4 w-px bg-[var(--ds-fill-hover)] xl:block" aria-hidden="true" />
                 {generatorMode === "agent_build" && (
                   <>
                     <div className="shrink-0">
@@ -1507,7 +1507,7 @@ export default function AgentWorkspaceLayout({ controller }) {
                         }}
                       />
                     </div>
-                    <div className="hidden h-4 w-px bg-white/10 xl:block" aria-hidden="true" />
+                    <div className="hidden h-4 w-px bg-[var(--ds-fill-hover)] xl:block" aria-hidden="true" />
                   </>
                 )}
                 <div data-tour="studio-pair" className="shrink-0">
@@ -1540,7 +1540,7 @@ export default function AgentWorkspaceLayout({ controller }) {
                     />
                   </div>
                 ) : (
-                  <div className="hidden text-right text-[11px] font-semibold text-gray-500 sm:block">
+                  <div className="hidden text-right text-[11px] font-semibold text-[var(--ds-text-muted)] sm:block">
                     No plan approval in Quick
                   </div>
                 )}
@@ -1550,7 +1550,7 @@ export default function AgentWorkspaceLayout({ controller }) {
 
           {generatorMode === "quick_script" ? (
             <div className="flex-1 min-h-0 flex flex-col">
-              <div data-tour="mobile-mode-switcher" className="shrink-0 border-b border-white/5 bg-black/20 px-4 py-2 md:hidden">
+              <div data-tour="mobile-mode-switcher" className="shrink-0 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-4 py-2 md:hidden">
                 <Segmented
                   fullWidth
                   size="sm"

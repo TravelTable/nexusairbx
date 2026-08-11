@@ -33,8 +33,8 @@ export default function RobloxCloudControls({
       <span
         className={`inline-flex items-center gap-1 px-2 py-1 rounded-md border text-[9px] font-black uppercase tracking-widest ${
           connected
-            ? "border-[#00bbf9]/25 bg-[#00bbf9]/10 text-[#00bbf9]"
-            : "border-white/10 bg-white/5 text-gray-500"
+            ? "border-[color-mix(in_srgb,var(--ds-info)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-info)_10%,transparent)] text-[var(--ds-info)]"
+            : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)]"
         }`}
         title={connected ? "Roblox OAuth is connected" : "Connect Roblox from Settings"}
       >
@@ -44,7 +44,7 @@ export default function RobloxCloudControls({
 
       {connected && selectedCreator && (
         <span
-          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-white/10 bg-white/5 text-[9px] font-black uppercase tracking-widest text-gray-400"
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[9px] font-black uppercase tracking-widest text-[var(--ds-text-secondary)]"
           title="Selected Roblox creator target"
         >
           {selectedCreator.type} {selectedCreator.id}
@@ -56,8 +56,8 @@ export default function RobloxCloudControls({
         onClick={assetLibraryAvailable ? onOpenAssetLibrary : handleDisabledAssetClick}
         className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-bold uppercase tracking-widest transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)] ${
           selectedAssetCount > 0
-            ? "border-[#00f5d4]/25 bg-[#00f5d4]/10 text-[#00f5d4]"
-            : "border-white/10 bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
+            ? "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]"
+            : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
         } ${!assetLibraryAvailable ? "opacity-60 cursor-not-allowed" : ""}`}
         title={assetLibraryAvailable ? "Browse and attach Roblox assets to this project" : assetLibraryDisabledReason || "Assets unavailable"}
         aria-label="Select Roblox assets"
@@ -67,7 +67,7 @@ export default function RobloxCloudControls({
       </button>
 
       <label
-        className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-white/10 bg-white/5 text-[10px] font-bold uppercase tracking-widest text-gray-400 cursor-pointer"
+        className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[10px] font-bold uppercase tracking-widest text-[var(--ds-text-secondary)] cursor-pointer"
         title={uploadAvailable ? `Auto-upload generated icons to Roblox (${uploadState})` : uploadDisabledReason || "Requires Roblox connection with asset write scope"}
         onClick={handleDisabledUploadClick}
       >
@@ -75,7 +75,7 @@ export default function RobloxCloudControls({
           type="checkbox"
           checked={Boolean(assetUploadsEnabled)}
           onChange={(e) => onAssetUploadsEnabledChange?.(e.target.checked)}
-          className="accent-[#00bbf9]"
+          className="accent-[var(--ds-info)]"
           disabled={!uploadAvailable}
         />
         Auto-upload icons to Roblox

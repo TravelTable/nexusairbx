@@ -28,8 +28,8 @@ export default function AdminRoute({ children }) {
 
   if (state.loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-white bg-black">
-        Loading...
+      <div className="flex min-h-screen items-center justify-center bg-background text-foreground" role="status">
+        Loading…
       </div>
     );
   }

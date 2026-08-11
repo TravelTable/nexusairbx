@@ -244,18 +244,18 @@ export default function BillingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#08090d] text-white flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#00f5d4]" />
+      <div className="flex min-h-screen items-center justify-center bg-[var(--ds-bg-canvas)] text-[var(--ds-text)]">
+        <Loader2 className="h-8 w-8 animate-spin text-[var(--ds-accent)]" />
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#08090d] text-white flex flex-col items-center justify-center px-4 text-center">
-        <AlertTriangle className="h-8 w-8 text-yellow-400" />
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[var(--ds-bg-canvas)] px-4 text-center text-[var(--ds-text)]">
+        <AlertTriangle className="h-8 w-8 text-[var(--ds-warning)]" />
         <h1 className="mt-4 text-2xl font-bold">Sign in to manage billing</h1>
-        <button className="mt-6 rounded-md bg-white px-5 py-2 font-bold text-black" onClick={() => navigate("/signin")}>
+        <button className="mt-6 min-h-11 rounded-[10px] bg-[var(--ds-accent)] px-5 py-2 font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)]" onClick={() => navigate("/signin")}>
           Login to Continue
         </button>
       </div>
@@ -270,11 +270,11 @@ export default function BillingPage() {
   const percentRemaining = Number.isFinite(Number(included.percentRemaining)) ? Number(included.percentRemaining) : 100;
 
   return (
-    <div className="min-h-screen bg-[#08090d] text-white pb-16">
-      <div className="max-w-6xl mx-auto px-4 pt-6">
+    <main className="min-h-screen bg-[var(--ds-bg-canvas)] pb-16 text-[var(--ds-text)]">
+      <div className="mx-auto max-w-6xl px-4 pt-6">
         <button
           type="button"
-          className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-sm text-gray-400 hover:text-white"
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
           onClick={() => window.location.assign("/")}
         >
           <ArrowLeft className="h-4 w-4" />
@@ -283,14 +283,14 @@ export default function BillingPage() {
 
         <div className="mt-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <h1 className="font-display text-4xl font-bold">Billing</h1>
-            <p className="mt-2 text-gray-400">Manage your NexusRBX subscription, Included Usage, and Premium Balance.</p>
+            <h1 className="text-4xl font-semibold tracking-[-0.035em]">Billing</h1>
+            <p className="mt-2 text-[var(--ds-text-muted)]">Manage your NexusRBX subscription, Included Usage, and Premium Balance.</p>
           </div>
           <button
             type="button"
             onClick={handlePortal}
             disabled={busy === "portal"}
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-bold text-black"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-4 py-2 text-sm font-semibold text-[var(--ds-text)] hover:bg-[var(--ds-fill-hover)]"
           >
             {busy === "portal" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Settings className="h-4 w-4" />}
             Manage subscription
@@ -298,72 +298,72 @@ export default function BillingPage() {
         </div>
 
         {note && (
-          <div className="mt-5 flex items-center gap-2 rounded-md border border-[#00f5d4]/30 bg-[#00f5d4]/10 px-4 py-3 text-sm text-[#b8fff4]">
+          <div className="mt-5 flex items-center gap-2 rounded-lg border border-[color-mix(in_srgb,var(--ds-success)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-success)_8%,transparent)] px-4 py-3 text-sm text-[var(--ds-success)]">
             <CheckCircle className="h-4 w-4" />
             {note}
           </div>
         )}
         {error && (
-          <div className="mt-5 flex items-center gap-2 rounded-md border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+          <div className="mt-5 flex items-center gap-2 rounded-lg border border-[color-mix(in_srgb,var(--ds-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-danger)_8%,transparent)] px-4 py-3 text-sm text-[var(--ds-danger)]">
             <AlertTriangle className="h-4 w-4" />
             {error}
           </div>
         )}
 
         <div className="mt-8 grid gap-4 lg:grid-cols-3">
-          <section className="rounded-lg border border-white/10 bg-[#11131a] p-5">
-            <div className="flex items-center gap-2 text-lg font-bold">
-              <Zap className="h-5 w-5 text-[#00f5d4]" />
+          <section className="rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] p-5">
+            <div className="flex items-center gap-2 text-lg font-semibold">
+              <Zap className="h-5 w-5 text-[var(--ds-accent)]" />
               Current plan
             </div>
-            <div className="mt-5 text-3xl font-black">{planLabel(entitlements?.plan)}</div>
-            <div className="mt-2 text-sm text-gray-400">
+            <div className="mt-5 text-3xl font-semibold tracking-[-0.025em]">{planLabel(entitlements?.plan)}</div>
+            <div className="mt-2 text-sm text-[var(--ds-text-muted)]">
               {isPaid ? `${subscription.interval === "year" ? "Yearly" : "Monthly"} billing` : "Free"}
             </div>
             {subscription.currentPeriodEnd && (
-              <div className="mt-3 text-sm text-gray-400">
+              <div className="mt-3 text-sm text-[var(--ds-text-muted)]">
                 Billing period ends {formatDate(subscription.currentPeriodEnd)}
               </div>
             )}
             {subscription.cancelAtPeriodEnd && (
-              <div className="mt-3 rounded-md border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-sm text-yellow-100">
+              <div className="mt-3 rounded-lg border border-[color-mix(in_srgb,var(--ds-warning)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-warning)_8%,transparent)] px-3 py-2 text-sm text-[var(--ds-warning)]">
                 Cancels at period end
               </div>
             )}
             {entitlements?.grandfathered && (
-              <div className="mt-3 rounded-md border border-[#00f5d4]/30 bg-[#00f5d4]/10 px-3 py-2 text-sm text-[#b8fff4]">
+              <div className="mt-3 rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-3 py-2 text-sm text-[var(--ds-accent)]">
                 <div className="font-bold">Legacy {planLabel(entitlements.plan)} pricing</div>
                 <div className="mt-1 text-xs">Your current subscription price remains active while this subscription continues.</div>
               </div>
             )}
             {entitlements?.team && (
-              <div className="mt-3 text-sm text-gray-400">
-                Team seats: <span className="font-bold text-white">{entitlements.team.seatCount}</span>
+              <div className="mt-3 text-sm text-[var(--ds-text-muted)]">
+                Team seats: <span className="font-semibold text-[var(--ds-text)]">{entitlements.team.seatCount}</span>
               </div>
             )}
           </section>
 
-          <section className="rounded-lg border border-white/10 bg-[#11131a] p-5">
-            <div className="text-lg font-bold">Included Usage</div>
-            <div className="mt-5 text-3xl font-black">{percentUsed}% used</div>
-            <div className="mt-1 text-sm text-gray-400">{percentRemaining}% remaining</div>
-            <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/10">
-              <div className="h-full rounded-full bg-[#00f5d4]" style={{ width: `${Math.min(100, Math.max(0, percentUsed))}%` }} />
+          <section className="rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] p-5">
+            <div className="text-lg font-semibold">Included Usage</div>
+            <div className="mt-5 text-3xl font-semibold tracking-[-0.025em]">{percentUsed}% used</div>
+            <div className="mt-1 text-sm text-[var(--ds-text-muted)]">{percentRemaining}% remaining</div>
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--ds-fill-active)]">
+              <div className="h-full rounded-full bg-[var(--ds-accent)]" style={{ width: `${Math.min(100, Math.max(0, percentUsed))}%` }} />
             </div>
-            <div className="mt-3 text-sm text-gray-400">Resets {formatDate(included.resetsAt)}</div>
-            {included.warningLevel === "WARNING" && <p className="mt-3 text-sm text-yellow-100">You’ve used 70% of your included usage.</p>}
+            <div className="mt-3 text-sm text-[var(--ds-text-muted)]">Resets {formatDate(included.resetsAt)}</div>
+            {included.warningLevel === "WARNING" && <p className="mt-3 text-sm text-[var(--ds-warning)]">You’ve used 70% of your included usage.</p>}
             {included.warningLevel === "CRITICAL" && (
-              <p className="mt-3 text-sm text-yellow-100">You’re almost out of included usage. You can continue with Premium Balance or wait for the reset.</p>
+              <p className="mt-3 text-sm text-[var(--ds-warning)]">You’re almost out of included usage. You can continue with Premium Balance or wait for the reset.</p>
             )}
             {included.warningLevel === "REACHED" && (
-              <p className="mt-3 text-sm text-yellow-100">Included usage reached. Continue using Premium Balance, or wait until your usage resets.</p>
+              <p className="mt-3 text-sm text-[var(--ds-warning)]">Included usage reached. Continue using Premium Balance, or wait until your usage resets.</p>
             )}
           </section>
 
-          <section className="rounded-lg border border-white/10 bg-[#11131a] p-5">
-            <div className="text-lg font-bold">Premium Balance</div>
-            <div className="mt-5 text-3xl font-black">{dollarsFromMicros(premiumBalance.balanceMicros)} available</div>
-            <p className="mt-2 text-sm text-gray-400">Used for supported Premium Direct models.</p>
+          <section className="rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] p-5">
+            <div className="text-lg font-semibold">Premium Balance</div>
+            <div className="mt-5 text-3xl font-semibold tracking-[-0.025em]">{dollarsFromMicros(premiumBalance.balanceMicros)} available</div>
+            <p className="mt-2 text-sm text-[var(--ds-text-muted)]">Used for supported Premium Direct models.</p>
             <div className="mt-5 grid grid-cols-3 gap-2">
               {[
                 ["Add $10", PREMIUM_BALANCE_PACKAGE.PREMIUM_10],
@@ -375,37 +375,37 @@ export default function BillingPage() {
                   type="button"
                   onClick={() => handleTopUp(packageKey)}
                   disabled={busy === packageKey}
-                  className="inline-flex h-10 items-center justify-center gap-1 rounded-md bg-white text-xs font-bold text-black hover:bg-gray-200"
+                  className="inline-flex min-h-11 items-center justify-center gap-1 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] text-xs font-semibold text-[var(--ds-text)] hover:bg-[var(--ds-fill-hover)]"
                 >
                   {busy === packageKey ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
                   {label}
                 </button>
               ))}
             </div>
-            <p className="mt-4 text-xs leading-5 text-gray-500">
+            <p className="mt-4 text-xs leading-5 text-[var(--ds-text-muted)]">
               Premium Balance is prepaid usage credit for supported Premium Direct models. It is not redeemable for cash and is subject to the NexusRBX billing terms.
             </p>
           </section>
         </div>
 
-        <section className="mt-6 rounded-lg border border-white/10 bg-[#11131a] p-5">
+        <section className="mt-6 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] p-5">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <h2 className="text-xl font-bold">Upgrade or change plan</h2>
-              <p className="mt-1 text-sm text-gray-400">Active subscribers should use billing settings for controlled plan changes.</p>
+              <h2 className="text-xl font-semibold">Upgrade or change plan</h2>
+              <p className="mt-1 text-sm text-[var(--ds-text-muted)]">Active subscribers should use billing settings for controlled plan changes.</p>
             </div>
-            <div className="inline-flex rounded-lg border border-white/10 bg-white/5 p-1 w-fit">
+            <div className="inline-flex w-fit rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] p-1">
               <button
                 type="button"
                 onClick={() => setIntervalValue(BILLING_INTERVAL.MONTH)}
-                className={`px-4 py-2 rounded-md text-sm font-bold ${interval === BILLING_INTERVAL.MONTH ? "bg-white text-black" : "text-gray-300"}`}
+                className={`min-h-11 rounded-lg px-4 py-2 text-sm font-semibold ${interval === BILLING_INTERVAL.MONTH ? "bg-[var(--ds-fill-selected)] text-[var(--ds-accent)]" : "text-[var(--ds-text-secondary)]"}`}
               >
                 Monthly
               </button>
               <button
                 type="button"
                 onClick={() => setIntervalValue(BILLING_INTERVAL.YEAR)}
-                className={`px-4 py-2 rounded-md text-sm font-bold ${interval === BILLING_INTERVAL.YEAR ? "bg-white text-black" : "text-gray-300"}`}
+                className={`min-h-11 rounded-lg px-4 py-2 text-sm font-semibold ${interval === BILLING_INTERVAL.YEAR ? "bg-[var(--ds-fill-selected)] text-[var(--ds-accent)]" : "text-[var(--ds-text-secondary)]"}`}
               >
                 Yearly
               </button>
@@ -413,12 +413,12 @@ export default function BillingPage() {
           </div>
           <div className="mt-5 grid gap-3 md:grid-cols-3">
             {PLAN_CHOICES.map((choice) => (
-              <div key={choice.plan} className="rounded-lg border border-white/10 bg-black/20 p-4">
-                <div className="font-bold">{choice.label}</div>
-                <div className="mt-1 text-sm text-gray-400">{interval === BILLING_INTERVAL.YEAR ? choice.year : choice.month}</div>
+              <div key={choice.plan} className="rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-2)] p-4">
+                <div className="font-semibold">{choice.label}</div>
+                <div className="mt-1 text-sm text-[var(--ds-text-muted)]">{interval === BILLING_INTERVAL.YEAR ? choice.year : choice.month}</div>
                 {choice.plan === PLAN.TEAM && (
                   <div className="mt-3">
-                    <label className="text-xs text-gray-500" htmlFor="billing-team-seats">Seats</label>
+                    <label className="text-xs text-[var(--ds-text-muted)]" htmlFor="billing-team-seats">Seats</label>
                     <input
                       id="billing-team-seats"
                       type="number"
@@ -426,7 +426,7 @@ export default function BillingPage() {
                       max="50"
                       value={teamSeats}
                       onChange={(event) => setTeamSeats(Math.min(50, Math.max(2, Number(event.target.value) || 2)))}
-                      className="mt-1 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
+                      className="mt-1 min-h-11 w-full rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-3)] px-3 py-2 text-sm text-[var(--ds-text)] focus:border-[var(--ds-accent-border)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-accent-soft)]"
                     />
                   </div>
                 )}
@@ -434,7 +434,7 @@ export default function BillingPage() {
                   type="button"
                   disabled={busy === choice.plan || entitlements?.plan === choice.plan}
                   onClick={() => handlePlanCheckout(choice.plan)}
-                  className="mt-4 w-full rounded-md bg-white px-3 py-2 text-sm font-bold text-black disabled:bg-white/10 disabled:text-gray-500"
+                  className="mt-4 min-h-11 w-full rounded-[10px] bg-[var(--ds-accent)] px-3 py-2 text-sm font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] disabled:bg-[var(--ds-fill-active)] disabled:text-[var(--ds-text-muted)]"
                 >
                   {busy === choice.plan ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : entitlements?.plan === choice.plan ? "Current plan" : `Choose ${choice.label}`}
                 </button>
@@ -443,16 +443,16 @@ export default function BillingPage() {
           </div>
         </section>
 
-        <section className="mt-6 rounded-lg border border-white/10 bg-[#11131a] p-5">
-          <div className="flex items-center gap-2 text-lg font-bold">
-            <CreditCard className="h-5 w-5 text-[#00f5d4]" />
+        <section className="mt-6 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] p-5">
+          <div className="flex items-center gap-2 text-lg font-semibold">
+            <CreditCard className="h-5 w-5 text-[var(--ds-accent)]" />
             Billing support
           </div>
-          <p className="mt-3 text-sm leading-6 text-gray-400">
+          <p className="mt-3 text-sm leading-6 text-[var(--ds-text-muted)]">
             Manage payment methods, invoices, billing details, and subscription cancellation through Stripe billing settings.
           </p>
         </section>
       </div>
-    </div>
+    </main>
   );
 }

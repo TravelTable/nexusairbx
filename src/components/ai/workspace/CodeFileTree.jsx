@@ -16,7 +16,7 @@ function WorkspaceQaSummary({ artifact }) {
     <div className="px-1.5 pb-2 space-y-1.5">
       {hasScore && <QaScoreBadge score={qa.score} issueCount={issueCount} />}
       {lintWarning && (
-        <div className="flex items-start gap-1.5 px-2 py-1.5 rounded-lg bg-yellow-400/10 border border-yellow-400/20 text-[10px] text-yellow-300/90 leading-snug">
+        <div className="flex items-start gap-1.5 px-2 py-1.5 rounded-lg bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)] text-[10px] text-[var(--ds-warning)] leading-snug">
           <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" />
           <span className="truncate">{lintWarning}</span>
         </div>
@@ -51,8 +51,8 @@ export default function CodeFileTree({ artifact, activeFileId, onSelectFile }) {
   if (!artifact || !artifact.files?.length) {
     return (
       <div className="px-4 py-8 text-center">
-        <FileQuestion className="w-8 h-8 text-gray-700 mx-auto mb-2" />
-        <p className="text-xs text-gray-500">No files yet. Describe what you want to build and the agent will generate them here.</p>
+        <FileQuestion className="w-8 h-8 text-[var(--ds-text-muted)] mx-auto mb-2" />
+        <p className="text-xs text-[var(--ds-text-muted)]">No files yet. Describe what you want to build and the agent will generate them here.</p>
       </div>
     );
   }
@@ -64,12 +64,12 @@ export default function CodeFileTree({ artifact, activeFileId, onSelectFile }) {
         <div key={placement} className="space-y-1">
           <div className="flex items-center gap-2 px-1.5 py-1">
             {files.some((f) => f.id === activeFileId) ? (
-              <FolderOpen className="w-3.5 h-3.5 text-[#00f5d4]" />
+              <FolderOpen className="w-3.5 h-3.5 text-[var(--ds-accent)]" />
             ) : (
-              <Folder className="w-3.5 h-3.5 text-gray-500" />
+              <Folder className="w-3.5 h-3.5 text-[var(--ds-text-muted)]" />
             )}
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider truncate">{placement}</span>
-            <span className="ml-auto text-[10px] text-gray-600">{files.length}</span>
+            <span className="text-[10px] font-bold text-[var(--ds-text-secondary)] uppercase tracking-wider truncate">{placement}</span>
+            <span className="ml-auto text-[10px] text-[var(--ds-text-muted)]">{files.length}</span>
           </div>
           <div className="space-y-0.5 pl-1">
             {files.map((file) => (

@@ -75,7 +75,7 @@ function App() {
   const localDevelopmentAuth = shouldUseLocalDevelopmentAuth();
   return (
     <Router>
-      <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-white bg-black">Loading...</div>}>
+      <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-background text-foreground" role="status">Loading…</div>}>
         {localDevelopmentAuth ? null : <AuthRedirectHandler />}
         <Routes>
           <Route path="/" element={withSiteShell(<NexusRBXHomepageV2 />, "marketing")} />

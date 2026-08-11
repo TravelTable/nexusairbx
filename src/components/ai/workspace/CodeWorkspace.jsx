@@ -5,31 +5,88 @@ import CodeEditorTabs from "./CodeEditorTabs";
 import ArtifactInspector from "./ArtifactInspector";
 import ExportActions from "./ExportActions";
 
-// Shared Monaco theme matching the app's dark palette.
-function defineNexusTheme(monaco) {
+// Monaco owns an isolated color system, so define both variants and select the
+// active one from the document theme rather than coupling the editor to Settings.
+function defineNexusThemes(monaco) {
   try {
     monaco.editor.defineTheme("nexus-dark", {
       base: "vs-dark",
       inherit: true,
       rules: [
-        { token: "comment", foreground: "5c6370", fontStyle: "italic" },
-        { token: "keyword", foreground: "9b5de5" },
-        { token: "string", foreground: "00f5d4" },
-        { token: "number", foreground: "f15bb5" },
+        { token: "comment", foreground: "8B949E", fontStyle: "italic" },
+        { token: "keyword", foreground: "BF5AF2" },
+        { token: "string", foreground: "64D2FF" },
+        { token: "number", foreground: "FFD60A" },
       ],
       colors: {
-        "editor.background": "#0D0D0D",
-        "editor.foreground": "#e5e7eb",
-        "editorLineNumber.foreground": "#3f3f46",
-        "editorLineNumber.activeForeground": "#9b5de5",
-        "editor.selectionBackground": "#9b5de540",
-        "editor.lineHighlightBackground": "#ffffff08",
-        "editorCursor.foreground": "#00f5d4",
+        "editor.background": "#111217",
+        "editor.foreground": "#F5F5F7",
+        "editorLineNumber.foreground": "#63636B",
+        "editorLineNumber.activeForeground": "#0A84FF",
+        "editor.selectionBackground": "#0A84FF40",
+        "editor.inactiveSelectionBackground": "#0A84FF24",
+        "editor.lineHighlightBackground": "#FFFFFF08",
+        "editorCursor.foreground": "#0A84FF",
+        "editorWidget.background": "#1C1D24",
+        "editorWidget.border": "#34353D",
+      },
+    });
+
+    monaco.editor.defineTheme("nexus-light", {
+      base: "vs",
+      inherit: true,
+      rules: [
+        { token: "comment", foreground: "6E7781", fontStyle: "italic" },
+        { token: "keyword", foreground: "8E44AD" },
+        { token: "string", foreground: "007A9E" },
+        { token: "number", foreground: "9A6700" },
+      ],
+      colors: {
+        "editor.background": "#FFFFFF",
+        "editor.foreground": "#1D1D1F",
+        "editorLineNumber.foreground": "#8E8E93",
+        "editorLineNumber.activeForeground": "#007AFF",
+        "editor.selectionBackground": "#007AFF33",
+        "editor.inactiveSelectionBackground": "#007AFF1F",
+        "editor.lineHighlightBackground": "#00000005",
+        "editorCursor.foreground": "#007AFF",
+        "editorWidget.background": "#FFFFFF",
+        "editorWidget.border": "#D2D2D7",
       },
     });
   } catch {
-    /* theme already defined */
+    /* Monaco may already have registered these themes. */
   }
+}
+
+function readDocumentTheme() {
+  if (typeof document !== "undefined") {
+    const theme = document.documentElement?.dataset?.theme;
+    if (theme === "light" || theme === "dark") return theme;
+  }
+  if (typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: light)")?.matches) {
+    return "light";
+  }
+  return "dark";
+}
+
+function useDocumentTheme() {
+  const [theme, setTheme] = useState(readDocumentTheme);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return undefined;
+    const update = () => setTheme(readDocumentTheme());
+    const observer = new MutationObserver(update);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    const media = window.matchMedia?.("(prefers-color-scheme: light)");
+    media?.addEventListener?.("change", update);
+    return () => {
+      observer.disconnect();
+      media?.removeEventListener?.("change", update);
+    };
+  }, []);
+
+  return theme;
 }
 
 function monacoLanguage(lang) {
@@ -61,6 +118,8 @@ export default function CodeWorkspace({
   const [copied, setCopied] = useState(false);
   const [mergeOpen, setMergeOpen] = useState(false);
   const [mergeSource, setMergeSource] = useState("");
+  const documentTheme = useDocumentTheme();
+  const monacoTheme = documentTheme === "light" ? "nexus-light" : "nexus-dark";
 
   useEffect(() => {
     if (!conflict) {
@@ -72,9 +131,9 @@ export default function CodeWorkspace({
   }, [conflict]);
 
   const handleEditorMount = useCallback((editor, monaco) => {
-    defineNexusTheme(monaco);
-    monaco.editor.setTheme("nexus-dark");
-  }, []);
+    defineNexusThemes(monaco);
+    monaco.editor.setTheme(monacoTheme);
+  }, [monacoTheme]);
 
   const handleCopy = useCallback(async () => {
     if (!activeFile) return;
@@ -89,12 +148,12 @@ export default function CodeWorkspace({
 
   if (!artifact) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-center px-8 bg-ink-950">
-        <div className="p-4 rounded-2xl bg-nexus-cyan/[0.04] border border-nexus-cyan/10 mb-4 shadow-[0_0_40px_-10px_rgba(0,245,212,0.25)]">
-          <FileCode2 className="w-10 h-10 text-nexus-cyan/70" />
+      <div className="h-full flex flex-col items-center justify-center text-center px-8 bg-[var(--ds-bg-workspace)]">
+        <div className="mb-4 rounded-xl border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] p-4">
+          <FileCode2 className="w-10 h-10 text-[var(--ds-accent)]" />
         </div>
-        <h2 className="font-display text-lg font-bold text-gray-200">Your code workspace</h2>
-        <p className="mt-2 text-sm text-gray-500 max-w-sm leading-relaxed">
+        <h2 className="font-display text-lg font-bold text-[var(--ds-text)]">Your code workspace</h2>
+        <p className="mt-2 text-sm text-[var(--ds-text-muted)] max-w-sm leading-relaxed">
           Ask the agent to build a Roblox system. Generated server, client, and module scripts appear
           here as editable files, organized by their Studio placement.
         </p>
@@ -105,12 +164,12 @@ export default function CodeWorkspace({
   const readOnly = !editing;
 
   return (
-    <div className="h-full flex flex-col min-h-0 bg-ink-950">
-      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/10 bg-black/30">
+    <div className="h-full flex flex-col min-h-0 bg-[var(--ds-bg-workspace)]">
+      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)]">
         <div className="min-w-0">
-          <div className="font-display text-sm font-bold text-white truncate">{artifact.title}</div>
+          <div className="font-display text-sm font-bold text-[var(--ds-text)] truncate">{artifact.title}</div>
           {artifact.summary && (
-            <div className="text-[11px] text-gray-500 truncate">{artifact.summary}</div>
+            <div className="text-[11px] text-[var(--ds-text-muted)] truncate">{artifact.summary}</div>
           )}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
@@ -118,7 +177,7 @@ export default function CodeWorkspace({
             <button
               type="button"
               onClick={() => onRevertEdits?.(artifact.id)}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)]"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--ds-fill-subtle)] border border-[var(--ds-border-subtle)] text-[10px] font-bold uppercase tracking-widest text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)] transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)]"
               title="Revert local edits"
             >
               <RotateCcw className="w-3.5 h-3.5" /> Revert
@@ -128,7 +187,7 @@ export default function CodeWorkspace({
             <button
               type="button"
               onClick={() => onRevertFile(activeFile)}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)]"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--ds-fill-subtle)] border border-[var(--ds-border-subtle)] text-[10px] font-bold uppercase tracking-widest text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)] transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)]"
             >
               <RotateCcw className="w-3.5 h-3.5" /> Revert File
             </button>
@@ -137,7 +196,7 @@ export default function CodeWorkspace({
             <button
               type="button"
               onClick={() => onRefreshFile(activeFile)}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)]"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--ds-fill-subtle)] border border-[var(--ds-border-subtle)] text-[10px] font-bold uppercase tracking-widest text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)] transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)]"
             >
               <RefreshCw className="w-3.5 h-3.5" /> Refresh
             </button>
@@ -147,8 +206,8 @@ export default function CodeWorkspace({
             onClick={() => setEditing((v) => !v)}
             className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[10px] font-bold uppercase tracking-widest transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)] ${
               editing
-                ? "bg-[#00f5d4]/10 border-[#00f5d4]/40 text-[#00f5d4]"
-                : "bg-white/5 border-white/10 text-gray-400 hover:text-white"
+                ? "bg-[var(--ds-accent-soft)] border-[var(--ds-accent-border)] text-[var(--ds-accent)]"
+                : "bg-[var(--ds-fill-subtle)] border-[var(--ds-border-subtle)] text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)]"
             }`}
           >
             {editing ? <Pencil className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -157,9 +216,9 @@ export default function CodeWorkspace({
           <button
             type="button"
             onClick={handleCopy}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)]"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--ds-fill-subtle)] border border-[var(--ds-border-subtle)] text-[10px] font-bold uppercase tracking-widest text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)] transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)]"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-[#00f5d4]" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? <Check className="w-3.5 h-3.5 text-[var(--ds-accent)]" /> : <Copy className="w-3.5 h-3.5" />}
             Copy
           </button>
           {onSaveFile && activeFile && (
@@ -167,7 +226,7 @@ export default function CodeWorkspace({
               type="button"
               onClick={() => onSaveFile(activeFile)}
               disabled={saving || readOnly}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#00f5d4] text-black border border-[#00f5d4]/70 text-[10px] font-bold uppercase tracking-widest disabled:opacity-40 transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)]"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-accent)] px-2.5 py-1.5 text-[10px] font-bold text-[var(--ds-accent-foreground)] transition-[background-color,border-color,color,opacity,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[var(--ds-accent-hover)] disabled:opacity-40"
               title="Save this file to Studio"
             >
               <Save className="w-3.5 h-3.5" />
@@ -179,7 +238,7 @@ export default function CodeWorkspace({
               type="button"
               onClick={() => onSaveAllFiles(artifact.files)}
               disabled={saving || readOnly}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#fee440] text-black border border-[#fee440]/70 text-[10px] font-bold uppercase tracking-widest disabled:opacity-40 transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)]"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[var(--ds-warning)] text-[var(--ds-warning-foreground)] border border-[color-mix(in_srgb,var(--ds-warning)_60%,transparent)] text-[10px] font-bold uppercase tracking-widest disabled:opacity-40 transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)]"
               title="Save all open files to Studio"
             >
               <Files className="w-3.5 h-3.5" />
@@ -190,26 +249,28 @@ export default function CodeWorkspace({
       </div>
 
       {conflict && (
-        <div className="border-b border-red-400/20 bg-red-400/10 px-4 py-3 text-xs text-red-100 space-y-3">
+        <div className="border-b border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] px-4 py-3 text-xs text-[var(--ds-danger)] space-y-3">
           <div className="font-bold">Source conflict: Studio changed since this file was opened.</div>
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-2 font-mono text-[11px]">
-            <div className="rounded bg-black/30 p-2">
-              <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">Base</div>
+            <div className="rounded bg-[var(--ds-fill-subtle)] p-2">
+              <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-[var(--ds-text-secondary)]">Base</div>
               <pre className="max-h-28 overflow-auto whitespace-pre-wrap">{conflict.baseSource || ""}</pre>
             </div>
-            <div className="rounded bg-black/30 p-2">
-              <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">Local</div>
+            <div className="rounded bg-[var(--ds-fill-subtle)] p-2">
+              <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-[var(--ds-text-secondary)]">Local</div>
               <pre className="max-h-28 overflow-auto whitespace-pre-wrap">{conflict.localSource || conflict.attemptedSource || ""}</pre>
             </div>
-            <div className="rounded bg-black/30 p-2">
-              <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">Studio</div>
+            <div className="rounded bg-[var(--ds-fill-subtle)] p-2">
+              <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-[var(--ds-text-secondary)]">Studio</div>
               <pre className="max-h-28 overflow-auto whitespace-pre-wrap">{conflict.studioSource || conflict.currentSource || ""}</pre>
             </div>
           </div>
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-            <div className="min-h-[220px] rounded-lg overflow-hidden border border-white/10">
+            <div className="min-h-[220px] rounded-lg overflow-hidden border border-[var(--ds-border-subtle)]">
               <DiffEditor
                 height="220px"
+                beforeMount={defineNexusThemes}
+                theme={monacoTheme}
                 language={monacoLanguage(activeFile?.language)}
                 original={conflict.studioSource || conflict.currentSource || ""}
                 modified={conflict.localSource || conflict.attemptedSource || ""}
@@ -223,9 +284,11 @@ export default function CodeWorkspace({
               />
             </div>
             {mergeOpen ? (
-              <div className="min-h-[220px] rounded-lg overflow-hidden border border-white/10">
+              <div className="min-h-[220px] rounded-lg overflow-hidden border border-[var(--ds-border-subtle)]">
                 <Editor
                   height="220px"
+                  beforeMount={defineNexusThemes}
+                  theme={monacoTheme}
                   language={monacoLanguage(activeFile?.language)}
                   value={mergeSource}
                   onMount={handleEditorMount}
@@ -240,7 +303,7 @@ export default function CodeWorkspace({
                 />
               </div>
             ) : (
-              <div className="rounded-lg border border-white/10 bg-black/30 p-3 text-[11px] text-gray-300">
+              <div className="rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-3 text-[11px] text-[var(--ds-text-secondary)]">
                 Choose whether to keep the latest Studio version, overwrite Studio with your local edits, retry against the latest hash, or open the merge editor and apply a merged version.
               </div>
             )}
@@ -250,7 +313,7 @@ export default function CodeWorkspace({
               <button
                 type="button"
                 onClick={conflict.onKeepStudio}
-                className="px-2.5 py-1.5 rounded-lg border border-white/10 bg-white/5 text-[10px] font-bold uppercase tracking-widest text-gray-200"
+                className="px-2.5 py-1.5 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[10px] font-bold uppercase tracking-widest text-[var(--ds-text)]"
               >
                 Keep Studio
               </button>
@@ -259,7 +322,7 @@ export default function CodeWorkspace({
               <button
                 type="button"
                 onClick={conflict.onOverwriteStudio}
-                className="px-2.5 py-1.5 rounded-lg border border-[#00f5d4]/40 bg-[#00f5d4]/10 text-[10px] font-bold uppercase tracking-widest text-[#00f5d4]"
+                className="px-2.5 py-1.5 rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] text-[10px] font-bold uppercase tracking-widest text-[var(--ds-accent)]"
               >
                 Overwrite Studio
               </button>
@@ -268,7 +331,7 @@ export default function CodeWorkspace({
               <button
                 type="button"
                 onClick={conflict.onRetryWithLatest}
-                className="px-2.5 py-1.5 rounded-lg border border-white/10 bg-white/5 text-[10px] font-bold uppercase tracking-widest text-gray-200"
+                className="px-2.5 py-1.5 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[10px] font-bold uppercase tracking-widest text-[var(--ds-text)]"
               >
                 Retry Latest Hash
               </button>
@@ -276,7 +339,7 @@ export default function CodeWorkspace({
             <button
               type="button"
               onClick={() => setMergeOpen((value) => !value)}
-              className="px-2.5 py-1.5 rounded-lg border border-white/10 bg-white/5 text-[10px] font-bold uppercase tracking-widest text-gray-200"
+              className="px-2.5 py-1.5 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[10px] font-bold uppercase tracking-widest text-[var(--ds-text)]"
             >
               {mergeOpen ? "Hide Merge" : "Open Merge"}
             </button>
@@ -284,7 +347,7 @@ export default function CodeWorkspace({
               <button
                 type="button"
                 onClick={() => conflict.onApplyMerge(mergeSource)}
-                className="px-2.5 py-1.5 rounded-lg border border-[#fee440]/40 bg-[#fee440]/10 text-[10px] font-bold uppercase tracking-widest text-[#fee440]"
+                className="px-2.5 py-1.5 rounded-lg border border-[color-mix(in_srgb,var(--ds-warning)_40%,transparent)] bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] text-[10px] font-bold uppercase tracking-widest text-[var(--ds-warning)]"
               >
                 Apply Merge
               </button>
@@ -300,7 +363,8 @@ export default function CodeWorkspace({
           key={`${artifact.id}:${activeFile?.id}`}
           height="100%"
           language={monacoLanguage(activeFile?.language)}
-          theme="nexus-dark"
+          beforeMount={defineNexusThemes}
+          theme={monacoTheme}
           value={activeFile?.content || ""}
           onMount={handleEditorMount}
           onChange={(value) => {

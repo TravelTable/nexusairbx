@@ -12,9 +12,9 @@ function PlanBadge({ plan: planProp }) {
       style={{
         background:
           (plan === "pro" || plan === "team")
-            ? (plan === "team" ? "linear-gradient(90deg, #00f5d4 0%, #9b5de5 100%)" : "linear-gradient(90deg, #9b5de5 0%, #00f5d4 100%)")
+            ? (plan === "team" ? "linear-gradient(90deg, var(--ds-accent) 0%, var(--ds-plan) 100%)" : "linear-gradient(90deg, var(--ds-plan) 0%, var(--ds-accent) 100%)")
             : undefined,
-        color: plan === "team" ? "#222" : undefined,
+        color: plan === "team" ? "var(--ds-accent-foreground)" : undefined,
       }}
     >
       {planInfo.label}

@@ -140,14 +140,14 @@ import { normalizeRobloxPlaceId } from "../../lib/robloxPlaceId";
 import { normalizeAuthoritativeRunStatus } from "../../lib/runCancellation";
 
 const MODE_COLORS = {
-  general: { primary: "#9b5de5", secondary: "#00f5d4" },
-  ui: { primary: "#00f5d4", secondary: "#9b5de5" },
-  logic: { primary: "#9b5de5", secondary: "#f15bb5" },
-  system: { primary: "#00bbf9", secondary: "#00f5d4" },
-  animator: { primary: "#f15bb5", secondary: "#fee440" },
-  data: { primary: "#fee440", secondary: "#00f5d4" },
-  performance: { primary: "#00f5d4", secondary: "#00bbf9" },
-  security: { primary: "#ff006e", secondary: "#8338ec" },
+  general: { primary: "var(--ds-accent)", secondary: "var(--ds-plan)" },
+  ui: { primary: "var(--ds-accent)", secondary: "var(--ds-plan)" },
+  logic: { primary: "var(--ds-plan)", secondary: "var(--ds-info)" },
+  system: { primary: "var(--ds-info)", secondary: "var(--ds-accent)" },
+  animator: { primary: "var(--ds-plan)", secondary: "var(--ds-warning)" },
+  data: { primary: "var(--ds-warning)", secondary: "var(--ds-info)" },
+  performance: { primary: "var(--ds-accent)", secondary: "var(--ds-info)" },
+  security: { primary: "var(--ds-danger)", secondary: "var(--ds-plan)" },
 };
 
 const TERMINAL_CHAT_RUN_STATUSES = new Set([

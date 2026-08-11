@@ -16,14 +16,14 @@ function MessageAttachments({ attachments }) {
               key={`${name}-${index}`}
               src={source}
               alt={name}
-              className="h-20 max-w-40 rounded-lg border border-white/[0.08] object-cover"
+              className="h-20 max-w-40 rounded-lg border border-[var(--ds-border-subtle)] object-cover"
             />
           );
         }
         return (
           <span
             key={`${name}-${index}`}
-            className="max-w-52 truncate rounded-md border border-white/[0.08] bg-black/20 px-2 py-1 text-[11px] text-gray-400"
+            className="max-w-52 truncate rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2 py-1 text-[11px] text-[var(--ds-text-secondary)]"
             title={name}
           >
             {name}
@@ -59,8 +59,8 @@ export default function MessageBubble({
       <div className="group/message flex w-full justify-end">
         <div className="max-w-[88%] sm:max-w-[68%]">
           <MessageAttachments attachments={m.attachments} />
-          <div className="rounded-[12px_12px_4px_12px] border border-white/[0.07] bg-white/[0.065] px-3.5 py-[11px]">
-            <div className="whitespace-pre-wrap text-[15px] font-normal leading-relaxed text-gray-100">
+          <div className="rounded-[12px_12px_4px_12px] border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-hover)] px-3.5 py-[11px]">
+            <div className="whitespace-pre-wrap text-[15px] font-normal leading-relaxed text-[var(--ds-text)]">
               {m.content}
             </div>
           </div>

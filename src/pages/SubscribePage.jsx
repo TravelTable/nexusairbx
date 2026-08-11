@@ -284,17 +284,17 @@ export default function SubscribePage() {
 
   if (!intent || !plan) {
     return (
-      <div className="min-h-[calc(100vh-72px)] bg-[#090b10] px-5 py-16 text-white">
+      <div className="min-h-[calc(100vh-72px)] bg-[var(--ds-bg-canvas)] px-5 py-16 text-[var(--ds-text)]">
         {pageHead}
-        <main className="mx-auto max-w-xl rounded-xl border border-white/10 bg-[#12151c] p-7 sm:p-9">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">Checkout</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight">Choose a plan first</h1>
-          <p className="mt-3 text-sm leading-6 text-slate-400">
+        <main className="mx-auto max-w-xl rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] p-7 sm:p-9">
+          <p className="text-xs font-semibold text-[var(--ds-accent)]">Checkout</p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-[-0.025em]">Choose a plan first</h1>
+          <p className="mt-3 text-sm leading-6 text-[var(--ds-text-muted)]">
             Your plan selection is missing or has expired. Return to pricing to create a new checkout review.
           </p>
           <a
             href="/pricing"
-            className="mt-7 inline-flex min-h-11 items-center justify-center rounded-md bg-white px-5 text-sm font-semibold text-slate-950 hover:bg-slate-200"
+            className="mt-7 inline-flex min-h-11 items-center justify-center rounded-[10px] bg-[var(--ds-accent)] px-5 text-sm font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)]"
           >
             View pricing
           </a>
@@ -305,60 +305,60 @@ export default function SubscribePage() {
 
   if (!authReady || !user) {
     return (
-      <div className="flex min-h-[calc(100vh-72px)] items-center justify-center bg-[#090b10] px-5 text-white">
+      <div className="flex min-h-[calc(100vh-72px)] items-center justify-center bg-[var(--ds-bg-canvas)] px-5 text-[var(--ds-text)]">
         {pageHead}
         <div className="text-center" role="status">
-          <Loader2 className="mx-auto h-6 w-6 animate-spin text-cyan-300" />
-          <p className="mt-3 text-sm text-slate-400">Taking you to sign in…</p>
+          <Loader2 className="mx-auto h-6 w-6 animate-spin text-[var(--ds-accent)]" />
+          <p className="mt-3 text-sm text-[var(--ds-text-muted)]">Taking you to sign in…</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-[calc(100vh-72px)] bg-[#090b10] px-5 py-10 text-white sm:py-14">
+    <div className="min-h-[calc(100vh-72px)] bg-[var(--ds-bg-canvas)] px-5 py-10 text-[var(--ds-text)] sm:py-14">
       {pageHead}
       <main className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
         <section aria-labelledby="checkout-title">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">Final review</p>
-          <h1 id="checkout-title" className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+          <p className="text-xs font-semibold text-[var(--ds-accent)]">Final review</p>
+          <h1 id="checkout-title" className="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
             Review your {plan.name} plan
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--ds-text-muted)]">
             Confirm the plan and billing schedule below. Stripe will securely collect and process your payment details.
           </p>
 
-          <div className="mt-8 border-y border-white/10 py-6">
+          <div className="mt-8 border-y border-[var(--ds-border-subtle)] py-6">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <div className="flex items-center gap-3">
                   <h2 className="text-xl font-semibold">{plan.name}</h2>
                   {intent.plan === PLAN.PRO && (
-                    <span className="rounded border border-cyan-300/30 px-2 py-0.5 text-xs font-medium text-cyan-200">
+                    <span className="rounded-md border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 py-0.5 text-xs font-medium text-[var(--ds-accent)]">
                       Featured
                     </span>
                   )}
                 </div>
-                <p className="mt-1 text-sm text-slate-400">{plan.audience}</p>
+                <p className="mt-1 text-sm text-[var(--ds-text-muted)]">{plan.audience}</p>
                 {intent.plan === PLAN.TEAM && (
-                  <p className="mt-3 text-sm text-slate-300">{seatCount} paid seats</p>
+                  <p className="mt-3 text-sm text-[var(--ds-text-secondary)]">{seatCount} paid seats</p>
                 )}
               </div>
               <div className="sm:text-right">
                 {intent.interval === BILLING_INTERVAL.YEAR ? (
                   <>
                     <p className="text-2xl font-semibold">{formatMoney(monthlyEquivalent)}/month</p>
-                    <p className="mt-1 text-sm text-slate-400">{formatMoney(billedTotal)} billed yearly</p>
+                    <p className="mt-1 text-sm text-[var(--ds-text-muted)]">{formatMoney(billedTotal)} billed yearly</p>
                     {plan.perSeat && (
-                      <p className="mt-1 text-xs text-slate-500">{formatMoney(plan.yearly)} per user, per year</p>
+                      <p className="mt-1 text-xs text-[var(--ds-text-muted)]">{formatMoney(plan.yearly)} per user, per year</p>
                     )}
                   </>
                 ) : (
                   <>
                     <p className="text-2xl font-semibold">{formatMoney(billedTotal)}/month</p>
-                    <p className="mt-1 text-sm text-slate-400">Billed monthly</p>
+                    <p className="mt-1 text-sm text-[var(--ds-text-muted)]">Billed monthly</p>
                     {plan.perSeat && (
-                      <p className="mt-1 text-xs text-slate-500">{formatMoney(plan.monthly)} per user, per month</p>
+                      <p className="mt-1 text-xs text-[var(--ds-text-muted)]">{formatMoney(plan.monthly)} per user, per month</p>
                     )}
                   </>
                 )}
@@ -367,70 +367,70 @@ export default function SubscribePage() {
 
             <ul className="mt-6 grid gap-3 sm:grid-cols-2" aria-label={`${plan.name} plan features`}>
               {plan.features.map((feature) => (
-                <li key={feature} className="flex gap-2 text-sm leading-5 text-slate-300">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" />
+                <li key={feature} className="flex gap-2 text-sm leading-5 text-[var(--ds-text-secondary)]">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--ds-success)]" />
                   <span>{feature}</span>
                 </li>
               ))}
             </ul>
 
-            <a href="/pricing" className="mt-6 inline-flex text-sm font-medium text-cyan-300 hover:text-cyan-200">
+            <a href="/pricing" className="mt-6 inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-[var(--ds-accent)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-accent-hover)]">
               Change plan or billing schedule
             </a>
           </div>
 
           <div className="mt-6">
-            <h2 className="text-sm font-semibold text-slate-200">Account</h2>
-            <p className="mt-1 text-sm text-slate-400">{user.email || "Signed-in NexusRBX account"}</p>
+            <h2 className="text-sm font-semibold text-[var(--ds-text)]">Account</h2>
+            <p className="mt-1 text-sm text-[var(--ds-text-muted)]">{user.email || "Signed-in NexusRBX account"}</p>
           </div>
 
           {(error || entitlementsError) && (
-            <div className="mt-6 rounded-md border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-100" role="alert">
+            <div className="mt-6 rounded-lg border border-[color-mix(in_srgb,var(--ds-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-danger)_8%,transparent)] px-4 py-3 text-sm text-[var(--ds-danger)]" role="alert">
               {error || entitlementsError}
             </div>
           )}
           {status && !error && (
-            <p className="mt-5 text-sm text-slate-300" role="status">{status}</p>
+            <p className="mt-5 text-sm text-[var(--ds-text-secondary)]" role="status">{status}</p>
           )}
         </section>
 
-        <aside className="h-fit rounded-xl border border-white/10 bg-[#12151c] p-6" aria-label="Checkout summary">
+        <aside className="h-fit rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] p-6 shadow-[var(--ds-shadow-panel)]" aria-label="Checkout summary">
           {entitlementsLoading ? (
             <div className="flex min-h-40 items-center justify-center" role="status" aria-label="Checking billing status">
-              <Loader2 className="h-6 w-6 animate-spin text-cyan-300" />
+              <Loader2 className="h-6 w-6 animate-spin text-[var(--ds-accent)]" />
             </div>
           ) : isSubscriber ? (
             <>
-              <Settings className="h-5 w-5 text-cyan-300" />
+              <Settings className="h-5 w-5 text-[var(--ds-accent)]" />
               <h2 className="mt-4 text-lg font-semibold">You already have an active plan</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-400">
+              <p className="mt-2 text-sm leading-6 text-[var(--ds-text-muted)]">
                 Open billing settings to change, update, or cancel your current subscription.
               </p>
               <button
                 type="button"
                 onClick={managePlan}
                 disabled={Boolean(busyAction)}
-                className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-white px-4 text-sm font-semibold text-slate-950 hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-4 text-sm font-semibold text-[var(--ds-text)] hover:bg-[var(--ds-fill-hover)] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {busyAction === "portal" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Manage plan"}
               </button>
             </>
           ) : (
             <>
-              <CreditCard className="h-5 w-5 text-cyan-300" />
+              <CreditCard className="h-5 w-5 text-[var(--ds-accent)]" />
               <h2 className="mt-4 text-lg font-semibold">Payment comes next</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-400">
+              <p className="mt-2 text-sm leading-6 text-[var(--ds-text-muted)]">
                 You will review payment details and the renewal schedule on Stripe before confirming.
               </p>
               <button
                 type="button"
                 onClick={beginCheckout}
                 disabled={Boolean(busyAction) || Boolean(entitlementsError)}
-                className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-md bg-cyan-300 px-4 text-sm font-semibold text-slate-950 hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-[10px] bg-[var(--ds-accent)] px-4 text-sm font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {busyAction === "checkout" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Continue to secure checkout"}
               </button>
-              <p className="mt-4 text-xs leading-5 text-slate-500">
+              <p className="mt-4 text-xs leading-5 text-[var(--ds-text-muted)]">
                 By continuing, you agree to the Terms of Service. Your subscription renews automatically until cancelled.
               </p>
             </>

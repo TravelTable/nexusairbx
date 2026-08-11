@@ -14,11 +14,11 @@ export default function TokenBar({
   if (unlimitedTokens) {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-xs text-gray-400 mr-2">Tokens:</span>
-        <span className="text-[#00f5d4] font-bold">
+        <span className="text-xs text-[var(--ds-text-muted)] mr-2">Tokens:</span>
+        <span className="text-accent font-bold">
           {devOverride ? "Dev unlimited" : "Unlimited"}
         </span>
-        <span className="ml-2 text-xs text-gray-400">
+        <span className="ml-2 text-xs text-[var(--ds-text-muted)]">
           {devOverride ? "Dev override active" : "Unlimited"}
         </span>
       </div>
@@ -52,11 +52,11 @@ export default function TokenBar({
   // Use tokensLeft prop instead of tokens from billing
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs text-gray-400 mr-2">Tokens:</span>
+      <span className="text-xs text-[var(--ds-text-muted)] mr-2">Tokens:</span>
       {isUnlimited ? (
-        <span className="text-green-400 font-bold">∞ (Unlimited)</span>
+        <span className="text-[var(--ds-success)] font-bold">∞ (Unlimited)</span>
       ) : plan?.toLowerCase() === "team" ? (
-        <span className="text-[#00f5d4] font-bold">High Limit (Team)</span>
+        <span className="text-[var(--ds-plan)] font-bold">High Limit (Team)</span>
       ) : (
         <div className="flex items-center gap-1">
           {[...Array(displayTokenLimit)].map((_, i) => (
@@ -73,10 +73,10 @@ export default function TokenBar({
               <Circle
                 className={`w-4 h-4 ${
                   tokensLeft > i
-                    ? "text-[#00f5d4] drop-shadow-[0_0_4px_#00f5d4]"
-                    : "text-gray-700"
+                    ? "text-accent drop-shadow-[0_0_4px_rgba(var(--ds-accent-rgb),0.38)]"
+                    : "text-[var(--ds-text-disabled)]"
                 }`}
-                fill={tokensLeft > i ? "#00f5d4" : "none"}
+                fill={tokensLeft > i ? "var(--ds-accent)" : "none"}
                 strokeWidth={tokensLeft > i ? 0 : 1.5}
               />
             </motion.div>
@@ -84,9 +84,9 @@ export default function TokenBar({
         </div>
       )}
       {tokensLoading && (
-        <Loader className="inline ml-2 h-4 w-4 animate-spin text-[#9b5de5]" />
+        <Loader className="inline ml-2 h-4 w-4 animate-spin text-accent" />
       )}
-      <span className="ml-2 text-xs text-gray-400">
+      <span className="ml-2 text-xs text-[var(--ds-text-muted)]">
         {getResetLabel()}
       </span>
     </div>

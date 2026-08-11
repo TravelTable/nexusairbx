@@ -160,7 +160,7 @@ export default function NexusRBXHomepageContainer() {
       title: "AI UI Builder",
       description: "Generate professional Roblox interfaces—from main menus to complex HUDs—in seconds. Fully customizable and optimized for all platforms.",
       icon: Layout,
-      gradient: "from-purple-600 to-pink-500",
+      gradient: "from-[var(--ds-plan)] to-accent",
       button: { text: "Build UI", href: "/ai" },
     },
     {
@@ -170,7 +170,7 @@ export default function NexusRBXHomepageContainer() {
         ? `You are currently on the ${tokenInfo.plan} plan. Enjoy full model selection, Included Usage, and Premium Direct support.`
         : "Unlock full model selection, higher included usage, Premium Direct support, and priority support. Access exclusive UI components and advanced scripting features.",
       icon: null,
-      gradient: "from-cyan-500 to-blue-600",
+      gradient: "from-[var(--ds-plan)] to-accent",
       button: { text: isPremium ? "Manage Plan" : "Subscribe", href: isPremium ? "/settings" : "/subscribe" },
       isSubscribeTab: true,
     },
@@ -179,7 +179,7 @@ export default function NexusRBXHomepageContainer() {
       title: "Smart Scripting",
       description: "Write complex Luau game logic with ease. Our AI understands Roblox's API deeply, helping you build features faster than ever.",
       icon: Zap,
-      gradient: "from-pink-500 to-purple-600",
+      gradient: "from-[var(--ds-accent-pressed)] to-accent",
       button: { text: "Start Scripting", href: "/ai" },
     },
   ];
@@ -283,27 +283,27 @@ function NexusRBXHomepage({
   ];
 
   const randomUsers = [
-    { letter: "J", color: "from-purple-500 to-indigo-500" },
-    { letter: "A", color: "from-cyan-500 to-blue-500" },
-    { letter: "T", color: "from-pink-500 to-rose-500" },
-    { letter: "K", color: "from-emerald-500 to-teal-500" },
-    { letter: "S", color: "from-orange-500 to-amber-500" },
+    { letter: "J", color: "from-blue-700 to-blue-500" },
+    { letter: "A", color: "from-blue-600 to-sky-400" },
+    { letter: "T", color: "from-slate-700 to-blue-500" },
+    { letter: "K", color: "from-blue-800 to-indigo-500" },
+    { letter: "S", color: "from-slate-600 to-blue-400" },
   ];
 
   return (
     // OPENING OF TOP-LEVEL CONTAINER WITH <Helmet> INSERTED
-    <div ref={containerRef} className="min-h-screen bg-[#0D0D0D] text-white font-sans flex flex-col relative">
+    <div ref={containerRef} className="min-h-screen bg-[var(--ds-bg-canvas)] text-[var(--ds-text)] font-sans flex flex-col relative">
       {/* Side Decorations */}
-      <div className="fixed inset-y-0 left-0 w-1 bg-gradient-to-b from-transparent via-[#9b5de5]/20 to-transparent z-20" />
-      <div className="fixed inset-y-0 right-0 w-1 bg-gradient-to-b from-transparent via-[#00f5d4]/20 to-transparent z-20" />
+      <div className="fixed inset-y-0 left-0 w-1 bg-gradient-to-b from-transparent via-accent/20 to-transparent z-20" />
+      <div className="fixed inset-y-0 right-0 w-1 bg-gradient-to-b from-transparent via-accent/20 to-transparent z-20" />
       
-      <div className="fixed inset-y-0 left-4 w-px bg-white/5 z-0 hidden lg:block" />
-      <div className="fixed inset-y-0 right-4 w-px bg-white/5 z-0 hidden lg:block" />
+      <div className="fixed inset-y-0 left-4 w-px bg-[var(--ds-border-subtle)] z-0 hidden lg:block" />
+      <div className="fixed inset-y-0 right-4 w-px bg-[var(--ds-border-subtle)] z-0 hidden lg:block" />
 
       {/* Background Blobs */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[#9b5de5]/10 blur-[120px] animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-[#00f5d4]/10 blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-accent/10 blur-[120px] animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-accent/10 blur-[120px] animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
       <Helmet>
         <title>NexusRBX — AI Roblox UI Builder & Script Generator</title>
@@ -325,7 +325,6 @@ function NexusRBXHomepage({
         <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
         <meta name="keywords" content="AI Roblox UI builder, Roblox script generator, Roblox UI design, Roblox scripting, Roblox AI, generate Roblox UI, Roblox developer tools, Roblox Premium, Luau code generator, Roblox UI engine" />
         <meta name="author" content="NexusRBX" />
-        <meta name="theme-color" content="#0D0D0D" />
         <script type="application/ld+json">
           {JSON.stringify({
             "@context":"https://schema.org",

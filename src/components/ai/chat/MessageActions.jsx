@@ -32,7 +32,7 @@ function ActionButton({ icon: Icon, label, onClick, alwaysVisible = false }) {
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-[11px] font-medium text-gray-500 transition-colors [transition-duration:120ms] hover:bg-white/[0.05] hover:text-gray-200 focus-visible:bg-white/[0.05] focus-visible:text-gray-200 ${
+      className={`inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-[11px] font-medium text-[var(--ds-text-muted)] transition-colors [transition-duration:120ms] hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text)] focus-visible:bg-[var(--ds-fill-subtle)] focus-visible:text-[var(--ds-text)] ${
         alwaysVisible ? "max-sm:inline-flex" : "max-sm:hidden"
       }`}
       aria-label={label}
@@ -49,7 +49,7 @@ function MenuItem({ icon: Icon, label, onSelect }) {
       type="button"
       role="menuitem"
       onClick={onSelect}
-      className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-gray-200 outline-none transition-colors hover:bg-white/10 focus-visible:bg-white/10"
+      className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-[var(--ds-text)] outline-none transition-colors hover:bg-[var(--ds-fill-hover)] focus-visible:bg-[var(--ds-fill-hover)]"
     >
       <Icon className="h-4 w-4 shrink-0" />
       {label}
@@ -141,7 +141,7 @@ export default function MessageActions({
       ? createPortal(
           <div
             ref={menuRef}
-            className="z-[9999] overflow-hidden rounded-md border border-white/10 bg-[#111] p-1 text-gray-200 shadow-md"
+            className="z-[9999] overflow-hidden rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] p-1 text-[var(--ds-text)] shadow-panel backdrop-blur-xl"
             style={{
               position: menuPosition?.strategy || "fixed",
               top: menuPosition?.top ?? 0,
@@ -208,7 +208,7 @@ export default function MessageActions({
       <button
         ref={buttonRef}
         type="button"
-        className="grid h-7 min-w-7 place-items-center rounded-md px-1 text-[11px] tracking-[0.12em] text-gray-500 transition-colors hover:bg-white/[0.05] hover:text-gray-200"
+        className="grid h-7 min-w-7 place-items-center rounded-md px-1 text-[11px] tracking-[0.12em] text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text)]"
         aria-label="More message actions"
         aria-haspopup="menu"
         aria-expanded={open}

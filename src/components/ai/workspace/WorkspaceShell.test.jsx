@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import WorkspaceShell, {
   clampWorkspaceDrawerWidth,
@@ -39,7 +40,7 @@ describe("WorkspaceShell", () => {
 
     expect(screen.getByRole("complementary", { name: "Files" })).toBeTruthy();
     expect(screen.getByText("files panel")).toBeTruthy();
-    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Close Files" }));
+    expect(screen.getByRole("button", { name: "Close Files" })).toHaveFocus();
 
     fireEvent.click(screen.getByRole("button", { name: "Close Files" }));
     expect(screen.getByRole("button", { name: "Open Files" })).toBeTruthy();
@@ -61,6 +62,77 @@ describe("WorkspaceShell", () => {
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.getByRole("button", { name: "Open Activity" })).toBeTruthy();
+  });
+
+  test("uses modal focus behavior only when the drawer overlays the workspace", () => {
+    const OriginalResizeObserver = global.ResizeObserver;
+    const OriginalWindowResizeObserver = window.ResizeObserver;
+    class MockResizeObserver {
+      constructor(callback) {
+        this.callback = callback;
+      }
+
+      observe(target) {
+        this.callback([{ target, contentRect: { width: 1000 } }]);
+      }
+
+      disconnect() {}
+    }
+    global.ResizeObserver = MockResizeObserver;
+    window.ResizeObserver = MockResizeObserver;
+
+    try {
+      render(<Harness />);
+      const filesButton = screen.getByRole("button", { name: "Open Files" });
+      const primary = screen.getByRole("group", { name: "Workspace content" });
+      filesButton.focus();
+      fireEvent.click(filesButton);
+
+      const dialog = screen.getByRole("dialog", { name: "Files" });
+      const drawerClose = within(dialog).getByRole("button", { name: "Close workspace drawer" });
+      expect(primary.hasAttribute("inert")).toBe(true);
+      expect(primary.getAttribute("aria-hidden")).toBe("true");
+      expect(drawerClose).toHaveFocus();
+
+      fireEvent.keyDown(document, { key: "Tab" });
+      expect(within(dialog).getByRole("separator", { name: "Resize workspace drawer" })).toHaveFocus();
+
+      fireEvent.keyDown(document, { key: "Escape" });
+      expect(filesButton).toHaveFocus();
+      expect(screen.queryByRole("dialog")).toBeNull();
+      expect(primary.hasAttribute("inert")).toBe(false);
+    } finally {
+      global.ResizeObserver = OriginalResizeObserver;
+      window.ResizeObserver = OriginalWindowResizeObserver;
+    }
+  });
+
+  test("focuses the mobile back action when the drawer becomes a full sheet", () => {
+    const OriginalResizeObserver = global.ResizeObserver;
+    const OriginalWindowResizeObserver = window.ResizeObserver;
+    class MockResizeObserver {
+      constructor(callback) {
+        this.callback = callback;
+      }
+
+      observe(target) {
+        this.callback([{ target, contentRect: { width: 500 } }]);
+      }
+
+      disconnect() {}
+    }
+    global.ResizeObserver = MockResizeObserver;
+    window.ResizeObserver = MockResizeObserver;
+
+    try {
+      render(<Harness />);
+      fireEvent.click(screen.getByRole("button", { name: "Open Code" }));
+      const dialog = screen.getByRole("dialog", { name: "Code" });
+      expect(within(dialog).getByRole("button", { name: "Back to chat" })).toHaveFocus();
+    } finally {
+      global.ResizeObserver = OriginalResizeObserver;
+      window.ResizeObserver = OriginalWindowResizeObserver;
+    }
   });
 
   test("clamps persisted and dragged widths to the supported range", () => {

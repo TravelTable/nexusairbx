@@ -12,7 +12,8 @@ export default function FeedbackModal({ onClose, onSubmit }) {
         <button
           className={cx(
             "mr-2 nexus-icon-button rounded-full",
-            rating === 1 && "border-emerald-400/40 bg-emerald-400/15 text-emerald-200"
+            rating === 1 &&
+              "border-[var(--ds-success-border)] bg-[var(--ds-success-soft)] text-[var(--ds-success)]"
           )}
           onClick={() => setRating(1)}
           aria-label="Thumbs up"
@@ -22,7 +23,8 @@ export default function FeedbackModal({ onClose, onSubmit }) {
         <button
           className={cx(
             "nexus-icon-button rounded-full",
-            rating === 0 && "border-red-400/40 bg-red-400/15 text-red-200"
+            rating === 0 &&
+              "border-[var(--ds-danger-border)] bg-[var(--ds-danger-soft)] text-[var(--ds-danger)]"
           )}
           onClick={() => setRating(0)}
           aria-label="Thumbs down"

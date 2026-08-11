@@ -68,7 +68,7 @@ export default function RobloxTrustStrip({ user: providedUser, authReady: provid
   const localDevelopmentAuth = shouldUseLocalDevelopmentAuth();
   const { user, authReady } = useHomepageAuthState(providedUser, providedAuthReady);
   const pillClass =
-    "inline-flex min-h-11 items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-xs font-semibold text-zinc-400";
+    "inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-4 py-2 text-xs font-medium text-[var(--ds-text-secondary)]";
 
   return (
     <div className="relative mt-6 w-full max-w-2xl pb-10 lg:pb-11">
@@ -79,7 +79,7 @@ export default function RobloxTrustStrip({ user: providedUser, authReady: provid
         </span>
 
         {localDevelopmentAuth || (authReady && user) ? (
-          <a href="/ai" className={pillClass + " transition hover:text-zinc-300 hover:border-white/20"}>
+          <a href="/ai" className={pillClass + " transition-[background-color,border-color,color,transform] hover:border-[var(--ds-accent-border)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] active:scale-[0.98] motion-reduce:transform-none"}>
             <Code className="h-3.5 w-3.5" />
             {localDevelopmentAuth ? "Local developer session" : "Open AI workspace"}
           </a>
@@ -88,7 +88,7 @@ export default function RobloxTrustStrip({ user: providedUser, authReady: provid
             Checking account...
           </span>
         ) : (
-          <a href="/signin" className={pillClass + " transition hover:text-zinc-300 hover:border-white/20"}>
+          <a href="/signin" className={pillClass + " transition-[background-color,border-color,color,transform] hover:border-[var(--ds-accent-border)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] active:scale-[0.98] motion-reduce:transform-none"}>
             <GoogleIcon />
             Sign in with Google
           </a>
@@ -99,7 +99,7 @@ export default function RobloxTrustStrip({ user: providedUser, authReady: provid
             href="https://create.roblox.com/store/asset/83865885181263/NexusRBX-Ai"
             target="_blank"
             rel="noopener noreferrer"
-            className={pillClass + " transition hover:text-zinc-300 hover:border-white/20"}
+            className={pillClass + " transition-[background-color,border-color,color,transform] hover:border-[var(--ds-accent-border)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] active:scale-[0.98] motion-reduce:transform-none"}
           >
             <Code className="h-3.5 w-3.5" />
             Built for Roblox Studio

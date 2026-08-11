@@ -111,19 +111,19 @@ export default function NativeModelRefinementReview({
   }, [inspection, validation, canApply, modelId, modelPath, sessionId, destructiveConfirmed, onApplied]);
 
   return (
-    <section className="w-full border border-white/10 bg-[#0c111d] p-4 text-sm text-white">
+    <section className="w-full border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] p-4 text-sm text-[var(--ds-text)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-widest text-white/55">Native Model Refinement</div>
+          <div className="text-xs font-semibold uppercase tracking-widest text-[var(--ds-text-muted)]">Native Model Refinement</div>
           <h3 className="mt-1 text-base font-semibold">{inspection?.rootName || modelId}</h3>
-          <p className="mt-1 max-w-2xl text-xs text-white/60">{requestedChange || validation?.normalizedPatch?.summary || "Review the prepared model edit."}</p>
+          <p className="mt-1 max-w-2xl text-xs text-[var(--ds-text-secondary)]">{requestedChange || validation?.normalizedPatch?.summary || "Review the prepared model edit."}</p>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={refreshAndValidate} disabled={state === "inspecting" || state === "validating"} className="inline-flex h-9 items-center gap-2 border border-white/15 px-3 text-xs font-semibold text-white hover:bg-white/10 disabled:opacity-50">
+          <button type="button" onClick={refreshAndValidate} disabled={state === "inspecting" || state === "validating"} className="inline-flex h-9 items-center gap-2 border border-[var(--ds-border-strong)] px-3 text-xs font-semibold text-[var(--ds-text)] hover:bg-[var(--ds-fill-hover)] disabled:opacity-50">
             <RefreshCw size={15} />
             Refresh
           </button>
-          <button type="button" onClick={onCancel} className="inline-flex h-9 items-center gap-2 border border-white/15 px-3 text-xs font-semibold text-white hover:bg-white/10">
+          <button type="button" onClick={onCancel} className="inline-flex h-9 items-center gap-2 border border-[var(--ds-border-strong)] px-3 text-xs font-semibold text-[var(--ds-text)] hover:bg-[var(--ds-fill-hover)]">
             <X size={15} />
             Cancel
           </button>
@@ -131,7 +131,7 @@ export default function NativeModelRefinementReview({
       </div>
 
       {inspection && (
-        <div className="mt-4 grid gap-2 text-xs text-white/70 sm:grid-cols-3">
+        <div className="mt-4 grid gap-2 text-xs text-[var(--ds-text-secondary)] sm:grid-cols-3">
           <span>Revision: {inspection.revision}</span>
           <span>Affected: {affectedCount}</span>
           <span>Bounds: {renderValue(validation?.diff?.impact?.estimatedBoundsAfter || inspection.summary?.bounds)}</span>
@@ -139,7 +139,7 @@ export default function NativeModelRefinementReview({
       )}
 
       {destructive && (
-        <label className="mt-4 flex items-center gap-3 border border-amber-400/30 bg-amber-500/10 p-3 text-xs text-amber-100">
+        <label className="mt-4 flex items-center gap-3 border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] p-3 text-xs text-[var(--ds-warning)] ">
           <input type="checkbox" checked={destructiveConfirmed} onChange={(event) => setDestructiveConfirmed(event.target.checked)} />
           <AlertTriangle size={16} />
           Confirm removal of managed model instances.
@@ -149,28 +149,28 @@ export default function NativeModelRefinementReview({
       {validation?.diff && (
         <div className="mt-4 space-y-2">
           {validation.diff.changes.map((change, index) => (
-            <div key={`${change.type}-${change.targetId}-${index}`} className="border border-white/10 p-3">
-              <div className="text-xs font-semibold uppercase tracking-wider text-white/50">{change.type.replaceAll("_", " ")}</div>
+            <div key={`${change.type}-${change.targetId}-${index}`} className="border border-[var(--ds-border-subtle)] p-3">
+              <div className="text-xs font-semibold uppercase tracking-wider text-[var(--ds-text-muted)]">{change.type.replaceAll("_", " ")}</div>
               <div className="mt-1 font-medium">{change.targetName || change.instanceName || change.targetId}</div>
-              {change.property && <div className="mt-1 text-xs text-white/65">{change.property}: {renderValue(change.before)} to {renderValue(change.after)}</div>}
-              {change.description && <div className="mt-1 text-xs text-white/65">{change.description}</div>}
-              {change.descendantsRemoved != null && <div className="mt-1 text-xs text-amber-100">{change.descendantsRemoved} descendants removed</div>}
+              {change.property && <div className="mt-1 text-xs text-[var(--ds-text-secondary)]">{change.property}: {renderValue(change.before)} to {renderValue(change.after)}</div>}
+              {change.description && <div className="mt-1 text-xs text-[var(--ds-text-secondary)]">{change.description}</div>}
+              {change.descendantsRemoved != null && <div className="mt-1 text-xs text-[var(--ds-warning)] ">{change.descendantsRemoved} descendants removed</div>}
             </div>
           ))}
         </div>
       )}
 
-      {error && <div className="mt-4 border border-red-400/30 bg-red-500/10 p-3 text-xs text-red-100">{error}</div>}
+      {error && <div className="mt-4 border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] p-3 text-xs text-[var(--ds-danger)] ">{error}</div>}
 
       {receipt?.ok && (
-        <div className="mt-4 flex items-center gap-2 border border-emerald-400/30 bg-emerald-500/10 p-3 text-xs text-emerald-100">
+        <div className="mt-4 flex items-center gap-2 border border-[color-mix(in_srgb,var(--ds-success)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-success)_12%,transparent)] p-3 text-xs text-[var(--ds-success)] ">
           <Check size={16} />
           Applied {receipt.operations?.applied || 0} operations. New revision: {receipt.newRevision}
         </div>
       )}
 
       <div className="mt-4 flex justify-end">
-        <button type="button" onClick={applyPatch} disabled={!canApply || state === "queueing" || state === "waiting_for_studio"} className="inline-flex h-9 items-center gap-2 bg-white px-4 text-xs font-bold text-black hover:bg-white/90 disabled:opacity-50">
+        <button type="button" onClick={applyPatch} disabled={!canApply || state === "queueing" || state === "waiting_for_studio"} className="inline-flex h-9 items-center gap-2 rounded-md bg-[var(--ds-accent)] px-4 text-xs font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] disabled:opacity-50">
           <Check size={15} />
           Apply changes
         </button>

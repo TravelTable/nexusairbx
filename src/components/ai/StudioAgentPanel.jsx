@@ -94,33 +94,33 @@ export default function StudioAgentPanel({ user, chatId, notify }) {
   }, [autoAdvance, busy, notify, pendingStep, run?.id, runDone]);
 
   return (
-    <section className="mx-4 mt-3 rounded-xl border border-white/10 bg-[#050505]/80 backdrop-blur-xl overflow-hidden">
-      <div className="flex items-center justify-between gap-3 px-3 py-2.5 border-b border-white/5">
+    <section className="mx-4 mt-3 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] backdrop-blur-xl overflow-hidden">
+      <div className="flex items-center justify-between gap-3 px-3 py-2.5 border-b border-[var(--ds-border-subtle)]">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="p-1.5 rounded-lg bg-[#00f5d4]/10 text-[#00f5d4] shrink-0">
+          <div className="p-1.5 rounded-lg bg-[var(--ds-accent-soft)] text-[var(--ds-accent)] shrink-0">
             <Bot className="w-4 h-4" />
           </div>
           <div className="min-w-0">
-            <div className="text-[10px] font-black uppercase tracking-widest text-white">Studio Agent</div>
-            <div className="text-[11px] text-gray-500 truncate">
+            <div className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text)]">Studio Agent</div>
+            <div className="text-[11px] text-[var(--ds-text-muted)] truncate">
               {run ? `${run.status} · ${run.iteration}/${run.maxIterations} step cycles · ${snapshots} snapshot(s)` : "Unrestricted dev mode"}
             </div>
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <label className="hidden sm:inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-white/10 bg-white/5 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+          <label className="hidden sm:inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[10px] font-bold uppercase tracking-widest text-[var(--ds-text-secondary)]">
             <input
               type="checkbox"
               checked={autoAdvance}
               onChange={(e) => setAutoAdvance(e.target.checked)}
-              className="accent-[#00f5d4]"
+              className="accent-[var(--ds-accent)]"
             />
             Auto
           </label>
           <button
             type="button"
             onClick={() => setCollapsed((v) => !v)}
-            className="px-2 py-1 rounded-lg border border-white/10 bg-white/5 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white"
+            className="px-2 py-1 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)]"
           >
             {collapsed ? "Open" : "Hide"}
           </button>
@@ -135,14 +135,14 @@ export default function StudioAgentPanel({ user, chatId, notify }) {
               onChange={(e) => setGoal(e.target.value)}
               rows={2}
               placeholder="Tell the Studio agent what to inspect, build, wire, or fix..."
-              className="min-h-[52px] flex-1 resize-none rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white placeholder:text-gray-600 outline-none focus:border-[#00f5d4]/50"
+              className="min-h-[52px] flex-1 resize-none rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-3 py-2 text-sm text-[var(--ds-text)] placeholder:text-[var(--ds-text-muted)] outline-none focus:border-[var(--ds-accent-border)]"
             />
             <div className="flex md:flex-col gap-2 md:w-40">
               <button
                 type="button"
                 onClick={handleStart}
                 disabled={busy || !goal.trim()}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-[#00f5d4] text-black text-[10px] font-black uppercase tracking-widest disabled:opacity-40"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] text-[10px] font-black uppercase tracking-widest disabled:opacity-40"
               >
                 {busy && !run ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
                 Start
@@ -151,7 +151,7 @@ export default function StudioAgentPanel({ user, chatId, notify }) {
                 type="button"
                 onClick={handleContinue}
                 disabled={busy || !run?.id || !!pendingStep || runDone}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-white/10 bg-white/5 text-gray-300 text-[10px] font-black uppercase tracking-widest disabled:opacity-40"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] text-[10px] font-black uppercase tracking-widest disabled:opacity-40"
               >
                 {busy && run ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <TerminalSquare className="w-3.5 h-3.5" />}
                 Next
@@ -161,13 +161,13 @@ export default function StudioAgentPanel({ user, chatId, notify }) {
 
           {run && (
             <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2 text-[11px] text-gray-400">
+              <div className="flex items-center justify-between gap-2 text-[11px] text-[var(--ds-text-secondary)]">
                 <span className="truncate">{run.summary || run.goal}</span>
                 <button
                   type="button"
                   onClick={handleRestore}
                   disabled={busy || !snapshots}
-                  className="shrink-0 inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-red-400/20 bg-red-400/10 text-red-200 text-[10px] font-black uppercase tracking-widest disabled:opacity-40"
+                  className="shrink-0 inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)]  text-[var(--ds-danger)] text-[10px] font-black uppercase tracking-widest disabled:opacity-40"
                   title="Queue restore for snapshots captured during this run"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
@@ -178,7 +178,7 @@ export default function StudioAgentPanel({ user, chatId, notify }) {
               <AgentStepList steps={run.steps || []} emptyLabel="No Studio tool steps yet." />
 
               {run.status === "failed" && (
-                <div className="flex items-start gap-2 rounded-lg border border-red-400/20 bg-red-400/10 px-3 py-2 text-xs text-red-100">
+                <div className="flex items-start gap-2 rounded-lg border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] px-3 py-2 text-xs text-[var(--ds-danger)] ">
                   <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
                   <span>{run.summary || "Studio agent run failed."}</span>
                 </div>

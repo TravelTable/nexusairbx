@@ -71,8 +71,8 @@ export default function StudioPlaceChip({
         disabled={!canOpen}
         className={`inline-flex max-w-full items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-semibold transition-colors focus-ring ${
           connected && label && selectedTargetIsLive
-            ? "border-[#00bbf9]/25 bg-[#00bbf9]/[0.08] text-[#9ae6ff] hover:bg-[#00bbf9]/15"
-            : "border-amber-400/25 bg-amber-400/10 text-amber-100"
+            ? "border-[color-mix(in_srgb,var(--ds-info)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-info)_10%,transparent)] text-[var(--ds-info)] hover:bg-[color-mix(in_srgb,var(--ds-info)_14%,transparent)]"
+            : " border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)]  text-[var(--ds-warning)] "
         } ${canOpen ? "cursor-pointer" : "cursor-default opacity-90"}`}
         aria-expanded={canOpen ? open : undefined}
         aria-haspopup={canOpen ? "listbox" : undefined}

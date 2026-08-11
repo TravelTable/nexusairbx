@@ -12,6 +12,7 @@ import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
 import lua from "react-syntax-highlighter/dist/esm/languages/hljs/lua";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { findLiteralMatches } from "../lib/codeSearch";
+import { shouldPreserveNativeCopy } from "./codeDrawerKeyboard";
 
 // Register lua highlighting
 let __luaRegistered = false;
@@ -180,6 +181,7 @@ export default function CodeDrawerContainer({
 
       // Ctrl/Cmd+C -> copy
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c") {
+        if (shouldPreserveNativeCopy(e)) return;
         e.preventDefault();
         if (copyHandlerRef.current) copyHandlerRef.current();
       }
@@ -440,7 +442,7 @@ const SecondaryButton = forwardRef(function SecondaryButton(
     <button
       type="button"
       ref={ref}
-      className={`flex items-center gap-2 px-4 py-1.5 rounded-md font-bold text-white border border-gray-600 bg-transparent hover:bg-gray-800 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#00f5d4] ${className}`}
+      className={`flex items-center gap-2 px-4 py-1.5 rounded-md font-bold text-[var(--ds-text)] border border-[var(--ds-border-strong)] bg-transparent hover:bg-[var(--ds-fill-hover)] text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-accent ${className}`}
       onClick={onClick}
       aria-label={ariaLabel}
       tabIndex={0}
@@ -450,6 +452,58 @@ const SecondaryButton = forwardRef(function SecondaryButton(
     </button>
   );
 });
+
+function LiveStatus({ liveGenerating }) {
+  if (!liveGenerating) return null;
+  return (
+    <span className="flex items-center gap-1 ml-2">
+      <span className="inline-block w-2 h-2 rounded-full bg-accent animate-pulse" />
+      <span className="text-xs text-accent font-mono">Generating...</span>
+    </span>
+  );
+}
+
+function GlowButton({
+  children,
+  onClick,
+  icon: Icon,
+  className = "",
+  glowColor = "from-[var(--ds-accent-pressed)] to-accent",
+  disabled = false,
+  "aria-label": ariaLabel,
+  locked = false,
+}) {
+  return (
+    <span className="relative group inline-flex">
+      <span
+        className={`absolute inset-0 rounded-md bg-gradient-to-r ${glowColor} blur-sm opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity duration-200 pointer-events-none code-drawer-glow${
+          locked ? " opacity-0" : ""
+        }`}
+        aria-hidden="true"
+      />
+      <button
+        type="button"
+        className={`relative z-10 flex items-center gap-2 px-4 py-1.5 rounded-md font-bold text-[var(--ds-text)] bg-[var(--ds-surface-2)] border border-[var(--ds-border-subtle)] text-sm shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent ${
+          locked
+            ? "pointer-events-none bg-[var(--ds-success)] border-[var(--ds-success)] text-[var(--ds-success-foreground)] shadow-none"
+            : "hover:shadow-lg hover:scale-[1.03] active:scale-100"
+        } ${className}`}
+        onClick={onClick}
+        aria-label={ariaLabel}
+        disabled={disabled}
+        tabIndex={0}
+      >
+        {Icon && <Icon className="h-5 w-5" />}
+        {children}
+      </button>
+    </span>
+  );
+}
+
+const DRAWER_VARIANTS = {
+  hidden: { x: "100%" },
+  visible: { x: 0 },
+};
 
 // UI component for presentation
 function CodeDrawerUI({
@@ -490,11 +544,6 @@ function CodeDrawerUI({
   saveError = "",
   isSavedScript = false, // <-- add this prop
 }) {
-  const drawerVariants = {
-    hidden: { x: "100%" },
-    visible: { x: 0 },
-  };
-
   // Highlight search matches in code
   const highlightedCode = useMemo(() => {
     if (!searchTerm || searchMatches.length === 0) return displayCode;
@@ -523,62 +572,13 @@ function CodeDrawerUI({
     if (highlightLine === lineNumber) {
       return {
         style: {
-          background: "rgba(0,245,212,0.18)",
+          background: "var(--ds-accent-soft)",
           transition: "background 0.3s",
         },
         className: "code-drawer-goto-highlight",
       };
     }
     return {};
-  }
-
-  // Live status badge (pulse dot + label)
-  function LiveStatus() {
-    if (!liveGenerating) return null;
-    return (
-      <span className="flex items-center gap-1 ml-2">
-        <span className="inline-block w-2 h-2 rounded-full bg-[#00f5d4] animate-pulse" />
-        <span className="text-xs text-[#00f5d4] font-mono">Generating...</span>
-      </span>
-    );
-  }
-
-  // Button kit: black base + animated glow
-  function GlowButton({
-    children,
-    onClick,
-    icon: Icon,
-    className = "",
-    glowColor = "from-[#9b5de5] to-[#00f5d4]",
-    disabled = false,
-    "aria-label": ariaLabel,
-    locked = false,
-  }) {
-    return (
-      <span className="relative group inline-flex">
-        <span
-          className={`absolute inset-0 rounded-md bg-gradient-to-r ${glowColor} blur-sm opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity duration-200 pointer-events-none code-drawer-glow${
-            locked ? " opacity-0" : ""
-          }`}
-          aria-hidden="true"
-        />
-        <button
-          type="button"
-          className={`relative z-10 flex items-center gap-2 px-4 py-1.5 rounded-md font-bold text-white bg-black border border-transparent text-sm shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#00f5d4] ${
-            locked
-              ? "pointer-events-none bg-green-600 border-green-600 shadow-none"
-              : "hover:shadow-lg hover:scale-[1.03] active:scale-100"
-          } ${className}`}
-          onClick={onClick}
-          aria-label={ariaLabel}
-          disabled={disabled}
-          tabIndex={0}
-        >
-          {Icon && <Icon className="h-5 w-5" />}
-          {children}
-        </button>
-      </span>
-    );
   }
 
   // Search navigation
@@ -608,7 +608,7 @@ function CodeDrawerUI({
       <motion.div
         key="drawer"
         ref={drawerRef}
-        className="fixed right-0 top-0 z-[120] h-full flex flex-col bg-[#181825] border-l border-[#9b5de5] shadow-2xl code-drawer-root"
+        className="fixed right-0 top-0 z-[120] h-full flex flex-col bg-[var(--ds-surface-1)] text-[var(--ds-text)] border-l border-[var(--ds-border-strong)] shadow-[var(--ds-shadow-overlay)] code-drawer-root"
         style={{
           width: drawerWidth,
           minWidth: 280,
@@ -619,7 +619,7 @@ function CodeDrawerUI({
         initial="hidden"
         animate="visible"
         exit="hidden"
-        variants={drawerVariants}
+        variants={DRAWER_VARIANTS}
         transition={{ type: "spring", stiffness: 350, damping: 35 }}
         tabIndex={-1}
         role="dialog"
@@ -638,30 +638,30 @@ function CodeDrawerUI({
             100% { filter: blur(8px) brightness(1.1); }
           }
           .code-drawer-search-highlight {
-            background: #9b5de5;
-            color: #fff;
+            background: var(--ds-accent-soft);
+            color: var(--ds-accent);
             border-radius: 2px;
             padding: 0 2px;
           }
           .code-drawer-search-highlight-active {
-            background: #00f5d4;
-            color: #181825;
+            background: var(--ds-accent);
+            color: var(--ds-accent-foreground);
           }
           .code-drawer-goto-highlight {
             animation: code-drawer-goto-flash 1.2s;
           }
           @keyframes code-drawer-goto-flash {
-            0% { background: rgba(0,245,212,0.35);}
+            0% { background: rgba(var(--ds-accent-rgb), 0.35);}
             100% { background: transparent;}
           }
         `}</style>
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800 bg-[#181825] sticky top-0 z-10">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] sticky top-0 z-10">
           <div className="flex-1 min-w-0 flex items-center gap-2">
             {isEditing ? (
               <input
                 ref={inputRef}
-                className="w-full bg-transparent border-b border-[#00f5d4] text-white font-bold text-lg outline-none px-1 py-0 transition-all focus:border-[#9b5de5]"
+                className="w-full bg-transparent border-b border-accent text-[var(--ds-text)] font-bold text-lg outline-none px-1 py-0 transition-all focus:border-[var(--ds-accent-hover)]"
                 value={editTitle}
                 maxLength={80}
                 onChange={onTitleChange}
@@ -672,7 +672,7 @@ function CodeDrawerUI({
               />
             ) : (
               <button
-                className="font-bold text-lg text-white truncate text-left hover:text-[#00f5d4] transition-colors focus:outline-none focus:text-[#00f5d4]"
+                className="font-bold text-lg text-[var(--ds-text)] truncate text-left hover:text-accent transition-colors focus:outline-none focus:text-accent"
                 title={`${editTitle} (click to edit)`}
                 onClick={onStartEditing}
                 aria-label="Edit script title"
@@ -683,7 +683,7 @@ function CodeDrawerUI({
             )}
             {filename && (
               <span
-                className="ml-2 text-xs text-gray-400 truncate max-w-[140px]"
+                className="ml-2 text-xs text-[var(--ds-text-muted)] truncate max-w-[140px]"
                 title={filename}
               >
                 {filename.length > 24
@@ -692,22 +692,22 @@ function CodeDrawerUI({
               </span>
             )}
             {version && (
-              <span className="ml-2 text-xs text-gray-300 border-l border-gray-600 pl-2 font-mono">
+              <span className="ml-2 text-xs text-[var(--ds-text-secondary)] border-l border-[var(--ds-border-strong)] pl-2 font-mono">
                 {version}
               </span>
             )}
             {isSavedScript && (
-              <span className="ml-2 px-2 py-1 rounded bg-[#00f5d4]/20 text-[#00f5d4] text-xs font-semibold">
+              <span className="ml-2 px-2 py-1 rounded bg-[var(--ds-accent-soft)] text-accent text-xs font-semibold">
                 Saved Version
               </span>
             )}
-            <LiveStatus />
+            <LiveStatus liveGenerating={liveGenerating} />
           </div>
           {/* Header controls: Search, Font size, Go-to-line */}
           <div className="flex items-center gap-2 ml-2">
             {/* Search */}
             <button
-              className="p-2 rounded-full hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00f5d4]"
+              className="p-2 rounded-full hover:bg-[var(--ds-fill-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-accent"
               onClick={() => {
                 setSearchOpen((v) => !v);
                 setTimeout(() => {
@@ -718,27 +718,27 @@ function CodeDrawerUI({
               aria-label="Search in code"
               tabIndex={0}
             >
-              <Search className="h-5 w-5 text-white" />
+              <Search className="h-5 w-5 text-[var(--ds-text)]" />
             </button>
             {/* Font size */}
             <button
-              className="p-2 rounded-full hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00f5d4]"
+              className="p-2 rounded-full hover:bg-[var(--ds-fill-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-accent"
               onClick={() => onFontSize(-2)}
               aria-label="Decrease font size"
               tabIndex={0}
             >
-              <Minus className="h-5 w-5 text-white" />
+              <Minus className="h-5 w-5 text-[var(--ds-text)]" />
             </button>
-            <span className="text-xs text-gray-400 font-mono w-6 text-center select-none">
+            <span className="text-xs text-[var(--ds-text-muted)] font-mono w-6 text-center select-none">
               {fontSize}
             </span>
             <button
-              className="p-2 rounded-full hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00f5d4]"
+              className="p-2 rounded-full hover:bg-[var(--ds-fill-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-accent"
               onClick={() => onFontSize(2)}
               aria-label="Increase font size"
               tabIndex={0}
             >
-              <Plus className="h-5 w-5 text-white" />
+              <Plus className="h-5 w-5 text-[var(--ds-text)]" />
             </button>
             {/* Go-to-line */}
             <form
@@ -746,25 +746,25 @@ function CodeDrawerUI({
               onSubmit={onGotoLine}
               autoComplete="off"
             >
-              <span className="text-xs text-gray-400 font-mono">:</span>
+              <span className="text-xs text-[var(--ds-text-muted)] font-mono">:</span>
               <input
                 type="number"
                 min={1}
                 max={9999}
                 value={gotoLine}
                 onChange={(e) => setGotoLine(e.target.value)}
-                className="w-10 bg-transparent border-b border-gray-600 text-white text-xs px-1 py-0 outline-none focus:border-[#00f5d4] transition-all"
+                className="w-10 bg-transparent border-b border-[var(--ds-border-strong)] text-[var(--ds-text)] text-xs px-1 py-0 outline-none focus:border-accent transition-all"
                 placeholder="#"
                 aria-label="Go to line"
                 tabIndex={0}
               />
               <button
                 type="submit"
-                className="p-1 rounded hover:bg-gray-800 transition-colors"
+                className="p-1 rounded hover:bg-[var(--ds-fill-hover)] transition-colors"
                 aria-label="Go to line"
                 tabIndex={0}
               >
-                <ArrowRight className="h-4 w-4 text-white" />
+                <ArrowRight className="h-4 w-4 text-[var(--ds-text)]" />
               </button>
             </form>
             {/* Close */}
@@ -781,51 +781,51 @@ function CodeDrawerUI({
         </div>
         {/* Search bar */}
         {searchOpen && (
-          <div className="flex items-center gap-2 px-5 py-2 bg-[#181825] border-b border-gray-800">
+          <div className="flex items-center gap-2 px-5 py-2 bg-[var(--ds-surface-overlay)] border-b border-[var(--ds-border-subtle)]">
             <input
               id="code-drawer-search-input"
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1 bg-transparent border-b border-[#00f5d4] text-white text-sm px-2 py-1 outline-none focus:border-[#9b5de5] transition-all"
+              className="flex-1 bg-transparent border-b border-accent text-[var(--ds-text)] text-sm px-2 py-1 outline-none focus:border-[var(--ds-accent-hover)] transition-all"
               placeholder="Search in code…"
               aria-label="Search in code"
               tabIndex={0}
             />
-            <span className="text-xs text-gray-400 font-mono">
+            <span className="text-xs text-[var(--ds-text-muted)] font-mono">
               {searchMatches.length > 0
                 ? `${searchIndex + 1}/${searchMatches.length}`
                 : ""}
             </span>
             <button
-              className="p-1 rounded hover:bg-gray-800 transition-colors"
+              className="p-1 rounded hover:bg-[var(--ds-fill-hover)] transition-colors text-[var(--ds-text)]"
               onClick={() => handleSearchNav(-1)}
               aria-label="Previous match"
               tabIndex={0}
               disabled={searchMatches.length === 0}
             >
               <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
-                <path d="M10 12L6 8l4-4" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+                <path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               </svg>
             </button>
             <button
-              className="p-1 rounded hover:bg-gray-800 transition-colors"
+              className="p-1 rounded hover:bg-[var(--ds-fill-hover)] transition-colors text-[var(--ds-text)]"
               onClick={() => handleSearchNav(1)}
               aria-label="Next match"
               tabIndex={0}
               disabled={searchMatches.length === 0}
             >
               <svg width="16" height="16" fill="none" viewBox="0 0 16 16">
-                <path d="M6 4l4 4-4 4" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+                <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               </svg>
             </button>
             <button
-              className="p-1 rounded hover:bg-gray-800 transition-colors"
+              className="p-1 rounded hover:bg-[var(--ds-fill-hover)] transition-colors"
               onClick={handleSearchClear}
               aria-label="Clear search"
               tabIndex={0}
             >
-              <X className="h-4 w-4 text-white" />
+              <X className="h-4 w-4 text-[var(--ds-text)]" />
             </button>
           </div>
         )}
@@ -837,11 +837,11 @@ function CodeDrawerUI({
         >
           <div id="code-drawer-codeblock">
             {explanation && (
-              <div className="px-5 pt-4 pb-3 border-b border-gray-800">
-                <div className="text-xs uppercase tracking-wide text-[#9b5de5] font-semibold mb-2">
+              <div className="px-5 pt-4 pb-3 border-b border-[var(--ds-border-subtle)]">
+                <div className="text-xs uppercase tracking-wide text-[var(--ds-plan)] font-semibold mb-2">
                   Explanation
                 </div>
-                <div className="space-y-3 text-sm text-gray-200 leading-relaxed">
+                <div className="space-y-3 text-sm text-[var(--ds-text-secondary)] leading-relaxed">
                   {getExplanationBlocks(explanation).map((block, idx) => {
                     if (block.type === "list") {
                       return (
@@ -868,7 +868,7 @@ function CodeDrawerUI({
               language="lua"
               style={atomOneDark}
               customStyle={{
-                background: "#181825",
+                background: "var(--ds-bg-workspace)",
                 margin: 0,
                 borderRadius: 0,
                 fontSize: `${fontSize}px`,
@@ -918,14 +918,14 @@ function CodeDrawerUI({
           </div>
         </div>
         {/* Bottom Buttons */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 justify-end p-4 border-t border-gray-800 bg-[#161622] sticky bottom-0 z-10">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 justify-end p-4 border-t border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] sticky bottom-0 z-10">
           {!isSavedScript && (
             <GlowButton
               onClick={onSaveScript}
               icon={Bookmark}
               aria-label="Save to Creations"
               locked={saveSuccess}
-              glowColor="from-[#00f5d4] to-[#9b5de5]"
+              glowColor="from-[var(--ds-accent-pressed)] to-accent"
             >
               {saveSuccess ? "Saved!" : "Save to Creations"}
             </GlowButton>
@@ -960,13 +960,13 @@ function CodeDrawerUI({
             Close
           </SecondaryButton>
           {saveError && (
-            <span className="ml-4 text-xs text-red-400">{saveError}</span>
+            <span className="ml-4 text-xs text-[var(--ds-danger)]">{saveError}</span>
           )}
           {/* Live status badge in bottom bar */}
           {liveGenerating && (
             <span className="flex items-center gap-1 ml-4">
-              <span className="inline-block w-2 h-2 rounded-full bg-[#00f5d4] animate-pulse" />
-              <span className="text-xs text-[#00f5d4] font-mono">Generating code live…</span>
+              <span className="inline-block w-2 h-2 rounded-full bg-accent animate-pulse" />
+              <span className="text-xs text-accent font-mono">Generating code live…</span>
             </span>
           )}
         </div>
@@ -981,20 +981,20 @@ function CodeDrawerUI({
             100% { filter: blur(8px) brightness(1.1); }
           }
           .code-drawer-search-highlight {
-            background: #9b5de5;
-            color: #fff;
+            background: var(--ds-accent-soft);
+            color: var(--ds-accent);
             border-radius: 2px;
             padding: 0 2px;
           }
           .code-drawer-search-highlight-active {
-            background: #00f5d4;
-            color: #181825;
+            background: var(--ds-accent);
+            color: var(--ds-accent-foreground);
           }
           .code-drawer-goto-highlight {
             animation: code-drawer-goto-flash 1.2s;
           }
           @keyframes code-drawer-goto-flash {
-            0% { background: rgba(0,245,212,0.35);}
+            0% { background: rgba(var(--ds-accent-rgb), 0.35);}
             100% { background: transparent;}
           }
         `}</style>

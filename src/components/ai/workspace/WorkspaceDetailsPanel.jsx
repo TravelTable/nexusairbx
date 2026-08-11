@@ -26,7 +26,7 @@ export default function WorkspaceDetailsPanel({
 }) {
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="shrink-0 border-b border-white/10 px-3 py-2">
+      <div className="shrink-0 border-b border-[var(--ds-border-subtle)] px-3 py-2">
         <Segmented
           fullWidth
           size="sm"

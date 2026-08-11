@@ -12,7 +12,7 @@ export default function FeaturesSection({ featureCards, navigate }) {
         viewport={{ once: true }}
         transition={{ duration: 0.6 }}
       >
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-transparent bg-clip-text">
+        <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 bg-gradient-to-r from-[var(--ds-accent-pressed)] to-accent text-transparent bg-clip-text">
           Powerful AI Tools for Roblox Creators
         </h2>
       </motion.div>
@@ -25,14 +25,14 @@ export default function FeaturesSection({ featureCards, navigate }) {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
             whileHover={{ y: -5 }}
-            className="relative overflow-hidden rounded-2xl bg-white/[0.02] backdrop-blur-md border border-white/10 p-8 hover:border-white/20 transition-all duration-500 group flex flex-col"
+            className="relative overflow-hidden rounded-2xl bg-[var(--ds-surface-1)] backdrop-blur-md border border-[var(--ds-border-subtle)] p-8 hover:border-[var(--ds-border-strong)] transition-all duration-500 group flex flex-col"
             itemScope
             itemType="https://schema.org/Service"
           >
             <div
               className={`absolute inset-0 bg-gradient-to-br ${card.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}
             ></div>
-            <div className="absolute -inset-1 bg-gradient-to-r from-transparent via-[#9b5de5]/20 to-transparent opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500"></div>
+            <div className="absolute -inset-1 bg-gradient-to-r from-transparent via-accent/20 to-transparent opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500"></div>
 
             <div className="relative flex-1">
               {card.isSubscribeTab ? (
@@ -59,13 +59,13 @@ export default function FeaturesSection({ featureCards, navigate }) {
                       height="1024"
                       loading="lazy"
                       decoding="async"
-                      className="rounded-lg border border-gray-800 mb-4 w-full"
+                      className="rounded-lg border border-[var(--ds-border-subtle)] mb-4 w-full"
                     />
                   )}
                   <h3 className="text-xl font-bold mb-2" itemProp="name">{card.title}</h3>
-                  <p className="text-gray-400" itemProp="description">{card.description}</p>
+                  <p className="text-[var(--ds-text-muted)]" itemProp="description">{card.description}</p>
                   <button
-                    className="mt-6 px-4 py-2 rounded-lg bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white font-medium hover:shadow-lg hover:shadow-[#9b5de5]/20 transform hover:translate-y-[-2px] transition-all duration-300 flex items-center justify-center"
+                    className="mt-6 px-4 py-2 rounded-lg bg-accent text-accent-foreground font-medium hover:bg-[var(--ds-accent-hover)] active:bg-[var(--ds-accent-pressed)] transform hover:translate-y-[-2px] transition-all duration-300 flex items-center justify-center"
                     onClick={() => navigate(card.button.href)}
                     type="button"
                     aria-label={`Learn more about ${card.title} for Roblox scripting`}

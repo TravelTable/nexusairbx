@@ -22,20 +22,20 @@ export default function ChatRow({
 
   return (
     <div
-      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border transition-all duration-300 text-left group cursor-pointer relative overflow-hidden ${
+      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border transition-all duration-300 text-left group relative overflow-hidden ${
         isSelected
-          ? "border-[#9b5de5]/50 bg-[#9b5de5]/5 shadow-[0_0_20px_rgba(155,93,229,0.05)]"
-          : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10"
+          ? "border-[color-mix(in_srgb,var(--ds-plan)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)]"
+          : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] hover:bg-[var(--ds-fill-subtle)] hover:border-[var(--ds-border-subtle)]"
       }`}
-      onClick={() => onOpenChat(chat.id)}
     >
       {isSelected && (
-        <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#9b5de5] shadow-[0_0_10px_#9b5de5]" />
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--ds-plan)] shadow-none" />
       )}
-      <div className="flex-1 min-w-0">
-        {isRenaming ? (
+      {isRenaming ? (
+        <div className="flex-1 min-w-0">
           <input
-            className="bg-gray-800 border border-[#9b5de5] rounded-lg px-2 py-1 text-xs text-white w-full outline-none"
+            className="bg-[var(--ds-surface-2)] border border-[var(--ds-plan)] rounded-lg px-2 py-1 text-xs text-[var(--ds-text)] w-full outline-none"
+            aria-label={`Rename chat ${chat.title || "Untitled chat"}`}
             value={renameChatTitle}
             onChange={(e) => setRenameChatTitle(e.target.value)}
             autoFocus
@@ -54,32 +54,41 @@ export default function ChatRow({
               onRenameCommit(chat.id, renameChatTitle);
             }}
           />
-        ) : (
+        </div>
+      ) : (
+        <button
+          type="button"
+          className="flex-1 min-w-0 cursor-pointer rounded-lg text-left focus-ring"
+          aria-label={`Open chat ${chat.title || "Untitled chat"}`}
+          aria-current={isSelected ? "page" : undefined}
+          onClick={() => onOpenChat(chat.id)}
+        >
           <div className="flex flex-col gap-0.5">
             <span
               className={`font-bold text-sm truncate flex items-center gap-1.5 ${
-                isSelected ? "text-white" : "text-gray-300 group-hover:text-white"
+                isSelected ? "text-[var(--ds-text)]" : "text-[var(--ds-text-secondary)] group-hover:text-[var(--ds-text)]"
               }`}
             >
               {visibleStatus && (
-                <Loader2 className="w-3 h-3 shrink-0 text-[#00f5d4] animate-spin" />
+                <Loader2 className="w-3 h-3 shrink-0 text-[var(--ds-accent)] animate-spin" />
               )}
               <span className="truncate">{chat.title || "Untitled chat"}</span>
             </span>
             <span className="text-[10px] truncate">
               {visibleStatus ? (
-                <span className="text-[#00f5d4] font-semibold capitalize">{statusLabel}</span>
+                <span className="text-[var(--ds-accent)] font-semibold capitalize">{statusLabel}</span>
               ) : (
-                <span className="text-gray-500">{chat.lastMessage || "No messages yet"}</span>
+                <span className="text-[var(--ds-text-muted)]">{chat.lastMessage || "No messages yet"}</span>
               )}
             </span>
           </div>
-        )}
-      </div>
+        </button>
+      )}
       {!isRenaming && (
         <div className="flex items-center gap-1 ml-2 opacity-70 transition-opacity hover:opacity-100 focus-within:opacity-100 md:opacity-60 md:group-hover:opacity-100">
           <button
-            className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-white/5"
+            type="button"
+            className="p-1.5 rounded-lg text-[var(--ds-text-muted)] hover:text-[var(--ds-text)] hover:bg-[var(--ds-fill-subtle)]"
             aria-label={`Rename chat ${chat.title || "Untitled chat"}`}
             onClick={(e) => {
               e.stopPropagation();
@@ -89,7 +98,8 @@ export default function ChatRow({
             <Edit className="w-3.5 h-3.5" />
           </button>
           <button
-            className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-400/10"
+            type="button"
+            className="rounded-lg p-1.5 text-[var(--ds-text-muted)] hover:bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] hover:text-[var(--ds-danger)]"
             aria-label={`Delete chat ${chat.title || "Untitled chat"}`}
             onClick={(e) => {
               e.stopPropagation();

@@ -123,29 +123,29 @@ export default function RunContextBar({ decision }) {
   return (
     <section
       aria-label="Run context"
-      className="w-full max-w-[840px] rounded-lg border border-white/[0.08] bg-white/[0.025] px-3 py-2 text-[11px] text-gray-400"
+      className="w-full max-w-[840px] rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-3 py-2 text-[11px] text-[var(--ds-text-secondary)]"
     >
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <span className="font-semibold text-gray-200">{context.status}</span>
+        <span className="font-semibold text-[var(--ds-text)]">{context.status}</span>
         <span><span className="sr-only">Mode: </span>{context.mode}</span>
-        <span><span className="text-gray-500">Studio:</span> {context.target} · {context.connection}</span>
-        <span><span className="text-gray-500">Tools:</span> {context.toolSummary}</span>
-        <span><span className="text-gray-500">Manifest:</span> {context.manifest}</span>
+        <span><span className="text-[var(--ds-text-muted)]">Studio:</span> {context.target} · {context.connection}</span>
+        <span><span className="text-[var(--ds-text-muted)]">Tools:</span> {context.toolSummary}</span>
+        <span><span className="text-[var(--ds-text-muted)]">Manifest:</span> {context.manifest}</span>
         <span title={context.confidenceTooltip || undefined}>
           <span className="sr-only">Execution confidence: </span>
-          <span aria-hidden="true" className="text-gray-500">Confidence:</span>{" "}
+          <span aria-hidden="true" className="text-[var(--ds-text-muted)]">Confidence:</span>{" "}
           {context.confidence}
         </span>
       </div>
       {context.nextAction ? (
-        <p className="mt-1 truncate text-gray-500" title={context.nextAction}>
+        <p className="mt-1 truncate text-[var(--ds-text-muted)]" title={context.nextAction}>
           Next: {context.nextAction}
         </p>
       ) : null}
       {context.confidenceFactors.length || context.reasons.length || context.unavailableCapabilities.length ? (
-        <details className="mt-1 text-gray-500">
+        <details className="mt-1 text-[var(--ds-text-muted)]">
           <summary
-            className="w-fit cursor-pointer rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+            className="w-fit cursor-pointer rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-info)]"
             title={context.confidenceTooltip || "Decision details"}
           >
             Confidence details
@@ -155,7 +155,7 @@ export default function RunContextBar({ decision }) {
               {context.confidenceFactors.map(({ factor, label, value }) => (
                 <div key={factor} className="flex min-w-0 justify-between gap-2">
                   <dt className="truncate" title={label}>{label}</dt>
-                  <dd aria-label={`${label}: ${value}`} className="tabular-nums text-gray-300">{value}</dd>
+                  <dd aria-label={`${label}: ${value}`} className="tabular-nums text-[var(--ds-text-secondary)]">{value}</dd>
                 </div>
               ))}
             </dl>
@@ -169,7 +169,7 @@ export default function RunContextBar({ decision }) {
             <ul aria-label="Unavailable capabilities" className="mt-1 space-y-0.5">
               {context.unavailableCapabilities.map(({ id, resolution }) => (
                 <li key={id}>
-                  <span className="font-medium text-gray-400">{id}</span>
+                  <span className="font-medium text-[var(--ds-text-secondary)]">{id}</span>
                   {resolution ? ` · ${resolution}` : ""}
                 </li>
               ))}

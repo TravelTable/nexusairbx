@@ -17,8 +17,8 @@ export default function CreatorStoreResultCard({ asset, onViewDetails }) {
   const thumbnailUrl = thumbnailCandidates[thumbnailIndex] || null;
 
   return (
-    <article className="rounded-md border border-white/10 bg-white/[0.03] overflow-hidden flex flex-col min-h-[260px]">
-      <div className="aspect-square bg-black/35 border-b border-white/10 flex items-center justify-center overflow-hidden">
+    <article className="flex min-h-[260px] flex-col overflow-hidden rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)]">
+      <div className="flex aspect-square items-center justify-center overflow-hidden border-b border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)]">
         {thumbnailUrl ? (
           <img
             key={thumbnailUrl}
@@ -33,7 +33,7 @@ export default function CreatorStoreResultCard({ asset, onViewDetails }) {
             }}
           />
         ) : (
-          <div className="flex flex-col items-center gap-2 text-gray-500">
+          <div className="flex flex-col items-center gap-2 text-[var(--ds-text-muted)]">
             <ImageIcon className="h-7 w-7" />
             <span className="text-[10px] font-bold uppercase tracking-wider">
               No preview
@@ -43,21 +43,21 @@ export default function CreatorStoreResultCard({ asset, onViewDetails }) {
       </div>
       <div className="p-3 flex-1 flex flex-col min-w-0">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="text-sm font-black text-white leading-tight line-clamp-2">{name}</h3>
-          <span className="shrink-0 rounded border border-[#00bbf9]/20 bg-[#00bbf9]/10 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-[#00bbf9]">
+          <h3 className="text-sm font-black text-[var(--ds-text)] leading-tight line-clamp-2">{name}</h3>
+          <span className="shrink-0 rounded-md border border-[color-mix(in_srgb,var(--ds-info)_28%,transparent)] bg-[color-mix(in_srgb,var(--ds-info)_8%,transparent)] px-1.5 py-0.5 text-[9px] font-semibold text-[var(--ds-info)]">
             {asset?.assetType || "Asset"}
           </span>
         </div>
-        <div className="mt-1 text-[11px] text-gray-400 truncate">{creatorLabel(asset?.creator)}</div>
+        <div className="mt-1 truncate text-[11px] text-[var(--ds-text-secondary)]">{creatorLabel(asset?.creator)}</div>
         {description ? (
-          <p className="mt-2 text-[11px] leading-relaxed text-gray-500 line-clamp-3">{description}</p>
+          <p className="mt-2 line-clamp-3 text-[11px] leading-relaxed text-[var(--ds-text-muted)]">{description}</p>
         ) : (
-          <p className="mt-2 text-[11px] leading-relaxed text-gray-600">No description available.</p>
+          <p className="mt-2 text-[11px] leading-relaxed text-[var(--ds-text-muted)]">No description available.</p>
         )}
         <button
           type="button"
           onClick={() => onViewDetails?.(asset)}
-          className="mt-auto inline-flex items-center justify-center gap-1.5 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-gray-200 hover:bg-white/10 hover:text-white"
+          className="mt-auto inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-3 py-2 text-[11px] font-semibold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
           aria-label={`View details for ${name}`}
         >
           <Eye className="w-3.5 h-3.5" />

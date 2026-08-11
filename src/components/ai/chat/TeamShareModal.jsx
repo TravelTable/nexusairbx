@@ -16,26 +16,26 @@ export default function TeamShareModal({
 
   return (
     <div
-      className="nexus-modal-overlay fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4"
+      className="nexus-modal-overlay fixed inset-0 z-[100] flex items-center justify-center bg-[var(--ds-surface-overlay)] p-4"
       data-state="open"
       role="presentation"
     >
       <div
-        className="nexus-modal-panel flex w-full max-w-md flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#121212] shadow-2xl"
+        className="nexus-modal-panel flex w-full max-w-md flex-col overflow-hidden rounded-3xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] shadow-2xl"
         role="dialog"
         aria-modal="true"
         aria-labelledby="team-share-title"
       >
-        <div className="p-6 border-b border-white/5 flex justify-between items-center">
+        <div className="p-6 border-b border-[var(--ds-border-subtle)] flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <Users className="w-5 h-5 text-[#00f5d4]" />
-            <h3 id="team-share-title" className="text-lg font-black text-white uppercase tracking-tight">
+            <Users className="w-5 h-5 text-[var(--ds-accent)]" />
+            <h3 id="team-share-title" className="text-lg font-black text-[var(--ds-text)] uppercase tracking-tight">
               Share with Team
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-white"
+            className="text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
           >
             <X className="w-5 h-5" />
           </button>
@@ -48,23 +48,23 @@ export default function TeamShareModal({
                 onShareWithTeam(artifactId, type, team.id);
                 onClose();
               }}
-              className="group flex w-full items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-4 text-left transition-[border-color,background-color,color] duration-150 hover:border-[#00f5d4]/50 hover:bg-[#00f5d4]/5"
+              className="group flex w-full items-center justify-between rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-4 text-left transition-[border-color,background-color,color] duration-150 hover:border-[var(--ds-accent-border)] hover:bg-[var(--ds-accent-soft)]"
             >
-              <span className="font-bold text-white group-hover:text-[#00f5d4] transition-colors">
+              <span className="font-bold text-[var(--ds-text)] group-hover:text-[var(--ds-accent)] transition-colors">
                 {team.name}
               </span>
-              <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-[#00f5d4]" />
+              <ChevronRight className="w-4 h-4 text-[var(--ds-text-muted)] group-hover:text-[var(--ds-accent)]" />
             </button>
           ))}
           {teams.length === 0 && (
             <div className="py-8 text-center">
-              <p className="text-sm text-gray-500 mb-4">You need to create a team first.</p>
+              <p className="text-sm text-[var(--ds-text-muted)] mb-4">You need to create a team first.</p>
               <button
                 onClick={() => {
                   onClose();
                   onGoToSettings?.();
                 }}
-                className="text-[#00f5d4] text-xs font-black uppercase tracking-widest underline"
+                className="text-[var(--ds-accent)] text-xs font-black uppercase tracking-widest underline"
               >
                 Go to Settings
               </button>

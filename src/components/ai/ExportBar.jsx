@@ -220,13 +220,13 @@ export default function ExportBar({
   const btn = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed";
 
   return (
-    <div className="flex items-center gap-2 flex-wrap px-4 py-2.5 rounded-xl border border-white/5 bg-black/20">
-      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mr-1">Export</span>
+    <div className="flex items-center gap-2 flex-wrap px-4 py-2.5 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)]">
+      <span className="text-[10px] font-bold text-[var(--ds-text-muted)] uppercase tracking-wider mr-1">Export</span>
       <span
         className={`inline-flex items-center gap-1 px-2 py-1 rounded-md border text-[9px] font-black uppercase tracking-widest ${
           studioConnected
-            ? "border-[#00f5d4]/25 bg-[#00f5d4]/10 text-[#00f5d4]"
-            : "border-white/10 bg-white/5 text-gray-500"
+            ? "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]"
+            : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)]"
         }`}
         title={lastCommandId ? `Last Studio command: ${lastCommandId}` : "Studio connection status"}
       >
@@ -234,17 +234,17 @@ export default function ExportBar({
         {studioConnected ? "Studio" : "Offline"}
       </span>
 
-      <button type="button" onClick={handleCopy} disabled={disabled} className={`${btn} bg-white/5 text-gray-300 hover:bg-white/10`}>
-        {copied ? <Check className="w-3.5 h-3.5 text-[#00f5d4]" /> : <Copy className="w-3.5 h-3.5" />}
+      <button type="button" onClick={handleCopy} disabled={disabled} className={`${btn} bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]`}>
+        {copied ? <Check className="w-3.5 h-3.5 text-[var(--ds-accent)]" /> : <Copy className="w-3.5 h-3.5" />}
         Copy
       </button>
 
-      <button type="button" onClick={handleDownload} disabled={disabled} className={`${btn} bg-white/5 text-gray-300 hover:bg-white/10`}>
+      <button type="button" onClick={handleDownload} disabled={disabled} className={`${btn} bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]`}>
         <Download className="w-3.5 h-3.5" /> .lua
       </button>
 
       {hasBundle && (
-        <button type="button" onClick={handleBundle} disabled={disabled || bundling} className={`${btn} bg-white/5 text-gray-300 hover:bg-white/10`}>
+        <button type="button" onClick={handleBundle} disabled={disabled || bundling} className={`${btn} bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]`}>
           {bundling ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Package className="w-3.5 h-3.5" />}
           Bundle
         </button>
@@ -255,7 +255,7 @@ export default function ExportBar({
         onClick={handleRojoExport}
         disabled={disabled || rojoBuilding}
         title="Download a Rojo project (default.project.json + src/ tree)"
-        className={`${btn} bg-[#9b5de5]/10 text-[#9b5de5] hover:bg-[#9b5de5]/20`}
+        className={`${btn} bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)] text-[var(--ds-plan)] hover:bg-[color-mix(in_srgb,var(--ds-plan)_18%,transparent)]`}
       >
         {rojoBuilding ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Boxes className="w-3.5 h-3.5" />}
         Rojo Project
@@ -266,7 +266,7 @@ export default function ExportBar({
         onClick={handleCopyLoader}
         disabled={disabled}
         title="Copy a Luau snippet to paste into the Studio command bar"
-        className={`${btn} bg-[#00f5d4]/10 text-[#00f5d4] hover:bg-[#00f5d4]/20`}
+        className={`${btn} bg-[var(--ds-accent-soft)] text-[var(--ds-accent)] hover:bg-[var(--ds-accent-soft)]`}
       >
         {loaderCopied ? <Check className="w-3.5 h-3.5" /> : <Terminal className="w-3.5 h-3.5" />}
         Studio Loader
@@ -275,7 +275,7 @@ export default function ExportBar({
       <select
         value={applyMode}
         onChange={(e) => setApplyMode(e.target.value)}
-        className="h-[30px] rounded-lg border border-white/10 bg-black/30 px-2 text-[10px] font-black uppercase tracking-widest text-gray-300 outline-none"
+        className="h-[30px] rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2 text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-secondary)] outline-none"
         title="Studio apply mode"
       >
         <option value="manual_review">Manual</option>
@@ -288,7 +288,7 @@ export default function ExportBar({
         onClick={handlePairStudio}
         disabled={studioBusy}
         title={pairCode ? `Pairing code: ${pairCode}` : "Create a pairing code for the Roblox Studio plugin"}
-        className={`${btn} bg-white/5 text-gray-300 hover:bg-white/10`}
+        className={`${btn} bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]`}
       >
         {studioBusy && !lastCommandId ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />}
         {pairCode || "Pair Studio"}
@@ -299,25 +299,25 @@ export default function ExportBar({
         onClick={handlePushStudio}
         disabled={disabled || studioBusy || !studioConnected}
         title={studioConnected ? "Queue this artifact for the paired Roblox Studio plugin" : "Pair the NexusRBX Studio plugin to enable push"}
-        className={`${btn} bg-[#00f5d4]/10 text-[#00f5d4] hover:bg-[#00f5d4]/20`}
+        className={`${btn} bg-[var(--ds-accent-soft)] text-[var(--ds-accent)] hover:bg-[var(--ds-accent-soft)]`}
       >
         {studioBusy ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
         Push Studio
       </button>
 
-      <button type="button" onClick={handleVerify} disabled={disabled || verifying} className={`${btn} bg-white/5 text-gray-300 hover:bg-white/10`}>
+      <button type="button" onClick={handleVerify} disabled={disabled || verifying} className={`${btn} bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]`}>
         {verifying ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
         Verify
       </button>
 
       {onSaveLibrary && (
-        <button type="button" onClick={() => onSaveLibrary({ name: title, code })} disabled={disabled} className={`${btn} bg-white/5 text-gray-300 hover:bg-white/10`}>
+        <button type="button" onClick={() => onSaveLibrary({ name: title, code })} disabled={disabled} className={`${btn} bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]`}>
           <Bookmark className="w-3.5 h-3.5" /> Save
         </button>
       )}
 
       {onRefine && (
-        <button type="button" onClick={onRefine} disabled={disabled} className={`${btn} bg-white/5 text-gray-300 hover:bg-white/10`}>
+        <button type="button" onClick={onRefine} disabled={disabled} className={`${btn} bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]`}>
           <RefreshCw className="w-3.5 h-3.5" /> Refine
         </button>
       )}

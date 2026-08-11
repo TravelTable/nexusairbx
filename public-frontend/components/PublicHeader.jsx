@@ -1,12 +1,12 @@
-import PublicAccountState from "./PublicAccountState";
+import PublicAccountState, { PublicAccountProvider } from "./PublicAccountState";
 import PublicNavBehavior from "./PublicNavBehavior";
 import SkipToMainContent from "../../src/components/site/SkipToMainContent";
 
 const navLinkClass =
-  "rounded-md px-3 py-2 text-sm font-medium text-zinc-300 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5d4]";
+  "inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-[var(--ds-text-secondary)] transition-[background-color,color,transform] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)] motion-reduce:transform-none";
 
 const dropdownLinkClass =
-  "flex min-h-11 items-center rounded-md px-3 text-sm text-zinc-200 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5d4]";
+  "flex min-h-11 items-center rounded-lg px-3 text-sm text-[var(--ds-text-secondary)] transition-[background-color,color,transform] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)] motion-reduce:transform-none";
 
 function DesktopGroup({ label, children }) {
   return (
@@ -15,11 +15,11 @@ function DesktopGroup({ label, children }) {
         className={`${navLinkClass} flex cursor-pointer list-none items-center gap-1.5 [&::-webkit-details-marker]:hidden`}
       >
         {label}
-        <span aria-hidden="true" className="text-[10px] text-zinc-500 transition-transform group-open:rotate-180">
+        <span aria-hidden="true" className="text-[10px] text-[var(--ds-text-muted)] transition-transform group-open:rotate-180 motion-reduce:transition-none">
           ▾
         </span>
       </summary>
-      <div className="absolute left-0 top-11 z-50 w-56 rounded-lg border border-white/10 bg-[#10131b] p-2 shadow-xl shadow-black/30">
+      <div className="absolute left-0 top-11 z-50 w-56 origin-top-left rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-2 shadow-xl shadow-black/10">
         {children}
       </div>
     </details>
@@ -28,21 +28,22 @@ function DesktopGroup({ label, children }) {
 
 export default function PublicHeader({ showSkipLink = false }) {
   return (
-    <header
-      className="sticky top-0 z-50 border-b border-white/10 bg-[#080a10]/95 text-white backdrop-blur-xl"
-      data-public-header
-    >
+    <PublicAccountProvider>
+      <header
+        className="sticky top-0 z-50 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] text-[var(--ds-text)] backdrop-blur-xl"
+        data-public-header
+      >
       {showSkipLink ? <SkipToMainContent /> : null}
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <a
           href="/"
-          className="inline-flex min-h-11 min-w-0 items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5d4]"
+          className="inline-flex min-h-11 min-w-0 items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)]"
           aria-label="NexusRBX home"
         >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/10 bg-white/[0.04]">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)]">
             <img src="/logo.png" alt="" className="h-7 w-7 object-contain" width="28" height="28" />
           </span>
-          <span className="truncate text-sm font-semibold tracking-tight text-white">NexusRBX</span>
+          <span className="truncate text-sm font-semibold tracking-[-0.01em] text-[var(--ds-text)]">NexusRBX</span>
         </a>
 
         <div className="hidden min-w-0 flex-1 items-center justify-end gap-5 lg:flex">
@@ -62,46 +63,47 @@ export default function PublicHeader({ showSkipLink = false }) {
             </DesktopGroup>
           </nav>
 
-          <div className="border-l border-white/10 pl-5">
+          <div className="border-l border-[var(--ds-border-subtle)] pl-5">
             <PublicAccountState />
           </div>
         </div>
 
         <details className="group relative lg:hidden">
-          <summary className="flex h-11 cursor-pointer list-none items-center rounded-md border border-white/15 bg-white/[0.04] px-3 text-sm font-medium text-zinc-100 transition-colors hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00f5d4] [&::-webkit-details-marker]:hidden">
+          <summary className="flex h-11 cursor-pointer list-none items-center rounded-lg border border-[var(--ds-border-strong)] bg-[var(--ds-fill-subtle)] px-3 text-sm font-medium text-[var(--ds-text)] transition-[background-color,transform] hover:bg-[var(--ds-fill-hover)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)] motion-reduce:transform-none [&::-webkit-details-marker]:hidden">
             <span className="group-open:hidden">Menu</span>
             <span className="hidden group-open:inline">Close</span>
           </summary>
-          <div className="absolute right-0 top-12 z-50 max-h-[calc(100vh-5rem)] w-[min(25rem,calc(100vw-2rem))] overflow-y-auto rounded-lg border border-white/10 bg-[#10131b] p-3 shadow-xl shadow-black/40">
+          <div className="absolute right-0 top-12 z-50 max-h-[calc(100vh-5rem)] w-[min(25rem,calc(100vw-2rem))] origin-top-right overflow-y-auto rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-3 shadow-xl shadow-black/10">
             <nav className="grid gap-4" aria-label="Mobile navigation" data-public-nav>
               <div>
-                <p className="px-3 pb-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">Product</p>
+                <p className="px-3 pb-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--ds-text-muted)]">Product</p>
                 <a className={dropdownLinkClass} href="/ai">AI Workspace</a>
                 <a className={dropdownLinkClass} href="/tools/icon-generator">Icon Generator</a>
                 <a className={dropdownLinkClass} href="/icons-market">Creator Store</a>
               </div>
 
-              <div className="grid gap-0.5 border-y border-white/10 py-3">
+              <div className="grid gap-0.5 border-y border-[var(--ds-border-subtle)] py-3">
                 <a className={dropdownLinkClass} href="/docs">Docs</a>
                 <a className={dropdownLinkClass} href="/pricing">Pricing</a>
                 <a className={dropdownLinkClass} href="/downloads">Downloads</a>
               </div>
 
               <div>
-                <p className="px-3 pb-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">Resources</p>
+                <p className="px-3 pb-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--ds-text-muted)]">Resources</p>
                 <a className={dropdownLinkClass} href="/contact">Contact</a>
                 <a className={dropdownLinkClass} href="/support">Support</a>
                 <a className={dropdownLinkClass} href="/legal">Legal</a>
               </div>
             </nav>
 
-            <div className="mt-3 border-t border-white/10 pt-3">
+            <div className="mt-3 border-t border-[var(--ds-border-subtle)] pt-3">
               <PublicAccountState mobile />
             </div>
           </div>
         </details>
       </div>
-      <PublicNavBehavior />
-    </header>
+        <PublicNavBehavior />
+      </header>
+    </PublicAccountProvider>
   );
 }

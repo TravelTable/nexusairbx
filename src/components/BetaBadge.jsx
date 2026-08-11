@@ -6,7 +6,7 @@ import React from "react";
 const BetaBadge = ({ className = "" }) => {
   return (
     <span 
-      className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter bg-[#9b5de5]/10 text-[#9b5de5] border border-[#9b5de5]/20 select-none ${className}`}
+      className={`inline-flex select-none items-center rounded border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-tighter text-[var(--ds-accent)] ${className}`}
       title="NexusRBX is currently in Beta. We are actively improving the platform!"
     >
       Beta

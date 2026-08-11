@@ -26,12 +26,12 @@ function fmtBounds(bounds) {
 }
 
 function statusMeta(status) {
-  if (status === "succeeded") return { icon: CheckCircle2, color: "text-emerald-300", label: "succeeded" };
-  if (status === "failed") return { icon: XCircle, color: "text-rose-300", label: "failed" };
+  if (status === "succeeded") return { icon: CheckCircle2, color: " text-[var(--ds-success)] ", label: "succeeded" };
+  if (status === "failed") return { icon: XCircle, color: " text-[var(--ds-danger)] ", label: "failed" };
   if (["validating", "queueing", "waiting_for_studio", "constructing", "validating_in_studio", "placing"].includes(status)) {
-    return { icon: Loader2, color: "text-cyan-300", label: status.replace(/_/g, " ") };
+    return { icon: Loader2, color: "text-[var(--ds-info)]", label: status.replace(/_/g, " ") };
   }
-  return { icon: Box, color: "text-gray-300", label: status || "ready" };
+  return { icon: Box, color: "text-[var(--ds-text-secondary)]", label: status || "ready" };
 }
 
 export default function NativeModelReviewPanel({ artifact, notify }) {
@@ -142,15 +142,15 @@ export default function NativeModelReviewPanel({ artifact, notify }) {
   };
 
   return (
-    <section className="border border-cyan-300/15 bg-cyan-300/[0.04] p-3 rounded-lg space-y-3">
+    <section className="border border-[color-mix(in_srgb,var(--ds-info)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-info)_10%,transparent)] p-3 rounded-lg space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-sm font-black text-white">
-            <Box className="w-4 h-4 text-cyan-300" />
+          <div className="flex items-center gap-2 text-sm font-black text-[var(--ds-text)]">
+            <Box className="w-4 h-4 text-[var(--ds-info)]" />
             <span className="truncate">{normalizedSpec?.name || "Native model build"}</span>
           </div>
           {normalizedSpec?.description && (
-            <p className="mt-1 text-xs text-gray-400">{normalizedSpec.description}</p>
+            <p className="mt-1 text-xs text-[var(--ds-text-secondary)]">{normalizedSpec.description}</p>
           )}
         </div>
         <span className={`inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest ${meta.color}`}>
@@ -160,28 +160,28 @@ export default function NativeModelReviewPanel({ artifact, notify }) {
       </div>
 
       <div className="grid grid-cols-2 gap-2 text-xs">
-        <div className="border border-white/10 bg-black/20 rounded-md p-2">
-          <div className="text-gray-500">Instances</div>
-          <div className="font-bold text-white">{summary?.instances ?? "..."}</div>
+        <div className="border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] rounded-md p-2">
+          <div className="text-[var(--ds-text-muted)]">Instances</div>
+          <div className="font-bold text-[var(--ds-text)]">{summary?.instances ?? "..."}</div>
         </div>
-        <div className="border border-white/10 bg-black/20 rounded-md p-2">
-          <div className="text-gray-500">Parts</div>
-          <div className="font-bold text-white">{summary?.parts ?? "..."}</div>
+        <div className="border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] rounded-md p-2">
+          <div className="text-[var(--ds-text-muted)]">Parts</div>
+          <div className="font-bold text-[var(--ds-text)]">{summary?.parts ?? "..."}</div>
         </div>
-        <div className="border border-white/10 bg-black/20 rounded-md p-2">
-          <div className="text-gray-500">Constraints</div>
-          <div className="font-bold text-white">{summary?.constraints ?? "..."}</div>
+        <div className="border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] rounded-md p-2">
+          <div className="text-[var(--ds-text-muted)]">Constraints</div>
+          <div className="font-bold text-[var(--ds-text)]">{summary?.constraints ?? "..."}</div>
         </div>
-        <div className="border border-white/10 bg-black/20 rounded-md p-2">
-          <div className="text-gray-500">Bounds</div>
-          <div className="font-bold text-white">{fmtBounds(summary?.estimatedBounds || receipt?.bounds)}</div>
+        <div className="border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] rounded-md p-2">
+          <div className="text-[var(--ds-text-muted)]">Bounds</div>
+          <div className="font-bold text-[var(--ds-text)]">{fmtBounds(summary?.estimatedBounds || receipt?.bounds)}</div>
         </div>
       </div>
 
-      <div className="text-xs text-gray-400 space-y-1">
-        <div>Destination: <span className="text-gray-200">{normalizedSpec?.targetParentPath || "Workspace/NexusBuilds"}</span></div>
-        <div>Placement: <span className="text-gray-200">{normalizedSpec?.placement?.mode || "camera_focus"}</span></div>
-        <div className="flex items-center gap-1 text-cyan-200">
+      <div className="text-xs text-[var(--ds-text-secondary)] space-y-1">
+        <div>Destination: <span className="text-[var(--ds-text)]">{normalizedSpec?.targetParentPath || "Workspace/NexusBuilds"}</span></div>
+        <div>Placement: <span className="text-[var(--ds-text)]">{normalizedSpec?.placement?.mode || "camera_focus"}</span></div>
+        <div className="flex items-center gap-1 text-[var(--ds-info)]">
           <Radio className="w-3 h-3" />
           Editable Roblox-native geometry. No paid mesh generation. New BaseParts are anchored by default.
         </div>
@@ -190,7 +190,7 @@ export default function NativeModelReviewPanel({ artifact, notify }) {
       {!!summary?.warnings?.length && (
         <div className="space-y-1">
           {summary.warnings.map((warning, index) => (
-            <div key={`${warning}-${index}`} className="flex items-start gap-2 text-xs text-amber-200">
+            <div key={`${warning}-${index}`} className="flex items-start gap-2 text-xs text-[var(--ds-warning)] ">
               <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
               <span>{warning}</span>
             </div>
@@ -199,22 +199,22 @@ export default function NativeModelReviewPanel({ artifact, notify }) {
       )}
 
       {error && (
-        <div className="text-xs text-rose-200 border border-rose-300/20 bg-rose-300/10 rounded-md p-2">{String(error)}</div>
+        <div className="text-xs text-[var(--ds-danger)] border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] rounded-md p-2">{String(error)}</div>
       )}
 
       <button
         type="button"
         onClick={() => setShowTree((value) => !value)}
-        className="w-full flex items-center justify-between text-xs font-bold text-gray-300"
+        className="w-full flex items-center justify-between text-xs font-bold text-[var(--ds-text-secondary)]"
       >
         <span>Object hierarchy</span>
         {showTree ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
       </button>
       {showTree && (
-        <div className="max-h-48 overflow-y-auto rounded-md border border-white/10 bg-black/20 p-2 text-xs scrollbar-subtle">
+        <div className="max-h-48 overflow-y-auto rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2 text-xs scrollbar-subtle">
           {hierarchy.slice(0, 80).map((item) => (
-            <div key={item.id} className="flex items-center gap-2 text-gray-300" style={{ paddingLeft: `${item.depth * 12}px` }}>
-              <span className="text-gray-500">{item.className}</span>
+            <div key={item.id} className="flex items-center gap-2 text-[var(--ds-text-secondary)]" style={{ paddingLeft: `${item.depth * 12}px` }}>
+              <span className="text-[var(--ds-text-muted)]">{item.className}</span>
               <span className="truncate">{item.name || item.id}</span>
             </div>
           ))}
@@ -222,9 +222,9 @@ export default function NativeModelReviewPanel({ artifact, notify }) {
       )}
 
       <details open={showRaw} onToggle={(event) => setShowRaw(event.currentTarget.open)}>
-        <summary className="cursor-pointer text-xs font-bold text-gray-400">Advanced raw spec</summary>
+        <summary className="cursor-pointer text-xs font-bold text-[var(--ds-text-secondary)]">Advanced raw spec</summary>
         {showRaw && (
-          <pre className="mt-2 max-h-56 overflow-auto rounded-md border border-white/10 bg-black/30 p-2 text-[10px] text-gray-300">
+          <pre className="mt-2 max-h-56 overflow-auto rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2 text-[10px] text-[var(--ds-text-secondary)]">
             {JSON.stringify(normalizedSpec, null, 2)}
           </pre>
         )}
@@ -235,7 +235,7 @@ export default function NativeModelReviewPanel({ artifact, notify }) {
           type="button"
           onClick={onBuild}
           disabled={!canBuild}
-          className="inline-flex items-center gap-2 rounded-md bg-cyan-300 px-3 py-2 text-xs font-black text-black disabled:opacity-40 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 rounded-md bg-[var(--ds-info)] px-3 py-2 text-xs font-semibold text-[var(--ds-info-foreground)] disabled:cursor-not-allowed disabled:opacity-40"
         >
           {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Hammer className="w-3.5 h-3.5" />}
           Build in Studio
@@ -246,11 +246,11 @@ export default function NativeModelReviewPanel({ artifact, notify }) {
             queueingRef.current = false;
             setStatus(validation?.ok ? "ready" : "failed");
           }}
-          className="rounded-md border border-white/10 px-3 py-2 text-xs font-bold text-gray-300"
+          className="rounded-md border border-[var(--ds-border-subtle)] px-3 py-2 text-xs font-bold text-[var(--ds-text-secondary)]"
         >
           Cancel
         </button>
-        {!studioConnected && <span className="text-xs text-amber-200">Pair Studio to build.</span>}
+        {!studioConnected && <span className="text-xs text-[var(--ds-warning)] ">Pair Studio to build.</span>}
       </div>
 
       {status === "succeeded" && (commandId || receipt?.commandId) && showValidation && (

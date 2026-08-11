@@ -23,6 +23,7 @@ describe("settingsSchema", () => {
 
   it("sanitizes valid partial patches without requiring full settings", () => {
     const { patch, invalidKeys } = sanitizeSettingsPatch({
+      theme: "light",
       robloxAssetUploadsEnabled: true,
       useExamples: true,
       selectedExampleIds: ["ItemShopUI", "itemshopui", "", "Trading UI"],
@@ -31,10 +32,23 @@ describe("settingsSchema", () => {
 
     expect(invalidKeys).toEqual([]);
     expect(patch).toEqual({
+      theme: "light",
       robloxAssetUploadsEnabled: true,
       useExamples: true,
       selectedExampleIds: ["itemshopui", "trading ui"],
       codingStandards: "Use typed Luau.",
+    });
+  });
+
+  it("defaults appearance to system and rejects unsupported themes", () => {
+    expect(DEFAULT_SETTINGS.theme).toBe("system");
+    expect(normalizeSettings({}).theme).toBe("system");
+    expect(normalizeSettings({ theme: "dark" }).theme).toBe("dark");
+    expect(normalizeSettings({ theme: "light" }).theme).toBe("light");
+
+    expect(sanitizeSettingsPatch({ theme: "turquoise" })).toEqual({
+      patch: {},
+      invalidKeys: ["theme"],
     });
   });
 
