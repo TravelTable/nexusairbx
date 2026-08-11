@@ -26,6 +26,7 @@ import {
   readAuthPersistencePreference,
   redirectSignInWithOAuthProvider,
   shouldFallbackToAuthRedirect,
+  shouldUseFirebaseGooglePopup,
   signInWithOAuthProvider,
   storeAuthRedirectError,
   writeAuthPersistencePreference,
@@ -66,6 +67,13 @@ describe("firebaseAuth", () => {
     expect(shouldFallbackToAuthRedirect({ code: "auth/popup-closed-by-user" })).toBe(true);
     expect(shouldFallbackToAuthRedirect({ code: "popup_failed_to_open" })).toBe(true);
     expect(shouldFallbackToAuthRedirect({ code: "auth/invalid-credential" })).toBe(false);
+  });
+
+  test("uses the Firebase popup transport for Vercel deployment origins", () => {
+    expect(shouldUseFirebaseGooglePopup("nexusairbx.vercel.app")).toBe(true);
+    expect(shouldUseFirebaseGooglePopup("preview-team.vercel.app")).toBe(true);
+    expect(shouldUseFirebaseGooglePopup("www.nexusrbx.com")).toBe(false);
+    expect(shouldUseFirebaseGooglePopup("localhost")).toBe(false);
   });
 
   test("defaults auth persistence preference to local", () => {
@@ -125,6 +133,23 @@ describe("firebaseAuth", () => {
     const popupProvider = signInWithPopup.mock.calls[0][1];
     expect(setCustomParameters).toHaveBeenCalledWith({ prompt: "select_account" });
     expect(signInWithRedirect).toHaveBeenCalledWith({}, popupProvider);
+  });
+
+  test("can disable redirect fallback for deployment origins", async () => {
+    class GoogleProvider {
+      setCustomParameters = jest.fn();
+    }
+    const popupError = { code: "auth/popup-closed-by-user" };
+    signInWithPopup.mockRejectedValue(popupError);
+
+    await expect(
+      signInWithOAuthProvider({}, GoogleProvider, {
+        method: "google",
+        redirectFallback: false,
+      })
+    ).rejects.toBe(popupError);
+
+    expect(signInWithRedirect).not.toHaveBeenCalled();
   });
 
   test("can start the Google redirect directly after the GIS popup is unavailable", async () => {

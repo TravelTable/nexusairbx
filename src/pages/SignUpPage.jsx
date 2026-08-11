@@ -13,7 +13,7 @@ import {
   consumeAuthRedirectError,
   getFriendlyAuthErrorMessage,
   readAuthPersistencePreference,
-  signInWithGoogleIdentityServices,
+  signInWithGoogleProvider,
   signInWithOAuthProvider,
   writeAuthPersistencePreference,
 } from "../lib/firebaseAuth";
@@ -254,9 +254,11 @@ export default function NexusRBXSignUpPageContainer() {
 
     try {
       writeAuthPersistencePreference(rememberMe);
-      const credential = await signInWithGoogleIdentityServices(auth, {
+      const credential = await signInWithGoogleProvider(auth, {
         rememberMe,
+        returnPath: authReturnPath || "/ai",
       });
+      if (!credential) return;
       await credential.user.getIdToken();
       if (!credential.user.emailVerified) await sendEmailVerification(credential.user);
       setFormStatus({

@@ -5,7 +5,6 @@ import { auth } from "../firebase";
 import {
   signInWithEmailAndPassword,
   GithubAuthProvider,
-  GoogleAuthProvider,
   onAuthStateChanged,
 } from "firebase/auth";
 import {
@@ -13,9 +12,7 @@ import {
   consumeAuthRedirectError,
   getFriendlyAuthErrorMessage,
   readAuthPersistencePreference,
-  redirectSignInWithOAuthProvider,
-  shouldFallbackToAuthRedirect,
-  signInWithGoogleIdentityServices,
+  signInWithGoogleProvider,
   signInWithOAuthProvider,
   writeAuthPersistencePreference,
 } from "../lib/firebaseAuth";
@@ -175,11 +172,11 @@ export default function NexusRBXSignInPageContainer() {
     });
     try {
       writeAuthPersistencePreference(rememberMe);
-      // Prefer GIS credential exchange so we do not depend on Firebase's
-      // /__/auth helper popup/redirect path (failing with auth/internal-error).
-      const credential = await signInWithGoogleIdentityServices(auth, {
+      const credential = await signInWithGoogleProvider(auth, {
         rememberMe,
+        returnPath: authReturnPath || "/",
       });
+      if (!credential) return;
       await credential.user.getIdToken();
       setFormStatus({
         status: "success",
@@ -189,26 +186,6 @@ export default function NexusRBXSignInPageContainer() {
         void finishSignInRedirect();
       }, 600);
     } catch (error) {
-      if (shouldFallbackToAuthRedirect(error)) {
-        setFormStatus({
-          status: "submitting",
-          message: "Continuing sign-in in this tab..."
-        });
-        try {
-          await redirectSignInWithOAuthProvider(auth, GoogleAuthProvider, {
-            rememberMe,
-            returnPath: authReturnPath || "/",
-            method: "google",
-          });
-          return;
-        } catch (redirectError) {
-          setFormStatus({
-            status: "error",
-            message: getFriendlyAuthErrorMessage(redirectError)
-          });
-          return;
-        }
-      }
       setFormStatus({
         status: "error",
         message: getFriendlyAuthErrorMessage(error)

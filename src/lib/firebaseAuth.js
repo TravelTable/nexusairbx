@@ -38,6 +38,12 @@ export function shouldFallbackToAuthRedirect(error) {
   return POPUP_REDIRECT_FALLBACK_CODES.has(error?.code);
 }
 
+export function shouldUseFirebaseGooglePopup(
+  hostname = typeof window !== "undefined" ? window.location?.hostname : ""
+) {
+  return String(hostname || "").trim().toLowerCase().endsWith(".vercel.app");
+}
+
 let googleIdentityScriptPromise = null;
 
 function loadGoogleIdentityServices() {
@@ -128,6 +134,45 @@ export async function signInWithGoogleIdentityServices(auth, { rememberMe = true
 
   const credential = GoogleAuthProvider.credential(null, accessToken);
   return signInWithCredential(auth, credential);
+}
+
+/**
+ * Selects the Google auth transport for the current deployment origin.
+ *
+ * Stable/custom origins use GIS so production browsers do not depend on the
+ * Firebase redirect helper's third-party storage. Vercel deployments use the
+ * Firebase popup because Firebase authorizes the app hostname directly while
+ * Google's JavaScript-origin allowlist may lag after a deployment alias is
+ * added. Redirect fallback is deliberately disabled on Vercel because an
+ * empty third-party redirect result would only make the user repeat sign-in.
+ */
+export async function signInWithGoogleProvider(
+  auth,
+  {
+    rememberMe = true,
+    returnPath = "/",
+    hostname = typeof window !== "undefined" ? window.location?.hostname : "",
+  } = {}
+) {
+  if (shouldUseFirebaseGooglePopup(hostname)) {
+    return signInWithOAuthProvider(auth, GoogleAuthProvider, {
+      rememberMe,
+      returnPath,
+      method: "google",
+      redirectFallback: false,
+    });
+  }
+
+  try {
+    return await signInWithGoogleIdentityServices(auth, { rememberMe });
+  } catch (error) {
+    if (!shouldFallbackToAuthRedirect(error)) throw error;
+    return redirectSignInWithOAuthProvider(auth, GoogleAuthProvider, {
+      rememberMe,
+      returnPath,
+      method: "google",
+    });
+  }
 }
 
 export function isMissingRedirectStateError(error) {
@@ -237,7 +282,12 @@ export function consumeAuthRedirectError() {
 export async function signInWithOAuthProvider(
   auth,
   ProviderClass,
-  { rememberMe = false, returnPath = "/", method = "oauth" } = {}
+  {
+    rememberMe = false,
+    returnPath = "/",
+    method = "oauth",
+    redirectFallback = true,
+  } = {}
 ) {
   await applyAuthPersistence(auth, rememberMe);
   const provider = new ProviderClass();
@@ -248,7 +298,8 @@ export async function signInWithOAuthProvider(
   try {
     return await signInWithPopup(auth, provider);
   } catch (error) {
-    const shouldFallbackToRedirect = shouldFallbackToAuthRedirect(error);
+    const shouldFallbackToRedirect =
+      redirectFallback && shouldFallbackToAuthRedirect(error);
     if (!shouldFallbackToRedirect) {
       throw error;
     }
