@@ -107,6 +107,50 @@ test("a fixed identity probe enriches the exact selected Studio target", async (
   assert.match(String(probeCall?.args.code), /__nexus_target_identity_probe_v1/);
 });
 
+test("an unpublished local place is targetable when its Studio window and signature are attested", async () => {
+  const mcp = new FakeMcp();
+  mcp.studios = [{ studio_id: "studio-local", place_name: "LocalArena.rbxl" }];
+  mcp.probeIdentity = {
+    result: {
+      placeId: "0",
+      universeId: "0",
+      placeName: "LocalArena.rbxl",
+      placeSignature: "local-signature",
+    },
+  };
+  const manager = new StudioTargetManager(mcp, true);
+
+  await manager.ensureMutationTarget({
+    id: "local-command",
+    type: "create_instance",
+    payload: {},
+    connectionType: "mcp_local",
+    expectedPlaceId: "0",
+    expectedUniverseId: "0",
+    expectedPlaceSignature: "local-signature",
+    studioTarget: { studioId: "studio-local" },
+  });
+
+  assert.deepEqual(manager.metadata(), {
+    studioTargets: [{
+      studioId: "studio-local",
+      label: "LocalArena.rbxl",
+      placeId: "0",
+      placeName: "LocalArena.rbxl",
+      universeId: "0",
+      placeSignature: "local-signature",
+    }],
+    activeStudioId: "studio-local",
+    studioId: "studio-local",
+    placeId: "0",
+    placeName: "LocalArena.rbxl",
+    universeId: "0",
+    placeSignature: "local-signature",
+    targetIdentityComplete: true,
+    targetConfirmedAt: manager.confirmedAt,
+  });
+});
+
 test("the identity probe cannot override a conflicting declared place", async () => {
   const mcp = new FakeMcp();
   mcp.studios = [{ studio_id: "studio-a", place_id: "101" }];

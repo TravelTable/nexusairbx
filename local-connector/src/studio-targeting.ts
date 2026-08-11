@@ -151,7 +151,7 @@ export class StudioTargetManager {
     if (!this.targetIdentityComplete) {
       throw new ConnectorError(
         "STUDIO_TARGET_ATTESTATION_INCOMPLETE",
-        "Roblox Studio did not attest a complete place, universe, and target signature.",
+        "Roblox Studio did not attest a complete target identity.",
       );
     }
     this.validateCommandTarget(command);
@@ -203,10 +203,12 @@ export class StudioTargetManager {
     universeId: string;
     placeSignature: string;
   } | null {
+    const publishedIdentity = isPublishedRobloxId(this.placeId)
+      && isPublishedRobloxId(this.universeId);
+    const localIdentity = this.placeId === "0" && this.universeId === "0";
     if (!this.activeStudioId
       || (this.desiredStudioId !== null && this.desiredStudioId !== this.activeStudioId)
-      || !isPublishedRobloxId(this.placeId)
-      || !isPublishedRobloxId(this.universeId)
+      || (!publishedIdentity && !localIdentity)
       || !this.placeName
       || !this.placeSignature) return null;
     return {
