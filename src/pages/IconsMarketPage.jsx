@@ -32,6 +32,141 @@ import IconMarketCard from "../components/icons/IconMarketCard";
 import Modal from "../components/Modal";
 
 const API_BASE = BACKEND_URL.replace(/\/+$/, "");
+const MARKET_ACCESS_OPTIONS = [
+  { label: "All Icons", value: null },
+  { label: "Free Only", value: false },
+  { label: "Pro Only", value: true },
+];
+const MARKET_STYLES = ["3D Rendered", "Flat Vector", "Cartoonish", "Outline"];
+const MARKET_CATEGORIES = ["Egg", "UI Element", "UI Component"];
+const MARKET_TABS = [
+  { label: "Browse", value: "browse" },
+  { label: "Collections", value: "collections" },
+];
+const MARKET_STYLE_OPTIONS = [
+  { label: "All Styles", value: "" },
+  ...MARKET_STYLES.map((value) => ({ label: value, value })),
+];
+const MARKET_CATEGORY_OPTIONS = [
+  { label: "All Categories", value: "" },
+  ...MARKET_CATEGORIES.map((value) => ({ label: value, value })),
+];
+
+function MarketTabs({ activeTab, onChange }) {
+  return (
+    <div className="flex border-b border-[var(--ds-border-subtle)]" aria-label="Creator Store sections">
+      {MARKET_TABS.map((tab) => (
+        <button
+          key={tab.value}
+          type="button"
+          aria-pressed={activeTab === tab.value}
+          onClick={() => onChange(tab.value)}
+          className={`min-h-11 flex-1 py-2 text-xs font-semibold transition-colors ${activeTab === tab.value ? 'border-b-2 border-[var(--ds-accent)] text-[var(--ds-accent)]' : 'text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]'}`}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function MarketFilterGroup({ icon: Icon, label, options, value, onChange }) {
+  return (
+    <section aria-label={label}>
+      <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold text-[var(--ds-text-muted)] lg:mb-4">
+        <Icon className="h-3 w-3" aria-hidden="true" /> {label}
+      </h3>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-1">
+        {options.map((option) => (
+          <button
+            key={option.label}
+            type="button"
+            aria-pressed={value === option.value}
+            onClick={() => onChange(option.value)}
+            className={`min-h-11 w-full rounded-lg px-4 py-2 text-left text-sm font-semibold transition-colors ${value === option.value ? 'bg-[var(--ds-fill-selected)] text-[var(--ds-accent)]' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]'}`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function MarketFilterControls({ isPro, setIsPro, style, setStyle, category, setCategory }) {
+  return (
+    <div className="grid gap-6 sm:grid-cols-3 lg:grid-cols-1 lg:gap-8">
+      <MarketFilterGroup
+        icon={Filter}
+        label="Access"
+        options={MARKET_ACCESS_OPTIONS}
+        value={isPro}
+        onChange={setIsPro}
+      />
+      <MarketFilterGroup
+        icon={Palette}
+        label="Visual Style"
+        options={MARKET_STYLE_OPTIONS}
+        value={style}
+        onChange={setStyle}
+      />
+      <MarketFilterGroup
+        icon={Box}
+        label="Category"
+        options={MARKET_CATEGORY_OPTIONS}
+        value={category}
+        onChange={setCategory}
+      />
+    </div>
+  );
+}
+
+function MarketCollections({ collections, onCreate, onDownload, onDelete }) {
+  return (
+    <div className="space-y-6">
+      <button
+        type="button"
+        onClick={onCreate}
+        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] py-3 text-xs font-semibold text-[var(--ds-text)] transition-colors hover:bg-[var(--ds-fill-hover)]"
+      >
+        <Plus className="h-4 w-4" aria-hidden="true" /> Create Collection
+      </button>
+
+      <div className="space-y-2">
+        {collections.map((collection) => (
+          <div
+            key={collection.id}
+            className="group flex w-full items-center justify-between rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-4 py-3 transition-colors hover:border-[var(--ds-border-strong)]"
+          >
+            <div className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-semibold text-[var(--ds-text-secondary)] group-hover:text-[var(--ds-text)]">{collection.name}</span>
+              <span className="text-[10px] font-semibold text-[var(--ds-text-muted)]">{collection.iconIds?.length || 0} items</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => onDownload(collection)}
+                disabled={!collection.iconIds || collection.iconIds.length === 0}
+                className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-accent)] disabled:opacity-30"
+                aria-label={`Download ${collection.name} as ZIP`}
+              >
+                <DownloadCloud className="h-4 w-4" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete(collection.id)}
+                className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-danger)]"
+                aria-label={`Delete ${collection.name}`}
+              >
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function IconsMarketPage() {
   const [user, setUser] = useState(null);
@@ -307,138 +442,29 @@ export default function IconsMarketPage() {
     }
   };
 
-  const styles = ["3D Rendered", "Flat Vector", "Cartoonish", "Outline"];
-  const categories = ["Egg", "UI Element", "UI Component"];
-
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-[var(--ds-bg-canvas)] text-[var(--ds-text)]">
       <main className="flex-grow flex relative z-10">
         <aside className="sticky top-16 hidden h-[calc(100vh-64px)] w-72 overflow-y-auto border-r border-[var(--ds-border-subtle)] bg-[var(--ds-bg-sidebar)] p-8 lg:block">
-          <div className="mb-8 flex border-b border-[var(--ds-border-subtle)]">
-            <button 
-              onClick={() => setActiveMarketTab("browse")}
-              className={`min-h-11 flex-1 py-2 text-xs font-semibold transition-colors ${activeMarketTab === "browse" ? 'border-b-2 border-[var(--ds-accent)] text-[var(--ds-accent)]' : 'text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]'}`}
-            >
-              Browse
-            </button>
-            <button 
-              onClick={() => setActiveMarketTab("collections")}
-              className={`min-h-11 flex-1 py-2 text-xs font-semibold transition-colors ${activeMarketTab === "collections" ? 'border-b-2 border-[var(--ds-accent)] text-[var(--ds-accent)]' : 'text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]'}`}
-            >
-              Collections
-            </button>
-          </div>
+          <div className="mb-8"><MarketTabs activeTab={activeMarketTab} onChange={setActiveMarketTab} /></div>
 
-          <div className="space-y-8">
+          <div>
             {activeMarketTab === "browse" ? (
-              <>
-                <div>
-                  <h3 className="mb-4 flex items-center gap-2 text-xs font-semibold text-[var(--ds-text-muted)]">
-                    <Filter className="h-3 w-3" /> Access
-                  </h3>
-                  <div className="space-y-2">
-                    {[
-                      { label: "All Icons", value: null },
-                      { label: "Free Only", value: false },
-                      { label: "Pro Only", value: true },
-                    ].map(opt => (
-                      <button
-                        key={opt.label}
-                        onClick={() => setIsPro(opt.value)}
-                        className={`min-h-11 w-full rounded-lg px-4 py-2 text-left text-sm font-semibold transition-colors ${isPro === opt.value ? 'bg-[var(--ds-fill-selected)] text-[var(--ds-accent)]' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]'}`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="mb-4 flex items-center gap-2 text-xs font-semibold text-[var(--ds-text-muted)]">
-                    <Palette className="h-3 w-3" /> Visual Style
-                  </h3>
-                  <div className="space-y-2">
-                    <button
-                      onClick={() => setStyle("")}
-                      className={`min-h-11 w-full rounded-lg px-4 py-2 text-left text-sm font-semibold transition-colors ${style === "" ? 'bg-[var(--ds-fill-selected)] text-[var(--ds-accent)]' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]'}`}
-                    >
-                      All Styles
-                    </button>
-                    {styles.map(s => (
-                      <button
-                        key={s}
-                        onClick={() => setStyle(s)}
-                        className={`min-h-11 w-full rounded-lg px-4 py-2 text-left text-sm font-semibold transition-colors ${style === s ? 'bg-[var(--ds-fill-selected)] text-[var(--ds-accent)]' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]'}`}
-                      >
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="mb-4 flex items-center gap-2 text-xs font-semibold text-[var(--ds-text-muted)]">
-                    <Box className="h-3 w-3" /> Category
-                  </h3>
-                  <div className="space-y-2">
-                    <button
-                      onClick={() => setCategory("")}
-                      className={`min-h-11 w-full rounded-lg px-4 py-2 text-left text-sm font-semibold transition-colors ${category === "" ? 'bg-[var(--ds-fill-selected)] text-[var(--ds-accent)]' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]'}`}
-                    >
-                      All Categories
-                    </button>
-                    {categories.map(c => (
-                      <button
-                        key={c}
-                        onClick={() => setCategory(c)}
-                        className={`min-h-11 w-full rounded-lg px-4 py-2 text-left text-sm font-semibold transition-colors ${category === c ? 'bg-[var(--ds-fill-selected)] text-[var(--ds-accent)]' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]'}`}
-                      >
-                        {c}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </>
+              <MarketFilterControls
+                isPro={isPro}
+                setIsPro={setIsPro}
+                style={style}
+                setStyle={setStyle}
+                category={category}
+                setCategory={setCategory}
+              />
             ) : (
-              <div className="space-y-6">
-                <button 
-                  onClick={() => setShowCreateCollection(true)}
-                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] py-3 text-xs font-semibold text-[var(--ds-text)] transition-colors hover:bg-[var(--ds-fill-hover)]"
-                >
-                  <Plus className="h-4 w-4" /> Create Collection
-                </button>
-
-                <div className="space-y-2">
-                  {collections.map(c => (
-                    <div
-                      key={c.id}
-                      className="group flex w-full items-center justify-between rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-4 py-3 transition-colors hover:border-[var(--ds-border-strong)]"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <span className="block truncate text-sm font-semibold text-[var(--ds-text-secondary)] group-hover:text-[var(--ds-text)]">{c.name}</span>
-                        <span className="text-[10px] font-semibold text-[var(--ds-text-muted)]">{c.iconIds?.length || 0} items</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button 
-                          onClick={() => handleDownloadCollection(c)}
-                          disabled={!c.iconIds || c.iconIds.length === 0}
-                          className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-accent)] disabled:opacity-30"
-                          title="Download All (ZIP)"
-                        >
-                          <DownloadCloud className="h-4 w-4" />
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteCollection(c.id)}
-                          className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-danger)]"
-                          title="Delete Collection"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <MarketCollections
+                collections={collections}
+                onCreate={() => setShowCreateCollection(true)}
+                onDownload={handleDownloadCollection}
+                onDelete={handleDeleteCollection}
+              />
             )}
           </div>
         </aside>
@@ -471,6 +497,40 @@ export default function IconsMarketPage() {
                 />
               </div>
             </header>
+
+            <div className="mb-8 space-y-4 lg:hidden">
+              <MarketTabs activeTab={activeMarketTab} onChange={setActiveMarketTab} />
+              {activeMarketTab === "browse" ? (
+                <details className="group rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-1)]">
+                  <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-[var(--ds-text)] focus-ring [&::-webkit-details-marker]:hidden">
+                    <span className="flex items-center gap-2">
+                      <Filter className="h-4 w-4 text-[var(--ds-accent)]" aria-hidden="true" />
+                      Filter icons
+                    </span>
+                    <span className="text-xs text-[var(--ds-text-muted)]">
+                      {[isPro !== null, Boolean(style), Boolean(category)].filter(Boolean).length || "All"}
+                    </span>
+                  </summary>
+                  <div className="border-t border-[var(--ds-border-subtle)] p-4">
+                    <MarketFilterControls
+                      isPro={isPro}
+                      setIsPro={setIsPro}
+                      style={style}
+                      setStyle={setStyle}
+                      category={category}
+                      setCategory={setCategory}
+                    />
+                  </div>
+                </details>
+              ) : (
+                <MarketCollections
+                  collections={collections}
+                  onCreate={() => setShowCreateCollection(true)}
+                  onDownload={handleDownloadCollection}
+                  onDelete={handleDeleteCollection}
+                />
+              )}
+            </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
               {icons.map((icon, index) => (
