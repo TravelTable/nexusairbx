@@ -336,7 +336,9 @@
   }
 
   .workspace-shell[data-drawer-open="true"] .workspace-shell__dock {
+    grid-row: 1 / -1;
     width: 100cqi;
+    height: 100%;
     border-left: 0;
   }
 
