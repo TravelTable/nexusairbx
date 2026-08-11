@@ -84,7 +84,12 @@ export default function StudioPlaceChip({
           selectingTargetId={selectingTargetId}
           onSelect={async (option) => {
             const selected = await (onSelectPlace || onChangePlace)?.(option);
-            if (selected !== null && selected !== false) setOpen(false);
+            // Async selection owns its success contract. Keeping the picker
+            // open on an omitted/false result gives validation errors a stable
+            // recovery surface instead of dismissing the user's choices.
+            if (selected === true || (selected && typeof selected === "object")) {
+              setOpen(false);
+            }
           }}
         />
       )}

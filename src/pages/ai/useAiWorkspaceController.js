@@ -1899,7 +1899,7 @@ export function useAiWorkspaceController() {
       const targetId = typeof option === "string"
         ? option
         : option?.id || option?.targetId || option?.studioTargetId;
-      if (!targetId || !user || selectingStudioTargetId) return;
+      if (!targetId || !user || selectingStudioTargetId) return false;
       // Choosing an exact live target is an explicit Studio action. Keep the
       // execution preference in lockstep with that choice so the subsequent
       // submit cannot discard the target's project binding and fall back to
@@ -1920,6 +1920,17 @@ export function useAiWorkspaceController() {
         });
         const bindDenied = isFirestorePermissionDenied(bindError);
         if (!resumed) {
+          if (!preference) {
+            setOptimisticStudioPlacePreference(null);
+            setStudioPlacePickerOpen(true);
+            if (bindError) {
+              notify({
+                message: bindError?.message || "Could not select this Studio place.",
+                type: "error",
+              });
+            }
+            return false;
+          }
           setStudioPlacePickerOpen(false);
           if (bindDenied) {
             notify({
@@ -1933,14 +1944,17 @@ export function useAiWorkspaceController() {
               type: "success",
             });
           }
-          return;
+          return true;
         }
         await syncAgentRunSteps(runId, null, result?.run || null);
         if (result?.conflict) {
+          setOptimisticStudioPlacePreference(null);
+          setStudioPlacePickerOpen(true);
           notify({
             message: result?.message || "That Studio project is no longer available. Choose another project to continue.",
             type: "error",
           });
+          return false;
         } else {
           setStudioPlacePickerOpen(false);
           notify({
@@ -1955,9 +1969,13 @@ export function useAiWorkspaceController() {
               type: "info",
             });
           }
+          return true;
         }
       } catch (err) {
+        setOptimisticStudioPlacePreference(null);
+        setStudioPlacePickerOpen(true);
         notify({ message: err?.message || "Could not continue in that Studio project", type: "error" });
+        return false;
       } finally {
         setSelectingStudioTargetId(null);
       }
