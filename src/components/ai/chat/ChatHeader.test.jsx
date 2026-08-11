@@ -33,4 +33,10 @@ describe("ChatHeader", () => {
 
     expect(onRenameChat).toHaveBeenCalledWith("New title");
   });
+
+  test("names the compact plan action for assistive technology", () => {
+    render(<ChatHeader onOpenPlan={jest.fn()} />);
+
+    expect(screen.getByRole("button", { name: "Review plan" })).toBeTruthy();
+  });
 });

@@ -95,6 +95,7 @@ export default function ChatHeader({
           <button
             type="button"
             onClick={onOpenPlan}
+            aria-label="Review plan"
             className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold text-[var(--ds-text-secondary)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring"
           >
             <ListChecks className="h-3.5 w-3.5" />
