@@ -69,6 +69,7 @@ export default function NotificationToast({
   let color = "#9b5de5";
   if (type === "success") color = "#00f5d4";
   if (type === "error") color = "#ff3860";
+  const isError = type === "error";
 
   return (
     <div
@@ -80,15 +81,14 @@ export default function NotificationToast({
         boxShadow: "0 6px 24px 0 rgba(0,0,0,0.25)",
         marginLeft: "8px",
       }}
-      role="alert"
-      aria-live="assertive"
+      role={isError ? "alert" : "status"}
+      aria-live={isError ? "assertive" : "polite"}
     >
       {!leaving && (
         <button
-          className="absolute top-2 right-2 text-gray-400 hover:text-white text-lg font-bold focus:outline-none"
+          className="absolute right-0.5 top-0.5 flex h-11 w-11 items-center justify-center rounded-md text-lg font-bold text-gray-400 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[#00f5d4]"
           onClick={handleClose}
           aria-label="Close notification"
-          tabIndex={0}
         >
           ×
         </button>
@@ -99,7 +99,7 @@ export default function NotificationToast({
         <div className="mt-3 flex gap-2">
           {cta && (
             <button
-              className={`px-3 py-1.5 rounded font-semibold text-sm shadow ${
+              className={`min-h-11 px-3 py-1.5 rounded font-semibold text-sm shadow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00f5d4] ${
                 cta.primary !== false
                   ? "bg-gradient-to-r from-[#9b5de5] to-[#00f5d4] text-white hover:shadow-xl"
                   : "bg-gray-800 text-gray-200 hover:bg-gray-700"
@@ -108,14 +108,13 @@ export default function NotificationToast({
                 if (cta.onClick) cta.onClick();
                 handleClose();
               }}
-              autoFocus={cta.primary !== false}
             >
               {cta.label}
             </button>
           )}
           {secondary && (
             <button
-              className="px-3 py-1.5 rounded bg-gray-800 text-gray-200 text-sm font-medium hover:bg-gray-700"
+              className="min-h-11 rounded bg-gray-800 px-3 py-1.5 text-sm font-medium text-gray-200 hover:bg-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00f5d4]"
               onClick={() => {
                 if (secondary.onClick) secondary.onClick();
                 handleClose();

@@ -1567,6 +1567,7 @@ export default function AgentWorkspaceLayout({ controller }) {
                 setPrompt={setPrompt}
                 quickScript={quickScript}
                 user={user}
+                authReady={authReady}
                 onGenerate={() => runQuickScript(prompt, { source: "composer" })}
                 onRetry={() => runQuickScript(quickScript?.prompt || prompt, { source: quickScript?.source || "retry", retry: true })}
                 onCopy={handleQuickScriptCopy}
@@ -1646,7 +1647,7 @@ export default function AgentWorkspaceLayout({ controller }) {
       />
 
       {currentToast && (
-        <div className="fixed inset-x-3 bottom-[max(1rem,env(safe-area-inset-bottom))] z-[120] sm:inset-x-auto sm:bottom-8 sm:right-8" role="status" aria-live="polite">
+        <div className="fixed inset-x-3 bottom-[max(1rem,env(safe-area-inset-bottom))] z-[120] sm:inset-x-auto sm:bottom-8 sm:right-8">
           <NotificationToast
             key={currentToast.id}
             message={currentToast.count > 1 ? `${currentToast.message} (x${currentToast.count})` : currentToast.message}

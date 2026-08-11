@@ -82,6 +82,7 @@ export default function QuickScriptWorkspace({
   setPrompt,
   quickScript,
   user,
+  authReady = true,
   onGenerate,
   onRetry,
   onCopy,
@@ -273,7 +274,7 @@ export default function QuickScriptWorkspace({
             </div>
             )}
 
-            {result && !user && (
+            {result && authReady && !user && (
             <div className="rounded-xl border border-[#00f5d4]/10 bg-[#00f5d4]/5 p-3.5 text-[11px] leading-relaxed text-[#a8fff4]">
               The generated code remains visible. Sign up to save, export, push to Studio, or continue editing.
             </div>

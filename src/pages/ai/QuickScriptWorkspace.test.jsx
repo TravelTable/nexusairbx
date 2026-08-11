@@ -145,6 +145,17 @@ describe("QuickScriptWorkspace", () => {
     expect(screen.getByRole("textbox", { name: "Quick Script prompt" })).toHaveValue("Make a damage part");
   });
 
+  test("does not flash anonymous guidance while auth is resolving", async () => {
+    renderWorkspace({
+      user: null,
+      authReady: false,
+      quickScript: { status: "success", prompt: "Make a damage part", result },
+    });
+
+    expect(screen.queryByText(/Sign up to save, export, push to Studio/i)).not.toBeInTheDocument();
+    expect(await screen.findByText("print('ready')")).toBeInTheDocument();
+  });
+
   test("discloses safe class adjustments and blocks invalid Studio pushes", () => {
     const adjusted = {
       ...result,

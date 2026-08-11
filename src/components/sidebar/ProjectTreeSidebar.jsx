@@ -553,12 +553,13 @@ export default function ProjectTreeSidebar({
           <span className="flex-1 text-left">New chat</span>
           <kbd className="text-[9px] font-normal text-gray-600">⌘N</kbd>
         </button>
-        <label className="relative block">
+        <div className="relative block">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-600" />
           <input
             ref={searchRef}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
+            aria-label="Search projects and chats"
             placeholder="Search projects and chats"
             className="h-8 w-full rounded-md border border-white/[.07] bg-black/25 pl-8 pr-14 text-xs text-white outline-none transition placeholder:text-gray-600 focus:border-[#00f5d4]/35 focus:bg-black/40"
           />
@@ -577,7 +578,7 @@ export default function ProjectTreeSidebar({
           ) : (
             <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] text-gray-600">⌘K</kbd>
           )}
-        </label>
+        </div>
         {studioOptions.length > 0 && (
           <div className="mt-2 rounded-md border border-[#00f5d4]/15 bg-[#00f5d4]/[.04] p-1">
             {studioOptions.map((option) => (

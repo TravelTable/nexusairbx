@@ -788,7 +788,7 @@ export default function SettingsPage() {
           <Panel
             title="Usage"
             description="Recent token activity from your account."
-            actions={<Button type="button" variant="outline" size="sm" onClick={loadUsage}><RefreshCcw className="h-4 w-4" />Retry</Button>}
+            actions={<Button type="button" variant="outline" size="sm" onClick={loadUsage}><RefreshCcw className="h-4 w-4" />Refresh</Button>}
           >
             <DataStateAlert state={usageState} onRetry={loadUsage} label="Usage" />
             {usageState.status === "ready" && usageState.chartData.length > 0 && (

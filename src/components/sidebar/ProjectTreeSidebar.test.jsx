@@ -91,6 +91,7 @@ describe("ProjectTreeSidebar", () => {
 
     fireEvent.keyDown(window, { key: "k", metaKey: true });
     const search = screen.getByPlaceholderText("Search projects and chats");
+    expect(screen.getByRole("textbox", { name: "Search projects and chats" })).toBe(search);
     expect(document.activeElement).toBe(search);
     fireEvent.change(search, { target: { value: "inventory" } });
 
