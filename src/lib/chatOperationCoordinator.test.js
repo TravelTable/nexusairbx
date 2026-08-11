@@ -98,6 +98,154 @@ describe("ChatOperationCoordinator", () => {
     expect(coordinator.snapshot("chat-1").queue[0].id).toBe("second");
   });
 
+  test("a Stop before run creation cancels the authoritative run as soon as its id arrives", async () => {
+    const coordinator = new ChatOperationCoordinator();
+    const execution = deferred();
+    const cancellations = [];
+    let context;
+    coordinator.admit(
+      {
+        id: "early-stop",
+        chatId: "chat-1",
+        draftRevision: "early-stop",
+        onCancel: (operation) => cancellations.push(operation.runId),
+      },
+      (nextContext) => {
+        context = nextContext;
+        return execution.promise;
+      },
+    );
+    await Promise.resolve();
+
+    await coordinator.stop("chat-1");
+    expect(cancellations).toEqual([null]);
+    expect(coordinator.snapshot("chat-1").active).toBeNull();
+
+    context.setRunId("run-created-after-stop");
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(cancellations).toEqual([null, "run-created-after-stop"]);
+    expect(coordinator.snapshot("chat-1")).toMatchObject({
+      active: null,
+      lastStatus: CHAT_OPERATION_STATUS.STOPPED,
+    });
+    execution.resolve();
+  });
+
+  test("a matching authoritative projection consumes pending cancellation without resurrecting Running", async () => {
+    const coordinator = new ChatOperationCoordinator();
+    const cancellations = [];
+    coordinator.admit(
+      {
+        id: "request-1",
+        chatId: "chat-1",
+        draftRevision: "request-1",
+        onCancel: (operation) => cancellations.push(operation.runId),
+      },
+      () => new Promise(() => {}),
+    );
+    await coordinator.stop("chat-1");
+
+    coordinator.hydrate({
+      id: "request-1",
+      chatId: "chat-1",
+      runId: "run-projected-late",
+      status: CHAT_OPERATION_STATUS.RUNNING,
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(cancellations).toEqual([null, "run-projected-late"]);
+    expect(coordinator.snapshot("chat-1")).toMatchObject({
+      active: null,
+      lastStatus: CHAT_OPERATION_STATUS.STOPPED,
+    });
+  });
+
+  test("pending cancellation never attaches to an unrelated later operation", async () => {
+    const coordinator = new ChatOperationCoordinator();
+    const cancel = jest.fn();
+    coordinator.admit(
+      {
+        id: "request-stopped",
+        chatId: "chat-1",
+        draftRevision: "request-stopped",
+        onCancel: cancel,
+      },
+      () => new Promise(() => {}),
+    );
+    await coordinator.stop("chat-1");
+
+    coordinator.hydrate({
+      id: "request-new",
+      chatId: "chat-1",
+      runId: "run-new",
+      status: CHAT_OPERATION_STATUS.RUNNING,
+    });
+
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(coordinator.snapshot("chat-1").active).toMatchObject({
+      id: "request-new",
+      runId: "run-new",
+      status: CHAT_OPERATION_STATUS.RUNNING,
+    });
+  });
+
+  test("treats a server-confirmed user cancellation as stopped rather than failed", async () => {
+    const coordinator = new ChatOperationCoordinator();
+    const cancellation = Object.assign(new Error("Cancelled by user"), {
+      code: "user_cancelled",
+    });
+
+    const admission = coordinator.admit(
+      { id: "cancelled", chatId: "chat-1", draftRevision: "1" },
+      () => Promise.reject(cancellation),
+    );
+    await expect(admission.promise).rejects.toBe(cancellation);
+
+    expect(coordinator.snapshot("chat-1")).toMatchObject({
+      active: null,
+      paused: false,
+      lastStatus: CHAT_OPERATION_STATUS.STOPPED,
+    });
+  });
+
+  test("treats a bare user_cancelled server message as stopped", async () => {
+    const coordinator = new ChatOperationCoordinator();
+    const cancellation = new Error("user_cancelled");
+
+    const admission = coordinator.admit(
+      { id: "cancelled-message", chatId: "chat-1", draftRevision: "1" },
+      () => Promise.reject(cancellation),
+    );
+    await expect(admission.promise).rejects.toBe(cancellation);
+
+    expect(coordinator.snapshot("chat-1")).toMatchObject({
+      active: null,
+      paused: false,
+      lastStatus: CHAT_OPERATION_STATUS.STOPPED,
+    });
+  });
+
+  test.each(["user_cancelled", "user_canceled", "cancelled-by-user"])(
+    "reconciles a hydrated failed run with %s evidence as stopped",
+    (failureCode) => {
+      const coordinator = new ChatOperationCoordinator();
+      coordinator.hydrate({ chatId: "chat-1", runId: "run-1" });
+
+      expect(coordinator.reconcile("chat-1", {
+        runId: "run-1",
+        status: "failed",
+        failureCode,
+      })).toBe(true);
+      expect(coordinator.snapshot("chat-1")).toMatchObject({
+        active: null,
+        paused: true,
+        lastStatus: CHAT_OPERATION_STATUS.STOPPED,
+      });
+    },
+  );
+
   test("interrupt keeps the new prompt visible and starts it after cancellation", async () => {
     const coordinator = new ChatOperationCoordinator();
     const cancel = deferred();

@@ -51,6 +51,20 @@ test("the plugin guard detects real GetService calls while blanking ordinary str
   }
 });
 
+test("the bundled placement guard keeps canonical service path names", () => {
+  const readTools = read("src/commands/readTools.lua");
+  const artifact = read("NexusRBXStudioBridge.plugin.lua");
+  const bundledGuard = section(
+    artifact,
+    "function ScriptContextGuard.placementContext(path)",
+    "function ScriptContextGuard.validate(descriptor)",
+  );
+
+  assert.match(readTools, /root == "ServerScriptService" or root == "Workspace"/);
+  assert.match(bundledGuard, /root == "ServerScriptService" or root == "Workspace"/);
+  assert.doesNotMatch(bundledGuard, /root == "Services\.(?:Workspace|ServerScriptService|ServerStorage|ReplicatedStorage)"/);
+});
+
 test("create, write, patch, and replace validate before snapshots or source changes", () => {
   const readTools = read("src/commands/readTools.lua");
   const writeTools = read("src/commands/writeTools.lua");

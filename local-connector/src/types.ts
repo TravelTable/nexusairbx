@@ -104,6 +104,18 @@ export interface StudioTarget extends JsonObject {
   placeSignature: string;
 }
 
+export interface StudioIdentityMetadata extends JsonObject {
+  studioTargets: StudioTarget[];
+  activeStudioId: string | null;
+  studioId: string | null;
+  placeId: string | null;
+  placeName: string | null;
+  universeId: string | null;
+  placeSignature: string | null;
+  targetIdentityComplete: boolean;
+  targetConfirmedAt: number | null;
+}
+
 export interface DiscoveredTool {
   name: string;
   description?: string;
@@ -165,6 +177,7 @@ export interface BackendClientLike {
     supportedCommands: string[],
     discoveredTools: Array<{ name: string; description?: string }>,
     capabilityDetails: CapabilityDetails,
+    studioIdentity: StudioIdentityMetadata,
     signal?: AbortSignal,
   ): Promise<JsonObject>;
   pollNext(waitMs: number, signal?: AbortSignal): Promise<StudioCommand | null>;

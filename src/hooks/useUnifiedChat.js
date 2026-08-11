@@ -16,7 +16,11 @@ import {
   startPlanExecution,
 } from "../lib/workflowApi";
 import { isExplicitPlanApproval } from "../lib/planApproval";
-import { classifyUserIntent, isImplementationIntent } from "../lib/intentClassifier";
+import {
+  classifyExecutionIntent,
+  classifyUserIntent,
+  isImplementationIntent,
+} from "../lib/intentClassifier";
 import {
   applyStreamActivity,
   createPendingStreamState,
@@ -33,6 +37,7 @@ import {
   getStudioSessionId,
   selectMcpStudioSession,
   selectPluginStudioSession,
+  STUDIO_CONNECTION_TYPES,
 } from "../lib/studioConnection";
 import {
   describeChatAttachments,
@@ -106,15 +111,34 @@ function decisionMessage(decision) {
   return reason?.trim() || "This request cannot start yet.";
 }
 
-async function resolvePreferredStudioTarget(studioEnabled) {
+async function resolvePreferredStudioTarget(studioEnabled, preferredTarget = null) {
   if (!studioEnabled) {
     return { studioSessionId: null, studioConnectionType: null };
   }
   const studioStatus = await getStudioStatus();
   const sessions = studioStatus.sessions || [];
+  const preferredTargetId = String(
+    preferredTarget?.studioTargetId || preferredTarget?.targetId || preferredTarget?.id || ""
+  ).trim();
+  const preferredPluginSessionId = String(preferredTarget?.pluginSessionId || "").trim();
+  const preferredMcpSessionId = String(preferredTarget?.mcpSessionId || "").trim();
+  const eligibleSessions = preferredTargetId || preferredPluginSessionId || preferredMcpSessionId
+    ? sessions.filter((session) => {
+        const connectionType = getStudioConnectionType(session);
+        const sessionId = String(getStudioSessionId(session) || "").trim();
+        const explicitSessionId = connectionType === STUDIO_CONNECTION_TYPES.MCP_LOCAL
+          ? preferredMcpSessionId
+          : preferredPluginSessionId;
+        if (explicitSessionId) return explicitSessionId === sessionId;
+        const sessionTargetId = String(
+          session?.studioTargetId || session?.targetingTargetId || session?.studio?.targetId || ""
+        ).trim();
+        return Boolean(preferredTargetId && sessionTargetId === preferredTargetId);
+      })
+    : sessions;
   const activeSession =
-    selectMcpStudioSession(sessions, { capability: "readProject" }) ||
-    selectPluginStudioSession(sessions, { compatibleOnly: true });
+    selectMcpStudioSession(eligibleSessions, { capability: "readProject" }) ||
+    selectPluginStudioSession(eligibleSessions, { compatibleOnly: true });
   return {
     studioSessionId: getStudioSessionId(activeSession),
     studioConnectionType: activeSession
@@ -551,7 +575,23 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     const runtimeRoute = selectAgentRuntimeRoute(capabilities, {
       projectId: submissionOptions.projectId,
     });
+    const studioEnabled = getStudioEnabledPreference() === true;
+    const targeting = buildWorkflowTargeting(submissionOptions);
+    const executionIntent = classifyExecutionIntent(prompt, {
+      studioEnabled,
+      generatorMode: submissionOptions.generatorMode || "agent_build",
+    });
+    const requiresLiveRuntime = ["inspect", "live_build", "live_fix", "playtest", "quick_script"]
+      .includes(executionIntent);
     const launchLegacyGeneration = () => {
+      if (requiresLiveRuntime) {
+        const error = new Error(
+          "This request requires the live Studio command runtime. NexusRBX will not replace it with a generated artifact."
+        );
+        error.code = "STUDIO_LIVE_RUNTIME_REQUIRED";
+        error.executionIntent = executionIntent;
+        throw error;
+      }
       if (capabilities && capabilities.legacyGeneration?.enabled !== true) {
         throw new Error("No executable generation transport is currently available.");
       }
@@ -578,7 +618,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     );
     throwIfAborted(signal);
     if (!agent) return launchLegacyGeneration();
-    const studioEnabled = getStudioEnabledPreference() === true;
     const autoPushToStudio = studioEnabled && settings?.studioAutoPushEnabled === true;
     const approvedPlan = normalizeApprovedPlanReference(submissionOptions.approvedPlan);
     let runtimeEnvelope;
@@ -607,11 +646,14 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           ? { parentJobId: submissionOptions.parentJobId }
           : {}),
         generatorMode: "agent_build",
+        executionIntent,
         studioEnabled,
         applyMode: getStudioApplyMode(),
         routingMode: studioEnabled ? "hybrid" : "cloud",
         autoPushToStudio,
         autoPushPolicy: runtimeAutoPushPolicy(settings),
+        targeting,
+        studioTarget: targeting.studioTarget || null,
         ...(approvedPlan ? { approvedPlan } : {}),
         chatMode: mode === "debug" ? "debug" : "agent",
         selectedExampleIds: Array.isArray(submissionOptions.selectedExampleIds)
@@ -619,6 +661,11 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           : [],
         showPlan: submissionOptions.showPlan === true,
       });
+      // The server may accept and create the durable run while the user is
+      // clicking Stop. Publish its authoritative id before honoring the local
+      // abort so the coordinator can deliver the retained cancellation intent
+      // instead of orphaning a live run behind a stopped composer.
+      if (runtimeEnvelope?.run?.runId) onRunId?.(runtimeEnvelope.run.runId);
       throwIfAborted(signal);
     } catch (error) {
       if (!FEATURE_FLAGS.legacyAgentFallback || !isLegacyRuntimeOwnershipError(error)) {
@@ -656,7 +703,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       await touchChat(activeChatId, content);
       return runtimeEnvelope;
     }
-    onRunId?.(runtimeEnvelope.run.runId);
     await chat.handleSubmit(
       prompt,
       activeChatId,
@@ -931,7 +977,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       requestId,
       signal,
       conversationMessages = null,
-      idempotencyKey = requestId
+      idempotencyKey = requestId,
+      submissionOptions = {}
     ) => {
       throwIfAborted(signal);
       const token = await user.getIdToken();
@@ -952,7 +999,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       let studioConnectionType = null;
       if (studioEnabled) {
         try {
-          const studioTarget = await resolvePreferredStudioTarget(studioEnabled);
+          const studioTarget = await resolvePreferredStudioTarget(
+            studioEnabled,
+            buildWorkflowTargeting(submissionOptions).studioTarget
+          );
           studioSessionId = studioTarget.studioSessionId;
           studioConnectionType = studioTarget.studioConnectionType;
           if (studioSessionId) {
@@ -1270,7 +1320,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
               requestId,
               flowController.signal,
               conversationMessages,
-              effectiveOptions.idempotencyKey
+              effectiveOptions.idempotencyKey,
+              effectiveOptions
             );
             return;
           }

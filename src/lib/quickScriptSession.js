@@ -101,6 +101,60 @@ function extractQuickScriptCode(parsed = {}, raw = "") {
   return direct;
 }
 
+const QUICK_SCRIPT_PLACEMENT_ROOTS = Object.freeze({
+  serverscriptservice: "ServerScriptService",
+  replicatedstorage: "ReplicatedStorage",
+  serverstorage: "ServerStorage",
+  startergui: "StarterGui",
+  starterpack: "StarterPack",
+  workspace: "Workspace",
+  starterplayerscripts: "StarterPlayer/StarterPlayerScripts",
+  startercharacterscripts: "StarterPlayer/StarterCharacterScripts",
+});
+
+export function extractExplicitQuickScriptPlacement(prompt = "") {
+  const text = String(prompt || "").replace(/\\/g, "/").trim();
+  if (!text) return "";
+  const rootAlternation = Object.keys(QUICK_SCRIPT_PLACEMENT_ROOTS).join("|");
+  const namedPlacement = text.match(new RegExp(
+    `\\b(?:Script|LocalScript|ModuleScript)\\s+(?:named|called)\\s+[A-Za-z_][A-Za-z0-9_-]{0,63}\\s+(?:for|in|inside|under|at)\\s+(?:game[./])?(${rootAlternation})([./][A-Za-z0-9_./-]+)?`,
+    "i"
+  ));
+  const placementMatch = namedPlacement || text.match(new RegExp(
+    `\\b(?:place|put|create|insert|save|locate|move|goes?|belongs?)\\b[\\s\\S]{0,100}?\\b(?:in|into|inside|under|at|to)\\s+(?:game[./])?(${rootAlternation})([./][A-Za-z0-9_./-]+)?`,
+    "i"
+  )) || text.match(new RegExp(
+    `\\b(?:in|into|inside|under)\\s+(?:game[./])?(${rootAlternation})([./][A-Za-z0-9_./-]+)?`,
+    "i"
+  ));
+  if (!placementMatch) return "";
+  const root = QUICK_SCRIPT_PLACEMENT_ROOTS[String(placementMatch[1] || "").toLowerCase()];
+  if (!root) return "";
+  const suffix = String(placementMatch[2] || "")
+    .replace(/^[./]+/, "")
+    .replace(/[.]+/g, "/")
+    .replace(/[^A-Za-z0-9_/-]/g, "")
+    .replace(/\/{2,}/g, "/")
+    .replace(/^\/+|\/+$/g, "")
+    .slice(0, 120);
+  return suffix ? `${root}/${suffix}` : root;
+}
+
+export function extractExplicitQuickScriptName(prompt = "") {
+  const match = String(prompt || "").match(
+    /\b(?:server\s+)?(?:Script|LocalScript|ModuleScript)\s+(?:named|called)\s+([A-Za-z_][A-Za-z0-9_-]{0,63})\b/i
+  );
+  return match ? match[1] : "";
+}
+
+function cleanScriptName(value, fallback = "QuickScript") {
+  return String(value || "")
+    .replace(/\.lua$/i, "")
+    .replace(/[^A-Za-z0-9_-]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 64) || fallback;
+}
+
 export function normalizeQuickScriptResult(raw, prompt = "") {
   const parsed = coerceQuickScriptRaw(raw);
   const code = extractQuickScriptCode(parsed, raw);
@@ -136,12 +190,32 @@ export function normalizeQuickScriptResult(raw, prompt = "") {
     };
   };
   const scriptType = String(parsed.scriptType || parsed.script_type || "").trim();
+  const explicitPromptPlacement = extractExplicitQuickScriptPlacement(prompt);
+  const explicitScriptName = extractExplicitQuickScriptName(prompt);
   const studioLocation = String(
-    parsed.studioLocation || parsed.recommendedLocation || parsed.location || ""
+    explicitPromptPlacement || parsed.studioLocation || parsed.recommendedLocation || parsed.location || ""
   ).replace(/\s+/g, " ").trim().slice(0, 180);
+  const scriptName = cleanScriptName(
+    explicitScriptName || parsed.scriptName || parsed.name || parsed.title,
+  );
+  const modelTargetPath = String(parsed.targetPath || parsed.target_path || "")
+    .replace(/\\/g, "/")
+    .replace(/^\/+|\/+$/g, "")
+    .slice(0, 400);
+  const targetPath = explicitPromptPlacement
+    ? (explicitScriptName
+      ? (explicitPromptPlacement.endsWith(`/${explicitScriptName}`)
+        ? explicitPromptPlacement
+        : `${explicitPromptPlacement}/${scriptName}`)
+      : (Object.values(QUICK_SCRIPT_PLACEMENT_ROOTS).includes(explicitPromptPlacement)
+        ? `${explicitPromptPlacement}/${scriptName}`
+        : explicitPromptPlacement))
+    : (modelTargetPath || (studioLocation ? `${studioLocation}/${scriptName}` : ""));
 
   return {
     title: String(parsed.title || "Quick").replace(/\s+/g, " ").trim().slice(0, 100) || "Quick",
+    scriptName,
+    targetPath,
     code,
     language: "luau",
     scriptType,

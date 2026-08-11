@@ -373,7 +373,7 @@ export default function QuickScriptWorkspace({
                     {result.scriptType || "Class required"}
                   </span>
                   <span className="rounded bg-white/5 border border-white/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-gray-300">
-                    {result.studioLocation || "Location required"}
+                    {result.targetPath || result.studioLocation || "Location required"}
                   </span>
                 </div>
               </div>
@@ -390,7 +390,7 @@ export default function QuickScriptWorkspace({
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 bg-black/20 px-3 py-2 shrink-0 sm:px-4">
                     <div className="flex min-w-0 items-center gap-2 text-[10px] text-gray-500 font-mono">
                       <TerminalSquare className="h-3.5 w-3.5 text-[#00f5d4]" />
-                      <span className="truncate">{result.studioLocation || "Studio location required"}</span>
+                      <span className="truncate">{result.targetPath || result.studioLocation || "Studio location required"}</span>
                     </div>
                     <div className="flex flex-wrap items-center justify-end gap-1" data-tour="code-actions">
                       <Button variant="ghost" size="sm" icon={copied ? Check : Clipboard} onClick={handleCopyClick} className="h-7 py-0 px-2 text-[10px] hover:bg-white/5">

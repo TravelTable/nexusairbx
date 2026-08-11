@@ -47,6 +47,106 @@ export function getStudioConnectionType(session) {
     : STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE;
 }
 
+function cleanIdentity(value) {
+  const normalized = String(value ?? "").trim();
+  return normalized || null;
+}
+
+function getStudioTargetId(session) {
+  return cleanIdentity(
+    session?.studioTargetId
+    || session?.targetingTargetId
+    || session?.studio?.studioTargetId
+    || session?.studio?.targetId
+  );
+}
+
+function getStudioUniverseId(session) {
+  return cleanIdentity(session?.universeId ?? session?.studio?.universeId);
+}
+
+function sessionMatchesStudioTarget(session, target) {
+  if (!session || !target) return false;
+  const sessionId = cleanIdentity(getStudioSessionId(session));
+  const connectionType = getStudioConnectionType(session);
+  const explicitSessionId = connectionType === STUDIO_CONNECTION_TYPES.MCP_LOCAL
+    ? cleanIdentity(target.mcpSessionId)
+    : cleanIdentity(target.pluginSessionId);
+  if (explicitSessionId) return sessionId === explicitSessionId;
+
+  const wantedTargetId = cleanIdentity(target.studioTargetId || target.targetId || target.id);
+  const sessionTargetId = getStudioTargetId(session);
+  if (wantedTargetId && sessionTargetId) return wantedTargetId === sessionTargetId;
+
+  // Only fall back to place identity when the transport has not supplied an
+  // opaque target id. Once both sides have one it is authoritative.
+  const wantedPlaceId = normalizeRobloxPlaceId(target.placeId ?? target.targetPlaceId);
+  const sessionPlaceId = getStudioPlaceId(session);
+  if (!wantedPlaceId || wantedPlaceId !== sessionPlaceId) return false;
+  const wantedUniverseId = cleanIdentity(target.universeId);
+  const sessionUniverseId = getStudioUniverseId(session);
+  return !wantedUniverseId || !sessionUniverseId || wantedUniverseId === sessionUniverseId;
+}
+
+function normalizeAdvertisedCapabilities(session) {
+  const raw = session?.capabilities;
+  if (Array.isArray(raw)) {
+    return Object.fromEntries(raw.map((capability) => [String(capability), true]));
+  }
+  if (!raw || typeof raw !== "object") return {};
+  return Object.fromEntries(
+    Object.entries(raw).map(([capability, available]) => [capability, available === true])
+  );
+}
+
+/**
+ * Build a transport-aware, target-scoped view of what Studio can execute now.
+ * This is evidence for readiness, not an authority minted by the browser: a
+ * server capabilitySnapshotId is preserved when supplied but never invented.
+ */
+export function buildStudioCapabilityRegistry({ sessions = [], target = null } = {}) {
+  const matchingSessions = (Array.isArray(sessions) ? sessions : [])
+    .filter((session) => isStudioSessionLive(session))
+    .filter((session) => sessionMatchesStudioTarget(session, target));
+  const transports = matchingSessions.map((session) => {
+    const supportedCommands = Array.isArray(session?.supportedCommands)
+      ? [...new Set(session.supportedCommands.map(String).filter(Boolean))].sort()
+      : [];
+    return {
+      sessionId: cleanIdentity(getStudioSessionId(session)),
+      connectionType: getStudioConnectionType(session),
+      supportedCommands,
+      capabilities: normalizeAdvertisedCapabilities(session),
+      capabilityDetails: session?.capabilityDetails && typeof session.capabilityDetails === "object"
+        ? session.capabilityDetails
+        : {},
+      observedAt: session?.lastSeenAt ?? session?.observedAt ?? null,
+    };
+  });
+
+  const commandNames = [...new Set(transports.flatMap((transport) => transport.supportedCommands))].sort();
+  const commands = Object.fromEntries(commandNames.map((command) => {
+    const availableTransports = transports
+      .filter((transport) => transport.supportedCommands.includes(command))
+      .map(({ sessionId, connectionType }) => ({ sessionId, connectionType }));
+    return [command, { available: true, transports: availableTransports }];
+  }));
+  const observedValues = transports
+    .map((transport) => Number(transport.observedAt || 0))
+    .filter((value) => Number.isFinite(value) && value > 0);
+
+  return {
+    schemaVersion: 1,
+    targetId: cleanIdentity(target?.studioTargetId || target?.targetId || target?.id),
+    ...(cleanIdentity(target?.capabilitySnapshotId)
+      ? { capabilitySnapshotId: cleanIdentity(target.capabilitySnapshotId) }
+      : {}),
+    observedAt: observedValues.length ? Math.max(...observedValues) : null,
+    transports,
+    commands,
+  };
+}
+
 export function isStudioSessionLive(session, now = Date.now()) {
   if (!session || (session.status !== "connected" && session.status !== "degraded")) return false;
   if (getStudioConnectionType(session) === STUDIO_CONNECTION_TYPES.MCP_LOCAL) {

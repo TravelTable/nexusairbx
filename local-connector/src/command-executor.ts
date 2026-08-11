@@ -509,11 +509,22 @@ function extractSource(result: ToolCallResult): string {
         }
       }
     } catch {
-      return validateSource(text);
+      return validateSource(decodeNumberedSourceText(text));
     }
-    return validateSource(text);
+    return validateSource(decodeNumberedSourceText(text));
   }
   throw new ConnectorError("MCP_RESPONSE_MALFORMED", "Roblox Studio MCP did not return readable script source.");
+}
+
+function decodeNumberedSourceText(text: string): string {
+  const lines = text.split("\n");
+  const decoded: string[] = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    const match = /^\s*(\d+)→(.*)$/.exec(lines[index] ?? "");
+    if (!match || Number(match[1]) !== index + 1) return text;
+    decoded.push(match[2] ?? "");
+  }
+  return decoded.join("\n");
 }
 
 function extractInspection(result: ToolCallResult, requestedPath: string): JsonObject {

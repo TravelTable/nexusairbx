@@ -2,10 +2,8 @@
 -- runs occasionally produced a dotted Starter Player path, e.g.
 -- `StarterPlayer.StarterPlayerScripts.MainMenuClient`; normalize only the
 -- unambiguous service aliases so dots in ordinary instance names remain valid.
--- Keep the service name split so bundle-plugin.js does not rewrite literal path
--- segments while it converts Roblox service variables to the Services table.
-local starterPlayerService = "Starter" .. "Player"
-local starterPlayerServicePath = "Services." .. starterPlayerService
+local starterPlayerService = "StarterPlayer"
+local starterPlayerServicePath = "Services.StarterPlayer"
 
 local function canonicalizePath(path)
 	local raw = tostring(path or "")
@@ -242,20 +240,40 @@ end
 
 function readScriptSource(inst)
 	if not inst or not SCRIPT_CLASSES[inst.ClassName] then
-		return false, ""
+		return false, "", {
+			code = "not_script",
+			className = inst and tostring(inst.ClassName) or "",
+		}
 	end
+	local editorError = nil
 	if ScriptEditorService and ScriptEditorService.GetEditorSource then
 		local ok, source = pcall(function()
 			return ScriptEditorService:GetEditorSource(inst)
 		end)
 		if ok and type(source) == "string" then
-			return true, source
+			return true, source, { method = "ScriptEditorService.GetEditorSource" }
 		end
+		editorError = ok and ("unexpected source type: " .. type(source))
+			or string.sub(tostring(source or "unknown error"), 1, 240)
+	else
+		editorError = "ScriptEditorService.GetEditorSource unavailable"
 	end
 	local ok, source = pcall(function()
 		return inst.Source
 	end)
-	return ok, ok and source or ""
+	if ok and type(source) == "string" then
+		return true, source, {
+			method = "Instance.Source",
+			editorError = editorError,
+		}
+	end
+	return false, "", {
+		code = "source_unreadable",
+		method = "ScriptEditorService.GetEditorSource+Instance.Source",
+		editorError = editorError,
+		propertyError = ok and ("unexpected source type: " .. type(source))
+			or string.sub(tostring(source or "unknown error"), 1, 240),
+	}
 end
 
 local function writeScriptSource(inst, source)

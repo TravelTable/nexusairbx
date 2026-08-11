@@ -55,7 +55,7 @@ describe("workflowPlan", () => {
       locks: { goal: true },
     });
     expect(plan.capabilities).toEqual([
-      expect.objectContaining({ id: "studio_inspection", label: "Studio inspection", available: true }),
+      expect.objectContaining({ id: "studio_inspection", label: "Studio inspection", available: null }),
     ]);
     expect(plan.sections.implementationSteps[0]).toEqual(expect.objectContaining({
       itemId: "inspect",

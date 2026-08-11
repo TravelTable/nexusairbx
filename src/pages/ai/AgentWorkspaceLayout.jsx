@@ -45,6 +45,11 @@ import useAiPageZoom from "../../hooks/useAiPageZoom";
 const WORKSPACE_DRAWER_WIDTH_KEY = "nexusrbx:workspace-drawer-width";
 const PROJECT_SIDEBAR_MODAL_QUERY = "(max-width: 1199px)";
 
+function isTerminalAgentRun(run) {
+  const status = String(run?.status || run?.state || "").toLowerCase();
+  return TERMINAL_AGENT_STATES.has(status) || status === "canceled";
+}
+
 function readProjectSidebarModalViewport() {
   if (typeof window === "undefined") return false;
   if (typeof window.matchMedia === "function") {
@@ -363,9 +368,12 @@ export default function AgentWorkspaceLayout({ controller }) {
     return items;
   }, [studioCommandSessionId]);
 
-  const waitForManifestCompletion = useCallback(async (previousRevision = "") => {
+  const waitForManifestCompletion = useCallback(async (
+    previousRevision = "",
+    expectedRevision = ""
+  ) => {
     const sessionId = studioCommandSessionId || "default";
-    const waitKey = `${sessionId}:${previousRevision || "none"}`;
+    const waitKey = `${sessionId}:${previousRevision || "none"}:${expectedRevision || "next"}`;
     if (manifestWaitsRef.current.has(waitKey)) {
       return manifestWaitsRef.current.get(waitKey);
     }
@@ -400,7 +408,9 @@ export default function AgentWorkspaceLayout({ controller }) {
           readyRevision &&
           status?.activeRevision === readyRevision &&
           status?.complete &&
-          (!previousRevision || readyRevision !== previousRevision)
+          (expectedRevision
+            ? readyRevision === expectedRevision
+            : (!previousRevision || readyRevision !== previousRevision))
         ) {
           return status;
         }
@@ -479,14 +489,25 @@ export default function AgentWorkspaceLayout({ controller }) {
           return;
         }
 
-        await queueStudioTool({
+        const queuedManifest = await queueStudioTool({
           type: "get_project_manifest",
           payload: { maxDepth: 24, maxInstances: 10000, pageSize: 500, includeSource: false },
           sessionId: studioCommandSessionId,
           label: force ? "Rescan Studio project" : "Refresh Studio manifest",
           applyMode: "unrestricted_dev",
         });
-        const status = await waitForManifestCompletion(previousRevision);
+        const manifestCommand = await pollStudioCommand(queuedManifest.commandId, { timeoutMs: 60000 });
+        if (manifestCommand.status === "failed") {
+          const error = new Error(manifestCommand.error || "Studio manifest refresh failed");
+          error.code = manifestCommand.code || "STUDIO_MANIFEST_FAILED";
+          throw error;
+        }
+        const expectedRevision = String(
+          manifestCommand.result?.revision
+          || manifestCommand.result?.manifest?.revision
+          || ""
+        ).trim();
+        const status = await waitForManifestCompletion(previousRevision, expectedRevision);
         const items = await fetchManifestPage(status.lastCompleteRevision || status.activeRevision || "");
         setStudioManifest(items);
       } catch (err) {
@@ -945,9 +966,11 @@ export default function AgentWorkspaceLayout({ controller }) {
 
   const handleStopActiveWork = useCallback(async () => {
     const stoppedCoordinatedOperation = await stopChatOperation?.();
-    if (stoppedCoordinatedOperation !== false) return;
 
-    if (unified.cancelCurrentFlow?.()) return;
+    // Aborting the browser flow is only a local ownership fence. Canonical
+    // runs continue on the server until their authoritative run id is
+    // cancelled, so always fall through to the active-agent projection.
+    const stoppedLocalFlow = Boolean(unified.cancelCurrentFlow?.());
 
     const currentAgent = activeAgentRuntime.agents.find(
       (agent) => agent.chatId === chat.currentChatId
@@ -966,6 +989,7 @@ export default function AgentWorkspaceLayout({ controller }) {
       || currentRun?.id;
 
     if (!runId) {
+      if (stoppedCoordinatedOperation !== false || stoppedLocalFlow) return;
       notify?.({
         message: "This run is already stopping or has just finished.",
         type: "info",
@@ -973,15 +997,17 @@ export default function AgentWorkspaceLayout({ controller }) {
       return;
     }
 
-    Promise.resolve(activeAgentRuntime.cancelRun(runId)).catch((error) => {
+    Promise.resolve(activeAgentRuntime.cancelRun(runId))
+      .then(() => chat.reconcileCancelledRun?.(runId, { chatId: chat.currentChatId }))
+      .catch((error) => {
       notify?.({
         message: error?.message || "The agent run could not be stopped.",
         type: "error",
       });
-    });
+      });
   }, [
     activeAgentRuntime,
-    chat.currentChatId,
+    chat,
     notify,
     stopChatOperation,
     unified,
@@ -1219,12 +1245,14 @@ export default function AgentWorkspaceLayout({ controller }) {
         agents={activeAgentRuntime.agents}
         onOpenChat={chat.openChatById}
         onCancelRun={(runId) => {
-          Promise.resolve(activeAgentRuntime.cancelRun(runId)).catch((error) => {
+          Promise.resolve(activeAgentRuntime.cancelRun(runId))
+            .then(() => chat.reconcileCancelledRun?.(runId, { chatId: chat.currentChatId }))
+            .catch((error) => {
             notify?.({
               message: error?.message || "The agent run could not be cancelled.",
               type: "error",
             });
-          });
+            });
         }}
       />
       {taskRuntime.task ? (
@@ -1240,6 +1268,78 @@ export default function AgentWorkspaceLayout({ controller }) {
             onAmend={(payload) => invokeTaskAction(() => taskRuntime.amend(payload))}
             onApprove={(payload) => invokeTaskAction(() => taskRuntime.approve(payload))}
           />
+        </div>
+      ) : activeAgentRuntime.agents.length ? (
+        <div className="min-h-0 flex-1 overflow-y-auto p-3 scrollbar-subtle" aria-label="Current agent runs">
+          <div className="space-y-2">
+            {activeAgentRuntime.agents.map((agent) => {
+              const agentRuns = [
+                ...(agent?.currentRun ? [agent.currentRun] : []),
+                ...(Array.isArray(agent?.runs) ? agent.runs : []),
+              ].filter((run, index, runs) => {
+                const runId = run?.runId || run?.id;
+                return runId && runs.findIndex((candidate) => (
+                  (candidate?.runId || candidate?.id) === runId
+                )) === index;
+              });
+              return (
+                <section
+                  key={agent.agentId || agent.id || agent.chatId}
+                  className="rounded-xl border border-white/10 bg-white/[0.03] p-3"
+                  aria-label={agent.title || "Active agent"}
+                >
+                  <div className="flex items-center gap-2">
+                    <Bot className="h-4 w-4 shrink-0 text-[#00f5d4]" />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-xs font-semibold text-gray-100">
+                        {agent.title || "Active agent"}
+                      </div>
+                      <div className="text-[11px] capitalize text-[#00f5d4]">
+                        {String(agent.status || "running").replaceAll("_", " ")}
+                      </div>
+                    </div>
+                  </div>
+                  {agentRuns.length ? (
+                    <div className="mt-3 space-y-2">
+                      {agentRuns.map((run) => {
+                        const runId = run.runId || run.id;
+                        const status = String(run.status || run.state || agent.status || "running")
+                          .replaceAll("_", " ");
+                        return (
+                          <div key={runId} className="flex items-center justify-between gap-3 rounded-lg bg-black/20 px-2.5 py-2">
+                            <div className="min-w-0">
+                              <div className="truncate text-[11px] font-medium text-gray-200">
+                                Run {String(runId).slice(-8)}
+                              </div>
+                              <div className="text-[11px] capitalize text-gray-400">{status}</div>
+                            </div>
+                            {!isTerminalAgentRun(run) && (
+                              <button
+                                type="button"
+                                onClick={() => activeAgentRuntime.cancelRun(runId)
+                                  .then(() => chat.reconcileCancelledRun?.(runId, { chatId: chat.currentChatId }))
+                                  .catch((error) => {
+                                    notify?.({
+                                      message: error?.message || "The agent run could not be cancelled.",
+                                      type: "error",
+                                    });
+                                  })}
+                                className="min-h-11 rounded-lg border border-red-300/20 px-3 text-[11px] font-semibold text-red-200 hover:bg-red-400/10 focus-ring"
+                              >
+                                Stop
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-[11px] text-gray-400">Preparing the authoritative run projection...</p>
+                  )}
+                </section>
+              );
+            })}
+          </div>
         </div>
       ) : (
         <WorkspaceEmptyState

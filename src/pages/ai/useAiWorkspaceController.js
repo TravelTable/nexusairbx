@@ -134,6 +134,7 @@ import {
   sanitizeTranscriptMessagePayload,
 } from "../../lib/firestorePayloads";
 import { normalizeRobloxPlaceId } from "../../lib/robloxPlaceId";
+import { normalizeAuthoritativeRunStatus } from "../../lib/runCancellation";
 
 const MODE_COLORS = {
   general: { primary: "#9b5de5", secondary: "#00f5d4" },
@@ -220,7 +221,11 @@ function quickScriptArtifact(result) {
     || !String(result?.studioLocation || "").trim()
   ) return null;
   const title = result.title || "Quick";
-  const name = `${title.replace(/[^a-z0-9_-]+/gi, "_").replace(/^_+|_+$/g, "") || "QuickScript"}.lua`;
+  const targetPath = String(result.targetPath || "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+  const name = result.scriptName
+    || targetPath.split("/").filter(Boolean).pop()
+    || title.replace(/[^a-z0-9_-]+/gi, "_").replace(/^_+|_+$/g, "")
+    || "QuickScript";
   const kind = quickScriptKind(result.scriptType);
   return {
     artifactId: `quick-script:${Date.now()}`,
@@ -230,7 +235,7 @@ function quickScriptArtifact(result) {
       {
         id: "quick-script-file",
         name,
-        path: `${result.studioLocation}/${name}`,
+        path: targetPath || `${result.studioLocation}/${name}`,
         placement: result.studioLocation,
         className: result.scriptType,
         kind,
@@ -454,16 +459,65 @@ export function useAiWorkspaceController() {
   useEffect(() => {
     const pendingRun = unified.pendingMessage || workspace.agentRun || null;
     const runId = String(pendingRun?.runId || pendingRun?.id || "").trim();
-    const status = String(pendingRun?.runStatus || pendingRun?.status || "").toLowerCase();
+    const rawStatus = pendingRun?.runStatus || pendingRun?.status || pendingRun?.metadata?.runState;
+    const terminalStatus = normalizeAuthoritativeRunStatus(rawStatus, pendingRun);
     const chatId = chat.currentChatId;
     if (!chatId || !runId) return;
 
     const coordinator = chatOperationCoordinatorRef.current;
-    if (isTerminalChatRunStatus(status)) {
-      coordinator.reconcile(chatId, { runId, status });
+    const requestId = String(
+      pendingRun?.operationId
+      || pendingRun?.requestId
+      || pendingRun?.clientMessageId
+      || pendingRun?.metadata?.requestId
+      || ""
+    ).trim();
+    const cancellationMarker = requestId
+      ? (chat.messages || []).find((message) => (
+          String(message?.requestId || "").trim() === requestId
+          && message?.stage === "canceled"
+          && message?.metadata?.cancellationPending === true
+        ))
+      : null;
+    const cancelProjectedRun = async (operation) => {
+      unified.cancelCurrentFlow?.();
+      await cancelCoordinatedAgentRun(operation, chatId);
+      await unified.reconcileCancelledRun?.(operation.runId, {
+        chatId,
+        requestId: operation.id,
+      });
+    };
+    if (cancellationMarker && requestId) {
+      if (terminalStatus === "canceled") {
+        void unified.reconcileCancelledRun?.(runId, { chatId, requestId });
+        coordinator.reconcile(chatId, { ...pendingRun, runId, status: rawStatus });
+        return;
+      }
+      if (!terminalStatus) {
+        coordinator.rememberCancellation({
+          id: requestId,
+          chatId,
+          type: "submit",
+          prompt: pendingRun?.prompt || "",
+          onCancel: cancelProjectedRun,
+        });
+        coordinator.hydrate({
+          id: requestId,
+          chatId,
+          type: "submit",
+          status: CHAT_OPERATION_STATUS.RUNNING,
+          prompt: pendingRun?.prompt || "",
+          runId,
+          onCancel: cancelProjectedRun,
+        });
+        return;
+      }
+    }
+    if (terminalStatus) {
+      coordinator.reconcile(chatId, { ...pendingRun, runId, status: rawStatus });
       return;
     }
-    if (!unified.isGenerating && !status) return;
+    if (!unified.isGenerating && !rawStatus) return;
     if (coordinator.snapshot(chatId).active) return;
 
     coordinator.hydrate({
@@ -473,10 +527,7 @@ export function useAiWorkspaceController() {
       status: CHAT_OPERATION_STATUS.RUNNING,
       prompt: pendingRun?.prompt || "",
       runId,
-      onCancel: async (operation) => {
-        unified.cancelCurrentFlow?.();
-        await cancelCoordinatedAgentRun(operation, chatId);
-      },
+      onCancel: cancelProjectedRun,
     });
   }, [
     chat.currentChatId,
@@ -484,6 +535,7 @@ export function useAiWorkspaceController() {
     unified.isGenerating,
     unified.pendingMessage,
     workspace.agentRun,
+    chat.messages,
   ]);
   const {
     isGenerating: unifiedIsGenerating,
@@ -906,7 +958,25 @@ export function useAiWorkspaceController() {
     if (sameTarget) setOptimisticStudioPlacePreference(null);
   }, [chatStudioPreference, optimisticStudioPlacePreference]);
 
-  const effectiveStudioPlacePreference = optimisticStudioPlacePreference || chatStudioPreference;
+  const storedStudioPlacePreference = optimisticStudioPlacePreference || chatStudioPreference;
+  // Persist only the user's opaque selection, but always rehydrate it from the
+  // current connection snapshot before readiness/run submission. Session ids,
+  // target attestation, and capability evidence are volatile and must not be
+  // treated as durable browser authority.
+  const effectiveStudioPlacePreference = useMemo(() => {
+    if (!storedStudioPlacePreference) return null;
+    const targetId = String(
+      storedStudioPlacePreference.targetId || storedStudioPlacePreference.studioTargetId || ""
+    ).trim();
+    const matchingLiveTarget = targetId
+      ? studioPlaceOptions.find((option) => (
+          option?.id === targetId || option?.studioTargetId === targetId
+        ))
+      : null;
+    return matchingLiveTarget
+      ? { ...storedStudioPlacePreference, ...matchingLiveTarget }
+      : storedStudioPlacePreference;
+  }, [storedStudioPlacePreference, studioPlaceOptions]);
 
   const ensureStudioProjectBinding = useCallback(async (option) => {
     const target = normalizeStudioTargetOption(option) || option;
@@ -944,8 +1014,9 @@ export function useAiWorkspaceController() {
           updatedAt: serverTimestamp(),
         }));
       }
-      setOptimisticStudioPlacePreference(preference);
-      return { ...preference, projectId: binding.projectId };
+      const boundPreference = { ...preference, projectId: binding.projectId };
+      setOptimisticStudioPlacePreference(boundPreference);
+      return boundPreference;
     } catch (error) {
       notify({ message: error?.message || "Could not select this Studio place.", type: "error" });
       setStudioPlacePickerOpen(true);
@@ -1015,7 +1086,10 @@ export function useAiWorkspaceController() {
     }
 
     let runtimeProjectId = String(
-      submissionOptions?.projectId || chat.currentChatMeta?.projectId || ""
+      submissionOptions?.projectId
+      || chat.currentChatMeta?.projectId
+      || effectiveStudioPlacePreference?.projectId
+      || ""
     ).trim() || null;
     let studioTargetPreference = submissionOptions?.studioTargetPreference || effectiveStudioPlacePreference;
     if (
@@ -1123,6 +1197,12 @@ export function useAiWorkspaceController() {
       ...restSubmissionOptions,
       ...(studioTargetPreference ? { studioTargetPreference } : {}),
       projectId: runtimeProjectId,
+      studioConnected: Boolean(studioConnection.connected),
+      targeting: {
+        projectId: runtimeProjectId,
+        studioConnected: Boolean(studioConnection.connected),
+        studioTarget: studioTargetPreference || null,
+      },
       ...(activeRewind?.messageId
         ? {
             rewindFromMessageId: activeRewind.messageId,
@@ -1228,7 +1308,13 @@ export function useAiWorkspaceController() {
       retainOnFailure: operationType === "retry",
       onCancel: async (operation) => {
         unified.cancelCurrentFlow?.();
-        if (!operation?.runId) return;
+        if (!operation?.runId) {
+          await unified.persistPendingCancellation?.({
+            chatId: operation?.chatId || chat.currentChatId || null,
+            requestId: operation?.id || operationId,
+          });
+          return;
+        }
         try {
           await cancelCoordinatedAgentRun(
             operation,
@@ -1240,6 +1326,10 @@ export function useAiWorkspaceController() {
           const message = String(error?.message || "").toLowerCase();
           if (!message.includes("already") && !message.includes("not found")) throw error;
         }
+        await unified.reconcileCancelledRun?.(operation.runId, {
+          chatId: operation.chatId || chat.currentChatId || null,
+          requestId: operation.id,
+        });
       },
     }, async (operation) => {
       const effectiveOptions = {
@@ -1736,14 +1826,20 @@ export function useAiWorkspaceController() {
 
       if (!run && !steps.length) return;
 
+      const normalizedRunStatus = run
+        ? normalizeAuthoritativeRunStatus(run.status, run) || run.status
+        : null;
+      const runWasCancelled = normalizedRunStatus === "canceled";
       const runPatch = run ? {
-        runStatus: run.status,
+        runStatus: normalizedRunStatus,
         targetSelection: run.targetSelection || null,
         studioPlaceName: run.placeName || null,
         errorCode: run.errorCode || run.blocker?.code || run.error?.code || null,
         errorDetails: run.errorDetails || run.blocker?.details || run.error?.details || null,
         recovery: run.recovery || run.blocker?.recovery || run.error?.recovery || null,
-        stage: run.status === "awaiting_studio_target"
+        stage: runWasCancelled
+          ? "Stopped"
+          : run.status === "awaiting_studio_target"
           ? "Waiting for your Studio project choice"
           : run.summary || (run.placeName ? `Continuing in ${run.placeName}...` : undefined),
       } : {};
@@ -1751,7 +1847,18 @@ export function useAiWorkspaceController() {
       if (unified.setPendingMessage) {
         unified.setPendingMessage((prev) => {
           if (!prev?.runId || prev.runId !== runId) return prev;
-          return { ...prev, ...runPatch, steps, runId };
+          return {
+            ...prev,
+            ...runPatch,
+            steps,
+            runId,
+            ...(runWasCancelled ? {
+              content: "Generation canceled.",
+              pending: false,
+              stage: "canceled",
+              metadata: { ...(prev.metadata || {}), runState: "canceled" },
+            } : {}),
+          };
         });
       }
 
@@ -1764,12 +1871,18 @@ export function useAiWorkspaceController() {
           steps,
           runId,
           ...(run ? {
-            runStatus: run.status,
+            runStatus: normalizedRunStatus,
             targetSelection: run.targetSelection || null,
             studioPlaceName: run.placeName || null,
             errorCode: run.errorCode || run.blocker?.code || run.error?.code || null,
             errorDetails: run.errorDetails || run.blocker?.details || run.error?.details || null,
             recovery: run.recovery || run.blocker?.recovery || run.error?.recovery || null,
+            ...(runWasCancelled ? {
+              content: "Generation canceled.",
+              pending: false,
+              stage: "canceled",
+              metadata: { ...(targetMessage.metadata || {}), runState: "canceled" },
+            } : {}),
           } : {}),
         })).catch(() => {});
       }
@@ -1787,6 +1900,11 @@ export function useAiWorkspaceController() {
         ? option
         : option?.id || option?.targetId || option?.studioTargetId;
       if (!targetId || !user || selectingStudioTargetId) return;
+      // Choosing an exact live target is an explicit Studio action. Keep the
+      // execution preference in lockstep with that choice so the subsequent
+      // submit cannot discard the target's project binding and fall back to
+      // the legacy artifact route.
+      handleStudioEnabledChange(true);
       setSelectingStudioTargetId(targetId);
       // Paint the chip immediately so empty chats (no Firestore doc yet) still show the place.
       const immediatePreference = buildStudioTargetPreference(
@@ -1846,6 +1964,7 @@ export function useAiWorkspaceController() {
     },
     [
       bindChatStudioPlace,
+      handleStudioEnabledChange,
       notify,
       selectingStudioTargetId,
       syncAgentRunSteps,
@@ -1940,6 +2059,10 @@ export function useAiWorkspaceController() {
               operation,
               operation.chatId || chat.currentChatId || null,
             );
+            await unified.reconcileCancelledRun?.(operation.runId, {
+              chatId: operation.chatId || chat.currentChatId || null,
+              requestId: operation.id,
+            });
           }
         },
       }, async ({ signal }) => {

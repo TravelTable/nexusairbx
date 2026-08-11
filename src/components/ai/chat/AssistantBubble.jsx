@@ -44,6 +44,8 @@ const RUN_STATE_META = {
   applying: { label: "Applying to Studio…", className: "border-amber-400/30 bg-amber-400/10 text-amber-200" },
   push_skipped: { label: "Saved to workspace", className: "border-white/10 bg-white/5 text-gray-400" },
   conflict: { label: "Studio conflict", className: "border-amber-400/30 bg-amber-400/10 text-amber-200" },
+  cancelled: { label: "Stopped", className: "border-white/15 bg-white/5 text-gray-300" },
+  canceled: { label: "Stopped", className: "border-white/15 bg-white/5 text-gray-300" },
   failed: { label: "Failed", className: "border-red-400/30 bg-red-400/10 text-red-300" },
 };
 

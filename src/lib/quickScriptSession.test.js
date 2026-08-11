@@ -1,5 +1,7 @@
 import {
   clearQuickScriptSession,
+  extractExplicitQuickScriptPlacement,
+  extractExplicitQuickScriptName,
   loadQuickScriptSession,
   normalizeQuickScriptResult,
   quickScriptResultToAgentPrompt,
@@ -111,5 +113,51 @@ describe("quickScriptSession", () => {
       requiredContext: "client",
       findings: [{ code: "SCRIPT_CLASS_REQUIRED", line: 1 }],
     });
+  });
+
+  test("preserves an explicit Quick Script placement from the user prompt", () => {
+    expect(extractExplicitQuickScriptPlacement(
+      "Create a Script and put it in ServerScriptService/NexusPipelineTest"
+    )).toBe("ServerScriptService/NexusPipelineTest");
+    expect(extractExplicitQuickScriptPlacement(
+      "Place this LocalScript inside StarterPlayerScripts"
+    )).toBe("StarterPlayer/StarterPlayerScripts");
+
+    const normalized = normalizeQuickScriptResult({
+      title: "Spin Script",
+      scriptType: "Script",
+      code: "print('spin')",
+    }, "Put this in ServerScriptService/NexusPipelineTest");
+
+    expect(normalized.studioLocation).toBe("ServerScriptService/NexusPipelineTest");
+    expect(normalized.scriptType).toBe("Script");
+
+    const conflictingModelPlacement = normalizeQuickScriptResult({
+      title: "Spin Script",
+      scriptType: "Script",
+      code: "print('spin')",
+      studioLocation: "Workspace",
+    }, "Put this in ServerScriptService/NexusPipelineTest");
+
+    expect(conflictingModelPlacement.studioLocation).toBe("ServerScriptService/NexusPipelineTest");
+    expect(conflictingModelPlacement.targetPath).toBe("ServerScriptService/NexusPipelineTest");
+
+    const named = normalizeQuickScriptResult({
+      title: "Smooth Y-Axis Part Rotation",
+      scriptType: "Script",
+      code: "print('spin')",
+    }, "Create one server Script named SpinScript for Workspace/NexusPipelineTest/Beacon.");
+    expect(extractExplicitQuickScriptName(
+      "Create one server Script named SpinScript for Workspace/NexusPipelineTest/Beacon."
+    )).toBe("SpinScript");
+    expect(named.studioLocation).toBe("Workspace/NexusPipelineTest/Beacon");
+    expect(named.scriptName).toBe("SpinScript");
+    expect(named.targetPath).toBe("Workspace/NexusPipelineTest/Beacon/SpinScript");
+  });
+
+  test("does not infer placement from a generic service mention", () => {
+    expect(extractExplicitQuickScriptPlacement(
+      "Explain when ServerScriptService should be used"
+    )).toBe("");
   });
 });

@@ -798,7 +798,14 @@ describe("useAiChat", () => {
   });
 
   test("returns a durable failed state when a queued run terminates before job assignment", async () => {
-    const getAgent = jest.fn();
+    const getAgent = jest.fn().mockResolvedValue({
+      runs: [{
+        runId: "run-failed",
+        status: "failed",
+        code: "WORKER_FAILED",
+        error: "Worker failed with authoritative details",
+      }],
+    });
 
     const run = await waitForAuthoritativeRunJob({
       agentId: "agent-1",
@@ -825,7 +832,163 @@ describe("useAiChat", () => {
       terminal: true,
       code: "WORKER_FAILED",
     }));
-    expect(getAgent).not.toHaveBeenCalled();
+    expect(getAgent).toHaveBeenCalledWith("agent-1");
+    expect(run.error).toBe("Worker failed with authoritative details");
+  });
+
+  test("persists and displays a typed terminal failure returned with HTTP 200", async () => {
+    const user = {
+      uid: "user_1",
+      getIdToken: jest.fn().mockResolvedValue("token_1"),
+    };
+    auth.currentUser = user;
+    const notify = jest.fn();
+    const message = "The selected Studio connection does not advertise the read-only command required for this inspection.";
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: { get: () => "application/json" },
+      json: async () => ({
+        code: "GENERATION_FAILED",
+        message,
+        status: "failed",
+      }),
+    });
+
+    const { result } = renderHook(() => useAiChat(
+      user,
+      { chatMode: "agent" },
+      jest.fn(),
+      notify,
+    ));
+
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      await act(async () => {
+        await result.current.handleSubmit(
+          "Inspect my Studio project",
+          "chat_1",
+          "req_immediate_failure",
+          "agent",
+          true,
+        );
+      });
+    } finally {
+      consoleError.mockRestore();
+    }
+
+    expect(setDoc).toHaveBeenCalledWith(
+      expect.objectContaining({
+        segments: expect.arrayContaining(["req_immediate_failure-assistant"]),
+      }),
+      expect.objectContaining({
+        content: message,
+        error: message,
+        errorCode: "GENERATION_FAILED",
+        pending: false,
+        stage: "failed",
+        metadata: expect.objectContaining({ runState: "failed" }),
+      }),
+      { merge: true },
+    );
+    expect(notify).toHaveBeenCalledWith({ message, type: "error" });
+  });
+
+  test("normalizes a failed authoritative run with user_cancelled evidence as canceled", async () => {
+    const run = await waitForAuthoritativeRunJob({
+      agentId: "agent-1",
+      runId: "run-canceled",
+      getEvents: jest.fn().mockResolvedValue({
+        events: [{
+          sequence: 3,
+          type: "run.failed",
+          payload: {
+            runId: "run-canceled",
+            failureCode: "user_cancelled",
+          },
+        }],
+      }),
+      getAgent: jest.fn().mockResolvedValue({
+        runs: [{
+          runId: "run-canceled",
+          status: "failed",
+          failureCode: "user_cancelled",
+        }],
+      }),
+      wait: jest.fn(),
+    });
+
+    expect(run).toEqual(expect.objectContaining({
+      runId: "run-canceled",
+      status: "canceled",
+      terminal: true,
+      failureCode: "user_cancelled",
+    }));
+  });
+
+  test("hydrates incomplete terminal events from the authoritative run projection", async () => {
+    const run = await waitForAuthoritativeRunJob({
+      agentId: "agent-1",
+      runId: "run-inspection",
+      getEvents: jest.fn().mockResolvedValue({
+        events: [{
+          sequence: 8,
+          type: "run.completed",
+          payload: { runId: "run-inspection" },
+        }],
+      }),
+      getAgent: jest.fn().mockResolvedValue({
+        runs: [{
+          runId: "run-inspection",
+          status: "completed",
+          output: {
+            summary: "Found 14 scripts in the selected Studio target.",
+            metadata: {
+              type: "studio_inspection",
+              inspectionEvidence: { commandId: "command-1", itemCount: 14 },
+            },
+          },
+        }],
+      }),
+      wait: jest.fn(),
+    });
+
+    expect(run).toEqual(expect.objectContaining({
+      status: "completed",
+      terminal: true,
+      output: expect.objectContaining({
+        summary: "Found 14 scripts in the selected Studio target.",
+      }),
+    }));
+  });
+
+  test("surfaces waiting Studio and verification projection states while a jobless run advances", async () => {
+    const onStatus = jest.fn();
+    const getAgent = jest.fn()
+      .mockResolvedValueOnce({
+        runs: [{ runId: "run-live", status: "waiting_studio", jobId: null }],
+      })
+      .mockResolvedValueOnce({
+        runs: [{ runId: "run-live", status: "verifying", jobId: null }],
+      })
+      .mockResolvedValueOnce({
+        runs: [{ runId: "run-live", status: "running", jobId: "job-live" }],
+      });
+
+    await expect(waitForAuthoritativeRunJob({
+      agentId: "agent-1",
+      runId: "run-live",
+      getEvents: jest.fn()
+        .mockResolvedValueOnce({
+          events: [{ sequence: 1, type: "run.admitted", payload: { runId: "run-live" } }],
+        }),
+      getAgent,
+      onStatus,
+      wait: jest.fn().mockResolvedValue(),
+    })).resolves.toEqual(expect.objectContaining({ jobId: "job-live" }));
+
+    expect(onStatus).toHaveBeenCalledWith("Waiting for Studio...");
+    expect(onStatus).toHaveBeenCalledWith("Verifying Studio changes...");
   });
 
   test("hands a queued run to the background at the admission deadline", async () => {
@@ -1049,7 +1212,7 @@ describe("useAiChat", () => {
           stage: "completed",
           agentId: "agent-terminal",
           runId: "run-terminal",
-          metadata: expect.objectContaining({ runState: "completed" }),
+          metadata: expect.objectContaining({ runState: "succeeded" }),
         }),
       );
     });
@@ -1057,6 +1220,99 @@ describe("useAiChat", () => {
       payload?.title === "Studio task completed"
     ));
     expect(terminalWrite[1].summary).toContain("The Studio changes were applied.");
+    hook.unmount();
+  });
+
+  test("waits for a running jobless inspection and persists its authoritative summary", async () => {
+    const user = {
+      uid: "user_1",
+      getIdToken: jest.fn().mockResolvedValue("token_1"),
+    };
+    auth.currentUser = user;
+    getAgentEventsV2.mockResolvedValue({
+      lastSequence: 21,
+      events: [{
+        sequence: 21,
+        type: "run.completed",
+        payload: { runId: "run-inspection" },
+      }],
+    });
+    getAgentV2.mockResolvedValue({
+      runs: [{
+        agentId: "agent-inspection",
+        runId: "run-inspection",
+        status: "completed",
+        jobId: null,
+        summary: "Found NexusShowcase at Workspace/NexusShowcase.",
+        inspectionEvidence: {
+          status: "verified",
+          scope: "scoped_search",
+          visiblePaths: ["Workspace/NexusShowcase"],
+        },
+      }],
+    });
+    const hook = renderHook(() => useAiChat(
+      user,
+      { chatMode: "agent" },
+      jest.fn(),
+      jest.fn(),
+    ));
+
+    let submission;
+    act(() => {
+      submission = hook.result.current.handleSubmit(
+        "Search Studio for NexusShowcase",
+        "chat_inspection",
+        "request_inspection",
+        "agent",
+        true,
+        [],
+        null,
+        {
+          authoritativeRun: {
+            authoritativeExecution: true,
+            executionDisposition: "executing",
+            agentId: "agent-inspection",
+            run: {
+              agentId: "agent-inspection",
+              runId: "run-inspection",
+              status: "running",
+              jobId: null,
+              inspectionOnly: true,
+            },
+          },
+        },
+      );
+    });
+    await submission;
+
+    expect(getAgentEventsV2).toHaveBeenCalled();
+    expect(getAgentV2).toHaveBeenCalledWith("agent-inspection");
+    expect(setDoc).toHaveBeenCalledWith(
+      expect.objectContaining({
+        segments: expect.arrayContaining(["request_inspection-assistant"]),
+      }),
+      expect.objectContaining({
+        pending: true,
+        stage: "Running in Studio...",
+        runId: "run-inspection",
+        metadata: expect.objectContaining({ runState: "running" }),
+      }),
+      { merge: true },
+    );
+    expect(setDoc).toHaveBeenCalledWith(
+      expect.objectContaining({
+        segments: expect.arrayContaining(["request_inspection-assistant"]),
+      }),
+      expect.objectContaining({
+        summary: "Found NexusShowcase at Workspace/NexusShowcase.",
+        pending: false,
+        stage: "completed",
+        runId: "run-inspection",
+        metadata: expect.objectContaining({ runState: "succeeded" }),
+      }),
+      { merge: true },
+    );
     hook.unmount();
   });
 
@@ -1129,5 +1385,130 @@ describe("useAiChat", () => {
       }),
       { merge: true },
     );
+  });
+
+  test("reconciles a recovered canonical cancellation into chat state and Firestore", async () => {
+    const user = {
+      uid: "user_1",
+      getIdToken: jest.fn().mockResolvedValue("token_1"),
+    };
+    auth.currentUser = user;
+    const hook = renderHook(() => useAiChat(
+      user,
+      { chatMode: "agent" },
+      jest.fn(),
+      jest.fn(),
+    ));
+
+    const recoveredPending = {
+      id: "recovered-cancel-message",
+      role: "assistant",
+      content: "",
+      pending: true,
+      stage: "Inspecting Studio project...",
+      requestId: "request-recovered-cancel",
+      agentId: "agent-recovered-cancel",
+      runId: "run-recovered-cancel",
+      metadata: { mode: "agent", runState: "running" },
+    };
+    act(() => {
+      hook.result.current.setPendingForChat(
+        "chat_recovered_cancel",
+        recoveredPending,
+        "request-recovered-cancel",
+      );
+      hook.result.current.setGeneratingForChat(
+        "chat_recovered_cancel",
+        true,
+        "request-recovered-cancel",
+      );
+    });
+
+    let reconciliation;
+    act(() => {
+      reconciliation = hook.result.current.reconcileCancelledRun("run-recovered-cancel", {
+        chatId: "chat_recovered_cancel",
+      });
+    });
+    await reconciliation;
+    act(() => {
+      hook.result.current.setCurrentChatId("chat_recovered_cancel");
+    });
+
+    expect(hook.result.current.pendingMessage).toBeNull();
+    expect(hook.result.current.isGenerating).toBe(false);
+    expect(setDoc).toHaveBeenCalledWith(
+      expect.objectContaining({
+        segments: expect.arrayContaining([
+          "chat_recovered_cancel",
+          "messages",
+          "recovered-cancel-message",
+        ]),
+      }),
+      expect.objectContaining({
+        content: "Generation canceled.",
+        pending: false,
+        runId: "run-recovered-cancel",
+        stage: "canceled",
+        metadata: expect.objectContaining({ runState: "canceled" }),
+      }),
+      { merge: true },
+    );
+    hook.unmount();
+  });
+
+  test("persists a canceled assistant turn when Stop preceded pending run attachment", async () => {
+    const user = {
+      uid: "user_1",
+      getIdToken: jest.fn().mockResolvedValue("token_1"),
+    };
+    auth.currentUser = user;
+    const hook = renderHook(() => useAiChat(
+      user,
+      { chatMode: "agent" },
+      jest.fn(),
+      jest.fn(),
+    ));
+    act(() => {
+      hook.result.current.setCurrentChatId("chat_early_stop");
+    });
+
+    let reconciliation;
+    act(() => {
+      reconciliation = hook.result.current.reconcileCancelledRun("run_early_stop", {
+        chatId: "chat_early_stop",
+        requestId: "request_early_stop",
+      });
+    });
+    await reconciliation;
+
+    expect(hook.result.current.messages).toContainEqual(expect.objectContaining({
+      id: "request_early_stop-assistant",
+      role: "assistant",
+      content: "Generation canceled.",
+      pending: false,
+      requestId: "request_early_stop",
+      runId: "run_early_stop",
+      stage: "canceled",
+      metadata: expect.objectContaining({ runState: "canceled" }),
+    }));
+    expect(setDoc).toHaveBeenCalledWith(
+      expect.objectContaining({
+        segments: expect.arrayContaining([
+          "chat_early_stop",
+          "messages",
+          "request_early_stop-assistant",
+        ]),
+      }),
+      expect.objectContaining({
+        content: "Generation canceled.",
+        pending: false,
+        requestId: "request_early_stop",
+        runId: "run_early_stop",
+        stage: "canceled",
+      }),
+      { merge: true },
+    );
+    hook.unmount();
   });
 });

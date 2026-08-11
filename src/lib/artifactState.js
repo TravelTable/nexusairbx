@@ -29,15 +29,22 @@ export function normalizeArtifactFile(rawFile = {}, index = 0) {
     placement: String(rawFile.placement || path.split("/")[0] || "ReplicatedStorage"),
     kind: String(rawFile.kind || "module"),
     content,
-    contentHash: String(rawFile.contentHash || computeContentHash(content)),
+    // The content crossing the Studio boundary is authoritative. Recompute its
+    // hash instead of trusting a generation-time hash that may predate editor
+    // changes or project merges.
+    contentHash: computeContentHash(content),
   };
   const optionalFields = {
+    className: rawFile.className,
     language: rawFile.language,
     purpose: rawFile.purpose,
     dependencies: cloneOptional(rawFile.dependencies),
     warnings: cloneOptional(rawFile.warnings),
     validation: cloneOptional(rawFile.validation),
     status: rawFile.status,
+    allowClassChange: rawFile.allowClassChange === true ? true : undefined,
+    inspectedClassName: rawFile.inspectedClassName,
+    expectedSourceHash: rawFile.expectedSourceHash,
   };
   Object.entries(optionalFields).forEach(([key, value]) => {
     if (value !== undefined) normalized[key] = value;
@@ -54,6 +61,7 @@ export function computeArtifactRevision(files = []) {
       path: file.path,
       placement: file.placement,
       kind: file.kind,
+      className: file.className || null,
       contentHash: file.contentHash,
     }));
   return stableHash(JSON.stringify(sorted));
@@ -66,10 +74,13 @@ export function buildBaseArtifactSnapshot(artifact) {
     : [];
   const snapshot = {
     artifactId: String(artifact.projectId || artifact.artifactId || artifact.id || ""),
-    revision: String(artifact.revision || computeArtifactRevision(files)),
+    revision: computeArtifactRevision(files),
     title: String(artifact.title || "Generated Artifact"),
     files,
   };
+  if (artifact.revision && String(artifact.revision) !== snapshot.revision) {
+    snapshot.sourceRevision = String(artifact.revision);
+  }
   const optionalFields = {
     summary: artifact.summary,
     metadata: cloneOptional(artifact.metadata),

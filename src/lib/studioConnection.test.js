@@ -1,4 +1,5 @@
 import {
+  buildStudioCapabilityRegistry,
   getStudioConnectionType,
   normalizeStudioConnectionSnapshot,
   selectPluginStudioSession,
@@ -6,6 +7,57 @@ import {
 } from "./studioConnection";
 
 describe("studio connection selection", () => {
+  test("builds command truth only from live transports bound to the selected target", () => {
+    const registry = buildStudioCapabilityRegistry({
+      target: { studioTargetId: "target-a", placeId: "111", universeId: "9" },
+      sessions: [
+        {
+          id: "mcp-a",
+          studioTargetId: "target-a",
+          connectionType: "mcp_local",
+          status: "connected",
+          live: true,
+          supportedCommands: ["read_script", "get_project_manifest"],
+          capabilities: { readProject: true, writeScript: false },
+          lastSeenAt: 200,
+        },
+        {
+          id: "plugin-a",
+          studioTargetId: "target-a",
+          connectionType: "plugin_bridge",
+          status: "connected",
+          live: true,
+          supportedCommands: ["get_project_manifest", "write_script"],
+          lastSeenAt: 150,
+        },
+        {
+          id: "mcp-wrong-target",
+          studioTargetId: "target-b",
+          connectionType: "mcp_local",
+          status: "connected",
+          live: true,
+          supportedCommands: ["execute_luau"],
+        },
+      ],
+    });
+
+    expect(registry.targetId).toBe("target-a");
+    expect(registry.observedAt).toBe(200);
+    expect(registry.transports).toHaveLength(2);
+    expect(registry.commands).toEqual(expect.objectContaining({
+      read_script: expect.objectContaining({ available: true }),
+      get_project_manifest: expect.objectContaining({
+        transports: expect.arrayContaining([
+          { sessionId: "mcp-a", connectionType: "mcp_local" },
+          { sessionId: "plugin-a", connectionType: "plugin_bridge" },
+        ]),
+      }),
+      write_script: expect.objectContaining({ available: true }),
+    }));
+    expect(registry.commands.execute_luau).toBeUndefined();
+    expect(registry.capabilitySnapshotId).toBeUndefined();
+  });
+
   test("treats historical sessions without a type as plugin bridge sessions", () => {
     const session = { id: "legacy", status: "connected", live: true };
     expect(getStudioConnectionType(session)).toBe(STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE);

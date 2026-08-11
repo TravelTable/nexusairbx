@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Bot, Loader2, X } from "lib/icons";
+import { TERMINAL_AGENT_STATES } from "../../../lib/agentRuntimeV2Api";
 
 function labelStatus(status) {
   return String(status || "idle").replaceAll("_", " ");
@@ -7,10 +8,14 @@ function labelStatus(status) {
 
 function activeRuns(agent) {
   const runs = Array.isArray(agent.runs) ? agent.runs : [];
-  if (agent.currentRun && !runs.some((run) => (run.runId || run.id) === (agent.currentRun.runId || agent.currentRun.id))) {
-    return [agent.currentRun, ...runs];
-  }
-  return runs;
+  const combined = agent.currentRun
+    && !runs.some((run) => (run.runId || run.id) === (agent.currentRun.runId || agent.currentRun.id))
+    ? [agent.currentRun, ...runs]
+    : runs;
+  return combined.filter((run) => {
+    const status = String(run?.status || run?.state || "").toLowerCase();
+    return !TERMINAL_AGENT_STATES.has(status) && status !== "canceled";
+  });
 }
 
 export default function ActiveAgentsTray({ agents = [], onOpenChat, onCancelRun }) {

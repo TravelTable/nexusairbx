@@ -21,6 +21,19 @@ const MCP_MUTATION_CAPABILITIES = new Set([
   "instanceMutation",
 ]);
 
+const READ_COMMANDS = new Set([
+  "get_project_manifest", "inspect_place", "inspect_instances", "read_instance",
+  "read_properties", "read_script", "read_scripts", "search_project", "search_source",
+  "get_selection", "get_studio_context", "get_output_logs", "collect_output",
+]);
+
+const MUTATION_COMMANDS = new Set([
+  "apply_artifact", "create_script", "write_script", "patch_script", "rename_script",
+  "move_script", "duplicate_script", "delete_script", "replace_in_files", "create_instance",
+  "update_properties", "update_attributes", "update_tags", "rename_instance", "move_instance",
+  "duplicate_instance", "delete_instance", "batch_operations", "restore_snapshot", "undo_last_batch",
+]);
+
 export function getSupportedStudioCapabilities(capabilities) {
   if (Array.isArray(capabilities)) {
     return [...new Set(capabilities.filter((capability) => typeof capability === "string" && capability))];
@@ -35,6 +48,17 @@ export function getSupportedStudioCapabilities(capabilities) {
     .map(([capability]) => capability);
 
   return [...new Set([...supported, ...explicitFlags])];
+}
+
+function getSupportedStudioCommands(capabilities) {
+  if (!capabilities || typeof capabilities !== "object") return [];
+  if (Array.isArray(capabilities.commands)) {
+    return [...new Set(capabilities.commands.map(String).filter(Boolean))];
+  }
+  if (!capabilities.commands || typeof capabilities.commands !== "object") return [];
+  return Object.entries(capabilities.commands)
+    .filter(([, detail]) => detail === true || detail?.available === true)
+    .map(([command]) => command);
 }
 
 function getSelectedStudioSession(studio) {
@@ -87,23 +111,37 @@ export function resolveStudioControlAccess({
   // the only Studio transport. Keep that path fully compatible.
   const selectedType = getStudioConnectionType({ connectionType });
   if (selectedType === STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE) {
+    const supportedCapabilities = getSupportedStudioCapabilities(capabilities);
+    const supportedCommands = getSupportedStudioCommands(capabilities);
+    const canRead = supportedCapabilities.some((capability) => MCP_READ_CAPABILITIES.has(capability))
+      || supportedCommands.some((command) => READ_COMMANDS.has(command));
+    const canMutate = supportedCapabilities.some((capability) => MCP_MUTATION_CAPABILITIES.has(capability))
+      || supportedCommands.some((command) => MUTATION_COMMANDS.has(command));
+    const hasEvidence = supportedCapabilities.length > 0 || supportedCommands.length > 0;
     return {
       connectionType: selectedType,
-      supportedCapabilities: [],
-      canUseAgent: true,
-      canRead: true,
-      canMutate: true,
-      canAutoPush: true,
-      workflowMode: "plugin_live",
+      supportedCapabilities,
+      supportedCommands,
+      canUseAgent: hasEvidence,
+      canRead,
+      canMutate,
+      canAutoPush: supportedCommands.includes("apply_artifact"),
+      workflowMode: hasEvidence ? "plugin_live" : "export_only",
       statusLabel: "Studio · Plugin",
-      statusTitle: "Roblox Studio is connected through the NexusRBX plugin",
-      capabilityLabel: null,
+      statusTitle: hasEvidence
+        ? "Roblox Studio is connected through the NexusRBX plugin with verified advertised commands"
+        : "The plugin is connected, but it has not advertised executable commands for the selected target",
+      capabilityLabel: hasEvidence ? "Plugin tools verified" : "Plugin has no verified tools",
     };
   }
 
   const supportedCapabilities = getSupportedStudioCapabilities(capabilities);
-  const canRead = supportedCapabilities.some((capability) => MCP_READ_CAPABILITIES.has(capability));
-  const canMutate = supportedCapabilities.some((capability) => MCP_MUTATION_CAPABILITIES.has(capability));
+  const supportedCommands = getSupportedStudioCommands(capabilities);
+  const canRead = supportedCapabilities.some((capability) => MCP_READ_CAPABILITIES.has(capability))
+    || supportedCommands.some((command) => READ_COMMANDS.has(command));
+  const canMutate = supportedCapabilities.some((capability) => MCP_MUTATION_CAPABILITIES.has(capability))
+    || supportedCommands.some((command) => MUTATION_COMMANDS.has(command));
+  const hasEvidence = supportedCapabilities.length > 0 || supportedCommands.length > 0;
   let capabilityLabel = "MCP · Limited";
   if (supportedCapabilities.length === 0) capabilityLabel = "MCP · No tools";
   else if (canRead && canMutate) capabilityLabel = "MCP · Read + edit";
@@ -113,7 +151,8 @@ export function resolveStudioControlAccess({
   return {
     connectionType: selectedType,
     supportedCapabilities,
-    canUseAgent: supportedCapabilities.length > 0,
+    supportedCommands,
+    canUseAgent: hasEvidence,
     canRead,
     canMutate,
     // Managed artifact apply is a plugin protocol operation. A generic MCP
@@ -127,8 +166,29 @@ export function resolveStudioControlAccess({
 }
 
 export function getActiveStudioCapabilities(studio) {
-  if (!studio?.connected || studio.connectionType !== STUDIO_CONNECTION_TYPES.MCP_LOCAL) return null;
-  return getSelectedStudioSession(studio)?.capabilities ?? null;
+  if (!studio?.connected) return null;
+  const registry = studio?.placePreference?.capabilityRegistry;
+  if (registry && typeof registry === "object") {
+    const supported = new Set();
+    (Array.isArray(registry.transports) ? registry.transports : []).forEach((transport) => {
+      Object.entries(transport?.capabilities || {}).forEach(([capability, available]) => {
+        if (available === true) supported.add(capability);
+      });
+    });
+    return {
+      supported: [...supported],
+      commands: registry.commands || {},
+      capabilitySnapshotId: registry.capabilitySnapshotId || null,
+    };
+  }
+  const selectedSession = getSelectedStudioSession(studio);
+  if (!selectedSession) return null;
+  return {
+    supported: getSupportedStudioCapabilities(selectedSession.capabilities),
+    commands: Array.isArray(selectedSession.supportedCommands)
+      ? selectedSession.supportedCommands
+      : [],
+  };
 }
 
 export function selectedStudioSupportsCommand(studio, commandType) {

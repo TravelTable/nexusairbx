@@ -524,7 +524,14 @@ export function PlanWorkspaceView({ controller, onUseTemplate, onViewProgress })
             <summary className="flex min-h-[44px] cursor-pointer list-none items-center gap-2 px-3 text-xs font-semibold text-gray-300 focus-ring">Advanced context <ChevronDown className="ml-auto h-3.5 w-3.5 text-gray-500" /></summary>
             <div className="space-y-3 border-t border-white/[0.06] p-3 text-xs text-gray-400">
               <div><div className="mb-1 font-semibold text-gray-300">Target</div><p>{controller.plan.targeting?.projectId || "Uses the selected workspace project"}</p><p>{controller.plan.requiresStudio ? "Studio connection required" : "Studio optional"}</p></div>
-              <div><div className="mb-1 font-semibold text-gray-300">Capabilities</div>{capabilities.length ? <ul className="space-y-1">{capabilities.map((capability) => <li key={capability.id} className={capability.available ? "text-gray-400" : "text-red-200"}>{capability.available ? "Available" : "Unavailable"}: {capability.label}</li>)}</ul> : <p>Resolved during readiness checking.</p>}</div>
+              <div><div className="mb-1 font-semibold text-gray-300">Capabilities</div>{capabilities.length ? <ul className="space-y-1">{capabilities.map((capability) => {
+                const status = capability.available === true
+                  ? "Available"
+                  : capability.available === false
+                    ? "Unavailable"
+                    : "Pending readiness";
+                return <li key={capability.id} className={capability.available === false ? "text-red-200" : "text-gray-400"}>{status}: {capability.label}</li>;
+              })}</ul> : <p>Resolved during readiness checking.</p>}</div>
             </div>
           </details>
           <PlanHistory controller={controller} />

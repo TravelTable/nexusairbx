@@ -1,5 +1,10 @@
 /* global globalThis */
 
+import {
+  isServerConfirmedUserCancellation,
+  normalizeAuthoritativeRunStatus,
+} from "./runCancellation";
+
 export const CHAT_OPERATION_STATUS = Object.freeze({
   PREPARING: "Preparing",
   RUNNING: "Running",
@@ -18,7 +23,17 @@ function createOperationId() {
 }
 
 function isAbortError(error) {
-  return error?.name === "AbortError" || error?.code === "ABORT_ERR";
+  const code = String(error?.code || "").trim().toLowerCase();
+  const message = String(error?.message || error || "").trim().toLowerCase();
+  return error?.name === "AbortError"
+    || isServerConfirmedUserCancellation(error)
+    || code === "abort_err"
+    || code === "user_cancelled"
+    || code === "user_canceled"
+    || message === "cancelled by user"
+    || message === "canceled by user"
+    || message === "generation canceled."
+    || message === "generation cancelled.";
 }
 
 function publicOperation(operation) {
@@ -69,6 +84,8 @@ function createFailedRetry(operation, error) {
     error: String(error?.message || error || "Unable to start the request"),
     retryOf: operation.id,
     cancelStarted: false,
+    cancelRequested: false,
+    cancelDispatches: new Map(),
     settled: false,
     promise: null,
     resolve: null,
@@ -86,6 +103,7 @@ export class ChatOperationCoordinator {
     this.slots = new Map();
     this.listeners = new Set();
     this.consumedDrafts = new Map();
+    this.pendingCancellations = new Map();
   }
 
   subscribe(listener) {
@@ -141,6 +159,8 @@ export class ChatOperationCoordinator {
       retainOnFailure: spec.retainOnFailure === true,
       consumedKey,
       cancelStarted: false,
+      cancelRequested: false,
+      cancelDispatches: new Map(),
       settled: false,
       promise: null,
       resolve: null,
@@ -191,7 +211,7 @@ export class ChatOperationCoordinator {
         chatId: operation.chatId,
         signal: operation.abortController.signal,
         isOwner: () => this.getSlot(operation.chatId).active === operation,
-        setRunId: (runId) => this.update(operation.chatId, operation.id, { runId }),
+        setRunId: (runId) => this.attachRunId(operation, runId),
         update: (patch) => this.update(operation.chatId, operation.id, patch),
         rekey: (nextChatId) => this.rekey(operation.chatId, nextChatId),
       }))
@@ -255,6 +275,63 @@ export class ChatOperationCoordinator {
     return true;
   }
 
+  pendingCancellationKey(chatId, operationId) {
+    return `${String(chatId || "draft")}:${String(operationId || "")}`;
+  }
+
+  rememberPendingCancellation(operation) {
+    const key = this.pendingCancellationKey(operation?.chatId, operation?.id);
+    this.pendingCancellations.set(key, operation);
+    while (this.pendingCancellations.size > 200) {
+      this.pendingCancellations.delete(this.pendingCancellations.keys().next().value);
+    }
+    return key;
+  }
+
+  dispatchCancellation(operation, runId = operation?.runId || null) {
+    if (!operation) return Promise.resolve(false);
+    const normalizedRunId = String(runId || "").trim() || null;
+    const dispatchKey = normalizedRunId || "__pending_run__";
+    operation.cancelDispatches ??= new Map();
+    if (operation.cancelDispatches.has(dispatchKey)) {
+      return operation.cancelDispatches.get(dispatchKey);
+    }
+    const snapshot = { ...publicOperation(operation), runId: normalizedRunId };
+    const dispatch = Promise.resolve()
+      .then(() => operation.onCancel?.(snapshot))
+      .then(() => true)
+      .catch((error) => {
+        operation.cancelDispatches.delete(dispatchKey);
+        throw error;
+      });
+    operation.cancelDispatches.set(dispatchKey, dispatch);
+    return dispatch;
+  }
+
+  attachRunId(operation, runId) {
+    const normalizedRunId = String(runId || "").trim();
+    if (!operation || !normalizedRunId) return false;
+    operation.runId = normalizedRunId;
+    const slot = this.getSlot(operation.chatId);
+    const isTracked = slot.active === operation || slot.queue.includes(operation);
+    if (isTracked) this.emit();
+    if (!operation.cancelRequested) return true;
+
+    const pendingKey = this.rememberPendingCancellation(operation);
+    void this.dispatchCancellation(operation, normalizedRunId)
+      .then(() => {
+        if (this.pendingCancellations.get(pendingKey) === operation) {
+          this.pendingCancellations.delete(pendingKey);
+        }
+      })
+      .catch((error) => {
+        // Keep the intent available for an authoritative projection retry.
+        operation.error = String(error?.message || error || "Run cancellation failed");
+        this.emit();
+      });
+    return true;
+  }
+
   async stop(chatId, options = {}) {
     const slot = this.getSlot(chatId);
     if (slot.stopPromise) return slot.stopPromise;
@@ -267,22 +344,25 @@ export class ChatOperationCoordinator {
     }
 
     operation.status = CHAT_OPERATION_STATUS.STOPPING;
+    operation.cancelRequested = true;
     slot.lastStatus = CHAT_OPERATION_STATUS.STOPPING;
     operation.abortController.abort();
     this.emit();
 
     slot.stopPromise = Promise.resolve()
       .then(async () => {
-        if (!operation.cancelStarted) {
-          operation.cancelStarted = true;
-          await operation.onCancel?.(publicOperation(operation));
-        }
+        if (operation.cancelStarted) return;
+        operation.cancelStarted = true;
+        await this.dispatchCancellation(operation);
       })
       .finally(() => {
         // Fence first. Any late stream chunks or cleanup callbacks now fail
         // the ownership check even if the underlying transport lingers.
         if (slot.active === operation) slot.active = null;
         operation.status = CHAT_OPERATION_STATUS.STOPPED;
+        if (!operation.runId) {
+          this.rememberPendingCancellation(operation);
+        }
         this.releaseConsumed(operation);
         slot.lastStatus = CHAT_OPERATION_STATUS.STOPPED;
         slot.stopPromise = null;
@@ -342,6 +422,12 @@ export class ChatOperationCoordinator {
     if (previousKey === nextKey) return nextKey;
     const previous = this.getSlot(previousKey);
     const next = this.getSlot(nextKey);
+    [...this.pendingCancellations.entries()].forEach(([key, operation]) => {
+      if (operation.chatId !== previousKey) return;
+      this.pendingCancellations.delete(key);
+      operation.chatId = nextKey;
+      this.rememberPendingCancellation(operation);
+    });
     const nextIsEmpty = !next.active
       && next.queue.length === 0
       && !next.stopPromise
@@ -368,12 +454,56 @@ export class ChatOperationCoordinator {
     return nextKey;
   }
 
+  rememberCancellation(spec = {}) {
+    const chatId = String(spec.chatId || "draft");
+    const operationId = String(spec.id || "").trim();
+    if (!operationId) return null;
+    const key = this.pendingCancellationKey(chatId, operationId);
+    const existing = this.pendingCancellations.get(key);
+    if (existing) {
+      if (spec.onCancel) existing.onCancel = spec.onCancel;
+      return publicOperation(existing);
+    }
+    const operation = {
+      id: operationId,
+      chatId,
+      type: String(spec.type || "submit"),
+      status: CHAT_OPERATION_STATUS.STOPPED,
+      prompt: String(spec.prompt || ""),
+      attachments: [],
+      runId: null,
+      abortController: new AbortController(),
+      checkpointMetadata: null,
+      createdAt: spec.createdAt || Date.now(),
+      onCancel: spec.onCancel,
+      hydrated: true,
+      cancelStarted: true,
+      cancelRequested: true,
+      cancelDispatches: new Map([["__pending_run__", Promise.resolve(true)]]),
+      settled: true,
+      promise: Promise.resolve(),
+    };
+    this.rememberPendingCancellation(operation);
+    const slot = this.getSlot(chatId);
+    if (!slot.active) slot.lastStatus = CHAT_OPERATION_STATUS.STOPPED;
+    this.emit();
+    return publicOperation(operation);
+  }
+
   hydrate(spec = {}) {
     const chatId = String(spec.chatId || "draft");
+    const operationId = String(spec.id || `hydrated:${spec.runId || createOperationId()}`);
+    const pendingCancellation = this.pendingCancellations.get(
+      this.pendingCancellationKey(chatId, operationId),
+    );
+    if (pendingCancellation && spec.runId) {
+      this.attachRunId(pendingCancellation, spec.runId);
+      return publicOperation(pendingCancellation);
+    }
     const slot = this.getSlot(chatId);
     if (slot.active) return publicOperation(slot.active);
     const operation = {
-      id: String(spec.id || `hydrated:${spec.runId || createOperationId()}`),
+      id: operationId,
       chatId,
       type: String(spec.type || "submit"),
       status: spec.status || CHAT_OPERATION_STATUS.RUNNING,
@@ -386,6 +516,8 @@ export class ChatOperationCoordinator {
       onCancel: spec.onCancel,
       hydrated: true,
       cancelStarted: false,
+      cancelRequested: false,
+      cancelDispatches: new Map(),
       settled: false,
       promise: Promise.resolve(),
     };
@@ -395,20 +527,15 @@ export class ChatOperationCoordinator {
     return publicOperation(operation);
   }
 
-  reconcile(chatId, { runId, status } = {}) {
+  reconcile(chatId, { runId, status, ...evidence } = {}) {
     const slot = this.getSlot(chatId);
     const operation = slot.active;
     if (!operation?.hydrated || (runId && operation.runId !== runId)) return false;
 
-    const normalized = String(status || "").toLowerCase();
-    const succeeded = normalized === "succeeded" || normalized === "completed";
-    const cancelled = normalized === "cancelled" || normalized === "canceled";
-    const failed = [
-      "failed",
-      "blocked",
-      "iteration_limit",
-      "timed_out",
-    ].includes(normalized);
+    const normalized = normalizeAuthoritativeRunStatus(status, evidence);
+    const succeeded = normalized === "completed";
+    const cancelled = normalized === "canceled";
+    const failed = normalized === "failed";
     if (!succeeded && !cancelled && !failed) return false;
 
     slot.active = null;

@@ -1,5 +1,6 @@
 import { BACKEND_URL } from "../config";
 import { parseApiErrorPayload } from "./billingErrors";
+import { isServerConfirmedUserCancellation } from "./runCancellation";
 
 export const RECOVERY_WALL_TIMEOUT_MS = Number(
   process.env.REACT_APP_RECOVERY_WALL_TIMEOUT_MS || 15 * 60 * 1000
@@ -24,6 +25,7 @@ const STAGE_LABELS = {
 const TERMINAL_FAILURE_STATUSES = new Set([
   "failed",
   "cancelled",
+  "canceled",
   "blocked",
   "iteration_limit",
   "timed_out",
@@ -33,8 +35,21 @@ export function getTerminalGenerateFailure(payload = {}) {
   if (payload?.done !== true) return null;
   const status = String(payload?.status || payload?.jobStatus || "").toLowerCase();
   if (!TERMINAL_FAILURE_STATUSES.has(status)) return null;
-  const err = new Error(payload?.message || payload?.error || "Generation failed");
-  err.code = payload?.code || "GENERATION_FAILED";
+  const userCancelled = isServerConfirmedUserCancellation(payload)
+    || status === "cancelled"
+    || status === "canceled";
+  const errorMessage = typeof payload?.error === "string"
+    ? payload.error
+    : payload?.error?.message;
+  const err = new Error(
+    userCancelled
+      ? "Generation canceled."
+      : payload?.message || errorMessage || "Generation failed"
+  );
+  err.code = userCancelled
+    ? "user_cancelled"
+    : payload?.failureCode || payload?.errorCode || payload?.code || payload?.error?.code || "GENERATION_FAILED";
+  err.serverPayload = payload;
   return err;
 }
 

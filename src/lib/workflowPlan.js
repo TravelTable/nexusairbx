@@ -138,13 +138,15 @@ function normalizeCapabilities(value) {
   return asArray(value)
     .map((capability, index) => {
       if (typeof capability === "string") {
-        return { id: slug(capability, `capability-${index + 1}`), label: capability, available: true };
+        return { id: slug(capability, `capability-${index + 1}`), label: capability, available: null };
       }
+      const explicitlyAvailable = capability?.available === true || capability?.supported === true;
+      const explicitlyUnavailable = capability?.available === false || capability?.supported === false;
       return {
         ...capability,
         id: String(capability?.id || capability?.capabilityId || capability?.key || `capability-${index + 1}`),
         label: String(capability?.label || capability?.name || capability?.capabilityId || capability?.id || "Capability"),
-        available: capability?.available !== false && capability?.supported !== false,
+        available: explicitlyAvailable ? true : explicitlyUnavailable ? false : null,
       };
     })
     .filter((capability) => capability.label);

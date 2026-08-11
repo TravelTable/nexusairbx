@@ -1,6 +1,7 @@
 -- Immutable Studio target identity and transport-freshness tracking.
--- Connector identity is stable across sessions; target generation advances
--- whenever this Studio process observes a different place identity.
+-- Connector identity is stable across sessions. Target generation advances
+-- for a different place identity and resumes the backend's authenticated
+-- high-water mark after a plugin/runtime restart.
 
 local studioFreshness, serverTarget = {
 	heartbeat = { ok = false },
@@ -44,17 +45,27 @@ end
 function TargetPrivate.targetSummary(attestation)
 	local expectedPlaceId = TargetPrivate.stringValue(serverTarget.expectedPlaceId or serverTarget.placeId)
 	local expectedUniverseId = TargetPrivate.stringValue(serverTarget.expectedUniverseId or serverTarget.universeId)
+	local expectedPlaceSignature = TargetPrivate.stringValue(serverTarget.expectedPlaceSignature or serverTarget.placeSignature)
+	local expectedGeneration = tonumber(serverTarget.targetGeneration)
 	local mismatch = (expectedPlaceId and expectedPlaceId ~= attestation.placeId)
 		or (expectedUniverseId and expectedUniverseId ~= attestation.universeId)
+		or (expectedPlaceSignature and expectedPlaceSignature ~= attestation.placeSignature)
+		or (expectedGeneration and expectedGeneration ~= tonumber(attestation.targetGeneration))
+	local resumeError = TargetPrivate.stringValue(serverTarget.generationResumeError)
+	local targetId = TargetPrivate.stringValue(serverTarget.targetId)
+	local targetBound = expectedPlaceId ~= nil and expectedUniverseId ~= nil
+		and expectedPlaceSignature ~= nil and targetId ~= nil
 	return {
-		targetId = TargetPrivate.stringValue(serverTarget.targetId),
+		targetId = targetId,
 		placeName = attestation.placeName,
 		placeId = attestation.placeId,
 		universeId = attestation.universeId,
 		targetGeneration = attestation.targetGeneration,
-		targetBound = expectedPlaceId ~= nil or expectedUniverseId ~= nil or serverTarget.targetId ~= nil,
-		targetReady = mismatch ~= true,
-		detail = mismatch and "Website target does not match this open place" or nil,
+		targetBound = targetBound,
+		targetReady = targetBound and mismatch ~= true and resumeError == nil,
+		detail = resumeError and ("Studio target resume was rejected: " .. resumeError)
+			or (not targetBound and "Studio target handshake is incomplete"
+				or (mismatch and "Website target does not match this open place" or nil)),
 	}
 end
 
@@ -104,6 +115,55 @@ function recordStudioFreshness(channel, ok, detail, latencyMs)
 	publishStudioConnectionDiagnostics()
 end
 
+function TargetPrivate.resumeServerGeneration(target)
+	local authoritativeGeneration = tonumber(target.targetGeneration)
+	if not authoritativeGeneration or authoritativeGeneration < 1
+		or authoritativeGeneration > 9007199254740991
+		or authoritativeGeneration ~= math.floor(authoritativeGeneration) then
+		return nil, "invalid_target_generation"
+	end
+
+	-- The server generation is authoritative only for this exact attested
+	-- target. A delayed response from another session/place must never advance
+	-- the local fence and strand valid commands behind an unrelated generation.
+	local actual = currentStudioTargetAttestation(false)
+	local responseSessionId = TargetPrivate.stringValue(target.sessionId)
+	local responseConnectorId = TargetPrivate.stringValue(target.connectorId)
+	local responseTargetId = TargetPrivate.stringValue(target.targetId)
+	local responsePlaceId = TargetPrivate.stringValue(target.expectedPlaceId or target.placeId)
+	local responseUniverseId = TargetPrivate.stringValue(target.expectedUniverseId or target.universeId)
+	local responsePlaceSignature = TargetPrivate.stringValue(target.expectedPlaceSignature or target.placeSignature)
+	if not responseSessionId or responseSessionId ~= actual.sessionId then
+		return nil, "session_mismatch"
+	end
+	if not responseConnectorId or responseConnectorId ~= actual.connectorId then
+		return nil, "connector_mismatch"
+	end
+	if not responseTargetId then
+		return nil, "target_id_missing"
+	end
+	if not responsePlaceId or responsePlaceId ~= actual.placeId then
+		return nil, "place_mismatch"
+	end
+	if not responseUniverseId or responseUniverseId ~= actual.universeId then
+		return nil, "universe_mismatch"
+	end
+	if not responsePlaceSignature or responsePlaceSignature ~= actual.placeSignature then
+		return nil, "signature_mismatch"
+	end
+
+	local localGeneration = tonumber(actual.targetGeneration)
+	if not localGeneration or localGeneration < 0 or localGeneration > 9007199254740991
+		or localGeneration ~= math.floor(localGeneration) then
+		localGeneration = 0
+	end
+	local resumedGeneration = math.max(localGeneration, authoritativeGeneration)
+	if resumedGeneration > localGeneration then
+		plugin:SetSetting("nexusrbxStudioTargetGeneration", resumedGeneration)
+	end
+	return resumedGeneration, nil
+end
+
 function updateStudioServerTarget(response)
 	if type(response) ~= "table" then return end
 	local target = type(response.studioTarget) == "table" and response.studioTarget
@@ -113,10 +173,16 @@ function updateStudioServerTarget(response)
 			or response.expectedUniverseId ~= nil) and response)
 		or nil
 	if not target then return end
+	local resumedGeneration, generationResumeError = TargetPrivate.resumeServerGeneration(target)
 	serverTarget = {
 		targetId = target.targetId,
+		sessionId = target.sessionId,
+		connectorId = target.connectorId,
 		expectedPlaceId = target.expectedPlaceId or target.placeId,
 		expectedUniverseId = target.expectedUniverseId or target.universeId,
+		expectedPlaceSignature = target.expectedPlaceSignature or target.placeSignature,
+		targetGeneration = resumedGeneration or target.targetGeneration,
+		generationResumeError = generationResumeError,
 	}
 	publishStudioConnectionDiagnostics()
 end

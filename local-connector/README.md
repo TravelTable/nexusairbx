@@ -46,7 +46,9 @@ Never place a connector token in an environment file, command line, issue, scree
 
 The connector initializes the official Model Context Protocol SDK over stdio and discovers the Studio server's tools at runtime. It follows every `tools/list` page, rejects duplicate or ambiguous definitions, and validates exact case-sensitive tool names and input schemas before advertising a NexusRBX command.
 
-Capabilities are rediscovered after an MCP reconnect and whenever the server sends `notifications/tools/list_changed`. The connector then re-registers the complete supported-command list with NexusRBX. A missing, renamed, or incompatible MCP tool fails closed as `MCP_TOOL_UNAVAILABLE`; it is never guessed from a similar name.
+Capabilities are rediscovered after an MCP reconnect and whenever the server sends `notifications/tools/list_changed`. The connector then re-registers the complete supported-command list with NexusRBX together with the attested `studioId`, `placeId`, `universeId`, `placeName`, and `placeSignature`. A window label alone is not target identity. Registration fails closed to an empty command set until every identity field is available from the selected Studio target.
+
+A missing, renamed, or incompatible MCP tool fails closed as `MCP_TOOL_UNAVAILABLE`; it is never guessed from a similar name.
 
 ### Conditional command mapping
 
@@ -95,6 +97,7 @@ Use the NexusRBX Studio plugin for an unavailable command. The connector never s
 - Read and backend requests use bounded timeouts, retries, response sizes, batch sizes, source sizes, and log output.
 - Pairing-code claim is never retried automatically. Transient backend reads can retry within a small bounded policy; authorization failures are terminal.
 - MCP disconnects immediately mark Studio unavailable and trigger bounded exponential reconnection; failed reconnect attempts publish an empty capability set. Commands cannot execute against a stale MCP client.
+- Heartbeats re-attest the full target identity. A closed window or a same-window place, universe, or signature change publishes an explicit cleared or replacement identity and triggers target-bound capability re-registration.
 - Command results and outbound JSON bodies are byte-bounded below the backend's 2 MiB request limit; oversized multi-script reads fail with a structured error.
 - `SIGINT` and `SIGTERM` stop polling, publish a final unavailable heartbeat when possible, close the MCP transport, and erase the in-memory connector token.
 - The connector executes only commands already queued by the NexusRBX approval workflow. It does not grant approval or bypass destructive-action gates.

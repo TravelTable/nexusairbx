@@ -14,7 +14,11 @@ import {
   startPlanExecution,
 } from "../lib/workflowApi";
 import { getProjectBinding } from "../lib/projectBindingsApi";
-import { classifyUserIntent, isImplementationIntent } from "../lib/intentClassifier";
+import {
+  classifyExecutionIntent,
+  classifyUserIntent,
+  isImplementationIntent,
+} from "../lib/intentClassifier";
 import { isExplicitPlanApproval } from "../lib/planApproval";
 import {
   createAgentRunV2,
@@ -63,6 +67,7 @@ jest.mock("../lib/planApproval", () => ({
 }));
 
 jest.mock("../lib/intentClassifier", () => ({
+  classifyExecutionIntent: jest.fn(() => "artifact_only"),
   classifyUserIntent: jest.fn(() => "IMPLEMENTATION"),
   isImplementationIntent: jest.fn(() => true),
 }));
@@ -129,6 +134,7 @@ describe("useUnifiedChat", () => {
     getStudioEnabledPreference.mockReturnValue(false);
     getStudioApplyMode.mockReturnValue("manual_review");
     resolveGameSpecForPrompt.mockImplementation((value) => value || null);
+    classifyExecutionIntent.mockReturnValue("artifact_only");
     classifyUserIntent.mockReturnValue("IMPLEMENTATION");
     isImplementationIntent.mockReturnValue(true);
     isExplicitPlanApproval.mockReturnValue(false);
@@ -527,6 +533,7 @@ describe("useUnifiedChat", () => {
     getStudioEnabledPreference.mockReturnValue(true);
     classifyUserIntent.mockReturnValue("GENERAL_QUESTION");
     isImplementationIntent.mockReturnValue(false);
+    classifyExecutionIntent.mockReturnValue("inspect");
     getStudioStatus.mockResolvedValue({
       sessions: [{
         id: "mcp_agent_exact",
@@ -571,6 +578,7 @@ describe("useUnifiedChat", () => {
       mode: "agent",
       prompt: "What files can you see in Studio?",
       studioEnabled: true,
+      executionIntent: "inspect",
     }));
     const canonicalRunInput = createAgentRunV2.mock.calls[0][0];
     expect(canonicalRunInput).not.toHaveProperty("studioSessionId");
@@ -878,7 +886,39 @@ describe("useUnifiedChat", () => {
     );
   });
 
+  test("never replaces an explicit live Studio request with legacy artifact generation", async () => {
+    classifyExecutionIntent.mockReturnValue("inspect");
+    getRuntimeCapabilitiesV2.mockResolvedValue({
+      executionOwner: "legacy_agent_adapter",
+      canonicalAgentRuns: { enabled: false, requiresProject: true },
+      legacyGeneration: { enabled: true },
+    });
+    useAiChat.mockReturnValue({
+      activeMode: "agent",
+      assertCanWrite: jest.fn(() => Promise.resolve()),
+      currentChatId: "chat-1",
+      generatingChatIds: [],
+      handleSubmit: chatHandleSubmit,
+      messages: [],
+      setPendingForChat: jest.fn(),
+    });
+    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
+
+    await expect(act(async () => {
+      await result.current.handleSubmit("Inspect the current Studio project", [], null, {
+        clientMessageId: "request-live-inspect",
+        projectId: "project_1",
+        propagateErrors: true,
+      });
+    })).rejects.toMatchObject({ code: "STUDIO_LIVE_RUNTIME_REQUIRED" });
+
+    expect(chatHandleSubmit).not.toHaveBeenCalled();
+    expect(createAgentRunV2).not.toHaveBeenCalled();
+  });
+
   test("sends the complete server-owned execution input for an authoritative Studio run", async () => {
+    classifyExecutionIntent.mockReturnValue("live_fix");
     getStudioEnabledPreference.mockReturnValue(true);
     getStudioApplyMode.mockReturnValue("manual_review");
     const baseArtifact = { artifactId: "artifact-1", files: [{ path: "src/Main.lua" }] };
@@ -908,12 +948,27 @@ describe("useUnifiedChat", () => {
       selectedExampleIds: ["example-1"],
     };
     const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const studioTarget = {
+      targetId: "studio_target_live",
+      placeId: "116714509720053",
+      universeId: "10669840815",
+      pluginSessionId: "plugin-live",
+      mcpSessionId: "mcp-live",
+      capabilityRegistry: {
+        schemaVersion: 1,
+        targetId: "studio_target_live",
+        commands: { read_script: { available: true } },
+        transports: [],
+      },
+    };
     const { result } = renderHook(() => useUnifiedChat(user, settings, jest.fn(), jest.fn()));
 
     await act(async () => {
       await result.current.handleSubmit("Fix the round manager", [], baseArtifact, {
         clientMessageId: "request-full-input",
         projectId: "project_1",
+        studioConnected: true,
+        studioTargetPreference: studioTarget,
         selectedExampleIds: ["example-1"],
         approvedPlan: {
           planId: "plan-1",
@@ -932,7 +987,14 @@ describe("useUnifiedChat", () => {
       mode: "debug",
       projectId: "project_1",
       generatorMode: "agent_build",
+      executionIntent: "live_fix",
       studioEnabled: true,
+      studioTarget,
+      targeting: expect.objectContaining({
+        projectId: "project_1",
+        studioConnected: true,
+        studioTarget,
+      }),
       applyMode: "manual_review",
       routingMode: "hybrid",
       autoPushToStudio: true,
@@ -951,6 +1013,8 @@ describe("useUnifiedChat", () => {
     const canonicalRunInput = createAgentRunV2.mock.calls[0][0];
     expect(canonicalRunInput).not.toHaveProperty("studioSessionId");
     expect(canonicalRunInput).not.toHaveProperty("studioConnectionType");
+    expect(canonicalRunInput).not.toHaveProperty("capabilitySnapshotId");
+    expect(canonicalRunInput).not.toHaveProperty("capabilityRegistry");
   });
 
   test("passes a queued authoritative run through without launching a second run", async () => {
@@ -1094,5 +1158,61 @@ describe("useUnifiedChat", () => {
       prompt: "Build a better lobby",
       conversation: [],
     }));
+  });
+
+  test("publishes a run id accepted during an early Stop before throwing the local abort", async () => {
+    let resolveRun;
+    createAgentRunV2.mockReturnValueOnce(new Promise((resolve) => {
+      resolveRun = resolve;
+    }));
+    useAiChat.mockReturnValue({
+      activeMode: "agent",
+      assertCanWrite: jest.fn(() => Promise.resolve()),
+      currentChatId: "chat-early-stop",
+      currentChatMeta: { agentId: "agent-1" },
+      generatingChatIds: [],
+      generationStage: "",
+      handleSubmit: chatHandleSubmit,
+      isGenerating: false,
+      messages: [],
+      openChatById: jest.fn(),
+      pendingMessage: null,
+      setPendingForChat: jest.fn(),
+    });
+    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const controller = new AbortController();
+    const onRunId = jest.fn();
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
+
+    let submission;
+    act(() => {
+      submission = result.current.handleSubmit("Inspect the Studio project", [], null, {
+        mode: "agent",
+        projectId: "project-1",
+        operationId: "request-early-stop",
+        clientMessageId: "request-early-stop",
+        operationSignal: controller.signal,
+        onRunId,
+      });
+    });
+    while (!createAgentRunV2.mock.calls.length) {
+      await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+    }
+
+    controller.abort();
+    resolveRun({
+      run: {
+        runId: "run-created-during-stop",
+        agentId: "agent-1",
+        jobId: "job-created-during-stop",
+        status: "running",
+      },
+      authoritativeExecution: true,
+      executionDisposition: "launched",
+    });
+
+    await expect(submission).rejects.toMatchObject({ name: "AbortError" });
+    expect(onRunId).toHaveBeenCalledWith("run-created-during-stop");
+    expect(chatHandleSubmit).not.toHaveBeenCalled();
   });
 });

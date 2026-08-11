@@ -79,6 +79,7 @@ class FakeMcp implements McpClientLike {
   mutationError: Error | null = null;
   applyMutation = true;
   malformedRead = false;
+  numberedRead = false;
   consoleText = "log";
   studioPlaying = false;
   applyPlayTransition = true;
@@ -99,8 +100,16 @@ class FakeMcp implements McpClientLike {
     if (name === "script_read") {
       if (this.malformedRead) return { content: [] };
       const path = String(args.path);
-      const source = this.sources.get(path);
+      const source = this.sources.get(path) ?? this.sources.get(path.replace(/^game\./, "").replace(/\./g, "/"));
       if (source === undefined) return { isError: true, content: [{ type: "text", text: "script not found" }] };
+      if (this.numberedRead) {
+        return {
+          content: [{
+            type: "text",
+            text: source.split("\n").map((line, index) => `${String(index + 1).padStart(6, " ")}→${line}`).join("\n"),
+          }],
+        };
+      }
       return { structuredContent: { source } };
     }
     if (name === "multi_edit") {
@@ -408,6 +417,24 @@ test("multi-script results fail locally when the acknowledgement would exceed th
   assert.equal(result.success, false);
   assert.equal(errorCode(result), "COMMAND_RESULT_TOO_LARGE");
   assert.equal(Buffer.byteLength(JSON.stringify(result), "utf8") < 10_000, true);
+});
+
+test("decodes the numbered source presentation returned by Roblox Studio MCP", async () => {
+  const mcp = new FakeMcp();
+  const source = "local value = 1\nprint(\"probe — ready\", value)\n";
+  mcp.sources.set(READ_PATH, source);
+  mcp.numberedRead = true;
+  const executor = new CommandExecutor(mcp, new ToolCatalog(tools));
+
+  const read = await executor.execute(command("read_script", { path: READ_PATH }));
+  assert.equal(read.success, true);
+  assert.equal(read.source, source);
+
+  const createdPath = "ServerScriptService/NumberedReadback";
+  const created = await executor.execute(command("create_script", { path: createdPath, className: "Script", source }));
+  assert.equal(created.success, true);
+  assert.equal(created.verified, true);
+  assert.equal(mcp.sources.get(createdPath), source);
 });
 
 test("snapshot-safe batches persist an undo receipt and reject overlapping paths before Studio", async () => {

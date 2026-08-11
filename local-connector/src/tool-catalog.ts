@@ -143,7 +143,7 @@ export class ToolCatalog {
     return {
       toolName: this.readScript.toolName,
       args: {
-        [this.readScript.pathKey]: path,
+        [this.readScript.pathKey]: toMcpDotPath(path),
         ...(this.readScript.datamodelKey === undefined ? {} : { [this.readScript.datamodelKey]: "Edit" }),
       },
     };
@@ -154,7 +154,7 @@ export class ToolCatalog {
     return {
       toolName: this.inspectInstance.toolName,
       args: {
-        [this.inspectInstance.pathKey]: path,
+        [this.inspectInstance.pathKey]: toMcpDotPath(path),
         ...(this.inspectInstance.datamodelKey === undefined
           ? {}
           : { [this.inspectInstance.datamodelKey]: "Edit" }),
@@ -189,7 +189,7 @@ export class ToolCatalog {
         [profile.assetIdKey]: input.assetId,
         ...(profile.assetNameKey && input.assetName ? { [profile.assetNameKey]: input.assetName } : {}),
         ...(profile.assetTypeKey && input.assetType ? { [profile.assetTypeKey]: input.assetType } : {}),
-        ...(profile.parentPathKey && input.parentPath ? { [profile.parentPathKey]: input.parentPath } : {}),
+        ...(profile.parentPathKey && input.parentPath ? { [profile.parentPathKey]: toMcpDotPath(input.parentPath) } : {}),
       },
     };
   }
@@ -197,7 +197,7 @@ export class ToolCatalog {
   makeMutationArgs(path: string, currentSource: string | null, targetSource: string): BasicToolAdapter | null {
     const profile = this.mutation;
     if (!profile) return null;
-    const base: JsonObject = { [profile.pathKey]: path, [profile.datamodelKey]: "Edit" };
+    const base: JsonObject = { [profile.pathKey]: toMcpDotPath(path), [profile.datamodelKey]: "Edit" };
     if (profile.encoding.kind === "source") {
       base[profile.encoding.sourceKey] = targetSource;
       return { toolName: profile.toolName, args: base };
@@ -222,6 +222,11 @@ export class ToolCatalog {
     ];
     return { toolName: profile.toolName, args: base };
   }
+}
+
+function toMcpDotPath(path: string): string {
+  const normalized = path.trim().replace(/\\/g, "/").replace(/^game[/.]/i, "").replace(/\//g, ".");
+  return `game.${normalized}`;
 }
 
 interface SearchProfile {

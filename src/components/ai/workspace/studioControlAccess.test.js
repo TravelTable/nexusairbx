@@ -28,6 +28,10 @@ describe("Studio agent control access", () => {
     expect(resolveStudioControlAccess({
       connected: true,
       connectionType: "plugin_bridge",
+      capabilities: {
+        supported: ["readProject", "writeScript"],
+        commands: ["get_project_manifest", "write_script", "apply_artifact"],
+      },
     })).toMatchObject({
       canUseAgent: true,
       canRead: true,
@@ -35,6 +39,20 @@ describe("Studio agent control access", () => {
       canAutoPush: true,
       workflowMode: "plugin_live",
       statusLabel: "Studio · Plugin",
+    });
+  });
+
+  test("does not claim full plugin support without advertised command evidence", () => {
+    expect(resolveStudioControlAccess({
+      connected: true,
+      connectionType: "plugin_bridge",
+      capabilities: null,
+    })).toMatchObject({
+      canUseAgent: false,
+      canRead: false,
+      canMutate: false,
+      canAutoPush: false,
+      workflowMode: "export_only",
     });
   });
 
@@ -96,7 +114,10 @@ describe("Studio agent control access", () => {
       sessions: [other, selected],
     };
 
-    expect(getActiveStudioCapabilities(studio)).toEqual({ readProject: true });
+    expect(getActiveStudioCapabilities(studio)).toEqual({
+      supported: ["readProject"],
+      commands: ["read_script"],
+    });
     expect(selectedStudioSupportsCommand(studio, "read_script")).toBe(true);
     expect(selectedStudioSupportsCommand(studio, "get_project_manifest")).toBe(false);
 

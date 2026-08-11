@@ -2,6 +2,7 @@ import React from "react";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 const mockUseTaskRuntime = jest.fn();
+const mockUseActiveAgents = jest.fn();
 const mockTaskProgressPanel = jest.fn();
 const mockAgentChatPanel = jest.fn();
 
@@ -11,7 +12,7 @@ jest.mock("../../hooks/useTaskRuntime", () => ({
 }));
 jest.mock("../../hooks/useActiveAgents", () => ({
   __esModule: true,
-  default: () => ({ agents: [], cancelRun: jest.fn() }),
+  default: (...args) => mockUseActiveAgents(...args),
 }));
 
 jest.mock("../../components/ai/workspace/TaskProgressPanel", () => ({
@@ -108,6 +109,11 @@ jest.mock("../../components/ai/workspace/AgentChatPanel", () => ({
         { type: "button", onClick: () => props.onApprovePlan({ planId: "plan_1" }) },
         "approve plan",
       ),
+      ReactModule.createElement(
+        "button",
+        { type: "button", onClick: props.onStop },
+        "stop generation",
+      ),
     );
   },
 }));
@@ -156,6 +162,8 @@ function makeController({
   studio = { connected: false },
   sidebarOpen = false,
   generatorMode = "agent_build",
+  unified = { isGenerating: false },
+  chatOverrides = {},
 } = {}) {
   return {
     billing: {},
@@ -193,9 +201,10 @@ function makeController({
         generatingChatIds: [],
         activeMode,
         updateChatMode: noop,
+        ...chatOverrides,
       },
       scriptManager: { versionHistory: [] },
-      unified: { isGenerating: false },
+      unified,
       workspace: {
         activeArtifact: null,
         activeFile: null,
@@ -218,6 +227,85 @@ function makeController({
 describe("AgentWorkspaceLayout task-runtime wiring", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseActiveAgents.mockReturnValue({ agents: [], cancelRun: jest.fn() });
+  });
+
+  test("cancels the authoritative run after locally aborting an uncoordinated flow", async () => {
+    const cancelRun = jest.fn().mockResolvedValue(undefined);
+    // Coordinator stop resolves without a boolean when it fenced a local
+    // operation. That must not suppress canonical run cancellation.
+    const stopChatOperation = jest.fn().mockResolvedValue(undefined);
+    const cancelCurrentFlow = jest.fn().mockReturnValue(true);
+    const reconcileCancelledRun = jest.fn().mockResolvedValue(true);
+    mockUseActiveAgents.mockReturnValue({
+      agents: [{
+        agentId: "agent_1",
+        chatId: "chat_1",
+        title: "Studio inspection",
+        status: "running",
+        currentRun: { runId: "run_live_1", status: "running" },
+        runs: [],
+      }],
+      cancelRun,
+    });
+    mockUseTaskRuntime.mockReturnValue({
+      taskId: "",
+      task: null,
+      events: [],
+      connectionState: "idle",
+      error: null,
+      busyAction: "",
+      selectTask: jest.fn(),
+    });
+
+    render(<AgentWorkspaceLayout controller={makeController({
+      handlers: { stopChatOperation },
+      unified: { isGenerating: true, cancelCurrentFlow },
+      chatOverrides: { reconcileCancelledRun },
+    })} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "stop generation" }));
+
+    await waitFor(() => expect(cancelRun).toHaveBeenCalledWith("run_live_1"));
+    await waitFor(() => expect(reconcileCancelledRun).toHaveBeenCalledWith(
+      "run_live_1",
+      { chatId: "chat_1" },
+    ));
+    expect(stopChatOperation).toHaveBeenCalledTimes(1);
+    expect(cancelCurrentFlow).toHaveBeenCalledTimes(1);
+  });
+
+  test("shows the authoritative active run instead of an empty activity state", async () => {
+    mockUseActiveAgents.mockReturnValue({
+      agents: [{
+        agentId: "agent_1",
+        chatId: "chat_1",
+        title: "Studio inspection",
+        status: "running",
+        currentRun: { runId: "run_live_12345678", status: "waiting_studio" },
+        runs: [{ runId: "run_done_87654321", status: "completed" }],
+      }],
+      cancelRun: jest.fn().mockResolvedValue(undefined),
+    });
+    mockUseTaskRuntime.mockReturnValue({
+      taskId: "",
+      task: null,
+      events: [],
+      connectionState: "idle",
+      error: null,
+      busyAction: "",
+      selectTask: jest.fn(),
+    });
+
+    render(<AgentWorkspaceLayout controller={makeController()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Open Activity" }));
+
+    expect(await screen.findByLabelText("Current agent runs")).toBeTruthy();
+    expect(screen.getByText("Studio inspection")).toBeTruthy();
+    expect(screen.getByText("waiting studio")).toBeTruthy();
+    expect(screen.getByText("completed")).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: "Stop" })).toHaveLength(1);
+    expect(screen.queryByRole("heading", { name: "No active run" })).toBeNull();
   });
 
   test("loads the scoped runtime and forwards durable state and actions to the progress panel", async () => {

@@ -20,6 +20,7 @@ import type {
   PairClaimResponse,
   StudioCommand,
   StudioCommandAttempts,
+  StudioIdentityMetadata,
   StudioCommandLease,
 } from "./types.js";
 import { EMPTY_CAPABILITIES } from "./types.js";
@@ -27,6 +28,8 @@ import { CONNECTOR_PROTOCOL_VERSION } from "./version.js";
 
 const MUTATING_COMMANDS = new Set(["create_script", "write_script", "patch_script", "create_instance", "update_properties", "update_attributes", "update_tags", "rename_instance", "move_instance", "duplicate_instance", "delete_instance", "batch_operations", "restore_snapshot", "undo_last_batch", "insert_creator_store_asset", "run_test_service", "run_play_test", "stop_play_test"]);
 const TARGET_BOUND_COMMANDS = new Set([...MUTATING_COMMANDS, "create_snapshot"]);
+const INITIAL_STUDIO_DISCOVERY_ATTEMPTS = 12;
+const INITIAL_STUDIO_DISCOVERY_RETRY_MS = 500;
 
 export interface LocalConnectorOptions {
   config: ConnectorConfig;
@@ -218,7 +221,7 @@ export class NexusLocalConnector {
       this.#mcpConnected = true;
       this.#announcedUnavailable = false;
       this.emitTelemetry({ stage: "tool_discovery", mcpConnected: true, ...(this.#mcpInfo.serverVersion ? { mcpServerVersion: this.#mcpInfo.serverVersion } : {}) });
-      const runtime = await this.refreshCatalog(signal);
+      const runtime = await this.refreshCatalog(signal, true);
       this.#logger.info("Roblox Studio MCP connected.");
       this.#logCapabilities();
       this.#logger.info("NexusRBX is connected to Roblox Studio. Press Ctrl+C to disconnect.");
@@ -235,7 +238,7 @@ export class NexusLocalConnector {
     }
   }
 
-  private async refreshCatalog(signal: AbortSignal): Promise<RuntimeCapabilities> {
+  private async refreshCatalog(signal: AbortSignal, waitForInitialStudio = false): Promise<RuntimeCapabilities> {
     this.#toolsDirty = false;
     const tools = await this.#mcp.listTools(signal);
     const catalog = new ToolCatalog(tools);
@@ -243,12 +246,29 @@ export class NexusLocalConnector {
     else this.#executor.updateCatalog(catalog);
     this.#catalog = catalog;
     if (catalog.listStudios && catalog.setActiveStudio && catalog.studioState) {
-      this.#targeting ??= new StudioTargetManager(this.#mcp);
+      this.#targeting ??= new StudioTargetManager(this.#mcp, catalog.executeLuau !== null);
+      this.#targeting.setIdentityProbeAvailable(catalog.executeLuau !== null);
       await this.#targeting.refresh(signal);
+      // StudioMCP can finish its MCP initialize handshake before its Studio
+      // window registry is populated. A single immediate target query then
+      // leaves the desktop falsely degraded even though the intended place is
+      // already open. Bound the warm-up wait to initial discovery only; later
+      // heartbeat refreshes remain non-blocking when Studio is genuinely shut.
+      if (waitForInitialStudio && this.#targeting.targets.length === 0) {
+        for (let attempt = 1; attempt < INITIAL_STUDIO_DISCOVERY_ATTEMPTS; attempt += 1) {
+          await delay(INITIAL_STUDIO_DISCOVERY_RETRY_MS, signal);
+          await this.#targeting.refresh(signal);
+          if (this.#targeting.targets.length > 0) break;
+        }
+      }
     } else this.#targeting = null;
-    if (this.#targeting) {
-      const changed = this.#targeting.acceptBackendResponse(await this.#backend.ping(this.pingPayload(true), signal));
-      if (changed) await this.#targeting.refresh(signal);
+    const targetResponse = await this.#backend.ping(this.pingPayload(true), signal);
+    this.#logger.info("Studio target selection received.", studioTargetSelectionDiagnostic(targetResponse));
+    if (this.#targeting?.acceptBackendResponse(targetResponse)) {
+      await this.#targeting.refresh(signal);
+      // Confirm the newly requested window and its exact identity before
+      // capabilities can be registered against it.
+      await this.#backend.ping(this.pingPayload(true), signal);
     }
     const runtime = runtimeCapabilities(catalog, this.#targeting);
     this.emitTelemetry({
@@ -269,6 +289,7 @@ export class NexusLocalConnector {
         ...(tool.description === undefined ? {} : { description: tool.description }),
       })),
       runtime.capabilityDetails,
+      this.studioIdentityMetadata(),
       signal,
     );
     await this.refreshExperienceSummary(tools, signal);
@@ -302,8 +323,9 @@ export class NexusLocalConnector {
     const startedAt = Date.now();
     let result: JsonObject;
     try {
-      if (TARGET_BOUND_COMMANDS.has(command.type)) await this.requireTargeting().ensureMutationTarget(command, signal);
-      result = await executor.execute(command, signal);
+      result = TARGET_BOUND_COMMANDS.has(command.type)
+        ? await this.requireTargeting().withMutationTarget(command, () => executor.execute(command, signal), signal)
+        : await executor.execute(command, signal);
     } catch (error) {
       result = failureResult(command, asConnectorError(error));
     }
@@ -393,9 +415,13 @@ export class NexusLocalConnector {
     let terminalStatus: TerminalCommandReceiptStatus;
     let executorInvoked = false;
     try {
-      if (TARGET_BOUND_COMMANDS.has(command.type)) await this.requireTargeting().ensureMutationTarget(command, executionSignal);
-      executorInvoked = true;
-      result = await executor.execute(command, executionSignal);
+      const execute = async (): Promise<JsonObject> => {
+        executorInvoked = true;
+        return executor.execute(command, executionSignal);
+      };
+      result = TARGET_BOUND_COMMANDS.has(command.type)
+        ? await this.requireTargeting().withMutationTarget(command, execute, executionSignal)
+        : await execute();
       result.duration = Date.now() - startedAt;
       if (result.success === true && (!MUTATING_COMMANDS.has(command.type) || result.verified === true)) {
         terminalStatus = "succeeded";
@@ -587,12 +613,24 @@ export class NexusLocalConnector {
     while (!signal.aborted) {
       await delay(this.#config.heartbeatMs, signal);
       try {
-        const activeStudioId = this.#targeting?.activeStudioId;
-        if (this.#mcpConnected) await this.#targeting?.refresh(signal);
-        if (this.#targeting?.activeStudioId !== activeStudioId) this.#toolsDirty = true;
+        const identityKey = this.#targeting?.identityKey() ?? "";
+        let targetRefreshError: ConnectorError | null = null;
+        if (this.#mcpConnected) {
+          try {
+            await this.#targeting?.refreshIfIdle(signal);
+          } catch (error) {
+            targetRefreshError = asConnectorError(error, "STUDIO_TARGET_UNAVAILABLE");
+          }
+        }
+        if ((this.#targeting?.identityKey() ?? "") !== identityKey || targetRefreshError) this.#toolsDirty = true;
         const response = await this.#backend.ping(this.pingPayload(this.#mcpConnected), signal);
         if (this.#targeting?.acceptBackendResponse(response)) this.#toolsDirty = true;
         this.emitTelemetry({ cloudConnected: true, lastHeartbeatAt: Date.now() });
+        if (targetRefreshError) {
+          this.#logger.warn("The active Roblox Studio target could not be re-attested; target identity was cleared.", {
+            code: targetRefreshError.code,
+          });
+        }
       } catch (error) {
         if (signal.aborted) return;
         const connectorError = asConnectorError(error);
@@ -611,8 +649,14 @@ export class NexusLocalConnector {
       ...(available && this.#mcpInfo.serverVersion !== undefined
         ? { mcpServerVersion: this.#mcpInfo.serverVersion }
         : {}),
-      ...(available && this.#targeting ? this.#targeting.metadata() : {}),
+      ...this.studioIdentityMetadata(available),
     };
+  }
+
+  private studioIdentityMetadata(available = this.#mcpConnected): StudioIdentityMetadata {
+    return available && this.#targeting
+      ? this.#targeting.metadata()
+      : unavailableStudioIdentityMetadata();
   }
 
   private async announceUnavailable(): Promise<void> {
@@ -620,7 +664,13 @@ export class NexusLocalConnector {
     this.emitLifecycleState("studio_mcp_unavailable");
     this.emitTelemetry({ mcpConnected: false, degradedReason: "mcp_initialization_failed" });
     try {
-      await this.#backend.registerCapabilities({ ...EMPTY_CAPABILITIES }, [], [], new ToolCatalog([]).capabilityDetails);
+      await this.#backend.registerCapabilities(
+        { ...EMPTY_CAPABILITIES },
+        [],
+        [],
+        new ToolCatalog([]).capabilityDetails,
+        unavailableStudioIdentityMetadata(),
+      );
       await this.#backend.ping(this.pingPayload(false));
       this.#announcedUnavailable = true;
     } catch (error) {
@@ -950,6 +1000,21 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function studioTargetSelectionDiagnostic(value: JsonObject): JsonObject {
+  const session = isRecord(value.session) ? value.session : {};
+  const studio = isRecord(session.studio) ? session.studio : {};
+  const bounded = (candidate: unknown): string | null => {
+    const normalized = typeof candidate === "string" ? candidate.trim().slice(0, 160) : "";
+    return normalized || null;
+  };
+  return {
+    activeStudioId: bounded(studio.activeStudioId),
+    desiredStudioId: bounded(session.desiredStudioId ?? value.desiredStudioId),
+    targetIdentityComplete: studio.targetIdentityComplete === true,
+    targetState: bounded(studio.targetState),
+  };
+}
+
 type RuntimeCapabilities = {
   capabilities: ToolCatalog["capabilities"];
   capabilityDetails: ToolCatalog["capabilityDetails"];
@@ -958,7 +1023,7 @@ type RuntimeCapabilities = {
 };
 
 function runtimeCapabilities(catalog: ToolCatalog, targeting: StudioTargetManager | null): RuntimeCapabilities {
-  if (targeting?.activeStudioId) {
+  if (targeting?.targetIdentityComplete) {
     return { capabilities: catalog.capabilities, capabilityDetails: catalog.capabilityDetails, supportedCommands: catalog.supportedCommands };
   }
   const reasonCode = targeting && targeting.targets.length > 1
@@ -977,6 +1042,20 @@ function runtimeCapabilities(catalog: ToolCatalog, targeting: StudioTargetManage
     ...(targeting
       ? { degradedReason: targeting.targets.length > 1 ? ("multiple_studio_windows" as const) : ("target_place_unavailable" as const) }
       : {}),
+  };
+}
+
+function unavailableStudioIdentityMetadata(): StudioIdentityMetadata {
+  return {
+    studioTargets: [],
+    activeStudioId: null,
+    studioId: null,
+    placeId: null,
+    placeName: null,
+    universeId: null,
+    placeSignature: null,
+    targetIdentityComplete: false,
+    targetConfirmedAt: null,
   };
 }
 

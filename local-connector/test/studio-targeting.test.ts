@@ -9,6 +9,9 @@ class FakeMcp implements McpClientLike {
   stateStudioId = "";
   omitStateStudioId = false;
   selectionFails = false;
+  probeIdentity: JsonObject | null = null;
+  probeResult: ToolCallResult | null = null;
+  probeHook: (() => void) | null = null;
   calls: Array<{ name: string; args: JsonObject }> = [];
 
   async connect(): Promise<McpConnectionInfo> { return {}; }
@@ -28,6 +31,10 @@ class FakeMcp implements McpClientLike {
       const target = this.studios.find((studio) => studio.studio_id === (this.stateStudioId || this.selected));
       return { structuredContent: { studio_id: this.omitStateStudioId ? undefined : this.stateStudioId || this.selected, place_id: target?.place_id, place_name: target?.place_name, universe_id: target?.universe_id, place_signature: target?.place_signature } };
     }
+    if (name === "execute_luau" && (this.probeResult || this.probeIdentity)) {
+      this.probeHook?.();
+      return this.probeResult ?? { structuredContent: this.probeIdentity };
+    }
     throw new Error(`Unexpected tool ${name}`);
   }
 }
@@ -46,8 +53,8 @@ test("a single open Studio is selected and its place is reported", async () => {
 test("multiple Studios require an enumerated backend choice", async () => {
   const mcp = new FakeMcp();
   mcp.studios = [
-    { studio_id: "studio-a", place_name: "Arena" },
-    { studio_id: "studio-b", place_name: "Obby" },
+    { studio_id: "studio-a", place_id: "101", universe_id: "201", place_name: "Arena", place_signature: "sig-a" },
+    { studio_id: "studio-b", place_id: "102", universe_id: "202", place_name: "Obby", place_signature: "sig-b" },
   ];
   const manager = new StudioTargetManager(mcp);
   await assert.rejects(() => manager.ensureMutationTarget(), (error: any) => error?.code === "STUDIO_TARGET_SELECTION_REQUIRED");
@@ -55,6 +62,159 @@ test("multiple Studios require an enumerated backend choice", async () => {
   await manager.ensureMutationTarget();
   assert.equal(manager.activeStudioId, "studio-b");
   assert.equal(manager.placeName, "Obby");
+});
+
+test("a fixed identity probe enriches the exact selected Studio target", async () => {
+  const mcp = new FakeMcp();
+  mcp.studios = [{ studio_id: "studio-a", place_name: "Window label" }];
+  mcp.probeIdentity = {
+    result: {
+      placeId: "116714509720053",
+      universeId: "10669840815",
+      placeName: "NexusRBX Pipeline Test",
+      placeSignature: "a1b2c3d4",
+    },
+  };
+  const manager = new StudioTargetManager(mcp, true);
+
+  await manager.refresh();
+
+  assert.equal(manager.placeId, "116714509720053");
+  assert.equal(manager.universeId, "10669840815");
+  assert.equal(manager.placeSignature, "a1b2c3d4");
+  assert.equal(manager.targets[0]?.placeId, "116714509720053");
+  assert.equal(manager.targets[0]?.label, "NexusRBX Pipeline Test");
+  assert.deepEqual(manager.metadata(), {
+    studioTargets: [{
+      studioId: "studio-a",
+      label: "NexusRBX Pipeline Test",
+      placeId: "116714509720053",
+      placeName: "NexusRBX Pipeline Test",
+      universeId: "10669840815",
+      placeSignature: "a1b2c3d4",
+    }],
+    activeStudioId: "studio-a",
+    studioId: "studio-a",
+    placeId: "116714509720053",
+    placeName: "NexusRBX Pipeline Test",
+    universeId: "10669840815",
+    placeSignature: "a1b2c3d4",
+    targetIdentityComplete: true,
+    targetConfirmedAt: manager.confirmedAt,
+  });
+  const probeCall = mcp.calls.find(({ name }) => name === "execute_luau");
+  assert.equal(probeCall?.args.datamodel_type, "Edit");
+  assert.match(String(probeCall?.args.code), /__nexus_target_identity_probe_v1/);
+});
+
+test("the identity probe cannot override a conflicting declared place", async () => {
+  const mcp = new FakeMcp();
+  mcp.studios = [{ studio_id: "studio-a", place_id: "101" }];
+  mcp.probeIdentity = { placeId: "999", universeId: "201", placeSignature: "sig" };
+  const manager = new StudioTargetManager(mcp, true);
+
+  await assert.rejects(() => manager.refresh(), (error: any) => error?.code === "STUDIO_TARGET_MISMATCH");
+  assert.equal(manager.activeStudioId, null);
+  assert.deepEqual(manager.targets, []);
+  assert.equal(manager.metadata().targetIdentityComplete, false);
+});
+
+test("identity probe JSON text wrappers are normalized", async () => {
+  const mcp = new FakeMcp();
+  mcp.studios = [{ studio_id: "studio-a", place_name: "Window label" }];
+  mcp.probeResult = { content: [{
+    type: "text",
+    text: JSON.stringify({ result: {
+      placeId: "116714509720053",
+      universeId: "10669840815",
+      placeName: "NexusRBX Pipeline Test",
+      placeSignature: "a1b2c3d4",
+    } }),
+  }] };
+  const manager = new StudioTargetManager(mcp, true);
+
+  await manager.refresh();
+
+  assert.equal(manager.metadata().placeId, "116714509720053");
+  assert.equal(manager.metadata().placeSignature, "a1b2c3d4");
+});
+
+test("a window switch during the identity probe fails post-confirmation", async () => {
+  const mcp = new FakeMcp();
+  mcp.studios = [
+    { studio_id: "studio-a", place_id: "101", place_name: "Arena", universe_id: "201", place_signature: "sig-a" },
+    { studio_id: "studio-b", place_id: "102", place_name: "Obby", universe_id: "202", place_signature: "sig-b" },
+  ];
+  mcp.probeIdentity = { result: {
+    placeId: "102",
+    universeId: "202",
+    placeName: "Obby",
+    placeSignature: "sig-b",
+  } };
+  mcp.probeHook = () => { mcp.stateStudioId = "studio-b"; };
+  const manager = new StudioTargetManager(mcp, true);
+  manager.acceptBackendResponse({ desiredStudioId: "studio-a" });
+
+  await assert.rejects(() => manager.refresh(), (error: any) => error?.code === "STUDIO_TARGET_MISMATCH");
+
+  assert.equal(manager.activeStudioId, null);
+  assert.equal(manager.metadata().targetIdentityComplete, false);
+});
+
+test("a window label alone never becomes server-consumable target identity", async () => {
+  const mcp = new FakeMcp();
+  mcp.studios = [{ studio_id: "studio-a", place_name: "Unattested label" }];
+  const manager = new StudioTargetManager(mcp);
+
+  await manager.refresh();
+
+  assert.equal(manager.activeStudioId, "studio-a");
+  assert.deepEqual(manager.metadata(), {
+    studioTargets: [{
+      studioId: "studio-a",
+      label: "Unattested label",
+      placeId: "",
+      placeName: "Unattested label",
+      universeId: "",
+      placeSignature: "",
+    }],
+    activeStudioId: null,
+    studioId: null,
+    placeId: null,
+    placeName: null,
+    universeId: null,
+    placeSignature: null,
+    targetIdentityComplete: false,
+    targetConfirmedAt: null,
+  });
+  await assert.rejects(
+    () => manager.ensureMutationTarget(),
+    (error: any) => error?.code === "STUDIO_TARGET_ATTESTATION_INCOMPLETE",
+  );
+});
+
+test("a stale desired window prevents a sole different window from becoming complete", async () => {
+  const mcp = new FakeMcp();
+  mcp.studios = [
+    { studio_id: "studio-a", place_id: "101", place_name: "Arena", universe_id: "201", place_signature: "sig-a" },
+    { studio_id: "studio-b", place_id: "102", place_name: "Obby", universe_id: "202", place_signature: "sig-b" },
+  ];
+  const manager = new StudioTargetManager(mcp);
+  manager.acceptBackendResponse({ desiredStudioId: "studio-b" });
+  await manager.refresh();
+  assert.equal(manager.metadata().studioId, "studio-b");
+
+  mcp.studios = [mcp.studios[0]!];
+  mcp.stateStudioId = "";
+  await manager.refresh();
+
+  assert.equal(manager.activeStudioId, "studio-a");
+  assert.equal(manager.metadata().studioId, null);
+  assert.equal(manager.metadata().targetIdentityComplete, false);
+  await assert.rejects(
+    () => manager.ensureMutationTarget(),
+    (error: any) => error?.code === "STUDIO_TARGET_ATTESTATION_INCOMPLETE",
+  );
 });
 
 test("multiple Studios require exact switch confirmation", async () => {
@@ -72,7 +232,7 @@ test("multiple Studios require exact switch confirmation", async () => {
 
 test("a command cannot mutate a different place, universe, signature, or connection type", async () => {
   const mcp = new FakeMcp();
-  mcp.studios = [{ studio_id: "studio-a", place_id: "101", universe_id: "201", place_signature: "sig-a" }];
+  mcp.studios = [{ studio_id: "studio-a", place_id: "101", place_name: "Arena", universe_id: "201", place_signature: "sig-a" }];
   const manager = new StudioTargetManager(mcp);
   const base: StudioCommand = { id: "command", type: "create_instance", payload: {}, connectionType: "mcp_local" };
 
@@ -101,4 +261,15 @@ test("closing the selected Studio clears stale place identity", async () => {
   assert.equal(manager.activeStudioId, null);
   assert.equal(manager.placeId, "");
   assert.equal(manager.placeName, "");
+  assert.deepEqual(manager.metadata(), {
+    studioTargets: [],
+    activeStudioId: null,
+    studioId: null,
+    placeId: null,
+    placeName: null,
+    universeId: null,
+    placeSignature: null,
+    targetIdentityComplete: false,
+    targetConfirmedAt: null,
+  });
 });

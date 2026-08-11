@@ -89,6 +89,10 @@ import {
 import { normalizeRobloxPlaceId } from "../lib/robloxPlaceId";
 import { requireVerifiedFirestoreUser } from "../lib/verifiedFirestoreUser";
 import {
+  isServerConfirmedUserCancellation,
+  normalizeAuthoritativeRunStatus,
+} from "../lib/runCancellation";
+import {
   mergeMessagesById,
   normalizeRewindMode,
   selectMessagesToRemove,
@@ -134,11 +138,27 @@ function throwIfAborted(signal) {
   if (signal?.aborted) throw createAbortError();
 }
 
-function normalizeTerminalRunStatus(status) {
-  const normalized = String(status || "").trim().toLowerCase();
-  if (normalized === "cancelled" || normalized === "canceled") return "canceled";
-  if (normalized === "completed" || normalized === "failed") return normalized;
-  return null;
+function normalizeTerminalRunStatus(status, evidence = null) {
+  return normalizeAuthoritativeRunStatus(status, evidence);
+}
+
+function statusCopyForAuthoritativeRun(status) {
+  switch (String(status || "").trim().toLowerCase()) {
+    case "running":
+      return "Running in Studio...";
+    case "waiting_studio":
+    case "awaiting_studio_reconnect":
+      return "Waiting for Studio...";
+    case "awaiting_studio_target":
+      return "Waiting for Studio target...";
+    case "waiting_user":
+    case "waiting_for_approval":
+      return "Waiting for approval...";
+    case "verifying":
+      return "Verifying Studio changes...";
+    default:
+      return null;
+  }
 }
 
 function findAuthoritativeRun(projection, runId) {
@@ -150,6 +170,7 @@ function findAuthoritativeRun(projection, runId) {
 
 function findAuthoritativeRunOutput(run) {
   const candidates = [
+    run?.summary,
     run?.result,
     run?.output,
     run?.generationResult,
@@ -288,6 +309,7 @@ export async function waitForAuthoritativeRunJob({
       });
     }
     reconnecting = false;
+    let projectedStatusReported = false;
 
     try {
       if (!admitted) {
@@ -311,13 +333,43 @@ export async function waitForAuthoritativeRunJob({
             if (Number.isFinite(sequence)) afterSequence = Math.max(afterSequence, sequence);
             if (String(event?.payload?.runId || "") !== runId) continue;
             if (event.type === "run.admitted") admitted = true;
-            const terminalStatus = normalizeTerminalRunStatus(String(event.type || "").replace("run.", ""));
+            const terminalStatus = normalizeTerminalRunStatus(
+              String(event.type || "").replace("run.", ""),
+              event.payload
+            );
             if (terminalStatus) {
+              let authoritativePayload = event.payload;
+              const terminalProjectionRemainingMs = deadline - now();
+              if (terminalProjectionRemainingMs > 0) {
+                try {
+                  const projection = await raceAuthoritativeOperation(
+                    () => getAgent(agentId),
+                    {
+                      signal,
+                      timeoutMs: Math.min(
+                        AUTHORITATIVE_RUN_RECOVERY_REQUEST_TIMEOUT_MS,
+                        terminalProjectionRemainingMs
+                      ),
+                    }
+                  );
+                  const projectedRun = findAuthoritativeRun(projection, runId);
+                  if (projectedRun) {
+                    authoritativePayload = {
+                      ...(event.payload && typeof event.payload === "object" ? event.payload : {}),
+                      ...projectedRun,
+                    };
+                  }
+                } catch (error) {
+                  if (isAbortError(error)) throw error;
+                  // The terminal event is still durable evidence. A temporary
+                  // projection failure must not make the client spin forever.
+                }
+              }
               return terminalRunResult({
                 agentId,
                 runId,
                 status: terminalStatus,
-                payload: event.payload,
+                payload: authoritativePayload,
               });
             }
           }
@@ -348,7 +400,7 @@ export async function waitForAuthoritativeRunJob({
           const run = findAuthoritativeRun(projection, runId);
           const jobId = String(run?.jobId || "").trim();
           if (jobId) return run;
-          const terminalStatus = normalizeTerminalRunStatus(run?.status);
+          const terminalStatus = normalizeTerminalRunStatus(run?.status, run);
           if (terminalStatus) {
             return terminalRunResult({
               agentId,
@@ -356,6 +408,11 @@ export async function waitForAuthoritativeRunJob({
               status: terminalStatus,
               payload: run,
             });
+          }
+          const projectedStatus = statusCopyForAuthoritativeRun(run?.status);
+          if (projectedStatus) {
+            projectedStatusReported = true;
+            onStatus?.(projectedStatus);
           }
         } catch (error) {
           if (isAbortError(error)) throw error;
@@ -365,7 +422,7 @@ export async function waitForAuthoritativeRunJob({
         }
       }
 
-      if (!reconnecting) {
+      if (!reconnecting && !projectedStatusReported) {
         onStatus?.(admitted ? "Starting admitted run..." : "Queued");
       }
     } catch (error) {
@@ -406,9 +463,10 @@ export function resolveResultUrl(jobId, resultUrl) {
 }
 
 function buildAssistantMessagePayload(data, { requestId, jobId, currentMode, isAutoExecuting }) {
+  const userCancelled = isServerConfirmedUserCancellation(data);
   const payload = {
     role: "assistant",
-    content: "",
+    content: userCancelled ? "Generation canceled." : "",
     explanation: data?.explanation || "",
     summary: data?.summary || "",
     thought: data?.thought || "",
@@ -417,7 +475,7 @@ function buildAssistantMessagePayload(data, { requestId, jobId, currentMode, isA
     projectId: data?.projectId || null,
     versionNumber: data?.versionNumber || 1,
     pending: false,
-    stage: "completed",
+    stage: userCancelled ? "canceled" : "completed",
     isAutoExecuting,
     updatedAt: serverTimestamp(),
     metadata: {
@@ -425,7 +483,9 @@ function buildAssistantMessagePayload(data, { requestId, jobId, currentMode, isA
       mode: currentMode,
       type: data?.artifactType || data?.metadata?.type || null,
       qaReport: data?.qaReport || null,
-      runState: data?.runState || data?.metadata?.runState || "completed",
+      runState: userCancelled
+        ? "canceled"
+        : data?.runState || data?.metadata?.runState || "succeeded",
     },
   };
 
@@ -554,6 +614,172 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     ),
     [setPendingForChat, currentChatId, pendingMessage?.requestId]
   );
+
+  const persistPendingCancellation = useCallback(async ({ chatId = null, requestId = null } = {}) => {
+    const targetChatId = String(chatId || currentChatId || "").trim();
+    const normalizedRequestId = String(requestId || "").trim();
+    if (!targetChatId || !normalizedRequestId || targetChatId === "draft") return false;
+    const messageId = `${normalizedRequestId}-assistant`;
+    const payload = {
+      id: messageId,
+      role: "assistant",
+      content: "Generation canceled.",
+      pending: false,
+      stage: "canceled",
+      requestId: normalizedRequestId,
+      metadata: {
+        runState: "canceled",
+        cancellationPending: true,
+      },
+    };
+    setPendingForChat(targetChatId, null, normalizedRequestId);
+    setStageForChat(targetChatId, "", normalizedRequestId);
+    setGeneratingForChat(targetChatId, false, normalizedRequestId);
+    if (targetChatId === currentChatId) {
+      setMessages((current) => {
+        const index = current.findIndex((message) => message?.id === messageId);
+        if (index < 0) return [...current, payload];
+        const next = [...current];
+        next[index] = { ...next[index], ...payload };
+        return next;
+      });
+    }
+    if (!user?.uid || auth.currentUser?.uid !== user.uid) return true;
+    await setDoc(
+      doc(db, "users", user.uid, "chats", targetChatId, "messages", messageId),
+      sanitizeTranscriptMessagePayload({
+        ...payload,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }),
+      { merge: true },
+    );
+    return true;
+  }, [
+    currentChatId,
+    setGeneratingForChat,
+    setPendingForChat,
+    setStageForChat,
+    user?.uid,
+  ]);
+
+  const reconcileCancelledRun = useCallback(async (runId, { chatId = null, requestId = null } = {}) => {
+    const normalizedRunId = String(runId || "").trim();
+    const targetChatId = String(chatId || currentChatId || "").trim();
+    const normalizedRequestId = String(requestId || "").trim();
+    if (!normalizedRunId || !targetChatId) return false;
+
+    const matchesRun = (message) => {
+      const messageRunId = String(
+        message?.runId
+        || message?.metadata?.runId
+        || ""
+      ).trim();
+      if (messageRunId === normalizedRunId) return true;
+      return Boolean(
+        normalizedRequestId
+        && !messageRunId
+        && String(message?.requestId || "").trim() === normalizedRequestId
+      );
+    };
+    const pendingEntries = Object.values(pendingMessages[targetChatId] || {})
+      .filter((message) => message && matchesRun(message));
+    const transcriptEntries = targetChatId === currentChatId
+      ? (messages || []).filter(matchesRun)
+      : [];
+    let matchingEntries = [...pendingEntries, ...transcriptEntries].filter(
+      (message, index, entries) => {
+        const identity = message?.id || message?.requestId || `${normalizedRunId}:${index}`;
+        return entries.findIndex((candidate, candidateIndex) => (
+          (candidate?.id || candidate?.requestId || `${normalizedRunId}:${candidateIndex}`) === identity
+        )) === index;
+      }
+    );
+
+    const terminalize = (message) => ({
+      ...message,
+      content: "Generation canceled.",
+      pending: false,
+      stage: "canceled",
+      runId: normalizedRunId,
+      metadata: {
+        ...(message?.metadata || {}),
+        runState: "canceled",
+      },
+    });
+    const fallbackMessageId = normalizedRequestId ? `${normalizedRequestId}-assistant` : null;
+    if (!matchingEntries.length && fallbackMessageId) {
+      matchingEntries = [{
+        id: fallbackMessageId,
+        role: "assistant",
+        content: "",
+        pending: true,
+        requestId: normalizedRequestId,
+        runId: normalizedRunId,
+        metadata: { runState: "running" },
+      }];
+    }
+
+    pendingEntries.forEach((message) => {
+      const requestId = message?.requestId || "__legacy__";
+      setPendingForChat(targetChatId, null, requestId);
+      setStageForChat(targetChatId, "", requestId);
+      setGeneratingForChat(targetChatId, false, requestId);
+    });
+    if (normalizedRequestId && !pendingEntries.length) {
+      setPendingForChat(targetChatId, null, normalizedRequestId);
+      setStageForChat(targetChatId, "", normalizedRequestId);
+      setGeneratingForChat(targetChatId, false, normalizedRequestId);
+    }
+    if (targetChatId === currentChatId) {
+      setMessages((current) => {
+        const hasMatchingMessage = current.some(matchesRun);
+        const next = current.map((message) => (
+          matchesRun(message) ? terminalize(message) : message
+        ));
+        if (!hasMatchingMessage && matchingEntries[0]) {
+          const terminal = terminalize(matchingEntries[0]);
+          if (!next.some((message) => message?.id === terminal.id)) next.push(terminal);
+        }
+        return next;
+      });
+    }
+
+    if (!user?.uid || auth.currentUser?.uid !== user.uid) return true;
+    const persistedEntries = matchingEntries
+      .map((message) => (
+        message?.id || !fallbackMessageId ? message : { ...message, id: fallbackMessageId }
+      ))
+      .filter((message) => message?.id)
+      .filter((message, index, entries) => (
+        entries.findIndex((candidate) => candidate.id === message.id) === index
+      ));
+    if (!persistedEntries.length) return true;
+    const writes = await Promise.allSettled(persistedEntries.map((message) => (
+      setDoc(
+        doc(db, "users", user.uid, "chats", targetChatId, "messages", message.id),
+        sanitizeTranscriptMessagePayload({
+          ...terminalize(message),
+          ...(message?.createdAt ? {} : { createdAt: serverTimestamp() }),
+          updatedAt: serverTimestamp(),
+        }),
+        { merge: true }
+      )
+    )));
+    const rejected = writes.find((result) => result.status === "rejected");
+    if (rejected) {
+      console.warn("Could not persist the cancelled run transcript state.", rejected.reason);
+    }
+    return true;
+  }, [
+    currentChatId,
+    messages,
+    pendingMessages,
+    setGeneratingForChat,
+    setPendingForChat,
+    setStageForChat,
+    user?.uid,
+  ]);
 
   const reportedFirestoreFailuresRef = useRef(new Set());
   const reportFirestoreFailure = useCallback((err, { uid, chatId = null, operation }) => {
@@ -864,7 +1090,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           const authoritativeRun = findAuthoritativeRun(projection, currentPending.runId);
           if (!authoritativeRun) return;
 
-          const terminalStatus = normalizeTerminalRunStatus(authoritativeRun.status);
+          const terminalStatus = normalizeTerminalRunStatus(authoritativeRun.status, authoritativeRun);
           if (terminalStatus) {
             const failureMessage = typeof authoritativeRun.error === "string"
               ? authoritativeRun.error
@@ -898,7 +1124,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
                   metadata: {
                     ...(currentPending.metadata || {}),
                     ...(completedPayload.metadata || {}),
-                    runState: "completed",
+                    runState: "succeeded",
                   },
                 }
               : {
@@ -1481,6 +1707,65 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       const runtimeDecision = authoritativeDecision || jobData?.decision || null;
       let jobId = typeof jobData.jobId === "string" ? jobData.jobId.trim() : "";
       const acceptedTaskId = typeof jobData.taskId === "string" ? jobData.taskId.trim() : "";
+      const immediateTerminalStatus = !jobId
+        ? normalizeTerminalRunStatus(jobData?.status, jobData)
+        : null;
+      if (immediateTerminalStatus === "failed" || immediateTerminalStatus === "canceled") {
+        const userCancelled = immediateTerminalStatus === "canceled";
+        const rawMessage = userCancelled
+          ? "Generation canceled."
+          : formatUserFacingError(jobData);
+        const terminalMessage = String(rawMessage || "Generation failed").trim().slice(0, 1000);
+        const terminalCode = userCancelled
+          ? "user_cancelled"
+          : String(
+              jobData?.failureCode
+              || jobData?.errorCode
+              || jobData?.code
+              || jobData?.error?.code
+              || "GENERATION_FAILED"
+            ).trim().slice(0, 120);
+        const assistantMsgRef = doc(
+          db,
+          "users",
+          user.uid,
+          "chats",
+          activeChatId,
+          "messages",
+          `${requestId}-assistant`,
+        );
+        activeAssistantRef = assistantMsgRef;
+        await setDoc(assistantMsgRef, sanitizeTranscriptMessagePayload({
+          role: "assistant",
+          content: terminalMessage,
+          pending: false,
+          stage: userCancelled ? "canceled" : "failed",
+          requestId,
+          ...(jobData?.runId ? { runId: jobData.runId } : {}),
+          ...(acceptedTaskId ? { taskId: acceptedTaskId } : {}),
+          ...(runtimeDecision ? { decision: runtimeDecision } : {}),
+          ...(userCancelled ? {} : {
+            error: terminalMessage,
+            errorCode: terminalCode,
+          }),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          metadata: {
+            mode: currentMode,
+            type: null,
+            runState: userCancelled ? "canceled" : "failed",
+          },
+        }), { merge: true });
+        recordChatMessageWrite({
+          reason: userCancelled
+            ? "assistant_terminal_canceled"
+            : "assistant_terminal_failure",
+        });
+        const terminalError = new Error(terminalMessage);
+        terminalError.code = terminalCode;
+        terminalError.serverPayload = jobData;
+        throw terminalError;
+      }
       const runtimeTaskAccepted = !authoritativeEnvelope
         && FEATURE_FLAGS.newTaskRuntime
         && Boolean(acceptedTaskId)
@@ -1501,27 +1786,25 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         }
       }
 
-      const queuedAuthoritativeRun = Boolean(
+      const joblessAuthoritativeRun = Boolean(
         authoritativeEnvelope
         && !jobId
-        && (
-          authoritativeEnvelope.executionDisposition === "queued"
-          || jobData.executionDisposition === "queued"
-          || jobData.status === "queued"
-        )
+        && String(jobData?.runId || "").trim()
       );
-      if (queuedAuthoritativeRun) {
-        const queuedAgentId = String(
+      if (joblessAuthoritativeRun) {
+        const joblessAgentId = String(
           jobData.agentId
           || authoritativeEnvelope?.agentId
           || authoritativeEnvelope?.agent?.agentId
           || ""
         ).trim();
-        const queuedRunId = String(jobData.runId || "").trim();
-        const queuedStage = Number.isFinite(Number(jobData.queuePosition))
+        const joblessRunId = String(jobData.runId || "").trim();
+        const joblessStage = jobData.queuePosition != null
+          && Number.isFinite(Number(jobData.queuePosition))
+          && Number(jobData.queuePosition) > 0
           ? `Queued (position ${Number(jobData.queuePosition)})`
-          : "Queued";
-        const queuedAssistantRef = doc(
+          : statusCopyForAuthoritativeRun(jobData.status) || "Queued";
+        const joblessAssistantRef = doc(
           db,
           "users",
           user.uid,
@@ -1530,39 +1813,43 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           "messages",
           `${requestId}-assistant`,
         );
-        publishGenerationStage(activeChatId, queuedStage, {
+        publishGenerationStage(activeChatId, joblessStage, {
           extraPending: {
-            runId: queuedRunId,
-            ...(queuedAgentId ? { agentId: queuedAgentId } : {}),
+            runId: joblessRunId,
+            ...(joblessAgentId ? { agentId: joblessAgentId } : {}),
             taskId: acceptedTaskId || null,
             queuePosition: jobData.queuePosition || null,
             ...(runtimeDecision ? { decision: runtimeDecision } : {}),
           },
         });
-        await setDoc(queuedAssistantRef, sanitizeTranscriptMessagePayload({
+        await setDoc(joblessAssistantRef, sanitizeTranscriptMessagePayload({
           role: "assistant",
           content: "",
-          stage: queuedStage,
+          stage: joblessStage,
           pending: true,
           requestId,
-          runId: queuedRunId,
-          ...(queuedAgentId ? { agentId: queuedAgentId } : {}),
+          runId: joblessRunId,
+          ...(joblessAgentId ? { agentId: joblessAgentId } : {}),
           ...(acceptedTaskId ? { taskId: acceptedTaskId } : {}),
           ...(jobData.queuePosition ? { queuePosition: jobData.queuePosition } : {}),
           ...(runtimeDecision ? { decision: runtimeDecision } : {}),
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-          metadata: { mode: currentMode, type: null, runState: "queued" },
+          metadata: {
+            mode: currentMode,
+            type: null,
+            runState: String(jobData.status || "queued").trim().toLowerCase() || "queued",
+          },
         }), { merge: true });
 
-        const persistQueuedTerminalState = async (
+        const persistJoblessTerminalState = async (
           status,
           error = null,
           authoritativeRun = null
         ) => {
           const copyByStatus = {
             completed: "Run completed.",
-            failed: "The queued run failed before generation started.",
+            failed: "The Studio run failed before a generation job was attached.",
             canceled: "Generation canceled.",
             background: "Still working in the background. Results will appear when ready.",
           };
@@ -1583,14 +1870,14 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
                 ...completedPayload,
                 role: "assistant",
                 requestId,
-                runId: queuedRunId,
-                ...(queuedAgentId ? { agentId: queuedAgentId } : {}),
+                runId: joblessRunId,
+                ...(joblessAgentId ? { agentId: joblessAgentId } : {}),
                 ...(acceptedTaskId ? { taskId: acceptedTaskId } : {}),
                 ...(runtimeDecision ? { decision: runtimeDecision } : {}),
                 metadata: {
                   ...(completedPayload.metadata || {}),
                   mode: currentMode,
-                  runState: "completed",
+                  runState: "succeeded",
                 },
                 updatedAt: serverTimestamp(),
               }
@@ -1600,8 +1887,8 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
                 pending: false,
                 stage: status,
                 requestId,
-                runId: queuedRunId,
-                ...(queuedAgentId ? { agentId: queuedAgentId } : {}),
+                runId: joblessRunId,
+                ...(joblessAgentId ? { agentId: joblessAgentId } : {}),
                 ...(acceptedTaskId ? { taskId: acceptedTaskId } : {}),
                 ...(runtimeDecision ? { decision: runtimeDecision } : {}),
                 ...(error ? {
@@ -1612,7 +1899,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
                 metadata: { mode: currentMode, type: null, runState: status },
               };
           await setDoc(
-            queuedAssistantRef,
+            joblessAssistantRef,
             sanitizeTranscriptMessagePayload(terminalPayload),
             { merge: true }
           );
@@ -1631,13 +1918,13 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
 
         try {
           jobData = await waitForAuthoritativeRunJob({
-            agentId: queuedAgentId,
-            runId: queuedRunId,
+            agentId: joblessAgentId,
+            runId: joblessRunId,
             signal: authoritativeSignal,
             onStatus: (nextStage) => publishGenerationStage(activeChatId, nextStage, {
               extraPending: {
-                runId: queuedRunId,
-                ...(queuedAgentId ? { agentId: queuedAgentId } : {}),
+                runId: joblessRunId,
+                ...(joblessAgentId ? { agentId: joblessAgentId } : {}),
                 taskId: acceptedTaskId || null,
               },
             }),
@@ -1645,16 +1932,20 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         } catch (error) {
           if (isAbortError(error)) {
             void requestCanonicalCancellation();
-            await persistQueuedTerminalState("canceled");
+            await persistJoblessTerminalState("canceled");
             return;
           }
-          await persistQueuedTerminalState("failed", error);
+          await persistJoblessTerminalState("failed", error);
           throw error;
         }
 
         if (jobData?.terminal && !jobData?.jobId) {
-          const terminalStatus = normalizeTerminalRunStatus(jobData.status) || "background";
-          await persistQueuedTerminalState(terminalStatus, null, jobData);
+          const terminalStatus = normalizeTerminalRunStatus(jobData.status, jobData) || "background";
+          await persistJoblessTerminalState(
+            terminalStatus,
+            terminalStatus === "failed" ? jobData : null,
+            jobData,
+          );
           if (terminalStatus === "background") {
             notify?.({
               type: "info",
@@ -1924,7 +2215,8 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           receivedDone = true;
           eventSource?.close?.();
           detachAuthoritativeAbort();
-          const friendlyMessage = formatUserFacingError(err);
+          const userCancelled = isServerConfirmedUserCancellation(err);
+          const friendlyMessage = userCancelled ? "Generation canceled." : formatUserFacingError(err);
           emitStreamMetric("error", {
             jobId,
             tag,
@@ -1934,19 +2226,25 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           progressPersistence.cancel();
           updateDoc(assistantMsgRef, sanitizeTranscriptMessagePayload({
             pending: false,
-            stage: "failed",
-            errorCode: err?.code || null,
-            error: friendlyMessage,
+            stage: userCancelled ? "canceled" : "failed",
+            ...(userCancelled ? {} : {
+              errorCode: err?.code || null,
+              error: friendlyMessage,
+            }),
+            ...(userCancelled ? { content: friendlyMessage } : {}),
             metadata: {
               mode: currentMode,
               type: null,
-              runState: "failed",
+              runState: userCancelled ? "canceled" : "failed",
             },
             updatedAt: serverTimestamp(),
           }))
-            .then(() => recordChatMessageWrite({ jobId, reason: "assistant_terminal_failure" }))
+            .then(() => recordChatMessageWrite({
+              jobId,
+              reason: userCancelled ? "assistant_terminal_canceled" : "assistant_terminal_failure",
+            }))
             .catch(() => {})
-            .finally(() => finishChatWriteMetrics(jobId, "error"));
+            .finally(() => finishChatWriteMetrics(jobId, userCancelled ? "canceled" : "error"));
           setBusy(false);
           if (streamFlushTimer) clearTimeout(streamFlushTimer);
           stopIdlePulse();
@@ -1955,7 +2253,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           setStage("");
           delete streamStatesRef.current[runStreamKey(activeChatId)];
           const publicError = new Error(friendlyMessage);
-          publicError.code = err?.code || "GENERATION_FAILED";
+          publicError.code = userCancelled ? "user_cancelled" : err?.code || "GENERATION_FAILED";
           reject(publicError);
         };
 
@@ -2256,12 +2554,20 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
               await failInsufficientTokens(data);
               return true;
             }
-            const errorMessage = data?.message || data?.error;
-            if (data?.code || errorMessage) {
+            const errorMessage = data?.message
+              || (typeof data?.error === "string" ? data.error : data?.error?.message);
+            const failureCode = data?.failureCode
+              || data?.errorCode
+              || data?.code
+              || data?.error?.failureCode
+              || data?.error?.errorCode
+              || data?.error?.code;
+            if (failureCode || errorMessage) {
               eventSource?.close?.();
               const terminalError = new Error(errorMessage || "Generation failed");
-              terminalError.code = data?.code || "GENERATION_FAILED";
+              terminalError.code = failureCode || "GENERATION_FAILED";
               terminalError.details = data?.details || data?.workspaceConflict || null;
+              terminalError.serverPayload = data;
               failAndReject(terminalError, terminalError.code);
               return true;
             }
@@ -2775,6 +3081,8 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     setPendingForChat,
     setStageForChat,
     setGeneratingForChat,
+    reconcileCancelledRun,
+    persistPendingCancellation,
     assertCanWrite,
     openChatById,
     handleSubmit,

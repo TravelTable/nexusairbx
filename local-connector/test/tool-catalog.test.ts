@@ -76,9 +76,17 @@ test("catalog enables only exact, schema-validated Nexus commands", () => {
     toolName: "script_read",
     args: { target_file: "game.ServerScriptService.Main", datamodel_type: "Edit" },
   });
+  assert.deepEqual(catalog.makeReadArgs("ServerScriptService/Nested/Main"), {
+    toolName: "script_read",
+    args: { target_file: "game.ServerScriptService.Nested.Main", datamodel_type: "Edit" },
+  });
   assert.deepEqual(catalog.makeInspectArgs("game.Workspace.Part"), {
     toolName: "inspect_instance",
     args: { path: "game.Workspace.Part", datamodel_type: "Edit" },
+  });
+  assert.deepEqual(catalog.makeInspectArgs("Workspace/Folder/Part"), {
+    toolName: "inspect_instance",
+    args: { path: "game.Workspace.Folder.Part", datamodel_type: "Edit" },
   });
   assert.deepEqual(catalog.makeSearchArgs("search_source", "RemoteEvent"), {
     toolName: "script_grep",
@@ -87,6 +95,10 @@ test("catalog enables only exact, schema-validated Nexus commands", () => {
   assert.deepEqual(catalog.makeMutationArgs("game.ServerScriptService.Main", "old", "new"), {
     toolName: "multi_edit",
     args: { file_path: "game.ServerScriptService.Main", datamodel_type: "Edit", edits: [{ old_string: "old", new_string: "new", replace_all: false }] },
+  });
+  assert.deepEqual(catalog.makeMutationArgs("ServerScriptService/Nested/Main", "old", "new"), {
+    toolName: "multi_edit",
+    args: { file_path: "game.ServerScriptService.Nested.Main", datamodel_type: "Edit", edits: [{ old_string: "old", new_string: "new", replace_all: false }] },
   });
 });
 
@@ -100,7 +112,7 @@ test("insert_asset maps current optional fields without inventing schema keys", 
   const catalog = new ToolCatalog(targeted([insert]));
   assert.deepEqual(catalog.makeInsertAssetArgs({ assetId: "123", assetName: "Tree", assetType: "Model", parentPath: "Workspace/Nexus" }), {
     toolName: "insert_asset",
-    args: { assetId: "123", assetName: "Tree", type: "Model", parentPath: "Workspace/Nexus" },
+    args: { assetId: "123", assetName: "Tree", type: "Model", parentPath: "game.Workspace.Nexus" },
   });
 });
 

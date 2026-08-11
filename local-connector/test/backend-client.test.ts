@@ -3,6 +3,7 @@ import test from "node:test";
 import { NexusBackendClient } from "../src/backend-client.js";
 import { ConnectorError } from "../src/errors.js";
 import type { Logger } from "../src/logger.js";
+import { ToolCatalog } from "../src/tool-catalog.js";
 
 interface CapturedRequest {
   url: string;
@@ -83,6 +84,25 @@ test("backend client claims, authenticates, pings, registers, polls, and acknowl
     },
     ["read_script"],
     [{ name: "script_read", description: "d".repeat(1_000) }],
+    new ToolCatalog([]).capabilityDetails,
+    {
+      studioTargets: [{
+        studioId: "studio-live",
+        label: "NexusRBX Pipeline Test",
+        placeId: "116714509720053",
+        placeName: "NexusRBX Pipeline Test",
+        universeId: "10669840815",
+        placeSignature: "a1b2c3d4",
+      }],
+      activeStudioId: "studio-live",
+      studioId: "studio-live",
+      placeId: "116714509720053",
+      placeName: "NexusRBX Pipeline Test",
+      universeId: "10669840815",
+      placeSignature: "a1b2c3d4",
+      targetIdentityComplete: true,
+      targetConfirmedAt: 1_700_000_000_000,
+    },
   );
   assert.equal(await client.pollNext(20_000), null);
   await client.acknowledge("command/id", "failed", {
@@ -97,6 +117,24 @@ test("backend client claims, authenticates, pings, registers, polls, and acknowl
   assert.match(calls[4]?.url ?? "", /commands\/command%2Fid\/ack$/);
   const registration = JSON.parse(String(calls[2]?.init.body));
   assert.equal(registration.discoveredTools[0].description.length, 512);
+  assert.deepEqual({
+    studioId: registration.studioId,
+    activeStudioId: registration.activeStudioId,
+    placeId: registration.placeId,
+    universeId: registration.universeId,
+    placeName: registration.placeName,
+    placeSignature: registration.placeSignature,
+    targetIdentityComplete: registration.targetIdentityComplete,
+  }, {
+    studioId: "studio-live",
+    activeStudioId: "studio-live",
+    placeId: "116714509720053",
+    universeId: "10669840815",
+    placeName: "NexusRBX Pipeline Test",
+    placeSignature: "a1b2c3d4",
+    targetIdentityComplete: true,
+  });
+  assert.equal(registration.studioTargets[0].placeSignature, "a1b2c3d4");
   const ack = JSON.parse(String(calls[4]?.init.body));
   assert.equal(ack.status, "failed");
   assert.equal(ack.error.code, "MCP_TOOL_UNAVAILABLE");

@@ -67,6 +67,60 @@ describe("studioPlaceBinding", () => {
     ]);
   });
 
+  test("enriches the selected target with exact plugin and MCP capability evidence", () => {
+    const [target] = targetingOptionsFromStatus({
+      targeting: {
+        targets: [{
+          id: "studio_target_a",
+          placeId: "111",
+          universeId: "9",
+          label: "Place A",
+        }],
+      },
+      sessions: [
+        {
+          id: "plugin-a",
+          studioTargetId: "studio_target_a",
+          connectionType: "plugin_bridge",
+          status: "connected",
+          live: true,
+          supportedCommands: ["write_script"],
+          lastSeenAt: 100,
+        },
+        {
+          id: "mcp-a",
+          studioTargetId: "studio_target_a",
+          connectionType: "mcp_local",
+          status: "connected",
+          live: true,
+          supportedCommands: ["read_script"],
+          studio: { placeSignature: "sig-a" },
+          lastSeenAt: 120,
+        },
+      ],
+    });
+
+    expect(target).toEqual(expect.objectContaining({
+      studioTargetId: "studio_target_a",
+      placeId: "111",
+      universeId: "9",
+      pluginSessionId: "plugin-a",
+      mcpSessionId: "mcp-a",
+      placeSignature: "sig-a",
+      observedAt: 120,
+    }));
+    expect(target.capabilityRegistry.commands).toEqual(expect.objectContaining({
+      read_script: expect.objectContaining({ available: true }),
+      write_script: expect.objectContaining({ available: true }),
+    }));
+    expect(buildStudioTargetPreference(target)).toEqual(expect.objectContaining({
+      targetId: "studio_target_a",
+      mcpSessionId: "mcp-a",
+      pluginSessionId: "plugin-a",
+      capabilityRegistry: target.capabilityRegistry,
+    }));
+  });
+
   test("evaluateStudioPlaceGate requires explicit selection for a single live place", () => {
     const gate = evaluateStudioPlaceGate({
       studioEnabled: true,

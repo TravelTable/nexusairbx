@@ -49,7 +49,7 @@ describe("StudioControls", () => {
     expect(screen.getByLabelText("Live Studio")).not.toBeChecked();
   });
 
-  test("never displays stale Auto Push state as enabled for a plugin", () => {
+  test("fails closed when a plugin advertises no verified tools", () => {
     render(
       <StudioControls
         connected
@@ -62,7 +62,9 @@ describe("StudioControls", () => {
     );
 
     expect(screen.getByText("Studio · Plugin")).toBeTruthy();
-    expect(screen.getByLabelText("Auto Push")).toBeDisabled();
-    expect(screen.getByLabelText("Auto Push")).not.toBeChecked();
+    expect(screen.getByText("Plugin has no verified tools")).toBeTruthy();
+    expect(screen.getByLabelText("Live Studio")).toBeDisabled();
+    expect(screen.getByLabelText("Live Studio")).not.toBeChecked();
+    expect(screen.queryByLabelText("Auto Push")).toBeNull();
   });
 });

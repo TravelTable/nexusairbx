@@ -11,6 +11,7 @@ import { ConnectorError } from "../src/errors.js";
 import type { Logger } from "../src/logger.js";
 import type {
   BackendClientLike,
+  CapabilityDetails,
   CommandReceiptStatus,
   DiscoveredTool,
   JsonObject,
@@ -19,6 +20,7 @@ import type {
   PairClaimResponse,
   StudioCapabilities,
   StudioCommand,
+  StudioIdentityMetadata,
   ToolCallResult,
 } from "../src/types.js";
 
@@ -97,9 +99,22 @@ class FakeMcp implements McpClientLike {
   callTools: Array<{ name: string; args: JsonObject }> = [];
   failConnects = 0;
   toolPages: DiscoveredTool[][] = [[readTool, ...targetTools]];
-  studios: Array<{ studio_id: string; place_id: string; place_name: string }> = [
-    { studio_id: "studio-1", place_id: "42", place_name: "Fixture Place" },
+  studios: Array<{
+    studio_id: string;
+    place_id?: string;
+    place_name?: string;
+    universe_id?: string;
+    place_signature?: string;
+  }> = [
+    {
+      studio_id: "studio-1",
+      place_id: "42",
+      place_name: "Fixture Place",
+      universe_id: "84",
+      place_signature: "fixture-signature",
+    },
   ];
+  selectedStudioId = "";
   events: string[] | null = null;
   callToolHandler: ((
     name: string,
@@ -132,8 +147,11 @@ class FakeMcp implements McpClientLike {
     }
     if (name === "script_read") return { structuredContent: { source: "print('ok')" } };
     if (name === "list_roblox_studios") return { structuredContent: { studios: this.studios } };
-    if (name === "get_studio_state") return { structuredContent: this.studios.find((studio) => studio.studio_id === args.studio_id) ?? this.studios[0] ?? {} };
-    if (name === "set_active_studio") return { structuredContent: { studio_id: String(args.studio_id || "") } };
+    if (name === "get_studio_state") return { structuredContent: this.studios.find((studio) => studio.studio_id === this.selectedStudioId) ?? this.studios[0] ?? {} };
+    if (name === "set_active_studio") {
+      this.selectedStudioId = String(args.studio_id || "");
+      return { structuredContent: { studio_id: this.selectedStudioId } };
+    }
     return { content: [{ type: "text", text: "ok" }] };
   }
   onToolsChanged(handler: () => void): void { this.#toolHandlers.add(handler); }
@@ -148,6 +166,7 @@ interface Registration {
   capabilities: StudioCapabilities;
   commands: string[];
   tools: Array<{ name: string; description?: string }>;
+  identity: StudioIdentityMetadata;
 }
 
 class FakeBackend implements BackendClientLike {
@@ -158,6 +177,8 @@ class FakeBackend implements BackendClientLike {
   acknowledgements: Array<{ id: string; status: CommandReceiptStatus; result: JsonObject }> = [];
   clearCalls = 0;
   registrationFailures = 0;
+  wireEvents: string[] = [];
+  pingHandler: ((body: JsonObject) => Promise<JsonObject> | JsonObject) | null = null;
   pollHandler: ((poll: number, signal?: AbortSignal) => Promise<StudioCommand | null>) | null = null;
   acknowledgeHandler: ((
     commandId: string,
@@ -175,13 +196,20 @@ class FakeBackend implements BackendClientLike {
     this.claims.push(code);
     return { token: "nsmcp_session_secret", sessionId: "session", userId: "user", pollIntervalMs: 0, expiresInMs: 60_000 };
   }
-  async ping(body: JsonObject): Promise<JsonObject> { this.pings.push(body); return { ok: true }; }
+  async ping(body: JsonObject): Promise<JsonObject> {
+    this.pings.push(body);
+    this.wireEvents.push(`ping:${String(body.studioId ?? "clear")}`);
+    return await this.pingHandler?.(body) ?? { ok: true };
+  }
   async registerCapabilities(
     capabilities: StudioCapabilities,
     supportedCommands: string[],
     discoveredTools: Array<{ name: string; description?: string }>,
+    _capabilityDetails: CapabilityDetails,
+    studioIdentity: StudioIdentityMetadata,
   ): Promise<JsonObject> {
-    this.registrations.push({ capabilities, commands: [...supportedCommands], tools: discoveredTools });
+    this.registrations.push({ capabilities, commands: [...supportedCommands], tools: discoveredTools, identity: structuredClone(studioIdentity) });
+    this.wireEvents.push(`register:${String(studioIdentity.studioId ?? "clear")}`);
     if (this.registrationFailures > 0) {
       this.registrationFailures -= 1;
       throw new ConnectorError("BACKEND_TEMPORARY", "simulated registration outage", { retryable: true });
@@ -265,6 +293,17 @@ class MemoryCommandJournal implements CommandJournalLike {
 
 function isTerminalStatus(status: CommandReceiptStatus): boolean {
   return status === "succeeded" || status === "failed" || status === "outcome_unknown";
+}
+
+function pickIdentity(value: JsonObject | StudioIdentityMetadata | undefined): JsonObject {
+  return {
+    studioId: value?.studioId ?? null,
+    placeId: value?.placeId ?? null,
+    universeId: value?.universeId ?? null,
+    placeName: value?.placeName ?? null,
+    placeSignature: value?.placeSignature ?? null,
+    targetIdentityComplete: value?.targetIdentityComplete === true,
+  };
 }
 
 function reliableCommand(options: {
@@ -415,7 +454,13 @@ test("connector refreshes capabilities when a Studio window opens after discover
   mcp.studios = [];
   backend.pollHandler = async (poll) => {
     await new Promise((resolve) => setTimeout(resolve, 1));
-    if (poll === 1) mcp.studios = [{ studio_id: "studio-1", place_id: "42", place_name: "Fixture Place" }];
+    if (poll === 1) mcp.studios = [{
+      studio_id: "studio-1",
+      place_id: "42",
+      place_name: "Fixture Place",
+      universe_id: "84",
+      place_signature: "fixture-signature",
+    }];
     if (backend.registrations.some((registration) => registration.commands.length > 0)) {
       controller.abort(new DOMException("capabilities recovered", "AbortError"));
     }
@@ -435,6 +480,36 @@ test("connector refreshes capabilities when a Studio window opens after discover
   assert.equal(backend.registrations.some((registration) => registration.commands.includes("read_script")), true);
   assert.equal(telemetry.some((event) => event.supportedToolCount === 0 && event.degradedReason === "target_place_unavailable"), true);
   assert.equal(telemetry.some((event) => (event.supportedToolCount ?? 0) > 0), true);
+});
+
+test("initial discovery waits for StudioMCP to populate its Studio window registry", async () => {
+  const controller = new AbortController();
+  const backend = new FakeBackend(controller);
+  const mcp = new FakeMcp();
+  let targetDiscoveryCalls = 0;
+  mcp.callToolHandler = (name) => {
+    if (name !== "list_roblox_studios") return undefined;
+    targetDiscoveryCalls += 1;
+    if (targetDiscoveryCalls < 3) return { structuredContent: { studios: [] } };
+    return undefined;
+  };
+  backend.pollHandler = async () => {
+    controller.abort(new DOMException("startup discovery observed", "AbortError"));
+    return null;
+  };
+  const startupConfig = { ...config, heartbeatMs: 5_000 };
+
+  await new NexusLocalConnector({
+    config: startupConfig,
+    connectorVersion: "0.1.0-test",
+    backend,
+    mcp,
+    logger,
+  }).run("PAIR-CODE", controller.signal);
+
+  assert.equal(targetDiscoveryCalls, 3);
+  assert.deepEqual(backend.registrations[0]?.commands, ["get_studio_context", "read_script", "read_scripts"]);
+  assert.equal(backend.registrations[0]?.identity.placeId, "42");
 });
 
 test("connector leaves MCP reconnect paused when automatic reconnect is disabled", async () => {
@@ -510,10 +585,164 @@ test("heartbeat continues during long polling and shutdown clears the in-memory 
   assert.equal(availablePings.length >= 2, true);
   assert.equal(mcp.callTools.filter((call) => call.name === "list_roblox_studios").length >= 2, true);
   assert.equal(availablePings.every((ping) => ping.activeStudioId === "studio-1"), true);
+  assert.equal(availablePings.every((ping) => ping.studioId === "studio-1"), true);
   assert.equal(availablePings.every((ping) => ping.placeId === "42"), true);
   assert.equal(availablePings.every((ping) => ping.placeName === "Fixture Place"), true);
+  assert.equal(availablePings.every((ping) => ping.universeId === "84"), true);
+  assert.equal(availablePings.every((ping) => ping.placeSignature === "fixture-signature"), true);
   assert.equal(backend.pings.at(-1)?.mcpServerAvailable, false);
+  assert.equal(backend.pings.at(-1)?.studioId, null);
+  assert.equal(backend.pings.at(-1)?.placeId, null);
+  assert.equal(backend.pings.at(-1)?.universeId, null);
+  assert.equal(backend.pings.at(-1)?.placeSignature, null);
   assert.equal(backend.clearCalls, 1);
+});
+
+test("attested Studio IDs reach both session pings and capability registration", async () => {
+  const controller = new AbortController();
+  const backend = new FakeBackend(controller);
+  const mcp = new FakeMcp();
+  mcp.toolPages = [[readTool, executeLuauTool, ...targetTools]];
+  mcp.studios = [{ studio_id: "studio-live", place_name: "Window label" }];
+  mcp.callToolHandler = (name) => name === "execute_luau" ? {
+    structuredContent: {
+      result: {
+        placeId: "116714509720053",
+        universeId: "10669840815",
+        placeName: "NexusRBX Pipeline Test",
+        placeSignature: "a1b2c3d4",
+      },
+    },
+  } : undefined;
+  backend.pollHandler = async () => {
+    controller.abort(new DOMException("identity observed", "AbortError"));
+    return null;
+  };
+
+  await new NexusLocalConnector({ config, connectorVersion: "0.2.8-test", backend, mcp, logger })
+    .run("PAIR-CODE", controller.signal);
+
+  const ping = backend.pings.find((entry) => entry.mcpServerAvailable === true && entry.studioId === "studio-live");
+  assert.deepEqual(pickIdentity(ping), {
+    studioId: "studio-live",
+    placeId: "116714509720053",
+    universeId: "10669840815",
+    placeName: "NexusRBX Pipeline Test",
+    placeSignature: "a1b2c3d4",
+    targetIdentityComplete: true,
+  });
+  const registration = backend.registrations.find((entry) => entry.identity.studioId === "studio-live");
+  assert.deepEqual(pickIdentity(registration?.identity), pickIdentity(ping));
+  assert.deepEqual(registration?.identity.studioTargets[0], {
+    studioId: "studio-live",
+    label: "NexusRBX Pipeline Test",
+    placeId: "116714509720053",
+    placeName: "NexusRBX Pipeline Test",
+    universeId: "10669840815",
+    placeSignature: "a1b2c3d4",
+  });
+});
+
+test("a backend-selected Studio is re-attested and pinged before registration", async () => {
+  const controller = new AbortController();
+  const backend = new FakeBackend(controller);
+  const mcp = new FakeMcp();
+  mcp.studios = [
+    { studio_id: "studio-1", place_id: "101", place_name: "First", universe_id: "201", place_signature: "sig-1" },
+    { studio_id: "studio-2", place_id: "102", place_name: "Second", universe_id: "202", place_signature: "sig-2" },
+  ];
+  backend.pingHandler = () => ({ session: { desiredStudioId: "studio-2" } });
+  backend.pollHandler = async () => {
+    controller.abort(new DOMException("selected identity registered", "AbortError"));
+    return null;
+  };
+
+  await new NexusLocalConnector({ config, connectorVersion: "0.2.8-test", backend, mcp, logger })
+    .run("PAIR-CODE", controller.signal);
+
+  const registrationIndex = backend.wireEvents.indexOf("register:studio-2");
+  assert.equal(registrationIndex > 0, true);
+  assert.deepEqual(backend.wireEvents.slice(registrationIndex - 2, registrationIndex + 1), [
+    "ping:clear",
+    "ping:studio-2",
+    "register:studio-2",
+  ]);
+  assert.deepEqual(pickIdentity(backend.registrations[0]?.identity), {
+    studioId: "studio-2",
+    placeId: "102",
+    universeId: "202",
+    placeName: "Second",
+    placeSignature: "sig-2",
+    targetIdentityComplete: true,
+  });
+});
+
+test("closing the active Studio clears stale identity in ping and registration", async () => {
+  const controller = new AbortController();
+  const backend = new FakeBackend(controller);
+  const mcp = new FakeMcp();
+  backend.pollHandler = async (poll) => {
+    if (poll === 1) mcp.studios = [];
+    await new Promise((resolve) => setTimeout(resolve, 1));
+    if (backend.registrations.some((entry, index) => index > 0 && entry.identity.targetIdentityComplete === false)) {
+      controller.abort(new DOMException("stale identity cleared", "AbortError"));
+    }
+    return null;
+  };
+
+  await new NexusLocalConnector({ config, connectorVersion: "0.2.8-test", backend, mcp, logger })
+    .run("PAIR-CODE", controller.signal);
+
+  const clearedPing = backend.pings.find((entry) => entry.mcpServerAvailable === true && entry.targetIdentityComplete === false);
+  assert.deepEqual(pickIdentity(clearedPing), {
+    studioId: null,
+    placeId: null,
+    universeId: null,
+    placeName: null,
+    placeSignature: null,
+    targetIdentityComplete: false,
+  });
+  assert.deepEqual(clearedPing?.studioTargets, []);
+  const clearedRegistration = backend.registrations.find((entry, index) => index > 0 && entry.identity.targetIdentityComplete === false);
+  assert.deepEqual(pickIdentity(clearedRegistration?.identity), pickIdentity(clearedPing));
+  assert.deepEqual(clearedRegistration?.commands, []);
+});
+
+test("same-window identity changes trigger a fresh target-bound registration", async () => {
+  const controller = new AbortController();
+  const backend = new FakeBackend(controller);
+  const mcp = new FakeMcp();
+  backend.pollHandler = async (poll) => {
+    if (poll === 1) {
+      mcp.studios = [{
+        studio_id: "studio-1",
+        place_id: "116714509720053",
+        place_name: "NexusRBX Pipeline Test",
+        universe_id: "10669840815",
+        place_signature: "changed-signature",
+      }];
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1));
+    if (backend.registrations.some((entry) => entry.identity.placeSignature === "changed-signature")) {
+      controller.abort(new DOMException("identity refresh registered", "AbortError"));
+    }
+    return null;
+  };
+
+  await new NexusLocalConnector({ config, connectorVersion: "0.2.8-test", backend, mcp, logger })
+    .run("PAIR-CODE", controller.signal);
+
+  const refreshed = backend.registrations.find((entry) => entry.identity.placeSignature === "changed-signature");
+  assert.deepEqual(pickIdentity(refreshed?.identity), {
+    studioId: "studio-1",
+    placeId: "116714509720053",
+    universeId: "10669840815",
+    placeName: "NexusRBX Pipeline Test",
+    placeSignature: "changed-signature",
+    targetIdentityComplete: true,
+  });
+  assert.equal(backend.registrations[0]?.identity.studioId, "studio-1");
+  assert.equal(backend.registrations.length >= 2, true);
 });
 
 test("lifecycle-v2 commands fence receipts before MCP work and persist the terminal result", async () => {

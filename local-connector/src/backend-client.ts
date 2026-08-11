@@ -8,6 +8,7 @@ import type {
   PairClaimResponse,
   StudioCapabilities,
   StudioCommand,
+  StudioIdentityMetadata,
 } from "./types.js";
 
 const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
@@ -90,6 +91,7 @@ export class NexusBackendClient implements BackendClientLike {
     supportedCommands: string[],
     discoveredTools: Array<{ name: string; description?: string }>,
     capabilityDetails: CapabilityDetails,
+    studioIdentity: StudioIdentityMetadata,
     signal?: AbortSignal,
   ): Promise<JsonObject> {
     const tools = discoveredTools.map((tool) => ({
@@ -99,7 +101,13 @@ export class NexusBackendClient implements BackendClientLike {
     return this.request(
       "POST",
       "/api/studio/mcp/capabilities",
-      { capabilities: { ...capabilities }, capabilityDetails, supportedCommands, discoveredTools: tools },
+      {
+        capabilities: { ...capabilities },
+        capabilityDetails,
+        supportedCommands,
+        discoveredTools: tools,
+        ...studioIdentity,
+      },
       { authenticated: true, retry: true, ...(signal === undefined ? {} : { signal }) },
     );
   }

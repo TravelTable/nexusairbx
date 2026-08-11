@@ -92,6 +92,15 @@ local function applyCompatibility(heartbeat)
 	compatibilityDetail = missingCommand or missingCapability or reasonCode
 
 	if compatibilityStatus == "compatible" or compatibilityStatus == "degraded" then
+		local targetReady, targetDetail = getStudioTargetReadiness()
+		if targetReady == false then
+			-- A compatible build is not sufficient to open command delivery. The
+			-- authenticated heartbeat must also resume the exact target generation.
+			compatibilityHandshakeReady = false
+			setBridgeState("target_stale", targetDetail)
+			setLast(targetDetail or "Restoring Studio target generation")
+			return true
+		end
 		compatibilityHandshakeReady = true
 		if compatibilityStatus == "degraded" then
 			setBridgeState("degraded", compatibilityDetail and ("Unavailable: " .. tostring(compatibilityDetail)) or "Some Studio features are unavailable")
@@ -100,14 +109,8 @@ local function applyCompatibility(heartbeat)
 			-- Compatible must leave CONNECTING. Previously only degraded/live
 			-- poll paths updated the pill, so a healthy handshake could stick on
 			-- "CONNECTING" / "Restoring Studio connection" forever.
-			local targetReady, targetDetail = getStudioTargetReadiness()
-			if targetReady == false then
-				setBridgeState("target_changed", targetDetail)
-				setLast(targetDetail or "Select the website target that matches this open Studio place")
-			else
-				setBridgeState("live")
-				setLast("Studio connection ready")
-			end
+			setBridgeState("live")
+			setLast("Studio connection ready")
 		end
 		return true
 	end

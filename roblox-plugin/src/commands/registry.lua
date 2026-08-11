@@ -368,16 +368,18 @@ local SCRIPT_WRITE_COMMANDS = {
 
 local function currentScriptHashAt(path)
 	if type(path) ~= "string" or path == "" then
-		return nil, nil
+		return nil, nil, { code = "invalid_path", method = "resolvePath" }
 	end
 	local inst = resolvePath(path)
 	if not inst then
-		return nil, nil
+		return nil, nil, { code = "target_not_found", method = "resolvePath" }
 	end
-	if SCRIPT_CLASSES and SCRIPT_CLASSES[inst.ClassName] and type(scriptHash) == "function" then
-		return inst, scriptHash(inst)
+	if SCRIPT_CLASSES and SCRIPT_CLASSES[inst.ClassName]
+		and type(readScriptSource) == "function" and type(stableHash) == "function" then
+		local ok, source, readEvidence = readScriptSource(inst)
+		return inst, ok and stableHash(source) or nil, readEvidence
 	end
-	return inst, nil
+	return inst, nil, { code = "not_script", className = tostring(inst.ClassName or "") }
 end
 
 -- Re-inspect the place after a mutating command and return semantic evidence
@@ -610,20 +612,78 @@ local function verifyCommandOutcome(command, payload, result)
 			if type(file) == "table" then
 				local p = file.lastResolvedStudioPath or file.canonicalPath or file.path
 				if type(p) == "string" and p ~= "" then
-					local inst = resolvePath(p)
 					local expected = file.lastAppliedSourceHash or file.resultingHash or file.sourceHash
-					local currentHash = inst and SCRIPT_CLASSES[inst.ClassName] and scriptHash(inst) or nil
-					for attempt = 2, 6 do
-						if expected == nil or currentHash == expected then
+					local expectedClassName = tostring(file.className or "")
+					local inst, currentHash, sourceRead = nil, nil, nil
+					local readbackAttempts = 0
+					local readbackWaitMs = 0
+					local readFailureCounts = {}
+					for attempt = 1, 12 do
+						readbackAttempts = attempt
+						-- Retry the complete identity + source read-back. Caching the first path
+						-- resolution would turn any initial lookup miss into a guaranteed failure
+						-- for the whole retry window. currentScriptHashAt remains fail-closed for
+						-- non-scripts and unreadable editor source.
+						inst, currentHash, sourceRead = currentScriptHashAt(p)
+						local classMatches = inst ~= nil and SCRIPT_CLASSES[inst.ClassName]
+							and (expectedClassName == "" or inst.ClassName == expectedClassName)
+						if expected ~= nil and classMatches and currentHash == expected then
 							break
 						end
-						task.wait(0.05)
-						currentHash = inst and SCRIPT_CLASSES[inst.ClassName] and scriptHash(inst) or nil
+						local attemptReason = expected == nil and "missing_expected_hash"
+							or (sourceRead and sourceRead.code)
+						if attemptReason == nil then
+							if currentHash ~= expected then
+								attemptReason = "source_hash_mismatch"
+							end
+						end
+						if attemptReason ~= nil then
+							readFailureCounts[attemptReason] = (readFailureCounts[attemptReason] or 0) + 1
+						end
+						if expected == nil then
+							break
+						end
+						if attempt < 12 then
+							-- Studio's editor buffer may trail an UpdateSourceAsync write for several
+							-- seconds. Re-resolve and re-read with a bounded exponential delay; never
+							-- substitute the handler's claimed hash for this authoritative read-back.
+							local delaySeconds = math.min(0.05 * (2 ^ (attempt - 1)), 1)
+							local waitedSeconds = task.wait(delaySeconds)
+							readbackWaitMs = readbackWaitMs
+								+ math.floor((tonumber(waitedSeconds) or delaySeconds) * 1000 + 0.5)
+						end
 					end
-					addCheck("artifact_file", p, inst ~= nil and expected ~= nil and currentHash == expected, {
+					local actualClassName = inst and inst.ClassName or nil
+					local failureReason = nil
+					if expected == nil then
+						failureReason = "missing_expected_hash"
+					elseif not inst then
+						failureReason = "target_not_found"
+					elseif not SCRIPT_CLASSES[actualClassName]
+						or (expectedClassName ~= "" and actualClassName ~= expectedClassName) then
+						failureReason = "class_mismatch"
+					elseif currentHash == nil then
+						failureReason = "source_unreadable"
+					elseif currentHash ~= expected then
+						failureReason = "source_hash_mismatch"
+					end
+					local classMatches = inst ~= nil and SCRIPT_CLASSES[actualClassName]
+						and (expectedClassName == "" or actualClassName == expectedClassName)
+					addCheck("artifact_file", p, classMatches and expected ~= nil and currentHash == expected, {
 						fileId = file.fileId,
 						expectedHash = expected,
 						actualHash = currentHash,
+						expectedClassName = expectedClassName,
+						actualClassName = actualClassName or "",
+						targetFound = inst ~= nil,
+						classMatches = classMatches == true,
+						sourceReadable = currentHash ~= nil,
+						readbackAttempts = readbackAttempts,
+						readbackWaitMs = readbackWaitMs,
+						readbackMaxAttempts = 12,
+						sourceRead = sourceRead or {},
+						readFailureCounts = readFailureCounts,
+						reason = failureReason,
 					})
 				end
 			end
@@ -875,23 +935,27 @@ local function executeCommand(command)
 		result = { output = result }
 	end
 	local affected = {}
-	if result.path then
-		table.insert(affected, result.path)
+	local affectedSeen = {}
+	local function addAffectedPath(candidate)
+		local path = type(candidate) == "string" and candidate or nil
+		if path and path ~= "" and not affectedSeen[path] then
+			affectedSeen[path] = true
+			table.insert(affected, path)
+		end
 	end
-	if result.previousPath then
-		table.insert(affected, result.previousPath)
-	end
+	addAffectedPath(result.path)
+	addAffectedPath(result.previousPath)
 	if result.files then
 		for _, file in ipairs(result.files) do
 			if type(file) == "table" and file.path then
-				table.insert(affected, file.path)
+				addAffectedPath(file.path)
 			end
 		end
 	end
 	if result.managedFiles then
 		for _, file in ipairs(result.managedFiles) do
 			if type(file) == "table" and file.canonicalPath then
-				table.insert(affected, file.canonicalPath)
+				addAffectedPath(file.canonicalPath)
 			end
 		end
 	end

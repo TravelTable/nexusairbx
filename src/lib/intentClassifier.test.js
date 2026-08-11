@@ -1,4 +1,8 @@
-import { classifyUserIntent, isImplementationIntent } from "./intentClassifier";
+import {
+  classifyExecutionIntent,
+  classifyUserIntent,
+  isImplementationIntent,
+} from "./intentClassifier";
 
 describe("classifyUserIntent", () => {
   test("classifies greetings", () => {
@@ -79,5 +83,44 @@ describe("isImplementationIntent", () => {
     expect(isImplementationIntent("AMBIGUOUS")).toBe(false);
     expect(isImplementationIntent("PLAN_APPROVAL")).toBe(false);
     expect(isImplementationIntent("CANCELLATION")).toBe(false);
+  });
+});
+
+describe("classifyExecutionIntent", () => {
+  test("routes read-only Studio requests to inspection", () => {
+    expect(classifyExecutionIntent("Inspect the current Studio project and list its scripts"))
+      .toBe("inspect");
+    expect(classifyExecutionIntent("What files can you see in Studio?"))
+      .toBe("inspect");
+    expect(classifyExecutionIntent("Explain the current Studio project"))
+      .toBe("inspect");
+    expect(classifyExecutionIntent("Review RemoteEvents", { studioEnabled: true }))
+      .toBe("artifact_only");
+    expect(classifyExecutionIntent("Review my plan", { studioEnabled: true }))
+      .toBe("artifact_only");
+    expect(classifyExecutionIntent("Show an example script"))
+      .toBe("artifact_only");
+    expect(classifyExecutionIntent("Explain how a ModuleScript works"))
+      .toBe("artifact_only");
+  });
+
+  test("distinguishes live builds, fixes, playtests, and explicit artifact-only work", () => {
+    expect(classifyExecutionIntent("Build a round system", { studioEnabled: true }))
+      .toBe("live_build");
+    expect(classifyExecutionIntent("Fix the shop script in Studio"))
+      .toBe("live_fix");
+    expect(classifyExecutionIntent("Playtest the current game"))
+      .toBe("playtest");
+    expect(classifyExecutionIntent("How do I run a test in Studio?"))
+      .toBe("artifact_only");
+    expect(classifyExecutionIntent("Generate code only; do not push to Studio", { studioEnabled: true }))
+      .toBe("artifact_only");
+  });
+
+  test("recognizes Quick Script as an explicit execution channel", () => {
+    expect(classifyExecutionIntent("Put this in ServerScriptService", {
+      studioEnabled: true,
+      generatorMode: "quick_script",
+    })).toBe("quick_script");
   });
 });

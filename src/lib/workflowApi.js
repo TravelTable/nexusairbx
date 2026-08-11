@@ -271,6 +271,10 @@ export function checkWorkflowPlanReadiness(planId, {
   studioTarget,
   targeting,
 } = {}) {
+  const capabilityRegistry = studioTarget?.capabilityRegistry || null;
+  const capabilitySnapshotId = studioTarget?.capabilitySnapshotId
+    || capabilityRegistry?.capabilitySnapshotId
+    || null;
   return workflowRequestWithFallback(getPlanPathCandidates(planId, "/readiness"), {
     method: "POST",
     body: {
@@ -279,10 +283,14 @@ export function checkWorkflowPlanReadiness(planId, {
       projectId: projectId || null,
       studioConnected: Boolean(studioConnected),
       studioTarget: studioTarget || null,
+      ...(capabilitySnapshotId ? { capabilitySnapshotId } : {}),
+      ...(capabilityRegistry ? { capabilityRegistry } : {}),
       targeting: targeting || {
         projectId: projectId || null,
         studioConnected: Boolean(studioConnected),
         studioTarget: studioTarget || null,
+        ...(capabilitySnapshotId ? { capabilitySnapshotId } : {}),
+        ...(capabilityRegistry ? { capabilityRegistry } : {}),
       },
     },
   }).then((payload) => validateObjectResponse(payload, "readiness"));

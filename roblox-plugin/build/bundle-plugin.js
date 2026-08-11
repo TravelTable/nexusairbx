@@ -263,23 +263,143 @@ function wrapModule(relativePath, content) {
   return [`local ${exports.join(", ")}`, "do", promoted, "end"].join("\n");
 }
 
+function longBracketAt(source, offset) {
+  if (source[offset] !== "[") {
+    return null;
+  }
+  let cursor = offset + 1;
+  while (source[cursor] === "=") {
+    cursor += 1;
+  }
+  if (source[cursor] !== "[") {
+    return null;
+  }
+  return {
+    close: `]${"=".repeat(cursor - offset - 1)}]`,
+    contentStart: cursor + 1,
+  };
+}
+
+function copyLongBracket(source, offset) {
+  const bracket = longBracketAt(source, offset);
+  if (!bracket) {
+    return null;
+  }
+  const closeAt = source.indexOf(bracket.close, bracket.contentStart);
+  return closeAt === -1 ? source.length : closeAt + bracket.close.length;
+}
+
+function followedByAssignment(source, offset) {
+  let cursor = offset;
+  while (cursor < source.length && /[\t\r\n ]/.test(source[cursor])) {
+    cursor += 1;
+  }
+  return source[cursor] === "=" && source[cursor + 1] !== "=";
+}
+
+/**
+ * Rewrites unqualified Roblox service globals in Lua/Luau code without
+ * touching data. The generated plugin embeds user-facing text, path strings,
+ * source snippets, and comments, so a text-wide replacement changes runtime
+ * behavior (for example, `"Workspace/Foo"` must remain a canonical path).
+ */
+function rewriteLuaServiceIdentifiers(source) {
+  const serviceNames = new Set(SERVICE_NAMES);
+  const chunks = [];
+  let cursor = 0;
+  let lastCodeToken = null;
+
+  while (cursor < source.length) {
+    const char = source[cursor];
+
+    if (char === "-" && source[cursor + 1] === "-") {
+      const longCommentEnd = copyLongBracket(source, cursor + 2);
+      if (longCommentEnd !== null) {
+        chunks.push(source.slice(cursor, longCommentEnd));
+        cursor = longCommentEnd;
+        continue;
+      }
+      const lineEnd = source.indexOf("\n", cursor + 2);
+      const end = lineEnd === -1 ? source.length : lineEnd;
+      chunks.push(source.slice(cursor, end));
+      cursor = end;
+      continue;
+    }
+
+    if (char === '"' || char === "'") {
+      const quote = char;
+      const start = cursor;
+      cursor += 1;
+      while (cursor < source.length) {
+        if (source[cursor] === "\\") {
+          cursor = Math.min(source.length, cursor + 2);
+        } else if (source[cursor] === quote) {
+          cursor += 1;
+          break;
+        } else {
+          cursor += 1;
+        }
+      }
+      chunks.push(source.slice(start, cursor));
+      lastCodeToken = "literal";
+      continue;
+    }
+
+    const longStringEnd = copyLongBracket(source, cursor);
+    if (longStringEnd !== null) {
+      chunks.push(source.slice(cursor, longStringEnd));
+      cursor = longStringEnd;
+      lastCodeToken = "literal";
+      continue;
+    }
+
+    if (/[A-Za-z_]/.test(char)) {
+      const start = cursor;
+      cursor += 1;
+      while (cursor < source.length && /[A-Za-z0-9_]/.test(source[cursor])) {
+        cursor += 1;
+      }
+      const identifier = source.slice(start, cursor);
+      const isQualifiedField = lastCodeToken === "." || lastCodeToken === ":";
+      const isAssignmentTarget = followedByAssignment(source, cursor);
+      chunks.push(
+        serviceNames.has(identifier) && !isQualifiedField && !isAssignmentTarget
+          ? `Services.${identifier}`
+          : identifier,
+      );
+      lastCodeToken = identifier;
+      continue;
+    }
+
+    if (/\s/.test(char)) {
+      chunks.push(char);
+      cursor += 1;
+      continue;
+    }
+
+    if (char === "." && source[cursor + 1] === ".") {
+      const token = source[cursor + 2] === "." ? "..." : "..";
+      chunks.push(token);
+      cursor += token.length;
+      lastCodeToken = token;
+      continue;
+    }
+
+    chunks.push(char);
+    cursor += 1;
+    lastCodeToken = char;
+  }
+
+  return chunks.join("");
+}
+
 function rewriteServices(bundle) {
   const configEnd = bundle.indexOf("-- END src/config.lua");
   if (configEnd === -1) {
     throw new Error("Missing config section in bundled plugin");
   }
   const prefix = bundle.slice(0, configEnd);
-  let suffix = bundle.slice(configEnd);
-  for (const serviceName of SERVICE_NAMES) {
-    suffix = suffix.replace(new RegExp(`\\b${escapeRegExp(serviceName)}\\b`, "g"), `Services.${serviceName}`);
-  }
-  for (const serviceName of SERVICE_NAMES) {
-    suffix = suffix.replace(
-      new RegExp(`^(\\t*)Services\\.${escapeRegExp(serviceName)} = Services\\.${escapeRegExp(serviceName)}`, "gm"),
-      `$1[Services.${serviceName}] = Services.${serviceName}`,
-    );
-  }
-  return prefix + suffix;
+  return prefix + rewriteLuaServiceIdentifiers(bundle.slice(configEnd));
 }
 
 const body = sources
@@ -315,7 +435,14 @@ if (localCount > 200) {
   throw new Error(`Bundled plugin exceeds Luau local register limit: ${localCount} > 200`);
 }
 
-fs.writeFileSync(outputPath, output, "utf8");
-console.log(
-  `Bundled ${sources.length} source files into ${path.relative(process.cwd(), outputPath)} (${localCount} top-level locals)`,
-);
+if (require.main === module) {
+  fs.writeFileSync(outputPath, output, "utf8");
+  console.log(
+    `Bundled ${sources.length} source files into ${path.relative(process.cwd(), outputPath)} (${localCount} top-level locals)`,
+  );
+}
+
+module.exports = {
+  rewriteLuaServiceIdentifiers,
+  rewriteServices,
+};

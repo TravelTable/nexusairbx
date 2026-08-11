@@ -35,6 +35,7 @@ const EMPTY_AGENT_RUN = {
 
 function normalizeRunState(value) {
   const state = String(value || "").trim().toLowerCase();
+  if (state === "completed" || state === "done") return "succeeded";
   if (
     [
       "inspecting",
@@ -54,6 +55,7 @@ function normalizeRunState(value) {
       "conflict",
       "failed",
       "cancelled",
+      "canceled",
       "blocked",
       "iteration_limit",
       "timed_out",

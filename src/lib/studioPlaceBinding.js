@@ -4,6 +4,18 @@
  * Target IDs are opaque backend-emitted studio_target_* values — never invent session: IDs here.
  */
 import { normalizeRobloxPlaceId } from "./robloxPlaceId";
+import {
+  buildStudioCapabilityRegistry,
+  getStudioConnectionType,
+  getStudioSessionId,
+  isStudioSessionLive,
+  STUDIO_CONNECTION_TYPES,
+} from "./studioConnection";
+
+function cleanOptional(value) {
+  const normalized = String(value ?? "").trim();
+  return normalized || null;
+}
 
 export function normalizeStudioTargetOption(option = {}) {
   const id = String(
@@ -33,6 +45,19 @@ export function normalizeStudioTargetOption(option = {}) {
       : String(option.universeId).trim(),
     isUntitled: option.isUntitled === true || !placeId,
     pluginSessionId: option.pluginSessionId || null,
+    ...(cleanOptional(option.mcpSessionId) ? { mcpSessionId: cleanOptional(option.mcpSessionId) } : {}),
+    ...(cleanOptional(option.placeSignature || option.targetSignature || option.studio?.placeSignature)
+      ? { placeSignature: cleanOptional(
+          option.placeSignature || option.targetSignature || option.studio?.placeSignature
+        ) }
+      : {}),
+    ...(cleanOptional(option.capabilitySnapshotId)
+      ? { capabilitySnapshotId: cleanOptional(option.capabilitySnapshotId) }
+      : {}),
+    ...(option.observedAt != null ? { observedAt: option.observedAt } : {}),
+    ...(option.capabilityRegistry && typeof option.capabilityRegistry === "object"
+      ? { capabilityRegistry: option.capabilityRegistry }
+      : {}),
     source: option.source || null,
     connectionType: option.connectionType || null,
   };
@@ -226,14 +251,57 @@ export function resolveGameIdentityFromStudioStatus(statusOrSnapshot = {}, {
 
 export function targetingOptionsFromStatus(statusOrSnapshot = {}) {
   const targeting = statusOrSnapshot.targeting || {};
+  const sessions = Array.isArray(statusOrSnapshot.sessions) ? statusOrSnapshot.sessions : [];
   const fromTargeting = Array.isArray(targeting.targets)
-    ? targeting.targets.map(normalizeStudioTargetOption).filter(Boolean)
+    ? targeting.targets.map((rawTarget) => {
+        const target = normalizeStudioTargetOption(rawTarget);
+        if (!target) return null;
+        const matchedSessions = sessions.filter((session) => {
+          if (!isStudioSessionLive(session)) return false;
+          const sessionTargetId = cleanOptional(
+            session?.studioTargetId || session?.targetingTargetId || session?.studio?.targetId
+          );
+          if (sessionTargetId) return sessionTargetId === target.studioTargetId;
+          const explicitSessionId = getStudioConnectionType(session) === STUDIO_CONNECTION_TYPES.MCP_LOCAL
+            ? target.mcpSessionId
+            : target.pluginSessionId;
+          if (explicitSessionId) return getStudioSessionId(session) === explicitSessionId;
+          const sessionPlaceId = normalizeRobloxPlaceId(session?.studio?.placeId ?? session?.placeId);
+          return Boolean(target.placeId && sessionPlaceId === target.placeId);
+        });
+        const pluginSession = matchedSessions.find(
+          (session) => getStudioConnectionType(session) === STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE
+        );
+        const mcpSession = matchedSessions.find(
+          (session) => getStudioConnectionType(session) === STUDIO_CONNECTION_TYPES.MCP_LOCAL
+        );
+        const enriched = normalizeStudioTargetOption({
+          ...target,
+          pluginSessionId: target.pluginSessionId || getStudioSessionId(pluginSession),
+          mcpSessionId: target.mcpSessionId || getStudioSessionId(mcpSession),
+          placeSignature: target.placeSignature || cleanOptional(
+            mcpSession?.placeSignature
+            || mcpSession?.studio?.placeSignature
+            || pluginSession?.placeSignature
+            || pluginSession?.studio?.placeSignature
+          ),
+          observedAt: Math.max(
+            Number(target.observedAt || 0),
+            ...matchedSessions.map((session) => Number(session?.lastSeenAt || session?.observedAt || 0))
+          ) || null,
+        });
+        return matchedSessions.length
+          ? {
+              ...enriched,
+              capabilityRegistry: buildStudioCapabilityRegistry({ sessions, target: enriched }),
+            }
+          : enriched;
+      }).filter(Boolean)
     : [];
   if (fromTargeting.length) return fromTargeting;
 
   // Fallback only when targeting payload is absent. Prefer opaque IDs from sessions
   // when present; never synthesize place: keys that diverge from backend IDs.
-  const sessions = Array.isArray(statusOrSnapshot.sessions) ? statusOrSnapshot.sessions : [];
   const options = [];
   const seen = new Set();
   for (const session of sessions) {
@@ -259,11 +327,17 @@ export function targetingOptionsFromStatus(statusOrSnapshot = {}) {
       label: experienceName || placeName || "Untitled Studio project",
       isUntitled: !placeId,
       pluginSessionId: session?.connectionType === "plugin_bridge" ? session.id : null,
+      mcpSessionId: session?.connectionType === "mcp_local" ? session.id : null,
+      placeSignature: session?.placeSignature || session?.studio?.placeSignature || null,
+      observedAt: session?.lastSeenAt || null,
       connectionType: session?.connectionType || null,
       source: session?.connectionType === "plugin_bridge" ? "plugin" : "mcp",
     }));
   }
-  return options.filter(Boolean);
+  return options.filter(Boolean).map((option) => ({
+    ...option,
+    capabilityRegistry: buildStudioCapabilityRegistry({ sessions, target: option }),
+  }));
 }
 
 export function readChatStudioPreference(chatMeta = null) {
@@ -273,7 +347,24 @@ export function readChatStudioPreference(chatMeta = null) {
   const placeId = normalizeRobloxPlaceId(preference.placeId);
   const label = String(preference.label || "").trim() || "Untitled Studio project";
   if (!targetId && !placeId) return null;
-  return { targetId: targetId || null, placeId, label };
+  return {
+    targetId: targetId || null,
+    placeId,
+    label,
+    ...(cleanOptional(preference.universeId) ? { universeId: cleanOptional(preference.universeId) } : {}),
+    ...(cleanOptional(preference.placeName) ? { placeName: cleanOptional(preference.placeName) } : {}),
+    ...(cleanOptional(preference.pluginSessionId)
+      ? { pluginSessionId: cleanOptional(preference.pluginSessionId) }
+      : {}),
+    ...(cleanOptional(preference.mcpSessionId) ? { mcpSessionId: cleanOptional(preference.mcpSessionId) } : {}),
+    ...(cleanOptional(preference.placeSignature || preference.targetSignature)
+      ? { placeSignature: cleanOptional(preference.placeSignature || preference.targetSignature) }
+      : {}),
+    ...(cleanOptional(preference.capabilitySnapshotId)
+      ? { capabilitySnapshotId: cleanOptional(preference.capabilitySnapshotId) }
+      : {}),
+    ...(preference.observedAt != null ? { observedAt: preference.observedAt } : {}),
+  };
 }
 
 export function buildStudioTargetPreference(option = {}) {
@@ -283,6 +374,16 @@ export function buildStudioTargetPreference(option = {}) {
     targetId: normalized.studioTargetId || normalized.id,
     placeId: normalized.placeId,
     label: normalized.label,
+    ...(normalized.universeId ? { universeId: normalized.universeId } : {}),
+    ...(normalized.placeName ? { placeName: normalized.placeName } : {}),
+    ...(normalized.pluginSessionId ? { pluginSessionId: normalized.pluginSessionId } : {}),
+    ...(normalized.mcpSessionId ? { mcpSessionId: normalized.mcpSessionId } : {}),
+    ...(normalized.placeSignature ? { placeSignature: normalized.placeSignature } : {}),
+    ...(normalized.capabilitySnapshotId
+      ? { capabilitySnapshotId: normalized.capabilitySnapshotId }
+      : {}),
+    ...(normalized.observedAt != null ? { observedAt: normalized.observedAt } : {}),
+    ...(normalized.capabilityRegistry ? { capabilityRegistry: normalized.capabilityRegistry } : {}),
   };
 }
 

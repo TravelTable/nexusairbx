@@ -96,6 +96,22 @@ describe("streamRecovery", () => {
     ).toEqual({ title: "Done" });
   });
 
+  test.each(["user_cancelled", "user_canceled", "cancelled-by-user"])(
+    "normalizes recovered failed jobs with %s evidence as user cancellation",
+    (failureCode) => {
+      const failure = getTerminalGenerateFailure({
+        status: "failed",
+        done: true,
+        failureCode,
+      });
+
+      expect(failure).toMatchObject({
+        message: "Generation canceled.",
+        code: "user_cancelled",
+      });
+    },
+  );
+
   test("pollJobResult fails fast on failed jobs", async () => {
     const fetchImpl = jest.fn().mockResolvedValue({
       status: 409,
