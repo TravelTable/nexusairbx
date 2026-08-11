@@ -115,7 +115,7 @@ export default function NexusRBXSignUpPageContainer() {
         });
         return;
       }
-      if (pendingAction) navigate(authReturnPath || "/ai", { replace: true });
+      navigate(authReturnPath || "/ai", { replace: true });
     });
     return () => unsubscribe();
   }, [authReturnPath, formStatus.status, navigate, pendingAction]);

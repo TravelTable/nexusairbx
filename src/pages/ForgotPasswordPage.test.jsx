@@ -56,7 +56,9 @@ describe("ForgotPasswordPage", () => {
       expect.objectContaining({ name: "test-auth" }),
       "unknown@example.com",
     );
-    expect(screen.getByRole("link", { name: "Back to sign in" }).getAttribute("href")).toBe("/signin");
+    const backLink = screen.getByRole("link", { name: "Back to sign in" });
+    expect(backLink.getAttribute("href")).toBe("/signin");
+    expect(backLink.className).toContain("min-h-11");
   });
 
   test("allows a successful address to be corrected and resubmitted without reload", async () => {

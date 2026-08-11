@@ -796,7 +796,7 @@ export default function ChatComposer({
                 onClick={() => onModeChange?.(planFirst ? "agent" : "plan")}
                 disabled={disabled || isGenerating}
                 aria-pressed={planFirst}
-                className={`inline-flex h-11 items-center rounded-md px-1.5 text-[10px] font-bold transition-[background-color,color,opacity] duration-150 focus-ring disabled:opacity-40 xl:h-7 xl:px-2 ${
+                className={`inline-flex h-11 min-w-11 items-center justify-center rounded-md px-1.5 text-[10px] font-bold transition-[background-color,color,opacity] duration-150 focus-ring disabled:opacity-40 xl:h-7 xl:min-w-0 xl:px-2 ${
                   planFirst
                     ? "bg-[color-mix(in_srgb,var(--ds-plan)_10%,transparent)] text-[var(--ds-plan)]"
                     : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text-secondary)]"

@@ -81,6 +81,7 @@ describe("ChatComposer compact interactions", () => {
       expect(control.className).toContain("h-11");
     }
     expect(upload.className).toContain("w-11");
+    expect(plan.className).toContain("min-w-11");
     expect(settings.className).toContain("w-11");
     expect(send.className).toContain("w-11");
   });
