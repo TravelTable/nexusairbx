@@ -37,6 +37,12 @@ describe("ChatHeader", () => {
   test("names the compact plan action for assistive technology", () => {
     render(<ChatHeader onOpenPlan={jest.fn()} />);
 
-    expect(screen.getByRole("button", { name: "Review plan" })).toBeTruthy();
+    const navigation = screen.getByRole("button", { name: "Open navigation" });
+    const review = screen.getByRole("button", { name: "Review plan" });
+
+    expect(navigation.className).toContain("h-11");
+    expect(navigation.className).toContain("w-11");
+    expect(review.className).toContain("h-11");
+    expect(review.className).toContain("min-w-11");
   });
 });

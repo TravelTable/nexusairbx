@@ -49,7 +49,7 @@ export default function ChatHeader({
         <button
           type="button"
           onClick={onOpenNavigation}
-          className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-[var(--ds-text-secondary)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring xl:hidden"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-md text-[var(--ds-text-secondary)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring xl:hidden"
           aria-label="Open navigation"
         >
           <Menu className="h-4 w-4" />
@@ -74,14 +74,14 @@ export default function ChatHeader({
               }
             }}
             maxLength={80}
-            className="h-8 min-w-0 max-w-[min(46vw,28rem)] rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2 text-sm font-medium text-[var(--ds-text)] outline-none focus:border-[var(--ds-accent-border)] focus-ring"
+            className="h-11 min-w-0 max-w-[min(46vw,28rem)] rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2 text-sm font-medium text-[var(--ds-text)] outline-none focus:border-[var(--ds-accent-border)] focus-ring xl:h-8"
             aria-label="Chat title"
           />
         ) : (
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="group/title flex min-w-0 items-center gap-1.5 rounded-md px-1 py-1 text-left text-sm font-medium text-[var(--ds-text)] transition-colors hover:bg-[var(--ds-fill-subtle)] focus-ring"
+            className="group/title flex min-h-11 min-w-0 items-center gap-1.5 rounded-md px-1 py-1 text-left text-sm font-medium text-[var(--ds-text)] transition-colors hover:bg-[var(--ds-fill-subtle)] focus-ring xl:min-h-0"
             title="Rename chat"
           >
             <span className="truncate">{chatTitle}</span>
@@ -96,7 +96,7 @@ export default function ChatHeader({
             type="button"
             onClick={onOpenPlan}
             aria-label="Review plan"
-            className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold text-[var(--ds-text-secondary)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring"
+            className="inline-flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-md px-2.5 text-xs font-semibold text-[var(--ds-text-secondary)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring xl:h-8 xl:min-w-0"
           >
             <ListChecks className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Review</span>

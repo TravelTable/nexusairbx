@@ -97,7 +97,7 @@ function ModeSelector({ mode, onModeChange, disabled }) {
           });
         }}
         disabled={disabled}
-        className={`inline-flex h-7 items-center gap-1.5 rounded-md border border-[var(--ds-border-subtle)] px-2 text-[10px] font-bold uppercase tracking-wider transition-[border-color,background-color,color,opacity,transform] duration-150 ease-out active:scale-[0.98] focus-ring disabled:cursor-not-allowed disabled:opacity-40 ${current.bg} ${current.color} hover:bg-[var(--ds-fill-hover)]`}
+        className={`inline-flex h-11 items-center gap-1 rounded-md border border-[var(--ds-border-subtle)] px-1.5 text-[10px] font-bold uppercase tracking-wider transition-[border-color,background-color,color,opacity,transform] duration-150 ease-out active:scale-[0.98] focus-ring disabled:cursor-not-allowed disabled:opacity-40 xl:h-7 xl:gap-1.5 xl:px-2 ${current.bg} ${current.color} hover:bg-[var(--ds-fill-hover)]`}
         title="Select mode"
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -766,7 +766,7 @@ export default function ChatComposer({
             />
           </div>
 
-          <div className="flex items-center justify-between gap-2 px-2 pb-2 pt-1">
+          <div className="flex items-center justify-between gap-2 px-1 pb-2 pt-1 sm:px-2">
             <div className="flex min-w-0 items-center gap-1">
               <input
                 ref={fileInputRef}
@@ -782,7 +782,7 @@ export default function ChatComposer({
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={disabled || robloxImageUploading}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[var(--ds-text-muted)] transition-[background-color,color,opacity,transform] duration-150 hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] active:scale-95 focus-ring disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[var(--ds-text-muted)] transition-[background-color,color,opacity,transform] duration-150 hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] active:scale-95 focus-ring disabled:cursor-not-allowed disabled:opacity-40 xl:h-7 xl:w-7"
                 title="Upload image to Roblox or attach a code/text file"
                 aria-label="Upload image to Roblox or attach a code/text file"
               >
@@ -796,21 +796,22 @@ export default function ChatComposer({
                 onClick={() => onModeChange?.(planFirst ? "agent" : "plan")}
                 disabled={disabled || isGenerating}
                 aria-pressed={planFirst}
-                className={`inline-flex h-7 items-center rounded-md px-2 text-[10px] font-bold transition-[background-color,color,opacity] duration-150 focus-ring disabled:opacity-40 ${
+                className={`inline-flex h-11 items-center rounded-md px-1.5 text-[10px] font-bold transition-[background-color,color,opacity] duration-150 focus-ring disabled:opacity-40 xl:h-7 xl:px-2 ${
                   planFirst
                     ? "bg-[color-mix(in_srgb,var(--ds-plan)_10%,transparent)] text-[var(--ds-plan)]"
                     : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text-secondary)]"
                 }`}
                 title="Plan before making changes"
               >
-                Plan first
+                <span className="sm:hidden">Plan</span>
+                <span className="hidden sm:inline">Plan first</span>
               </button>
               <div className="relative">
                 <button
                   ref={usageButtonRef}
                   type="button"
                   onClick={() => setUsageOpen((value) => !value)}
-                  className={`inline-flex h-7 items-center gap-1 rounded-md px-2 text-[10px] font-bold transition-[background-color,color,opacity] duration-150 focus-ring ${
+                  className={`inline-flex h-11 items-center gap-1 rounded-md px-1.5 text-[10px] font-bold transition-[background-color,color,opacity] duration-150 focus-ring xl:h-7 xl:px-2 ${
                     usageOpen
                       ? "bg-[var(--ds-fill-hover)] text-[var(--ds-text)]"
                       : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text-secondary)]"
@@ -819,7 +820,7 @@ export default function ChatComposer({
                   aria-haspopup="dialog"
                 >
                   Usage
-                  <ChevronDown className={`h-3 w-3 transition-transform duration-150 ${usageOpen ? "rotate-180" : ""}`} />
+                  <ChevronDown className={`hidden h-3 w-3 transition-transform duration-150 sm:block ${usageOpen ? "rotate-180" : ""}`} />
                 </button>
                 {usageOpen && (
                   <div
@@ -840,7 +841,7 @@ export default function ChatComposer({
                   ref={controlsButtonRef}
                   type="button"
                   onClick={() => setControlsOpen((value) => !value)}
-                  className={`flex h-7 w-7 items-center justify-center rounded-md transition-[background-color,color,opacity,transform] duration-150 active:scale-95 focus-ring ${
+                  className={`flex h-11 w-11 items-center justify-center rounded-md transition-[background-color,color,opacity,transform] duration-150 active:scale-95 focus-ring xl:h-7 xl:w-7 ${
                     controlsOpen
                       ? "bg-[var(--ds-fill-hover)] text-[var(--ds-text)]"
                       : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
@@ -923,7 +924,7 @@ export default function ChatComposer({
                   type="button"
                   onClick={(event) => submitDraft(event, { interrupt: true })}
                   disabled={disabled}
-                  className="inline-flex h-8 items-center rounded-md border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] px-2 text-[10px] font-bold text-[var(--ds-warning)] transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_20%,transparent)] focus-ring disabled:opacity-40"
+                  className="inline-flex h-11 items-center rounded-md border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] px-2 text-[10px] font-bold text-[var(--ds-warning)] transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_20%,transparent)] focus-ring disabled:opacity-40 xl:h-8"
                   title="Stop the active operation, then send this prompt (Cmd/Ctrl+Enter)"
                 >
                   Stop &amp; send
@@ -935,7 +936,7 @@ export default function ChatComposer({
                 data-tour="generate-btn"
                 onClick={(event) => (isGenerating ? onStop?.() : submitDraft(event))}
                 disabled={isGenerating ? disabled || !onStop : disabled || !canSendWithContext}
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-[background-color,color,opacity,transform] duration-150 active:scale-95 focus-ring disabled:opacity-40 disabled:active:scale-100 ${
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition-[background-color,color,opacity,transform] duration-150 active:scale-95 focus-ring disabled:opacity-40 disabled:active:scale-100 xl:h-8 xl:w-8 ${
                   isGenerating
                     ? "border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] text-[var(--ds-danger)] hover:bg-[color-mix(in_srgb,var(--ds-danger)_20%,transparent)]"
                     : "bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)]"

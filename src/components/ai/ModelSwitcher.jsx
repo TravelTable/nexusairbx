@@ -296,7 +296,7 @@ export default function ModelSwitcher({
           updateMenuPosition();
           setOpen((o) => !o);
         }}
-        className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--ds-fill-subtle)] border border-[var(--ds-border-subtle)] text-xs font-bold text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)] hover:bg-[var(--ds-fill-hover)] transition-all ${
+        className={`inline-flex min-h-11 items-center gap-2 px-3 py-2 rounded-xl bg-[var(--ds-fill-subtle)] border border-[var(--ds-border-subtle)] text-xs font-bold text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)] hover:bg-[var(--ds-fill-hover)] transition-all xl:min-h-0 ${
           fullWidth ? "w-full justify-between" : "max-w-[240px]"
         }`}
         title="Select AI model"

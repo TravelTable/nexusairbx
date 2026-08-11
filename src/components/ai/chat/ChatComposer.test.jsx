@@ -67,6 +67,24 @@ describe("ChatComposer compact interactions", () => {
     expect(screen.getByTitle("Open advanced Studio and Roblox settings").getAttribute("aria-expanded")).toBe("false");
   });
 
+  test("keeps primary composer actions touch-sized below desktop", () => {
+    renderComposer();
+
+    const upload = screen.getByRole("button", { name: "Upload image to Roblox or attach a code/text file" });
+    const mode = screen.getByTitle("Select mode");
+    const plan = screen.getByTitle("Plan before making changes");
+    const usage = screen.getByRole("button", { name: /Usage/i });
+    const settings = screen.getByTitle("Open advanced Studio and Roblox settings");
+    const send = screen.getByRole("button", { name: "Send prompt" });
+
+    for (const control of [upload, mode, plan, usage, settings, send]) {
+      expect(control.className).toContain("h-11");
+    }
+    expect(upload.className).toContain("w-11");
+    expect(settings.className).toContain("w-11");
+    expect(send.className).toContain("w-11");
+  });
+
   test("shows continuing-from-earlier-message chip while rewind target is set", () => {
     const onCancelRewind = jest.fn();
     renderComposer({

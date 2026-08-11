@@ -22,6 +22,19 @@ function renderPicker(onSelectStudioPlace) {
   fireEvent.click(screen.getByRole("button", { name: /choose a studio place/i }));
 }
 
+test("keeps the Studio place selector touch-sized below desktop", () => {
+  render(
+    <StudioPlaceChip
+      connected
+      studioEnabled
+      options={[target]}
+      onSelectPlace={jest.fn()}
+    />
+  );
+
+  expect(screen.getByRole("button", { name: /choose a studio place/i }).className).toContain("min-h-11");
+});
+
 test("keeps the picker open when async place selection fails", async () => {
   const onSelectStudioPlace = jest.fn(async () => false);
   renderPicker(onSelectStudioPlace);
