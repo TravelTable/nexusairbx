@@ -69,6 +69,7 @@ import {
   buildStudioTargetPreference,
   canBindStudioTargetToProject,
   evaluateStudioPlaceGate,
+  evaluateStudioSubmissionPreflight,
   normalizeStudioTargetOption,
   readChatStudioPreference,
   targetingOptionsFromStatus,
@@ -1289,6 +1290,19 @@ export function useAiWorkspaceController() {
       return executePromptOperation(e, overridePrompt, submissionOptions);
     }
 
+    const studioPreflight = evaluateStudioSubmissionPreflight({
+      studioEnabled,
+      connected: studioConnection.connected,
+      mode: settings?.chatMode || chat.activeMode || "agent",
+      preference: submissionOptions?.studioTargetPreference || effectiveStudioPlacePreference,
+      options: studioPlaceOptions,
+    });
+    if (studioPreflight.status === "blocked") {
+      notify({ message: studioPreflight.message, type: "error" });
+      setStudioPlacePickerOpen(true);
+      return undefined;
+    }
+
     const coordinator = chatOperationCoordinatorRef.current;
     const operationId = String(submissionOptions?.operationId || uuidv4());
     const operationType = String(submissionOptions?.operationType || "submit");
@@ -1392,11 +1406,18 @@ export function useAiWorkspaceController() {
   }, [
     attachments,
     chat.currentChatId,
+    chat.activeMode,
+    effectiveStudioPlacePreference,
     executePromptOperation,
     generatorMode,
+    notify,
     projectAssets.assets.length,
     prompt,
     refineTarget,
+    settings?.chatMode,
+    studioConnection.connected,
+    studioEnabled,
+    studioPlaceOptions,
     unified,
     user,
   ]);

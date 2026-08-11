@@ -3,6 +3,7 @@ import {
   buildStudioTargetPreference,
   canBindStudioTargetToProject,
   evaluateStudioPlaceGate,
+  evaluateStudioSubmissionPreflight,
   findProjectByPlaceId,
   normalizeStudioTargetOption,
   readChatStudioPreference,
@@ -257,6 +258,58 @@ describe("studioPlaceBinding", () => {
       requirePlugin: true,
       options: [{ id: "t1", placeId: "1", label: "A" }],
     }).status).toBe("needs_plugin");
+  });
+
+  test("preflight blocks unpublished Studio targets before chat admission", () => {
+    expect(evaluateStudioSubmissionPreflight({
+      studioEnabled: true,
+      connected: true,
+      mode: "agent",
+      preference: { targetId: "local-target" },
+      options: [{ id: "local-target", placeId: null, universeId: null }],
+    })).toEqual({
+      status: "blocked",
+      reason: "needs_publish",
+      message: "Publish an open Studio place to Roblox before using Agent Build.",
+    });
+  });
+
+  test("preflight asks for selection when a publishable target is available", () => {
+    expect(evaluateStudioSubmissionPreflight({
+      studioEnabled: true,
+      connected: true,
+      mode: "debug",
+      preference: null,
+      options: [
+        { id: "local-target", placeId: null, universeId: null },
+        { id: "published-target", placeId: "123", universeId: "456" },
+      ],
+    })).toEqual({
+      status: "blocked",
+      reason: "needs_selection",
+      message: "Choose which Studio place this chat should edit before sending.",
+    });
+  });
+
+  test("preflight passes a selected publishable target and defers stale status", () => {
+    const publishedTarget = {
+      id: "published-target",
+      placeId: "123",
+      universeId: "456",
+    };
+    expect(evaluateStudioSubmissionPreflight({
+      studioEnabled: true,
+      connected: true,
+      mode: "agent",
+      preference: { targetId: "published-target" },
+      options: [publishedTarget],
+    })).toEqual({ status: "pass", target: publishedTarget });
+    expect(evaluateStudioSubmissionPreflight({
+      studioEnabled: true,
+      connected: true,
+      mode: "agent",
+      options: [],
+    })).toEqual({ status: "pass" });
   });
 
   test("resolveGameTitleFromTarget prefers experienceName then placeName", () => {

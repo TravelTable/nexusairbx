@@ -430,3 +430,43 @@ export function evaluateStudioPlaceGate({
   }
   return { status: "needs_selection", options: liveOptions };
 }
+
+/**
+ * Synchronously catch known Studio target issues before a chat operation is
+ * admitted. Empty or disconnected target state is left to the async submit
+ * path, which can refresh Studio status before deciding whether to block.
+ */
+export function evaluateStudioSubmissionPreflight({
+  studioEnabled = false,
+  connected = false,
+  mode = "agent",
+  preference = null,
+  options = [],
+} = {}) {
+  const liveOptions = Array.isArray(options) ? options.filter(Boolean) : [];
+  const studioMode = ["agent", "debug"].includes(String(mode || "agent").toLowerCase());
+  if (!studioEnabled || !connected || !studioMode || liveOptions.length === 0) {
+    return { status: "pass" };
+  }
+
+  const gate = evaluateStudioPlaceGate({
+    studioEnabled: true,
+    connected: true,
+    preference,
+    options: liveOptions,
+  });
+  const selectedTargetCannotBind = gate.status === "ready"
+    && !canBindStudioTargetToProject(gate.target);
+  if (gate.status !== "needs_selection" && !selectedTargetCannotBind) {
+    return { status: "pass", target: gate.target };
+  }
+
+  const hasBindableTarget = liveOptions.some(canBindStudioTargetToProject);
+  return {
+    status: "blocked",
+    reason: hasBindableTarget ? "needs_selection" : "needs_publish",
+    message: hasBindableTarget
+      ? "Choose which Studio place this chat should edit before sending."
+      : "Publish an open Studio place to Roblox before using Agent Build.",
+  };
+}
