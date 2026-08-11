@@ -160,6 +160,9 @@ export default function QuickScriptWorkspace({
 
   return (
     <section className="relative flex h-full min-h-0 overflow-hidden bg-[#050505]" aria-label="Quick generator">
+      {result && (
+        <h1 className="sr-only">{result.title || "Generated Quick script"}</h1>
+      )}
       <div
         className={cx(
           "min-h-0 min-w-0 flex-1 flex-col bg-ink-900",

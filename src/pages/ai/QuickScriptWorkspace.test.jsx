@@ -115,6 +115,7 @@ describe("QuickScriptWorkspace", () => {
 
     expect(screen.getByTestId("quick-result-pane")).toHaveClass("flex");
     expect(screen.getByTestId("quick-prompt-pane")).toHaveClass("hidden");
+    expect(screen.getByRole("heading", { level: 1, name: "Damage part" })).toBeInTheDocument();
     expect(screen.getByText(/Sign up to save, export, push to Studio/i)).toBeInTheDocument();
     expect(await screen.findByText("print('ready')")).toBeInTheDocument();
 
