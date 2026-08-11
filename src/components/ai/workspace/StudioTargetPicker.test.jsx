@@ -6,8 +6,8 @@ describe("StudioTargetPicker", () => {
   const selection = {
     prompt: "Where should I make these changes?",
     options: [
-      { id: "opaque-one", label: "My Obby" },
-      { id: "opaque-two", label: "Untitled Studio project" },
+      { id: "opaque-one", placeId: "1", universeId: "10", label: "My Obby" },
+      { id: "opaque-two", placeId: "2", universeId: "20", label: "Untitled Studio project" },
     ],
   };
 
@@ -40,6 +40,31 @@ describe("StudioTargetPicker", () => {
     const buttons = screen.getAllByRole("button");
     expect(buttons.every((button) => button.disabled)).toBe(true);
     fireEvent.click(buttons[0]);
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  test("explains why a local place cannot be selected", () => {
+    const onSelect = jest.fn();
+    render(
+      <StudioTargetPicker
+        selection={{
+          prompt: "Choose a place",
+          options: [{
+            id: "local-place",
+            label: "LocalPlace.rbxl",
+            disabled: true,
+            disabledReason: "Publish to Roblox before using Agent Build",
+          }],
+        }}
+        onSelect={onSelect}
+      />
+    );
+
+    const button = screen.getByRole("button", {
+      name: /LocalPlace\.rbxl Publish to Roblox before using Agent Build/i,
+    });
+    expect(button.disabled).toBe(true);
+    fireEvent.click(button);
     expect(onSelect).not.toHaveBeenCalled();
   });
 });

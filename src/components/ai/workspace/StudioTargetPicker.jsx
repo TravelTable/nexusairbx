@@ -40,16 +40,25 @@ export default function StudioTargetPicker({
         {options.map((option) => {
           const id = optionId(option);
           const isSelecting = id === selectingTargetId;
+          const disabledReason = String(option?.disabledReason || "").trim();
+          const isUnavailable = option?.disabled === true;
           const selectableOption = option.id ? option : { ...option, id };
           return (
             <button
               key={id || optionLabel(option)}
               type="button"
               onClick={() => onSelect?.(selectableOption)}
-              disabled={!onSelect || !id || Boolean(selectingTargetId)}
-              className="flex min-h-11 items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-left text-sm font-semibold text-gray-100 transition-colors hover:border-[#00bbf9]/35 hover:bg-[#00bbf9]/10 disabled:cursor-wait disabled:opacity-60"
+              disabled={!onSelect || !id || Boolean(selectingTargetId) || isUnavailable}
+              className="flex min-h-11 items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-left text-sm font-semibold text-gray-100 transition-colors hover:border-[#00bbf9]/35 hover:bg-[#00bbf9]/10 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <span className="truncate">{optionLabel(option)}</span>
+              <span className="min-w-0">
+                <span className="block truncate">{optionLabel(option)}</span>
+                {disabledReason && (
+                  <span className="mt-0.5 block text-[11px] font-medium text-gray-500">
+                    {disabledReason}
+                  </span>
+                )}
+              </span>
               {isSelecting ? (
                 <Loader2 className="h-4 w-4 shrink-0 motion-safe:animate-spin text-[#7ddcff]" />
               ) : (

@@ -67,11 +67,13 @@ import {
 import {
   buildProjectBindingPayloadFromIdentity,
   buildStudioTargetPreference,
+  canBindStudioTargetToProject,
   evaluateStudioPlaceGate,
   normalizeStudioTargetOption,
   readChatStudioPreference,
   targetingOptionsFromStatus,
 } from "../../lib/studioPlaceBinding";
+import { restoreFailedPromptDraft } from "../../lib/promptDraftRecovery";
 import {
   findOrCreateProjectBinding,
   getProjectBinding,
@@ -983,7 +985,7 @@ export function useAiWorkspaceController() {
     const placeId = normalizeRobloxPlaceId(target?.placeId || target?.targetPlaceId);
     const universeId = String(target?.universeId || "").trim();
     if (!placeId || !universeId) {
-      throw new Error("Save or publish this Studio place before selecting it for agent edits.");
+      throw new Error("Publish this Studio place to Roblox before selecting it for Agent Build.");
     }
     const result = await findOrCreateProjectBinding(buildProjectBindingPayloadFromIdentity({
       title: target?.experienceName || target?.placeName || target?.label,
@@ -1116,12 +1118,15 @@ export function useAiWorkspaceController() {
         options,
       });
       if (gate.status === "needs_selection") {
+        const selectionMessage = options.some(canBindStudioTargetToProject)
+          ? "Choose which Studio place this chat should edit before sending."
+          : "Publish an open Studio place to Roblox before using Agent Build.";
         notify({
-          message: "Choose which Studio place this chat should edit before sending.",
+          message: selectionMessage,
           type: "error",
         });
         setStudioPlacePickerOpen(true);
-        throw new Error("Choose which Studio place this chat should edit before sending.");
+        throw new Error(selectionMessage);
       }
       if (gate.status === "ready") {
         studioTargetPreference = buildStudioTargetPreference(gate.target) || studioTargetPreference;
@@ -1367,13 +1372,23 @@ export function useAiWorkspaceController() {
       return executePromptOperation(null, promptToSend, effectiveOptions);
     });
 
-    if (!admission.duplicate && overridePrompt == null) {
+    const clearedComposerDraft = !admission.duplicate && overridePrompt == null;
+    if (clearedComposerDraft) {
       setPrompt("");
       setAttachments([]);
       setRewindTarget(null);
       setStudioPlacePickerOpen(false);
     }
-    return admission.promise;
+    if (!clearedComposerDraft) return admission.promise;
+    return admission.promise.catch((error) => {
+      restoreFailedPromptDraft({
+        prompt: currentPrompt,
+        attachments: currentAttachments,
+        setPrompt,
+        setAttachments,
+      });
+      throw error;
+    });
   }, [
     attachments,
     chat.currentChatId,

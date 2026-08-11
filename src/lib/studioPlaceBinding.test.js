@@ -1,6 +1,7 @@
 import {
   buildProjectBindingPayloadFromIdentity,
   buildStudioTargetPreference,
+  canBindStudioTargetToProject,
   evaluateStudioPlaceGate,
   findProjectByPlaceId,
   normalizeStudioTargetOption,
@@ -65,6 +66,12 @@ describe("studioPlaceBinding", () => {
         connectionType: null,
       },
     ]);
+  });
+
+  test("only published Studio targets can bind to workspace projects", () => {
+    expect(canBindStudioTargetToProject({ placeId: "123", universeId: "456" })).toBe(true);
+    expect(canBindStudioTargetToProject({ placeId: "123", universeId: null })).toBe(false);
+    expect(canBindStudioTargetToProject({ placeId: "0", universeId: "456" })).toBe(false);
   });
 
   test("enriches the selected target with exact plugin and MCP capability evidence", () => {

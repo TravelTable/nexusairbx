@@ -6,6 +6,8 @@ import StudioPlaceChip from "./StudioPlaceChip";
 const target = {
   id: "studio_target_local",
   label: "LocalPlace.rbxl",
+  placeId: "123",
+  universeId: "456",
 };
 
 function renderPicker(onSelectStudioPlace) {
@@ -49,4 +51,22 @@ test("closes the picker only after explicit async selection success", async () =
   await waitFor(() => {
     expect(screen.queryByRole("region", { name: "Studio project selection" })).toBeNull();
   });
+});
+
+test("keeps unpublished local places visible but unavailable", () => {
+  const onSelectStudioPlace = jest.fn();
+  render(
+    <StudioPlaceChip
+      connected
+      studioEnabled
+      options={[{ id: "studio_target_draft", label: "Draft.rbxl" }]}
+      onSelectPlace={onSelectStudioPlace}
+    />
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /choose a studio place/i }));
+  expect(screen.getByText(/publish this local place to roblox/i)).toBeTruthy();
+  expect(screen.getByRole("button", {
+    name: /Draft\.rbxl Publish to Roblox before using Agent Build/i,
+  }).disabled).toBe(true);
 });

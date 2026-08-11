@@ -63,6 +63,12 @@ export function normalizeStudioTargetOption(option = {}) {
   };
 }
 
+export function canBindStudioTargetToProject(option = {}) {
+  const placeId = normalizeRobloxPlaceId(option?.placeId ?? option?.targetPlaceId);
+  const universeId = cleanOptional(option?.universeId);
+  return Boolean(placeId && universeId);
+}
+
 /**
  * Resolve a user-facing game title from a Studio target and optional OAuth fallback.
  * Preference: experienceName → placeName → label → oauth title → "Untitled game".
