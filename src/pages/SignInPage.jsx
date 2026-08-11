@@ -161,26 +161,6 @@ export default function NexusRBXSignInPageContainer() {
         void finishSignInRedirect();
       }, 600);
     } catch (error) {
-      if (shouldFallbackToAuthRedirect(error)) {
-        setFormStatus({
-          status: "submitting",
-          message: "Continuing sign-in in this tab..."
-        });
-        try {
-          await redirectSignInWithOAuthProvider(auth, GoogleAuthProvider, {
-            rememberMe,
-            returnPath: authReturnPath || "/",
-            method: "google",
-          });
-          return;
-        } catch (redirectError) {
-          setFormStatus({
-            status: "error",
-            message: getFriendlyAuthErrorMessage(redirectError)
-          });
-          return;
-        }
-      }
       setFormStatus({
         status: "error",
         message: getFriendlyAuthErrorMessage(error)
@@ -209,6 +189,26 @@ export default function NexusRBXSignInPageContainer() {
         void finishSignInRedirect();
       }, 600);
     } catch (error) {
+      if (shouldFallbackToAuthRedirect(error)) {
+        setFormStatus({
+          status: "submitting",
+          message: "Continuing sign-in in this tab..."
+        });
+        try {
+          await redirectSignInWithOAuthProvider(auth, GoogleAuthProvider, {
+            rememberMe,
+            returnPath: authReturnPath || "/",
+            method: "google",
+          });
+          return;
+        } catch (redirectError) {
+          setFormStatus({
+            status: "error",
+            message: getFriendlyAuthErrorMessage(redirectError)
+          });
+          return;
+        }
+      }
       setFormStatus({
         status: "error",
         message: getFriendlyAuthErrorMessage(error)
