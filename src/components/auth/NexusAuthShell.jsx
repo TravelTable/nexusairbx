@@ -20,14 +20,21 @@ export function NexusAuthShell({
   headingLevel = 1,
 }) {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[var(--ds-bg-canvas)] text-[var(--ds-text)]">
-      <div className="pointer-events-none fixed inset-x-0 top-0 h-px bg-[var(--ds-accent)] opacity-70" />
-
-      <main className="relative flex min-h-screen items-center justify-center px-4 py-8 sm:px-6 sm:py-12">
-        <section className="grid w-full max-w-5xl items-center gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(28rem,1fr)]">
-          <div className="hidden lg:block" aria-hidden="true">
-            <div className="relative mx-auto aspect-[5/4] w-full max-w-[28rem]">
-              <div className="absolute left-4 top-10 w-[82%] overflow-hidden rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-surface-1)] shadow-[var(--ds-shadow-panel)]">
+    <div className="min-h-screen overflow-hidden bg-[var(--ds-bg-canvas)] text-[var(--ds-text)]">
+      <main className="flex min-h-screen items-center justify-center px-4 py-12 sm:px-8 sm:py-20 lg:px-14 lg:py-24">
+        <section className="grid w-full max-w-6xl items-center gap-16 lg:grid-cols-[minmax(0,1fr)_minmax(28rem,0.9fr)] lg:gap-24">
+          <div className="hidden lg:grid lg:gap-10">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--ds-accent)]">Personal build workspace</p>
+              <h2 className="mt-5 max-w-xl font-[Georgia,_Cambria,_'Times_New_Roman',_serif] text-5xl font-normal leading-[1.04] tracking-[-0.04em] text-[var(--ds-text)]">
+                Your work, ready when inspiration arrives.
+              </h2>
+              <p className="mt-6 max-w-lg text-base leading-7 text-[var(--ds-text-muted)]">
+                Sign in once to keep projects, Studio connections, and account tools together.
+              </p>
+            </div>
+            <div className="relative aspect-[5/4] w-full max-w-[30rem]" aria-hidden="true">
+              <div className="absolute left-0 top-6 w-[84%] overflow-hidden rounded-[14px] bg-[var(--ds-surface-1)] shadow-[var(--ds-shadow-panel)]">
                 <div className="flex h-11 items-center gap-2 border-b border-[var(--ds-border-subtle)] px-4">
                   <span className="h-2 w-2 rounded-full bg-[var(--ds-danger)] opacity-75" />
                   <span className="h-2 w-2 rounded-full bg-[var(--ds-warning)] opacity-75" />
@@ -51,9 +58,9 @@ export function NexusAuthShell({
                   </div>
                 </div>
               </div>
-              <div className="absolute bottom-7 right-0 w-44 rounded-xl border border-[var(--ds-accent-border)] bg-[var(--ds-surface-overlay)] p-4 shadow-[var(--ds-shadow-overlay)] backdrop-blur-xl">
+              <div className="absolute bottom-5 right-0 w-48 rounded-[12px] bg-[var(--ds-surface-overlay)] p-5 shadow-[var(--ds-shadow-overlay)] backdrop-blur-xl">
                 <div className="flex items-center gap-2 text-xs font-semibold text-[var(--ds-text)]">
-                  <span className="grid h-7 w-7 place-items-center rounded-lg bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]">
+                  <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]">
                     <Check className="h-4 w-4" />
                   </span>
                   Studio connected
@@ -64,30 +71,30 @@ export function NexusAuthShell({
               </div>
             </div>
           </div>
-          <div className="w-full max-w-lg justify-self-center">
+          <div className="w-full max-w-[32rem] justify-self-center">
           <Link
             to="/"
             aria-label="NexusRBX home"
-            className="focus-ring mx-auto mb-5 flex w-fit items-center gap-2.5 rounded-lg px-2 py-1.5"
+            className="focus-ring mx-auto mb-8 flex min-h-11 w-fit items-center gap-2.5 rounded-full px-3 py-1.5 lg:mx-0"
           >
-            <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-[10px] border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-2)]">
+            <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-[var(--ds-surface-2)]">
               <img src="/logo.png" alt="" className="h-7 w-7 object-contain" />
             </span>
             <span className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--ds-text)]">NexusRBX</span>
           </Link>
 
-          <Card className="overflow-hidden rounded-2xl border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] shadow-[var(--ds-shadow-panel)]">
-            <CardHeader className="space-y-2 border-b border-[var(--ds-border-subtle)] px-5 py-7 text-center sm:px-8">
+          <Card className="overflow-hidden rounded-[14px] border-0 bg-[var(--ds-surface-1)] shadow-[var(--ds-shadow-panel)]">
+            <CardHeader className="space-y-3 px-6 pb-5 pt-9 text-center sm:px-10 sm:pt-11 lg:text-left">
               {headingLevel === 1 ? (
-                <h1 className="text-2xl font-semibold tracking-[-0.025em] text-[var(--ds-text)]">{title}</h1>
+                <h1 className="font-[Georgia,_Cambria,_'Times_New_Roman',_serif] text-3xl font-normal leading-tight tracking-[-0.035em] text-[var(--ds-text)] sm:text-4xl">{title}</h1>
               ) : (
-                <CardTitle className="text-2xl font-semibold tracking-[-0.025em] text-[var(--ds-text)]">{title}</CardTitle>
+                <CardTitle className="font-[Georgia,_Cambria,_'Times_New_Roman',_serif] text-3xl font-normal leading-tight tracking-[-0.035em] text-[var(--ds-text)] sm:text-4xl">{title}</CardTitle>
               )}
               {description ? (
                 <CardDescription className="text-sm leading-6 text-[var(--ds-text-muted)]">{description}</CardDescription>
               ) : null}
             </CardHeader>
-            <CardContent className="px-5 py-6 sm:px-8 sm:py-7">{children}</CardContent>
+            <CardContent className="px-6 pb-9 pt-5 sm:px-10 sm:pb-11">{children}</CardContent>
           </Card>
           </div>
         </section>
@@ -101,7 +108,7 @@ export function AuthProviderButton({ icon: Icon, children, onClick, disabled }) 
     <Button
       type="button"
       variant="outline"
-      className="h-11 w-full rounded-[10px] border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text)] hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-fill-hover)] active:scale-[0.985]"
+      className="h-12 w-full rounded-full border-[var(--ds-border)] bg-transparent text-[var(--ds-text)] shadow-none hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-fill-hover)] active:scale-[0.985]"
       onClick={onClick}
       disabled={disabled}
     >
@@ -151,7 +158,7 @@ export function AuthStatusAlert({ status, message }) {
       role={isError ? "alert" : "status"}
       aria-live={isError ? "assertive" : "polite"}
       className={cn(
-        "flex items-start gap-3 rounded-lg border p-3 text-sm",
+        "flex items-start gap-3 rounded-[12px] border p-4 text-sm",
         isError && "border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-danger)_9%,transparent)] text-[var(--ds-danger)]",
         isSuccess && "border-[color-mix(in_srgb,var(--ds-success)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-success)_9%,transparent)] text-[var(--ds-success)]",
         status === "submitting" && "border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)]"
@@ -201,7 +208,7 @@ export function AuthTextField({
           required={required}
           aria-invalid={invalid || undefined}
           aria-describedby={describedBy}
-          className={cn("nexus-input h-11", Icon ? "pl-10" : "", inputClassName)}
+          className={cn("nexus-input h-12 rounded-[10px] bg-[var(--ds-surface-2)]", Icon ? "pl-10" : "", inputClassName)}
         />
       </div>
     </div>
@@ -246,7 +253,7 @@ export function AuthPasswordField({
           aria-invalid={invalid || undefined}
           aria-describedby={describedBy}
           className={cn(
-            "nexus-input h-11 pl-10 pr-11",
+            "nexus-input h-12 rounded-[10px] bg-[var(--ds-surface-2)] pl-10 pr-11",
             invalid && "border-destructive focus-visible:ring-destructive/50"
           )}
         />
@@ -257,7 +264,7 @@ export function AuthPasswordField({
           type="button"
           variant="ghost"
           size="icon"
-          className="absolute right-0 top-1/2 h-11 w-11 -translate-y-1/2 text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
+          className="absolute right-0 top-1/2 h-12 w-12 -translate-y-1/2 rounded-full text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
           onClick={onToggle}
           disabled={disabled}
           aria-label={shown ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
@@ -303,7 +310,7 @@ export function AuthCheckbox({ id, checked, onChange, disabled, children }) {
         aria-labelledby={`${id}-label`}
         className="peer sr-only"
       />
-      <label htmlFor={id} className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg peer-checked:[&>span]:border-[var(--ds-accent)] peer-checked:[&>span]:bg-[var(--ds-accent)] peer-checked:[&>span]:text-[var(--ds-accent-foreground)] peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--ds-accent)] peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-[var(--ds-bg-canvas)] peer-disabled:cursor-not-allowed peer-disabled:opacity-50">
+      <label htmlFor={id} className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg peer-checked:[&>span]:border-[var(--ds-accent)] peer-checked:[&>span]:bg-[var(--ds-accent)] peer-checked:[&>span]:text-[var(--ds-accent-foreground)] peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--ds-focus-ring)] peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-[var(--ds-bg-canvas)] peer-disabled:cursor-not-allowed peer-disabled:opacity-50">
         <span className="flex h-5 w-5 items-center justify-center rounded-md border border-[var(--ds-border-strong)] bg-[var(--ds-surface-2)] text-transparent transition-colors">
           <Check className="h-3.5 w-3.5 stroke-[3px]" />
         </span>
@@ -320,7 +327,7 @@ export function AuthSubmitButton({ status, idleLabel, loadingLabel, successLabel
     <Button
       type="submit"
       disabled={isLocked}
-      className="h-11 w-full rounded-[10px] bg-[var(--ds-accent)] font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] active:scale-[0.985] disabled:bg-[var(--ds-fill-active)] disabled:text-[var(--ds-text-muted)]"
+      className="h-12 w-full rounded-full bg-[var(--ds-accent)] px-6 font-semibold text-[var(--ds-accent-foreground)] shadow-none hover:bg-[var(--ds-accent-hover)] active:scale-[0.985] disabled:bg-[var(--ds-fill-active)] disabled:text-[var(--ds-text-muted)]"
     >
       {status === "submitting" ? (
         <>

@@ -2,6 +2,7 @@ import DownloadsContent from "../../../src/components/downloads/DownloadsContent
 import HomepageFooter from "../../../src/components/homepage/HomepageFooter";
 import { buildPublicMetadata } from "../../../src/lib/seo";
 import PublicHeader from "../../components/PublicHeader";
+import styles from "../../components/PublicEditorial.module.css";
 
 export const metadata = buildPublicMetadata({
   title: "Download NexusRBX Connector for macOS and Windows",
@@ -13,10 +14,10 @@ export default function DownloadsPage() {
   return (
     <>
       <PublicHeader />
-      <div className="bg-[var(--ds-bg-canvas)] text-[var(--ds-text)]">
+      <div className={styles.downloadPage}>
         <DownloadsContent />
-        <HomepageFooter />
       </div>
+      <HomepageFooter />
     </>
   );
 }

@@ -172,7 +172,7 @@ const BrutalAuditor = () => {
               <div key={i} className="flex gap-3">
                 <span className="text-[var(--ds-text-muted)]">[{log.time}]</span>
                 <span className={`
-                  ${log.type === 'system' ? 'text-[var(--ds-plan)] font-bold' : ''}
+                  ${log.type === 'system' ? 'text-[var(--ds-accent)] font-bold' : ''}
                   ${log.type === 'info' ? 'text-[var(--ds-info)]' : ''}
                   ${log.type === 'warning' ? 'text-[var(--ds-warning)]' : ''}
                   ${log.type === 'error' ? ' text-[var(--ds-danger)] font-bold' : ''}
@@ -334,8 +334,8 @@ const BrutalAuditor = () => {
 
           {/* Patches */}
           {auditData.patches && auditData.patches.length > 0 && (
-            <div className="bg-[var(--ds-surface-2)] border border-[color-mix(in_srgb,var(--ds-plan)_30%,transparent)] rounded-2xl p-6">
-              <h5 className="text-[var(--ds-plan)] font-bold mb-6 flex items-center gap-2">
+            <div className="rounded-xl border border-[var(--ds-accent-border)] bg-transparent p-6">
+              <h5 className="mb-6 flex items-center gap-2 font-bold text-[var(--ds-accent)]">
                 <Code className="w-4 h-4" /> RECOMMENDED PATCHES
               </h5>
               <div className="space-y-6">
@@ -343,7 +343,7 @@ const BrutalAuditor = () => {
                   <div key={i} className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-mono text-[var(--ds-text-secondary)]">{p.file}</span>
-                      <button className="text-[10px] font-bold text-[var(--ds-plan)] hover:brightness-110 uppercase tracking-widest">Copy Patch</button>
+                      <button className="text-[10px] font-semibold text-[var(--ds-accent)] hover:brightness-110">Copy Patch</button>
                     </div>
                     <pre className="p-4 rounded-xl bg-[var(--ds-bg-canvas)] border border-[var(--ds-border-subtle)] text-[10px] font-mono text-[var(--ds-info)] overflow-x-auto scrollbar-subtle">
                       {p.patch}

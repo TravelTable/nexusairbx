@@ -18,6 +18,12 @@ import {
   supportStatusLabel,
   supportStatusTone,
 } from "../lib/supportPresentation";
+import {
+  editorialDisplayClass,
+  editorialGutterClass,
+  editorialPrimaryButtonClass,
+  editorialSecondaryButtonClass,
+} from "../components/site/editorialUi";
 
 const EMPTY_FILTERS = { search: "", category: "", status: "", priority: "" };
 
@@ -130,36 +136,36 @@ export default function AdminSupportPage({ isAdmin = false }) {
   const ticket = detail.ticket;
 
   return (
-    <main className="min-h-[calc(100vh-4rem)] bg-[var(--ds-bg-canvas)] px-4 py-8 text-[var(--ds-text)] sm:px-6">
+    <main className={`${editorialGutterClass} min-h-[calc(100vh-4rem)] bg-[var(--ds-bg-canvas)] py-12 text-[var(--ds-text)] sm:py-16`}>
       <div className="mx-auto max-w-[1500px]">
-        <header className="flex flex-col gap-5 border-b border-[var(--ds-border-subtle)] pb-7 lg:flex-row lg:items-end lg:justify-between">
+        <header className="flex flex-col gap-7 pb-10 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-semibold text-[var(--ds-accent)]">Staff support</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-[-0.025em]">Shared request queue</h1>
+            <h1 className={`${editorialDisplayClass} mt-3 text-5xl sm:text-6xl`}>Shared request queue</h1>
             <p className="mt-2 text-sm text-[var(--ds-text-muted)]">Public replies, private notes, and immutable activity history in one place.</p>
           </div>
-          <button type="button" onClick={() => void loadQueue()} className="min-h-11 w-fit rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-4 py-2 text-sm font-medium hover:bg-[var(--ds-fill-hover)]">Refresh queue</button>
+          <button type="button" onClick={() => void loadQueue()} className={`${editorialSecondaryButtonClass} w-fit`}>Refresh queue</button>
         </header>
 
-        <section aria-label="Queue filters" className="grid gap-3 border-b border-[var(--ds-border-subtle)] py-5 sm:grid-cols-2 xl:grid-cols-[minmax(240px,1fr)_repeat(3,190px)_auto]">
+        <section aria-label="Queue filters" className="grid gap-3 rounded-[14px] bg-[var(--ds-surface-1)] p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-[minmax(240px,1fr)_repeat(3,190px)_auto]">
           <label className="sr-only" htmlFor="support-search">Search requests</label>
-          <input id="support-search" type="search" value={filters.search} onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))} placeholder="Search subject, email, request ID…" className="min-h-11 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-3 text-sm outline-none placeholder:text-[var(--ds-text-muted)] focus:border-[var(--ds-accent-border)] focus:ring-2 focus:ring-[var(--ds-accent-soft)]" />
+          <input id="support-search" type="search" value={filters.search} onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))} placeholder="Search subject, email, request ID…" className="min-h-12 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-4 text-sm outline-none placeholder:text-[var(--ds-text-muted)] focus:border-[var(--ds-accent-border)] focus:ring-2 focus:ring-[var(--ds-focus-ring)]" />
           <QueueSelect label="Category" value={filters.category} onChange={(value) => setFilters((current) => ({ ...current, category: value }))} options={SUPPORT_CATEGORIES.map((item) => ({ value: item.id, label: item.label }))} />
           <QueueSelect label="Status" value={filters.status} onChange={(value) => setFilters((current) => ({ ...current, status: value }))} options={SUPPORT_STATUSES.map((value) => ({ value, label: supportStatusLabel(value) }))} />
           <QueueSelect label="Priority" value={filters.priority} onChange={(value) => setFilters((current) => ({ ...current, priority: value }))} options={SUPPORT_PRIORITIES.map((value) => ({ value, label: value.charAt(0).toUpperCase() + value.slice(1) }))} />
-          <button type="button" onClick={() => setFilters(EMPTY_FILTERS)} className="min-h-11 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-4 text-sm text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]">Clear</button>
+          <button type="button" onClick={() => setFilters(EMPTY_FILTERS)} className="min-h-12 rounded-full border border-[var(--ds-border)] bg-transparent px-5 text-sm text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]">Clear</button>
         </section>
 
         {(queue.error || detail.error) && <div role="alert" className="my-4 rounded-lg border border-[color-mix(in_srgb,var(--ds-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-danger)_8%,transparent)] px-4 py-3 text-sm text-[var(--ds-danger)]">{queue.error || detail.error}</div>}
 
-        <div className="grid min-h-[650px] border-b border-[var(--ds-border-subtle)] lg:grid-cols-[380px_minmax(0,1fr)]">
+        <div className="mt-8 grid min-h-[650px] overflow-hidden rounded-[14px] bg-[var(--ds-surface-1)] lg:grid-cols-[380px_minmax(0,1fr)]">
           <aside aria-label="Support queue" className="border-b border-[var(--ds-border-subtle)] lg:border-b-0 lg:border-r">
             <div className="flex items-center justify-between border-b border-[var(--ds-border-subtle)] px-3 py-3 text-xs text-[var(--ds-text-muted)]">
               <span>{filteredTickets.length} requests</span><span>{queue.loading ? "Updating…" : "Latest first"}</span>
             </div>
             <div className="max-h-[760px] overflow-y-auto">
               {filteredTickets.map((item) => (
-                <button key={item.id} type="button" onClick={() => setSelectedId(item.id)} className={`block min-h-11 w-full border-b border-[var(--ds-border-subtle)] px-3 py-4 text-left outline-none hover:bg-[var(--ds-fill-hover)] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--ds-accent)] ${selectedId === item.id ? "bg-[var(--ds-fill-selected)]" : ""}`}>
+                <button key={item.id} type="button" onClick={() => setSelectedId(item.id)} className={`block min-h-11 w-full border-b border-[var(--ds-border-subtle)] px-3 py-4 text-left outline-none hover:bg-[var(--ds-fill-hover)] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--ds-focus-ring)] ${selectedId === item.id ? "bg-[var(--ds-fill-selected)]" : ""}`}>
                   <div className="flex items-start justify-between gap-3">
                     <span className="line-clamp-2 text-sm font-semibold text-[var(--ds-text)]">{item.subject}</span>
                     {item.staffUnreadCount > 0 && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[var(--ds-accent)]" aria-label={`${item.staffUnreadCount} unread`} />}
@@ -202,13 +208,13 @@ export default function AdminSupportPage({ isAdmin = false }) {
                   ))}
                 </div>
 
-                <form onSubmit={sendComposer} className={`border-t px-4 py-5 ${composer.type === "note" ? "border-[color-mix(in_srgb,var(--ds-warning)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-warning)_7%,transparent)]" : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)]"}`}>
+                <form onSubmit={sendComposer} className={`rounded-[14px] px-5 py-6 ${composer.type === "note" ? "bg-[color-mix(in_srgb,var(--ds-warning)_7%,transparent)]" : "bg-[var(--ds-fill-subtle)]"}`}>
                   <div className="flex items-center gap-4">
                     <label className="text-sm font-semibold"><input type="radio" name="composer-type" value="reply" checked={composer.type === "reply"} onChange={() => setComposer((current) => ({ ...current, type: "reply" }))} className="mr-2" />Public reply</label>
                     <label className="text-sm font-semibold text-[var(--ds-warning)]"><input type="radio" name="composer-type" value="note" checked={composer.type === "note"} onChange={() => setComposer((current) => ({ ...current, type: "note" }))} className="mr-2" />Private note</label>
                   </div>
                   <p className="mt-2 text-xs text-[var(--ds-text-muted)]">{composer.type === "note" ? "Visible only to support staff. It will never be returned by customer APIs." : "The customer will see this reply in their support desk."}</p>
-                  <textarea value={composer.message} onChange={(event) => setComposer((current) => ({ ...current, message: event.target.value }))} rows={5} maxLength={10000} required className="mt-3 w-full resize-y rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-3 py-3 text-sm leading-6 outline-none focus:border-[var(--ds-accent-border)] focus:ring-2 focus:ring-[var(--ds-accent-soft)]" />
+                  <textarea value={composer.message} onChange={(event) => setComposer((current) => ({ ...current, message: event.target.value }))} rows={5} maxLength={10000} required className="mt-3 w-full resize-y rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-4 py-3 text-sm leading-6 outline-none focus:border-[var(--ds-accent-border)] focus:ring-2 focus:ring-[var(--ds-focus-ring)]" />
                   <div className="mt-3 flex justify-end"><button type="submit" disabled={Boolean(busy) || !composer.message.trim()} className={`min-h-11 rounded-[10px] px-4 py-2 text-sm font-semibold disabled:opacity-50 ${composer.type === "note" ? "bg-[var(--ds-warning)] text-[var(--ds-bg-canvas)]" : "bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)]"}`}>{busy === composer.type ? "Saving…" : composer.type === "note" ? "Add private note" : "Send public reply"}</button></div>
                 </form>
 
@@ -235,9 +241,9 @@ export default function AdminSupportPage({ isAdmin = false }) {
             <p className="mt-2 text-sm leading-6 text-[var(--ds-text-muted)]">Grant the least-privilege support role using a verified Firebase UID. This does not grant general admin access.</p>
             <form onSubmit={changeSupportRole} className="mt-5 flex flex-col gap-3 sm:flex-row">
               <label className="sr-only" htmlFor="support-agent-uid">Firebase UID</label>
-              <input id="support-agent-uid" value={roleForm.uid} onChange={(event) => setRoleForm((current) => ({ ...current, uid: event.target.value }))} placeholder="Firebase UID" required className="min-h-11 min-w-0 flex-1 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-3 text-sm outline-none focus:border-[var(--ds-accent-border)]" />
-              <select aria-label="Support role action" value={roleForm.enabled ? "grant" : "revoke"} onChange={(event) => setRoleForm((current) => ({ ...current, enabled: event.target.value === "grant" }))} className="min-h-11 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-3 text-sm"><option value="grant">Grant support role</option><option value="revoke">Revoke support role</option></select>
-              <button type="submit" className="min-h-11 rounded-[10px] bg-[var(--ds-accent)] px-4 text-sm font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)]">Update access</button>
+              <input id="support-agent-uid" value={roleForm.uid} onChange={(event) => setRoleForm((current) => ({ ...current, uid: event.target.value }))} placeholder="Firebase UID" required className="min-h-12 min-w-0 flex-1 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-4 text-sm outline-none focus:border-[var(--ds-accent-border)]" />
+              <select aria-label="Support role action" value={roleForm.enabled ? "grant" : "revoke"} onChange={(event) => setRoleForm((current) => ({ ...current, enabled: event.target.value === "grant" }))} className="min-h-12 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-4 text-sm"><option value="grant">Grant support role</option><option value="revoke">Revoke support role</option></select>
+              <button type="submit" className={editorialPrimaryButtonClass}>Update access</button>
             </form>
             {(roleForm.status || roleForm.error) && <p role="status" className={`mt-3 text-sm ${roleForm.error ? "text-[var(--ds-danger)]" : "text-[var(--ds-success)]"}`}>{roleForm.error || roleForm.status}</p>}
           </section>
@@ -250,5 +256,5 @@ export default function AdminSupportPage({ isAdmin = false }) {
 function QueueSelect({ label, value, onChange, options }) {
   const id = `queue-${label.toLowerCase()}`;
   const plural = { Category: "categories", Status: "statuses", Priority: "priorities" }[label] || `${label.toLowerCase()}s`;
-  return <><label className="sr-only" htmlFor={id}>{label}</label><select id={id} value={value} onChange={(event) => onChange(event.target.value)} className="min-h-11 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-3 text-sm outline-none focus:border-[var(--ds-accent-border)]"><option value="">All {plural}</option>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></>;
+  return <><label className="sr-only" htmlFor={id}>{label}</label><select id={id} value={value} onChange={(event) => onChange(event.target.value)} className="min-h-12 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-4 text-sm outline-none focus:border-[var(--ds-accent-border)]"><option value="">All {plural}</option>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></>;
 }

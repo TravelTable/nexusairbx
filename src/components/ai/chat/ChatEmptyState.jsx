@@ -21,35 +21,35 @@ const EXAMPLES = [
 
 export default function ChatEmptyState({ onQuickStart, onOpenTemplates }) {
   return (
-    <div className="flex min-h-full flex-1 flex-col items-center justify-center gap-6 py-8 text-center motion-safe:animate-fade-in-up sm:gap-7 [@media(max-height:760px)]:gap-4 [@media(max-height:760px)]:py-4">
-      <div className="max-w-2xl space-y-3">
-        <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] [@media(max-height:760px)]:hidden">
-          <img src="/logo.png" alt="" className="h-6 w-6 object-contain" />
+    <div className="flex min-h-full flex-1 flex-col items-center justify-center gap-8 py-10 text-center motion-safe:animate-fade-in-up [@media(max-height:760px)]:gap-5 [@media(max-height:760px)]:py-5">
+      <div className="max-w-2xl space-y-4">
+        <div className="mx-auto flex h-9 w-9 items-center justify-center [@media(max-height:760px)]:hidden">
+          <img src="/logo.png" alt="" className="h-7 w-7 object-contain opacity-90" />
         </div>
-        <h1 className="font-display text-2xl font-semibold tracking-tight text-[var(--ds-text)] sm:text-[28px]">
+        <h1 className="pc-display-heading text-[2rem] leading-[1.08] text-[var(--ds-text)] sm:text-[2.5rem]">
           What should the Studio agent do?
         </h1>
-        <p className="text-[13px] leading-relaxed text-[var(--ds-text-secondary)] sm:text-sm">
+        <p className="mx-auto max-w-xl text-sm leading-relaxed text-[var(--ds-text-secondary)]">
           Describe the outcome. Nexus can inspect your paired place, plan the change, and prepare every Studio write for review.
         </p>
       </div>
 
-      <div className="scrollbar-subtle flex w-full max-w-[760px] snap-x snap-mandatory gap-2.5 overflow-x-auto px-1 pb-2">
+      <div className="scrollbar-subtle flex w-full max-w-[800px] snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-2">
         {EXAMPLES.map((ex) => (
           <button
             key={ex.title}
             type="button"
             onClick={() => onQuickStart?.(ex.prompt)}
-            className="group min-h-28 min-w-[15rem] flex-1 snap-start rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-3.5 text-left transition-[border-color,background-color] duration-[var(--motion-fast)] hover:border-[var(--ds-accent-border)] hover:bg-[var(--ds-fill-subtle)] focus-ring"
+            className="group min-h-28 min-w-[15rem] flex-1 snap-start border-x-0 border-b-0 border-t border-[var(--ds-border)] bg-transparent px-1 py-4 text-left transition-[border-color,color] duration-[var(--motion-fast)] hover:border-[var(--ds-accent)] focus-ring"
           >
-            <div className="mb-3 flex items-center justify-between">
-              <div className="grid h-7 w-7 place-items-center rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-accent)]">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="grid h-7 w-7 place-items-center text-[var(--ds-accent)]">
                 <ex.icon className="h-3.5 w-3.5" />
               </div>
               <ArrowRight className="h-3.5 w-3.5 text-[var(--ds-text-muted)] transition-colors group-hover:text-[var(--ds-accent)]" />
             </div>
-            <div className="mb-1 text-sm font-semibold text-[var(--ds-text)]">{ex.title}</div>
-            <div className="line-clamp-3 text-[11px] leading-relaxed text-[var(--ds-text-muted)]">{ex.prompt}</div>
+            <div className="mb-1.5 text-[15px] font-medium text-[var(--ds-text)]">{ex.title}</div>
+            <div className="line-clamp-3 text-xs leading-relaxed text-[var(--ds-text-muted)]">{ex.prompt}</div>
           </button>
         ))}
       </div>
@@ -58,7 +58,7 @@ export default function ChatEmptyState({ onQuickStart, onOpenTemplates }) {
         <button
           type="button"
           onClick={onOpenTemplates}
-          className="inline-flex h-8 items-center gap-2 rounded-md px-3 text-xs font-semibold text-[var(--ds-text-secondary)] transition-colors hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text)] focus-ring"
+          className="inline-flex h-10 items-center gap-2 rounded-full border border-[var(--ds-border)] px-4 text-xs font-medium text-[var(--ds-text-secondary)] transition-colors hover:border-[var(--ds-accent-border)] hover:text-[var(--ds-text)] focus-ring"
         >
           <LayoutGrid className="h-3.5 w-3.5" />
           Browse template gallery

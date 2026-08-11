@@ -25,6 +25,7 @@ import {
   X,
 } from "../../src/lib/icons";
 import PublicHeader from "./PublicHeader";
+import styles from "./PublicEditorial.module.css";
 
 const RECENT_SEARCH_KEY = "nexusrbx.docs.recentSearches";
 const SEARCH_LIMIT = 10;
@@ -870,7 +871,7 @@ export default function DocsExplorer({
   };
 
   return (
-    <div className={cx("docs-shell", mode === "legal" && "docs-shell-legal")}>
+    <div className={cx("docs-shell", styles.docsShell, mode === "legal" && "docs-shell-legal")}>
       <a className="docs-skip-link" href="#content">Skip to documentation</a>
       <div className="docs-public-header">
         <PublicHeader />

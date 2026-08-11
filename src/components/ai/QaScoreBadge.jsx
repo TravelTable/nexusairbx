@@ -63,7 +63,7 @@ export default function QaScoreBadge({ score, issueCount = 0, onFix, disabled = 
           type="button"
           onClick={onFix}
           disabled={disabled}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)] border border-[color-mix(in_srgb,var(--ds-plan)_35%,transparent)] text-[var(--ds-plan)] text-[10px] font-black uppercase tracking-widest hover:bg-[color-mix(in_srgb,var(--ds-plan)_18%,transparent)] hover:text-[var(--ds-text)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-1.5 rounded-full border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2.5 py-1 text-[10px] font-semibold text-[var(--ds-accent)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] disabled:cursor-not-allowed disabled:opacity-50"
           title="Apply automated fixes to resolve the detected issues"
         >
           <Wrench className="w-3 h-3" />

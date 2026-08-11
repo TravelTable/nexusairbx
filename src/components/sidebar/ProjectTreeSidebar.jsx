@@ -539,9 +539,9 @@ export default function ProjectTreeSidebar({
 
   return (
     <div className="nexus-project-tree flex h-full min-h-0 flex-col bg-[var(--ds-bg-sidebar)] text-[var(--ds-text-secondary)]">
-      <div className="border-b border-[var(--ds-border-subtle)] px-3 pb-3 pt-2.5">
+      <div className="border-b border-[var(--ds-border-subtle)] px-4 pb-4 pt-3">
         <div className="mb-2.5 flex h-7 items-center justify-between">
-          <span className="text-sm font-semibold tracking-tight text-[var(--ds-text)]">NexusRBX</span>
+          <span className="text-[13px] font-semibold text-[var(--ds-text)]">NexusRBX</span>
           <button
             type="button"
             onClick={onCollapse}
@@ -554,9 +554,9 @@ export default function ProjectTreeSidebar({
         <button
           type="button"
           onClick={() => onNewChat(currentProjectId || null)}
-          className="mb-2 flex h-8 w-full items-center gap-2 rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2.5 text-xs font-medium text-[var(--ds-text)] transition hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+          className="mb-2.5 flex h-9 w-full items-center gap-2 rounded-full border border-transparent bg-[var(--ds-accent)] px-3 text-xs font-medium text-[var(--ds-accent-foreground)] transition-colors hover:bg-[var(--ds-accent-hover)]"
         >
-          <Plus className="h-3.5 w-3.5 text-[var(--ds-accent)]" />
+          <Plus className="h-3.5 w-3.5" />
           <span className="flex-1 text-left">New chat</span>
           <kbd className="text-[9px] font-normal text-[var(--ds-text-muted)]">⌘N</kbd>
         </button>
@@ -568,7 +568,7 @@ export default function ProjectTreeSidebar({
             onChange={(event) => setQuery(event.target.value)}
             aria-label="Search projects and chats"
             placeholder="Search projects and chats"
-            className="h-8 w-full rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] pl-8 pr-14 text-xs text-[var(--ds-text)] outline-none transition placeholder:text-[var(--ds-text-muted)] focus:border-[var(--ds-accent-border)] focus:bg-[var(--ds-fill-hover)]"
+            className="h-9 w-full rounded-full border border-transparent bg-[var(--ds-fill-subtle)] pl-8 pr-14 text-xs text-[var(--ds-text)] outline-none transition placeholder:text-[var(--ds-text-muted)] focus:border-[var(--ds-accent-border)] focus:bg-[var(--ds-fill-hover)]"
           />
           {query ? (
             <button
@@ -587,7 +587,7 @@ export default function ProjectTreeSidebar({
           )}
         </div>
         {studioOptions.length > 0 && (
-          <div className="mt-2 rounded-md border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] p-1">
+          <div className="mt-2 border-l border-[var(--ds-accent-border)] bg-transparent py-1 pl-2">
             {studioOptions.map((option) => (
               <button
                 key={option.id || option.placeId}
@@ -619,7 +619,7 @@ export default function ProjectTreeSidebar({
             <div className="space-y-4" aria-label="Search results">
               {searchResults.projects.length > 0 && (
                 <section>
-                  <h2 className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-[.16em] text-[var(--ds-text-muted)]">
+                  <h2 className="mb-1 px-2 text-xs font-medium text-[var(--ds-text-muted)]">
                     Projects
                   </h2>
                   {searchResults.projects.map((project) => (
@@ -641,7 +641,7 @@ export default function ProjectTreeSidebar({
               )}
               {searchResults.chats.length > 0 && (
                 <section>
-                  <h2 className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-[.16em] text-[var(--ds-text-muted)]">
+                  <h2 className="mb-1 px-2 text-xs font-medium text-[var(--ds-text-muted)]">
                     Chats
                   </h2>
                   {searchResults.chats.map((chat) => (
@@ -659,7 +659,7 @@ export default function ProjectTreeSidebar({
               )}
               {searchResults.creations.length > 0 && (
                 <section>
-                  <h2 className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-[.16em] text-[var(--ds-text-muted)]">
+                  <h2 className="mb-1 px-2 text-xs font-medium text-[var(--ds-text-muted)]">
                     Files &amp; creations
                   </h2>
                   {searchResults.creations.map((script) => (
@@ -795,8 +795,8 @@ export default function ProjectTreeSidebar({
                                   data-expanded={expanded}
                                 />
                                 {expanded
-                                  ? <FolderOpen className="mr-2 h-3.5 w-3.5 shrink-0 text-[var(--ds-plan)]" />
-                                  : <Folder className="mr-2 h-3.5 w-3.5 shrink-0 text-[var(--ds-plan)]" />}
+                                  ? <FolderOpen className="mr-2 h-3.5 w-3.5 shrink-0 text-[var(--ds-text-secondary)]" />
+                                  : <Folder className="mr-2 h-3.5 w-3.5 shrink-0 text-[var(--ds-text-secondary)]" />}
                                 <InlineRename
                                   value={project.title || "Untitled project"}
                                   onCommit={(title) => commitRename("project", project.projectId, title)}
@@ -817,8 +817,8 @@ export default function ProjectTreeSidebar({
                                 data-expanded={expanded}
                               />
                               {expanded
-                                ? <FolderOpen className="mr-2 h-3.5 w-3.5 shrink-0 text-[var(--ds-plan)]" />
-                                : <Folder className="mr-2 h-3.5 w-3.5 shrink-0 text-[var(--ds-plan)]" />}
+                                ? <FolderOpen className="mr-2 h-3.5 w-3.5 shrink-0 text-[var(--ds-text-secondary)]" />
+                                : <Folder className="mr-2 h-3.5 w-3.5 shrink-0 text-[var(--ds-text-secondary)]" />}
                               <span className="min-w-0 flex-1 truncate">{project.title || "Untitled project"}</span>
                               {project.isConnected && (
                                 <span

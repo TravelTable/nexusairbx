@@ -77,7 +77,7 @@ export default function AgentStepList({
                   <span className={`rounded-full border px-1.5 py-0.5 text-[9px] font-bold shrink-0 ${
                     step.executionProvider === "mcp_local"
                       ? "border-[color-mix(in_srgb,var(--ds-info)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-info)_10%,transparent)] text-[var(--ds-info)]"
-                      : "border-[color-mix(in_srgb,var(--ds-plan)_20%,transparent)] bg-[color-mix(in_srgb,var(--ds-plan)_10%,transparent)] text-[var(--ds-plan)]"
+                      : "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]"
                   }`}>
                     {providerLabel(step.executionProvider)}
                   </span>

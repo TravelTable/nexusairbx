@@ -255,7 +255,7 @@ export default function ExportBar({
         onClick={handleRojoExport}
         disabled={disabled || rojoBuilding}
         title="Download a Rojo project (default.project.json + src/ tree)"
-        className={`${btn} bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)] text-[var(--ds-plan)] hover:bg-[color-mix(in_srgb,var(--ds-plan)_18%,transparent)]`}
+        className={`${btn} bg-[var(--ds-accent-soft)] text-[var(--ds-accent)] hover:bg-[var(--ds-fill-hover)]`}
       >
         {rojoBuilding ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Boxes className="w-3.5 h-3.5" />}
         Rojo Project

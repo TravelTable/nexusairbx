@@ -15,6 +15,7 @@ const sourceExtensions = new Set([".css", ".html", ".js", ".jsx", ".mjs", ".ts",
 // than NexusRBX browser chrome, so their palettes are intentionally independent.
 const generatedOutputExclusions = new Set([
   "src/lib/gameProfile.js",
+  "public-frontend/data/landingEvidence.js",
 ]);
 
 const normalizePath = (filePath) => filePath.split(path.sep).join("/");
@@ -76,21 +77,37 @@ const classifyRetiredColor = (rgb) => {
   const { hue, saturation, lightness } = rgbToHsl(rgb);
   const chromaticEnough = saturation >= 0.25 && lightness >= 0.03 && lightness <= 0.97;
   if (chromaticEnough && hue >= 155 && hue <= 200) return "retired turquoise/cyan/teal literal";
+  if (chromaticEnough && hue > 200 && hue < 250) return "retired blue literal; use the semantic accent or information token";
   if (chromaticEnough && hue >= 250 && hue < 305) return "raw purple literal; use the semantic Plan/AI token";
   if (chromaticEnough && hue >= 305 && hue <= 340) return "retired decorative pink literal";
   return null;
 };
 
 const allowedSemanticLiteral = (relativePath, line) => {
+  if (/Color3\.fromRGB\s*\(/.test(line)) return true; // Shipped Roblox code example/output.
   const isCanonicalTheme = relativePath === "src/index.css"
     || relativePath === "public-frontend/app/globals.css";
-  return isCanonicalTheme && /--ds-(?:info|plan)(?:-[a-z]+)?\s*:/.test(line);
+  if (isCanonicalTheme && /--ds-(?:fill-selected|accent|focus-ring|info|plan)(?:-[a-z]+)?\s*:/.test(line)) return true;
+
+  // Monaco theme data cannot resolve CSS custom properties. Keep its two
+  // adaptive palettes and the AI token bridge as explicit, audited owners.
+  if (relativePath === "src/components/ai/workspace/CodeWorkspace.jsx") return true;
+  if (
+    relativePath === "src/components/ai/AiComponents.jsx"
+    && /initialData\?\.color\s*\|\|\s*["']#20808d["']/i.test(line)
+  ) return true; // Native color inputs require a concrete sRGB value.
+  if (relativePath === "src/components/homepage/RobloxTrustStrip.jsx") return true; // Google brand mark.
+  return relativePath === "src/styles/aiTheme.css" && /--ai-[a-z0-9-]+\s*:/.test(line);
 };
 
 const utilityPatterns = [
   {
     label: "retired cyan/teal utility",
     pattern: /\b(?:(?:[a-z-]+):)*(?:accent|bg|border|caret|decoration|divide|fill|from|outline|placeholder|ring|shadow|stroke|text|to|via)-(?:cyan|teal)-\d{2,3}(?:\/\d{1,3})?\b/gi,
+  },
+  {
+    label: "retired blue utility; use the semantic accent or information token",
+    pattern: /\b(?:(?:[a-z-]+):)*(?:accent|bg|border|caret|decoration|divide|fill|from|outline|placeholder|ring|shadow|stroke|text|to|via)-(?:blue|sky|indigo)-\d{2,3}(?:\/\d{1,3})?\b/gi,
   },
   {
     label: "retired decorative pink utility",
@@ -153,38 +170,38 @@ const readToken = (block, token) => {
 };
 
 const darkThemeContract = {
-  "--ds-bg-canvas": "#050507",
-  "--ds-bg-workspace": "#08090d",
-  "--ds-bg-sidebar": "#0c0d12",
-  "--ds-surface-1": "#111217",
-  "--ds-text": "#f5f5f7",
-  "--ds-accent": "#0a84ff",
-  "--ds-accent-hover": "#409cff",
-  "--ds-accent-pressed": "#0071e3",
-  "--ds-focus-ring": "#0a84ff",
-  "--ds-info": "#64d2ff",
-  "--ds-info-foreground": "#050507",
+  "--ds-bg-canvas": "#181817",
+  "--ds-bg-workspace": "#11110f",
+  "--ds-bg-sidebar": "#151514",
+  "--ds-surface-1": "#20201e",
+  "--ds-text": "#f5f3ed",
+  "--ds-accent": "#20808d",
+  "--ds-accent-hover": "#2a94a1",
+  "--ds-accent-pressed": "#176f79",
+  "--ds-focus-ring": "#52b7c0",
+  "--ds-info": "#58b6c1",
+  "--ds-info-foreground": "#11110f",
   "--ds-success": "#30d158",
-  "--ds-success-foreground": "#050507",
+  "--ds-success-foreground": "#11110f",
   "--ds-warning": "#ffd60a",
   "--ds-warning-foreground": "#1d1d1f",
   "--ds-danger": "#ff453a",
   "--ds-danger-foreground": "#ffffff",
   "--ds-plan": "#bf5af2",
-  "--ds-plan-foreground": "#050507",
+  "--ds-plan-foreground": "#11110f",
 };
 
 const lightThemeContract = {
-  "--ds-bg-canvas": "#f5f5f7",
-  "--ds-bg-workspace": "#ffffff",
-  "--ds-bg-sidebar": "#f2f2f7",
-  "--ds-surface-1": "#ffffff",
-  "--ds-text": "#1d1d1f",
-  "--ds-accent": "#007aff",
-  "--ds-accent-hover": "#0066d6",
-  "--ds-accent-pressed": "#0055b3",
-  "--ds-focus-ring": "#007aff",
-  "--ds-info": "#007a9e",
+  "--ds-bg-canvas": "#faf8f5",
+  "--ds-bg-workspace": "#fffdf9",
+  "--ds-bg-sidebar": "#f2efe9",
+  "--ds-surface-1": "#fffdf9",
+  "--ds-text": "#27251e",
+  "--ds-accent": "#20808d",
+  "--ds-accent-hover": "#176f79",
+  "--ds-accent-pressed": "#115d66",
+  "--ds-focus-ring": "#20808d",
+  "--ds-info": "#176f79",
   "--ds-info-foreground": "#ffffff",
   "--ds-success": "#248a3d",
   "--ds-success-foreground": "#ffffff",
@@ -196,7 +213,7 @@ const lightThemeContract = {
   "--ds-plan-foreground": "#ffffff",
 };
 
-test("keeps shipped browser UI on the Apple-blue design contract", () => {
+test("keeps shipped browser UI on the warm-charcoal and semantic-teal design contract", () => {
   const violations = shippedBrowserSources.flatMap((relativePath) => {
     const source = fs.readFileSync(path.join(projectRoot, relativePath), "utf8");
     return source.split(/\r?\n/).flatMap((line, index) => findLineViolations(relativePath, line, index + 1));
@@ -220,7 +237,8 @@ test("keeps both browser entry points on the canonical dark and light tokens", (
         .toEqual({ file: relativePath, theme: "light", token, value: expected });
     });
 
-    expect(css).toMatch(/font-family:\s*-apple-system,\s*BlinkMacSystemFont,\s*["']SF Pro (?:Text|Display)["'],\s*["']Segoe UI["'],\s*system-ui,\s*sans-serif/i);
+    expect(readToken(darkBlock, "--ds-font-sans")).toBe('-apple-system, blinkmacsystemfont, "sf pro text", "segoe ui", system-ui, sans-serif');
+    expect(readToken(darkBlock, "--ds-font-display")).toBe('georgia, "times new roman", serif');
   });
 });
 

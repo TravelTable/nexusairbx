@@ -490,10 +490,10 @@ export function PlanWorkspaceView({ controller, onUseTemplate, onViewProgress })
 
   return (
     <div className="flex min-h-full flex-col">
-      <header className="sticky top-0 z-10 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] px-4 py-3 backdrop-blur sm:px-5">
+      <header className="sticky top-0 z-10 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)] px-4 py-3 sm:px-5">
         <div className="mx-auto flex max-w-5xl items-start gap-3">
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--ds-accent)]">Review plan</div>
+            <div className="text-[10px] font-semibold text-[var(--ds-plan)]">Review plan</div>
             <h2 className="mt-0.5 truncate text-base font-semibold text-[var(--ds-text)]">{controller.plan.sections?.goal || "NexusRBX execution plan"}</h2>
             <p className="mt-1 hidden text-[11px] text-[var(--ds-text-muted)] sm:block">Request → Clarify → <span className="text-[var(--ds-text-secondary)]">Review Plan</span> → Execute → Verify</p>
           </div>

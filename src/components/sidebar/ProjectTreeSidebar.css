@@ -31,7 +31,7 @@
   display: flex;
   width: 100%;
   align-items: center;
-  border-radius: 6px;
+  border-radius: 999px;
   color: var(--ds-text-secondary);
   transition:
     color var(--motion-fast) var(--ease-standard),
@@ -41,7 +41,7 @@
 .nexus-tree-row::before {
   position: absolute;
   inset-block: 5px;
-  left: 0;
+  left: 4px;
   width: 2px;
   border-radius: 999px;
   background: var(--ds-accent);
@@ -131,8 +131,8 @@
 }
 
 .nexus-project-sidebar {
-  flex-basis: 272px;
-  width: 272px;
+  flex-basis: 288px;
+  width: 288px;
   transition:
     flex-basis 220ms var(--ease-product),
     width 220ms var(--ease-product),
@@ -152,8 +152,8 @@
 
 @media (min-width: 1200px) and (max-width: 1499px) {
   .nexus-project-sidebar {
-    flex-basis: 248px;
-    width: 248px;
+    flex-basis: 264px;
+    width: 264px;
   }
 }
 
@@ -164,7 +164,7 @@
     left: 0;
     z-index: 50;
     flex-basis: auto;
-    width: 272px;
+    width: 288px;
     opacity: 1;
     transform: translateX(0);
     transition:
@@ -174,7 +174,7 @@
 
   .nexus-project-sidebar[data-open="false"] {
     flex-basis: auto;
-    width: 272px;
+    width: 288px;
     opacity: 0;
     transform: translateX(-16px);
   }

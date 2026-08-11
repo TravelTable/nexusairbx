@@ -166,21 +166,21 @@ export default function QuickScriptWorkspace({
       )}
       <div
         className={cx(
-          "min-h-0 min-w-0 flex-1 flex-col bg-[var(--ds-surface-1)]",
+          "min-h-0 min-w-0 flex-1 flex-col bg-[var(--ds-bg-workspace)]",
           mobilePane === "prompt" ? "flex pb-16 lg:pb-0" : "hidden lg:flex"
         )}
         data-testid="quick-prompt-pane"
       >
-        <div className="flex-1 min-h-0 overflow-y-auto px-4 py-5 sm:px-6 sm:py-7 scrollbar-subtle">
+        <div className="pc-page-gutter flex-1 min-h-0 overflow-y-auto py-6 md:py-8 scrollbar-subtle">
           <div className="mx-auto max-w-3xl space-y-4">
             {isGenerating && (
-            <div className="rounded-2xl border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] p-4 motion-safe:animate-fade-in-up" aria-live="polite">
+            <div className="border-y border-[var(--ds-accent-border)] bg-transparent py-4 motion-safe:animate-fade-in-up" aria-live="polite">
               <div className="flex items-start gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)]">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center text-[var(--ds-accent)]">
                   <Loader className="h-4 w-4 animate-spin text-[var(--ds-accent)]" aria-hidden="true" />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--ds-accent)]">Quick is working</p>
+                  <p className="text-xs font-semibold text-[var(--ds-accent)]">Quick is working</p>
                   <p className="mt-1 text-sm leading-relaxed text-[var(--ds-text-secondary)]">{quickScript?.stage || "Compiling your Luau script..."}</p>
                 </div>
               </div>
@@ -190,21 +190,21 @@ export default function QuickScriptWorkspace({
             {!result && status === "idle" && (
             <div className="space-y-5 py-2 sm:py-6">
               <div className="max-w-xl">
-                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[var(--ds-accent)]">Quick Script</p>
-                <h1 className="mt-2 font-display text-xl font-bold text-[var(--ds-text)] sm:text-2xl">Build one focused Roblox script</h1>
-                <p className="mt-2 text-sm leading-relaxed text-[var(--ds-text-muted)]">
+                <p className="text-xs font-medium text-[var(--ds-accent)]">Quick Script</p>
+                <h1 className="pc-display-heading mt-2 text-[2rem] leading-tight text-[var(--ds-text)] sm:text-[2.5rem]">Build one focused Roblox script</h1>
+                <p className="mt-3 text-sm leading-relaxed text-[var(--ds-text-muted)]">
                   Describe the behavior and placement. Quick returns ready-to-use Luau with setup and testing guidance.
                 </p>
               </div>
               <div>
-                <h2 className="mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--ds-text-muted)]">Try an example</h2>
-                <div className="grid gap-2.5">
+                <h2 className="mb-2 text-xs font-medium text-[var(--ds-text-muted)]">Try an example</h2>
+                <div className="grid gap-0">
                   {EXAMPLES.map((example) => (
                     <button
                       key={example}
                       type="button"
                       onClick={() => setPrompt(example)}
-                      className="min-h-11 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-4 text-left text-sm leading-relaxed text-[var(--ds-text-secondary)] transition-[border-color,background-color,color,transform] duration-150 hover:border-[var(--ds-accent-border)] hover:bg-[var(--ds-accent-soft)] hover:text-[var(--ds-text)] active:scale-[0.99] focus-ring motion-reduce:transition-none"
+                      className="min-h-11 border-x-0 border-b-0 border-t border-[var(--ds-border-subtle)] bg-transparent px-0 py-3.5 text-left text-sm leading-relaxed text-[var(--ds-text-secondary)] transition-[border-color,color] duration-150 hover:border-[var(--ds-accent)] hover:text-[var(--ds-text)] focus-ring motion-reduce:transition-none"
                     >
                       {example}
                     </button>
@@ -282,8 +282,8 @@ export default function QuickScriptWorkspace({
           </div>
         </div>
 
-        <div className="shrink-0 bg-gradient-to-t from-[var(--ds-bg-workspace)] via-[var(--ds-bg-workspace)] to-transparent p-3">
-          <div className="mx-auto max-w-5xl">
+        <div className="pc-page-gutter shrink-0 bg-[var(--ds-bg-workspace)] py-3">
+          <div className="mx-auto max-w-[800px]">
             <form
             onSubmit={(event) => {
               event.preventDefault();
@@ -291,11 +291,11 @@ export default function QuickScriptWorkspace({
             }}
             className="group relative"
           >
-            <div className="relative flex flex-col gap-2 rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] p-2 shadow-panel backdrop-blur-xl">
+            <div className="relative flex flex-col gap-2 rounded-[20px] border border-[var(--ds-border)] bg-[var(--ds-surface-1)] p-2">
               <div className="flex flex-wrap items-center gap-2">
                 <div
                   className={cx(
-                    "inline-flex h-8 items-center rounded-lg border px-2.5 text-[10px] font-black uppercase tracking-widest transition-all",
+                    "inline-flex h-8 items-center rounded-full border px-3 text-[11px] font-medium transition-colors duration-150",
                     isGenerating
                       ? "border-[var(--ds-accent)] bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] motion-safe:animate-pulse"
                       : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)]"
@@ -311,7 +311,7 @@ export default function QuickScriptWorkspace({
                   onClick={() => onImprovePrompt()}
                   disabled={isGenerating || isImproving || !String(prompt || "").trim()}
                   data-tour="improve-btn"
-                  className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[color-mix(in_srgb,var(--ds-plan)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)] px-2.5 text-[10px] font-bold uppercase tracking-wider text-[var(--ds-plan)] transition-[border-color,background-color,color,transform] duration-150 hover:bg-[color-mix(in_srgb,var(--ds-plan)_18%,transparent)] hover:text-[var(--ds-text)] active:scale-[0.98] focus-ring disabled:cursor-not-allowed disabled:opacity-40 motion-reduce:transition-none"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-3 text-[11px] font-medium text-[var(--ds-accent)] transition-[border-color,background-color,color] duration-150 hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring disabled:cursor-not-allowed disabled:opacity-40 motion-reduce:transition-none"
                   title="Expand your prompt into a detailed brief"
                 >
                   {isImproving ? <Loader className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
@@ -319,7 +319,7 @@ export default function QuickScriptWorkspace({
                 </button>
               )}
               </div>
-              <div className="flex items-end gap-2 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-1.5 transition-[border-color,background-color] duration-200 focus-within:border-[var(--ds-accent-border)] focus-within:bg-[var(--ds-surface-2)] motion-reduce:transition-none">
+              <div className="flex items-end gap-2 rounded-xl border border-transparent bg-transparent p-1.5 transition-[border-color] duration-200 focus-within:border-[var(--ds-accent-border)] motion-reduce:transition-none">
                 <textarea
                   id="quick-script-prompt"
                   ref={textareaRef}
@@ -368,7 +368,7 @@ export default function QuickScriptWorkspace({
       >
         {result ? (
           <Tabs defaultValue="code" className="flex-1 flex flex-col min-h-0">
-            <div className="flex min-h-[60px] shrink-0 flex-col gap-3 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-h-[60px] shrink-0 flex-col gap-3 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <div className="font-display text-sm font-bold text-[var(--ds-text)] truncate">{result.title || "Quick"}</div>
                 <div className="mt-1 flex items-center gap-1.5">
@@ -390,7 +390,7 @@ export default function QuickScriptWorkspace({
             <div className="flex-1 min-h-0 bg-[var(--ds-bg-workspace)] flex flex-col">
               <TabsContent value="code" className="flex-1 min-h-0 mt-0 focus-visible:ring-0 flex flex-col">
                 <div className="flex-1 min-h-0 flex flex-col relative" data-tour="code-output">
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-3 py-2 shrink-0 sm:px-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)] px-3 py-2 shrink-0 sm:px-4">
                     <div className="flex min-w-0 items-center gap-2 text-[10px] text-[var(--ds-text-muted)] font-mono">
                       <TerminalSquare className="h-3.5 w-3.5 text-[var(--ds-accent)]" />
                       <span className="truncate">{result.targetPath || result.studioLocation || "Studio location required"}</span>
@@ -483,10 +483,10 @@ export default function QuickScriptWorkspace({
           </Tabs>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[var(--ds-bg-workspace)]" data-tour="code-output">
-            <div className="mb-4 rounded-xl border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] p-4">
-              <Code2 className="h-8 w-8 text-[var(--ds-accent)]" />
+            <div className="mb-5 text-[var(--ds-accent)]">
+              <Code2 className="h-8 w-8" />
             </div>
-            <h2 className="font-display text-sm font-bold text-[var(--ds-text)]">One prompt, one focused script</h2>
+            <h2 className="pc-display-heading text-2xl text-[var(--ds-text)]">One prompt, one focused script</h2>
             <p className="mt-2 text-xs text-[var(--ds-text-muted)] max-w-xs leading-relaxed">
               Quick compiles functional Luau code, placement directories, step-by-step setup guides, verification tests, and syntax diagnostics instantly.
             </p>
@@ -504,7 +504,7 @@ export default function QuickScriptWorkspace({
       </div>
 
       <nav
-        className="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-1 rounded-full border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] p-1.5 shadow-2xl backdrop-blur-xl lg:hidden"
+        className="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-1 rounded-full border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-1.5 lg:hidden"
         aria-label="Quick Script workspace"
       >
         {[
@@ -519,7 +519,7 @@ export default function QuickScriptWorkspace({
               type="button"
               onClick={() => setMobilePane(item.id)}
               className={cx(
-                "inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 py-2 text-[10px] font-semibold uppercase tracking-wider transition-[background-color,color] duration-150 focus-ring motion-reduce:transition-none",
+                "inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 py-2 text-xs font-medium transition-[background-color,color] duration-150 focus-ring motion-reduce:transition-none",
                 active ? "bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)]" : "text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)]"
               )}
               aria-pressed={active}

@@ -20,7 +20,7 @@ const ScriptRow = React.memo(function ScriptRow({
   const systemTags = useMemo(() => {
     const tags = [];
     if (script.type === "ui") tags.push({ label: "UI", color: "text-[var(--ds-accent)] bg-[var(--ds-accent-soft)]" });
-    else tags.push({ label: "Logic", color: "text-[var(--ds-plan)] bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)]" });
+    else tags.push({ label: "Logic", color: "text-[var(--ds-info)] bg-[color-mix(in_srgb,var(--ds-info)_12%,transparent)]" });
     
     // Mocking some tags based on title for demo purposes
     if (script.title?.toLowerCase().includes("mobile")) tags.push({ icon: Smartphone, color: " text-[var(--ds-info)] " });

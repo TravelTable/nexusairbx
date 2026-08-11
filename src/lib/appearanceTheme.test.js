@@ -45,7 +45,7 @@ describe("appearance theme", () => {
     expect(applyResolvedAppearanceTheme("light", { documentObject: document, matchMedia: media(true) })).toBe("light");
     expect(document.documentElement.getAttribute("data-theme")).toBe("light");
     expect(document.documentElement.style.colorScheme).toBe("light");
-    expect(meta.getAttribute("content")).toBe("#f5f5f7");
+    expect(meta.getAttribute("content")).toBe("#faf8f5");
     meta.remove();
   });
 
@@ -96,7 +96,7 @@ describe("appearance theme", () => {
 
     expect(root.dataset.theme).toBe("light");
     expect(root.style.colorScheme).toBe("light");
-    expect(meta.setAttribute).toHaveBeenCalledWith("content", "#f5f5f7");
+    expect(meta.setAttribute).toHaveBeenCalledWith("content", "#faf8f5");
     expect(mediaQuery.addEventListener).toHaveBeenCalledWith("change", expect.any(Function));
     expect(storageListeners).toHaveLength(1);
   });

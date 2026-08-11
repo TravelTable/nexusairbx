@@ -13,22 +13,22 @@ function defineNexusThemes(monaco) {
       base: "vs-dark",
       inherit: true,
       rules: [
-        { token: "comment", foreground: "8B949E", fontStyle: "italic" },
-        { token: "keyword", foreground: "BF5AF2" },
-        { token: "string", foreground: "64D2FF" },
-        { token: "number", foreground: "FFD60A" },
+        { token: "comment", foreground: "85817A", fontStyle: "italic" },
+        { token: "keyword", foreground: "7FB8BF" },
+        { token: "string", foreground: "B7C98C" },
+        { token: "number", foreground: "D0A65A" },
       ],
       colors: {
-        "editor.background": "#111217",
-        "editor.foreground": "#F5F5F7",
-        "editorLineNumber.foreground": "#63636B",
-        "editorLineNumber.activeForeground": "#0A84FF",
-        "editor.selectionBackground": "#0A84FF40",
-        "editor.inactiveSelectionBackground": "#0A84FF24",
-        "editor.lineHighlightBackground": "#FFFFFF08",
-        "editorCursor.foreground": "#0A84FF",
-        "editorWidget.background": "#1C1D24",
-        "editorWidget.border": "#34353D",
+        "editor.background": "#181817",
+        "editor.foreground": "#F4F1EB",
+        "editorLineNumber.foreground": "#6F6B64",
+        "editorLineNumber.activeForeground": "#5B9EAA",
+        "editor.selectionBackground": "#20808D55",
+        "editor.inactiveSelectionBackground": "#20808D2E",
+        "editor.lineHighlightBackground": "#FAF8F50A",
+        "editorCursor.foreground": "#20808D",
+        "editorWidget.background": "#242422",
+        "editorWidget.border": "#3B3935",
       },
     });
 
@@ -36,22 +36,22 @@ function defineNexusThemes(monaco) {
       base: "vs",
       inherit: true,
       rules: [
-        { token: "comment", foreground: "6E7781", fontStyle: "italic" },
-        { token: "keyword", foreground: "8E44AD" },
-        { token: "string", foreground: "007A9E" },
-        { token: "number", foreground: "9A6700" },
+        { token: "comment", foreground: "777169", fontStyle: "italic" },
+        { token: "keyword", foreground: "236D76" },
+        { token: "string", foreground: "58713F" },
+        { token: "number", foreground: "8A641F" },
       ],
       colors: {
-        "editor.background": "#FFFFFF",
-        "editor.foreground": "#1D1D1F",
-        "editorLineNumber.foreground": "#8E8E93",
-        "editorLineNumber.activeForeground": "#007AFF",
-        "editor.selectionBackground": "#007AFF33",
-        "editor.inactiveSelectionBackground": "#007AFF1F",
-        "editor.lineHighlightBackground": "#00000005",
-        "editorCursor.foreground": "#007AFF",
-        "editorWidget.background": "#FFFFFF",
-        "editorWidget.border": "#D2D2D7",
+        "editor.background": "#FAF8F5",
+        "editor.foreground": "#252421",
+        "editorLineNumber.foreground": "#918B82",
+        "editorLineNumber.activeForeground": "#20808D",
+        "editor.selectionBackground": "#20808D33",
+        "editor.inactiveSelectionBackground": "#20808D1F",
+        "editor.lineHighlightBackground": "#312E2A08",
+        "editorCursor.foreground": "#20808D",
+        "editorWidget.background": "#FFFDFA",
+        "editorWidget.border": "#D9D2C8",
       },
     });
   } catch {
@@ -148,11 +148,11 @@ export default function CodeWorkspace({
 
   if (!artifact) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-center px-8 bg-[var(--ds-bg-workspace)]">
-        <div className="mb-4 rounded-xl border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] p-4">
-          <FileCode2 className="w-10 h-10 text-[var(--ds-accent)]" />
+      <div className="pc-page-gutter h-full flex flex-col items-center justify-center text-center bg-[var(--ds-bg-workspace)]">
+        <div className="mb-5 text-[var(--ds-accent)]">
+          <FileCode2 className="w-9 h-9" />
         </div>
-        <h2 className="font-display text-lg font-bold text-[var(--ds-text)]">Your code workspace</h2>
+        <h2 className="pc-display-heading text-3xl text-[var(--ds-text)]">Your code workspace</h2>
         <p className="mt-2 text-sm text-[var(--ds-text-muted)] max-w-sm leading-relaxed">
           Ask the agent to build a Roblox system. Generated server, client, and module scripts appear
           here as editable files, organized by their Studio placement.
@@ -165,7 +165,7 @@ export default function CodeWorkspace({
 
   return (
     <div className="h-full flex flex-col min-h-0 bg-[var(--ds-bg-workspace)]">
-      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)]">
+      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)]">
         <div className="min-w-0">
           <div className="font-display text-sm font-bold text-[var(--ds-text)] truncate">{artifact.title}</div>
           {artifact.summary && (

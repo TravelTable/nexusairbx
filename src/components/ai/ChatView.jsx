@@ -68,7 +68,7 @@ export default function ChatView({
         />
         <Conversation className="h-full min-h-0 w-full flex-1">
           <ConversationContent
-            className="mx-auto min-h-full w-full max-w-[1080px] gap-5 px-3 py-5 sm:px-5"
+            className="pc-page-gutter mx-auto min-h-full w-full max-w-[1024px] gap-6 py-6 md:py-8"
             scrollClassName="nexus-chat-scroll scrollbar-subtle"
           >
             {showEmpty ? (

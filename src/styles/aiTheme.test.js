@@ -26,6 +26,28 @@ test("maps the dense AI workspace to canonical semantic tokens", () => {
   expect(themeCss).not.toMatch(/#00f5d4|#00bbf9|cyan-|teal-/i);
 });
 
+test("inherits the canonical product palette rather than forking design tokens", () => {
+  expect(themeCss).not.toMatch(/^\s*--ds-[\w-]+\s*:/m);
+  expect(themeCss).toContain("background-color: var(--ds-bg-workspace)");
+  expect(themeCss).toContain("color: var(--ds-text)");
+  expect(themeCss).toContain("--ai-accent: var(--ds-accent)");
+});
+
+test("keeps editorial type opt-in and scales workspace gutters", () => {
+  expect(themeCss).toContain("--pc-font-display: var(--ds-font-display)");
+  expect(themeCss).toMatch(/\.ai-page \.font-display\s*\{\s*font-family:\s*var\(--pc-font-ui\)/);
+  expect(themeCss).toMatch(/\.ai-page \.pc-display-heading\s*\{\s*font-family:\s*var\(--pc-font-display\)/);
+  expect(themeCss).toMatch(/@media \(min-width: 768px\)[\s\S]*?--pc-gutter:\s*24px/);
+  expect(themeCss).toMatch(/@media \(min-width: 1200px\)[\s\S]*?--pc-gutter:\s*32px/);
+});
+
+test("flattens legacy workspace decoration without remapping status semantics", () => {
+  expect(themeCss).toMatch(/\[class\*="bg-gradient-to-"\][\s\S]*?background-image:\s*none/);
+  expect(themeCss).toMatch(/\[class~="shadow-2xl"\][\s\S]*?box-shadow:\s*none/);
+  expect(themeCss).toContain("--ai-info: var(--ds-info)");
+  expect(themeCss).toContain("--ai-danger: var(--ds-danger)");
+});
+
 test("provides non-motion, opaque, and high-contrast fallbacks", () => {
   expect(themeCss).toContain("@media (prefers-reduced-motion: reduce)");
   expect(themeCss).toContain("@media (prefers-reduced-transparency: reduce)");

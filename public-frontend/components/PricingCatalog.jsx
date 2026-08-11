@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import publicPlanCatalog from "../../src/data/publicPlanCatalog.json";
 
 const focusClass =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-bg-canvas)]";
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-bg-canvas)]";
 
 const comparisonFacts = {
   FREE: {
@@ -119,7 +119,7 @@ function PlanAction({ plan, interval, seats, disabled = false, managePlan = fals
   if (managePlan && plan.id !== "FREE") {
     return (
       <a
-        className={`${focusClass} mt-auto inline-flex h-11 w-full items-center justify-center rounded-lg border border-[var(--ds-border-strong)] bg-[var(--ds-fill-subtle)] px-4 text-sm font-semibold text-[var(--ds-text)] transition-[background-color,border-color,transform] hover:border-[var(--ds-accent-border)] hover:bg-[var(--ds-fill-hover)] active:scale-[0.99] motion-reduce:transform-none`}
+        className={`${focusClass} mt-auto inline-flex h-11 w-full items-center justify-center rounded-full border border-[var(--ds-border-strong)] bg-[var(--ds-fill-subtle)] px-5 text-sm font-semibold text-[var(--ds-text)] transition-[background-color,border-color,transform] hover:border-[var(--ds-accent-border)] hover:bg-[var(--ds-fill-hover)] active:scale-[0.99] motion-reduce:transform-none`}
         href="/billing"
       >
         Manage plan
@@ -143,7 +143,7 @@ function PlanAction({ plan, interval, seats, disabled = false, managePlan = fals
   if (disabled) {
     return (
       <button
-        className="mt-auto h-11 w-full cursor-not-allowed rounded-lg border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-4 text-sm font-semibold text-[var(--ds-text-muted)] opacity-70"
+        className="mt-auto h-11 w-full cursor-not-allowed rounded-full border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-5 text-sm font-semibold text-[var(--ds-text-muted)] opacity-70"
         type="button"
         disabled
       >
@@ -154,7 +154,7 @@ function PlanAction({ plan, interval, seats, disabled = false, managePlan = fals
 
   return (
     <a
-      className={`${focusClass} mt-auto inline-flex h-11 w-full items-center justify-center rounded-lg px-4 text-sm font-semibold transition-[background-color,border-color,transform] active:scale-[0.99] motion-reduce:transform-none ${
+      className={`${focusClass} mt-auto inline-flex h-11 w-full items-center justify-center rounded-full px-5 text-sm font-semibold transition-[background-color,border-color,transform] active:scale-[0.99] motion-reduce:transform-none ${
         plan.featured
           ? "bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] active:bg-[var(--ds-accent-pressed)]"
           : "border border-[var(--ds-border-strong)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text)] hover:border-[var(--ds-accent-border)] hover:bg-[var(--ds-fill-hover)]"
@@ -171,7 +171,7 @@ function EntryPlan({ plan, interval, managePlan }) {
   const unavailableAnnually = interval === "year" && plan.id === "STARTER";
 
   return (
-    <article className="flex min-h-full flex-col rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-1)] p-6 shadow-sm shadow-black/5">
+    <article className="flex min-h-full flex-col rounded-[14px] border border-[var(--ds-border)] bg-[var(--ds-surface-1)] p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="text-xl font-semibold tracking-[-0.015em] text-[var(--ds-text)]">{plan.name}</h3>
@@ -202,7 +202,7 @@ function EntryPlan({ plan, interval, managePlan }) {
 function PrimaryPlan({ plan, interval, managePlan }) {
   return (
     <article
-      className={`flex min-h-full flex-col rounded-xl border p-7 shadow-sm shadow-black/5 ${
+      className={`flex min-h-full flex-col rounded-[14px] border p-7 ${
         plan.featured ? "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)]" : "border-[var(--ds-border)] bg-[var(--ds-surface-1)]"
       }`}
     >
@@ -285,19 +285,19 @@ export default function PricingCatalog() {
 
   return (
     <main id="main-content">
-      <section className="border-b border-[var(--ds-border-subtle)] px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+      <section className="border-b border-[var(--ds-border-subtle)] px-4 py-20 sm:px-6 sm:py-28 lg:px-8">
         <div className="mx-auto max-w-5xl text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--ds-accent)]">Pricing</p>
-          <h1 className="mx-auto mt-4 max-w-4xl text-4xl font-semibold tracking-[-0.04em] text-[var(--ds-text)] sm:text-5xl lg:text-6xl">
+          <h1 className="mx-auto mt-5 max-w-4xl font-display text-5xl font-normal leading-[0.98] tracking-[-0.045em] text-[var(--ds-text)] sm:text-6xl lg:text-7xl">
             Plans for individual creators and Roblox studios.
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-[var(--ds-text-secondary)] sm:text-lg">
             Compare included product access, choose a billing period, and review the final details before checkout.
           </p>
-          <div className="mt-9 inline-flex rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] p-1" aria-label="Billing period">
+          <div className="mt-10 inline-flex rounded-full border border-[var(--ds-border)] bg-[var(--ds-surface-2)] p-1" aria-label="Billing period">
             <button
               aria-pressed={interval === "month"}
-              className={`${focusClass} min-h-11 rounded-md px-5 py-2 text-sm font-semibold transition-[background-color,color,transform] active:scale-[0.98] motion-reduce:transform-none ${
+              className={`${focusClass} min-h-11 rounded-full px-5 py-2 text-sm font-semibold transition-[background-color,color,transform] active:scale-[0.98] motion-reduce:transform-none ${
                 interval === "month" ? "bg-[var(--ds-surface-3)] text-[var(--ds-text)] shadow-sm" : "text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)]"
               }`}
               onClick={() => setInterval("month")}
@@ -307,7 +307,7 @@ export default function PricingCatalog() {
             </button>
             <button
               aria-pressed={interval === "year"}
-              className={`${focusClass} min-h-11 rounded-md px-5 py-2 text-sm font-semibold transition-[background-color,color,transform] active:scale-[0.98] motion-reduce:transform-none ${
+              className={`${focusClass} min-h-11 rounded-full px-5 py-2 text-sm font-semibold transition-[background-color,color,transform] active:scale-[0.98] motion-reduce:transform-none ${
                 interval === "year" ? "bg-[var(--ds-surface-3)] text-[var(--ds-text)] shadow-sm" : "text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)]"
               }`}
               onClick={() => setInterval("year")}
@@ -320,10 +320,10 @@ export default function PricingCatalog() {
         </div>
       </section>
 
-      <section className="px-4 py-14 sm:px-6 lg:px-8" aria-labelledby="entry-plans-title">
+      <section className="px-4 py-20 sm:px-6 sm:py-24 lg:px-8" aria-labelledby="entry-plans-title">
         <div className="mx-auto max-w-6xl">
           <div className="mb-7 max-w-2xl">
-            <h2 id="entry-plans-title" className="text-2xl font-semibold tracking-[-0.02em] text-[var(--ds-text)]">Start with the essentials</h2>
+            <h2 id="entry-plans-title" className="font-display text-4xl font-normal tracking-[-0.035em] text-[var(--ds-text)]">Start with the essentials</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--ds-text-secondary)]">Free and Starter keep the initial commitment small.</p>
           </div>
           <div className="grid gap-5 md:grid-cols-2">
@@ -339,10 +339,10 @@ export default function PricingCatalog() {
         </div>
       </section>
 
-      <section className="border-y border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] px-4 py-14 sm:px-6 lg:px-8" aria-labelledby="creator-plans-title">
+      <section className="border-y border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] px-4 py-20 sm:px-6 sm:py-24 lg:px-8" aria-labelledby="creator-plans-title">
         <div className="mx-auto max-w-6xl">
           <div className="mb-7 max-w-2xl">
-            <h2 id="creator-plans-title" className="text-2xl font-semibold tracking-[-0.02em] text-[var(--ds-text)]">Compare Pro and Pro+</h2>
+            <h2 id="creator-plans-title" className="font-display text-4xl font-normal tracking-[-0.035em] text-[var(--ds-text)]">Compare Pro and Pro+</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--ds-text-secondary)]">Both plans include Premium Direct model access and the Icon Generator.</p>
           </div>
           <div className="grid gap-5 lg:grid-cols-2">
@@ -358,11 +358,11 @@ export default function PricingCatalog() {
         </div>
       </section>
 
-      <section className="px-4 py-14 sm:px-6 lg:px-8" aria-labelledby="team-plan-title">
-        <div className="mx-auto max-w-6xl rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-1)] p-6 shadow-sm shadow-black/5 sm:p-8 lg:grid lg:grid-cols-[1fr_0.9fr] lg:gap-12 lg:p-10">
+      <section className="px-4 py-20 sm:px-6 sm:py-24 lg:px-8" aria-labelledby="team-plan-title">
+        <div className="mx-auto max-w-6xl rounded-[14px] border border-[var(--ds-border)] bg-[var(--ds-surface-1)] p-6 sm:p-8 lg:grid lg:grid-cols-[1fr_0.9fr] lg:gap-12 lg:p-10">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--ds-accent)]">For studios</p>
-            <h2 id="team-plan-title" className="mt-3 text-3xl font-semibold tracking-[-0.025em] text-[var(--ds-text)]">Team</h2>
+            <h2 id="team-plan-title" className="mt-3 font-display text-5xl font-normal tracking-[-0.04em] text-[var(--ds-text)]">Team</h2>
             <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--ds-text-secondary)]">{team.audience}. Choose between 2 and 50 seats.</p>
             <div className="mt-7">
               <FeatureList features={team.features} />
@@ -417,10 +417,10 @@ export default function PricingCatalog() {
         </div>
       </section>
 
-      <section className="border-t border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] px-4 py-14 sm:px-6 lg:px-8" aria-labelledby="comparison-title">
+      <section className="border-t border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] px-4 py-20 sm:px-6 sm:py-24 lg:px-8" aria-labelledby="comparison-title">
         <div className="mx-auto max-w-6xl">
           <div className="max-w-2xl">
-            <h2 id="comparison-title" className="text-2xl font-semibold tracking-[-0.02em] text-[var(--ds-text)]">Plan comparison</h2>
+            <h2 id="comparison-title" className="font-display text-4xl font-normal tracking-[-0.035em] text-[var(--ds-text)]">Plan comparison</h2>
             <p className="mt-2 text-sm leading-6 text-[var(--ds-text-secondary)]">A concise view of the currently listed product access and limits.</p>
           </div>
           <div className="mt-7 overflow-x-auto rounded-xl border border-[var(--ds-border)]">

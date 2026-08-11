@@ -33,7 +33,8 @@ const DOCUMENT_ROUTES = new Set([
 ]);
 
 /**
- * NexusRBXHeader - Upgraded Floating Glass UI
+ * Legacy homepage header. The active site header uses the same quiet overlay
+ * treatment, so this fallback stays visually compatible with static routes.
  */
 function NexusRBXHeader({
   navigate,
@@ -163,14 +164,14 @@ function NexusRBXHeader({
   const isAiPage = variant === "ai";
 
   return (
-    <div className={`fixed top-4 left-0 right-0 z-50 px-4 flex justify-center pointer-events-none ${isAiPage ? 'max-w-none' : ''}`}>
-      <header className={`${isAiPage ? 'w-full' : 'w-full max-w-6xl'} bg-[color-mix(in_srgb,var(--ds-surface-overlay)_82%,transparent)] backdrop-blur-xl border border-[var(--ds-border-subtle)] rounded-2xl px-6 py-2.5 flex items-center justify-between pointer-events-auto shadow-panel transition-all duration-500`}>
+    <div className={`fixed left-0 right-0 top-0 z-50 flex justify-center px-4 pointer-events-none ${isAiPage ? 'max-w-none' : ''}`}>
+      <header data-overlay="true" className={`${isAiPage ? 'w-full' : 'w-full max-w-[90rem]'} flex h-14 items-center justify-between border-0 bg-transparent px-0 sm:px-2 pointer-events-auto`}>
         {/* Logo */}
         <div 
-          className="text-xl font-black text-accent cursor-pointer flex items-center gap-2"
+          className="focus-ring flex min-h-11 cursor-pointer items-center gap-2 rounded-full text-[13px] font-semibold tracking-[-0.01em] text-[var(--ds-text)]"
           onClick={() => openRoute("/")}
         >
-          <Zap className="h-5 w-5 text-accent fill-accent" />
+          <Zap className="h-4 w-4 text-[var(--ds-accent)]" />
           <div className="flex items-center gap-1.5">
             <span className="hidden sm:inline">NexusRBX</span>
             <BetaBadge className="mt-0.5" />

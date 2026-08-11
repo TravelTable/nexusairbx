@@ -22,6 +22,11 @@ import {
   supportDraftFromSearchParams,
 } from "../lib/supportDraft";
 import { trackProductEvent } from "../lib/productAnalytics";
+import {
+  editorialDisplayClass,
+  editorialGutterClass,
+  editorialPrimaryButtonClass,
+} from "../components/site/editorialUi";
 
 const EMPTY_FORM = {
   category: "technical",
@@ -37,7 +42,7 @@ const EMPTY_FORM = {
 };
 
 const FIELD_CLASS =
-  "mt-2 min-h-11 w-full rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-3 py-2.5 text-sm text-[var(--ds-text)] outline-none transition-colors placeholder:text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] focus:border-[var(--ds-accent-border)] focus:ring-2 focus:ring-[var(--ds-accent-soft)]";
+  "mt-2 min-h-12 w-full rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-4 py-3 text-sm text-[var(--ds-text)] outline-none transition-colors placeholder:text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] focus:border-[var(--ds-accent-border)] focus:ring-2 focus:ring-[var(--ds-focus-ring)]";
 
 function buildTicketMessage(form) {
   const details = [];
@@ -72,7 +77,7 @@ function SelfServiceLink({ href, icon: Icon, title, body, internal = false }) {
     </>
   );
   const className =
-    "flex min-h-11 gap-3 border-b border-[var(--ds-border-subtle)] py-4 text-left transition-colors first:pt-0 last:border-0 last:pb-0 hover:text-[var(--ds-text)] focus-visible:rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)]";
+    "flex min-h-11 gap-3 border-b border-[var(--ds-border-subtle)] py-4 text-left transition-colors first:pt-0 last:border-0 last:pb-0 hover:text-[var(--ds-text)] focus-visible:rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)]";
   return internal ? (
     <Link to={href} className={className}>{content}</Link>
   ) : (
@@ -156,21 +161,21 @@ export default function ContactPage() {
 
   return (
     <main className="min-h-[calc(100vh-4rem)] bg-[var(--ds-bg-canvas)] text-[var(--ds-text)]">
-      <section className="border-b border-[var(--ds-border-subtle)]">
-        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20">
+      <section>
+        <div className={`${editorialGutterClass} mx-auto max-w-7xl py-16 sm:py-20 lg:py-28`}>
           <p className="text-sm font-semibold text-[var(--ds-accent)]">Contact NexusRBX</p>
-          <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-[-0.035em] sm:text-5xl">
+          <h1 className={`${editorialDisplayClass} mt-5 max-w-4xl text-5xl sm:text-6xl lg:text-7xl`}>
             Tell us what happened. Keep the details in one place.
           </h1>
-          <p className="mt-5 max-w-2xl text-base leading-7 text-[var(--ds-text-muted)] sm:text-lg">
+          <p className="mt-7 max-w-2xl text-base leading-8 text-[var(--ds-text-muted)] sm:text-lg">
             You can read the form and prepare a request without an account. Sign in only when you are ready to send it and receive replies.
           </p>
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-6xl gap-12 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-8 lg:py-16">
+      <section className={`${editorialGutterClass} mx-auto grid max-w-7xl gap-14 pb-24 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-20 lg:pb-32`}>
         <form onSubmit={submit} className="min-w-0" noValidate>
-          <div className="flex items-start justify-between gap-4 border-b border-[var(--ds-border-subtle)] pb-6">
+          <div className="flex items-start justify-between gap-4 pb-7">
             <div>
               <h2 className="text-2xl font-semibold">New support request</h2>
               <p className="mt-2 text-sm leading-6 text-[var(--ds-text-muted)]">
@@ -184,7 +189,7 @@ export default function ContactPage() {
             )}
           </div>
 
-          <div className="mt-7 grid gap-6">
+          <div className="grid gap-7 rounded-[14px] bg-[var(--ds-surface-1)] p-5 sm:p-8">
             <Field label="Category">
               <select
                 className={FIELD_CLASS}
@@ -271,14 +276,14 @@ export default function ContactPage() {
               </div>
             )}
 
-            <div className="flex flex-col gap-3 border-t border-[var(--ds-border-subtle)] pt-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-4 border-t border-[var(--ds-border-subtle)] pt-7 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-[var(--ds-text-muted)]">
                 {user ? `Replies will go to the verified account ${user.email}.` : "Your draft is kept in this tab while you sign in."}
               </p>
               <button
                 type="submit"
                 disabled={status.state === "submitting" || !authReady || form.subject.trim().length < 5 || !form.message.trim()}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-[var(--ds-accent)] px-5 text-sm font-semibold text-[var(--ds-accent-foreground)] transition hover:bg-[var(--ds-accent-hover)] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50"
+                className={`${editorialPrimaryButtonClass} gap-2`}
               >
                 {status.state === "submitting" ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquare className="h-4 w-4" />}
                 {user ? "Create request" : "Sign in to send"}

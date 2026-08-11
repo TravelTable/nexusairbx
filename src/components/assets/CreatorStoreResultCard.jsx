@@ -17,8 +17,8 @@ export default function CreatorStoreResultCard({ asset, onViewDetails }) {
   const thumbnailUrl = thumbnailCandidates[thumbnailIndex] || null;
 
   return (
-    <article className="flex min-h-[260px] flex-col overflow-hidden rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)]">
-      <div className="flex aspect-square items-center justify-center overflow-hidden border-b border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)]">
+    <article className="flex min-h-[280px] flex-col overflow-hidden rounded-[14px] bg-[var(--ds-surface-1)]">
+      <div className="flex aspect-square items-center justify-center overflow-hidden bg-[var(--ds-bg-workspace)]">
         {thumbnailUrl ? (
           <img
             key={thumbnailUrl}
@@ -41,7 +41,7 @@ export default function CreatorStoreResultCard({ asset, onViewDetails }) {
           </div>
         )}
       </div>
-      <div className="p-3 flex-1 flex flex-col min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col p-4">
         <div className="flex items-start justify-between gap-2">
           <h3 className="text-sm font-black text-[var(--ds-text)] leading-tight line-clamp-2">{name}</h3>
           <span className="shrink-0 rounded-md border border-[color-mix(in_srgb,var(--ds-info)_28%,transparent)] bg-[color-mix(in_srgb,var(--ds-info)_8%,transparent)] px-1.5 py-0.5 text-[9px] font-semibold text-[var(--ds-info)]">
@@ -57,7 +57,7 @@ export default function CreatorStoreResultCard({ asset, onViewDetails }) {
         <button
           type="button"
           onClick={() => onViewDetails?.(asset)}
-          className="mt-auto inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-3 py-2 text-[11px] font-semibold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+          className="mt-4 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-[var(--ds-border)] bg-transparent px-4 py-2 text-[11px] font-semibold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
           aria-label={`View details for ${name}`}
         >
           <Eye className="w-3.5 h-3.5" />

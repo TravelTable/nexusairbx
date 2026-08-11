@@ -23,6 +23,12 @@ import IconMarketCard from "../components/icons/IconMarketCard";
 import { BACKEND_URL } from "../config";
 import { filterMarketplaceIcons, isMarketplaceEligible } from "../lib/iconMarket";
 import NoIndexMeta from "../components/seo/NoIndexMeta";
+import {
+  editorialDisplayClass,
+  editorialGutterClass,
+  editorialPrimaryButtonClass,
+  editorialSecondaryButtonClass,
+} from "../components/site/editorialUi";
 
 const API_BASE = BACKEND_URL.replace(/\/+$/, "");
 
@@ -142,7 +148,7 @@ export default function IconDetailPage() {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-[var(--ds-bg-canvas)] p-4 text-[var(--ds-text)]">
         <NoIndexMeta title="Icon Not Found | NexusRBX" />
-        <h1 className="mb-4 text-4xl font-semibold tracking-[-0.035em]">Icon Not Found</h1>
+        <h1 className={`${editorialDisplayClass} mb-5 text-5xl`}>Icon Not Found</h1>
         <button onClick={() => navigate("/icons-market")} className="flex min-h-11 items-center gap-2 rounded-lg px-3 font-semibold text-[var(--ds-accent)] hover:bg-[var(--ds-fill-hover)]">
           <ArrowLeft className="w-5 h-5" /> Back to Market
         </button>
@@ -168,19 +174,19 @@ export default function IconDetailPage() {
         <meta name="twitter:card" content="summary_large_image" />
       </NoIndexMeta>
 
-      <main className="flex-grow pt-12 pb-20 px-4 md:px-8">
+      <main className={`${editorialGutterClass} flex-grow pb-28 pt-14 sm:pt-20`}>
         <div className="max-w-7xl mx-auto">
           <button 
             onClick={() => navigate("/icons-market")}
-            className="focus-ring mb-8 flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-semibold text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+            className="focus-ring mb-10 flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-semibold text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
           >
             <ArrowLeft className="w-4 h-4" /> Back to Marketplace
           </button>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+          <div className="grid grid-cols-1 gap-14 lg:grid-cols-12 lg:gap-20">
             {/* Left: Preview Section */}
             <div className="lg:col-span-7 space-y-8">
-              <div className={`relative flex aspect-square items-center justify-center overflow-hidden rounded-2xl border border-[var(--ds-border-subtle)] shadow-[var(--ds-shadow-panel)] transition-colors duration-500 ${bgClasses[previewBg]}`}>
+              <div className={`relative flex aspect-square items-center justify-center overflow-hidden rounded-[14px] transition-colors duration-500 ${bgClasses[previewBg]}`}>
                 <img 
                   src={icon.imageUrl} 
                   alt={icon.name} 
@@ -203,7 +209,7 @@ export default function IconDetailPage() {
               </div>
 
               {/* Scale Preview */}
-              <div className="nexus-page-card p-8">
+              <div className="rounded-[14px] bg-[var(--ds-surface-1)] p-7 sm:p-8">
                 <h3 className="mb-6 flex items-center gap-2 text-sm font-semibold text-[var(--ds-text-muted)]">
                   <Maximize2 className="w-4 h-4" /> Scale Preview
                 </h3>
@@ -227,7 +233,7 @@ export default function IconDetailPage() {
             <div className="lg:col-span-5 flex flex-col">
               <div className="mb-8">
                 <div className="flex items-center gap-3 mb-4">
-                  <h1 className="text-4xl font-semibold tracking-[-0.035em]">{icon.name}</h1>
+                  <h1 className={`${editorialDisplayClass} text-5xl sm:text-6xl`}>{icon.name}</h1>
                   {icon.isPro && !isPremium && (
                     <span className="rounded-full border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-3 py-1 text-[10px] font-semibold text-[var(--ds-accent)]">Pro</span>
                   )}
@@ -243,7 +249,7 @@ export default function IconDetailPage() {
               </div>
 
               <div className="space-y-6 mb-12">
-                <div className="nexus-page-card p-6 space-y-4">
+                <div className="space-y-4 rounded-[14px] bg-[var(--ds-surface-1)] p-6">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-semibold text-[var(--ds-text-muted)]">ImageColor3 Tint</h3>
                     <input 
@@ -281,7 +287,7 @@ export default function IconDetailPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <button
                     onClick={handlePostToRoblox}
-                    className="focus-ring flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-[var(--ds-accent)] py-5 text-sm font-semibold text-[var(--ds-accent-foreground)] transition-colors hover:bg-[var(--ds-accent-hover)] active:scale-[0.985]"
+                    className={`${editorialPrimaryButtonClass} gap-2 py-3`}
                   >
                     {icon.isPro && !isPremium ? <ShieldCheck className="h-5 w-5" /> : <ExternalLink className="h-5 w-5" />}
                     {icon.isPro && !isPremium ? "Unlock Pro" : (copied ? "Copied Lua!" : "Post to Roblox")}
@@ -289,7 +295,7 @@ export default function IconDetailPage() {
                   
                   <button
                     onClick={handleDownload}
-                    className="focus-ring flex min-h-11 items-center justify-center gap-2 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] py-5 text-sm font-semibold text-[var(--ds-text)] transition-colors hover:bg-[var(--ds-fill-hover)]"
+                    className={`${editorialSecondaryButtonClass} gap-2 py-3`}
                   >
                     <Download className="h-5 w-5" /> Download PNG
                   </button>
@@ -299,7 +305,7 @@ export default function IconDetailPage() {
                   href="https://create.roblox.com/dashboard/creations?activeTab=Decal"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] py-4 text-xs font-semibold text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-[var(--ds-border)] bg-transparent px-5 py-3 text-xs font-semibold text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
                 >
                   <Upload className="h-4 w-4" /> Upload to Roblox Dashboard
                 </a>

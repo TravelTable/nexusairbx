@@ -55,15 +55,15 @@ function Brand({ compact = false }) {
     <Link
       to="/"
       aria-label="NexusRBX home"
-      className="inline-flex min-h-11 min-w-11 shrink-0 items-center gap-2.5 rounded-lg px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)]"
+      className="inline-flex min-h-11 min-w-11 shrink-0 items-center gap-2 rounded-full px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)]"
     >
       <span className={cn(
-        "flex items-center justify-center overflow-hidden rounded-[10px] border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-2)]",
-        compact ? "h-8 w-8" : "h-9 w-9"
+        "flex items-center justify-center overflow-hidden rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)]",
+        compact ? "h-7 w-7" : "h-8 w-8"
       )}>
-        <img src="/logo.png" alt="" className={cn("object-contain", compact ? "h-6 w-6" : "h-7 w-7")} />
+        <img src="/logo.png" alt="" className={cn("object-contain", compact ? "h-5 w-5" : "h-6 w-6")} />
       </span>
-      {!compact && <span className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--ds-text)]">NexusRBX</span>}
+      {!compact && <span className="text-[13px] font-semibold tracking-[-0.01em] text-[var(--ds-text)]">NexusRBX</span>}
     </Link>
   );
 }
@@ -128,7 +128,7 @@ function NavDisclosure({ label, items, pathname }) {
           }
         }}
         className={cn(
-          "inline-flex h-11 items-center gap-1 rounded-lg px-3 text-sm font-medium text-[var(--ds-text-secondary)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)]",
+          "inline-flex h-11 items-center gap-1 rounded-full px-3 text-[13px] font-medium text-[var(--ds-text-secondary)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)]",
           active && "bg-[var(--ds-fill-selected)] text-[var(--ds-text)]"
         )}
       >
@@ -181,7 +181,7 @@ function DesktopNavigation({ pathname }) {
           item={item}
           aria-current={isActivePath(pathname, item.to) ? "page" : undefined}
           className={cn(
-            "inline-flex h-11 items-center rounded-lg px-3 text-sm font-medium text-[var(--ds-text-secondary)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)]",
+            "inline-flex h-11 items-center rounded-full px-3 text-[13px] font-medium text-[var(--ds-text-secondary)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)]",
             isActivePath(pathname, item.to) && "bg-[var(--ds-fill-selected)] text-[var(--ds-text)]"
           )}
         >
@@ -342,12 +342,12 @@ function MobileDestination({ item, pathname }) {
   );
 }
 
-function MobileMenu({ identity, pathname, workspace = false, checkout = false }) {
+function MobileMenu({ identity, pathname, workspace = false, checkout = false, alwaysVisible = false }) {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button type="button" variant="ghost" size="icon" className="h-11 w-11 text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] lg:hidden" aria-label="Open navigation">
-          <Menu className="h-5 w-5" />
+        <Button type="button" variant="ghost" size="icon" className={cn("h-11 w-11 rounded-full border border-[var(--ds-border-strong)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]", !alwaysVisible && "lg:hidden")} aria-label="Open navigation">
+          <Menu className="h-4 w-4" />
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-[88vw] max-w-sm overflow-y-auto border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] text-[var(--ds-text)]">
@@ -422,6 +422,7 @@ export default function SiteHeader({
   const resolvedVariant = variant || getHeaderVariantForPath(location.pathname);
   const isWorkspace = resolvedVariant === "workspace";
   const isCheckout = resolvedVariant === "checkout";
+  const isHomepage = location.pathname === "/" && !isWorkspace && !isCheckout;
   const identity = useHeaderIdentity({ robloxStatusOverride, robloxLoadingOverride });
 
   const workspaceControls = useMemo(() => (
@@ -433,14 +434,18 @@ export default function SiteHeader({
 
   return (
     <header className={cn(
-      "z-50 border-b border-[var(--ds-border-subtle)] bg-[color-mix(in_srgb,var(--ds-surface-overlay)_88%,transparent)] text-[var(--ds-text)] backdrop-blur-xl",
-      isWorkspace ? "relative z-30 bg-[var(--ds-bg-workspace)]" : "sticky top-0",
+      "z-50 text-[var(--ds-text)]",
+      isWorkspace
+        ? "relative z-30 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)]"
+        : isHomepage
+          ? "absolute inset-x-0 top-0 border-transparent bg-transparent"
+          : "sticky top-0 border-b border-[var(--ds-border-subtle)] bg-[color-mix(in_srgb,var(--ds-surface-overlay)_94%,transparent)] backdrop-blur-xl",
       className
-    )}>
+    )} data-overlay={isHomepage ? "true" : undefined}>
       {location.pathname === "/" ? <SkipToMainContent /> : null}
       <div className={cn(
         "flex min-w-0 items-center justify-between gap-2 xl:gap-3",
-        isWorkspace ? "px-3 py-1.5 sm:px-4" : "mx-auto h-16 max-w-[82rem] px-4 sm:px-6 lg:px-8"
+        isWorkspace ? "px-3 py-1.5 sm:px-4" : "mx-auto h-14 max-w-[82rem] px-4 sm:px-6 lg:px-8"
       )}>
         {isWorkspace ? (
           <>
@@ -464,11 +469,11 @@ export default function SiteHeader({
           <>
             <div className="flex min-w-0 items-center gap-8">
               <Brand />
-              <DesktopNavigation pathname={location.pathname} />
+              {!isHomepage && <DesktopNavigation pathname={location.pathname} />}
             </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <DesktopIdentityActions identity={identity} />
-              <MobileMenu identity={identity} pathname={location.pathname} />
+            <div className={cn("flex shrink-0 items-center gap-2", isHomepage && "lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2")}>
+              {!isHomepage && <DesktopIdentityActions identity={identity} />}
+              <MobileMenu identity={identity} pathname={location.pathname} alwaysVisible={isHomepage} />
             </div>
           </>
         )}

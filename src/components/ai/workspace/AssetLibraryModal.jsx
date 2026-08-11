@@ -439,12 +439,12 @@ export default function AssetLibraryModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="asset-library-title"
-        className="nexus-modal-panel flex h-[92vh] w-full max-w-7xl flex-col overflow-hidden rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] shadow-2xl"
+        className="nexus-modal-panel flex h-[92vh] w-full max-w-7xl flex-col overflow-hidden rounded-xl border border-[var(--ds-border-strong)] bg-[var(--ds-surface-overlay)]"
       >
         <header className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--ds-border-subtle)] p-4">
           <div className="min-w-0">
-            <h2 id="asset-library-title" className="text-lg font-black text-[var(--ds-text)]">Asset Library</h2>
-            <div className="mt-1 flex flex-wrap gap-2 text-[10px] font-bold uppercase tracking-widest text-[var(--ds-text-muted)]">
+            <h2 id="asset-library-title" className="text-lg font-semibold text-[var(--ds-text)]">Asset Library</h2>
+            <div className="mt-1 flex flex-wrap gap-2 text-[10px] font-medium text-[var(--ds-text-muted)]">
               <span>{robloxIdentity?.profile?.preferred_username || robloxIdentity?.profile?.name || "Roblox connected"}</span>
               {destination ? <span>Destination {destination.type} {destination.id}</span> : <span>No destination selected</span>}
             </div>
@@ -466,7 +466,7 @@ export default function AssetLibraryModal({
               type="button"
               onClick={() => setSource(item.id)}
               className={cx(
-                "rounded-lg border px-2.5 py-1 text-[10px] font-black uppercase tracking-widest transition-[border-color,background-color,color] duration-150",
+                "rounded-full border px-2.5 py-1 text-[10px] font-semibold transition-[border-color,background-color,color] duration-150",
                 source === item.id ? "border-[color-mix(in_srgb,var(--ds-info)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-info)_10%,transparent)] text-[var(--ds-info)]" : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
               )}
             >

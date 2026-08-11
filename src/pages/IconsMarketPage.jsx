@@ -30,6 +30,7 @@ import { BACKEND_URL } from "../config";
 import { filterMarketplaceIcons } from "../lib/iconMarket";
 import IconMarketCard from "../components/icons/IconMarketCard";
 import Modal from "../components/Modal";
+import { editorialDisplayClass } from "../components/site/editorialUi";
 
 const API_BASE = BACKEND_URL.replace(/\/+$/, "");
 const MARKET_ACCESS_OPTIONS = [
@@ -445,7 +446,7 @@ export default function IconsMarketPage() {
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-[var(--ds-bg-canvas)] text-[var(--ds-text)]">
       <main className="flex-grow flex relative z-10">
-        <aside className="sticky top-16 hidden h-[calc(100vh-64px)] w-72 overflow-y-auto border-r border-[var(--ds-border-subtle)] bg-[var(--ds-bg-sidebar)] p-8 lg:block">
+        <aside className="sticky top-16 hidden h-[calc(100vh-64px)] w-72 overflow-y-auto bg-[var(--ds-bg-sidebar)] p-8 lg:block">
           <div className="mb-8"><MarketTabs activeTab={activeMarketTab} onChange={setActiveMarketTab} /></div>
 
           <div>
@@ -469,15 +470,15 @@ export default function IconsMarketPage() {
           </div>
         </aside>
 
-        <div className="flex-grow p-8 lg:p-12 overflow-y-auto h-[calc(100vh-64px)]">
+        <div className="h-[calc(100vh-64px)] flex-grow overflow-y-auto px-4 py-12 sm:px-8 lg:px-14 lg:py-16">
           <div className="max-w-7xl mx-auto">
-            <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <header className="mb-14 flex flex-col justify-between gap-8 md:flex-row md:items-end lg:mb-20">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="rounded-[10px] bg-[var(--ds-accent-soft)] p-2">
+                  <div className="rounded-full bg-[var(--ds-accent-soft)] p-3">
                     <Grid className="h-6 w-6 text-[var(--ds-accent)]" />
                   </div>
-                  <h1 className="text-4xl font-semibold tracking-[-0.035em]">Icons Market</h1>
+                  <h1 className={`${editorialDisplayClass} text-5xl sm:text-6xl`}>Icons Market</h1>
                 </div>
                 <p className="max-w-xl text-[var(--ds-text-muted)]">
                   Browse curated, game-ready icons. One-click export to Roblox Studio.
@@ -493,7 +494,7 @@ export default function IconsMarketPage() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search icons (e.g. 'dragon', 'sword')..."
-                  className="nexus-input w-full py-4 pl-12 pr-4"
+                  className="min-h-12 w-full rounded-full border border-[var(--ds-border)] bg-[var(--ds-surface-1)] py-3 pl-12 pr-5 text-sm outline-none placeholder:text-[var(--ds-text-muted)] focus:border-[var(--ds-accent-border)] focus:ring-2 focus:ring-[var(--ds-focus-ring)]"
                 />
               </div>
             </header>
@@ -501,7 +502,7 @@ export default function IconsMarketPage() {
             <div className="mb-8 space-y-4 lg:hidden">
               <MarketTabs activeTab={activeMarketTab} onChange={setActiveMarketTab} />
               {activeMarketTab === "browse" ? (
-                <details className="group rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-1)]">
+                <details className="group rounded-[14px] bg-[var(--ds-surface-1)]">
                   <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-[var(--ds-text)] focus-ring [&::-webkit-details-marker]:hidden">
                     <span className="flex items-center gap-2">
                       <Filter className="h-4 w-4 text-[var(--ds-accent)]" aria-hidden="true" />
@@ -532,7 +533,7 @@ export default function IconsMarketPage() {
               )}
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
+            <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
               {icons.map((icon, index) => (
                 <IconMarketCard
                   key={icon.id}
@@ -551,7 +552,7 @@ export default function IconsMarketPage() {
             )}
 
             {!loading && icons.length === 0 && (
-              <div className="text-center py-24">
+              <div className="py-28 text-center">
                 <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-[14px] bg-[var(--ds-fill-subtle)]">
                   <Search className="h-7 w-7 text-[var(--ds-text-muted)]" />
                 </div>
@@ -603,7 +604,7 @@ export default function IconsMarketPage() {
                 </div>
 
                 <div className="space-y-6 mb-12">
-                  <div className="flex items-start gap-3 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-4">
+                  <div className="flex items-start gap-3 rounded-[14px] bg-[var(--ds-fill-subtle)] p-5">
                     <Info className="mt-0.5 h-5 w-5 shrink-0 text-[var(--ds-info)]" />
                     <div className="space-y-2">
                       <p className="text-xs leading-relaxed text-[var(--ds-text-secondary)]">
@@ -616,11 +617,11 @@ export default function IconsMarketPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-4 text-center">
+                    <div className="rounded-[1.25rem] bg-[var(--ds-fill-subtle)] p-4 text-center">
                       <p className="mb-1 text-[10px] font-semibold text-[var(--ds-text-muted)]">Format</p>
                       <p className="text-sm font-semibold">PNG</p>
                     </div>
-                    <div className="rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-4 text-center">
+                    <div className="rounded-[1.25rem] bg-[var(--ds-fill-subtle)] p-4 text-center">
                       <p className="mb-1 text-[10px] font-semibold text-[var(--ds-text-muted)]">Resolution</p>
                       <p className="text-sm font-semibold">512x512</p>
                     </div>
@@ -631,7 +632,7 @@ export default function IconsMarketPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       onClick={() => handlePostToRoblox(selectedIcon)}
-                      className="focus-ring flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-[var(--ds-accent)] py-4 text-sm font-semibold text-[var(--ds-accent-foreground)] transition-colors hover:bg-[var(--ds-accent-hover)] active:scale-[0.985]"
+                      className="focus-ring flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--ds-accent)] px-4 py-3 text-sm font-semibold text-[var(--ds-accent-foreground)] transition-colors hover:bg-[var(--ds-accent-hover)] active:scale-[0.985]"
                     >
                       {selectedIcon.isPro && !isPremium ? <ShieldCheck className="h-5 w-5" /> : <ExternalLink className="h-5 w-5" />}
                       {selectedIcon.isPro && !isPremium ? "Unlock" : (copied ? "Copied!" : "Post to Roblox")}
@@ -639,7 +640,7 @@ export default function IconsMarketPage() {
                     
                     <button
                       onClick={() => handleGenerateVariation(selectedIcon)}
-                      className="flex min-h-11 items-center justify-center gap-2 rounded-[10px] border border-[color-mix(in_srgb,var(--ds-plan)_28%,transparent)] bg-[color-mix(in_srgb,var(--ds-plan)_9%,transparent)] py-4 text-sm font-semibold text-[var(--ds-plan)] transition-colors hover:bg-[color-mix(in_srgb,var(--ds-plan)_15%,transparent)]"
+                      className="flex min-h-11 items-center justify-center gap-2 rounded-full border border-[color-mix(in_srgb,var(--ds-plan)_28%,transparent)] bg-[color-mix(in_srgb,var(--ds-plan)_9%,transparent)] px-4 py-3 text-sm font-semibold text-[var(--ds-plan)] transition-colors hover:bg-[color-mix(in_srgb,var(--ds-plan)_15%,transparent)]"
                     >
                       <Sparkles className="h-5 w-5" /> Variation
                     </button>

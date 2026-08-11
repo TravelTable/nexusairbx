@@ -3,6 +3,7 @@ import LandingAnalyticsLink from "./LandingAnalyticsLink";
 import LandingEvidence from "./LandingEvidence";
 import ExamplePromptButton from "./ExamplePromptButton";
 import StructuredData from "./StructuredData";
+import styles from "./PublicEditorial.module.css";
 import { canonicalUrl, SITE_NAME } from "../../src/lib/seo";
 
 function SectionList({ title, items }) {
@@ -54,7 +55,7 @@ export default function SearchLandingPage({ page, allPages }) {
 
   return (
     <>
-      <main>
+      <main className={styles.searchPage}>
         <section className="landing-hero">
           <div className="section-inner">
             <span className="eyebrow">{page.eyebrow}</span>

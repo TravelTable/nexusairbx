@@ -121,8 +121,8 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
 
   if (answered) {
     return (
-      <div className="rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-4">
-        <div className="flex items-center gap-2 mb-2 text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-muted)]">
+      <div className="border-y border-[var(--ds-border-subtle)] bg-transparent py-4">
+        <div className="flex items-center gap-2 mb-2 text-xs font-medium text-[var(--ds-text-muted)]">
           <Check className="w-3.5 h-3.5 text-[var(--ds-accent)]" /> Answers submitted
         </div>
         <div className="space-y-1">
@@ -137,8 +137,8 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
   }
 
   return (
-    <div className="rounded-2xl border border-[color-mix(in_srgb,var(--ds-plan)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)] p-4 space-y-4">
-      <div className="flex items-center gap-2 font-display text-sm font-bold text-[var(--ds-plan)]">
+    <div className="rounded-xl border border-[var(--ds-border)] bg-transparent p-4 space-y-4">
+      <div className="flex items-center gap-2 text-sm font-medium text-[var(--ds-accent)]">
         <HelpCircle className="w-4 h-4" /> A few quick questions
       </div>
 
@@ -193,7 +193,7 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
                       }}
                       className={`min-h-[44px] rounded-xl border px-3 py-2 text-left text-[12px] transition-colors ${
                         selected
-                          ? "bg-[var(--ds-plan)] text-[var(--ds-plan-foreground)] border-[var(--ds-plan)]"
+                          ? "bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] border-[var(--ds-accent)]"
                           : "bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] border-[var(--ds-border-subtle)] hover:bg-[var(--ds-fill-hover)]"
                       }`}
                       aria-pressed={selected}
@@ -231,7 +231,7 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
                 }}
                 placeholder="Type an answer…"
                 aria-label={`Custom answer for ${q.question || q.prompt || `question ${questionIndex + 1}`}`}
-                className="w-full min-h-[44px] bg-[var(--ds-fill-hover)] border border-[var(--ds-border-subtle)] rounded-xl px-3 py-2 text-[13px] text-[var(--ds-text)] placeholder-gray-600 focus:outline-none focus:border-[color-mix(in_srgb,var(--ds-plan)_45%,transparent)]"
+                className="w-full min-h-[44px] bg-transparent border border-[var(--ds-border)] rounded-xl px-3 py-2 text-[13px] text-[var(--ds-text)] placeholder:text-[var(--ds-text-muted)] focus:outline-none focus:border-[var(--ds-accent-border)]"
               />
             ) : null}
           </div>
@@ -243,7 +243,7 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
         type="button"
         disabled={disabled || !canContinue}
         onClick={() => onSubmit?.(message, answers)}
-        className="w-full py-2.5 rounded-xl bg-[var(--ds-plan)] text-[var(--ds-plan-foreground)] font-black text-sm flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-[background-color,color,opacity,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)] disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full py-2.5 rounded-full bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] font-semibold text-sm flex items-center justify-center gap-2 hover:bg-[var(--ds-accent-hover)] transition-[background-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)] disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {disabled ? <Loader className="w-4 h-4" /> : <SendPrompt className="w-4 h-4" />}
         Continue
@@ -270,10 +270,10 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
   const opensEditableWorkspace = typeof onApprove !== "function" && typeof onEdit === "function";
 
   return (
-    <Plan defaultOpen className="border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)]">
+    <Plan defaultOpen className="border-[color-mix(in_srgb,var(--ds-plan)_40%,transparent)] bg-[color-mix(in_srgb,var(--ds-plan)_8%,transparent)]">
       <PlanHeader className="pb-4">
         <div className="space-y-1">
-          <PlanTitle className="flex items-center gap-2 text-sm font-bold text-[var(--ds-accent)]">
+          <PlanTitle className="flex items-center gap-2 text-sm font-semibold text-[var(--ds-plan)]">
             <ListChecks className="w-4 h-4" /> Implementation plan
           </PlanTitle>
           {message.aiSummary && !hasMarkdownPlan ? (
@@ -281,7 +281,7 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
           ) : null}
         </div>
         <PlanAction className="flex items-center gap-1">
-          <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest">
+          <Badge variant="outline" className="border-[color-mix(in_srgb,var(--ds-plan)_35%,transparent)] text-[10px] font-semibold text-[var(--ds-plan)]">
             {label}
           </Badge>
           <PlanTrigger />
@@ -306,7 +306,7 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
                 <ol className="space-y-2">
                   {steps.map((step, idx) => (
                     <li key={idx} className="flex items-start gap-3 text-[13px] text-[var(--ds-text-secondary)]">
-                      <span className="mt-0.5 w-5 h-5 shrink-0 rounded-full bg-[var(--ds-fill-hover)] border border-[var(--ds-border-subtle)] flex items-center justify-center text-[10px] font-black text-[var(--ds-accent)]">
+                      <span className="mt-0.5 w-5 h-5 shrink-0 rounded-full bg-[color-mix(in_srgb,var(--ds-plan)_10%,transparent)] border border-[color-mix(in_srgb,var(--ds-plan)_30%,transparent)] flex items-center justify-center text-[10px] font-semibold text-[var(--ds-plan)]">
                         {idx + 1}
                       </span>
                       <span>{step}</span>
@@ -340,7 +340,7 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
                   <span
                     className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider border ${
                       done
-                        ? "bg-[var(--ds-accent-soft)] border-[var(--ds-accent-border)] text-[var(--ds-accent)]"
+                        ? "bg-[var(--ds-success-soft)] border-[var(--ds-success-border)] text-[var(--ds-success)]"
                         : "bg-[var(--ds-fill-subtle)] border-[var(--ds-border-subtle)] text-[var(--ds-text-muted)]"
                     }`}
                   >
@@ -357,8 +357,8 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
 
       <PlanFooter className="flex-col items-stretch gap-3 pt-0">
         {approved ? (
-          <div className="w-full py-2.5 rounded-xl bg-[var(--ds-fill-subtle)] border border-[var(--ds-border-subtle)] text-[var(--ds-text-secondary)] font-bold text-sm flex items-center justify-center gap-2">
-            <Check className="w-4 h-4 text-[var(--ds-accent)]" /> Approved — building…
+          <div className="w-full py-2.5 rounded-xl bg-[var(--ds-success-soft)] border border-[var(--ds-success-border)] text-[var(--ds-text-secondary)] font-medium text-sm flex items-center justify-center gap-2">
+            <Check className="w-4 h-4 text-[var(--ds-success)]" /> Approved — building…
           </div>
         ) : (
           <>
@@ -372,7 +372,7 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
                 type="button"
                 disabled={disabled}
                 onClick={() => onEdit(message)}
-                className="flex-1 bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] font-black hover:bg-[var(--ds-accent-hover)]"
+                className="flex-1 bg-[var(--ds-plan)] text-[var(--ds-plan-foreground)] font-semibold hover:opacity-90"
               >
                 {disabled ? <Loader className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
                 Review &amp; edit plan
@@ -383,7 +383,7 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
                   type="button"
                   disabled={disabled}
                   onClick={() => onApprove?.(message)}
-                  className="flex-1 bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] font-black hover:bg-[var(--ds-accent-hover)]"
+                  className="flex-1 bg-[var(--ds-plan)] text-[var(--ds-plan-foreground)] font-semibold hover:opacity-90"
                 >
                   {disabled ? <Loader className="w-4 h-4" /> : <SendPrompt className="w-4 h-4" />}
                   Approve &amp; Build
@@ -393,7 +393,7 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
                   variant="outline"
                   disabled={disabled}
                   onClick={() => onEdit?.(message)}
-                  className="font-bold"
+                  className="font-medium"
                 >
                   <Pencil className="w-3.5 h-3.5" /> Edit
                 </Button>

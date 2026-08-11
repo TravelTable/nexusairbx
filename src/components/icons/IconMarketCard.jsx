@@ -18,12 +18,12 @@ export default function IconMarketCard({
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: animationDelay }}
-      className="group relative overflow-hidden rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] p-4 transition-colors hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-fill-hover)]"
+      className="group relative overflow-hidden rounded-[14px] bg-[var(--ds-surface-1)] p-4 transition-[background-color,transform] hover:-translate-y-0.5 hover:bg-[var(--ds-fill-hover)] motion-reduce:transform-none"
     >
       <Link
         to={getAuthenticatedIconDetailPath(icon.id)}
         aria-label={`View ${icon.name} details`}
-        className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)] focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--ds-bg-canvas)]"
+        className="block rounded-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--ds-bg-canvas)]"
       >
         {icon.isPro && !isPremium ? (
           <span className="absolute right-2 top-2 z-20 rounded-md border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--ds-accent)]">
@@ -31,7 +31,7 @@ export default function IconMarketCard({
           </span>
         ) : null}
 
-        <div className="relative mb-4 flex aspect-square items-center justify-center overflow-hidden rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)]">
+        <div className="relative mb-4 flex aspect-square items-center justify-center overflow-hidden rounded-[12px] bg-[var(--ds-bg-workspace)]">
           <img
             src={icon.imageUrl}
             alt={icon.name}

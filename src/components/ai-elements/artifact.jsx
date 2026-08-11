@@ -14,7 +14,7 @@ export const Artifact = ({
 }) => (
   <div
     className={cn(
-      "flex flex-col overflow-hidden rounded-lg border bg-background shadow-sm",
+      "flex flex-col overflow-hidden border-y border-[var(--ds-border-subtle)] bg-transparent shadow-none",
       className
     )}
     {...props} />
@@ -26,7 +26,7 @@ export const ArtifactHeader = ({
 }) => (
   <div
     className={cn(
-      "flex items-center justify-between border-b bg-muted/50 px-4 py-3",
+      "flex items-center justify-between border-b border-[var(--ds-border-subtle)] bg-transparent px-1 py-3",
       className
     )}
     {...props} />
@@ -115,5 +115,5 @@ export const ArtifactContent = ({
   className,
   ...props
 }) => (
-  <div className={cn("flex-1 overflow-auto p-4", className)} {...props} />
+  <div className={cn("flex-1 overflow-auto px-1 py-4", className)} {...props} />
 );

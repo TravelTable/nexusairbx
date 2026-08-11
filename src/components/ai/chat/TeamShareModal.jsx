@@ -21,15 +21,15 @@ export default function TeamShareModal({
       role="presentation"
     >
       <div
-        className="nexus-modal-panel flex w-full max-w-md flex-col overflow-hidden rounded-3xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] shadow-2xl"
+        className="nexus-modal-panel flex w-full max-w-md flex-col overflow-hidden rounded-xl border border-[var(--ds-border-strong)] bg-[var(--ds-surface-1)]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="team-share-title"
       >
-        <div className="p-6 border-b border-[var(--ds-border-subtle)] flex justify-between items-center">
+        <div className="flex items-center justify-between border-b border-[var(--ds-border-subtle)] p-6">
           <div className="flex items-center gap-3">
             <Users className="w-5 h-5 text-[var(--ds-accent)]" />
-            <h3 id="team-share-title" className="text-lg font-black text-[var(--ds-text)] uppercase tracking-tight">
+            <h3 id="team-share-title" className="text-lg font-semibold text-[var(--ds-text)]">
               Share with Team
             </h3>
           </div>
@@ -48,7 +48,7 @@ export default function TeamShareModal({
                 onShareWithTeam(artifactId, type, team.id);
                 onClose();
               }}
-              className="group flex w-full items-center justify-between rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-4 text-left transition-[border-color,background-color,color] duration-150 hover:border-[var(--ds-accent-border)] hover:bg-[var(--ds-accent-soft)]"
+              className="group flex w-full items-center justify-between border-t border-[var(--ds-border-subtle)] bg-transparent p-4 text-left transition-[background-color,color] duration-150 first:border-t-0 hover:bg-[var(--ds-fill-hover)]"
             >
               <span className="font-bold text-[var(--ds-text)] group-hover:text-[var(--ds-accent)] transition-colors">
                 {team.name}
@@ -64,7 +64,7 @@ export default function TeamShareModal({
                   onClose();
                   onGoToSettings?.();
                 }}
-                className="text-[var(--ds-accent)] text-xs font-black uppercase tracking-widest underline"
+                className="text-xs font-semibold text-[var(--ds-accent)] underline"
               >
                 Go to Settings
               </button>

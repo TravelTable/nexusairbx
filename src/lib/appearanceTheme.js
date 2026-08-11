@@ -2,8 +2,8 @@ import { SETTINGS_STORAGE_KEY } from "./settingsSchema";
 
 export const APPEARANCE_THEMES = Object.freeze(["system", "dark", "light"]);
 export const DEFAULT_APPEARANCE_THEME = "system";
-export const DARK_THEME_COLOR = "#050507";
-export const LIGHT_THEME_COLOR = "#f5f5f7";
+export const DARK_THEME_COLOR = "#181817";
+export const LIGHT_THEME_COLOR = "#faf8f5";
 
 export function normalizeAppearanceTheme(value) {
   return APPEARANCE_THEMES.includes(value) ? value : DEFAULT_APPEARANCE_THEME;

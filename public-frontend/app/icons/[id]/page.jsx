@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import PublicHeader from "../../../components/PublicHeader";
+import styles from "../../../components/PublicEditorial.module.css";
 import StructuredData from "../../../components/StructuredData";
 import icons from "../../../data/generated/qualified-icons.json";
 import { buildPublicMetadata, canonicalUrl, SITE_NAME } from "../../../../src/lib/seo";
@@ -89,7 +90,7 @@ export default async function IconPage({ params }) {
   if (!icon) notFound();
 
   return (
-    <div className="page-shell">
+    <div className={`page-shell ${styles.iconPage}`}>
       <PublicHeader />
       <main>
         <section className="icon-detail-hero">

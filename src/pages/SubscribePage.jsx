@@ -18,6 +18,13 @@ import {
 import { formatMoney, getPublicPlan } from "../lib/planCatalog";
 import { BILLING_INTERVAL, PLAN } from "../lib/prices";
 import { trackProductEvent } from "../lib/productAnalytics";
+import {
+  editorialDisplayClass,
+  editorialGutterClass,
+  editorialPanelClass,
+  editorialPrimaryButtonClass,
+  editorialSecondaryButtonClass,
+} from "../components/site/editorialUi";
 
 function subscribeUntilTerminal(unsubscribersRef, documentRef, onValue, onError) {
   let unsubscribe = null;
@@ -284,17 +291,17 @@ export default function SubscribePage() {
 
   if (!intent || !plan) {
     return (
-      <div className="min-h-[calc(100vh-72px)] bg-[var(--ds-bg-canvas)] px-5 py-16 text-[var(--ds-text)]">
+      <div className={`${editorialGutterClass} min-h-[calc(100vh-72px)] bg-[var(--ds-bg-canvas)] py-20 text-[var(--ds-text)]`}>
         {pageHead}
-        <main className="mx-auto max-w-xl rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] p-7 sm:p-9">
+        <main className={`${editorialPanelClass} mx-auto max-w-xl p-8 sm:p-10`}>
           <p className="text-xs font-semibold text-[var(--ds-accent)]">Checkout</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-[-0.025em]">Choose a plan first</h1>
+          <h1 className={`${editorialDisplayClass} mt-4 text-4xl`}>Choose a plan first</h1>
           <p className="mt-3 text-sm leading-6 text-[var(--ds-text-muted)]">
             Your plan selection is missing or has expired. Return to pricing to create a new checkout review.
           </p>
           <a
             href="/pricing"
-            className="mt-7 inline-flex min-h-11 items-center justify-center rounded-[10px] bg-[var(--ds-accent)] px-5 text-sm font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)]"
+            className={`${editorialPrimaryButtonClass} mt-8`}
           >
             View pricing
           </a>
@@ -316,19 +323,19 @@ export default function SubscribePage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-72px)] bg-[var(--ds-bg-canvas)] px-5 py-10 text-[var(--ds-text)] sm:py-14">
+    <div className={`${editorialGutterClass} min-h-[calc(100vh-72px)] bg-[var(--ds-bg-canvas)] py-14 text-[var(--ds-text)] sm:py-20`}>
       {pageHead}
-      <main className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <main className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-16">
         <section aria-labelledby="checkout-title">
           <p className="text-xs font-semibold text-[var(--ds-accent)]">Final review</p>
-          <h1 id="checkout-title" className="mt-3 text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
+          <h1 id="checkout-title" className={`${editorialDisplayClass} mt-4 text-4xl sm:text-6xl`}>
             Review your {plan.name} plan
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--ds-text-muted)]">
             Confirm the plan and billing schedule below. Stripe will securely collect and process your payment details.
           </p>
 
-          <div className="mt-8 border-y border-[var(--ds-border-subtle)] py-6">
+          <div className="mt-10 border-y border-[var(--ds-border-subtle)] py-8">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <div className="flex items-center gap-3">
@@ -374,7 +381,7 @@ export default function SubscribePage() {
               ))}
             </ul>
 
-            <a href="/pricing" className="mt-6 inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-[var(--ds-accent)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-accent-hover)]">
+            <a href="/pricing" className="mt-7 inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-[var(--ds-accent)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-accent-hover)]">
               Change plan or billing schedule
             </a>
           </div>
@@ -394,7 +401,7 @@ export default function SubscribePage() {
           )}
         </section>
 
-        <aside className="h-fit rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] p-6 shadow-[var(--ds-shadow-panel)]" aria-label="Checkout summary">
+        <aside className={`${editorialPanelClass} h-fit p-7 sm:p-8`} aria-label="Checkout summary">
           {entitlementsLoading ? (
             <div className="flex min-h-40 items-center justify-center" role="status" aria-label="Checking billing status">
               <Loader2 className="h-6 w-6 animate-spin text-[var(--ds-accent)]" />
@@ -410,7 +417,7 @@ export default function SubscribePage() {
                 type="button"
                 onClick={managePlan}
                 disabled={Boolean(busyAction)}
-                className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-4 text-sm font-semibold text-[var(--ds-text)] hover:bg-[var(--ds-fill-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+                className={`${editorialSecondaryButtonClass} mt-7 w-full`}
               >
                 {busyAction === "portal" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Manage plan"}
               </button>
@@ -426,7 +433,7 @@ export default function SubscribePage() {
                 type="button"
                 onClick={beginCheckout}
                 disabled={Boolean(busyAction) || Boolean(entitlementsError)}
-                className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-[10px] bg-[var(--ds-accent)] px-4 text-sm font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-60"
+                className={`${editorialPrimaryButtonClass} mt-7 w-full`}
               >
                 {busyAction === "checkout" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Continue to secure checkout"}
               </button>

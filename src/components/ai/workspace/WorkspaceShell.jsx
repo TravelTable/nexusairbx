@@ -116,12 +116,12 @@ function ToolButton({ tool, active, badge, onSelect }) {
 export function WorkspaceEmptyState({ icon: Icon = FileCode2, title, description, action }) {
   return (
     <div className="flex h-full min-h-[220px] items-center justify-center p-6 text-center">
-      <div className="max-w-[260px]">
-        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)]">
+      <div className="max-w-[280px]">
+        <div className="mx-auto mb-4 flex h-9 w-9 items-center justify-center text-[var(--ds-accent)]">
           <Icon className="h-5 w-5" aria-hidden="true" />
         </div>
-        <h3 className="text-sm font-semibold text-[var(--ds-text)]">{title}</h3>
-        {description ? <p className="mt-1.5 text-xs leading-relaxed text-[var(--ds-text-muted)]">{description}</p> : null}
+        <h3 className="pc-display-heading text-2xl leading-tight text-[var(--ds-text)]">{title}</h3>
+        {description ? <p className="mt-2.5 text-xs leading-relaxed text-[var(--ds-text-muted)]">{description}</p> : null}
         {action ? <div className="mt-4">{action}</div> : null}
       </div>
     </div>

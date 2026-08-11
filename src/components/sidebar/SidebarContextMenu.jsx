@@ -149,7 +149,7 @@ export default function SidebarContextMenu({ menu, onClose }) {
           if (ref.current && !ref.current.contains(document.activeElement)) requestClose(false);
         }, 0);
       }}
-      className="fixed z-[90] w-[208px] rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] p-1.5 shadow-2xl backdrop-blur-xl"
+      className="fixed z-[90] w-[208px] rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-1.5"
       style={position}
     >
       {childItems && (
@@ -160,7 +160,7 @@ export default function SidebarContextMenu({ menu, onClose }) {
           tabIndex={activeItemId === "__back" ? 0 : -1}
           onFocus={() => setFocusedItemId("__back")}
           onClick={() => setChildItems(null)}
-          className="mb-1 flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-xs text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+          className="mb-1 flex h-9 w-full items-center gap-2 rounded-lg px-3 text-left text-xs text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
         >
           <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
           Back
@@ -188,7 +188,7 @@ export default function SidebarContextMenu({ menu, onClose }) {
               item.onSelect?.();
               requestClose(true);
             }}
-            className={`flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-xs transition disabled:cursor-not-allowed disabled:opacity-40 ${
+            className={`flex h-9 w-full items-center gap-2 rounded-lg px-3 text-left text-xs transition disabled:cursor-not-allowed disabled:opacity-40 ${
               item.danger
                 ? "text-[var(--ds-danger)] hover:bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)]"
                 : "text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"

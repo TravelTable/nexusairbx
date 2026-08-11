@@ -38,7 +38,7 @@ export default function AppearanceSelector({ value, onChange, disabled = false }
 
   return (
     <div
-      className="grid gap-2 rounded-xl border border-border bg-muted/25 p-2 sm:grid-cols-3"
+      className="grid gap-3 rounded-[14px] bg-muted/25 p-2 sm:grid-cols-3"
       role="radiogroup"
       aria-label="Color appearance"
     >
@@ -58,10 +58,10 @@ export default function AppearanceSelector({ value, onChange, disabled = false }
             onClick={() => onChange?.(option.value)}
             onKeyDown={(event) => handleKeyDown(event, index)}
             className={cn(
-              "min-h-16 rounded-lg border px-4 py-3 text-left transition-[border-color,background-color,color,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
+              "min-h-20 rounded-[12px] border px-5 py-4 text-left transition-[border-color,background-color,color,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
               selected
-                ? "border-accent/40 bg-accent/10 text-foreground shadow-sm"
-                : "border-transparent bg-transparent text-muted-foreground hover:border-border hover:bg-background hover:text-foreground"
+                ? "border-accent/35 bg-background text-foreground shadow-sm"
+                : "border-transparent bg-transparent text-muted-foreground hover:bg-background/70 hover:text-foreground"
             )}
           >
             <span className="block text-sm font-semibold">{option.label}</span>

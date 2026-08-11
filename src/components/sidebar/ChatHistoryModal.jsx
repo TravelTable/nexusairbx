@@ -66,9 +66,9 @@ export default function ChatHistoryModal({
     <Modal isOpen={isOpen} onClose={onClose} title="Chats">
       <div className="flex flex-col gap-4 max-h-[60vh]">
         <div className="relative group">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--ds-text-muted)] group-focus-within:text-[var(--ds-plan)] transition-colors" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ds-text-muted)] transition-colors group-focus-within:text-[var(--ds-accent)]" />
           <input
-            className="w-full rounded-xl bg-[var(--ds-fill-subtle)] border border-[var(--ds-border-subtle)] px-10 py-3 text-sm text-[var(--ds-text)] outline-none focus:border-[color-mix(in_srgb,var(--ds-plan)_35%,transparent)] focus:bg-[var(--ds-fill-subtle)] transition-all"
+            className="w-full rounded-full border border-[var(--ds-border-subtle)] bg-transparent px-10 py-3 text-sm text-[var(--ds-text)] outline-none transition-colors focus:border-[var(--ds-accent-border)] focus:bg-[var(--ds-fill-subtle)]"
             placeholder="Search all chats..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -78,7 +78,7 @@ export default function ChatHistoryModal({
 
         <div className="flex-1 overflow-y-auto pr-2 space-y-2 scrollbar-subtle">
           {visibleChats.length === 0 ? (
-            <div className="text-center py-12 px-4 rounded-2xl bg-[var(--ds-fill-subtle)] border border-dashed border-[var(--ds-border-subtle)]">
+            <div className="border-y border-[var(--ds-border-subtle)] px-4 py-12 text-center">
               <MessageSquare className="w-10 h-10 text-[var(--ds-text-muted)] mx-auto mb-3" />
               <p className="text-sm text-[var(--ds-text-muted)]">No chats found.</p>
             </div>

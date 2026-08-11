@@ -3,6 +3,13 @@
    vocabulary and dense Tailwind-era utilities onto those semantic tokens. */
 
 .ai-page {
+  /* Perplexity Personal Computer: editorial restraint around dense tooling. */
+  --pc-font-ui: var(--ds-font-sans);
+  --pc-font-display: var(--ds-font-display);
+  --pc-gutter: 16px;
+  --pc-radius-panel: 12px;
+  --pc-radius-control: 999px;
+
   --ai-bg: var(--ds-bg-workspace);
   --ai-surface: var(--ds-surface-1);
   --ai-surface-muted: var(--ds-surface-2);
@@ -10,7 +17,7 @@
   --ai-text: var(--ds-text);
   --ai-text-muted: var(--ds-text-muted);
   --ai-accent: var(--ds-accent);
-  --ai-accent-2: var(--ds-plan);
+  --ai-accent-2: var(--ds-accent);
   --ai-info: var(--ds-info);
   --ai-danger: var(--ds-danger);
 
@@ -21,6 +28,75 @@
   min-height: 0;
   overflow: hidden;
   box-sizing: border-box;
+  font-family: var(--pc-font-ui);
+}
+
+@media (min-width: 768px) {
+  .ai-page { --pc-gutter: 24px; }
+}
+
+@media (min-width: 1200px) {
+  .ai-page { --pc-gutter: 32px; }
+}
+
+/* Existing display utilities are common in editor chrome. Keep them sans by
+   default; opt only genuine display/empty-state headings into the serif. */
+.ai-page .font-display {
+  font-family: var(--pc-font-ui);
+}
+
+.ai-page .pc-display-heading {
+  font-family: var(--pc-font-display);
+  font-weight: 400;
+  letter-spacing: -0.025em;
+}
+
+.ai-page .pc-page-gutter {
+  padding-inline: var(--pc-gutter);
+}
+
+.ai-page .font-black {
+  font-weight: 600;
+}
+
+.ai-page .uppercase {
+  text-transform: none;
+}
+
+.ai-page .tracking-wider,
+.ai-page .tracking-widest,
+.ai-page [class*="tracking-["] {
+  letter-spacing: 0.015em;
+}
+
+.ai-page [class~="rounded-2xl"],
+.ai-page [class~="rounded-3xl"] {
+  border-radius: var(--pc-radius-panel);
+}
+
+.ai-page [class*="bg-gradient-to-"] {
+  background-image: none;
+}
+
+.ai-page [class~="shadow-xl"],
+.ai-page [class~="shadow-2xl"],
+.ai-page [class~="shadow-panel"],
+.ai-page [class*="shadow-[0_0"] {
+  box-shadow: none;
+}
+
+.ai-page [class*="backdrop-blur"] {
+  backdrop-filter: none;
+}
+
+.ai-page button:not([class*="text-left"]):not([class*="rounded-none"]),
+.ai-page input:not([type="checkbox"]):not([type="radio"]),
+.ai-page select {
+  border-radius: var(--pc-radius-control);
+}
+
+.ai-page textarea {
+  border-radius: var(--pc-radius-panel);
 }
 
 /* Workspace utility text must remain legible at the user's browser zoom. */
@@ -37,7 +113,7 @@
 }
 
 .ai-glow-secondary {
-  background-color: color-mix(in srgb, var(--ds-plan) 12%, transparent);
+  background-color: var(--ds-accent-soft);
 }
 
 .ai-surface {

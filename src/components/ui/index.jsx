@@ -15,9 +15,9 @@ function cx(...parts) {
 // --- Button -----------------------------------------------------------------
 
 const BTN_SIZES = {
-  sm: "px-2.5 py-1.5 text-[11px] gap-1.5 rounded-lg",
-  md: "px-4 py-2.5 text-sm gap-2 rounded-xl",
-  lg: "px-5 py-3 text-[15px] gap-2 rounded-xl",
+  sm: "px-2.5 py-1.5 text-[11px] gap-1.5 rounded-full",
+  md: "px-4 py-2.5 text-sm gap-2 rounded-full",
+  lg: "px-5 py-3 text-[15px] gap-2 rounded-full",
 };
 
 const BTN_VARIANTS = {

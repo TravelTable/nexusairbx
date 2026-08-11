@@ -97,7 +97,7 @@ function ModeSelector({ mode, onModeChange, disabled }) {
           });
         }}
         disabled={disabled}
-        className={`inline-flex h-11 items-center gap-1 rounded-md border border-[var(--ds-border-subtle)] px-1.5 text-[10px] font-bold uppercase tracking-wider transition-[border-color,background-color,color,opacity,transform] duration-150 ease-out active:scale-[0.98] focus-ring disabled:cursor-not-allowed disabled:opacity-40 xl:h-7 xl:gap-1.5 xl:px-2 ${current.bg} ${current.color} hover:bg-[var(--ds-fill-hover)]`}
+        className={`inline-flex h-11 items-center gap-1 rounded-full border border-[var(--ds-border-subtle)] px-2 text-[11px] font-medium transition-[border-color,background-color,color,opacity,transform] duration-150 ease-out active:scale-[0.98] focus-ring disabled:cursor-not-allowed disabled:opacity-40 xl:h-7 xl:gap-1.5 xl:px-2.5 ${current.bg} ${current.color} hover:bg-[var(--ds-fill-hover)]`}
         title="Select mode"
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -111,7 +111,7 @@ function ModeSelector({ mode, onModeChange, disabled }) {
         ? createPortal(
             <div
               ref={menuRef}
-              className={`fixed z-[9999] overflow-y-auto rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] p-1.5 shadow-2xl backdrop-blur-2xl scrollbar-subtle transition-[opacity,transform] duration-150 ${
+              className={`fixed z-[90] overflow-y-auto rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-1.5 scrollbar-subtle transition-[opacity,transform] duration-150 ${
                 menuPresence.entering ? "opacity-100" : "pointer-events-none opacity-0"
               }`}
               style={{
@@ -139,9 +139,9 @@ function ModeSelector({ mode, onModeChange, disabled }) {
                       onModeChange?.(item.id);
                       setOpen(false);
                     }}
-                    className={`flex w-full items-start gap-2.5 rounded-xl border px-2.5 py-2 text-left transition-[border-color,background-color,color,opacity,transform] duration-150 hover:translate-x-0.5 ${
+                    className={`flex w-full items-start gap-2.5 rounded-lg border px-3 py-2.5 text-left transition-[border-color,background-color,color,opacity] duration-150 ${
                       selected
-                        ? "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-hover)]"
+                        ? "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)]"
                         : "border-transparent hover:bg-[var(--ds-fill-subtle)]"
                     }`}
                   >
@@ -585,8 +585,8 @@ export default function ChatComposer({
   );
 
   return (
-    <div className="border-t border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)] px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 sm:px-3">
-      <div className="relative z-20 mx-auto max-w-[768px] overflow-visible rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] transition-colors duration-150 focus-within:border-[var(--ds-accent-border)]">
+    <div className="pc-page-gutter bg-[var(--ds-bg-workspace)] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
+      <div className="relative z-20 mx-auto max-w-[800px] overflow-visible rounded-[20px] border border-[var(--ds-border)] bg-[var(--ds-surface-1)] transition-colors duration-150 focus-within:border-[var(--ds-accent-border)]">
         {(activeOperationStatus || queuedOperations.length > 0) && (
           <div className="border-b border-[var(--ds-border-subtle)] px-2 py-1.5" aria-label="Chat operation status">
             <div className="flex items-center gap-2 text-[10px]">

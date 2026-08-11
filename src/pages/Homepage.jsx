@@ -283,11 +283,11 @@ function NexusRBXHomepage({
   ];
 
   const randomUsers = [
-    { letter: "J", color: "from-blue-700 to-blue-500" },
-    { letter: "A", color: "from-blue-600 to-sky-400" },
-    { letter: "T", color: "from-slate-700 to-blue-500" },
-    { letter: "K", color: "from-blue-800 to-indigo-500" },
-    { letter: "S", color: "from-slate-600 to-blue-400" },
+    { letter: "J", color: "from-[var(--ds-accent-pressed)] to-[var(--ds-accent)]" },
+    { letter: "A", color: "from-[var(--ds-accent)] to-[var(--ds-accent-hover)]" },
+    { letter: "T", color: "from-[var(--ds-surface-3)] to-[var(--ds-accent)]" },
+    { letter: "K", color: "from-[var(--ds-accent-pressed)] to-[var(--ds-accent-hover)]" },
+    { letter: "S", color: "from-[var(--ds-text-subtle)] to-[var(--ds-accent)]" },
   ];
 
   return (

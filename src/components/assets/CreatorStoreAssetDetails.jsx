@@ -156,8 +156,8 @@ export default function CreatorStoreAssetDetails({ asset, loading = false, onClo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[color-mix(in_srgb,var(--ds-bg-canvas)_72%,transparent)] px-4 py-6" role="dialog" aria-modal="true" aria-label="Creator Store asset details">
-      <div className="w-full max-w-2xl overflow-hidden rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] shadow-[var(--ds-shadow-overlay)]">
-        <div className="flex items-center justify-between gap-3 border-b border-[var(--ds-border-subtle)] px-4 py-3">
+      <div className="w-full max-w-3xl overflow-hidden rounded-[14px] bg-[var(--ds-surface-overlay)] shadow-[var(--ds-shadow-overlay)]">
+        <div className="flex items-center justify-between gap-3 px-6 py-5">
           <div className="min-w-0">
             <div className="text-[10px] font-semibold text-[var(--ds-info)]">Creator Store</div>
             <h2 className="text-base font-black text-[var(--ds-text)] truncate">{loading ? "Loading asset" : name}</h2>
@@ -165,15 +165,15 @@ export default function CreatorStoreAssetDetails({ asset, loading = false, onClo
           <button
             type="button"
             onClick={onClose}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] border border-[var(--ds-border)] text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[var(--ds-border)] text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
             aria-label="Close asset details"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="grid gap-4 p-4 md:grid-cols-[220px_1fr]">
-          <div className="flex aspect-square items-center justify-center overflow-hidden rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)]">
+        <div className="grid gap-6 p-6 pt-2 md:grid-cols-[240px_1fr]">
+          <div className="flex aspect-square items-center justify-center overflow-hidden rounded-[12px] bg-[var(--ds-bg-workspace)]">
             {thumbnailUrl && !imageFailed ? (
               <img
                 src={thumbnailUrl}
@@ -228,7 +228,7 @@ export default function CreatorStoreAssetDetails({ asset, loading = false, onClo
                   </div>
                 </dl>
                 {canImportAsset && (
-                  <div className="mt-5 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-3">
+                  <div className="mt-6 rounded-[14px] bg-[var(--ds-fill-subtle)] p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="min-w-0 text-xs text-[var(--ds-text-secondary)]">
                         <div className="font-semibold text-[var(--ds-text-muted)]">Studio import</div>
@@ -307,7 +307,7 @@ export default function CreatorStoreAssetDetails({ asset, loading = false, onClo
       </div>
       {confirming && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[color-mix(in_srgb,var(--ds-bg-canvas)_76%,transparent)] px-4 py-6" role="dialog" aria-modal="true" aria-label="Confirm Creator Store import">
-          <div className="w-full max-w-md rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-4 shadow-[var(--ds-shadow-overlay)]">
+          <div className="w-full max-w-md rounded-[14px] bg-[var(--ds-surface-overlay)] p-6 shadow-[var(--ds-shadow-overlay)]">
             <div className="flex items-start gap-3">
               <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)]">
                 {thumbnailUrl && !imageFailed ? <img src={thumbnailUrl} alt="" className="h-full w-full object-cover" /> : null}
@@ -326,10 +326,10 @@ export default function CreatorStoreAssetDetails({ asset, loading = false, onClo
               NexusRBX removes scripts and networking objects before placing this asset in your project.
             </p>
             <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => setConfirming(false)} className="min-h-11 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-3 py-2 text-[11px] font-semibold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]">
+              <button type="button" onClick={() => setConfirming(false)} className="min-h-11 rounded-full border border-[var(--ds-border)] bg-transparent px-4 py-2 text-[11px] font-semibold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]">
                 Cancel
               </button>
-              <button type="button" onClick={queueImport} disabled={importState === "queueing"} className="inline-flex min-h-11 items-center gap-2 rounded-[10px] bg-[var(--ds-accent)] px-3 py-2 text-[11px] font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] disabled:opacity-40">
+              <button type="button" onClick={queueImport} disabled={importState === "queueing"} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--ds-accent)] px-4 py-2 text-[11px] font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] disabled:opacity-40">
                 {importState === "queueing" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
                 Import safely
               </button>

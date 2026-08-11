@@ -12,6 +12,13 @@ import {
 } from "../lib/billing";
 import { BILLING_INTERVAL, PLAN, PREMIUM_BALANCE_PACKAGE } from "../lib/prices";
 import { trackProductEvent } from "../lib/productAnalytics";
+import {
+  editorialDisplayClass,
+  editorialGutterClass,
+  editorialPanelClass,
+  editorialPrimaryButtonClass,
+  editorialSecondaryButtonClass,
+} from "../components/site/editorialUi";
 
 const PLAN_CHOICES = [
   { plan: PLAN.PRO, label: "Pro", month: "$19.99/month", year: "$199/year" },
@@ -254,8 +261,8 @@ export default function BillingPage() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-[var(--ds-bg-canvas)] px-4 text-center text-[var(--ds-text)]">
         <AlertTriangle className="h-8 w-8 text-[var(--ds-warning)]" />
-        <h1 className="mt-4 text-2xl font-bold">Sign in to manage billing</h1>
-        <button className="mt-6 min-h-11 rounded-[10px] bg-[var(--ds-accent)] px-5 py-2 font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)]" onClick={() => navigate("/signin")}>
+        <h1 className={`${editorialDisplayClass} mt-5 text-4xl`}>Sign in to manage billing</h1>
+        <button className={`${editorialPrimaryButtonClass} mt-8`} onClick={() => navigate("/signin")}>
           Login to Continue
         </button>
       </div>
@@ -270,27 +277,27 @@ export default function BillingPage() {
   const percentRemaining = Number.isFinite(Number(included.percentRemaining)) ? Number(included.percentRemaining) : 100;
 
   return (
-    <main className="min-h-screen bg-[var(--ds-bg-canvas)] pb-16 text-[var(--ds-text)]">
-      <div className="mx-auto max-w-6xl px-4 pt-6">
+    <main className="min-h-screen bg-[var(--ds-bg-canvas)] pb-24 text-[var(--ds-text)]">
+      <div className={`${editorialGutterClass} mx-auto max-w-7xl pt-10 sm:pt-14 lg:pt-16`}>
         <button
           type="button"
-          className="inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+          className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-sm text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
           onClick={() => window.location.assign("/")}
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Home
         </button>
 
-        <div className="mt-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="mt-12 flex flex-col gap-6 md:flex-row md:items-end md:justify-between lg:mt-16">
           <div>
-            <h1 className="text-4xl font-semibold tracking-[-0.035em]">Billing</h1>
-            <p className="mt-2 text-[var(--ds-text-muted)]">Manage your NexusRBX subscription, Included Usage, and Premium Balance.</p>
+            <h1 className={`${editorialDisplayClass} text-5xl sm:text-6xl`}>Billing</h1>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--ds-text-muted)]">Manage your NexusRBX subscription, Included Usage, and Premium Balance.</p>
           </div>
           <button
             type="button"
             onClick={handlePortal}
             disabled={busy === "portal"}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-4 py-2 text-sm font-semibold text-[var(--ds-text)] hover:bg-[var(--ds-fill-hover)]"
+            className={`${editorialSecondaryButtonClass} gap-2`}
           >
             {busy === "portal" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Settings className="h-4 w-4" />}
             Manage subscription
@@ -310,8 +317,8 @@ export default function BillingPage() {
           </div>
         )}
 
-        <div className="mt-8 grid gap-4 lg:grid-cols-3">
-          <section className="rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] p-5">
+        <div className="mt-12 grid gap-5 lg:grid-cols-3">
+          <section className={`${editorialPanelClass} p-6 sm:p-7`}>
             <div className="flex items-center gap-2 text-lg font-semibold">
               <Zap className="h-5 w-5 text-[var(--ds-accent)]" />
               Current plan
@@ -343,7 +350,7 @@ export default function BillingPage() {
             )}
           </section>
 
-          <section className="rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] p-5">
+          <section className={`${editorialPanelClass} p-6 sm:p-7`}>
             <div className="text-lg font-semibold">Included Usage</div>
             <div className="mt-5 text-3xl font-semibold tracking-[-0.025em]">{percentUsed}% used</div>
             <div className="mt-1 text-sm text-[var(--ds-text-muted)]">{percentRemaining}% remaining</div>
@@ -360,7 +367,7 @@ export default function BillingPage() {
             )}
           </section>
 
-          <section className="rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] p-5">
+          <section className={`${editorialPanelClass} p-6 sm:p-7`}>
             <div className="text-lg font-semibold">Premium Balance</div>
             <div className="mt-5 text-3xl font-semibold tracking-[-0.025em]">{dollarsFromMicros(premiumBalance.balanceMicros)} available</div>
             <p className="mt-2 text-sm text-[var(--ds-text-muted)]">Used for supported Premium Direct models.</p>
@@ -375,7 +382,7 @@ export default function BillingPage() {
                   type="button"
                   onClick={() => handleTopUp(packageKey)}
                   disabled={busy === packageKey}
-                  className="inline-flex min-h-11 items-center justify-center gap-1 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] text-xs font-semibold text-[var(--ds-text)] hover:bg-[var(--ds-fill-hover)]"
+                  className="inline-flex min-h-11 items-center justify-center gap-1 rounded-full border border-[var(--ds-border)] bg-transparent px-2 text-xs font-semibold text-[var(--ds-text)] hover:bg-[var(--ds-fill-hover)]"
                 >
                   {busy === packageKey ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
                   {label}
@@ -388,32 +395,32 @@ export default function BillingPage() {
           </section>
         </div>
 
-        <section className="mt-6 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] p-5">
+        <section className={`${editorialPanelClass} mt-8 p-6 sm:p-8`}>
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-xl font-semibold">Upgrade or change plan</h2>
               <p className="mt-1 text-sm text-[var(--ds-text-muted)]">Active subscribers should use billing settings for controlled plan changes.</p>
             </div>
-            <div className="inline-flex w-fit rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] p-1">
+            <div className="inline-flex w-fit rounded-full bg-[var(--ds-fill-subtle)] p-1">
               <button
                 type="button"
                 onClick={() => setIntervalValue(BILLING_INTERVAL.MONTH)}
-                className={`min-h-11 rounded-lg px-4 py-2 text-sm font-semibold ${interval === BILLING_INTERVAL.MONTH ? "bg-[var(--ds-fill-selected)] text-[var(--ds-accent)]" : "text-[var(--ds-text-secondary)]"}`}
+                className={`min-h-11 rounded-full px-5 py-2 text-sm font-semibold ${interval === BILLING_INTERVAL.MONTH ? "bg-[var(--ds-surface-2)] text-[var(--ds-accent)]" : "text-[var(--ds-text-secondary)]"}`}
               >
                 Monthly
               </button>
               <button
                 type="button"
                 onClick={() => setIntervalValue(BILLING_INTERVAL.YEAR)}
-                className={`min-h-11 rounded-lg px-4 py-2 text-sm font-semibold ${interval === BILLING_INTERVAL.YEAR ? "bg-[var(--ds-fill-selected)] text-[var(--ds-accent)]" : "text-[var(--ds-text-secondary)]"}`}
+                className={`min-h-11 rounded-full px-5 py-2 text-sm font-semibold ${interval === BILLING_INTERVAL.YEAR ? "bg-[var(--ds-surface-2)] text-[var(--ds-accent)]" : "text-[var(--ds-text-secondary)]"}`}
               >
                 Yearly
               </button>
             </div>
           </div>
-          <div className="mt-5 grid gap-3 md:grid-cols-3">
+          <div className="mt-7 grid gap-4 md:grid-cols-3">
             {PLAN_CHOICES.map((choice) => (
-              <div key={choice.plan} className="rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-2)] p-4">
+              <div key={choice.plan} className="rounded-[14px] bg-[var(--ds-surface-2)] p-5">
                 <div className="font-semibold">{choice.label}</div>
                 <div className="mt-1 text-sm text-[var(--ds-text-muted)]">{interval === BILLING_INTERVAL.YEAR ? choice.year : choice.month}</div>
                 {choice.plan === PLAN.TEAM && (
@@ -426,7 +433,7 @@ export default function BillingPage() {
                       max="50"
                       value={teamSeats}
                       onChange={(event) => setTeamSeats(Math.min(50, Math.max(2, Number(event.target.value) || 2)))}
-                      className="mt-1 min-h-11 w-full rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-3)] px-3 py-2 text-sm text-[var(--ds-text)] focus:border-[var(--ds-accent-border)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-accent-soft)]"
+                      className="mt-2 min-h-12 w-full rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-3)] px-4 py-2 text-sm text-[var(--ds-text)] focus:border-[var(--ds-accent-border)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-focus-ring)]"
                     />
                   </div>
                 )}
@@ -434,7 +441,7 @@ export default function BillingPage() {
                   type="button"
                   disabled={busy === choice.plan || entitlements?.plan === choice.plan}
                   onClick={() => handlePlanCheckout(choice.plan)}
-                  className="mt-4 min-h-11 w-full rounded-[10px] bg-[var(--ds-accent)] px-3 py-2 text-sm font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] disabled:bg-[var(--ds-fill-active)] disabled:text-[var(--ds-text-muted)]"
+                  className={`${editorialPrimaryButtonClass} mt-5 w-full px-3`}
                 >
                   {busy === choice.plan ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : entitlements?.plan === choice.plan ? "Current plan" : `Choose ${choice.label}`}
                 </button>
@@ -443,7 +450,7 @@ export default function BillingPage() {
           </div>
         </section>
 
-        <section className="mt-6 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] p-5">
+        <section className="mt-12 border-t border-[var(--ds-border-subtle)] py-8">
           <div className="flex items-center gap-2 text-lg font-semibold">
             <CreditCard className="h-5 w-5 text-[var(--ds-accent)]" />
             Billing support

@@ -3,16 +3,16 @@ import { Server, Code2, Package, Layout, Settings2, FileText, FileCode } from "l
 import { ROBLOX_PLACEMENTS } from "../../../lib/normalizeArtifact";
 
 export const KIND_META = {
-  server: { label: "Server", icon: Server, accent: "var(--ds-plan)" },
+  server: { label: "Server", icon: Server, accent: "var(--ds-info)" },
   client: { label: "Client", icon: Code2, accent: "var(--ds-accent)" },
   module: { label: "Module", icon: Package, accent: "var(--ds-info)" },
-  ui: { label: "UI", icon: Layout, accent: "var(--ds-plan)" },
+  ui: { label: "UI", icon: Layout, accent: "var(--ds-accent)" },
   config: { label: "Config", icon: Settings2, accent: "var(--ds-warning)" },
   docs: { label: "Docs", icon: FileText, accent: "var(--ds-text-secondary)" },
 };
 
 export function kindMeta(kind) {
-  return KIND_META[String(kind || "").toLowerCase()] || { label: "File", icon: FileCode, accent: "var(--ds-plan)" };
+  return KIND_META[String(kind || "").toLowerCase()] || { label: "File", icon: FileCode, accent: "var(--ds-text-secondary)" };
 }
 
 export const STATUS_META = {

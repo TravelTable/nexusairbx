@@ -1,4 +1,5 @@
 import PublicHeader from "../components/PublicHeader";
+import styles from "../components/PublicEditorial.module.css";
 import { buildPublicMetadata } from "../../src/lib/seo";
 
 export const metadata = buildPublicMetadata({
@@ -10,7 +11,7 @@ export const metadata = buildPublicMetadata({
 
 export default function NotFound() {
   return (
-    <div className="page-shell">
+    <div className={`page-shell ${styles.notFoundPage}`}>
       <PublicHeader />
       <main className="section-inner hero">
         <span className="eyebrow">404</span>

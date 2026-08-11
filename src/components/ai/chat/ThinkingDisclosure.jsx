@@ -20,7 +20,7 @@ export default function ThinkingDisclosure({ text, live = false, defaultOpen = f
         className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-[var(--ds-fill-subtle)] transition-colors"
         aria-expanded={open}
       >
-        <Brain className={`w-3.5 h-3.5 ${live ? "text-[var(--ds-accent)] animate-pulse" : "text-[var(--ds-plan)]"}`} />
+        <Brain className={`w-3.5 h-3.5 ${live ? "text-[var(--ds-accent)] animate-pulse" : "text-[var(--ds-text-muted)]"}`} />
         <span className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-secondary)]">
           {label || (live ? "Thinking" : "Build log")}
         </span>

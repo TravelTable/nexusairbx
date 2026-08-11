@@ -224,7 +224,7 @@ export default function ExportActions({ artifact, activeFile, notify }) {
       <button type="button" onClick={handleDownloadFile} disabled={!activeFile} className={`${btn} bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]`}>
         <FileDown className="w-3.5 h-3.5" /> .lua
       </button>
-      <button type="button" onClick={handleRojoExport} disabled={rojoBuilding} className={`${btn} bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)] text-[var(--ds-plan)] hover:bg-[color-mix(in_srgb,var(--ds-plan)_18%,transparent)]`}>
+      <button type="button" onClick={handleRojoExport} disabled={rojoBuilding} className={`${btn} bg-[var(--ds-accent-soft)] text-[var(--ds-accent)] hover:bg-[var(--ds-fill-hover)]`}>
         {rojoBuilding ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Boxes className="w-3.5 h-3.5" />} Rojo
       </button>
       <button type="button" onClick={handleCopyLoader} className={`${btn} bg-[var(--ds-accent-soft)] text-[var(--ds-accent)] hover:bg-[var(--ds-accent-soft)]`}>

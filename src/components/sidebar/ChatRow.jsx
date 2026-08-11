@@ -24,17 +24,17 @@ export default function ChatRow({
     <div
       className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl border transition-all duration-300 text-left group relative overflow-hidden ${
         isSelected
-          ? "border-[color-mix(in_srgb,var(--ds-plan)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)]"
+          ? "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)]"
           : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] hover:bg-[var(--ds-fill-subtle)] hover:border-[var(--ds-border-subtle)]"
       }`}
     >
       {isSelected && (
-        <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--ds-plan)] shadow-none" />
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--ds-accent)] shadow-none" />
       )}
       {isRenaming ? (
         <div className="flex-1 min-w-0">
           <input
-            className="bg-[var(--ds-surface-2)] border border-[var(--ds-plan)] rounded-lg px-2 py-1 text-xs text-[var(--ds-text)] w-full outline-none"
+            className="bg-[var(--ds-surface-2)] border border-[var(--ds-accent)] rounded-full px-3 py-1 text-xs text-[var(--ds-text)] w-full outline-none"
             aria-label={`Rename chat ${chat.title || "Untitled chat"}`}
             value={renameChatTitle}
             onChange={(e) => setRenameChatTitle(e.target.value)}

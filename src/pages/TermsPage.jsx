@@ -15,10 +15,15 @@ import {
   Database,
   Zap
 } from "lib/icons";
+import {
+  editorialDisplayClass,
+  editorialGutterClass,
+  editorialPrimaryButtonClass,
+} from "../components/site/editorialUi";
 
 // Container Component
 export default function TermsPageContainer() {
-  const [activeSection, setActiveSection] = useState("terms");
+  const [activeSection, setActiveSection] = useState("introduction");
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -90,10 +95,10 @@ function TermsPage({
   return (
     <div className="min-h-screen bg-[var(--ds-bg-canvas)] text-[var(--ds-text)] font-sans flex flex-col">
       <main className="flex-grow">
-        <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className={`${editorialGutterClass} mx-auto max-w-7xl py-14 sm:py-20`}>
           {/* Page Title */}
-          <div className="mb-8 text-center">
-            <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-[var(--ds-accent-pressed)] via-accent to-[var(--ds-info)] text-transparent bg-clip-text">
+          <div className="mb-12 text-center sm:mb-16">
+            <h1 className={`${editorialDisplayClass} mb-5 text-5xl sm:text-6xl`}>
               Legal Documents
             </h1>
             <p className="text-[var(--ds-text-muted)] max-w-2xl mx-auto">
@@ -102,7 +107,7 @@ function TermsPage({
           </div>
 
           {/* Search Bar */}
-          <div className="max-w-xl mx-auto mb-10">
+          <div className="mx-auto mb-14 max-w-xl">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[var(--ds-text-subtle)]" />
               <input
@@ -110,25 +115,25 @@ function TermsPage({
                 value={searchQuery}
                 onChange={handleSearchChange}
                 placeholder="Search legal documents..."
-                className="nexus-input w-full py-3 pl-10 pr-4"
+                className="min-h-12 w-full rounded-full border border-[var(--ds-border)] bg-[var(--ds-surface-1)] py-3 pl-11 pr-5 text-sm outline-none placeholder:text-[var(--ds-text-muted)] focus:border-[var(--ds-accent-border)] focus:ring-2 focus:ring-[var(--ds-focus-ring)]"
               />
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row gap-8">
+          <div className="flex flex-col gap-12 md:flex-row lg:gap-20">
             {/* Sidebar */}
-            <aside className="md:w-64 shrink-0">
+            <aside className="shrink-0 md:w-72">
               <div className="sticky top-24">
-                <h2 className="text-xl font-bold mb-4">Legal Hub</h2>
+                <h2 className={`${editorialDisplayClass} mb-5 text-3xl`}>Legal Hub</h2>
                 <nav className="space-y-1">
                   {sections.map(section => (
                     <button
                       key={section.id}
                       onClick={() => handleSectionChange(section.id)}
-                      className={`focus-ring w-full flex items-center p-3 rounded-lg border transition-colors duration-200 text-sm ${
+                      className={`focus-ring flex min-h-11 w-full items-center rounded-full px-4 py-2.5 text-sm transition-colors duration-200 ${
                         activeSection === section.id
-                          ? "bg-[var(--ds-accent-soft)] border-[var(--ds-accent-border)] text-[var(--ds-text)]"
-                          : "border-transparent text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text)]"
+                          ? "bg-[var(--ds-fill-selected)] text-[var(--ds-text)]"
+                          : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text)]"
                       }`}
                     >
                       <section.icon className="h-4 w-4 mr-3" />
@@ -137,7 +142,7 @@ function TermsPage({
                   ))}
                 </nav>
 
-                <div className="nexus-page-card mt-8 p-4">
+                <div className="mt-10 rounded-[14px] bg-[var(--ds-surface-1)] p-5">
                   <h3 className="font-medium mb-2 flex items-center text-sm">
                     <Mail className="h-4 w-4 mr-2 text-accent" />
                     Legal Support
@@ -147,13 +152,13 @@ function TermsPage({
                   </p>
                   <a
                     href="/contact?category=security_privacy"
-                    className="focus-ring text-xs px-4 py-2 rounded-lg bg-[var(--ds-accent-soft)] border border-[var(--ds-accent-border)] text-accent hover:bg-[var(--ds-accent-soft)] hover:text-[var(--ds-text)] transition-colors duration-200 inline-block w-full text-center font-semibold"
+                    className={`${editorialPrimaryButtonClass} mt-1 w-full px-4 text-xs`}
                   >
                     Open contact form
                   </a>
                 </div>
 
-                <div className="nexus-page-card mt-8 p-4">
+                <div className="mt-6 rounded-[14px] bg-[var(--ds-surface-1)] p-5">
                   <div className="flex items-center mb-2">
                     <Calendar className="h-4 w-4 mr-2 text-accent" />
                     <h3 className="font-medium text-sm">Last Updated</h3>
@@ -166,7 +171,7 @@ function TermsPage({
             </aside>
 
             {/* Main Content */}
-            <div className="flex-grow">
+            <div className="min-w-0 flex-grow [&_h1]:font-[Georgia,_Cambria,_'Times_New_Roman',_serif] [&_h1]:font-normal [&_h1]:leading-[1.08] [&_h1]:tracking-[-0.035em] [&_h1]:text-[var(--ds-text)] [&_p]:leading-7">
               {activeSection === "introduction" && <IntroductionContent />}
               {activeSection === "accounts" && <AccountsContent />}
               {activeSection === "usage" && <UsageContent />}
@@ -184,8 +189,8 @@ function TermsPage({
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[var(--ds-border-subtle)] py-6 px-4 bg-[var(--ds-surface-overlay)]">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center">
+      <footer className={`${editorialGutterClass} border-t border-[var(--ds-border-subtle)] py-8`}>
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between md:flex-row">
           <div className="flex items-center mb-4 md:mb-0">
             <div className="text-xl font-bold text-accent mr-2">
               NexusRBX

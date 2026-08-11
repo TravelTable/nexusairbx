@@ -40,7 +40,7 @@ export const Plan = ({
   return (
     <PlanContext.Provider value={contextValue}>
       <Collapsible asChild data-slot="plan" {...props}>
-        <Card className={cn("shadow-none", className)}>{children}</Card>
+        <Card className={cn("rounded-xl border-[var(--ds-border)] bg-transparent shadow-none", className)}>{children}</Card>
       </Collapsible>
     </PlanContext.Provider>
   );

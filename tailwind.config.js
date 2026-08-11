@@ -54,8 +54,8 @@ module.exports = {
         },
       },
       fontFamily: {
-        display: ["-apple-system", "BlinkMacSystemFont", '"SF Pro Display"', '"Segoe UI"', "system-ui", "sans-serif"],
-        sans: ["-apple-system", "BlinkMacSystemFont", '"SF Pro Text"', '"Segoe UI"', "system-ui", "sans-serif"],
+        display: ["var(--ds-font-display)", "Georgia", '"Times New Roman"', "serif"],
+        sans: ["var(--ds-font-sans)", "-apple-system", "BlinkMacSystemFont", '"SF Pro Text"', '"Segoe UI"', "system-ui", "sans-serif"],
         mono: ['"JetBrains Mono"', "ui-monospace", "SFMono-Regular", "monospace"],
       },
       borderRadius: {

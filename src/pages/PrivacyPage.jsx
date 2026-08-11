@@ -14,10 +14,15 @@ import {
   Users,
   Scale
 } from "lib/icons";
+import {
+  editorialDisplayClass,
+  editorialGutterClass,
+  editorialPrimaryButtonClass,
+} from "../components/site/editorialUi";
 
 // Container Component
 export default function NexusRBXPrivacyPageContainer() {
-  const [activeSection, setActiveSection] = useState("overview");
+  const [activeSection, setActiveSection] = useState("introduction");
 
   const handleSectionChange = (section) => {
     setActiveSection(section);
@@ -60,14 +65,14 @@ function NexusRBXPrivacyPage({
   return (
     <div className="min-h-screen bg-[var(--ds-bg-canvas)] text-[var(--ds-text)] font-sans flex flex-col">
       <main className="flex-grow">
-        <div className="max-w-6xl mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row gap-8">
+        <div className={`${editorialGutterClass} mx-auto max-w-7xl py-14 sm:py-20`}>
+          <div className="flex flex-col gap-12 md:flex-row lg:gap-20">
             {/* Sidebar */}
-            <aside className="md:w-64 shrink-0">
+            <aside className="shrink-0 md:w-72">
               <div className="sticky top-24">
-                <div className="flex items-center mb-6">
+                <div className="mb-8 flex items-center">
                   <Shield className="h-6 w-6 text-accent mr-3" />
-                  <h2 className="text-xl font-bold">Privacy Policy</h2>
+                  <h2 className={`${editorialDisplayClass} text-3xl`}>Privacy Policy</h2>
                 </div>
                 <p className="text-[var(--ds-text-muted)] text-sm mb-6">
                   Last updated: {lastUpdated}
@@ -78,10 +83,10 @@ function NexusRBXPrivacyPage({
                     <button
                       key={section.id}
                       onClick={() => handleSectionChange(section.id)}
-                      className={`focus-ring w-full flex items-center p-2.5 rounded-lg border transition-colors duration-200 text-sm ${
+                      className={`focus-ring flex min-h-11 w-full items-center rounded-full px-4 py-2.5 text-sm transition-colors duration-200 ${
                         activeSection === section.id
-                          ? "bg-[var(--ds-accent-soft)] border-[var(--ds-accent-border)] text-[var(--ds-text)]"
-                          : "border-transparent text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text)]"
+                          ? "bg-[var(--ds-fill-selected)] text-[var(--ds-text)]"
+                          : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text)]"
                       }`}
                     >
                       <section.icon className="h-4 w-4 mr-3" />
@@ -90,7 +95,7 @@ function NexusRBXPrivacyPage({
                   ))}
                 </nav>
 
-                <div className="nexus-page-card mt-8 p-4">
+                <div className="mt-10 rounded-[14px] bg-[var(--ds-surface-1)] p-5">
                   <h3 className="font-medium mb-2 flex items-center text-sm">
                     <Mail className="h-4 w-4 mr-2 text-accent" />
                     Privacy Support
@@ -100,7 +105,7 @@ function NexusRBXPrivacyPage({
                   </p>
                   <a
                     href="/contact?subject=security_privacy&message=I%20want%20to%20make%20a%20privacy%20request."
-                    className="focus-ring text-xs px-4 py-2 rounded-lg bg-[var(--ds-accent-soft)] border border-[var(--ds-accent-border)] text-accent hover:bg-[var(--ds-accent-soft)] hover:text-[var(--ds-text)] transition-colors duration-200 inline-block w-full text-center font-semibold"
+                    className={`${editorialPrimaryButtonClass} mt-1 w-full px-4 text-xs`}
                   >
                     Start privacy request
                   </a>
@@ -109,7 +114,7 @@ function NexusRBXPrivacyPage({
             </aside>
 
             {/* Main Content */}
-            <div className="flex-grow">
+            <div className="min-w-0 flex-grow [&_h1]:font-[Georgia,_Cambria,_'Times_New_Roman',_serif] [&_h1]:font-normal [&_h1]:leading-[1.08] [&_h1]:tracking-[-0.035em] [&_h1]:text-[var(--ds-text)] [&_p]:leading-7">
               {activeSection === "introduction" && <IntroductionContent />}
               {activeSection === "collection" && <CollectionContent />}
               {activeSection === "use" && <UseContent />}
@@ -128,8 +133,8 @@ function NexusRBXPrivacyPage({
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[var(--ds-border-subtle)] py-6 px-4 bg-[var(--ds-surface-overlay)]">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center">
+      <footer className={`${editorialGutterClass} border-t border-[var(--ds-border-subtle)] py-8`}>
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between md:flex-row">
           <div className="flex items-center mb-4 md:mb-0">
             <div className="text-xl font-bold text-accent mr-2">
               NexusRBX

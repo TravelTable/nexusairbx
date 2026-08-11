@@ -1,5 +1,7 @@
+/* eslint-disable testing-library/no-container, testing-library/no-node-access */
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
+import HomepageV2Content from "./HomepageV2Content";
 
 const mockSubmitHomepagePrompt = jest.fn();
 
@@ -21,8 +23,6 @@ jest.mock("./HomepageIntentEvidence", () => () => null);
 jest.mock("./HomepageFooter", () => () => <footer>Homepage footer</footer>);
 jest.mock("./RobloxTrustStrip", () => () => null);
 jest.mock("./CompanionDownloadSection", () => () => null);
-
-import HomepageV2Content from "./HomepageV2Content";
 
 describe("HomepageV2Content prompt accessibility", () => {
   beforeEach(() => {
@@ -64,5 +64,43 @@ describe("HomepageV2Content prompt accessibility", () => {
 
     expect(screen.getByRole("alert").textContent).toBe("Could not start generation.");
     expect(input.getAttribute("aria-invalid")).toBe("true");
+  });
+
+  test("uses responsive cinematic media and the complete story hierarchy", () => {
+    const { container } = render(<HomepageV2Content navigate={jest.fn()} />);
+
+    expect(
+      screen.getByRole("heading", { name: "AI Roblox Script Generator for Studio", level: 1 })
+    ).toBeTruthy();
+
+    const heroImage = container.querySelector("[data-home-hero-image]");
+    expect(heroImage.getAttribute("src")).toBe("/assets/nexus-cinematic-hero-v2-1600.webp");
+    expect(heroImage.getAttribute("width")).toBe("1600");
+    expect(heroImage.getAttribute("height")).toBe("901");
+    expect(heroImage.getAttribute("loading")).toBe("eager");
+    expect(heroImage.getAttribute("fetchpriority")).toBe("high");
+    expect(heroImage.previousElementSibling.getAttribute("srcset")).toBe(
+      "/assets/nexus-cinematic-hero-v2-960.webp"
+    );
+
+    const vaultImage = container.querySelector("[data-home-vault-image]");
+    expect(vaultImage.getAttribute("src")).toBe("/assets/nexus-cinematic-vault-v2-1600.webp");
+    expect(vaultImage.getAttribute("loading")).toBe("lazy");
+    expect(vaultImage.previousElementSibling.getAttribute("srcset")).toBe(
+      "/assets/nexus-cinematic-vault-v2-960.webp"
+    );
+
+    const finalImage = container.querySelector("[data-home-final-image]");
+    expect(finalImage.getAttribute("src")).toBe("/assets/nexus-cinematic-final-v2-1600.webp");
+    expect(finalImage.getAttribute("width")).toBe("1600");
+    expect(finalImage.getAttribute("height")).toBe("901");
+    expect(finalImage.getAttribute("loading")).toBe("lazy");
+    expect(finalImage.previousElementSibling.getAttribute("srcset")).toBe(
+      "/assets/nexus-cinematic-final-v2-960.webp"
+    );
+
+    expect(container.querySelectorAll("[data-home-story-card]")).toHaveLength(3);
+    expect(container.querySelectorAll("[data-home-capability]")).toHaveLength(6);
+    expect(container.querySelector('img[src*="nexus-product-mock"]')).toBeNull();
   });
 });

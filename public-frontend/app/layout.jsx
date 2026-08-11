@@ -14,7 +14,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#050507" />
+        <meta name="theme-color" content="#181817" />
         <Script id="nexusrbx-appearance" strategy="beforeInteractive">
           {APPEARANCE_BOOTSTRAP_SCRIPT}
         </Script>

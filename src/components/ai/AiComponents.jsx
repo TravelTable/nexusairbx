@@ -73,7 +73,7 @@ export function TokenBar({
           </span>
           {premiumDollars && (
             <span>
-              Premium Balance: <span className="font-bold text-[var(--ds-plan)]">{premiumDollars}</span>
+              Premium Balance: <span className="font-bold text-[var(--ds-accent)]">{premiumDollars}</span>
             </span>
           )}
           <span className="inline-flex items-center gap-1 text-[var(--ds-accent)]" title="Unlimited usage override is active">
@@ -92,7 +92,7 @@ export function TokenBar({
             </span>
             {premiumDollars && (
               <span>
-                Premium Balance: <span className="font-bold text-[var(--ds-plan)]">{premiumDollars}</span>
+                Premium Balance: <span className="font-bold text-[var(--ds-accent)]">{premiumDollars}</span>
               </span>
             )}
           </div>
@@ -136,7 +136,7 @@ export function TokenBar({
           </span>
           {premiumDollars && (
             <span>
-              Premium Balance: <span className="font-bold text-[var(--ds-plan)]">{premiumDollars}</span>
+              Premium Balance: <span className="font-bold text-[var(--ds-accent)]">{premiumDollars}</span>
             </span>
           )}
           {!isLow && <span className="text-[var(--ds-text-muted)]">{resetText}</span>}
@@ -145,7 +145,7 @@ export function TokenBar({
               <Zap className="h-3 w-3 fill-current" /> Upgrade to Pro
             </a>
           ) : isLow && plan === "pro" ? (
-            <a href="/subscribe" className="inline-flex items-center gap-1 font-black uppercase tracking-wider text-[var(--ds-plan)] hover:brightness-125">
+            <a href="/subscribe" className="inline-flex items-center gap-1 font-semibold text-[var(--ds-accent)] hover:brightness-110">
               <Zap className="h-3 w-3 fill-current" /> Explore Team
             </a>
           ) : isLow ? (
@@ -181,7 +181,7 @@ export function TokenBar({
           </span>
           {premiumDollars && (
             <span>
-              Premium Balance: <span className="font-bold text-[var(--ds-plan)]">{premiumDollars}</span>
+              Premium Balance: <span className="font-bold text-[var(--ds-accent)]">{premiumDollars}</span>
             </span>
           )}
         </div>
@@ -190,7 +190,7 @@ export function TokenBar({
             <Zap className="h-3 w-3 fill-current" /> Upgrade to Pro
           </a>
         ) : isLow && plan === "pro" ? (
-          <a href="/subscribe" className="flex shrink-0 items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[var(--ds-plan)] transition-[filter,color] duration-[var(--motion-fast)] ease-[var(--ease-product)] hover:brightness-125">
+          <a href="/subscribe" className="flex shrink-0 items-center gap-1 text-[10px] font-semibold text-[var(--ds-accent)] transition-[filter,color] duration-[var(--motion-fast)] ease-[var(--ease-product)] hover:brightness-110">
             <Zap className="h-3 w-3 fill-current" /> Explore Team
           </a>
         ) : (
@@ -209,7 +209,7 @@ export function TokenBar({
       >
         <div
           className={`h-full rounded-full transition-[width] duration-[var(--motion-large)] ease-[var(--ease-standard)] ${
-            isLow ? "bg-[var(--ds-danger)]" : plan === "pro" ? "bg-[var(--ds-plan)]" : "bg-[var(--ds-accent)]"
+            isLow ? "bg-[var(--ds-danger)]" : "bg-[var(--ds-accent)]"
           }`}
           style={{ width: `${usageLoading || usageUnavailable || percentUsed == null ? 0 : percentUsed}%` }}
         />
@@ -224,7 +224,7 @@ export function PlanBadge({ plan: planProp }) {
   const premium = plan === "pro" || plan === "team";
   return (
     <span
-      className={`mr-2 inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${premium ? "border-[color-mix(in_srgb,var(--ds-plan)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)] text-[var(--ds-plan)]" : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)]"}`}
+      className={`mr-2 inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${premium ? "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]" : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)]"}`}
     >
       {planInfo.label}
       <span className="ml-2 text-xs font-normal opacity-80">• {planInfo.capText}</span>
@@ -250,9 +250,9 @@ export const NexusRBXAvatar = React.memo(({ isThinking = false, mode = "general"
   const modeColors = {
     general: "var(--ds-accent)",
     ui: "var(--ds-accent)",
-    logic: "var(--ds-plan)",
+    logic: "var(--ds-accent)",
     system: "var(--ds-info)",
-    animator: "var(--ds-plan)",
+    animator: "var(--ds-accent)",
     data: "var(--ds-warning)",
     performance: "var(--ds-accent)",
     security: "var(--ds-danger)",
@@ -350,18 +350,18 @@ export const TaskOrchestrator = ({ tasks, currentTaskId, onExecuteTask, plan }) 
   const isPro = plan === "pro" || plan === "team" || plan === "TEAM" || plan === "PRO";
 
   return (
-    <div className={`mt-4 mb-6 rounded-2xl border border-[color-mix(in_srgb,var(--ds-plan)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500 relative ${!isPro ? 'opacity-50' : ''}`}>
+    <div className={`relative mt-4 mb-6 overflow-hidden rounded-xl border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] animate-in fade-in slide-in-from-top-2 duration-300 ${!isPro ? 'opacity-50' : ''}`}>
       {!isPro && (
         <div className="absolute top-3 right-3 z-20">
-          <Zap className="w-4 h-4 text-[var(--ds-plan)] fill-current" />
+          <Zap className="w-4 h-4 text-[var(--ds-accent)] fill-current" />
         </div>
       )}
-      <div className="px-4 py-3 border-b border-[color-mix(in_srgb,var(--ds-plan)_35%,transparent)] flex items-center justify-between bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)]">
+      <div className="flex items-center justify-between border-b border-[var(--ds-accent-border)] bg-transparent px-4 py-3">
         <div className="flex items-center gap-2">
-          <Zap className="w-4 h-4 text-[var(--ds-plan)]" />
+          <Zap className="w-4 h-4 text-[var(--ds-accent)]" />
           <span className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text)]">Multi-Step Goal Orchestration</span>
         </div>
-        <div className="text-[9px] font-bold text-[var(--ds-plan)] uppercase tracking-widest">
+        <div className="text-[9px] font-semibold text-[var(--ds-accent)]">
           {tasks.filter(t => t.status === 'done').length} / {tasks.length} Steps
         </div>
       </div>
@@ -371,8 +371,8 @@ export const TaskOrchestrator = ({ tasks, currentTaskId, onExecuteTask, plan }) 
           const isDone = task.status === 'done';
 
           return (
-            <div key={task.id} className={`flex items-center gap-4 p-3 rounded-xl border transition-[background-color,border-color,box-shadow,opacity] duration-[var(--motion-standard)] ease-[var(--ease-standard)] ${isCurrent ? 'bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)] border-[color-mix(in_srgb,var(--ds-plan)_35%,transparent)] shadow-lg' : isDone ? 'bg-[var(--ds-fill-subtle)] border-[var(--ds-border-subtle)] opacity-60' : 'bg-[var(--ds-fill-subtle)] border-[var(--ds-border-subtle)]'}`}>
-              <div className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${isDone ? 'bg-[var(--ds-success)] text-[var(--ds-success-foreground)]' : isCurrent ? 'bg-[var(--ds-plan)] text-[var(--ds-plan-foreground)] animate-pulse' : 'bg-[var(--ds-surface-2)] text-[var(--ds-text-muted)]'}`}>
+            <div key={task.id} className={`flex items-center gap-4 rounded-xl border p-3 transition-[background-color,border-color,opacity] duration-[var(--motion-standard)] ease-[var(--ease-standard)] ${isCurrent ? 'bg-[var(--ds-accent-soft)] border-[var(--ds-accent-border)]' : isDone ? 'bg-[var(--ds-fill-subtle)] border-[var(--ds-border-subtle)] opacity-60' : 'bg-[var(--ds-fill-subtle)] border-[var(--ds-border-subtle)]'}`}>
+              <div className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${isDone ? 'bg-[var(--ds-success)] text-[var(--ds-success-foreground)]' : isCurrent ? 'bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] animate-pulse' : 'bg-[var(--ds-surface-2)] text-[var(--ds-text-muted)]'}`}>
                 {isDone ? '✓' : i + 1}
               </div>
               <div className="flex-1 min-w-0">
@@ -381,8 +381,8 @@ export const TaskOrchestrator = ({ tasks, currentTaskId, onExecuteTask, plan }) 
               </div>
               {isCurrent && (
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[var(--ds-plan)] animate-ping" />
-                  <span className="text-[9px] font-black text-[var(--ds-plan)] uppercase tracking-widest">Active</span>
+                  <div className="w-2 h-2 rounded-full bg-[var(--ds-accent)] animate-ping" />
+                  <span className="text-[9px] font-semibold text-[var(--ds-accent)]">Active</span>
                 </div>
               )}
             </div>
@@ -392,7 +392,7 @@ export const TaskOrchestrator = ({ tasks, currentTaskId, onExecuteTask, plan }) 
         {!currentTaskId && tasks.some(t => !t.status) && (
           <button 
             onClick={() => onExecuteTask(tasks.find(t => !t.status))}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[var(--ds-plan)] py-3 text-sm font-semibold text-[var(--ds-plan-foreground)] transition-[filter,transform] duration-[var(--motion-fast)] ease-[var(--ease-product)] hover:brightness-110 active:scale-[0.98]"
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--ds-accent)] py-3 text-sm font-semibold text-[var(--ds-accent-foreground)] transition-[filter] duration-[var(--motion-fast)] ease-[var(--ease-product)] hover:brightness-110"
           >
             <Rocket className="w-4 h-4" />
             START AUTOMATED PIPELINE
@@ -453,7 +453,7 @@ export const ProjectContextStatus = ({
     <div className={`flex items-center gap-3 px-3 py-2 rounded-xl bg-[var(--ds-fill-subtle)] border border-[var(--ds-border-subtle)] backdrop-blur-md relative ${!isPro ? 'opacity-50' : ''}`}>
       {!isPro && (
         <div className="absolute top-[-6px] right-[-6px] z-20">
-          <Zap className="w-3 h-3 text-[var(--ds-plan)] fill-current" />
+          <Zap className="w-3 h-3 text-[var(--ds-accent)] fill-current" />
         </div>
       )}
       <button
@@ -525,9 +525,9 @@ export const UnifiedStatusBar = ({ stage, isGenerating, mode = "general" }) => {
   const modeColors = {
     general: "var(--ds-accent)",
     ui: "var(--ds-accent)",
-    logic: "var(--ds-plan)",
+    logic: "var(--ds-accent)",
     system: "var(--ds-info)",
-    animator: "var(--ds-plan)",
+    animator: "var(--ds-accent)",
     data: "var(--ds-warning)",
     performance: "var(--ds-accent)",
     security: "var(--ds-danger)",
@@ -622,7 +622,7 @@ export const SkeletonArtifact = ({ type = "code" }) => (
 
 export const ArtifactCard = ({ title, subtitle, icon: Icon, type = "code", qaReport = null, children, actions = [] }) => {
   const typeColors = {
-    code: "text-[var(--ds-plan)] bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)] border-[color-mix(in_srgb,var(--ds-plan)_35%,transparent)]",
+    code: "text-[var(--ds-accent)] bg-[var(--ds-accent-soft)] border-[var(--ds-accent-border)]",
     ui: "text-[var(--ds-accent)] bg-[var(--ds-accent-soft)] border-[var(--ds-accent-border)]",
     report: " text-[var(--ds-danger)]  bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)]  border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)] ",
     system: " text-[var(--ds-info)]  bg-[color-mix(in_srgb,var(--ds-info)_12%,transparent)]  border-[color-mix(in_srgb,var(--ds-info)_35%,transparent)] ",
@@ -808,7 +808,7 @@ export const CustomModeModal = ({ isOpen, onClose, onSave, initialData = null })
   const [description, setDescription] = useState(initialData?.description || "");
   const [systemPrompt, setSystemPrompt] = useState(initialData?.systemPrompt || "");
   const [temperature, setTemperature] = useState(initialData?.temperature || 0.7);
-  const [color, setColor] = useState(initialData?.color || "#0A84FF");
+  const [color, setColor] = useState(initialData?.color || "#20808D");
   const [isPublic, setIsPublic] = useState(initialData?.isPublic || false);
 
   if (!isOpen) return null;
@@ -827,7 +827,7 @@ export const CustomModeModal = ({ isOpen, onClose, onSave, initialData = null })
       >
         <div className="px-6 py-4 border-b border-[var(--ds-border-subtle)] flex items-center justify-between bg-[var(--ds-fill-subtle)]">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)] text-[var(--ds-plan)]">
+            <div className="p-2 rounded-xl bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]">
               <Settings2 className="w-5 h-5" />
             </div>
             <div>
@@ -886,7 +886,7 @@ export const CustomModeModal = ({ isOpen, onClose, onSave, initialData = null })
           <div className="space-y-2">
             <div className="flex items-center justify-between px-1">
               <label className="text-[10px] font-black text-[var(--ds-text-muted)] uppercase tracking-widest">System Prompt (The "Brain")</label>
-              <span className="text-[9px] text-[var(--ds-plan)] font-bold italic">Advanced users only</span>
+              <span className="text-[9px] text-[var(--ds-accent)] font-semibold italic">Advanced users only</span>
             </div>
             <textarea 
               value={systemPrompt}

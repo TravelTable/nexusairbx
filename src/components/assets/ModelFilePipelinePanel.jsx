@@ -603,7 +603,7 @@ export default function ModelFilePipelinePanel({ notify }) {
   };
 
   return (
-    <section className="border-t border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)] px-3 py-3 text-xs text-[var(--ds-text)]">
+    <section className="model-file-pipeline border-t border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)] px-3 py-3 text-xs text-[var(--ds-text)]">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <FileArchive className="h-4 w-4 text-[var(--ds-info)]" />

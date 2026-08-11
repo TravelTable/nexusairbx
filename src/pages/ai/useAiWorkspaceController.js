@@ -140,14 +140,14 @@ import { normalizeRobloxPlaceId } from "../../lib/robloxPlaceId";
 import { normalizeAuthoritativeRunStatus } from "../../lib/runCancellation";
 
 const MODE_COLORS = {
-  general: { primary: "var(--ds-accent)", secondary: "var(--ds-plan)" },
-  ui: { primary: "var(--ds-accent)", secondary: "var(--ds-plan)" },
-  logic: { primary: "var(--ds-plan)", secondary: "var(--ds-info)" },
+  general: { primary: "var(--ds-accent)", secondary: "var(--ds-info)" },
+  ui: { primary: "var(--ds-accent)", secondary: "var(--ds-accent)" },
+  logic: { primary: "var(--ds-info)", secondary: "var(--ds-accent)" },
   system: { primary: "var(--ds-info)", secondary: "var(--ds-accent)" },
-  animator: { primary: "var(--ds-plan)", secondary: "var(--ds-warning)" },
+  animator: { primary: "var(--ds-warning)", secondary: "var(--ds-accent)" },
   data: { primary: "var(--ds-warning)", secondary: "var(--ds-info)" },
   performance: { primary: "var(--ds-accent)", secondary: "var(--ds-info)" },
-  security: { primary: "var(--ds-danger)", secondary: "var(--ds-plan)" },
+  security: { primary: "var(--ds-danger)", secondary: "var(--ds-warning)" },
 };
 
 const TERMINAL_CHAT_RUN_STATUSES = new Set([

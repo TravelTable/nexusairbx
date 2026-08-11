@@ -183,7 +183,7 @@ export default function ProjectArchitecturePanel({ context, onClose, onSync, emb
                   {normalized.tags.map((t, i) => (
                     <span
                       key={i}
-                      className="px-2 py-0.5 rounded-md bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)] text-[var(--ds-plan)] text-xs font-mono"
+                      className="rounded-md bg-[color-mix(in_srgb,var(--ds-info)_12%,transparent)] px-2 py-0.5 font-mono text-xs text-[var(--ds-info)]"
                     >
                       {t}
                     </span>

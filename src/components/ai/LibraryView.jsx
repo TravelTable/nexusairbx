@@ -37,7 +37,7 @@ export default function LibraryView({ scripts, onOpenScript }) {
               onClick={() => onOpenScript(script)}
               className="group flex items-start gap-4 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] p-5 text-left transition-[border-color,background-color] hover:border-[var(--ds-accent-border)] hover:bg-[var(--ds-fill-hover)]"
             >
-              <div className={`p-3 rounded-xl ${script.type === 'ui' ? 'bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]' : 'bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)] text-[var(--ds-plan)]'}`}>
+              <div className={`rounded-xl p-3 ${script.type === 'ui' ? 'bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]' : 'bg-[color-mix(in_srgb,var(--ds-info)_12%,transparent)] text-[var(--ds-info)]'}`}>
                 {script.type === 'ui' ? <Layout className="w-5 h-5" /> : <FileCode className="w-5 h-5" />}
               </div>
               <div className="flex-1 min-w-0">

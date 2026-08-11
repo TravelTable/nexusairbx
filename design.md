@@ -2,7 +2,7 @@
 title: NexusRBX UI Design System
 status: normative
 owner: NexusRBX product and engineering
-last_reviewed: 2026-08-03
+last_reviewed: 2026-08-12
 repository_baseline: TravelTable/nexusairbx@26c0b182bac2d2dc09b1ab41068bd74f6399fdee
 applies_to:
   - src/
@@ -86,7 +86,7 @@ NexusRBX should feel:
 - dense without being cramped;
 - approachable without being childish.
 
-The interaction restraint may take cues from Apple, Cursor, VS Code, Linear, and Notion. Do not clone their visual styling. NexusRBX earns its identity through its Studio-aware workflow, exact state communication, typography, structure, and restrained blue accent—not through decorative novelty.
+The interaction restraint may take cues from Apple and Cursor. Public storytelling follows a Perplexity Personal Computer-inspired editorial system: cinematic full-bleed scenes, warm charcoal, parchment, generous negative space, serif display type, and a restrained teal accent. NexusRBX retains its own product copy, imagery, logo, Studio-aware workflow, and runtime truth.
 
 ### 2.2 What NexusRBX is not
 
@@ -113,9 +113,9 @@ Use this voice in product UI:
 Avoid language such as “magic”, “revolutionary”, “supercharge”, “unleash”, “effortless”, and “perfect”.
 
 
-## 2.4 Cursor-inspired product direction
+## 2.4 Product direction
 
-NexusRBX should adopt the interaction discipline of modern editor-first tools such as Cursor without copying their brand, exact layout, or visual styling. The reference is behavioural: compact, quiet, contextual, and focused on the current file, conversation, or task.
+NexusRBX should combine the interaction discipline of modern editor-first tools with a calm editorial public presence. The workspace stays compact, quiet, contextual, and focused on the current file, conversation, or task. Marketing pages use tall cinematic chapters and deliberately sparse layouts without importing another product's copy, marks, or media.
 
 The product MUST prioritise:
 
@@ -123,11 +123,11 @@ The product MUST prioritise:
 - an editor-first mental model, even when chat is the active surface;
 - compact controls that reveal labels or detail only when needed;
 - persistent, synchronised project context across chat, files, code, activity, Studio target, and run state;
-- restrained colour, with selection and status carrying meaning rather than decoration;
+- restrained colour, with teal reserved for interaction and status colours carrying literal meaning;
 - stable pane geometry and predictable keyboard-driven navigation;
 - one canonical representation of each state, mode, target, and object.
 
-The product MUST NOT imitate Apple or Cursor through copied layouts, icons, proprietary interaction details, or platform-specific chrome. NexusRBX remains recognisable through its Studio-aware workflow, blue accent, runtime truth model, terminology, and approval system.
+NexusRBX remains recognisable through its Studio-aware workflow, original cinematic imagery, runtime truth model, terminology, and approval system.
 
 ## 3. Scope and surface families
 
@@ -257,46 +257,46 @@ Raw palette values may appear in the central token definition. Product component
 ```css
 :root {
   /* Brand and categorical colour */
-  --nexus-blue: #0a84ff;
+  --nexus-teal: #20808d;
   --nexus-purple: #bf5af2;
 
   /* Base surfaces */
-  --ds-bg-canvas: #050507;
-  --ds-bg-workspace: #08090d;
-  --ds-bg-sidebar: #0c0d12;
-  --ds-surface-1: #111217;
-  --ds-surface-2: #17181f;
-  --ds-surface-3: #1d1f27;
-  --ds-surface-overlay: rgba(17, 18, 23, 0.92);
+  --ds-bg-canvas: #181817;
+  --ds-bg-workspace: #11110f;
+  --ds-bg-sidebar: #151514;
+  --ds-surface-1: #20201e;
+  --ds-surface-2: #282825;
+  --ds-surface-3: #302f2c;
+  --ds-surface-overlay: rgba(24, 24, 23, 0.92);
 
   /* Interactive fills */
-  --ds-fill-subtle: rgba(255, 255, 255, 0.035);
-  --ds-fill-hover: rgba(255, 255, 255, 0.06);
-  --ds-fill-active: rgba(255, 255, 255, 0.08);
-  --ds-fill-selected: rgba(10, 132, 255, 0.14);
+  --ds-fill-subtle: rgba(245, 243, 237, 0.045);
+  --ds-fill-hover: rgba(245, 243, 237, 0.075);
+  --ds-fill-active: rgba(245, 243, 237, 0.11);
+  --ds-fill-selected: rgba(32, 128, 141, 0.18);
 
   /* Borders */
-  --ds-border-subtle: rgba(255, 255, 255, 0.07);
-  --ds-border: rgba(255, 255, 255, 0.10);
-  --ds-border-strong: rgba(255, 255, 255, 0.16);
+  --ds-border-subtle: rgba(245, 243, 237, 0.075);
+  --ds-border: rgba(245, 243, 237, 0.12);
+  --ds-border-strong: rgba(245, 243, 237, 0.20);
 
   /* Text */
-  --ds-text: #f5f5f7;
-  --ds-text-secondary: #c7c7cc;
-  --ds-text-muted: #a1a1aa;
-  --ds-text-subtle: #71717a;
-  --ds-text-disabled: #52525b;
+  --ds-text: #f5f3ed;
+  --ds-text-secondary: #d6d2c8;
+  --ds-text-muted: #aaa69c;
+  --ds-text-subtle: #7c786f;
+  --ds-text-disabled: #5b5852;
 
   /* Brand interaction */
-  --ds-accent: #0a84ff;
-  --ds-accent-hover: #409cff;
-  --ds-accent-pressed: #0071e3;
+  --ds-accent: #20808d;
+  --ds-accent-hover: #2a94a1;
+  --ds-accent-pressed: #176f79;
   --ds-accent-foreground: #ffffff;
-  --ds-accent-soft: rgba(10, 132, 255, 0.13);
-  --ds-accent-border: rgba(10, 132, 255, 0.38);
+  --ds-accent-soft: rgba(32, 128, 141, 0.16);
+  --ds-accent-border: rgba(42, 148, 161, 0.44);
 
   /* Semantic state */
-  --ds-info: #64d2ff;
+  --ds-info: #58b6c1;
   --ds-success: #30d158;
   --ds-warning: #ffd60a;
   --ds-danger: #ff453a;
@@ -304,19 +304,19 @@ Raw palette values may appear in the central token definition. Product component
 }
 
 :root[data-theme="light"] {
-  --ds-bg-canvas: #f5f5f7;
-  --ds-bg-workspace: #ffffff;
-  --ds-bg-sidebar: #f2f2f7;
-  --ds-surface-1: #ffffff;
-  --ds-surface-2: #f7f7f9;
-  --ds-surface-3: #ececf1;
-  --ds-text: #1d1d1f;
-  --ds-text-secondary: #48484a;
-  --ds-text-muted: #5e5e66;
-  --ds-accent: #007aff;
-  --ds-accent-hover: #0066d6;
-  --ds-accent-pressed: #0055b3;
-  --ds-info: #007a9e;
+  --ds-bg-canvas: #faf8f5;
+  --ds-bg-workspace: #fffdf9;
+  --ds-bg-sidebar: #f2efe9;
+  --ds-surface-1: #fffdf9;
+  --ds-surface-2: #f5f1eb;
+  --ds-surface-3: #ebe7df;
+  --ds-text: #27251e;
+  --ds-text-secondary: #4f4b43;
+  --ds-text-muted: #6b675f;
+  --ds-accent: #20808d;
+  --ds-accent-hover: #176f79;
+  --ds-accent-pressed: #115d66;
+  --ds-info: #176f79;
   --ds-success: #248a3d;
   --ds-warning: #9a6700;
   --ds-danger: #d70015;
@@ -328,7 +328,7 @@ These names define the target semantics. Existing `--ai-*`, `--nexus-*`, HSL, an
 
 ### 6.2 Accent rules
 
-Blue is the canonical NexusRBX interaction accent. It must be used sparingly so the workspace remains quiet. Use it for:
+Teal is the canonical NexusRBX interaction accent. It must be used sparingly so the workspace remains quiet. Use it for:
 
 - the primary action;
 - focus-visible rings;
@@ -337,7 +337,7 @@ Blue is the canonical NexusRBX interaction accent. It must be used sparingly so 
 - live or actively running state;
 - restrained brand highlights.
 
-Do not use blue as a general decorative border, glow, background wash, or persistent highlight around ordinary content.
+Do not use teal as a general decorative border, glow, background wash, or persistent highlight around ordinary content.
 
 Purple is secondary and categorical. Use it for Plan mode, selected model context, or a deliberate secondary AI category. It is not the default secondary-button colour.
 
@@ -345,17 +345,17 @@ Decorative pink is retired. Do not introduce a third workspace accent without a 
 
 ### 6.3 Legacy colours
 
-- `#00e0c2`, `#00f5d4`, and cyan/teal utilities are legacy brand colours. New work uses `--ds-accent`.
-- `#3855f6` is a legacy blue variant. Normal product CTAs use the theme-resolved canonical accent.
+- `#00e0c2`, `#00f5d4`, and raw cyan/teal utilities are legacy colours. New work uses the calmer semantic `--ds-accent`.
+- `#3855f6`, `#0a84ff`, and `#007aff` are retired interaction variants. Normal product CTAs use the theme-resolved canonical accent.
 - Raw `#0D0D0D`, `#090b12`, `#0b0d14`, and similar values should be replaced by semantic surface tokens when the component is touched.
 
 ### 6.4 Semantic colour rules
 
-- Blue: live, active, selected, primary action.
+- Teal: live, active, selected, primary action.
 - Green: completed, applied, verified success.
 - Amber: waiting, degraded, warning, user attention required.
 - Red: failed, invalid, destructive, target mismatch that prevents safe action.
-- Light blue: information, queued external work, neutral connection detail.
+- Soft teal: information, queued external work, neutral connection detail.
 - Purple: planning or AI mode category.
 - Grey: idle, cancelled, unavailable, secondary information.
 
@@ -422,8 +422,8 @@ Rules:
 
 ### 8.1 Font ownership
 
-- The platform UI stack (`-apple-system`, `BlinkMacSystemFont`, `SF Pro`, `Segoe UI`, `system-ui`) owns UI, body, and display typography.
-- Marketing hierarchy comes from size, weight, optical tracking, and spacing rather than a separate decorative display family.
+- The platform UI stack (`-apple-system`, `BlinkMacSystemFont`, `SF Pro`, `Segoe UI`, `system-ui`) owns UI and body typography.
+- Georgia with Times New Roman fallback owns editorial marketing display moments only. It MUST NOT replace dense product headings, controls, or code-adjacent text.
 - **JetBrains Mono** is for code, paths, identifiers, hashes, keyboard shortcuts, and fixed-width technical values.
 - LobeHub/model marks may use their supplied brand assets, but no new general UI font may be added.
 - Manrope, Sora, and Inter overrides are legacy and should migrate to the platform stack when touched.
@@ -441,7 +441,7 @@ Rules:
 | Small heading | 16px | Panel or card title |
 | Section heading | 20px | Settings or page section |
 | Page heading | 28–36px | Product page heading |
-| Marketing display | 40–64px | Public hero only |
+| Marketing display | 48–84px | Public hero and cinematic chapter statements |
 
 Interactive control labels SHOULD be at least 11px. Ten-pixel text is not acceptable for primary actions, form labels, or information required to complete a task.
 
@@ -513,6 +513,20 @@ Do not introduce arbitrary spacing such as 13px, 17px, or 29px for standard layo
 
 On touch-oriented layouts, interactive targets MUST be at least 44×44px or have an equivalent hit area. Visual icons may remain 16–20px inside that area.
 
+### 9.5 Public editorial composition
+
+The public homepage uses measured cinematic chapters rather than the workspace density scale:
+
+- Hero: one viewport tall, with its primary statement held in the visual centre and the shared header overlaid.
+- Desktop chapter media: no wider than 1250px, with approximately 80px page gutters, 64px between chapters, and 40px internal copy insets.
+- Mobile chapter media: 343px at a 390px viewport, with 16px page gutters, approximately 54px between chapters, and 32px internal copy insets.
+- Warm editorial chapters may use a centred content column up to approximately 970px.
+- The security scene may use a narrower cinematic frame up to approximately 840px.
+- Capability collections are unboxed grids; do not turn each capability into an ornamental floating card.
+- The final cinematic call to action sits immediately before the compact footer.
+
+These measurements MAY depart from the product spacing scale when needed to preserve the composed proportions. They remain responsive targets, not hard minimum widths.
+
 ## 10. Radius, border, and shape
 
 Use a restrained radius system:
@@ -520,8 +534,8 @@ Use a restrained radius system:
 ```css
 --ds-radius-xs: 4px;
 --ds-radius-sm: 6px;
---ds-radius-md: 8px;
---ds-radius-lg: 12px;
+--ds-radius-md: 10px;
+--ds-radius-lg: 14px;
 --ds-radius-xl: 16px;
 --ds-radius-pill: 999px;
 ```
@@ -529,10 +543,10 @@ Use a restrained radius system:
 Guidance:
 
 - Tree and dense list rows: 4–6px.
-- Buttons and inputs: 6–8px.
-- Composer and standard cards: 12px.
+- Inputs and compact rectangular controls: 6–10px.
+- Composer and standard product cards: 10–14px.
 - Large marketing cards and modals: 12–16px.
-- Pills: only for true status chips, tags, or binary compact controls.
+- Primary actions, compact navigation actions, status chips, tags, and binary compact controls MAY use the pill radius.
 
 Workspace controls MUST NOT use oversized 20–32px radii. Rounded rectangles should not become decorative bubbles.
 
@@ -1301,7 +1315,7 @@ The public experience should look like a credible developer-tool company, not an
 ### 21.1 Public visual direction
 
 - Same platform UI/JetBrains Mono typography system.
-- Same canonical blue accent.
+- Same canonical teal accent.
 - Dark neutral surfaces with more whitespace than the workspace.
 - Maximum content width around 1120–1200px.
 - Real product screenshots, diagrams, or verified examples over generic 3D decoration.
