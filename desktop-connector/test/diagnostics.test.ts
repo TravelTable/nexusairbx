@@ -31,6 +31,7 @@ test("Windows detection probes Roblox mcp.bat instead of treating cmd.exe as Stu
     environment: { LOCALAPPDATA: localAppData },
   });
   assert.equal(missing.studioInstalled, false);
+  assert.equal(missing.mcpCommand, "mcp.bat");
 
   await mkdir(join(localAppData, "Roblox"), { recursive: true });
   await writeFile(join(localAppData, "Roblox", "mcp.bat"), "@echo off\n");
@@ -42,6 +43,7 @@ test("Windows detection probes Roblox mcp.bat instead of treating cmd.exe as Stu
     environment: { LOCALAPPDATA: localAppData },
   });
   assert.equal(installed.studioInstalled, true);
+  assert.equal(installed.mcpCommand, "mcp.bat");
   await rm(localAppData, { recursive: true, force: true });
 });
 

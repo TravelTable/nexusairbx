@@ -45,6 +45,7 @@ export async function collectDiagnostics({
 }): Promise<CompanionDiagnostics> {
   const probePath = resolveMcpProbePath({ mcpCommand, mcpArgs, platform, environment });
   const isWindowsShellWrapper = platform === "win32" && ["cmd", "cmd.exe"].includes(basename(mcpCommand).toLowerCase());
+  const displayedMcpCommand = probePath && isWindowsShellWrapper ? basename(probePath) : mcpCommand;
   let mcpCommandAvailable = !probePath && !isWindowsShellWrapper;
   if (probePath) {
     try { await access(probePath); mcpCommandAvailable = true; } catch { mcpCommandAvailable = false; }
@@ -55,7 +56,7 @@ export async function collectDiagnostics({
     platform,
     architecture: process.arch,
     connectorVersion,
-    mcpCommand,
+    mcpCommand: displayedMcpCommand,
     backendUrl,
     logLocation,
     mcpServerVersion: snapshot?.mcpServerVersion ?? null,
