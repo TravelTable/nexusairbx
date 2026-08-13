@@ -380,7 +380,7 @@ end
 -- END src/net/httpClient.lua
 
 -- BEGIN src/studio/serialization.lua
-local SCRIPT_CLASSES, ensureManagedId, stableHash, nowMs, readManagedId, attributesOf, propertyHash, scriptHash, verifyExpectedScriptHash, propertiesOf, safePropertyValue, structuredUnsupported, lastBatchSnapshots, AGENT_ARTIFACT_ID_ATTRIBUTE, AGENT_FILE_ID_ATTRIBUTE, CREATABLE_CLASSES, NATIVE_MODEL_LIMITS, escapePattern, escapeReplacement
+local SCRIPT_CLASSES, ensureManagedId, stableHash, nowMs, readManagedId, attributesOf, propertyHash, scriptHash, verifyExpectedScriptHash, propertiesOf, safePropertyValue, structuredUnsupported, lastBatchSnapshots, AGENT_ARTIFACT_ID_ATTRIBUTE, AGENT_FILE_ID_ATTRIBUTE, CREATABLE_CLASSES, NATIVE_MODEL_LIMITS, NATIVE_CLASSES, NATIVE_BASE_PART_CLASSES, NATIVE_CONSTRAINT_CLASSES, NATIVE_LIGHT_CLASSES, NATIVE_PROPERTY_ALLOWLIST, NATIVE_REFERENCE_FIELDS, escapePattern, escapeReplacement
 do
 NATIVE_MODEL_LIMITS = {
 	maxInstances = 750,
@@ -395,7 +395,7 @@ NATIVE_MODEL_LIMITS = {
 	maxModelExtent = 4096,
 }
 
-local NATIVE_CLASSES = {
+NATIVE_CLASSES = {
 	Model = true,
 	Folder = true,
 	Part = true,
@@ -431,7 +431,7 @@ local NATIVE_CLASSES = {
 	AlignOrientation = true,
 }
 
-local NATIVE_BASE_PART_CLASSES = {
+NATIVE_BASE_PART_CLASSES = {
 	Part = true,
 	WedgePart = true,
 	CornerWedgePart = true,
@@ -441,7 +441,7 @@ local NATIVE_BASE_PART_CLASSES = {
 	SpawnLocation = true,
 }
 
-local NATIVE_CONSTRAINT_CLASSES = {
+NATIVE_CONSTRAINT_CLASSES = {
 	WeldConstraint = true,
 	HingeConstraint = true,
 	BallSocketConstraint = true,
@@ -454,13 +454,13 @@ local NATIVE_CONSTRAINT_CLASSES = {
 	AlignOrientation = true,
 }
 
-local NATIVE_LIGHT_CLASSES = {
+NATIVE_LIGHT_CLASSES = {
 	PointLight = true,
 	SurfaceLight = true,
 	SpotLight = true,
 }
 
-local NATIVE_PROPERTY_ALLOWLIST = {
+NATIVE_PROPERTY_ALLOWLIST = {
 	Model = {},
 	Folder = {},
 	Configuration = {},
@@ -496,7 +496,7 @@ local NATIVE_PROPERTY_ALLOWLIST = {
 	AlignOrientation = { Enabled = true, MaxTorque = true, Responsiveness = true, RigidityEnabled = true, Visible = true },
 }
 
-local NATIVE_REFERENCE_FIELDS = {
+NATIVE_REFERENCE_FIELDS = {
 	WeldConstraint = { part0Id = "Part0", part1Id = "Part1" },
 	HingeConstraint = { attachment0Id = "Attachment0", attachment1Id = "Attachment1" },
 	BallSocketConstraint = { attachment0Id = "Attachment0", attachment1Id = "Attachment1" },

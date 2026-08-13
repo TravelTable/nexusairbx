@@ -61,6 +61,25 @@ test("managed instance IDs are exported across bundled plugin sections", () => {
   assert.doesNotMatch(artifact, /local function ensureManagedId\(inst\)/);
 });
 
+test("native model safety tables are exported into the bundled command scope", () => {
+  const bundler = read("build/bundle-plugin.js");
+  const artifact = read("NexusRBXStudioBridge.plugin.lua");
+
+  for (const name of [
+    "NATIVE_CLASSES",
+    "NATIVE_BASE_PART_CLASSES",
+    "NATIVE_CONSTRAINT_CLASSES",
+    "NATIVE_LIGHT_CLASSES",
+    "NATIVE_PROPERTY_ALLOWLIST",
+    "NATIVE_REFERENCE_FIELDS",
+  ]) {
+    assert.match(bundler, new RegExp(`"${name}"`));
+    assert.match(artifact, new RegExp(`local [^\\n]*${name}[^\\n]*\\ndo\\n`));
+    assert.match(artifact, new RegExp(`${name} = \\{`));
+    assert.doesNotMatch(artifact, new RegExp(`local ${name} = \\{`));
+  }
+});
+
 test("the bundled placement guard keeps canonical service path names", () => {
   const readTools = read("src/commands/readTools.lua");
   const artifact = read("NexusRBXStudioBridge.plugin.lua");
