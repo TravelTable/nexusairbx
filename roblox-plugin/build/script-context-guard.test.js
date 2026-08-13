@@ -51,6 +51,16 @@ test("the plugin guard detects real GetService calls while blanking ordinary str
   }
 });
 
+test("managed instance IDs are exported across bundled plugin sections", () => {
+  const bundler = read("build/bundle-plugin.js");
+  const artifact = read("NexusRBXStudioBridge.plugin.lua");
+
+  assert.match(bundler, /"ensureManagedId"/);
+  assert.match(artifact, /local [^\n]*ensureManagedId[^\n]*\ndo\n/);
+  assert.match(artifact, /ensureManagedId = function\(inst\)/);
+  assert.doesNotMatch(artifact, /local function ensureManagedId\(inst\)/);
+});
+
 test("the bundled placement guard keeps canonical service path names", () => {
   const readTools = read("src/commands/readTools.lua");
   const artifact = read("NexusRBXStudioBridge.plugin.lua");

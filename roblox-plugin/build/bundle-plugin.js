@@ -109,6 +109,7 @@ const MODULE_EXPORTS = {
   ],
   "src/studio/serialization.lua": [
     "SCRIPT_CLASSES",
+    "ensureManagedId",
     "stableHash",
     "nowMs",
     "readManagedId",

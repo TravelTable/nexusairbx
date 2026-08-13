@@ -14,7 +14,7 @@ local STUDIO_PROTOCOL_VERSION = "2026-07-30-script-context"
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.12.0-script-context.2"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.12.0-script-context.3"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the
@@ -380,7 +380,7 @@ end
 -- END src/net/httpClient.lua
 
 -- BEGIN src/studio/serialization.lua
-local SCRIPT_CLASSES, stableHash, nowMs, readManagedId, attributesOf, propertyHash, scriptHash, verifyExpectedScriptHash, propertiesOf, safePropertyValue, structuredUnsupported, lastBatchSnapshots, AGENT_ARTIFACT_ID_ATTRIBUTE, AGENT_FILE_ID_ATTRIBUTE, CREATABLE_CLASSES, NATIVE_MODEL_LIMITS, escapePattern, escapeReplacement
+local SCRIPT_CLASSES, ensureManagedId, stableHash, nowMs, readManagedId, attributesOf, propertyHash, scriptHash, verifyExpectedScriptHash, propertiesOf, safePropertyValue, structuredUnsupported, lastBatchSnapshots, AGENT_ARTIFACT_ID_ATTRIBUTE, AGENT_FILE_ID_ATTRIBUTE, CREATABLE_CLASSES, NATIVE_MODEL_LIMITS, escapePattern, escapeReplacement
 do
 NATIVE_MODEL_LIMITS = {
 	maxInstances = 750,
@@ -578,7 +578,7 @@ nowMs = function()
 	return math.floor(os.clock() * 1000)
 end
 
-local function ensureManagedId(inst)
+ensureManagedId = function(inst)
 	if not inst or inst == game then
 		return nil
 	end
