@@ -7,7 +7,6 @@ import {
   Loader2, 
   Info, 
   ShieldCheck, 
-  Sparkles,
   Palette,
   Maximize2,
   Box,
@@ -156,7 +155,7 @@ export default function IconDetailPage() {
       <main className="creator-store-page flex min-h-screen flex-col items-center justify-center bg-[var(--ds-bg-canvas)] p-4 text-[var(--ds-text)]">
         <NoIndexMeta title="Icon Not Found | NexusRBX" />
         <h1 className={`${editorialDisplayClass} mb-5 text-5xl`}>Icon Not Found</h1>
-        <button onClick={() => navigate("/icons-market")} className="flex min-h-11 items-center gap-2 rounded-lg px-3 font-semibold text-[var(--ds-accent)] hover:bg-[var(--ds-fill-hover)]">
+        <button onClick={() => navigate("/icons-market")} className="flex min-h-11 items-center gap-2 rounded-lg px-3 font-semibold text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]">
           <ArrowLeft className="w-5 h-5" /> Back to Creator Store
         </button>
       </main>
@@ -178,7 +177,7 @@ export default function IconDetailPage() {
         <div className="max-w-7xl mx-auto">
           <button 
             onClick={() => navigate("/icons-market")}
-            className="focus-ring mb-10 flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-semibold text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+            className="focus-ring mb-10 flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
           >
             <ArrowLeft className="w-4 h-4" /> Back to Creator Store
           </button>
@@ -195,13 +194,13 @@ export default function IconDetailPage() {
                 />
                 
                 {/* Preview Controls */}
-                <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-1.5 shadow-[var(--ds-shadow-overlay)] backdrop-blur-md">
+                <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-1.5 shadow-[var(--ds-shadow-overlay)]">
                   {Object.entries(PREVIEW_BACKGROUNDS).map(([bg, option]) => (
                     <button
                       key={bg}
                       onClick={() => setPreviewBg(bg)}
                       aria-pressed={previewBg === bg}
-                      className={`min-h-11 rounded-lg px-4 py-2 text-xs font-semibold transition-colors ${previewBg === bg ? 'bg-[var(--ds-fill-selected)] text-[var(--ds-accent)]' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]'}`}
+                      className={`min-h-11 rounded-lg px-4 py-2 text-xs font-semibold transition-colors ${previewBg === bg ? 'bg-[var(--ds-fill-active)] text-[var(--ds-text)]' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]'}`}
                     >
                       {option.label}
                     </button>
@@ -236,7 +235,7 @@ export default function IconDetailPage() {
                 <div className="flex items-center gap-3 mb-4">
                   <h1 className={`${editorialDisplayClass} text-5xl sm:text-6xl`}>{icon.name}</h1>
                   {icon.isPro && !isPremium && (
-                    <span className="rounded-full border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-3 py-1 text-xs font-semibold text-[var(--ds-accent)]">Pro</span>
+                    <span className="rounded-md border border-[var(--ds-border-strong)] bg-[var(--ds-fill-subtle)] px-3 py-1 text-xs font-semibold text-[var(--ds-text-secondary)]">Pro</span>
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -309,7 +308,7 @@ export default function IconDetailPage() {
                   href="https://create.roblox.com/dashboard/creations?activeTab=Decal"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-[var(--ds-border)] bg-transparent px-5 py-3 text-sm font-semibold text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-[var(--ds-border)] bg-transparent px-5 py-3 text-sm font-semibold text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
                 >
                   <Upload className="h-4 w-4" /> Upload to Roblox Dashboard
                 </a>
@@ -321,7 +320,7 @@ export default function IconDetailPage() {
           {relatedIcons.length > 0 && (
             <section className="mt-32">
               <h2 className="mb-8 flex items-center gap-3 text-2xl font-semibold">
-                <Sparkles className="h-6 w-6 text-[var(--ds-accent)]" /> Related Icons
+                <Box className="h-6 w-6 text-[var(--ds-text-muted)]" /> Related Icons
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
                 {relatedIcons.map((rel) => (

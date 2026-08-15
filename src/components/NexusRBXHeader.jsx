@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import BetaBadge from "./BetaBadge";
-import { 
-  ChevronDown, 
-  Sparkles, 
-  Volume2, 
-  Activity, 
-  User, 
-  LogOut, 
+import {
+  ChevronDown,
+  ImagePlus,
+  Volume2,
+  Activity,
+  User,
+  LogOut,
   Menu,
   X,
   Zap,
@@ -133,7 +133,7 @@ function NexusRBXHeader({
     {
       name: "Icon Generator",
       description: "AI-powered Roblox game assets",
-      icon: Sparkles,
+      icon: ImagePlus,
       href: "/tools/icon-generator",
       premium: true,
       badge: "PRO"

@@ -1,12 +1,12 @@
 import React from "react";
 import {
-  Wand2,
+  SlidersHorizontal,
   Bug,
   Shield,
   Zap,
   Layers,
   FileCode2,
-  Sparkles,
+  LayoutGrid,
   RefreshCw,
 } from "lib/icons";
 
@@ -18,7 +18,7 @@ const REFINE_CHIPS = [
   { label: "Split modules", text: "Split oversized scripts into clearer ModuleScripts with single responsibilities", icon: Layers },
   { label: "Add comments", text: "Add brief comments for non-obvious logic without changing behavior", icon: FileCode2 },
   { label: "Harden remotes", text: "Harden RemoteEvents/RemoteFunctions with cooldowns, ownership checks, and anti-exploit guards", icon: RefreshCw },
-  { label: "Polish UX", text: "Polish player-facing feedback, messaging, and UI polish without redesigning the whole system", icon: Sparkles },
+  { label: "Polish UX", text: "Polish player-facing feedback, messaging, and UI polish without redesigning the whole system", icon: LayoutGrid },
 ];
 
 export default function RefineChips({ onRefine, isRefining = false, className = "" }) {
@@ -31,7 +31,7 @@ export default function RefineChips({ onRefine, isRefining = false, className = 
       aria-label="Quick refine suggestions"
     >
       <span className="shrink-0 inline-flex items-center gap-1 pr-1 text-[10px] font-bold uppercase tracking-widest text-[var(--ds-text-muted)]">
-        <Wand2 className="w-3 h-3 text-[var(--ds-accent)]" />
+        <SlidersHorizontal className="w-3 h-3 text-[var(--ds-accent)]" />
         Quick
       </span>
       {REFINE_CHIPS.map(({ label, text, icon: Icon }) => (

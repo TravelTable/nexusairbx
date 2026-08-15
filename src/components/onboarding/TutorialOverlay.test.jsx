@@ -104,6 +104,7 @@ describe("TutorialOverlay", () => {
     expect(
       screen.getByText(/Open Quick Script or Agent Build when you are ready/i)
     ).toBeTruthy();
+    expect(document.querySelector('[data-placement="docked"]')).toBeTruthy();
     expect(nextStep).not.toHaveBeenCalled();
     expect(Element.prototype.scrollIntoView).not.toHaveBeenCalled();
     expect(document.activeElement).toBe(workspaceButton);
@@ -180,6 +181,7 @@ describe("TutorialOverlay", () => {
     });
 
     await waitFor(() => expect(promptTarget.classList.contains(ACTIVE_TARGET_CLASS)).toBe(true));
+    expect(document.querySelector('[data-placement="bottom"]')).toBeTruthy();
     expect(promptTarget.getAttribute("aria-describedby")).toContain("existing-prompt-help");
     expect(promptTarget.getAttribute("aria-describedby")).toContain("tour-content");
 

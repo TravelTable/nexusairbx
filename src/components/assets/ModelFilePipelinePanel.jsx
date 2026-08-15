@@ -606,15 +606,15 @@ export default function ModelFilePipelinePanel({ notify }) {
     <section className="model-file-pipeline border-t border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)] px-3 py-3 text-xs text-[var(--ds-text)]">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
-          <FileArchive className="h-4 w-4 text-[var(--ds-info)]" />
+          <FileArchive className="h-4 w-4 text-[var(--ds-text-muted)]" />
           <div className="min-w-0">
             <div className="font-black">GLB model files</div>
             <div className="truncate text-[var(--ds-text-muted)]">{activeLabel}</div>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <input ref={fileInputRef} type="file" accept=".glb,model/gltf-binary" className="hidden" onChange={handleFile} />
-          <button type="button" onClick={() => fileInputRef.current?.click()} className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-[var(--ds-border)] px-2 py-1 font-semibold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]">
+          <input ref={fileInputRef} type="file" accept=".glb,model/gltf-binary" className="hidden" onChange={handleFile} aria-label="Choose GLB file" />
+          <button type="button" onClick={() => fileInputRef.current?.click()} className="inline-flex min-h-[44px] items-center gap-1 rounded-lg border border-[var(--ds-border)] px-2 py-1 font-semibold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] focus-ring">
             {busy === "upload" || busy === "complete" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UploadCloud className="h-3.5 w-3.5" />}
             Upload GLB
           </button>
@@ -622,7 +622,7 @@ export default function ModelFilePipelinePanel({ notify }) {
             type="button"
             onClick={() => refresh().catch(() => {})}
             disabled={retryDisabled}
-            className="rounded-lg border border-[var(--ds-border)] p-1.5 text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-[var(--ds-border)] text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent focus-ring"
             aria-label="Refresh model files"
           >
             <RefreshCw className="h-3.5 w-3.5" />
@@ -648,7 +648,7 @@ export default function ModelFilePipelinePanel({ notify }) {
                 type="button"
                 onClick={retryModelPipeline}
                 disabled={retryDisabled}
-                className="inline-flex items-center justify-center gap-1 rounded-md border border-[var(--ds-danger-border)] px-2 py-1 text-xs font-bold text-[var(--ds-danger)] hover:bg-[var(--ds-danger-soft)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex min-h-[44px] items-center justify-center gap-1 rounded-md border border-[var(--ds-danger-border)] px-2 py-1 text-xs font-bold text-[var(--ds-danger)] hover:bg-[var(--ds-danger-soft)] disabled:cursor-not-allowed disabled:opacity-50 focus-ring"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
                 {retryButtonLabel}
@@ -660,16 +660,16 @@ export default function ModelFilePipelinePanel({ notify }) {
 
       {active && (
         <div className="mt-3 flex flex-wrap gap-2">
-          <button type="button" onClick={() => openSourceUrl("preview")} disabled={!VALIDATED.has(active.status) || busy === "preview"} className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-[var(--ds-border)] px-2 py-1 font-semibold text-[var(--ds-text-secondary)] disabled:opacity-40">
+          <button type="button" onClick={() => openSourceUrl("preview")} disabled={!VALIDATED.has(active.status) || busy === "preview"} className="inline-flex min-h-[44px] items-center gap-1 rounded-lg border border-[var(--ds-border)] px-2 py-1 font-semibold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] disabled:opacity-40 focus-ring">
             <Eye className="h-3.5 w-3.5" /> Preview
           </button>
-          <button type="button" onClick={() => openSourceUrl("download")} disabled={!VALIDATED.has(active.status) || busy === "download"} className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-[var(--ds-border)] px-2 py-1 font-semibold text-[var(--ds-text-secondary)] disabled:opacity-40">
+          <button type="button" onClick={() => openSourceUrl("download")} disabled={!VALIDATED.has(active.status) || busy === "download"} className="inline-flex min-h-[44px] items-center gap-1 rounded-lg border border-[var(--ds-border)] px-2 py-1 font-semibold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] disabled:opacity-40 focus-ring">
             <Download className="h-3.5 w-3.5" /> Download
           </button>
-          <button type="button" onClick={cancelActive} disabled={!ACTIVE_MODEL.has(active.status) || busy === "cancel"} className="inline-flex min-h-9 items-center gap-1 rounded-lg border border-[var(--ds-border)] px-2 py-1 font-semibold text-[var(--ds-text-secondary)] disabled:opacity-40">
+          <button type="button" onClick={cancelActive} disabled={!ACTIVE_MODEL.has(active.status) || busy === "cancel"} className="inline-flex min-h-[44px] items-center gap-1 rounded-lg border border-[var(--ds-border)] px-2 py-1 font-semibold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] disabled:opacity-40 focus-ring">
             <Square className="h-3.5 w-3.5" /> Cancel
           </button>
-          <button type="button" onClick={removeModel} disabled={busy === "delete"} className="rounded-lg border border-[var(--ds-border)] p-1.5 text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-danger)]" aria-label="Delete model file">
+          <button type="button" onClick={removeModel} disabled={busy === "delete"} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-[var(--ds-border)] text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-danger)] focus-ring" aria-label="Delete model file">
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -702,26 +702,28 @@ export default function ModelFilePipelinePanel({ notify }) {
               value={uploadName}
               onChange={(event) => setUploadName(event.target.value.slice(0, 50))}
               placeholder={active.originalFilename || "Model name"}
-              className="min-h-9 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-2 py-1 text-[var(--ds-text)]"
+              aria-label="Roblox model name"
+              className="min-h-[44px] rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-2 py-1 text-[var(--ds-text)] focus-ring"
             />
             <input
               value={uploadDescription}
               onChange={(event) => setUploadDescription(event.target.value.slice(0, 1000))}
               placeholder="Description"
-              className="min-h-9 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-2 py-1 text-[var(--ds-text)]"
+              aria-label="Roblox model description"
+              className="min-h-[44px] rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-2 py-1 text-[var(--ds-text)] focus-ring"
             />
-            <button type="button" onClick={() => prepareRobloxUpload(null)} disabled={busy === "roblox_prepare"} className="min-h-9 rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 py-1 font-semibold text-[var(--ds-accent)] disabled:opacity-40">
+            <button type="button" onClick={() => prepareRobloxUpload(null)} disabled={busy === "roblox_prepare"} className="min-h-[44px] rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 py-1 font-semibold text-[var(--ds-accent)] disabled:opacity-40 focus-ring">
               Prepare original
             </button>
           </div>
           {derivatives.some((item) => String(item.status).startsWith("completed")) && (
-            <div className="mt-2 flex flex-wrap gap-1">
+            <div className="mt-2 flex flex-wrap gap-2">
               {derivatives.filter((item) => String(item.status).startsWith("completed")).slice(0, 4).map((item) => (
                 <button
                   key={`upload-${item.id || item.derivativeId}`}
                   type="button"
                   onClick={() => prepareRobloxUpload(item.id || item.derivativeId)}
-                  className="rounded-lg border border-[var(--ds-border)] px-2 py-1 text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]"
+                  className="min-h-[44px] rounded-lg border border-[var(--ds-border)] px-2 py-1 text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] focus-ring"
                 >
                   Prepare derivative {String(item.id || item.derivativeId).slice(0, 8)}
                 </button>
@@ -733,19 +735,19 @@ export default function ModelFilePipelinePanel({ notify }) {
               <div className="font-bold text-[var(--ds-text)]">Review {uploadPrep.uploadName}</div>
               <div className="mt-1">Source: {uploadPrep.sourceType} · {formatBytes(uploadPrep.sourceBytes)} · SHA-256 {uploadPrep.trustedSourceSha256}</div>
               <div>Creator: {uploadPrep.creator?.type} {uploadPrep.creator?.id} · File: {uploadPrep.expectedFilename} · {uploadPrep.expectedMimeType}</div>
-              <label className="mt-2 flex items-start gap-2">
+              <label className="mt-2 flex min-h-[44px] cursor-pointer items-center gap-2 rounded-md focus-within:ring-2 focus-within:ring-[var(--ds-accent-border)]">
                 <input type="checkbox" checked={rightsConfirmed} onChange={(event) => setRightsConfirmed(event.target.checked)} />
                 <span>{uploadPrep.rightsConfirmationText || "I confirm I have rights to upload this model."}</span>
               </label>
-              <label className="mt-1 flex items-start gap-2">
+              <label className="mt-1 flex min-h-[44px] cursor-pointer items-center gap-2 rounded-md focus-within:ring-2 focus-within:ring-[var(--ds-accent-border)]">
                 <input type="checkbox" checked={moderationAcknowledged} onChange={(event) => setModerationAcknowledged(event.target.checked)} />
                 <span>{uploadPrep.moderationWarning || "Roblox moderation/access can remain pending after upload."}</span>
               </label>
               <div className="mt-2 flex flex-wrap gap-2">
-                <button type="button" onClick={confirmRobloxUpload} disabled={!rightsConfirmed || !moderationAcknowledged || busy === "roblox_confirm"} className="min-h-9 rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 py-1 font-semibold text-[var(--ds-accent)] disabled:opacity-40">
+                <button type="button" onClick={confirmRobloxUpload} disabled={!rightsConfirmed || !moderationAcknowledged || busy === "roblox_confirm"} className="min-h-[44px] rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 py-1 font-semibold text-[var(--ds-accent)] disabled:opacity-40 focus-ring">
                   Confirm upload
                 </button>
-                <button type="button" onClick={refreshRobloxUpload} disabled={busy === "roblox_refresh"} className="min-h-9 rounded-lg border border-[var(--ds-border)] px-2 py-1 text-[var(--ds-text-secondary)] disabled:opacity-40">
+                <button type="button" onClick={refreshRobloxUpload} disabled={busy === "roblox_refresh"} className="min-h-[44px] rounded-lg border border-[var(--ds-border)] px-2 py-1 text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] disabled:opacity-40 focus-ring">
                   Refresh
                 </button>
               </div>
@@ -758,7 +760,7 @@ export default function ModelFilePipelinePanel({ notify }) {
               {(currentUpload.state === "submission_unknown" || currentUpload.status === "submission_unknown") && (
                 <div className="mt-1 text-[var(--ds-warning)]">The create request may have reached Roblox. Automatic retry is disabled; use Refresh to reconcile.</div>
               )}
-              <button type="button" onClick={prepareInsertion} disabled={!currentUpload.robloxAssetId || busy === "insertion_prepare"} className="mt-2 min-h-9 rounded-lg border border-[var(--ds-border)] px-2 py-1 font-semibold text-[var(--ds-text-secondary)] disabled:opacity-40">
+              <button type="button" onClick={prepareInsertion} disabled={!currentUpload.robloxAssetId || busy === "insertion_prepare"} className="mt-2 min-h-[44px] rounded-lg border border-[var(--ds-border)] px-2 py-1 font-semibold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] disabled:opacity-40 focus-ring">
                 Prepare Studio insertion
               </button>
             </div>
@@ -767,7 +769,7 @@ export default function ModelFilePipelinePanel({ notify }) {
             <div className="mt-2 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2 text-[var(--ds-text-secondary)]">
               <div>Studio: {insertionReview.experience?.name || insertionReview.experience?.placeId || "paired session"} · Creator: {insertionReview.experience?.creator?.type} {insertionReview.experience?.creator?.id}</div>
               <div>Destination: {insertionReview.insertion?.targetParentPath} · Placement: {statusText(insertionReview.insertion?.placement?.mode)}</div>
-              <button type="button" onClick={confirmInsertion} disabled={busy === "insertion_confirm"} className="mt-2 min-h-9 rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 py-1 font-semibold text-[var(--ds-accent)] disabled:opacity-40">
+              <button type="button" onClick={confirmInsertion} disabled={busy === "insertion_confirm"} className="mt-2 min-h-[44px] rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 py-1 font-semibold text-[var(--ds-accent)] disabled:opacity-40 focus-ring">
                 Confirm insertion
               </button>
             </div>
@@ -783,15 +785,15 @@ export default function ModelFilePipelinePanel({ notify }) {
       {canOptimize && (
         <div className="mt-3 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2">
           <div className="flex flex-wrap items-center gap-2">
-            <select value={profile} onChange={(event) => setProfile(event.target.value)} className="min-h-9 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-2 py-1 text-[var(--ds-text)]">
+            <select value={profile} onChange={(event) => setProfile(event.target.value)} aria-label="Optimization profile" className="min-h-[44px] rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-2 py-1 text-[var(--ds-text)] focus-ring">
               <option value="conservative">Conservative</option>
               <option value="roblox_balanced">Roblox balanced</option>
               <option value="aggressive">Aggressive</option>
             </select>
-            <button type="button" onClick={createPlan} disabled={busy === "plan"} className="min-h-9 rounded-lg border border-[var(--ds-border)] px-2 py-1 font-semibold text-[var(--ds-text-secondary)] disabled:opacity-40">
+            <button type="button" onClick={createPlan} disabled={busy === "plan"} className="min-h-[44px] rounded-lg border border-[var(--ds-border)] px-2 py-1 font-semibold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] disabled:opacity-40 focus-ring">
               Review plan
             </button>
-            <button type="button" onClick={queueDerivative} disabled={!plan || (plan.confirmationRequired && !aggressiveConfirmed) || busy === "derivative"} className="min-h-9 rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 py-1 font-semibold text-[var(--ds-accent)] disabled:opacity-40">
+            <button type="button" onClick={queueDerivative} disabled={!plan || (plan.confirmationRequired && !aggressiveConfirmed) || busy === "derivative"} className="min-h-[44px] rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 py-1 font-semibold text-[var(--ds-accent)] disabled:opacity-40 focus-ring">
               Queue derivative
             </button>
           </div>
@@ -800,7 +802,7 @@ export default function ModelFilePipelinePanel({ notify }) {
               <div>Plan: {plan.planId} · Lossy: {(plan.lossyOperations || []).join(", ") || "none"}</div>
               <div>Tools: {Object.entries(plan.toolVersions || {}).map(([key, value]) => `${key} ${value}`).join(" · ") || "nexusrbx optimizer"}</div>
               {plan.confirmationRequired && (
-                <label className="mt-2 flex items-center gap-2 text-[var(--ds-text-secondary)]">
+                <label className="mt-2 flex min-h-[44px] cursor-pointer items-center gap-2 rounded-md text-[var(--ds-text-secondary)] focus-within:ring-2 focus-within:ring-[var(--ds-accent-border)]">
                   <input type="checkbox" checked={aggressiveConfirmed} onChange={(event) => setAggressiveConfirmed(event.target.checked)} />
                   Confirm aggressive lossy optimization
                 </label>
@@ -820,12 +822,12 @@ export default function ModelFilePipelinePanel({ notify }) {
                   <div className="truncate font-bold">{item.id || item.derivativeId}</div>
                   <div className="text-[var(--ds-text-muted)]">{statusText(item.status)}{item.stage ? ` · ${statusText(item.stage)}` : ""}</div>
                 </div>
-                <div className="flex gap-1">
-                  <button type="button" onClick={() => showDerivativeComparison(item.id || item.derivativeId)} disabled={!String(item.status).startsWith("completed")} className="rounded-lg border border-[var(--ds-border)] px-2 py-1 text-[var(--ds-text-muted)] disabled:opacity-40">Compare</button>
-                  <button type="button" onClick={() => openDerivativeUrl(item.id || item.derivativeId, "derivative_preview")} disabled={!String(item.status).startsWith("completed")} className="rounded-lg border border-[var(--ds-border)] p-1.5 text-[var(--ds-text-muted)] disabled:opacity-40" aria-label="Preview derivative"><Eye className="h-3.5 w-3.5" /></button>
-                  <button type="button" onClick={() => openDerivativeUrl(item.id || item.derivativeId, "derivative_download")} disabled={!String(item.status).startsWith("completed")} className="rounded-lg border border-[var(--ds-border)] p-1.5 text-[var(--ds-text-muted)] disabled:opacity-40" aria-label="Download derivative"><Download className="h-3.5 w-3.5" /></button>
-                  <button type="button" onClick={() => stopDerivative(item.id || item.derivativeId)} disabled={!ACTIVE_DERIVATIVE.has(item.status)} className="rounded-lg border border-[var(--ds-border)] p-1.5 text-[var(--ds-text-muted)] disabled:opacity-40" aria-label="Cancel derivative"><Square className="h-3.5 w-3.5" /></button>
-                  <button type="button" onClick={() => removeDerivative(item.id || item.derivativeId)} className="rounded-lg border border-[var(--ds-border)] p-1.5 text-[var(--ds-text-muted)] hover:text-[var(--ds-danger)]" aria-label="Delete derivative"><Trash2 className="h-3.5 w-3.5" /></button>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => showDerivativeComparison(item.id || item.derivativeId)} disabled={!String(item.status).startsWith("completed")} className="min-h-[44px] rounded-lg border border-[var(--ds-border)] px-2 py-1 text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] disabled:opacity-40 focus-ring">Compare</button>
+                  <button type="button" onClick={() => openDerivativeUrl(item.id || item.derivativeId, "derivative_preview")} disabled={!String(item.status).startsWith("completed")} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-[var(--ds-border)] text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] disabled:opacity-40 focus-ring" aria-label="Preview derivative"><Eye className="h-3.5 w-3.5" /></button>
+                  <button type="button" onClick={() => openDerivativeUrl(item.id || item.derivativeId, "derivative_download")} disabled={!String(item.status).startsWith("completed")} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-[var(--ds-border)] text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] disabled:opacity-40 focus-ring" aria-label="Download derivative"><Download className="h-3.5 w-3.5" /></button>
+                  <button type="button" onClick={() => stopDerivative(item.id || item.derivativeId)} disabled={!ACTIVE_DERIVATIVE.has(item.status)} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-[var(--ds-border)] text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] disabled:opacity-40 focus-ring" aria-label="Cancel derivative"><Square className="h-3.5 w-3.5" /></button>
+                  <button type="button" onClick={() => removeDerivative(item.id || item.derivativeId)} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-[var(--ds-border)] text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-danger)] focus-ring" aria-label="Delete derivative"><Trash2 className="h-3.5 w-3.5" /></button>
                 </div>
               </div>
             ))}
@@ -843,7 +845,7 @@ export default function ModelFilePipelinePanel({ notify }) {
         </div>
       )}
 
-      {link && <a href={link} target="_blank" rel="noreferrer" className="mt-2 block truncate text-[var(--ds-info)] hover:underline">{link}</a>}
+      {link && <a href={link} target="_blank" rel="noreferrer" className="mt-2 inline-flex min-h-[44px] max-w-full items-center truncate rounded-md text-[var(--ds-accent)] hover:underline focus-ring">{link}</a>}
     </section>
   );
 }

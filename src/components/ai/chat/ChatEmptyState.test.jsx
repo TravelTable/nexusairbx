@@ -4,25 +4,29 @@ import { fireEvent, render, screen } from "@testing-library/react";
 
 import ChatEmptyState from "./ChatEmptyState";
 
-test("presents a compact creator-workshop path and starter builds", () => {
+test("presents a calm, text-led Roblox construction start", () => {
   const onQuickStart = jest.fn();
   const { container } = render(<ChatEmptyState onQuickStart={onQuickStart} />);
   const cards = screen.getAllByRole("button");
-  const mark = container.querySelector('img[src="/nexus-mark.svg"]');
+  const mark = container.querySelector(".chat-empty-state__mark");
 
-  expect(screen.getByRole("heading", { name: "What are we building?" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Build anything in Roblox." })).toBeVisible();
   expect(mark).toBeInTheDocument();
+  expect(mark).toHaveAttribute("data-nexus-display-icon", "build");
+  expect(container.querySelectorAll("[data-nexus-display-icon]")).toHaveLength(4);
+  expect(Array.from(container.querySelectorAll(".chat-empty-state__starter-icon"), (icon) => icon.dataset.nexusDisplayIcon)).toEqual([
+    "build",
+    "edit",
+    "debug",
+  ]);
   expect(screen.queryByRole("group", { name: "Current build context" })).not.toBeInTheDocument();
-  expect(screen.getByRole("list", { name: "Project build path" })).toHaveTextContent(
-    "IdeaPlanBuildPlaytest",
-  );
   expect(cards).toHaveLength(3);
-  expect(cards[0]).toHaveClass("min-h-36", "rounded-[16px]");
-  expect(container.querySelector(".overflow-x-auto")).not.toBeInTheDocument();
-  expect(screen.getByText(/Build a floating-island adventure/i)).toHaveClass("line-clamp-2");
+  expect(cards[0]).toHaveClass("chat-empty-state__starter");
+  expect(container.querySelector(".grid.sm\\:grid-cols-3")).not.toBeInTheDocument();
+  expect(screen.getByText("Design a complete simulator loop")).toBeVisible();
 
-  fireEvent.click(screen.getByRole("button", { name: /Floating-island quest/i }));
-  expect(onQuickStart).toHaveBeenCalledWith(expect.stringContaining("floating-island adventure"));
+  fireEvent.click(screen.getByRole("button", { name: /Design a complete simulator loop/i }));
+  expect(onQuickStart).toHaveBeenCalledWith(expect.stringContaining("Roblox simulator"));
 });
 
 test("shows only authoritative project, place, and Studio context", () => {
@@ -82,6 +86,6 @@ test("offers build templates only when the action is available", () => {
   expect(screen.queryByRole("button", { name: /Browse build templates/i })).not.toBeInTheDocument();
 
   rerender(<ChatEmptyState onQuickStart={jest.fn()} onOpenTemplates={onOpenTemplates} />);
-  fireEvent.click(screen.getByRole("button", { name: /Browse build templates/i }));
+  fireEvent.click(screen.getByRole("button", { name: /Browse templates/i }));
   expect(onOpenTemplates).toHaveBeenCalledTimes(1);
 });

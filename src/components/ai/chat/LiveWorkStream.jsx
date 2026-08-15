@@ -3,13 +3,12 @@ import {
   CheckCircle2,
   FileCode2,
   Loader2,
-  RotateCcw,
   ShieldAlert,
   TerminalSquare,
   Wrench,
+  Bot,
   XCircle,
 } from "lib/icons";
-import { BrainIcon } from "lucide-react";
 import { kindMeta } from "../workspace/workspaceMeta";
 import {
   ChainOfThought,
@@ -20,6 +19,9 @@ import {
 import StudioTargetPicker from "../workspace/StudioTargetPicker";
 import StudioRunBlockNotice from "../workspace/StudioRunBlockNotice";
 import AnimatedStatusText from "./AnimatedStatusText";
+import NexusDisplayIcon from "../../icons/NexusDisplayIcon";
+import NBlockLoader from "../../ui/NBlockLoader";
+import "./LiveWorkStream.css";
 
 function cleanText(value = "") {
   return String(value || "").replace(/<\/?(thinking|progress)>/gi, "").trim();
@@ -99,7 +101,7 @@ function stepIconFor(item, motionStatus) {
   if (item.type === "file_chunk" || item.type === "file_ready" || item.type === "file_start") {
     return kindMeta(item.kind).icon || FileCode2;
   }
-  return BrainIcon;
+  return Bot;
 }
 
 function stepDescription(item) {
@@ -118,7 +120,6 @@ export default function LiveWorkStream({
   approvingStepId,
   onSelectStudioTarget,
   selectingStudioTargetId,
-  embedded = false,
   hideThinkingRows = false,
 }) {
   const streamState = pendingMessage?.streamState;
@@ -167,16 +168,18 @@ export default function LiveWorkStream({
       : "Starting work...";
 
   return (
-    <div className={embedded ? "overflow-hidden px-4 py-4" : "rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] shadow-2xl overflow-hidden px-4 py-4"}>
+    <div className="nexus-build-loader px-5 py-5">
       <ChainOfThought defaultOpen className="w-full space-y-3">
-        <ChainOfThoughtHeader>
-          {reconnecting ? (
-            <span className="inline-flex items-center gap-2">
-              <RotateCcw className="size-3.5 motion-safe:animate-spin" />
+        <ChainOfThoughtHeader className="nexus-build-loader__header">
+          {pendingMessage?.targetSelection ? null : (
+            <span className="nexus-build-loader__status">
+              {reconnecting ? (
+                <NexusDisplayIcon name="debug" size={32} className="h-8 w-8" />
+              ) : (
+                <NBlockLoader size={44} aria-label="Nexus is building" />
+              )}
               <AnimatedStatusText value={headerLabel} />
             </span>
-          ) : pendingMessage?.targetSelection ? null : (
-            <AnimatedStatusText value={headerLabel} />
           )}
         </ChainOfThoughtHeader>
         <ChainOfThoughtContent>

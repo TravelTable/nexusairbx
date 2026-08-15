@@ -1,0 +1,57 @@
+.nexus-build-loader {
+  min-height: 220px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  -webkit-backdrop-filter: blur(28px) saturate(155%);
+  backdrop-filter: blur(28px) saturate(155%);
+}
+
+.nexus-build-loader__status {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--ds-text);
+  text-align: center;
+}
+
+.nexus-build-loader__header {
+  display: block !important;
+}
+
+.nexus-build-loader__header > svg {
+  display: none;
+}
+
+.nexus-build-loader__header > span {
+  display: block;
+  width: 100%;
+  flex: none;
+  text-align: center;
+}
+
+.nexus-build-loader__header .animated-status-text {
+  text-align: center;
+}
+
+@media (max-width: 599px) {
+  .nexus-build-loader {
+    min-height: 180px;
+    border-radius: 20px;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .nexus-build-loader {
+    background: var(--ds-surface-1);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}

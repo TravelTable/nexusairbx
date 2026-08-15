@@ -94,7 +94,7 @@ export default function StudioAgentPanel({ user, chatId, notify }) {
   }, [autoAdvance, busy, notify, pendingStep, run?.id, runDone]);
 
   return (
-    <section className="mx-4 mt-3 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] backdrop-blur-xl overflow-hidden">
+    <section className="mx-4 mt-3 overflow-hidden rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)]">
       <div className="flex items-center justify-between gap-3 px-3 py-2.5 border-b border-[var(--ds-border-subtle)]">
         <div className="flex items-center gap-2 min-w-0">
           <div className="p-1.5 rounded-lg bg-[var(--ds-accent-soft)] text-[var(--ds-accent)] shrink-0">

@@ -10,7 +10,7 @@ export default function HomepageFooter() {
             <img src="/nexus-mark.svg" alt="" width="28" height="28" />
             <span>NexusRBX</span>
           </a>
-          <p>Build the game in your head. Keep the creative decisions and the upside.</p>
+          <p>Talk to the project, understand the work, inspect the result, and keep building.</p>
         </div>
         <nav className={styles.footerNav} aria-label="Footer">
           {homepageFooterLinks.map((link) => (

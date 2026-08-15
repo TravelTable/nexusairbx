@@ -1,17 +1,28 @@
 .nexus-project-tree {
   --tree-row-hover: var(--ds-fill-hover);
   --tree-row-selected: var(--ds-fill-selected);
-  background:
-    linear-gradient(color-mix(in srgb, var(--ds-accent-soft) 18%, transparent), transparent 92px),
-    var(--ds-bg-sidebar);
+  background: var(--ds-bg-sidebar);
 }
 
 .nexus-project-tree__new-chat {
-  box-shadow: 0 3px 0 color-mix(in srgb, var(--ds-accent-pressed) 58%, var(--ds-bg-sidebar));
+  box-shadow: none;
 }
 
 .nexus-project-tree__new-chat:active {
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--ds-accent-pressed) 58%, var(--ds-bg-sidebar));
+  box-shadow: none;
+}
+
+.nexus-project-tree__brand-mark {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 1px solid var(--ds-border-strong);
+  border-radius: 7px;
+  color: var(--ds-text);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: -0.08em;
 }
 
 .nexus-project-tree-scroll {
@@ -55,7 +66,7 @@
   left: 3px;
   width: 3px;
   border-radius: 999px;
-  background: var(--ds-accent);
+  background: var(--ds-text-secondary);
   content: "";
   opacity: 0;
   transform: scaleY(0.45);
@@ -74,7 +85,7 @@
 .nexus-tree-row[data-selected="true"] {
   background: var(--tree-row-selected);
   color: var(--ds-text);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ds-accent-border) 72%, transparent);
+  box-shadow: inset 0 0 0 1px var(--ds-border-subtle);
 }
 
 .nexus-tree-row[data-selected="true"]::before {
@@ -148,8 +159,8 @@
 }
 
 .nexus-project-sidebar {
-  flex-basis: 288px;
-  width: 288px;
+  flex-basis: 248px;
+  width: 248px;
   transition:
     flex-basis 220ms var(--ease-product),
     width 220ms var(--ease-product),
@@ -169,8 +180,8 @@
 
 @media (min-width: 1200px) and (max-width: 1499px) {
   .nexus-project-sidebar {
-    flex-basis: 264px;
-    width: 264px;
+    flex-basis: 232px;
+    width: 232px;
   }
 }
 
@@ -181,7 +192,7 @@
     left: 0;
     z-index: 50;
     flex-basis: auto;
-    width: 288px;
+    width: min(288px, 88vw);
     opacity: 1;
     transform: translateX(0);
     transition:
@@ -191,7 +202,7 @@
 
   .nexus-project-sidebar[data-open="false"] {
     flex-basis: auto;
-    width: 288px;
+    width: min(288px, 88vw);
     opacity: 0;
     transform: translateX(-16px);
   }
@@ -235,6 +246,39 @@
 
 .nexus-tree-row-in {
   animation: nexus-tree-row-in var(--motion-standard) var(--ease-product) both;
+}
+
+.nexus-project-tree__footer {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 2px;
+  border-top: 1px solid var(--ds-border-subtle);
+  padding: 8px;
+}
+
+.nexus-project-tree__destination {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 9px;
+  border-radius: 8px;
+  padding-inline: 9px;
+  color: var(--ds-text-muted);
+  font-size: 11px;
+  font-weight: 550;
+  text-decoration: none;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.nexus-project-tree__destination:hover {
+  background: var(--ds-fill-hover);
+  color: var(--ds-text);
+}
+
+@media (min-width: 1200px) {
+  .nexus-project-tree__destination {
+    min-height: 38px;
+  }
 }
 
 @keyframes nexus-tree-row-in {

@@ -58,7 +58,8 @@ export default function VerifyEmailPage() {
   });
   const [message, setMessage] = useState("Check your inbox and verify your email address to continue.");
   const [cooldown, setCooldown] = useState(0);
-  const [busy, setBusy] = useState(false);
+  const [busyAction, setBusyAction] = useState("");
+  const busy = Boolean(busyAction);
 
   useEffect(() => {
     if (!auth.currentUser) {
@@ -75,7 +76,7 @@ export default function VerifyEmailPage() {
   const checkVerification = async () => {
     const user = auth.currentUser;
     if (!user) return navigate("/signin", { replace: true, state: returnPathState(returnPath) });
-    setBusy(true);
+    setBusyAction("check");
     try {
       await reload(user);
       if (auth.currentUser?.emailVerified) {
@@ -86,14 +87,14 @@ export default function VerifyEmailPage() {
       }
       setMessage("Your email is not verified yet. Finish the verification link, then try again.");
     } finally {
-      setBusy(false);
+      setBusyAction("");
     }
   };
 
   const resend = async () => {
     const user = auth.currentUser;
     if (!user || cooldown > 0) return;
-    setBusy(true);
+    setBusyAction("resend");
     try {
       const response = await authedFetch("/api/auth/verification-email/resend", { method: "POST" });
       if (!response.ok) {
@@ -111,19 +112,30 @@ export default function VerifyEmailPage() {
     } catch (_) {
       setMessage("We could not send another email right now. Please try again later.");
     } finally {
-      setBusy(false);
+      setBusyAction("");
     }
   };
 
   return (
-    <NexusAuthShell title="Verify your email" description="Verification protects NexusRBX accounts and paid services from automated abuse.">
+    <NexusAuthShell title="Verify your email" description="Confirm your address to continue safely into your Nexus workspace.">
       <div className="space-y-5">
-        <p className="rounded-[12px] bg-[var(--ds-fill-subtle)] px-5 py-4 text-sm leading-7 text-[var(--ds-text-secondary)]" role="status">{message}</p>
-        <button className="min-h-12 w-full rounded-full bg-[var(--ds-accent)] px-6 py-2 font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-bg-canvas)] disabled:opacity-60" disabled={busy} onClick={checkVerification} type="button">
-          I have verified my email
+        <p
+          className="rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-4 py-3 text-sm leading-6 text-[var(--ds-text-secondary)]"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {message}
+        </p>
+        <button className="min-h-12 w-full rounded-[10px] bg-[var(--ds-text)] px-6 py-2 font-semibold text-[var(--ds-bg-canvas)] transition-colors duration-150 hover:bg-[var(--ds-text-secondary)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-bg-canvas)] disabled:bg-[var(--ds-fill-active)] disabled:text-[var(--ds-text-muted)] motion-reduce:transition-none" disabled={busy} onClick={checkVerification} type="button">
+          {busyAction === "check" ? "Checking verification…" : "I have verified my email"}
         </button>
-        <button className="min-h-12 w-full rounded-full border border-[var(--ds-border)] bg-transparent px-6 py-2 font-semibold text-[var(--ds-text)] hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-fill-hover)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-bg-canvas)] disabled:opacity-60" disabled={busy || cooldown > 0} onClick={resend} type="button">
-          {cooldown > 0 ? `Resend available in ${cooldown}s` : "Resend verification email"}
+        <button className="min-h-12 w-full rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-1)] px-6 py-2 font-semibold text-[var(--ds-text)] transition-colors duration-150 hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-surface-2)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-bg-canvas)] disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none" disabled={busy || cooldown > 0} onClick={resend} type="button">
+          {busyAction === "resend"
+            ? "Sending verification email…"
+            : cooldown > 0
+              ? `Resend available in ${cooldown}s`
+              : "Resend verification email"}
         </button>
       </div>
     </NexusAuthShell>

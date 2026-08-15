@@ -4,10 +4,10 @@ import SkipToMainContent from "../../src/components/site/SkipToMainContent";
 import { homepageNavigation, homepageResourceNavigation } from "../../src/content/siteNavigation";
 
 const navLinkClass =
-  "inline-flex min-h-11 items-center rounded-full px-3 text-[13px] font-medium text-[var(--ds-text-secondary)] transition-[background-color,color,transform] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] motion-reduce:transform-none";
+  "inline-flex min-h-11 items-center rounded-[7px] px-3 text-[13px] font-medium text-[var(--ds-text-secondary)] transition-[background-color,color] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)]";
 
 const dropdownLinkClass =
-  "flex min-h-11 items-center rounded-lg px-3 text-[13px] text-[var(--ds-text-secondary)] transition-[background-color,color,transform] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] motion-reduce:transform-none";
+  "flex min-h-11 items-center rounded-[7px] px-3 text-[13px] text-[var(--ds-text-secondary)] transition-[background-color,color] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)]";
 
 function DesktopGroup({ label, children }) {
   return (
@@ -20,7 +20,7 @@ function DesktopGroup({ label, children }) {
           ▾
         </span>
       </summary>
-      <div className="absolute left-0 top-11 z-50 w-56 origin-top-left rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-2 shadow-xl shadow-black/10">
+      <div className="absolute left-0 top-11 z-50 w-56 origin-top-left rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-2 shadow-[var(--ds-shadow-overlay)]">
         {children}
       </div>
     </details>
@@ -33,20 +33,18 @@ export default function PublicHeader({ showSkipLink = false, homepage = false, o
   return (
     <PublicAccountProvider>
       <header
-        className={`${isHomepage
-          ? "sticky top-0 z-50 border-b border-[var(--ds-border-subtle)] bg-[color-mix(in_srgb,var(--ds-surface-overlay)_92%,transparent)] backdrop-blur-xl"
-          : "sticky top-0 z-50 border-b border-[var(--ds-border-subtle)] bg-[color-mix(in_srgb,var(--ds-surface-overlay)_94%,transparent)] backdrop-blur-xl"} text-[var(--ds-text)]`}
+        className="sticky top-0 z-50 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] text-[var(--ds-text)]"
         data-public-header
         data-overlay={isHomepage ? "true" : undefined}
       >
       {showSkipLink ? <SkipToMainContent /> : null}
-      <div className={`${isHomepage ? "max-w-[82rem]" : "max-w-7xl"} mx-auto flex h-14 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8`} data-public-header-inner>
+      <div className={`${isHomepage ? "max-w-[88rem]" : "max-w-7xl"} mx-auto flex h-16 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8`} data-public-header-inner>
         <a
           href="/"
-          className="inline-flex min-h-11 min-w-0 items-center gap-2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)]"
+          className="inline-flex min-h-11 min-w-0 items-center gap-2 rounded-[8px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)]"
           aria-label="NexusRBX home"
         >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)]">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-[8px] border border-[var(--ds-border)] bg-transparent">
             <img src="/nexus-mark.svg" alt="" className="h-6 w-6 object-contain" width="24" height="24" />
           </span>
           <span className="truncate text-[13px] font-semibold tracking-[-0.01em] text-[var(--ds-text)]">NexusRBX</span>
@@ -87,7 +85,7 @@ export default function PublicHeader({ showSkipLink = false, homepage = false, o
               <PublicAccountState />
             </div>
             {isHomepage ? (
-              <a className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--ds-accent)] px-5 text-[13px] font-semibold text-[var(--ds-accent-foreground)] transition-[background-color,transform] hover:bg-[var(--ds-accent-hover)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] motion-reduce:transform-none" href="/#product">
+              <a className="inline-flex h-11 items-center justify-center rounded-[8px] bg-[var(--ds-text)] px-5 text-[13px] font-semibold text-[var(--ds-bg-canvas)] transition-[background-color,transform] hover:bg-[var(--ds-text-secondary)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] motion-reduce:transform-none" href="/ai">
                 Start building
               </a>
             ) : null}
@@ -95,11 +93,11 @@ export default function PublicHeader({ showSkipLink = false, homepage = false, o
         </div>
 
         <details className="group relative lg:hidden">
-          <summary className="flex h-11 cursor-pointer list-none items-center rounded-full border border-[var(--ds-border-strong)] bg-[var(--ds-fill-subtle)] px-3 text-[13px] font-medium text-[var(--ds-text)] transition-[background-color,transform] hover:bg-[var(--ds-fill-hover)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] motion-reduce:transform-none [&::-webkit-details-marker]:hidden">
+          <summary className="flex h-11 cursor-pointer list-none items-center rounded-[8px] border border-[var(--ds-border-strong)] bg-[var(--ds-fill-subtle)] px-3 text-[13px] font-medium text-[var(--ds-text)] transition-[background-color,transform] hover:bg-[var(--ds-fill-hover)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] motion-reduce:transform-none [&::-webkit-details-marker]:hidden">
             <span className="group-open:hidden">Menu</span>
             <span className="hidden group-open:inline">Close</span>
           </summary>
-          <div className="absolute right-0 top-12 z-50 max-h-[calc(100vh-5rem)] w-[min(25rem,calc(100vw-2rem))] origin-top-right overflow-y-auto rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-3 shadow-xl shadow-black/10">
+          <div className="absolute right-0 top-12 z-50 max-h-[calc(100vh-5rem)] w-[min(25rem,calc(100vw-2rem))] origin-top-right overflow-y-auto rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-3 shadow-[var(--ds-shadow-overlay)]">
             <nav className="grid gap-4" aria-label="Mobile navigation" data-public-nav>
               {isHomepage ? (
                 <div className="grid gap-0.5">
@@ -141,7 +139,7 @@ export default function PublicHeader({ showSkipLink = false, homepage = false, o
                 <PublicAccountState mobile />
               </div>
               {isHomepage ? (
-                <a className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--ds-accent)] px-5 text-[13px] font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)]" href="/#product">
+                <a className="inline-flex min-h-11 items-center justify-center rounded-[8px] bg-[var(--ds-text)] px-5 text-[13px] font-semibold text-[var(--ds-bg-canvas)] hover:bg-[var(--ds-text-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)]" href="/ai">
                   Start building
                 </a>
               ) : null}

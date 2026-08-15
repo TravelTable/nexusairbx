@@ -54,7 +54,7 @@ describe("RobloxAssetTray", () => {
       />
     );
 
-    await waitFor(() => expect(screen.getByText("Coin icon")).toBeTruthy());
+    expect(await screen.findByText("Coin icon")).toBeTruthy();
 
     expect(listAssets).toHaveBeenCalledWith({
       scope: "project",
@@ -62,7 +62,10 @@ describe("RobloxAssetTray", () => {
       sort: "updated_desc",
       limit: 8,
     });
+    expect(screen.getByRole("button", { name: "Refresh asset library" }).className).toContain("min-h-[44px]");
+    expect(screen.getByRole("button", { name: "Refresh asset library" }).className).toContain("min-w-[44px]");
     expect(screen.getByRole("button", { name: "Retry Upload" }).disabled).toBe(true);
+    expect(screen.getByRole("button", { name: "Retry Upload" }).className).toContain("min-h-[44px]");
     expect(screen.getByText("Auto Upload Assets is off. Assets stay in NexusRBX until you enable it.")).toBeTruthy();
     expect(screen.getByText("Ready to publish")).toBeTruthy();
     expect(screen.getByText("Roblox processing")).toBeTruthy();

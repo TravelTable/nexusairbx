@@ -1,0 +1,130 @@
+.nexus-studio-root,
+.nexus-studio-page,
+.nexus-studio-layout,
+.nexus-studio-main {
+  min-width: 0;
+  min-height: 0;
+}
+
+.nexus-studio-root {
+  background: var(--ds-bg-workspace);
+}
+
+.nexus-project-sidebar {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border-right-color: rgba(255, 255, 255, 0.16) !important;
+  border-radius: 0 0 28px 0;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.028) 55%, rgba(255, 255, 255, 0.042)) !important;
+  box-shadow:
+    24px 0 56px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset -1px 0 0 rgba(255, 255, 255, 0.045);
+  -webkit-backdrop-filter: blur(30px) saturate(170%) brightness(1.03);
+  backdrop-filter: blur(30px) saturate(170%) brightness(1.03);
+}
+
+.nexus-project-sidebar::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(from 210deg at 50% 50%, rgba(255,255,255,.05), rgba(255,255,255,.42) 12%, rgba(255,255,255,.08) 24%, rgba(255,255,255,.02) 50%, rgba(255,255,255,.24) 76%, rgba(255,255,255,.05));
+  content: "";
+  pointer-events: none;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.85;
+}
+
+.nexus-project-sidebar::after {
+  position: absolute;
+  z-index: -1;
+  width: 72%;
+  height: 34%;
+  left: -22%;
+  top: -8%;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, rgba(255,255,255,.22), rgba(255,255,255,.055) 42%, transparent 70%);
+  content: "";
+  filter: blur(8px);
+  transform: rotate(-18deg);
+  animation: nexus-sidebar-glass-breathe 7s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+.nexus-project-sidebar > * {
+  position: relative;
+  z-index: 1;
+}
+
+.nexus-project-sidebar .nexus-project-tree {
+  background: transparent !important;
+}
+
+@keyframes nexus-sidebar-glass-breathe {
+  to {
+    opacity: 0.6;
+    transform: translate(18px, 10px) rotate(-8deg) scale(1.08);
+  }
+}
+
+.nexus-studio-page {
+  height: 100%;
+  background: var(--ds-bg-workspace);
+}
+
+.nexus-studio-main {
+  position: relative;
+  isolation: isolate;
+  background: var(--ds-bg-workspace);
+}
+
+.nexus-commandbar__mode,
+.nexus-commandbar__model,
+.nexus-commandbar__studio {
+  display: inline-flex;
+  min-width: 0;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+.nexus-commandbar__model {
+  max-width: 150px;
+}
+
+@media (max-width: 960px) {
+  .nexus-commandbar__model {
+    display: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .nexus-commandbar__mode {
+    display: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .nexus-studio-main {
+    outline: 1px solid var(--ds-border-strong);
+    outline-offset: -1px;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .nexus-project-sidebar {
+    background: var(--ds-bg-sidebar) !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nexus-project-sidebar::after {
+    animation: none;
+  }
+}

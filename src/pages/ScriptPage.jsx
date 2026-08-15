@@ -7,7 +7,7 @@ import {
   Share2,
   ArrowLeft,
   Loader,
-  Wand2,
+  SlidersHorizontal,
   Info,
   ListChecks,
   X,
@@ -208,7 +208,7 @@ export default function ScriptPage() {
     <TooltipProvider>
       <div className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-[var(--ds-bg-canvas)] text-[var(--ds-text)]">
         {/* Script action bar */}
-        <div className="z-20 shrink-0 bg-[var(--ds-surface-overlay)] backdrop-blur-md">
+        <div className="z-20 shrink-0 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-bg-canvas)]">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-8 lg:px-14">
             <div className="flex items-center gap-3 min-w-0">
               <button
@@ -356,7 +356,7 @@ export default function ScriptPage() {
                     {aiLoading && aiType === "improve" ? (
                       <Loader className="h-4 w-4 animate-spin text-[var(--ds-plan)]" />
                     ) : (
-                      <Wand2 className="h-4 w-4 text-[var(--ds-plan)]" />
+                      <SlidersHorizontal className="h-4 w-4 text-[var(--ds-plan)]" />
                     )}
                     <span className="text-[10px] uppercase font-bold tracking-wider">Improve</span>
                   </Button>

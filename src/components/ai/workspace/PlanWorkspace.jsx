@@ -15,13 +15,13 @@ import {
   RotateCcw,
   Save,
   Send,
-  Sparkles,
   Square,
   Trash2,
   XCircle,
 } from "lib/icons";
 import usePlanWorkspace, { isPlanExecutionActive } from "../../../hooks/usePlanWorkspace";
 import { PLAN_SECTION_DEFINITIONS, PLAN_TEMPLATES } from "../../../lib/workflowPlan";
+import NexusDisplayIcon from "../../icons/NexusDisplayIcon";
 
 const cx = (...values) => values.filter(Boolean).join(" ");
 const isEditingDisabled = (controller) => (
@@ -113,7 +113,7 @@ function PlanItemEditor({ item, index, count, locked, onChange, onRemove, onMove
             disabled={locked}
             aria-label={`Item ${index + 1} title`}
             placeholder="Describe the result or action"
-            className="w-full rounded-md border border-transparent bg-transparent px-2 py-1.5 text-sm font-medium text-[var(--ds-text)] outline-none transition-colors hover:border-[var(--ds-border-subtle)] focus:border-[var(--ds-accent-border)] focus:bg-[var(--ds-fill-subtle)] disabled:cursor-not-allowed disabled:opacity-70"
+            className="min-h-[44px] w-full rounded-md border border-transparent bg-transparent px-2 py-1.5 text-sm font-medium text-[var(--ds-text)] outline-none transition-colors hover:border-[var(--ds-border-subtle)] focus:border-[var(--ds-accent-border)] focus:bg-[var(--ds-fill-subtle)] disabled:cursor-not-allowed disabled:opacity-70"
           />
           {(item.details || !locked) && (
             <textarea
@@ -123,15 +123,15 @@ function PlanItemEditor({ item, index, count, locked, onChange, onRemove, onMove
               aria-label={`Item ${index + 1} details`}
               placeholder="Optional details, constraints, or expected evidence"
               rows={item.details ? 2 : 1}
-              className="w-full resize-y rounded-md border border-transparent bg-transparent px-2 py-1 text-xs leading-relaxed text-[var(--ds-text-secondary)] outline-none transition-colors hover:border-[var(--ds-border-subtle)] focus:border-[var(--ds-accent-border)] focus:bg-[var(--ds-fill-subtle)] disabled:cursor-not-allowed disabled:opacity-70"
+              className="min-h-[44px] w-full resize-y rounded-md border border-transparent bg-transparent px-2 py-1 text-xs leading-relaxed text-[var(--ds-text-secondary)] outline-none transition-colors hover:border-[var(--ds-border-subtle)] focus:border-[var(--ds-accent-border)] focus:bg-[var(--ds-fill-subtle)] disabled:cursor-not-allowed disabled:opacity-70"
             />
           )}
         </div>
         {!locked && (
-          <div className="flex shrink-0 items-center gap-0.5">
-            <button type="button" disabled={index === 0} onClick={() => onMove(itemId, "up")} className="flex min-h-9 min-w-9 items-center justify-center rounded-md text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] disabled:opacity-25 focus-ring" aria-label={`Move item ${index + 1} up`}><ArrowUp className="h-3.5 w-3.5" /></button>
-            <button type="button" disabled={index === count - 1} onClick={() => onMove(itemId, "down")} className="flex min-h-9 min-w-9 items-center justify-center rounded-md text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] disabled:opacity-25 focus-ring" aria-label={`Move item ${index + 1} down`}><ChevronDown className="h-3.5 w-3.5" /></button>
-            <button type="button" onClick={() => onRemove(itemId)} className="flex min-h-9 min-w-9 items-center justify-center rounded-md text-[var(--ds-text-muted)] hover:bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] hover:text-[var(--ds-danger)] focus-ring" aria-label={`Remove item ${index + 1}`}><Trash2 className="h-3.5 w-3.5" /></button>
+          <div className="flex shrink-0 items-center gap-2">
+            <button type="button" disabled={index === 0} onClick={() => onMove(itemId, "up")} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] disabled:opacity-25 focus-ring" aria-label={`Move item ${index + 1} up`}><ArrowUp className="h-3.5 w-3.5" /></button>
+            <button type="button" disabled={index === count - 1} onClick={() => onMove(itemId, "down")} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] disabled:opacity-25 focus-ring" aria-label={`Move item ${index + 1} down`}><ChevronDown className="h-3.5 w-3.5" /></button>
+            <button type="button" onClick={() => onRemove(itemId)} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-[var(--ds-text-muted)] hover:bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] hover:text-[var(--ds-danger)] focus-ring" aria-label={`Remove item ${index + 1}`}><Trash2 className="h-3.5 w-3.5" /></button>
           </div>
         )}
       </div>
@@ -168,7 +168,7 @@ function PlanSection({ definition, controller }) {
           type="button"
           disabled={isEditingDisabled(controller)}
           onClick={(event) => { event.preventDefault(); controller.setSectionLocked(definition.id, !locked); }}
-          className={cx("flex min-h-9 min-w-9 items-center justify-center rounded-md disabled:cursor-not-allowed disabled:opacity-40 focus-ring", locked ? " bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)]  text-[var(--ds-warning)] " : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]")}
+          className={cx("flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md disabled:cursor-not-allowed disabled:opacity-40 focus-ring", locked ? " bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)]  text-[var(--ds-warning)] " : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]")}
           aria-label={`${locked ? "Unlock" : "Lock"} ${definition.label}`}
           aria-pressed={locked}
         >
@@ -178,17 +178,17 @@ function PlanSection({ definition, controller }) {
           type="button"
           disabled={editingDisabled || regenerating}
           onClick={(event) => { event.preventDefault(); setShowRegenerate((open) => !open); }}
-          className="flex min-h-9 min-w-9 items-center justify-center rounded-md text-[var(--ds-text-muted)] hover:bg-[var(--ds-accent-soft)] hover:text-[var(--ds-accent)] disabled:cursor-not-allowed disabled:opacity-30 focus-ring"
+          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-[var(--ds-text-muted)] hover:bg-[var(--ds-accent-soft)] hover:text-[var(--ds-accent)] disabled:cursor-not-allowed disabled:opacity-30 focus-ring"
           aria-label={`Regenerate ${definition.label}`}
         >
-          {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+          {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
         </button>
       </summary>
       <div className="border-t border-[var(--ds-border-subtle)] px-3 pb-3 pt-2.5">
         {showRegenerate && !editingDisabled && (
           <div className="mb-3 flex flex-col gap-2 rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] p-2 sm:flex-row">
-            <input value={instruction} onChange={(event) => setInstruction(event.target.value)} placeholder="Optional direction for this section" className="min-h-[36px] min-w-0 flex-1 rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2.5 text-xs text-[var(--ds-text)] outline-none focus:border-[var(--ds-accent-border)]" aria-label={`Regeneration instruction for ${definition.label}`} />
-            <button type="button" disabled={regenerating} onClick={runRegeneration} className="min-h-[36px] rounded-md bg-[var(--ds-accent)] px-3 text-xs font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] disabled:opacity-50 focus-ring">Regenerate section</button>
+            <input value={instruction} onChange={(event) => setInstruction(event.target.value)} placeholder="Optional direction for this section" className="min-h-[44px] min-w-0 flex-1 rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2.5 text-xs text-[var(--ds-text)] outline-none focus:border-[var(--ds-accent-border)]" aria-label={`Regeneration instruction for ${definition.label}`} />
+            <button type="button" disabled={regenerating} onClick={runRegeneration} className="min-h-[44px] rounded-md bg-[var(--ds-accent)] px-3 text-xs font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] disabled:opacity-50 focus-ring">Regenerate section</button>
           </div>
         )}
         {definition.kind === "text" ? (
@@ -199,7 +199,7 @@ function PlanSection({ definition, controller }) {
             rows={3}
             aria-label={definition.label}
             placeholder="State the intended outcome clearly"
-            className="w-full resize-y rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-3 py-2 text-sm leading-relaxed text-[var(--ds-text)] outline-none focus:border-[var(--ds-accent-border)] disabled:cursor-not-allowed disabled:opacity-70"
+            className="min-h-[44px] w-full resize-y rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-3 py-2 text-sm leading-relaxed text-[var(--ds-text)] outline-none focus:border-[var(--ds-accent-border)] disabled:cursor-not-allowed disabled:opacity-70"
           />
         ) : (
           <>
@@ -218,7 +218,7 @@ function PlanSection({ definition, controller }) {
               ))}
             </ol>
             {!editingDisabled && (
-              <button type="button" onClick={() => controller.addItem(definition.id)} className="mt-2 inline-flex min-h-[36px] items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring">
+              <button type="button" onClick={() => controller.addItem(definition.id)} className="mt-2 inline-flex min-h-[44px] items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring">
                 <Plus className="h-3.5 w-3.5" /> Add item
               </button>
             )}
@@ -270,7 +270,7 @@ function ReadinessPanel({ controller }) {
           <h3 id="plan-readiness-title" className="text-sm font-semibold text-[var(--ds-text)]">{title}</h3>
           <p className="text-[11px] text-[var(--ds-text-muted)]">Warnings stay advisory; only predictable failures block execution.</p>
         </div>
-        <button type="button" disabled={controller.readinessLoading || isEditingDisabled(controller)} onClick={() => ignoreHandledError(controller.checkReadiness())} className="rounded-md p-2 text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] disabled:opacity-50 focus-ring" aria-label="Refresh plan readiness">
+        <button type="button" disabled={controller.readinessLoading || isEditingDisabled(controller)} onClick={() => ignoreHandledError(controller.checkReadiness())} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] disabled:opacity-50 focus-ring" aria-label="Refresh plan readiness">
           <RefreshCw className={cx("h-3.5 w-3.5", controller.readinessLoading && "animate-spin")} />
         </button>
       </div>
@@ -308,8 +308,8 @@ function AskPlan({ controller }) {
         <h3 id="ask-plan-title" className="text-sm font-semibold text-[var(--ds-text)]">Ask about this plan</h3>
       </div>
       <form onSubmit={submit} className="mt-2 flex gap-2">
-        <input value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Why is this needed, or can it be simplified?" className="min-h-[40px] min-w-0 flex-1 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-3 text-sm text-[var(--ds-text)] outline-none placeholder:text-[var(--ds-text-muted)] focus:border-[var(--ds-accent-border)]" aria-label="Question about the current plan" />
-        <button type="submit" disabled={!question.trim() || controller.askState.status === "asking"} className="flex min-h-[40px] min-w-[40px] items-center justify-center rounded-lg bg-[var(--ds-fill-hover)] text-[var(--ds-text)] hover:bg-[var(--ds-fill-active)] disabled:opacity-40 focus-ring" aria-label="Ask question">
+        <input value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Why is this needed, or can it be simplified?" className="min-h-[44px] min-w-0 flex-1 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-3 text-sm text-[var(--ds-text)] outline-none placeholder:text-[var(--ds-text-muted)] focus:border-[var(--ds-accent-border)]" aria-label="Question about the current plan" />
+        <button type="submit" disabled={!question.trim() || controller.askState.status === "asking"} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg bg-[var(--ds-fill-hover)] text-[var(--ds-text)] hover:bg-[var(--ds-fill-active)] disabled:opacity-40 focus-ring" aria-label="Ask question">
           {controller.askState.status === "asking" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
         </button>
       </form>
@@ -317,7 +317,7 @@ function AskPlan({ controller }) {
         <div className="mt-3 rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] p-3 text-xs leading-relaxed text-[var(--ds-text)]">
           <p>{controller.askState.answer}</p>
           {controller.askState.proposedOperations.length > 0 && (
-            <button type="button" disabled={isEditingDisabled(controller)} onClick={() => ignoreHandledError(controller.applyProposedOperations())} className="mt-2 min-h-[34px] rounded-md bg-[var(--ds-accent)] px-3 text-xs font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] disabled:cursor-not-allowed disabled:bg-[var(--ds-fill-hover)] disabled:text-[var(--ds-text-muted)] focus-ring">Apply suggested changes</button>
+            <button type="button" disabled={isEditingDisabled(controller)} onClick={() => ignoreHandledError(controller.applyProposedOperations())} className="mt-2 min-h-[44px] rounded-md bg-[var(--ds-accent)] px-3 text-xs font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] disabled:cursor-not-allowed disabled:bg-[var(--ds-fill-hover)] disabled:text-[var(--ds-text-muted)] focus-ring">Apply suggested changes</button>
           )}
         </div>
       )}
@@ -378,19 +378,19 @@ function PlanLifecycle({ controller }) {
       )}
 
       {run && (
-        <div className="mt-3 flex flex-wrap gap-1.5 border-t border-[var(--ds-border-subtle)] pt-3">
+        <div className="mt-3 flex flex-wrap gap-2 border-t border-[var(--ds-border-subtle)] pt-3">
           {canPause && (
-            <button type="button" disabled={actionPending} onClick={() => ignoreHandledError(controller.pauseRun())} className="inline-flex min-h-[34px] items-center gap-1.5 rounded-md bg-[var(--ds-fill-hover)] px-2.5 text-xs font-semibold text-[var(--ds-text)] hover:bg-[var(--ds-fill-hover)] disabled:opacity-40 focus-ring">
+            <button type="button" disabled={actionPending} onClick={() => ignoreHandledError(controller.pauseRun())} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-md bg-[var(--ds-fill-hover)] px-2.5 text-xs font-semibold text-[var(--ds-text)] hover:bg-[var(--ds-fill-hover)] disabled:opacity-40 focus-ring">
               {controller.lifecycleAction === "pause" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Square className="h-3 w-3" />} Pause
             </button>
           )}
           {canResume && (
-            <button type="button" disabled={actionPending} onClick={() => ignoreHandledError(controller.resumeRun())} className="inline-flex min-h-[34px] items-center gap-1.5 rounded-md bg-[var(--ds-accent-soft)] px-2.5 text-xs font-semibold text-[var(--ds-accent)] hover:bg-[var(--ds-accent-soft)] disabled:opacity-40 focus-ring">
+            <button type="button" disabled={actionPending} onClick={() => ignoreHandledError(controller.resumeRun())} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-md bg-[var(--ds-accent-soft)] px-2.5 text-xs font-semibold text-[var(--ds-accent)] hover:bg-[var(--ds-accent-soft)] disabled:opacity-40 focus-ring">
               {controller.lifecycleAction === "resume" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />} Resume
             </button>
           )}
           {canCancel && (
-            <button type="button" disabled={actionPending} onClick={() => ignoreHandledError(controller.cancelRun())} className="ml-auto inline-flex min-h-[34px] items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold text-[var(--ds-danger)] hover:bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] disabled:opacity-40 focus-ring">
+            <button type="button" disabled={actionPending} onClick={() => ignoreHandledError(controller.cancelRun())} className="ml-auto inline-flex min-h-[44px] items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold text-[var(--ds-danger)] hover:bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] disabled:opacity-40 focus-ring">
               {controller.lifecycleAction === "cancel" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" />} Cancel
             </button>
           )}
@@ -417,7 +417,7 @@ function PlanHistory({ controller }) {
         {versionsError && (
           <div role="alert" className="mb-2 rounded-lg border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] p-2 text-xs text-[var(--ds-danger)] ">
             <p>{versionsError.message || "Version history could not be loaded."}</p>
-            <button type="button" disabled={versionsLoading} onClick={() => ignoreHandledError(loadVersions())} className="mt-1 min-h-[32px] rounded-md px-2 font-semibold text-[var(--ds-danger)] hover:bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] disabled:opacity-50 focus-ring">Retry history</button>
+            <button type="button" disabled={versionsLoading} onClick={() => ignoreHandledError(loadVersions())} className="mt-1 min-h-[44px] rounded-md px-2 font-semibold text-[var(--ds-danger)] hover:bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] disabled:opacity-50 focus-ring">Retry history</button>
           </div>
         )}
         {controller.restoreError && (
@@ -433,14 +433,19 @@ function PlanHistory({ controller }) {
               return (
               <li key={`${version.version}-${version.hash || ""}`} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-subtle)]">
                 <span className="min-w-0 flex-1">Version {version.version}{versionDateLabel(version.createdAt) ? ` · ${versionDateLabel(version.createdAt)}` : ""}</span>
-                <button type="button" disabled={isEditingDisabled(controller) || Boolean(controller.restoringVersion)} onClick={() => ignoreHandledError(controller.restoreVersion(version.version, version.hash))} className="inline-flex min-h-[32px] items-center gap-1 rounded-md px-2 text-[var(--ds-accent)] hover:bg-[var(--ds-accent-soft)] disabled:cursor-not-allowed disabled:opacity-50 focus-ring">
+                <button type="button" disabled={isEditingDisabled(controller) || Boolean(controller.restoringVersion)} onClick={() => ignoreHandledError(controller.restoreVersion(version.version, version.hash))} className="inline-flex min-h-[44px] items-center gap-1 rounded-md px-2 text-[var(--ds-accent)] hover:bg-[var(--ds-accent-soft)] disabled:cursor-not-allowed disabled:opacity-50 focus-ring">
                   {restoring && <Loader2 className="h-3 w-3 animate-spin" />}{restoring ? "Restoring…" : "Restore"}
                 </button>
               </li>
               );
             })}
           </ul>
-        ) : !versionsError && <p className="p-2 text-xs text-[var(--ds-text-muted)]">No earlier versions yet.</p>}
+        ) : !versionsError && (
+          <div className="flex flex-col items-center gap-2 p-3 text-center text-xs text-[var(--ds-text-muted)]">
+            <NexusDisplayIcon name="snapshot" size={56} className="h-14 w-14" />
+            <p>No earlier versions yet.</p>
+          </div>
+        )}
       </div>
     </details>
   );
@@ -502,7 +507,7 @@ export function PlanWorkspaceView({ controller, onUseTemplate, onViewProgress })
               {controller.lifecycle?.revisionId || `v${controller.plan.version}`} · {planStatusLabel(lifecycleRun?.status || controller.lifecycle?.status || controller.plan.status)}
             </span>
             <SaveState status={controller.saveStatus} loadState={controller.loadState} />
-            {(controller.saveStatus === "error" || controller.saveStatus === "conflict") && <button type="button" onClick={() => ignoreHandledError(controller.retrySave())} className="text-[11px] font-semibold text-[var(--ds-danger)] hover:text-[var(--ds-text)] focus-ring">Retry save</button>}
+            {(controller.saveStatus === "error" || controller.saveStatus === "conflict") && <button type="button" onClick={() => ignoreHandledError(controller.retrySave())} className="inline-flex min-h-[44px] items-center text-[11px] font-semibold text-[var(--ds-danger)] hover:text-[var(--ds-text)] focus-ring">Retry save</button>}
           </div>
         </div>
       </header>

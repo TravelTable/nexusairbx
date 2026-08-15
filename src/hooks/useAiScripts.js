@@ -22,6 +22,7 @@ export function useAiScripts(user, notify, { authReady = true } = {}) {
   const [currentScriptId, setCurrentScriptId] = useState(null);
   const [currentScript, setCurrentScript] = useState(null);
   const [versionHistory, setVersionHistory] = useState([]);
+  const [versionHistoryScriptId, setVersionHistoryScriptId] = useState(null);
   const [selectedVersionId, setSelectedVersionId] = useState(null);
   const [libraryRevision, setLibraryRevision] = useState(0);
 
@@ -30,9 +31,18 @@ export function useAiScripts(user, notify, { authReady = true } = {}) {
     if (!authReady || !uid || auth.currentUser?.uid !== uid || !currentScriptId) {
       setCurrentScript(null);
       setVersionHistory([]);
+      setVersionHistoryScriptId(null);
       setSelectedVersionId(null);
       return;
     }
+
+    // Never expose one creation's versions under another creation's title while
+    // Firestore is switching subscriptions. Consumers use the associated id to
+    // know when the requested creation is ready to render.
+    setCurrentScript(null);
+    setVersionHistory([]);
+    setVersionHistoryScriptId(null);
+    setSelectedVersionId(null);
 
     const scriptRef = doc(db, "users", uid, "scripts", currentScriptId);
     let cancelled = false;
@@ -70,10 +80,14 @@ export function useAiScripts(user, notify, { authReady = true } = {}) {
         const arr = [];
         snap.forEach((d) => arr.push({ id: d.id, ...d.data() }));
         setVersionHistory(arr);
+        setVersionHistoryScriptId(currentScriptId);
       })
       .catch((err) => {
         if (cancelled || auth.currentUser?.uid !== uid) return;
         console.error("Firestore versions load error:", err);
+        // Mark this request as settled so a Stage viewer can show an empty/error
+        // state instead of remaining on an indefinite loading placeholder.
+        setVersionHistoryScriptId(currentScriptId);
         notify?.({ message: "Failed to load version history", type: "error" });
       });
 
@@ -150,6 +164,7 @@ export function useAiScripts(user, notify, { authReady = true } = {}) {
     setCurrentScriptId,
     currentScript,
     versionHistory,
+    versionHistoryScriptId,
     selectedVersionId,
     setSelectedVersionId,
     libraryRevision,

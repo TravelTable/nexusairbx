@@ -79,7 +79,7 @@ export default function ProjectArchitecturePanel({ context, onClose, onSync, emb
     (normalized.gameState && (normalized.gameState.events?.length || normalized.gameState.properties?.length));
 
   return (
-    <div className={`flex h-full flex-col ${embedded ? "bg-transparent" : "border-l border-[var(--ds-border-subtle)] bg-[var(--ds-fill-hover)] backdrop-blur-md"}`}>
+    <div className={`flex h-full flex-col ${embedded ? "bg-transparent" : "border-l border-[var(--ds-border-subtle)] bg-[var(--ds-fill-hover)]"}`}>
       {!embedded ? (
         <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--ds-border-subtle)] shrink-0">
           <div className="flex items-center gap-2">

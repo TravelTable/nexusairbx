@@ -1,5 +1,6 @@
 import {
   PROJECT_SIDEBAR_DESKTOP_MIN_WIDTH,
+  shouldCloseProjectSidebarOnViewportChange,
   shouldOpenProjectSidebarByDefault,
 } from "./useAiWorkspaceController";
 
@@ -14,5 +15,12 @@ describe("AI workspace project-sidebar defaults", () => {
     expect(shouldOpenProjectSidebarByDefault(1200)).toBe(true);
     expect(shouldOpenProjectSidebarByDefault(1920)).toBe(true);
     expect(shouldOpenProjectSidebarByDefault(undefined)).toBe(false);
+  });
+
+  test("closes a persistent sidebar when the viewport crosses into modal layout", () => {
+    expect(shouldCloseProjectSidebarOnViewportChange(1440, 1199)).toBe(true);
+    expect(shouldCloseProjectSidebarOnViewportChange(1200, 375)).toBe(true);
+    expect(shouldCloseProjectSidebarOnViewportChange(1199, 375)).toBe(false);
+    expect(shouldCloseProjectSidebarOnViewportChange(1440, 1200)).toBe(false);
   });
 });

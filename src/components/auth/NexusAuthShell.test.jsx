@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
-import { AuthCheckbox, NexusAuthShell } from "./NexusAuthShell";
+import { AuthCheckbox, AuthSubmitButton, NexusAuthShell } from "./NexusAuthShell";
 
 describe("NexusAuthShell", () => {
   test("renders a focused auth card without marketing content", () => {
@@ -21,8 +21,12 @@ describe("NexusAuthShell", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Welcome back" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "NexusRBX home" }).getAttribute("href")).toBe("/");
     expect(screen.getByRole("button", { name: "Sign in" })).toBeTruthy();
+    expect(screen.getByText("Roblox production studio")).toBeTruthy();
+    expect(document.querySelector('[data-nexus-surface="auth"]')).toBeTruthy();
     expect(screen.queryByText("Marketing headline")).toBeNull();
     expect(screen.queryByText("Feature pitch")).toBeNull();
+    expect(screen.queryByText("Personal build workspace")).toBeNull();
+    expect(screen.queryByText("Studio connected")).toBeNull();
   });
 
   test("gives auth checkboxes the visible explanatory text as their accessible name", () => {
@@ -39,5 +43,23 @@ describe("NexusAuthShell", () => {
     expect(screen.getByRole("checkbox", {
       name: "Sign out when I close this browser (shared device).",
     })).toBeTruthy();
+    expect(screen.getByText("Sign out when I close this browser (shared device).").previousElementSibling.className).not.toContain(
+      "ds-accent"
+    );
+  });
+
+  test("keeps idle account actions monochrome", () => {
+    render(
+      <AuthSubmitButton
+        status="idle"
+        idleLabel="Continue"
+        loadingLabel="Continuing"
+        successLabel="Done"
+      />
+    );
+
+    const button = screen.getByRole("button", { name: "Continue" });
+    expect(button.className).toContain("bg-[var(--ds-text)]");
+    expect(button.className).not.toContain("bg-[var(--ds-accent)]");
   });
 });

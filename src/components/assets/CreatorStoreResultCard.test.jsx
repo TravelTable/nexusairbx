@@ -19,6 +19,9 @@ describe("CreatorStoreResultCard", () => {
     );
 
     const image = screen.getByAltText("Tree thumbnail");
+    const typeBadge = screen.getByText("Model");
+    expect(typeBadge.className).toContain("bg-[var(--ds-fill-subtle)]");
+    expect(typeBadge.className).not.toContain("--ds-info");
     expect(image.getAttribute("src")).toBe("https://cdn.test/broken.png");
     fireEvent.error(image);
     expect(screen.getByAltText("Tree thumbnail").getAttribute("src"))

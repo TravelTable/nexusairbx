@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Github, Mail } from "lib/icons";
 import { auth } from "../firebase";
@@ -67,6 +67,8 @@ export default function NexusRBXSignInPageContainer() {
     password: ""
   });
   const [showPassword, setShowPassword] = useState(false);
+  const emailInputRef = useRef(null);
+  const passwordInputRef = useRef(null);
   const [formStatus, setFormStatus] = useState({
     status: "idle", // idle, submitting, success, error
     message: ""
@@ -125,6 +127,7 @@ export default function NexusRBXSignInPageContainer() {
         status: "error",
         message: "Please fill out all required fields."
       });
+      (formData.email ? passwordInputRef : emailInputRef).current?.focus();
       return;
     }
 
@@ -214,6 +217,8 @@ export default function NexusRBXSignInPageContainer() {
       formData={formData}
       showPassword={showPassword}
       formStatus={formStatus}
+      emailInputRef={emailInputRef}
+      passwordInputRef={passwordInputRef}
       rememberMe={rememberMe}
       signUpLinkState={signUpLinkState}
       handleInputChange={handleInputChange}
@@ -232,6 +237,8 @@ function NexusRBXSignInPage({
   formData,
   showPassword,
   formStatus,
+  emailInputRef,
+  passwordInputRef,
   rememberMe,
   signUpLinkState,
   handleInputChange,
@@ -247,7 +254,7 @@ function NexusRBXSignInPage({
   return (
     <NexusAuthShell
       title="Welcome back"
-      description="Sign in to your NexusRBX account."
+      description="Continue your Roblox projects, conversations, and Studio work."
     >
       <div className="grid gap-6">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -261,10 +268,16 @@ function NexusRBXSignInPage({
 
         <AuthDivider />
 
-        <form onSubmit={handleSubmit} noValidate className="grid gap-5">
+        <form
+          onSubmit={handleSubmit}
+          noValidate
+          aria-busy={formStatus.status === "submitting"}
+          className="grid gap-5"
+        >
           <AuthStatusAlert status={formStatus.status} message={formStatus.message} />
 
           <AuthTextField
+            inputRef={emailInputRef}
             id="email"
             name="email"
             label="Email address"
@@ -279,6 +292,7 @@ function NexusRBXSignInPage({
           />
 
           <AuthPasswordField
+            inputRef={passwordInputRef}
             id="password"
             name="password"
             label="Password"
@@ -293,7 +307,7 @@ function NexusRBXSignInPage({
             action={
               <Link
                 to="/forgot-password"
-                className="focus-ring ml-auto inline-flex min-h-11 items-center rounded-md px-1 text-xs font-semibold text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                className="focus-ring ml-auto inline-flex min-h-11 items-center rounded-md px-1 text-xs font-semibold text-[var(--ds-text-muted)] underline-offset-4 hover:text-[var(--ds-text)] hover:underline"
               >
                 Forgot password?
               </Link>
@@ -319,7 +333,7 @@ function NexusRBXSignInPage({
           />
         </form>
 
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-center text-sm text-[var(--ds-text-muted)]">
           New to NexusRBX?{" "}
           <AuthInlineLinkButton
             onClick={() => navigate("/signup", signUpLinkState ? { state: signUpLinkState } : undefined)}

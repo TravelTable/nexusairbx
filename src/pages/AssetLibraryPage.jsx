@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Library, Package, Search, Sparkles } from "../lib/icons";
+import { ArrowRight, ImagePlus, Library, Package, Search } from "../lib/icons";
 import { Button } from "../components/ui";
 import AssetCard from "../components/assets/AssetCard";
 import AssetLifecycleBadge from "../components/assets/AssetLifecycleBadge";
@@ -298,7 +298,7 @@ export default function AssetLibraryPage() {
             <p>Browse durable Nexus records across projects and universes. Roblox IDs appear only after upload succeeds.</p>
           </div>
           <div className="asset-platform-header__actions">
-            {canGenerate ? <Button icon={Sparkles} onClick={() => navigate("/tools/icon-generator")}>Generate assets</Button> : null}
+            {canGenerate ? <Button icon={ImagePlus} onClick={() => navigate("/tools/icon-generator")}>Generate assets</Button> : null}
           </div>
         </header>
 
@@ -421,7 +421,7 @@ export default function AssetLibraryPage() {
                   />
                 ))}
               </div>
-            ) : <AssetEmptyState title="No matching assets" description="No canonical asset records match these filters." action={canGenerate ? <Button icon={Sparkles} onClick={() => navigate("/tools/icon-generator")}>Generate assets</Button> : null} />
+            ) : <AssetEmptyState title="No matching assets" description="No canonical asset records match these filters." action={canGenerate ? <Button icon={ImagePlus} onClick={() => navigate("/tools/icon-generator")}>Generate assets</Button> : null} />
           ) : packs.length ? (
             <div className="asset-pack-list">
               {packs.map((pack) => (

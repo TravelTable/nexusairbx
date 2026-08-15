@@ -56,6 +56,8 @@ describe("PlanWorkspaceView", () => {
 
     expect(screen.getByText("Check readiness before execution")).not.toBeNull();
     expect(screen.getByRole("button", { name: "Check & Execute" }).disabled).toBe(false);
+    expect(screen.getByRole("button", { name: "Refresh plan readiness" }).className).toContain("min-h-[44px]");
+    expect(screen.getByRole("button", { name: "Refresh plan readiness" }).className).toContain("min-w-[44px]");
     expect(screen.queryByText("Plan is ready to execute")).toBeNull();
   });
 

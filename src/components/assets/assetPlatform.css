@@ -334,13 +334,6 @@
   aspect-ratio: 1;
   padding: 18px;
   background-color: var(--ds-bg-workspace);
-  background-image:
-    linear-gradient(45deg, color-mix(in srgb, var(--ds-text) 4%, transparent) 25%, transparent 25%),
-    linear-gradient(-45deg, color-mix(in srgb, var(--ds-text) 4%, transparent) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, color-mix(in srgb, var(--ds-text) 4%, transparent) 75%),
-    linear-gradient(-45deg, transparent 75%, color-mix(in srgb, var(--ds-text) 4%, transparent) 75%);
-  background-size: 18px 18px;
-  background-position: 0 0, 0 9px, 9px -9px, -9px 0;
 }
 
 .asset-card__preview img { width: 100%; height: 100%; object-fit: contain; border-radius: 8px; }
@@ -391,8 +384,7 @@
 .asset-error-state p { margin: 0; color: var(--asset-text-muted); font-size: .71rem; line-height: 1.45; }
 
 .asset-skeleton { overflow: hidden; padding-bottom: 14px; border: 1px solid var(--asset-line); border-radius: 15px; background: var(--asset-fill); }
-.asset-skeleton__preview, .asset-skeleton__line { position: relative; overflow: hidden; background: var(--asset-fill-hover); }
-.asset-skeleton__preview::after, .asset-skeleton__line::after { position: absolute; inset: 0; content: ""; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ds-text) 8%, transparent), transparent); transform: translateX(-100%); animation: asset-shimmer 1.5s infinite; }
+.asset-skeleton__preview, .asset-skeleton__line { position: relative; overflow: hidden; background: var(--asset-fill-hover); animation: asset-skeleton-pulse 1.5s ease-in-out infinite; }
 .asset-skeleton__preview { aspect-ratio: 1; margin-bottom: 13px; }
 .asset-skeleton__line { width: 58%; height: 8px; margin: 8px 13px; border-radius: 999px; }
 .asset-skeleton__line--wide { width: 78%; height: 11px; }
@@ -425,7 +417,7 @@
 
 .asset-detail-layout { display: grid; grid-template-columns: minmax(310px,.72fr) minmax(0,1.28fr); gap: 18px; align-items: start; }
 .asset-detail-preview { position: sticky; top: 18px; overflow: hidden; border: 1px solid var(--asset-line); border-radius: 14px; background: var(--asset-panel); }
-.asset-detail-preview__canvas { aspect-ratio: 1; padding: 28px; background-color: var(--ds-bg-workspace); background-image: linear-gradient(45deg, color-mix(in srgb, var(--ds-text) 4%, transparent) 25%,transparent 25%),linear-gradient(-45deg,color-mix(in srgb, var(--ds-text) 4%, transparent) 25%,transparent 25%),linear-gradient(45deg,transparent 75%,color-mix(in srgb, var(--ds-text) 4%, transparent) 75%),linear-gradient(-45deg,transparent 75%,color-mix(in srgb, var(--ds-text) 4%, transparent) 75%); background-size: 20px 20px; background-position: 0 0,0 10px,10px -10px,-10px 0; }
+.asset-detail-preview__canvas { aspect-ratio: 1; padding: 28px; background-color: var(--ds-bg-workspace); }
 .asset-detail-preview__canvas img { width: 100%; height: 100%; object-fit: contain; }
 .asset-detail-preview__meta { display: grid; gap: 12px; padding: 17px; }
 .asset-detail-preview__meta h1 { margin: 0; font-size: 1.4rem; }
@@ -555,7 +547,7 @@
 .asset-detail-disclosure > .asset-detail-grid { padding: 14px; }
 
 @keyframes asset-spin { to { transform: rotate(360deg); } }
-@keyframes asset-shimmer { to { transform: translateX(100%); } }
+@keyframes asset-skeleton-pulse { 50% { opacity: 0.58; } }
 
 @media (max-width: 1180px) {
   .asset-context-bar { grid-template-columns: 1fr 1fr; }
@@ -1469,7 +1461,7 @@
 }
 
 .asset-platform-page:not(.asset-icon-generator-page) .asset-eyebrow {
-  color: var(--ds-accent);
+  color: var(--ds-text-muted);
   font-size: 0.75rem;
   font-weight: 650;
   letter-spacing: 0;
@@ -1529,7 +1521,7 @@
 .asset-platform-page:not(.asset-icon-generator-page) .asset-card__kind,
 .asset-platform-page:not(.asset-icon-generator-page) .asset-link-button,
 .asset-platform-page:not(.asset-icon-generator-page) .asset-studio-reference code {
-  color: var(--ds-accent);
+  color: var(--ds-text-secondary);
 }
 
 .asset-platform-page:not(.asset-icon-generator-page) .asset-context-bar__selectors label > span,
@@ -1607,18 +1599,19 @@
 
 .asset-platform-page:not(.asset-icon-generator-page) .asset-primary-action {
   min-height: 44px;
+  border-color: transparent !important;
   border-radius: 10px !important;
-  color: var(--ds-accent-foreground) !important;
-  background: var(--ds-accent) !important;
+  color: var(--ds-bg-canvas) !important;
+  background: var(--ds-text) !important;
   box-shadow: none !important;
 }
 
 .asset-platform-page:not(.asset-icon-generator-page) .asset-primary-action:hover:not(:disabled) {
-  background: var(--ds-accent-hover) !important;
+  background: var(--ds-text-secondary) !important;
 }
 
 .asset-platform-page:not(.asset-icon-generator-page) .asset-primary-action:active:not(:disabled) {
-  background: var(--ds-accent-pressed) !important;
+  background: var(--ds-text-secondary) !important;
   transform: scale(0.985);
 }
 
@@ -1633,9 +1626,9 @@
 }
 
 .asset-platform-page:not(.asset-icon-generator-page) .asset-library-tab--active {
-  border-color: var(--ds-accent-border);
-  color: var(--ds-accent);
-  background: var(--ds-accent-soft);
+  border-color: var(--ds-border-strong);
+  color: var(--ds-text);
+  background: var(--ds-fill-active);
 }
 
 .asset-platform-page:not(.asset-icon-generator-page) .asset-inline-notice {
@@ -1822,21 +1815,11 @@
 }
 
 .creator-store-preview--transparent {
-  background-color: var(--ds-bg-workspace);
-  background-image:
-    linear-gradient(45deg, color-mix(in srgb, var(--ds-text) 7%, transparent) 25%, transparent 25%),
-    linear-gradient(-45deg, color-mix(in srgb, var(--ds-text) 7%, transparent) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, color-mix(in srgb, var(--ds-text) 7%, transparent) 75%),
-    linear-gradient(-45deg, transparent 75%, color-mix(in srgb, var(--ds-text) 7%, transparent) 75%);
-  background-position: 0 0, 0 12px, 12px -12px, -12px 0;
-  background-size: 24px 24px;
+  background: var(--ds-bg-workspace);
 }
 
 .creator-store-preview--scene {
-  background-color: var(--ds-accent-soft);
-  background-image:
-    radial-gradient(circle at 24% 22%, color-mix(in srgb, var(--ds-accent) 24%, transparent), transparent 34%),
-    linear-gradient(145deg, var(--ds-surface-2), var(--ds-bg-sidebar));
+  background: var(--ds-surface-3);
 }
 
 .model-file-pipeline {
@@ -1849,7 +1832,7 @@
 .model-file-pipeline button,
 .model-file-pipeline a[role="button"] {
   min-height: 44px;
-  border-radius: 999px;
+  border-radius: 10px;
 }
 
 .model-file-pipeline input,
@@ -1885,7 +1868,7 @@
   margin: 6px 0 12px;
   font-family: var(--ds-font-display);
   font-size: clamp(2.75rem, 5vw, 4.75rem);
-  font-weight: 400;
+  font-weight: 600;
   line-height: 1.04;
   letter-spacing: -0.045em;
 }
@@ -1910,7 +1893,7 @@
 .asset-platform-page:not(.asset-icon-generator-page) .asset-card__actions > button {
   min-height: 44px;
   padding: 9px 18px;
-  border-radius: 999px !important;
+  border-radius: 10px !important;
   background: transparent !important;
 }
 
@@ -1919,7 +1902,25 @@
 .asset-platform-page:not(.asset-icon-generator-page) .asset-primary-action {
   min-height: 44px;
   padding: 10px 20px;
-  border-radius: 999px !important;
+  border-color: transparent !important;
+  border-radius: 10px !important;
+  color: var(--ds-bg-canvas) !important;
+  background: var(--ds-text) !important;
+}
+
+.asset-platform-page .asset-primary-action:hover:not(:disabled),
+.asset-icon-generator-page .asset-primary-action:hover:not(:disabled),
+.asset-platform-page:not(.asset-icon-generator-page) .asset-primary-action:hover:not(:disabled) {
+  color: var(--ds-bg-canvas) !important;
+  background: var(--ds-text-secondary) !important;
+  transform: none !important;
+}
+
+.asset-platform-page .asset-primary-action:active:not(:disabled),
+.asset-icon-generator-page .asset-primary-action:active:not(:disabled),
+.asset-platform-page:not(.asset-icon-generator-page) .asset-primary-action:active:not(:disabled) {
+  color: var(--ds-bg-canvas) !important;
+  background: var(--ds-text-secondary) !important;
 }
 
 .asset-platform-page .nexus-input,
@@ -2048,7 +2049,7 @@
 .asset-icon-generator-page .asset-card__actions > button {
   min-height: 44px;
   padding: 8px 12px;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
 }
 
 .asset-platform-page:not(.asset-icon-generator-page) .asset-context-chip,
@@ -2069,7 +2070,7 @@
 
 .asset-platform-page:not(.asset-icon-generator-page) .asset-library-tab {
   padding-inline: 18px;
-  border-radius: 999px;
+  border-radius: 8px;
 }
 
 @media (max-width: 700px) {

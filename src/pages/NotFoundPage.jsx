@@ -1,6 +1,6 @@
 // src/pages/NotFoundPage.jsx
 import React from "react";
-import { AlertCircle, BookOpen, Home, Mail, Sparkles, Wand2 } from "lib/icons";
+import { AlertCircle, BookOpen, Bot, Home, ImagePlus, Mail } from "lib/icons";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { editorialDisplayClass, editorialGutterClass } from "../components/site/editorialUi";
@@ -8,8 +8,8 @@ import { editorialDisplayClass, editorialGutterClass } from "../components/site/
 export default function NexusRBXNotFoundPage() {
   const links = [
     { to: "/", label: "Home", icon: Home, document: true },
-    { to: "/ai", label: "AI Workspace", icon: Sparkles },
-    { to: "/tools/icon-generator", label: "Icon Generator", icon: Wand2 },
+    { to: "/ai", label: "AI Workspace", icon: Bot },
+    { to: "/tools/icon-generator", label: "Icon Generator", icon: ImagePlus },
     { to: "/docs", label: "Docs", icon: BookOpen, document: true },
     { to: "/contact", label: "Contact", icon: Mail },
   ];

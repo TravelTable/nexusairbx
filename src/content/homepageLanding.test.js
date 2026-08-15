@@ -16,9 +16,11 @@ describe("homepageFooterLinks", () => {
 
   test("links the footer to the redesigned creator story", () => {
     expect(homepageFooterLinks).toEqual(expect.arrayContaining([
+      { label: "Product", href: "/#product" },
       { label: "Games", href: "/#genres" },
       { label: "How it works", href: "/#workflow" },
-      { label: "Creator control", href: "/#control" },
+      { label: "Project context", href: "/#context" },
+      { label: "Studio", href: "/#studio" },
       { label: "Creator upside", href: "/#grow" },
     ]));
   });

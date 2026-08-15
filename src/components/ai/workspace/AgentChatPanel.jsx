@@ -117,6 +117,10 @@ export default function AgentChatPanel({
   onModeChange,
   onPlanTaskAccepted,
   executionTask,
+  workspaceControls = null,
+  navigationOpen = false,
+  navigationControls = undefined,
+  navigationButtonRef = null,
 }) {
   const [view, setView] = useState("chat");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
@@ -154,7 +158,7 @@ export default function AgentChatPanel({
   }, [setAttachments, setPrompt, setRewindTarget]);
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden bg-[var(--ds-surface-1)]">
+    <div className="flex h-full min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden bg-transparent">
       <div className="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col">
         {view === "plan" && FEATURE_FLAGS.newPlanningMode ? (
           <div className="min-h-0 min-w-0 w-full max-w-full flex-1 overflow-y-auto scrollbar-subtle">
@@ -214,6 +218,10 @@ export default function AgentChatPanel({
               onEditMessage={handleEditMessage}
               onRetryMessage={onRetryMessage}
               onRestoreRun={onRestoreRun}
+              workspaceControls={workspaceControls}
+              navigationOpen={navigationOpen}
+              navigationControls={navigationControls}
+              navigationButtonRef={navigationButtonRef}
             />
           </div>
         )}
@@ -235,7 +243,7 @@ export default function AgentChatPanel({
         onRemoveQueued={onRemoveQueued}
         isGenerating={isBusy}
         generationStage={generationStage}
-        placeholder={refineTarget ? "Describe the Studio change you want..." : "Ask the Studio agent to build, inspect, wire, or fix..."}
+        placeholder={refineTarget ? "Describe the Studio change you want..." : "Ask Nexus to build, change, debug, or explain something..."}
         refineTarget={refineTarget}
         onCancelRefine={onCancelRefine}
         onStartRefine={onStartRefine}

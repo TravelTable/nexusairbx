@@ -63,8 +63,8 @@ describe("ChatComposer compact interactions", () => {
     expect(document.getElementById("tour-prompt-box").getAttribute("data-tour")).toBe("prompt-input");
     expect(document.getElementById("chat-composer-file-upload")).toBeTruthy();
     expect(document.getElementById("tour-generate-button").getAttribute("data-tour")).toBe("generate-btn");
-    expect(screen.queryByRole("dialog", { name: "Studio and Roblox settings" })).toBeNull();
-    expect(screen.getByTitle("Open advanced Studio and Roblox settings").getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByRole("dialog", { name: "Workspace options" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Open workspace options" }).getAttribute("aria-expanded")).toBe("false");
   });
 
   test("keeps primary composer actions touch-sized below desktop", () => {
@@ -72,18 +72,60 @@ describe("ChatComposer compact interactions", () => {
 
     const upload = screen.getByRole("button", { name: "Upload image to Roblox or attach a code/text file" });
     const mode = screen.getByTitle("Select mode");
-    const plan = screen.getByTitle("Plan before making changes");
-    const usage = screen.getByRole("button", { name: /Usage/i });
-    const settings = screen.getByTitle("Open advanced Studio and Roblox settings");
+    const settings = screen.getByRole("button", { name: "Open workspace options" });
     const send = screen.getByRole("button", { name: "Send prompt" });
 
-    for (const control of [upload, mode, plan, usage, settings, send]) {
+    for (const control of [upload, mode, settings, send]) {
       expect(control.className).toContain("h-11");
     }
     expect(upload.className).toContain("w-11");
-    expect(plan.className).toContain("min-w-11");
     expect(settings.className).toContain("w-11");
     expect(send.className).toContain("w-11");
+    expect(screen.queryByTitle("Plan before making changes")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Usage" })).toBeNull();
+  });
+
+  test("supports complete keyboard navigation and focus restoration in the mode listbox", async () => {
+    const onModeChange = jest.fn();
+    renderComposer({ onModeChange });
+    const trigger = screen.getByTitle("Select mode");
+
+    fireEvent.click(trigger);
+    expect(screen.getByRole("listbox", { name: "Agent operating mode" })).toBeTruthy();
+    const agent = screen.getByRole("option", { name: /Agent Autonomously/i });
+    const plan = screen.getByRole("option", { name: /Plan Proposes/i });
+    const ask = screen.getByRole("option", { name: /Ask Read-only/i });
+    await waitFor(() => expect(document.activeElement).toBe(agent));
+
+    fireEvent.keyDown(agent, { key: "ArrowDown" });
+    expect(document.activeElement).toBe(plan);
+    fireEvent.keyDown(plan, { key: "End" });
+    expect(document.activeElement).toBe(ask);
+    fireEvent.keyDown(ask, { key: "Home" });
+    expect(document.activeElement).toBe(agent);
+    fireEvent.keyDown(agent, { key: "ArrowUp" });
+    expect(document.activeElement).toBe(ask);
+    fireEvent.keyDown(ask, { key: "Enter" });
+
+    expect(onModeChange).toHaveBeenCalledWith("ask");
+    expect(screen.queryByRole("listbox", { name: "Agent operating mode" })).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+
+    fireEvent.click(trigger);
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("option", { name: /Agent Autonomously/i })));
+    fireEvent.keyDown(screen.getByRole("option", { name: /Agent Autonomously/i }), { key: "Escape" });
+    expect(screen.queryByRole("listbox", { name: "Agent operating mode" })).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+
+    fireEvent.keyDown(trigger, { key: "ArrowUp" });
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("option", { name: /Ask Read-only/i })));
+  });
+
+  test("uses a 16px prompt font on mobile to avoid input zoom", () => {
+    renderComposer();
+    const promptInput = screen.getByRole("textbox", { name: "Prompt input" });
+    expect(promptInput.className).toContain("text-[16px]");
+    expect(promptInput.className).toContain("xl:text-[15px]");
   });
 
   test("shows continuing-from-earlier-message chip while rewind target is set", () => {
@@ -129,24 +171,24 @@ describe("ChatComposer compact interactions", () => {
 
   test("opens advanced settings in a popover and closes on Escape or outside click", async () => {
     renderComposer();
-    const settingsButton = screen.getByTitle("Open advanced Studio and Roblox settings");
+    const settingsButton = screen.getByRole("button", { name: "Open workspace options" });
 
     fireEvent.click(settingsButton);
-    const panel = await screen.findByRole("dialog", { name: "Studio and Roblox settings" });
+    const panel = await screen.findByRole("dialog", { name: "Workspace options" });
     expect(settingsButton.getAttribute("aria-expanded")).toBe("true");
-    expect(screen.getByText("Advanced setup")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Workspace options" })).toBeTruthy();
     expect(panel.className).toContain("absolute");
     expect(panel.className).toContain("bottom-full");
     expect(panel.className).not.toContain("inset-y-0");
 
     fireEvent.keyDown(document, { key: "Escape" });
-    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Studio and Roblox settings" })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Workspace options" })).toBeNull());
     expect(document.activeElement).toBe(settingsButton);
 
     fireEvent.click(settingsButton);
-    await screen.findByRole("dialog", { name: "Studio and Roblox settings" });
+    await screen.findByRole("dialog", { name: "Workspace options" });
     fireEvent.mouseDown(document.body);
-    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Studio and Roblox settings" })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Workspace options" })).toBeNull());
   });
 
   test("collapses prompt context after three items and opens the context manager", () => {
@@ -163,12 +205,12 @@ describe("ChatComposer compact interactions", () => {
     expect(screen.getAllByText("Script5.lua").length).toBeGreaterThan(0);
   });
 
-  test("reveals usage in a popover instead of the composer row", () => {
+  test("reveals usage only inside progressively disclosed workspace options", () => {
     renderComposer();
 
-    expect(screen.queryByRole("dialog", { name: "Usage details" })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Usage" }));
-    expect(screen.getByRole("dialog", { name: "Usage details" })).toBeTruthy();
+    expect(screen.queryByRole("region", { name: "Usage details" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Open workspace options" }));
+    expect(screen.getByRole("region", { name: "Usage details" })).toBeTruthy();
     expect(screen.getByText("Unlimited")).toBeTruthy();
   });
 

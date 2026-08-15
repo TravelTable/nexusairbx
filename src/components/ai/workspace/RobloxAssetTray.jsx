@@ -160,24 +160,24 @@ export default function RobloxAssetTray({
 
   return (
     <section
-      className="mx-3 mb-2 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-hover)] backdrop-blur-xl overflow-hidden"
+      className="mx-3 mb-2 overflow-hidden rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-hover)]"
       aria-labelledby="project-assets-heading"
       aria-busy={loading}
     >
       <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-b border-[var(--ds-border-subtle)]">
         <div className="flex items-center gap-2 min-w-0">
-          <ImageIcon className="w-4 h-4 text-[var(--ds-info)]" aria-hidden="true" />
+          <ImageIcon className="h-4 w-4 text-[var(--ds-text-muted)]" aria-hidden="true" />
           <div className="min-w-0">
             <h2 id="project-assets-heading" className="text-[11px] font-black uppercase tracking-widest text-[var(--ds-text)]">Project Assets</h2>
             <div className="text-[10px] text-[var(--ds-text-muted)] truncate">{creatorLabel(selectedCreator)}</div>
           </div>
         </div>
-        <div className="flex flex-wrap items-center justify-end gap-1.5">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <button
             type="button"
             onClick={load}
             disabled={loading || Boolean(busy)}
-            className="p-1.5 rounded-md border border-[var(--ds-border-subtle)] text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)] hover:bg-[var(--ds-fill-subtle)] disabled:opacity-40"
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border border-[var(--ds-border-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text)] disabled:opacity-40 focus-ring"
             title="Refresh asset library"
             aria-label="Refresh asset library"
           >
@@ -187,7 +187,7 @@ export default function RobloxAssetTray({
             type="button"
             onClick={publishAssets}
             disabled={!writesAuthorized || !retryableUploads.length || Boolean(busy)}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-[color-mix(in_srgb,var(--ds-info)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-info)_10%,transparent)] text-[10px] font-bold text-[var(--ds-info)] hover:bg-[color-mix(in_srgb,var(--ds-info)_18%,transparent)] disabled:opacity-40"
+            className="inline-flex min-h-[44px] items-center gap-1 rounded-md border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 py-1 text-[10px] font-bold text-[var(--ds-accent)] hover:bg-[var(--ds-fill-hover)] disabled:opacity-40 focus-ring"
             title="Retry eligible Roblox uploads"
           >
             {busy === "publish" ? <Loader2 className="w-3 h-3 animate-spin" /> : <CloudUpload className="w-3 h-3" />}
@@ -197,7 +197,7 @@ export default function RobloxAssetTray({
             type="button"
             onClick={pollUploads}
             disabled={!pendingUploads.length || Boolean(busy)}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-[var(--ds-border-subtle)] text-[10px] font-bold text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)] hover:bg-[var(--ds-fill-subtle)] disabled:opacity-40"
+            className="inline-flex min-h-[44px] items-center gap-1 rounded-md border border-[var(--ds-border-subtle)] px-2 py-1 text-[10px] font-bold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text)] disabled:opacity-40 focus-ring"
             title="Refresh pending Roblox operations"
           >
             {busy === "poll" ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
@@ -253,7 +253,7 @@ export default function RobloxAssetTray({
                 <button
                   type="button"
                   onClick={() => copyAssetReference(asset.assetId, assetReference)}
-                  className="mt-2 w-full inline-flex items-center justify-center gap-1 px-2 py-1 rounded-md bg-[var(--ds-fill-subtle)] border border-[var(--ds-border-subtle)] text-[10px] font-bold text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)]"
+                  className="mt-2 inline-flex min-h-[44px] w-full items-center justify-center gap-1 rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2 py-1 text-[10px] font-bold text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)] focus-ring"
                   title={assetReference}
                   aria-label={copiedAssetId === asset.assetId
                     ? `${assetLabel(asset)} Roblox asset URI copied`

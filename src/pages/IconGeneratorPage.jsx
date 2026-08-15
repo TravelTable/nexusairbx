@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Clock, Library, Settings, Sparkles } from "../lib/icons";
+import { Clock, ImagePlus, Library, Settings } from "../lib/icons";
 import { Button } from "../components/ui";
 import AssetContextBar from "../components/assets/AssetContextBar";
 import AssetGenerationForm, { DEFAULT_ASSET_GENERATION_FORM } from "../components/assets/AssetGenerationForm";
@@ -412,7 +412,7 @@ export default function IconGeneratorPage() {
         <div className="asset-platform-shell">
           <header className="asset-platform-header">
             <div>
-              <p className="asset-eyebrow"><Sparkles aria-hidden="true" /> Asset tools</p>
+              <p className="asset-eyebrow"><ImagePlus aria-hidden="true" /> Asset tools</p>
               <h1>Icon generator</h1>
               <p>Loading your project context and asset workspace.</p>
             </div>
@@ -428,7 +428,7 @@ export default function IconGeneratorPage() {
       <div className="asset-platform-shell">
         <header className="asset-platform-header">
           <div>
-            <p className="asset-eyebrow"><Sparkles aria-hidden="true" /> Asset tools</p>
+            <p className="asset-eyebrow"><ImagePlus aria-hidden="true" /> Asset tools</p>
             <h1>Icon generator</h1>
             <p>Generate a single game icon or a coordinated set, then review publishing status from the same workspace.</p>
           </div>

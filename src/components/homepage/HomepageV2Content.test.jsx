@@ -1,6 +1,6 @@
 /* eslint-disable testing-library/no-container, testing-library/no-node-access */
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { homepageGenres } from "../../content/homepageV2";
 import HomepageV2Content from "./HomepageV2Content";
 
@@ -19,14 +19,13 @@ jest.mock("../../lib/productAnalytics", () => ({
   trackProductEvent: jest.fn(() => Promise.resolve()),
 }));
 jest.mock("./HomepageFooter", () => () => <footer>Homepage footer</footer>);
-jest.mock("./RobloxTrustStrip", () => () => null);
 
 describe("HomepageV2Content", () => {
   beforeEach(() => {
     mockSubmitHomepagePrompt.mockReset();
   });
 
-  test("provides the primary builder as an accessible loading interaction", () => {
+  test("provides the primary composer as an accessible loading interaction", () => {
     mockSubmitHomepagePrompt.mockImplementation(({ setLoading }) => setLoading(true));
 
     render(<HomepageV2Content navigate={jest.fn()} />);
@@ -38,13 +37,13 @@ describe("HomepageV2Content", () => {
     expect(main.id).toBe("main-content");
     expect(main.tabIndex).toBe(-1);
     expect(main.contains(screen.getByRole("contentinfo"))).toBe(false);
-    expect(screen.getAllByRole("textbox", { name: "What Roblox game do you want to make?" })).toContain(input);
+    expect(screen.getByRole("textbox", { name: "What Roblox game do you want to make?" })).toBe(input);
     expect(input.getAttribute("aria-describedby")).toBe("homepage-hero-prompt-message");
 
     fireEvent.change(input, { target: { value: "Build a round system" } });
     fireEvent.click(heroForm.querySelector("button[type='submit']"));
 
-    expect(screen.getAllByRole("button", { name: "Opening..." })[0].disabled).toBe(true);
+    expect(screen.getByRole("button", { name: "Opening..." }).disabled).toBe(true);
     expect(heroForm.getAttribute("aria-busy")).toBe("true");
   });
 
@@ -62,39 +61,95 @@ describe("HomepageV2Content", () => {
     expect(input.getAttribute("aria-invalid")).toBe("true");
   });
 
-  test("renders the complete game-builder story without shipping concept PNGs", () => {
-    const { container } = render(<HomepageV2Content navigate={jest.fn()} />);
+  test("submits the multiline composer with Enter and preserves Shift+Enter", () => {
+    render(<HomepageV2Content navigate={jest.fn()} />);
+    const input = document.getElementById("homepage-hero-prompt");
 
-    expect(screen.getByRole("heading", { name: /Make the Roblox game in your head/i, level: 1 })).toBeTruthy();
-    expect(container.querySelectorAll("[data-home-genre]")).toHaveLength(6);
-    expect(container.querySelectorAll("ol[aria-label='NexusRBX build stages'] > li")).toHaveLength(4);
+    fireEvent.change(input, { target: { value: "Build an inventory" } });
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter", shiftKey: true });
+    expect(mockSubmitHomepagePrompt).not.toHaveBeenCalled();
 
-    const focusedToolHrefs = Array.from(
-      container.querySelectorAll("nav[aria-label='Focused Roblox creation tools'] a"),
-      (link) => link.getAttribute("href"),
-    );
-    expect(focusedToolHrefs).toEqual([
-      "/roblox-script-generator",
-      "/roblox-ai-scripter",
-      "/roblox-studio-script-generator",
-      "/roblox-lua-script-generator",
-      "/roblox-gui-maker",
-    ]);
-    expect(container.querySelector("img[src*='nexus-cinematic']")).toBeNull();
-    expect(container.querySelectorAll("[data-mini-world]").length).toBeGreaterThanOrEqual(6);
-    expect(screen.getByRole("group", { name: "Illustrative NexusRBX workflow example" })).toBeTruthy();
-    expect(screen.getByText("Plan approved")).toBeTruthy();
-    expect(screen.getByText("Issue found")).toBeTruthy();
-    expect(screen.getByText("Fix applied")).toBeTruthy();
-    expect(screen.getByText("Playtest passed")).toBeTruthy();
+    fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+    expect(mockSubmitHomepagePrompt).toHaveBeenCalledWith(expect.objectContaining({
+      inputValue: "Build an inventory",
+      method: "enter",
+    }));
   });
 
-  test("loads a selected genre into the hero composer", () => {
+  test("uses a real product-shaped hero and the approved flat 2D Stage artwork", () => {
+    const { container } = render(<HomepageV2Content navigate={jest.fn()} />);
+
+    expect(screen.getByRole("heading", { name: /Talk to your Roblox project.*Watch it take shape/i, level: 1 })).toBeTruthy();
+    const demo = screen.getByRole("group", { name: "Interactive NexusRBX product demonstration" });
+    expect(within(demo).getByRole("region", { name: "Stage" })).toBeTruthy();
+    expect(within(demo).getByRole("list", { name: "Conversation-to-construction sequence" }).children).toHaveLength(6);
+
+    const stageImage = screen.getByRole("img", { name: /Flat editorial map/i });
+    expect(stageImage.getAttribute("src")).toBe("/assets/nexus-world-under-construction-2d.webp");
+    expect(screen.getByAltText(/technical cutaway/i).getAttribute("src")).toBe("/assets/nexus-project-xray-2d.webp");
+    expect(screen.getByAltText(/grey blockout/i).getAttribute("src")).toBe("/assets/nexus-world-transformation-2d.webp");
+    expect(screen.getByAltText(/diagnostic route/i).getAttribute("src")).toBe("/assets/nexus-debug-trace-2d.webp");
+    expect(screen.getByAltText(/inventory, HUD, navigation/i).getAttribute("src")).toBe("/assets/nexus-interface-assembly-2d.webp");
+    expect(screen.getByAltText(/reviewed Nexus change set/i).getAttribute("src")).toBe("/assets/nexus-studio-bridge-2d.webp");
+    expect(stageImage.getAttribute("width")).toBe("1920");
+    expect(stageImage.getAttribute("height")).toBe("1072");
+    expect(container.textContent).not.toMatch(/creator workshop|nexus workshop/i);
+    expect(container.querySelector("img[src*='3d']")).toBeNull();
+  });
+
+  test("uses the Nexus display family for the explanatory build ledger", () => {
+    const { container } = render(<HomepageV2Content navigate={jest.fn()} />);
+    const icons = Array.from(
+      container.querySelectorAll("#workflow [data-nexus-display-icon]"),
+      (icon) => icon.getAttribute("data-nexus-display-icon"),
+    );
+
+    expect(icons).toEqual(["ask", "assets", "plan", "build", "debug", "complete"]);
+    expect(container.querySelectorAll("[aria-label='Conversation-to-construction sequence'] [data-nexus-display-icon]")).toHaveLength(0);
+  });
+
+    test("lets creators inspect every request stage without relying on purple alone", () => {
     render(<HomepageV2Content navigate={jest.fn()} />);
+    const inspect = screen.getByRole("button", { name: "Inspect" });
+    const build = screen.getByRole("button", { name: "Build" });
+
+    expect(build.getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(inspect);
+
+    expect(inspect.getAttribute("aria-pressed")).toBe("true");
+    expect(build.getAttribute("aria-pressed")).toBe("false");
+    expect(screen.getByText("6 references found")).toBeTruthy();
+    expect(screen.getAllByText("Read the real project").length).toBeGreaterThanOrEqual(1);
+    });
+
+    test("turns the world progression artwork into an operable three-state comparison", () => {
+      const { container } = render(<HomepageV2Content navigate={jest.fn()} />);
+
+      const figure = container.querySelector("[data-transformation-stage]");
+      expect(figure.getAttribute("data-transformation-stage")).toBe("build");
+
+      fireEvent.click(screen.getByRole("button", { name: /Finished world/i }));
+      expect(figure.getAttribute("data-transformation-stage")).toBe("finished");
+      expect(screen.getByText(/Finished world selected: Tested experience/i)).toBeTruthy();
+
+      fireEvent.click(screen.getByRole("button", { name: /Blockout/i }));
+      expect(figure.getAttribute("data-transformation-stage")).toBe("blockout");
+    });
+
+  test("loads a selected genre into the hero composer", () => {
+    const { container } = render(<HomepageV2Content navigate={jest.fn()} />);
     const horror = screen.getByRole("button", { name: /Horror/i });
 
-    expect(screen.getByRole("button", { name: /Obby/i }).getAttribute("aria-pressed")).toBe("false");
-    expect(screen.getByText("Choose a genre")).toBeTruthy();
+    expect(container.querySelectorAll("[data-home-genre]")).toHaveLength(8);
+    expect(container.querySelectorAll("[data-home-genre] img[loading='lazy']")).toHaveLength(8);
+    homepageGenres.forEach((genre) => {
+      const image = screen.getByAltText(genre.imageAlt);
+      expect(image.getAttribute("src")).toBe(genre.image);
+      expect(image.getAttribute("width")).toBe("704");
+      expect(image.getAttribute("height")).toBe("440");
+    });
+    expect(horror.getAttribute("aria-pressed")).toBe("false");
+    expect(screen.getByText("Choose a direction")).toBeTruthy();
 
     fireEvent.click(horror);
 
@@ -102,11 +157,10 @@ describe("HomepageV2Content", () => {
     expect(document.getElementById("homepage-hero-prompt").value).toBe(
       homepageGenres.find(({ id }) => id === "horror").prompt,
     );
-    expect(screen.getByText("Horror starting point")).toBeTruthy();
-    expect(screen.getByText("Prompt loaded into the builder above.")).toBeTruthy();
+    expect(screen.getByText("Horror brief loaded")).toBeTruthy();
   });
 
-  test("returns to the loaded prompt only after the user asks to continue", () => {
+  test("returns to a loaded genre brief only when the user asks", () => {
     render(<HomepageV2Content navigate={jest.fn()} />);
     const input = document.getElementById("homepage-hero-prompt");
     input.scrollIntoView = jest.fn();
@@ -114,21 +168,22 @@ describe("HomepageV2Content", () => {
     fireEvent.click(screen.getByRole("button", { name: /Horror/i }));
     expect(document.activeElement).not.toBe(input);
 
-    fireEvent.click(screen.getByRole("button", { name: /Continue with this idea/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Continue in the composer/i }));
     expect(document.activeElement).toBe(input);
     expect(input.scrollIntoView).toHaveBeenCalled();
   });
 
-  test("labels workshop examples honestly and previews no more than three plans", () => {
+  test("labels curated examples and Robux upside honestly", () => {
     const { container } = render(<HomepageV2Content navigate={jest.fn()} />);
 
-    expect(screen.getByRole("heading", { name: /Proof should be earned/i })).toBeTruthy();
-    expect(screen.getByText(/not customer testimonials/i)).toBeTruthy();
-    expect(container.querySelectorAll("#pricing article")).toHaveLength(3);
-    expect(screen.getByRole("link", { name: /Compare every plan/i }).getAttribute("href")).toBe("/pricing");
+    expect(screen.getByRole("heading", { name: /Breadth without invented customer proof/i })).toBeTruthy();
+    expect(screen.getByText(/not testimonials or earnings claims/i)).toBeTruthy();
+    expect(container.querySelectorAll("#examples article")).toHaveLength(3);
+    expect(screen.getByText(/Robux can follow—never promised/i)).toBeTruthy();
+    expect(screen.getByText(/Robux is an outcome, not a generate button/i)).toBeTruthy();
   });
 
-  test("keeps the hero composer as the only dominant hero action", () => {
+  test("keeps one dominant conversion action in the hero", () => {
     const { container } = render(<HomepageV2Content navigate={jest.fn()} />);
     const hero = container.querySelector("[data-home-hero]");
 

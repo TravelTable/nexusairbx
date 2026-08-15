@@ -56,7 +56,7 @@ export default function ForgotPasswordPage() {
       <NexusAuthShell
         title="Reset your password"
         headingLevel={1}
-        description="Enter your account email and we’ll send reset instructions if it matches an account."
+        description="Enter your account email. We’ll send a secure reset link if it matches an account."
       >
         <form className="grid gap-5" onSubmit={handleSubmit} noValidate aria-busy={formStatus.status === "submitting"}>
           <AuthTextField
@@ -91,7 +91,7 @@ export default function ForgotPasswordPage() {
 
           <p className="text-center text-sm text-[var(--ds-text-muted)]">
             Remembered your password?{" "}
-            <Link to="/signin" className="focus-ring inline-flex min-h-11 items-center rounded px-1 font-semibold text-[var(--ds-accent)] hover:text-[var(--ds-accent-hover)] hover:underline">
+            <Link to="/signin" className="focus-ring inline-flex min-h-11 items-center rounded px-1 font-semibold text-[var(--ds-text)] hover:text-[var(--ds-text-secondary)] hover:underline">
               Back to sign in
             </Link>
           </p>

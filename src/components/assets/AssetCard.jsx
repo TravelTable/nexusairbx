@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowRight, Copy, RefreshCw, RotateCcw, Sparkles } from "../../lib/icons";
+import { ArrowRight, Copy, Layers, RefreshCw, RotateCcw } from "../../lib/icons";
 import { Button } from "../ui";
 import AssetLifecycleBadge from "./AssetLifecycleBadge";
 import CanonicalAssetPreview from "./CanonicalAssetPreview";
@@ -84,7 +84,7 @@ export default function AssetCard({
               {busyAction === "poll" ? "Checking…" : "Refresh status"}
             </Button>
           ) : null}
-          {onSimilar ? <Button size="sm" variant="subtle" icon={Sparkles} disabled={Boolean(busyAction)} onClick={() => onSimilar(asset)}>Similar</Button> : null}
+          {onSimilar ? <Button size="sm" variant="subtle" icon={Layers} disabled={Boolean(busyAction)} onClick={() => onSimilar(asset)}>Similar</Button> : null}
           {onReplace ? <Button size="sm" variant="subtle" icon={RotateCcw} disabled={Boolean(busyAction)} onClick={() => onReplace(asset)}>Replace</Button> : null}
           {onOpen ? <Button size="sm" variant="ghost" iconRight={ArrowRight} onClick={() => onOpen(asset)}>Details</Button> : null}
         </div>

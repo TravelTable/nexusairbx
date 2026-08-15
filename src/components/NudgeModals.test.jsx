@@ -80,7 +80,13 @@ describe.each(cases)("$name nudge modal", ({ name, dialogName, closeName, render
     launch.focus();
     fireEvent.click(launch);
 
-    expect(screen.getByRole("dialog", { name: dialogName })).toBeInTheDocument();
+    const dialog = screen.getByRole("dialog", { name: dialogName });
+    expect(dialog).toBeInTheDocument();
+    expect(dialog.parentElement?.className).not.toMatch(/backdrop-blur|bg-black\/80/);
+    expect(dialog.outerHTML).not.toMatch(/bg-gradient|blur-2xl|animate-pulse|shadow-panel/);
+    dialog.querySelectorAll("button").forEach((button) => {
+      expect(button.className).toMatch(/(?:^|\s)(?:h-11|min-h-11)(?:\s|$)/);
+    });
     const close = screen.getByRole("button", { name: closeName });
     await waitFor(() => expect(close).toHaveFocus());
 

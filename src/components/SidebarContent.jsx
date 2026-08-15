@@ -18,7 +18,6 @@ export default function SidebarContent({
   currentProjectId = null,
   studioConnected = false,
   studioPlacePreference = null,
-  setCurrentScriptId = () => {},
   onSelectChat,
   onDeleteChat = () => {},
   onRenameChat = () => {},
@@ -74,7 +73,6 @@ export default function SidebarContent({
     finishMobileSelection();
   };
   const openScript = (id) => {
-    setCurrentScriptId(id);
     emitAiEvent(AI_EVENTS.OPEN_CODE_DRAWER, { scriptId: id });
     finishMobileSelection();
   };

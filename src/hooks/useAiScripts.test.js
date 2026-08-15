@@ -54,6 +54,7 @@ describe("useAiScripts listener lifecycle", () => {
 
     rerender({ currentUser: user, authReady: true });
     await waitFor(() => expect(onSnapshot).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(result.current.versionHistoryScriptId).toBe("script_1"));
 
     act(() => {
       emitScript({
@@ -71,6 +72,7 @@ describe("useAiScripts listener lifecycle", () => {
     rerender({ currentUser: null, authReady: true });
     expect(unsubscribe).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(result.current.currentScript).toBeNull());
+    expect(result.current.versionHistoryScriptId).toBeNull();
 
     unmount();
     expect(unsubscribe).toHaveBeenCalledTimes(1);

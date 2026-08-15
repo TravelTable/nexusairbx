@@ -1,5 +1,5 @@
 import React from "react";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import CodeWorkspace from "./CodeWorkspace";
 
 jest.mock("@monaco-editor/react", () => ({
@@ -43,4 +43,24 @@ test("updates Monaco when the resolved document theme changes", async () => {
   await waitFor(() => {
     expect(screen.getByTestId("monaco-editor").getAttribute("data-theme")).toBe("nexus-light");
   });
+});
+
+test("keeps the opened script explanation and save action on the Stage surface", async () => {
+  const onSaveToCreations = jest.fn().mockResolvedValue(undefined);
+  render(
+    <CodeWorkspace
+      artifact={{ ...artifact, explanation: "Keeps inventory authoritative." }}
+      activeFile={activeFile}
+      onSaveToCreations={onSaveToCreations}
+    />,
+  );
+
+  fireEvent.click(screen.getByText("Explanation"));
+  expect(screen.getByText("Keeps inventory authoritative.")).toBeTruthy();
+
+  fireEvent.click(screen.getByRole("button", { name: "Save to creations" }));
+  await waitFor(() => expect(onSaveToCreations).toHaveBeenCalledWith(
+    "Theme test",
+    "print('hello')",
+  ));
 });

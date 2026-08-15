@@ -13,7 +13,7 @@ import {
   SendPrompt,
   ShieldCheck,
   TerminalSquare,
-  Wand2,
+  SlidersHorizontal,
   Check,
 } from "lib/icons";
 
@@ -232,11 +232,11 @@ export default function QuickScriptWorkspace({
                   <p className="mt-1 text-xs leading-relaxed text-[var(--ds-warning)] ">{quickScript.error.message}</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {quickScript.error.retryable && (
-                      <Button variant="ghost" size="sm" icon={RefreshCw} onClick={onRetry} disabled={isGenerating} className="h-8 text-xs">
+                      <Button variant="ghost" size="sm" icon={RefreshCw} onClick={onRetry} disabled={isGenerating} className="min-h-[44px] text-xs">
                         Retry
                       </Button>
                     )}
-                    <Button variant="secondary" size="sm" iconRight={ArrowRight} onClick={onOpenAgentBuild} className="h-8 text-xs bg-[var(--ds-fill-hover)] text-[var(--ds-text)] hover:bg-[var(--ds-fill-active)]">
+                    <Button variant="secondary" size="sm" iconRight={ArrowRight} onClick={onOpenAgentBuild} className="min-h-[44px] text-xs bg-[var(--ds-fill-hover)] text-[var(--ds-text)] hover:bg-[var(--ds-fill-active)]">
                       Open as Agent Build
                     </Button>
                   </div>
@@ -257,8 +257,8 @@ export default function QuickScriptWorkspace({
                   </p>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                <Button variant="ghost" size="sm" icon={Pencil} onClick={onContinueEditing} className="h-8 text-xs border border-[var(--ds-border-subtle)]">
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Button variant="ghost" size="sm" icon={Pencil} onClick={onContinueEditing} className="min-h-[44px] text-xs border border-[var(--ds-border-subtle)]">
                   Continue editing
                 </Button>
                 <Button
@@ -266,7 +266,7 @@ export default function QuickScriptWorkspace({
                   size="sm"
                   iconRight={ArrowRight}
                   onClick={onOpenAgentBuild}
-                  className="h-8 text-xs bg-[var(--ds-fill-hover)] text-[var(--ds-text)] hover:bg-[var(--ds-fill-active)]"
+                  className="min-h-[44px] text-xs bg-[var(--ds-fill-hover)] text-[var(--ds-text)] hover:bg-[var(--ds-fill-active)]"
                 >
                   Open as Agent Build
                 </Button>
@@ -311,10 +311,10 @@ export default function QuickScriptWorkspace({
                   onClick={() => onImprovePrompt()}
                   disabled={isGenerating || isImproving || !String(prompt || "").trim()}
                   data-tour="improve-btn"
-                  className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-3 text-[11px] font-medium text-[var(--ds-accent)] transition-[border-color,background-color,color] duration-150 hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring disabled:cursor-not-allowed disabled:opacity-40 motion-reduce:transition-none"
+                  className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-3 text-[11px] font-medium text-[var(--ds-accent)] transition-[border-color,background-color,color] duration-150 hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring disabled:cursor-not-allowed disabled:opacity-40 motion-reduce:transition-none"
                   title="Expand your prompt into a detailed brief"
                 >
-                  {isImproving ? <Loader className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
+                  {isImproving ? <Loader className="h-3 w-3 animate-spin" /> : <SlidersHorizontal className="h-3 w-3" />}
                   {isImproving ? "Improving" : "Improve"}
                 </button>
               )}
@@ -333,7 +333,7 @@ export default function QuickScriptWorkspace({
                   disabled={isGenerating}
                   data-tour="prompt-input"
                   placeholder="Describe one Roblox script and where it should go."
-                  className="min-h-[42px] max-h-[140px] flex-1 resize-none bg-transparent px-2 py-2.5 text-sm leading-relaxed text-[var(--ds-text)] outline-none placeholder:text-[var(--ds-text-muted)] disabled:opacity-60 md:text-[15px]"
+                  className="min-h-[44px] max-h-[140px] flex-1 resize-none bg-transparent px-2 py-2.5 text-sm leading-relaxed text-[var(--ds-text)] outline-none placeholder:text-[var(--ds-text-muted)] disabled:opacity-60 md:text-[15px]"
                   aria-label="Quick Script prompt"
                   aria-describedby="quick-script-help"
                   aria-invalid={Boolean(quickScript?.error && !result)}
@@ -342,7 +342,7 @@ export default function QuickScriptWorkspace({
                   type="submit"
                   disabled={!canSubmit}
                   data-tour="generate-btn"
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] transition-[transform,opacity,background-color] duration-150 hover:bg-[var(--ds-accent-hover)] active:scale-95 focus-ring disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 motion-reduce:transition-none md:h-10 md:w-10"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] transition-[transform,opacity,background-color] duration-150 hover:bg-[var(--ds-accent-hover)] active:scale-95 focus-ring disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 motion-reduce:transition-none"
                   aria-label={isGenerating ? "Generation in progress" : result ? "Generate updated script" : "Generate script"}
                   title={isGenerating ? "Generation in progress" : result ? "Generate updated script" : "Generate script"}
                 >
@@ -380,10 +380,10 @@ export default function QuickScriptWorkspace({
                   </span>
                 </div>
               </div>
-              <TabsList className="h-8 w-full gap-0.5 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-hover)] p-0.5 sm:w-auto">
-                <TabsTrigger value="code" className="rounded-md px-2.5 py-1 text-[9px] sm:px-3 sm:text-[10px]">Code</TabsTrigger>
-                <TabsTrigger value="setup" className="rounded-md px-2.5 py-1 text-[9px] sm:px-3 sm:text-[10px]">Setup</TabsTrigger>
-                <TabsTrigger value="diagnostics" className="rounded-md px-2.5 py-1 text-[9px] sm:px-3 sm:text-[10px]">Diagnostics</TabsTrigger>
+              <TabsList className="min-h-[44px] w-full gap-0.5 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-hover)] p-0.5 sm:w-auto">
+                <TabsTrigger value="code" className="min-h-[44px] rounded-md px-2.5 py-1 text-[9px] sm:px-3 sm:text-[10px]">Code</TabsTrigger>
+                <TabsTrigger value="setup" className="min-h-[44px] rounded-md px-2.5 py-1 text-[9px] sm:px-3 sm:text-[10px]">Setup</TabsTrigger>
+                <TabsTrigger value="diagnostics" className="min-h-[44px] rounded-md px-2.5 py-1 text-[9px] sm:px-3 sm:text-[10px]">Diagnostics</TabsTrigger>
               </TabsList>
             </div>
 
@@ -395,12 +395,12 @@ export default function QuickScriptWorkspace({
                       <TerminalSquare className="h-3.5 w-3.5 text-[var(--ds-accent)]" />
                       <span className="truncate">{result.targetPath || result.studioLocation || "Studio location required"}</span>
                     </div>
-                    <div className="flex flex-wrap items-center justify-end gap-1" data-tour="code-actions">
-                      <Button variant="ghost" size="sm" icon={copied ? Check : Clipboard} onClick={handleCopyClick} className="h-7 py-0 px-2 text-[10px] hover:bg-[var(--ds-fill-subtle)]">
+                    <div className="flex flex-wrap items-center justify-end gap-2" data-tour="code-actions">
+                      <Button variant="ghost" size="sm" icon={copied ? Check : Clipboard} onClick={handleCopyClick} className="min-h-[44px] px-2 py-0 text-[10px] hover:bg-[var(--ds-fill-subtle)]">
                         {copied ? "Copied" : "Copy"}
                       </Button>
-                      <Button variant="ghost" size="sm" icon={Save} onClick={onSave} className="h-7 py-0 px-2 text-[10px] hover:bg-[var(--ds-fill-subtle)]">Save</Button>
-                      <Button variant="ghost" size="sm" icon={Download} onClick={onExport} className="h-7 py-0 px-2 text-[10px] hover:bg-[var(--ds-fill-subtle)]">Export</Button>
+                      <Button variant="ghost" size="sm" icon={Save} onClick={onSave} className="min-h-[44px] px-2 py-0 text-[10px] hover:bg-[var(--ds-fill-subtle)]">Save</Button>
+                      <Button variant="ghost" size="sm" icon={Download} onClick={onExport} className="min-h-[44px] px-2 py-0 text-[10px] hover:bg-[var(--ds-fill-subtle)]">Export</Button>
                       <Button
                         variant="secondary"
                         size="sm"
@@ -408,7 +408,7 @@ export default function QuickScriptWorkspace({
                         onClick={onStudioPush}
                         disabled={studioPushBlocked}
                         title={studioPushBlocked ? "Studio push is blocked until script context validation passes" : "Push to Studio"}
-                        className="h-7 py-0 px-2.5 text-[10px] bg-[var(--ds-fill-hover)] text-[var(--ds-text)] hover:bg-[var(--ds-fill-active)]"
+                        className="min-h-[44px] px-2.5 py-0 text-[10px] bg-[var(--ds-fill-hover)] text-[var(--ds-text)] hover:bg-[var(--ds-fill-active)]"
                       >
                         Studio
                       </Button>
@@ -491,11 +491,11 @@ export default function QuickScriptWorkspace({
               Quick compiles functional Luau code, placement directories, step-by-step setup guides, verification tests, and syntax diagnostics instantly.
             </p>
             <div className="mt-5 flex items-center gap-3 text-[10px] border-t border-[var(--ds-border-subtle)] pt-4 w-full max-w-[200px] justify-center">
-              <a href="/roblox-lua-script-generator" className="text-[var(--ds-text-secondary)] hover:text-[var(--ds-accent)] transition-all">
+              <a href="/roblox-lua-script-generator" className="inline-flex min-h-[44px] items-center text-[var(--ds-text-secondary)] transition-colors hover:text-[var(--ds-accent)] focus-ring">
                 Luau examples
               </a>
               <span className="text-[var(--ds-text-muted)]">|</span>
-              <a href="/roblox-gui-maker" className="text-[var(--ds-text-secondary)] hover:text-[var(--ds-accent)] transition-all">
+              <a href="/roblox-gui-maker" className="inline-flex min-h-[44px] items-center text-[var(--ds-text-secondary)] transition-colors hover:text-[var(--ds-accent)] focus-ring">
                 GUI help
               </a>
             </div>

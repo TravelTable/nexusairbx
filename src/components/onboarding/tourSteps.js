@@ -7,7 +7,7 @@ export const TOUR_STEPS = [
     action:
       '“A co-op haunted hotel where players repair rooms before dawn.”',
     targetLabel: "Idea composer",
-    targets: ['[data-tour="prompt-input"]', "#tour-prompt-box"],
+    targets: ['[data-tour="prompt-composer"]', '[data-tour="prompt-input"]', "#tour-prompt-box"],
     missingTargetHint:
       "Open Quick Script or Agent Build when you are ready. The guide will stay out of your way.",
   },

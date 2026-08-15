@@ -413,7 +413,7 @@ export default function StudioPairControl({
         <div
           id="studio-connection-dialog"
           ref={menuRef}
-          className="z-[9999] overflow-y-auto rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] p-4 shadow-2xl backdrop-blur-2xl scrollbar-subtle"
+          className="z-[9999] overflow-y-auto rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] p-4 shadow-2xl scrollbar-subtle"
           style={{
             position: menuPosition?.strategy || "fixed",
             top: menuPosition?.top ?? 0,

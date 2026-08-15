@@ -1,0 +1,19 @@
+.nexus-shimmer {
+  background-position: 100% center;
+  animation: nexus-shimmer-sweep var(--nexus-shimmer-duration, 2s) linear infinite;
+}
+
+@keyframes nexus-shimmer-sweep {
+  to {
+    background-position: 0% center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nexus-shimmer {
+    animation: none;
+    background-image: none !important;
+    color: var(--ds-text-muted) !important;
+    -webkit-text-fill-color: currentColor;
+  }
+}

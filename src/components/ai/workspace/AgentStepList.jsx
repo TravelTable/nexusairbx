@@ -37,6 +37,21 @@ function statusLabel(status) {
   return "Pending";
 }
 
+function completedActivityLabel(steps = []) {
+  const succeeded = steps.filter((step) => step.status === "succeeded").length;
+  const failed = steps.filter((step) => step.status === "failed").length;
+  const blocked = steps.filter((step) => step.status === "blocked").length;
+
+  if (failed || blocked) {
+    const issues = failed + blocked;
+    return `${steps.length} Studio steps · ${issues} need${issues === 1 ? "s" : ""} attention`;
+  }
+  if (succeeded === steps.length) {
+    return `${steps.length} Studio step${steps.length === 1 ? "" : "s"} completed`;
+  }
+  return `${steps.length} Studio step${steps.length === 1 ? "" : "s"}`;
+}
+
 /**
  * Inline tool-step log for unified agent runs (chat thread + details panel).
  */
@@ -44,6 +59,7 @@ export default function AgentStepList({
   steps = [],
   maxHeight = "max-h-44",
   compact = false,
+  collapsible = false,
   onApproveStep,
   approvingStepId = null,
   emptyLabel = "No agent steps yet.",
@@ -56,7 +72,7 @@ export default function AgentStepList({
     );
   }
 
-  return (
+  const stepList = (
     <div className={`overflow-y-auto rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] divide-y divide-[var(--ds-border-subtle)] scrollbar-subtle ${maxHeight}`}>
       {steps.map((step) => {
         const awaiting = step.status === "awaiting_approval";
@@ -124,5 +140,31 @@ export default function AgentStepList({
         );
       })}
     </div>
+  );
+
+  const hasActionableStep = steps.some((step) => (
+    step.status === "failed"
+    || step.status === "blocked"
+    || step.status === "awaiting_approval"
+  ));
+
+  if (!collapsible || hasActionableStep) return stepList;
+
+  return (
+    <details className="group rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)]">
+      <summary className="flex min-h-10 cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-[var(--ds-text-secondary)] outline-none transition-colors hover:bg-[var(--ds-fill-hover)] focus-visible:ring-2 focus-visible:ring-[var(--ds-info)] [&::-webkit-details-marker]:hidden">
+        <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-[var(--ds-accent)]" aria-hidden="true" />
+        <span>{completedActivityLabel(steps)}</span>
+        <span className="ml-auto text-[11px] font-medium text-[var(--ds-text-muted)] group-open:hidden">
+          Show activity
+        </span>
+        <span className="ml-auto hidden text-[11px] font-medium text-[var(--ds-text-muted)] group-open:inline">
+          Hide activity
+        </span>
+      </summary>
+      <div className="border-t border-[var(--ds-border-subtle)] p-1.5">
+        {stepList}
+      </div>
+    </details>
   );
 }

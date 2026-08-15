@@ -724,7 +724,7 @@ export default function TaskProgressPanel({
               type="button"
               onClick={submitApprove}
               disabled={actionBusy || (showPriceField && !hasValidPrice)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2.5 py-1.5 text-[11px] font-bold text-[var(--ds-accent)] disabled:opacity-40"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2.5 py-1.5 text-[11px] font-bold text-[var(--ds-accent)] disabled:opacity-40 xl:min-h-0"
             >
               {busyAction === "approve" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
               {showPriceField ? "Confirm price & continue" : "Continue"}
@@ -735,7 +735,7 @@ export default function TaskProgressPanel({
               type="button"
               onClick={() => onRetry()}
               disabled={actionBusy}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] px-2.5 py-1.5 text-[11px] font-bold text-[var(--ds-warning)] disabled:opacity-40"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] px-2.5 py-1.5 text-[11px] font-bold text-[var(--ds-warning)] disabled:opacity-40 xl:min-h-0"
             >
               {busyAction === "retry" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCcw className="h-3.5 w-3.5" />}
               Retry step
@@ -747,7 +747,7 @@ export default function TaskProgressPanel({
               onClick={() => setShowAmendment((value) => !value)}
               disabled={actionBusy}
               aria-expanded={showAmendment}
-              className="rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2.5 py-1.5 text-[11px] font-bold text-[var(--ds-text)] disabled:opacity-40"
+              className="min-h-11 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2.5 py-1.5 text-[11px] font-bold text-[var(--ds-text)] disabled:opacity-40 xl:min-h-0"
             >
               Amend instructions
             </button>
@@ -757,7 +757,7 @@ export default function TaskProgressPanel({
               type="button"
               onClick={() => onCancel()}
               disabled={actionBusy}
-              className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] px-2.5 py-1.5 text-[11px] font-bold text-[var(--ds-danger)] disabled:opacity-40"
+              className="ml-auto inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] px-2.5 py-1.5 text-[11px] font-bold text-[var(--ds-danger)] disabled:opacity-40 xl:min-h-0"
             >
               {busyAction === "cancel" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <StopCircle className="h-3.5 w-3.5" />}
               Cancel task
@@ -779,7 +779,7 @@ export default function TaskProgressPanel({
             step={1}
             value={priceRobux}
             onChange={(event) => setPriceRobux(event.target.value)}
-            className="w-full rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-3 py-2 text-xs text-[var(--ds-text)] outline-none focus:border-[var(--ds-accent-border)]"
+            className="min-h-11 w-full rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-3 py-2 text-xs text-[var(--ds-text)] outline-none focus:border-[var(--ds-accent-border)] xl:min-h-0"
             placeholder="e.g. 199"
           />
           <p className="text-[11px] text-[var(--ds-warning)] ">
@@ -806,14 +806,14 @@ export default function TaskProgressPanel({
             <button
               type="button"
               onClick={() => setShowAmendment(false)}
-              className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-[var(--ds-text-secondary)]"
+              className="min-h-11 rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-[var(--ds-text-secondary)] xl:min-h-0"
             >
               Keep current plan
             </button>
             <button
               type="submit"
               disabled={!canSubmitAmendment}
-              className="rounded-lg bg-[var(--ds-accent)] px-2.5 py-1.5 text-[11px] font-semibold text-[var(--ds-accent-foreground)] disabled:opacity-40"
+              className="min-h-11 rounded-lg bg-[var(--ds-accent)] px-2.5 py-1.5 text-[11px] font-semibold text-[var(--ds-accent-foreground)] disabled:opacity-40 xl:min-h-0"
             >
               Save amendment
             </button>

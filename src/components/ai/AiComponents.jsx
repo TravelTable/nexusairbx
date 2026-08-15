@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { 
   ChevronDown, 
   ChevronUp, 
-  Sparkles, 
   ListTodo,
   ShieldAlert, 
   ShieldCheck, 
@@ -16,8 +15,7 @@ import {
   Type,
   Globe,
   Rocket,
-  RefreshCw,
-  Brain
+  RefreshCw
 } from "lib/icons";
 import PLAN_INFO from "../../lib/planInfo";
 import { dollarsFromMicros, resolveUsagePercent } from "../../lib/billing";
@@ -262,16 +260,25 @@ export const NexusRBXAvatar = React.memo(({ isThinking = false, mode = "general"
   return (
     <div
       data-testid="nexusrbx-avatar"
-      className={`${compact ? "h-7 w-7 rounded-lg" : "w-10 h-10 md:w-12 md:h-12 rounded-2xl"} bg-[var(--ds-fill-subtle)] flex items-center justify-center flex-shrink-0 border transition-colors duration-200`}
+      className={`${compact ? "h-7 w-7 rounded-md" : "h-9 w-9 rounded-[10px]"} flex flex-shrink-0 items-center justify-center border bg-[var(--ds-fill-subtle)] transition-colors duration-200`}
       style={{ 
         borderColor: isThinking ? color : "var(--ds-border-subtle)",
+        color: isThinking ? color : "var(--ds-text-secondary)",
       }}
     >
-      <Brain
+      <svg
+        viewBox="0 0 24 24"
         aria-hidden="true"
-        className={compact ? "h-3.5 w-3.5" : "w-5 h-5 md:w-6 md:h-6"}
-        style={{ color }}
-      />
+        className={compact ? "h-3.5 w-3.5" : "h-[18px] w-[18px]"}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M5 18V6l14 12V6" />
+        <path d="M9 9.4 15 14.6" opacity="0.42" />
+      </svg>
     </div>
   );
 });
@@ -281,13 +288,14 @@ export const ThoughtAccordion = ({ thought }) => {
   if (!thought) return null;
 
   return (
-    <div className="mt-2 mb-4 overflow-hidden rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] backdrop-blur-sm">
+    <div className="mt-2 mb-4 overflow-hidden rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)]">
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-4 py-2 text-[11px] font-bold text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)] transition-colors uppercase tracking-widest"
+        className="flex min-h-11 w-full items-center justify-between px-4 py-2 text-xs font-bold uppercase tracking-widest text-[var(--ds-text-secondary)] transition-colors hover:text-[var(--ds-text)]"
+        aria-expanded={isOpen}
       >
         <div className="flex items-center gap-2">
-          <Sparkles className="w-3 h-3 text-[var(--ds-accent)]" />
+          <Activity className="h-3.5 w-3.5 text-[var(--ds-text-muted)]" />
           Nexus Thought Process
         </div>
         {isOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -450,7 +458,7 @@ export const ProjectContextStatus = ({
   }
 
   return (
-    <div className={`flex items-center gap-3 px-3 py-2 rounded-xl bg-[var(--ds-fill-subtle)] border border-[var(--ds-border-subtle)] backdrop-blur-md relative ${!isPro ? 'opacity-50' : ''}`}>
+    <div className={`relative flex items-center gap-3 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-3 py-2 ${!isPro ? 'opacity-50' : ''}`}>
       {!isPro && (
         <div className="absolute top-[-6px] right-[-6px] z-20">
           <Zap className="w-3 h-3 text-[var(--ds-accent)] fill-current" />
@@ -535,7 +543,7 @@ export const UnifiedStatusBar = ({ stage, isGenerating, mode = "general" }) => {
   const color = modeColors[mode] || modeColors.general;
 
   return (
-    <div className="w-full px-4 py-2 bg-[var(--ds-fill-hover)] backdrop-blur-md border-t border-[var(--ds-border-subtle)] flex items-center justify-between animate-in slide-in-from-bottom-2 duration-500">
+    <div className="flex w-full items-center justify-between border-t border-[var(--ds-border-subtle)] bg-[var(--ds-fill-hover)] px-4 py-2 animate-in slide-in-from-bottom-2 duration-500">
       <div className="flex items-center gap-3">
         <div className="relative">
           <div className="w-2 h-2 rounded-full animate-ping absolute inset-0" style={{ backgroundColor: color }} />

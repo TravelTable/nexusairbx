@@ -14,31 +14,25 @@ export default function ProNudgeModal({ isOpen, onClose, reason = "this icon" })
       titleClassName="sr-only"
       panelClassName="max-w-md overflow-hidden"
       bodyClassName=""
-      overlayClassName="z-[110] bg-black/80 p-4 backdrop-blur-md"
+      overlayClassName="z-[110] bg-black/60 p-4"
       closeOnBackdrop
       showCloseButton={false}
     >
-          {/* Top Glow */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1.5 bg-gradient-to-r from-transparent via-[var(--ds-plan)] to-transparent" />
-          
           <button
             onClick={onClose}
             aria-label="Close upgrade prompt"
-            className="nexus-icon-button absolute top-6 right-6 rounded-full z-10"
+            className="nexus-icon-button absolute right-6 top-6 z-10 h-11 w-11 rounded-full"
           >
             <X className="w-5 h-5" />
           </button>
 
           <div className="p-8 pt-12 text-center">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-[var(--ds-plan)] to-accent p-0.5 mb-6 relative group">
-              <div className="absolute inset-0 bg-[var(--ds-plan)] blur-2xl opacity-30 group-hover:opacity-40 transition-opacity" />
-              <div className="w-full h-full rounded-[22px] bg-[var(--ds-surface-1)] flex items-center justify-center relative z-10">
-                <Zap className="w-10 h-10 text-accent" />
-              </div>
+            <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-surface-2)] text-[var(--ds-text-secondary)]">
+              <Zap className="h-10 w-10" />
             </div>
 
             <h2 className="text-3xl font-black text-[var(--ds-text)] mb-3 tracking-tight">
-              Unlock <span className="text-[var(--ds-plan)]">Pro</span> Access
+              Unlock Pro Access
             </h2>
 
             <p className="text-[var(--ds-text-muted)] text-[15px] leading-relaxed mb-8">
@@ -50,39 +44,35 @@ export default function ProNudgeModal({ isOpen, onClose, reason = "this icon" })
                 icon={Bookmark} 
                 title="Saved Creations"
                 desc="Save and organize your AI-generated code snippets."
-                color="text-[var(--ds-plan)]"
               />
               <BenefitItem 
                 icon={ExternalLink} 
                 title="One-Click Studio Export" 
                 desc="Instant Luau snippets for your game."
-                color="text-accent"
               />
               <BenefitItem 
                 icon={Download} 
                 title="High-Res Downloads" 
                 desc="Get 512x512 PNGs with perfect transparency."
-                color="text-[var(--ds-info)]"
               />
             </div>
 
             <div className="flex flex-col gap-3">
               <button
                 onClick={() => navigate("/subscribe")}
-                className="focus-ring w-full py-4 rounded-xl border border-[var(--ds-accent-border)] bg-accent text-accent-foreground font-black text-lg shadow-panel transition hover:bg-[var(--ds-accent-hover)] active:bg-[var(--ds-accent-pressed)]"
+                className="focus-ring min-h-11 w-full rounded-xl border border-[var(--ds-accent-border)] bg-accent py-4 text-lg font-black text-accent-foreground transition-colors hover:bg-[var(--ds-accent-hover)] active:bg-[var(--ds-accent-pressed)]"
               >
                 Upgrade to Pro
               </button>
               <button
                 onClick={onClose}
-                className="focus-ring w-full py-3 rounded-xl text-[var(--ds-text-subtle)] hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text)] text-sm font-bold transition-colors"
+                className="focus-ring min-h-11 w-full rounded-xl py-3 text-sm font-bold text-[var(--ds-text-subtle)] transition-colors hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text)]"
               >
                 Maybe Later
               </button>
             </div>
           </div>
 
-          {/* Bottom Decoration */}
           <div className="p-4 bg-[var(--ds-fill-subtle)] border-t border-[var(--ds-border-subtle)] text-center">
             <div className="flex items-center justify-center gap-2 text-[10px] font-black text-[var(--ds-text-subtle)] uppercase tracking-widest">
               <ShieldCheck className="w-3 h-3" />
@@ -93,11 +83,11 @@ export default function ProNudgeModal({ isOpen, onClose, reason = "this icon" })
   );
 }
 
-function BenefitItem({ icon: Icon, title, desc, color }) {
+function BenefitItem({ icon: Icon, title, desc }) {
   return (
     <div className="flex items-center gap-4 text-left p-3.5 rounded-2xl bg-[var(--ds-fill-subtle)] border border-[var(--ds-border-subtle)] hover:border-[var(--ds-border-strong)] transition-colors">
-      <div className="w-10 h-10 rounded-xl bg-[var(--ds-fill-hover)] flex items-center justify-center flex-shrink-0">
-        <Icon className={`w-5 h-5 ${color}`} />
+      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-2)] text-[var(--ds-text-secondary)]">
+        <Icon className="h-5 w-5" />
       </div>
       <div>
         <div className="text-sm font-bold text-[var(--ds-text)]">{title}</div>

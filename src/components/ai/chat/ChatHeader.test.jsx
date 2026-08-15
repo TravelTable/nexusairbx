@@ -1,4 +1,5 @@
 import React from "react";
+import "@testing-library/jest-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
 import ChatHeader from "./ChatHeader";
 
@@ -34,15 +35,14 @@ describe("ChatHeader", () => {
     expect(onRenameChat).toHaveBeenCalledWith("New title");
   });
 
-  test("names the compact plan action for assistive technology", () => {
-    render(<ChatHeader onOpenPlan={jest.fn()} />);
+  test("names project navigation and plan actions for assistive technology", () => {
+    render(<ChatHeader onOpenPlan={jest.fn()} navigationControls="project-sidebar" />);
 
-    const navigation = screen.getByRole("button", { name: "Open navigation" });
+    const navigation = screen.getByRole("button", { name: "Toggle project navigation" });
     const review = screen.getByRole("button", { name: "Review plan" });
 
-    expect(navigation.className).toContain("h-11");
-    expect(navigation.className).toContain("w-11");
-    expect(review.className).toContain("h-11");
-    expect(review.className).toContain("min-w-11");
+    expect(navigation).toHaveAttribute("aria-controls", "project-sidebar");
+    expect(navigation).toHaveAttribute("aria-expanded", "false");
+    expect(review).toHaveAttribute("type", "button");
   });
 });

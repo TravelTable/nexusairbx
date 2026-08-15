@@ -3,6 +3,38 @@ import { render, screen } from "@testing-library/react";
 import AgentStepList from "./AgentStepList";
 
 describe("AgentStepList", () => {
+  test("keeps completed Studio activity quiet until the user asks for details", () => {
+    render(
+      <AgentStepList
+        collapsible
+        steps={[
+          { id: "manifest", type: "get_project_manifest", label: "Build Studio project manifest", status: "succeeded" },
+          { id: "read", type: "read_script", label: "Read player controller", status: "succeeded" },
+        ]}
+      />
+    );
+
+    const disclosure = screen.getByText("2 Studio steps completed").closest("details");
+    expect(disclosure).toBeTruthy();
+    expect(disclosure.open).toBe(false);
+    expect(screen.getByText("Show activity")).toBeTruthy();
+  });
+
+  test("never hides a Studio step that needs attention", () => {
+    render(
+      <AgentStepList
+        collapsible
+        steps={[
+          { id: "write", type: "write_script", label: "Apply player controller", status: "failed", error: "Write failed" },
+        ]}
+      />
+    );
+
+    expect(screen.queryByText("Show activity")).toBeNull();
+    expect(screen.getByText("Apply player controller")).toBeTruthy();
+    expect(screen.getByText("Error")).toBeTruthy();
+  });
+
   test("renders a manifest conflict as a terminal step error", () => {
     render(
       <AgentStepList

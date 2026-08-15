@@ -49,9 +49,9 @@ test("flattens legacy workspace decoration without remapping status semantics", 
   expect(themeCss).toContain("--ai-danger: var(--ds-danger)");
 });
 
-test("uses softly squared creator-workshop geometry without forcing every control", () => {
-  expect(themeCss).toContain("--pc-radius-panel: 16px");
-  expect(themeCss).toContain("--pc-radius-control: 12px");
+test("uses compact studio geometry without forcing every control", () => {
+  expect(themeCss).toContain("--pc-radius-panel: 14px");
+  expect(themeCss).toContain("--pc-radius-control: 10px");
   expect(themeCss).not.toMatch(/\.ai-page button:not\([\s\S]*?border-radius:\s*var\(--pc-radius-control\)/);
   expect(themeCss).not.toMatch(/\.ai-page textarea\s*\{[\s\S]*?border-radius:\s*var\(--pc-radius-panel\)/);
 });

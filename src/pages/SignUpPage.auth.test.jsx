@@ -1,5 +1,5 @@
 import React from "react";
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 let authStateCallback;
@@ -74,5 +74,36 @@ describe("SignUpPage authenticated routing", () => {
     });
 
     expect(await screen.findByText("Verify email destination")).toBeTruthy();
+  });
+
+  test("keeps every signup method under the same consent and autofill contract", () => {
+    renderSignup();
+
+    expect(screen.getByRole("button", { name: "Google" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "GitHub" })).toBeTruthy();
+    expect(screen.getByRole("textbox", { name: "Name" }).getAttribute("autocomplete")).toBe("name");
+    expect(screen.getByRole("textbox", { name: "Email address" }).getAttribute("autocomplete")).toBe("email");
+    expect(screen.getByRole("link", { name: "Terms" }).getAttribute("href")).toBe("/legal/terms");
+    expect(screen.getByRole("link", { name: "Privacy Policy" }).getAttribute("href")).toBe("/legal/privacy");
+    expect(screen.getByText(/By creating an account with Google, GitHub, or email/i)).toBeTruthy();
+  });
+
+  test("moves focus through missing fields and to a mismatched confirmation", () => {
+    renderSignup();
+
+    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
+    expect(screen.getByRole("textbox", { name: "Name" })).toBe(document.activeElement);
+
+    fireEvent.change(screen.getByRole("textbox", { name: "Name" }), { target: { value: "Ava" } });
+    fireEvent.change(screen.getByRole("textbox", { name: "Email address" }), {
+      target: { value: "ava@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "correct horse" } });
+    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
+    expect(screen.getByLabelText("Confirm password")).toBe(document.activeElement);
+
+    fireEvent.change(screen.getByLabelText("Confirm password"), { target: { value: "different" } });
+    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
+    expect(screen.getByLabelText("Confirm password")).toBe(document.activeElement);
   });
 });

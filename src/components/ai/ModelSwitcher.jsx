@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronDown, Lock, Check, Sparkles } from "lib/icons";
+import { ChevronDown, Lock, Check, CheckCircle2 } from "lib/icons";
 import { useModelCatalog } from "../../hooks/useModelCatalog";
 import ModelProviderGlyph from "./ModelProviderGlyph";
 import {
@@ -55,7 +55,7 @@ function ModelRow({ model, selected, locked, onSelect }) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
           <span className="text-xs font-bold text-[var(--ds-text)] truncate">{model.name}</span>
-          {model.recommended && <Sparkles className="h-3 w-3 shrink-0 text-[var(--ds-accent)]" />}
+          {model.recommended && <CheckCircle2 className="h-3 w-3 shrink-0 text-[var(--ds-accent)]" />}
         </div>
         <div className="flex items-center gap-2 mt-0.5">
           {ctx && <span className="text-[9px] text-[var(--ds-text-muted)] font-mono">{ctx}</span>}

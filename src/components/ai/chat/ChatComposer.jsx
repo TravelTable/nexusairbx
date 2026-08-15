@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   Check,
@@ -8,10 +8,9 @@ import {
   Plus,
   SendPrompt,
   SlidersHorizontal,
-  Square,
-  Wand2,
   X,
 } from "lib/icons";
+import NBlockLoader from "../../ui/NBlockLoader";
 import { TokenBar } from "../AiComponents";
 import { CHAT_MODES } from "../chatConstants";
 import StudioControls from "../workspace/StudioControls";
@@ -32,11 +31,16 @@ import { messageHasRefineableFiles } from "../../../lib/chatRefine";
 
 function ModeSelector({ mode, onModeChange, disabled }) {
   const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
   const [menuPosition, setMenuPosition] = useState(null);
   const rootRef = useRef(null);
   const buttonRef = useRef(null);
   const menuRef = useRef(null);
+  const optionRefs = useRef([]);
+  const listboxId = useId();
   const menuPresence = useMotionPresence(open, 150);
+  const currentIndex = Math.max(0, CHAT_MODES.findIndex((item) => item.id === mode));
+  const current = CHAT_MODES[currentIndex] || CHAT_MODES[0];
 
   const updateMenuPosition = useCallback(() => {
     const rect = buttonRef.current?.getBoundingClientRect();
@@ -59,14 +63,41 @@ function ModeSelector({ mode, onModeChange, disabled }) {
     });
   }, []);
 
+  const closeMenu = useCallback((restoreTriggerFocus = false) => {
+    setOpen(false);
+    if (restoreTriggerFocus) buttonRef.current?.focus();
+  }, []);
+
+  const openMenu = useCallback((nextIndex = currentIndex) => {
+    setActiveIndex(nextIndex);
+    setOpen(true);
+    if (typeof window.requestAnimationFrame === "function") {
+      window.requestAnimationFrame(updateMenuPosition);
+    } else {
+      updateMenuPosition();
+    }
+  }, [currentIndex, updateMenuPosition]);
+
+  const focusOption = useCallback((nextIndex) => {
+    const optionCount = CHAT_MODES.length;
+    const wrappedIndex = (nextIndex + optionCount) % optionCount;
+    setActiveIndex(wrappedIndex);
+    optionRefs.current[wrappedIndex]?.focus();
+  }, []);
+
+  const selectMode = useCallback((nextMode) => {
+    onModeChange?.(nextMode);
+    closeMenu(true);
+  }, [closeMenu, onModeChange]);
+
   useEffect(() => {
     const onClickOutside = (event) => {
       if (rootRef.current?.contains(event.target) || menuRef.current?.contains(event.target)) return;
-      setOpen(false);
+      closeMenu();
     };
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
-  }, []);
+  }, [closeMenu]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -80,7 +111,58 @@ function ModeSelector({ mode, onModeChange, disabled }) {
     };
   }, [open, updateMenuPosition]);
 
-  const current = CHAT_MODES.find((item) => item.id === mode) || CHAT_MODES[0];
+  useLayoutEffect(() => {
+    if (!open || !menuPosition || !menuPresence.present) return;
+    optionRefs.current[activeIndex]?.focus();
+  }, [activeIndex, menuPosition, menuPresence.present, open]);
+
+  const handleTriggerKeyDown = (event) => {
+    if (event.key === "Escape" && open) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.nativeEvent?.stopImmediatePropagation?.();
+      closeMenu(true);
+      return;
+    }
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      openMenu(event.key === "ArrowUp" ? CHAT_MODES.length - 1 : currentIndex);
+    }
+  };
+
+  const handleListboxKeyDown = (event) => {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      focusOption(activeIndex + 1);
+      return;
+    }
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      focusOption(activeIndex - 1);
+      return;
+    }
+    if (event.key === "Home") {
+      event.preventDefault();
+      focusOption(0);
+      return;
+    }
+    if (event.key === "End") {
+      event.preventDefault();
+      focusOption(CHAT_MODES.length - 1);
+      return;
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      event.nativeEvent?.stopImmediatePropagation?.();
+      closeMenu(true);
+      return;
+    }
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      selectMode(CHAT_MODES[activeIndex]?.id);
+    }
+  };
 
   return (
     <div className="relative" ref={rootRef}>
@@ -88,19 +170,16 @@ function ModeSelector({ mode, onModeChange, disabled }) {
         ref={buttonRef}
         type="button"
         onClick={() => {
-          setOpen((value) => {
-            const next = !value;
-            if (next && typeof window.requestAnimationFrame === "function") {
-              window.requestAnimationFrame(updateMenuPosition);
-            }
-            return next;
-          });
+          if (open) closeMenu();
+          else openMenu(currentIndex);
         }}
+        onKeyDown={handleTriggerKeyDown}
         disabled={disabled}
         className={`inline-flex h-11 items-center gap-1 rounded-full border border-[var(--ds-border-subtle)] px-2 text-[11px] font-medium transition-[border-color,background-color,color,opacity,transform] duration-150 ease-out active:scale-[0.98] focus-ring disabled:cursor-not-allowed disabled:opacity-40 xl:h-7 xl:gap-1.5 xl:px-2.5 ${current.bg} ${current.color} hover:bg-[var(--ds-fill-hover)]`}
         title="Select mode"
         aria-haspopup="listbox"
         aria-expanded={open}
+        aria-controls={listboxId}
       >
         {current.icon}
         {current.label}
@@ -111,6 +190,7 @@ function ModeSelector({ mode, onModeChange, disabled }) {
         ? createPortal(
             <div
               ref={menuRef}
+              id={listboxId}
               className={`fixed z-[90] overflow-y-auto rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-1.5 scrollbar-subtle transition-[opacity,transform] duration-150 ${
                 menuPresence.entering ? "opacity-100" : "pointer-events-none opacity-0"
               }`}
@@ -125,20 +205,24 @@ function ModeSelector({ mode, onModeChange, disabled }) {
                 transformOrigin: menuPosition.transformOrigin,
               }}
               role="listbox"
+              aria-label="Agent operating mode"
               aria-hidden={!open}
+              inert={open ? undefined : ""}
+              onKeyDown={handleListboxKeyDown}
             >
-              {CHAT_MODES.map((item) => {
+              {CHAT_MODES.map((item, index) => {
                 const selected = item.id === mode;
                 return (
                   <button
                     key={item.id}
+                    ref={(element) => {
+                      optionRefs.current[index] = element;
+                    }}
                     type="button"
                     role="option"
                     aria-selected={selected}
-                    onClick={() => {
-                      onModeChange?.(item.id);
-                      setOpen(false);
-                    }}
+                    tabIndex={open && index === activeIndex ? 0 : -1}
+                    onClick={() => selectMode(item.id)}
                     className={`flex w-full items-start gap-2.5 rounded-lg border px-3 py-2.5 text-left transition-[border-color,background-color,color,opacity] duration-150 ${
                       selected
                         ? "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)]"
@@ -300,7 +384,6 @@ export default function ChatComposer({
 }) {
   const [controlsOpen, setControlsOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
-  const [usageOpen, setUsageOpen] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
   const [mentionOpen, setMentionOpen] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
@@ -312,8 +395,6 @@ export default function ChatComposer({
   const controlsPanelRef = useRef(null);
   const contextButtonRef = useRef(null);
   const contextPanelRef = useRef(null);
-  const usageButtonRef = useRef(null);
-  const usagePanelRef = useRef(null);
   const draftIdentityRef = useRef({ signature: null, revision: 0 });
   const controlsPresence = useMotionPresence(controlsOpen, 180);
   const controlsId = "chat-composer-controls";
@@ -334,7 +415,6 @@ export default function ChatComposer({
   const activeOperationStatus = operationState?.active?.status || operationState?.lastStatus || null;
   const queuedOperations = Array.isArray(operationState?.queue) ? operationState.queue : [];
   const mentionCommands = filterComposerCommands(mentionQuery, COMPOSER_COMMANDS);
-  const planFirst = mode === "plan";
   const contextItems = [
     ...(studioEnabled ? [{ kind: "studio", key: "studio-target" }] : []),
     ...robloxImageUploads.map((upload) => ({ kind: "upload", key: `upload-${upload.id}`, upload })),
@@ -363,29 +443,24 @@ export default function ChatComposer({
   }, [prompt]);
 
   useEffect(() => {
-    if (!controlsOpen && !contextOpen && !usageOpen) return undefined;
+    if (!controlsOpen && !contextOpen) return undefined;
     const onPointerDown = (event) => {
       if (
         controlsButtonRef.current?.contains(event.target)
         || controlsPanelRef.current?.contains(event.target)
         || contextButtonRef.current?.contains(event.target)
         || contextPanelRef.current?.contains(event.target)
-        || usageButtonRef.current?.contains(event.target)
-        || usagePanelRef.current?.contains(event.target)
       ) return;
       setControlsOpen(false);
       setContextOpen(false);
-      setUsageOpen(false);
     };
     const onKeyDown = (event) => {
       if (event.key !== "Escape") return;
       event.preventDefault();
       if (controlsOpen) controlsButtonRef.current?.focus();
-      else if (contextOpen) contextButtonRef.current?.focus();
-      else usageButtonRef.current?.focus();
+      else contextButtonRef.current?.focus();
       setControlsOpen(false);
       setContextOpen(false);
-      setUsageOpen(false);
     };
     document.addEventListener("mousedown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
@@ -393,7 +468,7 @@ export default function ChatComposer({
       document.removeEventListener("mousedown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [contextOpen, controlsOpen, usageOpen]);
+  }, [contextOpen, controlsOpen]);
 
   const syncMentionState = useCallback((value, caret) => {
     const mention = getActiveComposerMention(value, caret);
@@ -444,13 +519,13 @@ export default function ChatComposer({
     }
     const onKeyDown = (event) => {
       if (event.key !== "Escape") return;
-      if (mentionOpen || controlsOpen || contextOpen || usageOpen) return;
+      if (mentionOpen || controlsOpen || contextOpen) return;
       event.preventDefault();
       onCancelRefine?.();
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [refineTarget, mentionOpen, controlsOpen, contextOpen, usageOpen, onCancelRefine]);
+  }, [refineTarget, mentionOpen, controlsOpen, contextOpen, onCancelRefine]);
 
   const submitQuickRefine = useCallback((text) => {
     const next = String(text || "").trim();
@@ -585,8 +660,8 @@ export default function ChatComposer({
   );
 
   return (
-    <div className="pc-page-gutter bg-[var(--ds-bg-workspace)] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
-      <div className="relative z-20 mx-auto max-w-[800px] overflow-visible rounded-[20px] border border-[var(--ds-border)] bg-[var(--ds-surface-1)] transition-colors duration-150 focus-within:border-[var(--ds-accent-border)]">
+    <div className="nexus-composer-region pc-page-gutter bg-[var(--ds-bg-workspace)] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
+      <div data-tour="prompt-composer" className="nexus-composer relative z-20 mx-auto max-w-[760px] overflow-visible rounded-[14px] border border-[var(--ds-border)] bg-[var(--ds-surface-1)] transition-colors duration-150 focus-within:border-[var(--ds-border-strong)]">
         {(activeOperationStatus || queuedOperations.length > 0) && (
           <div className="border-b border-[var(--ds-border-subtle)] px-2 py-1.5" aria-label="Chat operation status">
             <div className="flex items-center gap-2 text-[10px]">
@@ -649,7 +724,7 @@ export default function ChatComposer({
           <div className="flex min-h-9 items-center gap-1.5 overflow-visible border-b border-[var(--ds-border-subtle)] px-2 py-1">
             {refineTarget && (
               <div className="inline-flex h-7 max-w-[280px] shrink-0 items-center gap-1.5 rounded-md border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 text-[10px] font-bold text-[var(--ds-accent)] transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
-                <Wand2 className="h-3 w-3 shrink-0" />
+                <SlidersHorizontal className="h-3 w-3 shrink-0" />
                 <span className="truncate">
                   {studioConnected ? "Refining in Studio: " : "Refining workspace: "}
                   {refineTarget.title || "current project"}
@@ -751,7 +826,7 @@ export default function ChatComposer({
               ref={textareaRef}
               id="tour-prompt-box"
               data-tour="prompt-input"
-              className="min-h-[44px] w-full resize-none border-none bg-transparent px-0 py-1.5 text-[14px] leading-relaxed text-[var(--ds-text)] outline-none transition-[height,color,opacity] duration-150 placeholder:text-[var(--ds-text-muted)] focus:ring-0 disabled:opacity-50 md:text-[15px]"
+              className="min-h-[44px] w-full resize-none border-none bg-transparent px-0 py-1.5 text-[16px] leading-relaxed text-[var(--ds-text)] outline-none transition-[height,color,opacity] duration-150 placeholder:text-[var(--ds-text-muted)] focus:ring-0 disabled:opacity-50 xl:text-[15px]"
               rows={1}
               placeholder={placeholder}
               value={prompt}
@@ -791,48 +866,6 @@ export default function ChatComposer({
                   : <Plus className="h-4 w-4" />}
               </button>
               <ModeSelector mode={mode} onModeChange={onModeChange} disabled={disabled || isGenerating} />
-              <button
-                type="button"
-                onClick={() => onModeChange?.(planFirst ? "agent" : "plan")}
-                disabled={disabled || isGenerating}
-                aria-pressed={planFirst}
-                className={`inline-flex h-11 min-w-11 items-center justify-center rounded-md px-1.5 text-[10px] font-bold transition-[background-color,color,opacity] duration-150 focus-ring disabled:opacity-40 xl:h-7 xl:min-w-0 xl:px-2 ${
-                  planFirst
-                    ? "bg-[color-mix(in_srgb,var(--ds-plan)_10%,transparent)] text-[var(--ds-plan)]"
-                    : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text-secondary)]"
-                }`}
-                title="Plan before making changes"
-              >
-                <span className="sm:hidden">Plan</span>
-                <span className="hidden sm:inline">Plan first</span>
-              </button>
-              <div className="relative">
-                <button
-                  ref={usageButtonRef}
-                  type="button"
-                  onClick={() => setUsageOpen((value) => !value)}
-                  className={`inline-flex h-11 items-center gap-1 rounded-md px-1.5 text-[10px] font-bold transition-[background-color,color,opacity] duration-150 focus-ring xl:h-7 xl:px-2 ${
-                    usageOpen
-                      ? "bg-[var(--ds-fill-hover)] text-[var(--ds-text)]"
-                      : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text-secondary)]"
-                  }`}
-                  aria-expanded={usageOpen}
-                  aria-haspopup="dialog"
-                >
-                  Usage
-                  <ChevronDown className={`hidden h-3 w-3 transition-transform duration-150 sm:block ${usageOpen ? "rotate-180" : ""}`} />
-                </button>
-                {usageOpen && (
-                  <div
-                    ref={usagePanelRef}
-                    role="dialog"
-                    aria-label="Usage details"
-                    className="absolute bottom-full left-0 z-30 mb-2 w-64 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] p-3 shadow-2xl"
-                  >
-                    {usage}
-                  </div>
-                )}
-              </div>
             </div>
 
             <div className="flex shrink-0 items-center gap-1">
@@ -849,7 +882,8 @@ export default function ChatComposer({
                   aria-expanded={controlsOpen}
                   aria-controls={controlsId}
                   aria-haspopup="dialog"
-                  title="Open advanced Studio and Roblox settings"
+                  aria-label="Open workspace options"
+                  title="Workspace options"
                 >
                   <SlidersHorizontal className="h-3.5 w-3.5" />
                 </button>
@@ -858,7 +892,7 @@ export default function ChatComposer({
                     ref={controlsPanelRef}
                     id={controlsId}
                     role="dialog"
-                    aria-label="Studio and Roblox settings"
+                    aria-label="Workspace options"
                     aria-hidden={!controlsOpen}
                     className={`absolute bottom-full right-0 z-30 mb-2 w-80 max-w-[min(20rem,92vw)] origin-bottom-right rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] p-3 shadow-2xl transition-[opacity,transform] duration-[180ms] ${
                       controlsPresence.entering
@@ -867,10 +901,14 @@ export default function ChatComposer({
                     }`}
                   >
                     <div className="mb-3">
-                      <h2 className="text-sm font-bold text-[var(--ds-text)]">Advanced setup</h2>
-                      <p className="text-[10px] text-[var(--ds-text-muted)]">Studio and Roblox connections</p>
+                      <h2 className="text-sm font-bold text-[var(--ds-text)]">Workspace options</h2>
+                      <p className="text-[10px] text-[var(--ds-text-muted)]">Usage, Studio, and Roblox context</p>
                     </div>
                     <div className="flex max-h-[min(24rem,50vh)] flex-col gap-3 overflow-y-auto scrollbar-subtle">
+                      <section className="rounded-lg border border-[var(--ds-border-subtle)] p-2.5" aria-label="Usage details">
+                        <h3 className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[var(--ds-text-muted)]">Usage</h3>
+                        {usage}
+                      </section>
                       <StudioControls
                         connected={studioConnected}
                         connectionType={studioConnectionType}
@@ -939,13 +977,13 @@ export default function ChatComposer({
                 className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition-[background-color,color,opacity,transform] duration-150 active:scale-95 focus-ring disabled:opacity-40 disabled:active:scale-100 xl:h-8 xl:w-8 ${
                   isGenerating
                     ? "border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] text-[var(--ds-danger)] hover:bg-[color-mix(in_srgb,var(--ds-danger)_20%,transparent)]"
-                    : "bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)]"
+                    : "bg-primary text-primary-foreground hover:opacity-90"
                 }`}
                 aria-label={isGenerating ? "Stop generation" : "Send prompt"}
                 title={isGenerating ? "Stop generation" : "Send prompt"}
               >
                 {isGenerating
-                  ? <Square className="h-3.5 w-3.5 fill-current" />
+                  ? <NBlockLoader size={26} aria-hidden="true" />
                   : <SendPrompt className="h-4 w-4" />}
               </button>
             </div>

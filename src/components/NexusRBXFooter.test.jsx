@@ -13,5 +13,7 @@ describe("NexusRBXFooter", () => {
 
     expect(screen.getByRole("link", { name: "GitHub" }).getAttribute("href"))
       .toBe("https://github.com/TravelTable/nexusairbx");
+    expect(screen.getByRole("link", { name: "GitHub" }).className).toContain("min-h-11");
+    expect(screen.getByRole("link", { name: "Go to homepage" }).className).toContain("min-h-11");
   });
 });

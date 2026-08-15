@@ -1,5 +1,5 @@
 export const PUBLIC_SITE_ORIGIN = "https://www.nexusrbx.com";
-export const DEFAULT_OG_IMAGE = `${PUBLIC_SITE_ORIGIN}/assets/nexusrbx-og-purple-workshop.png`;
+export const DEFAULT_OG_IMAGE = `${PUBLIC_SITE_ORIGIN}/assets/nexusrbx-og-flat-world.jpg`;
 export const SITE_NAME = "NexusRBX";
 
 export function canonicalUrl(pathname = "/") {

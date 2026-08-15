@@ -1,15 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Activity, Menu, FileCode2, Search, RefreshCw, Bot } from "lib/icons";
+import { Activity, FileCode2, Search, RefreshCw, Bot } from "lib/icons";
 
 import SidebarContent from "../../components/SidebarContent";
-import CodeDrawer from "../../components/CodeDrawer";
 import SignInNudgeModal from "../../components/SignInNudgeModal";
 import ProNudgeModal from "../../components/ProNudgeModal";
 import StarterPromoModal from "../../components/StarterPromoModal";
 import NotificationToast from "../../components/NotificationToast";
 import ModelSwitcher from "../../components/ai/ModelSwitcher";
 import StudioPairControl from "../../components/ai/StudioPairControl";
-import { ProjectContextStatus } from "../../components/ai/AiComponents";
 import SiteHeader from "../../components/site/SiteHeader";
 import { Segmented } from "../../components/ui";
 import {
@@ -38,12 +36,52 @@ import { TERMINAL_AGENT_STATES } from "../../lib/agentRuntimeV2Api";
 import { PENDING_AUTH_ACTIONS } from "../../lib/pendingAuthAction";
 import { getStudioSessionId } from "../../lib/studioConnection";
 import { buildRefineTargetFromWorkspace, messageHasRefineableFiles } from "../../lib/chatRefine";
+import { AI_EVENTS, onAiEvent } from "../../lib/aiEvents";
 import TutorialOverlay from "../../components/onboarding/TutorialOverlay";
 import { useTutorial } from "../../components/onboarding/useTutorial";
 import useAiPageZoom from "../../hooks/useAiPageZoom";
+import "./AgentWorkspaceLayout.css";
 
 const WORKSPACE_DRAWER_WIDTH_KEY = "nexusrbx:workspace-drawer-width";
 const PROJECT_SIDEBAR_MODAL_QUERY = "(max-width: 1199px)";
+
+function safeOpenedCodeName(title) {
+  return String(title || "Script")
+    .replace(/\.(?:lua|luau)$/i, "")
+    .replace(/[\\/:*?"<>|]/g, "-")
+    .trim() || "Script";
+}
+
+export function buildOpenedCodeArtifact(request) {
+  if (!request || request.loading) return null;
+  const title = String(request.title || "Script").trim() || "Script";
+  const fileName = safeOpenedCodeName(title);
+  const code = typeof request.code === "string" ? request.code : "";
+  const originalCode = typeof request.originalCode === "string" ? request.originalCode : code;
+  const dirty = code !== originalCode;
+  const id = `opened-code:${request.requestKey || request.scriptId || fileName}`;
+  return {
+    id,
+    artifactId: id,
+    title,
+    summary: request.summary || (request.scriptId ? "Saved creation" : "Generated script"),
+    explanation: String(request.explanation || ""),
+    source: request.scriptId ? "saved_creation" : "generated_script",
+    dirtyCount: dirty ? 1 : 0,
+    files: [{
+      id: `${id}:main`,
+      name: fileName,
+      path: `ServerScriptService/${fileName}.server.lua`,
+      placement: "ServerScriptService",
+      kind: "server",
+      language: request.language || "luau",
+      content: code,
+      originalContent: originalCode,
+      dirty,
+      status: dirty ? "edited" : "ready",
+    }],
+  };
+}
 
 function isTerminalAgentRun(run) {
   const status = String(run?.status || run?.state || "").toLowerCase();
@@ -125,8 +163,6 @@ export default function AgentWorkspaceLayout({ controller }) {
     signInNudgeReason,
     showProNudge,
     proNudgeReason,
-    codeDrawerOpen,
-    codeDrawerData,
     currentTheme,
     currentToast,
     authReady,
@@ -164,7 +200,6 @@ export default function AgentWorkspaceLayout({ controller }) {
     setShowSignInNudge,
     setShowProNudge,
     setProNudgeReason,
-    setCodeDrawerOpen,
     dismissToast,
     updateSettings,
     handlePromptSubmit,
@@ -209,6 +244,8 @@ export default function AgentWorkspaceLayout({ controller }) {
   const [drawerWidth, setDrawerWidth] = useState(readWorkspaceDrawerWidth);
   const [detailsView, setDetailsView] = useState("build");
   const [hasUnseenArtifact, setHasUnseenArtifact] = useState(false);
+  const [openedCodeRequest, setOpenedCodeRequest] = useState(null);
+  const openedCodeSequenceRef = useRef(0);
   const previousArtifactFileCountRef = useRef(null);
   const tutorial = useTutorial();
   const aiPageRef = useRef(null);
@@ -236,7 +273,7 @@ export default function AgentWorkspaceLayout({ controller }) {
 
     const handleKeyDown = (event) => {
       if (event.defaultPrevented) return;
-      if (event.key === "Escape") {
+      if (event.key === "Escape" && projectSidebarIsModal) {
         event.preventDefault();
         closeProjectSidebar(true);
         return;
@@ -294,6 +331,77 @@ export default function AgentWorkspaceLayout({ controller }) {
     if (panelId === "files" || panelId === "code") {
       setHasUnseenArtifact(false);
     }
+  }, []);
+
+  useEffect(() => onAiEvent(AI_EVENTS.OPEN_CODE_DRAWER, (event) => {
+    const detail = event?.detail || {};
+    const scriptId = String(detail.scriptId || "").trim();
+    const hasCode = typeof detail.code === "string";
+    if (!scriptId && !hasCode) return;
+
+    if (scriptId) scriptManager.setCurrentScriptId?.(scriptId);
+    openedCodeSequenceRef.current += 1;
+    const code = hasCode ? detail.code : "";
+    setOpenedCodeRequest({
+      requestKey: `${scriptId || "generated"}:${openedCodeSequenceRef.current}`,
+      scriptId: scriptId || null,
+      title: detail.title || detail.filename || "Script",
+      summary: scriptId ? "Loading saved creation..." : "Generated script",
+      explanation: detail.explanation || "",
+      language: detail.language || "luau",
+      version: detail.version || null,
+      code,
+      originalCode: code,
+      loading: Boolean(scriptId && !hasCode),
+    });
+    if (generatorMode !== "agent_build") setGeneratorMode("agent_build", "open_code_stage");
+    handleDockPanelChange("code");
+  }), [generatorMode, handleDockPanelChange, scriptManager, setGeneratorMode]);
+
+  useEffect(() => {
+    const scriptId = openedCodeRequest?.scriptId;
+    if (!scriptId || !openedCodeRequest.loading) return;
+    if (scriptManager.versionHistoryScriptId !== scriptId) return;
+
+    const metadata = scriptManager.currentScript?.id === scriptId
+      ? scriptManager.currentScript
+      : scripts.find((script) => script.id === scriptId);
+    const versions = Array.isArray(scriptManager.versionHistory) ? scriptManager.versionHistory : [];
+    const selectedVersion = versions.find((version) => version.id === scriptManager.selectedVersionId)
+      || versions[0]
+      || null;
+    const code = typeof selectedVersion?.code === "string" ? selectedVersion.code : "";
+    setOpenedCodeRequest((current) => {
+      if (current?.scriptId !== scriptId || !current.loading) return current;
+      return {
+        ...current,
+        title: metadata?.title || current.title || "Saved script",
+        summary: selectedVersion?.versionNumber != null
+          ? `Saved creation - Version ${selectedVersion.versionNumber}`
+          : "Saved creation - No saved version",
+        explanation: selectedVersion?.explanation || "",
+        language: selectedVersion?.language || current.language || "luau",
+        version: selectedVersion?.versionNumber || null,
+        code,
+        originalCode: code,
+        loading: false,
+      };
+    });
+  }, [openedCodeRequest, scriptManager, scripts]);
+
+  const openedCodeArtifact = useMemo(
+    () => buildOpenedCodeArtifact(openedCodeRequest),
+    [openedCodeRequest],
+  );
+
+  const handleOpenedCodeChange = useCallback((_artifactId, _fileId, code) => {
+    setOpenedCodeRequest((current) => current ? { ...current, code } : current);
+  }, []);
+
+  const revertOpenedCode = useCallback(() => {
+    setOpenedCodeRequest((current) => current
+      ? { ...current, code: current.originalCode || "" }
+      : current);
   }, []);
 
   useEffect(() => {
@@ -577,14 +685,6 @@ export default function AgentWorkspaceLayout({ controller }) {
       .slice(0, 200);
   }, [studioManifest, studioSearch]);
 
-  const studioScriptCount = useMemo(
-    () =>
-      (studioManifest || []).filter((item) =>
-        ["Script", "LocalScript", "ModuleScript"].includes(String(item?.className || ""))
-      ).length,
-    [studioManifest]
-  );
-
   const openStudioScript = useCallback(async (item) => {
     const path = item?.canonicalPath || item?.path;
     if (!path) return;
@@ -647,6 +747,9 @@ export default function AgentWorkspaceLayout({ controller }) {
     if (!studioFiles.length) return workspace.activeFile;
     return studioFiles.find((file) => file.id === activeStudioFileId) || studioFiles[0] || null;
   }, [activeStudioFileId, studioFiles, workspace.activeFile]);
+
+  const stageArtifact = openedCodeArtifact || studioArtifact;
+  const stageActiveFile = openedCodeArtifact?.files?.[0] || studioActiveFile;
 
   const handleStudioFileChange = useCallback((_artifactId, _fileId, content) => {
     if (studioFiles.length) {
@@ -1013,6 +1116,55 @@ export default function AgentWorkspaceLayout({ controller }) {
     unified,
   ]);
 
+  const openArtifactOnStage = (message) => {
+    setOpenedCodeRequest(null);
+    handleOpenArtifact(message);
+    handleDockPanelChange("code");
+  };
+
+  const agentWorkspaceControls = (
+    <>
+      <div data-tour="mode-switcher" className="nexus-commandbar__mode">
+        <Segmented
+          size="sm"
+          options={[
+            { id: "quick_script", label: "Quick", icon: FileCode2 },
+            { id: "agent_build", label: "Build", icon: Bot },
+          ]}
+          value={generatorMode}
+          onChange={(mode) => setGeneratorMode(mode, "mode_control")}
+        />
+      </div>
+      <div className="nexus-commandbar__model">
+        <ModelSwitcher
+          value={settings.modelVersion}
+          isPremium={isPremium}
+          isStarterOrAbove={isStarterOrAbove}
+          onChange={(id) => updateSettings({ modelVersion: id })}
+          onProNudge={(reason) => {
+            if (!requireUser()) return;
+            setProNudgeReason(reason || "Premium AI Models");
+            setShowProNudge(true);
+          }}
+          onStarterNudge={(reason) => {
+            if (!requireUser()) return;
+            starterPromo?.notifyStarterGate(reason || "Model Selection");
+          }}
+        />
+      </div>
+      <div data-tour="studio-pair" className="nexus-commandbar__studio">
+        <StudioPairControl
+          connection={studio}
+          connected={studio?.connected}
+          loading={studio?.loading}
+          refresh={studio?.refresh}
+          notify={notify}
+          requireUser={(next) => requireUser(next, PENDING_AUTH_ACTIONS.STUDIO_CONNECTION, "studio_pair_control")}
+        />
+      </div>
+    </>
+  );
+
   const agentChat = (
     <div className="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col">
       <AgentChatPanel
@@ -1042,10 +1194,10 @@ export default function AgentWorkspaceLayout({ controller }) {
           onEditPlan={handleEditPlan}
           onRefine={onRefine}
           onStartRefine={onStartRefineCommand}
-          onOpenArtifact={handleOpenArtifact}
+          onOpenArtifact={openArtifactOnStage}
           onQuickStart={handleQuickStart}
           onRenameChat={(title) => chat.handleRenameChat(chat.currentChatId, title)}
-          onOpenNavigation={() => setSidebarOpen(true)}
+          onOpenNavigation={() => (sidebarOpen ? closeProjectSidebar(true) : setSidebarOpen(true))}
           onRetryMessage={handleRetryMessage}
           notify={notify}
           prompt={prompt}
@@ -1131,30 +1283,64 @@ export default function AgentWorkspaceLayout({ controller }) {
           projectAssetSaving={roblox?.projectAssetSaving}
           selectedAssetProjectId={roblox?.selectedAssetProjectId}
           robloxStatus={roblox?.status}
+          workspaceControls={agentWorkspaceControls}
+          navigationOpen={sidebarOpen}
+          navigationControls="project-sidebar"
+          navigationButtonRef={sidebarToggleRef}
       />
     </div>
   );
 
-  const codeWorkspace = studioArtifact?.files?.length ? (
+  const saveOpenedCodeToCreations = async (title, code) => {
+    const scriptId = await scriptManager.handleCreateScript(
+      title,
+      code,
+      "logic",
+      chat.currentChatId,
+      chat.currentChatMeta?.projectId || null,
+    );
+    if (!scriptId) return;
+    notify({ message: "Script saved to creations", type: "success" });
+    track("project_saved", { output_type: "script" });
+    setOpenedCodeRequest((current) => current ? {
+      ...current,
+      scriptId,
+      originalCode: code,
+      summary: "Saved creation - Version 1",
+    } : current);
+  };
+
+  const codeWorkspace = openedCodeRequest?.loading ? (
+    <WorkspaceEmptyState
+      title="Loading saved creation"
+      description="Fetching the latest saved version for the Stage."
+    />
+  ) : stageArtifact?.files?.length ? (
     <CodeWorkspace
-      artifact={studioArtifact}
-      activeFile={studioActiveFile}
+      artifact={stageArtifact}
+      activeFile={stageActiveFile}
       onSelectFile={(fileId) => {
+        if (openedCodeArtifact) return;
         if (studioFiles.length) {
           setActiveStudioFileId(fileId);
         } else {
           workspace.openFile(workspace.activeArtifact?.id, fileId);
         }
       }}
-      onChangeContent={handleStudioFileChange}
-      onRevertEdits={studioFiles.length ? revertAllStudioFiles : workspace.revertArtifactEdits}
-      onRevertFile={studioFiles.length ? revertStudioFile : null}
-      onRefreshFile={studioFiles.length ? refreshStudioFile : null}
-      onCloseFile={studioFiles.length ? closeStudioFile : null}
-      onSaveFile={studioFiles.length ? saveStudioFile : null}
-      onSaveAllFiles={studioFiles.length ? saveAllStudioFiles : null}
+      onChangeContent={openedCodeArtifact ? handleOpenedCodeChange : handleStudioFileChange}
+      onRevertEdits={openedCodeArtifact
+        ? revertOpenedCode
+        : (studioFiles.length ? revertAllStudioFiles : workspace.revertArtifactEdits)}
+      onRevertFile={!openedCodeArtifact && studioFiles.length ? revertStudioFile : null}
+      onRefreshFile={!openedCodeArtifact && studioFiles.length ? refreshStudioFile : null}
+      onCloseFile={!openedCodeArtifact && studioFiles.length ? closeStudioFile : null}
+      onSaveFile={!openedCodeArtifact && studioFiles.length ? saveStudioFile : null}
+      onSaveAllFiles={!openedCodeArtifact && studioFiles.length ? saveAllStudioFiles : null}
+      onSaveToCreations={openedCodeArtifact && !openedCodeRequest?.scriptId && user
+        ? saveOpenedCodeToCreations
+        : null}
       saving={studioBusy}
-      conflict={studioConflict}
+      conflict={openedCodeArtifact ? null : studioConflict}
       notify={notify}
     />
   ) : (
@@ -1167,9 +1353,13 @@ export default function AgentWorkspaceLayout({ controller }) {
   const fileTree = (
     <div className="p-2">
       <CodeFileTree
-        artifact={studioFiles.length ? studioArtifact : workspace.activeArtifact}
-        activeFileId={studioFiles.length ? studioActiveFile?.id : workspace.activeFile?.id}
+        artifact={openedCodeArtifact || (studioFiles.length ? studioArtifact : workspace.activeArtifact)}
+        activeFileId={openedCodeArtifact?.files?.[0]?.id || (studioFiles.length ? studioActiveFile?.id : workspace.activeFile?.id)}
         onSelectFile={(fileId) => {
+          if (openedCodeArtifact) {
+            handleDockPanelChange("code");
+            return;
+          }
           if (studioFiles.length) {
             setActiveStudioFileId(fileId);
           } else {
@@ -1211,6 +1401,7 @@ export default function AgentWorkspaceLayout({ controller }) {
                 type="button"
                 onClick={() => {
                   if (!isScript) return;
+                  setOpenedCodeRequest(null);
                   openStudioScript(item);
                   handleDockPanelChange("code");
                 }}
@@ -1393,9 +1584,9 @@ export default function AgentWorkspaceLayout({ controller }) {
   };
 
   return (
-    <div className="fixed inset-0 overflow-hidden">
-      <div ref={aiPageRef} className="ai-page relative flex flex-col overflow-hidden font-sans">
-      <div className="flex min-h-0 flex-1 overflow-hidden">
+    <div className="nexus-studio-root fixed inset-0 overflow-hidden">
+      <div ref={aiPageRef} className="ai-page nexus-studio-page relative flex flex-col overflow-hidden font-sans">
+      <div className="nexus-studio-layout flex min-h-0 flex-1 overflow-hidden">
         {/* LEFT: projects and chats */}
         {generatorMode === "agent_build" && (
           <>
@@ -1427,7 +1618,6 @@ export default function AgentWorkspaceLayout({ controller }) {
                 studioPlacePreference={studio?.placePreference}
                 generatingChatIds={unified.generatingChatIds}
                 activeAgentStatusByChat={activeAgentStatusByChat}
-                setCurrentScriptId={scriptManager.setCurrentScriptId}
                 onSelectChat={(id) => {
                   chat.openChatById(id);
                   setActiveTab("chat");
@@ -1449,104 +1639,47 @@ export default function AgentWorkspaceLayout({ controller }) {
 
         {/* CENTER: Studio agent chat */}
         <main
-          className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+          className="nexus-studio-main flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
           aria-hidden={projectSidebarIsModal ? "true" : undefined}
           inert={projectSidebarIsModal ? "" : undefined}
         >
-          <SiteHeader
-            variant="workspace"
-            robloxStatusOverride={roblox?.status ?? null}
-            robloxLoadingOverride={Boolean(roblox?.loading)}
-            workspaceLeft={(
-              <>
-                {generatorMode === "agent_build" ? (
-                  <>
-                    <button
-                      ref={sidebarToggleRef}
-                      type="button"
-                      onClick={() => (sidebarOpen ? closeProjectSidebar(true) : setSidebarOpen(true))}
-                      className={`grid h-11 w-11 shrink-0 place-items-center rounded-md transition-[background-color,color] focus-ring xl:h-8 xl:w-8 ${sidebarOpen ? "bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]" : "text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text)]"}`}
-                      title="Toggle sidebar"
-                      aria-label="Toggle sidebar"
-                      aria-controls="project-sidebar"
-                      aria-expanded={sidebarOpen}
-                    >
-                      <Menu className="h-4 w-4" />
-                    </button>
-                    <div className="hidden h-4 w-px bg-[var(--ds-fill-hover)] xl:block" aria-hidden="true" />
-                  </>
-                ) : null}
-                <div data-tour="mode-switcher" className="hidden shrink-0 md:inline-flex">
-                  <Segmented
-                    size="sm"
-                    options={[
-                      { id: "quick_script", label: "Quick", icon: FileCode2 },
-                      { id: "agent_build", label: "Agent Build", icon: Bot },
-                    ]}
-                    value={generatorMode}
-                    onChange={(mode) => setGeneratorMode(mode, "mode_control")}
-                  />
-                </div>
-                <div className="hidden h-4 w-px bg-[var(--ds-fill-hover)] xl:block" aria-hidden="true" />
-                {generatorMode === "agent_build" && (
-                  <>
-                    <div className="shrink-0">
-                      <ModelSwitcher
-                        value={settings.modelVersion}
-                        isPremium={isPremium}
-                        isStarterOrAbove={isStarterOrAbove}
-                        onChange={(id) => updateSettings({ modelVersion: id })}
-                        onProNudge={(reason) => {
-                          if (!requireUser()) return;
-                          setProNudgeReason(reason || "Premium AI Models");
-                          setShowProNudge(true);
-                        }}
-                        onStarterNudge={(reason) => {
-                          if (!requireUser()) return;
-                          starterPromo?.notifyStarterGate(reason || "Model Selection");
-                        }}
-                      />
-                    </div>
-                    <div className="hidden h-4 w-px bg-[var(--ds-fill-hover)] xl:block" aria-hidden="true" />
-                  </>
-                )}
-                <div data-tour="studio-pair" className="shrink-0">
-                  <StudioPairControl
-                    connection={studio}
-                    connected={studio?.connected}
-                    loading={studio?.loading}
-                    refresh={studio?.refresh}
-                    notify={notify}
-                    requireUser={(next) => requireUser(next, PENDING_AUTH_ACTIONS.STUDIO_CONNECTION, "studio_pair_control")}
-                  />
-                </div>
-              </>
-            )}
-            workspaceRight={(
-              <>
-                {generatorMode === "agent_build" ? (
-                  <div className="hidden shrink-0 opacity-75 transition-opacity hover:opacity-100 2xl:block">
-                    <ProjectContextStatus
-                      context={projectContext}
-                      plan={planKey}
-                      studioConnected={Boolean(studio?.connected)}
-                      studioConnectionType={studio?.connectionType || null}
-                      studioManifestCount={studioScriptCount}
-                      studioManifestSupported={studioManifestSupported}
-                      onViewStructure={() => {
-                        setDetailsView("architecture");
-                        handleDockPanelChange("details");
-                      }}
+          {generatorMode === "quick_script" ? (
+            <SiteHeader
+              variant="workspace"
+              robloxStatusOverride={roblox?.status ?? null}
+              robloxLoadingOverride={Boolean(roblox?.loading)}
+              workspaceLeft={(
+                <>
+                  <div data-tour="mode-switcher" className="hidden shrink-0 md:inline-flex">
+                    <Segmented
+                      size="sm"
+                      options={[
+                        { id: "quick_script", label: "Quick", icon: FileCode2 },
+                        { id: "agent_build", label: "Build", icon: Bot },
+                      ]}
+                      value={generatorMode}
+                      onChange={(mode) => setGeneratorMode(mode, "mode_control")}
                     />
                   </div>
-                ) : (
-                  <div className="hidden text-right text-[11px] font-semibold text-[var(--ds-text-muted)] sm:block">
-                    No plan approval in Quick
+                  <div data-tour="studio-pair" className="shrink-0">
+                    <StudioPairControl
+                      connection={studio}
+                      connected={studio?.connected}
+                      loading={studio?.loading}
+                      refresh={studio?.refresh}
+                      notify={notify}
+                      requireUser={(next) => requireUser(next, PENDING_AUTH_ACTIONS.STUDIO_CONNECTION, "studio_pair_control")}
+                    />
                   </div>
-                )}
-              </>
-            )}
-          />
+                </>
+              )}
+              workspaceRight={(
+                <div className="hidden text-right text-[11px] font-semibold text-[var(--ds-text-muted)] sm:block">
+                  Quick script
+                </div>
+              )}
+            />
+          ) : null}
 
           {generatorMode === "quick_script" ? (
             <div className="flex-1 min-h-0 flex flex-col">
@@ -1600,25 +1733,6 @@ export default function AgentWorkspaceLayout({ controller }) {
           )}
         </main>
       </div>
-
-      <CodeDrawer
-        open={codeDrawerOpen}
-        onClose={() => setCodeDrawerOpen(false)}
-        code={codeDrawerData.code}
-        title={codeDrawerData.title}
-        explanation={codeDrawerData.explanation}
-        onSaveScript={async (title, code) => {
-          await scriptManager.handleCreateScript(
-            title,
-            code,
-            "logic",
-            chat.currentChatId,
-            chat.currentChatMeta?.projectId || null
-          );
-          notify({ message: "Script saved to creations", type: "success" });
-          track("project_saved", { output_type: "script" });
-        }}
-      />
 
       <SignInNudgeModal
         isOpen={showSignInNudge}

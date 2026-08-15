@@ -21,10 +21,13 @@ import {
   Pencil,
   Plus,
   Search,
+  Settings,
+  CreditCard,
   Trash2,
   X,
 } from "lib/icons";
 import SidebarContextMenu from "./SidebarContextMenu";
+import NexusDisplayIcon from "../icons/NexusDisplayIcon";
 import {
   buildSidebarTree,
   formatSidebarTimestamp,
@@ -542,9 +545,12 @@ export default function ProjectTreeSidebar({
 
   return (
     <div className="nexus-project-tree flex h-full min-h-0 flex-col bg-[var(--ds-bg-sidebar)] text-[var(--ds-text-secondary)]">
-      <div className="border-b border-[var(--ds-border-subtle)] px-4 pb-4 pt-3">
+      <div className="nexus-project-tree__top border-b border-[var(--ds-border-subtle)] px-3 pb-3 pt-3">
         <div className="mb-2.5 flex h-7 items-center justify-between">
-          <span className="text-[13px] font-semibold text-[var(--ds-text)]">NexusRBX</span>
+          <div className="flex items-center gap-2">
+            <span className="nexus-project-tree__brand-mark" aria-hidden="true">N</span>
+            <span className="text-[12px] font-semibold text-[var(--ds-text)]">Projects</span>
+          </div>
           <button
             type="button"
             onClick={onCollapse}
@@ -557,7 +563,7 @@ export default function ProjectTreeSidebar({
         <button
           type="button"
           onClick={() => onNewChat(currentProjectId || null)}
-          className="nexus-project-tree__new-chat mb-2.5 flex h-9 w-full items-center gap-2 rounded-xl border border-transparent bg-[var(--ds-accent)] px-3 text-xs font-semibold text-[var(--ds-accent-foreground)] transition-[background-color,box-shadow,transform] hover:bg-[var(--ds-accent-hover)] active:translate-y-px"
+          className="nexus-project-tree__new-chat mb-2.5 flex h-9 w-full items-center gap-2 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-3 text-xs font-semibold text-[var(--ds-text)] transition-[background-color,border-color,transform] hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-fill-hover)] active:translate-y-px"
         >
           <Plus className="h-3.5 w-3.5" />
           <span className="flex-1 text-left">New chat</span>
@@ -679,8 +685,9 @@ export default function ProjectTreeSidebar({
                 </section>
               )}
               {!searchResults.projects.length && !searchResults.chats.length && !searchResults.creations.length && (
-                <div className="px-3 py-10 text-center text-xs text-[var(--ds-text-muted)]">
-                  No projects, chats, or creations found.
+                <div className="flex flex-col items-center px-3 py-8 text-center text-xs text-[var(--ds-text-muted)]">
+                  <NexusDisplayIcon name="ask" size={56} className="mb-2 h-14 w-14" />
+                  <span>No projects, chats, or creations found.</span>
                 </div>
               )}
             </div>
@@ -764,7 +771,7 @@ export default function ProjectTreeSidebar({
                     disabled={creatingProject}
                     aria-label="Detect project from Studio"
                     title="Detect from Studio"
-                    className="nexus-sidebar-icon-action ml-1 rounded p-1 text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-accent)] disabled:opacity-40"
+                    className="nexus-sidebar-icon-action ml-1 rounded p-1 text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] disabled:opacity-40"
                   >
                     <Link2 className="h-3.5 w-3.5" />
                   </button>
@@ -868,14 +875,16 @@ export default function ProjectTreeSidebar({
                       );
                     })}
                     {!projectsLoading && !tree.projects.length && (
-                      <button
-                        type="button"
-                        onClick={onDetectProject}
-                        className="nexus-sidebar-row-action ml-3 flex h-9 items-center gap-2 rounded-md px-2 text-[11px] text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text-secondary)]"
-                      >
-                        <Link2 className="h-3 w-3" />
-                        Detect a published Studio game
-                      </button>
+                      <div className="ml-3 flex flex-col items-start gap-1.5 py-2">
+                        <button
+                          type="button"
+                          onClick={onDetectProject}
+                          className="nexus-sidebar-row-action flex min-h-11 items-center gap-2 rounded-md px-2 text-[11px] text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text-secondary)]"
+                        >
+                          <Link2 className="h-3 w-3" />
+                          Detect a published Studio game
+                        </button>
+                      </div>
                     )}
                     {projectsLoading && (
                       <p className="px-8 py-2 text-[11px] text-[var(--ds-text-muted)]">Loading projects…</p>
@@ -892,6 +901,16 @@ export default function ProjectTreeSidebar({
           data-visible={scrollEdges.bottom}
         />
       </div>
+      <nav className="nexus-project-tree__footer" aria-label="Workspace destinations">
+        <a href="/settings" className="nexus-project-tree__destination focus-ring">
+          <Settings className="h-3.5 w-3.5" aria-hidden="true" />
+          <span>Settings</span>
+        </a>
+        <a href="/billing" className="nexus-project-tree__destination focus-ring">
+          <CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
+          <span>Plan &amp; usage</span>
+        </a>
+      </nav>
       <SidebarContextMenu menu={menu} onClose={() => setMenu(null)} />
     </div>
   );

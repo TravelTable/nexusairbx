@@ -9,6 +9,7 @@ import {
   ConversationContent,
   ConversationScrollButton,
 } from "../ai-elements/conversation";
+import "./chat/ChatExperience.css";
 
 export { CHAT_MODES };
 
@@ -48,6 +49,10 @@ export default function ChatView({
   onEditMessage,
   onRetryMessage,
   onRestoreRun,
+  workspaceControls,
+  navigationOpen,
+  navigationControls,
+  navigationButtonRef,
 }) {
   const showEmpty = messages.length === 0 && !pendingMessage;
   const rootRef = useRef(null);
@@ -68,10 +73,14 @@ export default function ChatView({
           onRenameChat={onRenameChat}
           onOpenNavigation={onOpenNavigation}
           onOpenPlan={onOpenPlan}
+          workspaceControls={workspaceControls}
+          navigationOpen={navigationOpen}
+          navigationControls={navigationControls}
+          navigationButtonRef={navigationButtonRef}
         />
-        <Conversation className="h-full min-h-0 w-full flex-1">
+        <Conversation className="nexus-conversation-surface h-full min-h-0 w-full flex-1">
           <ConversationContent
-            className="pc-page-gutter mx-auto min-h-full w-full max-w-[1024px] gap-6 py-6 md:py-8"
+            className="nexus-conversation-content mx-auto min-h-full gap-7 py-6 md:py-9"
             scrollClassName="nexus-chat-scroll scrollbar-subtle"
           >
             {showEmpty ? (

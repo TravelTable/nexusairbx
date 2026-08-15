@@ -151,31 +151,32 @@ const legalRoutes = [
 
 test("homepage raw HTML is meaningful before client JavaScript", () => {
   const html = readHtml("/");
-  assert.equal(extractTitle(html), "AI Roblox Game Builder &amp; Studio Agent | NexusRBX");
-  assert.equal(extractH1(html), "Make the Roblox game in your head.");
+  assert.equal(extractTitle(html), "Conversational Roblox Production Studio | NexusRBX");
+  assert.equal(extractH1(html), "Talk to your Roblox project. Watch it take shape.");
   assert.equal(
     extractMetaContent(html, "description"),
-    "Turn an idea into a Roblox game with project-aware planning, reviewable multi-file builds, Studio playtests, and an honest path from prototype to publish.",
+    "Build any Roblox game through conversation with project-aware inspection, reviewable Studio changes, playtest evidence, and a creator-led path to publishing.",
   );
   assert.equal(extractCanonical(html), "https://www.nexusrbx.com/");
-  assert.match(html, /From idea to a playable Roblox game/);
-  assert.match(html, /Plan the whole project, build it in Studio, playtest every change/);
+  assert.match(html, /Conversational Roblox production studio/i);
+  assert.match(html, /Describe any game, system, interface, or fix/);
   assert.match(html, /aria-busy="false"/);
   assert.match(html, /<button[^>]*type="submit"[^>]*disabled=""[^>]*>Start building<\/button>/);
-  assert.match(html, /id="homepage-hero-prompt-message"[^>]*>No magic black box: you will see the plan before the build begins\./);
-  assert.match(html, /Start with the game[^<]*not the boilerplate\./);
-  assert.match(html, /Illustrative workflow/);
-  assert.match(html, /Playtest passed/);
-  assert.match(html, /Your game stays yours\./);
-  assert.match(html, /Robux is an outcome, not a button\./);
-  assert.match(html, /Proof should be earned/);
-  assert.match(html, /Plans described like a creator would use them\./);
+  assert.match(html, /id="homepage-hero-prompt-message"[^>]*>Your prompt is saved locally before the workspace opens\. Review is always part of the loop\./);
+  assert.match(html, /Nexus does not jump from prompt to paste\./);
+  assert.match(html, /Illustrative project · real interface controls/);
+  assert.match(html, /Play mode evidence/);
+  assert.match(html, /The project is bigger than the open script\./);
+  assert.match(html, /Robux is an outcome, not a generate button\./);
+  assert.match(html, /Breadth without invented customer proof\./);
+  assert.match(html, /These curated examples show the systems a Nexus project can coordinate\./);
   assert.doesNotMatch(html, /Trusted by Top Roblox Developers|Alex, Studio Lead|game-changer/);
   assert.match(html, /src="\/nexus-mark\.svg"/);
-  assert.match(html, /nexusrbx-og-purple-workshop\.png/);
+  assert.match(html, /nexusrbx-og-flat-world\.jpg/);
+  assert.doesNotMatch(html, /nexusrbx-og-purple-workshop\.png/);
   assert.doesNotMatch(html, /src="\/(?:logo|imageeeeAI|luginimageeeeeeeee|promptbox|generated-files)\.png"/);
   assert.match(html, /data-generation-intent-form="homepage"/);
-  assert.match(html, /placeholder="Describe the game, player loop, or system in your head\.\.\."/);
+  assert.match(html, /<label[^>]*for="homepage-hero-prompt"[^>]*>What Roblox game do you want to make\?<\/label>/);
   assert.match(html, /property="og:title"/);
   assert.match(html, /name="twitter:card"/);
   assert.match(html, /application\/ld\+json/);
@@ -194,9 +195,9 @@ test("homepage raw HTML is meaningful before client JavaScript", () => {
 
 test("homepage trust copy is specific without implying verification or earnings", () => {
   const html = readHtml("/");
-  assert.match(html, /Review before Studio writes/);
-  assert.match(html, /OAuth credentials stay server-side/);
-  assert.match(html, /Built for Roblox Studio/);
+  assert.match(html, /Reviewable Studio changes/);
+  assert.match(html, /Roblox credentials remain server-side/);
+  assert.match(html, /Continue inside Studio/);
   assert.match(html, /Earnings are never guaranteed/);
   assert.doesNotMatch(html, /Roblox OAuth Verified|guaranteed Robux|guaranteed earnings/i);
 });

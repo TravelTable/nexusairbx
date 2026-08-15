@@ -1,7 +1,7 @@
 export const homepageNavigation = Object.freeze([
   { href: "/#product", label: "Product" },
-  { href: "/#genres", label: "Games" },
   { href: "/#workflow", label: "How it works" },
+  { href: "/#studio", label: "Studio" },
   { href: "/pricing", label: "Pricing" },
 ]);
 

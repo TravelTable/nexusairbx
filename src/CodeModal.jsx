@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import {
-  X, Copy, Check, Download, Trash2, Edit, Save, Loader, Share2, Plus, Wand2, Info, ListChecks
+  X, Copy, Check, Download, Trash2, Edit, Save, Loader, Share2, Plus, SlidersHorizontal, Info, ListChecks
 } from "lib/icons";
 import { useBilling } from "./context/BillingContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -476,11 +476,11 @@ const handleEditSave = async () => {
           {!editMode && !loading && !error && (
             <div className="flex flex-wrap gap-2 px-6 py-3 border-t border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)]">
               <button
-                className="flex items-center gap-1 px-3 py-1 rounded bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--ds-plan)_18%,transparent)] text-[var(--ds-plan)] text-xs font-bold"
+                className="flex min-h-11 items-center gap-1 rounded bg-[color-mix(in_srgb,var(--ds-plan)_12%,transparent)] px-3 py-2 text-xs font-bold text-[var(--ds-plan)] hover:bg-[color-mix(in_srgb,var(--ds-plan)_18%,transparent)]"
                 onClick={() => handleAI("improve")}
                 disabled={aiLoading}
               >
-                <Wand2 className="h-4 w-4" />
+                <SlidersHorizontal className="h-4 w-4" />
                 Improve
               </button>
               <button

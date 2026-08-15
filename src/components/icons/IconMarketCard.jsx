@@ -26,7 +26,7 @@ export default function IconMarketCard({
         className="block min-h-11 rounded-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--ds-bg-canvas)]"
       >
         {icon.isPro && !isPremium ? (
-          <span className="absolute right-2 top-2 z-20 rounded-md border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--ds-accent)]">
+          <span className="absolute right-2 top-2 z-20 rounded-md border border-[var(--ds-border-strong)] bg-[var(--ds-surface-overlay)] px-2 py-0.5 text-xs font-semibold text-[var(--ds-text-secondary)]">
             Pro
           </span>
         ) : null}
@@ -38,7 +38,7 @@ export default function IconMarketCard({
             className="h-full w-full object-contain transition-opacity duration-200 group-hover:opacity-95"
             loading="lazy"
           />
-          <div className="absolute inset-x-2 bottom-2 flex justify-center rounded-lg bg-[var(--ds-surface-overlay)] p-3 opacity-0 shadow-[var(--ds-shadow-overlay)] backdrop-blur-md transition-opacity group-hover:opacity-100 group-focus-within:opacity-100" aria-hidden="true">
+          <div className="absolute inset-x-2 bottom-2 flex justify-center rounded-lg bg-[var(--ds-surface-overlay)] p-3 opacity-0 shadow-[var(--ds-shadow-overlay)] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100" aria-hidden="true">
             <span className="flex items-center gap-1 text-sm font-semibold text-[var(--ds-text)]">
               View details <ArrowRight className="h-3 w-3" />
             </span>

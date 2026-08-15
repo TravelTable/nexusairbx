@@ -14,6 +14,10 @@ export default function ChatHeader({
   onRenameChat,
   onOpenNavigation,
   onOpenPlan,
+  workspaceControls = null,
+  navigationOpen = false,
+  navigationControls = undefined,
+  navigationButtonRef = null,
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(chatTitle);
@@ -44,75 +48,85 @@ export default function ChatHeader({
       : "Studio offline";
 
   return (
-    <header className="pc-page-gutter relative z-20 flex h-12 shrink-0 items-center justify-between gap-4 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)]">
-      <div className="flex min-w-0 items-center gap-2">
+    <header className="nexus-chat-header">
+      <div className="nexus-chat-header__identity">
         <button
+          ref={navigationButtonRef}
           type="button"
           onClick={onOpenNavigation}
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[var(--ds-text-secondary)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring xl:hidden"
-          aria-label="Open navigation"
+          className="nexus-chat-header__nav focus-ring"
+          aria-label="Toggle project navigation"
+          aria-controls={navigationControls}
+          aria-expanded={navigationOpen}
         >
           <Menu className="h-4 w-4" />
         </button>
 
-        <div className="hidden min-w-0 items-center gap-2 text-sm sm:flex">
-          <span className="max-w-40 truncate text-[var(--ds-text-muted)]">{projectTitle}</span>
-          <span className="text-[var(--ds-text-muted)]" aria-hidden="true">/</span>
+        <div className="nexus-chat-header__mark" aria-hidden="true">
+          <span>N</span>
         </div>
 
-        {editing ? (
-          <input
-            ref={inputRef}
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            onBlur={finishEditing}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") finishEditing();
-              if (event.key === "Escape") {
-                setDraft(chatTitle);
-                setEditing(false);
-              }
-            }}
-            maxLength={80}
-            className="h-11 min-w-0 max-w-[min(46vw,28rem)] rounded-full border border-[var(--ds-border-subtle)] bg-transparent px-3 text-sm font-medium text-[var(--ds-text)] outline-none focus:border-[var(--ds-accent-border)] focus-ring xl:h-8"
-            aria-label="Chat title"
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            className="group/title flex min-h-11 min-w-0 items-center gap-1.5 rounded-full px-2 py-1 text-left text-sm font-medium text-[var(--ds-text)] transition-colors hover:bg-[var(--ds-fill-subtle)] focus-ring xl:min-h-0"
-            title="Rename chat"
-          >
-            <span className="truncate">{chatTitle}</span>
-            <Pencil className="h-3 w-3 shrink-0 text-[var(--ds-text-muted)] opacity-0 transition-opacity group-hover/title:opacity-100 group-focus-visible/title:opacity-100" />
-          </button>
-        )}
+        <div className="nexus-chat-header__titles">
+          <span className="nexus-chat-header__project" title={projectTitle}>{projectTitle}</span>
+
+          {editing ? (
+            <input
+              ref={inputRef}
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              onBlur={finishEditing}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") finishEditing();
+                if (event.key === "Escape") {
+                  setDraft(chatTitle);
+                  setEditing(false);
+                }
+              }}
+              maxLength={80}
+              className="nexus-chat-header__title-input focus-ring"
+              aria-label="Chat title"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="nexus-chat-header__title group/title focus-ring"
+              title="Rename chat"
+            >
+              <span>{chatTitle}</span>
+              <Pencil className="h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover/title:opacity-100 group-focus-visible/title:opacity-100" />
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="nexus-chat-header__controls">
+        {workspaceControls ? <div className="nexus-chat-header__workspace-controls">{workspaceControls}</div> : null}
         {onOpenPlan ? (
           <button
             type="button"
             onClick={onOpenPlan}
             aria-label="Review plan"
-            className="inline-flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-medium text-[var(--ds-text-secondary)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring xl:h-8 xl:min-w-0"
+            className="nexus-chat-header__review focus-ring"
           >
             <ListChecks className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Review</span>
           </button>
         ) : null}
         {isBusy ? (
-          <span className="hidden text-[11px] font-medium text-[var(--ds-text-secondary)] md:inline">Nexus working</span>
+          <span className="nexus-chat-header__working" role="status">
+            <span aria-hidden="true" />
+            Nexus working
+          </span>
         ) : null}
         <span
-          className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-[11px] font-medium text-[var(--ds-text-secondary)]"
+          className="nexus-chat-header__studio-state"
           title={connectionLabel}
         >
           <span
-            className={`h-1.5 w-1.5 rounded-full ${
-              studioConnected ? "bg-[var(--ds-success)]" : "bg-[var(--ds-surface-3)]"
-            }`}
+            className="nexus-chat-header__studio-dot"
+            data-connected={studioConnected ? "true" : "false"}
+            aria-hidden="true"
           />
           <span className="hidden sm:inline">{connectionLabel}</span>
         </span>

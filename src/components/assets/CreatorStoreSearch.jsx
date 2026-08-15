@@ -5,6 +5,7 @@ import { getCreatorStoreAsset, searchCreatorStore } from "../../lib/robloxCreato
 import CreatorStoreAssetDetails from "./CreatorStoreAssetDetails";
 import CreatorStoreResultCard from "./CreatorStoreResultCard";
 import RobloxAuthorizationRequired from "../roblox/RobloxAuthorizationRequired";
+import NexusDisplayIcon from "../icons/NexusDisplayIcon";
 
 const DEFAULT_ASSET_TYPES = ["Model", "Mesh"];
 const PAGE_SIZE = 20;
@@ -134,7 +135,7 @@ export default function CreatorStoreSearch({ notify, className = "mx-3 mb-2" }) 
             type="button"
             onClick={() => runSearch()}
             disabled={loading}
-            className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--ds-info)_28%,transparent)] bg-[color-mix(in_srgb,var(--ds-info)_8%,transparent)] px-4 py-2 text-[11px] font-semibold text-[var(--ds-info)] hover:bg-[color-mix(in_srgb,var(--ds-info)_14%,transparent)] disabled:opacity-40"
+            className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-4 py-2 text-[11px] font-semibold text-[var(--ds-text-secondary)] transition-colors hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] disabled:opacity-40"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
             Search
@@ -208,8 +209,9 @@ export default function CreatorStoreSearch({ notify, className = "mx-3 mb-2" }) 
         )}
 
         {!loading && hasSearched && results.length === 0 && !error && (
-          <div className="flex min-h-36 items-center justify-center rounded-[14px] bg-[var(--ds-fill-subtle)] text-sm text-[var(--ds-text-muted)]">
-            No Creator Store assets found.
+          <div className="flex min-h-44 flex-col items-center justify-center gap-2 rounded-[14px] bg-[var(--ds-fill-subtle)] px-4 text-center text-sm text-[var(--ds-text-muted)]">
+            <NexusDisplayIcon name="ask" size={64} className="h-16 w-16" />
+            <span>No Creator Store assets found.</span>
           </div>
         )}
 

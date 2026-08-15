@@ -23,7 +23,9 @@ beforeEach(() => {
 
 test("rejects non-GLB files before creating upload sessions", async () => {
   render(<ModelFilePipelinePanel />);
-  const input = document.querySelector('input[type="file"]');
+  expect(screen.getByRole("button", { name: "Upload GLB" }).className).toContain("min-h-[44px]");
+  expect(screen.getByRole("button", { name: "Refresh model files" }).className).toContain("min-w-[44px]");
+  const input = screen.getByLabelText("Choose GLB file");
   fireEvent.change(input, { target: { files: [file("tree.txt", 4, "text/plain")] } });
   expect(await screen.findByText("Choose a .glb file.")).toBeInTheDocument();
   expect(api.createModelUploadSession).not.toHaveBeenCalled();
@@ -32,7 +34,7 @@ test("rejects non-GLB files before creating upload sessions", async () => {
 test("rejects files above the server-advertised size limit", async () => {
   render(<ModelFilePipelinePanel />);
   await waitFor(() => expect(api.getModelFileRules).toHaveBeenCalled());
-  const input = document.querySelector('input[type="file"]');
+  const input = screen.getByLabelText("Choose GLB file");
   fireEvent.change(input, { target: { files: [file("tree.glb", 11)] } });
   expect(await screen.findByText("File is larger than 10 B.")).toBeInTheDocument();
   expect(api.createModelUploadSession).not.toHaveBeenCalled();
@@ -52,7 +54,7 @@ test("shows actual upload progress and completion state", async () => {
 
   render(<ModelFilePipelinePanel />);
   await waitFor(() => expect(api.getModelFileRules).toHaveBeenCalled());
-  const input = document.querySelector('input[type="file"]');
+  const input = screen.getByLabelText("Choose GLB file");
   fireEvent.change(input, { target: { files: [file("tree.glb", 10)] } });
 
   expect(await screen.findByText("5 B / 10 B")).toBeInTheDocument();

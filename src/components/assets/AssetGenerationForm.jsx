@@ -1,12 +1,12 @@
 import React, { useId } from "react";
-import { ImagePlus, Layers, Package, RefreshCw, Sparkles, WandSparkles } from "../../lib/icons";
+import { ImagePlus, Layers, Package, RefreshCw } from "../../lib/icons";
 import { Button, Toggle } from "../ui";
 
 export const ASSET_GENERATION_MODES = [
   { id: "single", label: "Single", description: "Create one new asset.", icon: ImagePlus },
   { id: "pack", label: "Pack", description: "Create a coordinated set. Eight is the suggested starting point, not a cap.", icon: Package },
   { id: "extend", label: "Extend", description: "Add matching assets to an existing pack.", icon: Layers },
-  { id: "similar", label: "Similar", description: "Use an existing asset as the style anchor.", icon: Sparkles },
+  { id: "similar", label: "Similar", description: "Use an existing asset as the style anchor.", icon: Layers },
   { id: "replacement", label: "Replace", description: "Generate a revision while preserving replacement history.", icon: RefreshCw },
 ];
 
@@ -196,7 +196,7 @@ export default function AssetGenerationForm({
 
       <footer className="asset-generation-form__footer">
         <div><span>Estimated cost</span><strong>{costEstimate || "Confirmed by the server before work starts"}</strong></div>
-        <Button className="asset-primary-action" type="submit" size="lg" icon={WandSparkles} disabled={disabled || submitting || unsupported || !form.prompt.trim()}>
+        <Button className="asset-primary-action" type="submit" size="lg" icon={ImagePlus} disabled={disabled || submitting || unsupported || !form.prompt.trim()}>
           {disabled ? "Generation unavailable" : submitting ? "Starting generation…" : `Generate ${selectedMode.label.toLowerCase()}`}
         </Button>
       </footer>

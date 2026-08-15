@@ -19,10 +19,9 @@ import {
   Save,
   Settings,
   Shield,
-  Sparkles,
+  PlugZap,
   Trash2,
   Users,
-  Wand2,
 } from "lib/icons";
 import { auth } from "../firebase";
 import { useBilling } from "../context/BillingContext";
@@ -63,7 +62,7 @@ import {
 } from "../components/shadcn/alert-dialog";
 import { Badge } from "../components/shadcn/badge";
 import { Button as BaseButton } from "../components/shadcn/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/shadcn/card";
+import { CardContent, CardDescription, CardHeader, CardTitle } from "../components/shadcn/card";
 import { Input } from "../components/shadcn/input";
 import { Label } from "../components/shadcn/label";
 import {
@@ -93,7 +92,7 @@ const NAV_ITEMS = [
   { id: "overview", label: "Overview", icon: Activity },
   { id: "appearance", label: "Appearance", icon: Palette },
   { id: "ai", label: "AI", icon: Bot },
-  { id: "roblox", label: "Roblox + Studio", icon: Wand2 },
+  { id: "roblox", label: "Roblox + Studio", icon: PlugZap },
   { id: "billing", label: "Billing", icon: CreditCard },
   { id: "team", label: "Team", icon: Users },
   { id: "account", label: "Account/Data", icon: Database },
@@ -184,8 +183,8 @@ const Button = React.forwardRef(({ className, variant = "default", ...props }, r
     ref={ref}
     variant={variant}
     className={cn(
-      "min-h-11 rounded-full px-5 focus-visible:ring-[var(--ds-focus-ring)]",
-      variant === "default" && "bg-accent text-accent-foreground shadow-none hover:bg-accent/90",
+      "min-h-11 rounded-[10px] px-4 focus-visible:ring-[var(--ds-focus-ring)]",
+      variant === "default" && "bg-primary text-primary-foreground shadow-none hover:bg-primary/90",
       className
     )}
     {...props}
@@ -355,7 +354,7 @@ function SaveStatus({ status, error, lastSavedAt, onRetry }) {
 
 function NavList({ items, activeTab, onSelect }) {
   return (
-    <nav className="space-y-2" aria-label="Settings sections">
+    <nav className="space-y-1" aria-label="Settings sections">
       {items.map((item) => {
         const Icon = item.icon;
         const active = item.id === activeTab;
@@ -365,10 +364,10 @@ function NavList({ items, activeTab, onSelect }) {
             type="button"
             onClick={() => onSelect(item.id)}
             className={cn(
-              "flex min-h-11 w-full items-center justify-between rounded-full px-4 py-2 text-left text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              "relative flex min-h-11 w-full items-center justify-between rounded-[8px] px-3 py-2 text-left text-sm font-medium transition-colors before:absolute before:bottom-2 before:left-0 before:top-2 before:w-px before:scale-y-0 before:bg-[var(--ds-accent)] before:transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               active
-                ? "bg-accent/10 text-accent"
-                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                ? "bg-[var(--ds-fill-selected)] text-foreground before:scale-y-100"
+                : "text-muted-foreground hover:bg-[var(--ds-fill-hover)] hover:text-foreground"
             )}
             aria-current={active ? "page" : undefined}
           >
@@ -386,11 +385,11 @@ function NavList({ items, activeTab, onSelect }) {
 
 function Panel({ title, description, actions, children, className, tone = "default" }) {
   return (
-    <Card className={cn("overflow-hidden rounded-[14px] border-border/60 bg-card shadow-none", tone === "danger" && "border-destructive/40", className)}>
+    <section className={cn("border-t border-border/70", tone === "danger" && "border-destructive/50", className)}>
       <CardHeader
         className={cn(
-          "flex gap-4 px-6 pb-3 pt-7 sm:flex-row sm:items-start sm:justify-between sm:space-y-0 sm:px-8 sm:pt-8",
-          tone === "danger" && "bg-destructive/5"
+          "flex gap-4 px-0 pb-3 pt-7 sm:flex-row sm:items-start sm:justify-between sm:space-y-0 sm:pt-8",
+          tone === "danger" && "text-destructive"
         )}
       >
         <div className="space-y-1.5">
@@ -399,14 +398,14 @@ function Panel({ title, description, actions, children, className, tone = "defau
         </div>
         {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
       </CardHeader>
-      <CardContent className="px-6 pb-7 pt-4 sm:px-8 sm:pb-8">{children}</CardContent>
-    </Card>
+      <CardContent className="px-0 pb-9 pt-4">{children}</CardContent>
+    </section>
   );
 }
 
 function EmptyState({ icon: Icon = HelpCircle, title, description, action }) {
   return (
-    <div className="rounded-[14px] bg-muted/25 p-8 text-center">
+    <div className="border-y border-dashed border-border/80 py-9 text-center">
       <Icon className="mx-auto h-8 w-8 text-muted-foreground" />
       <h3 className="mt-3 text-sm font-semibold text-foreground">{title}</h3>
       {description && <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">{description}</p>}
@@ -417,7 +416,7 @@ function EmptyState({ icon: Icon = HelpCircle, title, description, action }) {
 
 function HealthTile({ icon: Icon, label, value, detail, state = "neutral", action }) {
   return (
-    <div className={cn("rounded-md border p-4", statusTone(state))}>
+    <div className={cn("border-l-2 p-4", statusTone(state))}>
       <div className="flex items-start justify-between gap-3">
         <Icon className="mt-0.5 h-5 w-5 shrink-0" />
         {action}
@@ -435,7 +434,7 @@ function ToggleRow({ label, description, checked, onCheckedChange, disabled }) {
   const switchId = React.useId();
 
   return (
-    <div className="flex min-h-20 items-start justify-between gap-5 rounded-[12px] bg-muted/25 p-5">
+    <div className="flex min-h-20 items-start justify-between gap-5 border-b border-border/70 py-5 last:border-b-0">
       <div className="space-y-1">
         <Label htmlFor={switchId} className="text-sm font-semibold">{label}</Label>
         {description && <p className="text-sm text-muted-foreground">{description}</p>}
@@ -808,11 +807,6 @@ export default function SettingsPage() {
     }
   };
 
-  const redirectFromBilling = async (runner) => {
-    const data = await runner();
-    if (data?.url) window.location.assign(data.url);
-  };
-
   const clearUserData = async (type) => {
     try {
       const data = await readJson(
@@ -877,7 +871,7 @@ export default function SettingsPage() {
         state: billing.error ? "warn" : "good",
       },
       {
-        icon: Wand2,
+        icon: PlugZap,
         label: "Roblox OAuth",
         value: robloxConnected ? "Connected" : "Not connected",
         detail: selectedCreator ? `${selectedCreator.type} ${selectedCreator.id}` : "No creator target selected",
@@ -1316,7 +1310,7 @@ export default function SettingsPage() {
                     state={creators.length ? "good" : "warn"}
                   />
                   <HealthTile
-                    icon={Sparkles}
+                    icon={Database}
                     label="Universes"
                     value={formatNumber(accessibleUniverses.length)}
                     detail="Accessible resources reported by Roblox"
@@ -1407,7 +1401,7 @@ export default function SettingsPage() {
 
       <Panel title="Roblox operations" description="Recent Roblox upload and polling activity.">
         {robloxState.operations.length === 0 ? (
-          <EmptyState icon={Wand2} title="No Roblox operations yet" description="OAuth uploads and asset polling receipts will appear here." />
+          <EmptyState icon={PlugZap} title="No Roblox operations yet" description="OAuth uploads and asset polling receipts will appear here." />
         ) : (
           <Table>
             <TableHeader>
@@ -1436,7 +1430,7 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <Panel
         title="Billing plan"
-        description="Plan, token balance, subscription controls, and billing recovery states."
+        description="A read-only account summary. Checkout, top-ups, receipts, and subscription management live on the dedicated Billing page."
         actions={<Button type="button" variant="outline" size="sm" onClick={billing.refresh}><RefreshCcw className="h-4 w-4" />Refresh</Button>}
       >
         {billing.error && (
@@ -1455,40 +1449,18 @@ export default function SettingsPage() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-3">
             <HealthTile icon={CreditCard} label="Plan" value={billing.plan || "FREE"} detail={billing.cycle || "No billing cycle"} state="good" />
-            <HealthTile icon={Sparkles} label="Included tokens" value={formatNumber(billing.subRemaining)} detail="Subscription balance" state="neutral" />
+            <HealthTile icon={CreditCard} label="Included tokens" value={formatNumber(billing.subRemaining)} detail="Subscription balance" state="neutral" />
             <HealthTile icon={Activity} label="Premium balance" value={formatNumber(billing.paygRemaining)} detail="Pay-as-you-go balance" state="neutral" />
           </div>
         )}
-        <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-          <Button type="button" onClick={() => redirectFromBilling(() => billing.subscriptionCheckout?.({ plan: "PRO", interval: "month" }))}>
-            Upgrade to Pro
-          </Button>
-          <Button type="button" variant="outline" onClick={() => redirectFromBilling(() => billing.premiumBalanceCheckout?.({ packageKey: "starter" }))}>
-            Add Premium Balance
-          </Button>
-          <Button type="button" variant="secondary" onClick={() => redirectFromBilling(() => billing.portal?.())}>
-            Manage billing
+        <div className="mt-6 border-t border-border/70 pt-5">
+          <Button asChild>
+            <Link to="/billing">
+              Open Billing
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </Button>
         </div>
-        {!billing.isFreeUsagePlan && (
-          <div className="mt-6 flex flex-col gap-4 border-t border-destructive/25 pt-5 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h3 className="text-sm font-semibold text-destructive">Cancel subscription</h3>
-              <p className="mt-1 text-sm text-muted-foreground">Stops renewal without deleting your generated data.</p>
-            </div>
-            <ConfirmationAction
-              trigger={<Button type="button" variant="destructive">Cancel plan</Button>}
-              title="Cancel subscription"
-              description="Your paid subscription will be cancelled through the billing provider. Existing generated data is not deleted."
-              confirmationText="CANCEL PLAN"
-              actionLabel="Cancel plan"
-              onConfirm={async () => {
-                await billing.cancel?.();
-                setNotice("Subscription cancellation requested.");
-              }}
-            />
-          </div>
-        )}
       </Panel>
     </div>
   );
@@ -1632,7 +1604,7 @@ export default function SettingsPage() {
             <div className="grid gap-3 sm:grid-cols-3">
               <HealthTile icon={Users} label="Users" value={formatNumber(adminState.stats?.users || adminState.users.length)} detail="Known accounts" />
               <HealthTile icon={Activity} label="Runs" value={formatNumber(adminState.stats?.runs || adminState.stats?.jobs || 0)} detail="Tracked jobs" />
-              <HealthTile icon={Sparkles} label="Tokens" value={formatNumber(adminState.stats?.tokens || 0)} detail="Reported usage" />
+              <HealthTile icon={Activity} label="Tokens" value={formatNumber(adminState.stats?.tokens || 0)} detail="Reported usage" />
             </div>
           )}
         </Panel>
@@ -1716,13 +1688,11 @@ export default function SettingsPage() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-10 px-4 py-12 sm:px-8 sm:py-16 lg:gap-14 lg:px-14 lg:py-20">
-        <header className="flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex items-start gap-3">
-            <div className="rounded-full bg-accent/10 p-3 text-accent">
-              <Settings className="h-5 w-5" aria-hidden="true" />
-            </div>
+        <header className="flex flex-col gap-7 border-b border-border/70 pb-9 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex items-start gap-4">
+            <Settings className="mt-1 h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
             <div>
-              <h1 className="font-[var(--ds-font-display)] text-4xl font-bold leading-tight tracking-[-0.035em] sm:text-5xl">Settings</h1>
+              <h1 className="font-[var(--ds-font-display)] text-4xl font-semibold leading-tight tracking-[-0.04em] sm:text-5xl">Settings</h1>
               <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
                 Configure AI defaults, Roblox consent, billing, team access, and account data from one place.
               </p>
@@ -1776,7 +1746,7 @@ export default function SettingsPage() {
             </aside>
             <section className="min-w-0" aria-labelledby="settings-section-title">
               <div className="mb-9">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-accent">Account settings</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Account settings</p>
                 <h2 id="settings-section-title" className="mt-3 text-2xl font-semibold tracking-[-0.02em]">
                   {activeSection.label}
                 </h2>

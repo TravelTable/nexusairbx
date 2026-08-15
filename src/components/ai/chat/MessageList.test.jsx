@@ -19,15 +19,6 @@ jest.mock("../../../context/SettingsContext", () => ({
   useSettings: () => ({ settings: { showThinking: true } }),
 }));
 
-jest.mock("motion/react", () => ({
-  motion: {
-    create: () =>
-      function MotionStub({ children, ...props }) {
-        return <span {...props}>{children}</span>;
-      },
-  },
-}));
-
 const baseProps = {
   messages: [],
   user: { email: "builder@example.com" },
@@ -571,7 +562,8 @@ describe("MessageList conversation layout", () => {
 
     expect(screen.getByRole("region", { name: "Run context" })).toBeTruthy();
     expect(screen.getByText("Agent")).toBeTruthy();
-    expect(screen.getByText(/target_1 · connected/)).toBeTruthy();
+    expect(screen.getByText(/Selected place · connected/)).toBeTruthy();
+    expect(screen.queryByText(/target_1/)).toBeNull();
     expect(screen.getByText("Studio read/write")).toBeTruthy();
     expect(screen.getByText(/98\/100 · High/)).toBeTruthy();
     expect(screen.getByText(/98\/100/).closest("span")?.textContent).toContain("98/100");

@@ -43,10 +43,10 @@ test("makes the homepage skip link the first keyboard target", () => {
   expect(document.querySelector("header").className).toContain("sticky");
   expect(screen.getByRole("navigation", { name: "Homepage navigation" })).toBeTruthy();
   expect(screen.getByRole("link", { name: "Product" }).getAttribute("href")).toBe("/#product");
-  expect(screen.getByRole("link", { name: "Games" }).getAttribute("href")).toBe("/#genres");
   expect(screen.getByRole("link", { name: "How it works" }).getAttribute("href")).toBe("/#workflow");
+  expect(screen.getByRole("link", { name: "Studio" }).getAttribute("href")).toBe("/#studio");
   expect(screen.getByRole("link", { name: "Pricing" }).getAttribute("href")).toBe("/pricing");
-  expect(screen.getByRole("link", { name: "Start building" }).getAttribute("href")).toBe("/#product");
+  expect(screen.getByRole("link", { name: "Start building" }).getAttribute("href")).toBe("/ai");
   expect(screen.getByRole("link", { name: "NexusRBX home" }).querySelector("img").getAttribute("src")).toBe(
     "/nexus-mark.svg",
   );

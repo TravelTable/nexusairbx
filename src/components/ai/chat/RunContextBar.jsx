@@ -67,13 +67,20 @@ export function describeRunContext(decision) {
     ? requestedMode
     : `${requestedMode} → ${effectiveMode}`;
   const studio = decision?.studio || {};
-  const target = String(studio.targetId || studio.placeId || "").trim() || "Not bound";
+  const targetIdentity = String(studio.targetId || studio.placeId || "").trim();
+  const targetName = String(
+    studio.targetName || studio.placeName || studio.projectName || ""
+  ).trim();
+  const target = targetName || (targetIdentity ? "Selected place" : "Not bound");
   const connection = studio.required
     ? (studio.connected ? "connected" : "not connected")
     : "not required";
   const manifest = decision?.manifest || {};
   const manifestStatus = titleCase(manifest.status) || "Not required";
-  const manifestSource = titleCase(manifest.source);
+  const rawManifestSource = String(manifest.source || "").trim().toLowerCase();
+  const manifestSource = ["", "none", "null", "undefined", "unavailable"].includes(rawManifestSource)
+    ? ""
+    : titleCase(manifest.source);
   const confidence = Number.isFinite(Number(decision?.executionConfidence))
     ? `${Math.round(Number(decision.executionConfidence))}/100${decision.confidenceLabel ? ` · ${titleCase(decision.confidenceLabel)}` : ""}`
     : "Not scored";

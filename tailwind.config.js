@@ -54,7 +54,7 @@ module.exports = {
         },
       },
       fontFamily: {
-        display: ["var(--ds-font-display)", "Georgia", '"Times New Roman"', "serif"],
+        display: ["var(--ds-font-display)", "-apple-system", "BlinkMacSystemFont", '"Segoe UI"', "system-ui", "sans-serif"],
         sans: ["var(--ds-font-sans)", "-apple-system", "BlinkMacSystemFont", '"SF Pro Text"', '"Segoe UI"', "system-ui", "sans-serif"],
         mono: ['"JetBrains Mono"', "ui-monospace", "SFMono-Regular", "monospace"],
       },

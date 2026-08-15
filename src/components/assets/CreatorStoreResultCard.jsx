@@ -44,7 +44,7 @@ export default function CreatorStoreResultCard({ asset, onViewDetails }) {
       <div className="flex min-w-0 flex-1 flex-col p-4">
         <div className="flex items-start justify-between gap-2">
           <h3 className="text-sm font-black text-[var(--ds-text)] leading-tight line-clamp-2">{name}</h3>
-          <span className="shrink-0 rounded-md border border-[color-mix(in_srgb,var(--ds-info)_28%,transparent)] bg-[color-mix(in_srgb,var(--ds-info)_8%,transparent)] px-1.5 py-0.5 text-[9px] font-semibold text-[var(--ds-info)]">
+          <span className="shrink-0 rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-1.5 py-0.5 text-[9px] font-semibold text-[var(--ds-text-muted)]">
             {asset?.assetType || "Asset"}
           </span>
         </div>

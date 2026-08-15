@@ -181,58 +181,70 @@ const readToken = (block, token) => {
 };
 
 const darkThemeContract = {
-  "--ds-bg-canvas": "#160b24",
-  "--ds-bg-workspace": "#12081f",
-  "--ds-bg-sidebar": "#1c0f2b",
-  "--ds-surface-1": "#241536",
-  "--ds-text": "#fff8e7",
-  "--ds-text-subtle": "#8f7e9d",
+  "--ds-bg-canvas": "#0b0b0c",
+  "--ds-bg-workspace": "#0d0e10",
+  "--ds-bg-sidebar": "#101113",
+  "--ds-surface-1": "#111214",
+  "--ds-text": "#f5f5f3",
+  "--ds-text-subtle": "#878a91",
   "--ds-accent": "#a78bfa",
-  "--ds-accent-hover": "#b9a4ff",
-  "--ds-accent-pressed": "#9676f0",
-  "--ds-focus-ring": "#d9ff57",
-  "--ds-info": "#c4b5fd",
-  "--ds-info-foreground": "#17121b",
-  "--ds-success": "#d9ff57",
-  "--ds-success-foreground": "#17121b",
-  "--ds-warning": "#ffc857",
-  "--ds-warning-foreground": "#17121b",
-  "--ds-danger": "#ff7a70",
-  "--ds-danger-foreground": "#17121b",
-  "--ds-plan": "#ff8a7a",
-  "--ds-plan-foreground": "#17121b",
+  "--ds-accent-hover": "#b8a4fc",
+  "--ds-accent-pressed": "#8f72ea",
+  "--ds-focus-ring": "#a78bfa",
+  "--ds-info": "#91b7d1",
+  "--ds-info-foreground": "#0b0b0c",
+  "--ds-success": "#8bc59a",
+  "--ds-success-foreground": "#0b0b0c",
+  "--ds-warning": "#d8ad65",
+  "--ds-warning-foreground": "#0b0b0c",
+  "--ds-danger": "#ef8a84",
+  "--ds-danger-foreground": "#0b0b0c",
+  "--ds-plan": "var(--ds-accent)",
+  "--ds-plan-foreground": "var(--ds-accent-foreground)",
 };
 
 const lightThemeContract = {
-  "--ds-bg-canvas": "#fff8e7",
-  "--ds-bg-workspace": "#fffcf5",
-  "--ds-bg-sidebar": "#f5edff",
-  "--ds-surface-1": "#fffcf5",
-  "--ds-text": "#17121b",
-  "--ds-text-subtle": "#786a7e",
-  "--ds-accent": "#7c3aed",
-  "--ds-accent-hover": "#6d28d9",
-  "--ds-accent-pressed": "#5b21b6",
-  "--ds-focus-ring": "#7c3aed",
-  "--ds-info": "#6d28d9",
+  "--ds-bg-canvas": "#f7f7f4",
+  "--ds-bg-workspace": "#fbfbf8",
+  "--ds-bg-sidebar": "#f0f0ec",
+  "--ds-surface-1": "#fdfdfa",
+  "--ds-text": "#171719",
+  "--ds-text-subtle": "#64666d",
+  "--ds-accent": "#6d28d9",
+  "--ds-accent-hover": "#5b21b6",
+  "--ds-accent-pressed": "#4c1d95",
+  "--ds-focus-ring": "#6d28d9",
+  "--ds-info": "#315f7e",
   "--ds-info-foreground": "#ffffff",
-  "--ds-success": "#3f7f32",
+  "--ds-success": "#2f7045",
   "--ds-success-foreground": "#ffffff",
-  "--ds-warning": "#8a5700",
+  "--ds-warning": "#80530f",
   "--ds-warning-foreground": "#ffffff",
-  "--ds-danger": "#d92d20",
+  "--ds-danger": "#b8322b",
   "--ds-danger-foreground": "#ffffff",
-  "--ds-plan": "#b43b4b",
-  "--ds-plan-foreground": "#ffffff",
+  "--ds-plan": "var(--ds-accent)",
+  "--ds-plan-foreground": "var(--ds-accent-foreground)",
 };
 
-test("keeps shipped browser UI on the purple creator-workshop design contract", () => {
+test("keeps shipped browser UI on the monochrome conversational-studio design contract", () => {
   const violations = shippedBrowserSources.flatMap((relativePath) => {
     const source = fs.readFileSync(path.join(projectRoot, relativePath), "utf8");
     return source.split(/\r?\n/).flatMap((line, index) => findLineViolations(relativePath, line, index + 1));
   });
 
   expect(violations).toEqual([]);
+
+  const flatSurfaceContracts = {
+    "src/components/Modal.jsx": ["backdrop-blur"],
+    "src/components/shadcn/tooltip.jsx": ["backdrop-blur", "shadow-[var(--ds-shadow-overlay)]", "zoom-in", "zoom-out"],
+    "src/pages/ScriptPage.jsx": ["backdrop-blur-md"],
+  };
+  Object.entries(flatSurfaceContracts).forEach(([relativePath, forbiddenTokens]) => {
+    const source = fs.readFileSync(path.join(projectRoot, relativePath), "utf8");
+    forbiddenTokens.forEach((token) => expect(source).not.toContain(token));
+  });
+  expect(fs.readFileSync(path.join(projectRoot, "src/components/Modal.jsx"), "utf8"))
+    .toContain("nexus-page-card relative w-full shadow-none");
 });
 
 test("keeps both browser entry points on the canonical dark and light tokens", () => {
@@ -251,15 +263,15 @@ test("keeps both browser entry points on the canonical dark and light tokens", (
     });
 
     expect(readToken(darkBlock, "--ds-font-sans")).toBe('"instrument sans", -apple-system, blinkmacsystemfont, "segoe ui", system-ui, sans-serif');
-    expect(readToken(darkBlock, "--ds-font-display")).toBe('"bricolage grotesque", "instrument sans", system-ui, sans-serif');
+    expect(readToken(darkBlock, "--ds-font-display")).toBe('"instrument sans", -apple-system, blinkmacsystemfont, "segoe ui", system-ui, sans-serif');
   });
 });
 
-test("does not import or restore Manrope or Sora", () => {
+test("does not import or restore decorative display families", () => {
   const violations = shippedBrowserSources.flatMap((relativePath) => {
     const source = fs.readFileSync(path.join(projectRoot, relativePath), "utf8");
     return source.split(/\r?\n/).flatMap((line, index) => (
-      /\b(?:Manrope|Sora)\b/i.test(line) ? [`${relativePath}:${index + 1} ${line.trim()}`] : []
+      /\b(?:Bricolage Grotesque|Manrope|Sora)\b/i.test(line) ? [`${relativePath}:${index + 1} ${line.trim()}`] : []
     ));
   });
   expect(violations).toEqual([]);

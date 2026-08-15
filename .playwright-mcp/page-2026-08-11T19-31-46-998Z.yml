@@ -1,0 +1,339 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - link "Skip to main content" [ref=e4] [cursor=pointer]:
+      - /url: "#main-content"
+    - generic [ref=e5]:
+      - link "NexusRBX home" [ref=e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e9]: NexusRBX
+      - button "Open navigation" [ref=e11] [cursor=pointer]
+  - generic [ref=e12]:
+    - main [ref=e13]:
+      - region [ref=e14]:
+        - generic [ref=e16]:
+          - generic [ref=e17]:
+            - paragraph [ref=e18]: From idea to live Roblox game
+            - heading "Make the Roblox game in your head." [level=1] [ref=e20]:
+              - text: Make the Roblox game
+              - generic [ref=e21]: in your head.
+            - paragraph [ref=e22]: Plan the whole project, build it in Studio, playtest every change, and add Roblox-native monetization when the experience is ready.
+            - generic [ref=e23]:
+              - generic [ref=e24]: What Roblox game do you want to make?
+              - generic [ref=e25]:
+                - textbox "What Roblox game do you want to make?" [ref=e26]:
+                  - /placeholder: Describe the game, player loop, or system in your head...
+                - button "Start building" [disabled]
+              - paragraph [ref=e27]: "No magic black box: you will see the plan before the build begins."
+            - generic "Product principles" [ref=e28]:
+              - generic [ref=e29]: Review every change
+              - generic [ref=e33]: Verify it in Studio
+              - generic [ref=e36]: Keep snapshots and undo
+          - img "A cartoon creator workshop turning an idea into a Obby game" [ref=e40]:
+            - generic [ref=e41]:
+              - generic [ref=e42]: IDEA
+              - strong [ref=e43]: Obby
+            - generic [ref=e47]:
+              - generic [ref=e48]: NEXUS WORKSHOP
+              - generic [ref=e54]:
+                - generic [ref=e55]: Build plan
+                - generic [ref=e56]: Player loop
+                - generic [ref=e60]: Core systems
+                - generic [ref=e64]: Studio test
+            - generic [ref=e83]: PLAYTEST READY
+      - region [ref=e87]:
+        - generic [ref=e88]:
+          - paragraph [ref=e89]: Any genre, one build loop
+          - heading "Start with the game—not the boilerplate." [level=2] [ref=e91]
+          - paragraph [ref=e92]: Choose a direction to load a concrete starting prompt into the workshop.
+        - group "Choose a Roblox game genre" [ref=e93]:
+          - button "Obby Movement, checkpoints, and daily challenges." [ref=e94] [cursor=pointer]:
+            - generic [ref=e103]:
+              - strong [ref=e104]: Obby
+              - generic [ref=e105]: Movement, checkpoints, and daily challenges.
+          - button "Tycoon Upgrades, workers, and satisfying progression." [ref=e108] [cursor=pointer]:
+            - generic [ref=e117]:
+              - strong [ref=e118]: Tycoon
+              - generic [ref=e119]: Upgrades, workers, and satisfying progression.
+          - button "Horror Rounds, tension, and reactive encounters." [ref=e122] [cursor=pointer]:
+            - generic [ref=e131]:
+              - strong [ref=e132]: Horror
+              - generic [ref=e133]: Rounds, tension, and reactive encounters.
+          - button "Social Cozy activities and places worth returning to." [ref=e136] [cursor=pointer]:
+            - generic [ref=e145]:
+              - strong [ref=e146]: Social
+              - generic [ref=e147]: Cozy activities and places worth returning to.
+          - button "Racing Responsive vehicles, tracks, and competition." [ref=e150] [cursor=pointer]:
+            - generic [ref=e158]:
+              - strong [ref=e159]: Racing
+              - generic [ref=e160]: Responsive vehicles, tracks, and competition.
+          - button "RPG Quests, combat, inventory, and progression." [ref=e163] [cursor=pointer]:
+            - generic [ref=e172]:
+              - strong [ref=e173]: RPG
+              - generic [ref=e174]: Quests, combat, inventory, and progression.
+        - generic [ref=e177]:
+          - generic [ref=e178]: Choose a genre
+          - strong [ref=e179]: Six different worlds, one reviewable build loop.
+          - generic [ref=e180]: Select a genre to load its prompt.
+          - button "Continue with this idea" [disabled] [ref=e181]
+      - region [ref=e184]:
+        - generic [ref=e185]:
+          - paragraph [ref=e186]: Build with evidence
+          - heading "Prompt → plan → build → playtest." [level=2] [ref=e188]
+          - paragraph [ref=e189]: A continuous project workflow, not a chat window that drops a code block and disappears.
+        - list "NexusRBX build stages" [ref=e190]:
+          - listitem [ref=e191]:
+            - generic [ref=e192]: "01"
+            - generic [ref=e196]: Prompt
+            - heading "Describe the game, not a pile of scripts." [level=3] [ref=e197]
+            - paragraph [ref=e198]: Start with the player loop, genre, and feeling you want to create.
+          - listitem [ref=e199]:
+            - generic [ref=e200]: "02"
+            - generic [ref=e204]: Plan
+            - heading "Approve the route before anything changes." [level=3] [ref=e205]
+            - paragraph [ref=e206]: See the systems, files, and Studio destinations in one reviewable plan.
+          - listitem [ref=e207]:
+            - generic [ref=e208]: "03"
+            - generic [ref=e212]: Build
+            - heading "Coordinate the whole project." [level=3] [ref=e213]
+            - paragraph [ref=e214]: NexusRBX works across scripts, services, UI, and assets without losing context.
+          - listitem [ref=e215]:
+            - generic [ref=e216]: "04"
+            - generic [ref=e219]: Playtest
+            - heading "Prove the change inside Studio." [level=3] [ref=e220]
+            - paragraph [ref=e221]: Run the game, surface the failure, fix it, and keep the evidence with the build.
+        - group "Illustrative NexusRBX workflow example" [ref=e222]:
+          - generic [ref=e223]:
+            - strong [ref=e228]: Arcade Escape
+            - generic [ref=e229]: Illustrative workflow
+            - generic [ref=e230]: Studio target paired
+          - generic [ref=e232]:
+            - generic [ref=e233]:
+              - generic [ref=e234]: PROJECT
+              - strong [ref=e235]: Arcade Escape
+              - generic [ref=e236]: Workspace
+              - generic [ref=e237]: ServerScriptService
+              - generic [ref=e238]: RoundService.lua
+              - generic [ref=e239]: StarterGui
+            - generic [ref=e240]:
+              - generic [ref=e241]:
+                - generic [ref=e242]: Step 2 of 6
+                - strong [ref=e243]: Review the proposed build
+              - generic [ref=e248]:
+                - strong [ref=e249]: Plan approved
+                - generic [ref=e250]: Round loop, enemy state, and reward destinations confirmed
+              - generic [ref=e251]:
+                - generic [ref=e256]:
+                  - strong [ref=e257]: 3 files changed
+                  - generic [ref=e258]: Reviewable diff applied after approval
+                - generic [ref=e259]: +84 −12
+              - generic [ref=e260]:
+                - generic [ref=e261]: ROUND 01
+                - generic "Playtest evidence" [ref=e265]:
+                  - generic [ref=e270]:
+                    - strong [ref=e271]: Issue found
+                    - generic [ref=e272]: Door stayed locked after round restart
+                  - generic [ref=e276]:
+                    - strong [ref=e277]: Fix applied
+                    - generic [ref=e278]: Reset door state before player spawn
+                  - generic [ref=e283]:
+                    - strong [ref=e284]: Playtest passed
+                    - generic [ref=e285]: Spawn → round → reward verified
+      - region [ref=e286]:
+        - generic [ref=e287]:
+          - generic [ref=e288]:
+            - paragraph [ref=e289]: Creator control
+            - heading "Fast does not have to mean careless." [level=2] [ref=e291]
+            - paragraph [ref=e292]: Roblox already has AI assistance. NexusRBX earns its place by making the whole project visible, reviewable, and testable.
+          - generic [ref=e293]:
+            - strong [ref=e297]: Your game stays yours.
+            - generic [ref=e298]: Know what is planned, what changed, and what passed before you ship. Roblox credentials stay server-side.
+            - link "How project data is handled" [ref=e299] [cursor=pointer]:
+              - /url: /legal/privacy
+        - generic [ref=e302]:
+          - article [ref=e303]:
+            - generic [ref=e310]: "01"
+            - heading "Whole-project context" [level=3] [ref=e311]
+            - paragraph [ref=e312]: One persistent view of the goal, project tree, recent decisions, and current place.
+          - article [ref=e313]:
+            - generic [ref=e319]: "02"
+            - heading "Reviewable changes" [level=3] [ref=e320]
+            - paragraph [ref=e321]: Inspect the plan, affected files, and exact diff before a material write lands.
+          - article [ref=e322]:
+            - generic [ref=e326]: "03"
+            - heading "Playtest evidence" [level=3] [ref=e327]
+            - paragraph [ref=e328]: A green code block is not enough. See whether the experience actually ran.
+          - article [ref=e329]:
+            - generic [ref=e334]: "04"
+            - heading "Snapshots and undo" [level=3] [ref=e335]
+            - paragraph [ref=e336]: Experiment without surrendering ownership of the project or its working state.
+        - generic "NexusRBX trust and Studio details" [ref=e338]:
+          - generic [ref=e339]:
+            - generic [ref=e340]: Review before Studio writes
+            - generic [ref=e344]: OAuth credentials stay server-side
+            - link "Built for Roblox Studio" [ref=e348] [cursor=pointer]:
+              - /url: https://create.roblox.com/store/asset/83865885181263/NexusRBX-Ai
+      - region [ref=e353]:
+        - generic [ref=e354]:
+          - generic [ref=e355]:
+            - paragraph [ref=e356]: Your game. Your upside.
+            - heading "Build the fun first. Grow from real signals." [level=2] [ref=e358]
+          - generic [ref=e368]:
+            - strong [ref=e369]: Robux is an outcome, not a button.
+            - text: NexusRBX helps build and verify the game; Roblox Creator Analytics supplies the growth signals.
+        - list [ref=e370]:
+          - listitem [ref=e371]:
+            - generic [ref=e376]: "1"
+            - heading "Build the fun" [level=3] [ref=e377]
+            - paragraph [ref=e378]: Start with a loop players understand and want to repeat.
+          - listitem [ref=e379]:
+            - generic [ref=e383]: "2"
+            - heading "Earn retention" [level=3] [ref=e384]
+            - paragraph [ref=e385]: Playtest, listen, then use Roblox retention and session signals to find a real reason for players to return.
+          - listitem [ref=e386]:
+            - generic [ref=e395]: "3"
+            - heading "Add fair value" [level=3] [ref=e396]
+            - paragraph [ref=e397]: Design passes, developer products, or subscriptions only when they improve the experience. Creator Rewards depend on Roblox eligibility.
+          - listitem [ref=e398]:
+            - generic [ref=e403]: "4"
+            - heading "Learn and update" [level=3] [ref=e404]
+            - paragraph [ref=e405]: Read engagement, retention, and conversion in Roblox Creator Analytics, then ship the next better version.
+        - paragraph [ref=e406]: Player demand, retention, discovery, pricing, and update quality all affect results. NexusRBX does not promise earnings.
+      - region [ref=e407]:
+        - generic [ref=e408]:
+          - generic [ref=e409]:
+            - paragraph [ref=e410]: Workshop examples
+            - heading "Proof should be earned—not invented." [level=2] [ref=e412]
+            - paragraph [ref=e413]: These are curated build briefs that show the breadth of a NexusRBX project. They are examples, not customer testimonials or claims about player results.
+          - generic [ref=e418]:
+            - strong [ref=e419]: Clear by design
+            - text: Real creator stories will only appear here with a named project, context, and verifiable result.
+        - generic [ref=e420]:
+          - article [ref=e421]:
+            - generic [ref=e430]:
+              - text: Curated example build
+              - heading "Arcade Escape" [level=3] [ref=e431]
+              - paragraph [ref=e432]: A round-based chase game with shifting rooms, a reactive enemy, rewards, and a verified restart loop.
+              - list "Arcade Escape example systems" [ref=e433]:
+                - listitem [ref=e434]: Round service
+                - listitem [ref=e435]: Enemy state
+                - listitem [ref=e436]: Reward loop
+          - article [ref=e437]:
+            - generic [ref=e446]:
+              - text: Curated example build
+              - heading "Gravity Shift" [level=3] [ref=e447]
+              - paragraph [ref=e448]: A mobile-friendly obby slice with gravity swaps, checkpoints, daily challenges, and clear recovery states.
+              - list "Gravity Shift example systems" [ref=e449]:
+                - listitem [ref=e450]: Checkpoints
+                - listitem [ref=e451]: Mobile HUD
+                - listitem [ref=e452]: Daily challenge
+          - article [ref=e453]:
+            - generic [ref=e462]:
+              - text: Curated example build
+              - heading "Harbor Club" [level=3] [ref=e463]
+              - paragraph [ref=e464]: A cozy social loop built around fishing, home decoration, shared events, and reasons to return.
+              - list "Harbor Club example systems" [ref=e465]:
+                - listitem [ref=e466]: Fishing loop
+                - listitem [ref=e467]: Housing
+                - listitem [ref=e468]: Live events
+      - region [ref=e469]:
+        - generic [ref=e470]:
+          - generic [ref=e471]:
+            - paragraph [ref=e472]: Start small, keep building
+            - heading "Plans described like a creator would use them." [level=2] [ref=e474]
+            - paragraph [ref=e475]: Pick the amount of build capacity, history, creator tools, and team billing you need. Prices below are in USD.
+          - link "Compare every plan" [ref=e476] [cursor=pointer]:
+            - /url: /pricing
+        - generic [ref=e479]:
+          - article [ref=e480]:
+            - generic [ref=e481]:
+              - generic [ref=e482]: Start here
+              - heading "Free" [level=3] [ref=e483]
+              - paragraph [ref=e484]: Try the creator workflow on a focused idea
+            - strong [ref=e485]: $0
+            - list [ref=e486]:
+              - listitem [ref=e487]: Run one focused AI task at a time
+              - listitem [ref=e491]: Revisit seven days of build history
+              - listitem [ref=e495]: Keep one active UI project
+              - listitem [ref=e499]: Use the core idea-to-review workflow
+          - article [ref=e503]:
+            - generic [ref=e504]:
+              - generic [ref=e505]: Creator pick
+              - heading "Pro" [level=3] [ref=e506]
+              - paragraph [ref=e507]: Build and review bigger feature ideas more often
+            - strong [ref=e508]: $19.99 / month
+            - list [ref=e509]:
+              - listitem [ref=e510]: More capacity for longer build sessions
+              - listitem [ref=e514]: Review 90 days of usage history
+              - listitem [ref=e518]: Create game-ready icons
+              - listitem [ref=e522]: Optionally choose supported premium models
+          - article [ref=e526]:
+            - generic [ref=e527]:
+              - generic [ref=e528]: For studios
+              - heading "Team" [level=3] [ref=e529]
+              - paragraph [ref=e530]: One billing home for Roblox studios
+            - strong [ref=e531]: $29 / creator / month
+            - list [ref=e532]:
+              - listitem [ref=e533]: Pool build capacity across paid seats
+              - listitem [ref=e537]: Cover 2–50 creators with one subscription
+              - listitem [ref=e541]: Create game-ready icons
+              - listitem [ref=e545]: Keep studio billing in one place
+        - paragraph [ref=e549]: Usage limits and checkout details are shown before purchase. No plan promises player growth or Robux earnings.
+      - region [ref=e550]:
+        - generic [ref=e551]:
+          - paragraph [ref=e552]: Need something focused?
+          - heading "Use the whole workshop—or start with one task." [level=2] [ref=e554]
+        - navigation "Focused Roblox creation tools" [ref=e555]:
+          - link "Roblox script generator" [ref=e556] [cursor=pointer]:
+            - /url: /roblox-script-generator
+          - link "Roblox AI scripter" [ref=e559] [cursor=pointer]:
+            - /url: /roblox-ai-scripter
+          - link "Studio script generator" [ref=e562] [cursor=pointer]:
+            - /url: /roblox-studio-script-generator
+          - link "Luau script generator" [ref=e565] [cursor=pointer]:
+            - /url: /roblox-lua-script-generator
+          - link "Roblox GUI maker" [ref=e568] [cursor=pointer]:
+            - /url: /roblox-gui-maker
+      - region [ref=e571]:
+        - paragraph [ref=e576]: Build it. Ship it. Grow it.
+        - heading "What game are we building?" [level=2] [ref=e578]
+        - paragraph [ref=e579]: Bring the idea. Keep the creative decisions. Let NexusRBX coordinate the work.
+        - generic [ref=e580]:
+          - generic [ref=e581]: What Roblox game do you want to make?
+          - generic [ref=e582]:
+            - textbox "What Roblox game do you want to make?" [ref=e583]:
+              - /placeholder: Describe the game, player loop, or system in your head...
+            - button "Start building" [disabled]
+          - paragraph [ref=e584]: Your prompt stays local until you open the workspace.
+    - contentinfo [ref=e585]:
+      - generic [ref=e586]:
+        - generic [ref=e587]:
+          - link "NexusRBX home" [ref=e588] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e589]: NexusRBX
+          - paragraph [ref=e590]: Build the game in your head. Keep the creative decisions and the upside.
+        - navigation "Footer" [ref=e591]:
+          - link "Games" [ref=e592] [cursor=pointer]:
+            - /url: /#genres
+          - link "How it works" [ref=e593] [cursor=pointer]:
+            - /url: /#workflow
+          - link "Creator control" [ref=e594] [cursor=pointer]:
+            - /url: /#control
+          - link "Creator upside" [ref=e595] [cursor=pointer]:
+            - /url: /#grow
+          - link "Downloads" [ref=e596] [cursor=pointer]:
+            - /url: /downloads
+          - link "Pricing" [ref=e597] [cursor=pointer]:
+            - /url: /pricing
+          - link "Docs" [ref=e598] [cursor=pointer]:
+            - /url: /docs
+          - link "Support" [ref=e599] [cursor=pointer]:
+            - /url: /support
+          - link "Contact" [ref=e600] [cursor=pointer]:
+            - /url: /contact
+          - link "Legal" [ref=e601] [cursor=pointer]:
+            - /url: /legal
+          - link "Privacy" [ref=e602] [cursor=pointer]:
+            - /url: /legal/privacy
+          - link "Terms" [ref=e603] [cursor=pointer]:
+            - /url: /legal/terms
+      - paragraph [ref=e604]: NexusRBX is an independent developer tool and is not affiliated with or endorsed by Roblox Corporation. Earnings are never guaranteed.

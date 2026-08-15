@@ -69,7 +69,8 @@ describe("QuickScriptWorkspace", () => {
     const generate = screen.getByRole("button", { name: "Generate script" });
     expect(generate.className).toContain("h-11");
     expect(generate.className).toContain("w-11");
-    expect(generate.className).toContain("md:h-10");
+    expect(generate.className).not.toContain("md:h-10");
+    expect(prompt.className).toContain("min-h-[44px]");
     fireEvent.click(generate);
     expect(props.onGenerate).toHaveBeenCalledTimes(2);
   });
@@ -174,7 +175,7 @@ describe("QuickScriptWorkspace", () => {
         }],
       },
     };
-    const rendered = renderWorkspace({
+    const view = renderWorkspace({
       quickScript: { status: "success", result: adjusted },
     });
 
@@ -183,8 +184,8 @@ describe("QuickScriptWorkspace", () => {
     );
     expect(screen.getByRole("button", { name: "Studio" })).toBeEnabled();
 
-    rendered.rerender(<QuickScriptWorkspace
-      {...rendered.props}
+    view.rerender(<QuickScriptWorkspace
+      {...view.props}
       quickScript={{
         status: "success",
         result: {

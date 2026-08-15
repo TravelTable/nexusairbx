@@ -89,6 +89,9 @@ describe("AssetLibraryModal", () => {
       />
     );
 
+    expect(screen.getByRole("button", { name: "Close asset library" }).className).toContain("min-h-[44px]");
+    expect(screen.getByRole("button", { name: "Close asset library" }).className).toContain("min-w-[44px]");
+    expect(screen.getByRole("button", { name: "My Assets" }).getAttribute("aria-pressed")).toBe("true");
     expect(await screen.findByText("Low Poly Tree")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Preview Low Poly Tree" }));

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Copy, Edit, FolderOpen, RefreshCw, Wand2 } from "lib/icons";
+import { Copy, Edit, FolderOpen, Menu, RefreshCw, SlidersHorizontal } from "lib/icons";
 import { messageHasRefineableFiles } from "../../../lib/chatRefine";
 import {
   getWorkspaceMenuHost,
@@ -32,12 +32,12 @@ function ActionButton({ icon: Icon, label, onClick, alwaysVisible = false }) {
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex h-7 items-center gap-1 rounded-md px-1.5 text-[11px] font-medium text-[var(--ds-text-muted)] transition-colors [transition-duration:120ms] hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text)] focus-visible:bg-[var(--ds-fill-subtle)] focus-visible:text-[var(--ds-text)] ${
+      className={`inline-flex h-11 min-w-11 items-center justify-center gap-1 rounded-md px-2 text-[11px] font-medium text-[var(--ds-text-muted)] transition-colors [transition-duration:120ms] hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text)] focus-visible:bg-[var(--ds-fill-subtle)] focus-visible:text-[var(--ds-text)] sm:h-7 sm:min-w-0 sm:justify-start sm:px-1.5 ${
         alwaysVisible ? "max-sm:inline-flex" : "max-sm:hidden"
       }`}
       aria-label={label}
     >
-      <Icon className="h-3 w-3" />
+      <Icon className="h-4 w-4 sm:h-3 sm:w-3" />
       <span className="hidden md:inline">{label}</span>
     </button>
   );
@@ -48,8 +48,9 @@ function MenuItem({ icon: Icon, label, onSelect }) {
     <button
       type="button"
       role="menuitem"
+      tabIndex={-1}
       onClick={onSelect}
-      className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-[var(--ds-text)] outline-none transition-colors hover:bg-[var(--ds-fill-hover)] focus-visible:bg-[var(--ds-fill-hover)]"
+      className="flex min-h-11 w-full items-center gap-2 rounded-sm px-2 py-2 text-sm text-[var(--ds-text)] outline-none transition-colors hover:bg-[var(--ds-fill-hover)] focus-visible:bg-[var(--ds-fill-hover)] sm:min-h-0 sm:py-1.5"
     >
       <Icon className="h-4 w-4 shrink-0" />
       {label}
@@ -78,6 +79,11 @@ export default function MessageActions({
   const align = role === "user" ? "end" : "start";
   const canRefine = role === "assistant" && typeof onRefine === "function" && messageHasRefineableFiles(message);
 
+  const closeMenuAndRestoreFocus = useCallback(() => {
+    setOpen(false);
+    buttonRef.current?.focus();
+  }, []);
+
   const updateMenuPosition = useCallback(() => {
     setMenuPosition(resolveAnchoredMenuPosition(buttonRef.current, {
       menuWidth: MENU_WIDTH,
@@ -90,6 +96,7 @@ export default function MessageActions({
   useEffect(() => {
     if (!open) return undefined;
     updateMenuPosition();
+    menuRef.current?.querySelector('[role="menuitem"]')?.focus();
     const onClickOutside = (event) => {
       if (rootRef.current?.contains(event.target) || menuRef.current?.contains(event.target)) return;
       setOpen(false);
@@ -97,8 +104,7 @@ export default function MessageActions({
     const onKeyDown = (event) => {
       if (event.key !== "Escape") return;
       event.preventDefault();
-      setOpen(false);
-      buttonRef.current?.focus();
+      closeMenuAndRestoreFocus();
     };
     document.addEventListener("mousedown", onClickOutside);
     document.addEventListener("keydown", onKeyDown);
@@ -110,7 +116,35 @@ export default function MessageActions({
       window.removeEventListener("resize", updateMenuPosition);
       window.removeEventListener("scroll", updateMenuPosition, true);
     };
-  }, [open, updateMenuPosition]);
+  }, [closeMenuAndRestoreFocus, open, updateMenuPosition]);
+
+  const handleMenuKeyDown = useCallback((event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      closeMenuAndRestoreFocus();
+      return;
+    }
+
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+
+    const items = Array.from(
+      event.currentTarget.querySelectorAll('[role="menuitem"]:not([disabled])')
+    );
+    if (!items.length) return;
+
+    event.preventDefault();
+    const activeIndex = items.indexOf(document.activeElement);
+    let nextIndex = 0;
+    if (event.key === "ArrowDown") {
+      nextIndex = activeIndex < 0 ? 0 : (activeIndex + 1) % items.length;
+    } else if (event.key === "ArrowUp") {
+      nextIndex = activeIndex < 0 ? items.length - 1 : (activeIndex - 1 + items.length) % items.length;
+    } else if (event.key === "End") {
+      nextIndex = items.length - 1;
+    }
+    items[nextIndex]?.focus();
+  }, [closeMenuAndRestoreFocus]);
 
   const handleCopy = async () => {
     await copyText(text);
@@ -141,7 +175,7 @@ export default function MessageActions({
       ? createPortal(
           <div
             ref={menuRef}
-            className="z-[9999] overflow-hidden rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] p-1 text-[var(--ds-text)] shadow-panel backdrop-blur-xl"
+            className="z-[9999] overflow-hidden rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] p-1 text-[var(--ds-text)] shadow-panel"
             style={{
               position: menuPosition?.strategy || "fixed",
               top: menuPosition?.top ?? 0,
@@ -152,6 +186,7 @@ export default function MessageActions({
             }}
             role="menu"
             aria-label="More message actions"
+            onKeyDown={handleMenuKeyDown}
           >
             <MenuItem icon={Copy} label="Copy" onSelect={handleCopy} />
             {role === "user" && onEdit ? (
@@ -165,7 +200,7 @@ export default function MessageActions({
               />
             ) : null}
             {canRefine ? (
-              <MenuItem icon={Wand2} label="Refine" onSelect={() => runAndClose(() => onRefine(message))} />
+              <MenuItem icon={SlidersHorizontal} label="Refine" onSelect={() => runAndClose(() => onRefine(message))} />
             ) : null}
             {role === "assistant" && onOpenFiles ? (
               <MenuItem
@@ -182,7 +217,7 @@ export default function MessageActions({
   return (
     <div
       ref={rootRef}
-      className={`flex h-7 items-center gap-0.5 opacity-0 transition-opacity [transition-duration:120ms] group-hover/message:opacity-100 group-focus-within/message:opacity-100 max-sm:opacity-100 ${
+      className={`flex h-11 items-center gap-0.5 opacity-0 transition-opacity [transition-duration:120ms] group-hover/message:opacity-100 group-focus-within/message:opacity-100 max-sm:opacity-100 sm:h-7 ${
         role === "user" ? "justify-end" : "justify-start"
       }`}
       aria-label={`${role === "user" ? "User" : "Nexus"} message actions`}
@@ -199,7 +234,7 @@ export default function MessageActions({
         />
       ) : null}
       {canRefine ? (
-        <ActionButton icon={Wand2} label="Refine" onClick={() => onRefine(message)} />
+        <ActionButton icon={SlidersHorizontal} label="Refine" onClick={() => onRefine(message)} />
       ) : null}
       {role === "assistant" && onOpenFiles ? (
         <ActionButton icon={FolderOpen} label="Open files" onClick={() => onOpenFiles(message)} />
@@ -208,7 +243,7 @@ export default function MessageActions({
       <button
         ref={buttonRef}
         type="button"
-        className="grid h-7 min-w-7 place-items-center rounded-md px-1 text-[11px] tracking-[0.12em] text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text)]"
+        className="grid h-11 min-w-11 place-items-center rounded-md px-1 text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text)] sm:h-7 sm:min-w-7"
         aria-label="More message actions"
         aria-haspopup="menu"
         aria-expanded={open}
@@ -217,7 +252,7 @@ export default function MessageActions({
           setOpen((current) => !current);
         }}
       >
-        •••
+        <Menu className="h-3.5 w-3.5" aria-hidden="true" />
       </button>
       {menu}
     </div>

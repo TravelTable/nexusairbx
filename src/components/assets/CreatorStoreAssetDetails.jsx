@@ -159,7 +159,7 @@ export default function CreatorStoreAssetDetails({ asset, loading = false, onClo
       <div className="w-full max-w-3xl overflow-hidden rounded-[14px] bg-[var(--ds-surface-overlay)] shadow-[var(--ds-shadow-overlay)]">
         <div className="flex items-center justify-between gap-3 px-6 py-5">
           <div className="min-w-0">
-            <div className="text-[10px] font-semibold text-[var(--ds-info)]">Creator Store</div>
+            <div className="text-[10px] font-semibold text-[var(--ds-text-muted)]">Creator Store</div>
             <h2 className="text-base font-black text-[var(--ds-text)] truncate">{loading ? "Loading asset" : name}</h2>
           </div>
           <button
@@ -198,7 +198,7 @@ export default function CreatorStoreAssetDetails({ asset, loading = false, onClo
             ) : (
               <>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-md border border-[color-mix(in_srgb,var(--ds-info)_28%,transparent)] bg-[color-mix(in_srgb,var(--ds-info)_8%,transparent)] px-2 py-1 text-[10px] font-semibold text-[var(--ds-info)]">
+                  <span className="rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2 py-1 text-[10px] font-semibold text-[var(--ds-text-muted)]">
                     {asset?.assetType || "Asset"}
                   </span>
                   <span className="text-xs text-[var(--ds-text-muted)]">ID {assetId}</span>
@@ -246,7 +246,7 @@ export default function CreatorStoreAssetDetails({ asset, loading = false, onClo
                           type="button"
                           onClick={() => setConfirming(true)}
                           disabled={importState === "queueing" || importState === "queued" || importState === "waiting_for_studio"}
-                          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] border border-[color-mix(in_srgb,var(--ds-info)_28%,transparent)] bg-[color-mix(in_srgb,var(--ds-info)_8%,transparent)] px-3 py-2 text-[11px] font-semibold text-[var(--ds-info)] hover:bg-[color-mix(in_srgb,var(--ds-info)_14%,transparent)] disabled:opacity-40"
+                          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-3 py-2 text-[11px] font-semibold text-[var(--ds-text-secondary)] transition-colors hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] disabled:opacity-40"
                         >
                           {importState === "queueing" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
                           Import to Studio

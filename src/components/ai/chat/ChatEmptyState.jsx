@@ -1,28 +1,27 @@
 import React from "react";
-import { Layout, Code2, Rocket, LayoutGrid, ArrowRight } from "lib/icons";
+import { ArrowRight, LayoutGrid } from "lib/icons";
+import NexusDisplayIcon from "../../icons/NexusDisplayIcon";
 
-const EXAMPLES = [
+const STARTERS = [
   {
-    icon: Layout,
-    eyebrow: "Adventure",
-    title: "Floating-island quest",
-    prompt: "Build a floating-island adventure with collectible crystals, checkpoints, and a simple quest HUD. Plan the change before writing to Studio.",
+    eyebrow: "Start a game",
+    title: "Design a complete simulator loop",
+    prompt: "Plan a Roblox simulator with a satisfying upgrade loop, retention systems, monetization options, and a small first version I can playtest today.",
+    displayIcon: "build",
   },
   {
-    icon: Code2,
-    eyebrow: "Tycoon",
-    title: "Café tycoon loop",
-    prompt: "Build the core loop for a café tycoon: earn coins, unlock stations, save progress, and explain the first playtest.",
+    eyebrow: "Build a system",
+    title: "Add an inventory that fits my game",
+    prompt: "Inspect my project and build an inventory UI that matches the existing visual style, works on mobile, and saves player items safely.",
+    displayIcon: "edit",
   },
   {
-    icon: Rocket,
-    eyebrow: "Existing game",
-    title: "Inspect, fix, verify",
-    prompt: "Inspect my paired Studio place, find the broken gameplay script, fix it safely, and show me the playtest evidence before I approve the result.",
+    eyebrow: "Debug with context",
+    title: "Find the break, fix it, prove it",
+    prompt: "Inspect my paired Studio place, trace the broken gameplay flow, fix it safely, and show the playtest evidence before I approve the result.",
+    displayIcon: "debug",
   },
 ];
-
-const BUILD_STAGES = ["Idea", "Plan", "Build", "Playtest"];
 
 function cleanContextValue(value) {
   return String(value ?? "").replace(/\s+/g, " ").trim();
@@ -92,135 +91,89 @@ export default function ChatEmptyState({
   );
 
   return (
-    <div className="flex min-h-full w-full flex-1 items-start justify-center py-[clamp(1.5rem,7vh,4.5rem)] motion-safe:animate-fade-in-up">
-      <section className="w-full max-w-[920px]" aria-labelledby="workspace-start-title">
-        <div className="grid items-end gap-6 border-b border-[var(--ds-border-subtle)] pb-6 md:grid-cols-[minmax(0,1fr)_minmax(280px,0.72fr)]">
-          <div className="max-w-2xl text-left">
-            <div className="mb-4 flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-xl border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)]">
-                <img src="/nexus-mark.svg" alt="" className="h-6 w-6 object-contain" />
-              </span>
-              <span className="text-xs font-semibold text-[var(--ds-accent)]">Creator workshop</span>
-            </div>
-            <h1 id="workspace-start-title" className="pc-display-heading text-[2.25rem] font-semibold leading-[1.05] text-[var(--ds-text)] sm:text-[3rem]">
-              What are we building?
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--ds-text-secondary)]">
-              Start with the game loop, not a code dump. Nexus can shape the plan, build in your paired place, and carry the result through a real playtest.
-            </p>
+    <div className="chat-empty-state">
+      <section className="chat-empty-state__inner" aria-labelledby="workspace-start-title">
+        <div className="chat-empty-state__intro">
+          <div className="chat-empty-state__art">
+            <NexusDisplayIcon name="build" className="chat-empty-state__mark" size={112} loading="eager" />
           </div>
-
-          <div className="rounded-[16px] border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-4 text-left">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <span className="text-xs font-semibold text-[var(--ds-text)]">Project build path</span>
-              <span className="text-[11px] text-[var(--ds-text-muted)]">You approve the writes</span>
-            </div>
-            {hasBuildContext && (
-              <div
-                role="group"
-                aria-label="Current build context"
-                className="mb-4 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] px-3 py-2.5"
-              >
-                <dl className="grid gap-2">
-                  {buildContext.projectTitle && (
-                    <div className="grid min-w-0 grid-cols-[4rem_minmax(0,1fr)] items-baseline gap-2">
-                      <dt className="text-[10px] font-semibold text-[var(--ds-text-muted)]">Project</dt>
-                      <dd
-                        className="truncate text-xs font-semibold text-[var(--ds-text)]"
-                        title={buildContext.projectTitle}
-                      >
-                        {buildContext.projectTitle}
-                      </dd>
-                    </div>
-                  )}
-                  {buildContext.placeTitle && (
-                    <div className="grid min-w-0 grid-cols-[4rem_minmax(0,1fr)] items-baseline gap-2">
-                      <dt className="text-[10px] font-semibold text-[var(--ds-text-muted)]">Place</dt>
-                      <dd className="min-w-0 text-xs font-semibold text-[var(--ds-text)]">
-                        <span className="block truncate" title={buildContext.placeTitle}>
-                          {buildContext.placeTitle}
-                        </span>
-                        {buildContext.placeId && buildContext.placeTitle !== `Place ${buildContext.placeId}` && (
-                          <span className="mt-0.5 block truncate text-[10px] font-normal text-[var(--ds-text-muted)]">
-                            Place {buildContext.placeId}
-                          </span>
-                        )}
-                      </dd>
-                    </div>
-                  )}
-                  {buildContext.hasStudioStatus && (
-                    <div className="grid min-w-0 grid-cols-[4rem_minmax(0,1fr)] items-center gap-2">
-                      <dt className="text-[10px] font-semibold text-[var(--ds-text-muted)]">Studio</dt>
-                      <dd className="inline-flex min-w-0 items-center gap-1.5 text-xs font-semibold text-[var(--ds-text-secondary)]">
-                        <span
-                          className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                            buildContext.studioConnected
-                              ? "bg-[var(--ds-success)]"
-                              : "bg-[var(--ds-surface-3)]"
-                          }`}
-                          aria-hidden="true"
-                        />
-                        {buildContext.studioConnected ? "Connected" : "Disconnected"}
-                      </dd>
-                    </div>
-                  )}
-                </dl>
-              </div>
-            )}
-            <ol className="grid grid-cols-4 gap-2" aria-label="Project build path">
-              {BUILD_STAGES.map((stage, index) => (
-                <li key={stage} className="min-w-0">
-                  <span
-                    className={`mb-2 block h-1.5 rounded-full ${
-                      index === 0 ? "bg-[var(--ds-accent)]" : "bg-[var(--ds-fill-active)]"
-                    }`}
-                    aria-hidden="true"
-                  />
-                  <span className={`block truncate text-[10px] font-semibold ${
-                    index === 0 ? "text-[var(--ds-accent)]" : "text-[var(--ds-text-muted)]"
-                  }`}
-                  >
-                    {stage}
-                  </span>
-                </li>
-              ))}
-            </ol>
+          <div className="chat-empty-state__copy">
+            <p className="chat-empty-state__eyebrow">Conversational Roblox production</p>
+            <h1 id="workspace-start-title">Build anything in Roblox.</h1>
+            <p>
+              Describe the game, system, interface, or bug. Nexus can inspect the project,
+              plan the change, build it safely, and carry it through a real playtest.
+            </p>
           </div>
         </div>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-3" aria-label="Starter builds">
-          {EXAMPLES.map((ex) => (
-            <button
-              key={ex.title}
-              type="button"
-              onClick={() => onQuickStart?.(ex.prompt)}
-              className="group min-h-36 rounded-[16px] border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-1)] p-4 text-left transition-[border-color,background-color,transform] duration-[var(--motion-fast)] hover:-translate-y-0.5 hover:border-[var(--ds-accent-border)] hover:bg-[var(--ds-accent-soft)] focus-ring motion-reduce:transform-none"
-            >
-              <div className="mb-4 flex items-start justify-between gap-3">
-                <div className="grid h-9 w-9 place-items-center rounded-xl border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]">
-                  <ex.icon className="h-3.5 w-3.5" />
-                </div>
-                <ArrowRight className="h-3.5 w-3.5 text-[var(--ds-text-muted)] transition-colors group-hover:text-[var(--ds-accent)]" />
+        {hasBuildContext ? (
+          <dl className="chat-empty-state__context" role="group" aria-label="Current build context">
+            {buildContext.projectTitle ? (
+              <div>
+                <dt>Project</dt>
+                <dd title={buildContext.projectTitle}>{buildContext.projectTitle}</dd>
               </div>
-              <div className="text-[10px] font-semibold text-[var(--ds-accent)]">{ex.eyebrow}</div>
-              <div className="mt-1 text-[15px] font-semibold text-[var(--ds-text)]">{ex.title}</div>
-              <div className="mt-2 line-clamp-2 text-xs leading-relaxed text-[var(--ds-text-muted)]">{ex.prompt}</div>
+            ) : null}
+            {buildContext.placeTitle ? (
+              <div>
+                <dt>Place</dt>
+                <dd title={buildContext.placeTitle}>
+                  {buildContext.placeTitle}
+                  {buildContext.placeId && buildContext.placeTitle !== `Place ${buildContext.placeId}`
+                    ? <small>Place {buildContext.placeId}</small>
+                    : null}
+                </dd>
+              </div>
+            ) : null}
+            {buildContext.hasStudioStatus ? (
+              <div>
+                <dt>Studio</dt>
+                <dd>
+                  {!buildContext.studioConnected ? (
+                    <NexusDisplayIcon name="studio-connect" size={32} className="chat-empty-state__context-icon" />
+                  ) : null}
+                  <span
+                    className="chat-empty-state__status"
+                    data-connected={buildContext.studioConnected ? "true" : "false"}
+                    aria-hidden="true"
+                  />
+                  {buildContext.studioConnected ? "Connected" : "Disconnected"}
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+        ) : null}
+
+        <div className="chat-empty-state__starters" aria-label="Roblox starter requests">
+          {STARTERS.map((starter) => (
+            <button
+              key={starter.title}
+              type="button"
+              onClick={() => onQuickStart?.(starter.prompt)}
+              className="chat-empty-state__starter focus-ring"
+            >
+              <span className="chat-empty-state__starter-copy">
+                <NexusDisplayIcon name={starter.displayIcon} className="chat-empty-state__starter-icon" size={40} />
+                <span>
+                  <small>{starter.eyebrow}</small>
+                  <strong>{starter.title}</strong>
+                </span>
+              </span>
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </button>
           ))}
         </div>
 
-        {onOpenTemplates && (
-          <div className="mt-4 flex justify-end">
-            <button
-              type="button"
-              onClick={onOpenTemplates}
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[var(--ds-border)] px-4 text-xs font-semibold text-[var(--ds-text-secondary)] transition-colors hover:border-[var(--ds-accent-border)] hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text)] focus-ring"
-            >
-              <LayoutGrid className="h-3.5 w-3.5" />
-              Browse build templates
+        <div className="chat-empty-state__footer">
+          <span>Prototype faster. Understand every change. Ship when it is ready.</span>
+          {onOpenTemplates ? (
+            <button type="button" onClick={onOpenTemplates} className="chat-empty-state__templates focus-ring">
+              <LayoutGrid className="h-3.5 w-3.5" aria-hidden="true" />
+              Browse templates
             </button>
-          </div>
-        )}
+          ) : null}
+        </div>
       </section>
     </div>
   );

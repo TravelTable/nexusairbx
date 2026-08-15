@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Copy, ImageIcon, Library, RefreshCw, RotateCcw, Sparkles } from "../lib/icons";
+import { ArrowLeft, Copy, ImageIcon, ImagePlus, Layers, Library, RefreshCw, RotateCcw } from "../lib/icons";
 import { Button } from "../components/ui";
 import AssetLifecycleBadge from "../components/assets/AssetLifecycleBadge";
 import AssetLifecycleTimeline from "../components/assets/AssetLifecycleTimeline";
@@ -386,7 +386,7 @@ export default function AssetDetailPage() {
           </div>
           <div className="asset-platform-header__actions">
             <Button variant="ghost" icon={Library} onClick={() => navigate("/assets")}>Asset library</Button>
-            {canGenerate ? <Button icon={Sparkles} onClick={() => navigate("/tools/icon-generator")}>Generate assets</Button> : null}
+            {canGenerate ? <Button icon={ImagePlus} onClick={() => navigate("/tools/icon-generator")}>Generate assets</Button> : null}
           </div>
         </header>
 
@@ -414,7 +414,7 @@ export default function AssetDetailPage() {
                   <Button
                     size="sm"
                     variant="secondary"
-                    icon={lifecycle === "upload_failed" ? RotateCcw : Sparkles}
+                    icon={lifecycle === "upload_failed" ? RotateCcw : ImagePlus}
                     disabled={Boolean(busyAction)}
                     onClick={() => runAssetAction({
                       actionName: "publish_asset_to_roblox",
@@ -446,7 +446,7 @@ export default function AssetDetailPage() {
                   </Button>
                 ) : null}
                 {!canRefreshStatus && canPoll ? <Button size="sm" variant="ghost" icon={RefreshCw} onClick={loadAsset}>Refresh record</Button> : null}
-                {canGenerateVariation ? <Button size="sm" variant="subtle" icon={Sparkles} onClick={() => navigate(generatorUrl("similar", asset.assetId))}>Create similar</Button> : null}
+                {canGenerateVariation ? <Button size="sm" variant="subtle" icon={Layers} onClick={() => navigate(generatorUrl("similar", asset.assetId))}>Create similar</Button> : null}
                 {canGenerateVariation ? <Button size="sm" variant="subtle" icon={RotateCcw} onClick={() => navigate(generatorUrl("replacement", asset.assetId))}>Create replacement</Button> : null}
               </div>
             </div>

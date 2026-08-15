@@ -1,101 +1,153 @@
 export const homepageV2Metadata = {
-  title: "AI Roblox Game Builder & Studio Agent | NexusRBX",
+  title: "Conversational Roblox Production Studio | NexusRBX",
   description:
-    "Turn an idea into a Roblox game with project-aware planning, reviewable multi-file builds, Studio playtests, and an honest path from prototype to publish.",
+    "Build any Roblox game through conversation with project-aware inspection, reviewable Studio changes, playtest evidence, and a creator-led path to publishing.",
 };
 
-export const homepageGenres = [
-  {
-    id: "obby",
-    label: "Obby",
-    description: "Movement, checkpoints, and daily challenges.",
-    prompt: "Build a gravity-switching obby with checkpoints, daily challenges, and a clean mobile HUD.",
-    outcome: "A replayable traversal loop with clear progression.",
-  },
-  {
-    id: "tycoon",
-    label: "Tycoon",
-    description: "Upgrades, workers, and satisfying progression.",
-    prompt: "Build a co-op pizza tycoon with upgradeable kitchens, worker stations, and shared team goals.",
-    outcome: "A co-op upgrade loop built for repeat sessions.",
-  },
-  {
-    id: "horror",
-    label: "Horror",
-    description: "Rounds, tension, and reactive encounters.",
-    prompt: "Make a round-based horror game set in a broken arcade with shifting rooms and one stalking enemy.",
-    outcome: "A testable round loop with escalating tension.",
-  },
-  {
-    id: "social",
-    label: "Social",
-    description: "Cozy activities and places worth returning to.",
-    prompt: "Create a cozy social island with fishing, house decorating, and shared community events.",
-    outcome: "A welcoming social loop with reasons to return.",
-  },
-  {
-    id: "racing",
-    label: "Racing",
-    description: "Responsive vehicles, tracks, and competition.",
-    prompt: "Prototype an arcade racing game with drift boosts, three short tracks, and weekly time trials.",
-    outcome: "A fast competitive loop with measurable mastery.",
-  },
-  {
-    id: "rpg",
-    label: "RPG",
-    description: "Quests, combat, inventory, and progression.",
-    prompt: "Build a compact action RPG with three quest lines, ability upgrades, loot, and a shared town hub.",
-    outcome: "A focused adventure slice with room to expand.",
-  },
-];
+export const homepageHeroPrompt =
+  "Create a futuristic inventory UI that matches my existing game. Keep it fast on mobile and wire it to the current item system.";
 
 export const homepageBuildStages = [
   {
     id: "prompt",
     label: "Prompt",
-    title: "Describe the game, not a pile of scripts.",
-    description: "Start with the player loop, genre, and feeling you want to create.",
+    title: "Describe the outcome",
+    description: "Explain the player experience or system you want in ordinary language.",
+    status: "Request captured",
+  },
+  {
+    id: "inspect",
+    label: "Inspect",
+    title: "Read the real project",
+    description: "Nexus finds the relevant place, objects, scripts, UI, and dependencies before proposing work.",
+    status: "6 project references found",
   },
   {
     id: "plan",
     label: "Plan",
-    title: "Approve the route before anything changes.",
-    description: "See the systems, files, and Studio destinations in one reviewable plan.",
+    title: "Agree on the route",
+    description: "Review the systems, destinations, risks, and test plan before material changes begin.",
+    status: "4-step plan ready",
   },
   {
     id: "build",
     label: "Build",
-    title: "Coordinate the whole project.",
-    description: "NexusRBX works across scripts, services, UI, and assets without losing context.",
+    title: "Construct one change set",
+    description: "Scripts, interface, and project objects stay connected to one request and one recovery point.",
+    status: "3 files and 1 ScreenGui updated",
   },
   {
-    id: "playtest",
-    label: "Playtest",
-    title: "Prove the change inside Studio.",
-    description: "Run the game, surface the failure, fix it, and keep the evidence with the build.",
-  },
-];
-
-export const homepageControlPoints = [
-  {
-    id: "context",
-    title: "Whole-project context",
-    description: "One persistent view of the goal, project tree, recent decisions, and current place.",
+    id: "test",
+    label: "Test",
+    title: "Verify it in Play mode",
+    description: "Nexus keeps the output, failure, correction, and playtest evidence together.",
+    status: "7 checks passed",
   },
   {
     id: "review",
-    title: "Reviewable changes",
-    description: "Inspect the plan, affected files, and exact diff before a material write lands.",
+    label: "Review",
+    title: "Keep the decision",
+    description: "Inspect the final diff, restore selectively, or continue the build through conversation.",
+    status: "Change set ready to approve",
+  },
+];
+
+export const homepageGenres = [
+  {
+    id: "simulator",
+    label: "Simulator",
+    image: "/assets/nexus-template-worlds/simulator.webp",
+    imageAlt: "Hand-inked 2D simulator world with collection paths, upgrade pads, and a hatch pedestal",
+    description: "Progression, collection, upgrades, and repeatable goals.",
+    prompt: "Build a creature-collecting simulator with meaningful upgrades, mobile controls, and a clear first-session loop.",
+    outcome: "A progression loop with a testable first session and room for live updates.",
   },
   {
-    id: "proof",
-    title: "Playtest evidence",
-    description: "A green code block is not enough. See whether the experience actually ran.",
+    id: "tycoon",
+    label: "Tycoon",
+    image: "/assets/nexus-template-worlds/tycoon.webp",
+    imageAlt: "Hand-inked 2D tycoon plot with an expandable foundation and compact production line",
+    description: "Workers, production chains, co-op goals, and expansion.",
+    prompt: "Build a co-op pizza tycoon with upgradeable kitchens, worker stations, and shared team goals.",
+    outcome: "A co-op production loop built for repeat sessions.",
   },
   {
-    id: "undo",
-    title: "Snapshots and undo",
-    description: "Experiment without surrendering ownership of the project or its working state.",
+    id: "obby",
+    label: "Obby",
+    image: "/assets/nexus-template-worlds/obby.webp",
+    imageAlt: "Hand-inked 2D obby map with floating platforms, rotating bars, and a finish arch",
+    description: "Movement, checkpoints, recovery, and mastery.",
+    prompt: "Build a gravity-switching obby with checkpoints, daily challenges, and a clean mobile HUD.",
+    outcome: "A replayable traversal loop with clear progression and recovery.",
+  },
+  {
+    id: "combat",
+    label: "Combat",
+    image: "/assets/nexus-template-worlds/combat.webp",
+    imageAlt: "Hand-inked 2D combat arena with cover lanes, spawn gates, and a central capture point",
+    description: "Abilities, hit validation, rounds, and fair feedback.",
+    prompt: "Prototype a team arena game with three readable abilities, server-authoritative hits, and short competitive rounds.",
+    outcome: "A focused combat slice with verifiable client and server boundaries.",
+  },
+  {
+    id: "social",
+    label: "Social",
+    image: "/assets/nexus-template-worlds/social.webp",
+    imageAlt: "Hand-inked 2D social plaza with a fountain, cafe terrace, benches, and outdoor stage",
+    description: "Shared activities, expression, and reasons to return.",
+    prompt: "Create a cozy social island with fishing, house decorating, and shared community events.",
+    outcome: "A welcoming social loop with reasons to return.",
+  },
+  {
+    id: "horror",
+    label: "Horror",
+    image: "/assets/nexus-template-worlds/horror.webp",
+    imageAlt: "Hand-inked 2D horror map of a fenced abandoned facility surrounded by dark woodland",
+    description: "Tension, reactive encounters, and replayable rounds.",
+    prompt: "Make a round-based horror game set in a broken arcade with shifting rooms and one stalking enemy.",
+    outcome: "A testable round loop with escalating tension.",
+  },
+  {
+    id: "racing",
+    label: "Racing",
+    image: "/assets/nexus-template-worlds/racing.webp",
+    imageAlt: "Hand-inked 2D racing world with a looping track, start grid, checkpoint arch, and pit lane",
+    description: "Responsive vehicles, tracks, and measurable mastery.",
+    prompt: "Prototype an arcade racing game with drift boosts, three short tracks, and weekly time trials.",
+    outcome: "A fast competitive loop with measurable mastery.",
+  },
+  {
+    id: "adventure",
+    label: "Adventure",
+    image: "/assets/nexus-template-worlds/adventure.webp",
+    imageAlt: "Hand-inked 2D adventure valley with a cave, river bridge, ruins, and hilltop destination",
+    description: "Quests, inventory, exploration, and progression.",
+    prompt: "Build a compact action adventure with three quest lines, ability upgrades, loot, and a shared town hub.",
+    outcome: "A focused adventure slice with a project structure that can expand.",
+  },
+];
+
+export const homepageProjectEvidence = [
+  {
+    id: "context",
+    label: "Project context",
+    title: "Nexus reads beyond the open script.",
+    description:
+      "Explorer relationships, shared remotes, client/server boundaries, UI state, and the current place stay attached to the conversation.",
+  },
+  {
+    id: "changes",
+    label: "Change set",
+    title: "One request remains one reviewable unit.",
+    description:
+      "See every affected file and instance together instead of hunting through a transcript for disconnected code blocks.",
+  },
+  {
+    id: "recovery",
+    label: "Recovery",
+    title: "Experiment without surrendering control.",
+    description:
+      "Snapshots, expected source checks, selective review, and explicit apply states make iteration safer.",
   },
 ];
 
@@ -103,71 +155,48 @@ export const homepageGrowthLoop = [
   {
     id: "fun",
     title: "Build the fun",
-    description: "Start with a loop players understand and want to repeat.",
-  },
-  {
-    id: "retain",
-    title: "Earn retention",
-    description: "Playtest, listen, then use Roblox retention and session signals to find a real reason for players to return.",
-  },
-  {
-    id: "monetize",
-    title: "Add fair value",
-    description: "Design passes, developer products, or subscriptions only when they improve the experience. Creator Rewards depend on Roblox eligibility.",
+    description: "Prototype a loop players can understand, test, and want to repeat.",
   },
   {
     id: "learn",
-    title: "Learn and update",
-    description: "Read engagement, retention, and conversion in Roblox Creator Analytics, then ship the next better version.",
+    title: "Learn from play",
+    description: "Use playtests and Roblox Creator Analytics to find where players stop, return, or convert.",
+  },
+  {
+    id: "value",
+    title: "Add fair value",
+    description: "Introduce passes, products, or subscriptions only when they improve the experience.",
+  },
+  {
+    id: "update",
+    title: "Ship the next version",
+    description: "Keep the project brief, decisions, and evidence so the next update starts with context.",
   },
 ];
 
 export const homepageExampleBuilds = [
   {
     id: "arcade-escape",
-    genreId: "horror",
+    genre: "Round-based horror",
     title: "Arcade Escape",
-    description: "A round-based chase game with shifting rooms, a reactive enemy, rewards, and a clear restart loop.",
-    systems: ["Round service", "Enemy state", "Reward loop"],
+    description: "A reactive enemy, shifting rooms, rewards, and a verified restart loop.",
+    systems: ["RoundService", "Enemy state", "Reward loop"],
   },
   {
     id: "gravity-shift",
-    genreId: "obby",
+    genre: "Mobile obby",
     title: "Gravity Shift",
-    description: "A mobile-friendly obby slice with gravity swaps, checkpoints, daily challenges, and clear recovery states.",
+    description: "Gravity swaps, checkpoints, daily challenges, and readable recovery states.",
     systems: ["Checkpoints", "Mobile HUD", "Daily challenge"],
   },
   {
     id: "harbor-club",
-    genreId: "social",
+    genre: "Social experience",
     title: "Harbor Club",
-    description: "A cozy social loop built around fishing, home decoration, shared events, and reasons to return.",
+    description: "Fishing, home decoration, shared events, and a reason to return.",
     systems: ["Fishing loop", "Housing", "Live events"],
   },
 ];
-
-export const homepagePreviewPlanIds = ["FREE", "PRO", "TEAM"];
-
-export const homepagePreviewPlanFeatures = {
-  FREE: [
-    "Run one focused AI task at a time",
-    "Revisit seven days of build history",
-    "Keep one active UI project",
-    "Use the core idea-to-review workflow",
-  ],
-  PRO: [
-    "More capacity for longer build sessions",
-    "Review 90 days of usage history",
-    "Create game-ready icons",
-    "Optionally choose supported premium models",
-  ],
-  TEAM: [
-    "Pool build capacity across paid seats",
-    "Cover 2–50 creators with one subscription",
-    "Create game-ready icons",
-    "Keep studio billing in one place",
-  ],
-};
 
 export const homepageFocusedTools = [
   { href: "/roblox-script-generator", label: "Roblox script generator" },

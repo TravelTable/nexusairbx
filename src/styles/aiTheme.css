@@ -1,14 +1,14 @@
-/* Creator workshop compatibility layer.
+/* Conversational studio compatibility layer.
    Canonical --ds-* variables live in index.css. This file maps the older AI
    vocabulary and dense Tailwind-era utilities onto those semantic tokens. */
 
 .ai-page {
-  /* A restrained paper-and-plum frame around dense creation tooling. */
+  /* A quiet monochrome frame around dense creation tooling. */
   --pc-font-ui: var(--ds-font-sans);
   --pc-font-display: var(--ds-font-display);
   --pc-gutter: 16px;
-  --pc-radius-panel: 16px;
-  --pc-radius-control: 12px;
+  --pc-radius-panel: 14px;
+  --pc-radius-control: 10px;
 
   --ai-bg: var(--ds-bg-workspace);
   --ai-surface: var(--ds-surface-1);
@@ -101,12 +101,13 @@
   font-size: 0.75rem;
 }
 
-.ai-glow-primary {
+.ai-glow-primary,
+.ai-page[data-nexus-active="true"] .ai-active-signal {
   background-color: var(--ds-accent-soft);
 }
 
 .ai-glow-secondary {
-  background-color: var(--ds-accent-soft);
+  background-color: var(--ds-fill-subtle);
 }
 
 .ai-surface {

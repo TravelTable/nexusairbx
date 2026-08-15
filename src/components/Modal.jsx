@@ -22,7 +22,7 @@ export default function Modal({
   titleClassName = "mb-6 flex items-center gap-3 font-display text-2xl font-bold text-foreground",
   panelClassName = "max-w-lg p-6 sm:p-8",
   bodyClassName = "text-muted-foreground",
-  overlayClassName = "z-50 bg-black/60 px-4 backdrop-blur-sm",
+  overlayClassName = "z-50 bg-black/60 px-4",
   closeButtonClassName = "right-4 top-4",
   closeOnBackdrop = false,
   closeOnEscape = true,
@@ -101,7 +101,7 @@ export default function Modal({
             {...defaultMotionProps}
             {...motionProps}
             ref={modalRef}
-            className={`nexus-page-card relative w-full ${panelClassName}`}
+            className={`nexus-page-card relative w-full shadow-none ${panelClassName}`}
             role="dialog"
             aria-modal="true"
             aria-labelledby={title ? resolvedTitleId : undefined}

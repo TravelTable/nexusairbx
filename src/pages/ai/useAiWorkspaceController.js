@@ -146,6 +146,11 @@ export function shouldOpenProjectSidebarByDefault(viewportWidth) {
   return Number.isFinite(width) && width >= PROJECT_SIDEBAR_DESKTOP_MIN_WIDTH;
 }
 
+export function shouldCloseProjectSidebarOnViewportChange(previousViewportWidth, nextViewportWidth) {
+  return shouldOpenProjectSidebarByDefault(previousViewportWidth)
+    && !shouldOpenProjectSidebarByDefault(nextViewportWidth);
+}
+
 const MODE_COLORS = {
   general: { primary: "var(--ds-accent)", secondary: "var(--ds-info)" },
   ui: { primary: "var(--ds-accent)", secondary: "var(--ds-accent)" },
@@ -302,6 +307,7 @@ export function useAiWorkspaceController() {
   // Mobile tabs: chat | files | code | details (no preview).
   const [mobileTab, setMobileTab] = useState("chat");
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth < 1024 : false);
+  const previousViewportWidthRef = useRef(typeof window !== "undefined" ? window.innerWidth : 0);
   const [sidebarOpen, setSidebarOpen] = useState(() => (
     typeof window !== "undefined"
       ? shouldOpenProjectSidebarByDefault(window.innerWidth)
@@ -341,8 +347,6 @@ export function useAiWorkspaceController() {
   const [architecturePanelOpen, setArchitecturePanelOpen] = useState(false);
   const [teams, setTeams] = useState([]);
   const [attachments, setAttachments] = useState([]);
-  const [codeDrawerOpen, setCodeDrawerOpen] = useState(false);
-  const [codeDrawerData, setCodeDrawerData] = useState({ code: "", title: "", explanation: "" });
   const [pendingGenerationIntent, setPendingGenerationIntent] = useState(null);
   const [studioEnabled, setStudioEnabled] = useState(() => getStudioEnabledPreference());
   const [studioApplyMode, setStudioApplyModeState] = useState(() => getStudioApplyMode());
@@ -617,9 +621,14 @@ export function useAiWorkspaceController() {
 
   useEffect(() => {
     const handleResize = () => {
-      const mobile = window.innerWidth < 1024;
+      const nextViewportWidth = window.innerWidth;
+      const mobile = nextViewportWidth < 1024;
       setIsMobile(mobile);
       if (!mobile) setMobileTab("chat");
+      if (shouldCloseProjectSidebarOnViewportChange(previousViewportWidthRef.current, nextViewportWidth)) {
+        setSidebarOpen(false);
+      }
+      previousViewportWidthRef.current = nextViewportWidth;
     };
 
     window.addEventListener("resize", handleResize);
@@ -829,13 +838,6 @@ export function useAiWorkspaceController() {
       setActiveTab("chat");
     });
 
-    const unbindOpenCodeDrawer = onAiEvent(AI_EVENTS.OPEN_CODE_DRAWER, (e) => {
-      const { code, title, explanation } = e.detail || {};
-      if (!code) return;
-      setCodeDrawerData({ code: code || "", title: title || "", explanation: explanation || "" });
-      setCodeDrawerOpen(true);
-    });
-
     const unbindSaveScript = onAiEvent(AI_EVENTS.SAVE_SCRIPT, async (e) => {
       if (!isStarterOrAbove) {
         starterPromo.notifyStarterGate("Saved Creations");
@@ -850,7 +852,6 @@ export function useAiWorkspaceController() {
 
     return () => {
       unbindStartDraft();
-      unbindOpenCodeDrawer();
       unbindSaveScript();
     };
   }, [chat, isStarterOrAbove, notify, scriptManager, track, starterPromo]);
@@ -2639,8 +2640,6 @@ export function useAiWorkspaceController() {
       signInNudgeReason,
       showProNudge,
       proNudgeReason,
-      codeDrawerOpen,
-      codeDrawerData,
       currentTheme,
       activeModeData,
       currentToast,
@@ -2670,7 +2669,6 @@ export function useAiWorkspaceController() {
       setShowSignInNudge,
       setShowProNudge,
       setProNudgeReason,
-      setCodeDrawerOpen,
       dismissToast,
       updateSettings,
 

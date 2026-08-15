@@ -120,7 +120,7 @@ const BrutalAuditor = () => {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header & Main Action */}
-      <div className="bg-[var(--ds-surface-2)] border border-[var(--ds-border-subtle)] rounded-2xl p-6 backdrop-blur-xl relative overflow-hidden">
+      <div className="relative overflow-hidden rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-2)] p-6">
         <div className="absolute top-0 right-0 p-8 opacity-5">
           <Skull className="w-32 h-32 text-[var(--ds-danger)] " />
         </div>
@@ -186,7 +186,7 @@ const BrutalAuditor = () => {
         </div>
 
         {/* Chaos Monkey */}
-        <div className="bg-[var(--ds-surface-2)] border border-[var(--ds-border-subtle)] rounded-2xl p-6 backdrop-blur-xl">
+        <div className="rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-2)] p-6">
           <h4 className="text-[var(--ds-text)] font-bold mb-4 flex items-center gap-2">
             <Zap className="w-4 h-4 text-[var(--ds-warning)] " />
             Chaos Monkey

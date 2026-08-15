@@ -16,7 +16,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from "lib/icons";
-import { Button, Segmented, cx } from "../../ui";
+import { Button, cx } from "../../ui";
 import {
   getRobloxAsset,
   getRobloxAssetPreview,
@@ -28,6 +28,7 @@ import {
   isCreatorStoreReadAuthorized,
   isRobloxReauthorizationError,
 } from "../../../lib/robloxOAuthApi";
+import NexusDisplayIcon from "../../icons/NexusDisplayIcon";
 
 const ASSET_TYPES = ["Model", "Mesh", "Image", "Decal", "Audio", "Animation", "Package", "Plugin"];
 const SORTS = [
@@ -65,12 +66,12 @@ function ErrorState({ error, onRetry, onReauthorize }) {
         </div>
         <div className="flex shrink-0 flex-col gap-1">
           {reauthorizationRequired && onReauthorize ? (
-            <button type="button" onClick={onReauthorize} className="rounded-md border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)] px-2 py-1 text-xs font-bold hover:bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)]">
+            <button type="button" onClick={onReauthorize} className="min-h-[44px] rounded-md border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)] px-2 py-1 text-xs font-bold hover:bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] focus-ring">
               Reauthorize Roblox
             </button>
           ) : null}
           {onRetry ? (
-            <button type="button" onClick={onRetry} className="rounded-md border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)] px-2 py-1 text-xs font-bold hover:bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)]">
+            <button type="button" onClick={onRetry} className="min-h-[44px] rounded-md border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)] px-2 py-1 text-xs font-bold hover:bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] focus-ring">
               Retry
             </button>
           ) : null}
@@ -115,7 +116,7 @@ function AssetPreview({ asset, preview, loading, onSelectToggle, selected }) {
             onClick={onSelectToggle}
             disabled={!asset.canSelect}
             className={cx(
-              "inline-flex shrink-0 items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-black uppercase tracking-widest disabled:cursor-not-allowed disabled:opacity-40",
+              "inline-flex min-h-[44px] shrink-0 items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-black uppercase tracking-widest disabled:cursor-not-allowed disabled:opacity-40 focus-ring",
               selected
                 ? "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]"
                 : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]"
@@ -128,7 +129,7 @@ function AssetPreview({ asset, preview, loading, onSelectToggle, selected }) {
 
         <div className="relative mb-4 flex aspect-video items-center justify-center overflow-hidden rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-hover)]">
           {loading ? (
-            <Loader2 className="h-6 w-6 animate-spin text-[var(--ds-info)]" />
+            <Loader2 className="h-6 w-6 animate-spin text-[var(--ds-accent)]" />
           ) : renderer === "image" && imageUrl ? (
             <>
               <img
@@ -137,14 +138,14 @@ function AssetPreview({ asset, preview, loading, onSelectToggle, selected }) {
                 className="max-h-full max-w-full object-contain transition-transform"
                 style={{ transform: `scale(${zoom})` }}
               />
-              <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] p-1">
-                <button type="button" className="p-1 text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)]" onClick={() => setZoom((z) => Math.max(0.5, z - 0.25))} aria-label="Zoom out">
+              <div className="absolute bottom-2 right-2 flex items-center gap-2 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] p-1">
+                <button type="button" className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring" onClick={() => setZoom((z) => Math.max(0.5, z - 0.25))} aria-label="Zoom out">
                   <ZoomOut className="h-4 w-4" />
                 </button>
-                <button type="button" className="p-1 text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)]" onClick={() => setZoom(1)} aria-label="Reset zoom">
+                <button type="button" className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring" onClick={() => setZoom(1)} aria-label="Reset zoom">
                   <RotateCcw className="h-4 w-4" />
                 </button>
-                <button type="button" className="p-1 text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)]" onClick={() => setZoom((z) => Math.min(3, z + 0.25))} aria-label="Zoom in">
+                <button type="button" className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring" onClick={() => setZoom((z) => Math.min(3, z + 0.25))} aria-label="Zoom in">
                   <ZoomIn className="h-4 w-4" />
                 </button>
               </div>
@@ -185,7 +186,7 @@ function AssetPreview({ asset, preview, loading, onSelectToggle, selected }) {
         {asset.description ? <p className="mt-3 text-xs leading-relaxed text-[var(--ds-text-secondary)]">{asset.description}</p> : null}
 
         {asset.openUrl ? (
-          <a href={asset.openUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-[var(--ds-info)] hover:text-[var(--ds-text)]">
+          <a href={asset.openUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex min-h-[44px] items-center gap-1 rounded-md text-xs font-bold text-[var(--ds-accent)] hover:text-[var(--ds-text)] focus-ring">
             Open on Roblox <ExternalLink className="h-3 w-3" />
           </a>
         ) : null}
@@ -450,10 +451,10 @@ export default function AssetLibraryModal({
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <button type="button" onClick={() => loadAssets({ append: false, cursor: "" })} className="rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2 text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]" aria-label="Refresh assets">
+            <button type="button" onClick={() => loadAssets({ append: false, cursor: "" })} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring" aria-label="Refresh assets">
               <RefreshCw className={cx("h-4 w-4", loading && "animate-spin")} />
             </button>
-            <button type="button" onClick={onClose} className="rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2 text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]" aria-label="Close asset library">
+            <button type="button" onClick={onClose} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring" aria-label="Close asset library">
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -465,16 +466,37 @@ export default function AssetLibraryModal({
               key={item.id}
               type="button"
               onClick={() => setSource(item.id)}
+              aria-pressed={source === item.id}
               className={cx(
-                "rounded-full border px-2.5 py-1 text-[10px] font-semibold transition-[border-color,background-color,color] duration-150",
-                source === item.id ? "border-[color-mix(in_srgb,var(--ds-info)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-info)_10%,transparent)] text-[var(--ds-info)]" : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
+                "min-h-[44px] rounded-full border px-2.5 py-1 text-[10px] font-semibold transition-[border-color,background-color,color] duration-150 focus-ring motion-reduce:transition-none",
+                source === item.id ? "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]" : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
               )}
             >
               {item.label}
             </button>
           ))}
           <div className="h-px flex-1 bg-[var(--ds-fill-subtle)]" />
-          <Segmented size="sm" value={sort} onChange={setSort} options={SORTS} />
+          <div className="flex max-w-full flex-wrap rounded-xl border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] p-0.5" role="group" aria-label="Sort assets">
+            {SORTS.map((option) => {
+              const active = sort === option.id;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setSort(option.id)}
+                  className={cx(
+                    "inline-flex min-h-[44px] items-center justify-center rounded-lg px-2.5 py-1 text-[10px] font-semibold transition-[background-color,color] duration-150 focus-ring motion-reduce:transition-none",
+                    active
+                      ? "bg-[var(--ds-surface-1)] text-[var(--ds-accent)]"
+                      : "text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
+                  )}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px]">
@@ -487,23 +509,24 @@ export default function AssetLibraryModal({
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Search by asset name or ID"
-                  className="w-full rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-hover)] py-2 pl-9 pr-9 text-sm text-[var(--ds-text)] outline-none focus:border-[color-mix(in_srgb,var(--ds-info)_45%,transparent)]"
+                  className="min-h-[44px] w-full rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-hover)] py-2 pl-9 pr-12 text-sm text-[var(--ds-text)] outline-none focus:border-[var(--ds-accent-border)] focus-ring"
                   aria-label="Search assets"
                 />
                 {search ? (
-                  <button type="button" onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]" aria-label="Clear search">
+                  <button type="button" onClick={() => setSearch("")} className="absolute right-0 top-1/2 flex min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center rounded-lg text-[var(--ds-text-muted)] hover:text-[var(--ds-text)] focus-ring" aria-label="Clear search">
                     <X className="h-4 w-4" />
                   </button>
                 ) : null}
               </div>
-              <div className="flex flex-wrap gap-1.5" aria-label="Asset type filters">
+              <div className="flex flex-wrap gap-2" aria-label="Asset type filters">
                 {ASSET_TYPES.map((assetType) => (
                   <button
                     key={assetType}
                     type="button"
                     onClick={() => toggleType(assetType)}
+                    aria-pressed={assetTypes.includes(assetType)}
                     className={cx(
-                      "rounded-lg border px-2 py-1 text-[10px] font-bold uppercase tracking-widest",
+                      "min-h-[44px] rounded-lg border px-2 py-1 text-[10px] font-bold uppercase tracking-widest focus-ring",
                       assetTypes.includes(assetType) ? "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]" : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)]"
                     )}
                   >
@@ -532,7 +555,7 @@ export default function AssetLibraryModal({
                     const Icon = typeIcon(asset.assetType);
                     return (
                       <article key={asset.assetId} className={cx("rounded-lg border bg-[var(--ds-fill-subtle)] p-2 transition-[border-color,background-color] duration-150", selected ? "border-[var(--ds-accent-border)]" : "border-[var(--ds-border-subtle)] hover:border-[var(--ds-border-strong)]")}>
-                        <button type="button" onClick={() => setPreviewAsset(asset)} className="block w-full text-left" aria-label={`Preview ${asset.name}`}>
+                        <button type="button" onClick={() => setPreviewAsset(asset)} className="block min-h-[44px] w-full rounded-md text-left focus-ring" aria-label={`Preview ${asset.name}`}>
                           <div className="relative mb-2 aspect-video overflow-hidden rounded-md bg-[var(--ds-fill-hover)]">
                             {asset.thumbnailUrl ? <img src={asset.thumbnailUrl} alt="" className="h-full w-full object-cover" /> : <Icon className="m-auto h-full w-8 text-[var(--ds-text-muted)]" />}
                             <span className="absolute left-2 top-2 rounded bg-[var(--ds-surface-overlay)] px-1.5 py-0.5 text-[9px] font-black uppercase text-[var(--ds-text-secondary)]">{asset.assetType}</span>
@@ -550,7 +573,7 @@ export default function AssetLibraryModal({
                           onClick={() => toggleSelection(asset)}
                           disabled={!asset.canSelect}
                           className={cx(
-                            "mt-2 flex w-full items-center justify-center gap-1 rounded-md border px-2 py-1 text-[10px] font-black uppercase tracking-widest disabled:cursor-not-allowed disabled:opacity-40",
+                            "mt-2 flex min-h-[44px] w-full items-center justify-center gap-1 rounded-md border px-2 py-1 text-[10px] font-black uppercase tracking-widest disabled:cursor-not-allowed disabled:opacity-40 focus-ring",
                             selected ? "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]" : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]"
                           )}
                           aria-label={selected ? `Remove ${asset.name} from selection` : `Select ${asset.name}`}
@@ -565,7 +588,7 @@ export default function AssetLibraryModal({
               ) : (
                 <div className="flex h-full min-h-[260px] items-center justify-center text-center">
                   <div>
-                    <Box className="mx-auto mb-3 h-8 w-8 text-[var(--ds-text-muted)]" />
+                    <NexusDisplayIcon name="assets" size={72} className="mx-auto mb-3 h-[72px] w-[72px]" />
                     <div className="text-sm font-bold text-[var(--ds-text-secondary)]">No assets found</div>
                     <div className="mt-1 text-xs text-[var(--ds-text-muted)]">Adjust filters, search, or refresh Roblox permissions.</div>
                   </div>
@@ -574,7 +597,7 @@ export default function AssetLibraryModal({
 
               {nextCursor && !["project", "recent", "selected"].includes(source) ? (
                 <div className="mt-4 flex justify-center">
-                  <Button variant="ghost" size="sm" onClick={() => loadAssets({ append: true, cursor: nextCursor })} disabled={loading} iconRight={ChevronRight}>
+                  <Button variant="ghost" size="sm" onClick={() => loadAssets({ append: true, cursor: nextCursor })} disabled={loading} iconRight={ChevronRight} className="min-h-[44px]">
                     {loading ? "Loading" : "Load More"}
                   </Button>
                 </div>
@@ -599,13 +622,13 @@ export default function AssetLibraryModal({
             {!projectId ? <span className="ml-2 text-[var(--ds-warning)] ">Open a project before adding assets.</span> : null}
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setSelection(new Map())} disabled={saving || selection.size === 0}>
+            <Button variant="ghost" size="sm" onClick={() => setSelection(new Map())} disabled={saving || selection.size === 0} className="min-h-[44px]">
               Clear
             </Button>
-            <Button variant="ghost" size="sm" onClick={onClose} disabled={saving}>
+            <Button variant="ghost" size="sm" onClick={onClose} disabled={saving} className="min-h-[44px]">
               Cancel
             </Button>
-            <Button size="sm" onClick={confirm} disabled={saving || !projectId || selection.size === 0}>
+            <Button size="sm" onClick={confirm} disabled={saving || !projectId || selection.size === 0} className="min-h-[44px]">
               {saving ? "Adding..." : "Add Selected Assets"}
             </Button>
           </div>

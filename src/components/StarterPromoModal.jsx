@@ -55,18 +55,16 @@ export default function StarterPromoModal({
       titleClassName="sr-only"
       panelClassName="max-w-lg overflow-hidden"
       bodyClassName=""
-      overlayClassName="z-[115] bg-black/80 p-4 backdrop-blur-md"
+      overlayClassName="z-[115] bg-black/60 p-4"
       closeOnBackdrop={!blocking}
       closeOnEscape={!blocking}
       showCloseButton={false}
     >
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1.5 bg-gradient-to-r from-transparent via-accent to-transparent" />
-
           {!blocking ? (
             <button
               onClick={onClose}
               aria-label="Close Starter offer"
-              className="nexus-icon-button absolute top-5 right-5 rounded-full z-10"
+              className="nexus-icon-button absolute right-5 top-5 z-10 h-11 w-11 rounded-full"
             >
               <X className="w-5 h-5" />
             </button>
@@ -74,7 +72,7 @@ export default function StarterPromoModal({
 
           <div className="p-8 pt-10">
             <div className="flex items-center justify-center gap-3 mb-5">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--ds-accent-soft)] border border-[var(--ds-accent-border)] text-[10px] font-black uppercase tracking-widest text-accent animate-pulse">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-secondary)]">
                 {blocking ? "Starter — $2/mo" : "Limited — $2/mo"}
               </span>
             </div>
@@ -121,14 +119,14 @@ export default function StarterPromoModal({
                 type="button"
                 disabled={checkoutBusy}
                 onClick={handleCheckout}
-                className="focus-ring w-full py-4 rounded-xl border border-[var(--ds-accent-border)] bg-accent text-accent-foreground font-black text-lg shadow-panel transition hover:bg-[var(--ds-accent-hover)] active:bg-[var(--ds-accent-pressed)] disabled:opacity-60"
+                className="focus-ring min-h-11 w-full rounded-xl border border-[var(--ds-accent-border)] bg-accent py-4 text-lg font-black text-accent-foreground transition-colors hover:bg-[var(--ds-accent-hover)] active:bg-[var(--ds-accent-pressed)] disabled:opacity-60"
               >
                 {checkoutBusy ? "Starting checkout…" : "Get Starter for $2"}
               </button>
               <button
                 type="button"
                 onClick={() => navigate("/subscribe?highlight=starter")}
-                className="focus-ring w-full py-3 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text)] text-sm font-bold hover:bg-[var(--ds-fill-hover)] transition"
+                className="focus-ring min-h-11 w-full rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] py-3 text-sm font-bold text-[var(--ds-text)] transition-colors hover:bg-[var(--ds-fill-hover)]"
               >
                 Compare all plans
               </button>
@@ -137,14 +135,14 @@ export default function StarterPromoModal({
                   <button
                     type="button"
                     onClick={onDismiss}
-                    className="focus-ring w-full py-2 rounded-xl text-[var(--ds-text-subtle)] hover:text-[var(--ds-text)] text-sm font-bold transition-colors"
+                    className="focus-ring min-h-11 w-full rounded-xl py-2 text-sm font-bold text-[var(--ds-text-subtle)] transition-colors hover:text-[var(--ds-text)]"
                   >
                     Maybe later
                   </button>
                   <button
                     type="button"
                     onClick={onDismissLong}
-                    className="text-[10px] text-[var(--ds-text-disabled)] hover:text-[var(--ds-text-muted)] underline underline-offset-2"
+                    className="focus-ring min-h-11 w-full rounded-xl px-3 py-2 text-[10px] text-[var(--ds-text-disabled)] underline underline-offset-2 transition-colors hover:text-[var(--ds-text-muted)]"
                   >
                     Don&apos;t show again for 2 weeks
                   </button>
@@ -166,8 +164,8 @@ export default function StarterPromoModal({
 function BenefitCard({ icon: Icon, title, note }) {
   return (
     <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-[var(--ds-fill-subtle)] border border-[var(--ds-border-subtle)]">
-      <div className="w-9 h-9 rounded-xl bg-[var(--ds-accent-soft)] flex items-center justify-center shrink-0">
-        <Icon className="w-4 h-4 text-accent" />
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-2)] text-[var(--ds-text-secondary)]">
+        <Icon className="h-4 w-4" />
       </div>
       <div className="min-w-0">
         <div className="text-sm font-bold text-[var(--ds-text)] leading-tight">{title}</div>

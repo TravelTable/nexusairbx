@@ -56,10 +56,10 @@ function Brand({ compact = false }) {
     <Link
       to="/"
       aria-label="NexusRBX home"
-      className="inline-flex min-h-11 min-w-11 shrink-0 items-center gap-2 rounded-full px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)]"
+      className="inline-flex min-h-11 min-w-11 shrink-0 items-center gap-2 rounded-[8px] px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)]"
     >
       <span className={cn(
-        "flex items-center justify-center overflow-hidden rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)]",
+        "flex items-center justify-center overflow-hidden rounded-[8px] border border-[var(--ds-border-subtle)] bg-transparent",
         compact ? "h-7 w-7" : "h-8 w-8"
       )}>
         <img src="/nexus-mark.svg" alt="" className={cn("object-contain", compact ? "h-5 w-5" : "h-6 w-6")} />
@@ -150,7 +150,7 @@ function NavDisclosure({ label, items, pathname }) {
               links[(index + direction + links.length) % links.length]?.focus();
             }
           }}
-          className="absolute left-0 top-[calc(100%+8px)] z-50 w-56 origin-top-left rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-1.5 text-[var(--ds-text)] shadow-[var(--ds-shadow-overlay)] backdrop-blur-xl"
+          className="absolute left-0 top-[calc(100%+8px)] z-50 w-56 origin-top-left rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-1.5 text-[var(--ds-text)] shadow-[var(--ds-shadow-overlay)]"
         >
           {items.map((item) => (
             <DestinationLink
@@ -201,7 +201,7 @@ function HomepageDesktopNavigation({ pathname }) {
         <a
           key={item.href}
           href={item.href}
-          className="inline-flex h-11 items-center rounded-full px-3 text-[13px] font-semibold text-[var(--ds-text-secondary)] transition-[background-color,color,transform] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] motion-reduce:transform-none"
+          className="inline-flex h-11 items-center rounded-[7px] px-3 text-[13px] font-medium text-[var(--ds-text-secondary)] transition-[background-color,color] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)]"
         >
           {item.label}
         </a>
@@ -259,7 +259,7 @@ function AccountMenu({ identity, compact = false }) {
           ref={menuRef}
           role="menu"
           aria-label="Account menu"
-          className="absolute right-0 top-[calc(100%+8px)] z-50 w-[min(21rem,calc(100vw-1.5rem))] origin-top-right rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-2 text-[var(--ds-text)] shadow-[var(--ds-shadow-overlay)] backdrop-blur-xl"
+          className="absolute right-0 top-[calc(100%+8px)] z-50 w-[min(21rem,calc(100vw-1.5rem))] origin-top-right rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-2 text-[var(--ds-text)] shadow-[var(--ds-shadow-overlay)]"
         >
           <div className="px-3 pb-3 pt-2">
             <div className="truncate text-sm font-semibold text-[var(--ds-text)]">{identity.displayName}</div>
@@ -324,8 +324,8 @@ function DesktopIdentityActions({ identity, checkout = false, homepage = false }
     return (
       <div className="hidden items-center gap-2 lg:flex">
         {!checkout && (
-          <Button asChild size="sm" className="min-h-11 bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] active:scale-[0.985]">
-            {homepage ? <a href="/#product">Start building</a> : <Link to="/ai">Open workspace</Link>}
+          <Button asChild size="sm" className="min-h-11 rounded-[8px] bg-[var(--ds-text)] text-[var(--ds-bg-canvas)] hover:bg-[var(--ds-text-secondary)] active:scale-[0.985]">
+            {homepage ? <Link to="/ai">Start building</Link> : <Link to="/ai">Open workspace</Link>}
           </Button>
         )}
         <AccountMenu identity={identity} compact={checkout} />
@@ -338,8 +338,8 @@ function DesktopIdentityActions({ identity, checkout = false, homepage = false }
         <Link to="/signin">Sign in</Link>
       </Button>
       {!checkout && (
-        <Button asChild size="sm" className="min-h-11 bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] active:scale-[0.985]">
-          {homepage ? <a href="/#product">Start building</a> : <Link to="/signup">Start free</Link>}
+        <Button asChild size="sm" className="min-h-11 rounded-[8px] bg-[var(--ds-text)] text-[var(--ds-bg-canvas)] hover:bg-[var(--ds-text-secondary)] active:scale-[0.985]">
+          {homepage ? <Link to="/ai">Start building</Link> : <Link to="/signup">Start free</Link>}
         </Button>
       )}
     </div>
@@ -386,7 +386,7 @@ function MobileMenu({ identity, pathname, workspace = false, checkout = false, h
           ) : identity.authReady ? (
             <div className={cn("grid gap-2", homepage ? "grid-cols-1" : "grid-cols-2")}>
               <SheetClose asChild><Button asChild variant="outline" className="min-h-11 border-[var(--ds-border)] bg-transparent text-[var(--ds-text)]"><Link to="/signin">Sign in</Link></Button></SheetClose>
-              {!homepage && <SheetClose asChild><Button asChild className="min-h-11 bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)]"><Link to="/signup">Start free</Link></Button></SheetClose>}
+              {!homepage && <SheetClose asChild><Button asChild className="min-h-11 bg-[var(--ds-text)] text-[var(--ds-bg-canvas)] hover:bg-[var(--ds-text-secondary)]"><Link to="/signup">Start free</Link></Button></SheetClose>}
             </div>
           ) : <Skeleton className="h-12 w-full" />}
 
@@ -394,7 +394,7 @@ function MobileMenu({ identity, pathname, workspace = false, checkout = false, h
             <nav className="space-y-1" aria-label="Mobile homepage navigation">
               {homepageNavigation.map((item) => (
                 <SheetClose asChild key={item.href}>
-                  <a href={item.href} className="flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)]">
+                  <a href={item.href} className="flex min-h-11 items-center rounded-[7px] px-3 text-sm font-medium text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)]">
                     {item.label}
                   </a>
                 </SheetClose>
@@ -404,8 +404,8 @@ function MobileMenu({ identity, pathname, workspace = false, checkout = false, h
                 {homepageResourceNavigation.map((item) => <MobileDestination key={item.to} item={item} pathname={pathname} />)}
               </div>
               <SheetClose asChild>
-                <Button asChild className="mt-3 min-h-11 w-full bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)]">
-                  <a href="/#product">Start building</a>
+                <Button asChild className="mt-3 min-h-11 w-full rounded-[8px] bg-[var(--ds-text)] text-[var(--ds-bg-canvas)] hover:bg-[var(--ds-text-secondary)]">
+                  <Link to="/ai">Start building</Link>
                 </Button>
               </SheetClose>
             </nav>
@@ -475,14 +475,18 @@ export default function SiteHeader({
       isWorkspace
         ? "relative z-30 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)]"
         : isHomepage
-          ? "sticky top-0 border-b border-[var(--ds-border-subtle)] bg-[color-mix(in_srgb,var(--ds-surface-overlay)_92%,transparent)] backdrop-blur-xl"
-          : "sticky top-0 border-b border-[var(--ds-border-subtle)] bg-[color-mix(in_srgb,var(--ds-surface-overlay)_94%,transparent)] backdrop-blur-xl",
+          ? "sticky top-0 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)]"
+          : "sticky top-0 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)]",
       className
     )} data-overlay={isHomepage ? "true" : undefined}>
       {location.pathname === "/" ? <SkipToMainContent /> : null}
       <div className={cn(
         "flex min-w-0 items-center justify-between gap-2 xl:gap-3",
-        isWorkspace ? "px-3 py-1.5 sm:px-4" : "mx-auto h-14 max-w-[82rem] px-4 sm:px-6 lg:px-8"
+        isWorkspace
+          ? "px-3 py-1.5 sm:px-4"
+          : isHomepage
+            ? "mx-auto h-16 max-w-[88rem] px-4 sm:px-6 lg:px-8"
+            : "mx-auto h-14 max-w-[82rem] px-4 sm:px-6 lg:px-8"
       )}>
         {isWorkspace ? (
           <>

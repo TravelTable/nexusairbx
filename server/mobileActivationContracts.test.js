@@ -19,7 +19,8 @@ test("Quick Script mobile workspace keeps prompt reachable and code contained", 
   assert.match(workspace, /tabIndex=\{0\}/);
   assert.match(workspace, /Generated Luau code\. Scroll to read\./);
   assert.match(workspace, /data-tour="generate-btn"/);
-  assert.match(workspace, /className="flex h-11 w-11 shrink-0 items-center justify-center[^\"]*md:h-10 md:w-10"/);
+  assert.match(workspace, /className="flex h-11 w-11 shrink-0 items-center justify-center[^\"]*"/);
+  assert.doesNotMatch(workspace, /md:h-10 md:w-10/);
   assert.match(workspace, /aria-label=\{isGenerating \? "Generation in progress"/);
 });
 
@@ -36,8 +37,8 @@ test("AI workspace is viewport-bound and keeps safe toast placement", () => {
   const layout = read("src/pages/ai/AgentWorkspaceLayout.jsx");
   const theme = read("src/styles/aiTheme.css");
 
-  assert.match(layout, /className="fixed inset-0 overflow-hidden"/);
-  assert.match(layout, /className="ai-page relative flex flex-col overflow-hidden font-sans"/);
+  assert.match(layout, /className="[^"]*\bfixed\b[^"]*\binset-0\b[^"]*\boverflow-hidden\b[^"]*"/);
+  assert.match(layout, /className="[^"]*\bai-page\b[^"]*\brelative\b[^"]*\bflex\b[^"]*\bflex-col\b[^"]*\boverflow-hidden\b[^"]*\bfont-sans\b[^"]*"/);
   assert.match(theme, /width: 100%/);
   assert.match(theme, /height: 100%/);
   assert.doesNotMatch(theme, /--ai-zoom/);

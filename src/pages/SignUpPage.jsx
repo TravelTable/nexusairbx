@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Github, Mail, User } from "lib/icons";
 import { auth } from "../firebase";
@@ -72,6 +72,10 @@ export default function NexusRBXSignUpPageContainer() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const nameInputRef = useRef(null);
+  const emailInputRef = useRef(null);
+  const passwordInputRef = useRef(null);
+  const confirmPasswordInputRef = useRef(null);
   const [formStatus, setFormStatus] = useState({
     status: "idle", // idle, submitting, success, error
     message: ""
@@ -181,6 +185,13 @@ export default function NexusRBXSignUpPageContainer() {
         status: "error",
         message: "Please fill out all required fields."
       });
+      const firstMissingField = [
+        [formData.name, nameInputRef],
+        [formData.email, emailInputRef],
+        [formData.password, passwordInputRef],
+        [formData.confirmPassword, confirmPasswordInputRef],
+      ].find(([value]) => !value);
+      firstMissingField?.[1].current?.focus();
       return;
     }
 
@@ -189,6 +200,7 @@ export default function NexusRBXSignUpPageContainer() {
         status: "error",
         message: "Passwords do not match."
       });
+      confirmPasswordInputRef.current?.focus();
       return;
     }
 
@@ -223,7 +235,7 @@ export default function NexusRBXSignUpPageContainer() {
     } catch (error) {
       setFormStatus({
         status: "error",
-        message: error.message
+        message: getFriendlyAuthErrorMessage(error)
       });
     }
   };
@@ -319,6 +331,10 @@ export default function NexusRBXSignUpPageContainer() {
       showPassword={showPassword}
       showConfirmPassword={showConfirmPassword}
       formStatus={formStatus}
+      nameInputRef={nameInputRef}
+      emailInputRef={emailInputRef}
+      passwordInputRef={passwordInputRef}
+      confirmPasswordInputRef={confirmPasswordInputRef}
       rememberMe={rememberMe}
       passwordStrength={passwordStrength}
       signInLinkState={signInLinkState}
@@ -340,6 +356,10 @@ function NexusRBXSignUpPage({
   showPassword,
   showConfirmPassword,
   formStatus,
+  nameInputRef,
+  emailInputRef,
+  passwordInputRef,
+  confirmPasswordInputRef,
   rememberMe,
   passwordStrength,
   signInLinkState,
@@ -359,7 +379,7 @@ function NexusRBXSignUpPage({
   return (
     <NexusAuthShell
       title="Create your account"
-      description="Get started with NexusRBX."
+      description="Start a private workspace for your Roblox projects and Studio work."
     >
       <div className="grid gap-6">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -373,11 +393,17 @@ function NexusRBXSignUpPage({
 
         <AuthDivider />
 
-        <form onSubmit={handleSubmit} noValidate className="grid gap-5">
+        <form
+          onSubmit={handleSubmit}
+          noValidate
+          aria-busy={formStatus.status === "submitting"}
+          className="grid gap-5"
+        >
           <AuthStatusAlert status={formStatus.status} message={formStatus.message} />
 
           <div className="grid gap-4 sm:grid-cols-2">
             <AuthTextField
+              inputRef={nameInputRef}
               id="name"
               name="name"
               label="Name"
@@ -390,6 +416,7 @@ function NexusRBXSignUpPage({
               required
             />
             <AuthTextField
+              inputRef={emailInputRef}
               id="email"
               name="email"
               label="Email address"
@@ -406,6 +433,7 @@ function NexusRBXSignUpPage({
 
           <div className="grid gap-3">
             <AuthPasswordField
+              inputRef={passwordInputRef}
               id="password"
               name="password"
               label="Password"
@@ -441,6 +469,7 @@ function NexusRBXSignUpPage({
 
           <div>
             <AuthPasswordField
+              inputRef={confirmPasswordInputRef}
               id="confirmPassword"
               name="confirmPassword"
               label="Confirm password"
@@ -479,19 +508,19 @@ function NexusRBXSignUpPage({
           />
         </form>
 
-        <p className="text-center text-xs leading-5 text-muted-foreground">
+        <p className="text-center text-xs leading-5 text-[var(--ds-text-muted)]">
           By creating an account with Google, GitHub, or email, you agree to the{" "}
-          <a href="/legal/terms" className="font-medium text-foreground underline-offset-4 hover:underline">
+          <a href="/legal/terms" className="focus-ring inline-flex min-h-11 items-center rounded px-1 font-medium text-[var(--ds-text)] underline-offset-4 hover:underline">
             Terms
           </a>{" "}
           and{" "}
-          <a href="/legal/privacy" className="font-medium text-foreground underline-offset-4 hover:underline">
+          <a href="/legal/privacy" className="focus-ring inline-flex min-h-11 items-center rounded px-1 font-medium text-[var(--ds-text)] underline-offset-4 hover:underline">
             Privacy Policy
           </a>
           .
         </p>
 
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-center text-sm text-[var(--ds-text-muted)]">
           Already have an account?{" "}
           <AuthInlineLinkButton
             onClick={() => navigate("/signin", signInLinkState ? { state: signInLinkState } : undefined)}

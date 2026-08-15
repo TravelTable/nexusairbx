@@ -13,22 +13,22 @@ function defineNexusThemes(monaco) {
       base: "vs-dark",
       inherit: true,
       rules: [
-        { token: "comment", foreground: "9A8BA7", fontStyle: "italic" },
-        { token: "keyword", foreground: "C4B5FD" },
-        { token: "string", foreground: "B7D87A" },
-        { token: "number", foreground: "FF9E88" },
+        { token: "comment", foreground: "878A91", fontStyle: "italic" },
+        { token: "keyword", foreground: "A78BFA" },
+        { token: "string", foreground: "8BC59A" },
+        { token: "number", foreground: "D8AD65" },
       ],
       colors: {
-        "editor.background": "#160B24",
-        "editor.foreground": "#FFF8E7",
-        "editorLineNumber.foreground": "#74637F",
-        "editorLineNumber.activeForeground": "#C4B5FD",
-        "editor.selectionBackground": "#7C3AED66",
-        "editor.inactiveSelectionBackground": "#7C3AED33",
-        "editor.lineHighlightBackground": "#FFF8E70A",
-        "editorCursor.foreground": "#D9FF57",
-        "editorWidget.background": "#241536",
-        "editorWidget.border": "#4C365C",
+        "editor.background": "#0B0B0C",
+        "editor.foreground": "#F5F5F3",
+        "editorLineNumber.foreground": "#666970",
+        "editorLineNumber.activeForeground": "#D2D3D5",
+        "editor.selectionBackground": "#A78BFA4D",
+        "editor.inactiveSelectionBackground": "#A78BFA26",
+        "editor.lineHighlightBackground": "#F5F5F30A",
+        "editorCursor.foreground": "#A78BFA",
+        "editorWidget.background": "#17181B",
+        "editorWidget.border": "#3A3D44",
       },
     });
 
@@ -36,22 +36,22 @@ function defineNexusThemes(monaco) {
       base: "vs",
       inherit: true,
       rules: [
-        { token: "comment", foreground: "746B78", fontStyle: "italic" },
+        { token: "comment", foreground: "64666D", fontStyle: "italic" },
         { token: "keyword", foreground: "6D28D9" },
-        { token: "string", foreground: "3F7F32" },
-        { token: "number", foreground: "A3452E" },
+        { token: "string", foreground: "2F7045" },
+        { token: "number", foreground: "80530F" },
       ],
       colors: {
-        "editor.background": "#FFFCF5",
-        "editor.foreground": "#17121B",
-        "editorLineNumber.foreground": "#918397",
-        "editorLineNumber.activeForeground": "#7C3AED",
-        "editor.selectionBackground": "#7C3AED33",
-        "editor.inactiveSelectionBackground": "#7C3AED1F",
-        "editor.lineHighlightBackground": "#2E10650A",
-        "editorCursor.foreground": "#7C3AED",
-        "editorWidget.background": "#FFF8E7",
-        "editorWidget.border": "#D8C9E8",
+        "editor.background": "#FBFBF8",
+        "editor.foreground": "#171719",
+        "editorLineNumber.foreground": "#96989F",
+        "editorLineNumber.activeForeground": "#393A3F",
+        "editor.selectionBackground": "#6D28D933",
+        "editor.inactiveSelectionBackground": "#6D28D91F",
+        "editor.lineHighlightBackground": "#1717190A",
+        "editorCursor.foreground": "#6D28D9",
+        "editorWidget.background": "#FDFDFA",
+        "editorWidget.border": "#D1D2CE",
       },
     });
   } catch {
@@ -110,6 +110,7 @@ export default function CodeWorkspace({
   onRevertFile,
   onRefreshFile,
   onCloseFile,
+  onSaveToCreations,
   saving = false,
   conflict = null,
   notify,
@@ -118,6 +119,7 @@ export default function CodeWorkspace({
   const [copied, setCopied] = useState(false);
   const [mergeOpen, setMergeOpen] = useState(false);
   const [mergeSource, setMergeSource] = useState("");
+  const [savingToCreations, setSavingToCreations] = useState(false);
   const documentTheme = useDocumentTheme();
   const monacoTheme = documentTheme === "light" ? "nexus-light" : "nexus-dark";
 
@@ -145,6 +147,16 @@ export default function CodeWorkspace({
       notify?.({ message: "Failed to copy file", type: "error" });
     }
   }, [activeFile, notify]);
+
+  const handleSaveToCreations = useCallback(async () => {
+    if (!onSaveToCreations || !activeFile || savingToCreations) return;
+    setSavingToCreations(true);
+    try {
+      await onSaveToCreations(artifact?.title || "Script", activeFile.content || "");
+    } finally {
+      setSavingToCreations(false);
+    }
+  }, [activeFile, artifact?.title, onSaveToCreations, savingToCreations]);
 
   if (!artifact) {
     return (
@@ -221,6 +233,18 @@ export default function CodeWorkspace({
             {copied ? <Check className="w-3.5 h-3.5 text-[var(--ds-accent)]" /> : <Copy className="w-3.5 h-3.5" />}
             Copy
           </button>
+          {onSaveToCreations && activeFile && (
+            <button
+              type="button"
+              onClick={handleSaveToCreations}
+              disabled={savingToCreations}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-accent)] px-2.5 py-1.5 text-[10px] font-bold text-[var(--ds-accent-foreground)] transition-[background-color,border-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[var(--ds-accent-hover)] disabled:opacity-40"
+              aria-label="Save to creations"
+            >
+              <Save className="w-3.5 h-3.5" />
+              {savingToCreations ? "Saving" : "Save to creations"}
+            </button>
+          )}
           {onSaveFile && activeFile && (
             <button
               type="button"
@@ -247,6 +271,13 @@ export default function CodeWorkspace({
           )}
         </div>
       </div>
+
+      {artifact.explanation && (
+        <details className="border-b border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-4 py-2.5 text-xs text-[var(--ds-text-secondary)]">
+          <summary className="cursor-pointer font-semibold text-[var(--ds-text)] focus-ring">Explanation</summary>
+          <div className="mt-2 whitespace-pre-wrap leading-relaxed">{artifact.explanation}</div>
+        </details>
+      )}
 
       {conflict && (
         <div className="border-b border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] px-4 py-3 text-xs text-[var(--ds-danger)] space-y-3">

@@ -2,33 +2,24 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { 
   Search, 
   Filter, 
-  Download, 
-  Copy,
   Loader2, 
   Grid, 
-  Info,
-  ShieldCheck,
   Palette,
   Box,
   Plus,
-  FolderPlus,
-  Folder,
   DownloadCloud,
-  Trash2,
-  Upload,
-  Sparkles
+  Trash2
 } from "lib/icons";
 import JSZip from "jszip";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { exportIcon } from "../lib/uiBuilderApi";
 import NexusRBXFooter from "../components/NexusRBXFooter";
-import ProNudgeModal from "../components/ProNudgeModal";
 import { useBilling } from "../context/BillingContext";
 import { BACKEND_URL } from "../config";
 import { filterMarketplaceIcons } from "../lib/iconMarket";
 import IconMarketCard from "../components/icons/IconMarketCard";
+import NexusDisplayIcon from "../components/icons/NexusDisplayIcon";
 import Modal from "../components/Modal";
 import { editorialDisplayClass } from "../components/site/editorialUi";
 import "../components/assets/assetPlatform.css";
@@ -63,7 +54,7 @@ function MarketTabs({ activeTab, onChange }) {
           type="button"
           aria-pressed={activeTab === tab.value}
           onClick={() => onChange(tab.value)}
-          className={`min-h-11 flex-1 py-2 text-xs font-semibold transition-colors ${activeTab === tab.value ? 'border-b-2 border-[var(--ds-accent)] text-[var(--ds-accent)]' : 'text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]'}`}
+          className={`min-h-11 flex-1 py-2 text-xs font-semibold transition-colors ${activeTab === tab.value ? 'border-b-2 border-[var(--ds-text)] text-[var(--ds-text)]' : 'text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]'}`}
         >
           {tab.label}
         </button>
@@ -85,7 +76,7 @@ function MarketFilterGroup({ icon: Icon, label, options, value, onChange }) {
             type="button"
             aria-pressed={value === option.value}
             onClick={() => onChange(option.value)}
-            className={`min-h-11 w-full rounded-lg px-4 py-2 text-left text-sm font-semibold transition-colors ${value === option.value ? 'bg-[var(--ds-fill-selected)] text-[var(--ds-accent)]' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]'}`}
+            className={`min-h-11 w-full rounded-lg px-4 py-2 text-left text-sm font-semibold transition-colors ${value === option.value ? 'bg-[var(--ds-fill-active)] text-[var(--ds-text)]' : 'text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]'}`}
           >
             {option.label}
           </button>
@@ -149,7 +140,7 @@ function MarketCollections({ collections, onCreate, onDownload, onDelete }) {
                 type="button"
                 onClick={() => onDownload(collection)}
                 disabled={!collection.iconIds || collection.iconIds.length === 0}
-                className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-accent)] disabled:opacity-30"
+                className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] disabled:opacity-30"
                 aria-label={`Download ${collection.name} as ZIP`}
               >
                 <DownloadCloud className="h-4 w-4" aria-hidden="true" />
@@ -180,19 +171,13 @@ export default function IconsMarketPage() {
   const [isPro, setIsPro] = useState(null);
   const [lastDocId, setLastDocId] = useState(null);
   const [hasMore, setHasMore] = useState(true);
-  const [selectedIcon, setSelectedIcon] = useState(null);
-  const [copied, setCopied] = useState(false);
   const { isPremium } = useBilling();
-  const [showProNudge, setShowProNudge] = useState(false);
   const [collections, setCollections] = useState([]);
   const [activeMarketTab, setActiveMarketTab] = useState("browse"); // "browse" or "collections"
   const [showCreateCollection, setShowCreateCollection] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
-  const [collectionMenuOpen, setCollectionMenuOpen] = useState(false);
   
   const observer = useRef();
-  const collectionMenuRef = useRef(null);
-  const collectionMenuTriggerRef = useRef(null);
   const newCollectionInputRef = useRef(null);
   const fetchIcons = useCallback(async (loadMore = false) => {
     setLoading(true);
@@ -265,36 +250,6 @@ export default function IconsMarketPage() {
     fetchCollections();
   }, [user, search, style, category, isPro, fetchIcons]);
 
-  useEffect(() => {
-    if (!collectionMenuOpen) return undefined;
-
-    const frame = window.requestAnimationFrame(() => {
-      collectionMenuRef.current?.querySelector("button")?.focus();
-    });
-    const closeCollectionMenu = ({ restoreFocus = true } = {}) => {
-      setCollectionMenuOpen(false);
-      if (restoreFocus) window.requestAnimationFrame(() => collectionMenuTriggerRef.current?.focus());
-    };
-    const handleKeyDown = (event) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      closeCollectionMenu();
-    };
-    const handlePointerDown = (event) => {
-      if (collectionMenuRef.current?.contains(event.target) || collectionMenuTriggerRef.current?.contains(event.target)) return;
-      closeCollectionMenu({ restoreFocus: false });
-    };
-
-    window.addEventListener("keydown", handleKeyDown, true);
-    document.addEventListener("pointerdown", handlePointerDown, true);
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.removeEventListener("keydown", handleKeyDown, true);
-      document.removeEventListener("pointerdown", handlePointerDown, true);
-    };
-  }, [collectionMenuOpen]);
-
   const fetchCollections = async () => {
     try {
       const token = await user.getIdToken();
@@ -306,54 +261,6 @@ export default function IconsMarketPage() {
     } catch (e) {
       console.error("Failed to fetch collections", e);
     }
-  };
-
-  const handleDownload = async (icon) => {
-    try {
-      // Use backend proxy to bypass CORS
-      const proxyUrl = `${API_BASE}/api/tools/download-proxy?url=${encodeURIComponent(icon.imageUrl)}`;
-      const response = await fetch(proxyUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${icon.name.replace(/\s+/g, '_')}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (e) {
-      console.error("Download failed", e);
-    }
-  };
-
-  const handlePostToRoblox = async (icon) => {
-    if (!isPremium) {
-      setSelectedIcon(null);
-      setCollectionMenuOpen(false);
-      setShowProNudge(true);
-      return;
-    }
-
-    try {
-      const token = await user.getIdToken();
-      const data = await exportIcon({
-        token,
-        iconId: icon.id
-      });
-
-      if (data && data.combined) {
-        navigator.clipboard.writeText(data.combined);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      }
-    } catch (e) {
-      console.error("Failed to export icon", e);
-    }
-  };
-
-  const handleGenerateVariation = (icon) => {
-    navigate("/tools/icon-generator", { state: { referenceImage: icon.imageUrl, subject: icon.name } });
   };
 
   const handleCreateCollection = async () => {
@@ -375,25 +282,6 @@ export default function IconsMarketPage() {
       }
     } catch (e) {
       console.error("Failed to create collection", e);
-    }
-  };
-
-  const handleAddToCollection = async (collectionId, iconId) => {
-    try {
-      const token = await user.getIdToken();
-      const res = await fetch(`${API_BASE}/api/collections/${collectionId}/add`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ iconId })
-      });
-      if (res.ok) {
-        fetchCollections();
-      }
-    } catch (e) {
-      console.error("Failed to add to collection", e);
     }
   };
 
@@ -476,9 +364,7 @@ export default function IconsMarketPage() {
             <header className="mb-14 flex flex-col justify-between gap-8 md:flex-row md:items-end lg:mb-20">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="rounded-full bg-[var(--ds-accent-soft)] p-3">
-                    <Grid className="h-6 w-6 text-[var(--ds-accent)]" aria-hidden="true" />
-                  </div>
+                  <Grid className="h-6 w-6 text-[var(--ds-text-muted)]" aria-hidden="true" />
                   <h1 className={`${editorialDisplayClass} text-5xl sm:text-6xl`}>Creator Store</h1>
                 </div>
                 <p className="max-w-xl text-[var(--ds-text-muted)]">
@@ -495,7 +381,7 @@ export default function IconsMarketPage() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search icons (e.g. 'dragon', 'sword')..."
-                  className="min-h-12 w-full rounded-full border border-[var(--ds-border)] bg-[var(--ds-surface-1)] py-3 pl-12 pr-5 text-sm outline-none placeholder:text-[var(--ds-text-muted)] focus:border-[var(--ds-accent-border)] focus:ring-2 focus:ring-[var(--ds-focus-ring)]"
+                  className="min-h-12 w-full rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-1)] py-3 pl-12 pr-5 text-sm outline-none placeholder:text-[var(--ds-text-muted)] focus:border-[var(--ds-accent-border)] focus:ring-2 focus:ring-[var(--ds-focus-ring)]"
                 />
               </div>
             </header>
@@ -506,7 +392,7 @@ export default function IconsMarketPage() {
                 <details className="group rounded-[14px] bg-[var(--ds-surface-1)]">
                   <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-[var(--ds-text)] focus-ring [&::-webkit-details-marker]:hidden">
                     <span className="flex items-center gap-2">
-                      <Filter className="h-4 w-4 text-[var(--ds-accent)]" aria-hidden="true" />
+                      <Filter className="h-4 w-4 text-[var(--ds-text-muted)]" aria-hidden="true" />
                       Filter icons
                     </span>
                     <span className="text-xs text-[var(--ds-text-muted)]">
@@ -554,9 +440,7 @@ export default function IconsMarketPage() {
 
             {!loading && icons.length === 0 && (
               <div className="py-28 text-center">
-                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-[14px] bg-[var(--ds-fill-subtle)]">
-                  <Search className="h-7 w-7 text-[var(--ds-text-muted)]" />
-                </div>
+                <NexusDisplayIcon name="ask" className="mx-auto mb-5 h-20 w-20" size={80} />
                 <h3 className="text-xl font-semibold text-[var(--ds-text-secondary)]">No icons found</h3>
                 <p className="text-[var(--ds-text-muted)]">Try adjusting your search or filters.</p>
               </div>
@@ -565,156 +449,13 @@ export default function IconsMarketPage() {
         </div>
       </main>
 
-      {selectedIcon && (
-        <Modal
-          isOpen
-          title={selectedIcon.name}
-          titleClassName="sr-only"
-          onClose={() => {
-            setCollectionMenuOpen(false);
-            setSelectedIcon(null);
-          }}
-          panelClassName="max-w-4xl overflow-hidden p-0"
-          bodyClassName="flex flex-col text-[var(--ds-text)] md:flex-row"
-          overlayClassName="z-[100] bg-[color-mix(in_srgb,var(--ds-bg-canvas)_78%,transparent)] p-4 backdrop-blur-md md:p-8"
-          closeButtonClassName="right-6 top-6 h-11 w-11 rounded-full"
-          closeOnBackdrop
-        >
-              <div className="flex w-full items-center justify-center border-b border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)] p-12 md:w-1/2 md:border-b-0 md:border-r">
-                <div className="relative group">
-                  <img 
-                    src={selectedIcon.imageUrl} 
-                    alt={selectedIcon.name} 
-                    className="w-64 h-64 object-contain relative z-10"
-                  />
-                </div>
-              </div>
-
-              <div className="w-full md:w-1/2 p-12 flex flex-col">
-                <div className="mb-8">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h2 className="text-2xl font-semibold tracking-[-0.02em]">{selectedIcon.name}</h2>
-                    {selectedIcon.isPro && !isPremium && (
-                      <span className="rounded-md border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--ds-accent)]">Pro</span>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="rounded-full border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-3 py-1 text-xs font-semibold text-[var(--ds-text-muted)]">{selectedIcon.style}</span>
-                    <span className="rounded-full border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-3 py-1 text-xs font-semibold text-[var(--ds-text-muted)]">{selectedIcon.category}</span>
-                  </div>
-                </div>
-
-                <div className="space-y-6 mb-12">
-                  <div className="flex items-start gap-3 rounded-[14px] bg-[var(--ds-fill-subtle)] p-5">
-                    <Info className="mt-0.5 h-5 w-5 shrink-0 text-[var(--ds-info)]" />
-                    <div className="space-y-2">
-                      <p className="text-sm leading-relaxed text-[var(--ds-text-secondary)]">
-                        This icon is optimized for Roblox Studio. It features a centered composition and high-contrast lighting for maximum visibility in-game.
-                      </p>
-                      <p className="text-sm leading-relaxed text-[var(--ds-text-muted)]">
-                        Copy the editable Studio snippet, upload the PNG, then replace its image URL with your Roblox asset ID before reviewing and adding the client-side UI code in Studio.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="rounded-[1.25rem] bg-[var(--ds-fill-subtle)] p-4 text-center">
-                      <p className="mb-1 text-xs font-semibold text-[var(--ds-text-muted)]">Format</p>
-                      <p className="text-sm font-semibold">PNG</p>
-                    </div>
-                    <div className="rounded-[1.25rem] bg-[var(--ds-fill-subtle)] p-4 text-center">
-                      <p className="mb-1 text-xs font-semibold text-[var(--ds-text-muted)]">Resolution</p>
-                      <p className="text-sm font-semibold">512x512</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-auto space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={() => handlePostToRoblox(selectedIcon)}
-                      className="focus-ring flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--ds-accent)] px-4 py-3 text-sm font-semibold text-[var(--ds-accent-foreground)] transition-colors hover:bg-[var(--ds-accent-hover)] active:scale-[0.985]"
-                    >
-                      {selectedIcon.isPro && !isPremium ? <ShieldCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                      {selectedIcon.isPro && !isPremium ? "Unlock" : (copied ? "Snippet copied" : "Copy Studio snippet")}
-                    </button>
-                    
-                    <button
-                      onClick={() => handleGenerateVariation(selectedIcon)}
-                      className="flex min-h-11 items-center justify-center gap-2 rounded-full border border-[color-mix(in_srgb,var(--ds-plan)_28%,transparent)] bg-[color-mix(in_srgb,var(--ds-plan)_9%,transparent)] px-4 py-3 text-sm font-semibold text-[var(--ds-plan)] transition-colors hover:bg-[color-mix(in_srgb,var(--ds-plan)_15%,transparent)]"
-                    >
-                      <Sparkles className="h-5 w-5" /> Variation
-                    </button>
-                  </div>
-
-                  {collections.length > 0 && (
-                    <div className="relative">
-                      <button
-                        ref={collectionMenuTriggerRef}
-                        type="button"
-                        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] py-4 text-sm font-semibold text-[var(--ds-text)] transition-colors hover:bg-[var(--ds-fill-hover)]"
-                        aria-expanded={collectionMenuOpen}
-                        aria-controls="icon-collection-popover"
-                        onClick={() => setCollectionMenuOpen((open) => !open)}
-                      >
-                        <FolderPlus className="h-5 w-5" /> Add to Collection
-                      </button>
-                      {collectionMenuOpen ? (
-                        <div
-                          id="icon-collection-popover"
-                          ref={collectionMenuRef}
-                          className="nexus-menu-surface absolute bottom-full left-0 z-50 mb-2 max-h-48 w-full overflow-y-auto p-2"
-                          role="group"
-                          aria-label="Choose a collection"
-                        >
-                        {collections.map(c => (
-                          <button
-                            key={c.id}
-                            type="button"
-                            onClick={() => {
-                              setCollectionMenuOpen(false);
-                              collectionMenuTriggerRef.current?.focus();
-                              void handleAddToCollection(c.id, selectedIcon.id);
-                            }}
-                            className="nexus-menu-item flex min-h-11 w-full items-center gap-2 text-left"
-                          >
-                            <Folder className="h-3 w-3" /> {c.name}
-                          </button>
-                        ))}
-                        </div>
-                      ) : null}
-                    </div>
-                  )}
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={() => handleDownload(selectedIcon)}
-                      className="flex min-h-11 items-center justify-center gap-2 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] py-4 text-sm font-semibold text-[var(--ds-text)] transition-colors hover:bg-[var(--ds-fill-hover)]"
-                    >
-                      <Download className="h-5 w-5" /> Download
-                    </button>
-
-                    <a 
-                      href="https://create.roblox.com/dashboard/creations?activeTab=Decal"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex min-h-11 items-center justify-center gap-2 rounded-[10px] border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] py-4 text-sm font-semibold text-[var(--ds-accent)] transition-colors hover:bg-[var(--ds-fill-selected)]"
-                    >
-                      <Upload className="h-5 w-5" /> Get Asset ID
-                    </a>
-                  </div>
-                </div>
-              </div>
-        </Modal>
-      )}
-
       {showCreateCollection && (
         <Modal
           isOpen
           title="New Collection"
           onClose={() => setShowCreateCollection(false)}
           panelClassName="max-w-md p-8"
-          overlayClassName="z-[110] bg-[color-mix(in_srgb,var(--ds-bg-canvas)_72%,transparent)] p-4 backdrop-blur-sm"
+          overlayClassName="z-[110] bg-[color-mix(in_srgb,var(--ds-bg-canvas)_82%,transparent)] p-4"
           initialFocusRef={newCollectionInputRef}
           closeOnBackdrop
         >
@@ -736,7 +477,7 @@ export default function IconsMarketPage() {
                 <button 
                   onClick={handleCreateCollection}
                   disabled={!newCollectionName}
-                  className="min-h-11 flex-1 rounded-[10px] bg-[var(--ds-accent)] py-3 text-sm font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] disabled:opacity-50"
+                  className="min-h-11 flex-1 rounded-[10px] bg-[var(--ds-text)] py-3 text-sm font-semibold text-[var(--ds-bg-canvas)] hover:bg-[var(--ds-text-secondary)] disabled:opacity-50"
                 >
                   Create
                 </button>
@@ -746,11 +487,6 @@ export default function IconsMarketPage() {
 
       <NexusRBXFooter />
 
-      <ProNudgeModal 
-        isOpen={showProNudge}
-        onClose={() => setShowProNudge(false)}
-        reason="this premium icon"
-      />
     </div>
   );
 }

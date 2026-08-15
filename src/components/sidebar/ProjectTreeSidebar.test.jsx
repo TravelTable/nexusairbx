@@ -133,6 +133,17 @@ describe("ProjectTreeSidebar", () => {
     expect(container.querySelectorAll(".nexus-sidebar-icon-action").length).toBeGreaterThan(2);
   });
 
+  it("keeps mobile Settings and Plan destinations on the touch-target style contract", () => {
+    renderSidebar();
+
+    const settings = screen.getByRole("link", { name: "Settings" });
+    const billing = screen.getByRole("link", { name: "Plan & usage" });
+    expect(settings).toHaveClass("nexus-project-tree__destination");
+    expect(billing).toHaveClass("nexus-project-tree__destination");
+    expect(settings.getAttribute("href")).toBe("/settings");
+    expect(billing.getAttribute("href")).toBe("/billing");
+  });
+
   it("searches files without changing expansion state", async () => {
     renderSidebar();
     fireEvent.click(screen.getByRole("button", { name: "Sword Simulator" }));

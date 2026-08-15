@@ -5,6 +5,7 @@ const mockUseTaskRuntime = jest.fn();
 const mockUseActiveAgents = jest.fn();
 const mockTaskProgressPanel = jest.fn();
 const mockAgentChatPanel = jest.fn();
+const mockCodeWorkspace = jest.fn();
 
 jest.mock("../../hooks/useTaskRuntime", () => ({
   __esModule: true,
@@ -41,6 +42,8 @@ jest.mock("lib/icons", () => {
     Activity: Icon,
     ArrowLeft: Icon,
     Boxes: Icon,
+    Check: Icon,
+    ChevronDown: Icon,
     ChevronRight: Icon,
     Menu: Icon,
     FolderTree: Icon,
@@ -48,6 +51,9 @@ jest.mock("lib/icons", () => {
     FileCode2: Icon,
     MessageSquare: Icon,
     ClipboardList: Icon,
+    Layers: Icon,
+    Maximize2: Icon,
+    X: Icon,
     Search: Icon,
     RefreshCw: Icon,
     TerminalSquare: Icon,
@@ -64,7 +70,6 @@ jest.mock("../../components/SidebarContent", () => () => {
     ReactModule.createElement("button", { type: "button" }, "Last sidebar action"),
   );
 });
-jest.mock("../../components/CodeDrawer", () => () => null);
 jest.mock("../../components/SignInNudgeModal", () => () => null);
 jest.mock("../../components/ProNudgeModal", () => () => null);
 jest.mock("../../components/StarterPromoModal", () => () => null);
@@ -79,7 +84,14 @@ jest.mock("../../components/site/SiteHeader", () => (props) => {
 });
 jest.mock("../../components/ui", () => ({ Segmented: () => null }));
 jest.mock("../../components/ai/workspace/CodeFileTree", () => () => null);
-jest.mock("../../components/ai/workspace/CodeWorkspace", () => () => null);
+jest.mock("../../components/ai/workspace/CodeWorkspace", () => ({
+  __esModule: true,
+  default: (props) => {
+    const ReactModule = require("react");
+    mockCodeWorkspace(props);
+    return ReactModule.createElement("div", { "data-testid": "code-workspace" }, props.artifact?.title);
+  },
+}));
 jest.mock("../../components/ai/workspace/AgentChatPanel", () => ({
   __esModule: true,
   default: (props) => {
@@ -88,6 +100,19 @@ jest.mock("../../components/ai/workspace/AgentChatPanel", () => ({
     return ReactModule.createElement(
       "div",
       null,
+      ReactModule.createElement(
+        "button",
+        {
+          ref: props.navigationButtonRef,
+          type: "button",
+          onClick: props.onOpenNavigation,
+          "aria-label": "Toggle project navigation",
+          "aria-controls": props.navigationControls,
+          "aria-expanded": props.navigationOpen,
+          className: "h-11 w-11",
+        },
+        "navigation",
+      ),
       ReactModule.createElement(
         "button",
         { type: "button", onClick: () => props.onSubmit({ preventDefault: jest.fn() }) },
@@ -154,6 +179,11 @@ import AgentWorkspaceLayout from "./AgentWorkspaceLayout";
 
 const noop = jest.fn();
 
+function openStageView(label) {
+  fireEvent.click(screen.getByRole("button", { name: "Choose Stage view" }));
+  fireEvent.click(screen.getByRole("menuitemradio", { name: `Open ${label}` }));
+}
+
 function makeController({
   activeMode = "build",
   handlers = {},
@@ -164,6 +194,7 @@ function makeController({
   generatorMode = "agent_build",
   unified = { isGenerating: false },
   chatOverrides = {},
+  scriptManager = {},
 } = {}) {
   return {
     billing: {},
@@ -187,8 +218,6 @@ function makeController({
       signInNudgeReason: "",
       showProNudge: false,
       proNudgeReason: "",
-      codeDrawerOpen: false,
-      codeDrawerData: {},
       currentTheme: { primary: "var(--ds-accent)", secondary: "var(--ds-plan)" },
       currentToast: null,
       authReady: true,
@@ -203,7 +232,12 @@ function makeController({
         updateChatMode: noop,
         ...chatOverrides,
       },
-      scriptManager: { versionHistory: [] },
+      scriptManager: {
+        versionHistory: [],
+        setCurrentScriptId: noop,
+        handleCreateScript: noop,
+        ...scriptManager,
+      },
       unified,
       workspace: {
         activeArtifact: null,
@@ -298,7 +332,7 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
     });
 
     render(<AgentWorkspaceLayout controller={makeController()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Open Activity" }));
+    openStageView("Activity");
 
     expect(await screen.findByLabelText("Current agent runs")).toBeTruthy();
     expect(screen.getByText("Studio inspection")).toBeTruthy();
@@ -337,7 +371,7 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
       chatId: "chat_1",
       enabled: true,
     });
-    fireEvent.click(screen.getByRole("button", { name: "Open Activity" }));
+    openStageView("Activity");
     expect(await screen.findByTestId("task-progress")).toBeTruthy();
 
     const panelProps = mockTaskProgressPanel.mock.calls.at(-1)[0];
@@ -548,7 +582,7 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
     expect(sidebar.hasAttribute("inert")).toBe(true);
     expect(screen.queryByRole("button", { name: "First sidebar action" })).toBeNull();
 
-    const toggle = screen.getByRole("button", { name: "Toggle sidebar" });
+    const toggle = screen.getByRole("button", { name: "Toggle project navigation" });
     expect(toggle.getAttribute("aria-controls")).toBe(sidebar.id);
     expect(toggle.className).toContain("h-11");
     expect(toggle.className).toContain("w-11");
@@ -593,9 +627,103 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
       sidebarOpen: true,
     })} />);
 
-    expect(screen.queryByRole("button", { name: "Toggle sidebar" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Toggle project navigation" })).toBeNull();
     expect(document.querySelector("#project-sidebar")).toBeNull();
     expect(screen.getByRole("main").hasAttribute("inert")).toBe(false);
+  });
+
+  test("routes generated OPEN_CODE_DRAWER content into the Stage code workspace", async () => {
+    const handleCreateScript = jest.fn().mockResolvedValue("saved_script_1");
+    mockUseTaskRuntime.mockReturnValue({
+      enabled: true,
+      taskId: "",
+      task: null,
+      events: [],
+      connectionState: "idle",
+      error: null,
+      busyAction: "",
+      selectTask: jest.fn(),
+    });
+
+    render(<AgentWorkspaceLayout controller={makeController({
+      scriptManager: { handleCreateScript },
+    })} />);
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent("nexus:openCodeDrawer", {
+        detail: {
+          code: "print('stage')",
+          title: "Round Manager.lua",
+          explanation: "Starts each round and resets players.",
+          language: "luau",
+        },
+      }));
+    });
+
+    await waitFor(() => expect(mockCodeWorkspace).toHaveBeenCalled());
+    const props = [...mockCodeWorkspace.mock.calls]
+      .reverse()
+      .map(([value]) => value)
+      .find((value) => value.artifact?.title === "Round Manager.lua");
+    expect(props.artifact.explanation).toBe("Starts each round and resets players.");
+    expect(props.activeFile.content).toBe("print('stage')");
+    expect(props.activeFile.name).toBe("Round Manager");
+    expect(props.onSaveToCreations).toEqual(expect.any(Function));
+    expect(screen.getByRole("heading", { name: "Code" })).toBeTruthy();
+
+    await act(async () => props.onSaveToCreations(props.artifact.title, props.activeFile.content));
+    expect(handleCreateScript).toHaveBeenCalledWith(
+      "Round Manager.lua",
+      "print('stage')",
+      "logic",
+      "chat_1",
+      "project_1",
+    );
+  });
+
+  test("loads a sidebar saved creation into the same Stage surface", async () => {
+    const setCurrentScriptId = jest.fn();
+    mockUseTaskRuntime.mockReturnValue({
+      enabled: true,
+      taskId: "",
+      task: null,
+      events: [],
+      connectionState: "idle",
+      error: null,
+      busyAction: "",
+      selectTask: jest.fn(),
+    });
+
+    render(<AgentWorkspaceLayout controller={makeController({
+      scriptManager: {
+        setCurrentScriptId,
+        currentScript: { id: "script_7", title: "Inventory Service" },
+        versionHistoryScriptId: "script_7",
+        versionHistory: [{
+          id: "version_3",
+          versionNumber: 3,
+          code: "return InventoryService",
+          explanation: "Owns server-side inventory state.",
+        }],
+      },
+    })} />);
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent("nexus:openCodeDrawer", {
+        detail: { scriptId: "script_7" },
+      }));
+    });
+
+    await waitFor(() => {
+      const props = mockCodeWorkspace.mock.calls.at(-1)?.[0];
+      expect(props?.artifact?.title).toBe("Inventory Service");
+    });
+    const props = mockCodeWorkspace.mock.calls.at(-1)[0];
+    expect(props.activeFile.content).toBe("return InventoryService");
+    expect(setCurrentScriptId).toHaveBeenCalledWith("script_7");
+    expect(props.artifact.summary).toContain("Version 3");
+    expect(props.artifact.explanation).toBe("Owns server-side inventory state.");
+    expect(props.onSaveToCreations).toBeNull();
   });
 
   test("reactively isolates an open sidebar when the viewport crosses into overlay mode", async () => {
@@ -639,6 +767,35 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
     });
 
     rendered.unmount();
+    window.matchMedia = originalMatchMedia;
+  });
+
+  test("does not let Escape close the persistent desktop project navigation", () => {
+    mockUseTaskRuntime.mockReturnValue({
+      enabled: false,
+      taskId: "",
+      task: null,
+      events: [],
+      connectionState: "disabled",
+      error: null,
+      busyAction: "",
+      selectTask: jest.fn(),
+    });
+    const setSidebarOpen = jest.fn();
+    const originalMatchMedia = window.matchMedia;
+    window.matchMedia = jest.fn(() => ({
+      matches: false,
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+    }));
+
+    render(<AgentWorkspaceLayout controller={makeController({
+      sidebarOpen: true,
+      handlers: { setSidebarOpen },
+    })} />);
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    expect(setSidebarOpen).not.toHaveBeenCalled();
     window.matchMedia = originalMatchMedia;
   });
 });

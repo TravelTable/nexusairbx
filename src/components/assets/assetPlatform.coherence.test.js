@@ -5,6 +5,10 @@ const css = fs.readFileSync(
   path.join(process.cwd(), "src/components/assets/assetPlatform.css"),
   "utf8",
 );
+const creatorStore = fs.readFileSync(
+  path.join(process.cwd(), "src/pages/IconsMarketPage.jsx"),
+  "utf8",
+);
 
 test("uses canonical product fonts and explicit asset readability floors", () => {
   expect(css).not.toContain("var(--font-ui");
@@ -21,4 +25,9 @@ test("keeps asset actions touch-safe and preview treatments local", () => {
   expect(previewCss).toContain(".creator-store-preview--transparent");
   expect(previewCss).toContain(".creator-store-preview--scene");
   expect(previewCss).not.toMatch(/url\(|#[0-9a-f]{3,8}/i);
+});
+
+test("uses the canonical Creator Store detail route instead of a duplicate detail modal", () => {
+  expect(creatorStore).toContain("<IconMarketCard");
+  expect(creatorStore).not.toMatch(/selectedIcon|handlePostToRoblox|handleGenerateVariation/);
 });

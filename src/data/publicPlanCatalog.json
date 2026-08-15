@@ -3,34 +3,34 @@
     "id": "FREE",
     "slug": "free",
     "name": "Free",
-    "audience": "Try the creator workflow on a focused idea",
+    "audience": "Take one Roblox idea through the creator workflow",
     "monthly": 0,
     "yearly": null,
     "perSeat": false,
     "featured": false,
     "cta": "Start free",
     "features": [
-      "Shape focused Roblox ideas with Nexus Auto",
-      "Run 1 AI task at a time",
-      "Revisit 7 days of chat history",
-      "Keep 1 active UI project"
+      "Turn an idea into a scoped build plan with Nexus Auto",
+      "Run 1 reviewed build task at a time",
+      "Revisit 7 days of project conversations",
+      "Keep 1 active Roblox project workspace"
     ]
   },
   {
     "id": "STARTER",
     "slug": "starter",
     "name": "Starter",
-    "audience": "More room for regular build-and-review sessions",
+    "audience": "Iterate on a small Roblox project more often",
     "monthly": 2,
     "yearly": null,
     "perSeat": false,
     "featured": false,
     "cta": "Choose Starter",
     "features": [
-      "Choose from included models for each task",
-      "Run 2 AI tasks at a time",
-      "Revisit 30 days of chat history",
-      "Keep 3 active UI projects"
+      "Plan scripts, UI, and game systems with model choice",
+      "Run 2 reviewed build tasks at a time",
+      "Revisit 30 days of project conversations",
+      "Keep 3 active Roblox project workspaces"
     ]
   },
   {
@@ -44,10 +44,10 @@
     "featured": true,
     "cta": "Choose Pro",
     "features": [
-      "Higher Included Usage for longer creator sessions",
-      "Choose supported Premium Direct models",
-      "Create game-ready icons with Icon Generator",
-      "Review 90 days of usage history"
+      "Higher Included Usage for longer plan-and-build sessions",
+      "Use supported Premium Direct models for demanding tasks",
+      "Create and review game-ready icon assets",
+      "Review 90 days of project and usage history"
     ]
   },
   {
@@ -61,10 +61,10 @@
     "featured": false,
     "cta": "Choose Pro+",
     "features": [
-      "Higher Included Usage than Pro",
-      "Choose supported Premium Direct models",
-      "Create game-ready icons with Icon Generator",
-      "Review 90 days of usage history"
+      "Higher Included Usage than Pro for larger systems",
+      "Use supported Premium Direct models for demanding tasks",
+      "Create and review game-ready icon assets",
+      "Review 90 days of project and usage history"
     ]
   },
   {
@@ -80,9 +80,9 @@
     "featured": false,
     "cta": "Choose Team",
     "features": [
-      "Pool Included Usage across paid seats",
-      "Choose supported Premium Direct models",
-      "Create game-ready icons with Icon Generator",
+      "Pool Included Usage across paid creator seats",
+      "Use supported Premium Direct models for demanding tasks",
+      "Create and review game-ready icon assets",
       "Cover 2–50 seats with one subscription"
     ]
   }

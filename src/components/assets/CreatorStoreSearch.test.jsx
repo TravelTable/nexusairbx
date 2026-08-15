@@ -1,5 +1,5 @@
 import React from "react";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import CreatorStoreSearch from "./CreatorStoreSearch";
 import { ensureRobloxCapabilities } from "../../lib/robloxOAuthApi";
@@ -67,7 +67,10 @@ describe("CreatorStoreSearch", () => {
 
     render(<CreatorStoreSearch />);
     fireEvent.change(screen.getByLabelText("Search Creator Store"), { target: { value: "low poly tree" } });
-    fireEvent.click(screen.getByRole("button", { name: /^Search$/ }));
+    const searchButton = screen.getByRole("button", { name: /^Search$/ });
+    expect(searchButton.className).toContain("bg-[var(--ds-surface-2)]");
+    expect(searchButton.className).not.toContain("--ds-info");
+    fireEvent.click(searchButton);
 
     expect(screen.getByText("Searching Creator Store")).toBeTruthy();
     await waitFor(() => expect(searchCreatorStore).toHaveBeenCalledWith({
@@ -185,6 +188,9 @@ describe("CreatorStoreSearch", () => {
     expect(await screen.findByText("Full details")).toBeTruthy();
     expect(screen.getByText("Builder (User)")).toBeTruthy();
     expect(screen.getByText("ID 123")).toBeTruthy();
+    const detailsDialog = screen.getByRole("dialog", { name: "Creator Store asset details" });
+    expect(within(detailsDialog).getByText("Creator Store").className).not.toContain("--ds-info");
+    expect(within(detailsDialog).getByText("Model").className).not.toContain("--ds-info");
 
     fireEvent.click(screen.getByRole("button", { name: "Copy asset ID" }));
     await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith("123"));
@@ -210,7 +216,9 @@ describe("CreatorStoreSearch", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Search$/ }));
     expect(await screen.findByText("Low Poly Tree")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "View details for Low Poly Tree" }));
-    expect(await screen.findByRole("button", { name: "Import to Studio" })).toBeTruthy();
+    const importButton = await screen.findByRole("button", { name: "Import to Studio" });
+    expect(importButton.className).toContain("bg-[var(--ds-surface-2)]");
+    expect(importButton.className).not.toContain("--ds-info");
     fireEvent.click(screen.getByRole("button", { name: "Import to Studio" }));
     expect(screen.getByText("NexusRBX removes scripts and networking objects before placing this asset in your project.")).toBeTruthy();
     await act(async () => {

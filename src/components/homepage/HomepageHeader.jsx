@@ -14,7 +14,7 @@ export default function HomepageHeader({
   const primaryLinks = homepageFooterLinks.filter((link) => link.label !== "Support");
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)]">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
         <a className="inline-flex min-h-11 min-w-0 items-center gap-2.5 rounded-lg text-[var(--ds-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent)]" href="/" aria-label="NexusRBX home">
           <img className="h-8 w-8 flex-none object-contain" src="/nexus-mark.svg" alt="" width="32" height="32" />
@@ -55,7 +55,10 @@ export default function HomepageHeader({
                   {localDevelopmentAuth ? "Open workspace" : "Sign in"}
                 </a>
               ))}
-            <Button asChild className="hidden bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] active:bg-[var(--ds-accent-pressed)] sm:inline-flex">
+            <Button
+              asChild
+              className="hidden h-11 border-[var(--ds-text)] bg-[var(--ds-text)] text-[var(--ds-bg-canvas)] shadow-none hover:bg-[var(--ds-text-secondary)] active:bg-[var(--ds-text)] sm:inline-flex"
+            >
               <a href={ctaHref}>{ctaLabel}</a>
             </Button>
           </div>

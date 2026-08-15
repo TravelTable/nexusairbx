@@ -1,4 +1,5 @@
 import {
+  getCollisionSafeTourPosition,
   getStepSelectors,
   resolveTourTarget,
 } from "./tutorialGeometry";
@@ -77,5 +78,50 @@ describe("tutorialGeometry", () => {
         targets: ['[data-tour="primary"]', '[data-tour="fallback"]', '[data-tour="primary"]'],
       })
     ).toEqual(['[data-tour="primary"]', '[data-tour="fallback"]']);
+  });
+
+  it("prefers the full composer surface before the nested prompt input", () => {
+    expect(
+      getStepSelectors({
+        targets: ['[data-tour="prompt-composer"]', '[data-tour="prompt-input"]'],
+      })
+    ).toEqual(['[data-tour="prompt-composer"]', '[data-tour="prompt-input"]']);
+  });
+
+  it("places guidance above a composer near the bottom edge", () => {
+    const position = getCollisionSafeTourPosition({
+      targetRect: {
+        top: 690,
+        left: 280,
+        right: 744,
+        bottom: 750,
+        width: 464,
+        height: 60,
+      },
+      viewportWidth: 1024,
+      viewportHeight: 768,
+      tooltipWidth: 340,
+      tooltipHeight: 260,
+    });
+
+    expect(position.placement).toBe("top");
+    expect(position.top).toBe(418);
+    expect(position.left).toBeGreaterThanOrEqual(12);
+    expect(position.left + position.width).toBeLessThanOrEqual(1012);
+  });
+
+  it("clamps guidance into a narrow mobile viewport", () => {
+    const position = getCollisionSafeTourPosition({
+      targetRect: null,
+      viewportWidth: 375,
+      viewportHeight: 640,
+      tooltipWidth: 420,
+      tooltipHeight: 280,
+    });
+
+    expect(position.placement).toBe("docked");
+    expect(position.left).toBe(12);
+    expect(position.width).toBe(351);
+    expect(position.top).toBe(348);
   });
 });

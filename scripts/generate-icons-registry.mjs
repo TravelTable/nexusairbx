@@ -232,10 +232,10 @@ const iconExports = Object.keys(mapping)
   .join("\n");
 
 const loaderExports = mapping.Loader === null
-  ? `import PegtopLoader from "../components/ui/PegtopLoader";
+  ? `import NexusLoader from "../components/ui/NexusLoader";
 
-export const Loader = PegtopLoader;
-export const Loader2 = PegtopLoader;
+export const Loader = NexusLoader;
+export const Loader2 = NexusLoader;
 export const SendPrompt = createIcon(ArrowBigRightDashIcon);`
   : "";
 

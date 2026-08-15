@@ -20,28 +20,21 @@ export default function SignInNudgeModal({ isOpen, onClose, reason = "" }) {
       closeOnBackdrop
       showCloseButton={false}
     >
-          {/* Top Glow */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1 bg-gradient-to-r from-transparent via-accent to-transparent" />
-          
           <button
             onClick={onClose}
             aria-label="Dismiss sign-in prompt"
-            className="nexus-icon-button absolute top-3 right-3 rounded-full sm:top-4 sm:right-4"
+            className="nexus-icon-button absolute right-3 top-3 h-11 w-11 rounded-full sm:right-4 sm:top-4"
           >
             <X className="w-5 h-5" />
           </button>
 
           <div className="p-4 pt-12 text-center sm:p-8 sm:pt-10">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-[var(--ds-accent-soft)] border border-[var(--ds-accent-border)] mb-4 sm:mb-6 sm:w-20 sm:h-20 sm:rounded-2xl relative">
-              <div className="absolute inset-0 bg-accent blur-2xl opacity-15 animate-pulse" />
-              <Gift className="w-7 h-7 text-accent relative z-10 sm:w-10 sm:h-10" />
+            <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-2)] text-[var(--ds-text-secondary)] sm:mb-6 sm:h-20 sm:w-20 sm:rounded-2xl">
+              <Gift className="h-7 w-7 sm:h-10 sm:w-10" />
             </div>
 
             <h2 className="text-xl font-bold text-[var(--ds-text)] mb-3 sm:text-2xl">
-              Sign in to save and <br />
-              <span className="text-accent">
-                continue your work
-              </span>
+              Sign in to save and <br /> continue your work
             </h2>
 
             <p className="text-[var(--ds-text-muted)] text-[15px] leading-relaxed mb-5 sm:mb-8">
@@ -50,8 +43,8 @@ export default function SignInNudgeModal({ isOpen, onClose, reason = "" }) {
 
             <div className="space-y-3 mb-5 sm:space-y-4 sm:mb-8">
               <div className="flex items-center gap-3 text-left p-3 rounded-xl bg-[var(--ds-fill-subtle)] border border-[var(--ds-border-subtle)]">
-                <div className="w-8 h-8 rounded-lg bg-[var(--ds-accent-soft)] flex items-center justify-center flex-shrink-0">
-                  <Zap className="w-4 h-4 text-accent" />
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-2)] text-[var(--ds-text-secondary)]">
+                  <Zap className="h-4 w-4" />
                 </div>
                 <div>
                   <div className="text-sm font-bold text-[var(--ds-text)]">Free Agent Build access</div>
@@ -60,8 +53,8 @@ export default function SignInNudgeModal({ isOpen, onClose, reason = "" }) {
               </div>
 
               <div className="flex items-center gap-3 text-left p-3 rounded-xl bg-[var(--ds-fill-subtle)] border border-[var(--ds-border-subtle)]">
-                <div className="w-8 h-8 rounded-lg bg-[var(--ds-accent-soft)] flex items-center justify-center flex-shrink-0">
-                  <Save className="w-4 h-4 text-accent" />
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-2)] text-[var(--ds-text-secondary)]">
+                  <Save className="h-4 w-4" />
                 </div>
                 <div>
                   <div className="text-sm font-bold text-[var(--ds-text)]">Resume this workspace</div>
@@ -73,7 +66,7 @@ export default function SignInNudgeModal({ isOpen, onClose, reason = "" }) {
             <div className="flex flex-col gap-3">
               <button
                 onClick={() => navigate("/signup", { state: { from: aiFrom } })}
-                className="focus-ring w-full min-h-11 py-3 sm:py-4 rounded-xl border border-[var(--ds-accent-border)] bg-accent text-accent-foreground font-bold text-base sm:text-lg shadow-panel transition hover:bg-[var(--ds-accent-hover)] active:bg-[var(--ds-accent-pressed)]"
+                className="focus-ring min-h-11 w-full rounded-xl border border-[var(--ds-accent-border)] bg-accent py-3 text-base font-bold text-accent-foreground transition-colors hover:bg-[var(--ds-accent-hover)] active:bg-[var(--ds-accent-pressed)] sm:py-4 sm:text-lg"
               >
                 Sign Up
               </button>
@@ -92,7 +85,6 @@ export default function SignInNudgeModal({ isOpen, onClose, reason = "" }) {
             </div>
           </div>
 
-          {/* Bottom Decoration */}
           <div className="p-4 bg-[var(--ds-fill-subtle)] border-t border-[var(--ds-border-subtle)] text-center">
             <div className="flex items-center justify-center gap-2 text-[11px] text-[var(--ds-text-subtle)] uppercase tracking-widest">
               <ShieldCheck className="w-3 h-3" />

@@ -128,6 +128,33 @@ describe("TaskProgressPanel", () => {
     expect(onCancel).not.toHaveBeenCalled();
   });
 
+  test("keeps task mutation controls touch-sized on mobile", async () => {
+    render(
+      <TaskProgressPanel
+        task={task({ allowedActions: ["retry", "cancel", "amend", "approve"] })}
+        onRetry={jest.fn()}
+        onCancel={jest.fn()}
+        onAmend={jest.fn()}
+        onApprove={jest.fn()}
+      />
+    );
+
+    const primaryControls = [
+      screen.getByRole("button", { name: /retry step/i }),
+      screen.getByRole("button", { name: /continue/i }),
+      screen.getByRole("button", { name: /amend instructions/i }),
+      screen.getByRole("button", { name: /cancel task/i }),
+    ];
+    primaryControls.forEach((control) => {
+      expect(control.className).toContain("min-h-11");
+      expect(control.className).toContain("xl:min-h-0");
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: /amend instructions/i }));
+    expect(screen.getByRole("button", { name: /keep current plan/i }).className).toContain("min-h-11");
+    expect(screen.getByRole("button", { name: /save amendment/i }).className).toContain("min-h-11");
+  });
+
   test("shows a verified terminal summary and evidence count", () => {
     render(
       <TaskProgressPanel

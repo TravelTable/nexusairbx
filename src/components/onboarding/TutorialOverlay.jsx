@@ -15,12 +15,9 @@ function ensureRingStyles() {
   style.id = RING_STYLE_ID;
   style.textContent = `
     .${TOUR_TARGET_CLASS} {
-      outline: 2px solid rgba(var(--ds-accent-rgb), 0.95) !important;
-      outline-offset: 5px !important;
-      box-shadow:
-        0 0 0 7px rgba(var(--ds-accent-rgb), 0.14),
-        0 0 24px rgba(var(--ds-accent-rgb), 0.22) !important;
-      border-radius: 12px !important;
+      outline: 2px solid var(--ds-text-muted) !important;
+      outline-offset: 4px !important;
+      box-shadow: 0 0 0 7px var(--ds-fill-hover) !important;
       transition:
         outline-color 160ms ease,
         outline-offset 160ms ease,
@@ -48,6 +45,23 @@ function clearTargetHighlight(element) {
   element.removeAttribute(TOUR_TARGET_LABEL);
 }
 
+function toRectSnapshot(rect) {
+  return {
+    top: rect.top,
+    left: rect.left,
+    right: rect.right,
+    bottom: rect.bottom,
+    width: rect.width,
+    height: rect.height,
+  };
+}
+
+function rectsMatch(left, right) {
+  if (!left || !right) return left === right;
+  return ["top", "left", "right", "bottom", "width", "height"]
+    .every((key) => Math.abs(left[key] - right[key]) < 0.5);
+}
+
 export default function TutorialOverlay({
   activeStep,
   isActive,
@@ -59,6 +73,7 @@ export default function TutorialOverlay({
   const previousDescriptionRef = useRef(null);
   const pendingFrameRef = useRef(null);
   const [hasTarget, setHasTarget] = useState(false);
+  const [targetRect, setTargetRect] = useState(null);
 
   const clearCurrentHighlight = useCallback(() => {
     const element = highlightedRef.current;
@@ -83,6 +98,7 @@ export default function TutorialOverlay({
     if (!element) {
       clearCurrentHighlight();
       setHasTarget((currentValue) => (currentValue ? false : currentValue));
+      setTargetRect((currentValue) => (currentValue ? null : currentValue));
       return;
     }
 
@@ -107,6 +123,10 @@ export default function TutorialOverlay({
     if (element.getAttribute("aria-describedby") !== describedBy) {
       element.setAttribute("aria-describedby", describedBy);
     }
+    const nextRect = toRectSnapshot(element.getBoundingClientRect());
+    setTargetRect((currentValue) => (
+      rectsMatch(currentValue, nextRect) ? currentValue : nextRect
+    ));
     setHasTarget((currentValue) => (currentValue ? currentValue : true));
   }, [activeStep, clearCurrentHighlight]);
 
@@ -122,6 +142,7 @@ export default function TutorialOverlay({
     if (!isActive) {
       clearCurrentHighlight();
       setHasTarget(false);
+      setTargetRect(null);
       return undefined;
     }
 
@@ -139,11 +160,13 @@ export default function TutorialOverlay({
       attributeFilter: ["class", "style", "hidden", "aria-hidden"],
     });
     window.addEventListener("resize", scheduleResolve);
+    window.addEventListener("scroll", scheduleResolve, true);
 
     return () => {
       if (pendingFrameRef.current) cancelAnimationFrame(pendingFrameRef.current);
       observer?.disconnect();
       window.removeEventListener("resize", scheduleResolve);
+      window.removeEventListener("scroll", scheduleResolve, true);
       clearCurrentHighlight();
     };
   }, [activeStep, clearCurrentHighlight, isActive, resolveStepTarget, scheduleResolve]);
@@ -161,6 +184,7 @@ export default function TutorialOverlay({
       currentStepIndex={activeStep}
       totalSteps={TOUR_STEPS.length}
       hasTarget={hasTarget}
+      targetRect={targetRect}
       onNext={() => nextStep(TOUR_STEPS.length)}
       onPrev={prevStep}
       onSkip={skipTutorial}

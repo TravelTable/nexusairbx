@@ -1,0 +1,139 @@
+- generic [ref=e2] [box=0,0,919,10531]:
+  - banner [ref=e3] [box=0,0,919,57]:
+    - link "Skip to main content" [ref=e4] [cursor=pointer] [box=16,-84,168,44]:
+      - /url: "#main-content"
+    - generic [ref=e5] [box=0,0,919,56]:
+      - link "NexusRBX home" [ref=e7] [cursor=pointer] [box=24,6,111,44]:
+        - /url: /
+        - generic [ref=e9] [box=68,18,63,20]: NexusRBX
+      - button "Open navigation" [ref=e11] [cursor=pointer] [box=851,6,44,44]
+  - generic [ref=e12] [box=0,57,919,10474]:
+    - main [ref=e13] [box=0,57,919,10241]:
+      - region "Make the Roblox game in your head." [ref=e14] [box=0,57,919,1220]:
+        - generic [ref=e16] [box=24,57,871,1218]:
+          - generic [ref=e17] [box=24,133,780,469]
+          - img "A cartoon creator workshop turning an idea into a Obby game" [ref=e40] [box=80,626,760,580]
+      - region "Start with the game—not the boilerplate." [ref=e87] [box=24,1277,871,1108]:
+        - generic [ref=e88] [box=24,1389,760,170]:
+          - paragraph [ref=e89] [box=24,1389,760,14]: Any genre, one build loop
+          - heading "Start with the game—not the boilerplate." [level=2] [ref=e91] [box=24,1420,760,92]
+          - paragraph [ref=e92] [box=24,1532,680,27]: Choose a direction to load a concrete starting prompt into the workshop.
+        - group "Choose a Roblox game genre" [ref=e93] [box=24,1611,871,494]:
+          - button "Obby Movement, checkpoints, and daily challenges." [ref=e94] [cursor=pointer] [box=24,1611,281,240]
+          - button "Tycoon Upgrades, workers, and satisfying progression." [ref=e108] [cursor=pointer] [box=319,1611,281,240]
+          - button "Horror Rounds, tension, and reactive encounters." [ref=e122] [cursor=pointer] [box=614,1611,281,240]
+          - button "Social Cozy activities and places worth returning to." [ref=e136] [cursor=pointer] [box=24,1865,281,240]
+          - button "Racing Responsive vehicles, tracks, and competition." [ref=e150] [cursor=pointer] [box=319,1865,281,240]
+          - button "RPG Quests, combat, inventory, and progression." [ref=e163] [cursor=pointer] [box=614,1865,281,240]
+        - generic [ref=e177] [box=35,2139,850,127]:
+          - generic [ref=e178] [box=55,2156,184,31]: Choose a genre
+          - strong [ref=e179] [box=257,2161,410,21]: Six different worlds, one reviewable build loop.
+          - generic [ref=e180] [box=684,2162,180,18]: Select a genre to load its prompt.
+          - button "Continue with this idea" [disabled] [ref=e181] [box=55,2204,184,44]
+      - region "Prompt → plan → build → playtest." [ref=e184] [box=0,2385,919,1767]:
+        - generic [ref=e185] [box=32,2505,760,151]:
+          - paragraph [ref=e186] [box=32,2505,760,14]: Build with evidence
+          - heading "Prompt → plan → build → playtest." [level=2] [ref=e188] [box=32,2536,760,46]
+          - paragraph [ref=e189] [box=32,2602,680,54]: A continuous project workflow, not a chat window that drops a code block and disappears.
+        - list "NexusRBX build stages" [ref=e190] [box=32,2716,855,560]:
+          - listitem [ref=e191] [box=32,2716,420,272]
+          - listitem [ref=e199] [box=468,2716,420,272]
+          - listitem [ref=e207] [box=32,3004,420,272]
+          - listitem [ref=e215] [box=468,3004,420,272]
+        - group "Illustrative NexusRBX workflow example" [ref=e222] [box=32,3368,855,654]:
+          - generic [ref=e223] [box=35,3371,849,58]
+          - generic [ref=e232] [box=35,3429,849,590]
+      - region "Fast does not have to mean careless." [ref=e286] [box=24,4152,871,1399]:
+        - generic [ref=e287] [box=24,4276,871,465]:
+          - generic [ref=e288] [box=24,4276,760,151]
+          - generic [ref=e293] [box=21,4485,625,262]
+        - generic [ref=e302] [box=24,4807,871,546]:
+          - article [ref=e303] [box=24,4807,428,265]
+          - article [ref=e313] [box=468,4807,428,265]
+          - article [ref=e322] [box=24,5088,428,265]
+          - article [ref=e329] [box=468,5088,428,265]
+        - generic "NexusRBX trust and Studio details" [ref=e338] [box=24,5397,871,44]:
+          - generic [ref=e339] [box=24,5397,871,44]
+      - region "Build the fun first. Grow from real signals." [ref=e353] [box=0,5551,919,1184]:
+        - generic [ref=e354] [box=32,5671,855,329]:
+          - generic [ref=e355] [box=32,5671,760,122]
+          - generic [ref=e368] [box=98,5879,528,87]
+        - list [ref=e370] [box=32,6064,855,486]:
+          - listitem [ref=e371] [box=32,6064,420,235]
+          - listitem [ref=e379] [box=468,6064,420,235]
+          - listitem [ref=e386] [box=32,6315,420,235]
+          - listitem [ref=e398] [box=468,6315,420,235]
+        - paragraph [ref=e406] [box=70,6608,780,21]: Player demand, retention, discovery, pricing, and update quality all affect results. NexusRBX does not promise earnings.
+      - region "Proof should be earned—not invented." [ref=e407] [box=24,6735,871,1149]:
+        - generic [ref=e408] [box=24,6847,871,346]:
+          - generic [ref=e409] [box=24,6847,760,151]
+          - generic [ref=e418] [box=86,7083,533,86]
+        - generic [ref=e420] [box=24,7253,871,511]:
+          - article [ref=e421] [box=24,7253,278,511]
+          - article [ref=e437] [box=320,7265,278,511]
+          - article [ref=e453] [box=617,7253,278,511]
+      - region "Plans described like a creator would use them." [ref=e469] [box=0,7884,919,1188]:
+        - generic [ref=e470] [box=32,7998,855,310]:
+          - generic [ref=e471] [box=32,7998,760,197]
+          - link "Compare every plan" [ref=e476] [cursor=pointer] [box=32,8259,195,48]:
+            - /url: /pricing
+        - generic [ref=e479] [box=32,8367,855,535]:
+          - article [ref=e480] [box=32,8367,273,535]
+          - article [ref=e503] [box=321,8357,276,537]
+          - article [ref=e526] [box=614,8367,273,535]
+        - paragraph [ref=e549] [box=70,8945,780,21]: Usage limits and checkout details are shown before purchase. No plan promises player growth or Robux earnings.
+      - region "Use the whole workshop—or start with one task." [ref=e550] [box=24,9071,871,617]:
+        - generic [ref=e551] [box=24,9176,871,67]:
+          - paragraph [ref=e552] [box=24,9176,871,14]: Need something focused?
+          - heading "Use the whole workshop—or start with one task." [level=2] [ref=e554] [box=24,9207,871,37]
+        - navigation "Focused Roblox creation tools" [ref=e555] [box=24,9287,871,296]:
+          - link "Roblox script generator" [ref=e556] [cursor=pointer] [box=24,9287,871,52]:
+            - /url: /roblox-script-generator
+          - link "Roblox AI scripter" [ref=e559] [cursor=pointer] [box=24,9348,871,52]:
+            - /url: /roblox-ai-scripter
+          - link "Studio script generator" [ref=e562] [cursor=pointer] [box=24,9409,871,52]:
+            - /url: /roblox-studio-script-generator
+          - link "Luau script generator" [ref=e565] [cursor=pointer] [box=24,9470,871,52]:
+            - /url: /roblox-lua-script-generator
+          - link "Roblox GUI maker" [ref=e568] [cursor=pointer] [box=24,9531,871,52]:
+            - /url: /roblox-gui-maker
+      - region [ref=e571] [box=0,9688,919,609]:
+        - paragraph [ref=e576] [box=32,9902,855,14]: Build it. Ship it. Grow it.
+        - heading "What game are we building?" [level=2] [ref=e578] [box=32,9933,855,64]
+        - paragraph [ref=e579] [box=135,10017,650,26]: Bring the idea. Keep the creative decisions. Let NexusRBX coordinate the work.
+        - generic [ref=e580] [box=120,10074,680,104]:
+          - generic [ref=e581] [box=133,10087,1,1]: What Roblox game do you want to make?
+          - generic [ref=e582] [box=134,10088,652,48]
+          - paragraph [ref=e584] [box=134,10148,652,16]: Your prompt stays local until you open the workspace.
+    - contentinfo [ref=e585] [box=0,10298,919,233]:
+      - generic [ref=e586] [box=32,10300,855,160]:
+        - generic [ref=e587] [box=32,10334,304,91]:
+          - link "NexusRBX home" [ref=e588] [cursor=pointer] [box=32,10334,131,44]:
+            - /url: /
+          - paragraph [ref=e590] [box=32,10386,304,39]: Build the game in your head. Keep the creative decisions and the upside.
+        - navigation "Footer" [ref=e591] [box=380,10332,507,94]:
+          - link "Games" [ref=e592] [cursor=pointer] [box=421,10332,44,44]:
+            - /url: /#genres
+          - link "How it works" [ref=e593] [cursor=pointer] [box=487,10332,79,44]:
+            - /url: /#workflow
+          - link "Creator control" [ref=e594] [cursor=pointer] [box=587,10332,95,44]:
+            - /url: /#control
+          - link "Creator upside" [ref=e595] [cursor=pointer] [box=704,10332,92,44]:
+            - /url: /#grow
+          - link "Downloads" [ref=e596] [cursor=pointer] [box=818,10332,69,44]:
+            - /url: /downloads
+          - link "Pricing" [ref=e597] [cursor=pointer] [box=459,10382,44,44]:
+            - /url: /pricing
+          - link "Docs" [ref=e598] [cursor=pointer] [box=525,10382,32,44]:
+            - /url: /docs
+          - link "Support" [ref=e599] [cursor=pointer] [box=579,10382,52,44]:
+            - /url: /support
+          - link "Contact" [ref=e600] [cursor=pointer] [box=652,10382,51,44]:
+            - /url: /contact
+          - link "Legal" [ref=e601] [cursor=pointer] [box=725,10382,34,44]:
+            - /url: /legal
+          - link "Privacy" [ref=e602] [cursor=pointer] [box=781,10382,45,44]:
+            - /url: /legal/privacy
+          - link "Terms" [ref=e603] [cursor=pointer] [box=848,10382,39,44]:
+            - /url: /legal/terms
+      - paragraph [ref=e604] [box=32,10460,855,71]: NexusRBX is an independent developer tool and is not affiliated with or endorsed by Roblox Corporation. Earnings are never guaranteed.

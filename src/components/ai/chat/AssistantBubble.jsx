@@ -125,6 +125,7 @@ export default function AssistantBubble({
             <AgentStepList
               steps={m.steps}
               maxHeight="max-h-48"
+              collapsible={!m.pending}
               onApproveStep={onApproveStep}
               approvingStepId={approvingStepId}
             />

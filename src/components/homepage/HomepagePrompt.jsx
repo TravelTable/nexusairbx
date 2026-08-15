@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { track } from "@vercel/analytics";
 
 import { Button } from "../shadcn/button";
-import { Input } from "../shadcn/input";
 import { Label } from "../shadcn/label";
+import { Textarea } from "../shadcn/textarea";
 import { homepagePrompt } from "../../content/homepageLanding";
 import { getExperimentAnalyticsProperties, getHomepageCtaCopy } from "../../lib/experiments";
 import { submitHomepagePrompt, trackHomepagePromptStarted } from "../../lib/homepageActivation";
@@ -71,7 +71,10 @@ export default function HomepagePrompt({
   };
 
   const handleKeyDown = (event) => {
-    if (event.key === "Enter") methodRef.current = "enter";
+    if (event.key !== "Enter" || event.shiftKey || event.nativeEvent?.isComposing) return;
+    event.preventDefault();
+    methodRef.current = "enter";
+    event.currentTarget.form?.requestSubmit();
   };
 
   const navigate = (to, options) => {
@@ -102,7 +105,7 @@ export default function HomepagePrompt({
 
   return (
     <form
-      className={cn("mt-7 rounded-2xl border border-[var(--ds-border-strong)] bg-[var(--ds-surface-overlay)] p-3 shadow-xl shadow-black/10 backdrop-blur md:max-w-2xl", className)}
+      className={cn("mt-7 rounded-[14px] border border-[var(--ds-border-strong)] bg-[var(--ds-surface-1)] p-2.5 shadow-[var(--ds-shadow-panel)] md:max-w-2xl", className)}
       onSubmit={handleSubmit}
       data-generation-intent-form="homepage"
       data-home-prompt={promptId}
@@ -116,8 +119,7 @@ export default function HomepagePrompt({
       >
         {homepagePrompt.label}
       </Label>
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <Input
+      <Textarea
           ref={inputRef}
           id={promptId}
           name="prompt"
@@ -129,15 +131,18 @@ export default function HomepagePrompt({
           disabled={submitting}
           aria-invalid={Boolean(error)}
           aria-describedby={messageId}
-          className="h-12 flex-none rounded-lg border-[var(--ds-border-strong)] bg-[var(--ds-surface-2)] px-4 text-base text-[var(--ds-text)] placeholder:text-[var(--ds-text-muted)] focus-visible:ring-[var(--ds-accent)] sm:flex-1"
+          rows={3}
+          className="min-h-[92px] resize-none rounded-[10px] border-0 bg-transparent px-3 py-3 text-base leading-6 text-[var(--ds-text)] shadow-none placeholder:text-[var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] focus-visible:ring-offset-0"
         />
+      <div className="mt-2 flex flex-col gap-2 border-t border-[var(--ds-border-subtle)] pt-2 sm:flex-row sm:items-center sm:justify-between">
+        <span className="px-2 text-xs text-[var(--ds-text-muted)]">Roblox project / Shift + Enter for a new line</span>
         <Button
           type="submit"
           onClick={() => {
             methodRef.current = "button";
           }}
           disabled={!prompt.trim() || submitting}
-          className="h-12 rounded-lg bg-[var(--ds-accent)] px-6 text-base font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] active:bg-[var(--ds-accent-pressed)] sm:min-w-32"
+          className="h-11 rounded-[8px] bg-[var(--ds-text)] px-5 text-sm font-semibold text-[var(--ds-bg-canvas)] transition-[background-color,transform] hover:bg-[var(--ds-text-secondary)] active:scale-[0.985] disabled:bg-[var(--ds-text-muted)] motion-reduce:transform-none sm:min-w-32"
         >
           {submitting ? homepagePrompt.loadingLabel : ctaText}
         </Button>

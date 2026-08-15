@@ -281,7 +281,7 @@ export default function BillingPage() {
       <div className={`${editorialGutterClass} mx-auto max-w-7xl pt-10 sm:pt-14 lg:pt-16`}>
         <button
           type="button"
-          className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-sm text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+          className="inline-flex min-h-11 items-center gap-2 rounded-[8px] px-3 text-sm text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
           onClick={() => window.location.assign("/")}
         >
           <ArrowLeft className="h-4 w-4" />
@@ -320,7 +320,7 @@ export default function BillingPage() {
         <div className="mt-12 grid gap-5 lg:grid-cols-3">
           <section className={`${editorialPanelClass} p-6 sm:p-7`}>
             <div className="flex items-center gap-2 text-lg font-semibold">
-              <Zap className="h-5 w-5 text-[var(--ds-accent)]" />
+              <Zap className="h-5 w-5 text-[var(--ds-text-muted)]" />
               Current plan
             </div>
             <div className="mt-5 text-3xl font-semibold tracking-[-0.025em]">{planLabel(entitlements?.plan)}</div>
@@ -338,7 +338,7 @@ export default function BillingPage() {
               </div>
             )}
             {entitlements?.grandfathered && (
-              <div className="mt-3 rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-3 py-2 text-sm text-[var(--ds-accent)]">
+              <div className="mt-3 rounded-lg border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-3 py-2 text-sm text-[var(--ds-text-secondary)]">
                 <div className="font-bold">Legacy {planLabel(entitlements.plan)} pricing</div>
                 <div className="mt-1 text-xs">Your current subscription price remains active while this subscription continues.</div>
               </div>
@@ -356,7 +356,7 @@ export default function BillingPage() {
             <div className="mt-5 text-3xl font-semibold tracking-[-0.025em]">{percentUsed}% used</div>
             <div className="mt-1 text-sm text-[var(--ds-text-muted)]">{percentRemaining}% remaining</div>
             <div className="mt-4 h-2 overflow-hidden rounded-full bg-[var(--ds-fill-active)]">
-              <div className="h-full rounded-full bg-[var(--ds-accent)]" style={{ width: `${Math.min(100, Math.max(0, percentUsed))}%` }} />
+              <div className="h-full rounded-full bg-[var(--ds-text)]" style={{ width: `${Math.min(100, Math.max(0, percentUsed))}%` }} />
             </div>
             <div className="mt-3 text-sm text-[var(--ds-text-muted)]">Resets {formatDate(included.resetsAt)}</div>
             {included.warningLevel === "WARNING" && <p className="mt-3 text-sm text-[var(--ds-warning)]">You’ve used 70% of your included usage.</p>}
@@ -383,7 +383,7 @@ export default function BillingPage() {
                   type="button"
                   onClick={() => handleTopUp(packageKey)}
                   disabled={busy === packageKey}
-                  className="inline-flex min-h-11 items-center justify-center gap-1 rounded-full border border-[var(--ds-border)] bg-transparent px-2 text-xs font-semibold text-[var(--ds-text)] hover:bg-[var(--ds-fill-hover)]"
+                  className="inline-flex min-h-11 items-center justify-center gap-1 rounded-[8px] border border-[var(--ds-border)] bg-transparent px-2 text-xs font-semibold text-[var(--ds-text)] hover:bg-[var(--ds-fill-hover)]"
                 >
                   {busy === packageKey ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
                   {label}
@@ -402,18 +402,18 @@ export default function BillingPage() {
               <h2 className="text-xl font-semibold">Choose more room for your builds</h2>
               <p className="mt-1 text-sm text-[var(--ds-text-muted)]">Compare exact prices here. Active subscribers should use billing settings for controlled plan changes.</p>
             </div>
-            <div className="inline-flex w-fit rounded-full bg-[var(--ds-fill-subtle)] p-1">
+            <div className="inline-flex w-fit rounded-[12px] bg-[var(--ds-fill-subtle)] p-1">
               <button
                 type="button"
                 onClick={() => setIntervalValue(BILLING_INTERVAL.MONTH)}
-                className={`min-h-11 rounded-full px-5 py-2 text-sm font-semibold ${interval === BILLING_INTERVAL.MONTH ? "bg-[var(--ds-surface-2)] text-[var(--ds-accent)]" : "text-[var(--ds-text-secondary)]"}`}
+                className={`min-h-11 rounded-[8px] px-5 py-2 text-sm font-semibold ${interval === BILLING_INTERVAL.MONTH ? "bg-[var(--ds-surface-2)] text-[var(--ds-text)]" : "text-[var(--ds-text-secondary)]"}`}
               >
                 Monthly
               </button>
               <button
                 type="button"
                 onClick={() => setIntervalValue(BILLING_INTERVAL.YEAR)}
-                className={`min-h-11 rounded-full px-5 py-2 text-sm font-semibold ${interval === BILLING_INTERVAL.YEAR ? "bg-[var(--ds-surface-2)] text-[var(--ds-accent)]" : "text-[var(--ds-text-secondary)]"}`}
+                className={`min-h-11 rounded-[8px] px-5 py-2 text-sm font-semibold ${interval === BILLING_INTERVAL.YEAR ? "bg-[var(--ds-surface-2)] text-[var(--ds-text)]" : "text-[var(--ds-text-secondary)]"}`}
               >
                 Yearly
               </button>
@@ -454,7 +454,7 @@ export default function BillingPage() {
 
         <section className="mt-12 border-t border-[var(--ds-border-subtle)] py-8">
           <div className="flex items-center gap-2 text-lg font-semibold">
-            <CreditCard className="h-5 w-5 text-[var(--ds-accent)]" />
+            <CreditCard className="h-5 w-5 text-[var(--ds-text-muted)]" />
             Billing support
           </div>
           <p className="mt-3 text-sm leading-6 text-[var(--ds-text-muted)]">

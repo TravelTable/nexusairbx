@@ -320,7 +320,7 @@ function SingleMessageList({
                 <RunContextBar decision={pendingMessage.decision} />
               ) : null}
               {showLiveWorkStream ? (
-                <div className="w-full max-w-[840px] overflow-hidden rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)]">
+                <div className="w-full max-w-[840px]">
                   <div className="px-4 pt-3">
                     <ReasoningPanel
                       text={streamState?.rawReasoning}
