@@ -26,7 +26,8 @@ export function useStarterPromo({
   });
 
   const needsSubscription = Boolean(user) && !isSubscriber;
-  const canShowSoftPromo = needsSubscription && isFreeUsagePlan && !isStarterPromoSnoozed();
+  const eligibleForSoftPromo = needsSubscription && isFreeUsagePlan;
+  const canShowSoftPromo = eligibleForSoftPromo && !isStarterPromoSnoozed();
   const shouldBlock = blocking && needsSubscription;
 
   useEffect(() => {
@@ -40,14 +41,15 @@ export function useStarterPromo({
     }
   }, [shouldBlock, needsSubscription]);
 
-  const openPromo = useCallback((nextTrigger) => {
+  const openPromo = useCallback((nextTrigger, { force = false } = {}) => {
     if (blocking) {
       if (!needsSubscription) return false;
       setTrigger(nextTrigger || "subscription_required");
       setIsOpen(true);
       return true;
     }
-    if (!canShowSoftPromo || shownThisSession.current || isGenerating) return false;
+    const canOpen = force ? eligibleForSoftPromo : canShowSoftPromo;
+    if (!canOpen || shownThisSession.current || isGenerating) return false;
     shownThisSession.current = true;
     setTrigger(nextTrigger);
     setIsOpen(true);
@@ -56,7 +58,7 @@ export function useStarterPromo({
       daily_usage_percent: dailyUsagePercent,
     }, { dedupeKey: `starter_promo:${nextTrigger}` });
     return true;
-  }, [blocking, canShowSoftPromo, dailyUsagePercent, isGenerating, needsSubscription]);
+  }, [blocking, canShowSoftPromo, dailyUsagePercent, eligibleForSoftPromo, isGenerating, needsSubscription]);
 
   useEffect(() => {
     if (blocking || !canShowSoftPromo || dailyUsagePercent < 70) return;

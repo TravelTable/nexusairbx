@@ -3,30 +3,36 @@ import { X, Gift, Zap, ShieldCheck, Save } from "lib/icons";
 import { useNavigate, useLocation } from "react-router-dom";
 import Modal from "./Modal";
 
-export default function SignInNudgeModal({ isOpen, onClose, reason = "" }) {
+export default function SignInNudgeModal({ isOpen, onClose, reason = "", blocking = false }) {
   const navigate = useNavigate();
   const location = useLocation();
   const aiFrom = location?.pathname === "/ai" ? location : { pathname: "/ai" };
+  const title = blocking
+    ? "Sign in to use NexusRBX AI"
+    : "Sign in to save and continue your work";
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Sign in to save and continue your work"
+      title={title}
       titleClassName="sr-only"
       panelClassName="max-w-md overflow-hidden"
       bodyClassName=""
       overlayClassName="z-[100] overflow-y-auto bg-black/60 p-3 py-[max(0.75rem,env(safe-area-inset-top))] sm:p-4"
-      closeOnBackdrop
+      closeOnBackdrop={!blocking}
+      closeOnEscape={!blocking}
       showCloseButton={false}
     >
-          <button
-            onClick={onClose}
-            aria-label="Dismiss sign-in prompt"
-            className="nexus-icon-button absolute right-3 top-3 h-11 w-11 rounded-full sm:right-4 sm:top-4"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          {!blocking ? (
+            <button
+              onClick={onClose}
+              aria-label="Dismiss sign-in prompt"
+              className="nexus-icon-button absolute right-3 top-3 h-11 w-11 rounded-full sm:right-4 sm:top-4"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          ) : null}
 
           <div className="p-4 pt-12 text-center sm:p-8 sm:pt-10">
             <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-2)] text-[var(--ds-text-secondary)] sm:mb-6 sm:h-20 sm:w-20 sm:rounded-2xl">
@@ -34,11 +40,13 @@ export default function SignInNudgeModal({ isOpen, onClose, reason = "" }) {
             </div>
 
             <h2 className="text-xl font-bold text-[var(--ds-text)] mb-3 sm:text-2xl">
-              Sign in to save and <br /> continue your work
+              {blocking ? "Sign in to use NexusRBX AI" : <>Sign in to save and <br /> continue your work</>}
             </h2>
 
             <p className="text-[var(--ds-text-muted)] text-[15px] leading-relaxed mb-5 sm:mb-8">
-              {reason || "Create a free account to save your work and continue with Agent Build."}
+              {reason || (blocking
+                ? "Sign in or create a free account to use Quick Script, Agent Build, and your saved AI workspace."
+                : "Create a free account to save your work and continue with Agent Build.")}
             </p>
 
             <div className="space-y-3 mb-5 sm:space-y-4 sm:mb-8">
@@ -65,23 +73,25 @@ export default function SignInNudgeModal({ isOpen, onClose, reason = "" }) {
 
             <div className="flex flex-col gap-3">
               <button
-                onClick={() => navigate("/signup", { state: { from: aiFrom } })}
+                onClick={() => navigate("/signin", { state: { from: aiFrom } })}
                 className="focus-ring min-h-11 w-full rounded-xl border border-[var(--ds-accent-border)] bg-accent py-3 text-base font-bold text-accent-foreground transition-colors hover:bg-[var(--ds-accent-hover)] active:bg-[var(--ds-accent-pressed)] sm:py-4 sm:text-lg"
               >
-                Sign Up
+                Sign In
               </button>
               <button
-                onClick={() => navigate("/signin", { state: { from: aiFrom } })}
+                onClick={() => navigate("/signup", { state: { from: aiFrom } })}
                 className="focus-ring w-full min-h-11 py-3 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] hover:border-[var(--ds-border-strong)] text-sm font-medium transition-colors"
               >
-                Already have an account? Sign In
+                Create a free account
               </button>
-              <button
-                onClick={onClose}
-                className="focus-ring w-full min-h-11 py-3 rounded-xl text-[var(--ds-text-subtle)] hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text)] text-sm font-medium transition-colors"
-              >
-                Maybe Later
-              </button>
+              {!blocking ? (
+                <button
+                  onClick={onClose}
+                  className="focus-ring w-full min-h-11 py-3 rounded-xl text-[var(--ds-text-subtle)] hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text)] text-sm font-medium transition-colors"
+                >
+                  Maybe Later
+                </button>
+              ) : null}
             </div>
           </div>
 

@@ -95,3 +95,22 @@ describe.each(cases)("$name nudge modal", ({ name, dialogName, closeName, render
     await waitFor(() => expect(launch).toHaveFocus());
   });
 });
+
+test("the AI entry sign-in gate cannot be dismissed", () => {
+  const onClose = jest.fn();
+  render(
+    <MemoryRouter
+      initialEntries={["/ai"]}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
+      <SignInNudgeModal isOpen blocking onClose={onClose} />
+    </MemoryRouter>
+  );
+
+  expect(screen.getByRole("dialog", { name: "Sign in to use NexusRBX AI" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Dismiss sign-in prompt" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Maybe Later" })).not.toBeInTheDocument();
+
+  fireEvent.keyDown(window, { key: "Escape" });
+  expect(onClose).not.toHaveBeenCalled();
+});

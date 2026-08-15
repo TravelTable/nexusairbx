@@ -10,9 +10,15 @@ function randomKey(prefix = "qs") {
   return `${prefix}_${id}`;
 }
 
-async function optionalAuthHeaders() {
+async function requiredAuthHeaders() {
   const user = getAuth()?.currentUser;
-  if (!user) return {};
+  if (!user) {
+    const error = new Error("Sign in to use Quick Script.");
+    error.status = 401;
+    error.code = "AUTH_REQUIRED";
+    error.authRequired = true;
+    throw error;
+  }
   const token = await user.getIdToken();
   return { Authorization: `Bearer ${token}` };
 }
@@ -54,7 +60,7 @@ export async function generateQuickScript({
     "Content-Type": "application/json",
     "Idempotency-Key": idempotencyKey,
     ...getProductAnalyticsHeaders(),
-    ...(await optionalAuthHeaders()),
+    ...(await requiredAuthHeaders()),
   };
   const res = await fetch(`${BACKEND_URL}/api/quick-script/generate`, {
     method: "POST",
@@ -71,7 +77,7 @@ export async function claimQuickScriptResult({ anonymousResultId, claimToken } =
     Accept: "application/json",
     "Content-Type": "application/json",
     ...getProductAnalyticsHeaders(),
-    ...(await optionalAuthHeaders()),
+    ...(await requiredAuthHeaders()),
   };
   const res = await fetch(`${BACKEND_URL}/api/quick-script/claim`, {
     method: "POST",
@@ -95,7 +101,7 @@ export async function saveQuickScriptProject({
     "Content-Type": "application/json",
     "Idempotency-Key": idempotencyKey,
     ...getProductAnalyticsHeaders(),
-    ...(await optionalAuthHeaders()),
+    ...(await requiredAuthHeaders()),
   };
   const res = await fetch(`${BACKEND_URL}/api/projects/save-quick-script`, {
     method: "POST",
@@ -118,7 +124,7 @@ export async function upgradeQuickScriptProjectToAgent({ projectId } = {}) {
     Accept: "application/json",
     "Content-Type": "application/json",
     ...getProductAnalyticsHeaders(),
-    ...(await optionalAuthHeaders()),
+    ...(await requiredAuthHeaders()),
   };
   const res = await fetch(`${BACKEND_URL}/api/projects/${encodeURIComponent(projectId)}/upgrade-agent`, {
     method: "POST",

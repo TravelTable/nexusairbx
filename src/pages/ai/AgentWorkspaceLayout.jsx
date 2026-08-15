@@ -1738,6 +1738,7 @@ export default function AgentWorkspaceLayout({ controller }) {
         isOpen={showSignInNudge}
         onClose={() => setShowSignInNudge(false)}
         reason={signInNudgeReason}
+        blocking={authReady && !user}
       />
       <ProNudgeModal isOpen={showProNudge} onClose={() => setShowProNudge(false)} reason={proNudgeReason} />
       <StarterPromoModal

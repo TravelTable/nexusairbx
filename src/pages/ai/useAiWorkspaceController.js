@@ -446,6 +446,21 @@ export function useAiWorkspaceController() {
     user,
     isGenerating: unified.isGenerating,
   });
+  const openStarterPromo = starterPromo.openPromo;
+
+  useEffect(() => {
+    if (!authReady || !user || billingLoading || billingError) return;
+    if (!isFreeUsagePlan || isStarterOrAbove) return;
+    openStarterPromo("post_sign_in", { force: true });
+  }, [
+    authReady,
+    billingError,
+    billingLoading,
+    isFreeUsagePlan,
+    isStarterOrAbove,
+    openStarterPromo,
+    user,
+  ]);
 
   const chat = unified;
   const chatOperationKey = chat.currentChatId || "draft";
@@ -690,11 +705,17 @@ export function useAiWorkspaceController() {
     };
   }, []);
 
-  // A restored Firebase session can take a moment to be verified on a fresh
-  // /ai load. Clear a nudge that may have been opened while that session was
-  // still resolving, rather than leaving a signed-in user behind a stale gate.
+  // The AI workspace is authenticated-only. Wait for Firebase to finish
+  // restoring a session, then either open the entry gate or clear it.
   useEffect(() => {
-    if (!authReady || !user) return;
+    if (!authReady) return;
+    if (!user) {
+      setSignInNudgeReason(
+        "Sign in or create a free account to use Quick Script, Agent Build, and your saved AI workspace."
+      );
+      setShowSignInNudge(true);
+      return;
+    }
     setShowSignInNudge(false);
     setSignInNudgeReason("");
   }, [authReady, user]);
@@ -1475,8 +1496,10 @@ export function useAiWorkspaceController() {
       return null;
     }
     if (quickScript.status === "generating") return null;
-    if (!user && quickScript.result?.code && !options.retry) {
-      recordPendingAuthGate(PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION, "quick_script_additional_generation");
+    if (!authReady || !user) {
+      if (authReady) {
+        recordPendingAuthGate(PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION, "quick_script_generation");
+      }
       setShowSignInNudge(true);
       return null;
     }
@@ -1579,6 +1602,7 @@ export function useAiWorkspaceController() {
     }
   }, [
     activeTab,
+    authReady,
     isMobile,
     notify,
     prompt,
