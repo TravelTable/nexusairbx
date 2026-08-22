@@ -617,8 +617,18 @@ do
 	companionList.Padding = UDim.new(0, 3)
 	companionList.SortOrder = Enum.SortOrder.LayoutOrder
 	companionList.Parent = companionSection
-	makeText(companionSection, "McpCompanionTitle", "MCP Companion", 17, 12, true)
+	makeText(companionSection, "McpCompanionTitle", "MCP Companion (optional)", 17, 12, true)
 	mcpCompanionLabel = makeText(companionSection, "McpCompanionStatus", "Not configured", 17, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
+	mcpCompanionHelpLabel = makeText(
+		companionSection,
+		"McpCompanionHelp",
+		"Core bridge is live. Add the optional desktop connector when you need direct Studio inspection tools.",
+		nil,
+		10,
+		false,
+		themeColor(Enum.StudioStyleGuideColor.DimmedText)
+	)
+	mcpCompanionHelpLabel.TextWrapped = true
 end
 -- Team Create awareness: who else is editing this place (masked identity).
 -- Populated from the consolidated /api/studio/session/ping heartbeat response.
@@ -1071,11 +1081,11 @@ function setConnectionDiagnostics(summary)
 end
 
 function setMcpCompanionStatus(summary)
-	if not mcpCompanionLabel or type(summary) ~= "table" then return end
+	if not mcpCompanionLabel or not mcpCompanionHelpLabel or type(summary) ~= "table" then return end
 	local state = tostring(summary.state or "not_configured")
 	local labels = {
 		not_configured = "Not configured",
-		connector_offline = "Connector offline",
+		connector_offline = "Offline",
 		studio_mcp_unavailable = "Studio MCP unavailable",
 		ready = "Ready",
 	}
@@ -1085,9 +1095,16 @@ function setMcpCompanionStatus(summary)
 		studio_mcp_unavailable = COLORS.warning,
 		ready = COLORS.success,
 	}
+	local help = {
+		not_configured = "Core bridge is live. Add the optional desktop connector when you need direct Studio inspection tools.",
+		connector_offline = "Core bridge is still live. Enable the MCP server in Studio Assistant settings to add desktop inspection tools.",
+		studio_mcp_unavailable = "Core bridge is still live. Update Studio, then enable the MCP server in Assistant settings.",
+		ready = "Direct Studio inspection tools are available.",
+	}
 	local commandCount = tonumber(summary.supportedCommandCount) or 0
 	mcpCompanionLabel.Text = (labels[state] or "Unavailable") .. " · " .. tostring(commandCount) .. " commands"
 	mcpCompanionLabel.TextColor3 = colors[state] or COLORS.muted
+	mcpCompanionHelpLabel.Text = help[state] or "Core bridge is still live. Reconnect the optional desktop companion to restore inspection tools."
 end
 
 local function errorHelpFor(value)
