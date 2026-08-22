@@ -2006,9 +2006,9 @@ do
 	mcpCompanionHelpLabel = makeText(
 		companionSection,
 		"McpCompanionHelp",
-		"Core bridge is live. Add the optional desktop connector when you need direct Studio inspection tools.",
+		"Core bridge is live. The optional desktop connector adds inspection tools.",
 		nil,
-		10,
+		11,
 		false,
 		themeColor(Enum.StudioStyleGuideColor.DimmedText)
 	)
@@ -2480,15 +2480,15 @@ setMcpCompanionStatus = function(summary)
 		ready = COLORS.success,
 	}
 	local help = {
-		not_configured = "Core bridge is live. Add the optional desktop connector when you need direct Studio inspection tools.",
-		connector_offline = "Core bridge is still live. Enable the MCP server in Studio Assistant settings to add desktop inspection tools.",
-		studio_mcp_unavailable = "Core bridge is still live. Update Studio, then enable the MCP server in Assistant settings.",
+		not_configured = "Core bridge is live. The optional desktop connector adds inspection tools.",
+		connector_offline = "Core bridge is live. Enable Studio Assistant's MCP server for inspection tools.",
+		studio_mcp_unavailable = "Core bridge is live. Update Studio, then enable Assistant's MCP server.",
 		ready = "Direct Studio inspection tools are available.",
 	}
 	local commandCount = tonumber(summary.supportedCommandCount) or 0
 	mcpCompanionLabel.Text = (labels[state] or "Unavailable") .. " · " .. tostring(commandCount) .. " commands"
 	mcpCompanionLabel.TextColor3 = colors[state] or COLORS.muted
-	mcpCompanionHelpLabel.Text = help[state] or "Core bridge is still live. Reconnect the optional desktop companion to restore inspection tools."
+	mcpCompanionHelpLabel.Text = help[state] or "Core bridge is live. Reconnect the optional desktop companion to restore inspection tools."
 end
 
 local function errorHelpFor(value)
