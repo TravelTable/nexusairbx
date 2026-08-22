@@ -74,9 +74,12 @@ export class ToolCatalog {
     this.insertAsset = compileInsertAsset(this.#byName.get("insert_asset"));
     this.startStopPlay = compileExactTool(this.#byName.get("start_stop_play"), ["is_start"]);
     this.listStudios = compileExactTool(this.#byName.get("list_roblox_studios"), []);
-    this.setActiveStudio = compileExactTool(this.#byName.get("set_active_studio"), ["studio_id"]);
+    const perCallStudioTargeting = supportsPerCallStudioTargeting(this.#byName);
+    this.setActiveStudio = compileExactTool(this.#byName.get("set_active_studio"), ["studio_id"])
+      ?? (perCallStudioTargeting ? { toolName: "set_active_studio", args: {} } : null);
     this.studioState = compileExactTool(this.#byName.get("get_studio_state"), []);
     const targetToolsReady = Boolean(this.listStudios && this.setActiveStudio && this.studioState);
+    const targetTools = perCallStudioTargeting ? PER_CALL_TARGET_TOOLS : TARGET_TOOLS;
 
     const commands = new Set<string>();
     if (targetToolsReady && this.readScript) {
@@ -127,16 +130,16 @@ export class ToolCatalog {
       snapshots: SNAPSHOT_COMMANDS.every((command) => commands.has(command)),
     };
     this.capabilityDetails = makeCapabilityDetails(this.capabilities, {
-      readProject: { commands: ["search_project"], tools: ["script_search", ...TARGET_TOOLS] },
-      readScript: { commands: ["read_script", "read_scripts"], tools: ["script_read", ...TARGET_TOOLS] },
-      writeScript: { commands: ["create_script", "write_script"], tools: ["execute_luau", "script_read", "multi_edit", ...TARGET_TOOLS] },
-      patchScript: { commands: ["patch_script"], tools: ["script_read", "multi_edit", ...TARGET_TOOLS] },
-      inspectSelection: { commands: ["get_selection"], tools: ["execute_luau", ...TARGET_TOOLS] },
-      outputLogs: { commands: ["get_output_logs", "collect_output"], tools: ["get_console_output", ...TARGET_TOOLS] },
-      playtest: { commands: [...PLAYTEST_COMMANDS], tools: ["execute_luau", "start_stop_play", "get_studio_state", "get_console_output", ...TARGET_TOOLS] },
-      creatorStoreInsert: { commands: ["insert_creator_store_asset"], tools: ["execute_luau", "insert_asset", ...TARGET_TOOLS] },
-      instanceMutation: { commands: [...INSTANCE_COMMANDS], tools: ["execute_luau", ...TARGET_TOOLS] },
-      snapshots: { commands: [...SNAPSHOT_COMMANDS], tools: ["execute_luau", ...TARGET_TOOLS] },
+      readProject: { commands: ["search_project"], tools: ["script_search", ...targetTools] },
+      readScript: { commands: ["read_script", "read_scripts"], tools: ["script_read", ...targetTools] },
+      writeScript: { commands: ["create_script", "write_script"], tools: ["execute_luau", "script_read", "multi_edit", ...targetTools] },
+      patchScript: { commands: ["patch_script"], tools: ["script_read", "multi_edit", ...targetTools] },
+      inspectSelection: { commands: ["get_selection"], tools: ["execute_luau", ...targetTools] },
+      outputLogs: { commands: ["get_output_logs", "collect_output"], tools: ["get_console_output", ...targetTools] },
+      playtest: { commands: [...PLAYTEST_COMMANDS], tools: ["execute_luau", "start_stop_play", "get_studio_state", "get_console_output", ...targetTools] },
+      creatorStoreInsert: { commands: ["insert_creator_store_asset"], tools: ["execute_luau", "insert_asset", ...targetTools] },
+      instanceMutation: { commands: [...INSTANCE_COMMANDS], tools: ["execute_luau", ...targetTools] },
+      snapshots: { commands: [...SNAPSHOT_COMMANDS], tools: ["execute_luau", ...targetTools] },
     }, this.#byName, options.capabilityReasonCodes);
   }
 
@@ -243,7 +246,7 @@ interface SearchProfile {
 
 function compileReadScript(tool: DiscoveredTool | undefined): PathToolProfile | null {
   if (!tool || tool.name !== "script_read") return null;
-  const schema = objectSchema(tool.inputSchema);
+  const schema = objectSchema(tool.inputSchema, true);
   if (!schema) return null;
   const pathKey = findRequiredString(schema, ["target_file", "path", "script_path", "scriptPath"]);
   if (!pathKey) return null;
@@ -255,7 +258,7 @@ function compileReadScript(tool: DiscoveredTool | undefined): PathToolProfile | 
 
 function compileInspectInstance(tool: DiscoveredTool | undefined): InstanceToolProfile | null {
   if (!tool || tool.name !== "inspect_instance") return null;
-  const schema = objectSchema(tool.inputSchema);
+  const schema = objectSchema(tool.inputSchema, true);
   if (!schema) return null;
   const pathKey = findRequiredString(schema, ["path", "instance_path", "instancePath"]);
   if (!pathKey) return null;
@@ -269,7 +272,7 @@ function compileInspectInstance(tool: DiscoveredTool | undefined): InstanceToolP
 
 function compileSearch(tool: DiscoveredTool | undefined, queryCandidates: string[]): SearchProfile | null {
   if (!tool) return null;
-  const schema = objectSchema(tool.inputSchema);
+  const schema = objectSchema(tool.inputSchema, true);
   if (!schema) return null;
   const queryKey = findRequiredString(schema, queryCandidates);
   if (!queryKey) return null;
@@ -281,13 +284,13 @@ function compileSearch(tool: DiscoveredTool | undefined, queryCandidates: string
 
 function compileNoInput(tool: DiscoveredTool | undefined): boolean {
   if (!tool) return false;
-  const schema = objectSchema(tool.inputSchema);
+  const schema = objectSchema(tool.inputSchema, true);
   return schema !== null && schema.required.length === 0;
 }
 
 function compileInsertAsset(tool: DiscoveredTool | undefined): AssetToolProfile | null {
   if (!tool || tool.name !== "insert_asset") return null;
-  const schema = objectSchema(tool.inputSchema);
+  const schema = objectSchema(tool.inputSchema, true);
   if (!schema) return null;
   const assetIdKey = findRequiredString(schema, ["assetId", "asset_id"]);
   if (!assetIdKey || schema.required.some((key) => key !== assetIdKey)) return null;
@@ -309,7 +312,7 @@ function compileInsertAsset(tool: DiscoveredTool | undefined): AssetToolProfile 
 
 function compileMutation(tool: DiscoveredTool | undefined): MutationToolProfile | null {
   if (!tool || tool.name !== "multi_edit") return null;
-  const schema = objectSchema(tool.inputSchema);
+  const schema = objectSchema(tool.inputSchema, true);
   if (!schema) return null;
   const pathKey = findRequiredString(schema, ["file_path", "path", "script_path", "scriptPath"]);
   const datamodelKey = findDatamodelKey(schema, true);
@@ -358,7 +361,16 @@ interface ParsedObjectSchema {
   required: string[];
 }
 
-function objectSchema(value: unknown): ParsedObjectSchema | null {
+function objectSchema(value: unknown, stripStudioId = false): ParsedObjectSchema | null {
+  const schema = rawObjectSchema(value);
+  if (!schema) return null;
+  return {
+    properties: schema.properties,
+    required: stripStudioId ? schema.required.filter((key) => key !== "studio_id") : schema.required,
+  };
+}
+
+function rawObjectSchema(value: unknown): ParsedObjectSchema | null {
   const record = asRecord(value);
   if (!record || record.type !== "object") return null;
   const properties = asRecord(record.properties) ?? {};
@@ -389,7 +401,7 @@ function findOptionalBoolean(schema: ParsedObjectSchema, candidates: string[]): 
 
 function compileExactTool(tool: DiscoveredTool | undefined, required: string[]): BasicToolAdapter | null {
   if (!tool) return null;
-  const schema = objectSchema(tool.inputSchema);
+  const schema = objectSchema(tool.inputSchema, tool.name !== "set_active_studio");
   if (!schema || !requiredExactly(schema.required, required)) return null;
   for (const key of required) {
     const property = asRecord(schema.properties[key]);
@@ -408,6 +420,14 @@ const INSTANCE_COMMANDS = [
 const SNAPSHOT_COMMANDS = ["create_snapshot", "restore_snapshot", "undo_last_batch"] as const;
 const PLAYTEST_COMMANDS = ["run_test_service", "run_play_test", "stop_play_test"] as const;
 const TARGET_TOOLS = ["list_roblox_studios", "set_active_studio", "get_studio_state"] as const;
+const PER_CALL_TARGET_TOOLS = ["list_roblox_studios", "get_studio_state"] as const;
+
+function supportsPerCallStudioTargeting(tools: Map<string, DiscoveredTool>): boolean {
+  const state = tools.get("get_studio_state");
+  const schema = state ? rawObjectSchema(state.inputSchema) : null;
+  const studioId = schema ? asRecord(schema.properties.studio_id) : null;
+  return schema !== null && schema.required.includes("studio_id") && studioId?.type === "string";
+}
 
 function makeCapabilityDetails(
   capabilities: StudioCapabilities,

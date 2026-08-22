@@ -43,6 +43,19 @@ const executeLuau = tool(
 );
 const targetTools = [listStudios, setStudio, state];
 const targeted = (items: DiscoveredTool[]) => [...targetTools, ...items.filter((item) => item.name !== "get_studio_state")];
+const withStudioId = (value: DiscoveredTool): DiscoveredTool => ({
+  ...value,
+  inputSchema: {
+    ...(value.inputSchema as JsonObject),
+    properties: { ...((value.inputSchema.properties as JsonObject) ?? {}), studio_id: { type: "string" } },
+    required: [...((value.inputSchema.required as string[]) ?? []), "studio_id"],
+  },
+});
+const currentTargeted = (items: DiscoveredTool[]) => [
+  listStudios,
+  withStudioId(state),
+  ...items.filter((item) => item.name !== "get_studio_state").map(withStudioId),
+];
 
 test("catalog enables only exact, schema-validated Nexus commands", () => {
   const catalog = new ToolCatalog(targeted([read, inspect, search, grep, state, output, sourceMutation]));
@@ -114,6 +127,16 @@ test("insert_asset maps current optional fields without inventing schema keys", 
     toolName: "insert_asset",
     args: { assetId: "123", assetName: "Tree", type: "Model", parentPath: "game.Workspace.Nexus" },
   });
+});
+
+test("catalog accepts current Studio MCP schemas with a required per-call studio id", () => {
+  const catalog = new ToolCatalog(currentTargeted([read, inspect, search, grep, state, output, sourceMutation]));
+  assert.equal(catalog.setActiveStudio?.toolName, "set_active_studio");
+  assert.equal(catalog.hasCommand("read_script"), true);
+  assert.equal(catalog.hasCommand("write_script"), true);
+  assert.equal(catalog.hasCommand("get_output_logs"), true);
+  assert.equal(catalog.capabilityDetails.readScript.status, "supported");
+  assert.equal(catalog.capabilityDetails.readScript.requiredTools.includes("set_active_studio"), false);
 });
 
 test("inspect_instance fails closed on an unknown required argument", () => {

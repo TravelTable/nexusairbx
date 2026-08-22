@@ -46,6 +46,24 @@ test("official MCP client initializes, discovers every page, calls tools, and re
   ]);
 });
 
+test("current Studio MCP per-call targeting synthesizes selection and injects the selected studio id", async (t) => {
+  const mcp = client("per-call-targeting");
+  t.after(async () => mcp.disconnect());
+  await mcp.connect();
+  const tools = await mcp.listTools();
+  assert.deepEqual(tools.map((tool) => tool.name), ["list_roblox_studios", "script_read", "get_studio_state"]);
+
+  const selected = await mcp.callTool("set_active_studio", { studio_id: "studio-current" });
+  assert.deepEqual(selected.structuredContent, { studio_id: "studio-current" });
+  const result = await mcp.callTool("script_read", { path: "game.ServerScriptService.Main", datamodel_type: "Edit" });
+  const response = JSON.parse(String(result.content?.find((item) => item.type === "text")?.text ?? "{}"));
+  assert.equal(response.arguments.studio_id, "studio-current");
+  await assert.rejects(
+    mcp.callTool("script_read", { path: "game.ServerScriptService.Main", datamodel_type: "Edit", studio_id: "studio-other" }),
+    (error: unknown) => error instanceof ConnectorError && error.code === "STUDIO_TARGET_MISMATCH",
+  );
+});
+
 test("tool discovery rejects a repeated pagination cursor", async (t) => {
   const mcp = client("cycle");
   t.after(async () => mcp.disconnect());

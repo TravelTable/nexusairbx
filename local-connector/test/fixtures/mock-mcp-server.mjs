@@ -29,12 +29,38 @@ const stateTool = {
   inputSchema: { type: "object", properties: {}, required: [] },
 };
 
+const perCallStateTool = {
+  name: "get_studio_state",
+  inputSchema: {
+    type: "object",
+    properties: { studio_id: { type: "string" } },
+    required: ["studio_id"],
+  },
+};
+
+const listStudiosTool = {
+  name: "list_roblox_studios",
+  inputSchema: { type: "object", properties: {}, required: [] },
+};
+
+const perCallReadTool = {
+  ...readTool,
+  inputSchema: {
+    ...readTool.inputSchema,
+    properties: { ...readTool.inputSchema.properties, studio_id: { type: "string" } },
+    required: [...readTool.inputSchema.required, "studio_id"],
+  },
+};
+
 const disconnectTool = {
   name: "disconnect_test_server",
   inputSchema: { type: "object", properties: {}, required: [] },
 };
 
 server.setRequestHandler(ListToolsRequestSchema, async (request) => {
+  if (mode === "per-call-targeting") {
+    return { tools: [listStudiosTool, perCallReadTool, perCallStateTool] };
+  }
   if (mode === "cycle") {
     return { tools: [readTool], nextCursor: "repeated-cursor" };
   }

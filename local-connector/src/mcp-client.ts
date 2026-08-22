@@ -18,6 +18,8 @@ export interface RobloxStudioMcpOptions {
 export class RobloxStudioMcpClient implements McpClientLike {
   #client: Client | null = null;
   #transport: StdioClientTransport | null = null;
+  #activeStudioId: string | null = null;
+  #perCallStudioTools = new Set<string>();
   readonly #toolChangeHandlers = new Set<() => void>();
   readonly #disconnectHandlers = new Set<(error?: Error) => void>();
   #closing = false;
@@ -27,6 +29,8 @@ export class RobloxStudioMcpClient implements McpClientLike {
   async connect(signal?: AbortSignal): Promise<McpConnectionInfo> {
     await this.disconnect();
     this.#closing = false;
+    this.#activeStudioId = null;
+    this.#perCallStudioTools.clear();
     const client = new Client(
       { name: "nexusrbx-local-connector", version: this.options.connectorVersion },
       {
@@ -85,6 +89,8 @@ export class RobloxStudioMcpClient implements McpClientLike {
     const transport = this.#transport;
     this.#client = null;
     this.#transport = null;
+    this.#activeStudioId = null;
+    this.#perCallStudioTools.clear();
     try {
       if (client) await client.close();
       else if (transport) await transport.close();
@@ -109,7 +115,10 @@ export class RobloxStudioMcpClient implements McpClientLike {
           ...(tool.outputSchema === undefined ? {} : { outputSchema: tool.outputSchema as JsonObject }),
         });
       }
-      if (!result.nextCursor) return tools;
+      if (!result.nextCursor) {
+        this.#perCallStudioTools = new Set(tools.flatMap((tool) => requiresStudioId(tool) ? [tool.name] : []));
+        return tools;
+      }
       if (cursors.has(result.nextCursor)) throw new ConnectorError("MCP_CURSOR_CYCLE", "Roblox Studio MCP returned a repeated page cursor.");
       cursors.add(result.nextCursor);
       cursor = result.nextCursor;
@@ -119,9 +128,34 @@ export class RobloxStudioMcpClient implements McpClientLike {
 
   async callTool(name: string, args: JsonObject, signal?: AbortSignal): Promise<ToolCallResult> {
     const client = this.requireClient();
+    if (name === "set_active_studio" && this.#perCallStudioTools.has("get_studio_state")) {
+      const studioId = typeof args.studio_id === "string" ? args.studio_id.trim() : "";
+      if (!studioId) {
+        throw new ConnectorError("STUDIO_TARGET_UNAVAILABLE", "Roblox Studio target selection requires a Studio identifier.");
+      }
+      this.#activeStudioId = studioId;
+      return {
+        structuredContent: { studio_id: studioId },
+        content: [{ type: "text", text: JSON.stringify({ studio_id: studioId }) }],
+        isError: false,
+      };
+    }
+    let callArgs = args;
+    if (this.#perCallStudioTools.has(name)
+      && this.#activeStudioId
+      && typeof args.studio_id === "string"
+      && args.studio_id !== this.#activeStudioId) {
+      throw new ConnectorError("STUDIO_TARGET_MISMATCH", "The Studio tool target does not match the selected Studio window.");
+    }
+    if (this.#perCallStudioTools.has(name) && !Object.hasOwn(args, "studio_id")) {
+      if (!this.#activeStudioId) {
+        throw new ConnectorError("STUDIO_TARGET_UNAVAILABLE", "Choose a Roblox Studio window before calling a target-bound tool.");
+      }
+      callArgs = { ...args, studio_id: this.#activeStudioId };
+    }
     try {
       return (await client.callTool(
-        { name, arguments: args },
+        { name, arguments: callArgs },
         undefined,
         this.requestOptions(signal),
       )) as ToolCallResult;
@@ -153,4 +187,19 @@ export class RobloxStudioMcpClient implements McpClientLike {
       ...(signal === undefined ? {} : { signal }),
     };
   }
+}
+
+function requiresStudioId(tool: DiscoveredTool): boolean {
+  const schema = typeof tool.inputSchema === "object" && tool.inputSchema !== null && !Array.isArray(tool.inputSchema)
+    ? tool.inputSchema as Record<string, unknown>
+    : null;
+  const properties = schema && typeof schema.properties === "object" && schema.properties !== null && !Array.isArray(schema.properties)
+    ? schema.properties as Record<string, unknown>
+    : null;
+  const studioId = properties && typeof properties.studio_id === "object" && properties.studio_id !== null && !Array.isArray(properties.studio_id)
+    ? properties.studio_id as Record<string, unknown>
+    : null;
+  return Array.isArray(schema?.required)
+    && schema.required.includes("studio_id")
+    && studioId?.type === "string";
 }

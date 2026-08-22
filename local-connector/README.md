@@ -80,7 +80,7 @@ This is an intentional parity boundary, not an allowlist lag:
 - `inspect_instance` documents readable properties and attributes, so it can back the three bounded inspection commands above. The connector returns `MCP_TOOL_UNAVAILABLE` before calling MCP when a request requires CollectionService tags, exact child rows, or NexusRBX source hashes that the official contract does not guarantee.
 - `get_studio_state` does not document the current Studio selection or change history, so it is not treated as `get_selection` or `get_change_history`.
 - `execute_luau` is never exposed generically. Only versioned constant templates owned by the connector may use it; requests contain bounded data, not executable source.
-- `list_roblox_studios` and `set_active_studio` enumerate and pin the target. One Studio is auto-selected; multiple Studios require an authenticated explicit choice, confirmed before mutation or playtest.
+- `list_roblox_studios` enumerates the targets. The connector supports both legacy Studio MCP servers with `set_active_studio` and current servers that require `studio_id` on each target-bound call. One Studio is auto-selected; multiple Studios require an authenticated explicit choice, confirmed before mutation or playtest.
 
 Use the NexusRBX Studio plugin for an unavailable command. The connector never silently reroutes a command to another Studio session or bridge.
 
