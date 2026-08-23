@@ -47,7 +47,8 @@ export function PublicAccountProvider({ children }) {
 
     async function refreshUnreadCount() {
       try {
-        const { getSupportUnreadCount } = await import("../../src/lib/supportApi");
+        const { getSupportUnreadCount } =
+          await import("../../src/lib/supportApi");
         const count = await getSupportUnreadCount();
         if (active) setSupportUnreadCount(count);
       } catch (_) {
@@ -57,11 +58,17 @@ export function PublicAccountProvider({ children }) {
 
     void refreshUnreadCount();
     const timer = window.setInterval(refreshUnreadCount, 60_000);
-    window.addEventListener("nexusrbx:support-unread-changed", refreshUnreadCount);
+    window.addEventListener(
+      "nexusrbx:support-unread-changed",
+      refreshUnreadCount,
+    );
     return () => {
       active = false;
       window.clearInterval(timer);
-      window.removeEventListener("nexusrbx:support-unread-changed", refreshUnreadCount);
+      window.removeEventListener(
+        "nexusrbx:support-unread-changed",
+        refreshUnreadCount,
+      );
     };
   }, [account]);
 
@@ -81,28 +88,50 @@ export function PublicAccountProvider({ children }) {
 
   return (
     <PublicAccountContext.Provider
-      value={{ account, authReady, signOutState, supportUnreadCount, handleSignOut }}
+      value={{
+        account,
+        authReady,
+        signOutState,
+        supportUnreadCount,
+        handleSignOut,
+      }}
     >
       {children}
     </PublicAccountContext.Provider>
   );
 }
 
-export default function PublicAccountState({ mobile = false, compact = false }) {
+export default function PublicAccountState({
+  mobile = false,
+  compact = false,
+}) {
   const accountState = useContext(PublicAccountContext);
   if (!accountState) return null;
 
-  const { account, authReady, signOutState, supportUnreadCount, handleSignOut } = accountState;
+  const {
+    account,
+    authReady,
+    signOutState,
+    supportUnreadCount,
+    handleSignOut,
+  } = accountState;
 
-  const wrapperClass = compact ? "flex items-center" : mobile ? "grid gap-2" : "flex items-center gap-3";
+  const wrapperClass = compact
+    ? "flex items-center"
+    : mobile
+      ? "grid gap-2"
+      : "flex items-center gap-3";
   const controlHeightClass = "h-11 md:h-9";
-  const primaryClass = `${focusClass} ${controlHeightClass} inline-flex items-center justify-center border-0 border-b border-[var(--nx-text-secondary)] bg-transparent px-[9px] text-[13px] font-semibold text-[var(--nx-text)] no-underline hover:border-[var(--nx-purple-muted)] hover:text-[var(--nx-purple)]`;
-  const secondaryClass = `${focusClass} ${controlHeightClass} inline-flex items-center justify-center border-0 border-b border-[var(--nx-rule)] bg-transparent px-[9px] text-[13px] font-medium text-[var(--nx-text-secondary)] no-underline hover:border-[var(--nx-text-secondary)] hover:text-[var(--nx-text)]`;
+  const primaryClass = `${focusClass} ${controlHeightClass} inline-flex items-center justify-center rounded-full border border-[var(--nx-purple-muted)] bg-[var(--nx-purple)] px-4 text-[13px] font-bold text-[var(--nx-canvas)] no-underline shadow-[var(--nx-shadow-control)] transition-[background-color,border-color,box-shadow,transform] duration-200 hover:-translate-y-px hover:border-[var(--nx-purple-strong)] hover:bg-[var(--nx-purple-strong)] hover:shadow-[var(--nx-shadow-card)] active:translate-y-0 active:bg-[var(--nx-purple-muted)] motion-reduce:transform-none motion-reduce:transition-none`;
+  const secondaryClass = `${focusClass} ${controlHeightClass} inline-flex items-center justify-center rounded-full border border-transparent bg-transparent px-3 text-[13px] font-semibold text-[var(--nx-text-secondary)] no-underline transition-colors duration-150 hover:border-[var(--nx-rule)] hover:bg-[var(--nx-muted-surface)] hover:text-[var(--nx-text)]`;
   const menuItemClass = `${focusClass} flex min-h-11 items-center border-b border-[var(--nx-rule-quiet)] px-[9px] text-sm text-[var(--nx-text-secondary)] no-underline hover:text-[var(--nx-purple)]`;
 
   if (!authReady) {
     return (
-      <div className={`${wrapperClass} text-[12px] font-semibold tracking-[0.055em] text-[var(--nx-text-muted)]`} role="status">
+      <div
+        className={`${wrapperClass} text-[12px] font-semibold tracking-[0.055em] text-[var(--nx-text-muted)]`}
+        role="status"
+      >
         ACCOUNT / CHECKING
       </div>
     );
@@ -110,12 +139,23 @@ export default function PublicAccountState({ mobile = false, compact = false }) 
 
   if (!account) {
     if (compact) {
-      return <a className={`${focusClass} inline-flex h-11 items-center rounded-full border border-[var(--nx-rule)] bg-[var(--nx-card)] px-3 text-xs font-semibold text-[var(--nx-text)] no-underline shadow-[var(--nx-shadow-control)] md:h-9`} href="/signin">Sign in</a>;
+      return (
+        <a
+          className={`${focusClass} inline-flex h-11 items-center rounded-full border border-[var(--nx-rule)] bg-[var(--nx-card)] px-3 text-xs font-semibold text-[var(--nx-text)] no-underline shadow-[var(--nx-shadow-control)] md:h-9`}
+          href="/signin"
+        >
+          Sign in
+        </a>
+      );
     }
     return (
       <div className={wrapperClass}>
-        <a className={secondaryClass} href="/signin">Sign in</a>
-        <a className={primaryClass} href="/signup">Start free</a>
+        <a className={secondaryClass} href="/signin">
+          Sign in
+        </a>
+        <a className={primaryClass} href="/signup">
+          Start free
+        </a>
       </div>
     );
   }
@@ -123,20 +163,36 @@ export default function PublicAccountState({ mobile = false, compact = false }) 
   return (
     <div className={wrapperClass}>
       <details className="group relative">
-        <summary className={`${secondaryClass} w-full cursor-pointer list-none gap-1.5 [&::-webkit-details-marker]:hidden`}>
+        <summary
+          className={`${secondaryClass} w-full cursor-pointer list-none gap-1.5 [&::-webkit-details-marker]:hidden`}
+        >
           Account
           {supportUnreadCount > 0 ? (
-            <span className="inline-flex min-w-5 items-center justify-center border border-[var(--nx-rule)] px-1.5 text-[11px] font-bold text-[var(--nx-warning)]" aria-label={`${supportUnreadCount} unread support ${supportUnreadCount === 1 ? "reply" : "replies"}`}>
+            <span
+              className="inline-flex min-w-5 items-center justify-center border border-[var(--nx-rule)] px-1.5 text-[11px] font-bold text-[var(--nx-warning)]"
+              aria-label={`${supportUnreadCount} unread support ${supportUnreadCount === 1 ? "reply" : "replies"}`}
+            >
               {supportUnreadCount > 99 ? "99+" : supportUnreadCount}
             </span>
           ) : null}
-          <span aria-hidden="true" className="text-[10px] text-[var(--nx-text-muted)]">/</span>
+          <span
+            aria-hidden="true"
+            className="text-[10px] text-[var(--nx-text-muted)]"
+          >
+            /
+          </span>
         </summary>
-        <div className={mobile
-          ? "mt-[9px] border border-[var(--nx-rule)] bg-[var(--nx-work)] p-[9px]"
-          : "absolute right-0 top-12 z-50 w-64 border border-[var(--nx-rule)] bg-[var(--nx-work)] p-[9px]"
-        }>
-          <p className="truncate border-b border-[var(--nx-rule)] px-[9px] pb-[9px] pt-[5px] text-xs text-[var(--nx-text-muted)]" title={account.email}>
+        <div
+          className={
+            mobile
+              ? "mt-[9px] border border-[var(--nx-rule)] bg-[var(--nx-work)] p-[9px]"
+              : "absolute right-0 top-12 z-50 w-64 border border-[var(--nx-rule)] bg-[var(--nx-work)] p-[9px]"
+          }
+        >
+          <p
+            className="truncate border-b border-[var(--nx-rule)] px-[9px] pb-[9px] pt-[5px] text-xs text-[var(--nx-text-muted)]"
+            title={account.email}
+          >
             {account.email}
           </p>
           <a className={`${menuItemClass} mt-1`} href="/settings?tab=roblox">
@@ -148,7 +204,10 @@ export default function PublicAccountState({ mobile = false, compact = false }) 
           <a className={menuItemClass} href="/settings">
             Settings
           </a>
-          <a className={`${menuItemClass} justify-between gap-3`} href="/support">
+          <a
+            className={`${menuItemClass} justify-between gap-3`}
+            href="/support"
+          >
             <span>Support</span>
             {supportUnreadCount > 0 ? (
               <span className="inline-flex min-w-5 items-center justify-center border border-[var(--nx-rule)] px-1.5 text-[11px] font-bold text-[var(--nx-warning)]">
@@ -165,13 +224,20 @@ export default function PublicAccountState({ mobile = false, compact = false }) 
             {signOutState === "loading" ? "Signing out…" : "Sign out"}
           </button>
           {signOutState === "error" ? (
-            <p className="px-[9px] pb-[5px] pt-[9px] text-xs text-[var(--nx-danger)]" role="status">
+            <p
+              className="px-[9px] pb-[5px] pt-[9px] text-xs text-[var(--nx-danger)]"
+              role="status"
+            >
               Could not sign out. Try again.
             </p>
           ) : null}
         </div>
       </details>
-      {!compact ? <a className={primaryClass} href="/ai">Open workspace</a> : null}
+      {!compact ? (
+        <a className={primaryClass} href="/ai">
+          Open workspace
+        </a>
+      ) : null}
     </div>
   );
 }

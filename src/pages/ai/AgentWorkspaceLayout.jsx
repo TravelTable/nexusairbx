@@ -2180,10 +2180,13 @@ export default function AgentWorkspaceLayout({
                   prompt={prompt}
                   setPrompt={setPrompt}
                   quickScript={quickScript}
+                  studioConnected={Boolean(studio?.connected)}
                   user={user}
                   authReady={authReady}
-                  onGenerate={() =>
-                    runQuickScript(prompt, { source: "composer" })
+                  onGenerate={(generationPrompt) =>
+                    runQuickScript(generationPrompt || prompt, {
+                      source: "composer",
+                    })
                   }
                   onRetry={() =>
                     runQuickScript(quickScript?.prompt || prompt, {

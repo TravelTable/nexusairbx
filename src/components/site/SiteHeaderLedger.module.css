@@ -10,7 +10,9 @@
   gap: var(--nx-space-2);
 }
 
-.accountGroupCompact { gap: var(--nx-space-1); }
+.accountGroupCompact {
+  gap: var(--nx-space-1);
+}
 
 .compactAccountButton,
 .accountGroupCompact .accountButton {
@@ -25,12 +27,16 @@
   background: var(--nx-card);
   color: var(--nx-text-secondary);
   box-shadow: var(--nx-shadow-control);
-  font-size: .75rem;
+  font-size: 0.75rem;
   font-weight: 650;
   text-decoration: none;
 }
 
-.compactPlan { color: var(--nx-purple-strong); font-size: .62rem; text-transform: uppercase; }
+.compactPlan {
+  color: var(--nx-purple-strong);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+}
 
 .textAction,
 .accountButton {
@@ -39,27 +45,56 @@
   align-items: center;
   justify-content: center;
   gap: var(--nx-space-2);
-  padding: 0 var(--nx-space-2);
-  border: 0;
-  border-bottom: 1px solid var(--nx-rule);
+  padding: 0 var(--nx-space-3);
+  border: 1px solid transparent;
+  border-radius: var(--nx-radius-pill);
   background: transparent;
   color: var(--nx-text-secondary);
   cursor: pointer;
   font-size: 0.82rem;
   font-weight: 650;
   text-decoration: none;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease,
+    box-shadow 200ms ease,
+    transform 200ms ease;
+}
+
+.accountButton {
+  border-color: var(--nx-rule);
+  background: var(--nx-card);
+  box-shadow: var(--nx-shadow-control);
 }
 
 .textAction:hover,
 .accountButton:hover,
 .accountButton[aria-expanded="true"] {
-  border-bottom-color: var(--nx-purple-muted);
-  color: var(--nx-purple);
+  border-color: var(--nx-rule-strong);
+  background: var(--nx-muted-surface);
+  color: var(--nx-text);
 }
 
 .primaryAction {
-  border-bottom-color: var(--nx-text-secondary);
-  color: var(--nx-text);
+  border-color: var(--nx-purple-muted);
+  background: var(--nx-purple);
+  color: var(--nx-canvas);
+  box-shadow: var(--nx-shadow-control), var(--nx-inner-highlight);
+  font-weight: 750;
+}
+
+.primaryAction:hover {
+  border-color: var(--nx-purple-strong);
+  background: var(--nx-purple-strong);
+  color: var(--nx-canvas);
+  box-shadow: var(--nx-shadow-card), var(--nx-inner-highlight);
+  transform: translateY(-1px);
+}
+
+.primaryAction:active {
+  background: var(--nx-purple-muted);
+  transform: translateY(0);
 }
 
 .accountRoot {
@@ -130,9 +165,16 @@
   text-decoration: none;
 }
 
-.menuItem:hover { color: var(--nx-purple); }
-.signOut { width: 100%; color: var(--nx-danger); }
-.signOut:hover { color: #eca6a0; }
+.menuItem:hover {
+  color: var(--nx-purple);
+}
+.signOut {
+  width: 100%;
+  color: var(--nx-danger);
+}
+.signOut:hover {
+  color: #eca6a0;
+}
 
 .robloxRecord {
   display: grid;
@@ -155,8 +197,13 @@
   cursor: pointer;
 }
 
-.robloxRecord button:hover { color: var(--nx-purple); }
-.robloxRecord button:disabled { color: var(--nx-text-disabled); cursor: wait; }
+.robloxRecord button:hover {
+  color: var(--nx-purple);
+}
+.robloxRecord button:disabled {
+  color: var(--nx-text-disabled);
+  cursor: wait;
+}
 
 .error {
   grid-column: 1 / -1;
@@ -189,11 +236,21 @@
 }
 
 @media (max-width: 480px) {
-  .compactPlan { display: none; }
+  .compactPlan {
+    display: none;
+  }
   .compactAccountButton,
-  .accountGroupCompact .accountButton { width: 44px; padding: 0; overflow: hidden; font-size: 0; }
+  .accountGroupCompact .accountButton {
+    width: 44px;
+    padding: 0;
+    overflow: hidden;
+    font-size: 0;
+  }
   .compactAccountButton::before,
-  .accountGroupCompact .accountButton::before { font-size: .78rem; content: "You"; }
+  .accountGroupCompact .accountButton::before {
+    font-size: 0.78rem;
+    content: "You";
+  }
 }
 
 @media (max-width: 720px), (pointer: coarse) {
@@ -203,5 +260,16 @@
   .accountButton,
   .menuItem,
   .signOut,
-  .robloxRecord button { min-height: var(--nx-touch-target); }
+  .robloxRecord button {
+    min-height: var(--nx-touch-target);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .textAction,
+  .accountButton,
+  .primaryAction {
+    transition: none;
+    transform: none;
+  }
 }

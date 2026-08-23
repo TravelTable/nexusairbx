@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronDown, Search } from "../../lib/icons";
 import UniversalBrand, { renderLink } from "./UniversalBrand";
 import UniversalCommandMenu from "./UniversalCommandMenu";
 import UniversalSiteIndex from "./UniversalSiteIndex";
@@ -24,6 +25,7 @@ export default function UniversalHeaderFrame({
 }) {
   const [indexOpen, setIndexOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const [resolvedPathname, setResolvedPathname] = useState(pathname);
   const indexButtonRef = useRef(null);
   const searchButtonRef = useRef(null);
@@ -40,8 +42,19 @@ export default function UniversalHeaderFrame({
   }, [pathname]);
 
   useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 8);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
     const handleCommandShortcut = (event) => {
-      if (!((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k")) return;
+      if (!(
+        (event.metaKey || event.ctrlKey) &&
+        event.key.toLowerCase() === "k"
+      ))
+        return;
       event.preventDefault();
       searchButtonRef.current = document.activeElement;
       openSearch();
@@ -52,22 +65,30 @@ export default function UniversalHeaderFrame({
 
   return (
     <>
-      <header className={styles.header} data-universal-header>
+      <header
+        className={styles.header}
+        data-universal-header
+        data-scrolled={scrolled ? "true" : undefined}
+      >
         {before}
         <div className={styles.frame}>
           <div className={styles.left}>
             <UniversalBrand LinkComponent={LinkComponent} />
             <nav className={styles.navigation} aria-label="Primary navigation">
-              {navigation.map((item) => renderLink(
-                LinkComponent,
-                item.href,
-                {
-                  key: item.href,
-                  className: styles.navLink,
-                  "aria-current": isCurrent(resolvedPathname, item.href) ? "page" : undefined,
-                },
-                item.label,
-              ))}
+              {navigation.map((item) =>
+                renderLink(
+                  LinkComponent,
+                  item.href,
+                  {
+                    key: item.href,
+                    className: styles.navLink,
+                    "aria-current": isCurrent(resolvedPathname, item.href)
+                      ? "page"
+                      : undefined,
+                  },
+                  item.label,
+                ),
+              )}
             </nav>
           </div>
           <div className={styles.right}>
@@ -82,7 +103,12 @@ export default function UniversalHeaderFrame({
                 openSearch();
               }}
             >
-              <span aria-hidden="true">⌕</span>
+              <Search
+                className={styles.searchIcon}
+                aria-hidden="true"
+                size={15}
+                strokeWidth={2}
+              />
               <span className={styles.searchLabel}>Search</span>
               <kbd className={styles.searchShortcut}>⌘K</kbd>
             </button>
@@ -99,7 +125,13 @@ export default function UniversalHeaderFrame({
                 setIndexOpen(true);
               }}
             >
-              Tools
+              <span>Tools</span>
+              <ChevronDown
+                className={styles.indexChevron}
+                aria-hidden="true"
+                size={13}
+                strokeWidth={2}
+              />
             </button>
             <button
               type="button"
@@ -112,7 +144,13 @@ export default function UniversalHeaderFrame({
                 setIndexOpen(true);
               }}
             >
-              Tools
+              <span>Tools</span>
+              <ChevronDown
+                className={styles.indexChevron}
+                aria-hidden="true"
+                size={13}
+                strokeWidth={2}
+              />
             </button>
           </div>
         </div>

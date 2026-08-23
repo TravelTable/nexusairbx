@@ -12,7 +12,8 @@ jest.mock("../../components/ai/QuickScriptCodeBlock", () => ({
 const result = {
   title: "Damage part",
   scriptType: "Script",
-  studioLocation: "ServerScriptService/VeryLongFolderName/DamagePartHandler.server.lua",
+  studioLocation:
+    "ServerScriptService/VeryLongFolderName/DamagePartHandler.server.lua",
   code: "print('ready')",
   requiredObjects: ["A part named DamagePart"],
   setup: ["Place this script in ServerScriptService"],
@@ -56,10 +57,22 @@ describe("QuickScriptWorkspace", () => {
         name: "Build one focused Roblox script",
       }),
     ).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /damages players when they touch/i }));
+    const workflow = screen.getByRole("list", {
+      name: "Quick Script workflow",
+    });
+    expect(workflow).toHaveTextContent("Describe");
+    expect(workflow).toHaveTextContent("Generate");
+    expect(workflow).toHaveTextContent("Review");
+    expect(workflow).toHaveTextContent("Studio");
+    expect(
+      screen.getByText("Ready to review, not just paste."),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: /damages players when they touch/i }),
+    );
 
     expect(props.setPrompt).toHaveBeenCalledWith(
-      "Make a Script that damages players when they touch a part named DamagePart."
+      "Make a Script that damages players when they touch a part named DamagePart.",
     );
   });
 
@@ -72,13 +85,25 @@ describe("QuickScriptWorkspace", () => {
 
     fireEvent.keyDown(prompt, { key: "Enter" });
     const generate = screen.getByRole("button", { name: "Generate script" });
-    expect(generate.className).toContain("h-11");
-    expect(generate.className).toContain("px-4");
-    expect(generate.className).not.toContain("md:h-10");
-    expect(prompt.className).toContain("min-h-[52px]");
+    expect(generate).toHaveClass("quick-script-submit");
+    expect(prompt.className).toContain("min-h-[84px]");
     expect(generate).toHaveTextContent("Generate script");
     fireEvent.click(generate);
     expect(props.onGenerate).toHaveBeenCalledTimes(2);
+  });
+
+  test("adds an explicit script target to generation without rewriting the draft", () => {
+    const { props } = renderWorkspace({ prompt: "Open an inventory panel" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Local", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "Generate script" }));
+
+    expect(
+      screen.getByRole("textbox", { name: "Quick Script prompt" }),
+    ).toHaveValue("Open an inventory panel");
+    expect(props.onGenerate).toHaveBeenCalledWith(
+      "Open an inventory panel\n\nReturn a Roblox LocalScript.",
+    );
   });
 
   test("announces generation progress and disables prompt actions", () => {
@@ -89,8 +114,12 @@ describe("QuickScriptWorkspace", () => {
     });
 
     expect(screen.getAllByText("Validating Luau").length).toBeGreaterThan(0);
-    expect(screen.getByRole("textbox", { name: "Quick Script prompt" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Generation in progress" })).toBeDisabled();
+    expect(
+      screen.getByRole("textbox", { name: "Quick Script prompt" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Generation in progress" }),
+    ).toBeDisabled();
     expect(screen.getByRole("button", { name: "Improve" })).toBeDisabled();
   });
 
@@ -105,9 +134,13 @@ describe("QuickScriptWorkspace", () => {
     });
 
     expect(screen.getAllByText("Build an inventory system")).toHaveLength(2);
-    expect(screen.getByRole("alert")).toHaveTextContent("This request timed out.");
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "This request timed out.",
+    );
     fireEvent.click(screen.getByRole("button", { name: /Retry/i }));
-    fireEvent.click(screen.getByRole("button", { name: /Open as Agent Build/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Open as Agent Build/i }),
+    );
 
     expect(props.onRetry).toHaveBeenCalledTimes(1);
     expect(props.onOpenAgentBuild).toHaveBeenCalledTimes(1);
@@ -122,8 +155,12 @@ describe("QuickScriptWorkspace", () => {
 
     expect(screen.getByTestId("quick-result-pane")).toHaveClass("flex");
     expect(screen.getByTestId("quick-prompt-pane")).toHaveClass("hidden");
-    expect(screen.getByRole("heading", { level: 1, name: "Damage part" })).toBeInTheDocument();
-    expect(screen.getByText(/Sign up to save, export, push to Studio/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Damage part" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Sign up to save, export, push to Studio/i),
+    ).toBeInTheDocument();
     expect(await screen.findByText("print('ready')")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Copy/i }));
@@ -131,7 +168,9 @@ describe("QuickScriptWorkspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "Export" }));
     fireEvent.click(screen.getByRole("button", { name: "Studio" }));
     fireEvent.click(screen.getByRole("button", { name: "Continue editing" }));
-    fireEvent.click(screen.getByRole("button", { name: /Open as Agent Build/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /Open as Agent Build/i }),
+    );
 
     expect(props.onCopy).toHaveBeenCalledTimes(1);
     expect(props.onSave).toHaveBeenCalledTimes(1);
@@ -140,16 +179,30 @@ describe("QuickScriptWorkspace", () => {
     expect(props.onContinueEditing).toHaveBeenCalledTimes(1);
     expect(props.onOpenAgentBuild).toHaveBeenCalledTimes(1);
 
-    fireEvent.mouseDown(screen.getByRole("tab", { name: "Setup" }), { button: 0, ctrlKey: false });
+    fireEvent.mouseDown(screen.getByRole("tab", { name: "Setup" }), {
+      button: 0,
+      ctrlKey: false,
+    });
     expect(screen.getByText("A part named DamagePart")).toBeInTheDocument();
 
-    fireEvent.mouseDown(screen.getByRole("tab", { name: "Diagnostics" }), { button: 0, ctrlKey: false });
-    expect(screen.getByText("Only affects player characters")).toBeInTheDocument();
-    expect(screen.getByText("Assumption: DamagePart already exists")).toBeInTheDocument();
+    fireEvent.mouseDown(screen.getByRole("tab", { name: "Diagnostics" }), {
+      button: 0,
+      ctrlKey: false,
+    });
+    expect(
+      screen.getByText("Only affects player characters"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Assumption: DamagePart already exists"),
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Prompt" }));
-    await waitFor(() => expect(screen.getByTestId("quick-prompt-pane")).toHaveClass("flex"));
-    expect(screen.getByRole("textbox", { name: "Quick Script prompt" })).toHaveValue("Make a damage part");
+    await waitFor(() =>
+      expect(screen.getByTestId("quick-prompt-pane")).toHaveClass("flex"),
+    );
+    expect(
+      screen.getByRole("textbox", { name: "Quick Script prompt" }),
+    ).toHaveValue("Make a damage part");
   });
 
   test("does not flash anonymous guidance while auth is resolving", async () => {
@@ -159,7 +212,9 @@ describe("QuickScriptWorkspace", () => {
       quickScript: { status: "success", prompt: "Make a damage part", result },
     });
 
-    expect(screen.queryByText(/Sign up to save, export, push to Studio/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Sign up to save, export, push to Studio/i),
+    ).not.toBeInTheDocument();
     expect(await screen.findByText("print('ready')")).toBeInTheDocument();
   });
 
@@ -172,13 +227,16 @@ describe("QuickScriptWorkspace", () => {
         status: "adjusted",
         requiredContext: "client",
         findings: [],
-        adjustments: [{
-          field: "className",
-          oldValue: "Script",
-          newValue: "LocalScript",
-          ruleCode: "CLIENT_API_ON_SERVER",
-          message: "Adjusted Script → LocalScript because this code uses player input.",
-        }],
+        adjustments: [
+          {
+            field: "className",
+            oldValue: "Script",
+            newValue: "LocalScript",
+            ruleCode: "CLIENT_API_ON_SERVER",
+            message:
+              "Adjusted Script → LocalScript because this code uses player input.",
+          },
+        ],
       },
     };
     const view = renderWorkspace({
@@ -186,31 +244,37 @@ describe("QuickScriptWorkspace", () => {
     });
 
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Adjusted Script → LocalScript because this code uses player input."
+      "Adjusted Script → LocalScript because this code uses player input.",
     );
     expect(screen.getByRole("button", { name: "Studio" })).toBeEnabled();
 
-    view.rerender(<QuickScriptWorkspace
-      {...view.props}
-      quickScript={{
-        status: "success",
-        result: {
-          ...adjusted,
-          validation: {
-            status: "blocked",
-            requiredContext: "mixed",
-            findings: [{
-              code: "MIXED_RUNTIME_CONTEXT",
-              severity: "error",
-              explanation: "Client and server behavior must be split.",
-            }],
-            adjustments: [],
+    view.rerender(
+      <QuickScriptWorkspace
+        {...view.props}
+        quickScript={{
+          status: "success",
+          result: {
+            ...adjusted,
+            validation: {
+              status: "blocked",
+              requiredContext: "mixed",
+              findings: [
+                {
+                  code: "MIXED_RUNTIME_CONTEXT",
+                  severity: "error",
+                  explanation: "Client and server behavior must be split.",
+                },
+              ],
+              adjustments: [],
+            },
           },
-        },
-      }}
-    />);
+        }}
+      />,
+    );
 
-    expect(screen.getByRole("alert")).toHaveTextContent("Client and server behavior must be split.");
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Client and server behavior must be split.",
+    );
     expect(screen.getByRole("button", { name: "Studio" })).toBeDisabled();
   });
 });
