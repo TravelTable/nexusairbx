@@ -14,7 +14,6 @@ import {
   Loader2,
   LogOut,
   Menu,
-  Palette,
   RefreshCcw,
   Save,
   Settings,
@@ -47,7 +46,6 @@ import BrutalAuditor from "../components/ai/BrutalAuditor";
 import FreeUsageMeter from "../components/FreeUsageMeter";
 import ProNudgeModal from "../components/ProNudgeModal";
 import SettingsSignInAction from "../components/settings/SettingsSignInAction";
-import AppearanceSelector from "../components/settings/AppearanceSelector";
 import { Alert, AlertDescription, AlertTitle } from "../components/shadcn/alert";
 import {
   AlertDialog,
@@ -60,7 +58,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../components/shadcn/alert-dialog";
-import { Badge } from "../components/shadcn/badge";
 import { Button as BaseButton } from "../components/shadcn/button";
 import { CardContent, CardDescription, CardHeader, CardTitle } from "../components/shadcn/card";
 import { Input } from "../components/shadcn/input";
@@ -87,10 +84,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Textarea } from "../components/shadcn/textarea";
 import { cn } from "../lib/utils";
 import { resolveSettingsTab } from "../lib/settingsNavigation";
+import "./SettingsLedger.css";
 
 const NAV_ITEMS = [
   { id: "overview", label: "Overview", icon: Activity },
-  { id: "appearance", label: "Appearance", icon: Palette },
+  { id: "appearance", label: "Interface", icon: Settings },
   { id: "ai", label: "AI", icon: Bot },
   { id: "roblox", label: "Roblox + Studio", icon: PlugZap },
   { id: "billing", label: "Billing", icon: CreditCard },
@@ -105,8 +103,8 @@ const SECTION_META = {
     description: "Check service readiness, recent usage, and the settings that affect your workspace.",
   },
   appearance: {
-    label: "Appearance",
-    description: "Choose how NexusRBX looks on this device. System follows your operating-system preference.",
+    label: "Interface",
+    description: "Review the fixed Dark Build Ledger interface and accessibility behavior.",
   },
   ai: {
     label: "AI",
@@ -309,20 +307,20 @@ function SaveStatus({ status, error, lastSavedAt, onRetry }) {
   if (status === "saving") {
     return (
       <div role="status" aria-live="polite" aria-atomic="true">
-        <Badge variant="outline" className="gap-1.5 border-accent/35 text-accent">
+        <span className="settings-ledger-state" data-tone="info">
           <Loader2 className="h-3 w-3 animate-spin" />
           Saving changes…
-        </Badge>
+        </span>
       </div>
     );
   }
   if (status === "error") {
     return (
       <div className="flex flex-wrap items-center justify-end gap-2" role="alert" aria-live="assertive">
-        <Badge variant="destructive" className="gap-1.5">
+        <span className="settings-ledger-state" data-tone="danger">
           <AlertTriangle className="h-3 w-3" />
           Save failed
-        </Badge>
+        </span>
         {error && <span className="max-w-[20rem] text-xs text-muted-foreground">{error}</span>}
         <Button type="button" size="sm" variant="outline" onClick={onRetry}>
           <RefreshCcw className="h-4 w-4" />
@@ -334,20 +332,20 @@ function SaveStatus({ status, error, lastSavedAt, onRetry }) {
   if (status === "saved") {
     return (
       <div role="status" aria-live="polite" aria-atomic="true">
-        <Badge
-          variant="outline"
-          className="gap-1.5 border-[var(--ds-success-border)] bg-[var(--ds-success-soft)] text-[var(--ds-success)]"
+        <span
+          className="settings-ledger-state"
+          data-tone="success"
           title={lastSavedAt ? `Last saved ${formatDate(lastSavedAt)}` : undefined}
         >
           <CheckCircle2 className="h-3 w-3" />
           All changes saved
-        </Badge>
+        </span>
       </div>
     );
   }
   return (
     <div role="status" aria-live="polite" aria-atomic="true">
-      <Badge variant="secondary">Changes save automatically</Badge>
+      <span className="settings-ledger-state">Changes save automatically</span>
     </div>
   );
 }
@@ -1060,19 +1058,16 @@ export default function SettingsPage() {
   const renderAppearance = () => (
     <div className="space-y-6">
       <Panel
-        title="Color appearance"
-        description="NexusRBX applies this choice before the page paints, including the public site and AI workspace."
+        title="Dark Build Ledger"
+        description="NexusRBX uses one durable dark identity across the public site, AI workspace, tools, and account records."
       >
-        <AppearanceSelector
-          value={settings.theme}
-          onChange={(theme) => updateSetting({ theme })}
-          disabled={saveStatus === "saving"}
-        />
-        <p className="mt-4 text-sm leading-6 text-muted-foreground">
-          {user
-            ? "Your appearance preference syncs with your NexusRBX account and remains available on this device."
-            : "This preference is saved on this device. Sign in when you want it synchronized with your account."}
-        </p>
+        <dl className="settings-interface-record">
+          <div><dt>Surface</dt><dd>Warm graphite and plum-brown</dd></div>
+          <div><dt>Text ink</dt><dd>Muted purple for headings and authored emphasis</dd></div>
+          <div><dt>Motion</dt><dd>Meaning-led state changes; reduced-motion preferences are respected</dd></div>
+          <div><dt>Contrast</dt><dd>Keyboard focus and increased-contrast modes remain first-class</dd></div>
+        </dl>
+        <p className="mt-4 text-sm leading-6 text-muted-foreground">Previously stored appearance preferences remain safe but no longer change the product into a separate visual identity.</p>
         {!user && <div className="mt-4"><SettingsSignInAction /></div>}
       </Panel>
     </div>
@@ -1162,13 +1157,10 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-3 rounded-lg border border-border p-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <Badge
-                    variant={robloxConnected ? "outline" : "secondary"}
-                    className={robloxConnected ? "border-[var(--ds-success-border)] bg-[var(--ds-success-soft)] text-[var(--ds-success)]" : undefined}
-                  >
+                  <span className="settings-ledger-state" data-tone={robloxConnected ? "success" : "neutral"}>
                     {robloxConnected ? "Connected" : "Disconnected"}
-                  </Badge>
-                  {selectedCreator && <Badge variant="outline">{selectedCreator.type} {selectedCreator.id}</Badge>}
+                  </span>
+                  {selectedCreator && <span className="settings-ledger-term">{selectedCreator.type} {selectedCreator.id}</span>}
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">
                   {robloxConnected
@@ -1283,9 +1275,9 @@ export default function SettingsPage() {
                     <div className="flex min-h-10 flex-wrap gap-2 rounded-md border border-border bg-muted/20 p-2">
                       {grantedScopes.length > 0 ? (
                         grantedScopes.slice(0, 10).map((scope) => (
-                          <Badge key={scope} variant="outline">
+                          <span key={scope} className="settings-ledger-term">
                             {scope}
-                          </Badge>
+                          </span>
                         ))
                       ) : (
                         <span className="text-sm text-muted-foreground">No OAuth scopes reported.</span>
@@ -1364,9 +1356,9 @@ export default function SettingsPage() {
                   <div className="flex min-h-10 flex-wrap gap-2 rounded-md border border-border bg-muted/20 p-2">
                     {(robloxStatus?.capabilities?.granted || []).length > 0 ? (
                       robloxStatus.capabilities.granted.slice(0, 8).map((capability) => (
-                        <Badge key={capability.id || capability.label || capability} variant="outline">
+                        <span key={capability.id || capability.label || capability} className="settings-ledger-term">
                           {capability.label || capability.id || capability}
-                        </Badge>
+                        </span>
                       ))
                     ) : (
                       <span className="text-sm text-muted-foreground">No scoped capabilities found.</span>
@@ -1415,7 +1407,7 @@ export default function SettingsPage() {
               {robloxState.operations.map((operation) => (
                 <TableRow key={operation.id || operation.operationId || operation.createdAt}>
                   <TableCell>{operation.operationId || operation.type || operation.id || "Operation"}</TableCell>
-                  <TableCell><Badge variant="outline">{operation.status || operation.state || "Unknown"}</Badge></TableCell>
+                  <TableCell><span className="settings-ledger-state">{operation.status || operation.state || "Unknown"}</span></TableCell>
                   <TableCell>{formatDate(operation.updatedAt || operation.createdAt)}</TableCell>
                 </TableRow>
               ))}
@@ -1496,7 +1488,7 @@ export default function SettingsPage() {
               {teamState.teams.map((team) => (
                 <TableRow key={team.id}>
                   <TableCell>{team.name || "Untitled team"}</TableCell>
-                  <TableCell><Badge variant="outline">{team.ownerId === user?.uid ? "Owner" : "Member"}</Badge></TableCell>
+                  <TableCell><span className="settings-ledger-state">{team.ownerId === user?.uid ? "Owner" : "Member"}</span></TableCell>
                   <TableCell>{Array.isArray(team.members) ? team.members.length : 1}</TableCell>
                 </TableRow>
               ))}
@@ -1686,13 +1678,14 @@ export default function SettingsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-10 px-4 py-12 sm:px-8 sm:py-16 lg:gap-14 lg:px-14 lg:py-20">
-        <header className="flex flex-col gap-7 border-b border-border/70 pb-9 lg:flex-row lg:items-end lg:justify-between">
+    <main className="settings-ledger-page min-h-screen bg-background text-foreground">
+      <div className="settings-ledger-shell mx-auto flex w-full max-w-[1280px] flex-col gap-10 px-4 py-12 sm:px-8 sm:py-16 lg:gap-14 lg:px-14 lg:py-20">
+        <header className="settings-ledger-header flex flex-col gap-7 border-b border-border/70 pb-9 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex items-start gap-4">
             <Settings className="mt-1 h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
             <div>
-              <h1 className="font-[var(--ds-font-display)] text-4xl font-semibold leading-tight tracking-[-0.04em] sm:text-5xl">Settings</h1>
+              <p className="settings-ledger-phase">ACCOUNT RECORD / SETTINGS</p>
+              <h1 className="font-[var(--ds-font-display)] text-4xl font-semibold leading-tight tracking-[-0.04em] sm:text-5xl">Set the operating rules.</h1>
               <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
                 Configure AI defaults, Roblox consent, billing, team access, and account data from one place.
               </p>

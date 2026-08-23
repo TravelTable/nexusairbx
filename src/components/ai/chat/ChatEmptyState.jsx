@@ -1,25 +1,19 @@
 import React from "react";
-import { ArrowRight, LayoutGrid } from "lib/icons";
-import NexusDisplayIcon from "../../icons/NexusDisplayIcon";
-
 const STARTERS = [
   {
-    eyebrow: "Start a game",
-    title: "Design a complete simulator loop",
+    phase: "NEW WORLD",
+    title: "Design a simulator loop",
     prompt: "Plan a Roblox simulator with a satisfying upgrade loop, retention systems, monetization options, and a small first version I can playtest today.",
-    displayIcon: "build",
   },
   {
-    eyebrow: "Build a system",
-    title: "Add an inventory that fits my game",
+    phase: "CHANGE SET",
+    title: "Add an inventory that fits this game",
     prompt: "Inspect my project and build an inventory UI that matches the existing visual style, works on mobile, and saves player items safely.",
-    displayIcon: "edit",
   },
   {
-    eyebrow: "Debug with context",
+    phase: "FAULT REPORT",
     title: "Find the break, fix it, prove it",
     prompt: "Inspect my paired Studio place, trace the broken gameplay flow, fix it safely, and show the playtest evidence before I approve the result.",
-    displayIcon: "debug",
   },
 ];
 
@@ -94,15 +88,12 @@ export default function ChatEmptyState({
     <div className="chat-empty-state">
       <section className="chat-empty-state__inner" aria-labelledby="workspace-start-title">
         <div className="chat-empty-state__intro">
-          <div className="chat-empty-state__art">
-            <NexusDisplayIcon name="build" className="chat-empty-state__mark" size={112} loading="eager" />
-          </div>
           <div className="chat-empty-state__copy">
-            <p className="chat-empty-state__eyebrow">Conversational Roblox production</p>
-            <h1 id="workspace-start-title">Build anything in Roblox.</h1>
+            <p className="chat-empty-state__eyebrow">REQUEST / 000 — OPEN</p>
+            <h1 id="workspace-start-title">What are we changing?</h1>
             <p>
-              Describe the game, system, interface, or bug. Nexus can inspect the project,
-              plan the change, build it safely, and carry it through a real playtest.
+              Name the game, system, interface, or fault. Nexus will read the paired project,
+              plan the change, record every file it touches, and return test evidence for review.
             </p>
           </div>
         </div>
@@ -130,9 +121,6 @@ export default function ChatEmptyState({
               <div>
                 <dt>Studio</dt>
                 <dd>
-                  {!buildContext.studioConnected ? (
-                    <NexusDisplayIcon name="studio-connect" size={32} className="chat-empty-state__context-icon" />
-                  ) : null}
                   <span
                     className="chat-empty-state__status"
                     data-connected={buildContext.studioConnected ? "true" : "false"}
@@ -154,23 +142,21 @@ export default function ChatEmptyState({
               className="chat-empty-state__starter focus-ring"
             >
               <span className="chat-empty-state__starter-copy">
-                <NexusDisplayIcon name={starter.displayIcon} className="chat-empty-state__starter-icon" size={40} />
                 <span>
-                  <small>{starter.eyebrow}</small>
+                  <small>{starter.phase}</small>
                   <strong>{starter.title}</strong>
                 </span>
               </span>
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              <span className="chat-empty-state__starter-action" aria-hidden="true">Load request →</span>
             </button>
           ))}
         </div>
 
         <div className="chat-empty-state__footer">
-          <span>Prototype faster. Understand every change. Ship when it is ready.</span>
+          <span>The project stays readable. Nothing ships without a record.</span>
           {onOpenTemplates ? (
             <button type="button" onClick={onOpenTemplates} className="chat-empty-state__templates focus-ring">
-              <LayoutGrid className="h-3.5 w-3.5" aria-hidden="true" />
-              Browse templates
+              Browse request templates →
             </button>
           ) : null}
         </div>

@@ -57,7 +57,7 @@ export default function CreatorStoreResultCard({ asset, onViewDetails }) {
         <button
           type="button"
           onClick={() => onViewDetails?.(asset)}
-          className="mt-4 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-[var(--ds-border)] bg-transparent px-4 py-2 text-[11px] font-semibold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+          className="mt-4 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-none border-0 border-b border-[var(--ds-border)] bg-transparent px-4 py-2 text-[11px] font-semibold text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)]"
           aria-label={`View details for ${name}`}
         >
           <Eye className="w-3.5 h-3.5" />

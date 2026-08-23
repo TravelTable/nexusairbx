@@ -1,8 +1,12 @@
 import { Analytics } from "@vercel/analytics/react";
-import Script from "next/script";
+import "@fontsource-variable/sofia-sans-condensed/wght.css";
+import "@fontsource-variable/atkinson-hyperlegible-next/wght.css";
+import "@fontsource-variable/atkinson-hyperlegible-mono/wght.css";
 import "./globals.css";
+import "../../src/design/nexus-foundation.css";
+import "../../src/design/nexus-primitives.css";
+import "../../src/design/nexus-motion.css";
 import { buildPublicMetadata, organizationStructuredData } from "../../src/lib/seo";
-import { APPEARANCE_BOOTSTRAP_SCRIPT } from "../../src/lib/appearanceTheme";
 
 export const metadata = {
   ...buildPublicMetadata({
@@ -18,12 +22,9 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-theme="dark" style={{ colorScheme: "dark" }} suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#0b0b0c" />
-        <Script id="nexusrbx-appearance" strategy="beforeInteractive">
-          {APPEARANCE_BOOTSTRAP_SCRIPT}
-        </Script>
+        <meta name="theme-color" content="#1a1618" />
       </head>
       <body>
         {children}

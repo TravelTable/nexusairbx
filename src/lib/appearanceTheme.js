@@ -2,7 +2,7 @@ import { SETTINGS_STORAGE_KEY } from "./settingsSchema";
 
 export const APPEARANCE_THEMES = Object.freeze(["system", "dark", "light"]);
 export const DEFAULT_APPEARANCE_THEME = "system";
-export const DARK_THEME_COLOR = "#0b0b0c";
+export const DARK_THEME_COLOR = "#1a1618";
 export const LIGHT_THEME_COLOR = "#f7f7f4";
 
 export function normalizeAppearanceTheme(value) {
@@ -44,22 +44,23 @@ export function readStoredAppearanceTheme(
 }
 
 export function applyResolvedAppearanceTheme(
-  preference,
+  _preference,
   {
     documentObject = browserDocument(),
-    matchMedia = browserMatchMedia(),
+    matchMedia: _matchMedia = browserMatchMedia(),
   } = {}
 ) {
-  const resolved = resolveAppearanceTheme(preference, matchMedia);
+  // Stored preferences remain readable for backwards compatibility, but the
+  // rebuilt product intentionally renders as one authored dark environment.
+  const resolved = "dark";
   const root = documentObject?.documentElement;
   if (!root) return resolved;
 
   root.dataset.theme = resolved;
   root.style.colorScheme = resolved;
-  const themeColor = resolved === "dark" ? DARK_THEME_COLOR : LIGHT_THEME_COLOR;
   documentObject
     .querySelectorAll?.('meta[name="theme-color"]')
-    .forEach((node) => node.setAttribute("content", themeColor));
+    .forEach((node) => node.setAttribute("content", DARK_THEME_COLOR));
   return resolved;
 }
 
@@ -72,48 +73,15 @@ export function subscribeToAppearanceTheme(
   } = {}
 ) {
   if (!windowObject) return () => {};
-  const normalized = normalizeAppearanceTheme(preference);
-  const media = windowObject.matchMedia?.("(prefers-color-scheme: dark)");
-  const apply = () => {
-    const resolved = applyResolvedAppearanceTheme(normalized, {
-      documentObject,
-      matchMedia: windowObject.matchMedia?.bind(windowObject),
-    });
-    onChange?.(resolved);
-  };
-  apply();
-  if (normalized !== "system" || !media) return () => {};
-
-  media.addEventListener?.("change", apply);
-  if (!media.addEventListener) media.addListener?.(apply);
-  return () => {
-    media.removeEventListener?.("change", apply);
-    if (!media.removeEventListener) media.removeListener?.(apply);
-  };
+  const resolved = applyResolvedAppearanceTheme(preference, { documentObject });
+  onChange?.(resolved);
+  return () => {};
 }
 
 // Kept as a self-contained string so the Next static export can run it before
 // React hydration. public/index.html contains the equivalent minimal bootstrap.
 export const APPEARANCE_BOOTSTRAP_SCRIPT = `(() => {
-  const key = "${SETTINGS_STORAGE_KEY}";
-  const allowed = new Set(["system", "dark", "light"]);
-  const read = () => {
-    try {
-      const value = JSON.parse(localStorage.getItem(key) || "{}").theme;
-      return allowed.has(value) ? value : "system";
-    } catch { return "system"; }
-  };
-  const resolve = (value) => value === "system"
-    ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
-    : value;
-  const apply = () => {
-    const theme = resolve(read());
-    document.documentElement.dataset.theme = theme;
-    document.documentElement.style.colorScheme = theme;
-    const color = theme === "dark" ? "${DARK_THEME_COLOR}" : "${LIGHT_THEME_COLOR}";
-    document.querySelectorAll('meta[name="theme-color"]').forEach((node) => node.setAttribute("content", color));
-  };
-  apply();
-  matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", apply);
-  addEventListener("storage", (event) => { if (event.key === key) apply(); });
+  document.documentElement.dataset.theme = "dark";
+  document.documentElement.style.colorScheme = "dark";
+  document.querySelectorAll('meta[name="theme-color"]').forEach((node) => node.setAttribute("content", "${DARK_THEME_COLOR}"));
 })();`;

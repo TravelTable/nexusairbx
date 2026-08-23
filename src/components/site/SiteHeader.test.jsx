@@ -38,16 +38,17 @@ test("makes the homepage skip link the first keyboard target", () => {
 
   userEvent.tab();
   expect(document.activeElement).toBe(skipLink);
-  expect(screen.getByRole("link", { name: "NexusRBX home" }).className).toContain("min-w-11");
-  expect(screen.getByRole("button", { name: "Open navigation" }).className).toContain("h-11");
-  expect(document.querySelector("header").className).toContain("sticky");
-  expect(screen.getByRole("navigation", { name: "Homepage navigation" })).toBeTruthy();
-  expect(screen.getByRole("link", { name: "Product" }).getAttribute("href")).toBe("/#product");
-  expect(screen.getByRole("link", { name: "How it works" }).getAttribute("href")).toBe("/#workflow");
-  expect(screen.getByRole("link", { name: "Studio" }).getAttribute("href")).toBe("/#studio");
-  expect(screen.getByRole("link", { name: "Pricing" }).getAttribute("href")).toBe("/pricing");
-  expect(screen.getByRole("link", { name: "Start building" }).getAttribute("href")).toBe("/ai");
-  expect(screen.getByRole("link", { name: "NexusRBX home" }).querySelector("img").getAttribute("src")).toBe(
-    "/nexus-mark.svg",
-  );
+  const homeLink = screen.getByRole("link", { name: "NexusRBX home" });
+  expect(homeLink.getAttribute("href")).toBe("/");
+  expect(homeLink.textContent).toContain("NEXUS/RBX");
+  expect(screen.getByRole("navigation", { name: "Primary navigation" })).toBeTruthy();
+  expect(screen.getByRole("link", { name: "BUILD" }).getAttribute("href")).toBe("/ai");
+  expect(screen.getByRole("link", { name: "TOOLS" }).getAttribute("href")).toBe("/tools/icon-generator");
+  expect(screen.getByRole("link", { name: "DOCS" }).getAttribute("href")).toBe("/docs");
+  expect(screen.getByRole("link", { name: "PRICING" }).getAttribute("href")).toBe("/pricing");
+
+  const indexButton = screen.getAllByRole("button", { name: /index/i })[0];
+  userEvent.click(indexButton);
+  expect(screen.getByRole("dialog", { name: "NexusRBX site index" })).toBeTruthy();
+  expect(screen.getByRole("link", { name: "Legal documents" }).getAttribute("href")).toBe("/legal");
 });

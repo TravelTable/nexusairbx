@@ -5,6 +5,7 @@ import { Input } from "../shadcn/input";
 import { Label } from "../shadcn/label";
 import { Separator } from "../shadcn/separator";
 import { cn } from "../../lib/utils";
+import "./AuthLedger.css";
 
 export function NexusAuthShell({
   title,
@@ -19,34 +20,47 @@ export function NexusAuthShell({
       data-nexus-surface="auth"
       className="min-h-dvh overflow-x-hidden bg-[var(--ds-bg-canvas)] text-[var(--ds-text)]"
     >
-      <main className="flex min-h-dvh items-center justify-center px-5 py-10 sm:px-8 sm:py-16">
-        <section className="w-full max-w-[28rem]">
+      <main id="main-content" className="nexus-auth-layout">
+        <aside className="nexus-auth-record" aria-label="NexusRBX access record">
           <Link
             to="/"
             aria-label="NexusRBX home"
-            className="focus-ring mx-auto mb-10 flex min-h-11 w-fit items-center gap-3 rounded-[10px] px-2 py-1.5 text-left sm:mb-12"
+            className="nexus-auth-brand focus-ring"
           >
-            <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-1)]">
-              <img src="/nexus-mark.svg" alt="" className="h-7 w-7 object-contain" />
-            </span>
             <span className="grid leading-tight">
-              <span className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--ds-text)]">NexusRBX</span>
+              <span className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--ds-text)]">NEXUS/RBX</span>
               <span className="mt-0.5 text-[11px] font-medium text-[var(--ds-text-muted)]">Roblox production studio</span>
             </span>
           </Link>
 
-          <header className="mb-8 text-center">
-            <Heading className="font-[var(--ds-font-display)] text-[2rem] font-semibold leading-[1.08] tracking-[-0.035em] text-[var(--ds-text)] sm:text-[2.25rem]">
+          <div className="nexus-auth-record__copy">
+            <p>ACCESS RECORD / CREATOR</p>
+            <h2>A known creator. A readable project.</h2>
+            <p>Authentication protects project context, build history, Studio permissions, and the evidence returned for review.</p>
+          </div>
+
+          <ol className="nexus-auth-record__index">
+            <li><span>01</span>Project context</li>
+            <li><span>02</span>Change record</li>
+            <li><span>03</span>Test evidence</li>
+          </ol>
+        </aside>
+
+        <section className="nexus-auth-form">
+
+          <header className="nexus-auth-form__header">
+            <p>ACCOUNT / CONTINUE</p>
+            <Heading>
               {title}
             </Heading>
             {description ? (
-              <p className="mx-auto mt-3 max-w-[25rem] text-[15px] leading-6 text-[var(--ds-text-muted)]">
+              <div className="nexus-auth-form__description">
                 {description}
-              </p>
+              </div>
             ) : null}
           </header>
 
-          <div className="border-t border-[var(--ds-border-subtle)] pt-7 sm:pt-8">
+          <div className="nexus-auth-form__body">
             {children}
           </div>
         </section>
@@ -220,7 +234,7 @@ export function AuthPasswordField({
           type="button"
           variant="ghost"
           size="icon"
-          className="absolute right-0 top-1/2 h-12 w-12 -translate-y-1/2 rounded-full text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
+      className="absolute right-0 top-1/2 h-12 w-12 -translate-y-1/2 rounded-md text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
           onClick={onToggle}
           disabled={disabled}
           aria-label={shown ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}

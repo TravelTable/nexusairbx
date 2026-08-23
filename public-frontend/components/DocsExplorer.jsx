@@ -135,7 +135,7 @@ async function writeClipboard(value) {
   textarea.value = value;
   textarea.setAttribute("readonly", "");
   textarea.style.position = "fixed";
-  textarea.style.left = "-9999px";
+  textarea.style.left = "-9999px"; // design-guard-allow: off-screen clipboard fallback, not a radius
   textarea.style.top = "0";
   document.body.appendChild(textarea);
   textarea.select();
@@ -872,7 +872,7 @@ export default function DocsExplorer({
 
   return (
     <div className={cx("docs-shell", styles.docsShell, mode === "legal" && "docs-shell-legal")}>
-      <a className="docs-skip-link" href="#content">Skip to documentation</a>
+      <a className="docs-skip-link" href="#main-content">Skip to documentation</a>
       <div className="docs-public-header">
         <PublicHeader />
       </div>
@@ -936,7 +936,7 @@ export default function DocsExplorer({
           pages={pages}
         />
 
-        <main className="docs-article" id="content">
+        <main className="docs-article" id="main-content">
           <nav className="docs-breadcrumbs" aria-label="Breadcrumb">
             <a href="/">Home</a>
             <ChevronRight aria-hidden="true" size={14} />

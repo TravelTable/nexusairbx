@@ -13,16 +13,9 @@ import {
   formatSupportDate,
   supportCategoryLabel,
   supportStatusLabel,
-  supportStatusTone,
 } from "../lib/supportPresentation";
 import { trackProductEvent } from "../lib/productAnalytics";
-import {
-  editorialDisplayClass,
-  editorialGutterClass,
-  editorialPanelClass,
-  editorialPrimaryButtonClass,
-  editorialSecondaryButtonClass,
-} from "../components/site/editorialUi";
+import "./AccountLedger.css";
 
 export default function SupportTicketPage() {
   const { ticketId } = useParams();
@@ -96,78 +89,91 @@ export default function SupportTicketPage() {
   }
 
   if (!authReady) {
-    return <main className="grid min-h-[70vh] place-items-center bg-[var(--ds-bg-canvas)] text-sm text-[var(--ds-text-muted)]">Loading request…</main>;
+    return <main id="main-content" className="account-ledger-page account-ledger-page--center" role="status">Loading request…</main>;
   }
 
   if (!user) {
     return (
-      <main className={`${editorialGutterClass} min-h-[70vh] bg-[var(--ds-bg-canvas)] py-20 text-[var(--ds-text)] sm:py-28`}>
-        <div className={`${editorialPanelClass} mx-auto max-w-xl p-8 sm:p-12`}>
-          <h1 className={`${editorialDisplayClass} text-5xl`}>Sign in to view this request.</h1>
-          <p className="mt-3 text-sm leading-6 text-[var(--ds-text-muted)]">Only the verified requester and NexusRBX support staff can open this conversation.</p>
-          <Link to="/signin" state={{ from: { pathname: location.pathname } }} className={`${editorialPrimaryButtonClass} mt-8`}>Sign in</Link>
-        </div>
+      <main id="main-content" className="account-ledger-page account-ledger-page--center">
+        <section className="account-ledger-center-state" aria-labelledby="ticket-sign-in-title">
+          <p className="account-ledger-kicker">Private request</p>
+          <h1 id="ticket-sign-in-title" className="account-ledger-title account-ledger-title--compact">Sign in to view this request.</h1>
+          <p className="account-ledger-intro">Only the verified requester and NexusRBX support staff can open this conversation.</p>
+          <Link to="/signin" state={{ from: { pathname: location.pathname } }} className="account-ledger-link account-ledger-link--primary">Sign in</Link>
+        </section>
       </main>
     );
   }
 
   return (
-    <main className={`${editorialGutterClass} min-h-[calc(100vh-4rem)] bg-[var(--ds-bg-canvas)] py-14 text-[var(--ds-text)] sm:py-20`}>
-      <div className="mx-auto max-w-5xl">
-        <Link to="/support" className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]">← All requests</Link>
+    <main id="main-content" className="account-ledger-page">
+      <div className="account-ledger-wrap account-ledger-wrap--narrow">
+        <Link to="/support" className="account-ledger-back">← All requests</Link>
 
-        {state.error && <div role="alert" className="mt-6 rounded-lg border border-[color-mix(in_srgb,var(--ds-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-danger)_8%,transparent)] px-4 py-3 text-sm text-[var(--ds-danger)]">{state.error}</div>}
+        {state.error && <div role="alert" className="account-ledger-notice account-ledger-notice--danger">{state.error}</div>}
         {state.loading ? (
-          <p className="py-16 text-center text-sm text-[var(--ds-text-muted)]">Loading conversation…</p>
+          <p className="account-ledger-empty" role="status">Loading conversation…</p>
         ) : !state.ticket ? (
-          <section className="mt-8 border-t border-[var(--ds-border-subtle)] pt-8">
-            <h1 className="text-2xl font-semibold">Request unavailable</h1>
-            <p className="mt-3 text-sm text-[var(--ds-text-muted)]">It may not exist, or it belongs to a different account.</p>
+          <section className="account-ledger-empty">
+            <h1>Request unavailable</h1>
+            <p className="account-ledger-section-copy">It may not exist, or it belongs to a different account.</p>
           </section>
         ) : (
           <>
-            <header className="mt-10 border-b border-[var(--ds-border-subtle)] pb-9">
-              <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-[var(--ds-accent)]">{supportCategoryLabel(state.ticket.category)}</p>
-                  <h1 className={`${editorialDisplayClass} mt-3 break-words text-4xl sm:text-5xl`}>{state.ticket.subject}</h1>
-                  <p className="mt-2 text-xs text-[var(--ds-text-muted)]">Opened {formatSupportDate(state.ticket.createdAt, { includeTime: true })} · Request {state.ticket.id}</p>
-                </div>
-                <span className={`w-fit rounded-full border px-2.5 py-1 text-xs font-medium ${supportStatusTone(state.ticket.status)}`}>{supportStatusLabel(state.ticket.status)}</span>
+            <header className="account-ledger-header">
+              <div>
+                <p className="account-ledger-kicker">{supportCategoryLabel(state.ticket.category)}</p>
+                <h1 className="account-ledger-title account-ledger-title--compact">{state.ticket.subject}</h1>
+                <dl className="account-ledger-meta">
+                  <div>
+                    <dt>Opened</dt>
+                    <dd>{formatSupportDate(state.ticket.createdAt, { includeTime: true })}</dd>
+                  </div>
+                  <div>
+                    <dt>Request</dt>
+                    <dd>{state.ticket.id}</dd>
+                  </div>
+                  <div>
+                    <dt>Status</dt>
+                    <dd><span className="account-ledger-state" data-status={state.ticket.status}>{supportStatusLabel(state.ticket.status)}</span></dd>
+                  </div>
+                </dl>
               </div>
             </header>
 
-            <section aria-label="Support conversation" className="divide-y divide-[var(--ds-border-subtle)]">
+            <section aria-label="Support conversation" className="account-ledger-conversation">
               {(state.ticket.messages || []).map((message) => {
                 const fromCustomer = message.authorType === "customer";
                 return (
-                  <article key={message.id} className="grid gap-4 py-8 sm:grid-cols-[170px_minmax(0,1fr)]">
+                  <article key={message.id}>
                     <div>
-                      <p className="text-sm font-semibold text-[var(--ds-text)]">{fromCustomer ? "You" : message.authorType === "system" ? "NexusRBX" : "Support"}</p>
-                      <time className="mt-1 block text-xs text-[var(--ds-text-muted)]" dateTime={message.createdAt || undefined}>{formatSupportDate(message.createdAt, { includeTime: true })}</time>
+                      <p className="account-ledger-message-author">{fromCustomer ? "You" : message.authorType === "system" ? "NexusRBX" : "Support"}</p>
+                      <time className="account-ledger-message-time" dateTime={message.createdAt || undefined}>{formatSupportDate(message.createdAt, { includeTime: true })}</time>
                     </div>
-                    <p className="whitespace-pre-wrap break-words text-sm leading-7 text-[var(--ds-text-secondary)]">{message.body}</p>
+                    <p className="account-ledger-message-body">{message.body}</p>
                   </article>
                 );
               })}
             </section>
 
             {!["closed", "resolved"].includes(state.ticket.status) && (
-              <form onSubmit={submitReply} className="mt-4 rounded-[14px] bg-[var(--ds-surface-1)] p-5 sm:p-8">
-                <label htmlFor="support-reply" className="text-sm font-semibold">Reply</label>
-                <textarea id="support-reply" value={reply} onChange={(event) => setReply(event.target.value)} rows={6} maxLength={10000} required className="mt-3 w-full resize-y rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-4 py-3 text-sm leading-6 text-[var(--ds-text)] outline-none placeholder:text-[var(--ds-text-muted)] focus:border-[var(--ds-accent-border)] focus:ring-2 focus:ring-[var(--ds-focus-ring)]" placeholder="Add the details support needs to continue…" />
-                <p className="mt-2 text-xs text-[var(--ds-text-muted)]">Do not include passwords, API keys, card numbers, or recovery codes.</p>
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                  <button type="button" disabled={Boolean(busy)} onClick={changeOpenState} className={editorialSecondaryButtonClass}>{busy === "close" ? "Closing…" : "Close request"}</button>
-                  <button type="submit" disabled={Boolean(busy) || !reply.trim()} className={editorialPrimaryButtonClass}>{busy === "reply" ? "Sending…" : "Send reply"}</button>
+              <form onSubmit={submitReply} className="account-ledger-composer">
+                <div className="account-ledger-field-group">
+                  <label htmlFor="support-reply" className="account-ledger-field-label">Reply</label>
+                  <textarea id="support-reply" value={reply} onChange={(event) => setReply(event.target.value)} rows={6} maxLength={10000} required className="account-ledger-textarea" placeholder="Add the details support needs to continue…" />
+                  <p className="account-ledger-detail">Do not include passwords, API keys, card numbers, or recovery codes.</p>
+                </div>
+                <div className="account-ledger-section-head">
+                  <button type="button" disabled={Boolean(busy)} onClick={changeOpenState} className="account-ledger-button">{busy === "close" ? "Closing…" : "Close request"}</button>
+                  <button type="submit" disabled={Boolean(busy) || !reply.trim()} className="account-ledger-button account-ledger-button--primary">{busy === "reply" ? "Sending…" : "Send reply"}</button>
                 </div>
               </form>
             )}
 
             {["closed", "resolved"].includes(state.ticket.status) && (
-              <div className="flex flex-col gap-4 border-t border-[var(--ds-border-subtle)] py-6 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm text-[var(--ds-text-muted)]">This request is {state.ticket.status}. Reopen it if the same issue still needs attention.</p>
-                <button type="button" disabled={Boolean(busy)} onClick={changeOpenState} className={editorialSecondaryButtonClass}>{busy === "reopen" ? "Reopening…" : "Reopen request"}</button>
+              <div className="account-ledger-composer account-ledger-section-head">
+                <p className="account-ledger-section-copy">This request is {state.ticket.status}. Reopen it if the same issue still needs attention.</p>
+                <button type="button" disabled={Boolean(busy)} onClick={changeOpenState} className="account-ledger-button">{busy === "reopen" ? "Reopening…" : "Reopen request"}</button>
               </div>
             )}
           </>

@@ -1,0 +1,995 @@
+.account-ledger-page {
+  min-height: calc(100vh - 4rem);
+  padding-block: clamp(2.5rem, 6vw, 5.5rem);
+  background: var(--nx-canvas, var(--ds-bg-canvas));
+  color: var(--nx-text, var(--ds-text));
+}
+
+.account-ledger-page--full {
+  min-height: 100vh;
+}
+
+.account-ledger-page--center {
+  display: grid;
+  place-items: center;
+}
+
+.account-ledger-wrap {
+  width: min(100%, 94rem);
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4vw, 3.75rem);
+}
+
+.account-ledger-wrap--wide {
+  width: min(100%, 100rem);
+}
+
+.account-ledger-wrap--narrow {
+  width: min(100%, 72rem);
+}
+
+.account-ledger-center-state {
+  width: min(100%, 42rem);
+  padding: clamp(1.5rem, 5vw, 3.75rem);
+  border-block: 1px solid var(--nx-rule, var(--ds-border));
+  text-align: left;
+}
+
+.account-ledger-center-state > .account-ledger-button,
+.account-ledger-center-state > .account-ledger-link,
+.account-ledger-center-state > .account-ledger-inline-actions {
+  margin-top: 1.5rem;
+}
+
+.account-ledger-loading {
+  display: flex;
+  min-height: 10rem;
+  align-items: center;
+  justify-content: center;
+  gap: var(--nx-space-2, 0.625rem);
+  color: var(--nx-text-muted, var(--ds-text-muted));
+}
+
+.account-ledger-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: clamp(1.5rem, 5vw, 4rem);
+  align-items: end;
+  padding-bottom: clamp(1.75rem, 4vw, 3rem);
+  border-bottom: 1px solid var(--nx-rule, var(--ds-border));
+}
+
+.account-ledger-kicker {
+  margin: 0;
+  color: var(--nx-purple-muted, var(--ds-accent));
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+}
+
+.account-ledger-title {
+  max-width: 16ch;
+  margin: 0.75rem 0 0;
+  color: var(--nx-purple, var(--ds-accent));
+  font-family: var(--nx-font-display, var(--ds-font-display));
+  font-size: clamp(2.75rem, 5vw, 3.625rem);
+  font-weight: 650;
+  letter-spacing: 0.005em;
+  line-height: 0.94;
+}
+
+.account-ledger-title--compact {
+  font-size: clamp(2.25rem, 4vw, 3.625rem);
+}
+
+.account-ledger-intro {
+  max-width: 48rem;
+  margin: 1rem 0 0;
+  color: var(--nx-text-secondary, var(--ds-text-secondary));
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.account-ledger-back,
+.account-ledger-button,
+.account-ledger-link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  border: 0;
+  border-bottom: 1px solid var(--nx-rule, var(--ds-border));
+  border-radius: 0;
+  background: transparent;
+  color: var(--nx-text, var(--ds-text));
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.account-ledger-back {
+  justify-content: flex-start;
+  margin-bottom: clamp(2rem, 5vw, 4rem);
+  color: var(--nx-text-muted, var(--ds-text-muted));
+}
+
+.account-ledger-button,
+.account-ledger-link {
+  padding-inline: 0.25rem;
+}
+
+.account-ledger-button--primary,
+.account-ledger-link--primary {
+  border-bottom-color: var(--nx-purple-muted, var(--ds-accent-border));
+  color: var(--nx-purple-strong, var(--ds-accent));
+}
+
+.account-ledger-button--warning {
+  border-bottom-color: var(--nx-warning, var(--ds-warning));
+  color: var(--nx-warning, var(--ds-warning));
+}
+
+.account-ledger-back:hover,
+.account-ledger-button:hover:not(:disabled),
+.account-ledger-link:hover {
+  border-bottom-color: currentColor;
+  color: var(--nx-purple-strong, var(--ds-accent-hover));
+}
+
+.account-ledger-button:disabled,
+.account-ledger-link[aria-disabled="true"] {
+  border-bottom-color: var(--nx-rule-quiet, var(--ds-border-subtle));
+  color: var(--nx-text-disabled, var(--ds-text-disabled));
+  cursor: not-allowed;
+}
+
+.account-ledger-button--block {
+  width: 100%;
+}
+
+.account-ledger-actions,
+.account-ledger-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+}
+
+.account-ledger-actions {
+  justify-content: flex-end;
+}
+
+.account-ledger-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-top: 1.25rem;
+  padding: 0.85rem 0;
+  border-block: 1px solid var(--nx-rule-quiet, var(--ds-border-subtle));
+  color: var(--nx-text-secondary, var(--ds-text-secondary));
+  font-size: 0.875rem;
+}
+
+.account-ledger-notice--success {
+  border-color: var(--nx-success, var(--ds-success));
+  color: var(--nx-success, var(--ds-success));
+}
+
+.account-ledger-notice--warning {
+  border-color: var(--nx-warning, var(--ds-warning));
+  color: var(--nx-warning, var(--ds-warning));
+}
+
+.account-ledger-notice--danger {
+  border-color: var(--nx-danger, var(--ds-danger));
+  color: var(--nx-danger, var(--ds-danger));
+}
+
+.account-ledger-section {
+  margin-top: clamp(2.5rem, 6vw, 5rem);
+}
+
+.account-ledger-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+  margin-bottom: 1rem;
+}
+
+.account-ledger-section-title {
+  margin: 0;
+  color: var(--nx-purple, var(--ds-accent));
+  font-family: var(--nx-font-display, var(--ds-font-display));
+  font-size: clamp(1.55rem, 3vw, 2.35rem);
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+
+.account-ledger-kicker + .account-ledger-section-title {
+  margin-top: 0.5rem;
+}
+
+.account-ledger-section-copy {
+  max-width: 50rem;
+  margin: 0.5rem 0 0;
+  color: var(--nx-text-muted, var(--ds-text-muted));
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+
+.account-ledger-record-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-block: 1px solid var(--nx-rule, var(--ds-border));
+}
+
+.account-ledger-record {
+  min-width: 0;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border-right: 1px solid var(--nx-rule-quiet, var(--ds-border-subtle));
+}
+
+.account-ledger-record:last-child {
+  border-right: 0;
+}
+
+.account-ledger-record-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  color: var(--nx-text-secondary, var(--ds-text-secondary));
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.account-ledger-value {
+  margin: 1rem 0 0;
+  color: var(--nx-purple-strong, var(--ds-accent));
+  font-family: var(--nx-font-display, var(--ds-font-display));
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 650;
+  line-height: 1;
+}
+
+.account-ledger-detail {
+  margin: 0.55rem 0 0;
+  color: var(--nx-text-muted, var(--ds-text-muted));
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+.account-ledger-detail strong {
+  color: var(--nx-text, var(--ds-text));
+}
+
+.account-ledger-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--nx-text-secondary, var(--ds-text-secondary));
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.account-ledger-state::before,
+.account-ledger-unread::before {
+  width: 0.45rem;
+  height: 0.45rem;
+  flex: 0 0 0.45rem;
+  border: 1px solid currentColor;
+  background: transparent;
+  content: "";
+}
+
+.account-ledger-state[data-status="open"],
+.account-ledger-state[data-status="waiting_on_support"] {
+  color: var(--nx-purple, var(--ds-accent));
+}
+
+.account-ledger-state[data-status="waiting_on_customer"] {
+  color: var(--nx-warning, var(--ds-warning));
+}
+
+.account-ledger-state[data-status="resolved"] {
+  color: var(--nx-success, var(--ds-success));
+}
+
+.account-ledger-state[data-status="closed"] {
+  color: var(--nx-text-muted, var(--ds-text-muted));
+}
+
+.account-ledger-unread {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--nx-purple, var(--ds-accent));
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.account-ledger-progress {
+  height: 0.55rem;
+  margin-top: 1.1rem;
+  overflow: hidden;
+  border: 1px solid var(--nx-rule, var(--ds-border));
+  background: transparent;
+}
+
+.account-ledger-progress > span {
+  display: block;
+  height: 100%;
+  background: var(--nx-purple-muted, var(--ds-accent));
+}
+
+.account-ledger-topups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin-top: 1rem;
+}
+
+.account-ledger-choice-set {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(6.5rem, 1fr));
+  border: 1px solid var(--nx-rule, var(--ds-border));
+}
+
+.account-ledger-choice {
+  min-height: 44px;
+  border: 0;
+  border-right: 1px solid var(--nx-rule, var(--ds-border));
+  border-radius: 0;
+  background: transparent;
+  color: var(--nx-text-muted, var(--ds-text-muted));
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.account-ledger-choice:last-child {
+  border-right: 0;
+}
+
+.account-ledger-choice[aria-pressed="true"] {
+  background: var(--nx-field, var(--ds-surface-2));
+  color: var(--nx-purple-strong, var(--ds-accent));
+}
+
+.account-ledger-plan-list,
+.account-ledger-ticket-list,
+.account-ledger-conversation,
+.account-ledger-activity {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--nx-rule, var(--ds-border));
+  list-style: none;
+}
+
+.account-ledger-plan-row {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.7fr) minmax(9rem, 0.9fr) minmax(14rem, 1.4fr) minmax(9rem, 0.8fr);
+  gap: 1.25rem;
+  align-items: center;
+  padding: 1.35rem 0;
+  border-bottom: 1px solid var(--nx-rule, var(--ds-border));
+}
+
+.account-ledger-plan-name {
+  margin: 0;
+  color: var(--nx-purple, var(--ds-accent));
+  font-family: var(--nx-font-display, var(--ds-font-display));
+  font-size: 1.5rem;
+  font-weight: 650;
+}
+
+.account-ledger-plan-price {
+  color: var(--nx-text, var(--ds-text));
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.account-ledger-plan-fit {
+  margin: 0;
+  color: var(--nx-text-secondary, var(--ds-text-secondary));
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.account-ledger-plan-action {
+  display: flex;
+  align-items: end;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.account-ledger-field-group {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.account-ledger-field-label {
+  color: var(--nx-text-secondary, var(--ds-text-secondary));
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.account-ledger-field,
+.account-ledger-select,
+.account-ledger-textarea {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--nx-rule, var(--ds-border));
+  border-radius: var(--nx-radius-field, 3px);
+  background: var(--nx-field, var(--ds-surface-2));
+  color: var(--nx-text, var(--ds-text));
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.account-ledger-field,
+.account-ledger-select {
+  padding-inline: 0.8rem;
+}
+
+.account-ledger-textarea {
+  padding: 0.8rem;
+  resize: vertical;
+  line-height: 1.65;
+}
+
+.account-ledger-field:focus,
+.account-ledger-select:focus,
+.account-ledger-textarea:focus {
+  border-color: var(--nx-focus, var(--ds-focus-ring));
+  outline: 1px solid var(--nx-focus, var(--ds-focus-ring));
+  outline-offset: 2px;
+}
+
+.account-ledger-field:disabled,
+.account-ledger-select:disabled,
+.account-ledger-textarea:disabled {
+  color: var(--nx-text-disabled, var(--ds-text-disabled));
+  cursor: not-allowed;
+}
+
+.account-ledger-filter-bar {
+  display: grid;
+  grid-template-columns: minmax(14rem, 1fr) repeat(3, minmax(10rem, 0.55fr)) auto;
+  gap: 1rem;
+  align-items: end;
+  padding-block: 1rem;
+  border-block: 1px solid var(--nx-rule, var(--ds-border));
+}
+
+.account-ledger-ticket-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(8rem, 0.55fr) minmax(9rem, 0.65fr);
+  gap: 1.25rem;
+  align-items: center;
+  min-height: 44px;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--nx-rule-quiet, var(--ds-border-subtle));
+  color: inherit;
+  text-decoration: none;
+}
+
+.account-ledger-ticket-row:hover,
+.account-ledger-ticket-row:focus-visible {
+  background: var(--nx-field, var(--ds-fill-hover));
+}
+
+.account-ledger-ticket-subject {
+  overflow: hidden;
+  margin: 0;
+  color: var(--nx-text, var(--ds-text));
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-ledger-ticket-preview {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0.35rem 0 0;
+  color: var(--nx-text-secondary, var(--ds-text-secondary));
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.account-ledger-ticket-meta {
+  color: var(--nx-text-muted, var(--ds-text-muted));
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.account-ledger-empty {
+  padding-block: clamp(2.5rem, 8vw, 6rem);
+  border-bottom: 1px solid var(--nx-rule, var(--ds-border));
+  color: var(--nx-text-muted, var(--ds-text-muted));
+}
+
+.account-ledger-empty h2 {
+  margin: 0;
+  color: var(--nx-text, var(--ds-text));
+  font-size: 1.2rem;
+}
+
+.account-ledger-empty .account-ledger-link {
+  margin-top: 1rem;
+}
+
+.account-ledger-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 1.5rem 0 0;
+  border-block: 1px solid var(--nx-rule-quiet, var(--ds-border-subtle));
+}
+
+.account-ledger-meta > div {
+  min-width: 0;
+  padding: 1rem 1.25rem 1rem 0;
+  border-right: 1px solid var(--nx-rule-quiet, var(--ds-border-subtle));
+}
+
+.account-ledger-meta > div:not(:first-child) {
+  padding-left: 1.25rem;
+}
+
+.account-ledger-meta > div:last-child {
+  border-right: 0;
+}
+
+.account-ledger-meta dt {
+  color: var(--nx-text-muted, var(--ds-text-muted));
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.account-ledger-meta dd {
+  overflow-wrap: anywhere;
+  margin: 0.35rem 0 0;
+  color: var(--nx-text-secondary, var(--ds-text-secondary));
+  font-size: 0.875rem;
+}
+
+.account-ledger-conversation article {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.3fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  padding: 1.5rem 0;
+  border-bottom: 1px solid var(--nx-rule-quiet, var(--ds-border-subtle));
+}
+
+.account-ledger-message-author {
+  margin: 0;
+  color: var(--nx-purple, var(--ds-accent));
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.account-ledger-message-time {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--nx-text-muted, var(--ds-text-muted));
+  font-size: 0.75rem;
+}
+
+.account-ledger-message-body {
+  margin: 0;
+  color: var(--nx-text-secondary, var(--ds-text-secondary));
+  font-size: 0.875rem;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.account-ledger-composer {
+  margin-top: 2rem;
+  padding-block: 1.5rem;
+  border-block: 1px solid var(--nx-rule, var(--ds-border));
+}
+
+.account-ledger-composer > .account-ledger-actions,
+.account-ledger-composer > .account-ledger-section-head {
+  margin-top: 1rem;
+  margin-bottom: 0;
+}
+
+.account-ledger-composer--private {
+  border-left: 2px solid var(--nx-warning, var(--ds-warning));
+  padding-left: 1rem;
+}
+
+.account-ledger-composer-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+}
+
+.account-ledger-radio-label {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--nx-text-secondary, var(--ds-text-secondary));
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.account-ledger-radio-label--private {
+  color: var(--nx-warning, var(--ds-warning));
+}
+
+.account-ledger-queue-layout {
+  display: grid;
+  min-height: 40rem;
+  grid-template-columns: minmax(19rem, 24rem) minmax(0, 1fr);
+  margin-top: 2rem;
+  border-block: 1px solid var(--nx-rule, var(--ds-border));
+}
+
+.account-ledger-queue {
+  border-right: 1px solid var(--nx-rule, var(--ds-border));
+}
+
+.account-ledger-queue-summary {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-inline: 0.75rem;
+  border-bottom: 1px solid var(--nx-rule, var(--ds-border));
+  color: var(--nx-text-muted, var(--ds-text-muted));
+  font-size: 0.75rem;
+}
+
+.account-ledger-queue-scroll {
+  max-height: 48rem;
+  overflow-y: auto;
+}
+
+.account-ledger-queue-item {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 1rem 0.75rem;
+  border: 0;
+  border-bottom: 1px solid var(--nx-rule-quiet, var(--ds-border-subtle));
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.account-ledger-queue-item:hover,
+.account-ledger-queue-item[aria-current="true"] {
+  background: var(--nx-field, var(--ds-fill-selected));
+}
+
+.account-ledger-queue-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.8rem;
+}
+
+.account-ledger-case {
+  min-width: 0;
+  padding-inline: clamp(1rem, 3vw, 2rem);
+}
+
+.account-ledger-case-state {
+  display: grid;
+  min-height: 31rem;
+  place-items: center;
+  color: var(--nx-text-muted, var(--ds-text-muted));
+  font-size: 0.875rem;
+}
+
+.account-ledger-case-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(17rem, auto);
+  gap: 2rem;
+  padding: 1.5rem 0;
+  border-bottom: 1px solid var(--nx-rule, var(--ds-border));
+}
+
+.account-ledger-case-title {
+  margin: 0.5rem 0 0;
+  color: var(--nx-purple, var(--ds-accent));
+  font-family: var(--nx-font-display, var(--ds-font-display));
+  font-size: clamp(1.65rem, 3vw, 2.5rem);
+  font-weight: 650;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.account-ledger-case-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(8rem, 1fr));
+  gap: 0.75rem;
+}
+
+.account-ledger-private-notes {
+  margin-top: 2rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--nx-warning, var(--ds-warning));
+}
+
+.account-ledger-private-notes h3 {
+  margin: 0;
+  color: var(--nx-warning, var(--ds-warning));
+  font-size: 0.875rem;
+}
+
+.account-ledger-private-note {
+  padding-block: 0.8rem;
+  border-bottom: 1px solid var(--nx-rule-quiet, var(--ds-border-subtle));
+}
+
+.account-ledger-activity {
+  margin-top: 0.8rem;
+}
+
+.account-ledger-activity li {
+  display: grid;
+  grid-template-columns: minmax(10rem, 0.35fr) minmax(0, 1fr);
+  gap: 1rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--nx-rule-quiet, var(--ds-border-subtle));
+  color: var(--nx-text-secondary, var(--ds-text-secondary));
+  font-size: 0.75rem;
+}
+
+.account-ledger-charge-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
+  gap: clamp(2.5rem, 7vw, 6rem);
+  align-items: start;
+}
+
+.account-ledger-charge-record {
+  margin-top: 2.5rem;
+  border-top: 1px solid var(--nx-rule, var(--ds-border));
+}
+
+.account-ledger-charge-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.5rem;
+  padding: 1.15rem 0;
+  border-bottom: 1px solid var(--nx-rule-quiet, var(--ds-border-subtle));
+}
+
+.account-ledger-charge-row dt {
+  color: var(--nx-text-muted, var(--ds-text-muted));
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.account-ledger-charge-row dd {
+  margin: 0;
+  color: var(--nx-text, var(--ds-text));
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: right;
+}
+
+.account-ledger-charge-total dt,
+.account-ledger-charge-total dd {
+  color: var(--nx-purple-strong, var(--ds-accent));
+  font-size: 1.15rem;
+}
+
+.account-ledger-feature-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin: 2rem 0 0;
+  padding: 0;
+  border-top: 1px solid var(--nx-rule-quiet, var(--ds-border-subtle));
+  list-style: none;
+}
+
+.account-ledger-feature-list li {
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem 0.85rem 0;
+  border-bottom: 1px solid var(--nx-rule-quiet, var(--ds-border-subtle));
+  color: var(--nx-text-secondary, var(--ds-text-secondary));
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.account-ledger-feature-list + .account-ledger-link {
+  margin-top: 1rem;
+}
+
+.account-ledger-checkout-action {
+  padding: 1.5rem 0;
+  border-block: 1px solid var(--nx-rule, var(--ds-border));
+}
+
+.account-ledger-checkout-action h2 {
+  margin: 0.8rem 0 0;
+  color: var(--nx-purple, var(--ds-accent));
+  font-family: var(--nx-font-display, var(--ds-font-display));
+  font-size: 1.75rem;
+  font-weight: 650;
+  line-height: 1.05;
+}
+
+.account-ledger-checkout-action > .account-ledger-button {
+  margin-top: 1.25rem;
+}
+
+.account-ledger-role-form {
+  display: grid;
+  grid-template-columns: minmax(14rem, 1fr) minmax(12rem, 0.55fr) auto;
+  gap: 1rem;
+  align-items: end;
+  margin-top: 1.5rem;
+}
+
+.account-ledger-icon {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 1rem;
+}
+
+@media (max-width: 70rem) {
+  .account-ledger-record-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .account-ledger-record {
+    border-right: 0;
+    border-bottom: 1px solid var(--nx-rule-quiet, var(--ds-border-subtle));
+  }
+
+  .account-ledger-record:last-child {
+    border-bottom: 0;
+  }
+
+  .account-ledger-plan-row {
+    grid-template-columns: minmax(7rem, 0.55fr) minmax(8rem, 0.65fr) minmax(12rem, 1fr);
+  }
+
+  .account-ledger-plan-action {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+
+  .account-ledger-filter-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .account-ledger-role-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .account-ledger-queue-layout {
+    grid-template-columns: minmax(17rem, 21rem) minmax(0, 1fr);
+  }
+
+  .account-ledger-case-head {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 52rem) {
+  .account-ledger-header,
+  .account-ledger-charge-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .account-ledger-actions {
+    justify-content: flex-start;
+  }
+
+  .account-ledger-plan-row,
+  .account-ledger-ticket-row {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+  }
+
+  .account-ledger-plan-action {
+    grid-column: auto;
+    justify-content: flex-start;
+  }
+
+  .account-ledger-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .account-ledger-meta > div,
+  .account-ledger-meta > div:not(:first-child) {
+    padding: 0.85rem 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--nx-rule-quiet, var(--ds-border-subtle));
+  }
+
+  .account-ledger-meta > div:last-child {
+    border-bottom: 0;
+  }
+
+  .account-ledger-conversation article,
+  .account-ledger-activity li {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .account-ledger-queue-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .account-ledger-queue {
+    border-right: 0;
+    border-bottom: 1px solid var(--nx-rule, var(--ds-border));
+  }
+
+  .account-ledger-queue-scroll {
+    max-height: 24rem;
+  }
+
+  .account-ledger-feature-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 38rem) {
+  .account-ledger-page {
+    padding-block: 2.25rem;
+  }
+
+  .account-ledger-title {
+    font-size: clamp(2.5rem, 15vw, 3.625rem);
+  }
+
+  .account-ledger-filter-bar,
+  .account-ledger-case-controls,
+  .account-ledger-role-form {
+    grid-template-columns: 1fr;
+  }
+
+  .account-ledger-choice-set {
+    width: 100%;
+  }
+
+  .account-ledger-charge-row {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+  }
+
+  .account-ledger-charge-row dd {
+    text-align: left;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .account-ledger-notice,
+  .account-ledger-record-grid,
+  .account-ledger-plan-list,
+  .account-ledger-ticket-list,
+  .account-ledger-filter-bar,
+  .account-ledger-queue-layout,
+  .account-ledger-checkout-action {
+    border-color: var(--nx-text-secondary, var(--ds-text-secondary));
+  }
+}

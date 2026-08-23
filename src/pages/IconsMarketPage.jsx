@@ -23,6 +23,7 @@ import NexusDisplayIcon from "../components/icons/NexusDisplayIcon";
 import Modal from "../components/Modal";
 import { editorialDisplayClass } from "../components/site/editorialUi";
 import "../components/assets/assetPlatform.css";
+import "../components/assets/assetLedgerOverrides.css";
 
 const API_BASE = BACKEND_URL.replace(/\/+$/, "");
 const MARKET_ACCESS_OPTIONS = [
@@ -365,7 +366,7 @@ export default function IconsMarketPage() {
               <div>
                 <div className="flex items-center gap-3 mb-2">
                   <Grid className="h-6 w-6 text-[var(--ds-text-muted)]" aria-hidden="true" />
-                  <h1 className={`${editorialDisplayClass} text-5xl sm:text-6xl`}>Creator Store</h1>
+                  <h1 className={`${editorialDisplayClass} text-5xl`}>Creator Store</h1>
                 </div>
                 <p className="max-w-xl text-[var(--ds-text-muted)]">
                   Browse curated, game-ready icons, upload them to Roblox, and copy an editable Studio snippet.

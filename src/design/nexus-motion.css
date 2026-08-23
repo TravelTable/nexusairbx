@@ -1,0 +1,20 @@
+:where(a, button, summary, input, textarea, select) {
+  transition-duration: var(--nx-motion-fast);
+  transition-property: background-color, border-color, color, opacity, transform;
+  transition-timing-function: var(--nx-ease-state);
+}
+
+:where(button, [role="button"]):active:not(:disabled, [aria-disabled="true"]) {
+  transform: translateY(1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

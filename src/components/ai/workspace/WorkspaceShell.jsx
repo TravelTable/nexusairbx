@@ -1,6 +1,7 @@
 import React, {
   useCallback,
   useEffect,
+  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -10,12 +11,9 @@ import {
   Activity,
   ArrowLeft,
   Boxes,
-  Check,
-  ChevronDown,
   ClipboardList,
   FileCode2,
   FolderTree,
-  Layers,
   Maximize2,
   X,
 } from "lib/icons";
@@ -78,8 +76,8 @@ export const WORKSPACE_DOCK_PANELS = [
   },
   {
     id: "activity",
-    label: "Activity",
-    description: "Request progress, agent runs, and approvals",
+    label: "Run",
+    description: "Request progress, agent runs, tests, and approvals",
     icon: Activity,
   },
   {
@@ -96,13 +94,11 @@ export const WORKSPACE_DOCK_PANELS = [
   },
 ];
 
-export function WorkspaceEmptyState({ icon: Icon = FileCode2, title, description, action }) {
+export function WorkspaceEmptyState({ title, description, action }) {
   return (
     <div className="workspace-stage-empty">
       <div className="workspace-stage-empty__content">
-        <div className="workspace-stage-empty__icon" aria-hidden="true">
-          <Icon className="h-5 w-5" />
-        </div>
+        <span className="workspace-stage-empty__eyebrow">No evidence recorded</span>
         <h3>{title}</h3>
         {description ? <p>{description}</p> : null}
         {action ? <div className="workspace-stage-empty__action">{action}</div> : null}
@@ -111,99 +107,64 @@ export function WorkspaceEmptyState({ icon: Icon = FileCode2, title, description
   );
 }
 
-function StageViewMenu({
-  open,
+function EvidenceLensBar({
   activePanel,
+  selectedPanel,
   panelBadges,
   onSelect,
-  onClose,
-  anchorRef,
+  tabPanelId,
+  tabIdPrefix,
+  containerRef,
+  compact = false,
 }) {
-  const menuRef = useRef(null);
-
-  const getMenuItems = useCallback(
-    () => Array.from(menuRef.current?.querySelectorAll('[role="menuitemradio"]') || []),
-    [],
-  );
-
-  useLayoutEffect(() => {
-    if (!open) return;
-    const menuItems = getMenuItems();
-    const activeItem = menuItems.find((item) => item.getAttribute("aria-checked") === "true");
-    (activeItem || menuItems[0])?.focus();
-  }, [activePanel, getMenuItems, open]);
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const handlePointer = (event) => {
-      if (menuRef.current?.contains(event.target) || anchorRef.current?.contains(event.target)) return;
-      onClose();
-    };
-    document.addEventListener("mousedown", handlePointer);
-    return () => {
-      document.removeEventListener("mousedown", handlePointer);
-    };
-  }, [anchorRef, onClose, open]);
-
-  const handleMenuKeyDown = (event) => {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      event.stopPropagation();
-      onClose();
-      anchorRef.current?.focus();
-      return;
-    }
-
-    const menuItems = getMenuItems();
-    if (!menuItems.length) return;
-    const currentIndex = Math.max(0, menuItems.indexOf(document.activeElement));
+  const moveFocus = (event) => {
+    const tabs = Array.from(event.currentTarget.querySelectorAll('[role="tab"]'));
+    const currentIndex = tabs.indexOf(event.target.closest('[role="tab"]'));
+    if (currentIndex < 0 || !tabs.length) return;
     let nextIndex;
-    if (event.key === "ArrowDown") nextIndex = (currentIndex + 1) % menuItems.length;
-    if (event.key === "ArrowUp") nextIndex = (currentIndex - 1 + menuItems.length) % menuItems.length;
+    if (["ArrowRight", "ArrowDown"].includes(event.key)) nextIndex = (currentIndex + 1) % tabs.length;
+    if (["ArrowLeft", "ArrowUp"].includes(event.key)) nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
     if (event.key === "Home") nextIndex = 0;
-    if (event.key === "End") nextIndex = menuItems.length - 1;
+    if (event.key === "End") nextIndex = tabs.length - 1;
     if (nextIndex == null) return;
     event.preventDefault();
-    menuItems[nextIndex].focus();
+    tabs[nextIndex].focus();
   };
-
-  if (!open) return null;
 
   return (
     <div
-      ref={menuRef}
-      className="workspace-stage-menu"
-      role="menu"
-      aria-label="Stage views"
-      onKeyDown={handleMenuKeyDown}
+      ref={containerRef}
+      className={`workspace-evidence-lenses ${compact ? "workspace-evidence-lenses--compact" : ""}`}
+      role="tablist"
+      aria-label="Evidence lenses"
+      onKeyDown={moveFocus}
     >
-      <div className="workspace-stage-menu__eyebrow">Show on Stage</div>
       {WORKSPACE_DOCK_PANELS.map((tool) => {
-        const Icon = tool.icon;
         const badge = panelBadges[tool.id];
+        const isSelected = selectedPanel === tool.id;
         return (
           <button
             key={tool.id}
+            id={`${tabIdPrefix}-${tool.id}`}
             type="button"
-            role="menuitemradio"
-            tabIndex={-1}
-            aria-checked={activePanel === tool.id}
-            aria-label={`Open ${tool.label}`}
-            className="workspace-stage-menu__item focus-ring"
+            role="tab"
+            aria-controls={tabPanelId}
+            aria-selected={isSelected}
+            aria-label={`Open ${tool.label} evidence`}
+            tabIndex={isSelected ? 0 : -1}
+            className="workspace-evidence-lenses__item focus-ring"
             data-active={activePanel === tool.id ? "true" : "false"}
+            data-evidence-lens={tool.id}
             onClick={(event) => onSelect(tool.id, event.currentTarget)}
           >
-            <Icon className="h-4 w-4" aria-hidden="true" />
-            <span className="workspace-stage-menu__copy">
-              <strong>{tool.label}</strong>
-              <small>{tool.description}</small>
+            <span className="workspace-evidence-lenses__label" aria-hidden={compact ? "true" : undefined}>
+              {compact ? tool.label.slice(0, 3).toUpperCase() : tool.label}
             </span>
             {badge ? (
-              <span className="workspace-stage-menu__badge" aria-label={typeof badge === "number" ? `${badge} unseen items` : "Unseen items"}>
+              <span className="workspace-evidence-lenses__badge" aria-label={typeof badge === "number" ? `${badge} unseen items` : "Unseen items"}>
                 {typeof badge === "number" ? Math.min(badge, 99) : ""}
               </span>
             ) : null}
-            {activePanel === tool.id ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : null}
           </button>
         );
       })}
@@ -220,18 +181,26 @@ export default function WorkspaceShell({
   panelBadges = {},
   renderPanel,
 }) {
+  const shellId = useId().replace(/:/g, "");
+  const stageId = `workspace-context-drawer-${shellId}`;
+  const stageTitleId = `workspace-stage-title-${shellId}`;
+  const tabPanelId = `workspace-evidence-panel-${shellId}`;
+  const edgeTabIdPrefix = `workspace-evidence-edge-tab-${shellId}`;
+  const stageTabIdPrefix = `workspace-evidence-stage-tab-${shellId}`;
   const presence = useMotionPresence(Boolean(activePanel), 300);
   const [containerWidth, setContainerWidth] = useState(null);
-  const [viewMenuOpen, setViewMenuOpen] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const shellRef = useRef(null);
   const stageRef = useRef(null);
   const backButtonRef = useRef(null);
   const closeButtonRef = useRef(null);
   const launcherRef = useRef(null);
-  const viewMenuButtonRef = useRef(null);
+  const stageLensRef = useRef(null);
   const openerRef = useRef(null);
   const restoreLauncherFocusRef = useRef(false);
+  const pendingInlineFocusRef = useRef(false);
+  const previousActivePanelRef = useRef(activePanel);
+  const previousModalStateRef = useRef(false);
   const resizeCleanupRef = useRef(null);
   const visiblePanelRef = useRef(activePanel || "details");
   if (activePanel) visiblePanelRef.current = activePanel;
@@ -240,7 +209,6 @@ export default function WorkspaceShell({
     () => WORKSPACE_DOCK_PANELS.find((tool) => tool.id === visiblePanel) || WORKSPACE_DOCK_PANELS.at(-1),
     [visiblePanel],
   );
-  const SelectedIcon = selectedTool.icon;
   const safeDrawerWidth = clampWorkspaceDrawerWidth(drawerWidth);
   const isOverlayBreakpoint = containerWidth != null
     && containerWidth < WORKSPACE_DRAWER_OVERLAY_BREAKPOINT;
@@ -271,7 +239,6 @@ export default function WorkspaceShell({
 
   const closeStage = useCallback(() => {
     restoreLauncherFocusRef.current = true;
-    setViewMenuOpen(false);
     setFullscreen(false);
     onPanelChange(null);
     openerRef.current = null;
@@ -285,18 +252,12 @@ export default function WorkspaceShell({
 
   const openStage = useCallback((panelId = visiblePanel, trigger = launcherRef.current) => {
     openerRef.current = trigger || launcherRef.current;
-    setViewMenuOpen(false);
     onPanelChange(panelId || "details");
   }, [onPanelChange, visiblePanel]);
 
-  const selectPanel = useCallback((panelId) => {
-    openStage(
-      panelId,
-      activePanel
-        ? (openerRef.current || viewMenuButtonRef.current)
-        : (viewMenuButtonRef.current || launcherRef.current),
-    );
-  }, [activePanel, openStage]);
+  const selectPanel = useCallback((panelId, trigger) => {
+    openStage(panelId, trigger || openerRef.current || launcherRef.current);
+  }, [openStage]);
 
   useEffect(() => {
     if (!activePanel) setFullscreen(false);
@@ -306,7 +267,6 @@ export default function WorkspaceShell({
     if (!activePanel) return undefined;
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
-        if (viewMenuOpen) return;
         event.preventDefault();
         if (fullscreen) {
           setFullscreen(false);
@@ -333,17 +293,41 @@ export default function WorkspaceShell({
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [activePanel, closeStage, fullscreen, isModalStageOpen, viewMenuOpen]);
+  }, [activePanel, closeStage, fullscreen, isModalStageOpen]);
 
   useLayoutEffect(() => {
-    if (!isModalStageOpen) return;
-    const activeElement = document.activeElement;
-    if (!openerRef.current?.isConnected && activeElement && !stageRef.current?.contains(activeElement)) {
-      openerRef.current = activeElement;
+    const wasOpen = Boolean(previousActivePanelRef.current);
+    const isOpen = Boolean(activePanel);
+    if (isOpen && !wasOpen) pendingInlineFocusRef.current = true;
+    if (!isOpen) {
+      pendingInlineFocusRef.current = false;
+      previousModalStateRef.current = false;
     }
-    const initialFocus = isMobileBreakpoint ? backButtonRef.current : closeButtonRef.current;
-    (initialFocus || stageRef.current)?.focus();
-  }, [isMobileBreakpoint, isModalStageOpen, presence.present, visiblePanel]);
+    previousActivePanelRef.current = activePanel;
+  }, [activePanel]);
+
+  useLayoutEffect(() => {
+    if (!activePanel || !presence.present) return;
+
+    const becameModal = isModalStageOpen && !previousModalStateRef.current;
+    if (becameModal) {
+      const activeElement = document.activeElement;
+      if (!openerRef.current?.isConnected && activeElement && !stageRef.current?.contains(activeElement)) {
+        openerRef.current = activeElement;
+      }
+      const initialFocus = isMobileBreakpoint ? backButtonRef.current : closeButtonRef.current;
+      (initialFocus || stageRef.current)?.focus();
+      pendingInlineFocusRef.current = false;
+    } else if (!isModalStageOpen && pendingInlineFocusRef.current) {
+      const selectedLens = stageLensRef.current?.querySelector(
+        `[data-evidence-lens="${activePanel}"]`,
+      );
+      (selectedLens || stageRef.current)?.focus();
+      pendingInlineFocusRef.current = false;
+    }
+
+    previousModalStateRef.current = isModalStageOpen;
+  }, [activePanel, isMobileBreakpoint, isModalStageOpen, presence.present]);
 
   useEffect(() => {
     if (!activePanel) return undefined;
@@ -403,12 +387,6 @@ export default function WorkspaceShell({
       style={{ "--workspace-drawer-width": `${safeDrawerWidth}px` }}
       aria-label="AI workspace"
     >
-      <div className="workspace-shell__ambient" aria-hidden="true">
-        <span className="workspace-shell__blob workspace-shell__blob--one" />
-        <span className="workspace-shell__blob workspace-shell__blob--two" />
-        <span className="workspace-shell__blob workspace-shell__blob--three" />
-      </div>
-
       <div
         className="workspace-shell__primary"
         role="group"
@@ -420,38 +398,29 @@ export default function WorkspaceShell({
       </div>
 
       {!activePanel ? (
-        <div className="workspace-stage-launcher">
+        <nav className="workspace-evidence-edge" aria-label="Open evidence stage">
           <button
             ref={launcherRef}
             type="button"
-            className="workspace-stage-launcher__open focus-ring"
-            aria-label="Open Stage"
+            className="workspace-evidence-edge__label focus-ring"
+            aria-label="Open Stage evidence"
+            aria-controls={stageId}
+            aria-expanded="false"
             onClick={(event) => openStage(visiblePanel, event.currentTarget)}
           >
-            <Layers className="h-4 w-4" aria-hidden="true" />
-            <span>Stage</span>
-            {hasAnyBadge ? <span className="workspace-stage-launcher__signal" aria-label="New Stage content" /> : null}
+            <span>Evidence</span>
+            {hasAnyBadge ? <span className="workspace-evidence-edge__signal" aria-label="New evidence" /> : null}
           </button>
-          <button
-            ref={viewMenuButtonRef}
-            type="button"
-            className="workspace-stage-launcher__menu focus-ring"
-            aria-label="Choose Stage view"
-            aria-haspopup="menu"
-            aria-expanded={viewMenuOpen}
-            onClick={() => setViewMenuOpen((current) => !current)}
-          >
-            <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
-          </button>
-          <StageViewMenu
-            open={viewMenuOpen}
+          <EvidenceLensBar
             activePanel={activePanel}
+            selectedPanel={visiblePanel}
             panelBadges={panelBadges}
             onSelect={selectPanel}
-            onClose={() => setViewMenuOpen(false)}
-            anchorRef={viewMenuButtonRef}
+            tabPanelId={tabPanelId}
+            tabIdPrefix={edgeTabIdPrefix}
+            compact
           />
-        </div>
+        </nav>
       ) : null}
 
       {presence.present && isModalStageOpen ? (
@@ -467,12 +436,11 @@ export default function WorkspaceShell({
       {presence.present ? (
         <aside
           ref={stageRef}
-          id="workspace-context-drawer"
+          id={stageId}
           className={`workspace-stage ${presence.entering ? "is-entered" : ""}`}
           role={isModalStageOpen ? "dialog" : "complementary"}
           aria-modal={isModalStageOpen ? "true" : undefined}
-          aria-labelledby="workspace-stage-title"
-          aria-label={isModalStageOpen ? selectedTool.label : undefined}
+          aria-labelledby={stageTitleId}
           tabIndex={isModalStageOpen ? -1 : undefined}
         >
           {!isModalStageOpen ? (
@@ -504,36 +472,13 @@ export default function WorkspaceShell({
             </button>
 
             <div className="workspace-stage__identity">
-              <span className="workspace-stage__glyph" aria-hidden="true"><SelectedIcon className="h-4 w-4" /></span>
               <div className="min-w-0">
-                <span className="workspace-stage__eyebrow">Stage</span>
-                <h2 id="workspace-stage-title">{selectedTool.label}</h2>
+                <span className="workspace-stage__eyebrow">Evidence stage</span>
+                <h2 id={stageTitleId}>{selectedTool.label}</h2>
               </div>
             </div>
 
             <div className="workspace-stage__actions">
-              <div className="workspace-stage__switcher">
-                <button
-                  ref={viewMenuButtonRef}
-                  type="button"
-                  className="workspace-stage__action workspace-stage__switch focus-ring"
-                  aria-label="Switch Stage view"
-                  aria-haspopup="menu"
-                  aria-expanded={viewMenuOpen}
-                  onClick={() => setViewMenuOpen((current) => !current)}
-                >
-                  <span>{selectedTool.label}</span>
-                  <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
-                <StageViewMenu
-                  open={viewMenuOpen}
-                  activePanel={activePanel}
-                  panelBadges={panelBadges}
-                  onSelect={selectPanel}
-                  onClose={() => setViewMenuOpen(false)}
-                  anchorRef={viewMenuButtonRef}
-                />
-              </div>
               {!isMobileBreakpoint ? (
                 <button
                   type="button"
@@ -555,9 +500,24 @@ export default function WorkspaceShell({
                 <X className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
+            <EvidenceLensBar
+              activePanel={activePanel}
+              selectedPanel={visiblePanel}
+              panelBadges={panelBadges}
+              onSelect={selectPanel}
+              tabPanelId={tabPanelId}
+              tabIdPrefix={stageTabIdPrefix}
+              containerRef={stageLensRef}
+            />
           </header>
 
-          <div className="workspace-stage__body">
+          <div
+            id={tabPanelId}
+            className="workspace-stage__body"
+            role="tabpanel"
+            aria-labelledby={`${stageTabIdPrefix}-${selectedTool.id}`}
+            tabIndex={0}
+          >
             {selectedTool ? renderPanel?.(selectedTool.id) : null}
           </div>
         </aside>

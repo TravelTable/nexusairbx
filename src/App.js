@@ -110,7 +110,7 @@ function App() {
           <Route path="/assets/:assetId" element={withSiteShell(<AssetDetailRouteContent />, "tools")} />
           <Route path="/icons-market" element={withSiteShell(<NexusRBXIconsMarketPage />, "tools")} />
           <Route path={AUTHENTICATED_ICON_DETAIL_ROUTE} element={withSiteShell(<NexusRBXIconDetailPage />, "tools")} />
-          <Route path="/script/:id" element={withSiteShell(<NexusRBXScriptPage />, "tools")} />
+          <Route path="/script/:id" element={withSiteShell(<NexusRBXScriptPage />, "workspace")} />
           {/* NEW: on-screen entitlements debugger */}
           <Route path="/debug/entitlements" element={withSiteShell(<AdminRoute><DebugEntitlementsPage /></AdminRoute>, "account")} />
           <Route path="*" element={withSiteShell(<NexusRBXNotFoundPage />, "marketing")} />

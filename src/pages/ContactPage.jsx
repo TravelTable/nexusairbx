@@ -27,6 +27,7 @@ import {
   editorialGutterClass,
   editorialPrimaryButtonClass,
 } from "../components/site/editorialUi";
+import "./ContactLedger.css";
 
 const EMPTY_FORM = {
   category: "technical",
@@ -42,7 +43,7 @@ const EMPTY_FORM = {
 };
 
 const FIELD_CLASS =
-  "mt-2 min-h-12 w-full rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-4 py-3 text-sm text-[var(--ds-text)] outline-none transition-colors placeholder:text-[var(--ds-text-muted)] hover:border-[var(--ds-border-strong)] focus:border-[var(--ds-accent-border)] focus:ring-2 focus:ring-[var(--ds-focus-ring)]";
+  "contact-ledger-field mt-2 min-h-12 w-full rounded-[3px] border border-[var(--nx-rule)] bg-[var(--nx-field)] px-4 py-3 text-sm text-[var(--nx-text)] outline-none placeholder:text-[var(--nx-text-muted)] hover:border-[var(--nx-text-muted)] focus:border-[var(--nx-focus)] focus:ring-1 focus:ring-[var(--nx-focus)]";
 
 function buildTicketMessage(form) {
   const details = [];
@@ -77,7 +78,7 @@ function SelfServiceLink({ href, icon: Icon, title, body, internal = false }) {
     </>
   );
   const className =
-    "flex min-h-11 gap-3 border-b border-[var(--ds-border-subtle)] py-4 text-left transition-colors first:pt-0 last:border-0 last:pb-0 hover:text-[var(--ds-text)] focus-visible:rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)]";
+    "contact-ledger-link flex min-h-11 gap-3 border-b border-[var(--nx-rule-quiet)] py-4 text-left first:pt-0 last:border-0 last:pb-0 hover:text-[var(--nx-purple)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--nx-focus)]";
   return internal ? (
     <Link to={href} className={className}>{content}</Link>
   ) : (
@@ -160,11 +161,11 @@ export default function ContactPage() {
   const security = form.category === "security_privacy";
 
   return (
-    <main className="min-h-[calc(100vh-4rem)] bg-[var(--ds-bg-canvas)] text-[var(--ds-text)]">
+    <main className="contact-ledger-page min-h-[calc(100vh-4rem)] bg-[var(--nx-canvas)] text-[var(--nx-text)]">
       <section>
         <div className={`${editorialGutterClass} mx-auto max-w-7xl py-16 sm:py-20 lg:py-28`}>
-          <p className="text-sm font-semibold text-[var(--ds-accent)]">Contact NexusRBX</p>
-          <h1 className={`${editorialDisplayClass} mt-5 max-w-4xl text-5xl sm:text-6xl lg:text-7xl`}>
+          <p className="contact-ledger-phase text-sm font-semibold">CASE INTAKE / NEW REQUEST</p>
+          <h1 className={`${editorialDisplayClass} contact-ledger-title mt-5 max-w-4xl text-5xl lg:text-[3.625rem]`}>
             Tell us what happened. Keep the details in one place.
           </h1>
           <p className="mt-7 max-w-2xl text-base leading-8 text-[var(--ds-text-muted)] sm:text-lg">
@@ -189,7 +190,7 @@ export default function ContactPage() {
             )}
           </div>
 
-          <div className="grid gap-7 rounded-[14px] bg-[var(--ds-surface-1)] p-5 sm:p-8">
+          <div className="contact-ledger-form grid gap-7 p-5 sm:p-8">
             <Field label="Category">
               <select
                 className={FIELD_CLASS}
@@ -265,13 +266,13 @@ export default function ContactPage() {
               </Field>
             )}
 
-            <div className="flex gap-3 rounded-lg border border-[color-mix(in_srgb,var(--ds-warning)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-warning)_7%,transparent)] p-4 text-sm leading-6 text-[var(--ds-warning)]">
+            <div className="contact-ledger-state flex gap-3 border-y border-[color-mix(in_srgb,var(--ds-warning)_30%,transparent)] p-4 text-sm leading-6 text-[var(--ds-warning)]">
               <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
               <p>Do not include passwords, API keys, login codes, card numbers, or Roblox credentials. NexusRBX staff will not ask for them in a ticket.</p>
             </div>
 
             {status.state === "error" && (
-              <div role="alert" className="rounded-lg border border-[color-mix(in_srgb,var(--ds-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-danger)_7%,transparent)] px-4 py-3 text-sm text-[var(--ds-danger)]">
+              <div role="alert" className="contact-ledger-state border-y border-[color-mix(in_srgb,var(--ds-danger)_30%,transparent)] px-4 py-3 text-sm text-[var(--ds-danger)]">
                 {status.message}
               </div>
             )}
@@ -292,7 +293,7 @@ export default function ContactPage() {
           </div>
         </form>
 
-        <aside className="space-y-10">
+        <aside className="contact-ledger-index space-y-10">
           <section>
             <h2 className="text-base font-semibold">Try these first</h2>
             <div className="mt-5">

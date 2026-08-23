@@ -8,24 +8,16 @@ test("presents a calm, text-led Roblox construction start", () => {
   const onQuickStart = jest.fn();
   const { container } = render(<ChatEmptyState onQuickStart={onQuickStart} />);
   const cards = screen.getAllByRole("button");
-  const mark = container.querySelector(".chat-empty-state__mark");
 
-  expect(screen.getByRole("heading", { name: "Build anything in Roblox." })).toBeVisible();
-  expect(mark).toBeInTheDocument();
-  expect(mark).toHaveAttribute("data-nexus-display-icon", "build");
-  expect(container.querySelectorAll("[data-nexus-display-icon]")).toHaveLength(4);
-  expect(Array.from(container.querySelectorAll(".chat-empty-state__starter-icon"), (icon) => icon.dataset.nexusDisplayIcon)).toEqual([
-    "build",
-    "edit",
-    "debug",
-  ]);
+  expect(screen.getByRole("heading", { name: "What are we changing?" })).toBeVisible();
+  expect(container.querySelectorAll("[data-nexus-display-icon]")).toHaveLength(0);
   expect(screen.queryByRole("group", { name: "Current build context" })).not.toBeInTheDocument();
   expect(cards).toHaveLength(3);
   expect(cards[0]).toHaveClass("chat-empty-state__starter");
   expect(container.querySelector(".grid.sm\\:grid-cols-3")).not.toBeInTheDocument();
-  expect(screen.getByText("Design a complete simulator loop")).toBeVisible();
+  expect(screen.getByText("Design a simulator loop")).toBeVisible();
 
-  fireEvent.click(screen.getByRole("button", { name: /Design a complete simulator loop/i }));
+  fireEvent.click(screen.getByRole("button", { name: /Design a simulator loop/i }));
   expect(onQuickStart).toHaveBeenCalledWith(expect.stringContaining("Roblox simulator"));
 });
 
@@ -83,9 +75,9 @@ test("offers build templates only when the action is available", () => {
   const onOpenTemplates = jest.fn();
   const { rerender } = render(<ChatEmptyState onQuickStart={jest.fn()} />);
 
-  expect(screen.queryByRole("button", { name: /Browse build templates/i })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /Browse request templates/i })).not.toBeInTheDocument();
 
   rerender(<ChatEmptyState onQuickStart={jest.fn()} onOpenTemplates={onOpenTemplates} />);
-  fireEvent.click(screen.getByRole("button", { name: /Browse templates/i }));
+  fireEvent.click(screen.getByRole("button", { name: /Browse request templates/i }));
   expect(onOpenTemplates).toHaveBeenCalledTimes(1);
 });

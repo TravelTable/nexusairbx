@@ -15,7 +15,6 @@ import {
   ArrowRight,
   ShieldCheck,
 } from "lib/icons";
-import { motion } from "framer-motion";
 import { useBilling } from "../context/BillingContext";
 import { BACKEND_URL } from "../config";
 import { Button, Card } from "../components/ui";
@@ -23,6 +22,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/shadcn/t
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "../components/shadcn/tooltip";
 import { Separator } from "../components/shadcn/separator";
 import { editorialDisplayClass } from "../components/site/editorialUi";
+import "./ScriptLedger.css";
 
 const QuickScriptCodeBlock = lazy(() => import("../components/ai/QuickScriptCodeBlock"));
 
@@ -67,13 +67,13 @@ function lintScript(code) {
 function ListSection({ title, items, empty }) {
   const normalized = Array.isArray(items) ? items.filter(Boolean) : [];
   return (
-    <div className="rounded-[12px] bg-[var(--ds-fill-subtle)] p-4">
+    <div className="script-ledger-record p-4">
       <h4 className="text-[10px] font-semibold text-[var(--ds-text-muted)]">{title}</h4>
       {normalized.length ? (
         <ul className="mt-2.5 space-y-1.5 text-xs leading-relaxed text-[var(--ds-text-secondary)]">
           {normalized.map((item, index) => (
             <li key={`${title}-${index}`} className="flex gap-2">
-              <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[var(--ds-accent)]" aria-hidden="true" />
+              <span className="script-ledger-mark mt-1.5 h-1 w-1 shrink-0" aria-hidden="true" />
               <span>{item}</span>
             </li>
           ))}
@@ -175,8 +175,8 @@ export default function ScriptPage() {
 
   if (loading) {
     return (
-      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[var(--ds-bg-canvas)]">
-        <div className="flex flex-col items-center gap-4 text-[var(--ds-text-muted)]">
+      <div className="script-ledger-page relative flex min-h-screen overflow-hidden bg-[var(--ds-bg-canvas)]">
+        <div className="script-ledger-loading flex flex-col gap-4 text-[var(--ds-text-muted)]" role="status">
           <Loader className="h-8 w-8 animate-spin text-[var(--ds-accent)]" />
           <p className="text-sm font-semibold">Loading script...</p>
         </div>
@@ -186,12 +186,12 @@ export default function ScriptPage() {
 
   if (error) {
     return (
-      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[var(--ds-bg-canvas)]">
-        <div className="flex flex-col items-center gap-4 text-center">
+      <div className="script-ledger-page relative flex min-h-screen overflow-hidden bg-[var(--ds-bg-canvas)]">
+        <div className="script-ledger-loading flex flex-col gap-4">
           <p className="text-lg font-semibold text-[var(--ds-danger)]">{error}</p>
           <Link
             to="/ai"
-            className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-semibold text-[var(--ds-accent)] hover:bg-[var(--ds-fill-hover)] hover:underline"
+            className="nx-text-action text-sm"
           >
             ← Back to AI Console
           </Link>
@@ -206,15 +206,15 @@ export default function ScriptPage() {
 
   return (
     <TooltipProvider>
-      <div className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-[var(--ds-bg-canvas)] text-[var(--ds-text)]">
+      <div className="script-ledger-page relative flex min-h-[100dvh] flex-col overflow-hidden bg-[var(--ds-bg-canvas)] text-[var(--ds-text)]">
         {/* Script action bar */}
-        <div className="z-20 shrink-0 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-bg-canvas)]">
+        <div className="script-ledger-action-bar z-20 shrink-0 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-bg-canvas)]">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-8 lg:px-14">
             <div className="flex items-center gap-3 min-w-0">
               <button
                 type="button"
                 onClick={() => navigate("/ai")}
-                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--ds-border)] bg-transparent px-4 py-2 text-[10px] font-semibold text-[var(--ds-text-secondary)] transition-colors hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+                className="script-ledger-action inline-flex min-h-11 items-center gap-2 border-b border-[var(--ds-border)] bg-transparent px-3 py-2 text-[10px] font-semibold text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)]"
                 aria-label="Back to AI Console"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
@@ -234,7 +234,7 @@ export default function ScriptPage() {
                 <TooltipTrigger asChild>
                   <button
                     onClick={handleShare}
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--ds-border)] bg-transparent px-4 text-xs font-semibold text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+                    className="script-ledger-action inline-flex h-11 items-center justify-center gap-2 border-b border-[var(--ds-border)] bg-transparent px-3 text-xs font-semibold text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
                   >
                     {shareCopied ? (
                       <Check className="h-3.5 w-3.5 text-[var(--ds-success)]" />
@@ -251,26 +251,23 @@ export default function ScriptPage() {
         </div>
 
         {/* Main Content Layout */}
-        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-10 sm:px-8 lg:px-14 lg:py-14">
-          <motion.div
+        <main className="script-ledger-main min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-10 sm:px-8 lg:px-14 lg:py-14">
+          <div
             className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-12"
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.22, ease: "easeOut" }}
           >
             {/* Left Pane: Prompt, Metadata, AI Tools, Versions */}
             <div className="space-y-6">
               {/* Prompt Card */}
-              <Card className="rounded-[14px] border-0 bg-[var(--ds-surface-1)] p-6 shadow-none">
+              <Card className="script-ledger-record border-0 p-6 shadow-none">
                 <h3 className="text-[11px] font-semibold text-[var(--ds-text-muted)]">Prompt</h3>
-                <p className="mt-3 rounded-[12px] bg-[var(--ds-fill-subtle)] px-4 py-3 text-sm italic leading-relaxed text-[var(--ds-text-secondary)]">
+                <p className="script-ledger-request mt-3 px-0 py-3 text-sm leading-relaxed text-[var(--ds-text-secondary)]">
                   "{selectedVersion?.prompt || script?.prompt || "No prompt description"}"
                 </p>
               </Card>
 
               {/* Version History Card */}
               {allVersions.length > 1 && (
-                <Card className="rounded-[14px] border-0 bg-[var(--ds-surface-1)] p-6 shadow-none">
+                <Card className="script-ledger-record border-0 p-6 shadow-none">
                   <h3 className="mb-2.5 text-[11px] font-semibold text-[var(--ds-text-muted)]">Version History</h3>
                   <div className="flex flex-wrap gap-2">
                     {allVersions.map((ver) => {
@@ -284,7 +281,7 @@ export default function ScriptPage() {
                             setSelectedVersion(ver);
                             setTags(ver.tags || []);
                           }}
-                          className={`min-h-11 cursor-pointer rounded-full border px-4 py-1.5 text-xs font-semibold transition-colors ${
+                          className={`script-ledger-version min-h-11 cursor-pointer border-b px-4 py-1.5 text-xs font-semibold ${
                             isActive
                               ? "border-[var(--ds-accent-border)] bg-[var(--ds-fill-selected)] text-[var(--ds-accent)]"
                               : "border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
@@ -300,12 +297,12 @@ export default function ScriptPage() {
 
               {/* Details & Instructions Tabs */}
               <Tabs defaultValue="details" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="script-ledger-tabs grid w-full grid-cols-2">
                   <TabsTrigger value="details">Details & Tags</TabsTrigger>
                   <TabsTrigger value="instructions">Instructions</TabsTrigger>
                 </TabsList>
                 <TabsContent value="details" className="space-y-3">
-                  <Card className="space-y-5 rounded-[14px] border-0 bg-[var(--ds-surface-1)] p-6 shadow-none">
+                  <Card className="script-ledger-record space-y-5 border-0 p-6 shadow-none">
                     <div>
                       <h4 className="text-[10px] font-semibold text-[var(--ds-text-muted)]">Description</h4>
                       <p className="mt-1 text-sm leading-relaxed text-[var(--ds-text-secondary)]">
@@ -322,7 +319,7 @@ export default function ScriptPage() {
                           {tags.map((tag, i) => (
                             <span
                               key={i}
-                              className="rounded-full border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-3 py-0.5 text-xs font-semibold text-[var(--ds-accent)]"
+                              className="script-ledger-tag border-b border-[var(--ds-accent-border)] px-3 py-0.5 text-xs font-semibold text-[var(--ds-accent)]"
                             >
                               {tag}
                             </span>
@@ -343,7 +340,7 @@ export default function ScriptPage() {
               </Tabs>
 
               {/* AI Tools Card */}
-              <Card className="rounded-[14px] border-0 bg-[var(--ds-surface-1)] p-6 shadow-none">
+              <Card className="script-ledger-record border-0 p-6 shadow-none">
                 <h3 className="mb-3 text-[11px] font-semibold text-[var(--ds-text-muted)]">AI tools</h3>
                 <div className="grid grid-cols-3 gap-2">
                   <Button
@@ -395,11 +392,7 @@ export default function ScriptPage() {
 
               {/* AI Result Card */}
               {aiResult && (
-                <motion.div
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25 }}
-                >
+                <div>
                   <Card className="relative border border-[color-mix(in_srgb,var(--ds-info)_28%,transparent)] bg-[color-mix(in_srgb,var(--ds-info)_7%,transparent)] p-4">
                     <button
                       onClick={() => {
@@ -417,14 +410,14 @@ export default function ScriptPage() {
                       {aiResult}
                     </p>
                   </Card>
-                </motion.div>
+                </div>
               )}
             </div>
 
             {/* Right Pane: Code Viewer & Actions */}
             <div className="space-y-4 min-w-0">
               {/* Code viewer card */}
-              <section className="overflow-hidden rounded-[14px] bg-[var(--ds-surface-1)]">
+              <section className="script-ledger-code-record overflow-hidden">
                 <div className="flex flex-wrap items-start justify-between gap-4 bg-[var(--ds-fill-subtle)] px-5 py-5">
                   <div className="min-w-0">
                     <h2 className={`${editorialDisplayClass} truncate text-2xl text-[var(--ds-text)]`}>
@@ -449,7 +442,7 @@ export default function ScriptPage() {
                       <TooltipTrigger asChild>
                         <button
                           onClick={handleCopy}
-                          className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-[var(--ds-border)] bg-transparent px-4 text-xs font-semibold text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+                          className="script-ledger-action inline-flex min-h-11 items-center justify-center gap-1.5 border-b border-[var(--ds-border)] bg-transparent px-3 text-xs font-semibold text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
                         >
                           {copied ? <Check className="h-3.5 w-3.5 text-[var(--ds-success)]" /> : <Copy className="h-3.5 w-3.5" />}
                           <span>Copy</span>
@@ -462,7 +455,7 @@ export default function ScriptPage() {
                       <TooltipTrigger asChild>
                         <button
                           onClick={handleDownload}
-                          className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-[var(--ds-border)] bg-transparent px-4 text-xs font-semibold text-[var(--ds-text-muted)] transition-colors hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+                          className="script-ledger-action inline-flex min-h-11 items-center justify-center gap-1.5 border-b border-[var(--ds-border)] bg-transparent px-3 text-xs font-semibold text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
                         >
                           <Download className="h-3.5 w-3.5" />
                           <span>Export</span>
@@ -488,7 +481,7 @@ export default function ScriptPage() {
               </section>
 
               {/* Agent Build Nudge */}
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] bg-[var(--ds-fill-subtle)] p-5">
+              <div className="script-ledger-nudge flex flex-wrap items-center justify-between gap-3 p-5">
                 <div className="flex items-center gap-2.5 text-xs text-[var(--ds-text-muted)]">
                   <ShieldCheck className="h-4 w-4 text-[var(--ds-success)]" />
                   <span>Agent Build supports complex workspaces and live Studio syncing.</span>
@@ -506,7 +499,7 @@ export default function ScriptPage() {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
         </main>
       </div>
     </TooltipProvider>

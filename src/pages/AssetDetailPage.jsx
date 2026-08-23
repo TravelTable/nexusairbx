@@ -27,6 +27,7 @@ import {
 import { useBilling } from "../context/BillingContext";
 import { useSettings } from "../context/SettingsContext";
 import "../components/assets/assetPlatform.css";
+import "../components/assets/assetLedgerOverrides.css";
 
 const POLL_STATES = new Set([
   "upload_pending",

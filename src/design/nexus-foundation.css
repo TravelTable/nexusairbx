@@ -1,0 +1,220 @@
+:root,
+:root[data-theme="light"] {
+  color-scheme: dark;
+
+  --nx-canvas: #1a1618;
+  --nx-depth: #131012;
+  --nx-work: #211b1f;
+  --nx-field: #2c232a;
+  --nx-field-strong: #352a32;
+
+  --nx-text: #e8ded4;
+  --nx-text-secondary: #c2b4ae;
+  --nx-text-muted: #958985;
+  --nx-text-disabled: #746a68;
+
+  --nx-purple: #d6b8d7;
+  --nx-purple-strong: #e0bfe0;
+  --nx-purple-muted: #b982b6;
+
+  --nx-rule: #52434d;
+  --nx-rule-quiet: #3a3036;
+
+  --nx-info: #94a9b0;
+  --nx-success: #a4b487;
+  --nx-warning: #d0a26d;
+  --nx-danger: #d7837c;
+  --nx-focus: #e0bfe0;
+
+  --nx-space-1: 5px;
+  --nx-space-2: 9px;
+  --nx-space-3: 15px;
+  --nx-space-4: 23px;
+  --nx-space-5: 37px;
+  --nx-space-6: 59px;
+  --nx-space-7: 95px;
+
+  --nx-radius-field: 3px;
+  --nx-radius-overlay: 5px;
+
+  --nx-font-display: "Sofia Sans Condensed Variable", "Arial Narrow", sans-serif;
+  --nx-font-body: "Atkinson Hyperlegible Next Variable", "Segoe UI", sans-serif;
+  --nx-font-code: "Atkinson Hyperlegible Mono Variable", "SFMono-Regular", Consolas, monospace;
+
+  --nx-motion-fast: 120ms;
+  --nx-motion-state: 180ms;
+  --nx-motion-spatial: 240ms;
+  --nx-ease-state: cubic-bezier(0.22, 0.72, 0.24, 1);
+
+  /* shadcn compatibility */
+  --background: 330 8% 9%;
+  --foreground: 30 30% 87%;
+  --card: 320 10% 12%;
+  --card-foreground: 30 30% 87%;
+  --popover: 320 10% 12%;
+  --popover-foreground: 30 30% 87%;
+  --primary: 30 30% 87%;
+  --primary-foreground: 330 8% 9%;
+  --secondary: 313 11% 15%;
+  --secondary-foreground: 30 30% 87%;
+  --muted: 313 11% 15%;
+  --muted-foreground: 15 8% 56%;
+  --accent: 298 27% 78%;
+  --accent-foreground: 330 8% 9%;
+  --destructive: 3 53% 66%;
+  --destructive-foreground: 330 8% 9%;
+  --border: 320 10% 29%;
+  --input: 320 10% 29%;
+  --ring: 298 37% 81%;
+  --radius: 0.1875rem;
+
+  /* Compatibility bridge for surfaces migrating from the former --ds system. */
+  --ds-bg-canvas: var(--nx-canvas);
+  --ds-bg-workspace: var(--nx-depth);
+  --ds-bg-sidebar: var(--nx-work);
+  --ds-surface-1: var(--nx-work);
+  --ds-surface-2: var(--nx-field);
+  --ds-surface-3: var(--nx-field-strong);
+  --ds-surface-overlay: var(--nx-work);
+  --ds-surface-muted: var(--nx-field);
+  --ds-fill-subtle: #272025;
+  --ds-fill-hover: #30272d;
+  --ds-fill-active: #392e35;
+  --ds-fill-selected: #352a32;
+  --ds-border-subtle: var(--nx-rule-quiet);
+  --ds-border: var(--nx-rule);
+  --ds-border-strong: #6a5663;
+  --ds-text: var(--nx-text);
+  --ds-text-secondary: var(--nx-text-secondary);
+  --ds-text-muted: var(--nx-text-muted);
+  --ds-text-subtle: var(--nx-text-muted);
+  --ds-text-disabled: var(--nx-text-disabled);
+  --ds-brand-violet: var(--nx-purple);
+  --ds-brand-plum: var(--nx-field);
+  --ds-brand-paper: var(--nx-text);
+  --ds-brand-ink: var(--nx-canvas);
+  --ds-brand-lime: var(--nx-success);
+  --ds-brand-coral: var(--nx-danger);
+  --ds-accent: var(--nx-purple);
+  --ds-accent-rgb: 214, 184, 215;
+  --ds-accent-hover: var(--nx-purple-strong);
+  --ds-accent-pressed: var(--nx-purple-muted);
+  --ds-accent-foreground: var(--nx-canvas);
+  --ds-accent-soft: #332832;
+  --ds-accent-border: #775e75;
+  --ds-focus-ring: var(--nx-focus);
+  --ds-info: var(--nx-info);
+  --ds-info-rgb: 148, 169, 176;
+  --ds-info-foreground: var(--nx-depth);
+  --ds-info-soft: #253034;
+  --ds-info-border: #52656c;
+  --ds-success: var(--nx-success);
+  --ds-success-rgb: 164, 180, 135;
+  --ds-success-foreground: var(--nx-depth);
+  --ds-success-soft: #2c3027;
+  --ds-success-border: #5d684e;
+  --ds-warning: var(--nx-warning);
+  --ds-warning-rgb: 208, 162, 109;
+  --ds-warning-foreground: var(--nx-depth);
+  --ds-warning-soft: #372c22;
+  --ds-warning-border: #765a3e;
+  --ds-danger: var(--nx-danger);
+  --ds-danger-rgb: 215, 131, 124;
+  --ds-danger-foreground: var(--nx-depth);
+  --ds-danger-soft: #392525;
+  --ds-danger-border: #754b49;
+  --ds-plan: var(--nx-purple);
+  --ds-plan-rgb: 214, 184, 215;
+  --ds-plan-foreground: var(--nx-depth);
+  --ds-radius-sm: 2px;
+  --ds-radius-md: 3px;
+  --ds-radius-lg: 4px;
+  --ds-radius-xl: 5px;
+  --ds-shadow-panel: none;
+  --ds-shadow-overlay: none;
+  --ds-shadow-focus: none;
+  --ds-font-sans: var(--nx-font-body);
+  --ds-font-display: var(--nx-font-display);
+  --ds-font-code: var(--nx-font-code);
+  --ds-space-1: var(--nx-space-1);
+  --ds-space-2: var(--nx-space-2);
+  --ds-space-3: var(--nx-space-3);
+  --ds-space-4: var(--nx-space-4);
+  --ds-space-6: var(--nx-space-5);
+  --ds-space-8: var(--nx-space-6);
+  --ds-space-12: var(--nx-space-7);
+  --ds-motion-press: var(--nx-motion-fast);
+  --ds-motion-reveal: var(--nx-motion-fast);
+  --ds-motion-dock: var(--nx-motion-state);
+  --ds-motion-stage: var(--nx-motion-spatial);
+  --ds-motion-construct: var(--nx-motion-spatial);
+  --ds-ease-spatial: var(--nx-ease-state);
+
+  --motion-instant: var(--nx-motion-fast);
+  --motion-fast: var(--nx-motion-fast);
+  --motion-standard: var(--nx-motion-state);
+  --motion-panel: var(--nx-motion-spatial);
+  --motion-large: var(--nx-motion-spatial);
+  --ease-product: var(--nx-ease-state);
+  --ease-standard: var(--nx-ease-state);
+
+  --ai-bg: var(--nx-depth);
+  --ai-surface: var(--nx-work);
+  --ai-surface-muted: var(--nx-field);
+  --ai-border: var(--nx-rule);
+  --ai-text: var(--nx-text);
+  --ai-text-muted: var(--nx-text-muted);
+  --ai-accent: var(--nx-purple);
+  --ai-accent-2: var(--nx-purple-muted);
+  --ai-info: var(--nx-info);
+  --ai-danger: var(--nx-danger);
+}
+
+html {
+  min-width: 320px;
+  background: var(--nx-canvas);
+}
+
+body {
+  margin: 0;
+  background: var(--nx-canvas);
+  color: var(--nx-text);
+  font-family: var(--nx-font-body);
+  font-size: 16px;
+  line-height: 1.55;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--nx-field-strong);
+  color: var(--nx-purple-strong);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+a,
+button,
+summary,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+:where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--nx-focus);
+  outline-offset: 3px;
+}
+
+@media (prefers-contrast: more) {
+  :root,
+  :root[data-theme="light"] {
+    --nx-rule-quiet: #66545f;
+    --nx-rule: #846c7b;
+    --nx-text-muted: #c7b9b3;
+  }
+}

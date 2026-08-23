@@ -16,14 +16,8 @@ import {
   SUPPORT_STATUSES,
   supportCategoryLabel,
   supportStatusLabel,
-  supportStatusTone,
 } from "../lib/supportPresentation";
-import {
-  editorialDisplayClass,
-  editorialGutterClass,
-  editorialPrimaryButtonClass,
-  editorialSecondaryButtonClass,
-} from "../components/site/editorialUi";
+import "./AccountLedger.css";
 
 const EMPTY_FILTERS = { search: "", category: "", status: "", priority: "" };
 
@@ -136,98 +130,110 @@ export default function AdminSupportPage({ isAdmin = false }) {
   const ticket = detail.ticket;
 
   return (
-    <main className={`${editorialGutterClass} min-h-[calc(100vh-4rem)] bg-[var(--ds-bg-canvas)] py-12 text-[var(--ds-text)] sm:py-16`}>
-      <div className="mx-auto max-w-[1500px]">
-        <header className="flex flex-col gap-7 pb-10 lg:flex-row lg:items-end lg:justify-between">
+    <main id="main-content" className="account-ledger-page">
+      <div className="account-ledger-wrap account-ledger-wrap--wide">
+        <header className="account-ledger-header">
           <div>
-            <p className="text-sm font-semibold text-[var(--ds-accent)]">Staff support</p>
-            <h1 className={`${editorialDisplayClass} mt-3 text-5xl sm:text-6xl`}>Shared request queue</h1>
-            <p className="mt-2 text-sm text-[var(--ds-text-muted)]">Public replies, private notes, and immutable activity history in one place.</p>
+            <p className="account-ledger-kicker">Staff support</p>
+            <h1 className="account-ledger-title">Shared request queue</h1>
+            <p className="account-ledger-intro">Public replies, private notes, and immutable activity history in one operational ledger.</p>
           </div>
-          <button type="button" onClick={() => void loadQueue()} className={`${editorialSecondaryButtonClass} w-fit`}>Refresh queue</button>
+          <div className="account-ledger-actions">
+            <button type="button" onClick={() => void loadQueue()} className="account-ledger-button">Refresh queue</button>
+          </div>
         </header>
 
-        <section aria-label="Queue filters" className="grid gap-3 rounded-[14px] bg-[var(--ds-surface-1)] p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-[minmax(240px,1fr)_repeat(3,190px)_auto]">
-          <label className="sr-only" htmlFor="support-search">Search requests</label>
-          <input id="support-search" type="search" value={filters.search} onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))} placeholder="Search subject, email, request ID…" className="min-h-12 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-4 text-sm outline-none placeholder:text-[var(--ds-text-muted)] focus:border-[var(--ds-accent-border)] focus:ring-2 focus:ring-[var(--ds-focus-ring)]" />
+        <section aria-label="Queue filters" className="account-ledger-filter-bar account-ledger-section">
+          <div className="account-ledger-field-group">
+            <label className="account-ledger-field-label" htmlFor="support-search">Search requests</label>
+            <input id="support-search" type="search" value={filters.search} onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))} placeholder="Subject, email, request ID…" className="account-ledger-field" />
+          </div>
           <QueueSelect label="Category" value={filters.category} onChange={(value) => setFilters((current) => ({ ...current, category: value }))} options={SUPPORT_CATEGORIES.map((item) => ({ value: item.id, label: item.label }))} />
           <QueueSelect label="Status" value={filters.status} onChange={(value) => setFilters((current) => ({ ...current, status: value }))} options={SUPPORT_STATUSES.map((value) => ({ value, label: supportStatusLabel(value) }))} />
           <QueueSelect label="Priority" value={filters.priority} onChange={(value) => setFilters((current) => ({ ...current, priority: value }))} options={SUPPORT_PRIORITIES.map((value) => ({ value, label: value.charAt(0).toUpperCase() + value.slice(1) }))} />
-          <button type="button" onClick={() => setFilters(EMPTY_FILTERS)} className="min-h-12 rounded-full border border-[var(--ds-border)] bg-transparent px-5 text-sm text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]">Clear</button>
+          <button type="button" onClick={() => setFilters(EMPTY_FILTERS)} className="account-ledger-button">Clear filters</button>
         </section>
 
-        {(queue.error || detail.error) && <div role="alert" className="my-4 rounded-lg border border-[color-mix(in_srgb,var(--ds-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-danger)_8%,transparent)] px-4 py-3 text-sm text-[var(--ds-danger)]">{queue.error || detail.error}</div>}
+        {(queue.error || detail.error) && <div role="alert" className="account-ledger-notice account-ledger-notice--danger">{queue.error || detail.error}</div>}
 
-        <div className="mt-8 grid min-h-[650px] overflow-hidden rounded-[14px] bg-[var(--ds-surface-1)] lg:grid-cols-[380px_minmax(0,1fr)]">
-          <aside aria-label="Support queue" className="border-b border-[var(--ds-border-subtle)] lg:border-b-0 lg:border-r">
-            <div className="flex items-center justify-between border-b border-[var(--ds-border-subtle)] px-3 py-3 text-xs text-[var(--ds-text-muted)]">
+        <div className="account-ledger-queue-layout">
+          <aside aria-label="Support queue" className="account-ledger-queue">
+            <div className="account-ledger-queue-summary">
               <span>{filteredTickets.length} requests</span><span>{queue.loading ? "Updating…" : "Latest first"}</span>
             </div>
-            <div className="max-h-[760px] overflow-y-auto">
+            <div className="account-ledger-queue-scroll">
+              {queue.loading && filteredTickets.length === 0 && <p className="account-ledger-empty" role="status">Loading request queue…</p>}
               {filteredTickets.map((item) => (
-                <button key={item.id} type="button" onClick={() => setSelectedId(item.id)} className={`block min-h-11 w-full border-b border-[var(--ds-border-subtle)] px-3 py-4 text-left outline-none hover:bg-[var(--ds-fill-hover)] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--ds-focus-ring)] ${selectedId === item.id ? "bg-[var(--ds-fill-selected)]" : ""}`}>
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="line-clamp-2 text-sm font-semibold text-[var(--ds-text)]">{item.subject}</span>
-                    {item.staffUnreadCount > 0 && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[var(--ds-accent)]" aria-label={`${item.staffUnreadCount} unread`} />}
+                <button key={item.id} type="button" onClick={() => setSelectedId(item.id)} aria-current={selectedId === item.id ? "true" : undefined} className="account-ledger-queue-item">
+                  <div className="account-ledger-inline-actions">
+                    <span className="account-ledger-ticket-subject">{item.subject}</span>
+                    {item.staffUnreadCount > 0 && <span className="account-ledger-unread" aria-label={`${item.staffUnreadCount} unread`}>{item.staffUnreadCount} new</span>}
                   </div>
-                  <p className="mt-1 truncate text-xs text-[var(--ds-text-secondary)]">{item.requester?.email || item.requester?.uid}</p>
-                  <div className="mt-3 flex items-center justify-between gap-3 text-xs text-[var(--ds-text-muted)]"><span>{supportCategoryLabel(item.category)} · {item.priority}</span><span>{formatSupportDate(item.updatedAt)}</span></div>
+                  <p className="account-ledger-ticket-preview">{item.requester?.email || item.requester?.uid}</p>
+                  <div className="account-ledger-queue-meta account-ledger-ticket-meta"><span>{supportCategoryLabel(item.category)} · {item.priority}</span><span>{formatSupportDate(item.updatedAt)}</span></div>
                 </button>
               ))}
-              {!queue.loading && filteredTickets.length === 0 && <p className="px-4 py-12 text-center text-sm text-[var(--ds-text-muted)]">No requests match these filters.</p>}
+              {!queue.loading && filteredTickets.length === 0 && <p className="account-ledger-empty">No requests match these filters.</p>}
             </div>
           </aside>
 
-          <section aria-label="Selected request" className="min-w-0 lg:px-7">
+          <section aria-label="Selected request" className="account-ledger-case">
             {!selectedId ? (
-              <div className="grid min-h-[500px] place-items-center text-sm text-[var(--ds-text-muted)]">Select a request to open the conversation.</div>
+              <div className="account-ledger-case-state">Select a request to open the conversation.</div>
             ) : detail.loading && !ticket ? (
-              <div className="grid min-h-[500px] place-items-center text-sm text-[var(--ds-text-muted)]">Loading request…</div>
+              <div className="account-ledger-case-state" role="status">Loading request…</div>
             ) : ticket ? (
-              <div className="py-6">
-                <div className="flex flex-col gap-5 border-b border-[var(--ds-border-subtle)] pb-5 xl:flex-row xl:items-start xl:justify-between">
-                  <div className="min-w-0">
-                    <p className="text-xs text-[var(--ds-text-muted)]">{ticket.id} · {ticket.requester?.email || ticket.requester?.uid}</p>
-                    <h2 className="mt-2 break-words text-2xl font-semibold">{ticket.subject}</h2>
-                    <p className="mt-2 text-xs text-[var(--ds-text-muted)]">{supportCategoryLabel(ticket.category)} · Opened {formatSupportDate(ticket.createdAt, { includeTime: true })}</p>
+              <div>
+                <header className="account-ledger-case-head">
+                  <div>
+                    <p className="account-ledger-ticket-meta">{ticket.id} · {ticket.requester?.email || ticket.requester?.uid}</p>
+                    <h2 className="account-ledger-case-title">{ticket.subject}</h2>
+                    <p className="account-ledger-ticket-meta">{supportCategoryLabel(ticket.category)} · Opened {formatSupportDate(ticket.createdAt, { includeTime: true })}</p>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <label className="sr-only" htmlFor="ticket-status">Ticket status</label>
-                    <select id="ticket-status" value={ticket.status} disabled={Boolean(busy)} onChange={(event) => void mutateTicket("status", event.target.value)} className={`min-h-11 rounded-[10px] border px-2 text-xs outline-none ${supportStatusTone(ticket.status)}`}>{SUPPORT_STATUSES.map((value) => <option className="bg-[var(--ds-surface-2)] text-[var(--ds-text)]" key={value} value={value}>{supportStatusLabel(value)}</option>)}</select>
-                    <label className="sr-only" htmlFor="ticket-priority">Ticket priority</label>
-                    <select id="ticket-priority" value={ticket.priority} disabled={Boolean(busy)} onChange={(event) => void mutateTicket("priority", event.target.value)} className="min-h-11 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-2 text-xs capitalize outline-none focus:border-[var(--ds-accent-border)]">{SUPPORT_PRIORITIES.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+                  <div className="account-ledger-case-controls">
+                    <div className="account-ledger-field-group">
+                      <label className="account-ledger-field-label" htmlFor="ticket-status">Status</label>
+                      <select id="ticket-status" value={ticket.status} disabled={Boolean(busy)} onChange={(event) => void mutateTicket("status", event.target.value)} className="account-ledger-select">{SUPPORT_STATUSES.map((value) => <option key={value} value={value}>{supportStatusLabel(value)}</option>)}</select>
+                    </div>
+                    <div className="account-ledger-field-group">
+                      <label className="account-ledger-field-label" htmlFor="ticket-priority">Priority</label>
+                      <select id="ticket-priority" value={ticket.priority} disabled={Boolean(busy)} onChange={(event) => void mutateTicket("priority", event.target.value)} className="account-ledger-select capitalize">{SUPPORT_PRIORITIES.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+                    </div>
                   </div>
-                </div>
+                </header>
 
-                <div className="divide-y divide-[var(--ds-border-subtle)]">
+                <section className="account-ledger-conversation" aria-label="Request conversation">
                   {(ticket.messages || []).map((message) => (
-                    <article key={message.id} className="grid gap-2 py-5 sm:grid-cols-[140px_minmax(0,1fr)]">
-                      <div><p className="text-sm font-semibold">{message.authorType === "customer" ? "Customer" : message.authorType === "system" ? "System" : "Support"}</p><p className="mt-1 text-xs text-[var(--ds-text-muted)]">{formatSupportDate(message.createdAt, { includeTime: true })}</p></div>
-                      <p className="whitespace-pre-wrap break-words text-sm leading-7 text-[var(--ds-text-secondary)]">{message.body}</p>
+                    <article key={message.id}>
+                      <div><p className="account-ledger-message-author">{message.authorType === "customer" ? "Customer" : message.authorType === "system" ? "System" : "Support"}</p><p className="account-ledger-message-time">{formatSupportDate(message.createdAt, { includeTime: true })}</p></div>
+                      <p className="account-ledger-message-body">{message.body}</p>
                     </article>
                   ))}
-                </div>
+                </section>
 
-                <form onSubmit={sendComposer} className={`rounded-[14px] px-5 py-6 ${composer.type === "note" ? "bg-[color-mix(in_srgb,var(--ds-warning)_7%,transparent)]" : "bg-[var(--ds-fill-subtle)]"}`}>
-                  <div className="flex items-center gap-4">
-                    <label className="text-sm font-semibold"><input type="radio" name="composer-type" value="reply" checked={composer.type === "reply"} onChange={() => setComposer((current) => ({ ...current, type: "reply" }))} className="mr-2" />Public reply</label>
-                    <label className="text-sm font-semibold text-[var(--ds-warning)]"><input type="radio" name="composer-type" value="note" checked={composer.type === "note"} onChange={() => setComposer((current) => ({ ...current, type: "note" }))} className="mr-2" />Private note</label>
+                <form onSubmit={sendComposer} className={`account-ledger-composer ${composer.type === "note" ? "account-ledger-composer--private" : ""}`}>
+                  <div className="account-ledger-composer-head">
+                    <label className="account-ledger-radio-label"><input type="radio" name="composer-type" value="reply" checked={composer.type === "reply"} onChange={() => setComposer((current) => ({ ...current, type: "reply" }))} />Public reply</label>
+                    <label className="account-ledger-radio-label account-ledger-radio-label--private"><input type="radio" name="composer-type" value="note" checked={composer.type === "note"} onChange={() => setComposer((current) => ({ ...current, type: "note" }))} />Private note</label>
                   </div>
-                  <p className="mt-2 text-xs text-[var(--ds-text-muted)]">{composer.type === "note" ? "Visible only to support staff. It will never be returned by customer APIs." : "The customer will see this reply in their support desk."}</p>
-                  <textarea value={composer.message} onChange={(event) => setComposer((current) => ({ ...current, message: event.target.value }))} rows={5} maxLength={10000} required className="mt-3 w-full resize-y rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-4 py-3 text-sm leading-6 outline-none focus:border-[var(--ds-accent-border)] focus:ring-2 focus:ring-[var(--ds-focus-ring)]" />
-                  <div className="mt-3 flex justify-end"><button type="submit" disabled={Boolean(busy) || !composer.message.trim()} className={`min-h-11 rounded-[10px] px-4 py-2 text-sm font-semibold disabled:opacity-50 ${composer.type === "note" ? "bg-[var(--ds-warning)] text-[var(--ds-bg-canvas)]" : "bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)]"}`}>{busy === composer.type ? "Saving…" : composer.type === "note" ? "Add private note" : "Send public reply"}</button></div>
+                  <p className="account-ledger-detail">{composer.type === "note" ? "Visible only to support staff. It will never be returned by customer APIs." : "The customer will see this reply in their support desk."}</p>
+                  <div className="account-ledger-field-group">
+                    <label className="account-ledger-field-label" htmlFor="staff-support-composer">Message</label>
+                    <textarea id="staff-support-composer" value={composer.message} onChange={(event) => setComposer((current) => ({ ...current, message: event.target.value }))} rows={5} maxLength={10000} required className="account-ledger-textarea" />
+                  </div>
+                  <div className="account-ledger-actions"><button type="submit" disabled={Boolean(busy) || !composer.message.trim()} className={`account-ledger-button ${composer.type === "note" ? "account-ledger-button--warning" : "account-ledger-button--primary"}`}>{busy === composer.type ? "Saving…" : composer.type === "note" ? "Add private note" : "Send public reply"}</button></div>
                 </form>
 
                 {(ticket.internalNotes || []).length > 0 && (
-                  <section className="mt-7 border-l-2 border-[var(--ds-warning)] pl-4">
-                    <h3 className="text-sm font-semibold text-[var(--ds-warning)]">Private staff notes</h3>
-                    <div className="mt-3 space-y-4">{ticket.internalNotes.map((note) => <article key={note.id}><p className="whitespace-pre-wrap text-sm leading-6 text-[var(--ds-text-secondary)]">{note.body}</p><p className="mt-1 text-xs text-[var(--ds-text-muted)]">{note.authorEmail || note.authorUid} · {formatSupportDate(note.createdAt, { includeTime: true })}</p></article>)}</div>
+                  <section className="account-ledger-private-notes">
+                    <h3>Private staff notes</h3>
+                    <div>{ticket.internalNotes.map((note) => <article key={note.id} className="account-ledger-private-note"><p className="account-ledger-message-body">{note.body}</p><p className="account-ledger-message-time">{note.authorEmail || note.authorUid} · {formatSupportDate(note.createdAt, { includeTime: true })}</p></article>)}</div>
                   </section>
                 )}
 
-                <section className="mt-8 border-t border-[var(--ds-border-subtle)] pt-5">
-                  <h3 className="text-sm font-semibold">Activity history</h3>
-                  <ol className="mt-3 space-y-3">{(ticket.events || []).map((event) => <li key={event.id} className="grid gap-1 text-xs sm:grid-cols-[180px_minmax(0,1fr)]"><time className="text-[var(--ds-text-muted)]">{formatSupportDate(event.createdAt, { includeTime: true })}</time><span className="text-[var(--ds-text-secondary)]">{eventDescription(event)} <span className="text-[var(--ds-text-muted)]">by {event.actorEmail || event.actorType}</span></span></li>)}</ol>
+                <section className="account-ledger-section" aria-labelledby="activity-history-title">
+                  <h3 id="activity-history-title" className="account-ledger-record-heading">Activity history</h3>
+                  <ol className="account-ledger-activity">{(ticket.events || []).map((event) => <li key={event.id}><time>{formatSupportDate(event.createdAt, { includeTime: true })}</time><span>{eventDescription(event)} <span className="account-ledger-ticket-meta">by {event.actorEmail || event.actorType}</span></span></li>)}</ol>
                 </section>
               </div>
             ) : null}
@@ -235,17 +241,22 @@ export default function AdminSupportPage({ isAdmin = false }) {
         </div>
 
         {isAdmin && (
-          <section className="mt-8 max-w-2xl border-t border-[var(--ds-border-subtle)] pt-7">
-            <p className="text-sm font-semibold text-[var(--ds-accent)]">Admin only</p>
-            <h2 className="mt-2 text-xl font-semibold">Support staff access</h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--ds-text-muted)]">Grant the least-privilege support role using a verified Firebase UID. This does not grant general admin access.</p>
-            <form onSubmit={changeSupportRole} className="mt-5 flex flex-col gap-3 sm:flex-row">
-              <label className="sr-only" htmlFor="support-agent-uid">Firebase UID</label>
-              <input id="support-agent-uid" value={roleForm.uid} onChange={(event) => setRoleForm((current) => ({ ...current, uid: event.target.value }))} placeholder="Firebase UID" required className="min-h-12 min-w-0 flex-1 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-4 text-sm outline-none focus:border-[var(--ds-accent-border)]" />
-              <select aria-label="Support role action" value={roleForm.enabled ? "grant" : "revoke"} onChange={(event) => setRoleForm((current) => ({ ...current, enabled: event.target.value === "grant" }))} className="min-h-12 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-4 text-sm"><option value="grant">Grant support role</option><option value="revoke">Revoke support role</option></select>
-              <button type="submit" className={editorialPrimaryButtonClass}>Update access</button>
+          <section className="account-ledger-section account-ledger-checkout-action" aria-labelledby="support-access-title">
+            <p className="account-ledger-kicker">Admin only</p>
+            <h2 id="support-access-title" className="account-ledger-section-title">Support staff access</h2>
+            <p className="account-ledger-section-copy">Grant the least-privilege support role using a verified Firebase UID. This does not grant general admin access.</p>
+            <form onSubmit={changeSupportRole} className="account-ledger-role-form">
+              <div className="account-ledger-field-group">
+                <label className="account-ledger-field-label" htmlFor="support-agent-uid">Firebase UID</label>
+                <input id="support-agent-uid" value={roleForm.uid} onChange={(event) => setRoleForm((current) => ({ ...current, uid: event.target.value }))} placeholder="Verified Firebase UID" required className="account-ledger-field" />
+              </div>
+              <div className="account-ledger-field-group">
+                <label className="account-ledger-field-label" htmlFor="support-role-action">Access action</label>
+                <select id="support-role-action" value={roleForm.enabled ? "grant" : "revoke"} onChange={(event) => setRoleForm((current) => ({ ...current, enabled: event.target.value === "grant" }))} className="account-ledger-select"><option value="grant">Grant support role</option><option value="revoke">Revoke support role</option></select>
+              </div>
+              <button type="submit" className="account-ledger-button account-ledger-button--primary">Update access</button>
             </form>
-            {(roleForm.status || roleForm.error) && <p role="status" className={`mt-3 text-sm ${roleForm.error ? "text-[var(--ds-danger)]" : "text-[var(--ds-success)]"}`}>{roleForm.error || roleForm.status}</p>}
+            {(roleForm.status || roleForm.error) && <p role={roleForm.error ? "alert" : "status"} className={`account-ledger-notice ${roleForm.error ? "account-ledger-notice--danger" : "account-ledger-notice--success"}`}>{roleForm.error || roleForm.status}</p>}
           </section>
         )}
       </div>
@@ -256,5 +267,5 @@ export default function AdminSupportPage({ isAdmin = false }) {
 function QueueSelect({ label, value, onChange, options }) {
   const id = `queue-${label.toLowerCase()}`;
   const plural = { Category: "categories", Status: "statuses", Priority: "priorities" }[label] || `${label.toLowerCase()}s`;
-  return <><label className="sr-only" htmlFor={id}>{label}</label><select id={id} value={value} onChange={(event) => onChange(event.target.value)} className="min-h-12 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-4 text-sm outline-none focus:border-[var(--ds-accent-border)]"><option value="">All {plural}</option>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></>;
+  return <div className="account-ledger-field-group"><label className="account-ledger-field-label" htmlFor={id}>{label}</label><select id={id} value={value} onChange={(event) => onChange(event.target.value)} className="account-ledger-select"><option value="">All {plural}</option>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></div>;
 }

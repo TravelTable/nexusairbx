@@ -1,0 +1,54 @@
+.contact-ledger-page {
+  background: var(--nx-canvas);
+  color: var(--nx-text);
+  font-family: var(--nx-font-body);
+}
+
+.contact-ledger-phase {
+  color: var(--nx-purple-muted);
+  letter-spacing: 0.07em;
+}
+
+.contact-ledger-title {
+  color: var(--nx-purple);
+}
+
+.contact-ledger-form {
+  border-top: 1px solid var(--nx-rule);
+  border-bottom: 1px solid var(--nx-rule);
+  border-radius: 0;
+  background: transparent;
+}
+
+.contact-ledger-field {
+  border-radius: var(--nx-radius-field) !important;
+  box-shadow: none !important;
+}
+
+.contact-ledger-state {
+  border-right: 0;
+  border-left: 0;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.contact-ledger-index {
+  border-top: 1px solid var(--nx-rule);
+  padding-top: var(--nx-space-4);
+}
+
+.contact-ledger-link {
+  border-radius: 0 !important;
+}
+
+.contact-ledger-link > svg {
+  width: 13px;
+  height: 13px;
+  color: var(--nx-text-muted) !important;
+}
+
+@media (max-width: 1023px) {
+  .contact-ledger-index {
+    order: -1;
+  }
+}

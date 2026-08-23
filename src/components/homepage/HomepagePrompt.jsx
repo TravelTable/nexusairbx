@@ -105,7 +105,7 @@ export default function HomepagePrompt({
 
   return (
     <form
-      className={cn("mt-7 rounded-[14px] border border-[var(--ds-border-strong)] bg-[var(--ds-surface-1)] p-2.5 shadow-[var(--ds-shadow-panel)] md:max-w-2xl", className)}
+      className={cn("mt-7 border-y border-[var(--nx-rule)] bg-[var(--nx-work)] px-[15px] py-[15px] md:max-w-2xl", className)}
       onSubmit={handleSubmit}
       data-generation-intent-form="homepage"
       data-home-prompt={promptId}
@@ -132,27 +132,27 @@ export default function HomepagePrompt({
           aria-invalid={Boolean(error)}
           aria-describedby={messageId}
           rows={3}
-          className="min-h-[92px] resize-none rounded-[10px] border-0 bg-transparent px-3 py-3 text-base leading-6 text-[var(--ds-text)] shadow-none placeholder:text-[var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] focus-visible:ring-offset-0"
+          className="min-h-[92px] resize-none rounded-none border-0 border-l-2 border-[var(--nx-rule)] bg-transparent px-[15px] py-[9px] text-base leading-6 text-[var(--nx-text)] shadow-none placeholder:text-[var(--nx-text-muted)] focus-visible:border-[var(--nx-focus)] focus-visible:ring-0"
         />
-      <div className="mt-2 flex flex-col gap-2 border-t border-[var(--ds-border-subtle)] pt-2 sm:flex-row sm:items-center sm:justify-between">
-        <span className="px-2 text-xs text-[var(--ds-text-muted)]">Roblox project / Shift + Enter for a new line</span>
+      <div className="mt-[9px] flex flex-col gap-[9px] border-t border-[var(--nx-rule-quiet)] pt-[9px] sm:flex-row sm:items-center sm:justify-between">
+        <span className="px-[5px] text-xs text-[var(--nx-text-muted)]">PROJECT REQUEST / Shift + Enter for a new line</span>
         <Button
           type="submit"
           onClick={() => {
             methodRef.current = "button";
           }}
           disabled={!prompt.trim() || submitting}
-          className="h-11 rounded-[8px] bg-[var(--ds-text)] px-5 text-sm font-semibold text-[var(--ds-bg-canvas)] transition-[background-color,transform] hover:bg-[var(--ds-text-secondary)] active:scale-[0.985] disabled:bg-[var(--ds-text-muted)] motion-reduce:transform-none sm:min-w-32"
+          className="h-11 rounded-none border-0 border-b border-[var(--nx-text-secondary)] bg-transparent px-[15px] text-sm font-semibold text-[var(--nx-text)] hover:border-[var(--nx-purple-muted)] hover:bg-[var(--nx-field)] hover:text-[var(--nx-purple)] disabled:border-[var(--nx-rule-quiet)] disabled:bg-transparent disabled:text-[var(--nx-text-disabled)] sm:min-w-32"
         >
           {submitting ? homepagePrompt.loadingLabel : ctaText}
         </Button>
       </div>
       {error ? (
-        <p id={messageId} className="mt-3 text-sm font-medium text-[var(--ds-danger)]" role="alert">
+        <p id={messageId} className="mt-[15px] text-sm font-medium text-[var(--nx-danger)]" role="alert">
           {error}
         </p>
       ) : (
-        <p id={messageId} className="mt-3 text-xs text-[var(--ds-text-muted)]">
+        <p id={messageId} className="mt-[15px] text-xs text-[var(--nx-text-muted)]">
           {helperText}
         </p>
       )}

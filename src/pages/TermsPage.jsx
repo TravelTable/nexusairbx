@@ -98,7 +98,7 @@ function TermsPage({
         <div className={`${editorialGutterClass} mx-auto max-w-7xl py-14 sm:py-20`}>
           {/* Page Title */}
           <div className="mb-12 text-center sm:mb-16">
-            <h1 className={`${editorialDisplayClass} mb-5 text-5xl sm:text-6xl`}>
+            <h1 className={`${editorialDisplayClass} mb-5 text-5xl`}>
               Legal Documents
             </h1>
             <p className="text-[var(--ds-text-muted)] max-w-2xl mx-auto">

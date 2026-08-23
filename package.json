@@ -4,6 +4,9 @@
   "private": true,
   "packageManager": "yarn@1.22.22",
   "dependencies": {
+    "@fontsource-variable/atkinson-hyperlegible-mono": "5.3.0",
+    "@fontsource-variable/atkinson-hyperlegible-next": "5.3.0",
+    "@fontsource-variable/sofia-sans-condensed": "5.3.0",
     "@hugeicons/core-free-icons": "^4.2.2",
     "@hugeicons/react": "^1.1.9",
     "@lobehub/icons": "^5.10.1",
@@ -92,7 +95,9 @@
     "convert:roblox-examples": "node scripts/convertRobloxExamples.js \"Roblox examples for Ai/raw\" \"Roblox examples for Ai/converted\"",
     "sitemap": "node scripts/generate-sitemap.js",
     "test:production-routing": "node --test server/productionRouting.test.js",
-    "test:public-frontend": "node --test server/publicFrontendHtml.test.js"
+    "test:public-frontend": "node --test server/publicFrontendHtml.test.js",
+    "design:guard": "node scripts/design-guard.mjs",
+    "design:guard:report": "node scripts/design-guard.mjs --report-only"
   },
   "eslintConfig": {
     "extends": [

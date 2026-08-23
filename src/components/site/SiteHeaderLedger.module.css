@@ -1,0 +1,166 @@
+.accountGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--nx-space-3);
+}
+
+.accountGroupMobile {
+  display: grid;
+  width: 100%;
+  gap: var(--nx-space-2);
+}
+
+.textAction,
+.accountButton {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: var(--nx-space-2);
+  padding: 0 var(--nx-space-2);
+  border: 0;
+  border-bottom: 1px solid var(--nx-rule);
+  background: transparent;
+  color: var(--nx-text-secondary);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.textAction:hover,
+.accountButton:hover,
+.accountButton[aria-expanded="true"] {
+  border-bottom-color: var(--nx-purple-muted);
+  color: var(--nx-purple);
+}
+
+.primaryAction {
+  border-bottom-color: var(--nx-text-secondary);
+  color: var(--nx-text);
+}
+
+.accountRoot {
+  position: relative;
+}
+
+.accountMenu {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  z-index: 100;
+  width: min(21rem, calc(100vw - 30px));
+  border: 1px solid var(--nx-rule);
+  border-radius: var(--nx-radius-overlay);
+  background: var(--nx-work);
+  color: var(--nx-text);
+}
+
+.accountMenuMobile {
+  position: static;
+  width: 100%;
+}
+
+.accountIdentity {
+  display: grid;
+  gap: 5px;
+  padding: var(--nx-space-3);
+  border-bottom: 1px solid var(--nx-rule);
+}
+
+.accountIdentity strong,
+.accountIdentity span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountIdentity strong {
+  color: var(--nx-purple);
+}
+
+.accountIdentity span {
+  color: var(--nx-text-muted);
+  font-size: 0.78rem;
+}
+
+.accountMenu nav {
+  display: grid;
+  padding: var(--nx-space-2);
+}
+
+.menuItem,
+.signOut {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--nx-space-3);
+  padding: 0 var(--nx-space-2);
+  border: 0;
+  border-bottom: 1px solid var(--nx-rule-quiet);
+  background: transparent;
+  color: var(--nx-text-secondary);
+  cursor: pointer;
+  font-size: 0.875rem;
+  text-align: left;
+  text-decoration: none;
+}
+
+.menuItem:hover { color: var(--nx-purple); }
+.signOut { width: 100%; color: var(--nx-danger); }
+.signOut:hover { color: #eca6a0; }
+
+.robloxRecord {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--nx-space-2);
+  align-items: center;
+  padding: var(--nx-space-3);
+  border-top: 1px solid var(--nx-rule);
+  color: var(--nx-text-secondary);
+  font-size: 0.78rem;
+}
+
+.robloxRecord button {
+  min-height: 44px;
+  padding: 0 var(--nx-space-2);
+  border: 0;
+  border-bottom: 1px solid var(--nx-rule);
+  background: transparent;
+  color: var(--nx-text);
+  cursor: pointer;
+}
+
+.robloxRecord button:hover { color: var(--nx-purple); }
+.robloxRecord button:disabled { color: var(--nx-text-disabled); cursor: wait; }
+
+.error {
+  grid-column: 1 / -1;
+  color: var(--nx-danger);
+}
+
+.unread {
+  display: inline-flex;
+  min-width: 22px;
+  min-height: 22px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--nx-rule);
+  color: var(--nx-warning);
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.checking {
+  color: var(--nx-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.045em;
+}
+
+@media (max-width: 900px) {
+  .accountGroup:not(.accountGroupMobile) {
+    display: none;
+  }
+}

@@ -1,28 +1,26 @@
-/* Conversational studio compatibility layer.
-   Canonical --ds-* variables live in index.css. This file maps the older AI
-   vocabulary and dense Tailwind-era utilities onto those semantic tokens. */
+/* Temporary compatibility layer for dense AI utilities. Canonical values live
+   in nexus-foundation.css; new workspace components use --nx-* directly. */
 
 .ai-page {
-  /* A quiet monochrome frame around dense creation tooling. */
-  --pc-font-ui: var(--ds-font-sans);
-  --pc-font-display: var(--ds-font-display);
+  --pc-font-ui: var(--nx-font-body);
+  --pc-font-display: var(--nx-font-display);
   --pc-gutter: 16px;
-  --pc-radius-panel: 14px;
-  --pc-radius-control: 10px;
+  --pc-radius-panel: var(--nx-radius-field);
+  --pc-radius-control: var(--nx-radius-field);
 
-  --ai-bg: var(--ds-bg-workspace);
-  --ai-surface: var(--ds-surface-1);
-  --ai-surface-muted: var(--ds-surface-2);
-  --ai-border: var(--ds-border-subtle);
-  --ai-text: var(--ds-text);
-  --ai-text-muted: var(--ds-text-muted);
-  --ai-accent: var(--ds-accent);
-  --ai-accent-2: var(--ds-accent);
-  --ai-info: var(--ds-info);
-  --ai-danger: var(--ds-danger);
+  --ai-bg: var(--nx-depth);
+  --ai-surface: var(--nx-work);
+  --ai-surface-muted: var(--nx-field);
+  --ai-border: var(--nx-rule-quiet);
+  --ai-text: var(--nx-text);
+  --ai-text-muted: var(--nx-text-muted);
+  --ai-accent: var(--nx-purple);
+  --ai-accent-2: var(--nx-purple-muted);
+  --ai-info: var(--nx-info);
+  --ai-danger: var(--nx-danger);
 
-  background-color: var(--ds-bg-workspace);
-  color: var(--ds-text);
+  background-color: var(--nx-depth);
+  color: var(--nx-text);
   width: 100%;
   height: 100%;
   min-height: 0;
@@ -39,16 +37,15 @@
   .ai-page { --pc-gutter: 32px; }
 }
 
-/* Existing display utilities are common in editor chrome. Keep them sans by
-   default; opt only genuine display/empty-state headings into the serif. */
+/* Existing display utilities are common in editor chrome. */
 .ai-page .font-display {
   font-family: var(--pc-font-ui);
 }
 
 .ai-page .pc-display-heading {
   font-family: var(--pc-font-display);
-  font-weight: 400;
-  letter-spacing: -0.025em;
+  font-weight: 620;
+  letter-spacing: 0;
 }
 
 .ai-page .pc-page-gutter {
@@ -74,22 +71,22 @@
   border-radius: var(--pc-radius-panel);
 }
 
-.ai-page [class*="bg-gradient-to-"] {
+.ai-page [class*="bg-gradient-to-"] { /* design-guard-allow: neutralizes legacy gradient utilities */
   background-image: none;
 }
 
 .ai-page [class~="shadow-xl"],
 .ai-page [class~="shadow-2xl"],
 .ai-page [class~="shadow-panel"] {
-  box-shadow: var(--ds-shadow-panel);
+  box-shadow: none;
 }
 
 .ai-page [class*="shadow-[0_0"] {
   box-shadow: none;
 }
 
-.ai-page [class*="backdrop-blur"] {
-  backdrop-filter: none;
+.ai-page [class*="backdrop-blur"] { /* design-guard-allow: neutralizes legacy blur utilities */
+  backdrop-filter: none; /* design-guard-allow: disables legacy blur */
 }
 
 /* Workspace utility text must remain legible at the user's browser zoom. */
@@ -103,11 +100,11 @@
 
 .ai-glow-primary,
 .ai-page[data-nexus-active="true"] .ai-active-signal {
-  background-color: var(--ds-accent-soft);
+  background-color: var(--nx-field-strong);
 }
 
 .ai-glow-secondary {
-  background-color: var(--ds-fill-subtle);
+  background-color: var(--nx-field);
 }
 
 .ai-surface {
@@ -150,19 +147,19 @@
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .ai-page [class*="backdrop-blur"] {
-    background-color: var(--ds-surface-overlay);
-    backdrop-filter: none;
+  .ai-page [class*="backdrop-blur"] { /* design-guard-allow: reduced-transparency fallback */
+    background-color: var(--nx-work);
+    backdrop-filter: none; /* design-guard-allow: disables legacy blur */
   }
 }
 
 @media (prefers-contrast: more) {
   .ai-page {
-    --ai-border: var(--ds-border-strong);
+    --ai-border: var(--nx-rule);
   }
 
   .ai-page [class*="border-white"],
   .ai-page [class*="border-[var(--ds-border-subtle)]"] {
-    border-color: var(--ds-border-strong);
+    border-color: var(--nx-rule);
   }
 }

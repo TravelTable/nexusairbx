@@ -55,7 +55,7 @@ export default function SearchLandingPage({ page, allPages }) {
 
   return (
     <>
-      <main className={styles.searchPage}>
+      <main id="main-content" className={styles.searchPage}>
         <section className="landing-hero">
           <div className="section-inner">
             <span className="eyebrow">{page.eyebrow}</span>

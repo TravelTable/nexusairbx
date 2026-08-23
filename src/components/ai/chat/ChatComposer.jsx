@@ -821,6 +821,9 @@ export default function ChatComposer({
             />
           )}
 
+          <div className="nexus-composer__request-label" aria-hidden="true">
+            Request field <span>⌘ Enter to interrupt and send</span>
+          </div>
           <div className="relative min-h-[44px] px-3 pt-2">
             <textarea
               ref={textareaRef}

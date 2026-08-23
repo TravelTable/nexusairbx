@@ -24,7 +24,7 @@ export default function CapabilityUnavailablePage({
           <Grid className="h-8 w-8" aria-hidden="true" />
         </span>
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--ds-accent)]">{eyebrow}</p>
-        <h1 className={`${editorialDisplayClass} mt-5 text-4xl sm:text-6xl`}>{title}</h1>
+        <h1 className={`${editorialDisplayClass} mt-5 text-4xl sm:text-5xl`}>{title}</h1>
         <p className="mt-6 max-w-2xl text-base leading-8 text-[var(--ds-text-secondary)] sm:text-lg">{description}</p>
         <div className="mt-10 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
           <Link

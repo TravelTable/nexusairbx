@@ -19,6 +19,7 @@ import {
 
 import { Button, cx } from "../../components/ui";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../components/shadcn/tabs";
+import "./QuickScriptWorkspace.css";
 
 const QuickScriptCodeBlock = lazy(() => import("../../components/ai/QuickScriptCodeBlock"));
 
@@ -33,7 +34,7 @@ function ListSection({ title, items, empty, icon, isWarning }) {
   return (
     <div
       className={cx(
-        "rounded-xl border p-4 transition-all duration-200",
+        "quick-script-record border p-4",
         isWarning
           ? "border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] hover:border-[var(--ds-warning)]"
           : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] hover:border-[var(--ds-border-subtle)]"
@@ -61,7 +62,7 @@ function ListSection({ title, items, empty, icon, isWarning }) {
             <li key={`${title}-${index}`} className="flex items-start gap-2.5">
               <span
                 className={cx(
-                  "mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full",
+                  "quick-script-record__mark mt-1.5 h-1.5 w-1.5 shrink-0",
                   isWarning ? " bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] " : "bg-[var(--ds-accent-hover)]"
                 )}
                 aria-hidden="true"
@@ -160,7 +161,7 @@ export default function QuickScriptWorkspace({
   };
 
   return (
-    <section className="relative flex h-full min-h-0 overflow-hidden bg-[var(--ds-bg-workspace)]" aria-label="Quick generator">
+    <section className="quick-script-workspace relative flex h-full min-h-0 overflow-hidden bg-[var(--ds-bg-workspace)]" aria-label="Quick generator">
       {result && (
         <h1 className="sr-only">{result.title || "Generated Quick script"}</h1>
       )}
@@ -174,7 +175,7 @@ export default function QuickScriptWorkspace({
         <div className="pc-page-gutter flex-1 min-h-0 overflow-y-auto py-6 md:py-8 scrollbar-subtle">
           <div className="mx-auto max-w-3xl space-y-4">
             {isGenerating && (
-            <div className="border-y border-[var(--ds-accent-border)] bg-transparent py-4 motion-safe:animate-fade-in-up" aria-live="polite">
+            <div className="quick-script-state-record border-y border-[var(--ds-accent-border)] bg-transparent py-4" aria-live="polite">
               <div className="flex items-start gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center text-[var(--ds-accent)]">
                   <Loader className="h-4 w-4 animate-spin text-[var(--ds-accent)]" aria-hidden="true" />
@@ -190,8 +191,8 @@ export default function QuickScriptWorkspace({
             {!result && status === "idle" && (
             <div className="space-y-5 py-2 sm:py-6">
               <div className="max-w-xl">
-                <p className="text-xs font-medium text-[var(--ds-accent)]">Quick Script</p>
-                <h1 className="pc-display-heading mt-2 text-[2rem] leading-tight text-[var(--ds-text)] sm:text-[2.5rem]">Build one focused Roblox script</h1>
+                <p className="quick-script-phase text-xs font-medium text-[var(--ds-accent)]">SCRIPT / NEW REQUEST</p>
+                <h1 className="quick-script-heading pc-display-heading mt-2 text-[2rem] leading-tight text-[var(--ds-text)] sm:text-[2.5rem]">Build one focused Roblox script</h1>
                 <p className="mt-3 text-sm leading-relaxed text-[var(--ds-text-muted)]">
                   Describe the behavior and placement. Quick returns ready-to-use Luau with setup and testing guidance.
                 </p>
@@ -215,14 +216,14 @@ export default function QuickScriptWorkspace({
             )}
 
             {status !== "idle" && quickScript?.prompt && (
-            <div className="ml-auto max-w-[90%] rounded-2xl rounded-br-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-4 py-3 motion-safe:animate-fade-in-up">
+            <div className="quick-script-request-record border-y border-[var(--ds-border-subtle)] px-0 py-4">
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--ds-text-muted)]">Your request</p>
               <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-[var(--ds-text)]">{quickScript.prompt}</p>
             </div>
             )}
 
             {quickScript?.error && (
-            <section className="rounded-2xl border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] p-4 motion-safe:animate-fade-in-up" role="alert" aria-live="assertive">
+            <section className="quick-script-error-record border-y border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)] p-4" role="alert" aria-live="assertive">
               <div className="flex items-start gap-2.5">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--ds-warning)] " />
                 <div>
@@ -246,7 +247,7 @@ export default function QuickScriptWorkspace({
             )}
 
             {result && (
-            <div className="max-w-[94%] rounded-2xl rounded-bl-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-4 space-y-3 motion-safe:animate-fade-in-up">
+            <div className="quick-script-result-record border-y border-[var(--ds-border-subtle)] p-4 space-y-3">
               <div className="flex items-start gap-2.5">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[var(--ds-success)]" />
                 <div>
@@ -275,7 +276,7 @@ export default function QuickScriptWorkspace({
             )}
 
             {result && authReady && !user && (
-            <div className="rounded-xl border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] p-3.5 text-[11px] leading-relaxed text-[var(--ds-accent)]">
+            <div className="quick-script-access-record border-y border-[var(--ds-accent-border)] p-3.5 text-[11px] leading-relaxed text-[var(--ds-accent)]">
               The generated code remains visible. Sign up to save, export, push to Studio, or continue editing.
             </div>
             )}
@@ -291,13 +292,13 @@ export default function QuickScriptWorkspace({
             }}
             className="group relative"
           >
-            <div className="relative flex flex-col gap-2 rounded-[20px] border border-[var(--ds-border)] bg-[var(--ds-surface-1)] p-2">
+            <div className="quick-script-composer relative flex flex-col gap-2 border border-[var(--ds-border)] bg-[var(--ds-surface-1)] p-2">
               <div className="flex flex-wrap items-center gap-2">
                 <div
                   className={cx(
-                    "inline-flex h-8 items-center rounded-full border px-3 text-[11px] font-medium transition-colors duration-150",
+                    "quick-script-run-state inline-flex h-8 items-center border px-3 text-[11px] font-medium",
                     isGenerating
-                      ? "border-[var(--ds-accent)] bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] motion-safe:animate-pulse"
+                      ? "border-[var(--ds-success)] text-[var(--ds-success)]"
                       : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)]"
                   )}
                   aria-live="polite"
@@ -311,7 +312,7 @@ export default function QuickScriptWorkspace({
                   onClick={() => onImprovePrompt()}
                   disabled={isGenerating || isImproving || !String(prompt || "").trim()}
                   data-tour="improve-btn"
-                  className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-3 text-[11px] font-medium text-[var(--ds-accent)] transition-[border-color,background-color,color] duration-150 hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring disabled:cursor-not-allowed disabled:opacity-40 motion-reduce:transition-none"
+                  className="quick-script-text-action inline-flex min-h-[44px] items-center gap-1.5 border-b border-[var(--ds-accent-border)] px-3 text-[11px] font-medium text-[var(--ds-accent)] hover:text-[var(--ds-text)] focus-ring disabled:cursor-not-allowed disabled:opacity-40"
                   title="Expand your prompt into a detailed brief"
                 >
                   {isImproving ? <Loader className="h-3 w-3 animate-spin" /> : <SlidersHorizontal className="h-3 w-3" />}
@@ -319,7 +320,7 @@ export default function QuickScriptWorkspace({
                 </button>
               )}
               </div>
-              <div className="flex items-end gap-2 rounded-xl border border-transparent bg-transparent p-1.5 transition-[border-color] duration-200 focus-within:border-[var(--ds-accent-border)] motion-reduce:transition-none">
+              <div className="quick-script-prompt-field flex items-end gap-2 border border-transparent bg-transparent p-1.5 focus-within:border-[var(--ds-accent-border)]">
                 <textarea
                   id="quick-script-prompt"
                   ref={textareaRef}
@@ -342,7 +343,7 @@ export default function QuickScriptWorkspace({
                   type="submit"
                   disabled={!canSubmit}
                   data-tour="generate-btn"
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] transition-[transform,opacity,background-color] duration-150 hover:bg-[var(--ds-accent-hover)] active:scale-95 focus-ring disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100 motion-reduce:transition-none"
+                  className="quick-script-submit flex h-11 w-11 shrink-0 items-center justify-center border border-[var(--ds-text)] bg-[var(--ds-text)] text-[var(--ds-bg-canvas)] hover:bg-[var(--ds-text-secondary)] focus-ring disabled:cursor-not-allowed disabled:opacity-50"
                   aria-label={isGenerating ? "Generation in progress" : result ? "Generate updated script" : "Generate script"}
                   title={isGenerating ? "Generation in progress" : result ? "Generate updated script" : "Generate script"}
                 >
@@ -372,18 +373,18 @@ export default function QuickScriptWorkspace({
               <div className="min-w-0">
                 <div className="font-display text-sm font-bold text-[var(--ds-text)] truncate">{result.title || "Quick"}</div>
                 <div className="mt-1 flex items-center gap-1.5">
-                  <span className="rounded bg-[var(--ds-accent-soft)] border border-[var(--ds-accent-border)] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-[var(--ds-accent)]">
+                  <span className="quick-script-path-label border-b border-[var(--ds-accent-border)] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-[var(--ds-accent)]">
                     {result.scriptType || "Class required"}
                   </span>
-                  <span className="rounded bg-[var(--ds-fill-subtle)] border border-[var(--ds-border-subtle)] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-[var(--ds-text-secondary)]">
+                  <span className="quick-script-path-label border-b border-[var(--ds-border-subtle)] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-[var(--ds-text-secondary)]">
                     {result.targetPath || result.studioLocation || "Location required"}
                   </span>
                 </div>
               </div>
-              <TabsList className="min-h-[44px] w-full gap-0.5 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-hover)] p-0.5 sm:w-auto">
-                <TabsTrigger value="code" className="min-h-[44px] rounded-md px-2.5 py-1 text-[9px] sm:px-3 sm:text-[10px]">Code</TabsTrigger>
-                <TabsTrigger value="setup" className="min-h-[44px] rounded-md px-2.5 py-1 text-[9px] sm:px-3 sm:text-[10px]">Setup</TabsTrigger>
-                <TabsTrigger value="diagnostics" className="min-h-[44px] rounded-md px-2.5 py-1 text-[9px] sm:px-3 sm:text-[10px]">Diagnostics</TabsTrigger>
+              <TabsList className="quick-script-evidence-tabs min-h-[44px] w-full gap-0 border-y border-[var(--ds-border-subtle)] bg-transparent p-0 sm:w-auto">
+                <TabsTrigger value="code" className="quick-script-evidence-tab min-h-[44px] px-2.5 py-1 text-[9px] sm:px-3 sm:text-[10px]">Code</TabsTrigger>
+                <TabsTrigger value="setup" className="quick-script-evidence-tab min-h-[44px] px-2.5 py-1 text-[9px] sm:px-3 sm:text-[10px]">Setup</TabsTrigger>
+                <TabsTrigger value="diagnostics" className="quick-script-evidence-tab min-h-[44px] px-2.5 py-1 text-[9px] sm:px-3 sm:text-[10px]">Diagnostics</TabsTrigger>
               </TabsList>
             </div>
 
@@ -482,15 +483,13 @@ export default function QuickScriptWorkspace({
             </div>
           </Tabs>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[var(--ds-bg-workspace)]" data-tour="code-output">
-            <div className="mb-5 text-[var(--ds-accent)]">
-              <Code2 className="h-8 w-8" />
-            </div>
-            <h2 className="pc-display-heading text-2xl text-[var(--ds-text)]">One prompt, one focused script</h2>
+          <div className="quick-script-empty flex-1 flex flex-col justify-center p-8 bg-[var(--ds-bg-workspace)]" data-tour="code-output">
+            <p className="quick-script-phase">CODE / WAITING FOR REQUEST</p>
+            <h2 className="pc-display-heading text-2xl text-[var(--ds-accent)]">One prompt, one focused script.</h2>
             <p className="mt-2 text-xs text-[var(--ds-text-muted)] max-w-xs leading-relaxed">
               Quick compiles functional Luau code, placement directories, step-by-step setup guides, verification tests, and syntax diagnostics instantly.
             </p>
-            <div className="mt-5 flex items-center gap-3 text-[10px] border-t border-[var(--ds-border-subtle)] pt-4 w-full max-w-[200px] justify-center">
+            <div className="mt-5 flex items-center gap-3 text-[10px] border-t border-[var(--ds-border-subtle)] pt-4 w-full max-w-[240px]">
               <a href="/roblox-lua-script-generator" className="inline-flex min-h-[44px] items-center text-[var(--ds-text-secondary)] transition-colors hover:text-[var(--ds-accent)] focus-ring">
                 Luau examples
               </a>
@@ -504,7 +503,7 @@ export default function QuickScriptWorkspace({
       </div>
 
       <nav
-        className="fixed bottom-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-1 rounded-full border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-1.5 lg:hidden"
+        className="quick-script-mobile-states fixed inset-x-0 bottom-0 z-50 flex items-center border-t border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] lg:hidden"
         aria-label="Quick Script workspace"
       >
         {[
@@ -519,8 +518,8 @@ export default function QuickScriptWorkspace({
               type="button"
               onClick={() => setMobilePane(item.id)}
               className={cx(
-                "inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 py-2 text-xs font-medium transition-[background-color,color] duration-150 focus-ring motion-reduce:transition-none",
-                active ? "bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)]" : "text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)]"
+                "quick-script-mobile-state inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium focus-ring",
+                active ? "text-[var(--ds-accent)]" : "text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)]"
               )}
               aria-pressed={active}
             >

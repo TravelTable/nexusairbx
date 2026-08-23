@@ -29,6 +29,7 @@ import { getRobloxOAuthStatus } from "../lib/robloxOAuthApi";
 import { useBilling } from "../context/BillingContext";
 import { useSettings } from "../context/SettingsContext";
 import "../components/assets/assetPlatform.css";
+import "../components/assets/assetLedgerOverrides.css";
 
 const GENERATION_MODES = new Set(["single", "pack", "extend", "similar", "replacement"]);
 
@@ -412,8 +413,8 @@ export default function IconGeneratorPage() {
         <div className="asset-platform-shell">
           <header className="asset-platform-header">
             <div>
-              <p className="asset-eyebrow"><ImagePlus aria-hidden="true" /> Asset tools</p>
-              <h1>Icon generator</h1>
+              <p className="asset-eyebrow"><ImagePlus aria-hidden="true" /> Asset desk / generation</p>
+              <h1>Build the visual set.</h1>
               <p>Loading your project context and asset workspace.</p>
             </div>
           </header>
@@ -428,9 +429,9 @@ export default function IconGeneratorPage() {
       <div className="asset-platform-shell">
         <header className="asset-platform-header">
           <div>
-            <p className="asset-eyebrow"><ImagePlus aria-hidden="true" /> Asset tools</p>
-            <h1>Icon generator</h1>
-            <p>Generate a single game icon or a coordinated set, then review publishing status from the same workspace.</p>
+            <p className="asset-eyebrow"><ImagePlus aria-hidden="true" /> Asset desk / generation</p>
+            <h1>Build the visual set.</h1>
+            <p>Write one visual brief, establish a Roblox project context, then review the generated set and its publishing record on the same desk.</p>
           </div>
           <div className="asset-platform-header__actions">
             <Button className="asset-header-action" variant="ghost" icon={Library} onClick={() => navigate("/assets")}>Asset library</Button>
@@ -465,7 +466,7 @@ export default function IconGeneratorPage() {
         <div className="asset-generator-layout">
           <section className="asset-generator-panel" ref={formPanelRef} aria-labelledby="asset-generation-title">
             <div className="asset-panel-heading">
-              <div><h2 id="asset-generation-title">Generation brief</h2><p>Choose a workflow, describe the visual, and keep optional controls tucked away until you need them.</p></div>
+              <div><h2 id="asset-generation-title">Visual brief</h2><p>Name the job, supply the reference material, and make the output constraints explicit.</p></div>
             </div>
             <AssetGenerationForm
               value={form}

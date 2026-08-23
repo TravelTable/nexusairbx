@@ -180,8 +180,8 @@ import AgentWorkspaceLayout from "./AgentWorkspaceLayout";
 const noop = jest.fn();
 
 function openStageView(label) {
-  fireEvent.click(screen.getByRole("button", { name: "Choose Stage view" }));
-  fireEvent.click(screen.getByRole("menuitemradio", { name: `Open ${label}` }));
+  const evidenceLens = label === "Activity" ? "Run" : label;
+  fireEvent.click(screen.getByRole("tab", { name: `Open ${evidenceLens} evidence` }));
 }
 
 function makeController({
@@ -262,6 +262,26 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseActiveAgents.mockReturnValue({ agents: [], cancelRun: jest.fn() });
+  });
+
+  test("provides an AI workspace skip target and a labelled mode group", () => {
+    mockUseTaskRuntime.mockReturnValue({
+      taskId: "",
+      task: null,
+      events: [],
+      connectionState: "idle",
+      error: null,
+      busyAction: "",
+      selectTask: jest.fn(),
+    });
+
+    render(<AgentWorkspaceLayout controller={makeController()} />);
+
+    expect(screen.getByRole("link", { name: "Skip to main content" }).getAttribute("href"))
+      .toBe("#ai-workspace-main");
+    expect(screen.getByRole("main").getAttribute("id")).toBe("ai-workspace-main");
+    expect(screen.getByRole("main").getAttribute("tabindex")).toBe("-1");
+    expect(screen.getByRole("group", { name: "Workspace mode" })).toBeTruthy();
   });
 
   test("cancels the authoritative run after locally aborting an uncoordinated flow", async () => {

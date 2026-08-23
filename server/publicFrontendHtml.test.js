@@ -151,25 +151,26 @@ const legalRoutes = [
 
 test("homepage raw HTML is meaningful before client JavaScript", () => {
   const html = readHtml("/");
-  assert.equal(extractTitle(html), "Conversational Roblox Production Studio | NexusRBX");
-  assert.equal(extractH1(html), "Talk to your Roblox project. Watch it take shape.");
+  assert.equal(extractTitle(html), "Build and Review Roblox Projects | NexusRBX");
+  assert.equal(extractH1(html), "Create a round-based horror game in a broken arcade.");
   assert.equal(
     extractMetaContent(html, "description"),
-    "Build any Roblox game through conversation with project-aware inspection, reviewable Studio changes, playtest evidence, and a creator-led path to publishing.",
+    "Turn a Roblox project request into inspected Studio context, reviewable changes, playtest evidence, and a recoverable build record.",
   );
   assert.equal(extractCanonical(html), "https://www.nexusrbx.com/");
-  assert.match(html, /Conversational Roblox production studio/i);
-  assert.match(html, /Describe any game, system, interface, or fix/);
+  assert.match(html, /REQUEST \/ 184/);
+  assert.match(html, /Keep mobile controls simple\. Make the rooms shift after each round\./);
   assert.match(html, /aria-busy="false"/);
-  assert.match(html, /<button[^>]*type="submit"[^>]*disabled=""[^>]*>Start building<\/button>/);
-  assert.match(html, /id="homepage-hero-prompt-message"[^>]*>Your prompt is saved locally before the workspace opens\. Review is always part of the loop\./);
-  assert.match(html, /Nexus does not jump from prompt to paste\./);
-  assert.match(html, /Illustrative project · real interface controls/);
-  assert.match(html, /Play mode evidence/);
-  assert.match(html, /The project is bigger than the open script\./);
+  assert.match(html, /<button[^>]*type="submit"[^>]*disabled=""[^>]*>Run build<\/button>/);
+  assert.match(html, /id="homepage-hero-prompt-message"[^>]*>The request is saved before the workspace opens\. Review remains part of the build\./);
+  assert.match(html, /The project exists before the request\./);
+  assert.match(html, /One request remains one reviewable change set\./);
+  assert.match(html, /The first failure stays in the record\./);
+  assert.match(html, /Keep the change, inspect one object, or restore the snapshot\./);
+  assert.match(html, /Change the world, not the workflow\./);
   assert.match(html, /Robux is an outcome, not a generate button\./);
   assert.match(html, /Breadth without invented customer proof\./);
-  assert.match(html, /These curated examples show the systems a Nexus project can coordinate\./);
+  assert.match(html, /These are project briefs, not testimonials or earnings claims\./);
   assert.doesNotMatch(html, /Trusted by Top Roblox Developers|Alex, Studio Lead|game-changer/);
   assert.match(html, /src="\/nexus-mark\.svg"/);
   assert.match(html, /nexusrbx-og-flat-world\.jpg/);
@@ -195,10 +196,11 @@ test("homepage raw HTML is meaningful before client JavaScript", () => {
 
 test("homepage trust copy is specific without implying verification or earnings", () => {
   const html = readHtml("/");
-  assert.match(html, /Reviewable Studio changes/);
-  assert.match(html, /Roblox credentials remain server-side/);
-  assert.match(html, /Continue inside Studio/);
-  assert.match(html, /Earnings are never guaranteed/);
+  assert.match(html, /EXPECTED SOURCE MATCHED/);
+  assert.match(html, /Expected hashes matched/);
+  assert.match(html, /test evidence, and recovery point remain visible together/);
+  assert.match(html, /Robux can follow—never promised/);
+  assert.match(html, /not testimonials or earnings claims/);
   assert.doesNotMatch(html, /Roblox OAuth Verified|guaranteed Robux|guaranteed earnings/i);
 });
 
@@ -209,7 +211,7 @@ test("downloads raw HTML is meaningful and fails closed before release verificat
     extractMetaContent(html, "description"),
     "Download the NexusRBX Connector for macOS (Developer ID signed and notarized) or Windows 10 and 11 (currently unsigned).",
   );
-  assert.equal(extractH1(html), "Connect NexusRBX to Roblox Studio");
+  assert.equal(extractH1(html), "Put Nexus beside Roblox Studio.");
   assert.equal(extractCanonical(html), "https://www.nexusrbx.com/downloads");
   assert.equal(countCanonical(html), 1);
   assert.match(html, /macOS \(Universal\)/);

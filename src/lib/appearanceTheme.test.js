@@ -38,18 +38,18 @@ describe("appearance theme", () => {
     expect(readStoredAppearanceTheme()).toBe("system");
   });
 
-  test("applies the resolved theme and browser color", () => {
+  test("preserves the preference schema while rendering the authored dark theme", () => {
     const meta = document.createElement("meta");
     meta.name = "theme-color";
     document.head.appendChild(meta);
-    expect(applyResolvedAppearanceTheme("light", { documentObject: document, matchMedia: media(true) })).toBe("light");
-    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
-    expect(document.documentElement.style.colorScheme).toBe("light");
-    expect(meta.getAttribute("content")).toBe("#f7f7f4");
+    expect(applyResolvedAppearanceTheme("light", { documentObject: document, matchMedia: media(true) })).toBe("dark");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(document.documentElement.style.colorScheme).toBe("dark");
+    expect(meta.getAttribute("content")).toBe("#1a1618");
     meta.remove();
   });
 
-  test("system subscriptions react to media changes and clean up", () => {
+  test("appearance subscriptions apply once without following operating-system changes", () => {
     const listeners = new Set();
     const mediaQuery = {
       matches: false,
@@ -59,12 +59,13 @@ describe("appearance theme", () => {
     const windowObject = { matchMedia: jest.fn(() => mediaQuery) };
     const onChange = jest.fn();
     const unsubscribe = subscribeToAppearanceTheme("system", onChange, { windowObject, documentObject: document });
-    expect(onChange).toHaveBeenLastCalledWith("light");
+    expect(onChange).toHaveBeenLastCalledWith("dark");
     mediaQuery.matches = true;
     listeners.forEach((listener) => listener());
     expect(onChange).toHaveBeenLastCalledWith("dark");
     unsubscribe();
     expect(listeners.size).toBe(0);
+    expect(mediaQuery.addEventListener).not.toHaveBeenCalled();
   });
 
   test("the first-paint bootstrap applies stored appearance before hydration", () => {
@@ -94,10 +95,10 @@ describe("appearance theme", () => {
       jest.fn((_event, listener) => storageListeners.push(listener))
     );
 
-    expect(root.dataset.theme).toBe("light");
-    expect(root.style.colorScheme).toBe("light");
-    expect(meta.setAttribute).toHaveBeenCalledWith("content", "#f7f7f4");
-    expect(mediaQuery.addEventListener).toHaveBeenCalledWith("change", expect.any(Function));
-    expect(storageListeners).toHaveLength(1);
+    expect(root.dataset.theme).toBe("dark");
+    expect(root.style.colorScheme).toBe("dark");
+    expect(meta.setAttribute).toHaveBeenCalledWith("content", "#1a1618");
+    expect(mediaQuery.addEventListener).not.toHaveBeenCalled();
+    expect(storageListeners).toHaveLength(0);
   });
 });

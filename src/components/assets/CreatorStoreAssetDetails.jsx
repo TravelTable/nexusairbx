@@ -165,7 +165,7 @@ export default function CreatorStoreAssetDetails({ asset, loading = false, onClo
           <button
             type="button"
             onClick={onClose}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[var(--ds-border)] text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[3px] border border-[var(--ds-border)] text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
             aria-label="Close asset details"
           >
             <X className="w-4 h-4" />
@@ -326,10 +326,10 @@ export default function CreatorStoreAssetDetails({ asset, loading = false, onClo
               NexusRBX removes scripts and networking objects before placing this asset in your project.
             </p>
             <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => setConfirming(false)} className="min-h-11 rounded-full border border-[var(--ds-border)] bg-transparent px-4 py-2 text-[11px] font-semibold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]">
+              <button type="button" onClick={() => setConfirming(false)} className="min-h-11 rounded-none border-0 border-b border-[var(--ds-border)] bg-transparent px-4 py-2 text-[11px] font-semibold text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)]">
                 Cancel
               </button>
-              <button type="button" onClick={queueImport} disabled={importState === "queueing"} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--ds-accent)] px-4 py-2 text-[11px] font-semibold text-[var(--ds-accent-foreground)] hover:bg-[var(--ds-accent-hover)] disabled:opacity-40">
+              <button type="button" onClick={queueImport} disabled={importState === "queueing"} className="inline-flex min-h-11 items-center gap-2 rounded-[3px] border border-[var(--ds-text)] bg-[var(--ds-text)] px-4 py-2 text-[11px] font-semibold text-[var(--ds-bg-canvas)] hover:bg-[var(--ds-text-secondary)] disabled:opacity-40">
                 {importState === "queueing" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
                 Import safely
               </button>

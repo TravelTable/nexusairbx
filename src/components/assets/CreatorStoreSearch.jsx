@@ -135,7 +135,7 @@ export default function CreatorStoreSearch({ notify, className = "mx-3 mb-2" }) 
             type="button"
             onClick={() => runSearch()}
             disabled={loading}
-            className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-4 py-2 text-[11px] font-semibold text-[var(--ds-text-secondary)] transition-colors hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] disabled:opacity-40"
+            className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-[3px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-4 py-2 text-[11px] font-semibold text-[var(--ds-text-secondary)] hover:border-[var(--ds-border-strong)] hover:text-[var(--ds-text)] disabled:opacity-40"
           >
             {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
             Search
@@ -170,7 +170,7 @@ export default function CreatorStoreSearch({ notify, className = "mx-3 mb-2" }) 
           {DEFAULT_ASSET_TYPES.map((assetType) => (
             <label
               key={assetType}
-              className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-[var(--ds-border)] bg-transparent px-3.5 py-1.5 text-[11px] font-semibold text-[var(--ds-text-secondary)]"
+              className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-[3px] border border-[var(--ds-border)] bg-transparent px-3.5 py-1.5 text-[11px] font-semibold text-[var(--ds-text-secondary)]"
             >
               <input
                 type="checkbox"
@@ -232,7 +232,7 @@ export default function CreatorStoreSearch({ notify, className = "mx-3 mb-2" }) 
                   type="button"
                   onClick={() => runSearch({ cursor: nextCursor, append: true })}
                   disabled={loadingMore}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[var(--ds-border)] bg-transparent px-5 py-2 text-[12px] font-semibold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] disabled:opacity-40"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-none border-0 border-b border-[var(--ds-border)] bg-transparent px-5 py-2 text-[12px] font-semibold text-[var(--ds-text-secondary)] hover:text-[var(--ds-text)] disabled:opacity-40"
                 >
                   {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                   Load more

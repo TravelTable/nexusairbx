@@ -1,0 +1,112 @@
+.ai-workspace-ribbon__project {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: var(--nx-space-2);
+}
+
+.ai-workspace-ribbon__project strong {
+  overflow: hidden;
+  max-width: min(32vw, 30rem);
+  color: var(--nx-purple);
+  font-family: var(--nx-font-display);
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-workspace-ribbon__project span,
+.ai-workspace-ribbon__run {
+  color: var(--nx-text-muted);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ai-workspace-ribbon__modes {
+  display: flex;
+  align-self: stretch;
+  border-right: 1px solid var(--nx-rule-quiet);
+  border-left: 1px solid var(--nx-rule-quiet);
+}
+
+.ai-workspace-ribbon__modes button {
+  position: relative;
+  min-width: 70px;
+  min-height: 44px;
+  border: 0;
+  border-right: 1px solid var(--nx-rule-quiet);
+  background: transparent;
+  color: var(--nx-text-muted);
+  cursor: pointer;
+  font-size: 0.6875rem;
+  font-weight: 750;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+}
+
+.ai-workspace-ribbon__modes button:last-child {
+  border-right: 0;
+}
+
+.ai-workspace-ribbon__modes button:hover {
+  background: var(--nx-field);
+  color: var(--nx-text);
+}
+
+.ai-workspace-ribbon__modes button[data-active="true"] {
+  color: var(--nx-purple);
+}
+
+.ai-workspace-ribbon__modes button[data-active="true"]::after {
+  position: absolute;
+  right: var(--nx-space-2);
+  bottom: -1px;
+  left: var(--nx-space-2);
+  height: 2px;
+  background: var(--nx-purple);
+  content: "";
+}
+
+.ai-workspace-ribbon__model,
+.ai-workspace-ribbon__studio {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.ai-workspace-ribbon__model {
+  max-width: 150px;
+}
+
+.ai-workspace-ribbon__run {
+  color: var(--nx-success);
+}
+
+@media (max-width: 920px) {
+  .ai-workspace-ribbon__project span,
+  .ai-workspace-ribbon__model {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .ai-workspace-ribbon__project strong {
+    max-width: 26vw;
+    font-size: 0.875rem;
+  }
+
+  .ai-workspace-ribbon__modes button {
+    min-width: 54px;
+    padding: 0 var(--nx-space-1);
+  }
+
+  .ai-workspace-ribbon__studio,
+  .ai-workspace-ribbon__run {
+    display: none;
+  }
+}

@@ -31,8 +31,7 @@ function Harness({ panelBadges = {} }) {
 }
 
 function chooseStageView(label) {
-  fireEvent.click(screen.getByRole("button", { name: "Choose Stage view" }));
-  fireEvent.click(screen.getByRole("menuitemradio", { name: `Open ${label}` }));
+  fireEvent.click(screen.getByRole("tab", { name: `Open ${label} evidence` }));
 }
 
 describe("WorkspaceShell", () => {
@@ -43,28 +42,25 @@ describe("WorkspaceShell", () => {
     };
   });
 
-  test("keeps one restrained Stage launcher instead of a permanent five-tool rail", () => {
+  test("keeps conversation primary with a permanent evidence index", () => {
     render(<Harness />);
 
-    expect(screen.getByRole("button", { name: "Open Stage" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Choose Stage view" })).toBeTruthy();
-    expect(screen.queryByRole("navigation", { name: "Workspace tools" })).toBeNull();
-    expect(screen.queryByRole("menu", { name: "Stage views" })).toBeNull();
-
-    fireEvent.click(screen.getByRole("button", { name: "Choose Stage view" }));
-    expect(screen.getAllByRole("menuitemradio")).toHaveLength(5);
-    expect(screen.getByRole("menuitemradio", { name: "Open Files" })).toBeTruthy();
-    expect(screen.getByRole("menuitemradio", { name: "Open Activity" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Open Stage evidence" })).toBeTruthy();
+    expect(screen.getByRole("navigation", { name: "Open evidence stage" })).toBeTruthy();
+    expect(screen.getByRole("tablist", { name: "Evidence lenses" })).toBeTruthy();
+    expect(screen.getAllByRole("tab")).toHaveLength(5);
+    expect(screen.getByRole("tab", { name: "Open Files evidence" })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "Open Run evidence" })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "Open Project evidence" })).toHaveAttribute("tabindex", "0");
+    expect(screen.getByRole("tab", { name: "Open Files evidence" })).toHaveAttribute("tabindex", "-1");
   });
 
-  test("moves focus through the Stage menu and restores its trigger on Escape", () => {
+  test("moves focus through the evidence lens line", () => {
     render(<Harness />);
-    const trigger = screen.getByRole("button", { name: "Choose Stage view" });
-
-    fireEvent.click(trigger);
-    const files = screen.getByRole("menuitemradio", { name: "Open Files" });
-    const code = screen.getByRole("menuitemradio", { name: "Open Code" });
-    const project = screen.getByRole("menuitemradio", { name: "Open Project" });
+    const files = screen.getByRole("tab", { name: "Open Files evidence" });
+    const code = screen.getByRole("tab", { name: "Open Code evidence" });
+    const project = screen.getByRole("tab", { name: "Open Project evidence" });
+    files.focus();
     expect(files).toHaveFocus();
 
     fireEvent.keyDown(files, { key: "ArrowDown" });
@@ -77,10 +73,6 @@ describe("WorkspaceShell", () => {
     expect(project).toHaveFocus();
     fireEvent.keyDown(project, { key: "Home" });
     expect(files).toHaveFocus();
-
-    fireEvent.keyDown(files, { key: "Escape" });
-    expect(screen.queryByRole("menu", { name: "Stage views" })).toBeNull();
-    expect(trigger).toHaveFocus();
   });
 
   test("keeps conversation primary and opens a selected artifact view on Stage", () => {
@@ -93,25 +85,40 @@ describe("WorkspaceShell", () => {
 
     expect(screen.getByRole("complementary", { name: "Files" })).toBeTruthy();
     expect(screen.getByText("files panel")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Open Stage" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Open Stage evidence" })).toBeNull();
+  });
+
+  test("transfers inline focus to the selected lens and associates it with the evidence panel", async () => {
+    render(<Harness />);
+
+    chooseStageView("Files");
+
+    const stage = screen.getByRole("complementary", { name: "Files" });
+    const filesTab = within(stage).getByRole("tab", { name: "Open Files evidence" });
+    const codeTab = within(stage).getByRole("tab", { name: "Open Code evidence" });
+    const panel = within(stage).getByRole("tabpanel");
+    await waitFor(() => expect(filesTab).toHaveFocus());
+    expect(filesTab).toHaveAttribute("tabindex", "0");
+    expect(codeTab).toHaveAttribute("tabindex", "-1");
+    expect(filesTab).toHaveAttribute("aria-controls", panel.id);
+    expect(panel).toHaveAttribute("aria-labelledby", filesTab.id);
   });
 
   test("shows arrival badges without opening Stage", () => {
     render(<Harness panelBadges={{ code: true }} />);
 
-    expect(screen.getByLabelText("New Stage content")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Choose Stage view" }));
+    expect(screen.getByLabelText("New evidence")).toBeTruthy();
     expect(screen.getByLabelText("Unseen items")).toBeTruthy();
     expect(screen.queryByRole("complementary")).toBeNull();
   });
 
   test("closes Stage with Escape and restores the launcher", async () => {
     render(<Harness />);
-    chooseStageView("Activity");
-    expect(screen.getByRole("complementary", { name: "Activity" })).toBeTruthy();
+    chooseStageView("Run");
+    expect(screen.getByRole("complementary", { name: "Run" })).toBeTruthy();
 
     fireEvent.keyDown(document, { key: "Escape" });
-    const launcher = await screen.findByRole("button", { name: "Open Stage" });
+    const launcher = await screen.findByRole("button", { name: "Open Stage evidence" });
     await waitFor(() => expect(launcher).toHaveFocus());
   });
 
@@ -168,6 +175,33 @@ describe("WorkspaceShell", () => {
     }
   });
 
+  test("keeps focus on a newly selected lens inside modal Stage", () => {
+    const OriginalResizeObserver = global.ResizeObserver;
+    const OriginalWindowResizeObserver = window.ResizeObserver;
+    class MockResizeObserver {
+      constructor(callback) { this.callback = callback; }
+      observe(target) { this.callback([{ target, contentRect: { width: 1000 } }]); }
+      disconnect() {}
+    }
+    global.ResizeObserver = MockResizeObserver;
+    window.ResizeObserver = MockResizeObserver;
+
+    try {
+      render(<Harness />);
+      chooseStageView("Files");
+      const dialog = screen.getByRole("dialog", { name: "Files" });
+      const codeTab = within(dialog).getByRole("tab", { name: "Open Code evidence" });
+      codeTab.focus();
+      fireEvent.click(codeTab);
+
+      expect(screen.getByRole("dialog", { name: "Code" })).toBeTruthy();
+      expect(codeTab).toHaveFocus();
+    } finally {
+      global.ResizeObserver = OriginalResizeObserver;
+      window.ResizeObserver = OriginalWindowResizeObserver;
+    }
+  });
+
   test("switches from overlay Stage to inline Stage at the shell breakpoint", () => {
     expect(WORKSPACE_DRAWER_OVERLAY_BREAKPOINT).toBe(1180);
     const OriginalResizeObserver = global.ResizeObserver;
@@ -213,6 +247,13 @@ describe("WorkspaceShell", () => {
     const css = fs.readFileSync(path.join(__dirname, "WorkspaceShell.css"), "utf8");
     expect(css).toMatch(
       /\.workspace-shell\[data-stage-fullscreen="true"\] \.workspace-stage\s*\{[\s\S]*?grid-column:\s*1 \/ -1;/
+    );
+  });
+
+  test("reserves the mobile evidence bar height below the conversation", () => {
+    const css = fs.readFileSync(path.join(__dirname, "WorkspaceShell.css"), "utf8");
+    expect(css).toMatch(
+      /@container workspace-shell \(max-width: 599px\)[\s\S]*?\.workspace-shell__primary\s*\{[\s\S]*?padding-bottom:\s*calc\(54px \+ env\(safe-area-inset-bottom\)\);/
     );
   });
 

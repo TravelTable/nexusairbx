@@ -2,110 +2,30 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  AlertTriangle,
-  ArrowRight,
-  Bug,
-  CheckCircle2,
-  ChevronRight,
-  Coins,
-  FileCode2,
-  FolderTree,
-  Gamepad2,
-  History,
-  ListChecks,
-  Play,
-  PlugZap,
-  RefreshCw,
-  Search,
-  ShieldCheck,
-} from "../../lib/icons";
-import {
-  homepageBuildStages,
   homepageExampleBuilds,
   homepageFocusedTools,
   homepageGenres,
   homepageGrowthLoop,
   homepageHeroPrompt,
-  homepageProjectEvidence,
 } from "../../content/homepageV2";
 import HomepageFooter from "./HomepageFooter";
 import HomepagePrompt from "./HomepagePrompt";
-import NexusDisplayIcon from "../icons/NexusDisplayIcon";
 import styles from "./HomepageCinematic.module.css";
 
-const STAGE_DATA = {
-  prompt: {
-    eyebrow: "Request brief",
-    title: "Inventory system",
-    summary: "Match the current game, preserve mobile performance, and use the existing item data.",
-    items: ["Player goal captured", "Visual direction retained", "Performance constraint noted"],
-  },
-  inspect: {
-    eyebrow: "Project inspection",
-    title: "6 references found",
-    summary: "Nexus traced the current inventory flow before proposing a change.",
-    items: ["ReplicatedStorage.ItemDefinitions", "StarterGui.Inventory", "InventoryService remotes"],
-  },
-  plan: {
-    eyebrow: "Proposed route",
-    title: "4 steps, ready to review",
-    summary: "The plan connects interface structure, data binding, input, and Play mode verification.",
-    items: ["Reuse ItemDefinitions", "Build responsive ScreenGui", "Verify equip and close flows"],
-  },
-  build: {
-    eyebrow: "Construction active",
-    title: "World and interface taking shape",
-    summary: "Every affected object remains attached to this request and its recovery point.",
-    items: ["InventoryController.luau", "InventoryView ScreenGui", "InventoryService reference"],
-  },
-  test: {
-    eyebrow: "Play mode evidence",
-    title: "7 checks passed",
-    summary: "The first test exposed a stale selection; Nexus corrected it and ran the flow again.",
-    items: ["Open and close on mobile", "Equip updates server state", "Respawn clears stale selection"],
-  },
-  review: {
-    eyebrow: "Request change set",
-    title: "Ready for your decision",
-    summary: "Review the final scope, keep the whole change, or restore individual project objects.",
-    items: ["3 files changed", "1 ScreenGui updated", "Snapshot NXS-184 retained"],
-  },
-};
+const RUN_RECORD = [
+  { time: "00:00", state: "REQUEST ACCEPTED", detail: "Arcade District / Main place" },
+  { time: "00:03", state: "PROJECT READ", detail: "18 objects / 4 existing systems" },
+  { time: "00:11", state: "CHANGE APPLIED", detail: "4 project objects" },
+  { time: "00:20", state: "TEST FAILED", detail: "Stale player selection", tone: "warning" },
+  { time: "00:31", state: "CORRECTION APPLIED", detail: "Respawn state reset" },
+  { time: "00:39", state: "7 CHECKS PASSED", detail: "Mobile and server paths verified", tone: "success" },
+];
 
-const STEP_ICONS = {
-  prompt: ChevronRight,
-  inspect: Search,
-  plan: ListChecks,
-  build: FileCode2,
-  test: Play,
-  review: ShieldCheck,
-};
-
-const STAGE_DISPLAY_ICONS = {
-  prompt: "ask",
-  inspect: "assets",
-  plan: "plan",
-  build: "build",
-  test: "debug",
-  review: "complete",
-};
-
-const TRANSFORMATION_STAGES = [
-  {
-    id: "blockout",
-    label: "Blockout",
-    detail: "Playable geometry",
-  },
-  {
-    id: "build",
-    label: "Structured build",
-    detail: "Systems and routes",
-  },
-  {
-    id: "finished",
-    label: "Finished world",
-    detail: "Tested experience",
-  },
+const OBJECT_RECORD = [
+  { path: "ReplicatedStorage / ItemDefinitions", state: "READ" },
+  { path: "StarterGui / InventoryView", state: "CHANGE" },
+  { path: "StarterPlayerScripts / InventoryController", state: "CHANGE" },
+  { path: "ServerScriptService / InventoryService", state: "VERIFY" },
 ];
 
 async function trackHomepageProductEvent(name, properties, options) {
@@ -113,398 +33,346 @@ async function trackHomepageProductEvent(name, properties, options) {
     const { trackProductEvent } = await import("../../lib/productAnalytics");
     await trackProductEvent(name, properties, options);
   } catch (_) {
-    // The public journey must remain usable when analytics is unavailable.
+    // Public navigation and prompt handoff remain usable without analytics.
   }
 }
 
-function ProductNavigator() {
+function ProjectCutaway() {
   return (
-    <aside className={styles.productNavigator} aria-label="Example Nexus project navigation">
-      <div className={styles.navigatorBrand}>
-        <img src="/nexus-mark.svg" alt="" width="26" height="26" />
-        <span>Nexus</span>
-      </div>
-      <div className={styles.newBuildButton} aria-hidden="true">
-        <span>+</span> New build
-      </div>
-      <div className={styles.navigatorGroup}>
-        <small>ACTIVE PROJECT</small>
-        <strong>Arcade District</strong>
-        <span className={styles.navigatorPlace}><i /> Main place</span>
-      </div>
-      <div className={styles.navigatorGroup}>
-        <small>RECENT</small>
-        <span>Inventory system</span>
-        <span>Round restart bug</span>
-        <span>Mobile shop pass</span>
-      </div>
-      <div className={styles.navigatorFooter}>
-        <PlugZap size={15} aria-hidden="true" />
-        <span><strong>Studio paired</strong><small>Arcade District</small></span>
-      </div>
-    </aside>
-  );
-}
-
-function RequestRail({ activeIndex, onSelect }) {
-  return (
-    <ol className={styles.requestRail} aria-label="Conversation-to-construction sequence">
-      {homepageBuildStages.map((step, index) => {
-        const Icon = STEP_ICONS[step.id];
-        const active = index === activeIndex;
-        const complete = index < activeIndex;
-        return (
-          <li key={step.id} data-complete={complete ? "true" : undefined}>
-            <button
-              type="button"
-              aria-pressed={active}
-              onClick={() => onSelect(index)}
-              className={active ? styles.requestStepActive : ""}
-            >
-              <span className={styles.requestStepIcon}>
-                {complete ? <CheckCircle2 size={14} aria-hidden="true" /> : <Icon size={14} aria-hidden="true" />}
-              </span>
-              <span>{step.label}</span>
-            </button>
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
-
-function ProductStage({ step }) {
-  const content = STAGE_DATA[step.id];
-  return (
-    <section className={styles.productStage} aria-labelledby="demo-stage-title">
-      <header className={styles.stageHeader}>
-        <div>
-          <span className={styles.stageDot} aria-hidden="true" />
-          <strong id="demo-stage-title">Stage</strong>
-          <span>Arcade District</span>
-        </div>
-        <span className={styles.stageArtifact}>World · UI · Changes</span>
-      </header>
-      <div className={styles.stageViewport} data-stage-state={step.id}>
+    <figure className={styles.projectCutaway} aria-labelledby="project-cutaway-caption">
+      <div className={styles.projectImageField}>
         <img
           src="/assets/nexus-world-under-construction-2d.webp"
           width="1920"
           height="1072"
-          alt="Flat editorial map showing a Roblox-like world progressing from blockout to a finished environment"
+          alt="Roblox-like broken arcade project with rooms, paths, and active construction marks"
           loading="eager"
           decoding="async"
         />
-        <span className={styles.stageScanLine} aria-hidden="true" />
-        <div key={step.id} className={styles.stageStatus} aria-live="polite" aria-atomic="true">
-          <small>{content.eyebrow}</small>
-          <h3>{content.title}</h3>
-          <p>{content.summary}</p>
-          <ul>
-            {content.items.map((item) => (
-              <li key={item}><CheckCircle2 size={14} aria-hidden="true" /> {item}</li>
-            ))}
-          </ul>
-        </div>
-        <div className={styles.stageSelection} aria-hidden="true">
-          <span />
-          <span />
-          <span />
-          <span />
-        </div>
+        <span className={styles.objectLabel} data-position="entry">Workspace / Entry</span>
+        <span className={styles.objectLabel} data-position="round">RoundService / Active</span>
+        <span className={styles.objectLabel} data-position="enemy">EnemyDirector / Read</span>
+        <span className={styles.changeMark} data-position="north" aria-hidden="true">+03</span>
+        <span className={styles.changeMark} data-position="south" aria-hidden="true">~01</span>
       </div>
-      <div className={styles.stageFooter}>
-        <span>Illustrative project · real interface controls</span>
-        <strong>{step.status}</strong>
-      </div>
-    </section>
+      <figcaption id="project-cutaway-caption">
+        <span>ARCADE DISTRICT / MAIN PLACE</span>
+        <strong>Current snapshot NXS-184</strong>
+        <span className="nx-state-mark" data-state="success">STUDIO READY</span>
+      </figcaption>
+    </figure>
   );
 }
 
-function ProductHero({ surface, navigate, promptSuggestion, heroPromptRef }) {
-  const [activeStepIndex, setActiveStepIndex] = useState(3);
-  const activeStep = homepageBuildStages[activeStepIndex];
-
-  const selectStep = (index) => {
-    setActiveStepIndex(index);
-    void trackHomepageProductEvent("homepage_demo_step_selected", {
-      surface,
-      step: homepageBuildStages[index].id,
-    });
-  };
-
+function RequestOpening({ surface, navigate, promptSuggestion, heroPromptRef }) {
   return (
     <section id="product" className={styles.hero} aria-labelledby="homepage-hero-heading" data-home-hero>
-      <div className={styles.heroIntro}>
-        <p className={styles.eyebrow}><span aria-hidden="true" /> Conversational Roblox production studio</p>
-        <h1 id="homepage-hero-heading">Talk to your Roblox project. <span>Watch it take shape.</span></h1>
-        <p className={styles.heroDescription}>
-          Describe any game, system, interface, or fix. Nexus understands the project, plans the work,
-          changes Roblox Studio, and keeps the result ready to inspect.
-        </p>
-      </div>
-
-      <div className={styles.productDemo} role="group" aria-label="Interactive NexusRBX product demonstration">
-        <ProductNavigator />
-        <section className={styles.productConversation} aria-labelledby="demo-conversation-title">
-          <header className={styles.conversationHeader}>
-            <div>
-              <strong id="demo-conversation-title">Inventory system</strong>
-              <span>Arcade District · Main place</span>
-            </div>
-            <span className={styles.contextStatus}><i /> Project context ready</span>
-          </header>
-          <div className={styles.conversationBody}>
-            <div className={styles.nexusResponse}>
-              <span className={styles.responseMark} aria-hidden="true">N</span>
-              <div>
-                <strong>Nexus</strong>
-                <p>
-                  I found the current item definitions, inventory ScreenGui, and equip remote.
-                  I’ll preserve those contracts and build the responsive view as one reviewable change set.
-                </p>
-              </div>
-            </div>
-            <RequestRail activeIndex={activeStepIndex} onSelect={selectStep} />
-            <div className={styles.currentStep} aria-live="polite">
-              <span>{String(activeStepIndex + 1).padStart(2, "0")}</span>
-              <div>
-                <small>{activeStep.label}</small>
-                <strong>{activeStep.title}</strong>
-                <p>{activeStep.description}</p>
-              </div>
-            </div>
+      <div className={styles.requestOpening}>
+        <p className={styles.routeLabel}>REQUEST / 184</p>
+        <h1 id="homepage-hero-heading">Create a round-based horror game in a broken arcade.</h1>
+        <p className={styles.requestContinuation}>Keep mobile controls simple. Make the rooms shift after each round.</p>
+        <dl className={styles.projectRead}>
+          <div>
+            <dt>PROJECT READ</dt>
+            <dd>18 objects / 4 existing systems / 1 blocked remote</dd>
           </div>
-          <HomepagePrompt
-            surface={surface}
-            source={surface}
-            navigateToAi={navigate}
-            className={styles.heroPrompt}
-            promptId="homepage-hero-prompt"
-            suggestedPrompt={promptSuggestion.value}
-            suggestionVersion={promptSuggestion.version}
-            submitLabel="Start building"
-            helperText="Your prompt is saved locally before the workspace opens. Review is always part of the loop."
-            inputRef={heroPromptRef}
-          />
-        </section>
-        <ProductStage step={activeStep} />
+          <div>
+            <dt>TARGET</dt>
+            <dd>Arcade District / Main place</dd>
+          </div>
+        </dl>
+        <HomepagePrompt
+          surface={surface}
+          source={surface}
+          navigateToAi={navigate}
+          className={styles.heroPrompt}
+          promptId="homepage-hero-prompt"
+          suggestedPrompt={promptSuggestion.value}
+          suggestionVersion={promptSuggestion.version}
+          submitLabel="Run build"
+          helperText="The request is saved before the workspace opens. Review remains part of the build."
+          inputRef={heroPromptRef}
+          showLabel
+        />
       </div>
-
-      <div className={styles.heroProof} role="list" aria-label="NexusRBX product principles">
-        <span role="listitem"><FolderTree size={16} aria-hidden="true" /> Project-aware inspection</span>
-        <span role="listitem"><ShieldCheck size={16} aria-hidden="true" /> Reviewable Studio changes</span>
-        <span role="listitem"><Gamepad2 size={16} aria-hidden="true" /> Play mode evidence</span>
-        <span role="listitem"><History size={16} aria-hidden="true" /> Snapshots and recovery</span>
-      </div>
+      <ProjectCutaway />
     </section>
   );
 }
 
-function ProjectContextFigure() {
+function ObjectReadRecord() {
   return (
-    <figure className={styles.contextFigure}>
-      <figcaption>
-        <span>Request scope</span>
-        <strong>Inventory system · 4 affected objects</strong>
-      </figcaption>
-      <div className={styles.editorialPlate}>
+    <section className={styles.readRecord} aria-labelledby="read-record-heading">
+      <div className={styles.recordCopy}>
+        <p className={styles.routeLabel}>READ</p>
+        <h2 id="read-record-heading">The project exists before the request.</h2>
+        <p>Nexus traces the current object graph, client/server boundary, UI state, and selected Studio place before it proposes a route.</p>
+      </div>
+      <figure className={styles.xrayField}>
         <img
           src="/assets/nexus-project-xray-2d.webp"
           width="1440"
           height="960"
-          alt="Flat technical cutaway connecting a Roblox-like world, object hierarchy, and the subsystem Nexus is analysing"
+          alt="Technical cutaway connecting a Roblox-like world to its affected project hierarchy"
           loading="lazy"
           decoding="async"
         />
-        <span>World context</span>
-        <span>Analysed route</span>
-        <span>Related systems</span>
-      </div>
-      <div className={styles.contextFigureBody}>
-        <div className={styles.fileTree} aria-label="Example affected Roblox project hierarchy">
-          <span><ChevronRight size={13} aria-hidden="true" /> ReplicatedStorage</span>
-          <strong><ChevronRight size={13} aria-hidden="true" /> ItemDefinitions</strong>
-          <span><ChevronRight size={13} aria-hidden="true" /> StarterGui</span>
-          <strong><ChevronRight size={13} aria-hidden="true" /> InventoryView</strong>
-          <span><ChevronRight size={13} aria-hidden="true" /> StarterPlayerScripts</span>
-          <strong><ChevronRight size={13} aria-hidden="true" /> InventoryController</strong>
-          <span><ChevronRight size={13} aria-hidden="true" /> ServerScriptService</span>
-          <strong><ChevronRight size={13} aria-hidden="true" /> InventoryService</strong>
-        </div>
-        <div className={styles.changeSet}>
-          <header>
-            <span><FileCode2 size={16} aria-hidden="true" /> InventoryController.luau</span>
-            <strong>+42 −8</strong>
-          </header>
-          <pre aria-label="Illustrative Luau change"><code>{`local items = ItemDefinitions.getVisible(player)
+        <figcaption>REQUEST SCOPE / INVENTORY AND ROUND STATE</figcaption>
+      </figure>
+      <ol className={styles.objectRecord} aria-label="Affected Roblox project objects">
+        {OBJECT_RECORD.map((object) => (
+          <li key={object.path}>
+            <span>{object.path}</span>
+            <strong>{object.state}</strong>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+function ChangeRecord() {
+  return (
+    <section className={styles.changeRecord} aria-labelledby="change-record-heading">
+      <div className={styles.codeRecord}>
+        <header>
+          <span>InventoryController.luau</span>
+          <strong>+42 / −8</strong>
+        </header>
+        <pre aria-label="Illustrative Luau change"><code>{`local items = ItemDefinitions.getVisible(player)
 
 view:render(items)
 view:onEquip(function(itemId)
   equipRemote:FireServer(itemId)
 end)`}</code></pre>
-          <div className={styles.changeSetFooter}>
-            <span><ShieldCheck size={15} aria-hidden="true" /> Expected source matched</span>
-            <span>Snapshot NXS-184</span>
-          </div>
-        </div>
+        <footer>
+          <span className="nx-state-mark" data-state="success">EXPECTED SOURCE MATCHED</span>
+          <span>SNAPSHOT / NXS-184</span>
+        </footer>
       </div>
-    </figure>
+      <div className={styles.recordCopy}>
+        <p className={styles.routeLabel}>CHANGE</p>
+        <h2 id="change-record-heading">One request remains one reviewable change set.</h2>
+        <p>Scripts, interface objects, and project state stay attached to the same request and recovery point.</p>
+        <dl className={styles.changeSummary}>
+          <div><dt>FILES</dt><dd>3 changed</dd></div>
+          <div><dt>OBJECTS</dt><dd>1 ScreenGui updated</dd></div>
+          <div><dt>RECOVERY</dt><dd>Selective restore available</dd></div>
+        </dl>
+      </div>
+      <figure className={styles.assemblyField}>
+        <img
+          src="/assets/nexus-interface-assembly-2d.webp"
+          width="1440"
+          height="1080"
+          alt="Inventory, HUD, navigation, and touch controls aligned into one Roblox interface"
+          loading="lazy"
+          decoding="async"
+        />
+        <figcaption>INTERFACE ASSEMBLY / MOBILE INPUT RETAINED</figcaption>
+      </figure>
+    </section>
   );
 }
 
-function PlaytestFigure() {
+function TestRecord() {
   return (
-    <figure className={styles.playtestFigure}>
-      <figcaption>
-        <span>Play mode · run 2</span>
-        <strong>Inventory interaction</strong>
-      </figcaption>
-      <div className={styles.debugPlate}>
+    <section className={styles.testRecord} aria-labelledby="test-record-heading">
+      <div className={styles.recordCopy}>
+        <p className={styles.routeLabel}>TEST</p>
+        <h2 id="test-record-heading">The first failure stays in the record.</h2>
+        <p>The stale selection was found in Play mode, corrected without widening the request, and verified again.</p>
+      </div>
+      <ol className={styles.runLedger} aria-label="Playtest run record">
+        {RUN_RECORD.map((entry) => (
+          <li key={`${entry.time}-${entry.state}`}>
+            <time>{entry.time}</time>
+            <strong data-tone={entry.tone}>{entry.state}</strong>
+            <span>{entry.detail}</span>
+          </li>
+        ))}
+      </ol>
+      <figure className={styles.debugField}>
         <img
           src="/assets/nexus-debug-trace-2d.webp"
           width="1440"
           height="960"
-          alt="Flat game scene with one purple diagnostic route tracing an interaction to an interrupted connection"
+          alt="Roblox playtest scene with a diagnostic route connecting an interaction to a failed selection"
           loading="lazy"
           decoding="async"
         />
-      </div>
-      <ol aria-label="Example playtest evidence">
-        <li>
-          <span className={styles.testIconNeutral}><Play size={16} aria-hidden="true" /></span>
-          <div><strong>Test flow started</strong><small>Mobile viewport · fresh player spawn</small></div>
-          <time>00:00</time>
-        </li>
-        <li>
-          <span className={styles.testIconIssue}><AlertTriangle size={16} aria-hidden="true" /></span>
-          <div><strong>Stale selection found</strong><small>Respawn retained the previous equipped slot</small></div>
-          <time>00:08</time>
-        </li>
-        <li>
-          <span className={styles.testIconNeutral}><RefreshCw size={16} aria-hidden="true" /></span>
-          <div><strong>Targeted correction applied</strong><small>Selection now resets with character state</small></div>
-          <time>00:21</time>
-        </li>
-        <li>
-          <span className={styles.testIconPassed}><CheckCircle2 size={16} aria-hidden="true" /></span>
-          <div><strong>7 checks passed</strong><small>Open, equip, close, respawn, and touch input verified</small></div>
-          <time>00:36</time>
-        </li>
-      </ol>
-    </figure>
+        <figcaption>PLAY MODE / RUN 2 / MOBILE VIEWPORT</figcaption>
+      </figure>
+    </section>
   );
 }
 
-function TransformationFigure() {
-  const [activeStage, setActiveStage] = useState(1);
-  const selectedStage = TRANSFORMATION_STAGES[activeStage];
-
+function ReviewRecord() {
   return (
-    <figure
-      className={styles.transformationFigure}
-      data-transformation-stage={selectedStage.id}
-      aria-labelledby="transformation-title"
-    >
-      <div className={styles.transformationImage}>
+    <section className={styles.reviewRecord} aria-labelledby="review-record-heading">
+      <div className={styles.reviewState}>
+        <p>REVIEW / BUILD 184</p>
+        <strong>READY FOR YOUR DECISION</strong>
+        <span className="nx-state-mark" data-state="success">7 CHECKS PASSED</span>
+      </div>
+      <div className={styles.recordCopy}>
+        <p className={styles.routeLabel}>REVIEW</p>
+        <h2 id="review-record-heading">Keep the change, inspect one object, or restore the snapshot.</h2>
+        <p>The final scope, Studio target, source match, test evidence, and recovery point remain visible together.</p>
+      </div>
+      <dl className={styles.reviewLedger}>
+        <div><dt>STUDIO TARGET</dt><dd>Arcade District / Main place</dd></div>
+        <div><dt>CHANGE SET</dt><dd>3 files / 1 ScreenGui</dd></div>
+        <div><dt>SOURCE SAFETY</dt><dd>Expected hashes matched</dd></div>
+        <div><dt>RECOVERY</dt><dd>Restore snapshot NXS-184</dd></div>
+      </dl>
+    </section>
+  );
+}
+
+function BuildNarrative() {
+  return (
+    <section id="workflow" className={styles.workflow} aria-labelledby="workflow-heading">
+      <header className={styles.narrativeHeading}>
+        <p className={styles.routeLabel}>BUILD RECORD / 184</p>
+        <h2 id="workflow-heading">One request. One legible record of work.</h2>
+        <p>Project context, affected objects, code, failure, correction, and review change composition as the work changes.</p>
+      </header>
+      <ObjectReadRecord />
+      <ChangeRecord />
+      <TestRecord />
+      <ReviewRecord />
+    </section>
+  );
+}
+
+function GenreAtlas({ selectedGenre, onSelect, onContinue }) {
+  return (
+    <section id="genres" className={styles.genreAtlas} aria-labelledby="genres-heading">
+      <div className={styles.atlasHeading}>
+        <p className={styles.routeLabel}>BUILD ATLAS</p>
+        <h2 id="genres-heading">Change the world, not the workflow.</h2>
+        <p>Choose a genre to place a concrete project brief into the composer. Nexus still reads, changes, tests, and records the real project.</p>
+      </div>
+      <figure className={styles.atlasWorld}>
         <img
-          src="/assets/nexus-world-transformation-2d.webp"
-          width="1440"
-          height="900"
-          alt="The same Roblox-like level shown as a grey blockout, an intermediate build, and a finished world"
+          key={selectedGenre.id}
+          src={selectedGenre.image}
+          width="704"
+          height="440"
+          alt={selectedGenre.imageAlt}
           loading="lazy"
           decoding="async"
         />
-        <span
-          className={styles.transformationSelection}
-          style={{ "--transformation-index": activeStage }}
-          aria-hidden="true"
-        />
-      </div>
-      <figcaption id="transformation-title">
-        {TRANSFORMATION_STAGES.map((stage, index) => (
+        <figcaption>
+          <span>{selectedGenre.label.toUpperCase()} / SELECTED WORLD</span>
+          <strong>{selectedGenre.outcome}</strong>
+        </figcaption>
+      </figure>
+      <div className={styles.genreIndex} role="group" aria-label="Choose a Roblox game genre">
+        {homepageGenres.map((genre, index) => (
           <button
             type="button"
-            key={stage.id}
-            aria-pressed={activeStage === index}
-            onClick={() => setActiveStage(index)}
+            key={genre.id}
+            aria-pressed={selectedGenre.id === genre.id}
+            aria-controls="homepage-hero-prompt"
+            data-home-genre={genre.id}
+            onClick={() => onSelect(genre)}
           >
-            <span>{stage.label}</span>
-            <small>{stage.detail}</small>
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <strong>{genre.label}</strong>
+            <small>{genre.description}</small>
           </button>
         ))}
-      </figcaption>
-      <p className={styles.srOnly} aria-live="polite">
-        {selectedStage.label} selected: {selectedStage.detail}.
-      </p>
-    </figure>
-  );
-}
-
-function InterfaceAssemblyFigure() {
-  return (
-    <figure className={styles.assemblyFigure}>
-      <img
-        src="/assets/nexus-interface-assembly-2d.webp"
-        width="1440"
-        height="1080"
-        alt="Flat construction diagram showing inventory, HUD, navigation, and touch controls aligning into one Roblox game interface"
-        loading="lazy"
-        decoding="async"
-      />
-      <figcaption>
+      </div>
+      <div className={styles.loadedBrief} aria-live="polite" aria-atomic="true">
         <div>
-          <small>Interface assembly</small>
-          <strong>One system, composed around the game.</strong>
+          <span>{selectedGenre.label.toUpperCase()} BRIEF LOADED</span>
+          <p>{selectedGenre.prompt}</p>
         </div>
-        <ul aria-label="Interface areas shown">
-          <li>Inventory</li>
-          <li>HUD</li>
-          <li>Touch actions</li>
-        </ul>
-      </figcaption>
-    </figure>
+        <button type="button" className="nx-text-action" onClick={onContinue}>Continue in the composer /</button>
+      </div>
+    </section>
   );
 }
 
-function StudioBridge() {
+function CreatorRecord() {
   return (
-    <figure className={styles.studioBridge}>
-      <img
-        className={styles.studioBridgePlate}
-        src="/assets/nexus-studio-bridge-2d.webp"
-        width="1440"
-        height="810"
-        alt="Flat schematic of a reviewed Nexus change set transferring to a selected Roblox Studio project"
-        loading="lazy"
-        decoding="async"
+    <section id="grow" className={styles.creatorRecord} aria-labelledby="growth-heading">
+      <div className={styles.creatorHeading}>
+        <p className={styles.routeLabel}>AFTER THE BUILD</p>
+        <h2 id="growth-heading">Make something players return to. Robux can follow—never promised.</h2>
+        <p>Robux is an outcome, not a generate button. Retention, discovery, fair value, and update quality still determine results.</p>
+      </div>
+      <ol className={styles.growthLedger}>
+        {homepageGrowthLoop.map((step, index) => (
+          <li key={step.id}>
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <strong>{step.title}</strong>
+            <p>{step.description}</p>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+function ExampleRecord() {
+  return (
+    <section id="examples" className={styles.examples} aria-labelledby="examples-heading">
+      <header>
+        <p className={styles.routeLabel}>CURATED PROJECT RECORDS</p>
+        <h2 id="examples-heading">Breadth without invented customer proof.</h2>
+        <p>These are project briefs, not testimonials or earnings claims.</p>
+      </header>
+      <div className={styles.exampleLedger}>
+        {homepageExampleBuilds.map((example, index) => (
+          <article key={example.id}>
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            <div><small>{example.genre}</small><h3>{example.title}</h3><p>{example.description}</p></div>
+            <ul aria-label={`${example.title} example systems`}>
+              {example.systems.map((system) => <li key={system}>{system}</li>)}
+            </ul>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function EndingRequest({ surface, navigate }) {
+  return (
+    <section className={styles.endingRequest} aria-labelledby="ending-request-heading">
+      <div>
+        <p className={styles.routeLabel}>NEXT REQUEST</p>
+        <h2 id="ending-request-heading">What should change next?</h2>
+        <nav aria-label="Continue exploring NexusRBX">
+          <a href="/pricing">Access and usage</a>
+          <a href="/docs">Read the project guide</a>
+          <a href="/roblox-script-generator">Open a focused tool</a>
+        </nav>
+      </div>
+      <HomepagePrompt
+        surface={`${surface}_ending`}
+        source={surface}
+        navigateToAi={navigate}
+        promptId="homepage-ending-prompt"
+        submitLabel="Open workspace"
+        helperText="Your request is saved locally before the workspace opens."
+        showLabel
       />
-      <figcaption className={styles.studioBridgeLabels}>
-        <section>
-          <small>NEXUS CONVERSATION</small>
-          <strong>Inventory system</strong>
-          <span>Plan, change set, evidence</span>
-        </section>
-        <div className={styles.bridgeRoute} aria-hidden="true">
-          <i /><i /><i />
-          <ArrowRight size={18} />
-        </div>
-        <section>
-          <small>ROBLOX STUDIO</small>
-          <strong>Arcade District</strong>
-          <span>Main place · paired</span>
-        </section>
-      </figcaption>
-    </figure>
+    </section>
   );
 }
 
 export default function HomepageV2Content({ surface = "homepage", navigate }) {
-  const [selectedGenreId, setSelectedGenreId] = useState(null);
+  const initialGenre = homepageGenres.find((genre) => genre.id === "horror") || homepageGenres[0];
+  const [selectedGenreId, setSelectedGenreId] = useState(initialGenre.id);
   const [promptSuggestion, setPromptSuggestion] = useState({ value: homepageHeroPrompt, version: 0 });
   const heroPromptRef = useRef(null);
   const selectedGenre = useMemo(
-    () => homepageGenres.find((genre) => genre.id === selectedGenreId) || null,
-    [selectedGenreId],
+    () => homepageGenres.find((genre) => genre.id === selectedGenreId) || initialGenre,
+    [initialGenre, selectedGenreId],
   );
 
   useEffect(() => {
@@ -543,201 +411,26 @@ export default function HomepageV2Content({ surface = "homepage", navigate }) {
   return (
     <div className={styles.page}>
       <main id="main-content" tabIndex={-1}>
-        <ProductHero
+        <RequestOpening
           surface={surface}
           navigate={navigate}
           promptSuggestion={promptSuggestion}
           heroPromptRef={heroPromptRef}
         />
-
-        <section id="workflow" className={styles.workflow} aria-labelledby="workflow-heading">
-          <div className={styles.sectionHeading}>
-            <p className={styles.eyebrow}><span aria-hidden="true" /> A build you can follow</p>
-            <h2 id="workflow-heading">Nexus does not jump from prompt to paste.</h2>
-            <p>
-              The request stays legible from first inspection through final review. Raw tool noise stays out of the way;
-              decisions, affected objects, and evidence remain visible.
-            </p>
-          </div>
-          <ol className={styles.workflowLedger} aria-label="Nexus build workflow">
-            {homepageBuildStages.map((stage, index) => {
-              return (
-                <li key={stage.id}>
-                  <span className={styles.ledgerIndex}>{String(index + 1).padStart(2, "0")}</span>
-                  <span className={styles.ledgerIcon}>
-                    <NexusDisplayIcon
-                      name={STAGE_DISPLAY_ICONS[stage.id]}
-                      className={styles.ledgerIconAsset}
-                      size={52}
-                    />
-                  </span>
-                  <div><small>{stage.label}</small><strong>{stage.title}</strong></div>
-                  <p>{stage.description}</p>
-                  <span className={styles.ledgerStatus}>{stage.status}</span>
-                </li>
-              );
-            })}
-          </ol>
-          <TransformationFigure />
-          <InterfaceAssemblyFigure />
-        </section>
-
-        <section id="context" className={styles.contextSection} aria-labelledby="context-heading">
-          <div className={styles.contextCopy}>
-            <p className={styles.eyebrow}><span aria-hidden="true" /> Understand every change</p>
-            <h2 id="context-heading">The project is bigger than the open script.</h2>
-            <p>
-              Nexus keeps the Roblox object graph, shared dependencies, and creator intent beside the conversation.
-              A multi-file build remains one thing you can inspect, approve, or restore.
-            </p>
-            <dl>
-              {homepageProjectEvidence.map((item) => (
-                <div key={item.id}>
-                  <dt>{item.label}</dt>
-                  <dd><strong>{item.title}</strong><span>{item.description}</span></dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-          <ProjectContextFigure />
-        </section>
-
-        <section id="debug" className={styles.debugSection} aria-labelledby="debug-heading">
-          <div className={styles.debugCopy}>
-            <p className={styles.eyebrow}><span aria-hidden="true" /> Debug with context</p>
-            <h2 id="debug-heading">A plausible script is not proof that the game works.</h2>
-            <p>
-              Nexus connects a failure to the related project state, applies a focused correction, and keeps the
-              Play mode result with the request.
-            </p>
-            <ul>
-              <li><Bug size={17} aria-hidden="true" /> Failure and affected object stay connected</li>
-              <li><RefreshCw size={17} aria-hidden="true" /> Fixes preserve the original request scope</li>
-              <li><CheckCircle2 size={17} aria-hidden="true" /> Passing evidence remains reviewable</li>
-            </ul>
-          </div>
-          <PlaytestFigure />
-        </section>
-
-        <section id="studio" className={styles.studioSection} aria-labelledby="studio-heading">
-          <div className={styles.sectionHeading}>
-            <p className={styles.eyebrow}><span aria-hidden="true" /> Continue inside Studio</p>
-            <h2 id="studio-heading">Conversation stays attached to the place you mean to change.</h2>
-            <p>
-              Pair the selected Roblox Studio place when the work needs live project context. Review the route,
-              apply deliberately, test in Play mode, and keep building from the same conversation.
-            </p>
-          </div>
-          <StudioBridge />
-          <p className={styles.studioFinePrint}>
-            Roblox credentials remain server-side. NexusRBX is an independent developer tool and is not affiliated
-            with or endorsed by Roblox Corporation.
-          </p>
-        </section>
-
-        <section id="genres" className={styles.genres} aria-labelledby="genres-heading">
-          <div className={styles.sectionHeading}>
-            <p className={styles.eyebrow}><span aria-hidden="true" /> Any Roblox game</p>
-            <h2 id="genres-heading">Bring the genre. Keep the creative decisions.</h2>
-            <p>Select a starting direction to load a concrete brief into the real composer above.</p>
-          </div>
-          <div className={styles.genreSelector} role="group" aria-label="Choose a Roblox game genre">
-            {homepageGenres.map((genre) => (
-              <button
-                type="button"
-                key={genre.id}
-                aria-pressed={selectedGenreId === genre.id}
-                aria-controls="homepage-hero-prompt"
-                aria-label={`Load ${genre.label} brief: ${genre.description}`}
-                data-home-genre={genre.id}
-                onClick={() => chooseGenre(genre)}
-              >
-                <span className={styles.genreImage}>
-                  <img
-                    src={genre.image}
-                    width="704"
-                    height="440"
-                    alt={genre.imageAlt}
-                    loading="lazy"
-                    decoding="async"
-                    sizes="(max-width: 767px) calc(100vw - 40px), (max-width: 1100px) 50vw, 25vw"
-                  />
-                </span>
-                <span className={styles.genreCopy}>
-                  <span>{genre.label}</span>
-                  <small>{genre.description}</small>
-                </span>
-                <ArrowRight size={16} aria-hidden="true" />
-              </button>
-            ))}
-          </div>
-          <div className={styles.genreOutcome} aria-live="polite" aria-atomic="true">
-            <div>
-              <small>{selectedGenre ? `${selectedGenre.label} brief loaded` : "Choose a direction"}</small>
-              <strong>{selectedGenre ? selectedGenre.outcome : "Eight starting points. No fixed template ceiling."}</strong>
-              <p>{selectedGenre ? selectedGenre.prompt : "The same inspect, plan, build, test, and review loop adapts to the project."}</p>
-            </div>
-            <button type="button" onClick={continueWithGenre} disabled={!selectedGenre}>
-              Continue in the composer <ArrowRight size={16} aria-hidden="true" />
-            </button>
-          </div>
-        </section>
-
-        <section id="grow" className={styles.growth} aria-labelledby="growth-heading">
-          <div className={styles.growthIntro}>
-            <div className={styles.sectionHeading}>
-              <p className={styles.eyebrow}><span aria-hidden="true" /> Creator upside</p>
-              <h2 id="growth-heading">Make something players return to. Robux can follow—never promised.</h2>
-              <p>
-                Nexus helps shorten the distance between an idea and a game you can test, improve, publish, and operate.
-                Player demand, retention, discovery, pricing, and update quality still determine results.
-              </p>
-            </div>
-            <div className={styles.robuxTruth}>
-              <Coins size={24} aria-hidden="true" />
-              <span><strong>Robux is an outcome, not a generate button.</strong> Build the fun, read real signals, then add fair value where it belongs.</span>
-            </div>
-          </div>
-          <ol className={styles.growthLoop}>
-            {homepageGrowthLoop.map((step, index) => (
-              <li key={step.id}>
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                <div><strong>{step.title}</strong><p>{step.description}</p></div>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        <section id="examples" className={styles.examples} aria-labelledby="examples-heading">
-          <div className={styles.sectionHeading}>
-            <p className={styles.eyebrow}><span aria-hidden="true" /> Built as project briefs</p>
-            <h2 id="examples-heading">Breadth without invented customer proof.</h2>
-            <p>These curated examples show the systems a Nexus project can coordinate. They are not testimonials or earnings claims.</p>
-          </div>
-          <div className={styles.exampleLedger}>
-            {homepageExampleBuilds.map((example, index) => (
-              <article key={example.id}>
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                <div><small>{example.genre}</small><h3>{example.title}</h3><p>{example.description}</p></div>
-                <ul aria-label={`${example.title} example systems`}>
-                  {example.systems.map((system) => <li key={system}>{system}</li>)}
-                </ul>
-              </article>
-            ))}
-          </div>
-        </section>
-
+        <BuildNarrative />
+        <GenreAtlas selectedGenre={selectedGenre} onSelect={chooseGenre} onContinue={continueWithGenre} />
+        <CreatorRecord />
+        <ExampleRecord />
         <section className={styles.focusedTools} aria-labelledby="focused-tools-heading">
           <div>
-            <p className={styles.eyebrow}><span aria-hidden="true" /> Start with one task</p>
-            <h2 id="focused-tools-heading">Focused Roblox tools, when the whole project is not required.</h2>
+            <p className={styles.routeLabel}>FOCUSED TASKS</p>
+            <h2 id="focused-tools-heading">Use one tool when the whole project is not required.</h2>
           </div>
           <nav aria-label="Focused Roblox creation tools">
-            {homepageFocusedTools.map((tool) => (
-              <a href={tool.href} key={tool.href}>{tool.label} <ArrowRight size={14} aria-hidden="true" /></a>
-            ))}
+            {homepageFocusedTools.map((tool) => <a href={tool.href} key={tool.href}>{tool.label} /</a>)}
           </nav>
         </section>
+        <EndingRequest surface={surface} navigate={navigate} />
       </main>
       <HomepageFooter />
     </div>

@@ -20,6 +20,7 @@ import {
 import { useBilling } from "../context/BillingContext";
 import { useSettings } from "../context/SettingsContext";
 import "../components/assets/assetPlatform.css";
+import "../components/assets/assetLedgerOverrides.css";
 
 function asArray(value) {
   return Array.isArray(value) ? value : [];
@@ -281,7 +282,7 @@ export default function AssetLibraryPage() {
     return (
       <main className="asset-platform-page">
         <div className="asset-platform-shell">
-          <header className="asset-platform-header"><div><p className="asset-eyebrow"><Library /> Nexus asset platform</p><h1>Asset library</h1><p>Loading canonical asset records.</p></div></header>
+          <header className="asset-platform-header"><div><p className="asset-eyebrow"><Library /> Asset index</p><h1>Contact sheet.</h1><p>Loading canonical asset records.</p></div></header>
           <AssetGridSkeleton count={8} label="Loading asset library" />
         </div>
       </main>
@@ -293,9 +294,9 @@ export default function AssetLibraryPage() {
       <div className="asset-platform-shell">
         <header className="asset-platform-header">
           <div>
-            <p className="asset-eyebrow"><Library aria-hidden="true" /> Nexus asset platform</p>
-            <h1>Asset library</h1>
-            <p>Browse durable Nexus records across projects and universes. Roblox IDs appear only after upload succeeds.</p>
+            <p className="asset-eyebrow"><Library aria-hidden="true" /> Asset index</p>
+            <h1>Contact sheet.</h1>
+            <p>Read durable visual records across projects and universes. A Roblox ID appears only after publishing succeeds.</p>
           </div>
           <div className="asset-platform-header__actions">
             {canGenerate ? <Button icon={ImagePlus} onClick={() => navigate("/tools/icon-generator")}>Generate assets</Button> : null}

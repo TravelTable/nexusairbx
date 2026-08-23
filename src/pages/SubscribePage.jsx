@@ -18,13 +18,7 @@ import {
 import { formatMoney, getPublicPlan } from "../lib/planCatalog";
 import { BILLING_INTERVAL, PLAN } from "../lib/prices";
 import { trackProductEvent } from "../lib/productAnalytics";
-import {
-  editorialDisplayClass,
-  editorialGutterClass,
-  editorialPanelClass,
-  editorialPrimaryButtonClass,
-  editorialSecondaryButtonClass,
-} from "../components/site/editorialUi";
+import "./AccountLedger.css";
 
 function subscribeUntilTerminal(unsubscribersRef, documentRef, onValue, onError) {
   let unsubscribe = null;
@@ -291,159 +285,163 @@ export default function SubscribePage() {
 
   if (!intent || !plan) {
     return (
-      <div className={`${editorialGutterClass} min-h-[calc(100vh-72px)] bg-[var(--ds-bg-canvas)] py-20 text-[var(--ds-text)]`}>
+      <main id="main-content" className="account-ledger-page account-ledger-page--center">
         {pageHead}
-        <main className={`${editorialPanelClass} mx-auto max-w-xl p-8 sm:p-10`}>
-          <p className="text-xs font-semibold text-[var(--ds-accent)]">Checkout</p>
-          <h1 className={`${editorialDisplayClass} mt-4 text-4xl`}>Choose a plan first</h1>
-          <p className="mt-3 text-sm leading-6 text-[var(--ds-text-muted)]">
+        <section className="account-ledger-center-state" aria-labelledby="missing-plan-title">
+          <p className="account-ledger-kicker">Checkout record</p>
+          <h1 id="missing-plan-title" className="account-ledger-title account-ledger-title--compact">Choose a plan first</h1>
+          <p className="account-ledger-intro">
             Your plan selection is missing or has expired. Return to pricing to create a new checkout review.
           </p>
           <a
             href="/pricing"
-            className={`${editorialPrimaryButtonClass} mt-8`}
+            className="account-ledger-link account-ledger-link--primary"
           >
             View pricing
           </a>
-        </main>
-      </div>
+        </section>
+      </main>
     );
   }
 
   if (!authReady || !user) {
     return (
-      <div className="flex min-h-[calc(100vh-72px)] items-center justify-center bg-[var(--ds-bg-canvas)] px-5 text-[var(--ds-text)]">
+      <main id="main-content" className="account-ledger-page account-ledger-page--center">
         {pageHead}
-        <div className="text-center" role="status">
-          <Loader2 className="mx-auto h-6 w-6 animate-spin text-[var(--ds-accent)]" />
-          <p className="mt-3 text-sm text-[var(--ds-text-muted)]">Taking you to sign in…</p>
+        <div className="account-ledger-loading" role="status">
+          <Loader2 className="account-ledger-icon animate-spin" aria-hidden="true" />
+          <p>Taking you to sign in…</p>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className={`${editorialGutterClass} min-h-[calc(100vh-72px)] bg-[var(--ds-bg-canvas)] py-14 text-[var(--ds-text)] sm:py-20`}>
+    <main id="main-content" className="account-ledger-page">
       {pageHead}
-      <main className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-16">
+      <div className="account-ledger-wrap account-ledger-wrap--narrow account-ledger-charge-layout">
         <section aria-labelledby="checkout-title">
-          <p className="text-xs font-semibold text-[var(--ds-accent)]">Final review</p>
-          <h1 id="checkout-title" className={`${editorialDisplayClass} mt-4 text-4xl sm:text-6xl`}>
+          <p className="account-ledger-kicker">Charge record</p>
+          <h1 id="checkout-title" className="account-ledger-title account-ledger-title--compact">
             Review your {plan.name} plan
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--ds-text-muted)]">
+          <p className="account-ledger-intro">
             Confirm the plan and billing schedule below. Stripe will securely collect and process your payment details.
           </p>
 
-          <div className="mt-10 border-y border-[var(--ds-border-subtle)] py-8">
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <div className="flex items-center gap-3">
-                  <h2 className="text-xl font-semibold">{plan.name}</h2>
-                  {intent.plan === PLAN.PRO && (
-                    <span className="rounded-md border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 py-0.5 text-xs font-medium text-[var(--ds-accent)]">
-                      Featured
-                    </span>
-                  )}
-                </div>
-                <p className="mt-1 text-sm text-[var(--ds-text-muted)]">{plan.audience}</p>
-                {intent.plan === PLAN.TEAM && (
-                  <p className="mt-3 text-sm text-[var(--ds-text-secondary)]">{seatCount} paid seats</p>
-                )}
-              </div>
-              <div className="sm:text-right">
-                {intent.interval === BILLING_INTERVAL.YEAR ? (
-                  <>
-                    <p className="text-2xl font-semibold">{formatMoney(monthlyEquivalent)}/month</p>
-                    <p className="mt-1 text-sm text-[var(--ds-text-muted)]">{formatMoney(billedTotal)} billed yearly</p>
-                    {plan.perSeat && (
-                      <p className="mt-1 text-xs text-[var(--ds-text-muted)]">{formatMoney(plan.yearly)} per user, per year</p>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <p className="text-2xl font-semibold">{formatMoney(billedTotal)}/month</p>
-                    <p className="mt-1 text-sm text-[var(--ds-text-muted)]">Billed monthly</p>
-                    {plan.perSeat && (
-                      <p className="mt-1 text-xs text-[var(--ds-text-muted)]">{formatMoney(plan.monthly)} per user, per month</p>
-                    )}
-                  </>
-                )}
-              </div>
+          <dl className="account-ledger-charge-record">
+            <div className="account-ledger-charge-row">
+              <dt>Plan</dt>
+              <dd>{plan.name}</dd>
             </div>
+            <div className="account-ledger-charge-row">
+              <dt>Best for</dt>
+              <dd>{plan.audience}</dd>
+            </div>
+            {intent.plan === PLAN.TEAM && (
+              <div className="account-ledger-charge-row">
+                <dt>Seats</dt>
+                <dd>{seatCount} paid seats</dd>
+              </div>
+            )}
+            <div className="account-ledger-charge-row">
+              <dt>Billing schedule</dt>
+              <dd>{intent.interval === BILLING_INTERVAL.YEAR ? `${formatMoney(billedTotal)} billed yearly` : "Billed monthly"}</dd>
+            </div>
+            {plan.perSeat && (
+              <div className="account-ledger-charge-row">
+                <dt>Unit price</dt>
+                <dd>{intent.interval === BILLING_INTERVAL.YEAR ? `${formatMoney(plan.yearly)} per user, per year` : `${formatMoney(plan.monthly)} per user, per month`}</dd>
+              </div>
+            )}
+            <div className="account-ledger-charge-row account-ledger-charge-total">
+              <dt>{intent.interval === BILLING_INTERVAL.YEAR ? "Monthly equivalent" : "Recurring charge"}</dt>
+              <dd>{intent.interval === BILLING_INTERVAL.YEAR ? `${formatMoney(monthlyEquivalent)}/month` : `${formatMoney(billedTotal)}/month`}</dd>
+            </div>
+          </dl>
 
-            <ul className="mt-6 grid gap-3 sm:grid-cols-2" aria-label={`${plan.name} plan features`}>
-              {plan.features.map((feature) => (
-                <li key={feature} className="flex gap-2 text-sm leading-5 text-[var(--ds-text-secondary)]">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--ds-success)]" />
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
+          <ul className="account-ledger-feature-list" aria-label={`${plan.name} plan features`}>
+            {plan.features.map((feature) => (
+              <li key={feature}>
+                <Check className="account-ledger-icon text-[var(--nx-success)]" aria-hidden="true" />
+                <span>{feature}</span>
+              </li>
+            ))}
+          </ul>
 
-            <a href="/pricing" className="mt-7 inline-flex min-h-11 items-center rounded-full px-3 text-sm font-medium text-[var(--ds-accent)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-accent-hover)]">
-              Change plan or billing schedule
-            </a>
-          </div>
+          <a href="/pricing" className="account-ledger-link">
+            Change plan or billing schedule
+          </a>
 
-          <div className="mt-6">
-            <h2 className="text-sm font-semibold text-[var(--ds-text)]">Account</h2>
-            <p className="mt-1 text-sm text-[var(--ds-text-muted)]">{user.email || "Signed-in NexusRBX account"}</p>
-          </div>
+          <dl className="account-ledger-meta">
+            <div>
+              <dt>Account</dt>
+              <dd>{user.email || "Signed-in NexusRBX account"}</dd>
+            </div>
+            <div>
+              <dt>Processor</dt>
+              <dd>Stripe secure checkout</dd>
+            </div>
+            <div>
+              <dt>Renewal</dt>
+              <dd>Automatic until cancelled</dd>
+            </div>
+          </dl>
 
           {(error || entitlementsError) && (
-            <div className="mt-6 rounded-lg border border-[color-mix(in_srgb,var(--ds-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-danger)_8%,transparent)] px-4 py-3 text-sm text-[var(--ds-danger)]" role="alert">
+            <div className="account-ledger-notice account-ledger-notice--danger" role="alert">
               {error || entitlementsError}
             </div>
           )}
           {status && !error && (
-            <p className="mt-5 text-sm text-[var(--ds-text-secondary)]" role="status">{status}</p>
+            <p className="account-ledger-notice" role="status">{status}</p>
           )}
         </section>
 
-        <aside className={`${editorialPanelClass} h-fit p-7 sm:p-8`} aria-label="Checkout summary">
+        <aside className="account-ledger-checkout-action" aria-label="Checkout action">
           {entitlementsLoading ? (
-            <div className="flex min-h-40 items-center justify-center" role="status" aria-label="Checking billing status">
-              <Loader2 className="h-6 w-6 animate-spin text-[var(--ds-accent)]" />
+            <div className="account-ledger-loading" role="status" aria-label="Checking billing status">
+              <Loader2 className="account-ledger-icon animate-spin" aria-hidden="true" />
+              <span>Checking billing status…</span>
             </div>
           ) : isSubscriber ? (
             <>
-              <Settings className="h-5 w-5 text-[var(--ds-accent)]" />
-              <h2 className="mt-4 text-lg font-semibold">You already have an active plan</h2>
-              <p className="mt-2 text-sm leading-6 text-[var(--ds-text-muted)]">
+              <Settings className="account-ledger-icon text-[var(--nx-purple)]" aria-hidden="true" />
+              <h2>You already have an active plan</h2>
+              <p className="account-ledger-section-copy">
                 Open billing settings to change, update, or cancel your current subscription.
               </p>
               <button
                 type="button"
                 onClick={managePlan}
                 disabled={Boolean(busyAction)}
-                className={`${editorialSecondaryButtonClass} mt-7 w-full`}
+                className="account-ledger-button account-ledger-button--block"
               >
-                {busyAction === "portal" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Manage plan"}
+                {busyAction === "portal" ? <Loader2 className="account-ledger-icon animate-spin" aria-hidden="true" /> : "Manage plan"}
               </button>
             </>
           ) : (
             <>
-              <CreditCard className="h-5 w-5 text-[var(--ds-accent)]" />
-              <h2 className="mt-4 text-lg font-semibold">Payment comes next</h2>
-              <p className="mt-2 text-sm leading-6 text-[var(--ds-text-muted)]">
+              <CreditCard className="account-ledger-icon text-[var(--nx-purple)]" aria-hidden="true" />
+              <h2>Payment comes next</h2>
+              <p className="account-ledger-section-copy">
                 You will review payment details and the renewal schedule on Stripe before confirming.
               </p>
               <button
                 type="button"
                 onClick={beginCheckout}
                 disabled={Boolean(busyAction) || Boolean(entitlementsError)}
-                className={`${editorialPrimaryButtonClass} mt-7 w-full`}
+                className="account-ledger-button account-ledger-button--primary account-ledger-button--block"
               >
-                {busyAction === "checkout" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Continue to secure checkout"}
+                {busyAction === "checkout" ? <Loader2 className="account-ledger-icon animate-spin" aria-hidden="true" /> : "Continue to secure checkout"}
               </button>
-              <p className="mt-4 text-xs leading-5 text-[var(--ds-text-muted)]">
+              <p className="account-ledger-detail">
                 By continuing, you agree to the Terms of Service. Your subscription renews automatically until cancelled.
               </p>
             </>
           )}
         </aside>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }

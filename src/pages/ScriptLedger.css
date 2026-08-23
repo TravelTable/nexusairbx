@@ -1,0 +1,119 @@
+.script-ledger-page {
+  background: var(--nx-depth) !important;
+  color: var(--nx-text);
+  font-family: var(--nx-font-body);
+}
+
+.script-ledger-loading {
+  width: min(100% - 30px, 780px);
+  margin: auto;
+  padding: var(--nx-space-5) 0;
+  border-block: 1px solid var(--nx-rule);
+  align-items: flex-start;
+  text-align: left;
+}
+
+.script-ledger-action-bar {
+  background: var(--nx-depth) !important;
+  border-color: var(--nx-rule) !important;
+}
+
+.script-ledger-action {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.script-ledger-action:hover {
+  border-bottom-color: var(--nx-purple-muted) !important;
+  background: transparent !important;
+  color: var(--nx-purple) !important;
+}
+
+.script-ledger-main {
+  background: var(--nx-depth);
+}
+
+.script-ledger-record,
+.script-ledger-code-record,
+.script-ledger-nudge {
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.script-ledger-record,
+.script-ledger-code-record {
+  border-top: 1px solid var(--nx-rule) !important;
+  border-bottom: 1px solid var(--nx-rule) !important;
+}
+
+.script-ledger-request {
+  border-top: 1px solid var(--nx-rule-quiet);
+  border-bottom: 1px solid var(--nx-rule-quiet);
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--nx-purple) !important;
+  font-style: normal !important;
+}
+
+.script-ledger-version,
+.script-ledger-tag {
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.script-ledger-tabs {
+  min-height: 44px;
+  border-block: 1px solid var(--nx-rule);
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.script-ledger-tabs > * {
+  min-height: 44px;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.script-ledger-tabs > [data-state="active"] {
+  border-bottom: 2px solid var(--nx-purple-muted);
+  color: var(--nx-purple);
+  box-shadow: none !important;
+}
+
+.script-ledger-mark {
+  border: 1px solid var(--nx-purple-muted);
+  border-radius: 0 !important;
+  background: transparent;
+}
+
+.script-ledger-code-record h2 {
+  color: var(--nx-purple) !important;
+}
+
+.script-ledger-nudge {
+  border-block: 1px solid var(--nx-rule-quiet);
+}
+
+.script-ledger-page :where(.rounded-full, .rounded-xl, .rounded-lg, .rounded-md, .rounded-\[14px\], .rounded-\[12px\]) { /* design-guard-allow: neutralizes legacy radius utilities */
+  border-radius: var(--nx-radius-field) !important;
+}
+
+.script-ledger-page :where(.shadow, .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl, .shadow-panel) {
+  box-shadow: none !important;
+}
+
+@media (max-width: 720px) {
+  .script-ledger-main {
+    padding-inline: var(--nx-space-3) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .script-ledger-page *,
+  .script-ledger-page *::before,
+  .script-ledger-page *::after {
+    transition-duration: 0.01ms !important;
+  }
+}

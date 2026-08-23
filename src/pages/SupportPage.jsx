@@ -7,15 +7,8 @@ import {
   formatSupportDate,
   supportCategoryLabel,
   supportStatusLabel,
-  supportStatusTone,
 } from "../lib/supportPresentation";
-import {
-  editorialDisplayClass,
-  editorialGutterClass,
-  editorialPanelClass,
-  editorialPrimaryButtonClass,
-  editorialSecondaryButtonClass,
-} from "../components/site/editorialUi";
+import "./AccountLedger.css";
 
 const FILTERS = [
   { value: "", label: "All requests" },
@@ -52,21 +45,21 @@ export default function SupportPage() {
   );
 
   if (!authReady) {
-    return <main className="grid min-h-[70vh] place-items-center bg-[var(--ds-bg-canvas)] text-sm text-[var(--ds-text-muted)]">Loading support…</main>;
+    return <main id="main-content" className="account-ledger-page account-ledger-page--center" role="status">Loading support…</main>;
   }
 
   if (!user) {
     return (
-      <main className={`${editorialGutterClass} min-h-[70vh] bg-[var(--ds-bg-canvas)] py-20 text-[var(--ds-text)] sm:py-28`}>
-        <section className={`${editorialPanelClass} mx-auto max-w-2xl p-8 sm:p-12`}>
-          <p className="text-sm font-semibold text-[var(--ds-accent)]">Your support desk</p>
-          <h1 className={`${editorialDisplayClass} mt-4 text-5xl sm:text-6xl`}>Sign in to see your requests.</h1>
-          <p className="mt-4 max-w-xl text-base leading-7 text-[var(--ds-text-muted)]">
+      <main id="main-content" className="account-ledger-page account-ledger-page--center">
+        <section className="account-ledger-center-state" aria-labelledby="support-sign-in-title">
+          <p className="account-ledger-kicker">Your support desk</p>
+          <h1 id="support-sign-in-title" className="account-ledger-title account-ledger-title--compact">Sign in to see your requests.</h1>
+          <p className="account-ledger-intro">
             Support conversations are private to your verified NexusRBX account. You can still read self-service guidance or prepare a request before signing in.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/signin" state={{ from: { pathname: location.pathname } }} className={editorialPrimaryButtonClass}>Sign in</Link>
-            <Link to="/contact" className={editorialSecondaryButtonClass}>Prepare a request</Link>
+          <div className="account-ledger-inline-actions">
+            <Link to="/signin" state={{ from: { pathname: location.pathname } }} className="account-ledger-link account-ledger-link--primary">Sign in</Link>
+            <Link to="/contact" className="account-ledger-link">Prepare a request</Link>
           </div>
         </section>
       </main>
@@ -74,52 +67,56 @@ export default function SupportPage() {
   }
 
   return (
-    <main className={`${editorialGutterClass} min-h-[calc(100vh-4rem)] bg-[var(--ds-bg-canvas)] py-16 text-[var(--ds-text)] sm:py-20`}>
-      <div className="mx-auto max-w-6xl">
-        <div className="flex flex-col gap-8 pb-10 sm:flex-row sm:items-end sm:justify-between">
+    <main id="main-content" className="account-ledger-page">
+      <div className="account-ledger-wrap account-ledger-wrap--narrow">
+        <header className="account-ledger-header">
           <div>
-            <div className="flex items-center gap-3">
-              <p className="text-sm font-semibold text-[var(--ds-accent)]">Support</p>
-              {unread > 0 && <span className="rounded-full bg-[var(--ds-accent)] px-2 py-0.5 text-xs font-bold text-[var(--ds-accent-foreground)]">{unread} unread</span>}
+            <div className="account-ledger-inline-actions">
+              <p className="account-ledger-kicker">Support ledger</p>
+              {unread > 0 && <span className="account-ledger-unread">{unread} unread</span>}
             </div>
-            <h1 className={`${editorialDisplayClass} mt-3 text-5xl sm:text-6xl`}>Your requests</h1>
-            <p className="mt-3 text-sm leading-6 text-[var(--ds-text-muted)]">Replies stay attached to your account and are visible only to you and NexusRBX support staff.</p>
+            <h1 className="account-ledger-title">Your requests</h1>
+            <p className="account-ledger-intro">Replies stay attached to your account and are visible only to you and NexusRBX support staff.</p>
           </div>
-          <Link to="/contact" className={editorialPrimaryButtonClass}>New request</Link>
-        </div>
+          <div className="account-ledger-actions">
+            <Link to="/contact" className="account-ledger-link account-ledger-link--primary">New request</Link>
+          </div>
+        </header>
 
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <label htmlFor="support-filter" className="text-sm font-medium text-[var(--ds-text-secondary)]">Filter requests</label>
-          <select id="support-filter" value={filter} onChange={(event) => setFilter(event.target.value)} className="min-h-12 rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-4 text-sm text-[var(--ds-text)] focus:border-[var(--ds-accent-border)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-focus-ring)]">
+        <div className="account-ledger-section-head account-ledger-section">
+          <div className="account-ledger-field-group">
+          <label htmlFor="support-filter" className="account-ledger-field-label">Filter requests</label>
+          <select id="support-filter" value={filter} onChange={(event) => setFilter(event.target.value)} className="account-ledger-select">
             {FILTERS.map((item) => <option key={item.value || "all"} value={item.value}>{item.label}</option>)}
           </select>
+          </div>
         </div>
 
-        {state.error && <div role="alert" className="mt-6 rounded-lg border border-[color-mix(in_srgb,var(--ds-danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-danger)_8%,transparent)] px-4 py-3 text-sm text-[var(--ds-danger)]">{state.error}</div>}
+        {state.error && <div role="alert" className="account-ledger-notice account-ledger-notice--danger">{state.error}</div>}
 
-        <div className="mt-8 divide-y divide-[var(--ds-border-subtle)] border-y border-[var(--ds-border-subtle)]">
+        <section className="account-ledger-ticket-list" aria-label="Support requests">
           {state.loading ? (
-            <p className="py-12 text-center text-sm text-[var(--ds-text-muted)]">Loading requests…</p>
+            <p className="account-ledger-empty" role="status">Loading requests…</p>
           ) : state.tickets.length === 0 ? (
-            <div className="py-14 text-center">
-              <h2 className="text-lg font-semibold">No requests here</h2>
-              <p className="mt-2 text-sm text-[var(--ds-text-muted)]">If self-service guidance does not solve the issue, start a structured request.</p>
-              <Link to="/contact" className="mt-5 inline-block min-h-11 rounded-lg px-2 py-3 text-sm font-semibold text-[var(--ds-accent)] hover:text-[var(--ds-accent-hover)]">Open the contact form →</Link>
+            <div className="account-ledger-empty">
+              <h2>No requests here</h2>
+              <p className="account-ledger-section-copy">If self-service guidance does not solve the issue, start a structured request.</p>
+              <Link to="/contact" className="account-ledger-link">Open the contact form →</Link>
             </div>
           ) : state.tickets.map((ticket) => (
-            <Link key={ticket.id} to={`/support/${ticket.id}`} className="group grid gap-4 rounded-[12px] py-6 outline-none transition-colors hover:bg-[var(--ds-fill-hover)] focus-visible:bg-[var(--ds-fill-active)] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--ds-focus-ring)] sm:grid-cols-[minmax(0,1fr)_auto] sm:px-4">
+            <Link key={ticket.id} to={`/support/${ticket.id}`} className="account-ledger-ticket-row">
               <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="truncate font-semibold text-[var(--ds-text)] group-hover:text-[var(--ds-accent)]">{ticket.subject}</h2>
-                  {ticket.customerUnreadCount > 0 && <span className="h-2 w-2 rounded-full bg-[var(--ds-accent)]" aria-label={`${ticket.customerUnreadCount} unread replies`} />}
+                <div className="account-ledger-inline-actions">
+                  <h2 className="account-ledger-ticket-subject">{ticket.subject}</h2>
+                  {ticket.customerUnreadCount > 0 && <span className="account-ledger-unread" aria-label={`${ticket.customerUnreadCount} unread replies`}>{ticket.customerUnreadCount} new</span>}
                 </div>
-                <p className="mt-1 line-clamp-2 text-sm text-[var(--ds-text-secondary)]">{ticket.lastMessage?.preview}</p>
-                <p className="mt-2 text-xs text-[var(--ds-text-muted)]">{supportCategoryLabel(ticket.category)} · Updated {formatSupportDate(ticket.updatedAt, { includeTime: true })}</p>
+                <p className="account-ledger-ticket-preview">{ticket.lastMessage?.preview}</p>
               </div>
-              <span className={`h-fit w-fit rounded-full border px-2.5 py-1 text-xs font-medium ${supportStatusTone(ticket.status)}`}>{supportStatusLabel(ticket.status)}</span>
+              <p className="account-ledger-ticket-meta">{supportCategoryLabel(ticket.category)}<br />Updated {formatSupportDate(ticket.updatedAt, { includeTime: true })}</p>
+              <span className="account-ledger-state" data-status={ticket.status}>{supportStatusLabel(ticket.status)}</span>
             </Link>
           ))}
-        </div>
+        </section>
       </div>
     </main>
   );

@@ -1,37 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark" style="color-scheme: dark">
   <head>
     <meta charset="utf-8" />
     <link rel="icon" href="%PUBLIC_URL%/nexus-mark.svg" type="image/svg+xml" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0b0b0c" />
-    <script>
-      (() => {
-        const key = "nexusrbx:settings";
-        const allowed = new Set(["system", "dark", "light"]);
-        const read = () => {
-          try {
-            const value = JSON.parse(localStorage.getItem(key) || "{}").theme;
-            return allowed.has(value) ? value : "system";
-          } catch (_) {
-            return "system";
-          }
-        };
-        const resolve = (value) => value === "system"
-          ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
-          : value;
-        const apply = () => {
-          const theme = resolve(read());
-          document.documentElement.dataset.theme = theme;
-          document.documentElement.style.colorScheme = theme;
-          document.querySelector('meta[name="theme-color"]')
-            ?.setAttribute("content", theme === "dark" ? "#0b0b0c" : "#f7f7f4");
-        };
-        apply();
-        matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", apply);
-        addEventListener("storage", (event) => { if (event.key === key) apply(); });
-      })();
-    </script>
+    <meta name="theme-color" content="#1a1618" />
     <meta
       name="description"
       content="NexusRBX helps Roblox creators plan, build, playtest, and ship complete games through a reviewable Studio-connected workspace."

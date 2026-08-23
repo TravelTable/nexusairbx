@@ -1,13 +1,10 @@
 .nexus-project-tree {
-  --tree-row-hover: var(--ds-fill-hover);
-  --tree-row-selected: var(--ds-fill-selected);
-  background: var(--ds-bg-sidebar);
+  --tree-row-hover: var(--nx-field);
+  --tree-row-selected: var(--nx-field-strong);
+  background: var(--nx-work);
 }
 
-.nexus-project-tree__new-chat {
-  box-shadow: none;
-}
-
+.nexus-project-tree__new-chat,
 .nexus-project-tree__new-chat:active {
   box-shadow: none;
 }
@@ -17,18 +14,18 @@
   width: 24px;
   height: 24px;
   place-items: center;
-  border: 1px solid var(--ds-border-strong);
-  border-radius: 7px;
-  color: var(--ds-text);
-  font-size: 11px;
+  border: 0;
+  color: var(--nx-purple);
+  font-family: var(--nx-font-display);
+  font-size: 0.75rem;
   font-weight: 750;
-  letter-spacing: -0.08em;
+  letter-spacing: -0.05em;
 }
 
 .nexus-project-tree-scroll {
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: var(--ds-border-strong) transparent;
+  scrollbar-color: var(--nx-rule) transparent;
 }
 
 .nexus-project-tree-scroll::-webkit-scrollbar {
@@ -40,12 +37,11 @@
 }
 
 .nexus-project-tree-scroll::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: var(--ds-border-strong);
+  background: var(--nx-rule);
 }
 
 .nexus-project-tree-scroll::-webkit-scrollbar-thumb:hover {
-  background: var(--ds-text-muted);
+  background: var(--nx-text-muted);
 }
 
 .nexus-tree-row {
@@ -53,39 +49,40 @@
   display: flex;
   width: 100%;
   align-items: center;
-  border-radius: 10px;
-  color: var(--ds-text-secondary);
+  border-radius: 0 !important;
+  border-bottom: 1px solid transparent;
+  color: var(--nx-text-secondary);
   transition:
-    color var(--motion-fast) var(--ease-standard),
-    background-color var(--motion-fast) var(--ease-standard);
+    color var(--nx-motion-fast) var(--nx-ease-state),
+    background-color var(--nx-motion-fast) var(--nx-ease-state);
 }
 
 .nexus-tree-row::before {
   position: absolute;
-  inset-block: 5px;
-  left: 3px;
-  width: 3px;
-  border-radius: 999px;
-  background: var(--ds-text-secondary);
+  inset-block: var(--nx-space-2);
+  left: 0;
+  width: 2px;
+  background: var(--nx-purple);
   content: "";
   opacity: 0;
   transform: scaleY(0.45);
   transition:
-    opacity 140ms var(--ease-standard),
-    transform 140ms var(--ease-product);
+    opacity var(--nx-motion-fast) var(--nx-ease-state),
+    transform var(--nx-motion-state) var(--nx-ease-state);
 }
 
 .nexus-tree-row:hover,
 .nexus-tree-row:focus-visible {
   background: var(--tree-row-hover);
-  color: var(--ds-text);
+  color: var(--nx-text);
   outline: none;
 }
 
 .nexus-tree-row[data-selected="true"] {
+  border-bottom-color: var(--nx-rule);
   background: var(--tree-row-selected);
-  color: var(--ds-text);
-  box-shadow: inset 0 0 0 1px var(--ds-border-subtle);
+  color: var(--nx-purple);
+  box-shadow: none;
 }
 
 .nexus-tree-row[data-selected="true"]::before {
@@ -95,7 +92,7 @@
 
 .nexus-tree-row .nexus-tree-overflow {
   opacity: 0;
-  transition: opacity 120ms ease;
+  transition: opacity var(--nx-motion-fast) var(--nx-ease-state);
 }
 
 .nexus-sidebar-icon-action {
@@ -114,9 +111,9 @@
   opacity: 0;
   transform: translateY(-2px);
   transition:
-    grid-template-rows var(--motion-standard) var(--ease-product),
-    opacity 140ms var(--ease-standard),
-    transform var(--motion-standard) var(--ease-product);
+    grid-template-rows var(--nx-motion-state) var(--nx-ease-state),
+    opacity var(--nx-motion-fast) var(--nx-ease-state),
+    transform var(--nx-motion-state) var(--nx-ease-state);
 }
 
 .nexus-tree-children[data-expanded="true"] {
@@ -126,7 +123,7 @@
 }
 
 .nexus-tree-chevron {
-  transition: transform 160ms var(--ease-product);
+  transition: transform var(--nx-motion-state) var(--nx-ease-state);
 }
 
 .nexus-tree-chevron[data-expanded="true"] {
@@ -134,37 +131,16 @@
 }
 
 .nexus-sidebar-scroll-mask {
-  pointer-events: none;
-  position: absolute;
-  z-index: 3;
-  right: 0;
-  left: 0;
-  height: 22px;
-  opacity: 0;
-  transition: opacity 140ms ease;
-}
-
-.nexus-sidebar-scroll-mask[data-visible="true"] {
-  opacity: 1;
-}
-
-.nexus-sidebar-scroll-mask[data-edge="top"] {
-  top: 0;
-  background: linear-gradient(to bottom, var(--ds-bg-sidebar), transparent);
-}
-
-.nexus-sidebar-scroll-mask[data-edge="bottom"] {
-  bottom: 0;
-  background: linear-gradient(to top, var(--ds-bg-sidebar), transparent);
+  display: none;
 }
 
 .nexus-project-sidebar {
   flex-basis: 248px;
   width: 248px;
   transition:
-    flex-basis 220ms var(--ease-product),
-    width 220ms var(--ease-product),
-    opacity 100ms var(--ease-standard);
+    flex-basis var(--nx-motion-spatial) var(--nx-ease-state),
+    width var(--nx-motion-spatial) var(--nx-ease-state),
+    opacity var(--nx-motion-fast) var(--nx-ease-state);
 }
 
 .nexus-project-sidebar[data-open="false"] {
@@ -178,10 +154,48 @@
   display: none;
 }
 
+.nexus-tree-row-in {
+  animation: nexus-tree-row-in var(--nx-motion-state) var(--nx-ease-state) both;
+}
+
+.nexus-project-tree__footer {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 0;
+  border-top: 1px solid var(--nx-rule);
+  padding: var(--nx-space-2);
+}
+
+.nexus-project-tree__destination {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: var(--nx-space-2);
+  border-radius: 0;
+  border-bottom: 1px solid transparent;
+  padding-inline: var(--nx-space-2);
+  color: var(--nx-text-muted);
+  font-size: 0.75rem;
+  font-weight: 550;
+  text-decoration: none;
+}
+
+.nexus-project-tree__destination:hover {
+  border-bottom-color: var(--nx-rule);
+  background: var(--nx-field);
+  color: var(--nx-text);
+}
+
 @media (min-width: 1200px) and (max-width: 1499px) {
   .nexus-project-sidebar {
     flex-basis: 232px;
     width: 232px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .nexus-project-tree__destination {
+    min-height: 38px;
   }
 }
 
@@ -190,32 +204,32 @@
     position: fixed;
     inset-block: 0;
     left: 0;
-    z-index: 50;
+    z-index: 70;
     flex-basis: auto;
     width: min(288px, 88vw);
     opacity: 1;
     transform: translateX(0);
     transition:
-      transform var(--motion-panel) var(--ease-product),
-      opacity var(--motion-panel) var(--ease-standard);
+      transform var(--nx-motion-spatial) var(--nx-ease-state),
+      opacity var(--nx-motion-spatial) var(--nx-ease-state);
   }
 
   .nexus-project-sidebar[data-open="false"] {
     flex-basis: auto;
     width: min(288px, 88vw);
     opacity: 0;
-    transform: translateX(-16px);
+    transform: translateX(-15px);
   }
 
   .nexus-project-sidebar-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 40;
+    z-index: 65;
     display: block;
     border: 0;
-    background: color-mix(in srgb, black 55%, transparent);
+    background: rgb(12 9 11 / 78%);
     opacity: 1;
-    transition: opacity var(--motion-standard) var(--ease-standard);
+    transition: opacity var(--nx-motion-state) var(--nx-ease-state);
   }
 
   .nexus-project-sidebar-backdrop[data-open="false"] {
@@ -241,43 +255,6 @@
 
   .nexus-tree-row .nexus-tree-overflow {
     opacity: 1;
-  }
-}
-
-.nexus-tree-row-in {
-  animation: nexus-tree-row-in var(--motion-standard) var(--ease-product) both;
-}
-
-.nexus-project-tree__footer {
-  display: grid;
-  flex: 0 0 auto;
-  gap: 2px;
-  border-top: 1px solid var(--ds-border-subtle);
-  padding: 8px;
-}
-
-.nexus-project-tree__destination {
-  display: flex;
-  min-height: 44px;
-  align-items: center;
-  gap: 9px;
-  border-radius: 8px;
-  padding-inline: 9px;
-  color: var(--ds-text-muted);
-  font-size: 11px;
-  font-weight: 550;
-  text-decoration: none;
-  transition: background-color 150ms ease, color 150ms ease;
-}
-
-.nexus-project-tree__destination:hover {
-  background: var(--ds-fill-hover);
-  color: var(--ds-text);
-}
-
-@media (min-width: 1200px) {
-  .nexus-project-tree__destination {
-    min-height: 38px;
   }
 }
 
@@ -308,15 +285,9 @@
   }
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .nexus-project-sidebar {
-    background: var(--ds-bg-sidebar);
-  }
-}
-
-@media (prefers-contrast: more) {
+@media (forced-colors: active) {
   .nexus-tree-row[data-selected="true"] {
-    outline: 1px solid var(--ds-accent-border);
+    outline: 1px solid CanvasText;
     outline-offset: -1px;
   }
 }

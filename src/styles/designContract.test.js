@@ -97,9 +97,13 @@ const allowedSemanticLiteral = (relativePath, line) => {
     relativePath === "public/index.html"
     && /(?:theme-color|setAttribute\(["']content["'])/.test(line)
   ) return true;
-  const isCanonicalTheme = relativePath === "src/index.css"
+  const isLegacyThemeBridge = relativePath === "src/index.css"
     || relativePath === "public-frontend/app/globals.css";
-  if (isCanonicalTheme && /--ds-[a-z0-9-]+\s*:/.test(line)) return true;
+  if (isLegacyThemeBridge && /--ds-[a-z0-9-]+\s*:/.test(line)) return true;
+  if (
+    relativePath === "src/design/nexus-foundation.css"
+    && /--(?:nx|ds)-[a-z0-9-]+\s*:/.test(line)
+  ) return true;
 
   // Monaco theme data cannot resolve CSS custom properties. Keep its two
   // adaptive palettes and the AI token bridge as explicit, audited owners.
@@ -180,53 +184,36 @@ const readToken = (block, token) => {
   return match?.[1].trim().toLowerCase();
 };
 
-const darkThemeContract = {
-  "--ds-bg-canvas": "#0b0b0c",
-  "--ds-bg-workspace": "#0d0e10",
-  "--ds-bg-sidebar": "#101113",
-  "--ds-surface-1": "#111214",
-  "--ds-text": "#f5f5f3",
-  "--ds-text-subtle": "#878a91",
-  "--ds-accent": "#a78bfa",
-  "--ds-accent-hover": "#b8a4fc",
-  "--ds-accent-pressed": "#8f72ea",
-  "--ds-focus-ring": "#a78bfa",
-  "--ds-info": "#91b7d1",
-  "--ds-info-foreground": "#0b0b0c",
-  "--ds-success": "#8bc59a",
-  "--ds-success-foreground": "#0b0b0c",
-  "--ds-warning": "#d8ad65",
-  "--ds-warning-foreground": "#0b0b0c",
-  "--ds-danger": "#ef8a84",
-  "--ds-danger-foreground": "#0b0b0c",
-  "--ds-plan": "var(--ds-accent)",
-  "--ds-plan-foreground": "var(--ds-accent-foreground)",
+const darkBuildLedgerContract = {
+  "--nx-canvas": "#1a1618",
+  "--nx-depth": "#131012",
+  "--nx-work": "#211b1f",
+  "--nx-field": "#2c232a",
+  "--nx-text": "#e8ded4",
+  "--nx-text-secondary": "#c2b4ae",
+  "--nx-text-muted": "#958985",
+  "--nx-purple": "#d6b8d7",
+  "--nx-purple-strong": "#e0bfe0",
+  "--nx-purple-muted": "#b982b6",
+  "--nx-rule": "#52434d",
+  "--nx-rule-quiet": "#3a3036",
+  "--nx-info": "#94a9b0",
+  "--nx-success": "#a4b487",
+  "--nx-warning": "#d0a26d",
+  "--nx-danger": "#d7837c",
+  "--nx-focus": "#e0bfe0",
+  "--nx-space-1": "5px",
+  "--nx-space-2": "9px",
+  "--nx-space-3": "15px",
+  "--nx-space-4": "23px",
+  "--nx-space-5": "37px",
+  "--nx-space-6": "59px",
+  "--nx-space-7": "95px",
+  "--nx-radius-field": "3px",
+  "--nx-radius-overlay": "5px",
 };
 
-const lightThemeContract = {
-  "--ds-bg-canvas": "#f7f7f4",
-  "--ds-bg-workspace": "#fbfbf8",
-  "--ds-bg-sidebar": "#f0f0ec",
-  "--ds-surface-1": "#fdfdfa",
-  "--ds-text": "#171719",
-  "--ds-text-subtle": "#64666d",
-  "--ds-accent": "#6d28d9",
-  "--ds-accent-hover": "#5b21b6",
-  "--ds-accent-pressed": "#4c1d95",
-  "--ds-focus-ring": "#6d28d9",
-  "--ds-info": "#315f7e",
-  "--ds-info-foreground": "#ffffff",
-  "--ds-success": "#2f7045",
-  "--ds-success-foreground": "#ffffff",
-  "--ds-warning": "#80530f",
-  "--ds-warning-foreground": "#ffffff",
-  "--ds-danger": "#b8322b",
-  "--ds-danger-foreground": "#ffffff",
-  "--ds-plan": "var(--ds-accent)",
-  "--ds-plan-foreground": "var(--ds-accent-foreground)",
-};
-
-test("keeps shipped browser UI on the monochrome conversational-studio design contract", () => {
+test("keeps shipped browser UI on the Dark Build Ledger color contract", () => {
   const violations = shippedBrowserSources.flatMap((relativePath) => {
     const source = fs.readFileSync(path.join(projectRoot, relativePath), "utf8");
     return source.split(/\r?\n/).flatMap((line, index) => findLineViolations(relativePath, line, index + 1));
@@ -247,23 +234,37 @@ test("keeps shipped browser UI on the monochrome conversational-studio design co
     .toContain("nexus-page-card relative w-full shadow-none");
 });
 
-test("keeps both browser entry points on the canonical dark and light tokens", () => {
-  ["src/index.css", "public-frontend/app/globals.css"].forEach((relativePath) => {
-    const css = fs.readFileSync(path.join(projectRoot, relativePath), "utf8");
-    const darkBlock = readThemeBlock(css, ":root");
-    const lightBlock = readThemeBlock(css, ':root\\[data-theme=["\\\']light["\\\']\\]');
+test("loads one canonical dark ledger foundation after both legacy entry stylesheets", () => {
+  const relativePath = "src/design/nexus-foundation.css";
+  const css = fs.readFileSync(path.join(projectRoot, relativePath), "utf8");
+  const foundationBlock = readThemeBlock(css, ':root,\\s*:root\\[data-theme="light"\\]');
 
-    Object.entries(darkThemeContract).forEach(([token, expected]) => {
-      expect({ file: relativePath, theme: "dark", token, value: readToken(darkBlock, token) })
-        .toEqual({ file: relativePath, theme: "dark", token, value: expected });
-    });
-    Object.entries(lightThemeContract).forEach(([token, expected]) => {
-      expect({ file: relativePath, theme: "light", token, value: readToken(lightBlock, token) })
-        .toEqual({ file: relativePath, theme: "light", token, value: expected });
-    });
+  Object.entries(darkBuildLedgerContract).forEach(([token, expected]) => {
+    expect({ file: relativePath, token, value: readToken(foundationBlock, token) })
+      .toEqual({ file: relativePath, token, value: expected });
+  });
 
-    expect(readToken(darkBlock, "--ds-font-sans")).toBe('"instrument sans", -apple-system, blinkmacsystemfont, "segoe ui", system-ui, sans-serif');
-    expect(readToken(darkBlock, "--ds-font-display")).toBe('"instrument sans", -apple-system, blinkmacsystemfont, "segoe ui", system-ui, sans-serif');
+  expect(readToken(foundationBlock, "--nx-font-display"))
+    .toBe('"sofia sans condensed variable", "arial narrow", sans-serif');
+  expect(readToken(foundationBlock, "--nx-font-body"))
+    .toBe('"atkinson hyperlegible next variable", "segoe ui", sans-serif');
+  expect(readToken(foundationBlock, "--nx-font-code"))
+    .toBe('"atkinson hyperlegible mono variable", "sfmono-regular", consolas, monospace');
+  expect(readToken(foundationBlock, "--ds-bg-canvas")).toBe("var(--nx-canvas)");
+  expect(readToken(foundationBlock, "--ds-accent")).toBe("var(--nx-purple)");
+  expect(readToken(foundationBlock, "--ds-font-sans")).toBe("var(--nx-font-body)");
+  expect(css.match(/--nx-canvas\s*:/g)).toHaveLength(1);
+  expect(css).toMatch(/^:root,\s*\n:root\[data-theme="light"\]\s*\{\s*\n\s*color-scheme:\s*dark;/);
+
+  const browserEntries = [
+    ["src/index.js", 'import "./index.css";', 'import "./design/nexus-foundation.css";'],
+    ["public-frontend/app/layout.jsx", 'import "./globals.css";', 'import "../../src/design/nexus-foundation.css";'],
+  ];
+  browserEntries.forEach(([entryPath, legacyImport, foundationImport]) => {
+    const entry = fs.readFileSync(path.join(projectRoot, entryPath), "utf8");
+    expect(entry).toContain(legacyImport);
+    expect(entry).toContain(foundationImport);
+    expect(entry.indexOf(foundationImport)).toBeGreaterThan(entry.indexOf(legacyImport));
   });
 });
 

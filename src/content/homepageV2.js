@@ -1,11 +1,11 @@
 export const homepageV2Metadata = {
-  title: "Conversational Roblox Production Studio | NexusRBX",
+  title: "Build and Review Roblox Projects | NexusRBX",
   description:
-    "Build any Roblox game through conversation with project-aware inspection, reviewable Studio changes, playtest evidence, and a creator-led path to publishing.",
+    "Turn a Roblox project request into inspected Studio context, reviewable changes, playtest evidence, and a recoverable build record.",
 };
 
 export const homepageHeroPrompt =
-  "Create a futuristic inventory UI that matches my existing game. Keep it fast on mobile and wire it to the current item system.";
+  "Make a round-based horror game set in a broken arcade with shifting rooms, simple mobile controls, and one stalking enemy.";
 
 export const homepageBuildStages = [
   {

@@ -1,15 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Activity, FileCode2, Search, RefreshCw, Bot } from "lib/icons";
+import { Activity, Search, RefreshCw } from "lib/icons";
 
 import SidebarContent from "../../components/SidebarContent";
 import SignInNudgeModal from "../../components/SignInNudgeModal";
 import ProNudgeModal from "../../components/ProNudgeModal";
 import StarterPromoModal from "../../components/StarterPromoModal";
 import NotificationToast from "../../components/NotificationToast";
+import SkipToMainContent from "../../components/site/SkipToMainContent";
 import ModelSwitcher from "../../components/ai/ModelSwitcher";
 import StudioPairControl from "../../components/ai/StudioPairControl";
-import SiteHeader from "../../components/site/SiteHeader";
-import { Segmented } from "../../components/ui";
 import {
   getActiveStudioCapabilities,
   isCurrentPluginAutoPushAuthorized,
@@ -31,6 +30,7 @@ import WorkspaceShell, {
 import useTaskRuntime from "../../hooks/useTaskRuntime";
 import useActiveAgents from "../../hooks/useActiveAgents";
 import QuickScriptWorkspace from "./QuickScriptWorkspace";
+import WorkspaceRibbon from "./WorkspaceRibbon";
 import { getStudioCommand, getStudioManifest, getStudioManifestStatus, queueStudioTool } from "../../lib/studioBridgeApi";
 import { TERMINAL_AGENT_STATES } from "../../lib/agentRuntimeV2Api";
 import { PENDING_AUTH_ACTIONS } from "../../lib/pendingAuthAction";
@@ -1122,47 +1122,40 @@ export default function AgentWorkspaceLayout({ controller }) {
     handleDockPanelChange("code");
   };
 
-  const agentWorkspaceControls = (
-    <>
-      <div data-tour="mode-switcher" className="nexus-commandbar__mode">
-        <Segmented
-          size="sm"
-          options={[
-            { id: "quick_script", label: "Quick", icon: FileCode2 },
-            { id: "agent_build", label: "Build", icon: Bot },
-          ]}
-          value={generatorMode}
-          onChange={(mode) => setGeneratorMode(mode, "mode_control")}
-        />
-      </div>
-      <div className="nexus-commandbar__model">
-        <ModelSwitcher
-          value={settings.modelVersion}
-          isPremium={isPremium}
-          isStarterOrAbove={isStarterOrAbove}
-          onChange={(id) => updateSettings({ modelVersion: id })}
-          onProNudge={(reason) => {
-            if (!requireUser()) return;
-            setProNudgeReason(reason || "Premium AI Models");
-            setShowProNudge(true);
-          }}
-          onStarterNudge={(reason) => {
-            if (!requireUser()) return;
-            starterPromo?.notifyStarterGate(reason || "Model Selection");
-          }}
-        />
-      </div>
-      <div data-tour="studio-pair" className="nexus-commandbar__studio">
-        <StudioPairControl
-          connection={studio}
-          connected={studio?.connected}
-          loading={studio?.loading}
-          refresh={studio?.refresh}
-          notify={notify}
-          requireUser={(next) => requireUser(next, PENDING_AUTH_ACTIONS.STUDIO_CONNECTION, "studio_pair_control")}
-        />
-      </div>
-    </>
+  const workspaceProjectTitle =
+    projectContext?.name
+    || projectContext?.title
+    || studio?.placePreference?.placeName
+    || studio?.placePreference?.name
+    || "Workspace";
+
+  const modelControl = (
+    <ModelSwitcher
+      value={settings.modelVersion}
+      isPremium={isPremium}
+      isStarterOrAbove={isStarterOrAbove}
+      onChange={(id) => updateSettings({ modelVersion: id })}
+      onProNudge={(reason) => {
+        if (!requireUser()) return;
+        setProNudgeReason(reason || "Premium AI Models");
+        setShowProNudge(true);
+      }}
+      onStarterNudge={(reason) => {
+        if (!requireUser()) return;
+        starterPromo?.notifyStarterGate(reason || "Model Selection");
+      }}
+    />
+  );
+
+  const studioControl = (
+    <StudioPairControl
+      connection={studio}
+      connected={studio?.connected}
+      loading={studio?.loading}
+      refresh={studio?.refresh}
+      notify={notify}
+      requireUser={(next) => requireUser(next, PENDING_AUTH_ACTIONS.STUDIO_CONNECTION, "studio_pair_control")}
+    />
   );
 
   const agentChat = (
@@ -1170,13 +1163,7 @@ export default function AgentWorkspaceLayout({ controller }) {
       <AgentChatPanel
           currentChatId={chat.currentChatId}
           chatTitle={chat.currentChatMeta?.title || "New chat"}
-          projectTitle={
-            projectContext?.name ||
-            projectContext?.title ||
-            studio?.placePreference?.placeName ||
-            studio?.placePreference?.name ||
-            "Workspace"
-          }
+          projectTitle={workspaceProjectTitle}
           projectId={currentProjectId}
           messages={chat.messages}
           pendingMessage={unified.pendingMessage}
@@ -1283,7 +1270,7 @@ export default function AgentWorkspaceLayout({ controller }) {
           projectAssetSaving={roblox?.projectAssetSaving}
           selectedAssetProjectId={roblox?.selectedAssetProjectId}
           robloxStatus={roblox?.status}
-          workspaceControls={agentWorkspaceControls}
+          workspaceControls={null}
           navigationOpen={sidebarOpen}
           navigationControls="project-sidebar"
           navigationButtonRef={sidebarToggleRef}
@@ -1480,7 +1467,7 @@ export default function AgentWorkspaceLayout({ controller }) {
                   aria-label={agent.title || "Active agent"}
                 >
                   <div className="flex items-center gap-2">
-                    <Bot className="h-4 w-4 shrink-0 text-[var(--ds-accent)]" />
+                    <span className="nx-state-mark" data-state="success" aria-hidden="true" />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-xs font-semibold text-[var(--ds-text)]">
                         {agent.title || "Active agent"}
@@ -1586,6 +1573,15 @@ export default function AgentWorkspaceLayout({ controller }) {
   return (
     <div className="nexus-studio-root fixed inset-0 overflow-hidden">
       <div ref={aiPageRef} className="ai-page nexus-studio-page relative flex flex-col overflow-hidden font-sans">
+      <SkipToMainContent targetId="ai-workspace-main" />
+      <WorkspaceRibbon
+        mode={generatorMode}
+        onModeChange={(mode) => setGeneratorMode(mode, "mode_control")}
+        projectTitle={workspaceProjectTitle}
+        modelControl={modelControl}
+        studioControl={studioControl}
+        isBusy={Boolean(chatOperationState?.isBusy || unified.isGenerating)}
+      />
       <div className="nexus-studio-layout flex min-h-0 flex-1 overflow-hidden">
         {/* LEFT: projects and chats */}
         {generatorMode === "agent_build" && (
@@ -1639,62 +1635,14 @@ export default function AgentWorkspaceLayout({ controller }) {
 
         {/* CENTER: Studio agent chat */}
         <main
+          id="ai-workspace-main"
           className="nexus-studio-main flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+          tabIndex={-1}
           aria-hidden={projectSidebarIsModal ? "true" : undefined}
           inert={projectSidebarIsModal ? "" : undefined}
         >
           {generatorMode === "quick_script" ? (
-            <SiteHeader
-              variant="workspace"
-              robloxStatusOverride={roblox?.status ?? null}
-              robloxLoadingOverride={Boolean(roblox?.loading)}
-              workspaceLeft={(
-                <>
-                  <div data-tour="mode-switcher" className="hidden shrink-0 md:inline-flex">
-                    <Segmented
-                      size="sm"
-                      options={[
-                        { id: "quick_script", label: "Quick", icon: FileCode2 },
-                        { id: "agent_build", label: "Build", icon: Bot },
-                      ]}
-                      value={generatorMode}
-                      onChange={(mode) => setGeneratorMode(mode, "mode_control")}
-                    />
-                  </div>
-                  <div data-tour="studio-pair" className="shrink-0">
-                    <StudioPairControl
-                      connection={studio}
-                      connected={studio?.connected}
-                      loading={studio?.loading}
-                      refresh={studio?.refresh}
-                      notify={notify}
-                      requireUser={(next) => requireUser(next, PENDING_AUTH_ACTIONS.STUDIO_CONNECTION, "studio_pair_control")}
-                    />
-                  </div>
-                </>
-              )}
-              workspaceRight={(
-                <div className="hidden text-right text-[11px] font-semibold text-[var(--ds-text-muted)] sm:block">
-                  Quick script
-                </div>
-              )}
-            />
-          ) : null}
-
-          {generatorMode === "quick_script" ? (
             <div className="flex-1 min-h-0 flex flex-col">
-              <div data-tour="mobile-mode-switcher" className="shrink-0 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-4 py-2 md:hidden">
-                <Segmented
-                  fullWidth
-                  size="sm"
-                  options={[
-                    { id: "quick_script", label: "Quick", icon: FileCode2 },
-                    { id: "agent_build", label: "Agent Build", icon: Bot },
-                  ]}
-                  value={generatorMode}
-                  onChange={(mode) => setGeneratorMode(mode, "mode_control")}
-                />
-              </div>
               <QuickScriptWorkspace
                 prompt={prompt}
                 setPrompt={setPrompt}

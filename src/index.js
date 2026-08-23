@@ -1,8 +1,14 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { HelmetProvider } from "react-helmet-async";
+import "@fontsource-variable/sofia-sans-condensed/wght.css";
+import "@fontsource-variable/atkinson-hyperlegible-next/wght.css";
+import "@fontsource-variable/atkinson-hyperlegible-mono/wght.css";
 import App from "./App";
 import "./index.css";
+import "./design/nexus-foundation.css";
+import "./design/nexus-primitives.css";
+import "./design/nexus-motion.css";
 import { SettingsProvider } from "./context/SettingsContext";
 import { BillingProvider } from "./context/BillingContext";
 import { auth } from "./firebase";

@@ -29,6 +29,7 @@ import {
   editorialSecondaryButtonClass,
 } from "../components/site/editorialUi";
 import "../components/assets/assetPlatform.css";
+import "../components/assets/assetLedgerOverrides.css";
 
 const API_BASE = BACKEND_URL.replace(/\/+$/, "");
 const PREVIEW_BACKGROUNDS = {
@@ -233,7 +234,7 @@ export default function IconDetailPage() {
             <div className="lg:col-span-5 flex flex-col">
               <div className="mb-8">
                 <div className="flex items-center gap-3 mb-4">
-                  <h1 className={`${editorialDisplayClass} text-5xl sm:text-6xl`}>{icon.name}</h1>
+                  <h1 className={`${editorialDisplayClass} text-5xl`}>{icon.name}</h1>
                   {icon.isPro && !isPremium && (
                     <span className="rounded-md border border-[var(--ds-border-strong)] bg-[var(--ds-fill-subtle)] px-3 py-1 text-xs font-semibold text-[var(--ds-text-secondary)]">Pro</span>
                   )}

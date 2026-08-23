@@ -1,0 +1,210 @@
+.nx-route-heading {
+  margin: 0;
+  color: var(--nx-purple);
+  font-family: var(--nx-font-display);
+  font-size: clamp(2rem, 4vw, 3.625rem);
+  font-weight: 650;
+  letter-spacing: 0.005em;
+  line-height: 0.98;
+}
+
+.nx-phase-label {
+  color: var(--nx-purple-muted);
+  font-family: var(--nx-font-body);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.nx-text-action {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: var(--nx-space-2);
+  padding: 0 var(--nx-space-2);
+  border: 0;
+  border-bottom: 1px solid var(--nx-rule);
+  background: transparent;
+  color: var(--nx-text);
+  cursor: pointer;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.nx-text-action:hover {
+  border-bottom-color: var(--nx-text);
+  color: var(--nx-purple-strong);
+}
+
+.nx-text-action:active {
+  background: var(--nx-field);
+}
+
+.nx-text-action:disabled,
+.nx-text-action[aria-disabled="true"] {
+  border-bottom-color: var(--nx-rule-quiet);
+  color: var(--nx-text-disabled);
+  cursor: not-allowed;
+}
+
+.nx-field-frame {
+  border: 1px solid var(--nx-rule);
+  border-radius: var(--nx-radius-field);
+  background: var(--nx-field);
+  color: var(--nx-text);
+}
+
+.nx-field-frame:hover {
+  border-color: #6a5663;
+}
+
+.nx-field-frame:focus-within {
+  border-color: var(--nx-focus);
+  outline: 1px solid var(--nx-focus);
+  outline-offset: 2px;
+}
+
+.nx-structural-rule {
+  width: 100%;
+  height: 1px;
+  border: 0;
+  background: var(--nx-rule);
+}
+
+.nx-ledger-row {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.38fr) minmax(0, 1fr);
+  gap: var(--nx-space-4);
+  padding: var(--nx-space-4) 0;
+  border-top: 1px solid var(--nx-rule);
+}
+
+.nx-ledger-row:last-child {
+  border-bottom: 1px solid var(--nx-rule);
+}
+
+.nx-state-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--nx-space-2);
+  color: var(--nx-text-secondary);
+}
+
+.nx-state-mark::before {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border: 1px solid currentColor;
+  background: transparent;
+  content: "";
+}
+
+.nx-state-mark[data-state="success"] { color: var(--nx-success); }
+.nx-state-mark[data-state="warning"] { color: var(--nx-warning); }
+.nx-state-mark[data-state="danger"] { color: var(--nx-danger); }
+.nx-state-mark[data-state="info"] { color: var(--nx-info); }
+
+.nx-modal-surface,
+.nx-menu-surface,
+.nx-takeover-surface {
+  border: 1px solid var(--nx-rule);
+  border-radius: var(--nx-radius-overlay);
+  background: var(--nx-work);
+  color: var(--nx-text);
+  box-shadow: none;
+}
+
+.nx-modal-backdrop {
+  background: rgb(12 9 11 / 78%);
+}
+
+.nx-record-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nx-skip-link {
+  position: fixed;
+  top: var(--nx-space-2);
+  left: var(--nx-space-3);
+  z-index: 140;
+  display: inline-flex;
+  min-height: 44px;
+  translate: 0 -180%;
+  align-items: center;
+  padding: 0 var(--nx-space-3);
+  border: 1px solid var(--nx-text);
+  border-radius: var(--nx-radius-field);
+  background: var(--nx-depth);
+  color: var(--nx-text);
+  font-weight: 700;
+  text-decoration: none;
+  transition: translate var(--nx-motion-fast) var(--nx-ease-state);
+}
+
+.nx-skip-link:focus {
+  translate: 0;
+}
+
+.nx-site-shell {
+  min-width: 320px;
+  min-height: 100dvh;
+  background: var(--nx-canvas);
+  color: var(--nx-text);
+}
+
+.nx-site-shell__content:focus {
+  outline: 0;
+}
+
+.nx-site-shell[data-shell="tools"] {
+  background: var(--nx-depth);
+}
+
+.nx-site-shell[data-shell="account"],
+.nx-site-shell[data-shell="checkout"] {
+  background: var(--nx-canvas);
+}
+
+.nx-contact-sheet {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+  gap: 1px;
+  background: var(--nx-rule);
+}
+
+.nx-contact-sheet > * {
+  min-width: 0;
+  background: var(--nx-work);
+}
+
+/* Compatibility treatment while legacy components migrate to explicit primitives. */
+.glass-panel,
+.card-surface,
+.nexus-page-card {
+  border-radius: var(--nx-radius-field) !important;
+  background: var(--nx-work) !important;
+  box-shadow: none !important;
+}
+
+.nexus-input,
+.nexus-textarea {
+  border-radius: var(--nx-radius-field) !important;
+  background: var(--nx-field) !important;
+  box-shadow: none !important;
+}
+
+.nexus-menu-surface {
+  border-radius: var(--nx-radius-overlay) !important;
+  background: var(--nx-work) !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 640px) {
+  .nx-ledger-row {
+    grid-template-columns: 1fr;
+    gap: var(--nx-space-2);
+  }
+}

@@ -36,8 +36,8 @@ describe("HomepageV2Content", () => {
 
     expect(main.id).toBe("main-content");
     expect(main.tabIndex).toBe(-1);
-    expect(main.contains(screen.getByRole("contentinfo"))).toBe(false);
-    expect(screen.getByRole("textbox", { name: "What Roblox game do you want to make?" })).toBe(input);
+    expect(main.contains(screen.getByText("Homepage footer").closest("footer"))).toBe(false);
+    expect(within(heroForm).getByRole("textbox", { name: "What Roblox game do you want to make?" })).toBe(input);
     expect(input.getAttribute("aria-describedby")).toBe("homepage-hero-prompt-message");
 
     fireEvent.change(input, { target: { value: "Build a round system" } });
@@ -76,88 +76,72 @@ describe("HomepageV2Content", () => {
     }));
   });
 
-  test("uses a real product-shaped hero and the approved flat 2D Stage artwork", () => {
+  test("opens on a concrete request and a flat 2D project cutaway", () => {
     const { container } = render(<HomepageV2Content navigate={jest.fn()} />);
 
-    expect(screen.getByRole("heading", { name: /Talk to your Roblox project.*Watch it take shape/i, level: 1 })).toBeTruthy();
-    const demo = screen.getByRole("group", { name: "Interactive NexusRBX product demonstration" });
-    expect(within(demo).getByRole("region", { name: "Stage" })).toBeTruthy();
-    expect(within(demo).getByRole("list", { name: "Conversation-to-construction sequence" }).children).toHaveLength(6);
+    expect(screen.getByRole("heading", { name: "Create a round-based horror game in a broken arcade.", level: 1 })).toBeTruthy();
+    expect(screen.getByText("REQUEST / 184")).toBeTruthy();
+    expect(screen.getByText("18 objects / 4 existing systems / 1 blocked remote")).toBeTruthy();
 
-    const stageImage = screen.getByRole("img", { name: /Flat editorial map/i });
-    expect(stageImage.getAttribute("src")).toBe("/assets/nexus-world-under-construction-2d.webp");
+    const projectImage = screen.getByRole("img", { name: /broken arcade project/i });
+    expect(projectImage.getAttribute("src")).toBe("/assets/nexus-world-under-construction-2d.webp");
     expect(screen.getByAltText(/technical cutaway/i).getAttribute("src")).toBe("/assets/nexus-project-xray-2d.webp");
-    expect(screen.getByAltText(/grey blockout/i).getAttribute("src")).toBe("/assets/nexus-world-transformation-2d.webp");
     expect(screen.getByAltText(/diagnostic route/i).getAttribute("src")).toBe("/assets/nexus-debug-trace-2d.webp");
     expect(screen.getByAltText(/inventory, HUD, navigation/i).getAttribute("src")).toBe("/assets/nexus-interface-assembly-2d.webp");
-    expect(screen.getByAltText(/reviewed Nexus change set/i).getAttribute("src")).toBe("/assets/nexus-studio-bridge-2d.webp");
-    expect(stageImage.getAttribute("width")).toBe("1920");
-    expect(stageImage.getAttribute("height")).toBe("1072");
+    expect(projectImage.getAttribute("width")).toBe("1920");
+    expect(projectImage.getAttribute("height")).toBe("1072");
     expect(container.textContent).not.toMatch(/creator workshop|nexus workshop/i);
     expect(container.querySelector("img[src*='3d']")).toBeNull();
   });
 
-  test("uses the Nexus display family for the explanatory build ledger", () => {
+  test("changes composition across read, change, test, and review evidence", () => {
     const { container } = render(<HomepageV2Content navigate={jest.fn()} />);
-    const icons = Array.from(
-      container.querySelectorAll("#workflow [data-nexus-display-icon]"),
-      (icon) => icon.getAttribute("data-nexus-display-icon"),
-    );
 
-    expect(icons).toEqual(["ask", "assets", "plan", "build", "debug", "complete"]);
-    expect(container.querySelectorAll("[aria-label='Conversation-to-construction sequence'] [data-nexus-display-icon]")).toHaveLength(0);
+    expect(screen.getByRole("heading", { name: "One request. One legible record of work." })).toBeTruthy();
+    expect(screen.getByRole("list", { name: "Affected Roblox project objects" }).children).toHaveLength(4);
+    expect(screen.getByLabelText("Illustrative Luau change")).toBeTruthy();
+    expect(screen.getByRole("list", { name: "Playtest run record" }).children).toHaveLength(6);
+    expect(screen.getByText("READY FOR YOUR DECISION")).toBeTruthy();
+    expect(container.querySelectorAll("#workflow [data-nexus-display-icon]")).toHaveLength(0);
+    expect(container.querySelectorAll("#workflow button")).toHaveLength(0);
   });
 
-    test("lets creators inspect every request stage without relying on purple alone", () => {
+  test("communicates build state with text and a complete run record", () => {
     render(<HomepageV2Content navigate={jest.fn()} />);
-    const inspect = screen.getByRole("button", { name: "Inspect" });
-    const build = screen.getByRole("button", { name: "Build" });
 
-    expect(build.getAttribute("aria-pressed")).toBe("true");
-    fireEvent.click(inspect);
+    expect(screen.getByText("TEST FAILED").getAttribute("data-tone")).toBe("warning");
+    expect(screen.getByText("7 CHECKS PASSED", { selector: "strong" }).getAttribute("data-tone")).toBe("success");
+    expect(screen.getAllByText("7 CHECKS PASSED").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText("Restore snapshot NXS-184")).toBeTruthy();
+  });
 
-    expect(inspect.getAttribute("aria-pressed")).toBe("true");
-    expect(build.getAttribute("aria-pressed")).toBe("false");
-    expect(screen.getByText("6 references found")).toBeTruthy();
-    expect(screen.getAllByText("Read the real project").length).toBeGreaterThanOrEqual(1);
-    });
-
-    test("turns the world progression artwork into an operable three-state comparison", () => {
-      const { container } = render(<HomepageV2Content navigate={jest.fn()} />);
-
-      const figure = container.querySelector("[data-transformation-stage]");
-      expect(figure.getAttribute("data-transformation-stage")).toBe("build");
-
-      fireEvent.click(screen.getByRole("button", { name: /Finished world/i }));
-      expect(figure.getAttribute("data-transformation-stage")).toBe("finished");
-      expect(screen.getByText(/Finished world selected: Tested experience/i)).toBeTruthy();
-
-      fireEvent.click(screen.getByRole("button", { name: /Blockout/i }));
-      expect(figure.getAttribute("data-transformation-stage")).toBe("blockout");
-    });
-
-  test("loads a selected genre into the hero composer", () => {
+  test("uses one selected world with a text index and loads its brief into the composer", () => {
     const { container } = render(<HomepageV2Content navigate={jest.fn()} />);
     const horror = screen.getByRole("button", { name: /Horror/i });
+    const obby = screen.getByRole("button", { name: /Obby/i });
+    const horrorGenre = homepageGenres.find(({ id }) => id === "horror");
+    const obbyGenre = homepageGenres.find(({ id }) => id === "obby");
 
     expect(container.querySelectorAll("[data-home-genre]")).toHaveLength(8);
-    expect(container.querySelectorAll("[data-home-genre] img[loading='lazy']")).toHaveLength(8);
-    homepageGenres.forEach((genre) => {
-      const image = screen.getByAltText(genre.imageAlt);
-      expect(image.getAttribute("src")).toBe(genre.image);
-      expect(image.getAttribute("width")).toBe("704");
-      expect(image.getAttribute("height")).toBe("440");
-    });
-    expect(horror.getAttribute("aria-pressed")).toBe("false");
-    expect(screen.getByText("Choose a direction")).toBeTruthy();
-
-    fireEvent.click(horror);
-
+    expect(container.querySelectorAll("[data-home-genre] img")).toHaveLength(0);
+    expect(container.querySelectorAll("#genres img[loading='lazy']")).toHaveLength(1);
+    const initialImage = screen.getByAltText(horrorGenre.imageAlt);
+    expect(initialImage.getAttribute("src")).toBe(horrorGenre.image);
+    expect(initialImage.getAttribute("width")).toBe("704");
+    expect(initialImage.getAttribute("height")).toBe("440");
     expect(horror.getAttribute("aria-pressed")).toBe("true");
+    expect(obby.getAttribute("aria-pressed")).toBe("false");
+    expect(screen.getByText("HORROR BRIEF LOADED")).toBeTruthy();
+
+    fireEvent.click(obby);
+
+    expect(horror.getAttribute("aria-pressed")).toBe("false");
+    expect(obby.getAttribute("aria-pressed")).toBe("true");
     expect(document.getElementById("homepage-hero-prompt").value).toBe(
-      homepageGenres.find(({ id }) => id === "horror").prompt,
+      obbyGenre.prompt,
     );
-    expect(screen.getByText("Horror brief loaded")).toBeTruthy();
+    expect(screen.getByAltText(obbyGenre.imageAlt).getAttribute("src")).toBe(obbyGenre.image);
+    expect(screen.getByText("OBBY BRIEF LOADED")).toBeTruthy();
   });
 
   test("returns to a loaded genre brief only when the user asks", () => {
@@ -189,6 +173,6 @@ describe("HomepageV2Content", () => {
 
     expect(hero.querySelectorAll("button[type='submit']")).toHaveLength(1);
     expect(hero.querySelectorAll("a")).toHaveLength(0);
-    expect(hero.querySelector("button[type='submit']").textContent).toBe("Start building");
+    expect(hero.querySelector("button[type='submit']").textContent).toBe("Run build");
   });
 });

@@ -13,36 +13,46 @@ function read(relativePath) {
   return fs.readFileSync(path.join(root, relativePath), "utf8");
 }
 
-test("shared public header keeps server ownership and exposes the complete lg navigation contract", () => {
+test("public header keeps server ownership while delegating presentation to the universal frame", () => {
   const header = read("public-frontend/components/PublicHeader.jsx");
-  const behavior = read("public-frontend/components/PublicNavBehavior.jsx");
+  const frame = read("src/components/universal/UniversalHeaderFrame.jsx");
+  const siteIndex = read("src/components/universal/UniversalSiteIndex.jsx");
+  const navigation = read("src/content/universalNavigation.js");
   assert.doesNotMatch(header, /^\s*["']use client["']/m);
-  assert.match(header, /lg:flex/);
-  assert.match(header, /lg:hidden/);
-  assert.match(header, /data-public-header/);
-  assert.match(header, /PublicNavBehavior/);
+  assert.match(header, /UniversalHeaderFrame/);
+  assert.match(header, /universalPrimaryNavigation/);
+  assert.match(header, /universalSiteIndexSections/);
+  assert.match(header, /accountSlot=\{<PublicAccountState \/>\}/);
+  assert.match(header, /mobileAccountSlot=\{<PublicAccountState mobile \/>\}/);
+  assert.match(frame, /^\s*["']use client["']/m);
+  assert.match(frame, /data-universal-header/);
+  assert.match(frame, /aria-label="Primary navigation"/);
+  assert.match(frame, /aria-haspopup="dialog"/);
 
-  const expectedLinks = [
-    ["AI Workspace", "/ai"],
-    ["Icon Generator", "/tools/icon-generator"],
-    ["Creator Store", "/icons-market"],
-    ["Docs", "/docs"],
-    ["Pricing", "/pricing"],
-    ["Downloads", "/downloads"],
-    ["Contact", "/contact"],
-    ["Support", "/support"],
-    ["Legal", "/legal"],
+  const expectedDestinations = [
+    "/ai",
+    "/tools/icon-generator",
+    "/icons-market",
+    "/docs",
+    "/pricing",
+    "/downloads",
+    "/contact",
+    "/support",
+    "/legal",
   ];
-  for (const [label, href] of expectedLinks) {
-    assert.match(header, new RegExp(`href=["']${href.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}["'][^>]*>${label}`));
+  for (const href of expectedDestinations) {
+    assert.match(navigation, new RegExp(`href: ["']${href.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}["']`));
   }
-  assert.doesNotMatch(header, /href=["']\/subscribe["']/);
-  assert.doesNotMatch(header, /Icon Market|Start Building/);
-  assert.match(behavior, /^\s*["']use client["']/m);
-  assert.match(behavior, /event\.key !== "Escape"/);
-  assert.match(behavior, /restoreFocus: true/);
-  assert.match(behavior, /aria-current/);
-  assert.match(behavior, /pointerdown/);
+  for (const label of ["BUILD", "TOOLS", "DOCS", "PRICING"]) {
+    assert.match(navigation, new RegExp(`label: ["']${label}["']`));
+  }
+  assert.doesNotMatch(navigation, /href: ["']\/subscribe["']/);
+  assert.match(siteIndex, /event\.key === "Escape"/);
+  assert.match(siteIndex, /event\.key !== "Tab"/);
+  assert.match(siteIndex, /const opener = openerRef\?\.current/);
+  assert.match(siteIndex, /opener\?\.focus\(\)/);
+  assert.match(siteIndex, /aria-current/);
+  assert.match(siteIndex, /aria-modal="true"/);
 });
 
 test("isolated account control exposes signed-out and signed-in actions", () => {
@@ -78,9 +88,10 @@ test("public pricing reads the serializable catalog and preserves exact prices a
   const pricing = read("public-frontend/components/PricingCatalog.jsx");
   assert.match(pricing, /publicPlanCatalog\.json/);
   assert.match(pricing, /plan\.yearly \/ 12/);
-  assert.match(pricing, /Billed.*yearly/);
+  assert.match(pricing, /billed yearly/i);
   assert.match(pricing, /Monthly billing only/);
-  assert.match(pricing, /plan\.id === "STARTER"/);
+  assert.match(pricing, /annualUnavailable/);
+  assert.match(pricing, /plan\.yearly == null/);
   assert.match(pricing, /minimumSeats/);
   assert.match(pricing, /maximumSeats/);
   assert.match(pricing, /\/subscribe\?/);
@@ -88,11 +99,13 @@ test("public pricing reads the serializable catalog and preserves exact prices a
   assert.match(pricing, /getEntitlements/);
   assert.match(pricing, /Manage plan/);
   assert.match(pricing, /href="\/billing"/);
-  assert.match(pricing, /Give your Roblox game room to grow/);
-  assert.match(pricing, /plan, build, and review/);
-  assert.match(pricing, /Compare your creator runway/);
+  assert.match(pricing, /ACCESS LEDGER \/ USD/);
+  assert.match(pricing, /Choose how long the build can run/);
+  assert.match(pricing, /aria-label="NexusRBX access plans"/);
+  assert.match(pricing, /data-plan=\{plan\.id\}/);
+  assert.match(pricing, /CAPACITY INDEX/);
   assert.match(pricing, /aria-label="Plan comparison table"/);
-  assert.doesNotMatch(pricing, /Plans for individual creators|Model access|concurrent jobs?/i);
+  assert.doesNotMatch(pricing, /Recommended|featured|plan card/i);
   assert.doesNotMatch(pricing, /gradient|testimonial|priority processing|collaboration/i);
 });
 
@@ -130,5 +143,6 @@ test("pricing page publishes canonical metadata and restrained buyer copy", () =
   assert.match(page, /Skip to pricing/);
   assert.match(page, /Build Your Roblox Game/);
   assert.match(page, /min-h-11/);
+  assert.match(page, /var\(--nx-canvas\)/);
   assert.doesNotMatch(page, /gradient|testimonial|supercharge/i);
 });

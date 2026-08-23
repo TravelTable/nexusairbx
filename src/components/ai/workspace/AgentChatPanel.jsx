@@ -243,7 +243,7 @@ export default function AgentChatPanel({
         onRemoveQueued={onRemoveQueued}
         isGenerating={isBusy}
         generationStage={generationStage}
-        placeholder={refineTarget ? "Describe the Studio change you want..." : "Ask Nexus to build, change, debug, or explain something..."}
+        placeholder={refineTarget ? "Describe the exact Studio change..." : "Describe the outcome, constraints, and proof you need..."}
         refineTarget={refineTarget}
         onCancelRefine={onCancelRefine}
         onStartRefine={onStartRefine}

@@ -13,7 +13,7 @@ export default function NotFound() {
   return (
     <div className={`page-shell ${styles.notFoundPage}`}>
       <PublicHeader />
-      <main className="section-inner hero">
+      <main id="main-content" className="section-inner hero">
         <span className="eyebrow">404</span>
         <h1>This NexusRBX page is not available.</h1>
         <p className="hero-copy">Use a public tool below or open the AI workspace if you were trying to continue a private project.</p>

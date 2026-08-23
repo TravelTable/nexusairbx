@@ -92,7 +92,7 @@ export default async function IconPage({ params }) {
   return (
     <div className={`page-shell ${styles.iconPage}`}>
       <PublicHeader />
-      <main>
+      <main id="main-content">
         <section className="icon-detail-hero">
           <div className="section-inner icon-detail-grid">
             <div>
