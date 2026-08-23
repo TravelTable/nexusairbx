@@ -10,10 +10,32 @@
   gap: var(--nx-space-2);
 }
 
+.accountGroupCompact { gap: var(--nx-space-1); }
+
+.compactAccountButton,
+.accountGroupCompact .accountButton {
+  display: inline-flex;
+  min-height: var(--nx-control-height);
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 var(--nx-space-3);
+  border: 1px solid var(--nx-rule);
+  border-radius: var(--nx-radius-pill);
+  background: var(--nx-card);
+  color: var(--nx-text-secondary);
+  box-shadow: var(--nx-shadow-control);
+  font-size: .75rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.compactPlan { color: var(--nx-purple-strong); font-size: .62rem; text-transform: uppercase; }
+
 .textAction,
 .accountButton {
   display: inline-flex;
-  min-height: 44px;
+  min-height: var(--nx-control-height);
   align-items: center;
   justify-content: center;
   gap: var(--nx-space-2);
@@ -54,6 +76,7 @@
   border-radius: var(--nx-radius-overlay);
   background: var(--nx-work);
   color: var(--nx-text);
+  box-shadow: var(--nx-shadow-floating);
 }
 
 .accountMenuMobile {
@@ -92,7 +115,7 @@
 .menuItem,
 .signOut {
   display: flex;
-  min-height: 44px;
+  min-height: var(--nx-control-height);
   align-items: center;
   justify-content: space-between;
   gap: var(--nx-space-3);
@@ -123,7 +146,7 @@
 }
 
 .robloxRecord button {
-  min-height: 44px;
+  min-height: var(--nx-control-height);
   padding: 0 var(--nx-space-2);
   border: 0;
   border-bottom: 1px solid var(--nx-rule);
@@ -160,7 +183,25 @@
 }
 
 @media (max-width: 900px) {
-  .accountGroup:not(.accountGroupMobile) {
+  .accountGroup:not(.accountGroupMobile):not(.accountGroupCompact) {
     display: none;
   }
+}
+
+@media (max-width: 480px) {
+  .compactPlan { display: none; }
+  .compactAccountButton,
+  .accountGroupCompact .accountButton { width: 44px; padding: 0; overflow: hidden; font-size: 0; }
+  .compactAccountButton::before,
+  .accountGroupCompact .accountButton::before { font-size: .78rem; content: "You"; }
+}
+
+@media (max-width: 720px), (pointer: coarse) {
+  .compactAccountButton,
+  .accountGroupCompact .accountButton,
+  .textAction,
+  .accountButton,
+  .menuItem,
+  .signOut,
+  .robloxRecord button { min-height: var(--nx-touch-target); }
 }

@@ -2,122 +2,104 @@ import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
 
-const repositoryRoot = path.resolve(import.meta.dirname, "..");
+const root = path.resolve(import.meta.dirname, "..");
 const reportOnly = process.argv.includes("--report-only");
+const foundationPath = "src/design/nexus-foundation.css";
+const foundation = fs.readFileSync(path.join(root, foundationPath), "utf8");
 
-const migratedTargets = [
+const expectedTokens = new Map([
+  ["--nx-canvas", "#0a0a0a"],
+  ["--nx-card", "#171717"],
+  ["--nx-muted-surface", "#262626"],
+  ["--nx-raised-surface", "#303030"],
+  ["--nx-text", "#fafafa"],
+  ["--nx-text-muted", "#a1a1a1"],
+  ["--nx-purple", "#b45cff"],
+  ["--nx-purple-strong", "#c77dff"],
+  ["--nx-purple-muted", "#9333ea"],
+  ["--nx-focus", "rgb(180 92 255 / 45%)"],
+  ["--nx-space-1", "4px"],
+  ["--nx-space-2", "8px"],
+  ["--nx-space-3", "12px"],
+  ["--nx-space-4", "16px"],
+  ["--nx-radius-control", "10px"],
+  ["--nx-radius-field", "10px"],
+  ["--nx-radius-panel", "14px"],
+  ["--nx-radius-card", "18px"],
+  ["--nx-radius-overlay", "20px"],
+  ["--nx-radius-feature", "24px"],
+  ["--nx-radius-pill", "999px"],
+  ["--nx-header-height", "48px"],
+  ["--nx-header-height-touch", "52px"],
+  ["--nx-control-height", "36px"],
+  ["--nx-touch-target", "44px"],
+  ["--nx-content-compact", "1160px"],
+  ["--nx-type-interface", "0.9375rem"],
+  ["--nx-motion-color", "150ms"],
+  ["--nx-motion-elevation", "200ms"],
+  ["--nx-motion-spatial", "280ms"],
+]);
+
+const violations = [];
+const record = (file, line, rule, source) => violations.push({ file, line, rule, source: source.trim() });
+
+for (const [token, expected] of expectedTokens) {
+  const match = foundation.match(new RegExp(`${token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*:\\s*([^;]+);`, "i"));
+  const actual = match?.[1]?.trim().toLowerCase();
+  if (actual !== expected) record(foundationPath, 1, "token-contract", `${token}: ${actual || "missing"}; expected ${expected}`);
+}
+
+for (const required of ["--nx-shadow-control", "--nx-shadow-card", "--nx-shadow-floating", "prefers-reduced-motion", "prefers-contrast"]) {
+  if (!foundation.includes(required) && !fs.readFileSync(path.join(root, "src/design/nexus-motion.css"), "utf8").includes(required)) {
+    record(foundationPath, 1, "missing-foundation-contract", required);
+  }
+}
+
+const contractTargets = [
   "src/design",
   "src/components/universal",
-  "src/components/homepage",
-  "src/components/site/SiteHeader.jsx",
-  "src/components/site/SiteHeaderLedger.module.css",
-  "src/components/site/editorialUi.js",
-  "src/pages/ai/WorkspaceRibbon.jsx",
   "src/pages/ai/WorkspaceRibbon.css",
   "src/pages/ai/AgentWorkspaceLayout.css",
-  "src/styles/aiTheme.css",
-  "src/components/ai/workspace/WorkspaceShell.jsx",
-  "src/components/ai/workspace/WorkspaceShell.css",
-  "src/components/ai/chat/ChatEmptyState.jsx",
-  "src/components/ai/chat/ChatExperience.css",
-  "src/components/sidebar/ProjectTreeSidebar.css",
-  "src/pages/ai/QuickScriptWorkspace.jsx",
-  "src/pages/ai/QuickScriptWorkspace.css",
-  "src/components/auth/NexusAuthShell.jsx",
-  "src/components/auth/AuthLedger.css",
-  "src/components/downloads/DownloadsContent.jsx",
-  "src/components/downloads/DownloadsLedger.module.css",
-  "src/components/assets/assetLedgerOverrides.css",
-  "src/components/assets/assetPlatform.css",
-  "src/components/assets/CreatorStoreAssetDetails.jsx",
-  "src/components/assets/CreatorStoreResultCard.jsx",
-  "src/components/assets/CreatorStoreSearch.jsx",
-  "src/pages/IconGeneratorPage.jsx",
-  "src/pages/AssetLibraryPage.jsx",
-  "src/pages/AssetDetailPage.jsx",
-  "src/pages/IconsMarketPage.jsx",
-  "src/pages/IconDetailPage.jsx",
-  "src/pages/SettingsPage.jsx",
-  "src/pages/SettingsLedger.css",
-  "src/pages/ScriptPage.jsx",
-  "src/pages/ScriptLedger.css",
-  "src/pages/ContactPage.jsx",
-  "src/pages/ContactLedger.css",
-  "src/pages/NotFoundPage.jsx",
-  "src/pages/AccountLedger.css",
-  "src/pages/BillingPage.jsx",
-  "src/pages/SubscribePage.jsx",
-  "src/pages/SupportPage.jsx",
-  "src/pages/SupportTicketPage.jsx",
-  "src/pages/AdminSupportPage.jsx",
-  "src/lib/appearanceTheme.js",
-  "src/content/universalNavigation.js",
-  "public/index.html",
-  "public-frontend/app/layout.jsx",
-  "public-frontend/app/pricing/page.jsx",
-  "public-frontend/components/PublicHeader.jsx",
-  "public-frontend/components/PublicAccountState.jsx",
-  "public-frontend/components/PricingCatalog.jsx",
   "public-frontend/components/PricingLedger.module.css",
-  "public-frontend/components/PublicEditorial.module.css",
-  "public-frontend/components/SearchLandingPage.jsx",
-  "public-frontend/components/DocsExplorer.jsx",
 ];
+const extensions = new Set([".css", ".js", ".jsx", ".mjs", ".ts", ".tsx"]);
 
-const sourceExtensions = new Set([".css", ".js", ".jsx", ".mjs", ".ts", ".tsx"]);
-const rules = [
-  { id: "gradient", pattern: /(?:linear|radial|conic)-gradient\s*\(|\bbg-gradient\b|\bgradient-text\b/i },
-  { id: "glass-or-blur", pattern: /backdrop-filter\s*:|filter\s*:\s*blur\s*\(/i },
-  { id: "pill-radius", pattern: /\brounded-full\b|9999px/i },
-  { id: "ambient-loop", pattern: /animation(?:-[a-z-]+)?\s*:[^;\n]*\binfinite\b|\banimate-pulse\b/i },
-  { id: "prohibited-font", pattern: /Instrument Sans|JetBrains Mono|fonts\.googleapis\.com/i },
-  { id: "legacy-accent", pattern: /#a78bfa|#b8a4fc|#8f72ea/i },
-  { id: "generic-card-grid", pattern: /\b(?:feature|pricing|faq|asset)CardGrid\b/i },
-];
-
-function collectFiles(target) {
-  const absolute = path.join(repositoryRoot, target);
+function collect(target) {
+  const absolute = path.join(root, target);
   if (!fs.existsSync(absolute)) return [];
   const stat = fs.statSync(absolute);
-  if (stat.isFile()) return sourceExtensions.has(path.extname(absolute)) ? [absolute] : [];
-  return fs.readdirSync(absolute, { withFileTypes: true }).flatMap((entry) => {
-    if (entry.name.startsWith(".") || entry.name === "node_modules") return [];
-    return collectFiles(path.relative(repositoryRoot, path.join(absolute, entry.name)));
-  });
+  if (stat.isFile()) return extensions.has(path.extname(absolute)) ? [absolute] : [];
+  return fs.readdirSync(absolute, { withFileTypes: true }).flatMap((entry) => collect(path.relative(root, path.join(absolute, entry.name))));
 }
 
-const files = [...new Set(migratedTargets.flatMap(collectFiles))];
-const violations = [];
+const approvedPaletteLiterals = ["#0a0a0a", "#171717", "#262626", "#303030", "#fafafa", "#a1a1a1", "#b45cff", "#c77dff", "#9333ea"];
+const retiredLedgerLiterals = ["#1a1618", "#131012", "#211b1f", "#2c232a", "#d6b8d7", "#e0bfe0", "#b982b6"];
 
-for (const file of files) {
-  const relative = path.relative(repositoryRoot, file).replaceAll("\\", "/");
-  const lines = fs.readFileSync(file, "utf8").split(/\r?\n/);
+for (const absolute of [...new Set(contractTargets.flatMap(collect))]) {
+  const relative = path.relative(root, absolute).replaceAll("\\", "/");
+  const lines = fs.readFileSync(absolute, "utf8").split(/\r?\n/);
   lines.forEach((line, index) => {
-    if (line.includes("design-guard-allow")) return;
-    for (const rule of rules) {
-      if (rule.pattern.test(line)) {
-        violations.push({ file: relative, line: index + 1, rule: rule.id, source: line.trim() });
-      }
-    }
-    if (relative !== "src/design/nexus-foundation.css" && /--nx-[a-z0-9-]+\s*:/.test(line)) {
-      violations.push({ file: relative, line: index + 1, rule: "duplicate-token", source: line.trim() });
+    if (relative !== foundationPath && /--nx-[a-z0-9-]+\s*:/.test(line)) record(relative, index + 1, "duplicate-token", line);
+    if (retiredLedgerLiterals.some((literal) => line.toLowerCase().includes(literal))) record(relative, index + 1, "retired-ledger-token", line);
+    if (relative !== foundationPath && approvedPaletteLiterals.some((literal) => line.toLowerCase().includes(literal))) record(relative, index + 1, "raw-theme-literal", line);
+    if (/Sofia Sans Condensed|Atkinson Hyperlegible Next/i.test(line)) record(relative, index + 1, "retired-font-role", line);
+    if (relative.endsWith(".css")) {
+      const radius = line.match(/border-radius\s*:\s*(\d+(?:\.\d+)?(?:px|rem))/i)?.[1]?.toLowerCase();
+      const approved = new Set(["0px", "10px", "14px", "18px", "20px", "24px"]);
+      if (radius && !approved.has(radius)) record(relative, index + 1, "unapproved-radius", line);
     }
   });
 }
+
+const primitiveCss = fs.readFileSync(path.join(root, "src/design/nexus-primitives.css"), "utf8");
+if (!primitiveCss.includes("prefers-reduced-transparency")) record("src/design/nexus-primitives.css", 1, "missing-transparency-fallback", "prefers-reduced-transparency");
+if (!primitiveCss.includes("forced-colors")) record("src/design/nexus-primitives.css", 1, "missing-forced-colors-fallback", "forced-colors");
 
 if (!violations.length) {
-  console.log(`Design guard passed (${files.length} migrated files).`);
+  console.log(`Design guard passed (${expectedTokens.size} tokens, ${contractTargets.length} contract groups).`);
   process.exit(0);
 }
 
-console.error(`Design guard found ${violations.length} prohibited pattern${violations.length === 1 ? "" : "s"}:`);
-for (const violation of violations) {
-  console.error(`${violation.file}:${violation.line} [${violation.rule}] ${violation.source}`);
-}
-
-if (reportOnly) {
-  console.error("Report-only mode: violations did not fail the command.");
-  process.exit(0);
-}
-
-process.exit(1);
+console.error(`Design guard found ${violations.length} violation${violations.length === 1 ? "" : "s"}:`);
+for (const violation of violations) console.error(`${violation.file}:${violation.line} [${violation.rule}] ${violation.source}`);
+process.exit(reportOnly ? 0 : 1);

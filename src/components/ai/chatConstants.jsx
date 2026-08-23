@@ -1,4 +1,4 @@
-import { InfinityIcon, ClipboardList, Bug, MessageCircle } from "lib/icons";
+import { WandSparkles, ClipboardList, Bug, MessageCircle } from "lib/icons";
 
 /**
  * Cursor-style operating modes (replaces the legacy expert personas).
@@ -14,11 +14,12 @@ export const CHAT_MODES = [
   {
     id: "agent",
     label: "Agent",
-    icon: <InfinityIcon className="w-4 h-4" />,
+    icon: <WandSparkles className="w-4 h-4" />,
     color: "text-[var(--ds-text)]",
     bg: "bg-[var(--ds-fill-selected)]",
     border: "hover:border-[var(--ds-border-strong)]",
-    description: "Autonomously plans and builds your Roblox project end-to-end.",
+    description:
+      "Autonomously plans and builds your Roblox project end-to-end.",
     placeholder: "Describe what you want to build…",
     type: "operating-mode",
     requiresPremium: false,
@@ -30,7 +31,8 @@ export const CHAT_MODES = [
     color: "text-[var(--ds-text-secondary)]",
     bg: "bg-[var(--ds-fill-selected)]",
     border: "hover:border-[var(--ds-border-strong)]",
-    description: "Proposes a plan (and may ask a few questions) before building.",
+    description:
+      "Proposes a plan (and may ask a few questions) before building.",
     placeholder: "Describe what you want to plan…",
     type: "operating-mode",
     requiresPremium: false,
@@ -41,7 +43,8 @@ export const CHAT_MODES = [
     icon: <Bug className="w-4 h-4" />,
     color: "text-[var(--ds-warning)]",
     bg: "bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)]",
-    border: "hover:border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]",
+    border:
+      "hover:border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]",
     description: "Finds the root cause and fixes bugs. Paste an error or file.",
     placeholder: "Paste an error or describe the bug…",
     type: "operating-mode",
@@ -54,7 +57,8 @@ export const CHAT_MODES = [
     color: "text-[var(--ds-text-secondary)]",
     bg: "bg-[var(--ds-fill-subtle)]",
     border: "hover:border-[var(--ds-border-strong)]",
-    description: "Read-only Q&A. When Studio is connected, can list and read scripts from your place.",
+    description:
+      "Read-only Q&A. When Studio is connected, can list and read scripts from your place.",
     placeholder: "Ask anything about Roblox development…",
     type: "operating-mode",
     requiresPremium: false,

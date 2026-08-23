@@ -1,11 +1,103 @@
 :where(a, button, summary, input, textarea, select) {
-  transition-duration: var(--nx-motion-fast);
-  transition-property: background-color, border-color, color, opacity, transform;
+  transition-duration: var(--nx-motion-color);
+  transition-property: background-color, border-color, color, opacity;
+  transition-timing-function: var(--nx-ease-state);
+}
+
+:where(.card-surface, .nexus-page-card, .nx-modal-surface, .nx-menu-surface) {
+  transition-duration: var(--nx-motion-elevation);
+  transition-property: background-color, border-color, box-shadow, transform;
   transition-timing-function: var(--nx-ease-state);
 }
 
 :where(button, [role="button"]):active:not(:disabled, [aria-disabled="true"]) {
-  transform: translateY(1px);
+  transform: translateY(1px) scale(0.99);
+}
+
+.nx-composer-shine {
+  position: relative;
+  isolation: isolate;
+}
+.nx-composer-shine::after {
+  position: absolute;
+  z-index: -1;
+  inset: -1px;
+  overflow: hidden;
+  border-radius: inherit;
+  background: linear-gradient(
+    110deg,
+    transparent 15%,
+    rgb(180 92 255 / 18%) 42%,
+    transparent 70%
+  );
+  background-size: 240% 100%;
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+}
+
+.nx-composer-shine:focus-within::after {
+  inset: -1px 15% auto;
+  height: 2px;
+  border-radius: var(--nx-radius-pill);
+  background: linear-gradient(
+    90deg,
+    transparent 8%,
+    rgb(180 92 255 / 32%) 50%,
+    transparent 92%
+  );
+  background-size: 100% 100%;
+  opacity: 1;
+}
+
+.nx-composer-shine--active::after {
+  inset: -1px;
+  height: auto;
+  border-radius: inherit;
+  background: linear-gradient(
+    110deg,
+    transparent 15%,
+    rgb(180 92 255 / 18%) 42%,
+    transparent 70%
+  );
+  background-size: 240% 100%;
+  animation: nx-composer-shine 7s var(--nx-ease-spatial) infinite;
+}
+
+.nx-build-signal[data-active="true"]::after {
+  position: absolute;
+  inset: -5px;
+  border: 1px solid var(--nx-purple-edge);
+  border-radius: inherit;
+  content: "";
+  animation: nx-signal-pulse 1.8s var(--nx-ease-state) infinite;
+}
+
+@keyframes nx-signal-pulse {
+  0% {
+    opacity: 0.85;
+    transform: scale(0.7);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(1.55);
+  }
+}
+
+@keyframes nx-composer-shine {
+  0%,
+  64% {
+    background-position: 160% 0;
+    opacity: 0;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    background-position: -60% 0;
+    opacity: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -16,5 +108,11 @@
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+  }
+  .nx-composer-shine::after {
+    display: none;
+  }
+  .nx-build-signal::after {
+    display: none;
   }
 }

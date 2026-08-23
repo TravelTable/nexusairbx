@@ -1,138 +1,188 @@
 :root,
-:root[data-theme="light"] {
+:root[data-theme="light"],
+:root[data-theme="dark"],
+:root[data-nexus-theme="soft-depth"] {
   color-scheme: dark;
 
-  --nx-canvas: #1a1618;
-  --nx-depth: #131012;
-  --nx-work: #211b1f;
-  --nx-field: #2c232a;
-  --nx-field-strong: #352a32;
+  /* Purple soft-depth contract. Keep literals here; components consume tokens. */
+  --nx-canvas: #0a0a0a;
+  --nx-depth: #0a0a0a;
+  --nx-card: #171717;
+  --nx-work: #171717;
+  --nx-muted-surface: #262626;
+  --nx-field: #262626;
+  --nx-raised-surface: #303030;
+  --nx-field-strong: #303030;
+  --nx-text: #fafafa;
+  --nx-text-secondary: #d4d4d4;
+  --nx-text-muted: #a1a1a1;
+  --nx-text-disabled: #737373;
+  --nx-purple: #b45cff;
+  --nx-purple-strong: #c77dff;
+  --nx-purple-muted: #9333ea;
+  --nx-purple-rgb: 180, 92, 255;
+  --nx-purple-soft: rgb(180 92 255 / 12%);
+  --nx-purple-border: rgb(180 92 255 / 34%);
+  --nx-purple-wash: rgb(180 92 255 / 10%);
+  --nx-purple-edge: rgb(199 125 255 / 28%);
+  --nx-purple-glow: 0 0 36px rgb(180 92 255 / 16%);
+  --nx-inner-highlight: inset 0 1px rgb(255 255 255 / 8%);
+  --nx-rule: rgb(255 255 255 / 10%);
+  --nx-rule-quiet: rgb(255 255 255 / 7%);
+  --nx-rule-strong: rgb(255 255 255 / 18%);
+  --nx-info: #7dd3fc;
+  --nx-success: #86efac;
+  --nx-warning: #fcd34d;
+  --nx-danger: #fda4af;
+  --nx-focus: rgb(180 92 255 / 45%);
+  --nx-focus-ring: var(--nx-focus);
 
-  --nx-text: #e8ded4;
-  --nx-text-secondary: #c2b4ae;
-  --nx-text-muted: #958985;
-  --nx-text-disabled: #746a68;
+  /* 4px spatial rhythm. */
+  --nx-space-1: 4px;
+  --nx-space-2: 8px;
+  --nx-space-3: 12px;
+  --nx-space-4: 16px;
+  --nx-space-5: 20px;
+  --nx-space-6: 24px;
+  --nx-space-7: 28px;
+  --nx-space-8: 32px;
+  --nx-space-10: 40px;
+  --nx-space-12: 48px;
+  --nx-space-16: 64px;
+  --nx-space-20: 80px;
+  --nx-space-24: 96px;
 
-  --nx-purple: #d6b8d7;
-  --nx-purple-strong: #e0bfe0;
-  --nx-purple-muted: #b982b6;
+  --nx-radius-control: 10px;
+  --nx-radius-field: 10px;
+  --nx-radius-panel: 14px;
+  --nx-radius-card: 18px;
+  --nx-radius-overlay: 20px;
+  --nx-radius-feature: 24px;
+  --nx-radius-pill: 999px;
 
-  --nx-rule: #52434d;
-  --nx-rule-quiet: #3a3036;
+  /* Compact layout and typography roles. */
+  --nx-header-height: 48px;
+  --nx-header-height-touch: 52px;
+  --nx-control-height: 36px;
+  --nx-touch-target: 44px;
+  --nx-content-compact: 1160px;
+  --nx-content-reading: 720px;
+  --nx-type-interface: 0.9375rem;
+  --nx-type-body: 1rem;
+  --nx-type-label: 0.75rem;
 
-  --nx-info: #94a9b0;
-  --nx-success: #a4b487;
-  --nx-warning: #d0a26d;
-  --nx-danger: #d7837c;
-  --nx-focus: #e0bfe0;
+  --nx-font-display: "DM Sans Variable", "DM Sans", system-ui, sans-serif;
+  --nx-font-body:
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --nx-font-code:
+    "Atkinson Hyperlegible Mono Variable", "SFMono-Regular", Consolas, monospace;
 
-  --nx-space-1: 5px;
-  --nx-space-2: 9px;
-  --nx-space-3: 15px;
-  --nx-space-4: 23px;
-  --nx-space-5: 37px;
-  --nx-space-6: 59px;
-  --nx-space-7: 95px;
-
-  --nx-radius-field: 3px;
-  --nx-radius-overlay: 5px;
-
-  --nx-font-display: "Sofia Sans Condensed Variable", "Arial Narrow", sans-serif;
-  --nx-font-body: "Atkinson Hyperlegible Next Variable", "Segoe UI", sans-serif;
-  --nx-font-code: "Atkinson Hyperlegible Mono Variable", "SFMono-Regular", Consolas, monospace;
-
-  --nx-motion-fast: 120ms;
-  --nx-motion-state: 180ms;
-  --nx-motion-spatial: 240ms;
+  --nx-motion-color: 150ms;
+  --nx-motion-fast: 150ms;
+  --nx-motion-elevation: 200ms;
+  --nx-motion-state: 200ms;
+  --nx-motion-spatial: 280ms;
   --nx-ease-state: cubic-bezier(0.22, 0.72, 0.24, 1);
+  --nx-ease-spatial: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  --nx-shadow-control:
+    inset 0 1px 0 rgb(255 255 255 / 8%), 0 1px 2px rgb(0 0 0 / 38%),
+    0 3px 9px rgb(0 0 0 / 16%);
+  --nx-shadow-card:
+    inset 0 1px 0 rgb(255 255 255 / 6%), 0 1px 2px rgb(0 0 0 / 48%),
+    0 9px 26px rgb(0 0 0 / 25%);
+  --nx-shadow-floating:
+    inset 0 1px 0 rgb(255 255 255 / 8%), 0 2px 4px rgb(0 0 0 / 50%),
+    0 18px 54px rgb(0 0 0 / 44%);
+  --nx-shadow-focus: 0 0 0 4px var(--nx-focus);
 
   /* shadcn compatibility */
-  --background: 330 8% 9%;
-  --foreground: 30 30% 87%;
-  --card: 320 10% 12%;
-  --card-foreground: 30 30% 87%;
-  --popover: 320 10% 12%;
-  --popover-foreground: 30 30% 87%;
-  --primary: 30 30% 87%;
-  --primary-foreground: 330 8% 9%;
-  --secondary: 313 11% 15%;
-  --secondary-foreground: 30 30% 87%;
-  --muted: 313 11% 15%;
-  --muted-foreground: 15 8% 56%;
-  --accent: 298 27% 78%;
-  --accent-foreground: 330 8% 9%;
-  --destructive: 3 53% 66%;
-  --destructive-foreground: 330 8% 9%;
-  --border: 320 10% 29%;
-  --input: 320 10% 29%;
-  --ring: 298 37% 81%;
-  --radius: 0.1875rem;
+  --background: 0 0% 4%;
+  --foreground: 0 0% 98%;
+  --card: 0 0% 9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 0 0% 9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 274 100% 68%;
+  --primary-foreground: 0 0% 4%;
+  --secondary: 0 0% 15%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 63%;
+  --accent: 274 100% 68%;
+  --accent-foreground: 0 0% 4%;
+  --destructive: 350 94% 82%;
+  --destructive-foreground: 0 0% 4%;
+  --border: 0 0% 100% / 0.1;
+  --input: 0 0% 100% / 0.1;
+  --ring: 274 100% 68%;
+  --radius: 0.625rem;
 
-  /* Compatibility bridge for surfaces migrating from the former --ds system. */
+  /* Compatibility bridge for existing customer-facing surfaces. */
   --ds-bg-canvas: var(--nx-canvas);
   --ds-bg-workspace: var(--nx-depth);
-  --ds-bg-sidebar: var(--nx-work);
-  --ds-surface-1: var(--nx-work);
-  --ds-surface-2: var(--nx-field);
-  --ds-surface-3: var(--nx-field-strong);
-  --ds-surface-overlay: var(--nx-work);
-  --ds-surface-muted: var(--nx-field);
-  --ds-fill-subtle: #272025;
-  --ds-fill-hover: #30272d;
-  --ds-fill-active: #392e35;
-  --ds-fill-selected: #352a32;
+  --ds-bg-sidebar: var(--nx-card);
+  --ds-surface-1: var(--nx-card);
+  --ds-surface-2: var(--nx-muted-surface);
+  --ds-surface-3: var(--nx-raised-surface);
+  --ds-surface-overlay: var(--nx-card);
+  --ds-surface-muted: var(--nx-muted-surface);
+  --ds-fill-subtle: rgb(255 255 255 / 4%);
+  --ds-fill-hover: rgb(255 255 255 / 8%);
+  --ds-fill-active: rgb(255 255 255 / 12%);
+  --ds-fill-selected: var(--nx-raised-surface);
   --ds-border-subtle: var(--nx-rule-quiet);
   --ds-border: var(--nx-rule);
-  --ds-border-strong: #6a5663;
+  --ds-border-strong: var(--nx-rule-strong);
   --ds-text: var(--nx-text);
   --ds-text-secondary: var(--nx-text-secondary);
   --ds-text-muted: var(--nx-text-muted);
   --ds-text-subtle: var(--nx-text-muted);
   --ds-text-disabled: var(--nx-text-disabled);
   --ds-brand-violet: var(--nx-purple);
-  --ds-brand-plum: var(--nx-field);
+  --ds-brand-plum: var(--nx-muted-surface);
   --ds-brand-paper: var(--nx-text);
   --ds-brand-ink: var(--nx-canvas);
   --ds-brand-lime: var(--nx-success);
   --ds-brand-coral: var(--nx-danger);
   --ds-accent: var(--nx-purple);
-  --ds-accent-rgb: 214, 184, 215;
+  --ds-accent-rgb: var(--nx-purple-rgb);
   --ds-accent-hover: var(--nx-purple-strong);
   --ds-accent-pressed: var(--nx-purple-muted);
-  --ds-accent-foreground: var(--nx-canvas);
-  --ds-accent-soft: #332832;
-  --ds-accent-border: #775e75;
+  --ds-accent-foreground: #0a0a0a;
+  --ds-accent-soft: var(--nx-purple-soft);
+  --ds-accent-border: var(--nx-purple-border);
   --ds-focus-ring: var(--nx-focus);
   --ds-info: var(--nx-info);
-  --ds-info-rgb: 148, 169, 176;
+  --ds-info-rgb: 125, 211, 252;
   --ds-info-foreground: var(--nx-depth);
-  --ds-info-soft: #253034;
-  --ds-info-border: #52656c;
+  --ds-info-soft: rgb(125 211 252 / 12%);
+  --ds-info-border: rgb(125 211 252 / 32%);
   --ds-success: var(--nx-success);
-  --ds-success-rgb: 164, 180, 135;
+  --ds-success-rgb: 134, 239, 172;
   --ds-success-foreground: var(--nx-depth);
-  --ds-success-soft: #2c3027;
-  --ds-success-border: #5d684e;
+  --ds-success-soft: rgb(134 239 172 / 12%);
+  --ds-success-border: rgb(134 239 172 / 32%);
   --ds-warning: var(--nx-warning);
-  --ds-warning-rgb: 208, 162, 109;
+  --ds-warning-rgb: 252, 211, 77;
   --ds-warning-foreground: var(--nx-depth);
-  --ds-warning-soft: #372c22;
-  --ds-warning-border: #765a3e;
+  --ds-warning-soft: rgb(252 211 77 / 12%);
+  --ds-warning-border: rgb(252 211 77 / 32%);
   --ds-danger: var(--nx-danger);
-  --ds-danger-rgb: 215, 131, 124;
+  --ds-danger-rgb: 253, 164, 175;
   --ds-danger-foreground: var(--nx-depth);
-  --ds-danger-soft: #392525;
-  --ds-danger-border: #754b49;
+  --ds-danger-soft: rgb(253 164 175 / 12%);
+  --ds-danger-border: rgb(253 164 175 / 32%);
   --ds-plan: var(--nx-purple);
-  --ds-plan-rgb: 214, 184, 215;
+  --ds-plan-rgb: var(--nx-purple-rgb);
   --ds-plan-foreground: var(--nx-depth);
-  --ds-radius-sm: 2px;
-  --ds-radius-md: 3px;
-  --ds-radius-lg: 4px;
-  --ds-radius-xl: 5px;
-  --ds-shadow-panel: none;
-  --ds-shadow-overlay: none;
-  --ds-shadow-focus: none;
+  --ds-radius-sm: var(--nx-radius-control);
+  --ds-radius-md: var(--nx-radius-panel);
+  --ds-radius-lg: var(--nx-radius-card);
+  --ds-radius-xl: var(--nx-radius-overlay);
+  --ds-shadow-panel: var(--nx-shadow-card);
+  --ds-shadow-overlay: var(--nx-shadow-floating);
+  --ds-shadow-focus: var(--nx-shadow-focus);
   --ds-font-sans: var(--nx-font-body);
   --ds-font-display: var(--nx-font-display);
   --ds-font-code: var(--nx-font-code);
@@ -140,32 +190,30 @@
   --ds-space-2: var(--nx-space-2);
   --ds-space-3: var(--nx-space-3);
   --ds-space-4: var(--nx-space-4);
-  --ds-space-6: var(--nx-space-5);
-  --ds-space-8: var(--nx-space-6);
-  --ds-space-12: var(--nx-space-7);
-  --ds-motion-press: var(--nx-motion-fast);
-  --ds-motion-reveal: var(--nx-motion-fast);
-  --ds-motion-dock: var(--nx-motion-state);
+  --ds-space-6: var(--nx-space-6);
+  --ds-space-8: var(--nx-space-8);
+  --ds-space-12: var(--nx-space-12);
+  --ds-motion-press: var(--nx-motion-color);
+  --ds-motion-reveal: var(--nx-motion-elevation);
+  --ds-motion-dock: var(--nx-motion-spatial);
   --ds-motion-stage: var(--nx-motion-spatial);
   --ds-motion-construct: var(--nx-motion-spatial);
-  --ds-ease-spatial: var(--nx-ease-state);
-
-  --motion-instant: var(--nx-motion-fast);
-  --motion-fast: var(--nx-motion-fast);
-  --motion-standard: var(--nx-motion-state);
+  --ds-ease-spatial: var(--nx-ease-spatial);
+  --motion-instant: var(--nx-motion-color);
+  --motion-fast: var(--nx-motion-color);
+  --motion-standard: var(--nx-motion-elevation);
   --motion-panel: var(--nx-motion-spatial);
-  --motion-large: var(--nx-motion-spatial);
-  --ease-product: var(--nx-ease-state);
+  --motion-large: 300ms;
+  --ease-product: var(--nx-ease-spatial);
   --ease-standard: var(--nx-ease-state);
-
   --ai-bg: var(--nx-depth);
-  --ai-surface: var(--nx-work);
-  --ai-surface-muted: var(--nx-field);
+  --ai-surface: var(--nx-card);
+  --ai-surface-muted: var(--nx-muted-surface);
   --ai-border: var(--nx-rule);
   --ai-text: var(--nx-text);
   --ai-text-muted: var(--nx-text-muted);
   --ai-accent: var(--nx-purple);
-  --ai-accent-2: var(--nx-purple-muted);
+  --ai-accent-2: var(--nx-purple-strong);
   --ai-info: var(--nx-info);
   --ai-danger: var(--nx-danger);
 }
@@ -180,24 +228,37 @@ body {
   background: var(--nx-canvas);
   color: var(--nx-text);
   font-family: var(--nx-font-body);
-  font-size: 16px;
+  font-size: var(--nx-type-interface);
   line-height: 1.55;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
 
-::selection {
-  background: var(--nx-field-strong);
-  color: var(--nx-purple-strong);
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.font-display {
+  font-family: var(--nx-font-display);
 }
-
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--nx-font-code);
+}
+::selection {
+  background: rgb(180 92 255 / 30%);
+  color: var(--nx-text);
+}
 button,
 input,
 textarea,
 select {
   font: inherit;
 }
-
 a,
 button,
 summary,
@@ -205,16 +266,25 @@ summary,
   touch-action: manipulation;
 }
 
+@media (max-width: 720px), (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
 :where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
-  outline: 2px solid var(--nx-focus);
+  outline: 2px solid var(--nx-purple);
   outline-offset: 3px;
+  box-shadow: var(--nx-shadow-focus);
 }
 
 @media (prefers-contrast: more) {
-  :root,
-  :root[data-theme="light"] {
-    --nx-rule-quiet: #66545f;
-    --nx-rule: #846c7b;
-    --nx-text-muted: #c7b9b3;
+  :root {
+    --nx-rule-quiet: rgb(255 255 255 / 20%);
+    --nx-rule: rgb(255 255 255 / 32%);
+    --nx-rule-strong: rgb(255 255 255 / 52%);
+    --nx-text-muted: #d4d4d4;
   }
 }

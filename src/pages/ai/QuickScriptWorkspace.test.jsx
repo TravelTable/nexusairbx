@@ -50,7 +50,12 @@ describe("QuickScriptWorkspace", () => {
   test("shows idle guidance and fills the prompt from an example", () => {
     const { props } = renderWorkspace();
 
-    expect(screen.getByText("Build one focused Roblox script")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: "Build one focused Roblox script",
+      }),
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /damages players when they touch/i }));
 
     expect(props.setPrompt).toHaveBeenCalledWith(
@@ -68,9 +73,10 @@ describe("QuickScriptWorkspace", () => {
     fireEvent.keyDown(prompt, { key: "Enter" });
     const generate = screen.getByRole("button", { name: "Generate script" });
     expect(generate.className).toContain("h-11");
-    expect(generate.className).toContain("w-11");
+    expect(generate.className).toContain("px-4");
     expect(generate.className).not.toContain("md:h-10");
-    expect(prompt.className).toContain("min-h-[44px]");
+    expect(prompt.className).toContain("min-h-[52px]");
+    expect(generate).toHaveTextContent("Generate script");
     fireEvent.click(generate);
     expect(props.onGenerate).toHaveBeenCalledTimes(2);
   });

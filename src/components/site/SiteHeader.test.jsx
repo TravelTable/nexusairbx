@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 
@@ -24,7 +24,7 @@ jest.mock("./useHeaderIdentity", () => () => ({
 
 import SiteHeader from "./SiteHeader";
 
-test("makes the homepage skip link the first keyboard target", () => {
+test("makes the homepage skip link the first keyboard target", async () => {
   render(
     <MemoryRouter initialEntries={["/"]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <SiteHeader variant="marketing" />
@@ -42,12 +42,22 @@ test("makes the homepage skip link the first keyboard target", () => {
   expect(homeLink.getAttribute("href")).toBe("/");
   expect(homeLink.textContent).toContain("NEXUS/RBX");
   expect(screen.getByRole("navigation", { name: "Primary navigation" })).toBeTruthy();
-  expect(screen.getByRole("link", { name: "BUILD" }).getAttribute("href")).toBe("/ai");
-  expect(screen.getByRole("link", { name: "TOOLS" }).getAttribute("href")).toBe("/tools/icon-generator");
-  expect(screen.getByRole("link", { name: "DOCS" }).getAttribute("href")).toBe("/docs");
-  expect(screen.getByRole("link", { name: "PRICING" }).getAttribute("href")).toBe("/pricing");
+  expect(screen.getByRole("link", { name: "Build" }).getAttribute("href")).toBe("/ai");
+  expect(screen.getByRole("link", { name: "Assets" }).getAttribute("href")).toBe("/assets");
+  expect(screen.getByRole("link", { name: "Icons" }).getAttribute("href")).toBe("/icons-market");
+  expect(screen.getByRole("link", { name: "Studio" }).getAttribute("href")).toBe("/downloads");
+  expect(screen.getByRole("link", { name: "Docs" }).getAttribute("href")).toBe("/docs");
+  expect(screen.getByRole("link", { name: "Pricing" }).getAttribute("href")).toBe("/pricing");
 
-  const indexButton = screen.getAllByRole("button", { name: /index/i })[0];
+  const searchButton = screen.getByRole("button", { name: /Search/ });
+  searchButton.focus();
+  fireEvent.keyDown(document, { key: "k", ctrlKey: true });
+  expect(screen.getByRole("dialog", { name: "Search NexusRBX" })).toBeTruthy();
+  await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("textbox", { name: "Search pages and tools" })));
+  fireEvent.keyDown(document, { key: "Escape" });
+  await waitFor(() => expect(document.activeElement).toBe(searchButton));
+
+  const indexButton = screen.getAllByRole("button", { name: "Tools" })[0];
   userEvent.click(indexButton);
   expect(screen.getByRole("dialog", { name: "NexusRBX site index" })).toBeTruthy();
   expect(screen.getByRole("link", { name: "Legal documents" }).getAttribute("href")).toBe("/legal");

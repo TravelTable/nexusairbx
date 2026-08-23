@@ -88,14 +88,14 @@ export function PublicAccountProvider({ children }) {
   );
 }
 
-export default function PublicAccountState({ mobile = false }) {
+export default function PublicAccountState({ mobile = false, compact = false }) {
   const accountState = useContext(PublicAccountContext);
   if (!accountState) return null;
 
   const { account, authReady, signOutState, supportUnreadCount, handleSignOut } = accountState;
 
-  const wrapperClass = mobile ? "grid gap-[9px]" : "flex items-center gap-[15px]";
-  const controlHeightClass = "h-11";
+  const wrapperClass = compact ? "flex items-center" : mobile ? "grid gap-2" : "flex items-center gap-3";
+  const controlHeightClass = "h-11 md:h-9";
   const primaryClass = `${focusClass} ${controlHeightClass} inline-flex items-center justify-center border-0 border-b border-[var(--nx-text-secondary)] bg-transparent px-[9px] text-[13px] font-semibold text-[var(--nx-text)] no-underline hover:border-[var(--nx-purple-muted)] hover:text-[var(--nx-purple)]`;
   const secondaryClass = `${focusClass} ${controlHeightClass} inline-flex items-center justify-center border-0 border-b border-[var(--nx-rule)] bg-transparent px-[9px] text-[13px] font-medium text-[var(--nx-text-secondary)] no-underline hover:border-[var(--nx-text-secondary)] hover:text-[var(--nx-text)]`;
   const menuItemClass = `${focusClass} flex min-h-11 items-center border-b border-[var(--nx-rule-quiet)] px-[9px] text-sm text-[var(--nx-text-secondary)] no-underline hover:text-[var(--nx-purple)]`;
@@ -109,6 +109,9 @@ export default function PublicAccountState({ mobile = false }) {
   }
 
   if (!account) {
+    if (compact) {
+      return <a className={`${focusClass} inline-flex h-11 items-center rounded-full border border-[var(--nx-rule)] bg-[var(--nx-card)] px-3 text-xs font-semibold text-[var(--nx-text)] no-underline shadow-[var(--nx-shadow-control)] md:h-9`} href="/signin">Sign in</a>;
+    }
     return (
       <div className={wrapperClass}>
         <a className={secondaryClass} href="/signin">Sign in</a>
@@ -168,7 +171,7 @@ export default function PublicAccountState({ mobile = false }) {
           ) : null}
         </div>
       </details>
-      <a className={primaryClass} href="/ai">Open workspace</a>
+      {!compact ? <a className={primaryClass} href="/ai">Open workspace</a> : null}
     </div>
   );
 }

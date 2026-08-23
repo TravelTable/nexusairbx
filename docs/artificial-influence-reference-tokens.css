@@ -1,0 +1,89 @@
+/*
+ * Measured/derived visual tokens from the Artificial Influence / UniCan audit.
+ * Documentation reference only: this file is not imported by NexusRBX.
+ */
+
+:root {
+  --ref-ai-canvas: #0a0a0a;
+  --ref-ai-card: #171717;
+  --ref-ai-muted: #262626;
+  --ref-ai-text: #fafafa;
+  --ref-ai-text-muted: #a1a1a1;
+  --ref-ai-accent: #f529a0;
+  --ref-ai-ring: #737373;
+  --ref-ai-beta: #dbee00;
+  --ref-ai-border: rgb(255 255 255 / 10%);
+  --ref-ai-border-quiet: rgb(255 255 255 / 6%);
+
+  --ref-ai-space-1: 4px;
+  --ref-ai-space-2: 8px;
+  --ref-ai-space-3: 12px;
+  --ref-ai-space-4: 16px;
+  --ref-ai-space-5: 20px;
+  --ref-ai-space-6: 24px;
+  --ref-ai-space-8: 32px;
+  --ref-ai-space-10: 40px;
+  --ref-ai-space-12: 48px;
+  --ref-ai-space-16: 64px;
+
+  --ref-ai-radius-sm: 12px;
+  --ref-ai-radius-md: 18px;
+  --ref-ai-radius-lg: 22px;
+  --ref-ai-radius-xl: 24px;
+  --ref-ai-radius-2xl: 28px;
+  --ref-ai-radius-pill: 9999px;
+
+  --ref-ai-shadow-s:
+    inset 0 1px 2px rgb(255 255 255 / 30%),
+    0 1px 2px rgb(0 0 0 / 30%),
+    0 2px 4px rgb(0 0 0 / 15%);
+  --ref-ai-shadow-m:
+    inset 0 1px 2px rgb(255 255 255 / 50%),
+    0 2px 4px rgb(0 0 0 / 30%),
+    0 4px 8px rgb(0 0 0 / 15%);
+  --ref-ai-shadow-l:
+    inset 0 1px 2px rgb(255 255 255 / 70%),
+    0 4px 6px rgb(0 0 0 / 30%),
+    0 6px 10px rgb(0 0 0 / 15%);
+
+  --ref-ai-duration-state: 150ms;
+  --ref-ai-duration-depth: 200ms;
+  --ref-ai-duration-spatial: 300ms;
+  --ref-ai-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ref-ai-ease-out: cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* Recommended NexusRBX translation, intentionally less glossy than the source. */
+.nx-soft-depth {
+  --nx-soft-canvas: var(--nx-depth, #131012);
+  --nx-soft-card: var(--nx-work, #211b1f);
+  --nx-soft-muted: var(--nx-field, #2c232a);
+  --nx-soft-muted-strong: var(--nx-field-strong, #352a32);
+  --nx-soft-text: var(--nx-text, #e8ded4);
+  --nx-soft-text-muted: var(--nx-text-muted, #958985);
+  --nx-soft-accent: var(--nx-purple, #d6b8d7);
+  --nx-soft-accent-hover: var(--nx-purple-strong, #e0bfe0);
+  --nx-soft-accent-pressed: var(--nx-purple-muted, #b982b6);
+  --nx-soft-on-accent: var(--nx-canvas, #1a1618);
+  --nx-soft-border: rgb(232 222 212 / 10%);
+  --nx-soft-border-strong: rgb(232 222 212 / 18%);
+
+  --nx-soft-radius-sm: 12px;
+  --nx-soft-radius-md: 18px;
+  --nx-soft-radius-lg: 22px;
+  --nx-soft-radius-xl: 28px;
+  --nx-soft-radius-pill: 9999px;
+
+  --nx-soft-shadow-s:
+    inset 0 1px 2px rgb(255 255 255 / 12%),
+    0 1px 2px rgb(0 0 0 / 30%),
+    0 2px 4px rgb(0 0 0 / 15%);
+  --nx-soft-shadow-m:
+    inset 0 1px 2px rgb(255 255 255 / 18%),
+    0 2px 4px rgb(0 0 0 / 30%),
+    0 4px 8px rgb(0 0 0 / 15%);
+  --nx-soft-shadow-l:
+    inset 0 1px 2px rgb(255 255 255 / 24%),
+    0 4px 6px rgb(0 0 0 / 30%),
+    0 6px 10px rgb(0 0 0 / 15%);
+}

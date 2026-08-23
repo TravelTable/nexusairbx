@@ -2,6 +2,7 @@ import React, { Suspense, lazy, useEffect, useLayoutEffect, useMemo, useRef, use
 import {
   AlertTriangle,
   ArrowRight,
+  Check,
   Clipboard,
   Code2,
   Download,
@@ -12,9 +13,8 @@ import {
   Save,
   SendPrompt,
   ShieldCheck,
-  TerminalSquare,
   SlidersHorizontal,
-  Check,
+  TerminalSquare,
 } from "lib/icons";
 
 import { Button, cx } from "../../components/ui";
@@ -24,10 +24,52 @@ import "./QuickScriptWorkspace.css";
 const QuickScriptCodeBlock = lazy(() => import("../../components/ai/QuickScriptCodeBlock"));
 
 const EXAMPLES = [
-  "Make a Script that damages players when they touch a part named DamagePart.",
-  "Create a LocalScript that opens a shop frame when I press a button.",
-  "Fix this Luau error and explain where to put the script.",
+  {
+    icon: FileCode2,
+    type: "Server Script",
+    title: "Damage on touch",
+    prompt:
+      "Make a Script that damages players when they touch a part named DamagePart.",
+  },
+  {
+    icon: Code2,
+    type: "LocalScript",
+    title: "Open a shop UI",
+    prompt:
+      "Create a LocalScript that opens a shop frame when I press a button.",
+  },
+  {
+    icon: AlertTriangle,
+    type: "Debug",
+    title: "Fix a Luau error",
+    prompt: "Fix this Luau error and explain where to put the script.",
+  },
 ];
+
+const SCRIPT_TARGETS = [
+  { id: "auto", label: "Auto" },
+  { id: "server", label: "Server" },
+  { id: "local", label: "Local" },
+  { id: "module", label: "Module" },
+];
+
+const SCRIPT_TARGET_INSTRUCTIONS = {
+  server: "Return a Roblox server Script.",
+  local: "Return a Roblox LocalScript.",
+  module: "Return a Roblox ModuleScript.",
+};
+
+function withScriptTarget(prompt, scriptTarget) {
+  const instruction = SCRIPT_TARGET_INSTRUCTIONS[scriptTarget];
+  return instruction ? `${String(prompt || "").trim()}\n\n${instruction}` : prompt;
+}
+
+function generationLabel(stage) {
+  const normalized = String(stage || "").toLowerCase();
+  if (normalized.includes("validat") || normalized.includes("check")) return "Checking script";
+  if (normalized.includes("plan")) return "Planning";
+  return "Writing Luau";
+}
 
 function ListSection({ title, items, empty, icon, isWarning }) {
   const normalized = Array.isArray(items) ? items.filter(Boolean) : [];
@@ -75,6 +117,131 @@ function ListSection({ title, items, empty, icon, isWarning }) {
         <p className="mt-3 text-xs text-[var(--ds-text-muted)]">{empty}</p>
       )}
     </div>
+  );
+}
+
+function QuickScriptComposer({
+  prompt,
+  setPrompt,
+  textareaRef,
+  isGenerating,
+  isImproving,
+  isComposing,
+  setIsComposing,
+  canSubmit,
+  stage,
+  hasResult,
+  hasError,
+  onGenerate,
+  onImprovePrompt,
+  onFocus,
+}) {
+  const submit = (event) => {
+    event?.preventDefault?.();
+    if (canSubmit) onGenerate?.();
+  };
+
+  return (
+    <form onSubmit={submit} className="quick-script-composer-form group relative">
+      <div className="quick-script-composer relative flex flex-col gap-2 border border-[var(--ds-border)] bg-[var(--ds-surface-1)] p-2">
+        <div className="quick-script-composer__toolbar flex flex-wrap items-center gap-2">
+          <div
+            className={cx(
+              "quick-script-run-state inline-flex h-8 items-center border px-3 text-[11px] font-medium",
+              isGenerating
+                ? "border-[var(--ds-success)] text-[var(--ds-success)]"
+                : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)]",
+            )}
+            aria-live="polite"
+          >
+            {isGenerating
+              ? stage || "Working"
+              : hasResult
+                ? "Luau · Update script"
+                : "Luau · One script"}
+          </div>
+          <div className="hidden h-px min-w-[1rem] flex-1 bg-[var(--ds-fill-subtle)] sm:block" />
+          {onImprovePrompt ? (
+            <button
+              type="button"
+              onClick={() => onImprovePrompt()}
+              disabled={
+                isGenerating || isImproving || !String(prompt || "").trim()
+              }
+              data-tour="improve-btn"
+              className="quick-script-text-action inline-flex min-h-[44px] items-center gap-1.5 px-3 text-[11px] font-medium text-[var(--ds-text-secondary)] hover:text-[var(--nx-purple)] focus-ring disabled:cursor-not-allowed disabled:opacity-40"
+              title="Expand your prompt into a detailed brief"
+            >
+              {isImproving ? (
+                <Loader className="h-3 w-3 animate-spin" />
+              ) : (
+                <SlidersHorizontal className="h-3 w-3" />
+              )}
+              {isImproving ? "Improving" : "Improve"}
+            </button>
+          ) : null}
+        </div>
+
+        <div className="quick-script-prompt-field flex items-end gap-2 border border-transparent bg-transparent p-1.5 focus-within:border-[var(--ds-accent-border)]">
+          <textarea
+            id="quick-script-prompt"
+            ref={textareaRef}
+            value={prompt}
+            rows={1}
+            onChange={(event) => setPrompt(event.target.value)}
+            onFocus={onFocus}
+            onKeyDown={(event) => {
+              if (
+                event.key === "Enter" &&
+                !event.shiftKey &&
+                !isComposing &&
+                !event.nativeEvent?.isComposing
+              ) {
+                event.preventDefault();
+                submit(event);
+              }
+            }}
+            onCompositionStart={() => setIsComposing(true)}
+            onCompositionEnd={() => setIsComposing(false)}
+            disabled={isGenerating}
+            data-tour="prompt-input"
+            placeholder="Describe one Roblox script and where it should go."
+            className="min-h-[52px] max-h-[140px] flex-1 resize-none bg-transparent px-2 py-2.5 text-sm leading-relaxed text-[var(--ds-text)] outline-none placeholder:text-[var(--ds-text-muted)] disabled:opacity-60 md:text-[15px]"
+            aria-label="Quick Script prompt"
+            aria-describedby="quick-script-help"
+            aria-invalid={hasError}
+          />
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            data-tour="generate-btn"
+            className="quick-script-submit inline-flex h-11 shrink-0 items-center justify-center gap-2 border border-[var(--nx-purple)] bg-[var(--nx-purple)] px-4 text-xs font-bold text-[var(--nx-canvas)] hover:border-[var(--nx-purple-hover)] hover:bg-[var(--nx-purple-hover)] focus-ring disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label={
+              isGenerating
+                ? "Generation in progress"
+                : hasResult
+                  ? "Generate updated script"
+                  : "Generate script"
+            }
+          >
+            {isGenerating ? (
+              <Loader className="h-4 w-4 animate-spin" />
+            ) : (
+              <SendPrompt className="h-4 w-4" />
+            )}
+            <span>{hasResult ? "Update script" : "Generate script"}</span>
+          </button>
+        </div>
+
+        <div
+          id="quick-script-help"
+          className="flex flex-wrap items-center justify-between gap-2 px-1 text-[10px] font-semibold text-[var(--ds-text-muted)]"
+        >
+          <span>Enter to generate · Shift + Enter for a new line</span>
+          <span>{String(prompt || "").trim().length} characters</span>
+        </div>
+      </div>
+    </form>
   );
 }
 
@@ -147,18 +314,30 @@ export default function QuickScriptWorkspace({
     return items;
   }, [result]);
 
-  const handleKeyDown = (event) => {
-    if (event.key === "Enter" && !event.shiftKey && !isComposing && !event.nativeEvent?.isComposing) {
-      event.preventDefault();
-      if (canSubmit) onGenerate?.();
-    }
-  };
-
   const handleCopyClick = () => {
     onCopy?.();
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const composer = (
+    <QuickScriptComposer
+      prompt={prompt}
+      setPrompt={setPrompt}
+      textareaRef={textareaRef}
+      isGenerating={isGenerating}
+      isImproving={isImproving}
+      isComposing={isComposing}
+      setIsComposing={setIsComposing}
+      canSubmit={canSubmit}
+      stage={quickScript?.stage}
+      hasResult={Boolean(result)}
+      hasError={Boolean(quickScript?.error && !result)}
+      onGenerate={onGenerate}
+      onImprovePrompt={onImprovePrompt}
+      onFocus={keepPromptVisible}
+    />
+  );
 
   return (
     <section className="quick-script-workspace relative flex h-full min-h-0 overflow-hidden bg-[var(--ds-bg-workspace)]" aria-label="Quick generator">
@@ -167,8 +346,9 @@ export default function QuickScriptWorkspace({
       )}
       <div
         className={cx(
-          "min-h-0 min-w-0 flex-1 flex-col bg-[var(--ds-bg-workspace)]",
-          mobilePane === "prompt" ? "flex pb-16 lg:pb-0" : "hidden lg:flex"
+          "quick-script-prompt-pane min-h-0 min-w-0 flex-1 flex-col bg-[var(--ds-bg-workspace)]",
+          result ? "lg:w-[40%] lg:flex-none lg:border-r lg:border-[var(--ds-border-subtle)]" : "",
+          mobilePane === "prompt" ? `flex ${result ? "pb-16 lg:pb-0" : ""}` : "hidden lg:flex"
         )}
         data-testid="quick-prompt-pane"
       >
@@ -189,25 +369,31 @@ export default function QuickScriptWorkspace({
             )}
 
             {!result && status === "idle" && (
-            <div className="space-y-5 py-2 sm:py-6">
-              <div className="max-w-xl">
+            <div className="quick-script-start py-2 sm:py-6">
+              <div className="quick-script-start__intro">
                 <p className="quick-script-phase text-xs font-medium text-[var(--ds-accent)]">SCRIPT / NEW REQUEST</p>
-                <h1 className="quick-script-heading pc-display-heading mt-2 text-[2rem] leading-tight text-[var(--ds-text)] sm:text-[2.5rem]">Build one focused Roblox script</h1>
+                <h1 className="quick-script-heading pc-display-heading mt-2 text-[2rem] leading-tight text-[var(--ds-text)] sm:text-[2.25rem]">
+                  Build one <span>focused Roblox script</span>
+                </h1>
                 <p className="mt-3 text-sm leading-relaxed text-[var(--ds-text-muted)]">
                   Describe the behavior and placement. Quick returns ready-to-use Luau with setup and testing guidance.
                 </p>
               </div>
-              <div>
-                <h2 className="mb-2 text-xs font-medium text-[var(--ds-text-muted)]">Try an example</h2>
-                <div className="grid gap-0">
+              <div className="quick-script-start__composer">{composer}</div>
+              <div className="quick-script-examples">
+                <h2>Start with an example</h2>
+                <div className="quick-script-examples__grid">
                   {EXAMPLES.map((example) => (
                     <button
-                      key={example}
+                      key={example.prompt}
                       type="button"
-                      onClick={() => setPrompt(example)}
-                      className="min-h-11 border-x-0 border-b-0 border-t border-[var(--ds-border-subtle)] bg-transparent px-0 py-3.5 text-left text-sm leading-relaxed text-[var(--ds-text-secondary)] transition-[border-color,color] duration-150 hover:border-[var(--ds-accent)] hover:text-[var(--ds-text)] focus-ring motion-reduce:transition-none"
+                      onClick={() => setPrompt(example.prompt)}
+                      className="quick-script-example focus-ring"
                     >
-                      {example}
+                      <small>{example.type}</small>
+                      <strong>{example.title}</strong>
+                      <span>{example.prompt}</span>
+                      <i aria-hidden="true">Use prompt →</i>
                     </button>
                   ))}
                 </div>
@@ -283,91 +469,23 @@ export default function QuickScriptWorkspace({
           </div>
         </div>
 
+        {(result || status !== "idle") ? (
         <div className="pc-page-gutter shrink-0 bg-[var(--ds-bg-workspace)] py-3">
           <div className="mx-auto max-w-[800px]">
-            <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (canSubmit) onGenerate?.();
-            }}
-            className="group relative"
-          >
-            <div className="quick-script-composer relative flex flex-col gap-2 border border-[var(--ds-border)] bg-[var(--ds-surface-1)] p-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <div
-                  className={cx(
-                    "quick-script-run-state inline-flex h-8 items-center border px-3 text-[11px] font-medium",
-                    isGenerating
-                      ? "border-[var(--ds-success)] text-[var(--ds-success)]"
-                      : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)]"
-                  )}
-                  aria-live="polite"
-                >
-                  {isGenerating ? quickScript?.stage || "Working" : "Ready"}
-                </div>
-                <div className="hidden h-px min-w-[1rem] flex-1 bg-[var(--ds-fill-subtle)] sm:block" />
-              {onImprovePrompt && (
-                <button
-                  type="button"
-                  onClick={() => onImprovePrompt()}
-                  disabled={isGenerating || isImproving || !String(prompt || "").trim()}
-                  data-tour="improve-btn"
-                  className="quick-script-text-action inline-flex min-h-[44px] items-center gap-1.5 border-b border-[var(--ds-accent-border)] px-3 text-[11px] font-medium text-[var(--ds-accent)] hover:text-[var(--ds-text)] focus-ring disabled:cursor-not-allowed disabled:opacity-40"
-                  title="Expand your prompt into a detailed brief"
-                >
-                  {isImproving ? <Loader className="h-3 w-3 animate-spin" /> : <SlidersHorizontal className="h-3 w-3" />}
-                  {isImproving ? "Improving" : "Improve"}
-                </button>
-              )}
-              </div>
-              <div className="quick-script-prompt-field flex items-end gap-2 border border-transparent bg-transparent p-1.5 focus-within:border-[var(--ds-accent-border)]">
-                <textarea
-                  id="quick-script-prompt"
-                  ref={textareaRef}
-                  value={prompt}
-                  rows={1}
-                  onChange={(event) => setPrompt(event.target.value)}
-                  onFocus={keepPromptVisible}
-                  onKeyDown={handleKeyDown}
-                  onCompositionStart={() => setIsComposing(true)}
-                  onCompositionEnd={() => setIsComposing(false)}
-                  disabled={isGenerating}
-                  data-tour="prompt-input"
-                  placeholder="Describe one Roblox script and where it should go."
-                  className="min-h-[44px] max-h-[140px] flex-1 resize-none bg-transparent px-2 py-2.5 text-sm leading-relaxed text-[var(--ds-text)] outline-none placeholder:text-[var(--ds-text-muted)] disabled:opacity-60 md:text-[15px]"
-                  aria-label="Quick Script prompt"
-                  aria-describedby="quick-script-help"
-                  aria-invalid={Boolean(quickScript?.error && !result)}
-                />
-                <button
-                  type="submit"
-                  disabled={!canSubmit}
-                  data-tour="generate-btn"
-                  className="quick-script-submit flex h-11 w-11 shrink-0 items-center justify-center border border-[var(--ds-text)] bg-[var(--ds-text)] text-[var(--ds-bg-canvas)] hover:bg-[var(--ds-text-secondary)] focus-ring disabled:cursor-not-allowed disabled:opacity-50"
-                  aria-label={isGenerating ? "Generation in progress" : result ? "Generate updated script" : "Generate script"}
-                  title={isGenerating ? "Generation in progress" : result ? "Generate updated script" : "Generate script"}
-                >
-                  {isGenerating ? <Loader className="h-5 w-5 animate-spin" /> : <SendPrompt className="h-5 w-5" />}
-                </button>
-              </div>
-              <div id="quick-script-help" className="flex flex-wrap items-center justify-between gap-2 px-1 text-[10px] font-semibold text-[var(--ds-text-muted)]">
-                <span>Enter to send · Shift + Enter for a new line</span>
-                <span>{String(prompt || "").trim().length} characters</span>
-              </div>
-            </div>
-            </form>
+            {composer}
           </div>
         </div>
+        ) : null}
       </div>
 
+      {result ? (
       <div
         className={cx(
-          "w-full min-h-0 flex-col bg-[var(--ds-bg-workspace)] lg:w-[46%] lg:min-w-[420px] lg:max-w-[720px] lg:shrink-0 lg:border-l xl:w-[42%] 2xl:w-[38%] border-[var(--ds-border-subtle)]",
+          "w-full min-h-0 flex-col bg-[var(--ds-bg-workspace)] lg:flex-1",
           mobilePane === "result" ? "flex pb-16 lg:pb-0" : "hidden lg:flex"
         )}
         data-testid="quick-result-pane"
       >
-        {result ? (
           <Tabs defaultValue="code" className="flex-1 flex flex-col min-h-0">
             <div className="flex min-h-[60px] shrink-0 flex-col gap-3 border-b border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
@@ -482,26 +600,10 @@ export default function QuickScriptWorkspace({
               </TabsContent>
             </div>
           </Tabs>
-        ) : (
-          <div className="quick-script-empty flex-1 flex flex-col justify-center p-8 bg-[var(--ds-bg-workspace)]" data-tour="code-output">
-            <p className="quick-script-phase">CODE / WAITING FOR REQUEST</p>
-            <h2 className="pc-display-heading text-2xl text-[var(--ds-accent)]">One prompt, one focused script.</h2>
-            <p className="mt-2 text-xs text-[var(--ds-text-muted)] max-w-xs leading-relaxed">
-              Quick compiles functional Luau code, placement directories, step-by-step setup guides, verification tests, and syntax diagnostics instantly.
-            </p>
-            <div className="mt-5 flex items-center gap-3 text-[10px] border-t border-[var(--ds-border-subtle)] pt-4 w-full max-w-[240px]">
-              <a href="/roblox-lua-script-generator" className="inline-flex min-h-[44px] items-center text-[var(--ds-text-secondary)] transition-colors hover:text-[var(--ds-accent)] focus-ring">
-                Luau examples
-              </a>
-              <span className="text-[var(--ds-text-muted)]">|</span>
-              <a href="/roblox-gui-maker" className="inline-flex min-h-[44px] items-center text-[var(--ds-text-secondary)] transition-colors hover:text-[var(--ds-accent)] focus-ring">
-                GUI help
-              </a>
-            </div>
-          </div>
-        )}
       </div>
+      ) : null}
 
+      {result ? (
       <nav
         className="quick-script-mobile-states fixed inset-x-0 bottom-0 z-50 flex items-center border-t border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] lg:hidden"
         aria-label="Quick Script workspace"
@@ -529,6 +631,7 @@ export default function QuickScriptWorkspace({
           );
         })}
       </nav>
+      ) : null}
     </section>
   );
 }

@@ -9,7 +9,7 @@
 .operations,
 .alert,
 .disclaimer {
-  width: min(100% - 46px, 1240px);
+  width: min(100% - 40px, var(--nx-content-compact));
   margin-inline: auto;
 }
 
@@ -40,7 +40,7 @@
 
 .intro h1 {
   max-width: 10ch;
-  font-size: clamp(3rem, 6vw, 3.625rem);
+  font-size: clamp(2.4rem, 5vw, 3.1rem);
 }
 
 .introCopy {
@@ -104,8 +104,8 @@
 .release {
   display: grid;
   grid-template-columns: minmax(15rem, 0.75fr) minmax(20rem, 1.25fr) minmax(12rem, 0.55fr);
-  gap: var(--nx-space-5);
-  padding: var(--nx-space-5) 0;
+  gap: var(--nx-space-4);
+  padding: var(--nx-space-4) 0;
   border-top: 1px solid var(--nx-rule);
 }
 
@@ -133,7 +133,7 @@
   margin: var(--nx-space-3) 0 0;
   color: var(--nx-purple);
   font-family: var(--nx-font-display);
-  font-size: clamp(2.25rem, 4vw, 3.625rem);
+  font-size: clamp(1.8rem, 3.5vw, 2.75rem);
   font-weight: 620;
   line-height: 0.92;
 }
@@ -210,7 +210,7 @@
 }
 
 .operations h2 {
-  font-size: clamp(2.5rem, 5vw, 3.625rem);
+  font-size: clamp(2rem, 4vw, 2.8rem);
 }
 
 .operations ol {
@@ -271,7 +271,7 @@
   .operations,
   .alert,
   .disclaimer {
-    width: min(100% - 30px, 1240px);
+    width: min(100% - 24px, var(--nx-content-compact));
   }
 
   .intro {
@@ -279,7 +279,7 @@
   }
 
   .intro h1 {
-    font-size: clamp(2.75rem, 15vw, 3.625rem);
+    font-size: clamp(2.35rem, 13vw, 3.25rem);
   }
 
   .alert,

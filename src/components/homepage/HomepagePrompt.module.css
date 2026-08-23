@@ -1,0 +1,524 @@
+.composer {
+  position: relative;
+  isolation: isolate;
+  display: block;
+  width: min(var(--homepage-composer-width, 680px), 100%);
+  margin-top: 24px;
+  padding: 3px;
+  overflow: visible;
+  border: 1px solid color-mix(in srgb, var(--nx-purple) 38%, var(--nx-rule));
+  border-radius: var(--nx-radius-pill);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--nx-card) 92%, var(--nx-purple-soft)), var(--nx-card));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--nx-purple) 16%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--nx-purple) 12%, transparent),
+    0 12px 32px rgb(0 0 0 / 32%),
+    0 0 24px color-mix(in srgb, var(--nx-purple) 8%, transparent);
+  text-align: left;
+}
+
+.composer:focus-within {
+  border-color: color-mix(in srgb, var(--nx-purple) 72%, var(--nx-rule));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--nx-purple) 18%, transparent),
+    0 0 0 2px var(--nx-focus-ring),
+    0 12px 32px rgb(0 0 0 / 34%),
+    0 0 22px color-mix(in srgb, var(--nx-purple) 9%, transparent);
+}
+
+.promptSurface {
+  position: relative;
+  display: grid;
+  min-height: 54px;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 6px;
+  border-radius: inherit;
+}
+
+.modeControl {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.modeTrigger {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  place-items: center;
+  border: 2px dashed color-mix(in srgb, var(--nx-purple) 82%, var(--nx-text));
+  border-radius: var(--nx-radius-pill);
+  background: color-mix(in srgb, var(--nx-purple) 5%, transparent);
+  color: var(--nx-purple-strong);
+  cursor: pointer;
+  transition:
+    background-color var(--nx-motion-color) ease,
+    border-color var(--nx-motion-color) ease,
+    transform var(--nx-motion-elevation) ease;
+}
+
+.modeTrigger:hover,
+.modeTrigger[aria-expanded="true"] {
+  border-color: var(--nx-purple-strong);
+  background: var(--nx-purple-soft);
+}
+
+.modeTrigger:active {
+  transform: scale(0.96);
+}
+
+.modeTrigger:focus-visible {
+  outline: 3px solid var(--nx-focus-ring);
+  outline-offset: 3px;
+}
+
+.modeTrigger svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.8;
+}
+
+.currentModeIcon {
+  display: grid;
+  place-items: center;
+  animation: mode-icon-in 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.currentModeIcon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.modeAddBadge {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: grid;
+  width: 14px;
+  height: 14px;
+  place-items: center;
+  border: 2px solid var(--nx-card);
+  border-radius: var(--nx-radius-pill);
+  background: var(--nx-purple);
+  color: var(--nx-canvas);
+  transition: transform var(--nx-motion-elevation) cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modeTrigger[aria-expanded="true"] .modeAddBadge {
+  transform: rotate(90deg);
+}
+
+.modeAddBadge svg {
+  width: 8px;
+  height: 8px;
+  stroke-width: 2.5;
+}
+
+.modeMenu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 12px);
+  left: 0;
+  display: grid;
+  width: 180px;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--nx-rule-strong);
+  border-radius: var(--nx-radius-panel);
+  background: var(--nx-card);
+  box-shadow: var(--nx-shadow-floating);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px) scale(0.98);
+  transform-origin: top left;
+  transition:
+    opacity var(--nx-motion-color) ease,
+    transform var(--nx-motion-spatial) ease;
+}
+
+.modeMenuOpen {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+.modeMenuOpen .modeButton {
+  animation: mode-option-in 180ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.modeMenuOpen .modeButton:nth-child(2) {
+  animation-delay: 30ms;
+}
+
+.modeMenuOpen .modeButton:nth-child(3) {
+  animation-delay: 60ms;
+}
+
+.modeButton {
+  display: grid;
+  min-height: 40px;
+  grid-template-columns: 30px 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--nx-radius-control);
+  background: transparent;
+  color: var(--nx-text-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    color var(--nx-motion-color) ease,
+    background-color var(--nx-motion-color) ease,
+    border-color var(--nx-motion-color) ease;
+}
+
+.modeButton:hover {
+  background: var(--nx-muted-surface);
+  color: var(--nx-text);
+}
+
+.modeButton:focus-visible {
+  outline: 3px solid var(--nx-focus-ring);
+  outline-offset: 1px;
+}
+
+.modeButtonActive,
+.modeButtonActive:hover {
+  border-color: color-mix(in srgb, var(--nx-purple) 42%, transparent);
+  background: var(--nx-purple-soft);
+  color: var(--nx-text);
+}
+
+.modeButton strong {
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.modeIcon {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: var(--nx-radius-control);
+  background: var(--nx-muted-surface);
+  color: var(--nx-text-muted);
+}
+
+.modeButtonActive .modeIcon {
+  color: var(--nx-purple-strong);
+}
+
+.modeIcon svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.promptField {
+  position: relative;
+  min-width: 0;
+}
+
+.promptFieldOverflowing::after {
+  position: absolute;
+  top: 5px;
+  right: 0;
+  bottom: 5px;
+  width: 30px;
+  background: linear-gradient(90deg, transparent, var(--nx-card) 78%);
+  content: "";
+  pointer-events: none;
+  transition: opacity var(--nx-motion-color) ease;
+}
+
+.promptFieldOverflowing:focus-within::after {
+  opacity: 0;
+}
+
+.textarea {
+  width: 100%;
+  height: 46px;
+  min-height: 46px !important;
+  resize: none;
+  overflow: hidden;
+  white-space: nowrap;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--nx-text) !important;
+  box-shadow: none !important;
+  padding: 11px 4px !important;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.textarea::placeholder {
+  color: var(--nx-text-muted);
+}
+
+.textarea:focus-visible {
+  outline: 0;
+  box-shadow: none !important;
+}
+
+.actionBar {
+  display: grid;
+  place-items: center;
+}
+
+.submitButton {
+  display: grid !important;
+  width: 40px;
+  min-width: 40px !important;
+  height: 40px;
+  min-height: 40px !important;
+  padding: 0 !important;
+  place-items: center;
+  border: 0 !important;
+  border-radius: var(--nx-radius-pill) !important;
+  background: var(--nx-purple) !important;
+  color: var(--nx-canvas) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--nx-text) 24%, transparent),
+    0 0 22px color-mix(in srgb, var(--nx-purple) 34%, transparent) !important;
+  cursor: pointer;
+  transition:
+    background-color var(--nx-motion-color) ease,
+    transform var(--nx-motion-elevation) ease,
+    box-shadow var(--nx-motion-elevation) ease !important;
+}
+
+.submitButton:hover:not(:disabled) {
+  background: var(--nx-purple-strong) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--nx-text) 28%, transparent),
+    0 0 28px color-mix(in srgb, var(--nx-purple) 48%, transparent) !important;
+  transform: scale(1.04);
+}
+
+.submitButton:active:not(:disabled) {
+  background: var(--nx-purple-muted) !important;
+  box-shadow:
+    inset 0 1px 2px color-mix(in srgb, var(--nx-canvas) 42%, transparent),
+    0 0 12px color-mix(in srgb, var(--nx-purple) 24%, transparent) !important;
+  transform: scale(0.97);
+}
+
+.submitButton:disabled {
+  background: color-mix(in srgb, var(--nx-raised-surface) 84%, var(--nx-purple)) !important;
+  color: var(--nx-text-muted) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nx-purple) 18%, transparent) !important;
+  cursor: not-allowed;
+}
+
+.submitButton svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.composerReady:not(.composerSubmitting) .submitButton:not(:disabled) {
+  animation: ready-pulse 360ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.composerSubmitting .submitButton svg {
+  animation: submit-icon-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.submissionSweep {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.submissionSweep::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 18%,
+    color-mix(in srgb, var(--nx-purple) 24%, transparent) 50%,
+    transparent 82%
+  );
+  content: "";
+  transform: translateX(-115%);
+  animation: submission-sweep 300ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes mode-icon-in {
+  from {
+    opacity: 0;
+    transform: scale(0.72) rotate(-10deg);
+  }
+}
+
+@keyframes mode-option-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+@keyframes ready-pulse {
+  0%, 100% {
+    filter: none;
+  }
+
+  48% {
+    filter: brightness(1.13) drop-shadow(0 0 9px color-mix(in srgb, var(--nx-purple) 52%, transparent));
+  }
+}
+
+@keyframes submit-icon-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6) rotate(-12deg);
+  }
+}
+
+@keyframes submission-sweep {
+  to {
+    transform: translateX(115%);
+  }
+}
+
+.submitLabel,
+.srOnly,
+.assistiveMessage {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.message {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 60px;
+  margin: 0;
+  color: var(--nx-text-muted);
+  font-size: 0.78rem;
+}
+
+.error {
+  color: var(--nx-danger);
+  font-weight: 650;
+}
+
+@media (max-width: 640px) {
+  .promptSurface {
+    min-height: 52px;
+    grid-template-columns: 48px minmax(0, 1fr) 48px;
+    gap: 4px;
+  }
+
+  .modeTrigger {
+    width: 44px;
+    height: 44px;
+  }
+
+  .modeMenu {
+    top: calc(100% + 10px);
+  }
+
+  .textarea {
+    height: 48px;
+    min-height: 48px !important;
+    padding-block: 12px !important;
+    font-size: 1rem;
+  }
+
+  .submitButton {
+    width: 44px;
+    min-width: 44px !important;
+    height: 44px;
+    min-height: 44px !important;
+  }
+
+  .message {
+    left: 52px;
+  }
+}
+
+@media (pointer: coarse) {
+  .promptSurface {
+    min-height: 52px;
+    grid-template-columns: 48px minmax(0, 1fr) 48px;
+    gap: 4px;
+  }
+
+  .modeTrigger,
+  .submitButton {
+    width: 44px;
+    min-width: 44px !important;
+    height: 44px;
+    min-height: 44px !important;
+  }
+
+  .modeButton {
+    min-height: var(--nx-touch-target);
+  }
+
+  .textarea {
+    height: 48px;
+    min-height: 48px !important;
+    padding-block: 12px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modeTrigger,
+  .modeMenu,
+  .submitButton {
+    transition: none !important;
+  }
+
+  .modeTrigger:active,
+  .submitButton:hover:not(:disabled),
+  .submitButton:active:not(:disabled) {
+    transform: none;
+  }
+
+  .currentModeIcon,
+  .modeMenuOpen .modeButton,
+  .composerReady:not(.composerSubmitting) .submitButton:not(:disabled),
+  .composerSubmitting .submitButton svg,
+  .submissionSweep::after {
+    animation: none !important;
+  }
+
+  .modeAddBadge {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .composer,
+  .modeTrigger,
+  .modeMenu,
+  .modeButtonActive,
+  .submitButton {
+    border: 2px solid CanvasText !important;
+  }
+}

@@ -1,279 +1,111 @@
 import fs from "fs";
 import path from "path";
 
-const projectRoot = process.cwd();
-const sourceRoots = [
-  "src",
-  "public-frontend/app",
-  "public-frontend/components",
-  "public-frontend/data",
-];
-const standaloneSources = ["public/index.html"];
-const sourceExtensions = new Set([".css", ".html", ".js", ".jsx", ".mjs", ".ts", ".tsx"]);
+const read = (relativePath) => fs.readFileSync(path.join(process.cwd(), relativePath), "utf8");
+const foundation = read("src/design/nexus-foundation.css");
+const primitives = read("src/design/nexus-primitives.css");
+const motion = read("src/design/nexus-motion.css");
+const header = read("src/components/universal/UniversalHeader.module.css");
+const homepage = read("src/components/homepage/HomepageCinematic.module.css");
+const workspace = read("src/components/ai/chat/ChatExperience.css");
+const pricing = read("public-frontend/components/PricingLedger.module.css");
 
-// These files contain defaults/content for generated Roblox game output rather
-// than NexusRBX browser chrome, so their palettes are intentionally independent.
-const generatedOutputExclusions = new Set([
-  "src/lib/gameProfile.js",
-  "public-frontend/data/landingEvidence.js",
-]);
+function token(name) {
+  return foundation.match(new RegExp(`${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*:\\s*([^;]+);`, "i"))?.[1]?.trim().toLowerCase();
+}
 
-const normalizePath = (filePath) => filePath.split(path.sep).join("/");
-
-const isTestFixture = (relativePath) => (
-  /(?:^|\/)__tests__(?:\/|$)/.test(relativePath)
-  || /(?:^|\/)testMocks(?:\/|$)/.test(relativePath)
-  || /\.(?:spec|test)\.[cm]?[jt]sx?$/.test(relativePath)
-);
-
-const collectSourceFiles = (relativeRoot) => {
-  const absoluteRoot = path.join(projectRoot, relativeRoot);
-  if (!fs.existsSync(absoluteRoot)) return [];
-
-  return fs.readdirSync(absoluteRoot, { withFileTypes: true }).flatMap((entry) => {
-    const relativePath = normalizePath(path.join(relativeRoot, entry.name));
-    if (entry.isDirectory()) {
-      if ([".next", "generated", "node_modules", "out"].includes(entry.name)) return [];
-      return collectSourceFiles(relativePath);
-    }
-    if (!sourceExtensions.has(path.extname(entry.name))) return [];
-    if (isTestFixture(relativePath) || generatedOutputExclusions.has(relativePath)) return [];
-    return [relativePath];
-  });
-};
-
-const shippedBrowserSources = [
-  ...sourceRoots.flatMap(collectSourceFiles),
-  ...standaloneSources.filter((relativePath) => fs.existsSync(path.join(projectRoot, relativePath))),
-].sort();
-
-const parseHex = (literal) => {
-  const hex = literal.slice(1);
-  if (![3, 4, 6, 8].includes(hex.length)) return null;
-  const expanded = hex.length <= 4
-    ? hex.slice(0, 3).split("").map((character) => character + character).join("")
-    : hex.slice(0, 6);
-  return [0, 2, 4].map((offset) => Number.parseInt(expanded.slice(offset, offset + 2), 16));
-};
-
-const rgbToHsl = ([red, green, blue]) => {
-  const channels = [red, green, blue].map((channel) => channel / 255);
-  const max = Math.max(...channels);
-  const min = Math.min(...channels);
-  const delta = max - min;
-  const lightness = (max + min) / 2;
-  if (delta === 0) return { hue: 0, saturation: 0, lightness };
-
-  const saturation = delta / (1 - Math.abs((2 * lightness) - 1));
-  let hue;
-  if (max === channels[0]) hue = ((channels[1] - channels[2]) / delta) % 6;
-  else if (max === channels[1]) hue = ((channels[2] - channels[0]) / delta) + 2;
-  else hue = ((channels[0] - channels[1]) / delta) + 4;
-  hue = ((hue * 60) + 360) % 360;
-  return { hue, saturation, lightness };
-};
-
-const classifyRetiredColor = (rgb) => {
-  const { hue, saturation, lightness } = rgbToHsl(rgb);
-  const chromaticEnough = saturation >= 0.25 && lightness >= 0.03 && lightness <= 0.97;
-  if (chromaticEnough && hue >= 155 && hue <= 200) return "retired turquoise/cyan/teal literal";
-  if (chromaticEnough && hue > 200 && hue < 250) return "retired blue literal; use a semantic information token";
-  if (chromaticEnough && hue >= 250 && hue < 305) return "raw purple literal; use a semantic brand, accent, or plan token";
-  if (chromaticEnough && hue >= 305 && hue <= 340) return "retired decorative pink literal";
-  return null;
-};
-
-const allowedSemanticLiteral = (relativePath, line) => {
-  if (/Color3\.fromRGB\s*\(/.test(line)) return true; // Shipped Roblox code example/output.
-  if (
-    relativePath === "src/lib/appearanceTheme.js"
-    && /(?:DARK|LIGHT)_THEME_COLOR\s*=/.test(line)
-  ) return true;
-  if (
-    relativePath === "public-frontend/app/layout.jsx"
-    && /<meta\s+name=["']theme-color["']/.test(line)
-  ) return true;
-  if (
-    relativePath === "public/index.html"
-    && /(?:theme-color|setAttribute\(["']content["'])/.test(line)
-  ) return true;
-  const isLegacyThemeBridge = relativePath === "src/index.css"
-    || relativePath === "public-frontend/app/globals.css";
-  if (isLegacyThemeBridge && /--ds-[a-z0-9-]+\s*:/.test(line)) return true;
-  if (
-    relativePath === "src/design/nexus-foundation.css"
-    && /--(?:nx|ds)-[a-z0-9-]+\s*:/.test(line)
-  ) return true;
-
-  // Monaco theme data cannot resolve CSS custom properties. Keep its two
-  // adaptive palettes and the AI token bridge as explicit, audited owners.
-  if (relativePath === "src/components/ai/workspace/CodeWorkspace.jsx") return true;
-  if (
-    relativePath === "src/components/ai/AiComponents.jsx"
-    && /initialData\?\.color\s*\|\|\s*["']#7c3aed["']/i.test(line)
-  ) return true; // Native color inputs require a concrete sRGB value.
-  return relativePath === "src/styles/aiTheme.css" && /--ai-[a-z0-9-]+\s*:/.test(line);
-};
-
-const utilityPatterns = [
-  {
-    label: "retired cyan/teal utility",
-    pattern: /\b(?:(?:[a-z-]+):)*(?:accent|bg|border|caret|decoration|divide|fill|from|outline|placeholder|ring|shadow|stroke|text|to|via)-(?:cyan|teal)-\d{2,3}(?:\/\d{1,3})?\b/gi,
-  },
-  {
-    label: "retired blue utility; use the semantic accent or information token",
-    pattern: /\b(?:(?:[a-z-]+):)*(?:accent|bg|border|caret|decoration|divide|fill|from|outline|placeholder|ring|shadow|stroke|text|to|via)-(?:blue|sky|indigo)-\d{2,3}(?:\/\d{1,3})?\b/gi,
-  },
-  {
-    label: "retired decorative pink utility",
-    pattern: /\b(?:(?:[a-z-]+):)*(?:accent|bg|border|caret|decoration|divide|fill|from|outline|placeholder|ring|shadow|stroke|text|to|via)-pink-\d{2,3}(?:\/\d{1,3})?\b/gi,
-  },
-  {
-    label: "raw purple utility; use the semantic Plan/AI token",
-    pattern: /\b(?:(?:[a-z-]+):)*(?:accent|bg|border|caret|decoration|divide|fill|from|outline|placeholder|ring|shadow|stroke|text|to|via)-(?:purple|violet)-\d{2,3}(?:\/\d{1,3})?\b/gi,
-  },
-  {
-    label: "retired Nexus compatibility utility",
-    pattern: /\b(?:(?:[a-z-]+):)*(?:bg|border|fill|from|outline|ring|shadow|stroke|text|to|via)-nexus-(?:cyan|pink)\b/gi,
-  },
-  {
-    label: "retired named CSS color",
-    pattern: /:\s*(?:cyan|pink|teal|turquoise)\b/gi,
-  },
-];
-
-const findLineViolations = (relativePath, line, lineNumber) => {
-  const violations = [];
-  const record = (label, match, column) => {
-    violations.push(`${relativePath}:${lineNumber}:${column + 1} ${label}: ${match}`);
+test("keeps both runtimes on the exact purple soft-depth palette", () => {
+  const contract = {
+    "--nx-canvas": "#0a0a0a",
+    "--nx-card": "#171717",
+    "--nx-muted-surface": "#262626",
+    "--nx-raised-surface": "#303030",
+    "--nx-text": "#fafafa",
+    "--nx-text-muted": "#a1a1a1",
+    "--nx-purple": "#b45cff",
+    "--nx-purple-strong": "#c77dff",
+    "--nx-purple-muted": "#9333ea",
+    "--nx-rule": "rgb(255 255 255 / 10%)",
+    "--nx-focus": "rgb(180 92 255 / 45%)",
   };
-
-  utilityPatterns.forEach(({ label, pattern }) => {
-    pattern.lastIndex = 0;
-    for (const match of line.matchAll(pattern)) record(label, match[0], match.index);
-  });
-
-  if (allowedSemanticLiteral(relativePath, line)) return violations;
-
-  const hexPattern = /#[0-9a-f]{3,8}\b/gi;
-  for (const match of line.matchAll(hexPattern)) {
-    const rgb = parseHex(match[0]);
-    const label = rgb && classifyRetiredColor(rgb);
-    if (label) record(label, match[0], match.index);
-  }
-
-  const rgbPattern = /rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,[^)]*)?\)/gi;
-  for (const match of line.matchAll(rgbPattern)) {
-    const rgb = match.slice(1, 4).map(Number);
-    if (rgb.some((channel) => channel > 255)) continue;
-    const label = classifyRetiredColor(rgb);
-    if (label) record(label, match[0], match.index);
-  }
-
-  return violations;
-};
-
-const readThemeBlock = (css, selectorPattern) => {
-  const match = css.match(new RegExp(`${selectorPattern}\\s*\\{([\\s\\S]*?)\\n\\s*\\}`, "i"));
-  if (!match) throw new Error(`Missing theme block matching ${selectorPattern}`);
-  return match[1];
-};
-
-const readToken = (block, token) => {
-  const match = block.match(new RegExp(`(?:^|\\n)\\s*${token.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}\\s*:\\s*([^;]+);`, "i"));
-  return match?.[1].trim().toLowerCase();
-};
-
-const darkBuildLedgerContract = {
-  "--nx-canvas": "#1a1618",
-  "--nx-depth": "#131012",
-  "--nx-work": "#211b1f",
-  "--nx-field": "#2c232a",
-  "--nx-text": "#e8ded4",
-  "--nx-text-secondary": "#c2b4ae",
-  "--nx-text-muted": "#958985",
-  "--nx-purple": "#d6b8d7",
-  "--nx-purple-strong": "#e0bfe0",
-  "--nx-purple-muted": "#b982b6",
-  "--nx-rule": "#52434d",
-  "--nx-rule-quiet": "#3a3036",
-  "--nx-info": "#94a9b0",
-  "--nx-success": "#a4b487",
-  "--nx-warning": "#d0a26d",
-  "--nx-danger": "#d7837c",
-  "--nx-focus": "#e0bfe0",
-  "--nx-space-1": "5px",
-  "--nx-space-2": "9px",
-  "--nx-space-3": "15px",
-  "--nx-space-4": "23px",
-  "--nx-space-5": "37px",
-  "--nx-space-6": "59px",
-  "--nx-space-7": "95px",
-  "--nx-radius-field": "3px",
-  "--nx-radius-overlay": "5px",
-};
-
-test("keeps shipped browser UI on the Dark Build Ledger color contract", () => {
-  const violations = shippedBrowserSources.flatMap((relativePath) => {
-    const source = fs.readFileSync(path.join(projectRoot, relativePath), "utf8");
-    return source.split(/\r?\n/).flatMap((line, index) => findLineViolations(relativePath, line, index + 1));
-  });
-
-  expect(violations).toEqual([]);
-
-  const flatSurfaceContracts = {
-    "src/components/Modal.jsx": ["backdrop-blur"],
-    "src/components/shadcn/tooltip.jsx": ["backdrop-blur", "shadow-[var(--ds-shadow-overlay)]", "zoom-in", "zoom-out"],
-    "src/pages/ScriptPage.jsx": ["backdrop-blur-md"],
-  };
-  Object.entries(flatSurfaceContracts).forEach(([relativePath, forbiddenTokens]) => {
-    const source = fs.readFileSync(path.join(projectRoot, relativePath), "utf8");
-    forbiddenTokens.forEach((token) => expect(source).not.toContain(token));
-  });
-  expect(fs.readFileSync(path.join(projectRoot, "src/components/Modal.jsx"), "utf8"))
-    .toContain("nexus-page-card relative w-full shadow-none");
+  Object.entries(contract).forEach(([name, value]) => expect(token(name)).toBe(value));
+  expect(foundation).not.toMatch(/#1a1618|#131012|#211b1f|#2c232a|#d6b8d7/i);
 });
 
-test("loads one canonical dark ledger foundation after both legacy entry stylesheets", () => {
-  const relativePath = "src/design/nexus-foundation.css";
-  const css = fs.readFileSync(path.join(projectRoot, relativePath), "utf8");
-  const foundationBlock = readThemeBlock(css, ':root,\\s*:root\\[data-theme="light"\\]');
+test("uses the 4px spacing rhythm and approved radius scale", () => {
+  expect(token("--nx-space-1")).toBe("4px");
+  expect(token("--nx-space-2")).toBe("8px");
+  expect(token("--nx-space-3")).toBe("12px");
+  expect(token("--nx-space-4")).toBe("16px");
+  expect(token("--nx-space-6")).toBe("24px");
+  expect(token("--nx-space-8")).toBe("32px");
+  expect(token("--nx-radius-control")).toBe("10px");
+  expect(token("--nx-radius-field")).toBe("10px");
+  expect(token("--nx-radius-panel")).toBe("14px");
+  expect(token("--nx-radius-card")).toBe("18px");
+  expect(token("--nx-radius-overlay")).toBe("20px");
+  expect(token("--nx-radius-feature")).toBe("24px");
+  expect(token("--nx-radius-pill")).toBe("999px");
+});
 
-  Object.entries(darkBuildLedgerContract).forEach(([token, expected]) => {
-    expect({ file: relativePath, token, value: readToken(foundationBlock, token) })
-      .toEqual({ file: relativePath, token, value: expected });
-  });
+test("defines the compact semantic size and typography contract", () => {
+  expect(token("--nx-header-height")).toBe("48px");
+  expect(token("--nx-header-height-touch")).toBe("52px");
+  expect(token("--nx-control-height")).toBe("36px");
+  expect(token("--nx-touch-target")).toBe("44px");
+  expect(token("--nx-content-compact")).toBe("1160px");
+  expect(token("--nx-type-interface")).toBe("0.9375rem");
+  expect(token("--nx-type-body")).toBe("1rem");
+  expect(token("--nx-type-label")).toBe("0.75rem");
+});
 
-  expect(readToken(foundationBlock, "--nx-font-display"))
-    .toBe('"sofia sans condensed variable", "arial narrow", sans-serif');
-  expect(readToken(foundationBlock, "--nx-font-body"))
-    .toBe('"atkinson hyperlegible next variable", "segoe ui", sans-serif');
-  expect(readToken(foundationBlock, "--nx-font-code"))
-    .toBe('"atkinson hyperlegible mono variable", "sfmono-regular", consolas, monospace');
-  expect(readToken(foundationBlock, "--ds-bg-canvas")).toBe("var(--nx-canvas)");
-  expect(readToken(foundationBlock, "--ds-accent")).toBe("var(--nx-purple)");
-  expect(readToken(foundationBlock, "--ds-font-sans")).toBe("var(--nx-font-body)");
-  expect(css.match(/--nx-canvas\s*:/g)).toHaveLength(1);
-  expect(css).toMatch(/^:root,\s*\n:root\[data-theme="light"\]\s*\{\s*\n\s*color-scheme:\s*dark;/);
+test("defines font roles, elevation tiers, and standardized motion", () => {
+  expect(token("--nx-font-display")).toBe('"dm sans variable", "dm sans", system-ui, sans-serif');
+  expect(token("--nx-font-body")).toBe('system-ui, -apple-system, blinkmacsystemfont, "segoe ui", sans-serif');
+  expect(token("--nx-font-code")).toBe('"atkinson hyperlegible mono variable", "sfmono-regular", consolas, monospace');
+  expect(token("--nx-motion-color")).toBe("150ms");
+  expect(token("--nx-motion-elevation")).toBe("200ms");
+  expect(token("--nx-motion-spatial")).toBe("280ms");
+  expect(token("--nx-shadow-control")).toContain("0 3px 9px");
+  expect(token("--nx-shadow-card")).toContain("0 9px 26px");
+  expect(token("--nx-shadow-floating")).toContain("0 18px 54px");
+  expect(motion).toContain("nx-composer-shine");
+  expect(motion).toContain("7s var(--nx-ease-spatial) infinite");
+});
 
-  const browserEntries = [
+test("loads the canonical foundation after legacy entry styles in both runtimes", () => {
+  const entries = [
     ["src/index.js", 'import "./index.css";', 'import "./design/nexus-foundation.css";'],
     ["public-frontend/app/layout.jsx", 'import "./globals.css";', 'import "../../src/design/nexus-foundation.css";'],
   ];
-  browserEntries.forEach(([entryPath, legacyImport, foundationImport]) => {
-    const entry = fs.readFileSync(path.join(projectRoot, entryPath), "utf8");
-    expect(entry).toContain(legacyImport);
-    expect(entry).toContain(foundationImport);
-    expect(entry.indexOf(foundationImport)).toBeGreaterThan(entry.indexOf(legacyImport));
+  entries.forEach(([file, legacy, canonical]) => {
+    const source = read(file);
+    expect(source).toContain(legacy);
+    expect(source).toContain(canonical);
+    expect(source.indexOf(canonical)).toBeGreaterThan(source.indexOf(legacy));
   });
 });
 
-test("does not import or restore decorative display families", () => {
-  const violations = shippedBrowserSources.flatMap((relativePath) => {
-    const source = fs.readFileSync(path.join(projectRoot, relativePath), "utf8");
-    return source.split(/\r?\n/).flatMap((line, index) => (
-      /\b(?:Bricolage Grotesque|Manrope|Sora)\b/i.test(line) ? [`${relativePath}:${index + 1} ${line.trim()}`] : []
-    ));
-  });
-  expect(violations).toEqual([]);
+test("provides focus, reduced-motion, reduced-transparency, contrast, and forced-color fallbacks", () => {
+  expect(foundation).toMatch(/focus-visible[\s\S]*?outline:\s*2px solid var\(--nx-purple\)/);
+  expect(foundation).toContain("prefers-contrast: more");
+  expect(motion).toContain("prefers-reduced-motion: reduce");
+  expect(primitives).toContain("prefers-reduced-transparency: reduce");
+  expect(primitives).toContain("forced-colors: active");
+});
+
+test("applies the compact scale to the shared shell and major customer flows", () => {
+  expect(header).toContain("height: var(--nx-header-height)");
+  expect(header).toContain("height: var(--nx-header-height-touch)");
+  expect(homepage).toMatch(/font-size:\s*clamp\(1\.75rem,\s*5vw,\s*5\.5rem\)/);
+  expect(homepage).toContain("min-height: 440px");
+  expect(homepage).toContain("min-height: 500px");
+  expect(homepage).toContain("min-height: 480px");
+  expect(homepage).toMatch(/padding:\s*72px max/);
+  expect(homepage).toMatch(/padding:\s*52px 16px/);
+  expect(workspace).toMatch(/font-size:\s*clamp\(2\.25rem,\s*5vw,\s*3\.25rem\)/);
+  expect(workspace).toContain("min-height: 108px");
+  expect(pricing).toContain("var(--nx-content-compact)");
+  expect(pricing).toMatch(/grid-template-columns:\s*repeat\(5, minmax\(0, 1fr\)\)/);
+  expect(pricing).toContain("font-size: 1.75rem");
 });

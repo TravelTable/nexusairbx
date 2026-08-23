@@ -72,14 +72,14 @@
   margin: 0.75rem 0 0;
   color: var(--nx-purple, var(--ds-accent));
   font-family: var(--nx-font-display, var(--ds-font-display));
-  font-size: clamp(2.75rem, 5vw, 3.625rem);
+  font-size: clamp(2.25rem, 4.5vw, 3rem);
   font-weight: 650;
   letter-spacing: 0.005em;
   line-height: 0.94;
 }
 
 .account-ledger-title--compact {
-  font-size: clamp(2.25rem, 4vw, 3.625rem);
+  font-size: clamp(1.9rem, 3.5vw, 2.6rem);
 }
 
 .account-ledger-intro {
@@ -231,7 +231,7 @@
 
 .account-ledger-record {
   min-width: 0;
-  padding: clamp(1.25rem, 3vw, 2rem);
+  padding: clamp(1rem, 2.5vw, 1.5rem);
   border-right: 1px solid var(--nx-rule-quiet, var(--ds-border-subtle));
 }
 
@@ -959,7 +959,7 @@
   }
 
   .account-ledger-title {
-    font-size: clamp(2.5rem, 15vw, 3.625rem);
+    font-size: clamp(2.2rem, 13vw, 3rem);
   }
 
   .account-ledger-filter-bar,

@@ -17,9 +17,11 @@ function renderPicker(onSelectStudioPlace) {
       studioEnabled
       options={[target]}
       onSelectPlace={onSelectStudioPlace}
-    />
+    />,
   );
-  fireEvent.click(screen.getByRole("button", { name: /choose a studio place/i }));
+  fireEvent.click(
+    screen.getByRole("button", { name: /choose a studio place/i }),
+  );
 }
 
 test("keeps the Studio place selector touch-sized below desktop", () => {
@@ -29,10 +31,31 @@ test("keeps the Studio place selector touch-sized below desktop", () => {
       studioEnabled
       options={[target]}
       onSelectPlace={jest.fn()}
-    />
+    />,
   );
 
-  expect(screen.getByRole("button", { name: /choose a studio place/i }).className).toContain("min-h-11");
+  expect(
+    screen.getByRole("button", { name: /choose a studio place/i }).className,
+  ).toContain("min-h-11");
+});
+
+test("opens the existing Studio connection options from the disconnected state", () => {
+  const onRequestConnect = jest.fn();
+  render(
+    <StudioPlaceChip
+      studioEnabled
+      connected={false}
+      onRequestConnect={onRequestConnect}
+    />,
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: /Studio disconnected\. Open connection options/i,
+    }),
+  );
+  expect(onRequestConnect).toHaveBeenCalledTimes(1);
+  expect(screen.getByText("Connect")).toBeTruthy();
 });
 
 test("keeps the picker open when async place selection fails", async () => {
@@ -42,7 +65,9 @@ test("keeps the picker open when async place selection fails", async () => {
   fireEvent.click(screen.getByRole("button", { name: "LocalPlace.rbxl" }));
 
   await waitFor(() => expect(onSelectStudioPlace).toHaveBeenCalledWith(target));
-  expect(screen.getByRole("region", { name: "Studio project selection" })).not.toBeNull();
+  expect(
+    screen.getByRole("region", { name: "Studio project selection" }),
+  ).not.toBeNull();
 });
 
 test("keeps the picker open when a selection handler omits a success result", async () => {
@@ -52,7 +77,9 @@ test("keeps the picker open when a selection handler omits a success result", as
   fireEvent.click(screen.getByRole("button", { name: "LocalPlace.rbxl" }));
 
   await waitFor(() => expect(onSelectStudioPlace).toHaveBeenCalledWith(target));
-  expect(screen.getByRole("region", { name: "Studio project selection" })).not.toBeNull();
+  expect(
+    screen.getByRole("region", { name: "Studio project selection" }),
+  ).not.toBeNull();
 });
 
 test("closes the picker only after explicit async selection success", async () => {
@@ -62,7 +89,9 @@ test("closes the picker only after explicit async selection success", async () =
   fireEvent.click(screen.getByRole("button", { name: "LocalPlace.rbxl" }));
 
   await waitFor(() => {
-    expect(screen.queryByRole("region", { name: "Studio project selection" })).toBeNull();
+    expect(
+      screen.queryByRole("region", { name: "Studio project selection" }),
+    ).toBeNull();
   });
 });
 
@@ -74,12 +103,16 @@ test("keeps unpublished local places visible but unavailable", () => {
       studioEnabled
       options={[{ id: "studio_target_draft", label: "Draft.rbxl" }]}
       onSelectPlace={onSelectStudioPlace}
-    />
+    />,
   );
 
-  fireEvent.click(screen.getByRole("button", { name: /choose a studio place/i }));
+  fireEvent.click(
+    screen.getByRole("button", { name: /choose a studio place/i }),
+  );
   expect(screen.getByText(/publish this local place to roblox/i)).toBeTruthy();
-  expect(screen.getByRole("button", {
-    name: /Draft\.rbxl Publish to Roblox before using Agent Build/i,
-  }).disabled).toBe(true);
+  expect(
+    screen.getByRole("button", {
+      name: /Draft\.rbxl Publish to Roblox before using Agent Build/i,
+    }).disabled,
+  ).toBe(true);
 });

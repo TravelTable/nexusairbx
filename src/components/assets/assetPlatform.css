@@ -511,10 +511,16 @@
 .asset-lifecycle-timeline__stage.is-complete svg { border-color: color-mix(in srgb, var(--asset-success) 42%, transparent); }
 .asset-lifecycle-timeline__stage.is-active { color: var(--ds-info); }
 .asset-lifecycle-timeline__stage.is-active svg { border-color: var(--ds-accent); box-shadow: 0 0 0 3px var(--ds-accent-soft); }
+.asset-lifecycle-timeline__stage.is-active svg { animation: asset-lifecycle-signal 2s var(--nx-ease-state) infinite; }
 .asset-lifecycle-timeline__stage.is-error { color: var(--asset-danger); }
 .asset-lifecycle-timeline__stage.is-error svg { border-color: color-mix(in srgb, var(--asset-danger) 62%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--asset-danger) 9%, transparent); }
 .asset-lifecycle-timeline__stage.is-blocked { color: var(--asset-warning); }
 .asset-lifecycle-timeline__stage.is-blocked svg { border-color: color-mix(in srgb, var(--asset-warning) 58%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--asset-warning) 8%, transparent); }
+
+@keyframes asset-lifecycle-signal {
+  0%, 100% { box-shadow: 0 0 0 3px var(--ds-accent-soft); }
+  50% { box-shadow: 0 0 0 6px transparent, var(--nx-purple-glow); }
+}
 
 .asset-id-value { display: flex; align-items: center; gap: 7px; }
 .asset-copy-button {
@@ -582,7 +588,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .asset-card, .asset-mode-option { transition: none; }
-  .asset-status__icon--spin, .asset-skeleton__preview::after, .asset-skeleton__line::after { animation: none; }
+  .asset-status__icon--spin, .asset-skeleton__preview::after, .asset-skeleton__line::after, .asset-lifecycle-timeline__stage.is-active svg { animation: none; }
 }
 
 /* Icon generator --------------------------------------------------------- */

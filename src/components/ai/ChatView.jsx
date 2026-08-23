@@ -53,6 +53,7 @@ export default function ChatView({
   navigationOpen,
   navigationControls,
   navigationButtonRef,
+  showHeader = true,
 }) {
   const showEmpty = messages.length === 0 && !pendingMessage;
   const rootRef = useRef(null);
@@ -64,20 +65,22 @@ export default function ChatView({
         key={chatId || "new-chat"}
         className="nexus-chat-switch flex h-full min-h-0 min-w-0 w-full max-w-full flex-1 flex-col"
       >
-        <ChatHeader
-          chatTitle={chatTitle}
-          projectTitle={projectTitle}
-          studioConnected={studioConnected}
-          studioConnectionState={studioConnectionState}
-          isBusy={isBusy}
-          onRenameChat={onRenameChat}
-          onOpenNavigation={onOpenNavigation}
-          onOpenPlan={onOpenPlan}
-          workspaceControls={workspaceControls}
-          navigationOpen={navigationOpen}
-          navigationControls={navigationControls}
-          navigationButtonRef={navigationButtonRef}
-        />
+        {showHeader ? (
+          <ChatHeader
+            chatTitle={chatTitle}
+            projectTitle={projectTitle}
+            studioConnected={studioConnected}
+            studioConnectionState={studioConnectionState}
+            isBusy={isBusy}
+            onRenameChat={onRenameChat}
+            onOpenNavigation={onOpenNavigation}
+            onOpenPlan={onOpenPlan}
+            workspaceControls={workspaceControls}
+            navigationOpen={navigationOpen}
+            navigationControls={navigationControls}
+            navigationButtonRef={navigationButtonRef}
+          />
+        ) : null}
         <Conversation className="nexus-conversation-surface h-full min-h-0 w-full flex-1">
           <ConversationContent
             className="nexus-conversation-content mx-auto min-h-full gap-7 py-6 md:py-9"

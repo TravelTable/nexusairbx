@@ -1,31 +1,36 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  homepageExampleBuilds,
-  homepageFocusedTools,
-  homepageGenres,
-  homepageGrowthLoop,
-  homepageHeroPrompt,
-} from "../../content/homepageV2";
+import { useEffect, useRef, useState } from "react";
 import HomepageFooter from "./HomepageFooter";
 import HomepagePrompt from "./HomepagePrompt";
 import styles from "./HomepageCinematic.module.css";
 
-const RUN_RECORD = [
-  { time: "00:00", state: "REQUEST ACCEPTED", detail: "Arcade District / Main place" },
-  { time: "00:03", state: "PROJECT READ", detail: "18 objects / 4 existing systems" },
-  { time: "00:11", state: "CHANGE APPLIED", detail: "4 project objects" },
-  { time: "00:20", state: "TEST FAILED", detail: "Stale player selection", tone: "warning" },
-  { time: "00:31", state: "CORRECTION APPLIED", detail: "Respawn state reset" },
-  { time: "00:39", state: "7 CHECKS PASSED", detail: "Mobile and server paths verified", tone: "success" },
+const HERO_WORDS = ["playable", "testable", "reviewable", "real"];
+const HERO_LETTER_COLORS = ["#eca8d6", "#b591f3", "#81c3f9", "#a2d8a4", "#f8ba48"];
+
+const TOOL_TABS = [
+  { id: "agent", label: "Agent build", title: "Build through conversation", description: "Describe the game, system, or fix. Nexus reads the project, plans the work, and keeps the result attached to one request.", placeholder: "AGENT WORKSPACE SCREENSHOT" },
+  { id: "scripts", label: "Quick scripts", title: "Go from intent to Luau", description: "Generate focused scripts with context, explanations, source safety, and a clean handoff into your existing project.", placeholder: "SCRIPT EDITOR SCREENSHOT" },
+  { id: "studio", label: "Studio sync", title: "Work with the place you have", description: "Pair Roblox Studio, inspect the current object graph, review proposed changes, and restore snapshots when needed.", placeholder: "STUDIO BRIDGE SCREENSHOT" },
+  { id: "assets", label: "Assets", title: "Keep project media together", description: "Create, organize, and reuse icons, decals, interface art, and other project assets without losing the build context.", placeholder: "ASSET LIBRARY SCREENSHOT" },
 ];
 
-const OBJECT_RECORD = [
-  { path: "ReplicatedStorage / ItemDefinitions", state: "READ" },
-  { path: "StarterGui / InventoryView", state: "CHANGE" },
-  { path: "StarterPlayerScripts / InventoryController", state: "CHANGE" },
-  { path: "ServerScriptService / InventoryService", state: "VERIFY" },
+const PROOF_PLACEHOLDERS = ["GAMEPLAY BEFORE / AFTER", "STUDIO CHANGE REVIEW", "MOBILE UI RESULT", "ROUND SYSTEM RESULT", "CREATOR DASHBOARD", "PROJECT TEST RECORD"];
+
+const STACK_ITEMS = [
+  ["01", "Project-aware agent", "Reads the current place and keeps work grounded in the real object tree."],
+  ["02", "Luau generation", "Creates focused client, server, module, and interface code with visible scope."],
+  ["03", "Studio bridge", "Moves approved work into Roblox Studio and reports structured results back."],
+  ["04", "Review and recovery", "Keeps change sets, source matches, snapshots, and restore paths together."],
+  ["05", "Asset workspace", "Organizes generated and uploaded project media in one reusable library."],
+  ["06", "Build history", "Preserves the request, decisions, failures, corrections, and final evidence."],
+];
+
+const FAQ_ITEMS = [
+  ["Can Nexus work with an existing Roblox game?", "Yes. The Studio workflow reads the current project first, then scopes changes around what already exists."],
+  ["Do I need to know Luau?", "No. Describe the outcome in plain language, inspect the generated work, and use explanations whenever you want to learn more."],
+  ["Can I review changes before they reach Studio?", "Yes. Reviewable change sets and explicit Studio actions keep the work visible before it is applied."],
+  ["What can I build?", "Gameplay systems, interfaces, round logic, inventories, focused scripts, project assets, and larger multi-step builds."],
 ];
 
 async function trackHomepageProductEvent(name, properties, options) {
@@ -33,406 +38,137 @@ async function trackHomepageProductEvent(name, properties, options) {
     const { trackProductEvent } = await import("../../lib/productAnalytics");
     await trackProductEvent(name, properties, options);
   } catch (_) {
-    // Public navigation and prompt handoff remain usable without analytics.
+    // Public navigation remains usable without analytics.
   }
 }
 
-function ProjectCutaway() {
+function AnimatedHeroHeading() {
+  const [wordIndex, setWordIndex] = useState(0);
+  const [morphing, setMorphing] = useState(false);
+
+  useEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return undefined;
+    const intervalId = window.setInterval(() => setMorphing(true), 3000);
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    if (!morphing) return undefined;
+    const timeoutId = window.setTimeout(() => {
+      setWordIndex((current) => (current + 1) % HERO_WORDS.length);
+      setMorphing(false);
+    }, 1150);
+    return () => window.clearTimeout(timeoutId);
+  }, [morphing]);
+
+  const renderLetters = (word, direction) => (
+    <span className={styles.morphWord} data-direction={direction} aria-hidden="true">
+      {[...word].map((letter, index) => (
+        <span key={`${direction}-${letter}-${index}`} style={{ "--letter-delay": `${index * 42}ms`, "--letter-color": HERO_LETTER_COLORS[index % HERO_LETTER_COLORS.length] }}>{letter}</span>
+      ))}
+    </span>
+  );
+
+  const currentWord = HERO_WORDS[wordIndex];
+  const nextWord = HERO_WORDS[(wordIndex + 1) % HERO_WORDS.length];
+
   return (
-    <figure className={styles.projectCutaway} aria-labelledby="project-cutaway-caption">
-      <div className={styles.projectImageField}>
+    <h1 id="homepage-hero-heading" aria-label={`Build your Roblox game. Make it ${currentWord}.`} className={styles.heroHeading}>
+      <span className={styles.heroHeadingLine}>Build your Roblox game.</span>
+      <span className={styles.heroHeadingLine}>Make it{" "}<span className={styles.morphStage}>{renderLetters(currentWord, morphing ? "out" : "rest")}{morphing ? renderLetters(nextWord, "in") : null}</span></span>
+    </h1>
+  );
+}
+
+function ImagePlaceholder({ label, size, compact = false }) {
+  return (
+    <div className={`${styles.imagePlaceholder} ${compact ? styles.imagePlaceholderCompact : ""}`} role="img" aria-label={`${label} image placeholder`} data-image-placeholder>
+      <span>IMAGE PLACEHOLDER</span><strong>{label}</strong>{size ? <small>{size}</small> : null}
+    </div>
+  );
+}
+
+function Hero({ surface, navigate, inputRef }) {
+  return (
+    <section className={styles.hero} aria-labelledby="homepage-hero-heading" data-home-hero>
+      <div className={styles.heroCopy}>
+        <span className={styles.eyebrow}>AI BUILD WORKSPACE FOR ROBLOX</span>
+        <AnimatedHeroHeading />
+        <p>Talk to your project in plain language. Plan systems, generate Luau, review changes, and move approved work into Studio.</p>
+        <HomepagePrompt surface={surface} source={surface} navigateToAi={navigate} className={styles.heroPrompt} promptId="homepage-hero-prompt" suggestedPrompt="Build a round-based horror game with simple mobile controls and rooms that shift after each round." suggestionVersion={0} submitLabel="Start building" helperText="Your request is saved before the workspace opens." inputRef={inputRef} showLabel />
+        <div className={styles.heroLinks}><a href="/ai">Open workspace</a><a href="/pricing">View pricing</a></div>
+      </div>
+      <div className={styles.heroMedia}>
         <img
-          src="/assets/nexus-world-under-construction-2d.webp"
-          width="1920"
-          height="1072"
-          alt="Roblox-like broken arcade project with rooms, paths, and active construction marks"
-          loading="eager"
-          decoding="async"
-        />
-        <span className={styles.objectLabel} data-position="entry">Workspace / Entry</span>
-        <span className={styles.objectLabel} data-position="round">RoundService / Active</span>
-        <span className={styles.objectLabel} data-position="enemy">EnemyDirector / Read</span>
-        <span className={styles.changeMark} data-position="north" aria-hidden="true">+03</span>
-        <span className={styles.changeMark} data-position="south" aria-hidden="true">~01</span>
-      </div>
-      <figcaption id="project-cutaway-caption">
-        <span>ARCADE DISTRICT / MAIN PLACE</span>
-        <strong>Current snapshot NXS-184</strong>
-        <span className="nx-state-mark" data-state="success">STUDIO READY</span>
-      </figcaption>
-    </figure>
-  );
-}
-
-function RequestOpening({ surface, navigate, promptSuggestion, heroPromptRef }) {
-  return (
-    <section id="product" className={styles.hero} aria-labelledby="homepage-hero-heading" data-home-hero>
-      <div className={styles.requestOpening}>
-        <p className={styles.routeLabel}>REQUEST / 184</p>
-        <h1 id="homepage-hero-heading">Create a round-based horror game in a broken arcade.</h1>
-        <p className={styles.requestContinuation}>Keep mobile controls simple. Make the rooms shift after each round.</p>
-        <dl className={styles.projectRead}>
-          <div>
-            <dt>PROJECT READ</dt>
-            <dd>18 objects / 4 existing systems / 1 blocked remote</dd>
-          </div>
-          <div>
-            <dt>TARGET</dt>
-            <dd>Arcade District / Main place</dd>
-          </div>
-        </dl>
-        <HomepagePrompt
-          surface={surface}
-          source={surface}
-          navigateToAi={navigate}
-          className={styles.heroPrompt}
-          promptId="homepage-hero-prompt"
-          suggestedPrompt={promptSuggestion.value}
-          suggestionVersion={promptSuggestion.version}
-          submitLabel="Run build"
-          helperText="The request is saved before the workspace opens. Review remains part of the build."
-          inputRef={heroPromptRef}
-          showLabel
+          className={styles.heroImage}
+          src="/assets/nexusrbx-roblox-gameplay-hero.png"
+          alt="Roblox character running beside a simple block on a floating grass platform"
         />
       </div>
-      <ProjectCutaway />
     </section>
   );
 }
 
-function ObjectReadRecord() {
+function ProofRail() {
   return (
-    <section className={styles.readRecord} aria-labelledby="read-record-heading">
-      <div className={styles.recordCopy}>
-        <p className={styles.routeLabel}>READ</p>
-        <h2 id="read-record-heading">The project exists before the request.</h2>
-        <p>Nexus traces the current object graph, client/server boundary, UI state, and selected Studio place before it proposes a route.</p>
-      </div>
-      <figure className={styles.xrayField}>
-        <img
-          src="/assets/nexus-project-xray-2d.webp"
-          width="1440"
-          height="960"
-          alt="Technical cutaway connecting a Roblox-like world to its affected project hierarchy"
-          loading="lazy"
-          decoding="async"
-        />
-        <figcaption>REQUEST SCOPE / INVENTORY AND ROUND STATE</figcaption>
-      </figure>
-      <ol className={styles.objectRecord} aria-label="Affected Roblox project objects">
-        {OBJECT_RECORD.map((object) => (
-          <li key={object.path}>
-            <span>{object.path}</span>
-            <strong>{object.state}</strong>
-          </li>
-        ))}
-      </ol>
+    <section className={styles.proofSection} aria-labelledby="proof-heading">
+      <div className={styles.sectionHeading}><h2 id="proof-heading">Show what creators are building with Nexus</h2><p>Replace these slots with project screenshots, Studio results, community builds, or before-and-after proof.</p></div>
+      <div className={styles.proofRail} aria-label="Project image placeholders">{PROOF_PLACEHOLDERS.map((label) => <article key={label}><ImagePlaceholder label={label} size="900 × 1200" compact /></article>)}</div>
     </section>
   );
 }
 
-function ChangeRecord() {
+function ToolShowcase() {
+  const [activeId, setActiveId] = useState(TOOL_TABS[0].id);
+  const activeTool = TOOL_TABS.find((tool) => tool.id === activeId) || TOOL_TABS[0];
   return (
-    <section className={styles.changeRecord} aria-labelledby="change-record-heading">
-      <div className={styles.codeRecord}>
-        <header>
-          <span>InventoryController.luau</span>
-          <strong>+42 / −8</strong>
-        </header>
-        <pre aria-label="Illustrative Luau change"><code>{`local items = ItemDefinitions.getVisible(player)
-
-view:render(items)
-view:onEquip(function(itemId)
-  equipRemote:FireServer(itemId)
-end)`}</code></pre>
-        <footer>
-          <span className="nx-state-mark" data-state="success">EXPECTED SOURCE MATCHED</span>
-          <span>SNAPSHOT / NXS-184</span>
-        </footer>
+    <section id="workflow" className={styles.toolsSection} aria-labelledby="tools-heading">
+      <div className={styles.sectionHeading}><h2 id="tools-heading">Get every build tool in one place</h2><p>Move from a rough idea to reviewed project work without stitching together separate creation flows.</p></div>
+      <div className={styles.toolTabs} role="tablist" aria-label="NexusRBX tools">
+        {TOOL_TABS.map((tool) => <button key={tool.id} type="button" role="tab" aria-selected={activeId === tool.id} aria-controls="homepage-tool-panel" onClick={() => setActiveId(tool.id)}>{tool.label}</button>)}
       </div>
-      <div className={styles.recordCopy}>
-        <p className={styles.routeLabel}>CHANGE</p>
-        <h2 id="change-record-heading">One request remains one reviewable change set.</h2>
-        <p>Scripts, interface objects, and project state stay attached to the same request and recovery point.</p>
-        <dl className={styles.changeSummary}>
-          <div><dt>FILES</dt><dd>3 changed</dd></div>
-          <div><dt>OBJECTS</dt><dd>1 ScreenGui updated</dd></div>
-          <div><dt>RECOVERY</dt><dd>Selective restore available</dd></div>
-        </dl>
+      <div id="homepage-tool-panel" className={styles.toolPanel} role="tabpanel">
+        <div className={styles.toolPanelCopy}><span className={styles.eyebrow}>CURRENT VIEW</span><h3>{activeTool.title}</h3><p>{activeTool.description}</p><a href="/ai">Open {activeTool.label} /</a></div>
+        <ImagePlaceholder label={activeTool.placeholder} size="1600 × 900 recommended" />
       </div>
-      <figure className={styles.assemblyField}>
-        <img
-          src="/assets/nexus-interface-assembly-2d.webp"
-          width="1440"
-          height="1080"
-          alt="Inventory, HUD, navigation, and touch controls aligned into one Roblox interface"
-          loading="lazy"
-          decoding="async"
-        />
-        <figcaption>INTERFACE ASSEMBLY / MOBILE INPUT RETAINED</figcaption>
-      </figure>
+      <div className={styles.miniFeatureGrid}>{TOOL_TABS.map((tool) => <article key={tool.id}><ImagePlaceholder label={`${tool.label.toUpperCase()} DETAIL`} size="800 × 600" compact /><h3>{tool.label}</h3><p>{tool.description}</p></article>)}</div>
     </section>
   );
 }
 
-function TestRecord() {
+function StackSection() {
   return (
-    <section className={styles.testRecord} aria-labelledby="test-record-heading">
-      <div className={styles.recordCopy}>
-        <p className={styles.routeLabel}>TEST</p>
-        <h2 id="test-record-heading">The first failure stays in the record.</h2>
-        <p>The stale selection was found in Play mode, corrected without widening the request, and verified again.</p>
-      </div>
-      <ol className={styles.runLedger} aria-label="Playtest run record">
-        {RUN_RECORD.map((entry) => (
-          <li key={`${entry.time}-${entry.state}`}>
-            <time>{entry.time}</time>
-            <strong data-tone={entry.tone}>{entry.state}</strong>
-            <span>{entry.detail}</span>
-          </li>
-        ))}
-      </ol>
-      <figure className={styles.debugField}>
-        <img
-          src="/assets/nexus-debug-trace-2d.webp"
-          width="1440"
-          height="960"
-          alt="Roblox playtest scene with a diagnostic route connecting an interaction to a failed selection"
-          loading="lazy"
-          decoding="async"
-        />
-        <figcaption>PLAY MODE / RUN 2 / MOBILE VIEWPORT</figcaption>
-      </figure>
+    <section className={styles.stackSection} aria-labelledby="stack-heading">
+      <div className={styles.sectionHeading}><h2 id="stack-heading">One workspace. Your whole Roblox build stack.</h2><p>Project context, creation, Studio actions, assets, review, and recovery stay connected to the same body of work.</p></div>
+      <div className={styles.stackLead}><ImagePlaceholder label="FULL WORKSPACE OVERVIEW" size="1600 × 900 recommended" /></div>
+      <div className={styles.stackGrid}>{STACK_ITEMS.map(([number, title, description]) => <article key={number}><span>{number}</span><h3>{title}</h3><p>{description}</p></article>)}</div>
     </section>
   );
 }
 
-function ReviewRecord() {
+function FaqSection() {
   return (
-    <section className={styles.reviewRecord} aria-labelledby="review-record-heading">
-      <div className={styles.reviewState}>
-        <p>REVIEW / BUILD 184</p>
-        <strong>READY FOR YOUR DECISION</strong>
-        <span className="nx-state-mark" data-state="success">7 CHECKS PASSED</span>
-      </div>
-      <div className={styles.recordCopy}>
-        <p className={styles.routeLabel}>REVIEW</p>
-        <h2 id="review-record-heading">Keep the change, inspect one object, or restore the snapshot.</h2>
-        <p>The final scope, Studio target, source match, test evidence, and recovery point remain visible together.</p>
-      </div>
-      <dl className={styles.reviewLedger}>
-        <div><dt>STUDIO TARGET</dt><dd>Arcade District / Main place</dd></div>
-        <div><dt>CHANGE SET</dt><dd>3 files / 1 ScreenGui</dd></div>
-        <div><dt>SOURCE SAFETY</dt><dd>Expected hashes matched</dd></div>
-        <div><dt>RECOVERY</dt><dd>Restore snapshot NXS-184</dd></div>
-      </dl>
+    <section className={styles.faqSection} aria-labelledby="faq-heading">
+      <div className={styles.sectionHeading}><h2 id="faq-heading">Frequently asked questions</h2></div>
+      <div className={styles.faqList}>{FAQ_ITEMS.map(([question, answer], index) => <details key={question} open={index === 0}><summary>{question}<span aria-hidden="true">+</span></summary><p>{answer}</p></details>)}</div>
     </section>
   );
 }
 
-function BuildNarrative() {
+function FinalCta({ surface, navigate }) {
   return (
-    <section id="workflow" className={styles.workflow} aria-labelledby="workflow-heading">
-      <header className={styles.narrativeHeading}>
-        <p className={styles.routeLabel}>BUILD RECORD / 184</p>
-        <h2 id="workflow-heading">One request. One legible record of work.</h2>
-        <p>Project context, affected objects, code, failure, correction, and review change composition as the work changes.</p>
-      </header>
-      <ObjectReadRecord />
-      <ChangeRecord />
-      <TestRecord />
-      <ReviewRecord />
-    </section>
-  );
-}
-
-function GenreAtlas({ selectedGenre, onSelect, onContinue }) {
-  return (
-    <section id="genres" className={styles.genreAtlas} aria-labelledby="genres-heading">
-      <div className={styles.atlasHeading}>
-        <p className={styles.routeLabel}>BUILD ATLAS</p>
-        <h2 id="genres-heading">Change the world, not the workflow.</h2>
-        <p>Choose a genre to place a concrete project brief into the composer. Nexus still reads, changes, tests, and records the real project.</p>
-      </div>
-      <figure className={styles.atlasWorld}>
-        <img
-          key={selectedGenre.id}
-          src={selectedGenre.image}
-          width="704"
-          height="440"
-          alt={selectedGenre.imageAlt}
-          loading="lazy"
-          decoding="async"
-        />
-        <figcaption>
-          <span>{selectedGenre.label.toUpperCase()} / SELECTED WORLD</span>
-          <strong>{selectedGenre.outcome}</strong>
-        </figcaption>
-      </figure>
-      <div className={styles.genreIndex} role="group" aria-label="Choose a Roblox game genre">
-        {homepageGenres.map((genre, index) => (
-          <button
-            type="button"
-            key={genre.id}
-            aria-pressed={selectedGenre.id === genre.id}
-            aria-controls="homepage-hero-prompt"
-            data-home-genre={genre.id}
-            onClick={() => onSelect(genre)}
-          >
-            <span>{String(index + 1).padStart(2, "0")}</span>
-            <strong>{genre.label}</strong>
-            <small>{genre.description}</small>
-          </button>
-        ))}
-      </div>
-      <div className={styles.loadedBrief} aria-live="polite" aria-atomic="true">
-        <div>
-          <span>{selectedGenre.label.toUpperCase()} BRIEF LOADED</span>
-          <p>{selectedGenre.prompt}</p>
-        </div>
-        <button type="button" className="nx-text-action" onClick={onContinue}>Continue in the composer /</button>
-      </div>
-    </section>
-  );
-}
-
-function CreatorRecord() {
-  return (
-    <section id="grow" className={styles.creatorRecord} aria-labelledby="growth-heading">
-      <div className={styles.creatorHeading}>
-        <p className={styles.routeLabel}>AFTER THE BUILD</p>
-        <h2 id="growth-heading">Make something players return to. Robux can follow—never promised.</h2>
-        <p>Robux is an outcome, not a generate button. Retention, discovery, fair value, and update quality still determine results.</p>
-      </div>
-      <ol className={styles.growthLedger}>
-        {homepageGrowthLoop.map((step, index) => (
-          <li key={step.id}>
-            <span>{String(index + 1).padStart(2, "0")}</span>
-            <strong>{step.title}</strong>
-            <p>{step.description}</p>
-          </li>
-        ))}
-      </ol>
-    </section>
-  );
-}
-
-function ExampleRecord() {
-  return (
-    <section id="examples" className={styles.examples} aria-labelledby="examples-heading">
-      <header>
-        <p className={styles.routeLabel}>CURATED PROJECT RECORDS</p>
-        <h2 id="examples-heading">Breadth without invented customer proof.</h2>
-        <p>These are project briefs, not testimonials or earnings claims.</p>
-      </header>
-      <div className={styles.exampleLedger}>
-        {homepageExampleBuilds.map((example, index) => (
-          <article key={example.id}>
-            <span>{String(index + 1).padStart(2, "0")}</span>
-            <div><small>{example.genre}</small><h3>{example.title}</h3><p>{example.description}</p></div>
-            <ul aria-label={`${example.title} example systems`}>
-              {example.systems.map((system) => <li key={system}>{system}</li>)}
-            </ul>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function EndingRequest({ surface, navigate }) {
-  return (
-    <section className={styles.endingRequest} aria-labelledby="ending-request-heading">
-      <div>
-        <p className={styles.routeLabel}>NEXT REQUEST</p>
-        <h2 id="ending-request-heading">What should change next?</h2>
-        <nav aria-label="Continue exploring NexusRBX">
-          <a href="/pricing">Access and usage</a>
-          <a href="/docs">Read the project guide</a>
-          <a href="/roblox-script-generator">Open a focused tool</a>
-        </nav>
-      </div>
-      <HomepagePrompt
-        surface={`${surface}_ending`}
-        source={surface}
-        navigateToAi={navigate}
-        promptId="homepage-ending-prompt"
-        submitLabel="Open workspace"
-        helperText="Your request is saved locally before the workspace opens."
-        showLabel
-      />
+    <section className={styles.finalCta} aria-labelledby="final-cta-heading">
+      <div><span className={styles.eyebrow}>START WITH ONE REQUEST</span><h2 id="final-cta-heading">Build more of the game you actually want to ship.</h2><p>Bring a new idea or connect an existing project. Nexus keeps the work visible from request to review.</p></div>
+      <HomepagePrompt surface={`${surface}_ending`} source={surface} navigateToAi={navigate} promptId="homepage-ending-prompt" submitLabel="Open workspace" helperText="Your request is saved locally before the workspace opens." showLabel />
     </section>
   );
 }
 
 export default function HomepageV2Content({ surface = "homepage", navigate }) {
-  const initialGenre = homepageGenres.find((genre) => genre.id === "horror") || homepageGenres[0];
-  const [selectedGenreId, setSelectedGenreId] = useState(initialGenre.id);
-  const [promptSuggestion, setPromptSuggestion] = useState({ value: homepageHeroPrompt, version: 0 });
   const heroPromptRef = useRef(null);
-  const selectedGenre = useMemo(
-    () => homepageGenres.find((genre) => genre.id === selectedGenreId) || initialGenre,
-    [initialGenre, selectedGenreId],
-  );
-
   useEffect(() => {
-    const trackView = () => {
-      void trackHomepageProductEvent(
-        "landing_page_view",
-        { landing_page: "/", landing_page_category: "homepage" },
-        { dedupeKey: "homepage" },
-      );
-    };
-
-    if (typeof window.requestIdleCallback === "function") {
-      const idleId = window.requestIdleCallback(trackView, { timeout: 2000 });
-      return () => window.cancelIdleCallback?.(idleId);
-    }
-
-    const timeoutId = window.setTimeout(trackView, 500);
+    const timeoutId = window.setTimeout(() => void trackHomepageProductEvent("landing_page_view", { landing_page: "/", landing_page_category: "homepage" }, { dedupeKey: "homepage" }), 500);
     return () => window.clearTimeout(timeoutId);
   }, []);
-
-  const chooseGenre = (genre) => {
-    setSelectedGenreId(genre.id);
-    setPromptSuggestion((current) => ({ value: genre.prompt, version: current.version + 1 }));
-    void trackHomepageProductEvent("homepage_genre_selected", { surface, genre: genre.id });
-  };
-
-  const continueWithGenre = () => {
-    const input = heroPromptRef.current;
-    if (!input) return;
-    input.focus({ preventScroll: true });
-    const reducedMotion = typeof window !== "undefined"
-      && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    input.scrollIntoView?.({ behavior: reducedMotion ? "auto" : "smooth", block: "center" });
-  };
-
-  return (
-    <div className={styles.page}>
-      <main id="main-content" tabIndex={-1}>
-        <RequestOpening
-          surface={surface}
-          navigate={navigate}
-          promptSuggestion={promptSuggestion}
-          heroPromptRef={heroPromptRef}
-        />
-        <BuildNarrative />
-        <GenreAtlas selectedGenre={selectedGenre} onSelect={chooseGenre} onContinue={continueWithGenre} />
-        <CreatorRecord />
-        <ExampleRecord />
-        <section className={styles.focusedTools} aria-labelledby="focused-tools-heading">
-          <div>
-            <p className={styles.routeLabel}>FOCUSED TASKS</p>
-            <h2 id="focused-tools-heading">Use one tool when the whole project is not required.</h2>
-          </div>
-          <nav aria-label="Focused Roblox creation tools">
-            {homepageFocusedTools.map((tool) => <a href={tool.href} key={tool.href}>{tool.label} /</a>)}
-          </nav>
-        </section>
-        <EndingRequest surface={surface} navigate={navigate} />
-      </main>
-      <HomepageFooter />
-    </div>
-  );
+  return <div className={styles.page}><main id="main-content" tabIndex={-1}><Hero surface={surface} navigate={navigate} inputRef={heroPromptRef} /><ProofRail /><ToolShowcase /><StackSection /><FaqSection /><FinalCta surface={surface} navigate={navigate} /></main><HomepageFooter /></div>;
 }

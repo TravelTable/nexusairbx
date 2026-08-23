@@ -12,6 +12,7 @@ export default function PublicHeader({ showSkipLink = true, homepage = false }) 
         siteIndexSections={universalSiteIndexSections}
         accountSlot={<PublicAccountState />}
         mobileAccountSlot={<PublicAccountState mobile />}
+        compactAccountSlot={<PublicAccountState compact />}
         before={showSkipLink ? <SkipToMainContent /> : null}
       />
     </PublicAccountProvider>

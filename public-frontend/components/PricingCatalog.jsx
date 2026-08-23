@@ -6,10 +6,30 @@ import styles from "./PricingLedger.module.css";
 
 const comparisonFacts = {
   FREE: ["Nexus Auto", "1 task", "7-day chat history", "1 active project"],
-  STARTER: ["Model choice", "2 tasks", "30-day chat history", "3 active projects"],
-  PRO: ["Premium Direct options", "Higher Included Usage", "90-day usage history", "Icon Generator"],
-  PRO_PLUS: ["Premium Direct options", "Higher usage than Pro", "90-day usage history", "Icon Generator"],
-  TEAM: ["Premium Direct options", "Pooled usage per seat", "90-day usage history", "Icon Generator · 2–50 seats"],
+  STARTER: [
+    "Model choice",
+    "2 tasks",
+    "30-day chat history",
+    "3 active projects",
+  ],
+  PRO: [
+    "Premium Direct options",
+    "Higher Included Usage",
+    "90-day usage history",
+    "Icon Generator",
+  ],
+  PRO_PLUS: [
+    "Premium Direct options",
+    "Higher usage than Pro",
+    "90-day usage history",
+    "Icon Generator",
+  ],
+  TEAM: [
+    "Premium Direct options",
+    "Pooled usage per seat",
+    "90-day usage history",
+    "Icon Generator · 2–50 seats",
+  ],
 };
 
 function money(value) {
@@ -30,7 +50,11 @@ function checkoutHref(plan, interval, seats) {
 
 function priceRecord(plan, interval, seats = 1) {
   if (plan.id === "FREE") {
-    return { amount: "$0", cadence: "forever", bill: "No billing details required" };
+    return {
+      amount: "$0",
+      cadence: "forever",
+      bill: "No billing details required",
+    };
   }
   if (interval === "year" && plan.yearly != null) {
     return {
@@ -44,19 +68,26 @@ function priceRecord(plan, interval, seats = 1) {
   return {
     amount: money(plan.monthly * (plan.perSeat ? seats : 1)),
     cadence: plan.perSeat ? `/ month for ${seats} seats` : "/ month",
-    bill: plan.perSeat ? `${money(plan.monthly)} per user, billed monthly` : "Billed monthly",
+    bill: plan.perSeat
+      ? `${money(plan.monthly)} per user, billed monthly`
+      : "Billed monthly",
   };
 }
 
 function PlanAction({ plan, interval, seats, disabled, managePlan }) {
   const selectedInterval = plan.yearly == null ? "month" : interval;
   if (managePlan && plan.id !== "FREE") {
-    return <a className={styles.action} href="/billing">Manage plan →</a>;
+    return (
+      <a className={styles.action} href="/billing">
+        Manage plan →
+      </a>
+    );
   }
 
   async function trackSelection() {
     try {
-      const { PRODUCT_EVENTS, trackProductEvent } = await import("../../src/lib/productAnalytics");
+      const { PRODUCT_EVENTS, trackProductEvent } =
+        await import("../../src/lib/productAnalytics");
       await trackProductEvent(PRODUCT_EVENTS.PRICING_PLAN_SELECTED, {
         plan: plan.id,
         billing_interval: selectedInterval,
@@ -68,7 +99,11 @@ function PlanAction({ plan, interval, seats, disabled, managePlan }) {
   }
 
   if (disabled) {
-    return <button className={styles.action} type="button" disabled>Monthly billing only</button>;
+    return (
+      <button className={styles.action} type="button" disabled>
+        Monthly billing only
+      </button>
+    );
   }
 
   return (
@@ -82,13 +117,110 @@ function PlanAction({ plan, interval, seats, disabled, managePlan }) {
   );
 }
 
-function AccessRecord({ plan, interval, seats, managePlan, onSeatsChange }) {
-  const price = priceRecord(plan, interval, seats);
-  const annualUnavailable = interval === "year" && plan.yearly == null && plan.id !== "FREE";
+function PlanFinder({
+  teamMode,
+  onTeamModeChange,
+  pace,
+  onPaceChange,
+  focus,
+  onFocusChange,
+  recommendation,
+}) {
+  const groups = [
+    {
+      label: "Who is building?",
+      value: teamMode,
+      onChange: onTeamModeChange,
+      options: [
+        ["solo", "Just me"],
+        ["team", "A team"],
+      ],
+    },
+    {
+      label: "How often?",
+      value: pace,
+      onChange: onPaceChange,
+      options: [
+        ["explore", "Exploring"],
+        ["regular", "Regularly"],
+        ["heavy", "Frequently"],
+      ],
+    },
+    {
+      label: "Main workflow",
+      value: focus,
+      onChange: onFocusChange,
+      options: [
+        ["scripts", "Scripts"],
+        ["agent", "Agent builds"],
+        ["assets", "Assets"],
+      ],
+    },
+  ];
+
   return (
-    <article className={styles.plan} data-plan={plan.id}>
+    <section className={styles.finder} aria-labelledby="plan-finder-title">
+      <div className={styles.finderIntro}>
+        <p className={styles.phase}>Plan finder</p>
+        <h2 id="plan-finder-title">Find a sensible starting point.</h2>
+        <p>
+          This guide only highlights an existing plan. Prices and checkout stay
+          exactly the same.
+        </p>
+      </div>
+      <div className={styles.finderControls}>
+        {groups.map((group) => (
+          <div className={styles.finderGroup} key={group.label}>
+            <span>{group.label}</span>
+            <div role="group" aria-label={group.label}>
+              {group.options.map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={group.value === value}
+                  onClick={() => group.onChange(value)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className={styles.finderResult} role="status" aria-live="polite">
+        <i className="nx-build-signal" data-active="true" aria-hidden="true" />
+        <span>Suggested starting point</span>
+        <strong>{recommendation.name}</strong>
+        <a
+          href={`#plan-${recommendation.id.toLowerCase().replaceAll("_", "-")}`}
+        >
+          View plan ↓
+        </a>
+      </div>
+    </section>
+  );
+}
+
+function AccessRecord({
+  plan,
+  interval,
+  seats,
+  managePlan,
+  onSeatsChange,
+  recommended,
+}) {
+  const price = priceRecord(plan, interval, seats);
+  const annualUnavailable =
+    interval === "year" && plan.yearly == null && plan.id !== "FREE";
+  return (
+    <article
+      className={styles.plan}
+      data-plan={plan.id}
+      data-recommended={recommended ? "true" : "false"}
+      id={`plan-${plan.id.toLowerCase().replaceAll("_", "-")}`}
+    >
       <header className={styles.planIdentity}>
-        <span>{plan.id.replace("_", " / ")}</span>
+        <span>{recommended ? "Suggested for you" : "Nexus plan"}</span>
         <h2>{plan.name}</h2>
         <p>{plan.audience}</p>
       </header>
@@ -105,7 +237,9 @@ function AccessRecord({ plan, interval, seats, managePlan, onSeatsChange }) {
               aria-label="Remove one seat"
               disabled={seats <= plan.minimumSeats}
               onClick={() => onSeatsChange(seats - 1)}
-            >−</button>
+            >
+              −
+            </button>
             <input
               id="team-seat-count"
               inputMode="numeric"
@@ -120,7 +254,9 @@ function AccessRecord({ plan, interval, seats, managePlan, onSeatsChange }) {
               aria-label="Add one seat"
               disabled={seats >= plan.maximumSeats}
               onClick={() => onSeatsChange(seats + 1)}
-            >+</button>
+            >
+              +
+            </button>
             <span>2–50</span>
           </div>
         ) : null}
@@ -128,7 +264,10 @@ function AccessRecord({ plan, interval, seats, managePlan, onSeatsChange }) {
 
       <ul className={styles.features}>
         {plan.features.map((feature, index) => (
-          <li key={feature}><span>{String(index + 1).padStart(2, "0")}</span>{feature}</li>
+          <li key={feature}>
+            <span>{String(index + 1).padStart(2, "0")}</span>
+            {feature}
+          </li>
         ))}
       </ul>
 
@@ -150,6 +289,22 @@ export default function PricingCatalog() {
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
   const team = publicPlanCatalog.find((plan) => plan.id === "TEAM");
   const [seats, setSeats] = useState(team.minimumSeats);
+  const [teamMode, setTeamMode] = useState("solo");
+  const [pace, setPace] = useState("regular");
+  const [focus, setFocus] = useState("agent");
+  const recommendedPlanId =
+    teamMode === "team"
+      ? "TEAM"
+      : pace === "explore"
+        ? "FREE"
+        : pace === "heavy"
+          ? "PRO_PLUS"
+          : focus === "scripts"
+            ? "STARTER"
+            : "PRO";
+  const recommendation =
+    publicPlanCatalog.find((plan) => plan.id === recommendedPlanId) ||
+    publicPlanCatalog[0];
 
   useEffect(() => {
     let unsubscribe = () => {};
@@ -170,7 +325,10 @@ export default function PricingCatalog() {
             const { getEntitlements } = await import("../../src/lib/billing");
             const entitlements = await getEntitlements({ noCache: false });
             const paidPlans = new Set(["STARTER", "PRO", "PRO_PLUS", "TEAM"]);
-            if (!cancelled) setHasActiveSubscription(paidPlans.has(String(entitlements?.plan || "")));
+            if (!cancelled)
+              setHasActiveSubscription(
+                paidPlans.has(String(entitlements?.plan || "")),
+              );
           } catch (_) {
             if (!cancelled) setHasActiveSubscription(false);
           }
@@ -187,7 +345,9 @@ export default function PricingCatalog() {
   }, []);
 
   function updateSeats(nextSeats) {
-    const numeric = Number.isFinite(Number(nextSeats)) ? Math.round(Number(nextSeats)) : team.minimumSeats;
+    const numeric = Number.isFinite(Number(nextSeats))
+      ? Math.round(Number(nextSeats))
+      : team.minimumSeats;
     setSeats(Math.min(team.maximumSeats, Math.max(team.minimumSeats, numeric)));
   }
 
@@ -195,19 +355,44 @@ export default function PricingCatalog() {
     <main id="main-content" className={styles.main}>
       <section className={styles.intro} aria-labelledby="pricing-title">
         <div>
-          <p className={styles.phase}>ACCESS LEDGER / USD</p>
+          <p className={styles.phase}>Plans and usage</p>
           <h1 id="pricing-title">Choose how long the build can run.</h1>
         </div>
         <div className={styles.introCopy}>
-          <p>Every plan uses the same project-first workflow. Capacity, history, model access, and creator tools change as the work grows.</p>
+          <p>
+            Every plan uses the same project-first workflow. Capacity, history,
+            model access, and creator tools change as the work grows.
+          </p>
           <div className={styles.interval} aria-label="Billing period">
-            <span>BILLING</span>
-            <button type="button" aria-pressed={interval === "month"} onClick={() => setInterval("month")}>Monthly</button>
-            <button type="button" aria-pressed={interval === "year"} onClick={() => setInterval("year")}>Yearly</button>
+            <span>Billing period</span>
+            <button
+              type="button"
+              aria-pressed={interval === "month"}
+              onClick={() => setInterval("month")}
+            >
+              Monthly
+            </button>
+            <button
+              type="button"
+              aria-pressed={interval === "year"}
+              onClick={() => setInterval("year")}
+            >
+              Yearly
+            </button>
           </div>
           <small>Prices are in USD. Starter is available monthly only.</small>
         </div>
       </section>
+
+      <PlanFinder
+        teamMode={teamMode}
+        onTeamModeChange={setTeamMode}
+        pace={pace}
+        onPaceChange={setPace}
+        focus={focus}
+        onFocusChange={setFocus}
+        recommendation={recommendation}
+      />
 
       <section className={styles.ledger} aria-label="NexusRBX access plans">
         {publicPlanCatalog.map((plan) => (
@@ -218,16 +403,22 @@ export default function PricingCatalog() {
             seats={plan.id === "TEAM" ? seats : 1}
             managePlan={hasActiveSubscription}
             onSeatsChange={updateSeats}
+            recommended={plan.id === recommendedPlanId}
           />
         ))}
       </section>
 
       <section className={styles.comparison} aria-labelledby="comparison-title">
         <header>
-          <p className={styles.phase}>CAPACITY INDEX</p>
-          <h2 id="comparison-title">What changes between records</h2>
+          <p className={styles.phase}>Compare plans</p>
+          <h2 id="comparison-title">What changes between plans</h2>
         </header>
-        <div className={styles.tableWrap} role="region" aria-label="Plan comparison table" tabIndex="0">
+        <div
+          className={styles.tableWrap}
+          role="region"
+          aria-label="Plan comparison table"
+          tabIndex="0"
+        >
           <table>
             <thead>
               <tr>
@@ -242,7 +433,9 @@ export default function PricingCatalog() {
               {publicPlanCatalog.map((plan) => (
                 <tr key={plan.id}>
                   <th scope="row">{plan.name}</th>
-                  {comparisonFacts[plan.id].map((fact) => <td key={fact}>{fact}</td>)}
+                  {comparisonFacts[plan.id].map((fact) => (
+                    <td key={fact}>{fact}</td>
+                  ))}
                 </tr>
               ))}
             </tbody>

@@ -2,14 +2,13 @@ import React, { useEffect, useRef, useState } from "react";
 import { ListChecks, Menu, Pencil } from "lib/icons";
 
 function cleanTitle(value) {
-  return String(value || "").replace(/\s+/g, " ").trim();
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export default function ChatHeader({
   chatTitle = "New chat",
-  projectTitle = "Workspace",
-  studioConnected = false,
-  studioConnectionState = "",
   isBusy = false,
   onRenameChat,
   onOpenNavigation,
@@ -41,12 +40,6 @@ export default function ChatHeader({
     else setDraft(chatTitle);
   };
 
-  const connectionLabel = studioConnected
-    ? "Studio Live"
-    : String(studioConnectionState || "").toLowerCase() === "connecting"
-      ? "Studio connecting"
-      : "Studio offline";
-
   return (
     <header className="nexus-chat-header">
       <div className="nexus-chat-header__identity">
@@ -62,13 +55,7 @@ export default function ChatHeader({
           <Menu className="h-4 w-4" />
         </button>
 
-        <div className="nexus-chat-header__mark" aria-hidden="true">
-          <span>N</span>
-        </div>
-
         <div className="nexus-chat-header__titles">
-          <span className="nexus-chat-header__project" title={projectTitle}>{projectTitle}</span>
-
           {editing ? (
             <input
               ref={inputRef}
@@ -101,7 +88,11 @@ export default function ChatHeader({
       </div>
 
       <div className="nexus-chat-header__controls">
-        {workspaceControls ? <div className="nexus-chat-header__workspace-controls">{workspaceControls}</div> : null}
+        {workspaceControls ? (
+          <div className="nexus-chat-header__workspace-controls">
+            {workspaceControls}
+          </div>
+        ) : null}
         {onOpenPlan ? (
           <button
             type="button"
@@ -119,17 +110,6 @@ export default function ChatHeader({
             Nexus working
           </span>
         ) : null}
-        <span
-          className="nexus-chat-header__studio-state"
-          title={connectionLabel}
-        >
-          <span
-            className="nexus-chat-header__studio-dot"
-            data-connected={studioConnected ? "true" : "false"}
-            aria-hidden="true"
-          />
-          <span className="hidden sm:inline">{connectionLabel}</span>
-        </span>
       </div>
     </header>
   );

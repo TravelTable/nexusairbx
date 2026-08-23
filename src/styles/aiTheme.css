@@ -5,8 +5,8 @@
   --pc-font-ui: var(--nx-font-body);
   --pc-font-display: var(--nx-font-display);
   --pc-gutter: 16px;
-  --pc-radius-panel: var(--nx-radius-field);
-  --pc-radius-control: var(--nx-radius-field);
+  --pc-radius-panel: var(--nx-radius-panel);
+  --pc-radius-control: var(--nx-radius-control);
 
   --ai-bg: var(--nx-depth);
   --ai-surface: var(--nx-work);
@@ -66,27 +66,19 @@
   letter-spacing: 0.015em;
 }
 
-.ai-page [class~="rounded-2xl"],
-.ai-page [class~="rounded-3xl"] {
-  border-radius: var(--pc-radius-panel);
-}
-
-.ai-page [class*="bg-gradient-to-"] { /* design-guard-allow: neutralizes legacy gradient utilities */
-  background-image: none;
-}
-
 .ai-page [class~="shadow-xl"],
 .ai-page [class~="shadow-2xl"],
 .ai-page [class~="shadow-panel"] {
-  box-shadow: none;
+  box-shadow: var(--nx-shadow-card);
 }
 
 .ai-page [class*="shadow-[0_0"] {
-  box-shadow: none;
+  box-shadow: 0 0 0 1px var(--nx-purple-border), 0 12px 36px rgb(180 92 255 / 12%);
 }
 
-.ai-page [class*="backdrop-blur"] { /* design-guard-allow: neutralizes legacy blur utilities */
-  backdrop-filter: none; /* design-guard-allow: disables legacy blur */
+.ai-page [class*="backdrop-blur"] {
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
 }
 
 /* Workspace utility text must remain legible at the user's browser zoom. */
@@ -100,7 +92,7 @@
 
 .ai-glow-primary,
 .ai-page[data-nexus-active="true"] .ai-active-signal {
-  background-color: var(--nx-field-strong);
+  background-color: var(--nx-purple-soft);
 }
 
 .ai-glow-secondary {
@@ -129,8 +121,8 @@
 
 .ai-page button:not(:disabled):active,
 .ai-page [role="button"]:not([aria-disabled="true"]):active {
-  transform: scale(0.98);
-  transition-duration: 90ms;
+  transform: translateY(1px) scale(0.99);
+  transition-duration: var(--nx-motion-color);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -147,9 +139,10 @@
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .ai-page [class*="backdrop-blur"] { /* design-guard-allow: reduced-transparency fallback */
+  .ai-page [class*="backdrop-blur"] {
     background-color: var(--nx-work);
-    backdrop-filter: none; /* design-guard-allow: disables legacy blur */
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
 

@@ -10,9 +10,11 @@ export default function WorkspaceRibbon({
 }) {
   return (
     <header className={`${styles.ribbon} ${className}`} data-workspace-ribbon>
-      <div className={styles.brand}><UniversalBrand LinkComponent={LinkComponent} compact /></div>
+      <div className={styles.brand}>
+        <UniversalBrand LinkComponent={LinkComponent} compact />
+      </div>
       <div className={styles.left}>
-        <span className={styles.label}>{label}</span>
+        {label ? <span className={styles.label}>{label}</span> : null}
         {left}
       </div>
       <div className={styles.right}>{right}</div>

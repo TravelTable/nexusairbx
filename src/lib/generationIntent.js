@@ -3,6 +3,27 @@ const ACTIVE_INTENT_KEY = "nexusrbx:active-generation-intent";
 const DEFAULT_TTL_MS = 30 * 60 * 1000;
 const MAX_STORED_INTENTS = 5;
 
+export const GENERATION_INTENT_MODES = Object.freeze({
+  AGENT: "agent_build",
+  SCRIPT: "quick_script",
+  ASSET: "asset",
+});
+
+export function normalizeGenerationIntentMode(mode, fallback = GENERATION_INTENT_MODES.AGENT) {
+  const value = String(mode || "").trim().toLowerCase();
+  if (value === "agent" || value === "agent_build") return GENERATION_INTENT_MODES.AGENT;
+  if (value === "script" || value === "quick_script") return GENERATION_INTENT_MODES.SCRIPT;
+  if (value === "asset") return GENERATION_INTENT_MODES.ASSET;
+  return fallback;
+}
+
+export function creationModeFromIntent(mode) {
+  const normalized = normalizeGenerationIntentMode(mode);
+  if (normalized === GENERATION_INTENT_MODES.SCRIPT) return "script";
+  if (normalized === GENERATION_INTENT_MODES.ASSET) return "asset";
+  return "agent";
+}
+
 function getStorage() {
   if (typeof window === "undefined") return null;
   try {
@@ -63,7 +84,7 @@ function pruneIntents(intents, now = nowMs()) {
 
 export function createGenerationIntent({
   prompt,
-  mode = "agent",
+  mode = GENERATION_INTENT_MODES.AGENT,
   source = "homepage",
   ttlMs = DEFAULT_TTL_MS,
 } = {}) {
@@ -81,7 +102,7 @@ export function createGenerationIntent({
   const intent = {
     id: createId(),
     prompt: trimmedPrompt,
-    mode: String(mode || "agent"),
+    mode: normalizeGenerationIntentMode(mode),
     source: String(source || "homepage"),
     status: "pending",
     createdAt,
@@ -93,7 +114,7 @@ export function createGenerationIntent({
     throw new Error("Your browser could not store the prompt handoff. Try again.");
   }
   storage.setItem(ACTIVE_INTENT_KEY, intent.id);
-  return { ...intent };
+  return { ...intent, mode: normalizeGenerationIntentMode(intent.mode) };
 }
 
 export function restoreGenerationIntent(intentId = null) {
@@ -116,7 +137,12 @@ export function restoreGenerationIntent(intentId = null) {
   }
 
   storage.setItem(ACTIVE_INTENT_KEY, intent.id);
-  return { ...intent };
+  return { ...intent, mode: normalizeGenerationIntentMode(intent.mode) };
+}
+
+export function getActiveGenerationIntentId() {
+  const storage = getStorage();
+  return storage?.getItem(ACTIVE_INTENT_KEY) || null;
 }
 
 export function consumeGenerationIntent(intentId) {

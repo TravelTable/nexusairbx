@@ -1,8 +1,62 @@
+[data-nexus-surface="auth"] {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--nx-canvas);
+}
+
+.nexus-auth-form::before,
+.nexus-auth-form::after {
+  position: absolute;
+  pointer-events: none;
+  content: "";
+}
+
+.nexus-auth-form::before {
+  z-index: 0;
+  top: 46%;
+  left: 50%;
+  width: min(760px, 90vw);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: var(--nx-radius-pill);
+  background: radial-gradient(
+    circle,
+    rgba(var(--nx-purple-rgb), 0.18) 0,
+    rgba(var(--nx-purple-rgb), 0.07) 38%,
+    transparent 68%
+  );
+}
+
+.nexus-auth-form::after {
+  z-index: 1;
+  inset: -64px 0;
+  opacity: 0.64;
+  background-image: radial-gradient(
+    circle at 50% 50%,
+    transparent 0,
+    transparent 2px,
+    color-mix(in srgb, var(--nx-canvas) 82%, transparent) 2px
+  );
+  background-size: 8px 8px;
+  -webkit-mask-image: radial-gradient(circle at 50% 46%, #000 0, #000 30%, transparent 68%);
+  mask-image: radial-gradient(circle at 50% 46%, #000 0, #000 30%, transparent 68%);
+  animation: nexus-auth-pattern-drift 18s linear infinite;
+  will-change: transform;
+}
+
+@keyframes nexus-auth-pattern-drift {
+  from { transform: translate3d(0, -64px, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
 .nexus-auth-layout {
+  position: relative;
+  z-index: 2;
   display: grid;
   min-height: 100dvh;
   grid-template-columns: minmax(20rem, 0.9fr) minmax(24rem, 1.1fr);
-  background: var(--nx-canvas);
+  background: transparent;
 }
 
 .nexus-auth-record,
@@ -10,12 +64,12 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
-  padding: clamp(23px, 5vw, 59px);
+  padding: clamp(20px, 4vw, 48px);
 }
 
 .nexus-auth-record {
   border-right: 1px solid var(--nx-rule);
-  background: var(--nx-work);
+  background: color-mix(in srgb, var(--nx-work) 94%, transparent);
 }
 
 .nexus-auth-brand {
@@ -55,7 +109,7 @@
 
 .nexus-auth-record__copy h2 {
   max-width: 10ch;
-  font-size: clamp(3rem, 5vw, 3.625rem);
+  font-size: clamp(2.3rem, 4.5vw, 3rem);
 }
 
 .nexus-auth-record__copy > p:last-child {
@@ -89,13 +143,19 @@
 }
 
 .nexus-auth-form {
+  position: relative;
+  isolation: isolate;
+  contain: paint;
+  overflow: hidden;
   justify-content: center;
-  background: var(--nx-depth);
+  background: color-mix(in srgb, var(--nx-depth) 80%, transparent);
 }
 
 .nexus-auth-form__header,
 .nexus-auth-form__body {
-  width: min(100%, 31rem);
+  position: relative;
+  z-index: 2;
+  width: min(100%, 28rem);
   margin-inline: auto;
 }
 
@@ -107,7 +167,7 @@
 
 .nexus-auth-form__header h1,
 .nexus-auth-form__header h2 {
-  font-size: clamp(2.625rem, 4vw, 3.625rem);
+  font-size: clamp(2.15rem, 3.6vw, 2.8rem);
 }
 
 .nexus-auth-form__description {
@@ -136,6 +196,20 @@
 }
 
 @media (max-width: 800px) {
+  .nexus-auth-form::before {
+    top: 29%;
+    left: 50%;
+    width: 140vw;
+  }
+
+  .nexus-auth-form::after {
+    opacity: 0.5;
+    animation: none;
+    will-change: auto;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 30%, transparent 64%);
+    mask-image: linear-gradient(to bottom, #000 0, #000 30%, transparent 64%);
+  }
+
   .nexus-auth-layout {
     grid-template-columns: 1fr;
   }
@@ -151,7 +225,7 @@
   }
 
   .nexus-auth-record__copy h2 {
-    font-size: clamp(2.75rem, 14vw, 3.625rem);
+    font-size: clamp(2.25rem, 12vw, 3rem);
   }
 
   .nexus-auth-record__index {
@@ -160,5 +234,41 @@
 
   .nexus-auth-form {
     min-height: 62dvh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nexus-auth-form::after {
+    animation: none;
+    will-change: auto;
+  }
+}
+
+@media (pointer: coarse) {
+  .nexus-auth-form::after {
+    animation: none;
+    will-change: auto;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .nexus-auth-form::before {
+    display: none;
+  }
+
+  .nexus-auth-form::after {
+    opacity: 0.1;
+  }
+
+  .nexus-auth-record,
+  .nexus-auth-form {
+    background: var(--nx-canvas);
+  }
+}
+
+@media (forced-colors: active) {
+  .nexus-auth-form::before,
+  .nexus-auth-form::after {
+    display: none;
   }
 }

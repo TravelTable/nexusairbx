@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import ChatView from "../ChatView";
 import ChatComposer from "../chat/ChatComposer";
 import PlanWorkspace from "./PlanWorkspace";
@@ -121,45 +121,84 @@ export default function AgentChatPanel({
   navigationOpen = false,
   navigationControls = undefined,
   navigationButtonRef = null,
+  workspaceView,
+  onWorkspaceViewChange,
 }) {
-  const [view, setView] = useState("chat");
+  const [internalView, setInternalView] = useState("chat");
+  const view = workspaceView ?? internalView;
+  const setView = useCallback(
+    (nextView) => {
+      setInternalView(nextView);
+      onWorkspaceViewChange?.(nextView);
+    },
+    [onWorkspaceViewChange],
+  );
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
-  const openPlanWorkspace = useCallback(() => setView("plan"), []);
+  const openPlanWorkspace = useCallback(() => setView("plan"), [setView]);
+  const hasReviewablePlan = Boolean(
+    executionTask ||
+    messages?.some((message) =>
+      ["plan", "plan_approved"].includes(
+        String(message?.stage || "").toLowerCase(),
+      ),
+    ),
+  );
 
-  const handlePlanExecute = useCallback(async ({ result }) => {
-    const task = result?.task || result?.execution?.task || result?.run || null;
-    const taskId = task?.taskId || task?.id || result?.taskId || result?.execution?.taskId || result?.runId || "";
-    if (!taskId) throw new Error("NexusRBX did not return an execution task.");
-    onPlanTaskAccepted?.(task || taskId);
-  }, [onPlanTaskAccepted]);
+  useEffect(() => {
+    setView("chat");
+  }, [currentChatId, setView]);
 
-  const handleComposerSubmit = useCallback((event, overridePrompt = null, composerOptions = {}) => {
-    const submission = onSubmit?.(
-      event,
-      overridePrompt,
-      {
+  const handlePlanExecute = useCallback(
+    async ({ result }) => {
+      const task =
+        result?.task || result?.execution?.task || result?.run || null;
+      const taskId =
+        task?.taskId ||
+        task?.id ||
+        result?.taskId ||
+        result?.execution?.taskId ||
+        result?.runId ||
+        "";
+      if (!taskId)
+        throw new Error("NexusRBX did not return an execution task.");
+      onPlanTaskAccepted?.(task || taskId);
+    },
+    [onPlanTaskAccepted],
+  );
+
+  const handleComposerSubmit = useCallback(
+    (event, overridePrompt = null, composerOptions = {}) => {
+      const submission = onSubmit?.(event, overridePrompt, {
         ...composerOptions,
         ...(selectedTemplateId ? { templateId: selectedTemplateId } : {}),
-      },
-    );
-    setSelectedTemplateId("");
-    return submission;
-  }, [onSubmit, selectedTemplateId]);
+      });
+      setSelectedTemplateId("");
+      return submission;
+    },
+    [onSubmit, selectedTemplateId],
+  );
 
-  const handleEditMessage = useCallback((message) => {
-    const messageId = String(message?.id || "").trim();
-    setPrompt?.(String(message?.content || ""));
-    if (Array.isArray(message?.attachments)) setAttachments?.(message.attachments);
-    if (messageId) {
-      setRewindTarget?.({ messageId, mode: "replace" });
-    } else {
-      setRewindTarget?.(null);
-    }
-  }, [setAttachments, setPrompt, setRewindTarget]);
+  const handleEditMessage = useCallback(
+    (message) => {
+      const messageId = String(message?.id || "").trim();
+      setPrompt?.(String(message?.content || ""));
+      if (Array.isArray(message?.attachments))
+        setAttachments?.(message.attachments);
+      if (messageId) {
+        setRewindTarget?.({ messageId, mode: "replace" });
+      } else {
+        setRewindTarget?.(null);
+      }
+    },
+    [setAttachments, setPrompt, setRewindTarget],
+  );
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden bg-transparent">
-      <div className="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col">
+    <div
+      className="agent-chat-panel flex h-full min-h-0 min-w-0 w-full max-w-full flex-1 flex-col overflow-hidden bg-transparent"
+      data-empty={messages?.length === 0 && !pendingMessage ? "true" : "false"}
+    >
+      <div className="agent-chat-panel__content flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col">
         {view === "plan" && FEATURE_FLAGS.newPlanningMode ? (
           <div className="min-h-0 min-w-0 w-full max-w-full flex-1 overflow-y-auto scrollbar-subtle">
             <PlanWorkspace
@@ -197,9 +236,13 @@ export default function AgentChatPanel({
               profile={profile}
               activeMode={activeMode}
               isBusy={isBusy}
-              onApprovePlan={FEATURE_FLAGS.newPlanningMode ? undefined : onApprovePlan}
+              onApprovePlan={
+                FEATURE_FLAGS.newPlanningMode ? undefined : onApprovePlan
+              }
               onClarifySubmit={onClarifySubmit}
-              onEditPlan={FEATURE_FLAGS.newPlanningMode ? openPlanWorkspace : onEditPlan}
+              onEditPlan={
+                FEATURE_FLAGS.newPlanningMode ? openPlanWorkspace : onEditPlan
+              }
               onViewUi={onOpenArtifact}
               onRefine={onRefine}
               onQuickStart={onQuickStart}
@@ -214,7 +257,11 @@ export default function AgentChatPanel({
               studioPlacePreference={studioPlacePreference}
               onRenameChat={onRenameChat}
               onOpenNavigation={onOpenNavigation}
-              onOpenPlan={FEATURE_FLAGS.newPlanningMode ? openPlanWorkspace : undefined}
+              onOpenPlan={
+                FEATURE_FLAGS.newPlanningMode && hasReviewablePlan
+                  ? openPlanWorkspace
+                  : undefined
+              }
               onEditMessage={handleEditMessage}
               onRetryMessage={onRetryMessage}
               onRestoreRun={onRestoreRun}
@@ -222,6 +269,7 @@ export default function AgentChatPanel({
               navigationOpen={navigationOpen}
               navigationControls={navigationControls}
               navigationButtonRef={navigationButtonRef}
+              showHeader={false}
             />
           </div>
         )}
@@ -229,86 +277,90 @@ export default function AgentChatPanel({
 
       <div className="shrink-0">
         <ChatComposer
-        prompt={prompt}
-        setPrompt={setPrompt}
-        attachments={attachments}
-        setAttachments={setAttachments}
-        robloxImageUploading={robloxImageUploading}
-        robloxImageUploads={robloxImageUploads}
-        onSubmit={handleComposerSubmit}
-        onStop={onStop}
-        operationState={operationState}
-        onResumeQueue={onResumeQueue}
-        onSendNext={onSendNext}
-        onRemoveQueued={onRemoveQueued}
-        isGenerating={isBusy}
-        generationStage={generationStage}
-        placeholder={refineTarget ? "Describe the exact Studio change..." : "Describe the outcome, constraints, and proof you need..."}
-        refineTarget={refineTarget}
-        onCancelRefine={onCancelRefine}
-        onStartRefine={onStartRefine}
-        rewindTarget={rewindTarget}
-        onCancelRewind={onCancelRewind}
-        tokensLeft={tokensLeft}
-        tokensLimit={tokensLimit}
-        resetsAt={resetsAt}
-        planKey={planKey}
-        unlimitedTokens={unlimitedTokens}
-        devOverride={devOverride}
-        dailyUsage={dailyUsage}
-        includedUsage={includedUsage}
-        premiumBalance={premiumBalance}
-        isFreeUsagePlan={isFreeUsagePlan}
-        billingLoading={billingLoading}
-        billingError={billingError}
-        themePrimary={themePrimary}
-        themeSecondary={themeSecondary}
-        onFileUpload={onFileUpload}
-        onImprovePrompt={onImprovePrompt}
-        isImproving={isImproving}
-        disabled={composerLocked}
-        mode={activeMode}
-        onModeChange={onModeChange}
-        studioConnected={studioConnected}
-        studioConnectionType={studioConnectionType}
-        studioConnectionState={studioConnectionState}
-        studioCapabilities={studioCapabilities}
-        studioLoading={studioLoading}
-        studioEnabled={studioEnabled}
-        onStudioEnabledChange={onStudioEnabledChange}
-        studioApplyMode={studioApplyMode}
-        onStudioApplyModeChange={onStudioApplyModeChange}
-        studioAutoPushEnabled={studioAutoPushEnabled}
-        onStudioAutoPushEnabledChange={onStudioAutoPushEnabledChange}
-        studioAutoPushPolicy={studioAutoPushPolicy}
-        onStudioAutoPushPolicyChange={onStudioAutoPushPolicyChange}
-        studioAutoPushAuthorized={studioAutoPushAuthorized}
-        studioCollaborators={studioCollaborators}
-        studioPlacePreference={studioPlacePreference}
-        studioPlaceOptions={studioPlaceOptions}
-        studioPlacePickerOpen={studioPlacePickerOpen}
-        onStudioPlacePickerOpenChange={onStudioPlacePickerOpenChange}
-        onSelectStudioPlace={onSelectStudioPlace || onSelectStudioTarget}
-        selectingStudioTargetId={selectingStudioTargetId}
-        robloxConnected={robloxConnected}
-        robloxLoading={robloxLoading}
-        robloxSelectedCreator={robloxSelectedCreator}
-        robloxUploadAvailable={robloxUploadAvailable}
-        robloxUploadState={robloxUploadState}
-        robloxUploadDisabledReason={robloxUploadDisabledReason}
-        robloxAssetUploadsEnabled={robloxAssetUploadsEnabled}
-        onRobloxAssetUploadsEnabledChange={onRobloxAssetUploadsEnabledChange}
-        robloxAssetLibraryAvailable={robloxAssetLibraryAvailable}
-        robloxAssetLibraryDisabledReason={robloxAssetLibraryDisabledReason}
-        robloxProjectAssets={robloxProjectAssets}
-        onOpenAssetLibrary={onOpenAssetLibrary}
-        assetLibraryOpen={assetLibraryOpen}
-        onCloseAssetLibrary={onCloseAssetLibrary}
-        onConfirmProjectAssets={onConfirmProjectAssets}
-        onRemoveProjectAsset={onRemoveProjectAsset}
-        projectAssetSaving={projectAssetSaving}
-        assetProjectId={selectedAssetProjectId}
-        robloxStatus={robloxStatus}
+          prompt={prompt}
+          setPrompt={setPrompt}
+          attachments={attachments}
+          setAttachments={setAttachments}
+          robloxImageUploading={robloxImageUploading}
+          robloxImageUploads={robloxImageUploads}
+          onSubmit={handleComposerSubmit}
+          onStop={onStop}
+          operationState={operationState}
+          onResumeQueue={onResumeQueue}
+          onSendNext={onSendNext}
+          onRemoveQueued={onRemoveQueued}
+          isGenerating={isBusy}
+          generationStage={generationStage}
+          placeholder={
+            refineTarget
+              ? "Describe the exact Studio change..."
+              : "Describe the outcome, constraints, and proof you need..."
+          }
+          refineTarget={refineTarget}
+          onCancelRefine={onCancelRefine}
+          onStartRefine={onStartRefine}
+          rewindTarget={rewindTarget}
+          onCancelRewind={onCancelRewind}
+          tokensLeft={tokensLeft}
+          tokensLimit={tokensLimit}
+          resetsAt={resetsAt}
+          planKey={planKey}
+          unlimitedTokens={unlimitedTokens}
+          devOverride={devOverride}
+          dailyUsage={dailyUsage}
+          includedUsage={includedUsage}
+          premiumBalance={premiumBalance}
+          isFreeUsagePlan={isFreeUsagePlan}
+          billingLoading={billingLoading}
+          billingError={billingError}
+          themePrimary={themePrimary}
+          themeSecondary={themeSecondary}
+          onFileUpload={onFileUpload}
+          onImprovePrompt={onImprovePrompt}
+          isImproving={isImproving}
+          disabled={composerLocked}
+          mode={activeMode}
+          onModeChange={onModeChange}
+          studioConnected={studioConnected}
+          studioConnectionType={studioConnectionType}
+          studioConnectionState={studioConnectionState}
+          studioCapabilities={studioCapabilities}
+          studioLoading={studioLoading}
+          studioEnabled={studioEnabled}
+          onStudioEnabledChange={onStudioEnabledChange}
+          studioApplyMode={studioApplyMode}
+          onStudioApplyModeChange={onStudioApplyModeChange}
+          studioAutoPushEnabled={studioAutoPushEnabled}
+          onStudioAutoPushEnabledChange={onStudioAutoPushEnabledChange}
+          studioAutoPushPolicy={studioAutoPushPolicy}
+          onStudioAutoPushPolicyChange={onStudioAutoPushPolicyChange}
+          studioAutoPushAuthorized={studioAutoPushAuthorized}
+          studioCollaborators={studioCollaborators}
+          studioPlacePreference={studioPlacePreference}
+          studioPlaceOptions={studioPlaceOptions}
+          studioPlacePickerOpen={studioPlacePickerOpen}
+          onStudioPlacePickerOpenChange={onStudioPlacePickerOpenChange}
+          onSelectStudioPlace={onSelectStudioPlace || onSelectStudioTarget}
+          selectingStudioTargetId={selectingStudioTargetId}
+          robloxConnected={robloxConnected}
+          robloxLoading={robloxLoading}
+          robloxSelectedCreator={robloxSelectedCreator}
+          robloxUploadAvailable={robloxUploadAvailable}
+          robloxUploadState={robloxUploadState}
+          robloxUploadDisabledReason={robloxUploadDisabledReason}
+          robloxAssetUploadsEnabled={robloxAssetUploadsEnabled}
+          onRobloxAssetUploadsEnabledChange={onRobloxAssetUploadsEnabledChange}
+          robloxAssetLibraryAvailable={robloxAssetLibraryAvailable}
+          robloxAssetLibraryDisabledReason={robloxAssetLibraryDisabledReason}
+          robloxProjectAssets={robloxProjectAssets}
+          onOpenAssetLibrary={onOpenAssetLibrary}
+          assetLibraryOpen={assetLibraryOpen}
+          onCloseAssetLibrary={onCloseAssetLibrary}
+          onConfirmProjectAssets={onConfirmProjectAssets}
+          onRemoveProjectAsset={onRemoveProjectAsset}
+          projectAssetSaving={projectAssetSaving}
+          assetProjectId={selectedAssetProjectId}
+          robloxStatus={robloxStatus}
         />
       </div>
     </div>

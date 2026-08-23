@@ -41,9 +41,25 @@ test("public header keeps server ownership while delegating presentation to the 
     "/legal",
   ];
   for (const href of expectedDestinations) {
-    assert.match(navigation, new RegExp(`href: ["']${href.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}["']`));
+    assert.match(
+      navigation,
+      new RegExp(
+        `href: ["']${href.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}["']`,
+      ),
+    );
   }
-  for (const label of ["BUILD", "TOOLS", "DOCS", "PRICING"]) {
+  for (const label of [
+    "Build",
+    "Assets",
+    "Icons",
+    "Studio",
+    "Docs",
+    "Pricing",
+    "CREATE",
+    "ASSETS",
+    "LEARN",
+    "ACCOUNT",
+  ]) {
     assert.match(navigation, new RegExp(`label: ["']${label}["']`));
   }
   assert.doesNotMatch(navigation, /href: ["']\/subscribe["']/);
@@ -62,7 +78,13 @@ test("isolated account control exposes signed-out and signed-in actions", () => 
   assert.match(account, /Sign in/);
   assert.match(account, /Start free/);
   assert.match(account, /Open workspace/);
-  for (const label of ["Roblox + Studio", "Billing", "Settings", "Support", "Sign out"]) {
+  for (const label of [
+    "Roblox + Studio",
+    "Billing",
+    "Settings",
+    "Support",
+    "Sign out",
+  ]) {
     assert.match(account, new RegExp(label.replace(/[+]/g, "\\+")));
   }
   assert.match(account, /signOut\(auth\)/);
@@ -99,19 +121,30 @@ test("public pricing reads the serializable catalog and preserves exact prices a
   assert.match(pricing, /getEntitlements/);
   assert.match(pricing, /Manage plan/);
   assert.match(pricing, /href="\/billing"/);
-  assert.match(pricing, /ACCESS LEDGER \/ USD/);
+  assert.match(pricing, /Plans and usage/);
   assert.match(pricing, /Choose how long the build can run/);
+  assert.match(pricing, /PlanFinder/);
+  assert.match(pricing, /Find a sensible starting point/);
+  assert.match(pricing, /This guide only highlights an existing plan/);
+  assert.match(pricing, /role="status" aria-live="polite"/);
+  assert.match(pricing, /data-recommended/);
   assert.match(pricing, /aria-label="NexusRBX access plans"/);
   assert.match(pricing, /data-plan=\{plan\.id\}/);
-  assert.match(pricing, /CAPACITY INDEX/);
+  assert.match(pricing, /Compare plans/);
   assert.match(pricing, /aria-label="Plan comparison table"/);
-  assert.doesNotMatch(pricing, /Recommended|featured|plan card/i);
-  assert.doesNotMatch(pricing, /gradient|testimonial|priority processing|collaboration/i);
+  assert.doesNotMatch(
+    pricing,
+    /gradient|testimonial|priority processing|collaboration/i,
+  );
 });
 
 test("pricing is indexable while subscribe remains the noindex application bridge", async () => {
-  const { buildSitemapDocuments } = require(path.join(root, "server/sitemapBuilder.js"));
-  const { classifyRoute } = require(path.join(root, "server/productionRouting.js"));
+  const { buildSitemapDocuments } = require(
+    path.join(root, "server/sitemapBuilder.js"),
+  );
+  const { classifyRoute } = require(
+    path.join(root, "server/productionRouting.js"),
+  );
 
   const pricing = await classifyRoute("/pricing");
   assert.equal(pricing.status, 200);
@@ -124,7 +157,10 @@ test("pricing is indexable while subscribe remains the noindex application bridg
   assert.equal(subscribe.indexable, false);
 
   const { documents } = buildSitemapDocuments();
-  assert.match(documents["sitemaps/core.xml"], /https:\/\/www\.nexusrbx\.com\/pricing/);
+  assert.match(
+    documents["sitemaps/core.xml"],
+    /https:\/\/www\.nexusrbx\.com\/pricing/,
+  );
   assert.doesNotMatch(documents["sitemaps/core.xml"], /\/subscribe/);
 
   const staticCore = read("public/sitemaps/core.xml");
@@ -132,7 +168,13 @@ test("pricing is indexable while subscribe remains the noindex application bridg
   assert.doesNotMatch(staticCore, /\/subscribe/);
 
   const vercel = JSON.parse(read("vercel.json"));
-  assert.ok(vercel.rewrites.some((entry) => entry.source === "/pricing" && entry.destination === "/api/render?path=/pricing"));
+  assert.ok(
+    vercel.rewrites.some(
+      (entry) =>
+        entry.source === "/pricing" &&
+        entry.destination === "/api/render?path=/pricing",
+    ),
+  );
 });
 
 test("pricing page publishes canonical metadata and restrained buyer copy", () => {

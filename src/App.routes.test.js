@@ -28,7 +28,7 @@ test("uses canonical public legal routes without SPA-owned legacy aliases", () =
   expect(appSource).not.toContain('<Route path="/privacy"');
   expect(appSource).not.toContain('<Route path="/terms"');
   expect(headerSource).toContain('STATIC_PUBLIC_PATHS = ["/docs", "/pricing", "/legal"]');
-  expect(navigationSource).toContain('{ href: "/legal", label: "Legal documents" }');
+  expect(navigationSource).toContain('{ href: "/legal", label: "Legal documents"');
   expect(signUpSource).toContain('href="/legal/terms"');
   expect(signUpSource).toContain('href="/legal/privacy"');
   for (const source of [signInSource, signUpSource]) {

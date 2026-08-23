@@ -24,7 +24,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" data-theme="dark" style={{ colorScheme: "dark" }} suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#1a1618" />
+        <meta name="theme-color" content="#0a0a0a" />
       </head>
       <body>
         {children}

@@ -46,7 +46,7 @@ test("uses the ledger type roles for route headings, records, and code", () => {
 
 test("the editorial layout keeps adaptive mobile gutters and single-column fallbacks", () => {
   assert.match(styles, /@media \(max-width: 820px\)/);
-  assert.match(styles, /min\(100% - 30px, 1240px\)/);
+  assert.match(styles, /min\(100% - 24px, var\(--nx-content-compact\)\)/);
   assert.match(styles, /@media \(max-width: 560px\)/);
   assert.match(styles, /grid-template-columns:\s*1fr/);
 });

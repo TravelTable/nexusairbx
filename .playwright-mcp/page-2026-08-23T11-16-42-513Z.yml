@@ -1,0 +1,268 @@
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - link "Skip to main content" [ref=e3] [cursor=pointer]:
+      - /url: "#main-content"
+    - generic [ref=e4]:
+      - link "NexusRBX home" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e7]: PROJECT /
+        - generic [ref=e8]: NEXUS/RBX
+      - generic [ref=e16]:
+        - button [ref=e248] [cursor=pointer]:
+          - generic [ref=e18]: ⌕
+        - link "Sign in" [ref=e250] [cursor=pointer]:
+          - /url: /signin
+        - button "Tools" [ref=e251] [cursor=pointer]
+  - generic [ref=e24]:
+    - main [ref=e25]:
+      - region [ref=e276]:
+        - generic [ref=e27]:
+          - generic [ref=e28]: AI BUILD WORKSPACE FOR ROBLOX
+          - heading "Build your Roblox game. Make it reviewable." [level=1] [ref=e277]:
+            - generic [ref=e30]: Build your Roblox game.
+            - generic [ref=e31]:
+              - text: Make it
+              - generic [ref=e32]:
+                - generic [ref=e33]:
+                  - generic [ref=e278]: r
+                  - generic [ref=e279]: e
+                  - generic [ref=e280]: v
+                  - generic [ref=e281]: i
+                  - generic [ref=e282]: e
+                  - generic [ref=e283]: w
+                  - generic [ref=e284]: a
+                  - generic [ref=e285]: b
+                  - generic [ref=e286]: l
+                  - generic [ref=e287]: e
+                - generic [ref=e288]:
+                  - generic [ref=e289]: r
+                  - generic [ref=e290]: e
+                  - generic [ref=e291]: a
+                  - generic [ref=e292]: l
+          - paragraph [ref=e42]: Talk to your project in plain language. Plan systems, generate Luau, review changes, and move approved work into Studio.
+          - generic [ref=e43]:
+            - generic [ref=e44]:
+              - generic [ref=e45]:
+                - 'button "Choose creation mode. Current mode: Agent" [expanded] [active] [ref=e46] [cursor=pointer]'
+                - group "Creation mode" [ref=e293]:
+                  - button "Agent" [pressed] [ref=e294] [cursor=pointer]:
+                    - strong [ref=e300]: Agent
+                  - button "Script" [ref=e301] [cursor=pointer]:
+                    - strong [ref=e305]: Script
+                  - button "Asset" [ref=e306] [cursor=pointer]:
+                    - strong [ref=e312]: Asset
+              - generic [ref=e55]:
+                - generic [ref=e56]: What Roblox game do you want to make?
+                - textbox "What Roblox game do you want to make?" [ref=e57]:
+                  - /placeholder: Describe the game, player loop, or system in your head...
+                  - text: Build a round-based horror game with simple mobile controls and rooms that shift after each round.
+              - button "Start building" [ref=e273] [cursor=pointer]
+            - paragraph [ref=e59]: Your request is saved before the workspace opens.
+          - generic [ref=e60]:
+            - link "Open workspace" [ref=e61] [cursor=pointer]:
+              - /url: /ai
+            - link "View pricing" [ref=e62] [cursor=pointer]:
+              - /url: /pricing
+        - img "MAIN PRODUCT OR GAMEPLAY IMAGE image placeholder" [ref=e64]:
+          - generic [ref=e65]: IMAGE PLACEHOLDER
+          - strong [ref=e66]: MAIN PRODUCT OR GAMEPLAY IMAGE
+          - generic [ref=e67]: 1600 × 1000 recommended
+      - region [ref=e68]:
+        - generic [ref=e69]:
+          - heading "Show what creators are building with Nexus" [level=2] [ref=e70]
+          - paragraph [ref=e71]: Replace these slots with project screenshots, Studio results, community builds, or before-and-after proof.
+        - generic "Project image placeholders" [ref=e72]:
+          - article [ref=e73]:
+            - img "GAMEPLAY BEFORE / AFTER image placeholder" [ref=e74]:
+              - generic [ref=e75]: IMAGE PLACEHOLDER
+              - strong [ref=e76]: GAMEPLAY BEFORE / AFTER
+              - generic [ref=e77]: 900 × 1200
+          - article [ref=e78]:
+            - img "STUDIO CHANGE REVIEW image placeholder" [ref=e79]:
+              - generic [ref=e80]: IMAGE PLACEHOLDER
+              - strong [ref=e81]: STUDIO CHANGE REVIEW
+              - generic [ref=e82]: 900 × 1200
+          - article [ref=e83]:
+            - img "MOBILE UI RESULT image placeholder" [ref=e84]:
+              - generic [ref=e85]: IMAGE PLACEHOLDER
+              - strong [ref=e86]: MOBILE UI RESULT
+              - generic [ref=e87]: 900 × 1200
+          - article [ref=e88]:
+            - img "ROUND SYSTEM RESULT image placeholder" [ref=e89]:
+              - generic [ref=e90]: IMAGE PLACEHOLDER
+              - strong [ref=e91]: ROUND SYSTEM RESULT
+              - generic [ref=e92]: 900 × 1200
+          - article [ref=e93]:
+            - img "CREATOR DASHBOARD image placeholder" [ref=e94]:
+              - generic [ref=e95]: IMAGE PLACEHOLDER
+              - strong [ref=e96]: CREATOR DASHBOARD
+              - generic [ref=e97]: 900 × 1200
+          - article [ref=e98]:
+            - img "PROJECT TEST RECORD image placeholder" [ref=e99]:
+              - generic [ref=e100]: IMAGE PLACEHOLDER
+              - strong [ref=e101]: PROJECT TEST RECORD
+              - generic [ref=e102]: 900 × 1200
+      - region [ref=e103]:
+        - generic [ref=e104]:
+          - heading "Get every build tool in one place" [level=2] [ref=e105]
+          - paragraph [ref=e106]: Move from a rough idea to reviewed project work without stitching together separate creation flows.
+        - tablist "NexusRBX tools" [ref=e107]:
+          - tab "Agent build" [selected] [ref=e108] [cursor=pointer]
+          - tab "Quick scripts" [ref=e109] [cursor=pointer]
+          - tab "Studio sync" [ref=e110] [cursor=pointer]
+          - tab "Assets" [ref=e111] [cursor=pointer]
+        - tabpanel [ref=e112]:
+          - generic [ref=e113]:
+            - generic [ref=e114]: CURRENT VIEW
+            - heading "Build through conversation" [level=3] [ref=e115]
+            - paragraph [ref=e116]: Describe the game, system, or fix. Nexus reads the project, plans the work, and keeps the result attached to one request.
+            - link "Open Agent build /" [ref=e117] [cursor=pointer]:
+              - /url: /ai
+          - img "AGENT WORKSPACE SCREENSHOT image placeholder" [ref=e118]:
+            - generic [ref=e119]: IMAGE PLACEHOLDER
+            - strong [ref=e120]: AGENT WORKSPACE SCREENSHOT
+            - generic [ref=e121]: 1600 × 900 recommended
+        - generic [ref=e122]:
+          - article [ref=e123]:
+            - img "AGENT BUILD DETAIL image placeholder" [ref=e124]:
+              - generic [ref=e125]: IMAGE PLACEHOLDER
+              - strong [ref=e126]: AGENT BUILD DETAIL
+              - generic [ref=e127]: 800 × 600
+            - heading "Agent build" [level=3] [ref=e128]
+            - paragraph [ref=e129]: Describe the game, system, or fix. Nexus reads the project, plans the work, and keeps the result attached to one request.
+          - article [ref=e130]:
+            - img "QUICK SCRIPTS DETAIL image placeholder" [ref=e131]:
+              - generic [ref=e132]: IMAGE PLACEHOLDER
+              - strong [ref=e133]: QUICK SCRIPTS DETAIL
+              - generic [ref=e134]: 800 × 600
+            - heading "Quick scripts" [level=3] [ref=e135]
+            - paragraph [ref=e136]: Generate focused scripts with context, explanations, source safety, and a clean handoff into your existing project.
+          - article [ref=e137]:
+            - img "STUDIO SYNC DETAIL image placeholder" [ref=e138]:
+              - generic [ref=e139]: IMAGE PLACEHOLDER
+              - strong [ref=e140]: STUDIO SYNC DETAIL
+              - generic [ref=e141]: 800 × 600
+            - heading "Studio sync" [level=3] [ref=e142]
+            - paragraph [ref=e143]: Pair Roblox Studio, inspect the current object graph, review proposed changes, and restore snapshots when needed.
+          - article [ref=e144]:
+            - img "ASSETS DETAIL image placeholder" [ref=e145]:
+              - generic [ref=e146]: IMAGE PLACEHOLDER
+              - strong [ref=e147]: ASSETS DETAIL
+              - generic [ref=e148]: 800 × 600
+            - heading "Assets" [level=3] [ref=e149]
+            - paragraph [ref=e150]: Create, organize, and reuse icons, decals, interface art, and other project assets without losing the build context.
+      - region [ref=e151]:
+        - generic [ref=e152]:
+          - heading "One workspace. Your whole Roblox build stack." [level=2] [ref=e153]
+          - paragraph [ref=e154]: Project context, creation, Studio actions, assets, review, and recovery stay connected to the same body of work.
+        - img "FULL WORKSPACE OVERVIEW image placeholder" [ref=e156]:
+          - generic [ref=e157]: IMAGE PLACEHOLDER
+          - strong [ref=e158]: FULL WORKSPACE OVERVIEW
+          - generic [ref=e159]: 1600 × 900 recommended
+        - generic [ref=e160]:
+          - article [ref=e161]:
+            - text: "01"
+            - heading "Project-aware agent" [level=3] [ref=e162]
+            - paragraph [ref=e163]: Reads the current place and keeps work grounded in the real object tree.
+          - article [ref=e164]:
+            - text: "02"
+            - heading "Luau generation" [level=3] [ref=e165]
+            - paragraph [ref=e166]: Creates focused client, server, module, and interface code with visible scope.
+          - article [ref=e167]:
+            - text: "03"
+            - heading "Studio bridge" [level=3] [ref=e168]
+            - paragraph [ref=e169]: Moves approved work into Roblox Studio and reports structured results back.
+          - article [ref=e170]:
+            - text: "04"
+            - heading "Review and recovery" [level=3] [ref=e171]
+            - paragraph [ref=e172]: Keeps change sets, source matches, snapshots, and restore paths together.
+          - article [ref=e173]:
+            - text: "05"
+            - heading "Asset workspace" [level=3] [ref=e174]
+            - paragraph [ref=e175]: Organizes generated and uploaded project media in one reusable library.
+          - article [ref=e176]:
+            - text: "06"
+            - heading "Build history" [level=3] [ref=e177]
+            - paragraph [ref=e178]: Preserves the request, decisions, failures, corrections, and final evidence.
+      - region [ref=e179]:
+        - heading "Frequently asked questions" [level=2] [ref=e181]
+        - generic [ref=e182]:
+          - group [ref=e183]:
+            - generic "Can Nexus work with an existing Roblox game?" [ref=e184] [cursor=pointer]:
+              - text: Can Nexus work with an existing Roblox game?
+              - generic [ref=e185]: +
+            - paragraph [ref=e186]: Yes. The Studio workflow reads the current project first, then scopes changes around what already exists.
+          - group [ref=e187]:
+            - generic "Do I need to know Luau?" [ref=e188] [cursor=pointer]:
+              - text: Do I need to know Luau?
+              - generic [ref=e189]: +
+          - group [ref=e190]:
+            - generic "Can I review changes before they reach Studio?" [ref=e191] [cursor=pointer]:
+              - text: Can I review changes before they reach Studio?
+              - generic [ref=e192]: +
+          - group [ref=e193]:
+            - generic "What can I build?" [ref=e194] [cursor=pointer]:
+              - text: What can I build?
+              - generic [ref=e195]: +
+      - region [ref=e196]:
+        - generic [ref=e197]:
+          - generic [ref=e198]: START WITH ONE REQUEST
+          - heading "Build more of the game you actually want to ship." [level=2] [ref=e199]
+          - paragraph [ref=e200]: Bring a new idea or connect an existing project. Nexus keeps the work visible from request to review.
+        - generic [ref=e201]:
+          - generic [ref=e202]:
+            - generic [ref=e203]:
+              - 'button "Choose creation mode. Current mode: Agent" [ref=e204] [cursor=pointer]'
+              - group:
+                - button [pressed]:
+                  - strong: Agent
+                - button:
+                  - strong: Script
+                - button:
+                  - strong: Asset
+            - generic [ref=e213]:
+              - generic [ref=e214]: What Roblox game do you want to make?
+              - textbox "What Roblox game do you want to make?" [ref=e215]:
+                - /placeholder: Describe the game, player loop, or system in your head...
+            - generic [ref=e216]:
+              - button "Open workspace" [disabled]
+          - paragraph [ref=e217]: Your request is saved locally before the workspace opens.
+    - contentinfo [ref=e218]:
+      - generic [ref=e219]:
+        - generic [ref=e220]:
+          - link "NexusRBX home" [ref=e221] [cursor=pointer]:
+            - /url: /
+            - text: NexusRBX
+          - paragraph [ref=e222]: Talk to the project, understand the work, inspect the result, and keep building.
+        - navigation "Footer" [ref=e223]:
+          - link "Product" [ref=e224] [cursor=pointer]:
+            - /url: /#product
+          - link "How it works" [ref=e225] [cursor=pointer]:
+            - /url: /#workflow
+          - link "Project context" [ref=e226] [cursor=pointer]:
+            - /url: /#context
+          - link "Studio" [ref=e227] [cursor=pointer]:
+            - /url: /#studio
+          - link "Games" [ref=e228] [cursor=pointer]:
+            - /url: /#genres
+          - link "Creator upside" [ref=e229] [cursor=pointer]:
+            - /url: /#grow
+          - link "Downloads" [ref=e230] [cursor=pointer]:
+            - /url: /downloads
+          - link "Pricing" [ref=e231] [cursor=pointer]:
+            - /url: /pricing
+          - link "Docs" [ref=e232] [cursor=pointer]:
+            - /url: /docs
+          - link "Support" [ref=e233] [cursor=pointer]:
+            - /url: /support
+          - link "Contact" [ref=e234] [cursor=pointer]:
+            - /url: /contact
+          - link "Legal" [ref=e235] [cursor=pointer]:
+            - /url: /legal
+          - link "Privacy" [ref=e236] [cursor=pointer]:
+            - /url: /legal/privacy
+          - link "Terms" [ref=e237] [cursor=pointer]:
+            - /url: /legal/terms
+      - paragraph [ref=e238]: NexusRBX is an independent developer tool and is not affiliated with or endorsed by Roblox Corporation. Earnings are never guaranteed.
+  - button "Open Next.js Dev Tools" [ref=e244] [cursor=pointer]
+  - alert [ref=e275]

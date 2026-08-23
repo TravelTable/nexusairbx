@@ -4,28 +4,22 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import ChatHeader from "./ChatHeader";
 
 describe("ChatHeader", () => {
-  test("shows project context, chat title, and Studio state", () => {
+  test("keeps the toolbar focused on the chat identity", () => {
     render(
       <ChatHeader
         projectTitle="Obby Project"
         chatTitle="Checkpoint polish"
         studioConnected
-      />
+      />,
     );
-
-    expect(screen.getByText("Obby Project")).toBeTruthy();
     expect(screen.getByText("Checkpoint polish")).toBeTruthy();
-    expect(screen.getByText("Studio Live")).toBeTruthy();
+    expect(screen.queryByText("Obby Project")).toBeNull();
+    expect(screen.queryByText("Studio Live")).toBeNull();
   });
 
   test("renames the chat inline", () => {
     const onRenameChat = jest.fn();
-    render(
-      <ChatHeader
-        chatTitle="Old title"
-        onRenameChat={onRenameChat}
-      />
-    );
+    render(<ChatHeader chatTitle="Old title" onRenameChat={onRenameChat} />);
 
     fireEvent.click(screen.getByTitle("Rename chat"));
     const input = screen.getByRole("textbox", { name: "Chat title" });
@@ -36,9 +30,16 @@ describe("ChatHeader", () => {
   });
 
   test("names project navigation and plan actions for assistive technology", () => {
-    render(<ChatHeader onOpenPlan={jest.fn()} navigationControls="project-sidebar" />);
+    render(
+      <ChatHeader
+        onOpenPlan={jest.fn()}
+        navigationControls="project-sidebar"
+      />,
+    );
 
-    const navigation = screen.getByRole("button", { name: "Toggle project navigation" });
+    const navigation = screen.getByRole("button", {
+      name: "Toggle project navigation",
+    });
     const review = screen.getByRole("button", { name: "Review plan" });
 
     expect(navigation).toHaveAttribute("aria-controls", "project-sidebar");

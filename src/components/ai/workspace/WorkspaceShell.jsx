@@ -37,18 +37,24 @@ const FOCUSABLE_SELECTOR = [
 
 function getVisibleFocusableElements(container) {
   if (!container) return [];
-  return Array.from(container.querySelectorAll(FOCUSABLE_SELECTOR)).filter((element) => {
-    let currentElement = element;
-    while (currentElement) {
-      const style = window.getComputedStyle(currentElement);
-      if (currentElement.hidden || style.display === "none" || style.visibility === "hidden") {
-        return false;
+  return Array.from(container.querySelectorAll(FOCUSABLE_SELECTOR)).filter(
+    (element) => {
+      let currentElement = element;
+      while (currentElement) {
+        const style = window.getComputedStyle(currentElement);
+        if (
+          currentElement.hidden ||
+          style.display === "none" ||
+          style.visibility === "hidden"
+        ) {
+          return false;
+        }
+        if (currentElement === container) break;
+        currentElement = currentElement.parentElement;
       }
-      if (currentElement === container) break;
-      currentElement = currentElement.parentElement;
-    }
-    return true;
-  });
+      return true;
+    },
+  );
 }
 
 export function clampWorkspaceDrawerWidth(width) {
@@ -98,10 +104,12 @@ export function WorkspaceEmptyState({ title, description, action }) {
   return (
     <div className="workspace-stage-empty">
       <div className="workspace-stage-empty__content">
-        <span className="workspace-stage-empty__eyebrow">No evidence recorded</span>
+        <span className="workspace-stage-empty__eyebrow">No evidence yet</span>
         <h3>{title}</h3>
         {description ? <p>{description}</p> : null}
-        {action ? <div className="workspace-stage-empty__action">{action}</div> : null}
+        {action ? (
+          <div className="workspace-stage-empty__action">{action}</div>
+        ) : null}
       </div>
     </div>
   );
@@ -118,12 +126,16 @@ function EvidenceLensBar({
   compact = false,
 }) {
   const moveFocus = (event) => {
-    const tabs = Array.from(event.currentTarget.querySelectorAll('[role="tab"]'));
+    const tabs = Array.from(
+      event.currentTarget.querySelectorAll('[role="tab"]'),
+    );
     const currentIndex = tabs.indexOf(event.target.closest('[role="tab"]'));
     if (currentIndex < 0 || !tabs.length) return;
     let nextIndex;
-    if (["ArrowRight", "ArrowDown"].includes(event.key)) nextIndex = (currentIndex + 1) % tabs.length;
-    if (["ArrowLeft", "ArrowUp"].includes(event.key)) nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+    if (["ArrowRight", "ArrowDown"].includes(event.key))
+      nextIndex = (currentIndex + 1) % tabs.length;
+    if (["ArrowLeft", "ArrowUp"].includes(event.key))
+      nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
     if (event.key === "Home") nextIndex = 0;
     if (event.key === "End") nextIndex = tabs.length - 1;
     if (nextIndex == null) return;
@@ -142,6 +154,7 @@ function EvidenceLensBar({
       {WORKSPACE_DOCK_PANELS.map((tool) => {
         const badge = panelBadges[tool.id];
         const isSelected = selectedPanel === tool.id;
+        const ToolIcon = tool.icon;
         return (
           <button
             key={tool.id}
@@ -157,11 +170,21 @@ function EvidenceLensBar({
             data-evidence-lens={tool.id}
             onClick={(event) => onSelect(tool.id, event.currentTarget)}
           >
-            <span className="workspace-evidence-lenses__label" aria-hidden={compact ? "true" : undefined}>
-              {compact ? tool.label.slice(0, 3).toUpperCase() : tool.label}
+            <span
+              className="workspace-evidence-lenses__label"
+              aria-hidden={compact ? "true" : undefined}
+            >
+              {compact ? <ToolIcon aria-hidden="true" /> : tool.label}
             </span>
             {badge ? (
-              <span className="workspace-evidence-lenses__badge" aria-label={typeof badge === "number" ? `${badge} unseen items` : "Unseen items"}>
+              <span
+                className="workspace-evidence-lenses__badge"
+                aria-label={
+                  typeof badge === "number"
+                    ? `${badge} unseen items`
+                    : "Unseen items"
+                }
+              >
                 {typeof badge === "number" ? Math.min(badge, 99) : ""}
               </span>
             ) : null}
@@ -180,12 +203,13 @@ export default function WorkspaceShell({
   onDrawerWidthChange,
   panelBadges = {},
   renderPanel,
+  hideEvidenceLauncher = false,
+  evidenceLauncherRef = null,
 }) {
   const shellId = useId().replace(/:/g, "");
   const stageId = `workspace-context-drawer-${shellId}`;
   const stageTitleId = `workspace-stage-title-${shellId}`;
   const tabPanelId = `workspace-evidence-panel-${shellId}`;
-  const edgeTabIdPrefix = `workspace-evidence-edge-tab-${shellId}`;
   const stageTabIdPrefix = `workspace-evidence-stage-tab-${shellId}`;
   const presence = useMotionPresence(Boolean(activePanel), 300);
   const [containerWidth, setContainerWidth] = useState(null);
@@ -194,7 +218,8 @@ export default function WorkspaceShell({
   const stageRef = useRef(null);
   const backButtonRef = useRef(null);
   const closeButtonRef = useRef(null);
-  const launcherRef = useRef(null);
+  const internalLauncherRef = useRef(null);
+  const launcherRef = evidenceLauncherRef || internalLauncherRef;
   const stageLensRef = useRef(null);
   const openerRef = useRef(null);
   const restoreLauncherFocusRef = useRef(false);
@@ -206,28 +231,41 @@ export default function WorkspaceShell({
   if (activePanel) visiblePanelRef.current = activePanel;
   const visiblePanel = activePanel || visiblePanelRef.current;
   const selectedTool = useMemo(
-    () => WORKSPACE_DOCK_PANELS.find((tool) => tool.id === visiblePanel) || WORKSPACE_DOCK_PANELS.at(-1),
+    () =>
+      WORKSPACE_DOCK_PANELS.find((tool) => tool.id === visiblePanel) ||
+      WORKSPACE_DOCK_PANELS.at(-1),
     [visiblePanel],
   );
   const safeDrawerWidth = clampWorkspaceDrawerWidth(drawerWidth);
-  const isOverlayBreakpoint = containerWidth != null
-    && containerWidth < WORKSPACE_DRAWER_OVERLAY_BREAKPOINT;
-  const isMobileBreakpoint = containerWidth != null
-    && containerWidth < WORKSPACE_DRAWER_MOBILE_BREAKPOINT;
-  const isModalStageOpen = Boolean(activePanel && (isOverlayBreakpoint || fullscreen));
+  const isOverlayBreakpoint =
+    containerWidth != null &&
+    containerWidth < WORKSPACE_DRAWER_OVERLAY_BREAKPOINT;
+  const isMobileBreakpoint =
+    containerWidth != null &&
+    containerWidth < WORKSPACE_DRAWER_MOBILE_BREAKPOINT;
+  const isModalStageOpen = Boolean(
+    activePanel && (isOverlayBreakpoint || fullscreen),
+  );
   const hasAnyBadge = Object.values(panelBadges).some(Boolean);
+  const evidenceCount = Object.values(panelBadges).reduce(
+    (total, badge) =>
+      total + (typeof badge === "number" ? badge : badge ? 1 : 0),
+    0,
+  );
 
   useLayoutEffect(() => {
     const shell = shellRef.current;
     if (!shell) return undefined;
     const updateWidth = (nextWidth) => {
-      if (Number.isFinite(nextWidth) && nextWidth > 0) setContainerWidth(nextWidth);
+      if (Number.isFinite(nextWidth) && nextWidth > 0)
+        setContainerWidth(nextWidth);
     };
     const measure = () => updateWidth(shell.getBoundingClientRect().width);
     measure();
     if (typeof ResizeObserver === "function") {
       const observer = new ResizeObserver((entries) => {
-        const entry = entries.find((candidate) => candidate.target === shell) || entries[0];
+        const entry =
+          entries.find((candidate) => candidate.target === shell) || entries[0];
         updateWidth(entry?.contentRect?.width);
       });
       observer.observe(shell);
@@ -245,19 +283,26 @@ export default function WorkspaceShell({
   }, [onPanelChange]);
 
   useLayoutEffect(() => {
-    if (activePanel || !restoreLauncherFocusRef.current || !launcherRef.current) return;
+    if (activePanel || !restoreLauncherFocusRef.current || !launcherRef.current)
+      return;
     restoreLauncherFocusRef.current = false;
     launcherRef.current.focus();
-  }, [activePanel]);
+  }, [activePanel, launcherRef]);
 
-  const openStage = useCallback((panelId = visiblePanel, trigger = launcherRef.current) => {
-    openerRef.current = trigger || launcherRef.current;
-    onPanelChange(panelId || "details");
-  }, [onPanelChange, visiblePanel]);
+  const openStage = useCallback(
+    (panelId = visiblePanel, trigger = launcherRef.current) => {
+      openerRef.current = trigger || launcherRef.current;
+      onPanelChange(panelId || "details");
+    },
+    [launcherRef, onPanelChange, visiblePanel],
+  );
 
-  const selectPanel = useCallback((panelId, trigger) => {
-    openStage(panelId, trigger || openerRef.current || launcherRef.current);
-  }, [openStage]);
+  const selectPanel = useCallback(
+    (panelId, trigger) => {
+      openStage(panelId, trigger || openerRef.current || launcherRef.current);
+    },
+    [launcherRef, openStage],
+  );
 
   useEffect(() => {
     if (!activePanel) setFullscreen(false);
@@ -285,11 +330,14 @@ export default function WorkspaceShell({
       }
       const currentIndex = focusableElements.indexOf(document.activeElement);
       const shouldWrapBackward = event.shiftKey && currentIndex <= 0;
-      const shouldWrapForward = !event.shiftKey
-        && (currentIndex === -1 || currentIndex === focusableElements.length - 1);
+      const shouldWrapForward =
+        !event.shiftKey &&
+        (currentIndex === -1 || currentIndex === focusableElements.length - 1);
       if (!shouldWrapBackward && !shouldWrapForward) return;
       event.preventDefault();
-      focusableElements[shouldWrapBackward ? focusableElements.length - 1 : 0].focus();
+      focusableElements[
+        shouldWrapBackward ? focusableElements.length - 1 : 0
+      ].focus();
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
@@ -312,10 +360,16 @@ export default function WorkspaceShell({
     const becameModal = isModalStageOpen && !previousModalStateRef.current;
     if (becameModal) {
       const activeElement = document.activeElement;
-      if (!openerRef.current?.isConnected && activeElement && !stageRef.current?.contains(activeElement)) {
+      if (
+        !openerRef.current?.isConnected &&
+        activeElement &&
+        !stageRef.current?.contains(activeElement)
+      ) {
         openerRef.current = activeElement;
       }
-      const initialFocus = isMobileBreakpoint ? backButtonRef.current : closeButtonRef.current;
+      const initialFocus = isMobileBreakpoint
+        ? backButtonRef.current
+        : closeButtonRef.current;
       (initialFocus || stageRef.current)?.focus();
       pendingInlineFocusRef.current = false;
     } else if (!isModalStageOpen && pendingInlineFocusRef.current) {
@@ -331,7 +385,10 @@ export default function WorkspaceShell({
 
   useEffect(() => {
     if (!activePanel) return undefined;
-    const timeoutId = window.setTimeout(() => window.dispatchEvent(new Event("resize")), 310);
+    const timeoutId = window.setTimeout(
+      () => window.dispatchEvent(new Event("resize")),
+      310,
+    );
     return () => window.clearTimeout(timeoutId);
   }, [activePanel, safeDrawerWidth, fullscreen]);
 
@@ -345,7 +402,9 @@ export default function WorkspaceShell({
     const previousCursor = document.body.style.cursor;
     const previousUserSelect = document.body.style.userSelect;
     const onPointerMove = (moveEvent) => {
-      onDrawerWidthChange?.(clampWorkspaceDrawerWidth(startWidth + startX - moveEvent.clientX));
+      onDrawerWidthChange?.(
+        clampWorkspaceDrawerWidth(startWidth + startX - moveEvent.clientX),
+      );
     };
     const cleanup = () => {
       window.removeEventListener("pointermove", onPointerMove);
@@ -397,29 +456,35 @@ export default function WorkspaceShell({
         {children}
       </div>
 
-      {!activePanel ? (
-        <nav className="workspace-evidence-edge" aria-label="Open evidence stage">
+      {!activePanel && !hideEvidenceLauncher ? (
+        <nav
+          className="workspace-evidence-edge"
+          aria-label="Open evidence stage"
+        >
           <button
             ref={launcherRef}
             type="button"
             className="workspace-evidence-edge__label focus-ring"
-            aria-label="Open Stage evidence"
+            aria-label={
+              evidenceCount
+                ? `Open Stage evidence, ${evidenceCount} new ${evidenceCount === 1 ? "item" : "items"}`
+                : "Open Stage evidence"
+            }
             aria-controls={stageId}
             aria-expanded="false"
             onClick={(event) => openStage(visiblePanel, event.currentTarget)}
           >
             <span>Evidence</span>
-            {hasAnyBadge ? <span className="workspace-evidence-edge__signal" aria-label="New evidence" /> : null}
+            <span className="workspace-evidence-edge__count" aria-hidden="true">
+              {evidenceCount}
+            </span>
+            {hasAnyBadge ? (
+              <span
+                className="workspace-evidence-edge__signal"
+                aria-label="New evidence"
+              />
+            ) : null}
           </button>
-          <EvidenceLensBar
-            activePanel={activePanel}
-            selectedPanel={visiblePanel}
-            panelBadges={panelBadges}
-            onSelect={selectPanel}
-            tabPanelId={tabPanelId}
-            tabIdPrefix={edgeTabIdPrefix}
-            compact
-          />
         </nav>
       ) : null}
 
@@ -455,7 +520,9 @@ export default function WorkspaceShell({
               tabIndex={0}
               onPointerDown={beginResize}
               onKeyDown={resizeWithKeyboard}
-              onDoubleClick={() => onDrawerWidthChange?.(WORKSPACE_DRAWER_DEFAULT_WIDTH)}
+              onDoubleClick={() =>
+                onDrawerWidthChange?.(WORKSPACE_DRAWER_DEFAULT_WIDTH)
+              }
             />
           ) : null}
 
@@ -483,7 +550,9 @@ export default function WorkspaceShell({
                 <button
                   type="button"
                   className="workspace-stage__action workspace-stage__icon-action focus-ring"
-                  aria-label={fullscreen ? "Exit full screen" : "Enter full screen"}
+                  aria-label={
+                    fullscreen ? "Exit full screen" : "Enter full screen"
+                  }
                   aria-pressed={fullscreen}
                   onClick={() => setFullscreen((current) => !current)}
                 >

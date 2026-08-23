@@ -152,27 +152,26 @@ const legalRoutes = [
 test("homepage raw HTML is meaningful before client JavaScript", () => {
   const html = readHtml("/");
   assert.equal(extractTitle(html), "Build and Review Roblox Projects | NexusRBX");
-  assert.equal(extractH1(html), "Create a round-based horror game in a broken arcade.");
+  assert.equal(extractH1(html), "Build your Roblox game.Make it playable");
   assert.equal(
     extractMetaContent(html, "description"),
     "Turn a Roblox project request into inspected Studio context, reviewable changes, playtest evidence, and a recoverable build record.",
   );
   assert.equal(extractCanonical(html), "https://www.nexusrbx.com/");
-  assert.match(html, /REQUEST \/ 184/);
-  assert.match(html, /Keep mobile controls simple\. Make the rooms shift after each round\./);
+  assert.match(html, /aria-label="Creation mode"/);
+  assert.match(html, /<button[^>]*aria-label="Agent"[^>]*>/);
+  assert.match(html, /<button[^>]*aria-label="Script"[^>]*>/);
+  assert.match(html, /<button[^>]*aria-label="Asset"[^>]*>/);
   assert.match(html, /aria-busy="false"/);
-  assert.match(html, /<button[^>]*type="submit"[^>]*disabled=""[^>]*>Run build<\/button>/);
-  assert.match(html, /id="homepage-hero-prompt-message"[^>]*>The request is saved before the workspace opens\. Review remains part of the build\./);
-  assert.match(html, /The project exists before the request\./);
-  assert.match(html, /One request remains one reviewable change set\./);
-  assert.match(html, /The first failure stays in the record\./);
-  assert.match(html, /Keep the change, inspect one object, or restore the snapshot\./);
-  assert.match(html, /Change the world, not the workflow\./);
-  assert.match(html, /Robux is an outcome, not a generate button\./);
-  assert.match(html, /Breadth without invented customer proof\./);
-  assert.match(html, /These are project briefs, not testimonials or earnings claims\./);
+  assert.match(html, /<button[^>]*type="submit"[^>]*disabled=""[^>]*>[\s\S]*?Start building[\s\S]*?<\/button>/);
+  assert.match(html, /id="homepage-hero-prompt-message"[^>]*>[\s\S]*?Your request is saved before the workspace opens\./);
+  assert.match(html, /Show what creators are building with Nexus/);
+  assert.match(html, /Get every build tool in one place/);
+  assert.match(html, /One workspace\. Your whole Roblox build stack\./);
+  assert.match(html, /Build more of the game you actually want to ship\./);
   assert.doesNotMatch(html, /Trusted by Top Roblox Developers|Alex, Studio Lead|game-changer/);
-  assert.match(html, /src="\/nexus-mark\.svg"/);
+  assert.match(html, /aria-label="NexusRBX home"/);
+  assert.match(html, /NEXUS\/RBX/);
   assert.match(html, /nexusrbx-og-flat-world\.jpg/);
   assert.doesNotMatch(html, /nexusrbx-og-purple-workshop\.png/);
   assert.doesNotMatch(html, /src="\/(?:logo|imageeeeAI|luginimageeeeeeeee|promptbox|generated-files)\.png"/);
@@ -184,11 +183,12 @@ test("homepage raw HTML is meaningful before client JavaScript", () => {
   assert.match(html, /href="\/downloads"/);
   assert.equal(countCanonical(html), 1);
   [
-    "/roblox-script-generator",
-    "/roblox-ai-scripter",
-    "/roblox-studio-script-generator",
-    "/roblox-lua-script-generator",
-    "/roblox-gui-maker",
+    "/ai",
+    "/assets",
+    "/icons-market",
+    "/downloads",
+    "/docs",
+    "/pricing",
   ].forEach((route) => assert.match(html, new RegExp(`href="${route}"`)));
   assert.doesNotMatch(html, /\/ai-preview\.png|nexus-cinematic-(?:hero|vault|final)/);
   assert.doesNotMatch(html, /Monaco|AgentWorkspaceLayout|CodeEditorTabs/);
@@ -196,12 +196,11 @@ test("homepage raw HTML is meaningful before client JavaScript", () => {
 
 test("homepage trust copy is specific without implying verification or earnings", () => {
   const html = readHtml("/");
-  assert.match(html, /EXPECTED SOURCE MATCHED/);
-  assert.match(html, /Expected hashes matched/);
-  assert.match(html, /test evidence, and recovery point remain visible together/);
-  assert.match(html, /Robux can follow—never promised/);
-  assert.match(html, /not testimonials or earnings claims/);
-  assert.doesNotMatch(html, /Roblox OAuth Verified|guaranteed Robux|guaranteed earnings/i);
+  assert.match(html, /reads the current project first/);
+  assert.match(html, /Reviewable change sets and explicit Studio actions keep the work visible/);
+  assert.match(html, /Keeps change sets, source matches, snapshots, and restore paths together/);
+  assert.match(html, /Preserves the request, decisions, failures, corrections, and final evidence/);
+  assert.doesNotMatch(html, /Roblox OAuth Verified|guaranteed Robux|guaranteed earnings|invented customer proof/i);
 });
 
 test("downloads raw HTML is meaningful and fails closed before release verification", () => {
@@ -314,6 +313,7 @@ test("search landing page internal links resolve to known public or app routes",
   const knownRoutes = new Set([
     "/",
     "/ai",
+    "/assets",
     "/contact",
     "/downloads",
     "/icons-market",

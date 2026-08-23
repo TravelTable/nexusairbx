@@ -44,21 +44,24 @@ function UnreadCount({ count }) {
   return <span className={styles.unread} aria-label={`${count} unread support messages`}>{count > 99 ? "99+" : count}</span>;
 }
 
-function AccountControl({ identity, mobile = false, showWorkspaceAction = true }) {
+function AccountControl({ identity, mobile = false, compact = false, showWorkspaceAction = true }) {
   const [open, setOpen] = useState(false);
   const buttonRef = useRef(null);
   const menuRef = useRef(null);
   useDismissibleMenu(open, setOpen, buttonRef, menuRef);
 
-  const groupClass = mobile
-    ? `${styles.accountGroup} ${styles.accountGroupMobile}`
-    : styles.accountGroup;
+  const groupClass = compact
+    ? `${styles.accountGroup} ${styles.accountGroupCompact}`
+    : mobile
+      ? `${styles.accountGroup} ${styles.accountGroupMobile}`
+      : styles.accountGroup;
 
   if (!identity.authReady) {
     return <div className={`${groupClass} ${styles.checking}`} role="status">ACCOUNT / CHECKING</div>;
   }
 
   if (!identity.user) {
+    if (compact) return <AppLink to="/signin" className={styles.compactAccountButton} aria-label="Sign in">Sign in</AppLink>;
     return (
       <div className={groupClass}>
         <AppLink to="/signin" className={styles.textAction}>Sign in</AppLink>
@@ -86,6 +89,7 @@ function AccountControl({ identity, mobile = false, showWorkspaceAction = true }
           onClick={() => setOpen((value) => !value)}
         >
           {identity.displayName || "Account"}
+          {compact ? <span className={styles.compactPlan}>{identity.planLabel}</span> : null}
           <UnreadCount count={identity.supportUnreadCount} />
         </button>
         {open ? (
@@ -177,6 +181,7 @@ export default function SiteHeader({
       LinkComponent={AppLink}
       accountSlot={<AccountControl identity={identity} />}
       mobileAccountSlot={<AccountControl identity={identity} mobile />}
+      compactAccountSlot={<AccountControl identity={identity} compact showWorkspaceAction={false} />}
       before={<SkipToMainContent targetId={skipTargetId} />}
     />
   );

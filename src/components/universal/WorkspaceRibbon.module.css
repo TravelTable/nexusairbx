@@ -2,7 +2,7 @@
   position: relative;
   z-index: 60;
   display: grid;
-  min-height: 49px;
+  min-height: 48px;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: stretch;
   border-bottom: 1px solid var(--nx-rule);
@@ -30,7 +30,7 @@
 }
 
 .right {
-  gap: var(--nx-space-3);
+  gap: var(--nx-space-2);
   justify-content: flex-end;
   padding: 0 var(--nx-space-3);
   border-left: 1px solid var(--nx-rule-quiet);
@@ -47,7 +47,15 @@
 }
 
 @media (max-width: 640px) {
-  .brand { padding: 0 var(--nx-space-2); }
-  .left, .right { gap: var(--nx-space-2); padding: 0 var(--nx-space-2); }
-  .label { display: none; }
+  .brand {
+    padding: 0 var(--nx-space-2);
+  }
+  .left,
+  .right {
+    gap: var(--nx-space-2);
+    padding: 0 var(--nx-space-2);
+  }
+  .label {
+    display: none;
+  }
 }

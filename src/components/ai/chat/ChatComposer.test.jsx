@@ -3,25 +3,45 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { TokenBar } from "../AiComponents";
 import ChatComposer from "./ChatComposer";
 
-jest.mock("../workspace/StudioControls", () => function StudioControlsStub() {
-  return <div>Studio controls</div>;
-});
+jest.mock(
+  "../workspace/StudioControls",
+  () =>
+    function StudioControlsStub() {
+      return <div>Studio controls</div>;
+    },
+);
 
-jest.mock("../workspace/StudioPlaceChip", () => function StudioPlaceChipStub() {
-  return <button type="button">Studio place</button>;
-});
+jest.mock(
+  "../workspace/StudioPlaceChip",
+  () =>
+    function StudioPlaceChipStub() {
+      return <button type="button">Studio place</button>;
+    },
+);
 
-jest.mock("../workspace/RobloxCloudControls", () => function RobloxCloudControlsStub() {
-  return <div>Roblox controls</div>;
-});
+jest.mock(
+  "../workspace/RobloxCloudControls",
+  () =>
+    function RobloxCloudControlsStub() {
+      return <div>Roblox controls</div>;
+    },
+);
 
-jest.mock("../workspace/AssetLibraryModal", () => function AssetLibraryModalStub() {
-  return null;
-});
+jest.mock(
+  "../workspace/AssetLibraryModal",
+  () =>
+    function AssetLibraryModalStub() {
+      return null;
+    },
+);
 
-jest.mock("./ComposerCommandMenu", () => function ComposerCommandMenuStub() {
-  return <div>Command menu</div>;
-});
+jest.mock(
+  "./ComposerCommandMenu",
+  () =>
+    function ComposerCommandMenuStub() {
+      return <div>Command menu</div>;
+    },
+);
 
 jest.mock("../../../hooks/useMotionPresence", () => ({
   useMotionPresence: (open) => ({ present: open, entering: open }),
@@ -60,19 +80,33 @@ describe("ChatComposer compact interactions", () => {
   test("preserves integration hooks and starts with settings collapsed", () => {
     renderComposer();
 
-    expect(document.getElementById("tour-prompt-box").getAttribute("data-tour")).toBe("prompt-input");
+    expect(
+      document.getElementById("tour-prompt-box").getAttribute("data-tour"),
+    ).toBe("prompt-input");
     expect(document.getElementById("chat-composer-file-upload")).toBeTruthy();
-    expect(document.getElementById("tour-generate-button").getAttribute("data-tour")).toBe("generate-btn");
-    expect(screen.queryByRole("dialog", { name: "Workspace options" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Open workspace options" }).getAttribute("aria-expanded")).toBe("false");
+    expect(
+      document.getElementById("tour-generate-button").getAttribute("data-tour"),
+    ).toBe("generate-btn");
+    expect(
+      screen.queryByRole("dialog", { name: "Workspace options" }),
+    ).toBeNull();
+    expect(
+      screen
+        .getByRole("button", { name: "Open workspace options" })
+        .getAttribute("aria-expanded"),
+    ).toBe("false");
   });
 
   test("keeps primary composer actions touch-sized below desktop", () => {
     renderComposer();
 
-    const upload = screen.getByRole("button", { name: "Upload image to Roblox or attach a code/text file" });
+    const upload = screen.getByRole("button", {
+      name: "Upload image to Roblox or attach a code/text file",
+    });
     const mode = screen.getByTitle("Select mode");
-    const settings = screen.getByRole("button", { name: "Open workspace options" });
+    const settings = screen.getByRole("button", {
+      name: "Open workspace options",
+    });
     const send = screen.getByRole("button", { name: "Send prompt" });
 
     for (const control of [upload, mode, settings, send]) {
@@ -91,7 +125,9 @@ describe("ChatComposer compact interactions", () => {
     const trigger = screen.getByTitle("Select mode");
 
     fireEvent.click(trigger);
-    expect(screen.getByRole("listbox", { name: "Agent operating mode" })).toBeTruthy();
+    expect(
+      screen.getByRole("listbox", { name: "Agent operating mode" }),
+    ).toBeTruthy();
     const agent = screen.getByRole("option", { name: /Agent Autonomously/i });
     const plan = screen.getByRole("option", { name: /Plan Proposes/i });
     const ask = screen.getByRole("option", { name: /Ask Read-only/i });
@@ -108,22 +144,38 @@ describe("ChatComposer compact interactions", () => {
     fireEvent.keyDown(ask, { key: "Enter" });
 
     expect(onModeChange).toHaveBeenCalledWith("ask");
-    expect(screen.queryByRole("listbox", { name: "Agent operating mode" })).toBeNull();
+    expect(
+      screen.queryByRole("listbox", { name: "Agent operating mode" }),
+    ).toBeNull();
     expect(document.activeElement).toBe(trigger);
 
     fireEvent.click(trigger);
-    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("option", { name: /Agent Autonomously/i })));
-    fireEvent.keyDown(screen.getByRole("option", { name: /Agent Autonomously/i }), { key: "Escape" });
-    expect(screen.queryByRole("listbox", { name: "Agent operating mode" })).toBeNull();
+    await waitFor(() =>
+      expect(document.activeElement).toBe(
+        screen.getByRole("option", { name: /Agent Autonomously/i }),
+      ),
+    );
+    fireEvent.keyDown(
+      screen.getByRole("option", { name: /Agent Autonomously/i }),
+      { key: "Escape" },
+    );
+    expect(
+      screen.queryByRole("listbox", { name: "Agent operating mode" }),
+    ).toBeNull();
     expect(document.activeElement).toBe(trigger);
 
     fireEvent.keyDown(trigger, { key: "ArrowUp" });
-    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("option", { name: /Ask Read-only/i })));
+    await waitFor(() =>
+      expect(document.activeElement).toBe(
+        screen.getByRole("option", { name: /Ask Read-only/i }),
+      ),
+    );
   });
 
   test("uses a 16px prompt font on mobile to avoid input zoom", () => {
     renderComposer();
     const promptInput = screen.getByRole("textbox", { name: "Prompt input" });
+    expect(promptInput.className).toContain("nexus-composer__input");
     expect(promptInput.className).toContain("text-[16px]");
     expect(promptInput.className).toContain("xl:text-[15px]");
   });
@@ -136,7 +188,9 @@ describe("ChatComposer compact interactions", () => {
     });
 
     expect(screen.getByText("Continuing from earlier message")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Cancel edit from earlier message" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Cancel edit from earlier message" }),
+    );
     expect(onCancelRewind).toHaveBeenCalledTimes(1);
   });
 
@@ -156,13 +210,17 @@ describe("ChatComposer compact interactions", () => {
 
     expect(screen.getByText(/Refining workspace:/)).toBeTruthy();
     expect(screen.getByText(/Lobby System/)).toBeTruthy();
-    expect(screen.getByRole("group", { name: "Quick refine suggestions" })).toBeTruthy();
+    expect(
+      screen.getByRole("group", { name: "Quick refine suggestions" }),
+    ).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: /Add validation/i }));
     expect(onSubmit).toHaveBeenCalledWith(
       null,
       "Add server-side validation and type checks for remote inputs",
-      expect.objectContaining({ draftRevision: expect.stringContaining("quick-refine:") })
+      expect.objectContaining({
+        draftRevision: expect.stringContaining("quick-refine:"),
+      }),
     );
 
     fireEvent.keyDown(document, { key: "Escape" });
@@ -171,24 +229,38 @@ describe("ChatComposer compact interactions", () => {
 
   test("opens advanced settings in a popover and closes on Escape or outside click", async () => {
     renderComposer();
-    const settingsButton = screen.getByRole("button", { name: "Open workspace options" });
+    const settingsButton = screen.getByRole("button", {
+      name: "Open workspace options",
+    });
 
     fireEvent.click(settingsButton);
-    const panel = await screen.findByRole("dialog", { name: "Workspace options" });
+    const panel = await screen.findByRole("dialog", {
+      name: "Workspace options",
+    });
     expect(settingsButton.getAttribute("aria-expanded")).toBe("true");
-    expect(screen.getByRole("heading", { name: "Workspace options" })).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Workspace options" }),
+    ).toBeTruthy();
     expect(panel.className).toContain("absolute");
     expect(panel.className).toContain("bottom-full");
     expect(panel.className).not.toContain("inset-y-0");
 
     fireEvent.keyDown(document, { key: "Escape" });
-    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Workspace options" })).toBeNull());
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("dialog", { name: "Workspace options" }),
+      ).toBeNull(),
+    );
     expect(document.activeElement).toBe(settingsButton);
 
     fireEvent.click(settingsButton);
     await screen.findByRole("dialog", { name: "Workspace options" });
     fireEvent.mouseDown(document.body);
-    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Workspace options" })).toBeNull());
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("dialog", { name: "Workspace options" }),
+      ).toBeNull(),
+    );
   });
 
   test("collapses prompt context after three items and opens the context manager", () => {
@@ -197,11 +269,19 @@ describe("ChatComposer compact interactions", () => {
     }));
     renderComposer({ studioEnabled: false, attachments });
 
-    expect(screen.getByRole("button", { name: "Show 2 more context items" })).toBeTruthy();
-    expect(screen.queryByRole("dialog", { name: "All prompt context" })).toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Show 2 more context items" }),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole("dialog", { name: "All prompt context" }),
+    ).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "Show 2 more context items" }));
-    expect(screen.getByRole("dialog", { name: "All prompt context" })).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Show 2 more context items" }),
+    );
+    expect(
+      screen.getByRole("dialog", { name: "All prompt context" }),
+    ).toBeTruthy();
     expect(screen.getAllByText("Script5.lua").length).toBeGreaterThan(0);
   });
 
@@ -209,7 +289,9 @@ describe("ChatComposer compact interactions", () => {
     renderComposer();
 
     expect(screen.queryByRole("region", { name: "Usage details" })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Open workspace options" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Open workspace options" }),
+    );
     expect(screen.getByRole("region", { name: "Usage details" })).toBeTruthy();
     expect(screen.getByText("Unlimited")).toBeTruthy();
   });
@@ -221,17 +303,27 @@ describe("ChatComposer compact interactions", () => {
     const file = new File(["print('hi')"], "main.lua", { type: "text/plain" });
     const inputClick = jest.spyOn(input, "click");
 
-    fireEvent.click(screen.getByRole("button", { name: "Upload image to Roblox or attach a code/text file" }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Upload image to Roblox or attach a code/text file",
+      }),
+    );
     expect(inputClick).toHaveBeenCalledTimes(1);
     fireEvent.change(input, { target: { files: [file] } });
     expect(onFileUpload).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole("button", { name: "Send prompt" }).disabled).toBe(true);
+    expect(screen.getByRole("button", { name: "Send prompt" }).disabled).toBe(
+      true,
+    );
 
     rerender(<ChatComposer {...baseProps} prompt="Build a shop" />);
-    expect(screen.getByRole("button", { name: "Send prompt" }).disabled).toBe(false);
+    expect(screen.getByRole("button", { name: "Send prompt" }).disabled).toBe(
+      false,
+    );
 
     rerender(<ChatComposer {...baseProps} prompt="Build a shop" disabled />);
-    expect(screen.getByRole("button", { name: "Send prompt" }).disabled).toBe(true);
+    expect(screen.getByRole("button", { name: "Send prompt" }).disabled).toBe(
+      true,
+    );
   });
 
   test("Enter submits while Shift+Enter and IME composition do not", () => {
@@ -251,7 +343,7 @@ describe("ChatComposer compact interactions", () => {
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 
-  test("morphs Send into Stop while ordinary Enter queues and Cmd/Ctrl+Enter interrupts", () => {
+  test("morphs Send into Stop while ordinary Enter queues, Cmd/Ctrl+Enter interrupts, and Escape stops", () => {
     const onSubmit = jest.fn();
     const onStop = jest.fn();
     renderComposer({
@@ -266,11 +358,13 @@ describe("ChatComposer compact interactions", () => {
     expect(onStop).toHaveBeenCalledTimes(1);
     expect(onSubmit).not.toHaveBeenCalled();
 
-    fireEvent.keyDown(screen.getByRole("textbox", { name: "Prompt input" }), { key: "Enter" });
+    fireEvent.keyDown(screen.getByRole("textbox", { name: "Prompt input" }), {
+      key: "Enter",
+    });
     expect(onSubmit).toHaveBeenLastCalledWith(
       expect.anything(),
       null,
-      expect.objectContaining({ interrupt: false })
+      expect.objectContaining({ interrupt: false }),
     );
 
     fireEvent.keyDown(screen.getByRole("textbox", { name: "Prompt input" }), {
@@ -280,40 +374,69 @@ describe("ChatComposer compact interactions", () => {
     expect(onSubmit).toHaveBeenLastCalledWith(
       expect.anything(),
       null,
-      expect.objectContaining({ interrupt: true })
+      expect.objectContaining({ interrupt: true }),
     );
+
+    fireEvent.keyDown(screen.getByRole("textbox", { name: "Prompt input" }), {
+      key: "Escape",
+    });
+    expect(onStop).toHaveBeenCalledTimes(2);
   });
 
-  test("textarea grows to 144px and then scrolls internally", () => {
+  test("textarea grows from 72px to 160px and then scrolls internally", () => {
     const { rerender } = renderComposer({ prompt: "short" });
     const textarea = screen.getByRole("textbox", { name: "Prompt input" });
-    Object.defineProperty(textarea, "scrollHeight", { configurable: true, value: 320 });
+    Object.defineProperty(textarea, "scrollHeight", {
+      configurable: true,
+      value: 320,
+    });
 
     rerender(<ChatComposer {...baseProps} prompt="long\ncontent" />);
-    expect(textarea.style.height).toBe("144px");
+    expect(textarea.style.height).toBe("160px");
     expect(textarea.style.overflowY).toBe("auto");
 
-    Object.defineProperty(textarea, "scrollHeight", { configurable: true, value: 20 });
+    Object.defineProperty(textarea, "scrollHeight", {
+      configurable: true,
+      value: 20,
+    });
     rerender(<ChatComposer {...baseProps} prompt="short again" />);
-    expect(textarea.style.height).toBe("44px");
+    expect(textarea.style.height).toBe("72px");
     expect(textarea.style.overflowY).toBe("hidden");
   });
 });
 
 describe("TokenBar compact states", () => {
   test("renders unlimited and healthy usage without a progress track", () => {
-    const { rerender } = render(<TokenBar compact unlimitedTokens devOverride plan="free" />);
+    const { rerender } = render(
+      <TokenBar compact unlimitedTokens devOverride plan="free" />,
+    );
     expect(screen.getByText("Dev unlimited")).toBeTruthy();
     expect(screen.queryByRole("progressbar")).toBeNull();
 
-    rerender(<TokenBar compact plan="free" isFreeUsagePlan dailyUsage={{ percentUsed: 40 }} />);
+    rerender(
+      <TokenBar
+        compact
+        plan="free"
+        isFreeUsagePlan
+        dailyUsage={{ percentUsed: 40 }}
+      />,
+    );
     expect(screen.getByText("40%")).toBeTruthy();
     expect(screen.queryByRole("progressbar")).toBeNull();
   });
 
   test("retains a progress warning at 85 percent", () => {
-    render(<TokenBar compact plan="free" isFreeUsagePlan dailyUsage={{ percentUsed: 85 }} />);
-    expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe("85");
+    render(
+      <TokenBar
+        compact
+        plan="free"
+        isFreeUsagePlan
+        dailyUsage={{ percentUsed: 85 }}
+      />,
+    );
+    expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe(
+      "85",
+    );
     expect(screen.getByText("Upgrade to Pro")).toBeTruthy();
   });
 

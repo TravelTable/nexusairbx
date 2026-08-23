@@ -7,7 +7,6 @@ export default function HomepageFooter() {
       <div className={styles.footerMain}>
         <div className={styles.footerIdentity}>
           <a className={styles.footerBrand} href="/" aria-label="NexusRBX home">
-            <img src="/nexus-mark.svg" alt="" width="28" height="28" />
             <span>NexusRBX</span>
           </a>
           <p>Talk to the project, understand the work, inspect the result, and keep building.</p>

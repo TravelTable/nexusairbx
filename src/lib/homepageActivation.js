@@ -29,6 +29,7 @@ export function submitHomepagePrompt({
   clearInput,
   createIntent = createGenerationIntent,
   trackEvent = trackProductEvent,
+  creationMode,
 }) {
   if (submittingRef?.current) return { status: "ignored" };
 
@@ -41,7 +42,14 @@ export function submitHomepagePrompt({
 
   if (submittingRef) submittingRef.current = true;
   setLoading?.(true);
-  const mode = chooseHomepageGeneratorMode(prompt);
+  const selectedMode = String(creationMode || "").toLowerCase();
+  const mode = selectedMode === "agent"
+    ? "agent_build"
+    : selectedMode === "script"
+      ? "quick_script"
+      : selectedMode === "asset"
+        ? "asset"
+        : chooseHomepageGeneratorMode(prompt);
 
   void trackEvent("homepage_prompt_submitted", {
     surface,
@@ -66,7 +74,9 @@ export function submitHomepagePrompt({
       prompt_category: categorizePrompt(prompt),
     });
 
-    navigate?.("/ai", {
+    const creationModeQuery = mode === "quick_script" ? "script" : mode === "asset" ? "asset" : "agent";
+    const target = mode === "asset" ? "/tools/icon-generator" : `/ai?mode=${creationModeQuery}`;
+    navigate?.(target, {
       state: {
         generationIntentId: intent.id,
       },

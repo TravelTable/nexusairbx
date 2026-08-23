@@ -3843,3 +3843,66 @@ a.docs-mini-card:focus-visible strong {
     backdrop-filter: none !important;
   }
 }
+
+/* Universal compact-density pass. Long-form copy remains at a readable 16px. */
+.landing-hero-section {
+  gap: 32px;
+  padding: 72px 0 60px;
+}
+
+.landing-hero-copy h1 { font-size: clamp(40px, 5vw, 62px); }
+.landing-lede { margin-top: 16px; font-size: 16px; }
+.landing-cta-row { gap: 12px; margin-top: 20px; }
+.landing-feature-band { padding: 60px 0 72px; }
+.landing-feature-grid { gap: 36px 24px; }
+.landing-feature-icon { margin-bottom: 16px; }
+.landing-workflow-section { padding: 72px 0; }
+.landing-workflow-section h2,
+.landing-testimonial-section h2,
+.section-band h2,
+.docs-section h2 { font-size: clamp(30px, 4vw, 44px); }
+.landing-workflow-grid { gap: 24px; margin-top: 28px; }
+.supporting-grid { margin-top: 40px; }
+.metric-card,
+.feature-card { padding: 16px; }
+.section-band { padding: 44px 0; }
+.docs-hero { padding: 52px 0 24px; }
+.docs-layout { gap: 20px; padding: 20px 0 52px; }
+.icon-detail-hero { padding: 52px 0 28px; }
+.icon-detail-hero h1 { font-size: clamp(32px, 5vw, 54px); }
+.docs-topbar-inner { min-height: var(--nx-header-height); }
+.docs-context-bar { top: var(--nx-header-height); }
+.docs-context-inner { min-height: 44px; }
+.docs-main-grid { padding-top: 24px; }
+.docs-article-header { padding-bottom: 36px; }
+.docs-article-header h1 { font-size: clamp(32px, 4.5vw, 46px); }
+.docs-article-header p,
+.docs-paragraph,
+.docs-list,
+.docs-callout p,
+.docs-step-list p,
+.docs-api-block p,
+.docs-accordion p { font-size: 16px; }
+.docs-section { padding: 36px 0; }
+.docs-mini-card { padding: 16px 0; }
+.docs-step-list li { padding: 16px 0; }
+.docs-search-panel { width: min(680px, 100%); }
+.docs-search-results { max-height: min(480px, 62vh); }
+
+@media (max-width: 720px), (pointer: coarse) {
+  .button,
+  .docs-context-categories a,
+  .docs-search-button,
+  .docs-icon-button,
+  .docs-actions a,
+  .docs-actions button { min-height: var(--nx-touch-target); }
+  .docs-context-bar { top: var(--nx-header-height-touch); }
+}
+
+@media (max-width: 640px) {
+  .landing-hero-section { padding: 52px 0; }
+  .landing-feature-band,
+  .landing-workflow-section,
+  .section-band { padding: 52px 0; }
+  .docs-article-header h1 { font-size: clamp(30px, 10vw, 44px); }
+}

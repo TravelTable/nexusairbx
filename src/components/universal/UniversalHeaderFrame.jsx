@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import UniversalBrand, { renderLink } from "./UniversalBrand";
+import UniversalCommandMenu from "./UniversalCommandMenu";
 import UniversalSiteIndex from "./UniversalSiteIndex";
 import styles from "./UniversalHeader.module.css";
 
@@ -18,17 +19,36 @@ export default function UniversalHeaderFrame({
   LinkComponent = "a",
   accountSlot = null,
   mobileAccountSlot = accountSlot,
+  compactAccountSlot = mobileAccountSlot,
   before = null,
 }) {
   const [indexOpen, setIndexOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [resolvedPathname, setResolvedPathname] = useState(pathname);
   const indexButtonRef = useRef(null);
+  const searchButtonRef = useRef(null);
   const closeIndex = useCallback(() => setIndexOpen(false), []);
+  const closeSearch = useCallback(() => setSearchOpen(false), []);
+  const openSearch = useCallback(() => {
+    setIndexOpen(false);
+    setSearchOpen(true);
+  }, []);
 
   useEffect(() => {
     if (pathname || typeof window === "undefined") return;
     setResolvedPathname(window.location.pathname || "");
   }, [pathname]);
+
+  useEffect(() => {
+    const handleCommandShortcut = (event) => {
+      if (!((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k")) return;
+      event.preventDefault();
+      searchButtonRef.current = document.activeElement;
+      openSearch();
+    };
+    document.addEventListener("keydown", handleCommandShortcut);
+    return () => document.removeEventListener("keydown", handleCommandShortcut);
+  }, [openSearch]);
 
   return (
     <>
@@ -51,7 +71,23 @@ export default function UniversalHeaderFrame({
             </nav>
           </div>
           <div className={styles.right}>
+            <button
+              ref={searchButtonRef}
+              type="button"
+              className={styles.searchButton}
+              aria-haspopup="dialog"
+              aria-expanded={searchOpen}
+              onClick={(event) => {
+                searchButtonRef.current = event.currentTarget;
+                openSearch();
+              }}
+            >
+              <span aria-hidden="true">⌕</span>
+              <span className={styles.searchLabel}>Search</span>
+              <kbd className={styles.searchShortcut}>⌘K</kbd>
+            </button>
             <div className={styles.desktopRight}>{accountSlot}</div>
+            <div className={styles.mobileAccount}>{compactAccountSlot}</div>
             <button
               type="button"
               className={`${styles.indexButton} ${styles.mobileIndex}`}
@@ -59,10 +95,11 @@ export default function UniversalHeaderFrame({
               aria-haspopup="dialog"
               onClick={(event) => {
                 indexButtonRef.current = event.currentTarget;
+                setSearchOpen(false);
                 setIndexOpen(true);
               }}
             >
-              SITE INDEX
+              Tools
             </button>
             <button
               type="button"
@@ -71,10 +108,11 @@ export default function UniversalHeaderFrame({
               aria-haspopup="dialog"
               onClick={(event) => {
                 indexButtonRef.current = event.currentTarget;
+                setSearchOpen(false);
                 setIndexOpen(true);
               }}
             >
-              INDEX
+              Tools
             </button>
           </div>
         </div>
@@ -85,8 +123,16 @@ export default function UniversalHeaderFrame({
         sections={siteIndexSections}
         pathname={resolvedPathname}
         LinkComponent={LinkComponent}
-        accountSlot={mobileAccountSlot}
+        accountSlot={accountSlot}
+        mobileAccountSlot={mobileAccountSlot}
         openerRef={indexButtonRef}
+      />
+      <UniversalCommandMenu
+        open={searchOpen}
+        onClose={closeSearch}
+        sections={siteIndexSections}
+        LinkComponent={LinkComponent}
+        openerRef={searchButtonRef}
       />
     </>
   );

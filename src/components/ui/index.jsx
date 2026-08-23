@@ -15,14 +15,14 @@ function cx(...parts) {
 // --- Button -----------------------------------------------------------------
 
 const BTN_SIZES = {
-  sm: "px-2.5 py-1.5 text-[11px] gap-1.5 rounded-full",
-  md: "px-4 py-2.5 text-sm gap-2 rounded-full",
-  lg: "px-5 py-3 text-[15px] gap-2 rounded-full",
+  sm: "min-h-11 px-3 text-xs gap-1.5 rounded-full md:min-h-9",
+  md: "min-h-11 px-4 text-sm gap-2 rounded-full md:min-h-9",
+  lg: "min-h-11 px-5 text-[15px] gap-2 rounded-full md:min-h-9",
 };
 
 const BTN_VARIANTS = {
   primary:
-    "border border-transparent bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] font-semibold shadow-sm hover:bg-[var(--ds-accent-hover)] active:bg-[var(--ds-accent-pressed)] active:scale-[0.98]",
+    "border border-transparent bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] font-semibold shadow-[var(--nx-shadow-control)] hover:bg-[var(--ds-accent-hover)] hover:-translate-y-px active:bg-[var(--ds-accent-pressed)] active:translate-y-0 active:scale-[0.99]",
   secondary:
     "bg-[var(--ds-surface-2)] border border-[var(--ds-border)] text-[var(--ds-text)] font-semibold hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-surface-3)] active:scale-[0.98]",
   ghost:
@@ -68,7 +68,7 @@ export function Card({ as: Tag = "div", className = "", interactive = false, chi
     <Tag
       className={cx(
         "card-surface shadow-panel",
-        interactive && "transition-[background-color,border-color,box-shadow,transform] hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-surface-2)]",
+        interactive && "transition-[background-color,border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-surface-2)]",
         className
       )}
       {...rest}
@@ -155,13 +155,13 @@ export function Segmented({
   ariaLabel = "Choose an option",
 }) {
   const pad = size === "sm"
-    ? "min-h-11 px-2.5 py-1 text-[10px] xl:min-h-0"
-    : "min-h-11 px-3 py-1.5 text-[11px] xl:min-h-0";
+    ? "min-h-11 px-2.5 py-1 text-[10px] md:min-h-9"
+    : "min-h-11 px-3 py-1.5 text-[11px] md:min-h-9";
   return (
     <div
       className={cx(
         fullWidth ? "flex w-full" : "inline-flex",
-        "bg-[var(--ds-fill-subtle)] border border-[var(--ds-border)] rounded-xl p-0.5",
+        "bg-[var(--ds-fill-subtle)] border border-[var(--ds-border)] rounded-full p-1 shadow-[var(--nx-shadow-control)]",
         className
       )}
       role="group"
@@ -177,7 +177,7 @@ export function Segmented({
             aria-pressed={active}
             onClick={() => onChange?.(opt.id)}
             className={cx(
-              "inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold transition-[background-color,color,box-shadow] duration-150 focus-ring",
+              "inline-flex items-center justify-center gap-1.5 rounded-full font-semibold transition-[background-color,color,box-shadow] duration-150 focus-ring",
               fullWidth && "flex-1",
               pad,
               active
@@ -208,7 +208,7 @@ export function Input({
   icon: Icon,
   ...rest
 }) {
-  const pad = size === "sm" ? "px-2.5 py-2 text-xs" : "px-3 py-2.5 text-sm";
+  const pad = size === "sm" ? "min-h-11 px-3 py-2 text-xs md:min-h-9" : "min-h-11 px-3 py-2.5 text-sm md:min-h-9";
   return (
     <div className="relative group">
       {Icon ? (
@@ -241,7 +241,7 @@ export function Badge({ tone = "muted", className = "", children, ...rest }) {
   return (
     <span
       className={cx(
-        "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs font-semibold",
+        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold",
         BADGE_TONES[tone] || BADGE_TONES.muted,
         className
       )}

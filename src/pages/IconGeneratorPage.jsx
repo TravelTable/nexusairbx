@@ -26,6 +26,11 @@ import {
   publishAssetToRoblox,
 } from "../lib/assetPlatformApi";
 import { getRobloxOAuthStatus } from "../lib/robloxOAuthApi";
+import {
+  consumeGenerationIntent,
+  getActiveGenerationIntentId,
+  restoreGenerationIntent,
+} from "../lib/generationIntent";
 import { useBilling } from "../context/BillingContext";
 import { useSettings } from "../context/SettingsContext";
 import "../components/assets/assetPlatform.css";
@@ -155,6 +160,7 @@ export default function IconGeneratorPage() {
   const [autoUploadBusy, setAutoUploadBusy] = useState(false);
   const formPanelRef = useRef(null);
   const handoffAppliedRef = useRef(false);
+  const intentHandoffAppliedRef = useRef(false);
 
   useEffect(() => {
     if (authReady && !user) navigate("/signin", { replace: true, state: { from: "/tools/icon-generator" } });
@@ -204,6 +210,24 @@ export default function IconGeneratorPage() {
   useEffect(() => {
     if (user) loadWorkspace();
   }, [user, loadWorkspace]);
+
+  useEffect(() => {
+    if (intentHandoffAppliedRef.current) return;
+    intentHandoffAppliedRef.current = true;
+    const activeIntentId = getActiveGenerationIntentId();
+    if (!activeIntentId) return;
+    const intent = restoreGenerationIntent(activeIntentId);
+    if (!intent) {
+      setNotice("Your saved asset request expired. Add the prompt again to continue.");
+      return;
+    }
+    if (intent.mode !== "asset") return;
+    setForm((current) => ({ ...current, prompt: intent.prompt }));
+    setNotice("Asset request restored. Review the project, mode, settings, and cost before generating.");
+    consumeGenerationIntent(intent.id);
+    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    window.requestAnimationFrame(() => formPanelRef.current?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" }));
+  }, []);
 
   useEffect(() => {
     if (handoffAppliedRef.current) return;

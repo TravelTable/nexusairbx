@@ -2,7 +2,13 @@ import React, { useState } from "react";
 import fs from "fs";
 import path from "path";
 import "@testing-library/jest-dom";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 
 import WorkspaceShell, {
   clampWorkspaceDrawerWidth,
@@ -14,7 +20,9 @@ import WorkspaceShell, {
 
 function Harness({ panelBadges = {} }) {
   const [activePanel, setActivePanel] = useState(null);
-  const [drawerWidth, setDrawerWidth] = useState(WORKSPACE_DRAWER_DEFAULT_WIDTH);
+  const [drawerWidth, setDrawerWidth] = useState(
+    WORKSPACE_DRAWER_DEFAULT_WIDTH,
+  );
 
   return (
     <WorkspaceShell
@@ -31,7 +39,19 @@ function Harness({ panelBadges = {} }) {
 }
 
 function chooseStageView(label) {
-  fireEvent.click(screen.getByRole("tab", { name: `Open ${label} evidence` }));
+  const launcher = screen.queryByRole("button", {
+    name: /^Open Stage evidence/,
+  });
+  if (launcher) fireEvent.click(launcher);
+  const stage =
+    screen.queryByRole("dialog", { name: /Files|Code|Run|Assets|Project/ }) ||
+    screen.getByRole("complementary", {
+      name: /Files|Code|Run|Assets|Project/,
+    });
+  const target = within(stage).getByRole("tab", {
+    name: `Open ${label} evidence`,
+  });
+  fireEvent.click(target);
 }
 
 describe("WorkspaceShell", () => {
@@ -42,24 +62,35 @@ describe("WorkspaceShell", () => {
     };
   });
 
-  test("keeps conversation primary with a permanent evidence index", () => {
+  test("keeps conversation primary with one compact evidence launcher", () => {
     render(<Harness />);
 
-    expect(screen.getByRole("button", { name: "Open Stage evidence" })).toBeTruthy();
-    expect(screen.getByRole("navigation", { name: "Open evidence stage" })).toBeTruthy();
-    expect(screen.getByRole("tablist", { name: "Evidence lenses" })).toBeTruthy();
-    expect(screen.getAllByRole("tab")).toHaveLength(5);
-    expect(screen.getByRole("tab", { name: "Open Files evidence" })).toBeTruthy();
-    expect(screen.getByRole("tab", { name: "Open Run evidence" })).toBeTruthy();
-    expect(screen.getByRole("tab", { name: "Open Project evidence" })).toHaveAttribute("tabindex", "0");
-    expect(screen.getByRole("tab", { name: "Open Files evidence" })).toHaveAttribute("tabindex", "-1");
+    expect(
+      screen.getByRole("button", { name: "Open Stage evidence" }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("navigation", { name: "Open evidence stage" }),
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole("tablist", { name: "Evidence lenses" }),
+    ).toBeNull();
   });
 
   test("moves focus through the evidence lens line", () => {
     render(<Harness />);
-    const files = screen.getByRole("tab", { name: "Open Files evidence" });
-    const code = screen.getByRole("tab", { name: "Open Code evidence" });
-    const project = screen.getByRole("tab", { name: "Open Project evidence" });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Open Stage evidence" }),
+    );
+    const stage =
+      screen.queryByRole("dialog", { name: "Project" }) ||
+      screen.getByRole("complementary", { name: "Project" });
+    const files = within(stage).getByRole("tab", {
+      name: "Open Files evidence",
+    });
+    const code = within(stage).getByRole("tab", { name: "Open Code evidence" });
+    const project = within(stage).getByRole("tab", {
+      name: "Open Project evidence",
+    });
     files.focus();
     expect(files).toHaveFocus();
 
@@ -85,19 +116,24 @@ describe("WorkspaceShell", () => {
 
     expect(screen.getByRole("complementary", { name: "Files" })).toBeTruthy();
     expect(screen.getByText("files panel")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Open Stage evidence" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Open Stage evidence" }),
+    ).toBeNull();
   });
 
-  test("transfers inline focus to the selected lens and associates it with the evidence panel", async () => {
+  test("selects the requested lens and associates it with the evidence panel", () => {
     render(<Harness />);
 
     chooseStageView("Files");
 
     const stage = screen.getByRole("complementary", { name: "Files" });
-    const filesTab = within(stage).getByRole("tab", { name: "Open Files evidence" });
-    const codeTab = within(stage).getByRole("tab", { name: "Open Code evidence" });
+    const filesTab = within(stage).getByRole("tab", {
+      name: "Open Files evidence",
+    });
+    const codeTab = within(stage).getByRole("tab", {
+      name: "Open Code evidence",
+    });
     const panel = within(stage).getByRole("tabpanel");
-    await waitFor(() => expect(filesTab).toHaveFocus());
     expect(filesTab).toHaveAttribute("tabindex", "0");
     expect(codeTab).toHaveAttribute("tabindex", "-1");
     expect(filesTab).toHaveAttribute("aria-controls", panel.id);
@@ -108,7 +144,9 @@ describe("WorkspaceShell", () => {
     render(<Harness panelBadges={{ code: true }} />);
 
     expect(screen.getByLabelText("New evidence")).toBeTruthy();
-    expect(screen.getByLabelText("Unseen items")).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Open Stage evidence, 1 new item" }),
+    ).toBeTruthy();
     expect(screen.queryByRole("complementary")).toBeNull();
   });
 
@@ -118,7 +156,9 @@ describe("WorkspaceShell", () => {
     expect(screen.getByRole("complementary", { name: "Run" })).toBeTruthy();
 
     fireEvent.keyDown(document, { key: "Escape" });
-    const launcher = await screen.findByRole("button", { name: "Open Stage evidence" });
+    const launcher = await screen.findByRole("button", {
+      name: "Open Stage evidence",
+    });
     await waitFor(() => expect(launcher).toHaveFocus());
   });
 
@@ -126,8 +166,12 @@ describe("WorkspaceShell", () => {
     const OriginalResizeObserver = global.ResizeObserver;
     const OriginalWindowResizeObserver = window.ResizeObserver;
     class MockResizeObserver {
-      constructor(callback) { this.callback = callback; }
-      observe(target) { this.callback([{ target, contentRect: { width: 1000 } }]); }
+      constructor(callback) {
+        this.callback = callback;
+      }
+      observe(target) {
+        this.callback([{ target, contentRect: { width: 1000 } }]);
+      }
       disconnect() {}
     }
     global.ResizeObserver = MockResizeObserver;
@@ -157,8 +201,12 @@ describe("WorkspaceShell", () => {
     const OriginalResizeObserver = global.ResizeObserver;
     const OriginalWindowResizeObserver = window.ResizeObserver;
     class MockResizeObserver {
-      constructor(callback) { this.callback = callback; }
-      observe(target) { this.callback([{ target, contentRect: { width: 500 } }]); }
+      constructor(callback) {
+        this.callback = callback;
+      }
+      observe(target) {
+        this.callback([{ target, contentRect: { width: 500 } }]);
+      }
       disconnect() {}
     }
     global.ResizeObserver = MockResizeObserver;
@@ -168,7 +216,9 @@ describe("WorkspaceShell", () => {
       render(<Harness />);
       chooseStageView("Code");
       const dialog = screen.getByRole("dialog", { name: "Code" });
-      expect(within(dialog).getByRole("button", { name: "Back to conversation" })).toHaveFocus();
+      expect(
+        within(dialog).getByRole("button", { name: "Back to conversation" }),
+      ).toHaveFocus();
     } finally {
       global.ResizeObserver = OriginalResizeObserver;
       window.ResizeObserver = OriginalWindowResizeObserver;
@@ -179,8 +229,12 @@ describe("WorkspaceShell", () => {
     const OriginalResizeObserver = global.ResizeObserver;
     const OriginalWindowResizeObserver = window.ResizeObserver;
     class MockResizeObserver {
-      constructor(callback) { this.callback = callback; }
-      observe(target) { this.callback([{ target, contentRect: { width: 1000 } }]); }
+      constructor(callback) {
+        this.callback = callback;
+      }
+      observe(target) {
+        this.callback([{ target, contentRect: { width: 1000 } }]);
+      }
       disconnect() {}
     }
     global.ResizeObserver = MockResizeObserver;
@@ -190,7 +244,9 @@ describe("WorkspaceShell", () => {
       render(<Harness />);
       chooseStageView("Files");
       const dialog = screen.getByRole("dialog", { name: "Files" });
-      const codeTab = within(dialog).getByRole("tab", { name: "Open Code evidence" });
+      const codeTab = within(dialog).getByRole("tab", {
+        name: "Open Code evidence",
+      });
       codeTab.focus();
       fireEvent.click(codeTab);
 
@@ -208,8 +264,12 @@ describe("WorkspaceShell", () => {
     const OriginalWindowResizeObserver = window.ResizeObserver;
     let measuredWidth = WORKSPACE_DRAWER_OVERLAY_BREAKPOINT - 1;
     class MockResizeObserver {
-      constructor(callback) { this.callback = callback; }
-      observe(target) { this.callback([{ target, contentRect: { width: measuredWidth } }]); }
+      constructor(callback) {
+        this.callback = callback;
+      }
+      observe(target) {
+        this.callback([{ target, contentRect: { width: measuredWidth } }]);
+      }
       disconnect() {}
     }
     global.ResizeObserver = MockResizeObserver;
@@ -244,22 +304,32 @@ describe("WorkspaceShell", () => {
   });
 
   test("full-screen Stage spans the complete workspace grid", () => {
-    const css = fs.readFileSync(path.join(__dirname, "WorkspaceShell.css"), "utf8");
+    const css = fs.readFileSync(
+      path.join(__dirname, "WorkspaceShell.css"),
+      "utf8",
+    );
     expect(css).toMatch(
-      /\.workspace-shell\[data-stage-fullscreen="true"\] \.workspace-stage\s*\{[\s\S]*?grid-column:\s*1 \/ -1;/
+      /\.workspace-shell\[data-stage-fullscreen="true"\] \.workspace-stage\s*\{[\s\S]*?grid-column:\s*1 \/ -1;/,
     );
   });
 
   test("reserves the mobile evidence bar height below the conversation", () => {
-    const css = fs.readFileSync(path.join(__dirname, "WorkspaceShell.css"), "utf8");
+    const css = fs.readFileSync(
+      path.join(__dirname, "WorkspaceShell.css"),
+      "utf8",
+    );
     expect(css).toMatch(
-      /@container workspace-shell \(max-width: 599px\)[\s\S]*?\.workspace-shell__primary\s*\{[\s\S]*?padding-bottom:\s*calc\(54px \+ env\(safe-area-inset-bottom\)\);/
+      /@container workspace-shell \(max-width: 599px\)[\s\S]*?\.workspace-shell__primary\s*\{[\s\S]*?padding-bottom:\s*calc\(\s*var\(--nx-header-height-touch\) \+ env\(safe-area-inset-bottom\)\s*\);/,
     );
   });
 
   test("clamps persisted and dragged widths to the supported range", () => {
-    expect(clampWorkspaceDrawerWidth(null)).toBe(WORKSPACE_DRAWER_DEFAULT_WIDTH);
-    expect(clampWorkspaceDrawerWidth("not-a-width")).toBe(WORKSPACE_DRAWER_DEFAULT_WIDTH);
+    expect(clampWorkspaceDrawerWidth(null)).toBe(
+      WORKSPACE_DRAWER_DEFAULT_WIDTH,
+    );
+    expect(clampWorkspaceDrawerWidth("not-a-width")).toBe(
+      WORKSPACE_DRAWER_DEFAULT_WIDTH,
+    );
     expect(clampWorkspaceDrawerWidth(120)).toBe(WORKSPACE_DRAWER_MIN_WIDTH);
     expect(clampWorkspaceDrawerWidth(640.4)).toBe(640);
     expect(clampWorkspaceDrawerWidth(1200)).toBe(WORKSPACE_DRAWER_MAX_WIDTH);

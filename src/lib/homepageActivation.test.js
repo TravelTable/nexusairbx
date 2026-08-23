@@ -109,7 +109,7 @@ describe("homepageActivation", () => {
       mode: "agent_build",
       source: "homepage",
     });
-    expect(harness.navigate).toHaveBeenCalledWith("/ai", {
+    expect(harness.navigate).toHaveBeenCalledWith("/ai?mode=agent", {
       state: { generationIntentId: "intent-123" },
     });
     expect(JSON.stringify(harness.navigate.mock.calls[0][1].state)).not.toContain("Create a tycoon UI");
@@ -126,7 +126,7 @@ describe("homepageActivation", () => {
     });
 
     expect(harness.createIntent).toHaveBeenCalledTimes(1);
-    expect(harness.navigate).toHaveBeenCalledWith("/ai", {
+    expect(harness.navigate).toHaveBeenCalledWith("/ai?mode=agent", {
       state: { generationIntentId: "intent-123" },
     });
   });
@@ -146,6 +146,7 @@ describe("homepageActivation", () => {
       mode: "quick_script",
       source: "homepage",
     });
+    expect(harness.navigate).toHaveBeenCalledWith("/ai?mode=script", expect.any(Object));
   });
 
   test("desktop homepage submissions create an Agent Build intent", () => {
@@ -209,7 +210,7 @@ describe("homepageActivation", () => {
       source: "public_next_homepage",
     });
 
-    expect(assign).toHaveBeenCalledWith("/ai");
+    expect(assign).toHaveBeenCalledWith("/ai?mode=agent");
   });
 
   test("complex homepage prompts are routed to Agent Build regardless of experiment defaults", () => {
@@ -277,6 +278,26 @@ describe("homepageActivation", () => {
     expect(harness.submittingRef.current).toBe(false);
     expect(harness.setLoading).toHaveBeenLastCalledWith(false);
     expect(harness.setError).toHaveBeenCalledWith("Navigation failed");
+  });
+
+  test("asset mode hands off without putting the prompt in the URL", () => {
+    const harness = createHarness();
+
+    submitHomepagePrompt({
+      ...harness,
+      inputValue: "Create a crystal lantern inventory icon",
+      creationMode: "asset",
+    });
+
+    expect(harness.createIntent).toHaveBeenCalledWith({
+      prompt: "Create a crystal lantern inventory icon",
+      mode: "asset",
+      source: "homepage",
+    });
+    expect(harness.navigate).toHaveBeenCalledWith("/tools/icon-generator", {
+      state: { generationIntentId: "intent-123" },
+    });
+    expect(harness.navigate.mock.calls[0][0]).not.toContain("crystal");
   });
 
   test("emits activation events without prompt content", () => {

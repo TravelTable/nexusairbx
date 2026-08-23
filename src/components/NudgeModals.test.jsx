@@ -3,7 +3,9 @@ import "@testing-library/jest-dom";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import ProNudgeModal from "./ProNudgeModal";
-import SignInNudgeModal from "./SignInNudgeModal";
+import SignInNudgeModal, {
+  shouldHideLocalSignInNudge,
+} from "./SignInNudgeModal";
 import StarterPromoModal from "./StarterPromoModal";
 
 jest.mock("../lib/billing", () => ({
@@ -13,6 +15,33 @@ jest.mock("../lib/billing", () => ({
 jest.mock("../lib/productAnalytics", () => ({
   trackProductEvent: jest.fn(),
 }));
+
+test("the sign-in gate is hidden only on loopback development hosts", () => {
+  expect(
+    shouldHideLocalSignInNudge({
+      environment: "development",
+      hostname: "localhost",
+    }),
+  ).toBe(true);
+  expect(
+    shouldHideLocalSignInNudge({
+      environment: "development",
+      hostname: "127.0.0.1",
+    }),
+  ).toBe(true);
+  expect(
+    shouldHideLocalSignInNudge({
+      environment: "production",
+      hostname: "localhost",
+    }),
+  ).toBe(false);
+  expect(
+    shouldHideLocalSignInNudge({
+      environment: "development",
+      hostname: "nexusrbx.com",
+    }),
+  ).toBe(false);
+});
 
 const cases = [
   {
@@ -46,55 +75,62 @@ const cases = [
   },
 ];
 
-describe.each(cases)("$name nudge modal", ({ name, dialogName, closeName, renderModal }) => {
-  test("is named, receives initial focus, closes on Escape, and restores focus", async () => {
-    const onClose = jest.fn();
+describe.each(cases)(
+  "$name nudge modal",
+  ({ name, dialogName, closeName, renderModal }) => {
+    test("is named, receives initial focus, closes on Escape, and restores focus", async () => {
+      const onClose = jest.fn();
 
-    function Harness() {
-      const [isOpen, setIsOpen] = React.useState(false);
-      const close = () => {
-        onClose();
-        setIsOpen(false);
-      };
+      function Harness() {
+        const [isOpen, setIsOpen] = React.useState(false);
+        const close = () => {
+          onClose();
+          setIsOpen(false);
+        };
 
-      return (
-        <>
-          <button type="button" onClick={() => setIsOpen(true)}>
-            Open {name}
-          </button>
-          {renderModal(isOpen, close)}
-        </>
+        return (
+          <>
+            <button type="button" onClick={() => setIsOpen(true)}>
+              Open {name}
+            </button>
+            {renderModal(isOpen, close)}
+          </>
+        );
+      }
+
+      render(
+        <MemoryRouter
+          initialEntries={["/ai"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <Harness />
+        </MemoryRouter>,
       );
-    }
 
-    render(
-      <MemoryRouter
-        initialEntries={["/ai"]}
-        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-      >
-        <Harness />
-      </MemoryRouter>
-    );
+      const launch = screen.getByRole("button", { name: `Open ${name}` });
+      launch.focus();
+      fireEvent.click(launch);
 
-    const launch = screen.getByRole("button", { name: `Open ${name}` });
-    launch.focus();
-    fireEvent.click(launch);
+      const dialog = screen.getByRole("dialog", { name: dialogName });
+      expect(dialog).toBeInTheDocument();
+      expect(dialog.parentElement?.className).not.toMatch(
+        /backdrop-blur|bg-black\/80/,
+      );
+      expect(dialog.outerHTML).not.toMatch(
+        /bg-gradient|blur-2xl|animate-pulse|shadow-panel/,
+      );
+      dialog.querySelectorAll("button").forEach((button) => {
+        expect(button.className).toMatch(/(?:^|\s)(?:h-11|min-h-11)(?:\s|$)/);
+      });
+      const close = screen.getByRole("button", { name: closeName });
+      await waitFor(() => expect(close).toHaveFocus());
 
-    const dialog = screen.getByRole("dialog", { name: dialogName });
-    expect(dialog).toBeInTheDocument();
-    expect(dialog.parentElement?.className).not.toMatch(/backdrop-blur|bg-black\/80/);
-    expect(dialog.outerHTML).not.toMatch(/bg-gradient|blur-2xl|animate-pulse|shadow-panel/);
-    dialog.querySelectorAll("button").forEach((button) => {
-      expect(button.className).toMatch(/(?:^|\s)(?:h-11|min-h-11)(?:\s|$)/);
+      fireEvent.keyDown(window, { key: "Escape" });
+      expect(onClose).toHaveBeenCalledTimes(1);
+      await waitFor(() => expect(launch).toHaveFocus());
     });
-    const close = screen.getByRole("button", { name: closeName });
-    await waitFor(() => expect(close).toHaveFocus());
-
-    fireEvent.keyDown(window, { key: "Escape" });
-    expect(onClose).toHaveBeenCalledTimes(1);
-    await waitFor(() => expect(launch).toHaveFocus());
-  });
-});
+  },
+);
 
 test("the AI entry sign-in gate cannot be dismissed", () => {
   const onClose = jest.fn();
@@ -104,12 +140,18 @@ test("the AI entry sign-in gate cannot be dismissed", () => {
       future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
     >
       <SignInNudgeModal isOpen blocking onClose={onClose} />
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 
-  expect(screen.getByRole("dialog", { name: "Sign in to use NexusRBX AI" })).toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: "Dismiss sign-in prompt" })).not.toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: "Maybe Later" })).not.toBeInTheDocument();
+  expect(
+    screen.getByRole("dialog", { name: "Sign in to use NexusRBX AI" }),
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: "Dismiss sign-in prompt" }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: "Maybe Later" }),
+  ).not.toBeInTheDocument();
 
   fireEvent.keyDown(window, { key: "Escape" });
   expect(onClose).not.toHaveBeenCalled();

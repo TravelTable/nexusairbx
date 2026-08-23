@@ -2,6 +2,8 @@ import {
   clearGenerationIntentsForTests,
   consumeGenerationIntent,
   createGenerationIntent,
+  creationModeFromIntent,
+  normalizeGenerationIntentMode,
   restoreGenerationIntent,
 } from "./generationIntent";
 
@@ -27,7 +29,7 @@ describe("generationIntent", () => {
     const intent = createGenerationIntent({ prompt, mode: "agent", source: "homepage" });
 
     expect(intent.prompt).toBe(prompt.trim());
-    expect(intent.mode).toBe("agent");
+    expect(intent.mode).toBe("agent_build");
 
     const restored = restoreGenerationIntent(intent.id);
     expect(restored.prompt).toBe(prompt.trim());
@@ -57,5 +59,14 @@ describe("generationIntent", () => {
     expect(consumeGenerationIntent(intent.id)).toBe(true);
     expect(restoreGenerationIntent(intent.id)).toBeNull();
     expect(restoreGenerationIntent()).toBeNull();
+  });
+
+  test("normalizes legacy and UI-facing creation modes to canonical intent modes", () => {
+    expect(normalizeGenerationIntentMode("agent")).toBe("agent_build");
+    expect(normalizeGenerationIntentMode("script")).toBe("quick_script");
+    expect(normalizeGenerationIntentMode("asset")).toBe("asset");
+    expect(creationModeFromIntent("agent_build")).toBe("agent");
+    expect(creationModeFromIntent("quick_script")).toBe("script");
+    expect(creationModeFromIntent("asset")).toBe("asset");
   });
 });

@@ -792,6 +792,10 @@ export function useAiWorkspaceController() {
       const intentId = location.state.generationIntentId;
       const intent = restoreGenerationIntent(intentId);
       if (intent) {
+        if (intent.mode === "asset") {
+          navigate("/tools/icon-generator", { replace: true, state: { generationIntentId: intent.id } });
+          return;
+        }
         restoredIntentIdRef.current = intent.id;
         setPrompt(intent.prompt);
         setPendingGenerationIntent(intent);
@@ -838,6 +842,10 @@ export function useAiWorkspaceController() {
 
     const intent = restoreGenerationIntent();
     if (!intent) return;
+    if (intent.mode === "asset") {
+      navigate("/tools/icon-generator", { replace: true, state: { generationIntentId: intent.id } });
+      return;
+    }
 
     restoredIntentIdRef.current = intent.id;
     setPrompt(intent.prompt);
@@ -850,7 +858,7 @@ export function useAiWorkspaceController() {
       prompt_length: intent.prompt.length,
       prompt_category: categorizePrompt(intent.prompt),
     });
-  }, [pendingGenerationIntent, setGeneratorMode]);
+  }, [navigate, pendingGenerationIntent, setGeneratorMode]);
 
   useEffect(() => {
     const unbindStartDraft = onAiEvent(AI_EVENTS.START_DRAFT, (event) => {

@@ -1,0 +1,132 @@
+.surface {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(24px, 6vw, 56px);
+  border: 1px solid var(--nx-rule);
+  border-radius: var(--nx-radius-feature);
+  background:
+    radial-gradient(circle at 50% 0, var(--nx-purple-wash), transparent 52%),
+    var(--nx-card);
+  box-shadow: var(--nx-inner-highlight), var(--nx-shadow-card);
+}
+
+.signalMap {
+  display: flex;
+  width: min(100%, 360px);
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.signalMap > span {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: 64px;
+  justify-items: center;
+  gap: var(--nx-space-1);
+  color: var(--nx-text-muted);
+}
+
+.signalMap svg {
+  width: 40px;
+  height: 40px;
+  padding: 10px;
+  border: 1px solid var(--nx-rule-strong);
+  border-radius: var(--nx-radius-control);
+  background: var(--nx-muted-surface);
+  box-shadow: var(--nx-shadow-control);
+}
+
+.signalMap small {
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.signalMap > i {
+  position: relative;
+  width: 64px;
+  height: 1px;
+  margin-top: 20px;
+  overflow: hidden;
+  background: var(--nx-rule-strong);
+}
+
+.signalMap > i::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--nx-purple),
+    transparent
+  );
+  content: "";
+  animation: capability-signal 2.8s var(--nx-ease-spatial) infinite;
+}
+
+.signalMap .paused {
+  color: var(--nx-warning);
+}
+.signalMap .paused svg {
+  border-color: var(--ds-warning-border);
+  box-shadow: 0 0 0 4px var(--ds-warning-soft);
+}
+
+.recoveryNote {
+  display: inline-flex;
+  max-width: 34rem;
+  align-items: center;
+  gap: var(--nx-space-2);
+  margin: var(--nx-space-5) 0 0;
+  padding: var(--nx-space-2) var(--nx-space-3);
+  border: 1px solid var(--nx-rule);
+  border-radius: var(--nx-radius-pill);
+  background: var(--nx-muted-surface);
+  color: var(--nx-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+@keyframes capability-signal {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  35% {
+    opacity: 1;
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+@media (max-width: 520px) {
+  .surface {
+    padding-inline: var(--nx-space-4);
+  }
+  .signalMap > i {
+    width: 34px;
+  }
+  .recoveryNote {
+    align-items: flex-start;
+    border-radius: var(--nx-radius-panel);
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signalMap > i::after {
+    display: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .surface,
+  .signalMap svg,
+  .recoveryNote {
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+}

@@ -31,7 +31,7 @@
   max-width: 12ch;
   color: var(--nx-purple);
   font-family: var(--nx-font-display) !important;
-  font-size: clamp(3rem, 5vw, 3.625rem) !important;
+  font-size: clamp(2.4rem, 4.5vw, 3.1rem) !important;
   font-weight: 620 !important;
   letter-spacing: 0 !important;
   line-height: 0.88 !important;
@@ -77,7 +77,7 @@
 .settings-ledger-page #settings-section-title {
   color: var(--nx-purple);
   font-family: var(--nx-font-display);
-  font-size: clamp(2.25rem, 4vw, 3.625rem);
+  font-size: clamp(1.9rem, 3.5vw, 2.75rem);
   font-weight: 620;
   letter-spacing: 0;
   line-height: 0.92;
@@ -173,7 +173,7 @@
 
 @media (max-width: 640px) {
   .settings-ledger-header h1 {
-    font-size: clamp(2.75rem, 14vw, 3.625rem) !important;
+    font-size: clamp(2.3rem, 12vw, 3.1rem) !important;
   }
 
   .settings-interface-record div {
