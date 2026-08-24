@@ -28,6 +28,7 @@ test("keeps both runtimes on the shared compact purple soft-depth header", () =>
     expect(navigation).toContain(`{ href: "${href}", label: "${label}" }`);
   }
   expect(frame).toContain('aria-label="Primary navigation"');
+  expect(frame).toContain('aria-label="Search NexusRBX"');
   expect(frame).toContain("UniversalCommandMenu");
   expect(frame).toContain('event.key.toLowerCase() === "k"');
   expect(styles).toMatch(

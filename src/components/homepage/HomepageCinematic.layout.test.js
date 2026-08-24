@@ -41,3 +41,10 @@ test("keeps hero controls above the lead image", () => {
   expect(css).toMatch(/\.heroCopy\s*\{[^}]*z-index:\s*3/s);
   expect(css).toMatch(/\.heroMedia\s*\{[^}]*z-index:\s*2/s);
 });
+
+test("constrains intrinsic hero content to the mobile grid track", () => {
+  expect(css).toMatch(/\.hero\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/s);
+  expect(css).toMatch(/\.heroCopy\s*\{[^}]*width:\s*100%[^}]*min-width:\s*0[^}]*max-width:\s*960px/s);
+  expect(css).toMatch(/\.heroPrompt\s*\{[^}]*width:\s*100%[^}]*min-width:\s*0[^}]*max-width:\s*900px/s);
+  expect(css).toMatch(/\.heroMedia\s*\{[^}]*width:\s*100%[^}]*min-width:\s*0[^}]*max-width:\s*800px/s);
+});
