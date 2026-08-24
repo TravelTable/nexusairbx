@@ -19,6 +19,7 @@ import { isExplicitPlanApproval } from "../lib/planApproval";
 import {
   classifyExecutionIntent,
   classifyUserIntent,
+  explicitlyDisablesStudioContext,
   isImplementationIntent,
 } from "../lib/intentClassifier";
 import {
@@ -994,7 +995,9 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         stage: "Thinking...",
       }, requestId);
 
-      const studioEnabled = FEATURE_FLAGS.unifiedAgent && getStudioEnabledPreference();
+      const studioEnabled = FEATURE_FLAGS.unifiedAgent
+        && getStudioEnabledPreference()
+        && !explicitlyDisablesStudioContext(requestPrompt);
       let studioSessionId = null;
       let studioConnectionType = null;
       if (studioEnabled) {

@@ -1,6 +1,7 @@
 import {
   classifyExecutionIntent,
   classifyUserIntent,
+  explicitlyDisablesStudioContext,
   isImplementationIntent,
 } from "./intentClassifier";
 
@@ -130,6 +131,13 @@ describe("classifyExecutionIntent", () => {
       .toBe("AMBIGUOUS");
     expect(classifyUserIntent("Do not remove logs; instead fix the inventory bug"))
       .toBe("MODIFICATION_REQUEST");
+  });
+
+  test("distinguishes an explicit Studio opt-out from ordinary conversation", () => {
+    expect(explicitlyDisablesStudioContext("Do not use Studio for this answer"))
+      .toBe(true);
+    expect(explicitlyDisablesStudioContext("What does Main do?"))
+      .toBe(false);
   });
 
   test("recognizes Quick Script as an explicit execution channel", () => {

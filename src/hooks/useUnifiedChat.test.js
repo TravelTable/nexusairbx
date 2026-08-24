@@ -17,6 +17,7 @@ import { getProjectBinding } from "../lib/projectBindingsApi";
 import {
   classifyExecutionIntent,
   classifyUserIntent,
+  explicitlyDisablesStudioContext,
   isImplementationIntent,
 } from "../lib/intentClassifier";
 import { isExplicitPlanApproval } from "../lib/planApproval";
@@ -69,6 +70,7 @@ jest.mock("../lib/planApproval", () => ({
 jest.mock("../lib/intentClassifier", () => ({
   classifyExecutionIntent: jest.fn(() => "artifact_only"),
   classifyUserIntent: jest.fn(() => "IMPLEMENTATION"),
+  explicitlyDisablesStudioContext: jest.fn(() => false),
   isImplementationIntent: jest.fn(() => true),
 }));
 
@@ -529,6 +531,9 @@ describe("useUnifiedChat", () => {
   });
 
   test("routes projectless conversational Agent prompts through read-only chat", async () => {
+    FEATURE_FLAGS.unifiedAgent = true;
+    getStudioEnabledPreference.mockReturnValue(true);
+    explicitlyDisablesStudioContext.mockReturnValue(true);
     classifyUserIntent.mockReturnValue("GENERAL_QUESTION");
     isImplementationIntent.mockReturnValue(false);
     const setPendingForChat = jest.fn();
@@ -569,6 +574,12 @@ describe("useUnifiedChat", () => {
       expect.stringContaining("/api/ai/chat"),
       expect.objectContaining({ method: "POST" })
     );
+    expect(JSON.parse(global.fetch.mock.calls[0][1].body)).toEqual(expect.objectContaining({
+      studioEnabled: false,
+      studioSessionId: null,
+      studioConnectionType: null,
+    }));
+    expect(getStudioStatus).not.toHaveBeenCalled();
     expect(setDoc.mock.calls.some(([, payload]) => payload?.content === "Projectless answer")).toBe(true);
     expect(chatHandleSubmit).not.toHaveBeenCalled();
     expect(createAgentRunV2).not.toHaveBeenCalled();
