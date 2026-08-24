@@ -24,6 +24,7 @@ export class StudioTargetManager {
   constructor(
     private readonly mcp: McpClientLike,
     identityProbeAvailable = false,
+    private readonly perCallStudioTargeting = false,
   ) {
     this.identityProbeAvailable = identityProbeAvailable;
   }
@@ -93,7 +94,7 @@ export class StudioTargetManager {
       const stateResult = await this.mcp.callTool("get_studio_state", {}, signal);
       assertTargetToolSucceeded(stateResult, "Roblox Studio target attestation failed.");
       const state = parseState(stateResult);
-      assertSelectedStudioState(state, wanted, this.targets.length);
+      assertSelectedStudioState(state, wanted, this.targets.length, this.perCallStudioTargeting);
       const target = this.targets.find((item) => item.studioId === wanted);
       let probe = emptyIdentity();
       let confirmedState = state;
@@ -115,7 +116,7 @@ export class StudioTargetManager {
         const confirmedResult = await this.mcp.callTool("get_studio_state", {}, signal);
         assertTargetToolSucceeded(confirmedResult, "Roblox Studio target re-confirmation failed.");
         confirmedState = parseState(confirmedResult);
-        assertSelectedStudioState(confirmedState, wanted, this.targets.length);
+        assertSelectedStudioState(confirmedState, wanted, this.targets.length, this.perCallStudioTargeting);
         assertCompatibleIdentity("place", state.placeId, confirmedState.placeId);
         assertCompatibleIdentity("universe", state.universeId, confirmedState.universeId);
       }
@@ -317,8 +318,14 @@ function assertSelectedStudioState(
   state: ReturnType<typeof parseState>,
   wanted: string,
   targetCount: number,
+  perCallStudioTargeting: boolean,
 ): void {
-  if (targetCount > 1 && !state.studioId) {
+  // Current Studio MCP targets every tool call with a required studio_id but
+  // returns a human-readable get_studio_state response that omits that ID.
+  // In that mode the MCP client itself enforces and injects the selected ID,
+  // so requiring the server to echo it would reject a correctly routed call.
+  // Explicit set_active_studio providers still have to attest the active ID.
+  if (!perCallStudioTargeting && targetCount > 1 && !state.studioId) {
     throw new ConnectorError("STUDIO_TARGET_ATTESTATION_INCOMPLETE", "Roblox Studio did not confirm which window is active.");
   }
   if (state.studioId && state.studioId !== wanted) {

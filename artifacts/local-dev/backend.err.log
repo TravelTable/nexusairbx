@@ -9652,3 +9652,411 @@
   status: 403,
   errorCode: 'CORS_ORIGIN_BLOCKED'
 }
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:29:38.965Z',
+  requestId: 'aca7745d-be59-4468-bb01-d83b181350b4',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'cors.preflight_rejected',
+  ts: '2026-08-24T12:29:38.969Z',
+  origin: 'http://localhost:3000',
+  requestedMethod: 'GET',
+  requestedHeaders: [
+    'authorization',
+    'cache-control',
+    'pragma',
+    'x-nexus-anonymous-session-id',
+    'x-nexus-anonymous-user-id',
+    'x-nexus-client-deployment',
+    'x-nexus-experiment-variants',
+    'x-request-id'
+  ],
+  route: '/api/support/tickets/unread-count',
+  rejectionReason: 'origin_not_allowed'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:29:38.972Z',
+  requestId: '3f4d56be-f077-4491-bab9-025902ac2d1c',
+  route: '/api/support/tickets/unread-count',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:30:38.970Z',
+  requestId: '19851cc7-090f-40c5-99c7-a0b441c9b6d2',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'cors.preflight_rejected',
+  ts: '2026-08-24T12:30:38.972Z',
+  origin: 'http://localhost:3000',
+  requestedMethod: 'GET',
+  requestedHeaders: [
+    'authorization',
+    'cache-control',
+    'pragma',
+    'x-nexus-anonymous-session-id',
+    'x-nexus-anonymous-user-id',
+    'x-nexus-client-deployment',
+    'x-nexus-experiment-variants',
+    'x-request-id'
+  ],
+  route: '/api/support/tickets/unread-count',
+  rejectionReason: 'origin_not_allowed'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:30:38.972Z',
+  requestId: '9a4d0ce3-ac06-48c5-a5a5-22a17a7a5a5d',
+  route: '/api/support/tickets/unread-count',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'cors.preflight_rejected',
+  ts: '2026-08-24T12:30:53.965Z',
+  origin: 'http://localhost:3000',
+  requestedMethod: 'GET',
+  requestedHeaders: [
+    'authorization',
+    'cache-control',
+    'pragma',
+    'x-nexus-anonymous-session-id',
+    'x-nexus-anonymous-user-id',
+    'x-nexus-client-deployment',
+    'x-nexus-experiment-variants',
+    'x-request-id'
+  ],
+  route: '/api/billing/entitlements',
+  rejectionReason: 'origin_not_allowed'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:30:53.965Z',
+  requestId: '006e2fd0-f2ea-4577-875a-e8a426bc7e45',
+  route: '/api/billing/entitlements',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:31:39.278Z',
+  requestId: '0e121938-017a-436d-9f8c-c8c287b14489',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'cors.preflight_rejected',
+  ts: '2026-08-24T12:31:39.281Z',
+  origin: 'http://localhost:3000',
+  requestedMethod: 'GET',
+  requestedHeaders: [
+    'authorization',
+    'cache-control',
+    'pragma',
+    'x-nexus-anonymous-session-id',
+    'x-nexus-anonymous-user-id',
+    'x-nexus-client-deployment',
+    'x-nexus-experiment-variants',
+    'x-request-id'
+  ],
+  route: '/api/support/tickets/unread-count',
+  rejectionReason: 'origin_not_allowed'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:31:39.282Z',
+  requestId: '2645eaef-2068-4e5c-ab78-5405e5c4155e',
+  route: '/api/support/tickets/unread-count',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:32:38.973Z',
+  requestId: '627764c2-8b56-4cd6-acd5-4dbb5491855a',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'cors.preflight_rejected',
+  ts: '2026-08-24T12:32:38.975Z',
+  origin: 'http://localhost:3000',
+  requestedMethod: 'GET',
+  requestedHeaders: [
+    'authorization',
+    'cache-control',
+    'pragma',
+    'x-nexus-anonymous-session-id',
+    'x-nexus-anonymous-user-id',
+    'x-nexus-client-deployment',
+    'x-nexus-experiment-variants',
+    'x-request-id'
+  ],
+  route: '/api/support/tickets/unread-count',
+  rejectionReason: 'origin_not_allowed'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:32:38.975Z',
+  requestId: 'bf087b10-f272-48f3-a5e7-c6f1a035dd82',
+  route: '/api/support/tickets/unread-count',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:33:38.979Z',
+  requestId: 'b3d4f45f-2761-45e1-ab32-23270f6af2f2',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'cors.preflight_rejected',
+  ts: '2026-08-24T12:33:38.981Z',
+  origin: 'http://localhost:3000',
+  requestedMethod: 'GET',
+  requestedHeaders: [
+    'authorization',
+    'cache-control',
+    'pragma',
+    'x-nexus-anonymous-session-id',
+    'x-nexus-anonymous-user-id',
+    'x-nexus-client-deployment',
+    'x-nexus-experiment-variants',
+    'x-request-id'
+  ],
+  route: '/api/support/tickets/unread-count',
+  rejectionReason: 'origin_not_allowed'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:33:38.982Z',
+  requestId: '1eb4036a-87d1-4c28-bd04-68505666d76d',
+  route: '/api/support/tickets/unread-count',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:34:38.982Z',
+  requestId: 'de235b75-e4c9-44f7-8658-d906f6bdb94c',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'cors.preflight_rejected',
+  ts: '2026-08-24T12:34:38.987Z',
+  origin: 'http://localhost:3000',
+  requestedMethod: 'GET',
+  requestedHeaders: [
+    'authorization',
+    'cache-control',
+    'pragma',
+    'x-nexus-anonymous-session-id',
+    'x-nexus-anonymous-user-id',
+    'x-nexus-client-deployment',
+    'x-nexus-experiment-variants',
+    'x-request-id'
+  ],
+  route: '/api/support/tickets/unread-count',
+  rejectionReason: 'origin_not_allowed'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:34:38.988Z',
+  requestId: '1799c48d-caf9-4036-9ac9-014f1d0bc12a',
+  route: '/api/support/tickets/unread-count',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:35:39.280Z',
+  requestId: '554a0317-8e41-413a-9fd5-caf881816d1e',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'cors.preflight_rejected',
+  ts: '2026-08-24T12:35:39.281Z',
+  origin: 'http://localhost:3000',
+  requestedMethod: 'GET',
+  requestedHeaders: [
+    'authorization',
+    'cache-control',
+    'pragma',
+    'x-nexus-anonymous-session-id',
+    'x-nexus-anonymous-user-id',
+    'x-nexus-client-deployment',
+    'x-nexus-experiment-variants',
+    'x-request-id'
+  ],
+  route: '/api/support/tickets/unread-count',
+  rejectionReason: 'origin_not_allowed'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:35:39.281Z',
+  requestId: '7771f012-b2bf-4512-a5e9-0a6d76343d6e',
+  route: '/api/support/tickets/unread-count',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'cors.preflight_rejected',
+  ts: '2026-08-24T12:35:54.967Z',
+  origin: 'http://localhost:3000',
+  requestedMethod: 'GET',
+  requestedHeaders: [
+    'authorization',
+    'cache-control',
+    'pragma',
+    'x-nexus-anonymous-session-id',
+    'x-nexus-anonymous-user-id',
+    'x-nexus-client-deployment',
+    'x-nexus-experiment-variants',
+    'x-request-id'
+  ],
+  route: '/api/billing/entitlements',
+  rejectionReason: 'origin_not_allowed'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:35:54.969Z',
+  requestId: '66695710-cdde-4898-96dd-8792ddae09f9',
+  route: '/api/billing/entitlements',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:36:39.276Z',
+  requestId: 'f7dd4e47-dfa7-438a-8aac-c0a1bc286f1a',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'cors.preflight_rejected',
+  ts: '2026-08-24T12:36:39.277Z',
+  origin: 'http://localhost:3000',
+  requestedMethod: 'GET',
+  requestedHeaders: [
+    'authorization',
+    'cache-control',
+    'pragma',
+    'x-nexus-anonymous-session-id',
+    'x-nexus-anonymous-user-id',
+    'x-nexus-client-deployment',
+    'x-nexus-experiment-variants',
+    'x-request-id'
+  ],
+  route: '/api/support/tickets/unread-count',
+  rejectionReason: 'origin_not_allowed'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:36:39.278Z',
+  requestId: '185a6c9d-906c-418c-8d21-7d11dc4851eb',
+  route: '/api/support/tickets/unread-count',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:38:09.224Z',
+  requestId: '50291453-02d7-4689-9e49-3e4b2197efca',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'cors.preflight_rejected',
+  ts: '2026-08-24T12:38:09.228Z',
+  origin: 'http://localhost:3000',
+  requestedMethod: 'GET',
+  requestedHeaders: [
+    'authorization',
+    'cache-control',
+    'pragma',
+    'x-nexus-anonymous-session-id',
+    'x-nexus-anonymous-user-id',
+    'x-nexus-client-deployment',
+    'x-nexus-experiment-variants',
+    'x-request-id'
+  ],
+  route: '/api/billing/entitlements',
+  rejectionReason: 'origin_not_allowed'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:38:09.229Z',
+  requestId: '282eaf21-0ac0-4671-b7dd-71e12eb1e8ba',
+  route: '/api/billing/entitlements',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'cors.preflight_rejected',
+  ts: '2026-08-24T12:38:09.232Z',
+  origin: 'http://localhost:3000',
+  requestedMethod: 'GET',
+  requestedHeaders: [
+    'authorization',
+    'cache-control',
+    'pragma',
+    'x-nexus-anonymous-session-id',
+    'x-nexus-anonymous-user-id',
+    'x-nexus-client-deployment',
+    'x-nexus-experiment-variants',
+    'x-request-id'
+  ],
+  route: '/api/support/tickets/unread-count',
+  rejectionReason: 'origin_not_allowed'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:38:09.235Z',
+  requestId: 'c72bf51d-d4e3-4085-864c-118408af5b3c',
+  route: '/api/support/tickets/unread-count',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:38:10.187Z',
+  requestId: 'b6451a25-807e-4c55-bb18-8af51aa963fd',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:38:12.188Z',
+  requestId: '59343bfe-4fa0-4ecf-89e0-2959e3d0a73d',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:38:12.810Z',
+  requestId: 'e5df755b-180e-40d3-b67a-aa1e9bdc87a6',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}

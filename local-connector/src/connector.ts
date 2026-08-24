@@ -255,7 +255,11 @@ export class NexusLocalConnector {
     else this.#executor.updateCatalog(catalog);
     this.#catalog = catalog;
     if (catalog.listStudios && catalog.setActiveStudio && catalog.studioState) {
-      this.#targeting ??= new StudioTargetManager(this.#mcp, catalog.executeLuau !== null);
+      this.#targeting ??= new StudioTargetManager(
+        this.#mcp,
+        catalog.executeLuau !== null,
+        catalog.perCallStudioTargeting,
+      );
       this.#targeting.setIdentityProbeAvailable(catalog.executeLuau !== null);
       await this.#targeting.refresh(signal);
       // StudioMCP can finish its MCP initialize handshake before its Studio

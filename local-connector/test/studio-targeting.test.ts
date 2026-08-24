@@ -274,6 +274,29 @@ test("multiple Studios require exact switch confirmation", async () => {
   await assert.rejects(() => manager.ensureMutationTarget(), (error: any) => error?.code === "STUDIO_TARGET_UNAVAILABLE");
 });
 
+test("per-call Studio targeting accepts a selected window when state omits the echoed id", async () => {
+  const mcp = new FakeMcp();
+  mcp.studios = [
+    { studio_id: "studio-a", place_name: "Arena" },
+    { studio_id: "studio-b", place_name: "Obby" },
+  ];
+  mcp.omitStateStudioId = true;
+  mcp.probeIdentity = { result: {
+    placeId: "102",
+    universeId: "202",
+    placeName: "Obby",
+    placeSignature: "sig-b",
+  } };
+  const manager = new StudioTargetManager(mcp, true, true);
+  manager.acceptBackendResponse({ desiredStudioId: "studio-b" });
+
+  await manager.ensureMutationTarget();
+
+  assert.equal(manager.activeStudioId, "studio-b");
+  assert.equal(manager.metadata().targetIdentityComplete, true);
+  assert.equal(manager.metadata().placeName, "Obby");
+});
+
 test("a command cannot mutate a different place, universe, signature, or connection type", async () => {
   const mcp = new FakeMcp();
   mcp.studios = [{ studio_id: "studio-a", place_id: "101", place_name: "Arena", universe_id: "201", place_signature: "sig-a" }];

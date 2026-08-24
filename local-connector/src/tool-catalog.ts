@@ -54,6 +54,7 @@ export class ToolCatalog {
   readonly listStudios: BasicToolAdapter | null;
   readonly setActiveStudio: BasicToolAdapter | null;
   readonly studioState: BasicToolAdapter | null;
+  readonly perCallStudioTargeting: boolean;
   readonly capabilities: StudioCapabilities;
   readonly capabilityDetails: CapabilityDetails;
   readonly supportedCommands: string[];
@@ -75,6 +76,7 @@ export class ToolCatalog {
     this.startStopPlay = compileExactTool(this.#byName.get("start_stop_play"), ["is_start"]);
     this.listStudios = compileExactTool(this.#byName.get("list_roblox_studios"), []);
     const perCallStudioTargeting = supportsPerCallStudioTargeting(this.#byName);
+    this.perCallStudioTargeting = perCallStudioTargeting;
     this.setActiveStudio = compileExactTool(this.#byName.get("set_active_studio"), ["studio_id"])
       ?? (perCallStudioTargeting ? { toolName: "set_active_studio", args: {} } : null);
     this.studioState = compileExactTool(this.#byName.get("get_studio_state"), []);

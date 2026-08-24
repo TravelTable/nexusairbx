@@ -97,7 +97,7 @@ describe("StudioPairControl", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: /Roblox Studio MCP/i }));
     expect(
-      screen.getByRole("link", { name: /Download Connector 0\.2\.8/i }).getAttribute("href")
+      screen.getByRole("link", { name: /Download Connector 0\.2\.9/i }).getAttribute("href")
     ).toBe("/downloads");
 
     fireEvent.keyDown(document, { key: "Escape" });

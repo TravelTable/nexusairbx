@@ -3,6 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 const { resolvePluginsDirectory } = require("./plugin-install-path.js");
+const { CANONICAL_PLUGIN_NAME, quarantineStaleNexusPlugins } = require("./plugin-install-cleanup.js");
 const { buildRbxmx } = require("./rbxmx-artifact.js");
 
 const pluginRoot = path.resolve(__dirname, "..");
@@ -16,13 +17,9 @@ const pluginsDir = resolvePluginsDirectory({
     );
   },
 });
-const installedPath = path.join(pluginsDir, "NexusRBXStudioBridge.rbxmx");
+const installedPath = path.join(pluginsDir, CANONICAL_PLUGIN_NAME);
 const buildOnly = process.argv.includes("--build-only");
 const fromBundle = process.argv.includes("--from-bundle");
-const legacyPaths = [
-  path.join(pluginsDir, "Plugin.rbxmx"),
-  path.join(pluginsDir, "NexusRBXStudioBridge.plugin.rbxmx"),
-];
 
 if (!fromBundle) {
   require("./bundle-plugin.js");
@@ -41,13 +38,11 @@ fs.writeFileSync(buildRbxmxPath, rbxmx, "utf8");
 
 if (!buildOnly) {
   fs.mkdirSync(pluginsDir, { recursive: true });
+  const quarantined = quarantineStaleNexusPlugins(pluginsDir);
   fs.writeFileSync(installedPath, rbxmx, "utf8");
 
-  for (const legacyPath of legacyPaths) {
-    if (fs.existsSync(legacyPath)) {
-      fs.unlinkSync(legacyPath);
-      console.log(`Removed legacy plugin: ${legacyPath}`);
-    }
+  for (const moved of quarantined) {
+    console.log(`Quarantined duplicate plugin: ${moved.sourcePath} -> ${moved.destinationPath}`);
   }
 
   console.log(`Installed local plugin: ${installedPath}`);

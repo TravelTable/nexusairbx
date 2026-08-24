@@ -131,6 +131,7 @@ test("insert_asset maps current optional fields without inventing schema keys", 
 
 test("catalog accepts current Studio MCP schemas with a required per-call studio id", () => {
   const catalog = new ToolCatalog(currentTargeted([read, inspect, search, grep, state, output, sourceMutation]));
+  assert.equal(catalog.perCallStudioTargeting, true);
   assert.equal(catalog.setActiveStudio?.toolName, "set_active_studio");
   assert.equal(catalog.hasCommand("read_script"), true);
   assert.equal(catalog.hasCommand("write_script"), true);
