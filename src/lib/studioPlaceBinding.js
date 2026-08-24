@@ -64,9 +64,10 @@ export function normalizeStudioTargetOption(option = {}) {
 }
 
 export function canBindStudioTargetToProject(option = {}) {
+  const targetId = cleanOptional(option?.id || option?.studioTargetId || option?.targetId);
   const placeId = normalizeRobloxPlaceId(option?.placeId ?? option?.targetPlaceId);
   const universeId = cleanOptional(option?.universeId);
-  return Boolean(placeId && universeId);
+  return Boolean(targetId || (placeId && universeId));
 }
 
 /**
@@ -461,12 +462,9 @@ export function evaluateStudioSubmissionPreflight({
     return { status: "pass", target: gate.target };
   }
 
-  const hasBindableTarget = liveOptions.some(canBindStudioTargetToProject);
   return {
     status: "blocked",
-    reason: hasBindableTarget ? "needs_selection" : "needs_publish",
-    message: hasBindableTarget
-      ? "Choose which Studio place this chat should edit before sending."
-      : "Publish an open Studio place to Roblox before using Agent Build.",
+    reason: "needs_selection",
+    message: "Choose which Studio place this chat should edit before sending.",
   };
 }

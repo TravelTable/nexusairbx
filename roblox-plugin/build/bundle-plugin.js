@@ -437,9 +437,17 @@ const sharedPreamble = [
 ].join("\n");
 output = output.slice(0, configEnd + configEndMarker.length) + sharedPreamble + output.slice(configEnd + configEndMarker.length);
 const localCount = (output.match(/^local /gm) || []).length;
+// This is a deliberately conservative proxy for Luau's register allocator.
+// Roblox currently rejects a chunk once 200 local registers are live; bundled
+// export declarations can contain multiple names on one line, so leave enough
+// headroom for those names and compiler temporaries instead of building right up
+// to the runtime ceiling.
+const MAX_TOP_LEVEL_LOCAL_STATEMENTS = 185;
 
-if (localCount > 200) {
-  throw new Error(`Bundled plugin exceeds Luau local register limit: ${localCount} > 200`);
+if (localCount > MAX_TOP_LEVEL_LOCAL_STATEMENTS) {
+  throw new Error(
+    `Bundled plugin is too close to Luau's local register limit: ${localCount} > ${MAX_TOP_LEVEL_LOCAL_STATEMENTS}`,
+  );
 }
 
 if (require.main === module) {

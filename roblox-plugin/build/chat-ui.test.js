@@ -22,5 +22,10 @@ for (const relativePath of ["src/ui/BridgePanel.lua", "NexusRBXStudioBridge.plug
     assert.match(source, /\/api\/studio\/agent\/runs\/" \.\. runId/);
     assert.match(source, /appendChatMessage\(approvalId, "assistant"/);
     assert.match(source, /approvalOverlay\.Visible = false\s+setActiveTab\("Chat"\)/);
+    assert.match(source, /local UI_HELPERS = \{\}/);
+    assert.doesNotMatch(
+      source,
+      /^local function (formatTime|stateFromLegacy|clearErrorBanner|setBanner|getApprovalModeEnabled|refreshApprovalToggle|rebuildSnapshotList|resizeStatusPill|errorHelpFor|describeAffectedPaths)\(/m,
+    );
   });
 }

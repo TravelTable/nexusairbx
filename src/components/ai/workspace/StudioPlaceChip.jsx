@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { MapPin, ChevronDown } from "lib/icons";
 import { normalizeRobloxPlaceId } from "lib/robloxPlaceId";
-import { canBindStudioTargetToProject } from "lib/studioPlaceBinding";
 import StudioTargetPicker from "./StudioTargetPicker";
 
 export default function StudioPlaceChip({
@@ -28,20 +27,7 @@ export default function StudioPlaceChip({
 
   const label = preference?.label || null;
   const hasOptions = Array.isArray(options) && options.length > 0;
-  const pickerOptions = hasOptions
-    ? options.map((option) =>
-        canBindStudioTargetToProject(option)
-          ? option
-          : {
-              ...option,
-              disabled: true,
-              disabledReason: "Publish to Roblox before using Agent Build",
-            },
-      )
-    : [];
-  const hasBindableOptions = pickerOptions.some(
-    (option) => option?.disabled !== true,
-  );
+  const pickerOptions = hasOptions ? options : [];
   const canOpen = connected && hasOptions;
   const canRequestConnect =
     !connected && typeof onRequestConnect === "function";
@@ -129,9 +115,7 @@ export default function StudioPlaceChip({
               : "Which Studio place should this chat use?",
             message: label
               ? "Pick another open place. In-progress agent runs will continue there after you confirm."
-              : hasBindableOptions
-                ? "Pick the open place before the agent starts."
-                : "Publish this local place to Roblox, then reconnect it to Agent Build.",
+              : "Pick the open place before the agent starts.",
             options: pickerOptions,
           }}
           selectingTargetId={selectingTargetId}

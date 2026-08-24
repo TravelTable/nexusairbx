@@ -69,8 +69,9 @@ describe("studioPlaceBinding", () => {
     ]);
   });
 
-  test("only published Studio targets can bind to workspace projects", () => {
+  test("live local and published Studio targets can bind to workspace projects", () => {
     expect(canBindStudioTargetToProject({ placeId: "123", universeId: "456" })).toBe(true);
+    expect(canBindStudioTargetToProject({ id: "local-target", placeId: null, universeId: null })).toBe(true);
     expect(canBindStudioTargetToProject({ placeId: "123", universeId: null })).toBe(false);
     expect(canBindStudioTargetToProject({ placeId: "0", universeId: "456" })).toBe(false);
   });
@@ -260,7 +261,7 @@ describe("studioPlaceBinding", () => {
     }).status).toBe("needs_plugin");
   });
 
-  test("preflight blocks unpublished Studio targets before chat admission", () => {
+  test("preflight admits a selected live local Studio target", () => {
     expect(evaluateStudioSubmissionPreflight({
       studioEnabled: true,
       connected: true,
@@ -268,9 +269,8 @@ describe("studioPlaceBinding", () => {
       preference: { targetId: "local-target" },
       options: [{ id: "local-target", placeId: null, universeId: null }],
     })).toEqual({
-      status: "blocked",
-      reason: "needs_publish",
-      message: "Publish an open Studio place to Roblox before using Agent Build.",
+      status: "pass",
+      target: { id: "local-target", placeId: null, universeId: null },
     });
   });
 

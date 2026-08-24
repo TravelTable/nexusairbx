@@ -95,7 +95,7 @@ test("closes the picker only after explicit async selection success", async () =
   });
 });
 
-test("keeps unpublished local places visible but unavailable", () => {
+test("allows an unpublished local place to be selected", () => {
   const onSelectStudioPlace = jest.fn();
   render(
     <StudioPlaceChip
@@ -109,10 +109,9 @@ test("keeps unpublished local places visible but unavailable", () => {
   fireEvent.click(
     screen.getByRole("button", { name: /choose a studio place/i }),
   );
-  expect(screen.getByText(/publish this local place to roblox/i)).toBeTruthy();
-  expect(
-    screen.getByRole("button", {
-      name: /Draft\.rbxl Publish to Roblox before using Agent Build/i,
-    }).disabled,
-  ).toBe(true);
+  expect(screen.getByText(/pick the open place before the agent starts/i)).toBeTruthy();
+  const localPlace = screen.getByRole("button", { name: /Draft\.rbxl/i });
+  expect(localPlace.disabled).toBe(false);
+  fireEvent.click(localPlace);
+  expect(onSelectStudioPlace).toHaveBeenCalledWith(expect.objectContaining({ id: "studio_target_draft" }));
 });

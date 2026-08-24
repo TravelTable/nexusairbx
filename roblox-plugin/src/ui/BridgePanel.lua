@@ -35,7 +35,8 @@ local pollingActive, lastErrorText, diagnosticsOpen, pendingApproval, selectedSn
 -- active tab plus the paired state. Declared on one line to conserve the
 -- bundler's top-level local budget.
 local tabButtons, activeTab, setActiveTab, tabBar, promptSection = {}, "Chat", nil, nil, nil
-local conversationSection, chatMessageList, chatEmptyLabel, chatSuggestions, chatPromptBox, appendChatMessage, updateChatMessage, syncChatMessages
+local conversationSection, chatMessageList, chatEmptyLabel, chatSuggestions, appendChatMessage, updateChatMessage, syncChatMessages
+local UI_HELPERS = {}
 
 local function themeColor(color)
 	-- NexusRBX remains a dark, low-glare workspace even when Studio itself uses
@@ -125,17 +126,19 @@ scrollRoot.AutomaticSize = Enum.AutomaticSize.Y
 scrollRoot.BackgroundTransparency = 1
 scrollRoot.Parent = scroll
 
-local rootPadding = Instance.new("UIPadding")
-rootPadding.PaddingTop = UDim.new(0, 12)
-rootPadding.PaddingBottom = UDim.new(0, 12)
-rootPadding.PaddingLeft = UDim.new(0, 12)
-rootPadding.PaddingRight = UDim.new(0, 18)
-rootPadding.Parent = scrollRoot
+do
+	local rootPadding = Instance.new("UIPadding")
+	rootPadding.PaddingTop = UDim.new(0, 12)
+	rootPadding.PaddingBottom = UDim.new(0, 12)
+	rootPadding.PaddingLeft = UDim.new(0, 12)
+	rootPadding.PaddingRight = UDim.new(0, 18)
+	rootPadding.Parent = scrollRoot
 
-local list = Instance.new("UIListLayout")
-list.Padding = UDim.new(0, 10)
-list.SortOrder = Enum.SortOrder.LayoutOrder
-list.Parent = scrollRoot
+	local rootList = Instance.new("UIListLayout")
+	rootList.Padding = UDim.new(0, 10)
+	rootList.SortOrder = Enum.SortOrder.LayoutOrder
+	rootList.Parent = scrollRoot
+end
 
 local function applyCorner(parent, radius)
 	local corner = Instance.new("UICorner")
@@ -249,45 +252,48 @@ local function makeButton(parent, name, text, color, compact)
 	return button
 end
 
-local header = Instance.new("Frame")
-header.Name = "Header"
-header.BackgroundTransparency = 1
-header.Size = UDim2.new(1, 0, 0, 0)
-header.AutomaticSize = Enum.AutomaticSize.Y
-header.Parent = scrollRoot
+local statusPill
+do
+	local header = Instance.new("Frame")
+	header.Name = "Header"
+	header.BackgroundTransparency = 1
+	header.Size = UDim2.new(1, 0, 0, 0)
+	header.AutomaticSize = Enum.AutomaticSize.Y
+	header.Parent = scrollRoot
 
-local title = makeText(header, "Title", "NexusRBX", 22, 16, true)
-title.Size = UDim2.new(1, -STATUS_PILL_HEADER_RESERVE, 0, 22)
-title.LayoutOrder = 1
-local subtitle = makeText(header, "Subtitle", tostring(game.Name or "Studio place"), 18, 12, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
-subtitle.Size = UDim2.new(1, -STATUS_PILL_HEADER_RESERVE, 0, 18)
-subtitle.LayoutOrder = 2
-healthLabel = makeText(header, "Health", "Not synced yet", 16, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
-healthLabel.Size = UDim2.new(1, -STATUS_PILL_HEADER_RESERVE, 0, 16)
-healthLabel.LayoutOrder = 3
+	local title = makeText(header, "Title", "NexusRBX", 22, 16, true)
+	title.Size = UDim2.new(1, -STATUS_PILL_HEADER_RESERVE, 0, 22)
+	title.LayoutOrder = 1
+	local subtitle = makeText(header, "Subtitle", tostring(game.Name or "Studio place"), 18, 12, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
+	subtitle.Size = UDim2.new(1, -STATUS_PILL_HEADER_RESERVE, 0, 18)
+	subtitle.LayoutOrder = 2
+	healthLabel = makeText(header, "Health", "Not synced yet", 16, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
+	healthLabel.Size = UDim2.new(1, -STATUS_PILL_HEADER_RESERVE, 0, 16)
+	healthLabel.LayoutOrder = 3
 
-local headerList = Instance.new("UIListLayout")
-headerList.Padding = UDim.new(0, 2)
-headerList.SortOrder = Enum.SortOrder.LayoutOrder
-headerList.Parent = header
+	local headerList = Instance.new("UIListLayout")
+	headerList.Padding = UDim.new(0, 2)
+	headerList.SortOrder = Enum.SortOrder.LayoutOrder
+	headerList.Parent = header
 
-local statusPill = Instance.new("TextLabel")
-statusPill.Name = "StatusPill"
-statusPill.AnchorPoint = Vector2.new(1, 0)
-statusPill.Position = UDim2.new(1, 0, 0, 3)
-statusPill.Size = UDim2.new(0, STATUS_PILL_MIN_WIDTH, 0, STATUS_PILL_HEIGHT)
-statusPill.BackgroundColor3 = COLORS.muted
-statusPill.TextColor3 = Color3.fromRGB(255, 255, 255)
-statusPill.Font = Enum.Font.GothamBold
-statusPill.TextSize = STATUS_PILL_TEXT_SIZE
-statusPill.Text = "Offline"
-statusPill.TextXAlignment = Enum.TextXAlignment.Center
-statusPill.Parent = header
-applyCorner(statusPill, STATUS_PILL_HEIGHT / 2)
-local statusPillPad = Instance.new("UIPadding")
-statusPillPad.PaddingLeft = UDim.new(0, STATUS_PILL_PAD)
-statusPillPad.PaddingRight = UDim.new(0, STATUS_PILL_PAD)
-statusPillPad.Parent = statusPill
+	statusPill = Instance.new("TextLabel")
+	statusPill.Name = "StatusPill"
+	statusPill.AnchorPoint = Vector2.new(1, 0)
+	statusPill.Position = UDim2.new(1, 0, 0, 3)
+	statusPill.Size = UDim2.new(0, STATUS_PILL_MIN_WIDTH, 0, STATUS_PILL_HEIGHT)
+	statusPill.BackgroundColor3 = COLORS.muted
+	statusPill.TextColor3 = Color3.fromRGB(255, 255, 255)
+	statusPill.Font = Enum.Font.GothamBold
+	statusPill.TextSize = STATUS_PILL_TEXT_SIZE
+	statusPill.Text = "Offline"
+	statusPill.TextXAlignment = Enum.TextXAlignment.Center
+	statusPill.Parent = header
+	applyCorner(statusPill, STATUS_PILL_HEIGHT / 2)
+	local statusPillPad = Instance.new("UIPadding")
+	statusPillPad.PaddingLeft = UDim.new(0, STATUS_PILL_PAD)
+	statusPillPad.PaddingRight = UDim.new(0, STATUS_PILL_PAD)
+	statusPillPad.Parent = statusPill
+end
 
 local banner = Instance.new("TextButton")
 banner.Name = "Banner"
@@ -461,13 +467,15 @@ chatSuggestions.Name = "ChatSuggestions"
 chatSuggestions.BackgroundTransparency = 1
 chatSuggestions.Size = UDim2.new(1, 0, 0, 34)
 chatSuggestions.Parent = conversationSection
-local chatSuggestionLayout = Instance.new("UIListLayout")
-chatSuggestionLayout.FillDirection = Enum.FillDirection.Horizontal
-chatSuggestionLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-chatSuggestionLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-chatSuggestionLayout.SortOrder = Enum.SortOrder.LayoutOrder
-chatSuggestionLayout.Padding = UDim.new(0, 6)
-chatSuggestionLayout.Parent = chatSuggestions
+do
+	local chatSuggestionLayout = Instance.new("UIListLayout")
+	chatSuggestionLayout.FillDirection = Enum.FillDirection.Horizontal
+	chatSuggestionLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+	chatSuggestionLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	chatSuggestionLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	chatSuggestionLayout.Padding = UDim.new(0, 6)
+	chatSuggestionLayout.Parent = chatSuggestions
+end
 
 chatMessageList = Instance.new("Frame")
 chatMessageList.Name = "ChatMessages"
@@ -475,10 +483,12 @@ chatMessageList.BackgroundTransparency = 1
 chatMessageList.Size = UDim2.new(1, 0, 0, 0)
 chatMessageList.AutomaticSize = Enum.AutomaticSize.Y
 chatMessageList.Parent = conversationSection
-local chatMessageLayout = Instance.new("UIListLayout")
-chatMessageLayout.Padding = UDim.new(0, 8)
-chatMessageLayout.SortOrder = Enum.SortOrder.LayoutOrder
-chatMessageLayout.Parent = chatMessageList
+do
+	local chatMessageLayout = Instance.new("UIListLayout")
+	chatMessageLayout.Padding = UDim.new(0, 8)
+	chatMessageLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	chatMessageLayout.Parent = chatMessageList
+end
 
 local function chatStateText(state, detail)
 	local normalized = string.lower(tostring(state or ""))
@@ -614,7 +624,6 @@ do
 		plugin:SetSetting("nexusrbxProjectId", (projectBox.Text or ""):gsub("^%s+", ""):gsub("%s+$", ""))
 	end)
 	local promptBox = Instance.new("TextBox")
-	chatPromptBox = promptBox
 	promptBox.Name = "PromptInput"
 	promptBox.Size = UDim2.new(1, 0, 0, 60)
 	promptBox.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.MainBackground)
@@ -754,7 +763,9 @@ do
 			local message = tostring(dataOrError or "Prompt failed")
 			setLast("agent prompt failed: " .. message)
 			updateChatMessage(operationId .. "-assistant", message, "failed", "Try again")
-			if string.find(string.lower(message), "project") then
+			local loweredMessage = string.lower(message)
+			if string.find(loweredMessage, "choose the nexus project for this studio place")
+				or string.find(loweredMessage, "project could not be bound") then
 				setProjectFallbackVisible(true)
 				projectBox:CaptureFocus()
 			end
@@ -1057,7 +1068,7 @@ local onboardingCopy = makeText(
 onboardingCopy.TextWrapped = true
 onboardingDismissButton = makeButton(onboardingSheet, "OnboardingDismiss", "Got it", COLORS.primary)
 
-local function formatTime(ts)
+function UI_HELPERS.formatTime(ts)
 	if not ts then
 		return "--:--"
 	end
@@ -1066,7 +1077,7 @@ end
 
 -- Map legacy free-text status strings onto the structured state machine so old
 -- call sites keep working without ever mislabeling the connection.
-local function stateFromLegacy(text)
+function UI_HELPERS.stateFromLegacy(text)
 	local lowered = string.lower(tostring(text or ""))
 	if string.find(lowered, "wrong place") or string.find(lowered, "target changed") then
 		return "target_changed"
@@ -1094,7 +1105,7 @@ local function stateFromLegacy(text)
 	return "unpaired"
 end
 
-local function clearErrorBanner()
+function UI_HELPERS.clearErrorBanner()
 	lastErrorText = nil
 	diagnosticsOpen = false
 	banner.Visible = false
@@ -1102,7 +1113,7 @@ local function clearErrorBanner()
 	banner.Size = UDim2.new(1, 0, 0, 0)
 end
 
-local function setBanner(kind, text)
+function UI_HELPERS.setBanner(kind, text)
 	local hasText = text and tostring(text) ~= ""
 	banner.Visible = hasText
 	banner.Text = hasText and tostring(text) or ""
@@ -1114,18 +1125,18 @@ local function setBanner(kind, text)
 	end
 end
 
-local function getApprovalModeEnabled()
+function UI_HELPERS.getApprovalModeEnabled()
 	return plugin:GetSetting("nexusrbxApprovalMode") == true
 end
 
-local function refreshApprovalToggle()
-	local enabled = getApprovalModeEnabled()
+function UI_HELPERS.refreshApprovalToggle()
+	local enabled = UI_HELPERS.getApprovalModeEnabled()
 	approvalToggleButton:SetAttribute("BaseColor", enabled and COLORS.warning or themeColor(Enum.StudioStyleGuideColor.Button))
 	approvalToggleButton.BackgroundColor3 = approvalToggleButton:GetAttribute("BaseColor")
 	approvalToggleButton.Text = enabled and "Review before apply: ON" or "Review before apply: OFF"
 end
 
-local function rebuildSnapshotList()
+function UI_HELPERS.rebuildSnapshotList()
 	for _, child in ipairs(snapshotList:GetChildren()) do
 		if child:IsA("Frame") then
 			child:Destroy()
@@ -1222,7 +1233,7 @@ local function refreshControls()
 	local hasBatch = type(lastBatchSnapshots) == "table" and #lastBatchSnapshots > 0
 	setButtonEnabled(undoBatchButton, paired and (not busy) and hasBatch, hasBatch and "Undo Last Batch" or "No Batch To Undo")
 	setButtonEnabled(disconnectButton, paired and (not busy), busy and "Command Running" or "Disconnect Studio")
-	refreshApprovalToggle()
+	UI_HELPERS.refreshApprovalToggle()
 end
 
 -- Restyle the tab buttons for the active view, persist the choice, and refresh
@@ -1256,7 +1267,7 @@ do
 	end
 end
 
-local function resizeStatusPill(label)
+function UI_HELPERS.resizeStatusPill(label)
 	local bounds = game:GetService("TextService"):GetTextSize(
 		label,
 		statusPill.TextSize,
@@ -1273,7 +1284,7 @@ function setBridgeState(state, detail)
 	local def = BRIDGE_STATES[key]
 	currentBridgeState = key
 	statusPill.Text = def.label
-	resizeStatusPill(def.label)
+	UI_HELPERS.resizeStatusPill(def.label)
 	TweenService:Create(statusPill, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundColor3 = def.color }):Play()
 	if detail ~= nil and tostring(detail) ~= "" and (key == "working" or key == "degraded" or key == "reconciling" or key == "target_changed" or key == "target_stale") then
 		activeLabel.Text = "Active tool: " .. tostring(detail)
@@ -1282,7 +1293,7 @@ function setBridgeState(state, detail)
 end
 
 function setStatus(text)
-	setBridgeState(stateFromLegacy(text), text)
+	setBridgeState(UI_HELPERS.stateFromLegacy(text), text)
 end
 
 function setPollingPulse(active)
@@ -1366,7 +1377,7 @@ function setMcpCompanionStatus(summary)
 	mcpCompanionHelpLabel.Text = help[state] or "Core bridge is live. Reconnect the optional desktop companion to restore inspection tools."
 end
 
-local function errorHelpFor(value)
+function UI_HELPERS.errorHelpFor(value)
 	local lowered = string.lower(tostring(value or ""))
 	if string.find(lowered, "http") and (string.find(lowered, "disabled") or string.find(lowered, "not enabled") or string.find(lowered, "not allowed")) then
 		return "Enable Game Settings -> Security -> Allow HTTP Requests."
@@ -1397,11 +1408,11 @@ end
 function setLast(text)
 	local value = tostring(text or "none")
 	if string.find(string.lower(value), "failed") or string.find(string.lower(value), "unsupported") or string.find(string.lower(value), "expired") then
-		local hint = errorHelpFor(value)
+		local hint = UI_HELPERS.errorHelpFor(value)
 		lastErrorText = hint and (value .. "\n" .. hint) or value
-		setBanner("error", value .. "  ·  Click for details")
+		UI_HELPERS.setBanner("error", value .. "  ·  Click for details")
 	elseif string.find(string.lower(value), "succeeded") or string.find(string.lower(value), "paired session") or string.find(string.lower(value), "restore complete") or string.find(string.lower(value), "restored snapshot") then
-		setBanner("success", value)
+		UI_HELPERS.setBanner("success", value)
 	end
 end
 
@@ -1536,7 +1547,7 @@ function pushActivity(entry)
 	end
 	row.Text = string.format(
 		'<font color="#666666">%s</font> <font color="#845CDF">%s</font> <b>%s</b> <font color="%s">%s</font>%s%s%s%s',
-		formatTime(entry.at or os.time()),
+		UI_HELPERS.formatTime(entry.at or os.time()),
 		icon,
 		commandType,
 		colorHex,
@@ -1592,7 +1603,7 @@ end
 
 function updateSnapshotLabel()
 	snapshotLabel.Text = ("Snapshots: %d local"):format(#localSnapshots)
-	rebuildSnapshotList()
+	UI_HELPERS.rebuildSnapshotList()
 	refreshControls()
 end
 
@@ -1651,7 +1662,7 @@ function updateCollaborators(list)
 	collaboratorsLabel.Text = ("<b>Collaborators (%d)</b>\n%s"):format(#list, table.concat(parts, "\n"))
 end
 
-local function describeAffectedPaths(command)
+function UI_HELPERS.describeAffectedPaths(command)
 	local payload = command.payload or {}
 	local paths = {}
 	local seen = {}
@@ -1693,7 +1704,7 @@ function showApprovalGate(command)
 	local label = tostring(command.label or commandType)
 	local runText = command.runId and ("\nRun: " .. tostring(command.runId)) or ""
 	local stepText = command.stepId and ("\nStep: " .. tostring(command.stepId)) or ""
-	local paths = describeAffectedPaths(command)
+	local paths = UI_HELPERS.describeAffectedPaths(command)
 	local pathsText = ""
 	if #paths > 0 then
 		local shown = {}
@@ -1760,7 +1771,7 @@ function waitForApproval(command)
 end
 
 function getApprovalModeEnabledExport()
-	return getApprovalModeEnabled()
+	return UI_HELPERS.getApprovalModeEnabled()
 end
 
 function handleSessionExpired()
@@ -1768,7 +1779,7 @@ function handleSessionExpired()
 	plugin:SetSetting("nexusrbxStudioSessionId", nil)
 	setStatus("session expired - re-pair")
 	setLast("session expired - enter a new pairing code")
-	setBanner("error", "Session expired. Pair Studio again from the website.")
+	UI_HELPERS.setBanner("error", "Session expired. Pair Studio again from the website.")
 	setProgress({})
 	setActive("none")
 	refreshControls()
@@ -1789,9 +1800,9 @@ approvalDeclineButton.MouseButton1Click:Connect(function()
 end)
 
 approvalToggleButton.MouseButton1Click:Connect(function()
-	local nextValue = not getApprovalModeEnabled()
+	local nextValue = not UI_HELPERS.getApprovalModeEnabled()
 	plugin:SetSetting("nexusrbxApprovalMode", nextValue)
-	refreshApprovalToggle()
+	UI_HELPERS.refreshApprovalToggle()
 	showToast(nextValue and "Review before apply enabled" or "Review before apply disabled", "info")
 end)
 
@@ -1842,7 +1853,7 @@ codeBox:GetPropertyChangedSignal("Text"):Connect(function()
 		codeBox.Text = cleaned
 	end
 	if getToken() == nil then
-		clearErrorBanner()
+		UI_HELPERS.clearErrorBanner()
 		if cleaned ~= "" then
 			setStatus("ready to pair")
 		else
@@ -1905,5 +1916,5 @@ end)
 
 onboardingDismissButton.MouseButton1Click:Connect(hideOnboarding)
 
-refreshApprovalToggle()
+UI_HELPERS.refreshApprovalToggle()
 setActiveTab(activeTab)

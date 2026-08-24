@@ -1043,9 +1043,6 @@ export function useAiWorkspaceController() {
     const target = normalizeStudioTargetOption(option) || option;
     const placeId = normalizeRobloxPlaceId(target?.placeId || target?.targetPlaceId);
     const universeId = String(target?.universeId || "").trim();
-    if (!placeId || !universeId) {
-      throw new Error("Publish this Studio place to Roblox before selecting it for Agent Build.");
-    }
     const result = await findOrCreateProjectBinding(buildProjectBindingPayloadFromIdentity({
       title: target?.experienceName || target?.placeName || target?.label,
       placeId,
