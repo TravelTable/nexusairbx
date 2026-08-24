@@ -122,6 +122,16 @@ describe("classifyExecutionIntent", () => {
       .toBe("artifact_only");
   });
 
+  test("ignores build verbs inside explicit negative constraints", () => {
+    expect(classifyUserIntent(
+      'Reply with exactly "AUDIT CHAT OK". Do not use Studio, create files, or create assets.'
+    )).toBe("AMBIGUOUS");
+    expect(classifyUserIntent("Answer without changing any project files"))
+      .toBe("AMBIGUOUS");
+    expect(classifyUserIntent("Do not remove logs; instead fix the inventory bug"))
+      .toBe("MODIFICATION_REQUEST");
+  });
+
   test("recognizes Quick Script as an explicit execution channel", () => {
     expect(classifyExecutionIntent("Put this in ServerScriptService", {
       studioEnabled: true,

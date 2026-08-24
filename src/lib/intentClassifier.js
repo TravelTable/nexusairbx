@@ -32,6 +32,7 @@ const QUESTION_RE = /^(what|how|why|when|where|who|which|is|are|can|could|should
 const EXPLANATION_RE = /\b(explain|describe|walk me through|how would|how does|what is|what are)\b/i;
 const BUILD_REQUEST_RE = new RegExp(`\\b(${BUILD_VERBS.join("|")})\\b`, "i");
 const REQUEST_DIRECTIVE_RE = /\b(please|can you|could you|i need you to|i want you to|let's|lets)\b/i;
+const NEGATED_BUILD_CLAUSE_RE = /\b(?:do not|don't|without)\b[^.!?;]*/gi;
 
 function normalizePrompt(prompt) {
   return String(prompt || "").replace(/\s+/g, " ").trim();
@@ -47,12 +48,13 @@ export function classifyUserIntent(prompt) {
   if (GREETING_RE.test(text)) return "GREETING";
   if (ACK_RE.test(text)) return "GENERAL_QUESTION";
 
-  const hasBuildVerb = BUILD_REQUEST_RE.test(text);
-  const hasDirective = REQUEST_DIRECTIVE_RE.test(text);
-  const isQuestion = QUESTION_RE.test(text) || text.endsWith("?");
+  const affirmativeText = text.replace(NEGATED_BUILD_CLAUSE_RE, " ");
+  const hasBuildVerb = BUILD_REQUEST_RE.test(affirmativeText);
+  const hasDirective = REQUEST_DIRECTIVE_RE.test(affirmativeText);
+  const isQuestion = QUESTION_RE.test(affirmativeText.trim()) || text.endsWith("?");
 
   if (hasBuildVerb && (hasDirective || !isQuestion)) {
-    const lower = text.toLowerCase();
+    const lower = affirmativeText.toLowerCase();
     if (/\b(change|modify|update|fix|remove|refactor)\b/.test(lower)) {
       return "MODIFICATION_REQUEST";
     }

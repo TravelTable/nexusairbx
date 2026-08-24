@@ -528,6 +528,52 @@ describe("useUnifiedChat", () => {
     expect(createAgentRunV2).not.toHaveBeenCalled();
   });
 
+  test("routes projectless conversational Agent prompts through read-only chat", async () => {
+    classifyUserIntent.mockReturnValue("GENERAL_QUESTION");
+    isImplementationIntent.mockReturnValue(false);
+    const setPendingForChat = jest.fn();
+    useAiChat.mockReturnValue({
+      activeMode: "agent",
+      assertCanWrite: jest.fn(() => Promise.resolve()),
+      currentChatId: "chat-1",
+      currentChatMeta: { projectId: null },
+      generatingChatIds: [],
+      generationStage: "",
+      handleSubmit: chatHandleSubmit,
+      isGenerating: false,
+      messages: [],
+      openChatById: jest.fn(),
+      pendingMessage: null,
+      setPendingForChat,
+    });
+    const reader = {
+      read: jest.fn()
+        .mockResolvedValueOnce({
+          done: false,
+          value: Uint8Array.from(Array.from("Projectless answer").map((character) => character.charCodeAt(0))),
+        })
+        .mockResolvedValueOnce({ done: true, value: undefined }),
+    };
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      body: { getReader: () => reader },
+    });
+    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
+
+    await act(async () => {
+      await result.current.handleSubmit("Explain RemoteEvents", [], null, { mode: "agent" });
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/ai/chat"),
+      expect.objectContaining({ method: "POST" })
+    );
+    expect(setDoc.mock.calls.some(([, payload]) => payload?.content === "Projectless answer")).toBe(true);
+    expect(chatHandleSubmit).not.toHaveBeenCalled();
+    expect(createAgentRunV2).not.toHaveBeenCalled();
+  });
+
   test("sends conversational Agent prompts to the authoritative backend decision service", async () => {
     FEATURE_FLAGS.unifiedAgent = true;
     getStudioEnabledPreference.mockReturnValue(true);
