@@ -15,7 +15,12 @@ export default function UniversalBrand({ LinkComponent = "a", href = "/", compac
     { className: styles.brand, "aria-label": "NexusRBX home" },
     <>
       {!compact ? <span className={styles.brandMark} aria-hidden="true">PROJECT /</span> : null}
-      <span>NEXUS/RBX</span>
+      <img
+        src="/favicon-transparent.png"
+        alt=""
+        aria-hidden="true"
+        className={styles.brandIcon}
+      />
     </>,
   );
 }

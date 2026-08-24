@@ -217,14 +217,14 @@ test("downloads raw HTML is meaningful and fails closed before release verificat
     extractMetaContent(html, "description"),
     "Download the NexusRBX Connector for macOS (Developer ID signed and notarized) or Windows 10 and 11 (currently unsigned).",
   );
-  assert.equal(extractH1(html), "Put Nexus beside Roblox Studio.");
+  assert.equal(extractH1(html), "Connect Nexus to Roblox Studio.");
   assert.equal(extractCanonical(html), "https://www.nexusrbx.com/downloads");
   assert.equal(countCanonical(html), 1);
   assert.match(html, /macOS \(Universal\)/);
-  assert.match(html, /One installer for Apple Silicon and Intel Macs/);
+  assert.match(html, /Need macOS\?/);
   assert.match(html, /Windows \(64-bit\)/);
   assert.match(html, /For Windows 10 and 11 on Intel or AMD PCs/);
-  assert.match(html, /Checking current version/);
+  assert.match(html, /Checking current release/);
   assert.match(html, /href="\/downloads"/);
   assert.match(html, /href="\/docs\/troubleshooting"/);
   assert.doesNotMatch(html, /href="\/#features"|href="#features"/);

@@ -56,7 +56,7 @@ const baseProps = {
   onFileUpload: jest.fn(),
   onModeChange: jest.fn(),
   mode: "agent",
-  studioEnabled: true,
+  studioEnabled: false,
   studioPlaceOptions: [],
   robloxImageUploads: [],
   robloxProjectAssets: [],
@@ -341,6 +341,58 @@ describe("ChatComposer compact interactions", () => {
     expect(screen.getByRole("button", { name: "Send prompt" }).disabled).toBe(
       true,
     );
+  });
+
+  test("blocks Agent Build inline until a live published Studio place is selected", () => {
+    const onSubmit = jest.fn();
+    const onStudioPlacePickerOpenChange = jest.fn();
+    const studioPlaceOptions = [
+      {
+        id: "studio_target_1",
+        studioTargetId: "studio_target_1",
+        label: "My Place",
+        placeId: "123",
+        universeId: "456",
+      },
+    ];
+    const { rerender } = renderComposer({
+      prompt: "Build a fly GUI",
+      onSubmit,
+      studioEnabled: true,
+      studioConnected: true,
+      studioPlaceOptions,
+      onStudioPlacePickerOpenChange,
+    });
+
+    expect(screen.getByRole("alert").textContent).toContain("Build paused");
+    expect(screen.getByRole("alert").textContent).toContain("Choose which Studio place");
+    expect(document.getElementById("tour-generate-button").disabled).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "Choose place" }));
+    expect(onStudioPlacePickerOpenChange).toHaveBeenCalledWith(true);
+    fireEvent.keyDown(screen.getByRole("textbox", { name: "Prompt input" }), {
+      key: "Enter",
+    });
+    expect(onSubmit).not.toHaveBeenCalled();
+
+    rerender(
+      <ChatComposer
+        {...baseProps}
+        prompt="Build a fly GUI"
+        onSubmit={onSubmit}
+        studioEnabled
+        studioConnected
+        studioPlaceOptions={studioPlaceOptions}
+        studioPlacePreference={{
+          targetId: "studio_target_1",
+          placeId: "123",
+          label: "My Place",
+        }}
+      />,
+    );
+
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.getByRole("button", { name: "Send prompt" }).disabled).toBe(false);
   });
 
   test("Enter submits while Shift+Enter and IME composition do not", () => {

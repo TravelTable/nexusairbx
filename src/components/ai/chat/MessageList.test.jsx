@@ -35,6 +35,44 @@ const baseProps = {
 };
 
 describe("MessageList pending activity", () => {
+  test("keeps generated source out of Agent chat while files are streaming", () => {
+    render(
+      <MessageList
+        {...baseProps}
+        activeMode="agent"
+        pendingMessage={{
+          role: "assistant",
+          content:
+            "<explanation>Creating the controller.</explanation><code>local secretCode = true</code>",
+          type: "chat",
+          stage: "Writing files...",
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Writing files...")).toBeTruthy();
+    expect(screen.queryByText("Streaming Code")).toBeNull();
+    expect(screen.queryByText(/secretCode/)).toBeNull();
+  });
+
+  test("still shows short code snippets in read-only chat modes", () => {
+    render(
+      <MessageList
+        {...baseProps}
+        activeMode="ask"
+        pendingMessage={{
+          role: "assistant",
+          content: "<code>local visibleSnippet = true</code>",
+          type: "chat",
+          stage: "Answering...",
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Streaming Code")).toBeTruthy();
+    expect(screen.getByText(/visibleSnippet/)).toBeTruthy();
+  });
+
   test("shows the live stage header before visible output arrives", () => {
     render(
       <MessageList

@@ -9,6 +9,7 @@ import React, {
 import { createPortal } from "react-dom";
 import {
   ArrowUp,
+  AlertTriangle,
   Check,
   ChevronDown,
   Edit,
@@ -36,6 +37,10 @@ import {
   getActiveComposerMention,
 } from "../../../lib/composerCommands";
 import { messageHasRefineableFiles } from "../../../lib/chatRefine";
+import {
+  canBindStudioTargetToProject,
+  evaluateStudioPlaceGate,
+} from "../../../lib/studioPlaceBinding";
 
 function ModeSelector({ mode, onModeChange, disabled }) {
   const [open, setOpen] = useState(false);
@@ -443,6 +448,7 @@ export default function ChatComposer({
   const contextButtonRef = useRef(null);
   const contextPanelRef = useRef(null);
   const isPlanMode = normalizeChatMode(mode) === "plan";
+  const normalizedMode = normalizeChatMode(mode);
   const draftIdentityRef = useRef({ signature: null, revision: 0 });
   const controlsPresence = useMotionPresence(controlsOpen, 180);
   const controlsId = "chat-composer-controls";
@@ -450,6 +456,24 @@ export default function ChatComposer({
     Boolean(prompt?.trim()) ||
     attachments.length > 0 ||
     robloxProjectAssets.length > 0;
+  const studioPlaceGate = evaluateStudioPlaceGate({
+    studioEnabled,
+    connected: Boolean(studioConnected),
+    preference: studioPlacePreference,
+    options: studioPlaceOptions,
+  });
+  const selectedStudioTargetCannotBind =
+    studioPlaceGate.status === "ready" &&
+    !canBindStudioTargetToProject(studioPlaceGate.target);
+  const studioBuildBlocked =
+    ["agent", "debug"].includes(normalizedMode) &&
+    Boolean(studioEnabled) &&
+    (studioPlaceGate.status !== "ready" || selectedStudioTargetCannotBind);
+  const studioBlockerMessage = selectedStudioTargetCannotBind
+    ? "Publish the selected Studio place to Roblox before Nexus can build in it."
+    : studioPlaceGate.status === "needs_selection"
+      ? "Choose which Studio place Nexus should edit before starting this build."
+      : "Connect and open a published Studio place before starting this build.";
   const draftSignature = JSON.stringify({
     prompt: String(prompt || ""),
     attachments: attachments.map((file) => [
@@ -609,20 +633,20 @@ export default function ChatComposer({
   const submitQuickRefine = useCallback(
     (text) => {
       const next = String(text || "").trim();
-      if (!next || disabled) return;
+      if (!next || disabled || studioBuildBlocked) return;
       onSubmit?.(null, next, {
         draftRevision: `quick-refine:${draftRevision}:${next}`,
       });
     },
-    [disabled, draftRevision, onSubmit],
+    [disabled, draftRevision, onSubmit, studioBuildBlocked],
   );
 
   const submitDraft = useCallback(
     (event = null, { interrupt = false } = {}) => {
-      if (disabled || !canSendWithContext) return undefined;
+      if (disabled || studioBuildBlocked || !canSendWithContext) return undefined;
       return onSubmit?.(event, null, { draftRevision, interrupt });
     },
-    [canSendWithContext, disabled, draftRevision, onSubmit],
+    [canSendWithContext, disabled, draftRevision, onSubmit, studioBuildBlocked],
   );
 
   const applyMentionCommand = useCallback(
@@ -947,6 +971,36 @@ export default function ChatComposer({
           </div>
         )}
 
+        {studioBuildBlocked ? (
+          <div
+            role="alert"
+            aria-live="polite"
+            className="flex items-start gap-2 border-b border-[color-mix(in_srgb,var(--ds-warning)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-warning)_10%,transparent)] px-3 py-2 text-[11px] text-[var(--ds-warning)]"
+          >
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <p className="min-w-0 flex-1 leading-relaxed">
+              <span className="font-bold">Build paused.</span>{" "}
+              {studioBlockerMessage}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                if (studioPlaceGate.status === "needs_connect") {
+                  setControlsOpen(true);
+                  requestAnimationFrame(() => controlsButtonRef.current?.focus());
+                } else {
+                  onStudioPlacePickerOpenChange?.(true);
+                }
+              }}
+              className="inline-flex min-h-8 shrink-0 items-center rounded-md border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)] px-2 font-bold transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_16%,transparent)] focus-ring"
+            >
+              {studioPlaceGate.status === "needs_connect"
+                ? "Studio options"
+                : "Choose place"}
+            </button>
+          </div>
+        ) : null}
+
         {refineTarget ? (
           <div className="border-b border-[var(--ds-border-subtle)] px-2 py-1.5">
             <RefineChips
@@ -1164,15 +1218,27 @@ export default function ChatComposer({
                 disabled={
                   isGenerating
                     ? disabled || !onStop
-                    : disabled || !canSendWithContext
+                    : disabled || studioBuildBlocked || !canSendWithContext
                 }
                 className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition-[background-color,color,opacity,transform] duration-150 active:scale-95 focus-ring disabled:opacity-40 disabled:active:scale-100 xl:h-9 xl:w-9 ${
                   isGenerating
                     ? "border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] text-[var(--ds-danger)] hover:bg-[color-mix(in_srgb,var(--ds-danger)_20%,transparent)]"
                     : "bg-primary text-primary-foreground hover:opacity-90"
                 }`}
-                aria-label={isGenerating ? "Stop generation" : "Send prompt"}
-                title={isGenerating ? "Stop generation" : "Send prompt"}
+                aria-label={
+                  isGenerating
+                    ? "Stop generation"
+                    : studioBuildBlocked
+                      ? studioBlockerMessage
+                      : "Send prompt"
+                }
+                title={
+                  isGenerating
+                    ? "Stop generation"
+                    : studioBuildBlocked
+                      ? studioBlockerMessage
+                      : "Send prompt"
+                }
               >
                 {isGenerating ? (
                   <Square

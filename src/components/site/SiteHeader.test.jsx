@@ -45,7 +45,9 @@ test("makes the homepage skip link the first keyboard target", async () => {
   expect(document.activeElement).toBe(skipLink);
   const homeLink = screen.getByRole("link", { name: "NexusRBX home" });
   expect(homeLink.getAttribute("href")).toBe("/");
-  expect(homeLink.textContent).toContain("NEXUS/RBX");
+  const homeIcon = homeLink.querySelector("img");
+  expect(homeIcon).toBeTruthy();
+  expect(homeIcon.getAttribute("src")).toBe("/favicon-transparent.png");
   expect(
     screen.getByRole("navigation", { name: "Primary navigation" }),
   ).toBeTruthy();

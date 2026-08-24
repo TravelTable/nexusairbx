@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import DownloadsContent from "./DownloadsContent";
 import { trackProductEvent } from "../../lib/productAnalytics";
@@ -43,22 +43,24 @@ describe("DownloadsContent", () => {
     delete global.fetch;
   });
 
-  test("recommends the visitor platform and enables both verified installers", async () => {
+  test("recommends the visitor platform and keeps the alternate installer one click away", async () => {
     global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => releaseManifest });
     render(<DownloadsContent />);
 
     const macDownload = await screen.findByRole("link", { name: "Download macOS (Universal)" });
-    const windowsDownload = screen.getByRole("link", { name: "Download Windows (64-bit)" });
     expect(macDownload.getAttribute("href")).toBe("/connector/NexusRBX-Connector-0.1.0-macOS.dmg");
-    expect(windowsDownload.getAttribute("href")).toBe("/connector/NexusRBX-Connector-0.1.0-Windows.exe");
-    expect(screen.getByText("Recommended").closest("article")?.textContent).toContain("macOS");
-    expect(screen.getByText("Current version: v0.1.0")).toBeTruthy();
+    expect(screen.getByText("Detected for this machine").closest("article")?.textContent).toContain("macOS");
+    expect(screen.getAllByText("v0.1.0").length).toBeGreaterThan(0);
     expect(screen.getByText("Apple Silicon (M1 or newer)")).toBeTruthy();
     expect(screen.getByText("Intel Mac")).toBeTruthy();
-    expect(screen.getByText("Intel or AMD x64 PC")).toBeTruthy();
-    expect(screen.getByText(/Only the current release is shown/)).toBeTruthy();
+    expect(screen.getByText(/Only the current verified release is offered/)).toBeTruthy();
     expect(screen.getByText("Developer ID signed and Apple notarized")).toBeTruthy();
-    expect(screen.getByText(/Unknown publisher/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "View Windows (64-bit) download" }));
+    const windowsDownload = screen.getByRole("link", { name: "Download Windows (64-bit)" });
+    expect(windowsDownload.getAttribute("href")).toBe("/connector/NexusRBX-Connector-0.1.0-Windows.exe");
+    expect(screen.getByText("Intel or AMD x64 PC")).toBeTruthy();
+    expect(screen.getAllByText(/Unknown publisher/).length).toBeGreaterThan(0);
     expect(screen.getByText(/downloads updates in the background/)).toBeTruthy();
     expect(global.fetch).toHaveBeenCalledWith(
       "/connector/latest.json",
@@ -71,10 +73,9 @@ describe("DownloadsContent", () => {
     render(<DownloadsContent />);
 
     expect((await screen.findByRole("alert")).textContent).toContain("Downloads temporarily unavailable");
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: "macOS (Universal) unavailable" }).disabled).toBe(true);
-      expect(screen.getByRole("button", { name: "Windows (64-bit) unavailable" }).disabled).toBe(true);
-    });
+    await waitFor(() => expect(screen.getByRole("button", { name: "macOS (Universal) unavailable" }).disabled).toBe(true));
+    fireEvent.click(screen.getByRole("button", { name: "View Windows (64-bit) download" }));
+    expect(screen.getByRole("button", { name: "Windows (64-bit) unavailable" }).disabled).toBe(true);
     expect(screen.queryByRole("link", { name: /Download for/i })).toBeNull();
   });
 

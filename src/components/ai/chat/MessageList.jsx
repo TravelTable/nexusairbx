@@ -177,6 +177,9 @@ function SingleMessageList({
     return hasCompletedResponse ? null : pendingMessageProp;
   }, [messages, pendingMessageProp]);
   const pendingParsed = parsePendingStreamContent(pendingMessage?.content || "");
+  const hidesGeneratedSource = ["agent", "debug"].includes(
+    String(activeMode || "").trim().toLowerCase(),
+  );
   const showLiveWorkStream = Boolean(
     pendingMessage?.targetSelection ||
     pendingMessage?.streamState ||
@@ -359,7 +362,7 @@ function SingleMessageList({
                 <div className="nexus-streaming-caret w-full max-w-[840px] space-y-4">
                   {pendingParsed.hasStructured ? (
                     <div className="space-y-4">
-                      {pendingParsed.code && (
+                      {pendingParsed.code && !hidesGeneratedSource && (
                         <div className="rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-hover)] overflow-hidden">
                           <div className="px-3 py-2 border-b border-[var(--ds-border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-muted)]">
                             Streaming Code
@@ -373,11 +376,12 @@ function SingleMessageList({
                         <MarkdownMessage text={pendingParsed.plain} className="text-[var(--ds-text-secondary)]" />
                       )}
                     </div>
-                  ) : (
+                  ) : !hidesGeneratedSource ? (
                     <MarkdownMessage text={stripTags(pendingMessage.content)} />
-                  )}
+                  ) : null}
                   {pendingMessage.type === "ui" && <SkeletonArtifact type="ui" />}
                   {pendingMessage.type === "chat" &&
+                    !hidesGeneratedSource &&
                     (pendingMessage.content?.includes("```") || pendingParsed.code) && (
                       <SkeletonArtifact type="code" />
                     )}
