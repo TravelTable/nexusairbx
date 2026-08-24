@@ -210,7 +210,7 @@ export default function AssistantBubble({
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <ArtifactTitle>{m.title || "Generated Roblox Artifact"}</ArtifactTitle>
+                      <ArtifactTitle>{m.title || "Build ready"}</ArtifactTitle>
                       {runStateMeta ? (
                         <Badge className={cn("rounded-md px-1.5 py-0.5 text-[10px] font-black uppercase tracking-widest", runStateMeta.className)}>
                           {runStateMeta.label}
@@ -250,11 +250,11 @@ export default function AssistantBubble({
                     onClick={() => onViewUi?.(m)}
                     className="bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] font-black uppercase tracking-widest hover:bg-[var(--ds-accent-hover)]"
                   >
-                    <FolderOpen className="w-3.5 h-3.5" /> Open in editor
+                    <FolderOpen className="w-3.5 h-3.5" /> Review changes
                   </Button>
                   {onRefine && hasArtifact ? (
                     <Button type="button" size="sm" variant="outline" onClick={() => onRefine(m)}>
-                      Refine
+                      Keep building
                     </Button>
                   ) : null}
                 </ArtifactActions>

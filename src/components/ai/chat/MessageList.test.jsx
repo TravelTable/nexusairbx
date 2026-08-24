@@ -463,7 +463,7 @@ describe("MessageList pending activity", () => {
 });
 
 describe("MessageList conversation layout", () => {
-  test("shows one restorable checkpoint before an Agent turn with a run ID", () => {
+  test("shows one restorable checkpoint before a Nexus build with a run ID", () => {
     const onRestoreRun = jest.fn();
     const { container } = render(
       <MessageList
@@ -478,7 +478,7 @@ describe("MessageList conversation layout", () => {
     );
 
     const checkpoint = screen.getByRole("button", {
-      name: "Restore checkpoint before this Agent turn",
+      name: "Restore checkpoint before this Nexus build",
     });
     const prompt = screen.getByText("Build a round system.");
     expect(checkpoint.compareDocumentPosition(prompt) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -561,14 +561,14 @@ describe("MessageList conversation layout", () => {
     );
 
     expect(screen.getByRole("region", { name: "Run context" })).toBeTruthy();
-    expect(screen.getByText("Agent")).toBeTruthy();
+    expect(screen.getByText("Build")).toBeTruthy();
     expect(screen.getByText(/Selected place · connected/)).toBeTruthy();
     expect(screen.queryByText(/target_1/)).toBeNull();
     expect(screen.getByText("Studio read/write")).toBeTruthy();
     expect(screen.getByText(/98\/100 · High/)).toBeTruthy();
-    expect(screen.getByText(/98\/100/).closest("span")?.textContent).toContain("98/100");
+    expect(screen.getByText(/98\/100/).closest("dd")?.textContent).toContain("98/100");
 
-    const summary = screen.getByText("Confidence details");
+    const summary = screen.getByText("Run details");
     expect(summary.getAttribute("title")).toContain("Intent clarity: 25");
     summary.focus();
     expect(document.activeElement).toBe(summary);

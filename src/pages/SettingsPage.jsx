@@ -41,6 +41,7 @@ import {
 import RobloxAuthorizationRequired from "../components/roblox/RobloxAuthorizationRequired";
 import { DEFAULT_SETTINGS } from "../lib/settingsSchema";
 import { CHAT_MODES } from "../components/ai/chatConstants";
+import { formatChatModeLabel, normalizeChatMode } from "../lib/chatModes";
 import ModelSwitcher from "../components/ai/ModelSwitcher";
 import BrutalAuditor from "../components/ai/BrutalAuditor";
 import FreeUsageMeter from "../components/FreeUsageMeter";
@@ -858,7 +859,7 @@ export default function SettingsPage() {
         icon: Bot,
         label: "AI model",
         value: settings.modelVersion || DEFAULT_SETTINGS.modelVersion,
-        detail: settings.chatMode ? `${settings.chatMode} mode` : "Default agent mode",
+        detail: `${formatChatModeLabel(settings.chatMode) || "Build"} mode`,
         state: "good",
       },
       {
@@ -956,8 +957,8 @@ export default function SettingsPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="chat-mode">Chat mode</Label>
-            <Select value={settings.chatMode} onValueChange={(chatMode) => updateSetting({ chatMode })}>
+            <Label htmlFor="chat-mode">Conversation mode</Label>
+            <Select value={normalizeChatMode(settings.chatMode)} onValueChange={(chatMode) => updateSetting({ chatMode })}>
               <SelectTrigger id="chat-mode"><SelectValue placeholder="Select mode" /></SelectTrigger>
               <SelectContent>
                 {CHAT_MODES.map((mode) => (

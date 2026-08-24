@@ -97,6 +97,7 @@ import {
   normalizeRewindMode,
   selectMessagesToRemove,
 } from "../lib/chatTranscriptRewind";
+import { normalizeChatMode } from "../lib/chatModes";
 
 const STREAM_MAX_RETRIES = 3;
 const RESULT_MAX_POLLS = 45;
@@ -511,7 +512,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
   const [messages, setMessages] = useState([]);
   const [currentChatId, setCurrentChatId] = useState(null);
   const [currentChatMeta, setCurrentChatMeta] = useState(null);
-  const [activeMode, setActiveMode] = useState(settings?.chatMode || "agent");
+  const [activeMode, setActiveMode] = useState(() => normalizeChatMode(settings?.chatMode));
   const [customModes, setCustomModes] = useState([]);
   const [firestoreAccessError, setFirestoreAccessError] = useState(null);
   // Generation state is keyed by the *originating* chat id so that a generation
@@ -914,7 +915,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         const data = snap.exists() ? { id: snap.id, ...snap.data() } : null;
         setCurrentChatMeta(data || null);
         if (data?.activeMode) {
-          setActiveMode(data.activeMode);
+          setActiveMode(normalizeChatMode(data.activeMode));
         }
       },
       (err) => {
@@ -1427,7 +1428,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       return canonicalCancelRequest;
     };
 
-    const expertMode = modeOverride || activeMode || settings.chatMode || "agent";
+    const expertMode = modeOverride || normalizeChatMode(activeMode || settings?.chatMode);
 
     // Setters bound to the originating chat. `activeChatId` is a `let` that may be
     // assigned below (new chat); these closures always read its latest value, so
@@ -3042,22 +3043,21 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
 
   const updateChatMode = useCallback(async (chatId, mode) => {
     const uid = user?.uid;
-    
-    // Pro restriction for specialized modes is enforced in the UI.
+    const normalizedMode = normalizeChatMode(mode);
 
     if (!authReady || !uid || auth.currentUser?.uid !== uid) {
-      setActiveMode(mode);
+      setActiveMode(normalizedMode);
       return;
     }
-    
+
     // Update local state immediately for snappy UI
-    setActiveMode(mode);
+    setActiveMode(normalizedMode);
 
     if (chatId) {
       try {
         await assertCanWrite();
         await updateDoc(doc(db, "users", uid, "chats", chatId), sanitizeChatWritePayload({
-          activeMode: mode,
+          activeMode: normalizedMode,
           updatedAt: serverTimestamp(),
         }));
       } catch (err) {

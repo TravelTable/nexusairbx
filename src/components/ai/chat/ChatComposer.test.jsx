@@ -103,7 +103,7 @@ describe("ChatComposer compact interactions", () => {
     const upload = screen.getByRole("button", {
       name: "Upload image to Roblox or attach a code/text file",
     });
-    const mode = screen.getByTitle("Select mode");
+    const mode = screen.getByTitle("Choose conversation mode");
     const settings = screen.getByRole("button", {
       name: "Open workspace options",
     });
@@ -122,53 +122,70 @@ describe("ChatComposer compact interactions", () => {
   test("supports complete keyboard navigation and focus restoration in the mode listbox", async () => {
     const onModeChange = jest.fn();
     renderComposer({ onModeChange });
-    const trigger = screen.getByTitle("Select mode");
+    const trigger = screen.getByTitle("Choose conversation mode");
 
     fireEvent.click(trigger);
     expect(
-      screen.getByRole("listbox", { name: "Agent operating mode" }),
+      screen.getByRole("listbox", { name: "Conversation mode" }),
     ).toBeTruthy();
-    const agent = screen.getByRole("option", { name: /Agent Autonomously/i });
-    const plan = screen.getByRole("option", { name: /Plan Proposes/i });
-    const ask = screen.getByRole("option", { name: /Ask Read-only/i });
-    await waitFor(() => expect(document.activeElement).toBe(agent));
+    const build = screen.getByRole("option", { name: /Build Builds autonomously/i });
+    const plan = screen.getByRole("option", { name: /Plan Discusses the approach/i });
+    await waitFor(() => expect(document.activeElement).toBe(build));
 
-    fireEvent.keyDown(agent, { key: "ArrowDown" });
+    fireEvent.keyDown(build, { key: "ArrowDown" });
     expect(document.activeElement).toBe(plan);
     fireEvent.keyDown(plan, { key: "End" });
-    expect(document.activeElement).toBe(ask);
-    fireEvent.keyDown(ask, { key: "Home" });
-    expect(document.activeElement).toBe(agent);
-    fireEvent.keyDown(agent, { key: "ArrowUp" });
-    expect(document.activeElement).toBe(ask);
-    fireEvent.keyDown(ask, { key: "Enter" });
+    expect(document.activeElement).toBe(plan);
+    fireEvent.keyDown(plan, { key: "Home" });
+    expect(document.activeElement).toBe(build);
+    fireEvent.keyDown(build, { key: "ArrowUp" });
+    expect(document.activeElement).toBe(plan);
+    fireEvent.keyDown(plan, { key: "Enter" });
 
-    expect(onModeChange).toHaveBeenCalledWith("ask");
+    expect(onModeChange).toHaveBeenCalledWith("plan");
     expect(
-      screen.queryByRole("listbox", { name: "Agent operating mode" }),
+      screen.queryByRole("listbox", { name: "Conversation mode" }),
     ).toBeNull();
     expect(document.activeElement).toBe(trigger);
 
     fireEvent.click(trigger);
     await waitFor(() =>
       expect(document.activeElement).toBe(
-        screen.getByRole("option", { name: /Agent Autonomously/i }),
+        screen.getByRole("option", { name: /Build Builds autonomously/i }),
       ),
     );
     fireEvent.keyDown(
-      screen.getByRole("option", { name: /Agent Autonomously/i }),
+      screen.getByRole("option", { name: /Build Builds autonomously/i }),
       { key: "Escape" },
     );
     expect(
-      screen.queryByRole("listbox", { name: "Agent operating mode" }),
+      screen.queryByRole("listbox", { name: "Conversation mode" }),
     ).toBeNull();
     expect(document.activeElement).toBe(trigger);
 
     fireEvent.keyDown(trigger, { key: "ArrowUp" });
     await waitFor(() =>
       expect(document.activeElement).toBe(
-        screen.getByRole("option", { name: /Ask Read-only/i }),
+        screen.getByRole("option", { name: /Plan Discusses the approach/i }),
       ),
+    );
+  });
+
+  test("explains autonomous Build and read-only Plan behavior in the composer", () => {
+    const { container, rerender } = renderComposer();
+    expect(container.querySelector(".nexus-composer__request-label")?.textContent).toContain(
+      "What should Nexus build?",
+    );
+    expect(container.querySelector(".nexus-composer__request-label")?.textContent).toContain(
+      "Starts automatically",
+    );
+
+    rerender(<ChatComposer {...baseProps} mode="plan" />);
+    expect(container.querySelector(".nexus-composer__request-label")?.textContent).toContain(
+      "What should Nexus plan?",
+    );
+    expect(container.querySelector(".nexus-composer__request-label")?.textContent).toContain(
+      "no changes until you approve",
     );
   });
 

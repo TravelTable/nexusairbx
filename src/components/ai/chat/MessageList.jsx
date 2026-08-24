@@ -125,12 +125,12 @@ function CheckpointMarker({ checkpoint, onRestoreRun }) {
         type="button"
         onClick={() => onRestoreRun(checkpoint.runId, checkpoint.transcriptPivot)}
         className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2.5 py-1 text-[11px] font-medium text-[var(--ds-text-muted)] transition hover:border-[var(--ds-accent-border)] hover:bg-[var(--ds-accent-soft)] hover:text-[var(--ds-text-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent-border)]"
-        aria-label="Restore checkpoint before this Agent turn"
-        title="Restore Studio and chat to before this Agent turn"
+        aria-label="Restore checkpoint before this Nexus build"
+        title="Restore Studio and chat to before this Nexus build"
       >
         <RotateCcw className="h-3 w-3" />
         Checkpoint
-        <span className="hidden text-[var(--ds-text-muted)] sm:inline">· before this Agent turn</span>
+        <span className="hidden text-[var(--ds-text-muted)] sm:inline">· before this build</span>
       </button>
       <div className="h-px flex-1 bg-[var(--ds-fill-hover)]" />
     </div>

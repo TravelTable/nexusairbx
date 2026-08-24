@@ -1,8 +1,9 @@
 import React from "react";
+import { formatChatModeLabel } from "../../../lib/chatModes";
 
 const ACTION_LABELS = Object.freeze({
-  execute: "Starting",
-  stage_for_review: "Starting",
+  execute: "Building",
+  stage_for_review: "Preparing review",
   recover: "Recovering",
   clarify: "Needs input",
   block: "Blocked",
@@ -61,8 +62,8 @@ function titleCase(value) {
 }
 
 export function describeRunContext(decision) {
-  const requestedMode = titleCase(decision?.requestedMode) || "Unknown";
-  const effectiveMode = titleCase(decision?.effectiveMode) || requestedMode;
+  const requestedMode = formatChatModeLabel(decision?.requestedMode) || "Unknown";
+  const effectiveMode = formatChatModeLabel(decision?.effectiveMode) || requestedMode;
   const mode = requestedMode === effectiveMode
     ? requestedMode
     : `${requestedMode} → ${effectiveMode}`;
@@ -132,33 +133,36 @@ export default function RunContextBar({ decision }) {
       aria-label="Run context"
       className="w-full max-w-[840px] rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-3 py-2 text-[11px] text-[var(--ds-text-secondary)]"
     >
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className="font-semibold text-[var(--ds-text)]">{context.status}</span>
-        <span><span className="sr-only">Mode: </span>{context.mode}</span>
-        <span><span className="text-[var(--ds-text-muted)]">Studio:</span> {context.target} · {context.connection}</span>
-        <span><span className="text-[var(--ds-text-muted)]">Tools:</span> {context.toolSummary}</span>
-        <span><span className="text-[var(--ds-text-muted)]">Manifest:</span> {context.manifest}</span>
-        <span title={context.confidenceTooltip || undefined}>
-          <span className="sr-only">Execution confidence: </span>
-          <span aria-hidden="true" className="text-[var(--ds-text-muted)]">Confidence:</span>{" "}
-          {context.confidence}
-        </span>
+        {context.target !== "Not bound" ? (
+          <span className="text-[var(--ds-text-muted)]">in {context.target}</span>
+        ) : null}
       </div>
       {context.nextAction ? (
         <p className="mt-1 truncate text-[var(--ds-text-muted)]" title={context.nextAction}>
           Next: {context.nextAction}
         </p>
       ) : null}
-      {context.confidenceFactors.length || context.reasons.length || context.unavailableCapabilities.length ? (
-        <details className="mt-1 text-[var(--ds-text-muted)]">
+      <details className="mt-1 text-[var(--ds-text-muted)]">
           <summary
             className="w-fit cursor-pointer rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-info)]"
-            title={context.confidenceTooltip || "Decision details"}
+            title={context.confidenceTooltip || "Run details"}
           >
-            Confidence details
+            Run details
           </summary>
+          <dl className="mt-1 grid grid-cols-2 gap-x-4 gap-y-0.5 sm:grid-cols-3">
+            <div><dt>Mode</dt><dd className="text-[var(--ds-text-secondary)]">{context.mode}</dd></div>
+            <div><dt>Studio</dt><dd className="text-[var(--ds-text-secondary)]">{context.target} · {context.connection}</dd></div>
+            <div><dt>Tools</dt><dd className="text-[var(--ds-text-secondary)]">{context.toolSummary}</dd></div>
+            <div><dt>Manifest</dt><dd className="text-[var(--ds-text-secondary)]">{context.manifest}</dd></div>
+            <div>
+              <dt>Confidence</dt>
+              <dd className="text-[var(--ds-text-secondary)]" title={context.confidenceTooltip || undefined}>{context.confidence}</dd>
+            </div>
+          </dl>
           {context.confidenceFactors.length ? (
-            <dl className="mt-1 grid grid-cols-2 gap-x-4 gap-y-0.5 sm:grid-cols-3">
+            <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-0.5 border-t border-[var(--ds-border-subtle)] pt-2 sm:grid-cols-3">
               {context.confidenceFactors.map(({ factor, label, value }) => (
                 <div key={factor} className="flex min-w-0 justify-between gap-2">
                   <dt className="truncate" title={label}>{label}</dt>
@@ -182,8 +186,7 @@ export default function RunContextBar({ decision }) {
               ))}
             </ul>
           ) : null}
-        </details>
-      ) : null}
+      </details>
     </section>
   );
 }

@@ -9,7 +9,8 @@ test("presents a calm, text-led Roblox construction start", () => {
   const { container } = render(<ChatEmptyState onQuickStart={onQuickStart} />);
   const cards = screen.getAllByRole("button");
 
-  expect(screen.getByRole("heading", { name: "What are we changing?" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "What should Nexus build?" })).toBeVisible();
+  expect(screen.getByText(/make safe assumptions/i)).toBeVisible();
   expect(container.querySelectorAll("[data-nexus-display-icon]")).toHaveLength(0);
   expect(screen.queryByRole("group", { name: "Current build context" })).not.toBeInTheDocument();
   expect(cards).toHaveLength(3);

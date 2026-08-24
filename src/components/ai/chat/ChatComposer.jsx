@@ -20,6 +20,7 @@ import {
 } from "lib/icons";
 import { TokenBar } from "../AiComponents";
 import { CHAT_MODES } from "../chatConstants";
+import { normalizeChatMode } from "../../../lib/chatModes";
 import StudioControls from "../workspace/StudioControls";
 import StudioPlaceChip from "../workspace/StudioPlaceChip";
 import RobloxCloudControls from "../workspace/RobloxCloudControls";
@@ -46,9 +47,10 @@ function ModeSelector({ mode, onModeChange, disabled }) {
   const optionRefs = useRef([]);
   const listboxId = useId();
   const menuPresence = useMotionPresence(open, 150);
+  const normalizedMode = normalizeChatMode(mode);
   const currentIndex = Math.max(
     0,
-    CHAT_MODES.findIndex((item) => item.id === mode),
+    CHAT_MODES.findIndex((item) => item.id === normalizedMode),
   );
   const current = CHAT_MODES[currentIndex] || CHAT_MODES[0];
 
@@ -57,7 +59,7 @@ function ModeSelector({ mode, onModeChange, disabled }) {
     if (!rect) return;
 
     const menuWidth = 256;
-    const menuHeight = 280;
+    const menuHeight = 180;
     const gutter = 8;
     const spaceAbove = rect.top;
     const spaceBelow = window.innerHeight - rect.bottom;
@@ -202,7 +204,7 @@ function ModeSelector({ mode, onModeChange, disabled }) {
         onKeyDown={handleTriggerKeyDown}
         disabled={disabled}
         className={`inline-flex h-11 items-center gap-1 rounded-full border border-[var(--ds-border-subtle)] px-2 text-[11px] font-medium transition-[border-color,background-color,color,opacity,transform] duration-150 ease-out active:scale-[0.98] focus-ring disabled:cursor-not-allowed disabled:opacity-40 xl:h-9 xl:gap-1.5 xl:px-2.5 ${current.bg} ${current.color} hover:bg-[var(--ds-fill-hover)]`}
-        title="Select mode"
+        title="Choose conversation mode"
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listboxId}
@@ -236,13 +238,13 @@ function ModeSelector({ mode, onModeChange, disabled }) {
                 transformOrigin: menuPosition.transformOrigin,
               }}
               role="listbox"
-              aria-label="Agent operating mode"
+              aria-label="Conversation mode"
               aria-hidden={!open}
               inert={open ? undefined : ""}
               onKeyDown={handleListboxKeyDown}
             >
               {CHAT_MODES.map((item, index) => {
-                const selected = item.id === mode;
+                const selected = item.id === normalizedMode;
                 return (
                   <button
                     key={item.id}
@@ -440,6 +442,7 @@ export default function ChatComposer({
   const controlsPanelRef = useRef(null);
   const contextButtonRef = useRef(null);
   const contextPanelRef = useRef(null);
+  const isPlanMode = normalizeChatMode(mode) === "plan";
   const draftIdentityRef = useRef({ signature: null, revision: 0 });
   const controlsPresence = useMotionPresence(controlsOpen, 180);
   const controlsId = "chat-composer-controls";
@@ -964,11 +967,13 @@ export default function ChatComposer({
           )}
 
           <div className="nexus-composer__request-label" aria-hidden="true">
-            What should Nexus build?{" "}
+            {isPlanMode ? "What should Nexus plan?" : "What should Nexus build?"}{" "}
             <span>
               {isGenerating
-                ? "Esc to stop"
-                : "Enter to send · Shift Enter for a new line"}
+                ? "Enter queues · Ctrl/⌘ Enter steers · Esc stops"
+                : isPlanMode
+                  ? "Discuss first · no changes until you approve"
+                  : "Starts automatically · uses safe assumptions"}
             </span>
           </div>
           <div className="relative min-h-[72px] px-3 pt-1">

@@ -24,7 +24,7 @@ const STARTERS = [
 
 const BUILD_PATH = [
   { label: "Project", icon: FolderTree },
-  { label: "Plan", icon: Radio },
+  { label: "Approach", icon: Radio },
   { label: "Files", icon: FileCode2 },
   { label: "Studio", icon: Boxes },
   { label: "Proof", icon: ShieldCheck },
@@ -34,7 +34,7 @@ function BuildPathMap({ studioConnected }) {
   return (
     <ol
       className="chat-empty-state__build-path"
-      aria-label="Nexus build path: project, plan, files, Studio, and proof"
+      aria-label="Nexus build path: project, approach, files, Studio, and proof"
     >
       {BUILD_PATH.map(({ label, icon: Icon }, index) => (
         <li
@@ -139,12 +139,12 @@ export default function ChatEmptyState({
       >
         <div className="chat-empty-state__intro">
           <div className="chat-empty-state__copy">
-            <p className="chat-empty-state__eyebrow">New request</p>
-            <h1 id="workspace-start-title">What are we changing?</h1>
+            <p className="chat-empty-state__eyebrow">Start building</p>
+            <h1 id="workspace-start-title">What should Nexus build?</h1>
             <p>
-              Name the game, system, interface, or fault. Nexus will read the
-              paired project, plan the change, record every file it touches, and
-              return test evidence for review.
+              Describe the result you want. Nexus will inspect the paired
+              project, make safe assumptions, build the change, and return
+              verification evidence for review.
             </p>
           </div>
         </div>

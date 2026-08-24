@@ -200,12 +200,12 @@ export default function MessageActions({
               />
             ) : null}
             {canRefine ? (
-              <MenuItem icon={SlidersHorizontal} label="Refine" onSelect={() => runAndClose(() => onRefine(message))} />
+              <MenuItem icon={SlidersHorizontal} label="Keep building" onSelect={() => runAndClose(() => onRefine(message))} />
             ) : null}
             {role === "assistant" && onOpenFiles ? (
               <MenuItem
                 icon={FolderOpen}
-                label="Open files"
+                label="Review changes"
                 onSelect={() => runAndClose(() => onOpenFiles(message))}
               />
             ) : null}
@@ -234,10 +234,10 @@ export default function MessageActions({
         />
       ) : null}
       {canRefine ? (
-        <ActionButton icon={SlidersHorizontal} label="Refine" onClick={() => onRefine(message)} />
+        <ActionButton icon={SlidersHorizontal} label="Keep building" onClick={() => onRefine(message)} />
       ) : null}
       {role === "assistant" && onOpenFiles ? (
-        <ActionButton icon={FolderOpen} label="Open files" onClick={() => onOpenFiles(message)} />
+        <ActionButton icon={FolderOpen} label="Review changes" onClick={() => onOpenFiles(message)} />
       ) : null}
 
       <button

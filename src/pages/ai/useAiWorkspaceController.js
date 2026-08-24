@@ -32,6 +32,7 @@ import {
 } from "../../lib/intentClassifier";
 import { useAiScripts } from "../../hooks/useAiScripts";
 import { CHAT_MODES } from "../../components/ai/chatConstants";
+import { normalizeChatMode } from "../../lib/chatModes";
 import { BACKEND_URL } from "../../config";
 import { authedFetch } from "../../lib/billing";
 import { isRetryableApiError, readJsonResponse, withApiRetryCooldown } from "../../lib/apiErrors";
@@ -436,7 +437,7 @@ export function useAiWorkspaceController() {
         payload: {
           prompt,
           attachments: normalizeChatAttachments(attachments),
-          chatMode: settings?.chatMode || "agent",
+          chatMode: normalizeChatMode(settings?.chatMode),
           modelVersion: settings?.modelVersion || "",
           generatorMode: "agent_build",
           promptCategory: categorizePrompt(prompt),
@@ -476,6 +477,9 @@ export function useAiWorkspaceController() {
   ]);
 
   const chat = unified;
+  const activeConversationMode = normalizeChatMode(
+    chat.activeMode || settings?.chatMode,
+  );
   const chatOperationKey = chat.currentChatId || "draft";
   const chatOperationState = chatOperationCoordinatorRef.current.snapshot(chatOperationKey);
   const scriptManager = useAiScripts(user, notify, { authReady });
@@ -589,8 +593,8 @@ export function useAiWorkspaceController() {
   } = unified;
 
   const activeModeData = useMemo(
-    () => CHAT_MODES.find((m) => m.id === chat.activeMode) || CHAT_MODES[0],
-    [chat.activeMode]
+    () => CHAT_MODES.find((m) => m.id === activeConversationMode) || CHAT_MODES[0],
+    [activeConversationMode]
   );
 
   const assetProjectId = useMemo(() => {
@@ -599,17 +603,17 @@ export function useAiWorkspaceController() {
   }, [chat.messages, chatProjectSnapshot]);
 
   const currentTheme = useMemo(
-    () => MODE_COLORS[chat.activeMode] || MODE_COLORS.general,
-    [chat.activeMode]
+    () => MODE_COLORS[activeConversationMode] || MODE_COLORS.general,
+    [activeConversationMode]
   );
 
   const track = useCallback((event, metadata = {}, options = {}) => {
     void trackProductEvent(event, {
       surface: "ai_page",
-      generator_mode: metadata.generator_mode || (generatorMode === "quick_script" ? "quick_script" : chat.activeMode),
+      generator_mode: metadata.generator_mode || (generatorMode === "quick_script" ? "quick_script" : activeConversationMode),
       ...metadata,
     }, options);
-  }, [chat.activeMode, generatorMode]);
+  }, [activeConversationMode, generatorMode]);
 
   const setGeneratorMode = useCallback((mode, source = "manual") => {
     const normalized = mode === "agent_build" ? "agent_build" : "quick_script";
@@ -1130,7 +1134,7 @@ export function useAiWorkspaceController() {
         payload: {
           prompt: currentPrompt,
           attachments: normalizeChatAttachments(currentAttachments),
-          chatMode: settings?.chatMode || "agent",
+          chatMode: activeConversationMode,
           modelVersion: settings?.modelVersion || "",
           generatorMode,
           promptCategory: categorizePrompt(currentPrompt),
@@ -1153,7 +1157,7 @@ export function useAiWorkspaceController() {
       studioEnabled &&
       studioConnection.connected &&
       shouldRequireStudioPlaceSelection(promptToSend) &&
-      ["agent", "debug"].includes(String(settings?.chatMode || chat.activeMode || "agent").toLowerCase())
+      activeConversationMode === "agent"
     ) {
       let options = studioPlaceOptions;
       if (!options.length) {
@@ -1315,7 +1319,7 @@ export function useAiWorkspaceController() {
     workspace.projectArtifactSnapshot,
     track,
     generatorMode,
-    settings?.chatMode,
+    activeConversationMode,
     settings?.modelVersion,
     setGeneratorMode,
     studioEnabled,
@@ -1349,7 +1353,7 @@ export function useAiWorkspaceController() {
       prompt: currentPrompt,
       studioEnabled,
       connected: studioConnection.connected,
-      mode: settings?.chatMode || chat.activeMode || "agent",
+      mode: activeConversationMode,
       preference: submissionOptions?.studioTargetPreference || effectiveStudioPlacePreference,
       options: studioPlaceOptions,
     });
@@ -1461,8 +1465,8 @@ export function useAiWorkspaceController() {
     });
   }, [
     attachments,
+    activeConversationMode,
     chat.currentChatId,
-    chat.activeMode,
     effectiveStudioPlacePreference,
     executePromptOperation,
     generatorMode,
@@ -1470,7 +1474,6 @@ export function useAiWorkspaceController() {
     projectAssets.assets.length,
     prompt,
     refineTarget,
-    settings?.chatMode,
     studioConnection.connected,
     studioEnabled,
     studioPlaceOptions,
@@ -2546,7 +2549,9 @@ export function useAiWorkspaceController() {
           case PENDING_AUTH_ACTIONS.CHAT_SUBMIT: {
             const resumedPrompt = String(pending.payload?.prompt || "").trim();
             const resumedAttachments = normalizeChatAttachments(pending.payload?.attachments);
-            const resumedMode = pending.payload?.chatMode || settings?.chatMode || "agent";
+            const resumedMode = normalizeChatMode(
+              pending.payload?.chatMode || settings?.chatMode,
+            );
             const resumedModel = pending.payload?.modelVersion || "";
             if (resumedModel && resumedModel !== settings?.modelVersion) {
               await updateSettings({ modelVersion: resumedModel });

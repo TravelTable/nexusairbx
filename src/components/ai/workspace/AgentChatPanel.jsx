@@ -296,7 +296,9 @@ export default function AgentChatPanel({
           placeholder={
             refineTarget
               ? "Describe the exact Studio change..."
-              : "Describe the outcome, constraints, and proof you need..."
+              : activeMode === "plan"
+                ? "Describe what you want to plan before building..."
+                : "Describe the outcome you want Nexus to build..."
           }
           refineTarget={refineTarget}
           onCancelRefine={onCancelRefine}
