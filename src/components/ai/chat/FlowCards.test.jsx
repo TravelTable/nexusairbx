@@ -8,6 +8,7 @@ describe("interactive planning cards", () => {
     const message = {
       id: "clarify-1",
       stage: "clarify",
+      requestMode: "plan",
       questions: [
         { id: "placement", question: "Replace the inventory UI?", options: ["Replace it", "Keep both"] },
         { id: "saving", question: "Save data between sessions?" },
@@ -16,20 +17,26 @@ describe("interactive planning cards", () => {
     };
 
     render(<ClarifyCard message={message} onSubmit={onSubmit} />);
-    const continueButton = screen.getByRole("button", { name: "Continue" });
+    const nextButton = screen.getByRole("button", { name: "Next" });
 
-    expect(continueButton.disabled).toBe(true);
-    expect(screen.getByText("Answer every required question to continue.")).toBeTruthy();
+    expect(nextButton.disabled).toBe(true);
+    expect(screen.getByText("Question 1 of 3")).toBeTruthy();
+    expect(screen.queryByText("Save data between sessions?")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Keep both" }));
-    expect(continueButton.disabled).toBe(true);
+    expect(nextButton.disabled).toBe(false);
+    fireEvent.click(nextButton);
+
+    expect(screen.getByText("Question 2 of 3")).toBeTruthy();
+    expect(screen.getByText("Save data between sessions?")).toBeTruthy();
 
     fireEvent.change(screen.getByLabelText("Custom answer for Save data between sessions?"), {
       target: { value: "Yes" },
     });
-    expect(continueButton.disabled).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
 
-    fireEvent.click(continueButton);
+    expect(screen.getByText("Question 3 of 3")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Create plan" }));
     expect(onSubmit).toHaveBeenCalledWith(message, {
       placement: "Keep both",
       saving: "Yes",
@@ -41,6 +48,7 @@ describe("interactive planning cards", () => {
     const message = {
       id: "clarify-multi",
       stage: "clarify",
+      requestMode: "plan",
       questions: [{
         id: "scope",
         question: "Which changes should be included?",
@@ -57,17 +65,35 @@ describe("interactive planning cards", () => {
 
     const keepUi = screen.getByRole("button", { name: /Keep the current UI/ });
     const saveData = screen.getByRole("button", { name: "Save player data" });
-    expect(keepUi.getAttribute("aria-pressed")).toBe("true");
+    expect(keepUi.getAttribute("aria-pressed")).toBe("false");
     expect(saveData.getAttribute("aria-pressed")).toBe("false");
-    expect(screen.getByText("Recommended")).toBeTruthy();
+    expect(screen.getByText("Best fit")).toBeTruthy();
     expect(screen.queryByLabelText("Custom answer for Which changes should be included?")).toBeNull();
 
-    fireEvent.click(saveData);
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    fireEvent.click(screen.getByRole("button", { name: "Use recommended settings" }));
 
     expect(onSubmit).toHaveBeenCalledWith(message, {
-      scope: ["keep_ui", "save_data"],
+      scope: ["keep_ui"],
     });
+  });
+
+  test("renders blocking questions outside Plan mode as a single inline chat prompt", () => {
+    const message = {
+      id: "clarify-agent",
+      stage: "clarify",
+      requestMode: "agent",
+      questions: [
+        { id: "target", question: "Which live Studio place should I change?" },
+        { id: "scope", question: "Should I replace the existing script?" },
+      ],
+    };
+
+    render(<ClarifyCard message={message} onSubmit={jest.fn()} />);
+
+    expect(screen.getByText("Which live Studio place should I change?")).toBeTruthy();
+    expect(screen.getByText("Reply in chat and I’ll continue from there.")).toBeTruthy();
+    expect(screen.queryByText("Should I replace the existing script?")).toBeNull();
+    expect(screen.queryByRole("button")).toBeNull();
   });
 
   test("opens the editable workspace instead of presenting legacy execution copy", () => {

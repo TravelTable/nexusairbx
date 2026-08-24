@@ -1,5 +1,15 @@
 import React, { useState } from "react";
-import { Check, HelpCircle, ListChecks, SendPrompt, Pencil, Loader } from "lib/icons";
+import {
+  Check,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  HelpCircle,
+  ListChecks,
+  SendPrompt,
+  Pencil,
+  Loader,
+} from "lib/icons";
 import MarkdownMessage from "./MarkdownMessage";
 import {
   Plan,
@@ -79,13 +89,9 @@ const initialClarificationAnswers = (questions) => questions.reduce((initial, qu
   const optionDefaults = options
     .filter((option) => option.defaultSelected)
     .map((option) => option.value);
-  const recommendedDefaults = options
-    .filter((option) => option.recommended)
-    .map((option) => option.value);
   const defaults = [...new Set([
     ...configured,
     ...optionDefaults,
-    ...(configured.length || optionDefaults.length ? [] : recommendedDefaults),
   ])];
 
   if (isMultiSelectQuestion(question)) {
@@ -102,6 +108,46 @@ const clarificationAnswerHasValue = (value) => (
     : value != null && String(value).trim() !== ""
 );
 
+const recommendedClarificationAnswers = (questions) => {
+  const recommended = {};
+  for (let questionIndex = 0; questionIndex < questions.length; questionIndex += 1) {
+    const question = questions[questionIndex];
+    const questionId = clarificationQuestionId(question, questionIndex);
+    const options = Array.isArray(question.options)
+      ? question.options.map(normalizeClarificationOption)
+      : [];
+    const values = options.filter((option) => option.recommended).map((option) => option.value);
+    if (isMultiSelectQuestion(question) && values.length) {
+      recommended[questionId] = values;
+    } else if (values.length) {
+      recommended[questionId] = values[0];
+    } else if (question.required !== false) {
+      return null;
+    }
+  }
+  return Object.keys(recommended).length ? recommended : null;
+};
+
+function InlineBlockingQuestion({ message }) {
+  const firstQuestion = Array.isArray(message.questions) ? message.questions[0] : null;
+  const prompt = String(
+    firstQuestion?.question
+      || firstQuestion?.prompt
+      || message.content
+      || message.explanation
+      || "I need one detail before I can safely continue.",
+  ).trim();
+
+  return (
+    <div className="max-w-[720px] py-1">
+      <p className="text-[14px] leading-6 text-[var(--ds-text)]">{prompt}</p>
+      <p className="mt-1 text-[12px] leading-5 text-[var(--ds-text-muted)]">
+        Reply in chat and I’ll continue from there.
+      </p>
+    </div>
+  );
+}
+
 /**
  * ClarifyCard: rendered for assistant messages with stage "clarify".
  * Collects 1-3 short answers, then hands them back to re-orchestrate into a plan.
@@ -109,7 +155,12 @@ const clarificationAnswerHasValue = (value) => (
 export function ClarifyCard({ message, onSubmit, disabled }) {
   const questions = Array.isArray(message.questions) ? message.questions : [];
   const [answers, setAnswers] = useState(() => initialClarificationAnswers(questions));
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
+  const [customOpen, setCustomOpen] = useState({});
   const answered = message.stage === "clarify_answered";
+  const structuredPlanQuestion = !message.requestMode || message.requestMode === "plan";
+  const activeQuestion = questions[activeQuestionIndex] || null;
+  const recommendedAnswers = recommendedClarificationAnswers(questions);
 
   const setAnswer = (id, value) => setAnswers((prev) => ({ ...prev, [id]: value }));
   const requiredQuestionsAnswered = questions.every((question, questionIndex) => {
@@ -118,6 +169,10 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
     return clarificationAnswerHasValue(answers[questionId]);
   });
   const canContinue = questions.length > 0 && requiredQuestionsAnswered;
+
+  if (!structuredPlanQuestion && !answered) {
+    return <InlineBlockingQuestion message={message} />;
+  }
 
   if (answered) {
     return (
@@ -136,122 +191,217 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
     );
   }
 
-  return (
-    <div className="rounded-xl border border-[var(--ds-border)] bg-transparent p-4 space-y-4">
-      <div className="flex items-center gap-2 text-sm font-medium text-[var(--ds-accent)]">
-        <HelpCircle className="w-4 h-4" /> A few quick questions
-      </div>
+  if (!activeQuestion) return null;
 
-      <div className="space-y-4">
-        {questions.map((q, questionIndex) => {
-          const questionId = clarificationQuestionId(q, questionIndex);
-          const options = Array.isArray(q.options)
-            ? q.options.map(normalizeClarificationOption)
-            : [];
-          const optionValues = options.map((option) => option.value);
-          const multiSelect = isMultiSelectQuestion(q);
-          const allowCustom = q.allowCustom !== false && q.customAllowed !== false;
-          const currentValues = multiSelect
-            ? configuredAnswerValues(answers[questionId])
-            : [];
-          const customAnswer = multiSelect
-            ? currentValues.find((value) => !optionValues.includes(value)) || ""
-            : answers[questionId] && !optionValues.includes(answers[questionId])
-              ? String(answers[questionId])
-              : "";
-          return (
-          <div key={questionId} className="space-y-2">
-            <div className="text-[14px] text-[var(--ds-text)] font-medium">
-              {q.question || q.prompt}
-              {q.required === false ? <span className="ml-1 text-[11px] font-normal text-[var(--ds-text-muted)]">(optional)</span> : null}
-              {multiSelect ? <span className="ml-1 text-[11px] font-normal text-[var(--ds-text-muted)]">(select all that apply)</span> : null}
-            </div>
-            {options.length > 0 && (
-              <div className="grid gap-2 sm:grid-cols-2">
-                {options.map((option) => {
-                  const selected = multiSelect
-                    ? currentValues.includes(option.value)
-                    : answers[questionId] === option.value;
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      disabled={disabled}
-                      onClick={() => {
-                        if (!multiSelect) {
-                          setAnswer(questionId, option.value);
-                          return;
-                        }
-                        const optionSelections = currentValues.filter((value) => optionValues.includes(value));
-                        const nextSelections = selected
-                          ? optionSelections.filter((value) => value !== option.value)
-                          : [...optionSelections, option.value];
-                        setAnswer(questionId, [
-                          ...nextSelections,
-                          ...(customAnswer ? [customAnswer] : []),
-                        ]);
-                      }}
-                      className={`min-h-[44px] rounded-xl border px-3 py-2 text-left text-[12px] transition-colors ${
-                        selected
-                          ? "bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] border-[var(--ds-accent)]"
-                          : "bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] border-[var(--ds-border-subtle)] hover:bg-[var(--ds-fill-hover)]"
-                      }`}
-                      aria-pressed={selected}
-                    >
-                      <span className="flex items-center justify-between gap-2 font-bold">
+  const questionId = clarificationQuestionId(activeQuestion, activeQuestionIndex);
+  const options = Array.isArray(activeQuestion.options)
+    ? activeQuestion.options.map(normalizeClarificationOption)
+    : [];
+  const optionValues = options.map((option) => option.value);
+  const multiSelect = isMultiSelectQuestion(activeQuestion);
+  const allowCustom = activeQuestion.allowCustom !== false && activeQuestion.customAllowed !== false;
+  const currentValues = multiSelect ? configuredAnswerValues(answers[questionId]) : [];
+  const customAnswer = multiSelect
+    ? currentValues.find((value) => !optionValues.includes(value)) || ""
+    : answers[questionId] && !optionValues.includes(answers[questionId])
+      ? String(answers[questionId])
+      : "";
+  const currentQuestionAnswered = activeQuestion.required === false
+    || clarificationAnswerHasValue(answers[questionId]);
+  const onLastQuestion = activeQuestionIndex === questions.length - 1;
+  const progress = ((activeQuestionIndex + 1) / questions.length) * 100;
+  const customIsOpen = options.length === 0 || customOpen[questionId] === true || Boolean(customAnswer);
+
+  const updateCustomAnswer = (nextCustomAnswer) => {
+    if (!multiSelect) {
+      setAnswer(questionId, nextCustomAnswer);
+      return;
+    }
+    const optionSelections = currentValues.filter((value) => optionValues.includes(value));
+    setAnswer(questionId, [
+      ...optionSelections,
+      ...(nextCustomAnswer ? [nextCustomAnswer] : []),
+    ]);
+  };
+
+  return (
+    <section
+      className="w-full max-w-[640px] rounded-2xl border border-[var(--ds-border)] bg-[var(--ds-surface-1)] p-5 shadow-sm sm:p-6"
+      aria-labelledby={`${questionId}-title`}
+    >
+      <header className="space-y-3">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-[13px] font-semibold text-[var(--ds-accent)]">
+            <HelpCircle className="h-4 w-4" /> Let’s shape the plan
+          </div>
+          <span className="shrink-0 text-[12px] font-medium text-[var(--ds-text-muted)]">
+            Question {activeQuestionIndex + 1} of {questions.length}
+          </span>
+        </div>
+        <div
+          className="h-1 overflow-hidden rounded-full bg-[var(--ds-fill-subtle)]"
+          role="progressbar"
+          aria-label="Planning questions"
+          aria-valuemin="1"
+          aria-valuemax={questions.length}
+          aria-valuenow={activeQuestionIndex + 1}
+        >
+          <div
+            className="h-full rounded-full bg-[var(--ds-accent)] transition-[width] duration-[var(--motion-normal)] ease-[var(--ease-standard)]"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </header>
+
+      <div className="mt-6">
+        <h3 id={`${questionId}-title`} className="text-[16px] font-semibold leading-6 text-[var(--ds-text)]">
+          {activeQuestion.question || activeQuestion.prompt}
+        </h3>
+        <div className="mt-1 flex flex-wrap gap-x-2 text-[12px] leading-5 text-[var(--ds-text-muted)]">
+          {activeQuestion.reason ? <span>{activeQuestion.reason}</span> : null}
+          {activeQuestion.required === false ? <span>(Optional)</span> : null}
+          {multiSelect ? <span>Select all that apply.</span> : null}
+        </div>
+
+        {options.length > 0 ? (
+          <div className="mt-4 grid gap-2" role="group" aria-label={activeQuestion.question || activeQuestion.prompt}>
+            {options.map((option) => {
+              const selected = multiSelect
+                ? currentValues.includes(option.value)
+                : answers[questionId] === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => {
+                    if (!multiSelect) {
+                      setCustomOpen((previous) => ({ ...previous, [questionId]: false }));
+                      setAnswer(questionId, option.value);
+                      return;
+                    }
+                    const optionSelections = currentValues.filter((value) => optionValues.includes(value));
+                    const nextSelections = selected
+                      ? optionSelections.filter((value) => value !== option.value)
+                      : [...optionSelections, option.value];
+                    setAnswer(questionId, [
+                      ...nextSelections,
+                      ...(customAnswer ? [customAnswer] : []),
+                    ]);
+                  }}
+                  className={`group min-h-[56px] rounded-xl border px-4 py-3 text-left transition-[background-color,border-color,color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-surface-1)] ${
+                    selected
+                      ? "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] text-[var(--ds-text)]"
+                      : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-fill-hover)]"
+                  }`}
+                  aria-pressed={selected}
+                >
+                  <span className="flex items-start gap-3">
+                    <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                      selected
+                        ? "border-[var(--ds-accent)] bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)]"
+                        : "border-[var(--ds-border-strong)] text-transparent"
+                    }`} aria-hidden="true">
+                      <Check className="h-3 w-3" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex flex-wrap items-center justify-between gap-2 font-semibold">
                         <span>{option.label}</span>
                         {option.recommended ? (
-                          <span className={`text-[9px] uppercase tracking-wider ${selected ? "text-[var(--ds-text)]" : "text-[var(--ds-accent)]"}`}>
-                            Recommended
+                          <span className="rounded-full bg-[var(--ds-accent-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--ds-accent)]">
+                            Best fit
                           </span>
                         ) : null}
                       </span>
-                      {option.description && <span className={`mt-0.5 block text-[11px] leading-snug ${selected ? "text-[var(--ds-text-secondary)]" : "text-[var(--ds-text-muted)]"}`}>{option.description}</span>}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-            {allowCustom ? (
-              <input
-                type="text"
-                disabled={disabled}
-                value={customAnswer}
-                onChange={(event) => {
-                  const nextCustomAnswer = event.target.value;
-                  if (!multiSelect) {
-                    setAnswer(questionId, nextCustomAnswer);
-                    return;
-                  }
-                  const optionSelections = currentValues.filter((value) => optionValues.includes(value));
-                  setAnswer(questionId, [
-                    ...optionSelections,
-                    ...(nextCustomAnswer ? [nextCustomAnswer] : []),
-                  ]);
-                }}
-                placeholder="Type an answer…"
-                aria-label={`Custom answer for ${q.question || q.prompt || `question ${questionIndex + 1}`}`}
-                className="w-full min-h-[44px] bg-transparent border border-[var(--ds-border)] rounded-xl px-3 py-2 text-[13px] text-[var(--ds-text)] placeholder:text-[var(--ds-text-muted)] focus:outline-none focus:border-[var(--ds-accent-border)]"
-              />
-            ) : null}
+                      {option.description ? (
+                        <span className="mt-1 block text-[12px] leading-5 text-[var(--ds-text-muted)]">
+                          {option.description}
+                        </span>
+                      ) : null}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
           </div>
-          );
-        })}
+        ) : null}
+
+        {allowCustom && options.length > 0 ? (
+          <button
+            type="button"
+            disabled={disabled}
+            aria-expanded={customIsOpen}
+            onClick={() => {
+              setCustomOpen((previous) => ({ ...previous, [questionId]: true }));
+              if (!multiSelect && optionValues.includes(answers[questionId])) setAnswer(questionId, "");
+            }}
+            className={`mt-2 flex min-h-[48px] w-full items-center gap-3 rounded-xl border px-4 py-2.5 text-left text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] ${
+              customIsOpen
+                ? "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] text-[var(--ds-text)]"
+                : "border-[var(--ds-border-subtle)] bg-transparent text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)]"
+            }`}
+          >
+            <Pencil className="h-4 w-4" aria-hidden="true" /> Something else
+          </button>
+        ) : null}
+
+        {allowCustom && customIsOpen ? (
+          <label className="mt-3 block">
+            <span className="mb-1.5 block text-[12px] font-medium text-[var(--ds-text-secondary)]">
+              {options.length ? "Your answer" : "Answer"}
+            </span>
+            <input
+              type="text"
+              disabled={disabled}
+              value={customAnswer}
+              onChange={(event) => updateCustomAnswer(event.target.value)}
+              placeholder={activeQuestion.placeholder || "Describe what you have in mind…"}
+              aria-label={`Custom answer for ${activeQuestion.question || activeQuestion.prompt || `question ${activeQuestionIndex + 1}`}`}
+              className="min-h-[48px] w-full rounded-xl border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-3.5 py-2.5 text-[14px] text-[var(--ds-text)] placeholder:text-[var(--ds-text-muted)] focus:border-[var(--ds-accent-border)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-focus-ring)]"
+            />
+          </label>
+        ) : null}
       </div>
 
-      <button
-        type="button"
-        disabled={disabled || !canContinue}
-        onClick={() => onSubmit?.(message, answers)}
-        className="w-full py-2.5 rounded-full bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] font-semibold text-sm flex items-center justify-center gap-2 hover:bg-[var(--ds-accent-hover)] transition-[background-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)] disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {disabled ? <Loader className="w-4 h-4" /> : <SendPrompt className="w-4 h-4" />}
-        Continue
-      </button>
-      {!canContinue && (
-        <p className="text-[11px] text-[var(--ds-text-muted)] text-center">Answer every required question to continue.</p>
-      )}
-    </div>
+      <footer className="mt-6 space-y-3 border-t border-[var(--ds-border-subtle)] pt-4">
+        <div className="flex items-center justify-between gap-3">
+          <button
+            type="button"
+            disabled={disabled || activeQuestionIndex === 0}
+            onClick={() => setActiveQuestionIndex((index) => Math.max(0, index - 1))}
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] disabled:pointer-events-none disabled:opacity-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)]"
+          >
+            <ChevronLeft className="h-4 w-4" /> Back
+          </button>
+          <button
+            type="button"
+            disabled={disabled || !currentQuestionAnswered || (onLastQuestion && !canContinue)}
+            onClick={() => {
+              if (!onLastQuestion) {
+                setActiveQuestionIndex((index) => Math.min(questions.length - 1, index + 1));
+                return;
+              }
+              onSubmit?.(message, answers);
+            }}
+            className="inline-flex min-h-[44px] min-w-[132px] items-center justify-center gap-2 rounded-full bg-[var(--ds-accent)] px-5 text-[13px] font-semibold text-[var(--ds-accent-foreground)] transition-[background-color,color,opacity] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[var(--ds-accent-hover)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-surface-1)]"
+          >
+            {disabled ? <Loader className="h-4 w-4" /> : onLastQuestion ? <SendPrompt className="h-4 w-4" /> : null}
+            {onLastQuestion ? "Create plan" : "Next"}
+            {!disabled && !onLastQuestion ? <ChevronRight className="h-4 w-4" /> : null}
+          </button>
+        </div>
+        {recommendedAnswers ? (
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => onSubmit?.(message, recommendedAnswers)}
+            className="mx-auto flex min-h-[44px] items-center justify-center gap-2 rounded-lg px-3 text-[12px] font-medium text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)]"
+          >
+            <CheckCircle className="h-4 w-4 text-[var(--ds-accent)]" /> Use recommended settings
+          </button>
+        ) : null}
+      </footer>
+    </section>
   );
 }
 
