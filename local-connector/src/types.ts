@@ -8,6 +8,7 @@ export interface PairClaimResponse {
   userId: string;
   pollIntervalMs: number;
   expiresInMs: number;
+  targetObservationToken?: string;
 }
 
 export interface StudioCommand {
@@ -29,6 +30,7 @@ export interface StudioCommand {
   expectedPlaceId?: string | null;
   expectedUniverseId?: string | null;
   expectedPlaceSignature?: string | null;
+  expectedStudioWindowId?: string | null;
   targetGeneration?: number;
   studioTarget?: JsonObject | null;
   capability?: string | null;
@@ -114,6 +116,7 @@ export interface StudioIdentityMetadata extends JsonObject {
   placeSignature: string | null;
   targetIdentityComplete: boolean;
   targetConfirmedAt: number | null;
+  targetObservationToken?: string | null;
 }
 
 export interface DiscoveredTool {
@@ -180,11 +183,16 @@ export interface BackendClientLike {
     studioIdentity: StudioIdentityMetadata,
     signal?: AbortSignal,
   ): Promise<JsonObject>;
-  pollNext(waitMs: number, signal?: AbortSignal): Promise<StudioCommand | null>;
+  pollNext(
+    waitMs: number,
+    targetObservationToken: string | null,
+    signal?: AbortSignal,
+  ): Promise<StudioCommand | null>;
   acknowledge(
     commandId: string,
     status: CommandReceiptStatus,
     result: JsonObject,
+    targetObservationToken: string | null,
     signal?: AbortSignal,
   ): Promise<JsonObject>;
   clearToken(): void;

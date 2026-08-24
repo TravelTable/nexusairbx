@@ -10,6 +10,7 @@ import type {
   StudioCommand,
   StudioIdentityMetadata,
 } from "./types.js";
+import { CONNECTOR_PROTOCOL_VERSION } from "./version.js";
 
 const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
 // The Express backend uses a 2 MiB JSON parser limit. Keep connector requests
@@ -57,15 +58,18 @@ export class NexusBackendClient implements BackendClientLike {
     if (!/^nsmcp_[A-Za-z0-9_-]+_[A-Za-z0-9._~-]+$/.test(token)) {
       throw new ConnectorError("PAIR_RESPONSE_INVALID", "The pairing response contained an invalid connector token.");
     }
+    const targetObservationToken = optionalTargetObservationToken(body.targetObservationToken);
     const response: PairClaimResponse = {
       token,
       sessionId: requireString(body, "sessionId"),
       userId: requireString(body, "userId"),
       pollIntervalMs: requirePositiveInteger(body, "pollIntervalMs"),
       expiresInMs: requirePositiveInteger(body, "expiresInMs"),
+      ...(targetObservationToken ? { targetObservationToken } : {}),
     };
     this.#token = token;
     this.options.logger.addSecret(token);
+    if (targetObservationToken) this.options.logger.addTransientSecret(targetObservationToken);
     return response;
   }
 
@@ -106,13 +110,24 @@ export class NexusBackendClient implements BackendClientLike {
         capabilityDetails,
         supportedCommands,
         discoveredTools: tools,
+        connectorVersion: this.options.connectorVersion,
+        connectorProtocolVersion: CONNECTOR_PROTOCOL_VERSION,
         ...studioIdentity,
       },
-      { authenticated: true, retry: true, ...(signal === undefined ? {} : { signal }) },
+      {
+        authenticated: true,
+        retry: true,
+        targetObservationToken: studioIdentity.targetObservationToken ?? null,
+        ...(signal === undefined ? {} : { signal }),
+      },
     );
   }
 
-  async pollNext(waitMs: number, signal?: AbortSignal): Promise<StudioCommand | null> {
+  async pollNext(
+    waitMs: number,
+    targetObservationToken: string | null,
+    signal?: AbortSignal,
+  ): Promise<StudioCommand | null> {
     const response = await this.request(
       "GET",
       `/api/studio/mcp/commands/next?waitMs=${encodeURIComponent(String(waitMs))}`,
@@ -123,6 +138,7 @@ export class NexusBackendClient implements BackendClientLike {
         ...(signal === undefined ? {} : { signal }),
         timeoutMs: waitMs + 5_000,
         allowNoContent: true,
+        targetObservationToken,
       },
     );
     if (Object.keys(response).length === 0) return null;
@@ -135,14 +151,22 @@ export class NexusBackendClient implements BackendClientLike {
     commandId: string,
     status: CommandReceiptStatus,
     result: JsonObject,
+    targetObservationToken: string | null,
     signal?: AbortSignal,
   ): Promise<JsonObject> {
     const terminalError = status === "failed" || status === "outcome_unknown";
     return this.request(
       "POST",
       `/api/studio/mcp/commands/${encodeURIComponent(commandId)}/ack`,
-      terminalError ? { status, error: result.error ?? result, result } : { status, result },
-      { authenticated: true, retry: true, ...(signal === undefined ? {} : { signal }) },
+      terminalError
+        ? { status, error: result.error ?? result, result, targetObservationToken }
+        : { status, result, targetObservationToken },
+      {
+        authenticated: true,
+        retry: true,
+        targetObservationToken,
+        ...(signal === undefined ? {} : { signal }),
+      },
     );
   }
 
@@ -168,6 +192,7 @@ export class NexusBackendClient implements BackendClientLike {
       signal?: AbortSignal;
       timeoutMs?: number;
       allowNoContent?: boolean;
+      targetObservationToken?: string | null;
     },
   ): Promise<JsonObject> {
     const attempts = policy.retry ? this.#retryDelaysMs.length + 1 : 1;
@@ -206,6 +231,7 @@ export class NexusBackendClient implements BackendClientLike {
       signal?: AbortSignal;
       timeoutMs?: number;
       allowNoContent?: boolean;
+      targetObservationToken?: string | null;
     },
   ): Promise<JsonObject> {
     if (policy.authenticated && this.#token === null) {
@@ -224,6 +250,13 @@ export class NexusBackendClient implements BackendClientLike {
     }
     if (serializedBody !== undefined) headers["Content-Type"] = "application/json";
     if (policy.authenticated && this.#token !== null) headers.Authorization = `Bearer ${this.#token}`;
+    if (policy.authenticated) {
+      headers["X-NexusRBX-Connector-Version"] = this.options.connectorVersion;
+      headers["X-NexusRBX-Connector-Protocol"] = CONNECTOR_PROTOCOL_VERSION;
+      if (policy.targetObservationToken) {
+        headers["X-NexusRBX-Target-Observation"] = policy.targetObservationToken;
+      }
+    }
 
     let response: Response;
     try {
@@ -256,6 +289,11 @@ export class NexusBackendClient implements BackendClientLike {
       { retryable, details: { status: response.status, ...(serverCode ? { serverCode } : {}) } },
     );
   }
+}
+
+function optionalTargetObservationToken(value: unknown): string | undefined {
+  const token = typeof value === "string" ? value.trim() : "";
+  return /^[A-Za-z0-9_-]{16,128}$/.test(token) ? token : undefined;
 }
 
 async function readJsonResponse(response: Response): Promise<JsonObject> {
@@ -329,6 +367,7 @@ function parseStudioCommand(raw: Record<string, unknown>): StudioCommand {
   copyOptionalNullableString(raw, command, "expectedPlaceId");
   copyOptionalNullableString(raw, command, "expectedUniverseId");
   copyOptionalNullableString(raw, command, "expectedPlaceSignature");
+  copyOptionalNullableString(raw, command, "expectedStudioWindowId");
   copyOptionalNullableString(raw, command, "capability");
   copyOptionalString(raw, command, "commandId");
   copyOptionalString(raw, command, "operationId");
@@ -355,11 +394,22 @@ function parseStudioCommand(raw: Record<string, unknown>): StudioCommand {
     "attempts",
     "operationOutcome",
   ].some((key) => Object.hasOwn(raw, key));
-  if (!hasLifecycleMarker) return command;
+  if (!hasLifecycleMarker) {
+    throw new ConnectorError(
+      "CONNECTOR_LIFECYCLE_UNSUPPORTED",
+      "NexusRBX sent an unversioned Studio command envelope.",
+    );
+  }
   if (raw.lifecycleVersion !== 2) {
     throw new ConnectorError(
       "CONNECTOR_LIFECYCLE_UNSUPPORTED",
       "NexusRBX sent an unsupported Studio command lifecycle envelope.",
+    );
+  }
+  if (raw.connectionType !== "mcp_local") {
+    throw new ConnectorError(
+      "CONNECTOR_LIFECYCLE_ENVELOPE_INVALID",
+      "The Studio command lifecycle connection type is missing or invalid.",
     );
   }
   if (raw.commandId !== command.id) {
@@ -446,6 +496,7 @@ function copyOptionalNullableString(
     | "expectedPlaceId"
     | "expectedUniverseId"
     | "expectedPlaceSignature"
+    | "expectedStudioWindowId"
     | "capability",
 ): void {
   const value = source[key];

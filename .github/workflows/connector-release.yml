@@ -3,7 +3,6 @@ name: Release NexusRBX Connector
 on:
   push:
     tags: ["connector-v*"]
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -13,7 +12,28 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  connector-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            local-connector/package-lock.json
+            desktop-connector/package-lock.json
+      - run: npm ci --prefix local-connector && npm ci --prefix desktop-connector
+      - name: Verify local connector lifecycle and security gates
+        run: npm run check --prefix local-connector
+      - name: Verify desktop connector types, tests, and release contract
+        run: |
+          npm run typecheck --prefix desktop-connector
+          npm test --prefix desktop-connector
+          npm run version:check --prefix desktop-connector
+
   macos:
+    needs: connector-checks
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -95,6 +115,7 @@ jobs:
             desktop-connector/release/*.blockmap
 
   windows:
+    needs: connector-checks
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4

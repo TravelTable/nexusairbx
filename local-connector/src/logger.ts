@@ -8,6 +8,7 @@ const TOKEN_PATTERNS: Array<{ pattern: RegExp; replacement: string }> = [
 ];
 
 const MAX_LOG_CHARS = 4_096;
+const MAX_TRANSIENT_SECRETS = 4;
 
 export function redact(value: unknown, secrets: Iterable<string> = []): string {
   let text = typeof value === "string" ? value : safeStringify(value);
@@ -33,15 +34,27 @@ export interface Logger {
   error(message: string, details?: unknown): void;
   debug(message: string, details?: unknown): void;
   addSecret(secret: string): void;
+  addTransientSecret(secret: string): void;
 }
 
 export class ConsoleLogger implements Logger {
   readonly #secrets = new Set<string>();
+  readonly #transientSecrets: string[] = [];
 
   constructor(private readonly verbose = false) {}
 
   addSecret(secret: string): void {
     if (secret.length >= 4) this.#secrets.add(secret);
+  }
+
+  addTransientSecret(secret: string): void {
+    if (secret.length < 4) return;
+    const existing = this.#transientSecrets.indexOf(secret);
+    if (existing >= 0) this.#transientSecrets.splice(existing, 1);
+    this.#transientSecrets.push(secret);
+    if (this.#transientSecrets.length > MAX_TRANSIENT_SECRETS) {
+      this.#transientSecrets.splice(0, this.#transientSecrets.length - MAX_TRANSIENT_SECRETS);
+    }
   }
 
   info(message: string, details?: unknown): void {
@@ -61,8 +74,9 @@ export class ConsoleLogger implements Logger {
   }
 
   private write(level: string, message: string, details?: unknown): void {
-    const suffix = details === undefined ? "" : ` ${redact(details, this.#secrets)}`;
-    const line = `[${level}] ${redact(message, this.#secrets)}${suffix}`;
+    const redactionSecrets = [...this.#secrets, ...this.#transientSecrets];
+    const suffix = details === undefined ? "" : ` ${redact(details, redactionSecrets)}`;
+    const line = `[${level}] ${redact(message, redactionSecrets)}${suffix}`;
     if (level === "ERROR") console.error(line);
     else if (level === "WARN") console.warn(line);
     else console.log(line);

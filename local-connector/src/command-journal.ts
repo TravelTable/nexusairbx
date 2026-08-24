@@ -37,6 +37,11 @@ export interface CommandJournalLike {
     receiptId: string,
     acknowledgedAt?: number,
   ): Promise<CommandJournalEntry>;
+  ensureTerminalReceipt(
+    commandId: string,
+    receiptId: string,
+    result: JsonObject,
+  ): Promise<CommandJournalEntry>;
 }
 
 interface JournalDocument {
@@ -152,6 +157,47 @@ export class PersistentCommandJournal implements CommandJournalLike {
       this.prune(document);
       await this.persist(document);
       return cloneEntry(document.entries[normalizedCommandId] ?? acknowledged);
+    });
+  }
+
+  ensureTerminalReceipt(
+    commandId: string,
+    receiptId: string,
+    result: JsonObject,
+  ): Promise<CommandJournalEntry> {
+    return this.exclusive(async () => {
+      const normalizedCommandId = requiredString(commandId);
+      const normalizedReceiptId = requiredString(receiptId);
+      if (!isJsonObject(result)) {
+        throw new ConnectorError("COMMAND_JOURNAL_CORRUPT", "The terminal command receipt is invalid.");
+      }
+      const document = await this.load();
+      const current = document.entries[normalizedCommandId];
+      if (!current || current.stage !== "terminal") {
+        throw new ConnectorError(
+          "COMMAND_JOURNAL_RECEIPT_MISMATCH",
+          "The terminal command receipt does not match the durable safety journal.",
+          { details: { commandId: normalizedCommandId } },
+        );
+      }
+      if (current.receiptId && current.receiptId !== normalizedReceiptId) {
+        throw new ConnectorError(
+          "COMMAND_JOURNAL_RECEIPT_MISMATCH",
+          "The terminal command receipt conflicts with the durable safety journal.",
+          { details: { commandId: normalizedCommandId } },
+        );
+      }
+      const persistedResult = current.receiptId && current.result ? current.result : result;
+      const migrated: CommandJournalEntry = {
+        ...current,
+        receiptId: current.receiptId ?? normalizedReceiptId,
+        result: persistedResult,
+        updatedAt: this.#now(),
+      };
+      validateEntry(migrated);
+      document.entries[normalizedCommandId] = migrated;
+      await this.persist(document);
+      return cloneEntry(migrated);
     });
   }
 

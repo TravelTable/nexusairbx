@@ -128,7 +128,8 @@ test("an unpublished local place is targetable when its Studio window and signat
     expectedPlaceId: "0",
     expectedUniverseId: "0",
     expectedPlaceSignature: "local-signature",
-    studioTarget: { studioId: "studio-local" },
+    expectedStudioWindowId: "studio-local",
+    studioTarget: { expectedStudioWindowId: "studio-local" },
   });
 
   assert.deepEqual(manager.metadata(), {
@@ -306,6 +307,160 @@ test("a command cannot mutate a different place, universe, signature, or connect
   await manager.ensureMutationTarget({ ...base, expectedPlaceId: "101", expectedUniverseId: "201", expectedPlaceSignature: "sig-a" });
   await assert.rejects(() => manager.ensureMutationTarget({ ...base, expectedPlaceId: "999" }), (error: any) => error?.code === "STUDIO_TARGET_MISMATCH");
   await assert.rejects(() => manager.ensureMutationTarget({ ...base, connectionType: "plugin_bridge" }), (error: any) => error?.code === "STUDIO_CONNECTION_TYPE_MISMATCH");
+});
+
+test("a delayed command is rejected after Studio switches to a different attested window", async () => {
+  const mcp = new FakeMcp();
+  mcp.studios = [{ studio_id: "studio-a", place_id: "101", place_name: "Arena", universe_id: "201", place_signature: "sig-a" }];
+  const manager = new StudioTargetManager(mcp);
+  await manager.refresh();
+
+  mcp.studios = [{ studio_id: "studio-b", place_id: "101", place_name: "Arena", universe_id: "201", place_signature: "sig-a" }];
+  manager.acceptBackendResponse({ desiredStudioId: "studio-b" });
+  let executed = false;
+  await assert.rejects(
+    () => manager.withCommandTarget({
+      id: "delayed-read",
+      type: "read_script",
+      payload: {},
+      connectionType: "mcp_local",
+      expectedPlaceId: "101",
+      expectedUniverseId: "201",
+      expectedPlaceSignature: "sig-a",
+      expectedStudioWindowId: "studio-a",
+    }, async () => {
+      executed = true;
+    }),
+    (error: any) => error?.code === "STUDIO_TARGET_MISMATCH",
+  );
+  assert.equal(executed, false);
+  assert.equal(manager.activeStudioId, "studio-b");
+});
+
+test("conflicting command window aliases are rejected before execution", async () => {
+  const mcp = new FakeMcp();
+  mcp.studios = [{ studio_id: "studio-a", place_id: "101", place_name: "Arena", universe_id: "201", place_signature: "sig-a" }];
+  const manager = new StudioTargetManager(mcp);
+  await manager.refresh();
+
+  let executed = false;
+  await assert.rejects(
+    () => manager.withCommandTarget({
+      id: "conflicting-window-read",
+      type: "read_script",
+      payload: {},
+      connectionType: "mcp_local",
+      expectedPlaceId: "101",
+      expectedUniverseId: "201",
+      expectedPlaceSignature: "sig-a",
+      expectedStudioWindowId: "studio-a",
+      studioTarget: { studioId: "studio-b" },
+    }, async () => {
+      executed = true;
+    }),
+    (error: any) => error?.code === "STUDIO_TARGET_MISMATCH",
+  );
+  assert.equal(executed, false);
+});
+
+test("lifecycle-v2 canonical target copies are present, type-strict, and equal for published and local targets", async (t) => {
+  const cases = [
+    { name: "published", placeId: "101", universeId: "201" },
+    { name: "unpublished", placeId: "0", universeId: "0" },
+  ];
+  const canonicalFields = [
+    "targetId",
+    "sessionId",
+    "expectedPlaceId",
+    "expectedUniverseId",
+    "expectedPlaceSignature",
+    "targetGeneration",
+    "expectedStudioWindowId",
+  ] as const;
+
+  for (const identity of cases) {
+    const command = (): StudioCommand => ({
+      id: `strict-${identity.name}`,
+      commandId: `strict-${identity.name}`,
+      type: "read_script",
+      payload: { path: "game.ServerScriptService.Main" },
+      lifecycleVersion: 2,
+      connectionType: "mcp_local",
+      targetId: "target-strict",
+      sessionId: "session-strict",
+      expectedPlaceId: identity.placeId === "0" ? null : identity.placeId,
+      expectedUniverseId: identity.universeId === "0" ? null : identity.universeId,
+      placeId: identity.placeId === "0" ? null : identity.placeId,
+      universeId: identity.universeId === "0" ? null : identity.universeId,
+      expectedPlaceSignature: "strict-signature",
+      targetGeneration: 1,
+      expectedStudioWindowId: "studio-strict",
+      studioTarget: {
+        targetId: "target-strict",
+        sessionId: "session-strict",
+        expectedPlaceId: identity.placeId === "0" ? null : identity.placeId,
+        expectedUniverseId: identity.universeId === "0" ? null : identity.universeId,
+        expectedPlaceSignature: "strict-signature",
+        targetGeneration: 1,
+        expectedStudioWindowId: "studio-strict",
+      },
+      lease: { owner: "session-strict", fence: 1, targetFence: 0, expiresAt: Date.now() + 10_000 },
+    });
+    const assertNeverExecutes = async (candidate: StudioCommand): Promise<void> => {
+      const mcp = new FakeMcp();
+      mcp.studios = [{
+        studio_id: "studio-strict",
+        place_id: identity.placeId,
+        universe_id: identity.universeId,
+        place_name: "Strict Fixture",
+        place_signature: "strict-signature",
+      }];
+      const manager = new StudioTargetManager(mcp);
+      let executed = false;
+      await assert.rejects(
+        () => manager.withCommandTarget(candidate, async () => { executed = true; }),
+        (error: any) => error?.code === "STUDIO_TARGET_ATTESTATION_INCOMPLETE"
+          || error?.code === "STUDIO_TARGET_MISMATCH",
+      );
+      assert.equal(executed, false);
+    };
+
+    for (const field of canonicalFields) {
+      await t.test(`${identity.name}: missing top-level ${field}`, async () => {
+        const candidate = command() as unknown as Record<string, unknown>;
+        delete candidate[field];
+        await assertNeverExecutes(candidate as unknown as StudioCommand);
+      });
+      await t.test(`${identity.name}: missing nested ${field}`, async () => {
+        const candidate = command();
+        delete (candidate.studioTarget as Record<string, unknown>)[field];
+        await assertNeverExecutes(candidate);
+      });
+      await t.test(`${identity.name}: malformed/conflicting nested ${field}`, async () => {
+        const candidate = command();
+        const nested = candidate.studioTarget as Record<string, unknown>;
+        nested[field] = field === "targetGeneration"
+          ? "1"
+          : field === "expectedPlaceId" || field === "expectedUniverseId"
+            ? Number(field === "expectedPlaceId" ? identity.placeId : identity.universeId)
+            : 123;
+        await assertNeverExecutes(candidate);
+      });
+    }
+
+    for (const field of ["placeId", "universeId"] as const) {
+      await t.test(`${identity.name}: missing top-level ${field}`, async () => {
+        const candidate = command() as unknown as Record<string, unknown>;
+        delete candidate[field];
+        await assertNeverExecutes(candidate as unknown as StudioCommand);
+      });
+      await t.test(`${identity.name}: conflicting top-level ${field}`, async () => {
+        const candidate = command() as unknown as Record<string, unknown>;
+        candidate[field] = "999";
+        await assertNeverExecutes(candidate as unknown as StudioCommand);
+      });
+    }
+  }
 });
 
 test("a mismatched active Studio is refused before mutation", async () => {

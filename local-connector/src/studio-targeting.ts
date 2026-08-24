@@ -76,6 +76,44 @@ export class StudioTargetManager {
     }, signal);
   }
 
+  async withCommandTarget<T>(
+    command: StudioCommand,
+    action: () => Promise<T>,
+    signal?: AbortSignal,
+  ): Promise<T> {
+    return this.withTargetLock(async () => {
+      await this.refreshUnlocked(signal);
+      this.assertMutationTarget(command);
+      return action();
+    }, signal);
+  }
+
+  async attestCommandTarget(command: StudioCommand, signal?: AbortSignal): Promise<JsonObject> {
+    return this.withTargetLock(async () => {
+      await this.refreshUnlocked(signal);
+      // A verified write may legitimately advance the place signature. Recheck
+      // every immutable fence against the freshly discovered target, but use
+      // the new nonempty signature as the terminal attestation.
+      this.assertMutationTarget(command, { allowSignatureAdvance: true });
+      const identity = this.exactIdentity();
+      if (!identity) {
+        throw new ConnectorError(
+          "STUDIO_TARGET_ATTESTATION_INCOMPLETE",
+          "Roblox Studio did not return a complete post-command target identity.",
+        );
+      }
+      return {
+        targetId: bounded(command.targetId, 80),
+        sessionId: bounded(command.sessionId, 160),
+        placeId: identity.placeId,
+        universeId: identity.universeId,
+        placeSignature: identity.placeSignature,
+        targetGeneration: Number(command.targetGeneration),
+        studioWindowId: identity.studioId,
+      };
+    }, signal);
+  }
+
   private async refreshUnlocked(signal?: AbortSignal): Promise<void> {
     try {
       const listed = await this.mcp.callTool("list_roblox_studios", {}, signal);
@@ -144,7 +182,10 @@ export class StudioTargetManager {
     }
   }
 
-  private assertMutationTarget(command?: StudioCommand): void {
+  private assertMutationTarget(
+    command?: StudioCommand,
+    { allowSignatureAdvance = false }: { allowSignatureAdvance?: boolean } = {},
+  ): void {
     if (!this.activeStudioId) {
       throw new ConnectorError(this.targets.length > 1 ? "STUDIO_TARGET_SELECTION_REQUIRED" : "STUDIO_TARGET_UNAVAILABLE",
         this.targets.length > 1 ? "Choose the Studio window before making changes." : "No confirmed Roblox Studio window is available.");
@@ -155,7 +196,7 @@ export class StudioTargetManager {
         "Roblox Studio did not attest a complete target identity.",
       );
     }
-    this.validateCommandTarget(command);
+    this.validateCommandTarget(command, { allowSignatureAdvance });
   }
 
   get targetIdentityComplete(): boolean {
@@ -245,23 +286,122 @@ export class StudioTargetManager {
     }
   }
 
-  private validateCommandTarget(command?: StudioCommand): void {
+  private validateCommandTarget(
+    command?: StudioCommand,
+    { allowSignatureAdvance = false }: { allowSignatureAdvance?: boolean } = {},
+  ): void {
     if (!command) return;
-    if (command.connectionType && command.connectionType !== "mcp_local") {
+    const lifecycleMcp = command.lifecycleVersion === 2;
+    if ((lifecycleMcp && command.connectionType !== "mcp_local")
+      || (command.connectionType && command.connectionType !== "mcp_local")) {
       throw new ConnectorError("STUDIO_CONNECTION_TYPE_MISMATCH", "The Studio command was routed to a different connection type.");
     }
     const nested = object(command.studioTarget);
-    const expectedStudioId = bounded(nested?.studioId ?? nested?.studio_id, 160);
-    const expectedPlaceId = firstBounded([command.expectedPlaceId, command.placeId, nested?.placeId, nested?.place_id], 40);
-    const expectedUniverseId = firstBounded([command.expectedUniverseId, command.universeId, nested?.universeId, nested?.universe_id], 40);
-    const expectedPlaceSignature = firstBounded([command.expectedPlaceSignature, nested?.placeSignature, nested?.place_signature], 128);
+    const commandRecord = command as unknown as Record<string, unknown>;
+    const targetIdSources: Array<[Record<string, unknown> | null, string]> = [
+      [commandRecord, "targetId"],
+      [nested, "targetId"],
+    ];
+    const targetId = consistentAlias("target ID", targetIdSources, (value) => strictProtocolString(value, 80));
+    const targetIdSourceCount = targetIdSources.filter(([record, key]) => record && Object.hasOwn(record, key)).length;
+    const sessionIdSources: Array<[Record<string, unknown> | null, string]> = [
+      [commandRecord, "sessionId"],
+      [nested, "sessionId"],
+    ];
+    const sessionId = consistentAlias("session ID", sessionIdSources, (value) => strictProtocolString(value, 160));
+    const sessionIdSourceCount = sessionIdSources.filter(([record, key]) => record && Object.hasOwn(record, key)).length;
+    const generationSources: Array<[Record<string, unknown> | null, string]> = [
+      [commandRecord, "targetGeneration"],
+      [nested, "targetGeneration"],
+    ];
+    const generationValues = generationSources.flatMap(([record, key]) => record && Object.hasOwn(record, key)
+      ? [record[key]]
+      : []);
+    const validTargetGeneration = generationValues.length === 2
+      && generationValues.every((value) => Number.isSafeInteger(value) && Number(value) > 0)
+      && new Set(generationValues).size === 1;
+    const expectedStudioId = consistentAlias("Studio window", [
+      [commandRecord, "expectedStudioWindowId"],
+      [nested, "expectedStudioWindowId"],
+      [nested, "studioWindowId"],
+      [nested, "studioId"],
+      [nested, "studio_id"],
+    ], (value) => strictProtocolString(value, 160)).value;
+    const expectedStudioWindowCanonicalCount = [commandRecord, nested]
+      .filter((record) => record && Object.hasOwn(record, "expectedStudioWindowId")).length;
+    const explicitExpectedStudioWindowId = Object.hasOwn(commandRecord, "expectedStudioWindowId")
+      ? strictProtocolString(commandRecord.expectedStudioWindowId, 160)
+      : "";
+    const identityNormalizer = lifecycleMcp ? canonicalExpectedRobloxId : (value: unknown) => bounded(value, 40);
+    const expectedPlace = consistentAlias("place", [
+      [commandRecord, "expectedPlaceId"],
+      [commandRecord, "placeId"],
+      [nested, "expectedPlaceId"],
+      [nested, "placeId"],
+      [nested, "place_id"],
+    ], identityNormalizer);
+    const expectedPlaceCanonicalCount = [commandRecord, nested]
+      .filter((record) => record && Object.hasOwn(record, "expectedPlaceId")).length;
+    const topLevelPlacePresent = Object.hasOwn(commandRecord, "placeId");
+    const expectedUniverse = consistentAlias("universe", [
+      [commandRecord, "expectedUniverseId"],
+      [commandRecord, "universeId"],
+      [nested, "expectedUniverseId"],
+      [nested, "universeId"],
+      [nested, "universe_id"],
+    ], identityNormalizer);
+    const expectedUniverseCanonicalCount = [commandRecord, nested]
+      .filter((record) => record && Object.hasOwn(record, "expectedUniverseId")).length;
+    const topLevelUniversePresent = Object.hasOwn(commandRecord, "universeId");
+    const expectedSignature = consistentAlias("place signature", [
+      [commandRecord, "expectedPlaceSignature"],
+      [nested, "expectedPlaceSignature"],
+      [nested, "placeSignature"],
+      [nested, "place_signature"],
+    ], (value) => strictProtocolString(value, 128));
+    const expectedSignatureCanonicalCount = [commandRecord, nested]
+      .filter((record) => record && Object.hasOwn(record, "expectedPlaceSignature")).length;
+    const expectedPlaceId = expectedPlace.value;
+    const expectedUniverseId = expectedUniverse.value;
+    const expectedPlaceSignature = expectedSignature.value;
+
+    if (lifecycleMcp) {
+      const localIdentity = expectedPlaceId === "0" && expectedUniverseId === "0";
+      const publishedIdentity = isPublishedRobloxId(expectedPlaceId) && isPublishedRobloxId(expectedUniverseId);
+      if (targetIdSourceCount !== 2
+        || !targetId.present
+        || !targetId.value
+        || sessionIdSourceCount !== 2
+        || !sessionId.present
+        || !sessionId.value
+        || sessionId.value !== command.lease?.owner
+        || !validTargetGeneration
+        || expectedPlaceCanonicalCount !== 2
+        || !topLevelPlacePresent
+        || expectedUniverseCanonicalCount !== 2
+        || !topLevelUniversePresent
+        || expectedSignatureCanonicalCount !== 2
+        || expectedStudioWindowCanonicalCount !== 2
+        || !explicitExpectedStudioWindowId
+        || explicitExpectedStudioWindowId !== expectedStudioId
+        || !expectedPlaceSignature
+        || (!localIdentity && !publishedIdentity)
+        || !expectedStudioId) {
+        throw new ConnectorError(
+          "STUDIO_TARGET_ATTESTATION_INCOMPLETE",
+          "The Studio command is missing its immutable target attestation.",
+        );
+      }
+    }
 
     if (expectedStudioId && expectedStudioId !== this.activeStudioId) {
       throw new ConnectorError("STUDIO_TARGET_MISMATCH", "The active Studio window does not match the command target.");
     }
     assertIdentityMatch("place", expectedPlaceId, this.placeId);
     assertIdentityMatch("universe", expectedUniverseId, this.universeId);
-    assertIdentityMatch("place signature", expectedPlaceSignature, this.placeSignature);
+    if (!allowSignatureAdvance) {
+      assertIdentityMatch("place signature", expectedPlaceSignature, this.placeSignature);
+    }
   }
 }
 
@@ -374,8 +514,32 @@ function parseResult(result: ToolCallResult): unknown {
 }
 function object(value: unknown): Record<string, unknown> | null { return typeof value === "object" && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : null; }
 function bounded(value: unknown, max: number): string { return typeof value === "string" ? value.trim().slice(0, max) : typeof value === "number" ? String(value).slice(0, max) : ""; }
+function strictProtocolString(value: unknown, max: number): string {
+  if (typeof value !== "string" || value.length === 0 || value.length > max || value.trim() !== value) return "";
+  return value;
+}
 function nullableBounded(value: unknown, max: number): string | null { return bounded(value, max) || null; }
-function firstBounded(values: unknown[], max: number): string { for (const value of values) { const next = bounded(value, max); if (next) return next; } return ""; }
+function canonicalExpectedRobloxId(value: unknown): string {
+  if (value === null || value === "0") return "0";
+  if (typeof value === "string") {
+    const normalized = value.trim();
+    return /^[1-9]\d{0,39}$/.test(normalized) ? normalized : "__invalid__";
+  }
+  return "__invalid__";
+}
+function consistentAlias(
+  label: string,
+  sources: Array<[Record<string, unknown> | null, string]>,
+  normalize: (value: unknown) => string,
+): { present: boolean; value: string } {
+  const values = sources.flatMap(([record, key]) => record && Object.hasOwn(record, key)
+    ? [normalize(record[key])]
+    : []);
+  if (new Set(values).size > 1) {
+    throw new ConnectorError("STUDIO_TARGET_MISMATCH", `The Studio command contains conflicting ${label} targets.`);
+  }
+  return { present: values.length > 0, value: values[0] ?? "" };
+}
 function isPublishedRobloxId(value: string): boolean { return /^[1-9]\d{0,39}$/.test(value); }
 function assertTargetToolSucceeded(result: ToolCallResult, message: string): void { if (result.isError === true) throw new ConnectorError("STUDIO_TARGET_UNAVAILABLE", message); }
 function assertIdentityMatch(label: string, expected: string, actual: string): void {

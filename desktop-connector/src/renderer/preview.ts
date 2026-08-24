@@ -5,7 +5,7 @@ const defaults: CompanionSnapshot = {
   state: "awaiting_pairing", message: "Enter the code shown on the NexusRBX website.", updatedAt: now, autoStart: true, updateState: "idle",
   preferences: { autoStart: true, minimizeToTray: true, startMinimized: false, theme: "dark", autoReconnect: true, reconnectDelayMs: 2500, automaticUpdates: true },
   cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected", connectionStage: null, degradedReason: null, pairingError: null,
-  experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, connectorVersion: "0.2.10", mcpServerVersion: null, lastCommand: null,
+  experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, connectorVersion: "0.2.11", mcpServerVersion: null, lastCommand: null,
 };
 
 export function previewSnapshot(): CompanionSnapshot {

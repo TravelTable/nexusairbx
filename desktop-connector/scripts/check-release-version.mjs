@@ -14,9 +14,17 @@ const [desktopPackage, localPackage, versionSource] = await Promise.all([
 ]);
 
 const sourceVersion = versionSource.match(/CONNECTOR_VERSION\s*=\s*["']([^"']+)["']/)?.[1];
+const sourceProtocol = versionSource.match(/CONNECTOR_PROTOCOL_VERSION\s*=\s*["']([^"']+)["']/)?.[1];
 const expectedVersion = desktopPackage.version;
+const releaseProtocols = new Map([
+  ["0.2.11", "2026-07-17-mcp-parity"],
+]);
+const expectedProtocol = releaseProtocols.get(expectedVersion);
 if (!sourceVersion || localPackage.version !== expectedVersion || sourceVersion !== expectedVersion) {
   throw new Error(`Connector version mismatch: desktop=${expectedVersion}, local=${localPackage.version}, runtime=${sourceVersion ?? "missing"}.`);
+}
+if (!expectedProtocol || sourceProtocol !== expectedProtocol) {
+  throw new Error(`Connector protocol mismatch for ${expectedVersion}: expected=${expectedProtocol ?? "unmapped"}, runtime=${sourceProtocol ?? "missing"}.`);
 }
 
 const releaseTag = process.env.GITHUB_REF_TYPE === "tag" ? process.env.GITHUB_REF_NAME : process.env.NEXUSRBX_RELEASE_TAG;
@@ -24,4 +32,4 @@ if (releaseTag && releaseTag !== `connector-v${expectedVersion}`) {
   throw new Error(`Release tag mismatch: expected connector-v${expectedVersion}, received ${releaseTag}.`);
 }
 
-console.log(`Connector release version verified: ${expectedVersion}`);
+console.log(`Connector release version verified: ${expectedVersion} (${sourceProtocol}).`);

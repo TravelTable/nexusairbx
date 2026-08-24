@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { asConnectorError, ConnectorError, isAbortError } from "./errors.js";
 import { CommandExecutor } from "./command-executor.js";
 import {
@@ -81,6 +81,8 @@ export class NexusLocalConnector {
   #mcpInfo: McpConnectionInfo = {};
   #announcedUnavailable = false;
   #targeting: StudioTargetManager | null = null;
+  #targetObservationToken: string | null = null;
+  #identityRequestTail: Promise<void> = Promise.resolve();
   readonly #runtimeDisabledCommands = new Set<string>();
   readonly #runtimeCapabilityReasonCodes: Partial<Record<keyof typeof EMPTY_CAPABILITIES, string>> = {};
 
@@ -123,6 +125,10 @@ export class NexusLocalConnector {
   /** Runs a previously claimed session. Used by the desktop companion after securely restoring its token. */
   async runClaimed(claim: PairClaimResponse, externalSignal?: AbortSignal): Promise<void> {
     if (externalSignal?.aborted) throw abortReason(externalSignal);
+    if (validTargetObservationToken(claim.targetObservationToken)) {
+      this.#targetObservationToken = claim.targetObservationToken;
+      this.#logger.addTransientSecret(claim.targetObservationToken);
+    }
     this.emitLifecycleState("connecting");
     this.emitTelemetry({ stage: "runtime", cloudConnected: true, mcpConnected: false });
 
@@ -198,8 +204,22 @@ export class NexusLocalConnector {
       }
 
       try {
-        const command = await this.#backend.pollNext(this.#config.pollWaitMs, signal);
+        const identitySafePollWaitMs = Math.min(
+          this.#config.pollWaitMs,
+          Math.max(250, Math.min(5_000, Math.floor(this.#config.heartbeatMs / 2))),
+        );
+        const command = await this.withIdentityRequest(() => this.#backend.pollNext(
+          identitySafePollWaitMs,
+          this.#targetObservationToken,
+          signal,
+        ));
         if (command === null) {
+          // Target selection rotates the server observation token, but an empty
+          // long-poll has no response body in which to return that successor.
+          // Observe Studio after every bounded empty poll so a selection made
+          // just after a heartbeat is discovered within the activation SLA,
+          // independent of the configured heartbeat interval.
+          await this.observeTargetAfterEmptyPoll(signal);
           if (claim.pollIntervalMs > 0) await delay(Math.min(claim.pollIntervalMs, 5_000), signal);
           continue;
         }
@@ -261,27 +281,23 @@ export class NexusLocalConnector {
         catalog.perCallStudioTargeting,
       );
       this.#targeting.setIdentityProbeAvailable(catalog.executeLuau !== null);
-      await this.#targeting.refresh(signal);
-      // StudioMCP can finish its MCP initialize handshake before its Studio
-      // window registry is populated. A single immediate target query then
-      // leaves the desktop falsely degraded even though the intended place is
-      // already open. Bound the warm-up wait to initial discovery only; later
-      // heartbeat refreshes remain non-blocking when Studio is genuinely shut.
-      if (waitForInitialStudio && this.#targeting.targets.length === 0) {
-        for (let attempt = 1; attempt < INITIAL_STUDIO_DISCOVERY_ATTEMPTS; attempt += 1) {
-          await delay(INITIAL_STUDIO_DISCOVERY_RETRY_MS, signal);
-          await this.#targeting.refresh(signal);
-          if (this.#targeting.targets.length > 0) break;
-        }
-      }
     } else this.#targeting = null;
-    const targetResponse = await this.#backend.ping(this.pingPayload(true), signal);
+    let targetObservation = await this.probeAndPingBackend(true, signal, {
+      refresh: "full",
+      waitForInitialStudio,
+    });
+    // A CAS miss means this identity was captured under an obsolete token.
+    // Discard it and make a new Studio probe only after learning the current
+    // server token; never rebind cached identity to that successor token.
+    if (targetObservation.accepted === false) {
+      targetObservation = await this.probeAndPingBackend(true, signal, { refresh: "full" });
+    }
+    const targetResponse = targetObservation.response;
     this.#logger.info("Studio target selection received.", studioTargetSelectionDiagnostic(targetResponse));
     if (this.#targeting?.acceptBackendResponse(targetResponse)) {
-      await this.#targeting.refresh(signal);
       // Confirm the newly requested window and its exact identity before
       // capabilities can be registered against it.
-      await this.#backend.ping(this.pingPayload(true), signal);
+      targetObservation = await this.probeAndPingBackend(true, signal, { refresh: "full" });
     }
     const runtime = runtimeCapabilities(catalog, this.#targeting);
     this.emitTelemetry({
@@ -294,17 +310,31 @@ export class NexusLocalConnector {
         ? { degradedReason: runtime.degradedReason ?? "zero_supported_tools" }
         : {}),
     });
-    await this.#backend.registerCapabilities(
-      runtime.capabilities,
-      runtime.supportedCommands,
-      tools.map((tool) => ({
-        name: tool.name,
-        ...(tool.description === undefined ? {} : { description: tool.description }),
-      })),
-      runtime.capabilityDetails,
-      this.studioIdentityMetadata(),
-      signal,
-    );
+    if (targetObservation.accepted === false) {
+      this.#toolsDirty = true;
+      return runtime;
+    }
+    await this.withIdentityRequest(async () => {
+      const requestToken = this.#targetObservationToken;
+      // Capability registration itself carries identity. Probe while holding
+      // the same observation lock so this token can describe only that fresh
+      // Studio sample.
+      await this.#targeting?.refresh(signal);
+      const response = await this.#backend.registerCapabilities(
+        runtime.capabilities,
+        runtime.supportedCommands,
+        tools.map((tool) => ({
+          name: tool.name,
+          ...(tool.description === undefined ? {} : { description: tool.description }),
+        })),
+        runtime.capabilityDetails,
+        this.studioIdentityMetadata(this.#mcpConnected, requestToken),
+        signal,
+      );
+      if (this.acceptTargetObservationResponse(response, requestToken) === false) {
+        this.#toolsDirty = true;
+      }
+    });
     await this.refreshExperienceSummary(tools, signal);
     return runtime;
   }
@@ -323,11 +353,13 @@ export class NexusLocalConnector {
   }
 
   private async executeAndAcknowledge(command: StudioCommand, signal: AbortSignal): Promise<void> {
-    if (hasLifecycleMarkers(command)) {
-      await this.executeReliableAndAcknowledge(requireReliableCommand(command), signal);
-      return;
+    if (!hasLifecycleMarkers(command)) {
+      throw new ConnectorError(
+        "CONNECTOR_LIFECYCLE_UNSUPPORTED",
+        "NexusRBX sent an unversioned Studio command envelope.",
+      );
     }
-    await this.executeLegacyAndAcknowledge(command, signal);
+    await this.executeReliableAndAcknowledge(requireReliableCommand(command), signal);
   }
 
   private async executeLegacyAndAcknowledge(command: StudioCommand, signal: AbortSignal): Promise<void> {
@@ -338,14 +370,21 @@ export class NexusLocalConnector {
     try {
       result = TARGET_BOUND_COMMANDS.has(command.type)
         ? await this.requireTargeting().withMutationTarget(command, () => executor.execute(command, signal), signal)
-        : await executor.execute(command, signal);
+        : hasExpectedStudioWindow(command)
+          ? await this.requireTargeting().withCommandTarget(command, () => executor.execute(command, signal), signal)
+          : await executor.execute(command, signal);
     } catch (error) {
       result = failureResult(command, asConnectorError(error));
     }
     result.duration = Date.now() - startedAt;
     this.recordRuntimeCapabilityFailure(command, result);
     const success = result.success === true && (!MUTATING_COMMANDS.has(command.type) || result.verified === true);
-    await this.#backend.acknowledge(command.id, success ? "succeeded" : "failed", result, signal);
+    await this.acknowledgeWithCurrentObservation(
+      command.id,
+      success ? "succeeded" : "failed",
+      result,
+      signal,
+    );
     const completedAt = Date.now();
     this.emitTelemetry({ lastActivityAt: completedAt, lastCommand: { name: command.type, status: success ? "succeeded" : "failed", at: completedAt } });
     this.#logger.info(success ? "Studio command completed." : "Studio command failed safely.", {
@@ -359,6 +398,13 @@ export class NexusLocalConnector {
     command: ReliableStudioCommand,
     signal: AbortSignal,
   ): Promise<void> {
+    await this.withIdentityRequest(() => this.executeReliableAndAcknowledgeLocked(command, signal));
+  }
+
+  private async executeReliableAndAcknowledgeLocked(
+    command: ReliableStudioCommand,
+    signal: AbortSignal,
+  ): Promise<void> {
     const executor = this.#executor;
     if (!executor) {
       throw new ConnectorError("MCP_NOT_CONNECTED", "Roblox Studio MCP is not connected.", { retryable: true });
@@ -369,7 +415,7 @@ export class NexusLocalConnector {
       existing.commandType !== command.type ||
       existing.semanticInputHash !== command.semanticInputHash
     )) {
-      await this.acknowledgeReliableTerminal(
+      await this.acknowledgeReliableTerminalAlreadyLocked(
         command,
         "outcome_unknown",
         outcomeUnknownResult(
@@ -385,16 +431,17 @@ export class NexusLocalConnector {
 
     if (existing?.stage === "terminal" && existing.terminalStatus && existing.result) {
       if (existing.receiptId && existing.sessionId) {
-        await this.acknowledgeJournaledTerminal(existing, signal);
+        await this.acknowledgeJournaledTerminalAlreadyLocked(existing, signal);
       } else {
         // Compatibility for lifecycle-v2 journals written before durable receipt
         // identity was introduced.
-        await this.acknowledgeReliableTerminal(
-          command,
-          existing.terminalStatus,
-          attachReliableMetadata(command, existing.result),
-          signal,
+        const receiptId = deterministicReceiptId(command, existing.terminalStatus);
+        const migrated = await this.#commandJournal.ensureTerminalReceipt(
+          command.id,
+          receiptId,
+          attachReliableMetadata(command, { ...existing.result, receiptId }),
         );
+        await this.acknowledgeJournaledTerminalAlreadyLocked(migrated, signal);
       }
       return;
     }
@@ -406,18 +453,17 @@ export class NexusLocalConnector {
         "CONNECTOR_RESTART_AFTER_COMMAND_START",
         "The connector restarted after command execution began, so the Studio outcome requires reconciliation.",
       );
-      const terminal = await this.persistReliableTerminal(command, "outcome_unknown", result);
-      await this.acknowledgeJournaledTerminal(terminal, signal);
+      await this.persistAndAcknowledgeReliableTerminalAlreadyLocked(command, "outcome_unknown", result, signal);
       return;
     }
 
     await this.#commandJournal.put(journalEntry(command, "received"));
     const receivedReceipt = reliableReceipt(command, "received");
-    await this.#backend.acknowledge(command.id, "received", receivedReceipt, signal);
+    await this.acknowledgeAlreadyLocked(command.id, "received", receivedReceipt, signal);
 
     await this.#commandJournal.put(journalEntry(command, "started"));
     const startedReceipt = reliableReceipt(command, "started");
-    await this.#backend.acknowledge(command.id, "started", startedReceipt, signal);
+    await this.acknowledgeAlreadyLocked(command.id, "started", startedReceipt, signal);
 
     const executionAbort = new AbortController();
     const executionSignal = AbortSignal.any([signal, executionAbort.signal]);
@@ -435,9 +481,13 @@ export class NexusLocalConnector {
       };
       result = TARGET_BOUND_COMMANDS.has(command.type)
         ? await this.requireTargeting().withMutationTarget(command, execute, executionSignal)
-        : await execute();
+        : command.connectionType === "mcp_local"
+          ? await this.requireTargeting().withCommandTarget(command, execute, executionSignal)
+          : await execute();
+      if (result.success !== true && NO_SIDE_EFFECT_FAILURE_CODES.has(errorCode(result))) {
+        result = { ...result, executionStarted: false, sideEffectStarted: false };
+      }
       result.duration = Date.now() - startedAt;
-      this.recordRuntimeCapabilityFailure(command, result);
       if (result.success === true && (!MUTATING_COMMANDS.has(command.type) || result.verified === true)) {
         terminalStatus = "succeeded";
       } else if (MUTATING_COMMANDS.has(command.type) && mutationOutcomeMayBeUnknown(result)) {
@@ -460,7 +510,7 @@ export class NexusLocalConnector {
         : "failed";
       result = terminalStatus === "outcome_unknown"
         ? outcomeUnknownResult(command, undefined, connectorError.code, connectorError.message)
-        : failureResult(command, connectorError);
+        : failureResult(command, connectorError, { noSideEffect: !executorInvoked });
       result.duration = Date.now() - startedAt;
     } finally {
       await leaseHeartbeat.stop();
@@ -483,8 +533,12 @@ export class NexusLocalConnector {
       result.duration = Date.now() - startedAt;
     }
 
-    const terminal = await this.persistReliableTerminal(command, terminalStatus, result);
-    await this.acknowledgeJournaledTerminal(terminal, signal);
+    // Runtime capability failures normally surface as thrown executor errors,
+    // so publish the suppression after both success and failure paths have
+    // produced their canonical result.
+    this.recordRuntimeCapabilityFailure(command, result);
+
+    await this.persistAndAcknowledgeReliableTerminalAlreadyLocked(command, terminalStatus, result, signal);
   }
 
   private startCommandLeaseHeartbeat(
@@ -501,7 +555,7 @@ export class NexusLocalConnector {
     const completion = (async () => {
       while (!heartbeatSignal.aborted) {
         await delay(intervalMs, heartbeatSignal);
-        await this.#backend.acknowledge(command.id, "started", receipt, heartbeatSignal);
+        await this.acknowledgeAlreadyLocked(command.id, "started", receipt, heartbeatSignal);
       }
     })().catch((error: unknown) => {
       if (heartbeatSignal.aborted && isAbortLike(error)) return;
@@ -543,6 +597,20 @@ export class NexusLocalConnector {
     signal: AbortSignal,
   ): Promise<void> {
     const pending = await this.#commandJournal.listPendingTerminalReceipts(sessionId);
+    if (pending.length > 0 && !this.#targetObservationToken) {
+      // Desktop restores the bearer but deliberately does not persist the
+      // rotating target-observation credential. Learn the current control
+      // token with a liveness-only request before replaying durable receipts;
+      // no cached Studio identity is rebound by this migration request.
+      await this.probeAndPingBackend(false, signal, { refresh: "none" });
+      if (!this.#targetObservationToken) {
+        throw new ConnectorError(
+          "TARGET_OBSERVATION_REQUIRED",
+          "The current target-observation credential is required before replaying a saved command receipt.",
+          { retryable: true },
+        );
+      }
+    }
     for (const entry of pending) {
       if (signal.aborted) throw abortReason(signal);
       try {
@@ -564,6 +632,13 @@ export class NexusLocalConnector {
     entry: CommandJournalEntry,
     signal: AbortSignal,
   ): Promise<void> {
+    await this.withIdentityRequest(() => this.acknowledgeJournaledTerminalAlreadyLocked(entry, signal));
+  }
+
+  private async acknowledgeJournaledTerminalAlreadyLocked(
+    entry: CommandJournalEntry,
+    signal: AbortSignal,
+  ): Promise<void> {
     if (
       entry.stage !== "terminal" ||
       !entry.terminalStatus ||
@@ -575,21 +650,21 @@ export class NexusLocalConnector {
         "A saved terminal Studio command receipt is incomplete.",
       );
     }
-    await this.#backend.acknowledge(
-      entry.commandId,
-      entry.terminalStatus,
-      entry.result,
-      signal,
-    );
+    const terminalStatus = entry.terminalStatus;
+    const terminalResult = entry.result;
+    const receiptId = entry.receiptId;
+    const commandId = entry.commandId;
+    const commandType = entry.commandType;
+    await this.acknowledgeAlreadyLocked(commandId, terminalStatus, terminalResult, signal);
     await this.#commandJournal.markTerminalReceiptAcknowledged(
-      entry.commandId,
-      entry.receiptId,
+      commandId,
+      receiptId,
     );
     this.recordReliableTerminalAcknowledged(
-      entry.commandId,
-      entry.commandType,
-      entry.terminalStatus,
-      entry.result,
+      commandId,
+      commandType,
+      terminalStatus,
+      terminalResult,
     );
   }
 
@@ -599,8 +674,32 @@ export class NexusLocalConnector {
     result: JsonObject,
     signal: AbortSignal,
   ): Promise<void> {
-    const finalResult = attachReliableMetadata(command, result);
-    await this.#backend.acknowledge(command.id, status, finalResult, signal);
+    await this.withIdentityRequest(() => this.acknowledgeReliableTerminalAlreadyLocked(
+      command,
+      status,
+      result,
+      signal,
+    ));
+  }
+
+  private async acknowledgeReliableTerminalAlreadyLocked(
+    command: ReliableStudioCommand,
+    status: TerminalCommandReceiptStatus,
+    result: JsonObject,
+    signal: AbortSignal,
+  ): Promise<void> {
+    const receiptResult = typeof result.receiptId === "string" && result.receiptId.trim()
+      ? result
+      : {
+          ...result,
+          receiptId: deterministicReceiptId(command, status),
+        };
+    const finalResult = await this.acknowledgeAlreadyLocked(
+      command.id,
+      status,
+      attachReliableMetadata(command, receiptResult),
+      signal,
+    );
     this.recordReliableTerminalAcknowledged(command.id, command.type, status, finalResult);
   }
 
@@ -628,17 +727,11 @@ export class NexusLocalConnector {
     while (!signal.aborted) {
       await delay(this.#config.heartbeatMs, signal);
       try {
-        const identityKey = this.#targeting?.identityKey() ?? "";
-        let targetRefreshError: ConnectorError | null = null;
-        if (this.#mcpConnected) {
-          try {
-            await this.#targeting?.refreshIfIdle(signal);
-          } catch (error) {
-            targetRefreshError = asConnectorError(error, "STUDIO_TARGET_UNAVAILABLE");
-          }
-        }
-        if ((this.#targeting?.identityKey() ?? "") !== identityKey || targetRefreshError) this.#toolsDirty = true;
-        const response = await this.#backend.ping(this.pingPayload(this.#mcpConnected), signal);
+        const observation = await this.probeAndPingBackend(this.#mcpConnected, signal, {
+          refresh: this.#mcpConnected ? "idle" : "none",
+        });
+        const { response, targetRefreshError } = observation;
+        if (observation.identityChanged || targetRefreshError || observation.accepted === false) this.#toolsDirty = true;
         if (this.#targeting?.acceptBackendResponse(response)) this.#toolsDirty = true;
         this.emitTelemetry({ cloudConnected: true, lastHeartbeatAt: Date.now() });
         if (targetRefreshError) {
@@ -656,7 +749,204 @@ export class NexusLocalConnector {
     }
   }
 
-  private pingPayload(available: boolean): JsonObject {
+  private async withIdentityRequest<T>(operation: () => Promise<T>): Promise<T> {
+    let release: (() => void) | undefined;
+    const previous = this.#identityRequestTail;
+    this.#identityRequestTail = new Promise<void>((resolve) => { release = resolve; });
+    await previous;
+    try {
+      return await operation();
+    } finally {
+      release?.();
+    }
+  }
+
+  private async observeTargetAfterEmptyPoll(signal: AbortSignal): Promise<void> {
+    let observation = await this.probeAndPingBackend(this.#mcpConnected, signal, {
+      refresh: this.#mcpConnected ? "full" : "none",
+    });
+    if (this.#targeting?.acceptBackendResponse(observation.response)) {
+      this.#toolsDirty = true;
+    }
+    // A stale poll token means the first Studio sample was captured before the
+    // website selection response was learned. Discard it and probe again using
+    // only the successor token and desired window returned by the server.
+    if (observation.accepted === false) {
+      observation = await this.probeAndPingBackend(this.#mcpConnected, signal, {
+        refresh: this.#mcpConnected ? "full" : "none",
+      });
+      if (this.#targeting?.acceptBackendResponse(observation.response)) {
+        this.#toolsDirty = true;
+      }
+    }
+    if (observation.identityChanged
+      || observation.targetRefreshError
+      || observation.accepted === false) {
+      this.#toolsDirty = true;
+    }
+  }
+
+  private acceptTargetObservationResponse(response: JsonObject, requestToken: string | null): boolean | null {
+    const responseToken = targetObservationTokenFromResponse(response);
+    const accepted = targetObservationAcceptedFromResponse(response);
+    if (responseToken && (
+      !this.#targetObservationToken
+      || this.#targetObservationToken === requestToken
+      || this.#targetObservationToken === responseToken
+    )) {
+      this.#targetObservationToken = responseToken;
+      this.#logger.addTransientSecret(responseToken);
+    }
+    if (capabilityRegistrationRequiredFromResponse(response)) {
+      // A backend hot-deploy can introduce a stronger target/capability
+      // binding after this 0.2.11 process already registered with the previous
+      // backend. Re-publish immediately without requiring a reconnect or
+      // failing already-queued work as unsupported.
+      this.#toolsDirty = true;
+    }
+    return accepted;
+  }
+
+  private async probeAndPingBackend(
+    available: boolean,
+    signal?: AbortSignal,
+    options: { refresh?: "none" | "idle" | "full"; waitForInitialStudio?: boolean } = {},
+  ): Promise<{
+    response: JsonObject;
+    accepted: boolean | null;
+    identityChanged: boolean;
+    targetRefreshError: ConnectorError | null;
+  }> {
+    return this.withIdentityRequest(async () => {
+      const requestToken = this.#targetObservationToken;
+      const identityKey = this.#targeting?.identityKey() ?? "";
+      let targetRefreshError: ConnectorError | null = null;
+      let identityObserved = options.refresh !== "idle";
+      if (available && this.#targeting && options.refresh !== "none") {
+        try {
+          if (options.refresh === "idle") {
+            identityObserved = await this.#targeting.refreshIfIdle(signal);
+          } else {
+            await this.#targeting.refresh(signal);
+            identityObserved = true;
+            // StudioMCP can finish its initialize handshake before the window
+            // registry is populated. Keep every retry inside this same token
+            // observation lock.
+            if (options.waitForInitialStudio && this.#targeting.targets.length === 0) {
+              for (let attempt = 1; attempt < INITIAL_STUDIO_DISCOVERY_ATTEMPTS; attempt += 1) {
+                await delay(INITIAL_STUDIO_DISCOVERY_RETRY_MS, signal);
+                await this.#targeting.refresh(signal);
+                if (this.#targeting.targets.length > 0) break;
+              }
+            }
+          }
+        } catch (error) {
+          targetRefreshError = asConnectorError(error, "STUDIO_TARGET_UNAVAILABLE");
+          identityObserved = true;
+        }
+      }
+      const response = await this.#backend.ping(
+        identityObserved
+          ? this.pingPayload(available, requestToken)
+          : this.livenessPingPayload(available, requestToken),
+        signal,
+      );
+      const accepted = this.acceptTargetObservationResponse(response, requestToken);
+      return {
+        response,
+        accepted,
+        identityChanged: (this.#targeting?.identityKey() ?? "") !== identityKey,
+        targetRefreshError,
+      };
+    });
+  }
+
+  private async pingBackend(available: boolean, signal?: AbortSignal): Promise<JsonObject> {
+    return (await this.probeAndPingBackend(available, signal, { refresh: "none" })).response;
+  }
+
+  private async acknowledgeWithCurrentObservation(
+    commandId: string,
+    status: CommandReceiptStatus,
+    result: JsonObject,
+    signal?: AbortSignal,
+  ): Promise<JsonObject> {
+    return this.withIdentityRequest(() => this.acknowledgeAlreadyLocked(
+      commandId,
+      status,
+      result,
+      signal,
+    ));
+  }
+
+  private async acknowledgeAlreadyLocked(
+    commandId: string,
+    status: CommandReceiptStatus,
+    result: JsonObject,
+    signal?: AbortSignal,
+  ): Promise<JsonObject> {
+    const requestToken = this.#targetObservationToken;
+    const response = await this.#backend.acknowledge(commandId, status, result, requestToken, signal);
+    this.acceptTargetObservationResponse(response, requestToken);
+    return result;
+  }
+
+  private async persistAndAcknowledgeReliableTerminalAlreadyLocked(
+    command: ReliableStudioCommand,
+    status: TerminalCommandReceiptStatus,
+    result: JsonObject,
+    signal: AbortSignal,
+  ): Promise<void> {
+      const { targetAttestation: _discardedPreLockAttestation, ...resultWithoutAttestation } = result;
+      let terminalResult = resultWithoutAttestation;
+      let terminalStatus = status;
+      if (command.connectionType === "mcp_local"
+        && MUTATING_COMMANDS.has(command.type)
+        && result.success === true
+        && result.verified === true) {
+        try {
+          terminalResult = {
+            ...result,
+            targetAttestation: await this.requireTargeting().attestCommandTarget(command, signal),
+          };
+        } catch (error) {
+          terminalStatus = "outcome_unknown";
+          terminalResult = outcomeUnknownResult(
+            command,
+            resultWithoutAttestation,
+            "POST_MUTATION_TARGET_ATTESTATION_FAILED",
+            "The Studio mutation completed, but its post-write target identity could not be attested.",
+          );
+          this.#logger.warn("Could not refresh the post-mutation Studio target attestation.", {
+            commandId: command.id,
+            operation: command.type,
+            code: asConnectorError(error).code,
+          });
+        }
+      }
+      const terminal = await this.persistReliableTerminal(command, terminalStatus, terminalResult);
+      if (!terminal.terminalStatus || !terminal.result || !terminal.receiptId) {
+        throw new ConnectorError("COMMAND_JOURNAL_CORRUPT", "The terminal Studio receipt could not be persisted.");
+      }
+      await this.acknowledgeAlreadyLocked(
+        terminal.commandId,
+        terminal.terminalStatus,
+        terminal.result,
+        signal,
+      );
+      await this.#commandJournal.markTerminalReceiptAcknowledged(
+        terminal.commandId,
+        terminal.receiptId,
+      );
+      this.recordReliableTerminalAcknowledged(
+        terminal.commandId,
+        terminal.commandType,
+        terminal.terminalStatus,
+        terminal.result,
+      );
+  }
+
+  private pingPayload(available: boolean, targetObservationToken = this.#targetObservationToken): JsonObject {
     return {
       mcpServerAvailable: available,
       connectorVersion: this.#connectorVersion,
@@ -664,14 +954,30 @@ export class NexusLocalConnector {
       ...(available && this.#mcpInfo.serverVersion !== undefined
         ? { mcpServerVersion: this.#mcpInfo.serverVersion }
         : {}),
-      ...this.studioIdentityMetadata(available),
+      ...this.studioIdentityMetadata(available, targetObservationToken),
     };
   }
 
-  private studioIdentityMetadata(available = this.#mcpConnected): StudioIdentityMetadata {
-    return available && this.#targeting
+  private livenessPingPayload(
+    available: boolean,
+    targetObservationToken = this.#targetObservationToken,
+  ): JsonObject {
+    return {
+      mcpServerAvailable: available,
+      connectorVersion: this.#connectorVersion,
+      connectorProtocolVersion: CONNECTOR_PROTOCOL_VERSION,
+      targetObservationToken,
+    };
+  }
+
+  private studioIdentityMetadata(
+    available = this.#mcpConnected,
+    targetObservationToken = this.#targetObservationToken,
+  ): StudioIdentityMetadata {
+    const identity = available && this.#targeting
       ? this.#targeting.metadata()
       : unavailableStudioIdentityMetadata();
+    return { ...identity, targetObservationToken };
   }
 
   private async announceUnavailable(): Promise<void> {
@@ -679,14 +985,18 @@ export class NexusLocalConnector {
     this.emitLifecycleState("studio_mcp_unavailable");
     this.emitTelemetry({ mcpConnected: false, degradedReason: "mcp_initialization_failed" });
     try {
-      await this.#backend.registerCapabilities(
-        { ...EMPTY_CAPABILITIES },
-        [],
-        [],
-        new ToolCatalog([]).capabilityDetails,
-        unavailableStudioIdentityMetadata(),
-      );
-      await this.#backend.ping(this.pingPayload(false));
+      await this.withIdentityRequest(async () => {
+        const requestToken = this.#targetObservationToken;
+        const response = await this.#backend.registerCapabilities(
+          { ...EMPTY_CAPABILITIES },
+          [],
+          [],
+          new ToolCatalog([]).capabilityDetails,
+          { ...unavailableStudioIdentityMetadata(), targetObservationToken: requestToken },
+        );
+        this.acceptTargetObservationResponse(response, requestToken);
+      });
+      await this.pingBackend(false);
       this.#announcedUnavailable = true;
     } catch (error) {
       this.#logger.debug("Could not publish degraded connector state.", { code: asConnectorError(error).code });
@@ -716,7 +1026,7 @@ export class NexusLocalConnector {
 
   private async shutdown(): Promise<void> {
     try {
-      await this.#backend.ping(this.pingPayload(false), AbortSignal.timeout(2_000));
+      await this.pingBackend(false, AbortSignal.timeout(2_000));
     } catch {
       // The process may be offline or the session may already be revoked.
     }
@@ -751,6 +1061,17 @@ export class NexusLocalConnector {
     }
     return this.#targeting;
   }
+}
+
+function deterministicReceiptId(
+  command: ReliableStudioCommand,
+  status: TerminalCommandReceiptStatus,
+): string {
+  const digest = createHash("sha256")
+    .update([command.id, command.semanticInputHash, status].join("\u001f"))
+    .digest("hex")
+    .slice(0, 32);
+  return `receipt_${digest}`;
 }
 
 interface ReliableStudioCommand extends StudioCommand {
@@ -791,6 +1112,10 @@ const SAFE_PRE_MUTATION_FAILURE_CODES = new Set([
   "PATH_INVALID",
   "PATH_NOT_ALLOWED",
   "PLAYTEST_CONFIRMATION_REQUIRED",
+  // The executor emits this only after confirming Studio remained in or
+  // returned to Edit mode. An unverified cleanup uses PLAYTEST_CLEANUP_FAILED
+  // and remains outcome_unknown.
+  "PLAYTEST_CONTROL_UNAVAILABLE",
   "ROUTINE_UNAVAILABLE",
   "SCRIPT_ALREADY_EXISTS",
   "SCRIPT_NOT_FOUND",
@@ -821,6 +1146,15 @@ const SAFE_PRE_MUTATION_FAILURE_CODES = new Set([
   "BATCH_PATH_OVERLAP",
 ]);
 
+const NO_SIDE_EFFECT_FAILURE_CODES = new Set(
+  [...SAFE_PRE_MUTATION_FAILURE_CODES].filter((code) => ![
+    "APPLY_ROLLED_BACK",
+    "BATCH_ROLLED_BACK",
+    "MUTATION_ROLLED_BACK",
+    "SNAPSHOT_RESTORE_FAILED",
+  ].includes(code)),
+);
+
 function hasLifecycleMarkers(command: StudioCommand): boolean {
   return LIFECYCLE_MARKERS.some((key) => Object.hasOwn(command, key));
 }
@@ -839,6 +1173,7 @@ function requireReliableCommand(command: StudioCommand): ReliableStudioCommand {
     command.commandId !== command.id ||
     command.status !== "leased" ||
     command.operationOutcome !== "reserved" ||
+    command.connectionType !== "mcp_local" ||
     typeof command.id !== "string" ||
     command.id.trim().length === 0 ||
     typeof command.type !== "string" ||
@@ -930,7 +1265,11 @@ function attachReliableMetadata(command: ReliableStudioCommand, result: JsonObje
   };
 }
 
-function failureResult(command: StudioCommand, error: ConnectorError): JsonObject {
+function failureResult(
+  command: StudioCommand,
+  error: ConnectorError,
+  { noSideEffect = false }: { noSideEffect?: boolean } = {},
+): JsonObject {
   return {
     success: false,
     ok: false,
@@ -938,6 +1277,7 @@ function failureResult(command: StudioCommand, error: ConnectorError): JsonObjec
     operation: command.type,
     retryable: error.retryable,
     verified: false,
+    ...(noSideEffect ? { executionStarted: false, sideEffectStarted: false } : {}),
     error: {
       code: error.code,
       message: error.message.slice(0, 1_024),
@@ -1030,6 +1370,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function hasExpectedStudioWindow(command: StudioCommand): boolean {
+  if (typeof command.expectedStudioWindowId === "string" && command.expectedStudioWindowId.trim()) return true;
+  const target = isRecord(command.studioTarget) ? command.studioTarget : null;
+  return Boolean(target && [
+    target.expectedStudioWindowId,
+    target.studioWindowId,
+    target.studioId,
+    target.studio_id,
+  ].some((value) => typeof value === "string" && value.trim()));
+}
+
 function studioTargetSelectionDiagnostic(value: JsonObject): JsonObject {
   const session = isRecord(value.session) ? value.session : {};
   const studio = isRecord(session.studio) ? session.studio : {};
@@ -1087,6 +1438,34 @@ function unavailableStudioIdentityMetadata(): StudioIdentityMetadata {
     targetIdentityComplete: false,
     targetConfirmedAt: null,
   };
+}
+
+function validTargetObservationToken(value: unknown): value is string {
+  return typeof value === "string" && /^[A-Za-z0-9_-]{16,128}$/.test(value.trim());
+}
+
+function targetObservationTokenFromResponse(response: JsonObject): string | null {
+  const direct = response.targetObservationToken;
+  if (validTargetObservationToken(direct)) return direct.trim();
+  const session = response.session;
+  if (isRecord(session) && validTargetObservationToken(session.targetObservationToken)) {
+    return session.targetObservationToken.trim();
+  }
+  return null;
+}
+
+function targetObservationAcceptedFromResponse(response: JsonObject): boolean | null {
+  if (typeof response.targetObservationAccepted === "boolean") return response.targetObservationAccepted;
+  const session = response.session;
+  return isRecord(session) && typeof session.targetObservationAccepted === "boolean"
+    ? session.targetObservationAccepted
+    : null;
+}
+
+function capabilityRegistrationRequiredFromResponse(response: JsonObject): boolean {
+  if (response.capabilityRegistrationRequired === true) return true;
+  const session = response.session;
+  return isRecord(session) && session.capabilityRegistrationRequired === true;
 }
 
 function abortReason(signal: AbortSignal): unknown {

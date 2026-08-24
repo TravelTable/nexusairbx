@@ -4,6 +4,7 @@ import { NexusBackendClient } from "../src/backend-client.js";
 import { ConnectorError } from "../src/errors.js";
 import type { Logger } from "../src/logger.js";
 import { ToolCatalog } from "../src/tool-catalog.js";
+import { CONNECTOR_PROTOCOL_VERSION } from "../src/version.js";
 
 interface CapturedRequest {
   url: string;
@@ -12,12 +13,14 @@ interface CapturedRequest {
 
 class TestLogger implements Logger {
   readonly secrets: string[] = [];
+  readonly transientSecrets: string[] = [];
   readonly warnings: unknown[] = [];
   info(): void {}
   warn(_message: string, details?: unknown): void { this.warnings.push(details); }
   error(): void {}
   debug(): void {}
   addSecret(secret: string): void { this.secrets.push(secret); }
+  addTransientSecret(secret: string): void { this.transientSecrets.push(secret); }
 }
 
 function response(value: unknown, status = 200): Response {
@@ -40,16 +43,17 @@ function makeFetch(queue: Array<Response | Error>, calls: CapturedRequest[]): ty
 
 test("backend client claims, authenticates, pings, registers, polls, and acknowledges", async () => {
   const token = "nsmcp_session123_secret.value";
+  const observationToken = "observation_token_fixture_123456";
   const calls: CapturedRequest[] = [];
   const logger = new TestLogger();
   const client = new NexusBackendClient({
     apiUrl: "https://api.example.test",
-    connectorVersion: "0.1.0",
+    connectorVersion: "0.2.11",
     requestTimeoutMs: 1_000,
     logger,
     fetch: makeFetch(
       [
-        response({ token, sessionId: "session123", userId: "user1", pollIntervalMs: 25, expiresInMs: 60_000 }),
+        response({ token, targetObservationToken: observationToken, sessionId: "session123", userId: "user1", pollIntervalMs: 25, expiresInMs: 60_000 }),
         response({ ok: true }),
         response({ ok: true }),
         response({}, 204),
@@ -62,10 +66,11 @@ test("backend client claims, authenticates, pings, registers, polls, and acknowl
   const claim = await client.claimPairing("ab-cd");
   assert.equal(claim.token, token);
   assert.deepEqual(logger.secrets, [token]);
+  assert.deepEqual(logger.transientSecrets, [observationToken]);
   assert.equal((calls[0]?.init.headers as Record<string, string>).Authorization, undefined);
   assert.deepEqual(JSON.parse(String(calls[0]?.init.body)), {
     code: "AB-CD",
-    connector: { connectorVersion: "0.1.0", platform: process.platform, nodeVersion: process.version },
+    connector: { connectorVersion: "0.2.11", platform: process.platform, nodeVersion: process.version },
   });
 
   await client.ping({ mcpServerAvailable: true });
@@ -102,16 +107,20 @@ test("backend client claims, authenticates, pings, registers, polls, and acknowl
       placeSignature: "a1b2c3d4",
       targetIdentityComplete: true,
       targetConfirmedAt: 1_700_000_000_000,
+      targetObservationToken: observationToken,
     },
   );
-  assert.equal(await client.pollNext(20_000), null);
+  assert.equal(await client.pollNext(20_000, observationToken), null);
   await client.acknowledge("command/id", "failed", {
     success: false,
     error: { code: "MCP_TOOL_UNAVAILABLE", message: "unsupported" },
-  });
+  }, observationToken);
 
   for (const request of calls.slice(1)) {
-    assert.equal((request.init.headers as Record<string, string>).Authorization, `Bearer ${token}`);
+    const headers = request.init.headers as Record<string, string>;
+    assert.equal(headers.Authorization, `Bearer ${token}`);
+    assert.equal(headers["X-NexusRBX-Connector-Version"], "0.2.11");
+    assert.equal(headers["X-NexusRBX-Connector-Protocol"], CONNECTOR_PROTOCOL_VERSION);
   }
   assert.match(calls[3]?.url ?? "", /waitMs=20000$/);
   assert.match(calls[4]?.url ?? "", /commands\/command%2Fid\/ack$/);
@@ -135,9 +144,15 @@ test("backend client claims, authenticates, pings, registers, polls, and acknowl
     targetIdentityComplete: true,
   });
   assert.equal(registration.studioTargets[0].placeSignature, "a1b2c3d4");
+  assert.equal(registration.connectorVersion, "0.2.11");
+  assert.equal(registration.connectorProtocolVersion, CONNECTOR_PROTOCOL_VERSION);
+  assert.equal((calls[2]?.init.headers as Record<string, string>)["X-NexusRBX-Target-Observation"], observationToken);
+  assert.equal((calls[3]?.init.headers as Record<string, string>)["X-NexusRBX-Target-Observation"], observationToken);
+  assert.equal((calls[4]?.init.headers as Record<string, string>)["X-NexusRBX-Target-Observation"], observationToken);
   const ack = JSON.parse(String(calls[4]?.init.body));
   assert.equal(ack.status, "failed");
   assert.equal(ack.error.code, "MCP_TOOL_UNAVAILABLE");
+  assert.equal(ack.targetObservationToken, observationToken);
 
   client.clearToken();
   await assert.rejects(
@@ -252,6 +267,7 @@ test("backend client preserves a complete lifecycle-v2 command and sends outcome
     id: "command-v2",
     commandId: "command-v2",
     type: "write_script",
+    connectionType: "mcp_local",
     payload: {
       path: "game.ServerScriptService.Main",
       source: "print('new')",
@@ -260,6 +276,8 @@ test("backend client preserves a complete lifecycle-v2 command and sends outcome
     taskId: "task-1",
     runId: "run-1",
     stepId: "step-1",
+    expectedStudioWindowId: "studio-window-1",
+    studioTarget: { expectedStudioWindowId: "studio-window-1" },
     lifecycleVersion: 2,
     semanticInputHash: "A".repeat(64),
     status: "leased",
@@ -296,10 +314,13 @@ test("backend client preserves a complete lifecycle-v2 command and sends outcome
     id: "command-v2",
     commandId: "command-v2",
     type: "write_script",
+    connectionType: "mcp_local",
     payload: rawCommand.payload,
     taskId: "task-1",
     runId: "run-1",
     stepId: "step-1",
+    expectedStudioWindowId: "studio-window-1",
+    studioTarget: { expectedStudioWindowId: "studio-window-1" },
     lifecycleVersion: 2,
     semanticInputHash: "a".repeat(64),
     status: "leased",
@@ -319,15 +340,16 @@ test("backend client preserves a complete lifecycle-v2 command and sends outcome
     operationOutcome: "outcome_unknown",
     error: { code: "MCP_REQUEST_TIMEOUT", message: "Reconcile before retrying." },
   };
-  await client.acknowledge("command-v2", "outcome_unknown", result);
+  await client.acknowledge("command-v2", "outcome_unknown", result, "observation_token_control_1");
   assert.deepEqual(JSON.parse(String(calls[2]?.init.body)), {
     status: "outcome_unknown",
     error: result.error,
     result,
+    targetObservationToken: "observation_token_control_1",
   });
 });
 
-test("backend client keeps marker-free legacy commands and rejects partial or unsupported lifecycle envelopes", async () => {
+test("backend client rejects unversioned, partial, and unsupported lifecycle envelopes", async () => {
   const client = new NexusBackendClient({
     apiUrl: "https://api.example.test",
     connectorVersion: "0.1.0",
@@ -368,11 +390,11 @@ test("backend client keeps marker-free legacy commands and rejects partial or un
   });
 
   await client.claimPairing("ABCD");
-  assert.deepEqual(await client.pollNext(1_000), {
-    id: "legacy-command",
-    type: "read_script",
-    payload: { path: "game.ServerScriptService.Main" },
-  });
+  await assert.rejects(
+    client.pollNext(1_000),
+    (error: unknown) => error instanceof ConnectorError &&
+      error.code === "CONNECTOR_LIFECYCLE_UNSUPPORTED",
+  );
   await assert.rejects(
     client.pollNext(1_000),
     (error: unknown) => error instanceof ConnectorError &&
@@ -400,7 +422,7 @@ test("oversized request bodies fail locally without a network retry", async () =
   await client.claimPairing("ABCD");
 
   await assert.rejects(
-    client.acknowledge("command-1", "succeeded", { success: true, output: "x".repeat(1_800_000) }),
+    client.acknowledge("command-1", "succeeded", { success: true, output: "x".repeat(1_800_000) }, null),
     (error: unknown) => error instanceof ConnectorError && error.code === "BACKEND_REQUEST_TOO_LARGE",
   );
   assert.equal(calls.length, 1);

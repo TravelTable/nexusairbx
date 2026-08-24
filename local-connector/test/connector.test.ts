@@ -87,6 +87,7 @@ const logger: Logger = {
   error() {},
   debug() {},
   addSecret() {},
+  addTransientSecret() {},
 };
 
 const config: ConnectorConfig = {
@@ -184,7 +185,8 @@ class FakeBackend implements BackendClientLike {
   pings: JsonObject[] = [];
   registrations: Registration[] = [];
   polls = 0;
-  acknowledgements: Array<{ id: string; status: CommandReceiptStatus; result: JsonObject }> = [];
+  pollWaits: number[] = [];
+  acknowledgements: Array<{ id: string; status: CommandReceiptStatus; result: JsonObject; targetObservationToken: string | null }> = [];
   clearCalls = 0;
   registrationFailures = 0;
   abortOnTerminal = true;
@@ -205,7 +207,14 @@ class FakeBackend implements BackendClientLike {
 
   async claimPairing(code: string): Promise<PairClaimResponse> {
     this.claims.push(code);
-    return { token: "nsmcp_session_secret", sessionId: "session", userId: "user", pollIntervalMs: 0, expiresInMs: 60_000 };
+    return {
+      token: "nsmcp_session_secret",
+      sessionId: "session",
+      userId: "user",
+      pollIntervalMs: 0,
+      expiresInMs: 60_000,
+      targetObservationToken: "initial-observation-token",
+    };
   }
   async ping(body: JsonObject): Promise<JsonObject> {
     this.pings.push(body);
@@ -233,8 +242,13 @@ class FakeBackend implements BackendClientLike {
     }
     return { ok: true };
   }
-  async pollNext(_waitMs: number, signal?: AbortSignal): Promise<StudioCommand | null> {
+  async pollNext(
+    waitMs: number,
+    _targetObservationToken: string | null,
+    signal?: AbortSignal,
+  ): Promise<StudioCommand | null> {
     this.polls += 1;
+    this.pollWaits.push(waitMs);
     if (this.pollHandler) return this.pollHandler(this.polls, signal);
     return null;
   }
@@ -242,9 +256,10 @@ class FakeBackend implements BackendClientLike {
     commandId: string,
     status: CommandReceiptStatus,
     result: JsonObject,
+    targetObservationToken: string | null,
     signal?: AbortSignal,
   ): Promise<JsonObject> {
-    this.acknowledgements.push({ id: commandId, status, result });
+    this.acknowledgements.push({ id: commandId, status, result, targetObservationToken });
     this.events?.push(`ack:${status}`);
     await this.acknowledgeHandler?.(commandId, status, result, signal);
     if (this.abortOnTerminal && isTerminalStatus(status)) {
@@ -306,6 +321,24 @@ class MemoryCommandJournal implements CommandJournalLike {
     this.entries.set(commandId, acknowledged);
     return structuredClone(acknowledged);
   }
+
+  async ensureTerminalReceipt(
+    commandId: string,
+    receiptId: string,
+    result: JsonObject,
+  ): Promise<CommandJournalEntry> {
+    const entry = this.entries.get(commandId);
+    if (!entry || entry.stage !== "terminal") throw new Error("receipt mismatch");
+    if (entry.receiptId && entry.receiptId !== receiptId) throw new Error("receipt mismatch");
+    const migrated: CommandJournalEntry = {
+      ...entry,
+      receiptId: entry.receiptId ?? receiptId,
+      result: entry.receiptId && entry.result ? entry.result : structuredClone(result),
+      updatedAt: Date.now(),
+    };
+    this.entries.set(commandId, migrated);
+    return structuredClone(migrated);
+  }
 }
 
 function isTerminalStatus(status: CommandReceiptStatus): boolean {
@@ -337,8 +370,16 @@ function reliableCommand(options: {
   semanticInputHash?: string;
   targetFence?: number;
   leaseExpiresAt?: number;
+  expectedStudioWindowId?: string;
+  expectedPlaceSignature?: string;
+  unpublishedMcp?: boolean;
 } = {}): StudioCommand {
   const id = options.id ?? "reliable-command";
+  const unpublishedMcp = options.unpublishedMcp === true;
+  const expectedStudioWindowId = options.expectedStudioWindowId
+    ?? (unpublishedMcp ? undefined : "studio-1");
+  const expectedPlaceId = unpublishedMcp ? null : "42";
+  const expectedUniverseId = unpublishedMcp ? null : "84";
   return {
     id,
     commandId: id,
@@ -348,6 +389,27 @@ function reliableCommand(options: {
     semanticInputHash: options.semanticInputHash ?? "a".repeat(64),
     status: "leased",
     operationOutcome: "reserved",
+    connectionType: "mcp_local",
+    targetId: "target-local",
+    sessionId: "session",
+    targetGeneration: 3,
+    ...(expectedStudioWindowId
+        ? { expectedStudioWindowId }
+        : {}),
+    expectedPlaceId,
+    expectedUniverseId,
+    placeId: expectedPlaceId,
+    universeId: expectedUniverseId,
+    expectedPlaceSignature: options.expectedPlaceSignature ?? "fixture-signature",
+    studioTarget: {
+      targetId: "target-local",
+      sessionId: "session",
+      targetGeneration: 3,
+      expectedPlaceId,
+      expectedUniverseId,
+      expectedPlaceSignature: options.expectedPlaceSignature ?? "fixture-signature",
+      ...(expectedStudioWindowId ? { expectedStudioWindowId } : {}),
+    },
     attempts: { delivery: 1, maximum: 3 },
     lease: {
       owner: "session",
@@ -376,13 +438,19 @@ test("connector claims, discovers, registers, polls, executes, acknowledges, and
   const controller = new AbortController();
   const backend = new FakeBackend(controller);
   const mcp = new FakeMcp();
-  backend.pollHandler = async () => ({
+  backend.pollHandler = async () => reliableCommand({
     id: "command-1",
-    type: "read_script",
     payload: { path: "game.ServerScriptService.Main" },
   });
 
-  await new NexusLocalConnector({ config, connectorVersion: "0.1.0-test", backend, mcp, logger })
+  await new NexusLocalConnector({
+    config,
+    connectorVersion: "0.1.0-test",
+    backend,
+    mcp,
+    logger,
+    commandJournal: new MemoryCommandJournal(),
+  })
     .run("PAIR-CODE", controller.signal);
 
   assert.deepEqual(backend.claims, ["PAIR-CODE"]);
@@ -390,16 +458,12 @@ test("connector claims, discovers, registers, polls, executes, acknowledges, and
   assert.equal(mcp.listCalls, 1);
   assert.deepEqual(backend.registrations[0]?.commands, ["get_studio_context", "read_script", "read_scripts"]);
   assert.deepEqual(backend.acknowledgements.map(({ id, status }) => ({ id, status })), [
+    { id: "command-1", status: "received" },
+    { id: "command-1", status: "started" },
     { id: "command-1", status: "succeeded" },
   ]);
-  assert.equal(backend.acknowledgements[0]?.result.verified, false);
-  assert.deepEqual(mcp.callTools.map((call) => call.name), [
-    "list_roblox_studios",
-    "set_active_studio",
-    "get_studio_state",
-    "get_studio_state",
-    "script_read",
-  ]);
+  assert.equal(backend.acknowledgements.at(-1)?.result.verified, false);
+  assert.equal(mcp.callTools.filter((call) => call.name === "script_read").length, 1);
   assert.equal(backend.pings.some((ping) => ping.mcpServerAvailable === true), true);
   assert.equal(backend.pings.at(-1)?.mcpServerAvailable, false);
   assert.equal(mcp.disconnects >= 1, true);
@@ -411,7 +475,7 @@ test("connector publishes an empty catalog while MCP is unavailable, then reconn
   const backend = new FakeBackend(controller);
   const mcp = new FakeMcp();
   mcp.failConnects = 1;
-  backend.pollHandler = async () => ({ id: "command-2", type: "read_script", payload: { path: "game.Script" } });
+  backend.pollHandler = async () => reliableCommand({ id: "command-2", payload: { path: "game.Script" } });
 
   await new NexusLocalConnector({ config, connectorVersion: "0.1.0-test", backend, mcp, logger })
     .run("PAIR-CODE", controller.signal);
@@ -420,7 +484,7 @@ test("connector publishes an empty catalog while MCP is unavailable, then reconn
   assert.deepEqual(backend.registrations[0]?.commands, []);
   assert.deepEqual(backend.registrations[1]?.commands, ["get_studio_context", "read_script", "read_scripts"]);
   assert.equal(backend.pings.some((ping) => ping.mcpServerAvailable === false), true);
-  assert.equal(backend.acknowledgements[0]?.status, "succeeded");
+  assert.equal(backend.acknowledgements.at(-1)?.status, "succeeded");
 });
 
 test("an unavailable capability publication retries after a transient backend failure", async () => {
@@ -429,13 +493,42 @@ test("an unavailable capability publication retries after a transient backend fa
   const mcp = new FakeMcp();
   mcp.failConnects = 2;
   backend.registrationFailures = 1;
-  backend.pollHandler = async () => ({ id: "command-retry", type: "read_script", payload: { path: "game.Script" } });
+  backend.pollHandler = async () => reliableCommand({ id: "command-retry", payload: { path: "game.Script" } });
 
-  await new NexusLocalConnector({ config, connectorVersion: "0.1.0-test", backend, mcp, logger })
+  await new NexusLocalConnector({
+    config,
+    connectorVersion: "0.1.0-test",
+    backend,
+    mcp,
+    logger,
+    commandJournal: new MemoryCommandJournal(),
+  })
     .run("PAIR-CODE", controller.signal);
 
   assert.equal(backend.registrations.filter((registration) => registration.commands.length === 0).length, 2);
   assert.deepEqual(backend.registrations.at(-1)?.commands, ["get_studio_context", "read_script", "read_scripts"]);
+});
+
+test("a hot-upgraded backend can request capability re-registration without reconnecting MCP", async () => {
+  const controller = new AbortController();
+  const backend = new FakeBackend(controller);
+  const mcp = new FakeMcp();
+  backend.pingHandler = () => backend.pings.length >= 2
+    ? { ok: true, capabilityRegistrationRequired: true }
+    : { ok: true };
+  backend.pollHandler = async (poll) => {
+    if (poll === 1) return null;
+    controller.abort(new DOMException("capabilities rebound", "AbortError"));
+    return null;
+  };
+
+  await new NexusLocalConnector({ config, connectorVersion: "0.2.11-test", backend, mcp, logger })
+    .run("PAIR-CODE", AbortSignal.any([controller.signal, AbortSignal.timeout(1_000)]));
+
+  assert.equal(mcp.connectAttempts, 1);
+  assert.equal(backend.registrations.length >= 2, true);
+  assert.deepEqual(backend.registrations.at(-1)?.commands, backend.registrations[0]?.commands);
+  assert.equal(backend.wireEvents.filter((event) => event.startsWith("register:")).length >= 2, true);
 });
 
 test("connector reports multiple Studio windows as a recoverable degraded state", async () => {
@@ -531,7 +624,7 @@ test("initial discovery waits for StudioMCP to populate its Studio window regist
     logger,
   }).run("PAIR-CODE", controller.signal);
 
-  assert.equal(targetDiscoveryCalls, 3);
+  assert.equal(targetDiscoveryCalls, 4);
   assert.deepEqual(backend.registrations[0]?.commands, ["get_studio_context", "read_script", "read_scripts"]);
   assert.equal(backend.registrations[0]?.identity.placeId, "42");
 });
@@ -568,10 +661,17 @@ test("tools/list_changed causes full rediscovery and capability re-registration"
       mcp.triggerToolsChanged();
       return null;
     }
-    return { id: "command-3", type: "collect_output", payload: {} };
+    return reliableCommand({ id: "command-3", type: "collect_output", payload: {} });
   };
 
-  await new NexusLocalConnector({ config, connectorVersion: "0.1.0-test", backend, mcp, logger })
+  await new NexusLocalConnector({
+    config,
+    connectorVersion: "0.1.0-test",
+    backend,
+    mcp,
+    logger,
+    commandJournal: new MemoryCommandJournal(),
+  })
     .run("PAIR-CODE", controller.signal);
 
   assert.equal(mcp.listCalls, 2);
@@ -583,7 +683,7 @@ test("tools/list_changed causes full rediscovery and capability re-registration"
     "read_script",
     "read_scripts",
   ]);
-  assert.equal(backend.acknowledgements[0]?.status, "succeeded");
+  assert.equal(backend.acknowledgements.at(-1)?.status, "succeeded");
 });
 
 test("a failed StudioMCP play-control self-check suppresses automated start and stop until reconnect", async () => {
@@ -597,17 +697,25 @@ test("a failed StudioMCP play-control self-check suppresses automated start and 
     : undefined;
   backend.pollHandler = async (poll) => {
     if (poll === 1) {
-      return {
+      return reliableCommand({
         id: "command-play-control-failure",
         type: "run_play_test",
+        targetFence: 1,
         payload: { confirmed: true, maxDurationSeconds: 1 },
-      };
+      });
     }
     controller.abort(new DOMException("suppressed capability published", "AbortError"));
     return null;
   };
 
-  await new NexusLocalConnector({ config, connectorVersion: "0.2.8-test", backend, mcp, logger })
+  await new NexusLocalConnector({
+    config,
+    connectorVersion: "0.2.8-test",
+    backend,
+    mcp,
+    logger,
+    commandJournal: new MemoryCommandJournal(),
+  })
     .run("PAIR-CODE", controller.signal);
 
   assert.equal(backend.registrations[0]?.commands.includes("run_play_test"), true);
@@ -618,8 +726,8 @@ test("a failed StudioMCP play-control self-check suppresses automated start and 
   assert.equal(suppressed?.commands.includes("stop_play_test"), false);
   assert.equal(suppressed?.capabilities.playtest, false);
   assert.equal(suppressed?.capabilityDetails.playtest.reasonCode, "RUNTIME_SELF_CHECK_FAILED");
-  assert.equal(backend.acknowledgements[0]?.status, "failed");
-  assert.equal(resultErrorCode(backend.acknowledgements[0]?.result), "PLAYTEST_CONTROL_UNAVAILABLE");
+  assert.equal(backend.acknowledgements.at(-1)?.status, "failed");
+  assert.equal(resultErrorCode(backend.acknowledgements.at(-1)?.result), "PLAYTEST_CONTROL_UNAVAILABLE");
   assert.deepEqual(
     mcp.callTools.filter((call) => call.name === "start_stop_play").map((call) => call.args.is_start),
     [true],
@@ -642,7 +750,14 @@ test("heartbeat continues during long polling and shutdown clears the in-memory 
     return null;
   };
 
-  await new NexusLocalConnector({ config, connectorVersion: "0.1.0-test", backend, mcp, logger })
+  await new NexusLocalConnector({
+    config,
+    connectorVersion: "0.1.0-test",
+    backend,
+    mcp,
+    logger,
+    commandJournal: new MemoryCommandJournal(),
+  })
     .run("PAIR-CODE", controller.signal);
 
   const availablePings = backend.pings.filter((ping) => ping.mcpServerAvailable === true);
@@ -660,6 +775,71 @@ test("heartbeat continues during long polling and shutdown clears the in-memory 
   assert.equal(backend.pings.at(-1)?.universeId, null);
   assert.equal(backend.pings.at(-1)?.placeSignature, null);
   assert.equal(backend.clearCalls, 1);
+});
+
+test("an empty bounded poll observes a website target switch before the next long heartbeat", async () => {
+  const controller = new AbortController();
+  const backend = new FakeBackend(controller);
+  const mcp = new FakeMcp();
+  const slowHeartbeatConfig = { ...config, heartbeatMs: 300_000, pollWaitMs: 20_000 };
+  const tokenA = "observation-token-a";
+  const tokenB = "observation-token-b";
+  let selectionTriggered = false;
+  let switchedAt = 0;
+  let observedAt = 0;
+  mcp.studios = [
+    { studio_id: "studio-a", place_id: "42", universe_id: "84", place_name: "Alpha", place_signature: "signature-a" },
+    { studio_id: "studio-b", place_id: "43", universe_id: "85", place_name: "Beta", place_signature: "signature-b" },
+  ];
+  backend.claimPairing = async () => ({
+    token: "nsmcp_session_secret",
+    sessionId: "session",
+    userId: "user",
+    pollIntervalMs: 0,
+    expiresInMs: 60_000,
+    targetObservationToken: tokenA,
+  });
+  backend.pingHandler = (body) => {
+    const requestToken = String(body.targetObservationToken || "");
+    if (selectionTriggered && requestToken === tokenA) {
+      return {
+        ok: true,
+        desiredStudioId: "studio-b",
+        targetObservationAccepted: false,
+        targetObservationToken: tokenB,
+      };
+    }
+    if (selectionTriggered && requestToken === tokenB && body.activeStudioId === "studio-b") {
+      observedAt = Date.now();
+      controller.abort(new DOMException("target switch observed", "AbortError"));
+    }
+    return {
+      ok: true,
+      desiredStudioId: selectionTriggered ? "studio-b" : "studio-a",
+      targetObservationAccepted: true,
+      targetObservationToken: selectionTriggered ? tokenB : tokenA,
+    };
+  };
+  backend.pollHandler = async () => {
+    selectionTriggered = true;
+    switchedAt = Date.now();
+    return null;
+  };
+
+  await new NexusLocalConnector({
+    config: slowHeartbeatConfig,
+    connectorVersion: "0.2.11-test",
+    backend,
+    mcp,
+    logger,
+    commandJournal: new MemoryCommandJournal(),
+  }).run("PAIR-CODE", controller.signal);
+
+  assert.equal(backend.polls, 1);
+  assert.equal(backend.pollWaits[0] <= 5_000, true);
+  assert.equal(observedAt >= switchedAt, true);
+  assert.equal(observedAt - switchedAt < 12_000, true);
+  assert.equal(mcp.selectedStudioId, "studio-b");
 });
 
 test("attested Studio IDs reach both session pings and capability registration", async () => {
@@ -848,6 +1028,341 @@ test("lifecycle-v2 commands fence receipts before MCP work and persist the termi
   assert.equal(typeof journal.entries.get("reliable-command")?.acknowledgedAt, "number");
 });
 
+test("a lifecycle read rejects a delayed wrong-window envelope before MCP execution", async () => {
+  const controller = new AbortController();
+  const backend = new FakeBackend(controller);
+  const mcp = new FakeMcp();
+  mcp.studios = [{
+    studio_id: "studio-1",
+    place_id: "0",
+    place_name: "Local Fixture",
+    universe_id: "0",
+    place_signature: "fixture-signature",
+  }];
+  const journal = new MemoryCommandJournal();
+  backend.pollHandler = async () => reliableCommand({
+    id: "wrong-window-read",
+    expectedStudioWindowId: "studio-other",
+    unpublishedMcp: true,
+  });
+
+  await new NexusLocalConnector({
+    config,
+    connectorVersion: "0.1.0-test",
+    backend,
+    mcp,
+    logger,
+    commandJournal: journal,
+  }).run("PAIR-CODE", controller.signal);
+
+  assert.deepEqual(backend.acknowledgements.map(({ status }) => status), [
+    "received",
+    "started",
+    "failed",
+  ]);
+  const terminalResult = backend.acknowledgements.at(-1)?.result;
+  assert.equal(resultErrorCode(terminalResult), "STUDIO_TARGET_MISMATCH");
+  assert.equal(terminalResult?.executionStarted, false);
+  assert.equal(terminalResult?.sideEffectStarted, false);
+  assert.equal(mcp.callTools.some(({ name }) => name === "script_read"), false);
+  assert.equal(journal.entries.get("wrong-window-read")?.terminalStatus, "failed");
+});
+
+test("an unpublished lifecycle read without an exact window fails closed", async () => {
+  const controller = new AbortController();
+  const backend = new FakeBackend(controller);
+  const mcp = new FakeMcp();
+  const journal = new MemoryCommandJournal();
+  mcp.studios = [{
+    studio_id: "studio-1",
+    place_id: "0",
+    place_name: "Local Fixture",
+    universe_id: "0",
+    place_signature: "fixture-signature",
+  }];
+  backend.pollHandler = async () => reliableCommand({
+    id: "missing-window-read",
+    unpublishedMcp: true,
+  });
+
+  await new NexusLocalConnector({
+    config,
+    connectorVersion: "0.1.0-test",
+    backend,
+    mcp,
+    logger,
+    commandJournal: journal,
+  }).run("PAIR-CODE", controller.signal);
+
+  assert.deepEqual(backend.acknowledgements.map(({ status }) => status), [
+    "received",
+    "started",
+    "failed",
+  ]);
+  assert.equal(resultErrorCode(backend.acknowledgements.at(-1)?.result), "STUDIO_TARGET_ATTESTATION_INCOMPLETE");
+  assert.equal(mcp.callTools.some(({ name }) => name === "script_read"), false);
+  assert.equal(journal.entries.get("missing-window-read")?.terminalStatus, "failed");
+});
+
+test("lifecycle envelope stripping, routing gaps, and identity ambiguity never reach Studio business tools", async (t) => {
+  const makeCommand = (type: "read_script" | "write_script", id: string): StudioCommand => reliableCommand({
+    id,
+    type,
+    payload: type === "write_script" ? {
+      path: "game.ServerScriptService.Main",
+      source: "print('changed')",
+      expectedSourceHash: sha256("print('ok')"),
+    } : { path: "game.ServerScriptService.Main" },
+    targetFence: type === "write_script" ? 1 : 0,
+    semanticInputHash: (type === "write_script" ? "b" : "a").repeat(64),
+  });
+  const stripLifecycle = (command: StudioCommand): StudioCommand => ({
+    id: command.id,
+    type: command.type,
+    payload: command.payload,
+  });
+  const withoutWindow = (command: StudioCommand): StudioCommand => {
+    delete command.expectedStudioWindowId;
+    if (command.studioTarget && typeof command.studioTarget === "object") {
+      delete command.studioTarget.expectedStudioWindowId;
+    }
+    return command;
+  };
+  const localEnvelope = (command: StudioCommand): StudioCommand => {
+    command.expectedPlaceId = null;
+    command.expectedUniverseId = null;
+    command.studioTarget = {
+      ...(command.studioTarget || {}),
+      expectedPlaceId: null,
+      expectedUniverseId: null,
+    };
+    return command;
+  };
+  const conflictingAlias = (
+    command: StudioCommand,
+    field: "placeId" | "universeId" | "signature",
+  ): StudioCommand => {
+    if (field === "placeId") command.placeId = "999";
+    if (field === "universeId") command.universeId = "999";
+    if (field === "signature") command.studioTarget = {
+      ...(command.studioTarget || {}),
+      placeSignature: "conflicting-signature",
+    };
+    return command;
+  };
+  const malformedPlace = (command: StudioCommand, value: unknown): StudioCommand => {
+    (command as unknown as Record<string, unknown>).expectedPlaceId = value;
+    command.studioTarget = {
+      ...(command.studioTarget || {}),
+      expectedPlaceId: value as never,
+    };
+    return command;
+  };
+
+  const scenarios: Array<{ name: string; command: StudioCommand }> = [];
+  for (const type of ["read_script", "write_script"] as const) {
+    const prefix = type === "read_script" ? "read" : "mutation";
+    const missingType = makeCommand(type, `${prefix}-missing-connection`);
+    delete missingType.connectionType;
+    scenarios.push({ name: `${prefix}: missing connection type`, command: missingType });
+    scenarios.push({
+      name: `${prefix}: wrong connection type`,
+      command: { ...makeCommand(type, `${prefix}-wrong-connection`), connectionType: "plugin_bridge" },
+    });
+    scenarios.push({
+      name: `${prefix}: stripped lifecycle`,
+      command: stripLifecycle(makeCommand(type, `${prefix}-stripped-lifecycle`)),
+    });
+    scenarios.push({
+      name: `${prefix}: published envelope missing exact window`,
+      command: withoutWindow(makeCommand(type, `${prefix}-missing-window`)),
+    });
+    scenarios.push({
+      name: `${prefix}: unpublished envelope delivered after the same window becomes published`,
+      command: localEnvelope(makeCommand(type, `${prefix}-local-to-published`)),
+    });
+  }
+
+  for (const field of ["placeId", "universeId", "signature"] as const) {
+    scenarios.push({
+      name: `read: conflicting ${field} alias`,
+      command: conflictingAlias(makeCommand("read_script", `read-conflicting-${field}`), field),
+    });
+  }
+  for (const [index, value] of ["", " ", false, {}, -1, 1.5, "01"].entries()) {
+    scenarios.push({
+      name: `read: malformed expected place identity ${index + 1}`,
+      command: malformedPlace(makeCommand("read_script", `read-malformed-place-${index + 1}`), value),
+    });
+  }
+  const missingExpectedPlace = makeCommand("read_script", "read-missing-expected-place");
+  delete missingExpectedPlace.expectedPlaceId;
+  scenarios.push({ name: "read: missing explicit expected place identity", command: missingExpectedPlace });
+
+  for (const scenario of scenarios) {
+    await t.test(scenario.name, async () => {
+      const controller = new AbortController();
+      const backend = new FakeBackend(controller);
+      const mcp = new FakeMcp();
+      const journal = new MemoryCommandJournal();
+      mcp.toolPages = [[readTool, mutationTool, ...targetTools]];
+      backend.pollHandler = async (poll) => {
+        if (poll === 1) return scenario.command;
+        controller.abort(new DOMException("malformed command rejected", "AbortError"));
+        return null;
+      };
+
+      await new NexusLocalConnector({
+        config,
+        connectorVersion: "0.2.11-test",
+        backend,
+        mcp,
+        logger,
+        commandJournal: journal,
+      }).run("PAIR-CODE", controller.signal);
+
+      assert.equal(mcp.callTools.some(({ name }) => name === "script_read" || name === "multi_edit"), false);
+      assert.equal(backend.acknowledgements.some(({ status }) => status === "succeeded"), false);
+    });
+  }
+});
+
+test("verified local writes attest the advanced signature and the next write uses it", async () => {
+  const controller = new AbortController();
+  const backend = new FakeBackend(controller);
+  const mcp = new FakeMcp();
+  const journal = new MemoryCommandJournal();
+  backend.abortOnTerminal = false;
+  mcp.toolPages = [[readTool, mutationTool, ...targetTools]];
+  mcp.studios = [{
+    studio_id: "studio-1",
+    place_id: "0",
+    place_name: "Local Fixture",
+    universe_id: "0",
+    place_signature: "fixture-signature",
+  }];
+
+  let source = "print('before')";
+  let mutationCalls = 0;
+  mcp.callToolHandler = async (name, args) => {
+    if (name === "script_read") return { structuredContent: { source } };
+    if (name === "multi_edit") {
+      mutationCalls += 1;
+      source = String(args.source ?? "");
+      mcp.studios[0]!.place_signature = `fixture-signature-${mutationCalls + 1}`;
+      return { structuredContent: { ok: true } };
+    }
+    return undefined;
+  };
+
+  const first = reliableCommand({
+    id: "advanced-signature-write-1",
+    type: "write_script",
+    payload: {
+      path: "game.ServerScriptService.Main",
+      source: "print('first')",
+      expectedSourceHash: sha256("print('before')"),
+    },
+    semanticInputHash: "1".repeat(64),
+    targetFence: 1,
+    expectedStudioWindowId: "studio-1",
+    unpublishedMcp: true,
+  });
+  const second = reliableCommand({
+    id: "advanced-signature-write-2",
+    type: "write_script",
+    payload: {
+      path: "game.ServerScriptService.Main",
+      source: "print('second')",
+      expectedSourceHash: sha256("print('first')"),
+    },
+    semanticInputHash: "2".repeat(64),
+    targetFence: 2,
+    expectedStudioWindowId: "studio-1",
+    expectedPlaceSignature: "fixture-signature-2",
+    unpublishedMcp: true,
+  });
+  backend.pollHandler = async (poll) => poll === 1 ? first : second;
+  backend.acknowledgeHandler = async (commandId, status) => {
+    if (commandId === second.id && status === "succeeded") {
+      controller.abort(new DOMException("two writes complete", "AbortError"));
+    }
+  };
+
+  await new NexusLocalConnector({
+    config,
+    connectorVersion: "0.2.11-test",
+    backend,
+    mcp,
+    logger,
+    commandJournal: journal,
+  }).run("PAIR-CODE", controller.signal);
+
+  const terminal = backend.acknowledgements.filter(({ status }) => status === "succeeded");
+  assert.equal(mutationCalls, 2);
+  assert.equal(source, "print('second')");
+  assert.equal(terminal.length, 2);
+  assert.deepEqual(terminal.map(({ result }) => {
+    const attestation = result.targetAttestation as JsonObject;
+    return {
+      studioWindowId: attestation?.studioWindowId,
+      placeSignature: attestation?.placeSignature,
+    };
+  }), [
+    { studioWindowId: "studio-1", placeSignature: "fixture-signature-2" },
+    { studioWindowId: "studio-1", placeSignature: "fixture-signature-3" },
+  ]);
+});
+
+test("a verified mutation with failed post-write target attestation is durably demoted to outcome_unknown", async () => {
+  const controller = new AbortController();
+  const backend = new FakeBackend(controller);
+  const mcp = new FakeMcp();
+  const journal = new MemoryCommandJournal();
+  mcp.toolPages = [[readTool, mutationTool, ...targetTools]];
+  let postMutation = false;
+  let source = "print('before')";
+  mcp.callToolHandler = (name, args) => {
+    if (name === "script_read") return { structuredContent: { source } };
+    if (name === "multi_edit") {
+      postMutation = true;
+      source = "print('after')";
+      mcp.studios[0]!.place_signature = "fixture-signature-after";
+      return { structuredContent: { ok: true, path: args.file_path } };
+    }
+    if (name === "list_roblox_studios" && postMutation) {
+      return { isError: true, content: [{ type: "text", text: "post-write target probe unavailable" }] };
+    }
+    return undefined;
+  };
+  backend.pollHandler = async () => reliableCommand({
+    id: "post-attestation-failure",
+    type: "write_script",
+    payload: {
+      path: "game.ServerScriptService.Main",
+      source: "print('after')",
+      expectedSourceHash: sha256("print('before')"),
+    },
+    semanticInputHash: "f".repeat(64),
+    targetFence: 1,
+  });
+
+  await new NexusLocalConnector({
+    config,
+    connectorVersion: "0.2.11-test",
+    backend,
+    mcp,
+    logger,
+    commandJournal: journal,
+  }).run("PAIR-CODE", controller.signal);
+
+  const terminal = backend.acknowledgements.at(-1);
+  assert.equal(terminal?.status, "outcome_unknown");
+  assert.equal(resultErrorCode(terminal?.result), "POST_MUTATION_TARGET_ATTESTATION_FAILED");
+  assert.equal(Object.hasOwn(terminal?.result || {}, "targetAttestation"), false);
+  assert.equal(journal.entries.get("post-attestation-failure")?.terminalStatus, "outcome_unknown");
+});
+
 test("lifecycle-v2 execution renews the same started fence while MCP work is in flight", async () => {
   const controller = new AbortController();
   const backend = new FakeBackend(controller);
@@ -908,6 +1423,11 @@ test("a journaled terminal is replayed after restart without invoking MCP again"
   backend.pollHandler = async () => {
     throw new Error("The backend must not redeliver a command to replay its saved receipt.");
   };
+  backend.pingHandler = () => ({
+    ok: true,
+    targetObservationAccepted: false,
+    targetObservationToken: "restart-observation-token",
+  });
 
   await new NexusLocalConnector({
     config,
@@ -916,14 +1436,148 @@ test("a journaled terminal is replayed after restart without invoking MCP again"
     mcp,
     logger,
     commandJournal: journal,
-  }).run("PAIR-CODE", controller.signal);
+  }).runClaimed({
+    token: "nsmcp_session_secret",
+    sessionId: "session",
+    userId: "user",
+    pollIntervalMs: 0,
+    expiresInMs: 60_000,
+  }, controller.signal);
 
   assert.deepEqual(backend.acknowledgements.map(({ status }) => status), ["succeeded"]);
   assert.equal(backend.acknowledgements[0]?.result.receiptId, "receipt-restart");
   assert.equal(backend.polls, 0);
+  assert.equal(backend.pings.length >= 1, true);
   assert.equal(mcp.connectAttempts, 0);
   assert.equal(mcp.callTools.some(({ name }) => name === "script_read"), false);
   assert.equal(typeof journal.entries.get(command.id)?.acknowledgedAt, "number");
+});
+
+test("restart learns the current observation token before replaying a durable mutation receipt", async () => {
+  const controller = new AbortController();
+  const backend = new FakeBackend(controller);
+  const mcp = new FakeMcp();
+  const journal = new MemoryCommandJournal();
+  const command = reliableCommand({
+    id: "terminal-mutation-restart",
+    type: "write_script",
+    targetFence: 4,
+    payload: {
+      path: "game.ServerScriptService.Main",
+      source: "print('committed')",
+      expectedSourceHash: sha256("print('before')"),
+    },
+  });
+  const receiptId = "receipt-terminal-mutation-restart";
+  const result = {
+    success: true,
+    verified: true,
+    receiptId,
+    commandId: command.id,
+    lifecycleVersion: 2,
+    semanticInputHash: command.semanticInputHash,
+    leaseFence: command.lease?.fence,
+    targetFence: command.lease?.targetFence,
+    operationOutcome: "succeeded",
+    targetAttestation: {
+      targetId: command.targetId,
+      sessionId: command.sessionId,
+      placeId: command.expectedPlaceId,
+      universeId: command.expectedUniverseId,
+      placeSignature: command.expectedPlaceSignature,
+      targetGeneration: command.targetGeneration,
+      studioWindowId: command.expectedStudioWindowId,
+    },
+  } satisfies JsonObject;
+  await journal.put({
+    commandId: command.id,
+    commandType: command.type,
+    semanticInputHash: String(command.semanticInputHash),
+    stage: "terminal",
+    sessionId: "session",
+    receiptId,
+    terminalStatus: "succeeded",
+    result,
+    updatedAt: Date.now(),
+  });
+  backend.pingHandler = () => ({
+    ok: true,
+    targetObservationAccepted: false,
+    targetObservationToken: "fresh-restart-observation-token",
+  });
+
+  await new NexusLocalConnector({
+    config,
+    connectorVersion: "0.2.11-test",
+    backend,
+    mcp,
+    logger,
+    commandJournal: journal,
+  }).runClaimed({
+    token: "nsmcp_session_secret",
+    sessionId: "session",
+    userId: "user",
+    pollIntervalMs: 0,
+    expiresInMs: 60_000,
+  }, controller.signal);
+
+  assert.equal(backend.pings.length >= 1, true);
+  assert.equal(backend.pings[0]?.targetObservationToken, null);
+  assert.equal(backend.acknowledgements.length, 1);
+  assert.equal(backend.acknowledgements[0]?.targetObservationToken, "fresh-restart-observation-token");
+  assert.equal(mcp.connectAttempts, 0);
+  assert.equal(typeof journal.entries.get(command.id)?.acknowledgedAt, "number");
+});
+
+test("restart never replays a durable receipt when observation-token bootstrap fails", async () => {
+  const controller = new AbortController();
+  const backend = new FakeBackend(controller);
+  const mcp = new FakeMcp();
+  const journal = new MemoryCommandJournal();
+  const command = reliableCommand({ id: "terminal-bootstrap-failure" });
+  await journal.put({
+    commandId: command.id,
+    commandType: command.type,
+    semanticInputHash: String(command.semanticInputHash),
+    stage: "terminal",
+    sessionId: "session",
+    receiptId: "receipt-bootstrap-failure",
+    terminalStatus: "succeeded",
+    result: {
+      success: true,
+      receiptId: "receipt-bootstrap-failure",
+      commandId: command.id,
+      lifecycleVersion: 2,
+      semanticInputHash: command.semanticInputHash,
+      leaseFence: command.lease?.fence,
+      targetFence: command.lease?.targetFence,
+      operationOutcome: "succeeded",
+    },
+    updatedAt: Date.now(),
+  });
+  backend.pingHandler = () => {
+    controller.abort(new DOMException("bootstrap unavailable", "AbortError"));
+    throw new ConnectorError("BACKEND_TEMPORARY_ERROR", "bootstrap unavailable", { retryable: true });
+  };
+
+  await new NexusLocalConnector({
+    config,
+    connectorVersion: "0.2.11-test",
+    backend,
+    mcp,
+    logger,
+    commandJournal: journal,
+  }).runClaimed({
+    token: "nsmcp_session_secret",
+    sessionId: "session",
+    userId: "user",
+    pollIntervalMs: 0,
+    expiresInMs: 60_000,
+  }, controller.signal);
+
+  assert.equal(backend.acknowledgements.length, 0);
+  assert.equal(journal.entries.get(command.id)?.acknowledgedAt, undefined);
+  assert.equal(mcp.connectAttempts, 0);
 });
 
 test("a terminal acknowledgement outage replays the exact durable receipt without re-executing Studio", async () => {

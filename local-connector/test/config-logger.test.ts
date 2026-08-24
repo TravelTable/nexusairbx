@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { loadConfig } from "../src/config.js";
 import { ConnectorError } from "../src/errors.js";
-import { redact } from "../src/logger.js";
+import { ConsoleLogger, redact } from "../src/logger.js";
 
 test("configuration uses the documented macOS launch and applies CLI precedence", () => {
   const config = loadConfig(
@@ -67,4 +67,30 @@ test("redaction removes connector tokens, bearer credentials, configured secrets
   assert.match(result, /\[REDACTED\]/);
   assert.match(result, /…\[truncated\]$/);
   assert.ok(result.length < 4_200);
+});
+
+test("rotating observation secrets stay bounded while current retries and permanent credentials remain redacted", () => {
+  const logger = new ConsoleLogger();
+  const permanent = "permanent-credential-value";
+  logger.addSecret(permanent);
+  for (let index = 0; index < 10_000; index += 1) {
+    logger.addTransientSecret(`observation-credential-${index}-value`);
+  }
+  const current = "observation-credential-9999-value";
+  const previous = "observation-credential-9998-value";
+  const evicted = "observation-credential-0-value";
+  const lines: string[] = [];
+  const originalLog = console.log;
+  console.log = (line?: unknown) => { lines.push(String(line)); };
+  try {
+    logger.info("redaction probe", { permanent, current, previous, evicted });
+  } finally {
+    console.log = originalLog;
+  }
+
+  assert.equal(lines.length, 1);
+  assert.equal(lines[0]?.includes(permanent), false);
+  assert.equal(lines[0]?.includes(current), false);
+  assert.equal(lines[0]?.includes(previous), false);
+  assert.equal(lines[0]?.includes(evicted), true);
 });

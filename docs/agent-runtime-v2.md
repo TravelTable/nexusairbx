@@ -95,6 +95,7 @@ Every mutation command contains this server-signed envelope:
   "expectedPlaceId": "Roblox place ID",
   "expectedUniverseId": "Roblox universe ID",
   "expectedPlaceSignature": "hash of authoritative target facts",
+  "expectedStudioWindowId": "exact confirmed MCP Studio window",
   "targetGeneration": 7,
   "operationId": "stable side-effect identity",
   "idempotencyKey": "stable delivery/retry identity"
@@ -104,8 +105,14 @@ Every mutation command contains this server-signed envelope:
 For known script writes the payload also requires `expectedSourceHash`. Destructive
 commands require a recoverable snapshot before mutation. The plugin verifies the
 signature-bound fields and current place again at approval and immediately before
-the write. A mismatch returns `TARGET_CHANGED`; an obsolete generation returns
-`TARGET_STALE`. Neither is retryable by silently selecting another target.
+the write. The local MCP connector also refreshes and verifies
+`expectedStudioWindowId` before executing any lifecycle MCP command, including
+published places. The safety-critical window contract requires both the exact
+deployed protocol and connector release 0.2.11 or newer; older connectors stay
+available for health and update checks but cannot advertise or execute Studio
+commands. An older or incomplete envelope fails closed. A mismatch returns
+`TARGET_CHANGED`; an obsolete generation returns `TARGET_STALE`. Neither is
+retryable by silently selecting another target.
 
 Changing the selected target invalidates prepared approvals and commands. The
 backend cancels or replans commands that have not executed; ambiguous commands enter

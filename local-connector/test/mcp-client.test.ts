@@ -13,6 +13,7 @@ const logger: Logger = {
   error() {},
   debug() {},
   addSecret() {},
+  addTransientSecret() {},
 };
 
 function client(mode = "normal", requestTimeoutMs = 5_000): RobloxStudioMcpClient {

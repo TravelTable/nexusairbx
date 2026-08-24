@@ -157,9 +157,16 @@ not part of any browser or backend request interface.
 The connector enumerates live targets and reports only sanitized target
 metadata. Exactly one target may be auto-selected. Multiple targets require an
 authenticated website selection of an enumerated live `studioId`, followed by a
-connector-confirmed switch. The target is rechecked immediately before every
-mutation and playtest. Studio target IDs are ephemeral and are rediscovered
-after restarts; a closed or mismatched target blocks execution.
+connector-confirmed switch. Every lifecycle MCP command, for published and
+unpublished places alike, carries the exact confirmed Studio window as
+`expectedStudioWindowId`;
+the connector refreshes and rechecks that window immediately before reads or
+mutations. Missing or conflicting window fields fail closed. This wire contract
+requires both the exact deployed protocol and connector release 0.2.11 or
+newer. Older connectors remain visible for health and update checks, but their
+executable capabilities are cleared so an older parser cannot execute an
+unfenced command. Studio target IDs are ephemeral and are
+rediscovered after restarts; a closed or mismatched target blocks execution.
 
 Team Create reporting excludes the same user's other connection for the same
 place, but ownership checks remain per session. One session never gains access
