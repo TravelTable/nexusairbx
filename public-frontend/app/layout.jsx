@@ -15,8 +15,9 @@ export const metadata = {
     path: "/",
   }),
   icons: {
-    icon: "/nexus-mark.svg",
-    shortcut: "/nexus-mark.svg",
+    icon: [{ url: "/favicon.png", type: "image/png", sizes: "64x64" }],
+    shortcut: "/favicon.png",
+    apple: "/logo192.png",
   },
 };
 

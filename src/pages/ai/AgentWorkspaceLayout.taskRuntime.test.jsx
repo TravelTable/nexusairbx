@@ -50,8 +50,10 @@ jest.mock("lib/icons", () => {
     History: Icon,
     FileCode2: Icon,
     MessageSquare: Icon,
+    Pencil: Icon,
     ClipboardList: Icon,
     Layers: Icon,
+    ListChecks: Icon,
     Maximize2: Icon,
     X: Icon,
     Search: Icon,
@@ -150,6 +152,7 @@ jest.mock("../../components/onboarding/useTutorial", () => ({
   useTutorial: () => ({
     activeStep: 0,
     isActive: false,
+    shouldOfferTutorial: false,
     startTutorial: jest.fn(),
     nextStep: jest.fn(),
     prevStep: jest.fn(),
@@ -181,6 +184,7 @@ const noop = jest.fn();
 
 function openStageView(label) {
   const evidenceLens = label === "Activity" ? "Run" : label;
+  fireEvent.click(screen.getByRole("button", { name: /^Open Evidence/ }));
   fireEvent.click(screen.getByRole("tab", { name: `Open ${evidenceLens} evidence` }));
 }
 
@@ -602,7 +606,10 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
     expect(sidebar.hasAttribute("inert")).toBe(true);
     expect(screen.queryByRole("button", { name: "First sidebar action" })).toBeNull();
 
-    const toggle = screen.getByRole("button", { name: "Toggle project navigation" });
+    const toggle = screen
+      .getAllByRole("button", { name: "Toggle project navigation" })
+      .find((button) => button.className.includes("h-11"));
+    expect(toggle).toBeTruthy();
     expect(toggle.getAttribute("aria-controls")).toBe(sidebar.id);
     expect(toggle.className).toContain("h-11");
     expect(toggle.className).toContain("w-11");

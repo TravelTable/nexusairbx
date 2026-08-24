@@ -28,6 +28,7 @@ export default function AgentChatPanel({
   onStartRefine,
   onOpenArtifact,
   onQuickStart,
+  onStartGuide,
   onRenameChat,
   onOpenNavigation,
   onRetryMessage,
@@ -246,6 +247,7 @@ export default function AgentChatPanel({
               onViewUi={onOpenArtifact}
               onRefine={onRefine}
               onQuickStart={onQuickStart}
+              onStartGuide={onStartGuide}
               notify={notify}
               onApproveStep={onApproveStep}
               approvingStepId={approvingStepId}

@@ -3,6 +3,7 @@ const path = require("path");
 const {
   buildIconQualityReport,
   buildMarketplaceCategoryReport,
+  buildRelatedIconMap,
   PREFERRED_ORIGIN,
 } = require("./iconIndexability");
 const {
@@ -147,18 +148,16 @@ function iconRoutesFromQualifiedIcons(icons = []) {
 }
 
 function restrictRelatedIconsToPublished(icons = []) {
-  const publishedPaths = new Map(
-    icons
-      .map((icon) => [String(icon?.id || ""), String(icon?.path || "")])
-      .filter(([id, iconPath]) => id && iconPath),
-  );
+  const relatedById = buildRelatedIconMap(icons);
   return icons.map((icon) => ({
     ...icon,
-    relatedIcons: (Array.isArray(icon.relatedIcons) ? icon.relatedIcons : [])
-      .filter((related) => publishedPaths.has(String(related?.id || "")))
+    relatedIcons: (relatedById.get(String(icon?.id || "")) || [])
+      .slice(0, 6)
       .map((related) => ({
-        ...related,
-        path: publishedPaths.get(String(related.id)),
+        id: String(related.id),
+        name: String(related.name),
+        path: String(related.path || `/icons/${encodeURIComponent(String(related.id))}`),
+        imageUrl: String(related.imageUrl),
       })),
   }));
 }

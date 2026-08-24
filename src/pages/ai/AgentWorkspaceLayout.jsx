@@ -1590,6 +1590,9 @@ export default function AgentWorkspaceLayout({
         onStartRefine={onStartRefineCommand}
         onOpenArtifact={openArtifactOnStage}
         onQuickStart={handleQuickStart}
+        onStartGuide={
+          tutorial.shouldOfferTutorial ? tutorial.startTutorial : undefined
+        }
         onRenameChat={(title) =>
           chat.handleRenameChat(chat.currentChatId, title)
         }

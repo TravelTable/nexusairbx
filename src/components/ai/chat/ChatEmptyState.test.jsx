@@ -81,3 +81,16 @@ test("offers build templates only when the action is available", () => {
   fireEvent.click(screen.getByRole("button", { name: /Browse request templates/i }));
   expect(onOpenTemplates).toHaveBeenCalledTimes(1);
 });
+
+test("offers the creator guide as an explicit, non-blocking action", () => {
+  const onStartGuide = jest.fn();
+  render(
+    <ChatEmptyState onQuickStart={jest.fn()} onStartGuide={onStartGuide} />,
+  );
+
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole("button", { name: /Show the 5-step creator guide/i }),
+  );
+  expect(onStartGuide).toHaveBeenCalledTimes(1);
+});

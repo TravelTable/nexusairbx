@@ -32,6 +32,7 @@ const QUESTION_RE = /^(what|how|why|when|where|who|which|is|are|can|could|should
 const EXPLANATION_RE = /\b(explain|describe|walk me through|how would|how does|what is|what are)\b/i;
 const BUILD_REQUEST_RE = new RegExp(`\\b(${BUILD_VERBS.join("|")})\\b`, "i");
 const REQUEST_DIRECTIVE_RE = /\b(please|can you|could you|i need you to|i want you to|let's|lets)\b/i;
+const NEGATED_BUILD_CLAUSE_RE = /\b(?:do not|don't|without)\b[^.!?;]*/gi;
 
 function normalizePrompt(prompt) {
   return String(prompt || "").replace(/\s+/g, " ").trim();
@@ -47,12 +48,13 @@ export function classifyUserIntent(prompt) {
   if (GREETING_RE.test(text)) return "GREETING";
   if (ACK_RE.test(text)) return "GENERAL_QUESTION";
 
-  const hasBuildVerb = BUILD_REQUEST_RE.test(text);
-  const hasDirective = REQUEST_DIRECTIVE_RE.test(text);
-  const isQuestion = QUESTION_RE.test(text) || text.endsWith("?");
+  const affirmativeText = text.replace(NEGATED_BUILD_CLAUSE_RE, " ");
+  const hasBuildVerb = BUILD_REQUEST_RE.test(affirmativeText);
+  const hasDirective = REQUEST_DIRECTIVE_RE.test(affirmativeText);
+  const isQuestion = QUESTION_RE.test(affirmativeText.trim()) || text.endsWith("?");
 
   if (hasBuildVerb && (hasDirective || !isQuestion)) {
-    const lower = text.toLowerCase();
+    const lower = affirmativeText.toLowerCase();
     if (/\b(change|modify|update|fix|remove|refactor)\b/.test(lower)) {
       return "MODIFICATION_REQUEST";
     }
@@ -69,7 +71,8 @@ export function isImplementationIntent(intent) {
   return intent === "BUILD_REQUEST" || intent === "MODIFICATION_REQUEST" || intent === "REFINEMENT" || intent === "CONTINUATION";
 }
 
-const ARTIFACT_ONLY_RE = /\b(code|artifact|files?|export|download)\s+only\b|\b(do not|don't|without)\s+(push|apply|edit|change|touch)(?:\s+(?:it\s+)?(?:to|in))?\s+studio\b/i;
+const STUDIO_DISABLED_RE = /\b(?:do not|don't|without)\s+(?:use\s+)?studio\b|\b(?:do not|don't|without)\s+(?:push|apply|edit|change|touch)(?:\s+(?:it\s+)?(?:to|in))?\s+studio\b/i;
+const ARTIFACT_ONLY_RE = /\b(code|artifact|files?|export|download)\s+only\b/i;
 const PLAYTEST_RE = /\b(play\s*test|run\s+(?:a\s+)?test|test\s+(?:the\s+)?(?:game|place|experience)|start\s+(?:the\s+)?game)\b/i;
 const INSPECTION_RE = /\b(inspect|audit|analy[sz]e|review|summari[sz]e|explain|list|show|see|view|visible|read|find|search|diagnose)\b|\bwhat\s+files?\b/i;
 const LIVE_CONTEXT_RE = /\b(studio|current\s+(?:game|place|project|experience)|live\s+(?:game|place|project|experience)|explorer|selection|(?:this|selected|open|current)\s+(?:module\s*)?script|ServerScriptService|ServerStorage|ReplicatedStorage|StarterGui|StarterPlayer|Workspace\.[A-Za-z0-9_]+)\b/i;
@@ -86,7 +89,7 @@ export function classifyExecutionIntent(prompt, {
 } = {}) {
   const text = normalizePrompt(prompt);
   if (String(generatorMode).toLowerCase() === "quick_script") return "quick_script";
-  if (ARTIFACT_ONLY_RE.test(text)) return "artifact_only";
+  if (ARTIFACT_ONLY_RE.test(text) || STUDIO_DISABLED_RE.test(text)) return "artifact_only";
   const userIntent = classifyUserIntent(text);
   const implementation = isImplementationIntent(userIntent);
   const mentionsLiveContext = LIVE_CONTEXT_RE.test(text);
@@ -100,6 +103,10 @@ export function classifyExecutionIntent(prompt, {
     return userIntent === "MODIFICATION_REQUEST" ? "live_fix" : "live_build";
   }
   return "artifact_only";
+}
+
+export function explicitlyDisablesStudioContext(prompt) {
+  return STUDIO_DISABLED_RE.test(normalizePrompt(prompt));
 }
 
 export { isExplicitPlanApproval };

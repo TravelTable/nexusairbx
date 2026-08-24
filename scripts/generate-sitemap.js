@@ -1,11 +1,11 @@
 const fs = require("fs");
 const path = require("path");
 const https = require("https");
-const { buildSitemapDocuments, writeSitemapDocuments } = require("../server/sitemapBuilder");
+const { buildSitemapDocuments } = require("../server/sitemapBuilder");
 
 const BACKEND_URL = (process.env.REACT_APP_BACKEND_URL || "https://api.nexusrbx.com").replace(/\/+$/, "");
 const PAGE_LIMIT = Number(process.env.SITEMAP_ICON_PAGE_LIMIT || 500);
-const MAX_PAGES = Number(process.env.SITEMAP_ICON_MAX_PAGES || 50);
+const MAX_PAGES = Number(process.env.SITEMAP_ICON_MAX_PAGES || 200);
 const OUTPUT_DIR = path.join(__dirname, "..", "public");
 const GENERATED_ICON_DATA = path.join(__dirname, "..", "public-frontend", "data", "generated", "qualified-icons.json");
 
@@ -49,6 +49,12 @@ async function collectPaginatedMarketplaceIcons(fetchPage, { pageLimit = PAGE_LI
       console.log(`[sitemap] page ${page}: ${pageIcons.length} icons`);
 
       if (!json.hasMore || !json.lastDocId || pageIcons.length === 0) break;
+      if (page === maxPages) {
+        const message = `[sitemap] icon collection reached maxPages=${maxPages} while the API still reported more records`;
+        console.error(message);
+        errors.push(message);
+        break;
+      }
       lastDocId = json.lastDocId;
     } catch (err) {
       const message = `[sitemap] icon page ${page} failed: ${err.message}`;
@@ -72,19 +78,69 @@ async function fetchAllMarketplaceIcons() {
 }
 
 function writeGeneratedIconData(publishedIcons) {
-  fs.mkdirSync(path.dirname(GENERATED_ICON_DATA), { recursive: true });
-  fs.writeFileSync(GENERATED_ICON_DATA, `${JSON.stringify(publishedIcons, null, 2)}\n`);
+  writeFilesAtomically([{
+    target: GENERATED_ICON_DATA,
+    contents: `${JSON.stringify(publishedIcons, null, 2)}\n`,
+  }]);
 }
 
-async function generate() {
-  const { icons, errors } = await fetchAllMarketplaceIcons();
-  const result = buildSitemapDocuments({ icons });
+function writeFilesAtomically(files) {
+  const staged = [];
+  try {
+    files.forEach(({ target, contents }, index) => {
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      const temporary = `${target}.${process.pid}.${index}.tmp`;
+      fs.writeFileSync(temporary, contents);
+      staged.push({ target, temporary });
+    });
+    staged.forEach(({ target, temporary }) => fs.renameSync(temporary, target));
+  } finally {
+    staged.forEach(({ temporary }) => {
+      if (fs.existsSync(temporary)) fs.rmSync(temporary, { force: true });
+    });
+  }
+}
 
-  writeSitemapDocuments({
-    outputDir: OUTPUT_DIR,
-    documents: result.documents,
+function assertCompleteIconCollection({ icons, errors }) {
+  if (errors.length) {
+    throw new Error(`Marketplace icon collection was incomplete: ${errors.join("; ")}`);
+  }
+  if (!icons.length) {
+    throw new Error("Marketplace icon collection returned no records; retaining the last-known-good sitemap.");
+  }
+}
+
+function writeGeneratedBundle(result, {
+  outputDir = OUTPUT_DIR,
+  generatedIconDataPath = GENERATED_ICON_DATA,
+} = {}) {
+  const files = Object.entries(result.documents).map(([relativePath, contents]) => ({
+    target: path.join(outputDir, relativePath),
+    contents,
+  }));
+  files.push({
+    target: generatedIconDataPath,
+    contents: `${JSON.stringify(result.report.published, null, 2)}\n`,
   });
-  writeGeneratedIconData(result.report.published);
+  writeFilesAtomically(files);
+}
+
+async function generate({
+  fetchIcons = fetchAllMarketplaceIcons,
+  writeBundle = writeGeneratedBundle,
+  outputDir = OUTPUT_DIR,
+  generatedIconDataPath = GENERATED_ICON_DATA,
+} = {}) {
+  const collection = await fetchIcons();
+  const icons = Array.isArray(collection?.icons) ? collection.icons : [];
+  const errors = Array.isArray(collection?.errors) ? collection.errors : ["invalid collection response"];
+  assertCompleteIconCollection({ icons, errors });
+  const result = buildSitemapDocuments({ icons });
+  if (!result.report.published.length) {
+    throw new Error("No marketplace icons passed indexability checks; retaining the last-known-good sitemap.");
+  }
+
+  writeBundle(result, { outputDir, generatedIconDataPath });
 
   console.log("[sitemap] generated sitemap index and child sitemaps");
   console.log(`[sitemap] included core=${result.counts.core}, docs=${result.counts.docs}, examples=${result.counts.examples}, icons=${result.counts.publishedIcons}`);
@@ -102,23 +158,23 @@ async function generate() {
   if (result.report.excluded.length) {
     console.log(`[sitemap] exclusion samples=${JSON.stringify(result.report.excluded.slice(0, 20))}`);
   }
-  if (errors.length) {
-    console.error(`[sitemap] generation completed with recoverable errors=${JSON.stringify(errors)}`);
-  }
+  return result;
 }
 
 if (require.main === module) {
+  const bestEffort = process.argv.includes("--best-effort");
   generate().catch((err) => {
-    console.error("[sitemap] unexpected failure", err);
-    const fallback = buildSitemapDocuments({ icons: [] });
-    writeSitemapDocuments({ outputDir: OUTPUT_DIR, documents: fallback.documents });
-    writeGeneratedIconData([]);
+    console.error(`[sitemap] refresh failed; retained last-known-good files: ${err.message}`);
+    if (!bestEffort) process.exitCode = 1;
   });
 }
 
 module.exports = {
+  assertCompleteIconCollection,
   collectPaginatedMarketplaceIcons,
   fetchAllMarketplaceIcons,
   generate,
+  writeFilesAtomically,
+  writeGeneratedBundle,
   writeGeneratedIconData,
 };

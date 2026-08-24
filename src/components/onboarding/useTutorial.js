@@ -38,9 +38,10 @@ function clearCompletion() {
 export function useTutorial() {
   const [activeStep, setActiveStep] = useState(0);
   const [isActive, setIsActive] = useState(false);
+  const [shouldOfferTutorial, setShouldOfferTutorial] = useState(false);
 
   useEffect(() => {
-    setIsActive(!readCompletion());
+    setShouldOfferTutorial(!readCompletion());
   }, []);
 
   const nextStep = useCallback((maxSteps) => {
@@ -48,6 +49,7 @@ export function useTutorial() {
       if (previousStep + 1 >= maxSteps) {
         writeCompletion();
         setIsActive(false);
+        setShouldOfferTutorial(false);
         return 0;
       }
       return previousStep + 1;
@@ -61,6 +63,7 @@ export function useTutorial() {
   const skipTutorial = useCallback(() => {
     writeCompletion();
     setIsActive(false);
+    setShouldOfferTutorial(false);
     setActiveStep(0);
   }, []);
 
@@ -68,11 +71,13 @@ export function useTutorial() {
     clearCompletion();
     setActiveStep(0);
     setIsActive(true);
+    setShouldOfferTutorial(false);
   }, []);
 
   return {
     activeStep,
     isActive,
+    shouldOfferTutorial,
     nextStep,
     prevStep,
     skipTutorial,

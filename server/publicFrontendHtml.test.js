@@ -1,11 +1,12 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 const { buildSitemapDocuments } = require("./sitemapBuilder");
 const { marketplaceFilterIndexability } = require("./iconIndexability");
 const { DEFAULT_PRERENDER_ICON_LIMIT } = require("./prerenderIcons");
-const { collectPaginatedMarketplaceIcons } = require("../scripts/generate-sitemap");
+const { collectPaginatedMarketplaceIcons, generate } = require("../scripts/generate-sitemap");
 const generatedIcons = require("../public-frontend/data/generated/qualified-icons.json");
 
 const outDir = path.join(__dirname, "..", "public-frontend", "out");
@@ -151,11 +152,11 @@ const legalRoutes = [
 
 test("homepage raw HTML is meaningful before client JavaScript", () => {
   const html = readHtml("/");
-  assert.equal(extractTitle(html), "Build and Review Roblox Projects | NexusRBX");
-  assert.equal(extractH1(html), "Build your Roblox game.Make it playable");
+  assert.equal(extractTitle(html), "AI Roblox Script Generator &amp; Studio Agent | NexusRBX");
+  assert.equal(extractH1(html), "AI Roblox Script Generator and Studio Agent");
   assert.equal(
     extractMetaContent(html, "description"),
-    "Turn a Roblox project request into inspected Studio context, reviewable changes, playtest evidence, and a recoverable build record.",
+    "Generate Roblox Luau scripts with AI, inspect Studio projects, review multi-file changes, and playtest safely with NexusRBX.",
   );
   assert.equal(extractCanonical(html), "https://www.nexusrbx.com/");
   assert.match(html, /aria-label="Creation mode"/);
@@ -167,6 +168,7 @@ test("homepage raw HTML is meaningful before client JavaScript", () => {
   assert.match(html, /id="homepage-hero-prompt-message"[^>]*>[\s\S]*?Your request is saved before the workspace opens\./);
   assert.match(html, /Show what creators are building with Nexus/);
   assert.match(html, /Get every build tool in one place/);
+  assert.match(html, /Start with the scripting task you need/);
   assert.match(html, /One workspace\. Your whole Roblox build stack\./);
   assert.match(html, /Build more of the game you actually want to ship\./);
   assert.doesNotMatch(html, /Trusted by Top Roblox Developers|Alex, Studio Lead|game-changer/);
@@ -189,6 +191,11 @@ test("homepage raw HTML is meaningful before client JavaScript", () => {
     "/downloads",
     "/docs",
     "/pricing",
+    "/roblox-script-generator",
+    "/roblox-ai-scripter",
+    "/roblox-studio-script-generator",
+    "/roblox-lua-script-generator",
+    "/roblox-gui-maker",
   ].forEach((route) => assert.match(html, new RegExp(`href="${route}"`)));
   assert.doesNotMatch(html, /\/ai-preview\.png|nexus-cinematic-(?:hero|vault|final)/);
   assert.doesNotMatch(html, /Monaco|AgentWorkspaceLayout|CodeEditorTabs/);
@@ -435,6 +442,7 @@ test("icon sitemap publishes only the deterministic capped qualified set", () =>
   assert.deepEqual(result.report.unpublishedQualified.map((icon) => icon.id), ["charlie003"]);
   const publishedIds = new Set(result.report.published.map((icon) => icon.id));
   result.report.published.forEach((icon) => {
+    assert.ok(icon.relatedIcons.length > 0, `${icon.id} should retain navigation within the published set`);
     icon.relatedIcons.forEach((related) => {
       assert.ok(publishedIds.has(related.id), `${icon.id} links to unpublished icon ${related.id}`);
       assert.equal(related.path, `/icons/${encodeURIComponent(related.id)}`);
@@ -532,4 +540,40 @@ test("icon pagination collector retrieves records beyond one thousand icons and 
 
   assert.deepEqual(failed.icons, [{ id: "first-page" }]);
   assert.equal(failed.errors.length, 1);
+
+  const capped = await collectPaginatedMarketplaceIcons(async ({ page }) => ({
+    icons: [{ id: `capped-${page}` }],
+    hasMore: true,
+    lastDocId: `cursor-${page}`,
+  }), { pageLimit: 500, maxPages: 2 });
+
+  assert.deepEqual(capped.icons, [{ id: "capped-1" }, { id: "capped-2" }]);
+  assert.equal(capped.errors.length, 1);
+  assert.match(capped.errors[0], /reached maxPages=2/);
+});
+
+test("sitemap refresh retains the last-known-good bundle when icon collection is incomplete", async (t) => {
+  const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), "nexusrbx-sitemap-"));
+  const outputDir = path.join(temporaryRoot, "public");
+  const generatedIconDataPath = path.join(temporaryRoot, "qualified-icons.json");
+  const existingSitemap = path.join(outputDir, "sitemap.xml");
+  fs.mkdirSync(outputDir, { recursive: true });
+  fs.writeFileSync(existingSitemap, "last-known-good-sitemap\n");
+  fs.writeFileSync(generatedIconDataPath, "last-known-good-icons\n");
+  t.after(() => fs.rmSync(temporaryRoot, { recursive: true, force: true }));
+
+  await assert.rejects(
+    generate({
+      fetchIcons: async () => ({
+        icons: [{ id: "partial-page-icon" }],
+        errors: ["page 2 failed"],
+      }),
+      outputDir,
+      generatedIconDataPath,
+    }),
+    /collection was incomplete/,
+  );
+
+  assert.equal(fs.readFileSync(existingSitemap, "utf8"), "last-known-good-sitemap\n");
+  assert.equal(fs.readFileSync(generatedIconDataPath, "utf8"), "last-known-good-icons\n");
 });

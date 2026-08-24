@@ -26,6 +26,10 @@ import { useSettings } from "../../context/SettingsContext";
 import { useUnifiedChat } from "../../hooks/useUnifiedChat";
 import { useArtifactWorkspace } from "../../hooks/useArtifactWorkspace";
 import { resolveGameSpecForPrompt } from "../../lib/gameProfile";
+import {
+  classifyUserIntent,
+  isImplementationIntent,
+} from "../../lib/intentClassifier";
 import { useAiScripts } from "../../hooks/useAiScripts";
 import { CHAT_MODES } from "../../components/ai/chatConstants";
 import { BACKEND_URL } from "../../config";
@@ -149,6 +153,15 @@ export function shouldOpenProjectSidebarByDefault(viewportWidth) {
 export function shouldCloseProjectSidebarOnViewportChange(previousViewportWidth, nextViewportWidth) {
   return shouldOpenProjectSidebarByDefault(previousViewportWidth)
     && !shouldOpenProjectSidebarByDefault(nextViewportWidth);
+}
+
+export function shouldRequireStudioPlaceSelection(prompt) {
+  return isImplementationIntent(classifyUserIntent(prompt));
+}
+
+export function evaluateIntentAwareStudioSubmissionPreflight({ prompt, ...studioOptions }) {
+  if (!shouldRequireStudioPlaceSelection(prompt)) return { status: "ready" };
+  return evaluateStudioSubmissionPreflight(studioOptions);
 }
 
 const MODE_COLORS = {
@@ -1139,6 +1152,7 @@ export function useAiWorkspaceController() {
     if (
       studioEnabled &&
       studioConnection.connected &&
+      shouldRequireStudioPlaceSelection(promptToSend) &&
       ["agent", "debug"].includes(String(settings?.chatMode || chat.activeMode || "agent").toLowerCase())
     ) {
       let options = studioPlaceOptions;
@@ -1331,7 +1345,8 @@ export function useAiWorkspaceController() {
       return executePromptOperation(e, overridePrompt, submissionOptions);
     }
 
-    const studioPreflight = evaluateStudioSubmissionPreflight({
+    const studioPreflight = evaluateIntentAwareStudioSubmissionPreflight({
+      prompt: currentPrompt,
       studioEnabled,
       connected: studioConnection.connected,
       mode: settings?.chatMode || chat.activeMode || "agent",

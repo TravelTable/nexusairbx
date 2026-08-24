@@ -9,7 +9,7 @@ export { SUGGESTED_MODEL_IDS, isSuggestedModelId, pickSuggestedModels, suggested
 
 export const DEFAULT_FREE_MODEL = "nexus-free-auto";
 export const DEFAULT_PRO_MODEL = "openai/gpt-5-mini";
-export const NEXUS_AGENT_LOGO = "/nexus-mark.svg";
+export const NEXUS_AGENT_LOGO = "/logo192.png";
 
 export const MODEL_ID_ALIASES = Object.freeze({
   "deepseek-free": DEFAULT_FREE_MODEL,

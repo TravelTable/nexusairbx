@@ -54,7 +54,7 @@ export function organizationStructuredData() {
     "@type": "Organization",
     name: SITE_NAME,
     url: PUBLIC_SITE_ORIGIN,
-    logo: absoluteUrl("/nexus-mark.svg"),
+    logo: absoluteUrl("/logo512.png"),
     sameAs: ["https://github.com/TravelTable/nexusairbx"],
   };
 }

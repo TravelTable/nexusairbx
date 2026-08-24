@@ -41,14 +41,17 @@ describe("HomepageV2Content", () => {
     expect(input.getAttribute("aria-invalid")).toBe("true");
   });
 
-  test("keeps the animated hero heading, lead image, and labeled image slots", () => {
+  test("keeps a static search-intent heading and uses product evidence throughout", () => {
     const { container } = render(<HomepageV2Content navigate={jest.fn()} />);
-    expect(screen.getByRole("heading", { name: "Build your Roblox game. Make it playable.", level: 1 })).toBeTruthy();
-    expect(container.querySelectorAll("[data-image-placeholder]")).toHaveLength(12);
-    expect(container.querySelectorAll("img")).toHaveLength(1);
-    expect(screen.getByRole("img", { name: /roblox character running beside a simple block/i }).getAttribute("src")).toBe(
-      "/assets/nexusrbx-roblox-gameplay-hero.png",
+    expect(screen.getByRole("heading", { name: "AI Roblox Script Generator and Studio Agent", level: 1 })).toBeTruthy();
+    expect(container.querySelectorAll("[data-image-placeholder]")).toHaveLength(0);
+    expect(container.querySelectorAll("img").length).toBeGreaterThanOrEqual(3);
+    expect(screen.getByRole("img", { name: /agent build workspace showing the request composer/i }).getAttribute("src")).toBe(
+      "/assets/nexusrbx-workspace-evidence.png",
     );
+    expect(screen.getByText("Source matched")).toBeTruthy();
+    expect(screen.getByText("Creator review")).toBeTruthy();
+    expect(screen.getByText("Checks passed")).toBeTruthy();
   });
 
   test("switches the tabbed tool showcase", () => {
@@ -58,7 +61,9 @@ describe("HomepageV2Content", () => {
     fireEvent.click(studioTab);
     expect(studioTab.getAttribute("aria-selected")).toBe("true");
     expect(screen.getByRole("heading", { name: "Work with the place you have" })).toBeTruthy();
-    expect(screen.getByRole("img", { name: /studio bridge screenshot image placeholder/i })).toBeTruthy();
+    expect(screen.getByRole("img", { name: /Roblox Studio playtest running/i }).getAttribute("src")).toBe(
+      "/assets/nexusrbx-studio-playtest-evidence.png",
+    );
   });
 
   test("presents the build stack and accessible FAQ", () => {
@@ -72,8 +77,25 @@ describe("HomepageV2Content", () => {
     const { container } = render(<HomepageV2Content navigate={jest.fn()} />);
     const hero = container.querySelector("[data-home-hero]");
     expect(hero.querySelectorAll("button[type='submit']")).toHaveLength(1);
-    expect(hero.querySelectorAll("a")).toHaveLength(2);
+    expect(hero.querySelectorAll("a")).toHaveLength(1);
+    expect(hero.querySelector("a").getAttribute("href")).toBe("#workflow");
     expect(hero.querySelector("button[type='submit']").textContent).toBe("Start building");
+  });
+
+  test("links to every focused search landing page with descriptive anchor text", () => {
+    render(<HomepageV2Content navigate={jest.fn()} />);
+    const focusedTools = screen.getByRole("navigation", { name: "Focused Roblox creation tools" });
+    const expectedLinks = [
+      ["Roblox script generator", "/roblox-script-generator"],
+      ["Roblox AI scripter", "/roblox-ai-scripter"],
+      ["Studio script generator", "/roblox-studio-script-generator"],
+      ["Luau script generator", "/roblox-lua-script-generator"],
+      ["Roblox GUI maker", "/roblox-gui-maker"],
+    ];
+
+    expectedLinks.forEach(([name, href]) => {
+      expect(within(focusedTools).getByRole("link", { name: new RegExp(name, "i") }).getAttribute("href")).toBe(href);
+    });
   });
 
   test("submits the selected creation mode", () => {

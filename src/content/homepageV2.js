@@ -1,7 +1,7 @@
 export const homepageV2Metadata = {
-  title: "Build and Review Roblox Projects | NexusRBX",
+  title: "AI Roblox Script Generator & Studio Agent | NexusRBX",
   description:
-    "Turn a Roblox project request into inspected Studio context, reviewable changes, playtest evidence, and a recoverable build record.",
+    "Generate Roblox Luau scripts with AI, inspect Studio projects, review multi-file changes, and playtest safely with NexusRBX.",
 };
 
 export const homepageHeroPrompt =

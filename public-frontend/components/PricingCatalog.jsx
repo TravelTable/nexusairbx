@@ -384,16 +384,6 @@ export default function PricingCatalog() {
         </div>
       </section>
 
-      <PlanFinder
-        teamMode={teamMode}
-        onTeamModeChange={setTeamMode}
-        pace={pace}
-        onPaceChange={setPace}
-        focus={focus}
-        onFocusChange={setFocus}
-        recommendation={recommendation}
-      />
-
       <section className={styles.ledger} aria-label="NexusRBX access plans">
         {publicPlanCatalog.map((plan) => (
           <AccessRecord
@@ -407,6 +397,16 @@ export default function PricingCatalog() {
           />
         ))}
       </section>
+
+      <PlanFinder
+        teamMode={teamMode}
+        onTeamModeChange={setTeamMode}
+        pace={pace}
+        onPaceChange={setPace}
+        focus={focus}
+        onFocusChange={setFocus}
+        recommendation={recommendation}
+      />
 
       <section className={styles.comparison} aria-labelledby="comparison-title">
         <header>

@@ -3,13 +3,7 @@
   "name": "NexusRBX - Build Roblox games with an AI creator workspace",
   "icons": [
     {
-      "src": "nexus-mark.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "nexus-mark-64.png",
+      "src": "favicon.png",
       "sizes": "64x64",
       "type": "image/png"
     },

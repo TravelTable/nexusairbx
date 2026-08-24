@@ -1,6 +1,7 @@
 import {
   classifyExecutionIntent,
   classifyUserIntent,
+  explicitlyDisablesStudioContext,
   isImplementationIntent,
 } from "./intentClassifier";
 
@@ -104,6 +105,23 @@ describe("classifyExecutionIntent", () => {
       .toBe("artifact_only");
   });
 
+  test("ignores build verbs inside explicit negative constraints", () => {
+    expect(classifyUserIntent(
+      'Reply with exactly "AUDIT CHAT OK". Do not use Studio, create files, or create assets.'
+    )).toBe("AMBIGUOUS");
+    expect(classifyUserIntent("Answer without changing any project files"))
+      .toBe("AMBIGUOUS");
+    expect(classifyUserIntent("Do not remove logs; instead fix the inventory bug"))
+      .toBe("MODIFICATION_REQUEST");
+  });
+
+  test("distinguishes an explicit Studio opt-out from ordinary conversation", () => {
+    expect(explicitlyDisablesStudioContext("Do not use Studio for this answer"))
+      .toBe(true);
+    expect(explicitlyDisablesStudioContext("What does Main do?"))
+      .toBe(false);
+  });
+
   test("distinguishes live builds, fixes, playtests, and explicit artifact-only work", () => {
     expect(classifyExecutionIntent("Build a round system", { studioEnabled: true }))
       .toBe("live_build");
@@ -114,6 +132,11 @@ describe("classifyExecutionIntent", () => {
     expect(classifyExecutionIntent("How do I run a test in Studio?"))
       .toBe("artifact_only");
     expect(classifyExecutionIntent("Generate code only; do not push to Studio", { studioEnabled: true }))
+      .toBe("artifact_only");
+    expect(classifyExecutionIntent(
+      'Reply with exactly "AUDIT CHAT OK". Do not use Studio, create files, or create assets.'
+    )).toBe("artifact_only");
+    expect(classifyExecutionIntent("Answer without Studio and without changing any project files"))
       .toBe("artifact_only");
   });
 

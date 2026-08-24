@@ -19,6 +19,7 @@ import { isExplicitPlanApproval } from "../lib/planApproval";
 import {
   classifyExecutionIntent,
   classifyUserIntent,
+  explicitlyDisablesStudioContext,
   isImplementationIntent,
 } from "../lib/intentClassifier";
 import {
@@ -994,7 +995,9 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         stage: "Thinking...",
       }, requestId);
 
-      const studioEnabled = FEATURE_FLAGS.unifiedAgent && getStudioEnabledPreference();
+      const studioEnabled = FEATURE_FLAGS.unifiedAgent
+        && getStudioEnabledPreference()
+        && !explicitlyDisablesStudioContext(requestPrompt);
       let studioSessionId = null;
       let studioConnectionType = null;
       if (studioEnabled) {
@@ -1274,6 +1277,27 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
               throwIfAborted(flowController.signal);
             }
             onOperationStatus?.("Running");
+            const userIntent = classifyUserIntent(implementationPrompt);
+            if (!effectiveOptions.projectId && !isImplementationIntent(userIntent)) {
+              await handleAskSubmit(
+                implementationPrompt,
+                currentAttachments,
+                activeChatId,
+                requestId,
+                flowController.signal,
+                conversationMessages,
+                effectiveOptions.idempotencyKey,
+                effectiveOptions
+              );
+              return;
+            }
+            if (!effectiveOptions.projectId) {
+              const projectError = new Error(
+                "Choose a project before starting Agent Build. General chats remain available for questions and discussion."
+              );
+              projectError.code = "PROJECT_REQUIRED";
+              throw projectError;
+            }
             await launchAuthoritativeRun({
               activeChatId,
               requestId,

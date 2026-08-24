@@ -96,6 +96,7 @@ export default function UniversalHeaderFrame({
               ref={searchButtonRef}
               type="button"
               className={styles.searchButton}
+              aria-label="Search NexusRBX"
               aria-haspopup="dialog"
               aria-expanded={searchOpen}
               onClick={(event) => {

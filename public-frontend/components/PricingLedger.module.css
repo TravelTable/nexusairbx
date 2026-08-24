@@ -22,11 +22,8 @@
   margin-bottom: var(--nx-space-5);
   padding: var(--nx-space-4);
   border: 1px solid var(--nx-rule);
-  border-radius: var(--nx-radius-card);
-  background:
-    radial-gradient(circle at 0 0, var(--nx-purple-wash), transparent 42%),
-    var(--nx-card);
-  box-shadow: var(--nx-inner-highlight), var(--nx-shadow-card);
+  border-radius: var(--nx-radius-panel);
+  background: var(--nx-card);
 }
 
 .finderIntro h2 {
@@ -131,7 +128,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.85fr);
   gap: var(--nx-space-6);
-  padding: var(--nx-space-12) 0 var(--nx-space-10);
+  padding: var(--nx-space-10) 0 var(--nx-space-8);
 }
 .phase {
   margin: 0 0 var(--nx-space-3);
@@ -149,8 +146,8 @@
   letter-spacing: -0.045em;
 }
 .intro h1 {
-  max-width: 12ch;
-  font-size: clamp(2.75rem, 6vw, 4rem);
+  max-width: 15ch;
+  font-size: clamp(2.5rem, 5vw, 3.65rem);
   line-height: 1;
 }
 .introCopy {
@@ -214,39 +211,28 @@
 }
 
 .ledger {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: var(--nx-space-3);
-  padding-bottom: var(--nx-space-12);
+  display: block;
+  padding-bottom: var(--nx-space-8);
+  border-top: 1px solid var(--nx-rule-strong);
 }
 .plan {
   display: grid;
-  min-height: 100%;
-  grid-template-rows: auto auto 1fr auto;
-  gap: var(--nx-space-4);
-  align-items: stretch;
-  padding: var(--nx-space-4);
-  border: 1px solid var(--nx-rule);
-  border-radius: var(--nx-radius-card);
-  background: var(--nx-card);
-  box-shadow: var(--nx-shadow-card);
-  transition:
-    border-color var(--nx-motion-color),
-    box-shadow var(--nx-motion-elevation),
-    transform var(--nx-motion-elevation);
+  grid-template-columns: minmax(170px, 0.72fr) minmax(190px, 0.78fr) minmax(340px, 1.8fr) minmax(150px, 0.62fr);
+  gap: var(--nx-space-5);
+  align-items: center;
+  padding: var(--nx-space-6) 0;
+  border-bottom: 1px solid var(--nx-rule);
+  background: transparent;
+  transition: border-color var(--nx-motion-color), background-color var(--nx-motion-color);
 }
 .plan:hover {
   border-color: var(--nx-rule-strong);
-  transform: translateY(-2px);
+  background: color-mix(in srgb, var(--nx-card) 45%, transparent);
 }
 
 .plan[data-recommended="true"] {
   border-color: var(--nx-purple-edge);
-  background:
-    radial-gradient(circle at 50% 0, var(--nx-purple-wash), transparent 36%),
-    var(--nx-card);
-  box-shadow:
-    var(--nx-inner-highlight), var(--nx-shadow-card), var(--nx-purple-glow);
+  box-shadow: inset 3px 0 var(--nx-purple);
 }
 .planIdentity > span {
   color: var(--nx-purple-strong);
@@ -263,7 +249,6 @@
   line-height: 1;
 }
 .planIdentity p {
-  min-height: 3.2em;
   margin: var(--nx-space-2) 0 0;
   color: var(--nx-text-muted);
   font-size: 0.76rem;
@@ -271,10 +256,7 @@
 }
 
 .price {
-  padding: var(--nx-space-3);
-  border: 1px solid var(--nx-rule);
-  border-radius: var(--nx-radius-panel);
-  background: var(--nx-muted-surface);
+  padding: 0;
 }
 .price strong {
   display: block;
@@ -323,10 +305,11 @@
 }
 
 .features {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 var(--nx-space-4);
   margin: 0;
-  padding: var(--nx-space-3);
-  border-radius: var(--nx-radius-panel);
-  background: rgb(255 255 255 / 3%);
+  padding: 0;
   list-style: none;
 }
 .features li {
@@ -340,7 +323,7 @@
   line-height: 1.45;
 }
 .features li:first-child {
-  border-top: 0;
+  border-top: 1px solid var(--nx-rule-quiet);
 }
 .features li span {
   color: var(--nx-purple-strong);
@@ -370,7 +353,6 @@
 .action:hover {
   background: var(--nx-purple-strong);
   color: var(--nx-canvas);
-  transform: translateY(-1px);
 }
 .action:disabled {
   background: var(--nx-raised-surface);
@@ -423,20 +405,20 @@
   .intro {
     grid-template-columns: 1fr;
   }
-  .ledger {
+  .plan {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .features {
+    grid-column: 1 / -1;
+  }
+  .planAction {
+    grid-column: 2;
   }
   .finder {
     grid-template-columns: 1fr;
   }
   .finderResult {
     max-width: 20rem;
-  }
-}
-
-@media (min-width: 981px) and (max-width: 1180px) {
-  .ledger {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -463,7 +445,15 @@
     flex: 1;
     justify-content: center;
   }
-  .ledger {
+  .plan {
+    grid-template-columns: 1fr;
+    gap: var(--nx-space-4);
+  }
+  .features,
+  .planAction {
+    grid-column: auto;
+  }
+  .features {
     grid-template-columns: 1fr;
   }
   .finderControls {

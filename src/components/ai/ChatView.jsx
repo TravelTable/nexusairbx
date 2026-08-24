@@ -28,6 +28,7 @@ export default function ChatView({
   onViewUi,
   onQuickStart,
   onOpenTemplates,
+  onStartGuide,
   onRefine,
   onFixUiAudit,
   onApprovePlan,
@@ -90,6 +91,7 @@ export default function ChatView({
               <ChatEmptyState
                 onQuickStart={onQuickStart}
                 onOpenTemplates={onOpenTemplates}
+                onStartGuide={onStartGuide}
                 projectTitle={projectTitle}
                 projectId={projectId}
                 studioConnected={studioConnected}

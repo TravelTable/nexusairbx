@@ -111,6 +111,7 @@ function resolveBuildContext({
 export default function ChatEmptyState({
   onQuickStart,
   onOpenTemplates,
+  onStartGuide,
   projectTitle,
   projectId,
   studioConnected,
@@ -125,7 +126,9 @@ export default function ChatEmptyState({
     studioPlacePreference,
   });
   const hasBuildContext = Boolean(
-    buildContext.projectTitle || buildContext.placeTitle,
+    buildContext.projectTitle ||
+      buildContext.placeTitle ||
+      buildContext.hasStudioStatus,
   );
 
   return (
@@ -175,6 +178,21 @@ export default function ChatEmptyState({
                 </dd>
               </div>
             ) : null}
+            {buildContext.hasStudioStatus ? (
+              <div>
+                <dt>Studio</dt>
+                <dd>
+                  <span
+                    className="chat-empty-state__status"
+                    data-connected={
+                      buildContext.studioConnected ? "true" : "false"
+                    }
+                    aria-hidden="true"
+                  />
+                  {buildContext.studioConnected ? "Connected" : "Disconnected"}
+                </dd>
+              </div>
+            ) : null}
           </dl>
         ) : null}
 
@@ -205,15 +223,26 @@ export default function ChatEmptyState({
           ))}
         </div>
 
-        {onOpenTemplates ? (
+        {onOpenTemplates || onStartGuide ? (
           <div className="chat-empty-state__footer">
-            <button
-              type="button"
-              onClick={onOpenTemplates}
-              className="chat-empty-state__templates focus-ring"
-            >
-              Browse request templates →
-            </button>
+            {onOpenTemplates ? (
+              <button
+                type="button"
+                onClick={onOpenTemplates}
+                className="chat-empty-state__templates focus-ring"
+              >
+                Browse request templates →
+              </button>
+            ) : null}
+            {onStartGuide ? (
+              <button
+                type="button"
+                onClick={onStartGuide}
+                className="chat-empty-state__templates focus-ring"
+              >
+                Show the 5-step creator guide →
+              </button>
+            ) : null}
           </div>
         ) : null}
       </section>

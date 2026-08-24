@@ -468,18 +468,15 @@
   text-align: left;
   transition:
     color var(--nx-motion-fast) var(--nx-ease-state),
-    padding var(--nx-motion-state) var(--nx-ease-state),
     background-color var(--nx-motion-fast) var(--nx-ease-state);
 }
 
 .chat-empty-state__starter:hover,
 .chat-empty-state__starter:focus-visible {
-  padding-inline: var(--nx-space-4);
   border-color: var(--nx-rule-strong);
   background: var(--nx-muted-surface);
   color: var(--nx-text);
   box-shadow: var(--nx-shadow-card);
-  transform: translateY(-2px);
 }
 
 .chat-empty-state__starter-copy,
@@ -518,6 +515,7 @@
 .chat-empty-state__footer {
   display: flex;
   min-height: 48px;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: var(--nx-space-3);
