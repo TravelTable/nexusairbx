@@ -32,7 +32,11 @@
   padding-block: clamp(72px, 10vw, 132px) 88px;
 }
 
-.heroCopy { min-width: 0; }
+.heroCopy {
+  width: 100%;
+  min-width: 0;
+  max-width: 960px;
+}
 
 .eyebrow {
   display: inline-flex;
@@ -68,7 +72,13 @@
   line-height: 1.7;
 }
 
-.heroPrompt { --homepage-composer-width: 620px; margin-top: 30px; }
+.heroPrompt {
+  --homepage-composer-width: 620px;
+  width: 100%;
+  min-width: 0;
+  max-width: 620px;
+  margin-top: 30px;
+}
 .heroLinks { display: flex; min-height: 44px; align-items: center; margin-top: 14px; }
 
 .heroLinks a,
@@ -87,7 +97,9 @@
 .footer a:hover { color: var(--nx-text); }
 
 .heroMedia {
+  width: 100%;
   min-width: 0;
+  max-width: 800px;
   min-height: 440px;
   margin: 0;
   overflow: hidden;
@@ -214,7 +226,7 @@
 .footerFinePrint { margin: 32px 0 0; padding-top: 20px; border-top: 1px solid var(--nx-rule); }
 
 @media (max-width: 1020px) {
-  .hero { min-height: 0; grid-template-columns: 1fr; gap: 48px; padding-top: 96px; }
+  .hero { min-height: 0; grid-template-columns: minmax(0, 1fr); gap: 48px; padding-top: 96px; }
   .heroCopy { max-width: 760px; }
   .heroHeading { font-size: clamp(3rem, 8vw, 5rem); }
   .heroMedia { min-height: 0; }

@@ -35,3 +35,10 @@ test("uses semantic build-state colors and minimum touch targets", () => {
   expect(css).toMatch(/\.toolTabs button\s*\{[^}]*min-height:\s*44px/s);
   expect(css).toMatch(/\.heroLinks a\s*\{[^}]*min-height:\s*44px/s);
 });
+
+test("constrains intrinsic hero content to the mobile grid track", () => {
+  expect(css).toMatch(/\.hero\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/s);
+  expect(css).toMatch(/\.heroCopy\s*\{[^}]*width:\s*100%[^}]*min-width:\s*0[^}]*max-width:\s*960px/s);
+  expect(css).toMatch(/\.heroPrompt\s*\{[^}]*width:\s*100%[^}]*min-width:\s*0[^}]*max-width:\s*620px/s);
+  expect(css).toMatch(/\.heroMedia\s*\{[^}]*width:\s*100%[^}]*min-width:\s*0[^}]*max-width:\s*800px/s);
+});
