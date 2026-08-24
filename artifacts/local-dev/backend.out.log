@@ -6592,3 +6592,173 @@
   durationMs: 2,
   errorCode: 'CORS_ORIGIN_BLOCKED'
 }
+[ops] {
+  event: 'http_request',
+  ts: '2026-08-24T12:17:46.187Z',
+  requestId: 'fc29867d-8565-4a5c-941b-98246a7b81c2',
+  method: 'POST',
+  route: '/api/auth/:id',
+  status: 403,
+  durationMs: 2,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-08-24T12:17:48.176Z',
+  requestId: '99e10bac-d3dd-4e5b-a115-ac4950694d29',
+  method: 'POST',
+  route: '/api/auth/:id',
+  status: 403,
+  durationMs: 2,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-08-24T12:17:50.176Z',
+  requestId: '88dd0e6b-3d0c-4dcf-b715-597118eebbbf',
+  method: 'POST',
+  route: '/api/auth/:id',
+  status: 403,
+  durationMs: 4,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-08-24T12:17:52.183Z',
+  requestId: 'fd88f1f9-9087-412c-97e8-c4fb17920382',
+  method: 'POST',
+  route: '/api/auth/:id',
+  status: 403,
+  durationMs: 4,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-08-24T12:17:52.244Z',
+  requestId: '3fe88305-bcb5-4bda-b60b-0813ccb4b39e',
+  method: 'OPTIONS',
+  route: '/api/support/tickets/unread-count',
+  status: 403,
+  durationMs: 2,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-08-24T12:17:54.175Z',
+  requestId: '796ea7e3-6a32-48f6-86a5-93509b69d727',
+  method: 'POST',
+  route: '/api/auth/:id',
+  status: 403,
+  durationMs: 2,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-08-24T12:17:56.185Z',
+  requestId: '3b37b612-0714-4e2d-920c-0a3438a87789',
+  method: 'POST',
+  route: '/api/auth/:id',
+  status: 403,
+  durationMs: 1,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-08-24T12:17:58.179Z',
+  requestId: '796a93a5-739f-4ebe-a780-a34e0cf577d7',
+  method: 'POST',
+  route: '/api/auth/:id',
+  status: 403,
+  durationMs: 2,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-08-24T12:18:00.187Z',
+  requestId: 'a5c6eab2-3632-43b2-9ec1-7e83956d4291',
+  method: 'POST',
+  route: '/api/auth/:id',
+  status: 403,
+  durationMs: 3,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-08-24T12:18:02.179Z',
+  requestId: '60f2266f-afe2-45cb-8b00-4b7b7ed56a83',
+  method: 'POST',
+  route: '/api/auth/:id',
+  status: 403,
+  durationMs: 2,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-08-24T12:18:04.185Z',
+  requestId: 'bb4ab27b-9aa0-4654-8865-0e753f2c0960',
+  method: 'POST',
+  route: '/api/auth/:id',
+  status: 403,
+  durationMs: 2,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-08-24T12:18:06.178Z',
+  requestId: '816c0a18-8452-45e0-b02d-a5037b834c5f',
+  method: 'POST',
+  route: '/api/auth/:id',
+  status: 403,
+  durationMs: 3,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-08-24T12:18:08.180Z',
+  requestId: '573939c5-d4e8-4802-98df-d4c670332c59',
+  method: 'POST',
+  route: '/api/auth/:id',
+  status: 403,
+  durationMs: 3,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-08-24T12:18:10.181Z',
+  requestId: 'dd418c25-3a23-4919-925a-acc8a1ab4eb3',
+  method: 'POST',
+  route: '/api/auth/:id',
+  status: 403,
+  durationMs: 1,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-08-24T12:18:12.185Z',
+  requestId: 'e2270ce0-0f70-4927-89f5-1c8efbb23388',
+  method: 'POST',
+  route: '/api/auth/:id',
+  status: 403,
+  durationMs: 3,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-08-24T12:18:14.185Z',
+  requestId: '49d5b1e0-deff-4a12-a25e-73c2a1c7473a',
+  method: 'POST',
+  route: '/api/auth/:id',
+  status: 403,
+  durationMs: 2,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-08-24T12:18:16.182Z',
+  requestId: 'bd85c312-e096-4245-aae0-edaa9784b2fb',
+  method: 'POST',
+  route: '/api/auth/:id',
+  status: 403,
+  durationMs: 2,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}

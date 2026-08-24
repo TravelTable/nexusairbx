@@ -8024,3 +8024,157 @@
   status: 403,
   errorCode: 'CORS_ORIGIN_BLOCKED'
 }
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:17:46.185Z',
+  requestId: 'fc29867d-8565-4a5c-941b-98246a7b81c2',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:17:48.174Z',
+  requestId: '99e10bac-d3dd-4e5b-a115-ac4950694d29',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:17:50.173Z',
+  requestId: '88dd0e6b-3d0c-4dcf-b715-597118eebbbf',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:17:52.179Z',
+  requestId: 'fd88f1f9-9087-412c-97e8-c4fb17920382',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'cors.preflight_rejected',
+  ts: '2026-08-24T12:17:52.242Z',
+  origin: 'http://localhost:3000',
+  requestedMethod: 'GET',
+  requestedHeaders: [
+    'authorization',
+    'cache-control',
+    'pragma',
+    'x-nexus-anonymous-session-id',
+    'x-nexus-anonymous-user-id',
+    'x-nexus-client-deployment',
+    'x-nexus-experiment-variants',
+    'x-request-id'
+  ],
+  route: '/api/support/tickets/unread-count',
+  rejectionReason: 'origin_not_allowed'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:17:52.243Z',
+  requestId: '3fe88305-bcb5-4bda-b60b-0813ccb4b39e',
+  route: '/api/support/tickets/unread-count',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:17:54.173Z',
+  requestId: '796ea7e3-6a32-48f6-86a5-93509b69d727',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:17:56.184Z',
+  requestId: '3b37b612-0714-4e2d-920c-0a3438a87789',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:17:58.177Z',
+  requestId: '796a93a5-739f-4ebe-a780-a34e0cf577d7',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:18:00.184Z',
+  requestId: 'a5c6eab2-3632-43b2-9ec1-7e83956d4291',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:18:02.177Z',
+  requestId: '60f2266f-afe2-45cb-8b00-4b7b7ed56a83',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:18:04.183Z',
+  requestId: 'bb4ab27b-9aa0-4654-8865-0e753f2c0960',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:18:06.176Z',
+  requestId: '816c0a18-8452-45e0-b02d-a5037b834c5f',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:18:08.178Z',
+  requestId: '573939c5-d4e8-4802-98df-d4c670332c59',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:18:10.180Z',
+  requestId: 'dd418c25-3a23-4919-925a-acc8a1ab4eb3',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:18:12.183Z',
+  requestId: 'e2270ce0-0f70-4927-89f5-1c8efbb23388',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:18:14.184Z',
+  requestId: '49d5b1e0-deff-4a12-a25e-73c2a1c7473a',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
+[ops] {
+  event: 'expected_error',
+  ts: '2026-08-24T12:18:16.180Z',
+  requestId: 'bd85c312-e096-4245-aae0-edaa9784b2fb',
+  route: '/api/auth/:id',
+  status: 403,
+  errorCode: 'CORS_ORIGIN_BLOCKED'
+}
