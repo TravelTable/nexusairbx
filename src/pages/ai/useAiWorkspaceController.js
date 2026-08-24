@@ -159,6 +159,11 @@ export function shouldRequireStudioPlaceSelection(prompt) {
   return isImplementationIntent(classifyUserIntent(prompt));
 }
 
+export function evaluateIntentAwareStudioSubmissionPreflight({ prompt, ...studioOptions }) {
+  if (!shouldRequireStudioPlaceSelection(prompt)) return { status: "ready" };
+  return evaluateStudioSubmissionPreflight(studioOptions);
+}
+
 const MODE_COLORS = {
   general: { primary: "var(--ds-accent)", secondary: "var(--ds-info)" },
   ui: { primary: "var(--ds-accent)", secondary: "var(--ds-accent)" },
@@ -1340,7 +1345,8 @@ export function useAiWorkspaceController() {
       return executePromptOperation(e, overridePrompt, submissionOptions);
     }
 
-    const studioPreflight = evaluateStudioSubmissionPreflight({
+    const studioPreflight = evaluateIntentAwareStudioSubmissionPreflight({
+      prompt: currentPrompt,
       studioEnabled,
       connected: studioConnection.connected,
       mode: settings?.chatMode || chat.activeMode || "agent",

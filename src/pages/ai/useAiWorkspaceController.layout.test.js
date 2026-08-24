@@ -1,4 +1,5 @@
 import {
+  evaluateIntentAwareStudioSubmissionPreflight,
   PROJECT_SIDEBAR_DESKTOP_MIN_WIDTH,
   shouldCloseProjectSidebarOnViewportChange,
   shouldOpenProjectSidebarByDefault,
@@ -33,6 +34,14 @@ describe("AI workspace Studio-place gate", () => {
     )).toBe(false);
     expect(shouldRequireStudioPlaceSelection("Explain how DataStore retries work"))
       .toBe(false);
+    expect(evaluateIntentAwareStudioSubmissionPreflight({
+      prompt: 'Reply with exactly "AUDIT CHAT OK". Do not use Studio, create files, or create assets.',
+      studioEnabled: true,
+      connected: true,
+      mode: "agent",
+      preference: null,
+      options: [{ placeName: "Local.rbxl" }],
+    })).toEqual({ status: "ready" });
   });
 
   test("still requires a Studio place for implementation requests", () => {
