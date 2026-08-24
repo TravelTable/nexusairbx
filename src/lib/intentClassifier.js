@@ -69,7 +69,7 @@ export function isImplementationIntent(intent) {
   return intent === "BUILD_REQUEST" || intent === "MODIFICATION_REQUEST" || intent === "REFINEMENT" || intent === "CONTINUATION";
 }
 
-const ARTIFACT_ONLY_RE = /\b(code|artifact|files?|export|download)\s+only\b|\b(do not|don't|without)\s+(push|apply|edit|change|touch)(?:\s+(?:it\s+)?(?:to|in))?\s+studio\b/i;
+const ARTIFACT_ONLY_RE = /\b(code|artifact|files?|export|download)\s+only\b|\b(?:do not|don't|without)\s+(?:use\s+)?studio\b|\b(?:do not|don't|without)\s+(?:push|apply|edit|change|touch)(?:\s+(?:it\s+)?(?:to|in))?\s+studio\b/i;
 const PLAYTEST_RE = /\b(play\s*test|run\s+(?:a\s+)?test|test\s+(?:the\s+)?(?:game|place|experience)|start\s+(?:the\s+)?game)\b/i;
 const INSPECTION_RE = /\b(inspect|audit|analy[sz]e|review|summari[sz]e|explain|list|show|see|view|visible|read|find|search|diagnose)\b|\bwhat\s+files?\b/i;
 const LIVE_CONTEXT_RE = /\b(studio|current\s+(?:game|place|project|experience)|live\s+(?:game|place|project|experience)|explorer|selection|(?:this|selected|open|current)\s+(?:module\s*)?script|ServerScriptService|ServerStorage|ReplicatedStorage|StarterGui|StarterPlayer|Workspace\.[A-Za-z0-9_]+)\b/i;

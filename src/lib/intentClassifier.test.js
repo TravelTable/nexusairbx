@@ -115,6 +115,11 @@ describe("classifyExecutionIntent", () => {
       .toBe("artifact_only");
     expect(classifyExecutionIntent("Generate code only; do not push to Studio", { studioEnabled: true }))
       .toBe("artifact_only");
+    expect(classifyExecutionIntent(
+      'Reply with exactly "AUDIT CHAT OK". Do not use Studio, create files, or create assets.'
+    )).toBe("artifact_only");
+    expect(classifyExecutionIntent("Answer without Studio and without changing any project files"))
+      .toBe("artifact_only");
   });
 
   test("recognizes Quick Script as an explicit execution channel", () => {
