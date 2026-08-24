@@ -41,17 +41,15 @@ describe("HomepageV2Content", () => {
     expect(input.getAttribute("aria-invalid")).toBe("true");
   });
 
-  test("keeps a static search-intent heading and uses product evidence throughout", () => {
+  test("keeps a static search-intent heading, animated promise, lead image, and labeled image slots", () => {
     const { container } = render(<HomepageV2Content navigate={jest.fn()} />);
     expect(screen.getByRole("heading", { name: "AI Roblox Script Generator and Studio Agent", level: 1 })).toBeTruthy();
-    expect(container.querySelectorAll("[data-image-placeholder]")).toHaveLength(0);
-    expect(container.querySelectorAll("img").length).toBeGreaterThanOrEqual(3);
-    expect(screen.getByRole("img", { name: /agent build workspace showing the request composer/i }).getAttribute("src")).toBe(
-      "/assets/nexusrbx-workspace-evidence.png",
+    expect(screen.getByLabelText("Build your Roblox game. Make it playable.")).toBeTruthy();
+    expect(container.querySelectorAll("[data-image-placeholder]")).toHaveLength(12);
+    expect(container.querySelectorAll("img")).toHaveLength(1);
+    expect(screen.getByRole("img", { name: /Roblox character running beside a simple block/i }).getAttribute("src")).toBe(
+      "/assets/nexusrbx-roblox-gameplay-hero.png",
     );
-    expect(screen.getByText("Source matched")).toBeTruthy();
-    expect(screen.getByText("Creator review")).toBeTruthy();
-    expect(screen.getByText("Checks passed")).toBeTruthy();
   });
 
   test("switches the tabbed tool showcase", () => {
@@ -61,9 +59,7 @@ describe("HomepageV2Content", () => {
     fireEvent.click(studioTab);
     expect(studioTab.getAttribute("aria-selected")).toBe("true");
     expect(screen.getByRole("heading", { name: "Work with the place you have" })).toBeTruthy();
-    expect(screen.getByRole("img", { name: /Roblox Studio playtest running/i }).getAttribute("src")).toBe(
-      "/assets/nexusrbx-studio-playtest-evidence.png",
-    );
+    expect(screen.getByRole("img", { name: "STUDIO BRIDGE SCREENSHOT image placeholder" })).toBeTruthy();
   });
 
   test("presents the build stack and accessible FAQ", () => {
@@ -77,8 +73,8 @@ describe("HomepageV2Content", () => {
     const { container } = render(<HomepageV2Content navigate={jest.fn()} />);
     const hero = container.querySelector("[data-home-hero]");
     expect(hero.querySelectorAll("button[type='submit']")).toHaveLength(1);
-    expect(hero.querySelectorAll("a")).toHaveLength(1);
-    expect(hero.querySelector("a").getAttribute("href")).toBe("#workflow");
+    expect(hero.querySelectorAll("a")).toHaveLength(2);
+    expect(Array.from(hero.querySelectorAll("a")).map((link) => link.getAttribute("href"))).toEqual(["/ai", "/pricing"]);
     expect(hero.querySelector("button[type='submit']").textContent).toBe("Start building");
   });
 

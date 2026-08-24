@@ -6,18 +6,17 @@ import HomepageFooter from "./HomepageFooter";
 import HomepagePrompt from "./HomepagePrompt";
 import styles from "./HomepageCinematic.module.css";
 
+const HERO_WORDS = ["playable", "testable", "reviewable", "real"];
+const HERO_LETTER_COLORS = ["#eca8d6", "#b591f3", "#81c3f9", "#a2d8a4", "#f8ba48"];
+
 const TOOL_TABS = [
-  { id: "agent", label: "Agent build", title: "Build through conversation", description: "Describe the game, system, or fix. Nexus reads the project, plans the work, and keeps the result attached to one request.", src: "/assets/nexusrbx-workspace-evidence.png", alt: "NexusRBX Agent Build workspace with project navigation, starter requests, and a Studio-aware composer" },
-  { id: "scripts", label: "Quick scripts", title: "Go from intent to Luau", description: "Generate focused scripts with context, explanations, source safety, and a clean handoff into your existing project.", src: "/assets/nexus-debug-trace-2d.webp", alt: "A NexusRBX project diagram tracing source, runtime signals, and a verified correction" },
-  { id: "studio", label: "Studio sync", title: "Work with the place you have", description: "Pair Roblox Studio, inspect the current object graph, review proposed changes, and restore snapshots when needed.", src: "/assets/nexusrbx-studio-playtest-evidence.png", alt: "Roblox Studio playtest running a NexusRBX generated project with gameplay diagnostics visible" },
-  { id: "assets", label: "Assets", title: "Keep project media together", description: "Create, organize, and reuse icons, decals, interface art, and other project assets without losing the build context.", src: "/assets/nexus-interface-assembly-2d.webp", alt: "A NexusRBX interface assembly diagram connecting UI components to the Roblox project tree" },
+  { id: "agent", label: "Agent build", title: "Build through conversation", description: "Describe the game, system, or fix. Nexus reads the project, plans the work, and keeps the result attached to one request.", placeholder: "AGENT WORKSPACE SCREENSHOT" },
+  { id: "scripts", label: "Quick scripts", title: "Go from intent to Luau", description: "Generate focused scripts with context, explanations, source safety, and a clean handoff into your existing project.", placeholder: "SCRIPT EDITOR SCREENSHOT" },
+  { id: "studio", label: "Studio sync", title: "Work with the place you have", description: "Pair Roblox Studio, inspect the current object graph, review proposed changes, and restore snapshots when needed.", placeholder: "STUDIO BRIDGE SCREENSHOT" },
+  { id: "assets", label: "Assets", title: "Keep project media together", description: "Create, organize, and reuse icons, decals, interface art, and other project assets without losing the build context.", placeholder: "ASSET LIBRARY SCREENSHOT" },
 ];
 
-const PROOF_RECORDS = [
-  { phase: "Inspect", title: "Read the project before changing it", target: "game.ServerScriptService.RoundManager", result: "Source matched", state: "ready" },
-  { phase: "Review", title: "Approve the exact files and objects", target: "3 scripts · 2 instances", result: "Creator review", state: "review" },
-  { phase: "Verify", title: "Finish with playtest evidence", target: "Round loop · mobile input · diagnostics", result: "Checks passed", state: "verified" },
-];
+const PROOF_PLACEHOLDERS = ["GAMEPLAY BEFORE / AFTER", "STUDIO CHANGE REVIEW", "MOBILE UI RESULT", "ROUND SYSTEM RESULT", "CREATOR DASHBOARD", "PROJECT TEST RECORD"];
 
 const STACK_ITEMS = [
   ["01", "Project-aware agent", "Reads the current place and keeps work grounded in the real object tree."],
@@ -44,25 +43,49 @@ async function trackHomepageProductEvent(name, properties, options) {
   }
 }
 
-function EvidenceImage({ src, alt, eager = false }) {
+function AnimatedHeroPromise() {
+  const [wordIndex, setWordIndex] = useState(0);
+  const [morphing, setMorphing] = useState(false);
+
+  useEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return undefined;
+    const intervalId = window.setInterval(() => setMorphing(true), 3000);
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    if (!morphing) return undefined;
+    const timeoutId = window.setTimeout(() => {
+      setWordIndex((current) => (current + 1) % HERO_WORDS.length);
+      setMorphing(false);
+    }, 1150);
+    return () => window.clearTimeout(timeoutId);
+  }, [morphing]);
+
+  const renderLetters = (word, direction) => (
+    <span className={styles.morphWord} data-direction={direction} aria-hidden="true">
+      {[...word].map((letter, index) => (
+        <span key={`${direction}-${letter}-${index}`} style={{ "--letter-delay": `${index * 42}ms`, "--letter-color": HERO_LETTER_COLORS[index % HERO_LETTER_COLORS.length] }}>{letter}</span>
+      ))}
+    </span>
+  );
+
+  const currentWord = HERO_WORDS[wordIndex];
+  const nextWord = HERO_WORDS[(wordIndex + 1) % HERO_WORDS.length];
+
   return (
-    <img
-      className={styles.evidenceImage}
-      src={src}
-      alt={alt}
-      loading={eager ? "eager" : "lazy"}
-      decoding="async"
-    />
+    <p aria-label={`Build your Roblox game. Make it ${currentWord}.`} className={styles.heroPromise}>
+      <span className={styles.heroHeadingLine}>Build your Roblox game.</span>
+      <span className={styles.heroHeadingLine}>Make it{" "}<span className={styles.morphStage}>{renderLetters(currentWord, morphing ? "out" : "rest")}{morphing ? renderLetters(nextWord, "in") : null}</span></span>
+    </p>
   );
 }
 
-function BuildRecord({ record }) {
+function ImagePlaceholder({ label, size, compact = false }) {
   return (
-    <article className={styles.buildRecord} data-state={record.state}>
-      <header><span>{record.phase}</span><strong>{record.result}</strong></header>
-      <h3>{record.title}</h3>
-      <code>{record.target}</code>
-    </article>
+    <div className={`${styles.imagePlaceholder} ${compact ? styles.imagePlaceholderCompact : ""}`} role="img" aria-label={`${label} image placeholder`} data-image-placeholder>
+      <span>IMAGE PLACEHOLDER</span><strong>{label}</strong>{size ? <small>{size}</small> : null}
+    </div>
   );
 }
 
@@ -70,30 +93,22 @@ function Hero({ surface, navigate, inputRef }) {
   return (
     <section className={styles.hero} aria-labelledby="homepage-hero-heading" data-home-hero>
       <div className={styles.heroCopy}>
-        <span className={styles.eyebrow}>ROBLOX PROJECT WORKSPACE</span>
+        <span className={styles.eyebrow}>AI BUILD WORKSPACE FOR ROBLOX</span>
         <h1 id="homepage-hero-heading" className={styles.heroHeading}>
           AI Roblox Script Generator <span>and Studio Agent</span>
         </h1>
-        <p className={styles.heroDescription}>Turn one request into inspected project context, reviewable Luau changes, and a verified Studio result you can restore.</p>
+        <AnimatedHeroPromise />
+        <p>Talk to your project in plain language. Plan systems, generate Luau, review changes, and move approved work into Studio.</p>
         <HomepagePrompt surface={surface} source={surface} navigateToAi={navigate} className={styles.heroPrompt} promptId="homepage-hero-prompt" suggestedPrompt="Build a round-based horror game with simple mobile controls and rooms that shift after each round." suggestionVersion={0} submitLabel="Start building" helperText="Your request is saved before the workspace opens." inputRef={inputRef} showLabel />
-        <div className={styles.heroLinks}><a href="#workflow">See the verified workflow <span aria-hidden="true">↓</span></a></div>
+        <div className={styles.heroLinks}><a href="/ai">Open workspace</a><a href="/pricing">View pricing</a></div>
       </div>
-      <figure className={styles.heroMedia}>
-        <EvidenceImage
-          src="/assets/nexusrbx-workspace-evidence.png"
-          alt="NexusRBX Agent Build workspace showing the request composer, project navigation, and Studio connection status"
-          eager
+      <div className={styles.heroMedia}>
+        <img
+          className={styles.heroImage}
+          src="/assets/nexusrbx-roblox-gameplay-hero.png"
+          alt="Roblox character running beside a simple block on a floating grass platform"
         />
-        <figcaption>
-          <span>Current project record</span>
-          <strong>Round system rebuild</strong>
-          <dl>
-            <div><dt>Target</dt><dd>RoundManager</dd></div>
-            <div><dt>Change</dt><dd>3 files</dd></div>
-            <div data-state="verified"><dt>Evidence</dt><dd>Playtest passed</dd></div>
-          </dl>
-        </figcaption>
-      </figure>
+      </div>
     </section>
   );
 }
@@ -118,8 +133,8 @@ function FocusedTools() {
 function ProofRail() {
   return (
     <section className={styles.proofSection} aria-labelledby="proof-heading">
-      <div className={styles.sectionHeading}><span className={styles.eyebrow}>ONE BUILD RECORD</span><h2 id="proof-heading">See what changed, why it changed, and whether it worked.</h2><p>Nexus keeps the request, targets, approvals, and verification attached to the same project record.</p></div>
-      <div className={styles.proofRail} aria-label="Example NexusRBX build record">{PROOF_RECORDS.map((record) => <BuildRecord key={record.phase} record={record} />)}</div>
+      <div className={styles.sectionHeading}><h2 id="proof-heading">Show what creators are building with Nexus</h2><p>Replace these slots with project screenshots, Studio results, community builds, or before-and-after proof.</p></div>
+      <div className={styles.proofRail} aria-label="Project image placeholders">{PROOF_PLACEHOLDERS.map((label) => <article key={label}><ImagePlaceholder label={label} size="900 × 1200" compact /></article>)}</div>
     </section>
   );
 }
@@ -135,9 +150,9 @@ function ToolShowcase() {
       </div>
       <div id="homepage-tool-panel" className={styles.toolPanel} role="tabpanel">
         <div className={styles.toolPanelCopy}><span className={styles.eyebrow}>CURRENT VIEW</span><h3>{activeTool.title}</h3><p>{activeTool.description}</p><a href="/ai">Open {activeTool.label} /</a></div>
-        <div className={styles.toolPanelMedia}><EvidenceImage src={activeTool.src} alt={activeTool.alt} /></div>
+        <ImagePlaceholder label={activeTool.placeholder} size="1600 × 900 recommended" />
       </div>
-      <div className={styles.toolIndex}>{TOOL_TABS.map((tool, index) => <article key={tool.id}><span>{String(index + 1).padStart(2, "0")}</span><div><h3>{tool.label}</h3><p>{tool.description}</p></div></article>)}</div>
+      <div className={styles.miniFeatureGrid}>{TOOL_TABS.map((tool) => <article key={tool.id}><ImagePlaceholder label={`${tool.label.toUpperCase()} DETAIL`} size="800 × 600" compact /><h3>{tool.label}</h3><p>{tool.description}</p></article>)}</div>
     </section>
   );
 }
@@ -146,10 +161,7 @@ function StackSection() {
   return (
     <section className={styles.stackSection} aria-labelledby="stack-heading">
       <div className={styles.sectionHeading}><h2 id="stack-heading">One workspace. Your whole Roblox build stack.</h2><p>Project context, creation, Studio actions, assets, review, and recovery stay connected to the same body of work.</p></div>
-      <figure className={styles.stackLead}>
-        <EvidenceImage src="/assets/nexus-project-xray-2d.webp" alt="Cutaway diagram of a Roblox world connected to project systems, scripts, and verification points" />
-        <figcaption><span>PROJECT XRAY</span><strong>World, systems, files, and evidence stay connected.</strong></figcaption>
-      </figure>
+      <div className={styles.stackLead}><ImagePlaceholder label="FULL WORKSPACE OVERVIEW" size="1600 × 900 recommended" /></div>
       <div className={styles.stackGrid}>{STACK_ITEMS.map(([number, title, description]) => <article key={number}><span>{number}</span><h3>{title}</h3><p>{description}</p></article>)}</div>
     </section>
   );

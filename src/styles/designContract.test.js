@@ -97,12 +97,11 @@ test("provides focus, reduced-motion, reduced-transparency, contrast, and forced
 test("applies the compact scale to the shared shell and major customer flows", () => {
   expect(header).toContain("height: var(--nx-header-height)");
   expect(header).toContain("height: var(--nx-header-height-touch)");
-  expect(homepage).toMatch(/font-size:\s*clamp\(3rem,\s*5\.8vw,\s*5\.3rem\)/);
-  expect(homepage).toContain("min-height: 440px");
+  expect(homepage).toMatch(/font-size:\s*clamp\(2\.15rem,\s*5vw,\s*5\.25rem\)/);
   expect(homepage).toContain("min-height: 500px");
   expect(homepage).toContain("min-height: 480px");
-  expect(homepage).toContain("min-height: 44px");
-  expect(homepage).toContain("grid-template-columns: minmax(0, 0.9fr) minmax(480px, 1.1fr)");
+  expect(homepage).toContain("padding: 72px max(20px, calc((100vw - var(--nx-content-compact)) / 2))");
+  expect(homepage).toContain("padding: 52px 16px");
   expect(workspace).toMatch(/font-size:\s*clamp\(2rem,\s*4vw,\s*2\.75rem\)/);
   expect(workspace).toContain("min-height: 92px");
   expect(pricing).toContain("var(--nx-content-compact)");
