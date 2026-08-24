@@ -10,7 +10,6 @@ import {
   LogOut,
   Menu,
   X,
-  Zap,
   Layout,
   Code,
   ShieldCheck
@@ -171,7 +170,7 @@ function NexusRBXHeader({
           className="focus-ring flex min-h-11 cursor-pointer items-center gap-2 rounded-full text-[13px] font-semibold tracking-[-0.01em] text-[var(--ds-text)]"
           onClick={() => openRoute("/")}
         >
-          <Zap className="h-4 w-4 text-[var(--ds-accent)]" />
+          <img src="/favicon-transparent.png" alt="" aria-hidden="true" className="h-4 w-4 object-contain" />
           <div className="flex items-center gap-1.5">
             <span className="hidden sm:inline">NexusRBX</span>
             <BetaBadge className="mt-0.5" />
