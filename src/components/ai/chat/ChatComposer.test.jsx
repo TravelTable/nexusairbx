@@ -14,8 +14,15 @@ jest.mock(
 jest.mock(
   "../workspace/StudioPlaceChip",
   () =>
-    function StudioPlaceChipStub() {
-      return <button type="button">Studio place</button>;
+    function StudioPlaceChipStub({ onRequestConnect }) {
+      return (
+        <button
+          type="button"
+          onClick={(event) => onRequestConnect?.(event.currentTarget)}
+        >
+          {onRequestConnect ? "Studio disconnected · Connect" : "Studio place"}
+        </button>
+      );
     },
 );
 
@@ -343,16 +350,17 @@ describe("ChatComposer compact interactions", () => {
     );
   });
 
-  test("blocks Agent Build inline until a live published Studio place is selected", () => {
+  test("blocks Agent Build until an opaque live Studio target is selected", () => {
     const onSubmit = jest.fn();
     const onStudioPlacePickerOpenChange = jest.fn();
+    const onStudioConnectionOpen = jest.fn();
     const studioPlaceOptions = [
       {
         id: "studio_target_1",
         studioTargetId: "studio_target_1",
-        label: "My Place",
-        placeId: "123",
-        universeId: "456",
+        label: "Local project",
+        placeId: null,
+        universeId: null,
       },
     ];
     const { rerender } = renderComposer({
@@ -362,6 +370,7 @@ describe("ChatComposer compact interactions", () => {
       studioConnected: true,
       studioPlaceOptions,
       onStudioPlacePickerOpenChange,
+      onStudioConnectionOpen,
     });
 
     expect(screen.getByRole("alert").textContent).toContain("Build paused");
@@ -370,6 +379,7 @@ describe("ChatComposer compact interactions", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Choose place" }));
     expect(onStudioPlacePickerOpenChange).toHaveBeenCalledWith(true);
+    expect(onStudioConnectionOpen).not.toHaveBeenCalled();
     fireEvent.keyDown(screen.getByRole("textbox", { name: "Prompt input" }), {
       key: "Enter",
     });
@@ -385,14 +395,52 @@ describe("ChatComposer compact interactions", () => {
         studioPlaceOptions={studioPlaceOptions}
         studioPlacePreference={{
           targetId: "studio_target_1",
-          placeId: "123",
-          label: "My Place",
+          placeId: null,
+          label: "Local project",
         }}
       />,
     );
 
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.getByRole("button", { name: "Send prompt" }).disabled).toBe(false);
+  });
+
+  test("opens Studio connection directly from both disconnected recovery controls", () => {
+    const onStudioConnectionOpen = jest.fn();
+    const onStudioPlacePickerOpenChange = jest.fn();
+    renderComposer({
+      prompt: "Build a fly GUI",
+      studioEnabled: true,
+      studioConnected: false,
+      onStudioConnectionOpen,
+      onStudioPlacePickerOpenChange,
+    });
+
+    expect(screen.getByRole("alert").textContent).toContain(
+      "Connect Studio and open the project you want Nexus to build in.",
+    );
+    expect(screen.getByRole("alert").textContent).not.toContain("published");
+
+    const disconnectedChip = screen.getByRole("button", {
+      name: "Studio disconnected · Connect",
+    });
+    fireEvent.click(disconnectedChip);
+    expect(onStudioConnectionOpen).toHaveBeenLastCalledWith(disconnectedChip);
+
+    const recoveryAction = screen.getByRole("button", {
+      name: "Studio options",
+    });
+    expect(recoveryAction.getAttribute("aria-haspopup")).toBe("dialog");
+    expect(recoveryAction.getAttribute("aria-controls")).toBe(
+      "studio-connection-dialog",
+    );
+    fireEvent.click(recoveryAction);
+    expect(onStudioConnectionOpen).toHaveBeenLastCalledWith(recoveryAction);
+    expect(onStudioConnectionOpen).toHaveBeenCalledTimes(2);
+    expect(onStudioPlacePickerOpenChange).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole("dialog", { name: "Workspace options" }),
+    ).toBeNull();
   });
 
   test("Enter submits while Shift+Enter and IME composition do not", () => {

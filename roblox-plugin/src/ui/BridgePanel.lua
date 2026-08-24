@@ -1411,7 +1411,7 @@ function setLast(text)
 		local hint = UI_HELPERS.errorHelpFor(value)
 		lastErrorText = hint and (value .. "\n" .. hint) or value
 		UI_HELPERS.setBanner("error", value .. "  ·  Click for details")
-	elseif string.find(string.lower(value), "succeeded") or string.find(string.lower(value), "paired session") or string.find(string.lower(value), "restore complete") or string.find(string.lower(value), "restored snapshot") then
+	elseif string.find(string.lower(value), "succeeded") or string.find(string.lower(value), "studio paired") or string.find(string.lower(value), "restore complete") or string.find(string.lower(value), "restored snapshot") then
 		UI_HELPERS.setBanner("success", value)
 	end
 end

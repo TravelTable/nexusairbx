@@ -665,8 +665,8 @@ export const DOC_PAGES = [
           {
             "type": "callout",
             "tone": "warning",
-            "title": "Close unrelated Studio windows",
-            "text": "The current connector does not advertise multi-window target selection. Keep only the intended Studio window open before allowing a write."
+            "title": "Choose the intended Studio target",
+            "text": "When more than one Studio window is open, select the exact place in the NexusRBX connection panel and confirm its provider before allowing a write."
           },
           {
             "type": "paragraph",

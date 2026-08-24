@@ -75,7 +75,7 @@
   cursor: pointer;
   font-family: var(--nx-font-body);
   font-weight: 700;
-  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
 }
 
 .primaryDownload {
@@ -83,12 +83,13 @@
   min-height: 50px;
   align-items: center;
   gap: var(--nx-space-3);
-  border: 1px solid var(--nx-purple);
-  border-radius: var(--nx-radius-pill);
-  background: var(--nx-purple);
+  border: 0;
+  border-top: 1px solid var(--nx-rule-strong);
+  border-bottom: 1px solid var(--nx-rule-strong);
+  border-radius: 0;
+  background: transparent;
   padding: 0 var(--nx-space-5);
-  color: var(--nx-canvas);
-  box-shadow: var(--nx-purple-glow);
+  color: var(--nx-text);
   font-size: 0.9375rem;
   text-decoration: none;
 }
@@ -98,26 +99,23 @@
   height: 18px;
 }
 
+.primaryDownload svg:first-child {
+  color: var(--nx-purple-strong);
+}
+
 .primaryDownload svg:last-child {
   margin-left: var(--nx-space-2);
 }
 
 .primaryDownload:hover:not(:disabled) {
-  border-color: var(--nx-purple-strong);
-  background: var(--nx-purple-strong);
-  box-shadow: 0 0 42px rgba(var(--nx-purple-rgb), 0.24);
-  transform: translateY(-1px);
-}
-
-.primaryDownload:active:not(:disabled) {
-  transform: translateY(0);
+  border-color: var(--nx-text-muted);
+  background: var(--nx-depth);
 }
 
 .primaryDownload:disabled {
   border-color: var(--nx-rule-strong);
-  background: var(--nx-rule);
+  background: transparent;
   color: var(--nx-text-disabled);
-  box-shadow: none;
   cursor: wait;
 }
 
@@ -317,22 +315,10 @@
 .bridgeCard {
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--nx-rule-strong);
-  border-radius: var(--nx-radius-card);
-  background: var(--nx-depth);
-  box-shadow: var(--nx-purple-glow);
-}
-
-.bridgeCard::before {
-  position: absolute;
-  width: 220px;
-  height: 220px;
-  border-radius: 50%;
-  background: rgba(var(--nx-purple-rgb), 0.12);
-  content: "";
-  filter: blur(70px);
-  inset: 30% auto auto 35%;
-  pointer-events: none;
+  border-top: 1px solid var(--nx-rule-strong);
+  border-bottom: 1px solid var(--nx-rule-strong);
+  border-radius: 0;
+  background: transparent;
 }
 
 .bridgeHeader {
@@ -363,7 +349,6 @@
   height: 6px;
   border-radius: 50%;
   background: var(--nx-success);
-  box-shadow: 0 0 12px var(--nx-success);
 }
 
 .bridgeFlow {
@@ -380,13 +365,14 @@
   min-width: 0;
   min-height: 132px;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  border: 1px solid var(--nx-rule);
-  border-radius: var(--nx-radius-panel);
-  background: rgb(255 255 255 / 2%);
+  border: 0;
+  border-left: 1px solid var(--nx-rule);
+  border-radius: 0;
+  background: transparent;
   padding: var(--nx-space-3);
-  text-align: center;
+  text-align: left;
 }
 
 .bridgeNode svg {
@@ -410,9 +396,8 @@
 }
 
 .bridgeNodeActive {
-  border-color: var(--nx-purple-border);
-  background: var(--nx-purple-soft);
-  box-shadow: inset 0 0 24px rgba(var(--nx-purple-rgb), 0.07);
+  border-left: 2px solid var(--nx-purple);
+  background: var(--nx-depth);
 }
 
 .bridgeNodeActive svg {
@@ -429,7 +414,7 @@
   display: block;
   width: 100%;
   height: 1px;
-  background: linear-gradient(90deg, var(--nx-rule-strong), var(--nx-purple), var(--nx-rule-strong));
+  background: var(--nx-rule-strong);
 }
 
 .bridgeCard > p {
@@ -499,10 +484,11 @@
   display: grid;
   grid-template-columns: minmax(16rem, 0.78fr) minmax(20rem, 1.1fr) minmax(13rem, 0.62fr);
   gap: var(--nx-space-8);
-  border: 1px solid var(--nx-rule-strong);
-  border-radius: var(--nx-radius-card);
-  background: var(--nx-depth);
-  padding: var(--nx-space-8);
+  border-top: 1px solid var(--nx-rule-strong);
+  border-bottom: 1px solid var(--nx-rule-strong);
+  border-radius: 0;
+  background: transparent;
+  padding: var(--nx-space-8) 0;
 }
 
 .platformEyebrow {
@@ -521,10 +507,11 @@
 }
 
 .platformEyebrow small {
-  border: 1px solid var(--nx-purple-border);
-  border-radius: var(--nx-radius-pill);
-  background: var(--nx-purple-soft);
-  padding: 4px 8px;
+  border: 0;
+  border-left: 1px solid var(--nx-purple-border);
+  border-radius: 0;
+  background: transparent;
+  padding: 0 0 0 var(--nx-space-2);
   color: var(--nx-purple-strong);
   font-size: 0.6875rem;
   font-weight: 700;
@@ -607,7 +594,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--nx-space-2);
-  border-radius: var(--nx-radius-pill);
+  border-radius: 0;
   padding: 0 var(--nx-space-4);
   font-size: 0.8125rem;
   text-align: center;
@@ -615,8 +602,10 @@
 }
 
 .secondaryDownload {
-  border: 1px solid var(--nx-purple-border);
-  background: var(--nx-purple-soft);
+  border: 0;
+  border-top: 1px solid var(--nx-purple-border);
+  border-bottom: 1px solid var(--nx-purple-border);
+  background: transparent;
   color: var(--nx-purple-strong);
 }
 
@@ -632,7 +621,9 @@
 }
 
 .alternatePlatform {
-  border: 1px solid var(--nx-rule);
+  border: 0;
+  border-top: 1px solid var(--nx-rule);
+  border-bottom: 1px solid var(--nx-rule);
   background: transparent;
   color: var(--nx-text-secondary);
 }
@@ -779,10 +770,11 @@
   grid-template-columns: auto minmax(0, 1fr);
   gap: var(--nx-space-4);
   align-self: start;
-  border: 1px solid var(--nx-rule);
-  border-radius: var(--nx-radius-panel);
-  background: var(--nx-depth);
-  padding: var(--nx-space-5);
+  border-top: 1px solid var(--nx-rule);
+  border-bottom: 1px solid var(--nx-rule);
+  border-radius: 0;
+  background: transparent;
+  padding: var(--nx-space-5) 0;
 }
 
 .updatesCard > svg {
@@ -945,7 +937,7 @@
   .bridgeLine span {
     width: 1px;
     height: 100%;
-    background: linear-gradient(180deg, var(--nx-rule-strong), var(--nx-purple), var(--nx-rule-strong));
+    background: var(--nx-rule-strong);
   }
 
   .sectionHeader,
@@ -961,7 +953,7 @@
 
   .installerCard {
     gap: var(--nx-space-6);
-    padding: var(--nx-space-5);
+    padding: var(--nx-space-5) 0;
   }
 
   .installerActions,

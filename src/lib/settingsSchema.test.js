@@ -52,6 +52,15 @@ describe("settingsSchema", () => {
     });
   });
 
+  it("preserves the persisted game-wizard preference used by chat runtime", () => {
+    expect(DEFAULT_SETTINGS.enableGameWizard).toBe(true);
+    expect(normalizeSettings({ enableGameWizard: false }).enableGameWizard).toBe(false);
+    expect(sanitizeSettingsPatch({ enableGameWizard: false })).toEqual({
+      patch: { enableGameWizard: false },
+      invalidKeys: [],
+    });
+  });
+
   it("rejects unknown keys and malformed values", () => {
     const { patch, invalidKeys } = sanitizeSettingsPatch({
       robloxAssetUploadsEnabled: "yes",

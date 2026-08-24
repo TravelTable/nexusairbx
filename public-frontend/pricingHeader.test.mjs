@@ -138,6 +138,34 @@ test("public pricing reads the serializable catalog and preserves exact prices a
   );
 });
 
+test("pricing billing-period control follows the access-ledger design authority", () => {
+  const routeMatrix = read("docs/design/revamp-route-matrix.md");
+  const pricing = read("public-frontend/components/PricingCatalog.jsx");
+  const styles = read("public-frontend/components/PricingLedger.module.css");
+
+  assert.match(routeMatrix, /`\/pricing`[\s\S]*No plan cards, recommended badge, or pill toggle/);
+  assert.match(
+    pricing,
+    /className=\{styles\.interval\}[\s\S]*role="group"[\s\S]*aria-label="Billing period"/,
+  );
+  assert.match(
+    styles,
+    /\.interval\s*\{[^}]*border-bottom:\s*1px solid var\(--nx-rule\)[^}]*border-radius:\s*var\(--nx-radius-field\)/,
+  );
+  assert.match(
+    styles,
+    /\.interval button\s*\{[^}]*min-height:\s*var\(--nx-touch-target\)[^}]*border-bottom:\s*2px solid transparent[^}]*border-radius:\s*var\(--nx-radius-field\)/,
+  );
+  assert.match(
+    styles,
+    /\.interval button\[aria-pressed="true"\]\s*\{[^}]*border-bottom-color:\s*var\(--nx-purple-strong\)/,
+  );
+  assert.doesNotMatch(
+    styles,
+    /\.interval(?: button)?\s*\{[^}]*var\(--nx-radius-pill\)/,
+  );
+});
+
 test("pricing is indexable while subscribe remains the noindex application bridge", async () => {
   const { buildSitemapDocuments } = require(
     path.join(root, "server/sitemapBuilder.js"),

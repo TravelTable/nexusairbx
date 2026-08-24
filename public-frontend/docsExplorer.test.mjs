@@ -150,6 +150,16 @@ test("installation docs link directly to the official Creator Store listing", ()
   assert.doesNotMatch(JSON.stringify(installation), /listing when available/i);
 });
 
+test("Studio docs describe the current multi-window target selector", () => {
+  const studioPlugin = DOC_PAGES.find((page) => page.slug === "studio-plugin");
+  const studioPluginText = JSON.stringify(studioPlugin);
+
+  assert.ok(studioPlugin);
+  assert.match(studioPluginText, /more than one Studio window/i);
+  assert.match(studioPluginText, /select the exact place/i);
+  assert.doesNotMatch(studioPluginText, /does not advertise multi-window target selection/i);
+});
+
 test("article feedback routes to support with article context", () => {
   assert.doesNotMatch(docsExplorerSource, /saved\s+for\s+this\s+session/i);
   assert.match(docsExplorerSource, /\/contact\?/);

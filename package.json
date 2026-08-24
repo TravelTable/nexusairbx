@@ -81,7 +81,7 @@
     "typescript": "4.9.5"
   },
   "scripts": {
-    "postinstall": "node scripts/patch-lobehub-obsidian.js",
+    "postinstall": "node scripts/patch-lobehub-obsidian.js && node scripts/patch-rehype-harden.js",
     "start": "react-scripts start",
     "build": "node scripts/generate-sitemap.js --best-effort && react-scripts build && npm run public:build && node scripts/merge-public-export.js",
     "build:app": "react-scripts build",

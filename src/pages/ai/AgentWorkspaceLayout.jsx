@@ -414,6 +414,7 @@ export default function AgentWorkspaceLayout({
   const [detailsView, setDetailsView] = useState("build");
   const [hasUnseenArtifact, setHasUnseenArtifact] = useState(false);
   const [openedCodeRequest, setOpenedCodeRequest] = useState(null);
+  const [studioConnectionOpen, setStudioConnectionOpen] = useState(false);
   const openedCodeSequenceRef = useRef(0);
   const previousArtifactFileCountRef = useRef(null);
   const tutorial = useTutorial();
@@ -421,6 +422,7 @@ export default function AgentWorkspaceLayout({
   const projectSidebarRef = useRef(null);
   const sidebarToggleRef = useRef(null);
   const evidenceButtonRef = useRef(null);
+  const studioConnectionReturnFocusRef = useRef(null);
   const projectSidebarModalViewport = useProjectSidebarModalViewport();
   const projectSidebarIsModal =
     creationMode === "agent" && sidebarOpen && projectSidebarModalViewport;
@@ -439,6 +441,17 @@ export default function AgentWorkspaceLayout({
     },
     [setSidebarOpen],
   );
+
+  const handleStudioConnectionOpen = useCallback((trigger = null) => {
+    if (trigger && typeof trigger.focus === "function") {
+      studioConnectionReturnFocusRef.current = trigger;
+    }
+    setStudioConnectionOpen(true);
+  }, []);
+
+  const handleStudioConnectionOpenChange = useCallback((nextOpen) => {
+    setStudioConnectionOpen(Boolean(nextOpen));
+  }, []);
 
   useEffect(() => {
     if (!sidebarOpen) return undefined;
@@ -628,7 +641,7 @@ export default function AgentWorkspaceLayout({
 
   useEffect(() => {
     const handleRestartTour = () => {
-      tutorial.startTutorial();
+      tutorial.restartTutorial();
     };
     window.addEventListener("nexus-restart-tour", handleRestartTour);
     return () =>
@@ -1553,6 +1566,9 @@ export default function AgentWorkspaceLayout({
       loading={studio?.loading}
       refresh={studio?.refresh}
       notify={notify}
+      open={studioConnectionOpen}
+      onOpenChange={handleStudioConnectionOpenChange}
+      returnFocusRef={studioConnectionReturnFocusRef}
       requireUser={(next) =>
         requireUser(
           next,
@@ -1591,7 +1607,12 @@ export default function AgentWorkspaceLayout({
         onOpenArtifact={openArtifactOnStage}
         onQuickStart={handleQuickStart}
         onStartGuide={
-          tutorial.shouldOfferTutorial ? tutorial.startTutorial : undefined
+          tutorial.shouldOfferTutorial ? tutorial.resumeTutorial : undefined
+        }
+        startGuideLabel={
+          tutorial.hasSavedProgress
+            ? "Resume the 5-step creator guide"
+            : "Show the 5-step creator guide"
         }
         onRenameChat={(title) =>
           chat.handleRenameChat(chat.currentChatId, title)
@@ -1663,6 +1684,7 @@ export default function AgentWorkspaceLayout({
         studioPlaceOptions={studio?.placeOptions || []}
         studioPlacePickerOpen={studio?.placePickerOpen}
         onStudioPlacePickerOpenChange={studio?.setPlacePickerOpen}
+        onStudioConnectionOpen={handleStudioConnectionOpen}
         onSelectStudioPlace={handleSelectStudioTarget}
         robloxConnected={roblox?.connected}
         robloxLoading={roblox?.loading}

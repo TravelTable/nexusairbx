@@ -22,7 +22,7 @@ import { isTerminalSessionError, resetLocalSession } from "./session-lifecycle.j
 const { autoUpdater } = electronUpdater;
 
 const PAIRING_PAGE = "https://nexusrbx.com/ai?studio=mcp&connector=desktop";
-const HELP_PAGE = "https://nexusrbx.com/docs/studio-mcp";
+const HELP_PAGE = "https://www.nexusrbx.com/docs/studio-plugin";
 const DOWNLOADS_PAGE = "https://www.nexusrbx.com/downloads";
 const API_URL = process.env.NEXUSRBX_API_URL || "https://api.nexusrbx.com";
 const COMPACT_SIZE = { width: 460, height: 640 };

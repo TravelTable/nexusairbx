@@ -10,6 +10,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   codingStandards: "",
   gameSpec: "",
   theme: "system",
+  enableGameWizard: true,
   chatMode: "agent",
   showThinking: true,
   studioAutoPushEnabled: false,
@@ -88,7 +89,7 @@ function sanitizeValue(key, value, { strict = false } = {}) {
     return value;
   }
 
-  if (["showThinking", "studioAutoPushEnabled", "robloxAssetUploadsEnabled", "allowPlaceholderAssets", "useExamples"].includes(key)) {
+  if (["enableGameWizard", "showThinking", "studioAutoPushEnabled", "robloxAssetUploadsEnabled", "allowPlaceholderAssets", "useExamples"].includes(key)) {
     if (typeof value !== "boolean") {
       if (strict) throw new Error(`${key} must be a boolean`);
       return DEFAULT_SETTINGS[key];

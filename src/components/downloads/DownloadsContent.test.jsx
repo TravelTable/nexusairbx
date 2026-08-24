@@ -3,6 +3,13 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import DownloadsContent from "./DownloadsContent";
 import { trackProductEvent } from "../../lib/productAnalytics";
 
+const fs = require("fs");
+const path = require("path");
+const downloadsCss = fs.readFileSync(
+  path.join(__dirname, "DownloadsLedger.module.css"),
+  "utf8",
+);
+
 jest.mock("../../lib/productAnalytics", () => ({
   trackProductEvent: jest.fn(() => Promise.resolve()),
 }));
@@ -92,5 +99,15 @@ describe("DownloadsContent", () => {
       expect.any(Object)
     );
     expect(JSON.stringify(trackProductEvent.mock.calls)).not.toMatch(/token|pairing|session/i);
+  });
+
+  test("keeps the primary download action out of the pill component language", () => {
+    const primaryDownloadRule = downloadsCss.match(
+      /[.]primaryDownload\s*\{([^}]*)\}/s,
+    )?.[1];
+
+    expect(primaryDownloadRule).toBeTruthy();
+    expect(primaryDownloadRule).toMatch(/border-radius:\s*0\s*;/);
+    expect(primaryDownloadRule).not.toMatch(/radius-pill|9999px|9999rem/i);
   });
 });

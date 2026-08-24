@@ -164,16 +164,16 @@ local function pairStudio()
 	-- UI stuck in CONNECTING while the session is actually usable.
 	if not applyCompatibility(dataOrError) then
 		setBridgeState("connecting")
-		setLast("paired session " .. tostring(dataOrError.sessionId) .. " · finishing handshake")
-	else
-		setLast("paired session " .. tostring(dataOrError.sessionId))
+		setLast("Studio paired · finishing secure handshake")
+	elseif compatibilityHandshakeReady then
+		setLast("Studio paired and ready")
 	end
 	codeBox.Text = ""
 	setStatus("connected")
 	pushActivity({
 		commandType = "pair",
 		status = "succeeded",
-		detail = tostring(dataOrError.sessionId),
+		detail = "Secure Studio connection established",
 	})
 	showToast("Studio paired", "success")
 	refreshControls()

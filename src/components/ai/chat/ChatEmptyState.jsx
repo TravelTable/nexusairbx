@@ -112,6 +112,7 @@ export default function ChatEmptyState({
   onQuickStart,
   onOpenTemplates,
   onStartGuide,
+  startGuideLabel = "Show the 5-step creator guide",
   projectTitle,
   projectId,
   studioConnected,
@@ -240,7 +241,7 @@ export default function ChatEmptyState({
                 onClick={onStartGuide}
                 className="chat-empty-state__templates focus-ring"
               >
-                Show the 5-step creator guide →
+                {startGuideLabel} →
               </button>
             ) : null}
           </div>

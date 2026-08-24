@@ -1,15 +1,4 @@
-const ACTIVE_STATUSES = new Set([
-  "active",
-  "queued",
-  "running",
-  "starting",
-  "thinking",
-  "working",
-  "waiting",
-  "awaiting_approval",
-  "awaiting_input",
-  "reconnecting",
-]);
+import { ACTIVE_AGENT_STATES } from "../../lib/agentRuntimeV2Api";
 
 export function timeValue(value) {
   if (typeof value?.toMillis === "function") return value.toMillis();
@@ -19,7 +8,7 @@ export function timeValue(value) {
 }
 
 export function isActiveRunStatus(status) {
-  return ACTIVE_STATUSES.has(String(status || "").trim().toLowerCase());
+  return ACTIVE_AGENT_STATES.has(String(status || "").trim().toLowerCase());
 }
 
 function compareText(a, b) {

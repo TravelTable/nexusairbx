@@ -5,6 +5,7 @@ import StudioPairControl, {
   getDesktopConnectorPairingLink,
   isStudioMcpAlreadyDisconnected,
   resolvePairingExpiry,
+  STUDIO_SETUP_VISUAL_PREFERENCE_KEY,
 } from "./StudioPairControl";
 import {
   disconnectStudioMcp,
@@ -12,6 +13,7 @@ import {
   testStudioMcp,
 } from "../../lib/studioBridgeApi";
 import { normalizeStudioConnectionSnapshot } from "../../lib/studioConnection";
+import desktopConnectorPackage from "../../../desktop-connector/package.json";
 
 jest.mock("../../lib/studioBridgeApi", () => ({
   disconnectStudio: jest.fn(),
@@ -24,6 +26,7 @@ jest.mock("../../lib/studioBridgeApi", () => ({
 describe("StudioPairControl", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    localStorage.clear();
     testStudioMcp.mockResolvedValue({ ok: true, connected: true });
     disconnectStudioMcp.mockResolvedValue({ ok: true });
   });
@@ -76,7 +79,7 @@ describe("StudioPairControl", () => {
     startStudioPairing.mockResolvedValue({ code: "abc123", expiresInSeconds: 60 });
     render(<StudioPairControl refresh={jest.fn()} />);
 
-    fireEvent.click(screen.getByRole("button", { name: /Pair Studio/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Connect Roblox Studio/i }));
     fireEvent.click(screen.getByRole("button", { name: /Connect with plugin/i }));
 
     expect(await screen.findByText("ABC123")).toBeTruthy();
@@ -87,22 +90,204 @@ describe("StudioPairControl", () => {
   test("moves focus into the popup and restores it when Escape closes", async () => {
     render(<StudioPairControl refresh={jest.fn()} />);
 
-    const trigger = screen.getByRole("button", { name: /Pair Studio/i });
+    const trigger = screen.getByRole("button", { name: "Connect Roblox Studio" });
     expect(trigger.className).toContain("min-h-11");
     expect(trigger.className).toContain("xl:min-h-0");
     fireEvent.click(trigger);
 
-    const pluginTab = screen.getByRole("tab", { name: /Studio Plugin/i });
+    const pluginTab = screen.getByRole("tab", {
+      name: "Recommended: Studio plugin",
+    });
     await waitFor(() => expect(document.activeElement).toBe(pluginTab));
-
-    fireEvent.click(screen.getByRole("tab", { name: /Roblox Studio MCP/i }));
+    expect(pluginTab.getAttribute("aria-controls")).toBe(
+      "studio-connection-plugin-panel",
+    );
     expect(
-      screen.getByRole("link", { name: /Download Connector 0\.2\.9/i }).getAttribute("href")
+      screen.getByText(/Browser chat stays available without Studio/i),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("tabpanel", { name: "Recommended: Studio plugin" }),
+    ).toBeTruthy();
+
+    const advancedTab = screen.getByRole("tab", {
+      name: "Advanced: Connector / Roblox Studio MCP",
+    });
+    fireEvent.keyDown(pluginTab, { key: "ArrowRight" });
+    await waitFor(() => expect(document.activeElement).toBe(advancedTab));
+    expect(advancedTab.getAttribute("aria-selected")).toBe("true");
+    expect(advancedTab.getAttribute("aria-controls")).toBe(
+      "studio-connection-mcp-panel",
+    );
+    expect(
+      screen.getByRole("tabpanel", {
+        name: "Advanced: Connector / Roblox Studio MCP",
+      }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("link", {
+        name: `Download Connector ${desktopConnectorPackage.version}`,
+      }).getAttribute("href")
     ).toBe("/downloads");
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog", { name: /Connect Roblox Studio/i })).toBeNull();
     expect(document.activeElement).toBe(trigger);
+  });
+
+  test("supports a controlled composer entry point and restores that trigger", async () => {
+    function ControlledHarness() {
+      const [open, setOpen] = React.useState(false);
+      const composerTriggerRef = React.useRef(null);
+
+      return (
+        <>
+          <button
+            ref={composerTriggerRef}
+            type="button"
+            onClick={() => setOpen(true)}
+          >
+            Open Studio connection from composer
+          </button>
+          <StudioPairControl
+            open={open}
+            onOpenChange={setOpen}
+            returnFocusRef={composerTriggerRef}
+            refresh={jest.fn()}
+          />
+        </>
+      );
+    }
+
+    render(<ControlledHarness />);
+    const composerTrigger = screen.getByRole("button", {
+      name: "Open Studio connection from composer",
+    });
+    composerTrigger.focus();
+    fireEvent.click(composerTrigger);
+
+    const pluginTab = await screen.findByRole("tab", {
+      name: "Recommended: Studio plugin",
+    });
+    await waitFor(() => expect(document.activeElement).toBe(pluginTab));
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: "Connect Roblox Studio" }),
+      ).toBeNull();
+    });
+    expect(document.activeElement).toBe(composerTrigger);
+
+    fireEvent.click(composerTrigger);
+    expect(
+      await screen.findByRole("dialog", { name: "Connect Roblox Studio" }),
+    ).toBeTruthy();
+    fireEvent.mouseDown(document.body);
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: "Connect Roblox Studio" }),
+      ).toBeNull();
+    });
+
+    const desktopTrigger = screen.getByRole("button", {
+      name: "Connect Roblox Studio",
+    });
+    desktopTrigger.focus();
+    fireEvent.click(desktopTrigger);
+    expect(
+      await screen.findByRole("dialog", { name: "Connect Roblox Studio" }),
+    ).toBeTruthy();
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: "Connect Roblox Studio" }),
+      ).toBeNull();
+    });
+    expect(document.activeElement).toBe(desktopTrigger);
+  });
+
+  test("integrates all maintained plugin screenshot slots with an honest fallback", () => {
+    render(<StudioPairControl refresh={jest.fn()} />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Connect Roblox Studio" }),
+    );
+
+    const stepSelect = screen.getByLabelText("Setup step");
+    expect(
+      Array.from(stepSelect.options).map((option) => option.textContent),
+    ).toEqual([
+      "1. Install plugin",
+      "2. Open plugin",
+      "3. Enter pair code",
+      "4. Allow HTTP",
+      "5. Connected state",
+    ]);
+
+    expect(document.querySelector("img")).toBeNull();
+    expect(
+      screen.getByRole("img", {
+        name: /plugin management showing the NexusRBX Studio plugin installed.*Screenshot unavailable/i,
+      }),
+    ).toBeTruthy();
+
+    fireEvent.change(stepSelect, { target: { value: "allow-http" } });
+    expect(
+      screen.getByRole("img", {
+        name: /Game Settings Security panel with Allow HTTP Requests enabled.*Screenshot unavailable/i,
+      }),
+    ).toBeTruthy();
+    expect(localStorage.getItem(STUDIO_SETUP_VISUAL_PREFERENCE_KEY)).toBe(
+      "allow-http",
+    );
+    expect(
+      screen.getByText(/Game Settings → Security → Allow HTTP Requests/i),
+    ).toBeTruthy();
+  });
+
+  test("restores the last selected plugin setup reference", () => {
+    localStorage.setItem(STUDIO_SETUP_VISUAL_PREFERENCE_KEY, "enter-pair-code");
+    render(<StudioPairControl refresh={jest.fn()} />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Connect Roblox Studio" }),
+    );
+
+    expect(screen.getByLabelText("Setup step").value).toBe("enter-pair-code");
+    expect(screen.getByText(/Generate a one-time code here/i)).toBeTruthy();
+  });
+
+  test("does not replace the saved setup step with transient live guidance", () => {
+    localStorage.setItem(STUDIO_SETUP_VISUAL_PREFERENCE_KEY, "allow-http");
+    const { rerender } = render(
+      <StudioPairControl connected={false} refresh={jest.fn()} />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Connect Roblox Studio" }),
+    );
+    expect(screen.getByLabelText("Setup step").value).toBe("allow-http");
+
+    rerender(<StudioPairControl connected refresh={jest.fn()} />);
+    expect(screen.getByLabelText("Setup step").value).toBe("connected-state");
+    expect(localStorage.getItem(STUDIO_SETUP_VISUAL_PREFERENCE_KEY)).toBe(
+      "allow-http",
+    );
+
+    rerender(<StudioPairControl connected={false} refresh={jest.fn()} />);
+    expect(screen.getByLabelText("Setup step").value).toBe("allow-http");
+  });
+
+  test("uses live connection state while labelling screenshots as references", () => {
+    render(<StudioPairControl connected refresh={jest.fn()} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Studio" }));
+
+    expect(screen.getAllByText("Connected via NexusRBX Studio Plugin").length).toBeGreaterThan(0);
+    expect(screen.getByLabelText("Setup step").value).toBe("connected-state");
+    expect(
+      screen.getByText("Setup reference, not live Studio state"),
+    ).toBeTruthy();
   });
 
   test("keeps connector and MCP health distinct and uses the exact MCP session", async () => {

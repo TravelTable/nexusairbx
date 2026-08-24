@@ -170,44 +170,55 @@
 .interval {
   display: flex;
   width: fit-content;
-  min-height: 44px;
+  min-height: var(--nx-touch-target);
   align-items: center;
-  gap: 3px;
+  gap: var(--nx-space-2);
   margin-top: var(--nx-space-5);
-  padding: 4px;
-  border: 1px solid var(--nx-rule);
-  border-radius: var(--nx-radius-pill);
-  background: var(--nx-muted-surface);
-  box-shadow: var(--nx-shadow-control);
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--nx-rule);
+  border-radius: var(--nx-radius-field);
+  background: transparent;
 }
 .interval span,
 .interval button {
   display: inline-flex;
-  min-height: var(--nx-control-height);
   align-items: center;
-  border: 0;
-  border-radius: var(--nx-radius-pill);
-  background: transparent;
-  padding: 0 var(--nx-space-4);
   color: var(--nx-text-muted);
   font-size: 0.75rem;
   font-weight: 700;
 }
 .interval span {
+  padding-right: var(--nx-space-3);
   font-size: 0.68rem;
   letter-spacing: 0.06em;
 }
 .interval button {
+  min-width: 5.5rem;
+  min-height: var(--nx-touch-target);
+  margin-bottom: -1px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: var(--nx-radius-field);
+  background: transparent;
+  padding: 0 var(--nx-space-3);
   cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    border-color var(--nx-motion-color),
+    color var(--nx-motion-color);
 }
 .interval button:hover {
-  background: rgb(255 255 255 / 6%);
   color: var(--nx-text);
 }
+.interval button:focus-visible {
+  outline: 2px solid var(--nx-focus-ring);
+  outline-offset: -3px;
+}
 .interval button[aria-pressed="true"] {
-  background: var(--nx-raised-surface);
+  border-bottom-color: var(--nx-purple-strong);
   color: var(--nx-text);
-  box-shadow: var(--nx-shadow-control);
+  font-weight: 750;
 }
 
 .ledger {

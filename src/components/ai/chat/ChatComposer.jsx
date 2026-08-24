@@ -412,6 +412,7 @@ export default function ChatComposer({
   studioPlaceOptions = [],
   studioPlacePickerOpen = null,
   onStudioPlacePickerOpenChange = null,
+  onStudioConnectionOpen = null,
   onSelectStudioPlace = null,
   selectingStudioTargetId = null,
   robloxConnected,
@@ -470,10 +471,10 @@ export default function ChatComposer({
     Boolean(studioEnabled) &&
     (studioPlaceGate.status !== "ready" || selectedStudioTargetCannotBind);
   const studioBlockerMessage = selectedStudioTargetCannotBind
-    ? "Publish the selected Studio place to Roblox before Nexus can build in it."
+    ? "Nexus could not verify a complete live identity for the selected Studio project. Refresh Studio and choose it again."
     : studioPlaceGate.status === "needs_selection"
       ? "Choose which Studio place Nexus should edit before starting this build."
-      : "Connect and open a published Studio place before starting this build.";
+      : "Connect Studio and open the project you want Nexus to build in.";
   const draftSignature = JSON.stringify({
     prompt: String(prompt || ""),
     attachments: attachments.map((file) => [
@@ -745,11 +746,15 @@ export default function ChatComposer({
           pickerOpen={studioPlacePickerOpen}
           onPickerOpenChange={onStudioPlacePickerOpenChange}
           onSelectPlace={onSelectStudioPlace}
-          onRequestConnect={() => {
-            setContextOpen(false);
-            controlsButtonRef.current?.focus();
-            setControlsOpen(true);
-          }}
+          onRequestConnect={
+            typeof onStudioConnectionOpen === "function"
+              ? (trigger) => {
+                  setContextOpen(false);
+                  setControlsOpen(false);
+                  onStudioConnectionOpen(trigger);
+                }
+              : undefined
+          }
         />
       );
     }
@@ -984,15 +989,23 @@ export default function ChatComposer({
             </p>
             <button
               type="button"
-              onClick={() => {
+              onClick={(event) => {
                 if (studioPlaceGate.status === "needs_connect") {
-                  setControlsOpen(true);
-                  requestAnimationFrame(() => controlsButtonRef.current?.focus());
+                  setControlsOpen(false);
+                  onStudioConnectionOpen?.(event.currentTarget);
                 } else {
                   onStudioPlacePickerOpenChange?.(true);
                 }
               }}
-              className="inline-flex min-h-8 shrink-0 items-center rounded-md border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)] px-2 font-bold transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_16%,transparent)] focus-ring"
+              aria-haspopup={
+                studioPlaceGate.status === "needs_connect" ? "dialog" : undefined
+              }
+              aria-controls={
+                studioPlaceGate.status === "needs_connect"
+                  ? "studio-connection-dialog"
+                  : undefined
+              }
+              className="inline-flex min-h-11 shrink-0 items-center rounded-md border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)] px-2 font-bold transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_16%,transparent)] focus-ring xl:min-h-8"
             >
               {studioPlaceGate.status === "needs_connect"
                 ? "Studio options"

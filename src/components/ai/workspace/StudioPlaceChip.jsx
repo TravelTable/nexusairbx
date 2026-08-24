@@ -65,9 +65,9 @@ export default function StudioPlaceChip({
     <div className={`space-y-2 ${className}`}>
       <button
         type="button"
-        onClick={() => {
+        onClick={(event) => {
           if (canRequestConnect) {
-            onRequestConnect();
+            onRequestConnect(event.currentTarget);
             return;
           }
           if (!canOpen) return;
@@ -80,7 +80,10 @@ export default function StudioPlaceChip({
             : "border-[var(--nx-rule)] bg-[var(--nx-muted-surface)] text-[var(--nx-text-secondary)] hover:bg-[var(--nx-raised-surface)]"
         } ${canInteract ? "cursor-pointer" : "cursor-default opacity-90"}`}
         aria-expanded={canOpen ? open : undefined}
-        aria-haspopup={canOpen ? "listbox" : undefined}
+        aria-haspopup={canRequestConnect ? "dialog" : canOpen ? "listbox" : undefined}
+        aria-controls={
+          canRequestConnect ? "studio-connection-dialog" : undefined
+        }
         aria-label={
           canRequestConnect
             ? "Studio disconnected. Open connection options"

@@ -41,6 +41,13 @@ const NEXT_PUBLIC_ROUTES = new Set([
   "/roblox-studio-script-generator",
 ]);
 
+const NEXT_PUBLIC_NOINDEX_ROUTES = new Set([
+  "/legal",
+  "/legal/acceptable-use",
+  "/legal/cookies",
+  "/legal/refunds",
+]);
+
 const SPA_ROUTES = new Set([
   "/admin/support",
   "/ai",
@@ -71,7 +78,9 @@ const SPA_ROUTE_PATTERNS = [
   /^\/support\/[^/]+$/,
 ];
 
-const PUBLIC_INDEXABLE_ROUTES = NEXT_PUBLIC_ROUTES;
+const PUBLIC_INDEXABLE_ROUTES = new Set(
+  [...NEXT_PUBLIC_ROUTES].filter((pathname) => !NEXT_PUBLIC_NOINDEX_ROUTES.has(pathname)),
+);
 const VALID_NON_INDEXABLE_ROUTES = SPA_ROUTES;
 
 function normalizeHost(host = "") {
@@ -129,11 +138,12 @@ async function classifyRoute(pathname, { iconExists, iconStatus } = {}) {
   const normalized = normalizePathname(pathname);
 
   if (isNextPublicRoute(normalized)) {
+    const indexable = PUBLIC_INDEXABLE_ROUTES.has(normalized);
     return {
       status: 200,
-      indexable: true,
-      canonical: canonicalUrl(normalized),
-      canonicalPath: normalized,
+      indexable,
+      ...(indexable ? { canonical: canonicalUrl(normalized) } : {}),
+      canonicalPath: indexable ? normalized : null,
       frontend: "next",
       routeType: "public",
     };
@@ -280,6 +290,7 @@ module.exports = {
   PREFERRED_HOST,
   PREFERRED_ORIGIN,
   NEXT_PUBLIC_ROUTES,
+  NEXT_PUBLIC_NOINDEX_ROUTES,
   PUBLIC_INDEXABLE_ROUTES,
   SPA_ROUTES,
   VALID_NON_INDEXABLE_ROUTES,

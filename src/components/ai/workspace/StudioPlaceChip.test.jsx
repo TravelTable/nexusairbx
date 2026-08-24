@@ -49,13 +49,51 @@ test("opens the existing Studio connection options from the disconnected state",
     />,
   );
 
-  fireEvent.click(
-    screen.getByRole("button", {
-      name: /Studio disconnected\. Open connection options/i,
-    }),
+  const trigger = screen.getByRole("button", {
+    name: /Studio disconnected\. Open connection options/i,
+  });
+  expect(trigger.getAttribute("aria-haspopup")).toBe("dialog");
+  expect(trigger.getAttribute("aria-controls")).toBe(
+    "studio-connection-dialog",
   );
-  expect(onRequestConnect).toHaveBeenCalledTimes(1);
+
+  fireEvent.click(trigger);
+  expect(onRequestConnect).toHaveBeenCalledWith(trigger);
   expect(screen.getByText("Connect")).toBeTruthy();
+});
+
+test("keeps connected place selection ahead of the recovery callback", () => {
+  const onRequestConnect = jest.fn();
+  const onPickerOpenChange = jest.fn();
+
+  function ConnectedHarness() {
+    const [pickerOpen, setPickerOpen] = React.useState(false);
+    return (
+      <StudioPlaceChip
+        connected
+        studioEnabled
+        options={[target]}
+        pickerOpen={pickerOpen}
+        onPickerOpenChange={(nextOpen) => {
+          onPickerOpenChange(nextOpen);
+          setPickerOpen(nextOpen);
+        }}
+        onRequestConnect={onRequestConnect}
+        onSelectPlace={jest.fn()}
+      />
+    );
+  }
+
+  render(<ConnectedHarness />);
+  fireEvent.click(
+    screen.getByRole("button", { name: /choose a studio place/i }),
+  );
+
+  expect(onPickerOpenChange).toHaveBeenCalledWith(true);
+  expect(onRequestConnect).not.toHaveBeenCalled();
+  expect(
+    screen.getByRole("region", { name: "Studio project selection" }),
+  ).toBeTruthy();
 });
 
 test("keeps the picker open when async place selection fails", async () => {

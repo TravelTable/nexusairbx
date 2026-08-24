@@ -141,14 +141,19 @@ const docsRoutes = [
   "/docs/api",
 ];
 
-const legalRoutes = [
-  "/legal",
+const indexableLegalRoutes = [
   "/legal/terms",
   "/legal/privacy",
+];
+
+const noindexLegalRoutes = [
+  "/legal",
   "/legal/acceptable-use",
   "/legal/refunds",
   "/legal/cookies",
 ];
+
+const legalRoutes = [...indexableLegalRoutes, ...noindexLegalRoutes];
 
 test("homepage raw HTML is meaningful before client JavaScript", () => {
   const html = readHtml("/");
@@ -172,8 +177,13 @@ test("homepage raw HTML is meaningful before client JavaScript", () => {
   assert.match(html, /One workspace\. Your whole Roblox build stack\./);
   assert.match(html, /Build more of the game you actually want to ship\./);
   assert.doesNotMatch(html, /Trusted by Top Roblox Developers|Alex, Studio Lead|game-changer/);
-  assert.match(html, /aria-label="NexusRBX home"/);
-  assert.match(html, /NEXUS\/RBX/);
+  const brandLink = html.match(/<a\b[^>]*aria-label="NexusRBX home"[^>]*>[\s\S]*?<\/a>/)?.[0] || "";
+  assert.ok(brandLink, "Expected the NexusRBX home brand link in server-rendered HTML.");
+  assert.match(brandLink, /<span\b(?=[^>]*\baria-hidden="true")[^>]*>PROJECT \/<\/span>/);
+  assert.match(
+    brandLink,
+    /<img\b(?=[^>]*\bsrc="\/favicon-transparent\.png")(?=[^>]*\balt="")(?=[^>]*\baria-hidden="true")[^>]*>/,
+  );
   assert.match(html, /nexusrbx-og-flat-world\.jpg/);
   assert.doesNotMatch(html, /nexusrbx-og-purple-workshop\.png/);
   assert.doesNotMatch(html, /src="\/(?:logo|imageeeeAI|luginimageeeeeeeee|promptbox|generated-files)\.png"/);
@@ -258,6 +268,14 @@ test("legal raw HTML has route-specific metadata and content", () => {
   assert.equal(countCanonical(html), 1);
   assert.equal(extractCanonical(html), "https://www.nexusrbx.com/legal/privacy");
   assert.doesNotMatch(html, /Monaco|AgentWorkspaceLayout|CodeEditorTabs/);
+});
+
+test("legal hub and draft policies publish noindex metadata without canonicals", () => {
+  noindexLegalRoutes.forEach((route) => {
+    const html = readHtml(route);
+    assert.equal(extractMetaContent(html, "robots"), "noindex, nofollow", route);
+    assert.equal(countCanonical(html), 0, route);
+  });
 });
 
 test("search landing pages have unique raw metadata and meaningful server HTML", () => {
@@ -357,7 +375,7 @@ test("search landing pages are present in sitemap", () => {
   }
 });
 
-test("docs and legal pages are present in public sitemaps", () => {
+test("docs and indexable legal pages are present in public sitemaps", () => {
   const sitemapIndex = fs.readFileSync(path.join(__dirname, "..", "public", "sitemap.xml"), "utf8");
   const docsSitemap = fs.readFileSync(path.join(__dirname, "..", "public", "sitemaps", "docs.xml"), "utf8");
   const legalSitemap = fs.readFileSync(path.join(__dirname, "..", "public", "sitemaps", "legal.xml"), "utf8");
@@ -367,8 +385,11 @@ test("docs and legal pages are present in public sitemaps", () => {
   docsRoutes.forEach((route) => {
     assert.match(docsSitemap, new RegExp(`<loc>https://www\\.nexusrbx\\.com${route}</loc>`));
   });
-  legalRoutes.forEach((route) => {
+  indexableLegalRoutes.forEach((route) => {
     assert.match(legalSitemap, new RegExp(`<loc>https://www\\.nexusrbx\\.com${route}</loc>`));
+  });
+  noindexLegalRoutes.forEach((route) => {
+    assert.doesNotMatch(legalSitemap, new RegExp(`<loc>https://www\\.nexusrbx\\.com${route}</loc>`));
   });
 });
 

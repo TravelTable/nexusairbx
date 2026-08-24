@@ -95,3 +95,17 @@ test("offers the creator guide as an explicit, non-blocking action", () => {
   );
   expect(onStartGuide).toHaveBeenCalledTimes(1);
 });
+
+test("labels a paused creator guide as resumable", () => {
+  render(
+    <ChatEmptyState
+      onQuickStart={jest.fn()}
+      onStartGuide={jest.fn()}
+      startGuideLabel="Resume the 5-step creator guide"
+    />,
+  );
+
+  expect(
+    screen.getByRole("button", { name: /Resume the 5-step creator guide/i }),
+  ).toBeTruthy();
+});

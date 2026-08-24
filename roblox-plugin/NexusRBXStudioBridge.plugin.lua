@@ -2795,7 +2795,7 @@ setLast = function(text)
 		local hint = UI_HELPERS.errorHelpFor(value)
 		lastErrorText = hint and (value .. "\n" .. hint) or value
 		UI_HELPERS.setBanner("error", value .. "  ·  Click for details")
-	elseif string.find(string.lower(value), "succeeded") or string.find(string.lower(value), "paired session") or string.find(string.lower(value), "restore complete") or string.find(string.lower(value), "restored snapshot") then
+	elseif string.find(string.lower(value), "succeeded") or string.find(string.lower(value), "studio paired") or string.find(string.lower(value), "restore complete") or string.find(string.lower(value), "restored snapshot") then
 		UI_HELPERS.setBanner("success", value)
 	end
 end
@@ -9477,16 +9477,16 @@ local function pairStudio()
 	-- UI stuck in CONNECTING while the session is actually usable.
 	if not applyCompatibility(dataOrError) then
 		setBridgeState("connecting")
-		setLast("paired session " .. tostring(dataOrError.sessionId) .. " · finishing handshake")
-	else
-		setLast("paired session " .. tostring(dataOrError.sessionId))
+		setLast("Studio paired · finishing secure handshake")
+	elseif compatibilityHandshakeReady then
+		setLast("Studio paired and ready")
 	end
 	codeBox.Text = ""
 	setStatus("connected")
 	pushActivity({
 		commandType = "pair",
 		status = "succeeded",
-		detail = tostring(dataOrError.sessionId),
+		detail = "Secure Studio connection established",
 	})
 	showToast("Studio paired", "success")
 	refreshControls()

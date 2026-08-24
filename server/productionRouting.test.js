@@ -4,6 +4,8 @@ const path = require("node:path");
 const test = require("node:test");
 const {
   NEXT_PUBLIC_ROUTES,
+  NEXT_PUBLIC_NOINDEX_ROUTES,
+  PUBLIC_INDEXABLE_ROUTES,
   SPA_ROUTES,
   buildPreferredHostLocation,
   classifyRoute,
@@ -47,6 +49,12 @@ const legalRouteSources = [
   "/legal/acceptable-use",
   "/legal/refunds",
   "/legal/cookies",
+];
+const noindexLegalRouteSources = [
+  "/legal",
+  "/legal/acceptable-use",
+  "/legal/cookies",
+  "/legal/refunds",
 ];
 
 function iconExists(id) {
@@ -106,9 +114,11 @@ test("non-www nested path preserves path and query in redirect target", () => {
 test("route classifier assigns explicit Next public and SPA owners", async () => {
   for (const pathname of NEXT_PUBLIC_ROUTES) {
     const route = await classifyRoute(pathname, { iconExists, iconStatus });
+    const expectedIndexable = PUBLIC_INDEXABLE_ROUTES.has(pathname);
     assert.equal(route.status, 200, pathname);
     assert.equal(route.frontend, "next", pathname);
-    assert.equal(route.indexable, true, pathname);
+    assert.equal(route.indexable, expectedIndexable, pathname);
+    assert.equal(route.canonicalPath, expectedIndexable ? pathname : null, pathname);
     assert.equal(route.routeType, "public", pathname);
     assert.equal(isNextPublicRoute(pathname), true, pathname);
   }
@@ -134,6 +144,24 @@ test("route classifier assigns explicit Next public and SPA owners", async () =>
   assert.equal(unknown.status, 404);
   assert.equal(unknown.frontend, "none");
   assert.equal(unknown.indexable, false);
+});
+
+test("legal hub and draft policies remain Next-owned but are excluded from indexing", async () => {
+  assert.deepEqual([...NEXT_PUBLIC_NOINDEX_ROUTES], noindexLegalRouteSources);
+
+  for (const pathname of noindexLegalRouteSources) {
+    const route = await classifyRoute(pathname, { iconExists, iconStatus });
+    assert.equal(route.status, 200, pathname);
+    assert.equal(route.frontend, "next", pathname);
+    assert.equal(route.indexable, false, pathname);
+    assert.equal(route.canonical, undefined, pathname);
+    assert.equal(route.canonicalPath, null, pathname);
+
+    const rendered = await renderAppRoute({ html, pathname, iconExists, iconStatus });
+    assert.equal(rendered.headers["x-robots-tag"], "noindex, nofollow", pathname);
+    assert.match(rendered.body, /name="robots" content="noindex, nofollow"/, pathname);
+    assert.doesNotMatch(rendered.body, /rel="canonical"/, pathname);
+  }
 });
 
 test("every documented page is an owned, indexable Next public route", async () => {

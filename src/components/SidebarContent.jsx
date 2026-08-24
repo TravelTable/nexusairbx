@@ -12,6 +12,9 @@ import {
 import { getStudioStatus } from "../lib/studioBridgeApi";
 import { isActiveRunStatus } from "./sidebar/sidebarTreeModel";
 
+const STALE_PROJECT_ACTION_MESSAGE =
+  "Project state changed while this action was running. Review the current account and try again.";
+
 export default function SidebarContent({
   scripts = [],
   currentChatId,
@@ -38,9 +41,11 @@ export default function SidebarContent({
   const {
     projects,
     loading: projectsLoading,
+    error: projectsError,
     openGameProject,
     deleteProject,
     renameProject,
+    refresh: refreshProjects,
   } = useProjectBindings(user, { authReady });
   const [creatingProject, setCreatingProject] = useState(false);
   const [studioOptions, setStudioOptions] = useState([]);
@@ -78,16 +83,25 @@ export default function SidebarContent({
   };
   const adoptIdentity = async (identity) => {
     const project = await openGameProject(identity);
+    if (!project) {
+      notify({ message: STALE_PROJECT_ACTION_MESSAGE, type: "info" });
+      return null;
+    }
     setStudioOptions([]);
     notify({ message: `Added ${project?.title || "game"} to Projects`, type: "success" });
+    return project;
   };
   const openFromStudio = async () => {
-    if (!user || creatingProject) return;
+    if (!user) {
+      notify({ message: "Sign in before adding a Studio game to Projects.", type: "error" });
+      return;
+    }
+    if (creatingProject) return;
     setCreatingProject(true);
     try {
       const identity = resolveGameIdentityFromStudioStatus(await getStudioStatus());
       if (identity.status === "needs_connect") {
-        throw new Error("Connect Roblox Studio to detect a published game.");
+        throw new Error("Connect Roblox Studio to detect the open project.");
       }
       if (identity.status === "needs_selection") {
         setStudioOptions(identity.options || []);
@@ -96,7 +110,7 @@ export default function SidebarContent({
       await adoptIdentity(identity);
     } catch (error) {
       notify({
-        message: error.message || "Could not detect a published Studio game",
+        message: error.message || "Could not detect the open Studio project",
         type: "error",
       });
     } finally {
@@ -122,6 +136,20 @@ export default function SidebarContent({
       setCreatingProject(false);
     }
   };
+  const renameGameProject = async (projectId, title) => {
+    try {
+      const project = await renameProject(projectId, title);
+      if (!project) {
+        return { ok: false, error: STALE_PROJECT_ACTION_MESSAGE };
+      }
+      notify({ message: "Project renamed", type: "success" });
+      return { ok: true, project };
+    } catch (error) {
+      const message = error?.message || "Failed to rename project";
+      notify({ message, type: "error" });
+      return { ok: false, error: message };
+    }
+  };
   const confirmChatDelete = async () => {
     if (!deleteChatId || isActiveRunStatus(activeAgentStatusByChat[deleteChatId])) return;
     setDeleting(true);
@@ -132,11 +160,24 @@ export default function SidebarContent({
       setDeleting(false);
     }
   };
+  const hasActiveRunForProject = (projectId) => {
+    const projectChatIds = new Set(
+      allChats.filter((chat) => chat.projectId === projectId).map((chat) => chat.id)
+    );
+    return [...projectChatIds].some((chatId) => (
+      generatingChatIds.includes(chatId)
+      || isActiveRunStatus(activeAgentStatusByChat[chatId])
+    ));
+  };
   const confirmProjectDelete = async () => {
-    if (!deleteProjectId) return;
+    if (!deleteProjectId || hasActiveRunForProject(deleteProjectId)) return;
     setDeleting(true);
     try {
       const result = await deleteProject(deleteProjectId);
+      if (!result) {
+        notify({ message: STALE_PROJECT_ACTION_MESSAGE, type: "info" });
+        return;
+      }
       setDeleteProjectId(null);
       notify({
         message: `Deleted game project and ${result?.counts?.chats || 0} chats. Roblox content was not changed.`,
@@ -152,7 +193,7 @@ export default function SidebarContent({
     }
   };
   const projectCounts = useMemo(() => {
-    if (!deleteProjectId) return { chats: 0, creations: 0 };
+    if (!deleteProjectId) return { chats: 0, creations: 0, activeRuns: 0 };
     const projectChatIds = new Set(
       allChats.filter((chat) => chat.projectId === deleteProjectId).map((chat) => chat.id)
     );
@@ -161,8 +202,12 @@ export default function SidebarContent({
       creations: scripts.filter((script) => (
         script.workspaceProjectId === deleteProjectId || projectChatIds.has(script.chatId)
       )).length,
+      activeRuns: [...projectChatIds].filter((chatId) => (
+        generatingChatIds.includes(chatId)
+        || isActiveRunStatus(activeAgentStatusByChat[chatId])
+      )).length,
     };
-  }, [allChats, deleteProjectId, scripts]);
+  }, [activeAgentStatusByChat, allChats, deleteProjectId, generatingChatIds, scripts]);
 
   return (
     <>
@@ -177,17 +222,19 @@ export default function SidebarContent({
         generatingChatIds={generatingChatIds}
         activeAgentStatusByChat={activeAgentStatusByChat}
         projectsLoading={projectsLoading}
+        projectsError={projectsError}
         creatingProject={creatingProject}
         studioOptions={studioOptions}
         onNewChat={createChat}
         onOpenChat={openChat}
         onOpenCreation={openScript}
         onRenameChat={onRenameChat}
-        onRenameProject={renameProject}
+        onRenameProject={renameGameProject}
         onMoveChat={onMoveChat}
         onDeleteChat={setDeleteChatId}
         onDeleteProject={setDeleteProjectId}
         onDetectProject={openFromStudio}
+        onRetryProjects={refreshProjects}
         onChooseStudioOption={chooseStudioOption}
         onCollapse={onCollapse}
       />
@@ -235,6 +282,11 @@ export default function SidebarContent({
         <p className="mt-3 text-xs text-muted-foreground">
           An active agent run must be finished or cancelled first. Partial failures can be retried.
         </p>
+        {projectCounts.activeRuns > 0 && (
+          <p role="status" className="mt-3 text-sm text-[var(--ds-warning)]">
+            Finish or cancel {projectCounts.activeRuns === 1 ? "the active run" : `${projectCounts.activeRuns} active runs`} first.
+          </p>
+        )}
         <div className="mt-6 flex justify-end gap-2">
           <button
             type="button"
@@ -246,7 +298,7 @@ export default function SidebarContent({
           <button
             type="button"
             onClick={confirmProjectDelete}
-            disabled={deleting}
+            disabled={deleting || projectCounts.activeRuns > 0}
             className="min-h-11 rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground disabled:opacity-40"
           >
             Delete Nexus data

@@ -85,6 +85,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Textarea } from "../components/shadcn/textarea";
 import { cn } from "../lib/utils";
 import { resolveSettingsTab } from "../lib/settingsNavigation";
+import { useSettingsLongForm } from "../hooks/useSettingsLongForm";
+import { requestTutorialRestart } from "../components/onboarding/useTutorial";
 import "./SettingsLedger.css";
 
 const NAV_ITEMS = [
@@ -452,11 +454,12 @@ function ConfirmationAction({
   onConfirm,
   destructive = true,
 }) {
+  const confirmationInputId = React.useId();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
-  const matches = value === confirmationText;
+  const matches = !confirmationText || value === confirmationText;
 
   const reset = () => {
     setValue("");
@@ -478,16 +481,18 @@ function ConfirmationAction({
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
-        <div className="space-y-2">
-          <Label htmlFor={`confirm-${confirmationText}`}>Type {confirmationText} to continue</Label>
-          <Input
-            id={`confirm-${confirmationText}`}
-            value={value}
-            onChange={(event) => setValue(event.target.value)}
-            autoComplete="off"
-          />
-          {error && <p className="text-sm text-destructive">{error}</p>}
-        </div>
+        {confirmationText && (
+          <div className="space-y-2">
+            <Label htmlFor={confirmationInputId}>Type {confirmationText} to continue</Label>
+            <Input
+              id={confirmationInputId}
+              value={value}
+              onChange={(event) => setValue(event.target.value)}
+              autoComplete="off"
+            />
+          </div>
+        )}
+        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={running}>Cancel</AlertDialogCancel>
           <AlertDialogAction
@@ -574,9 +579,20 @@ export default function SettingsPage() {
   const [adminInspector, setAdminInspector] = useState({ uid: "", status: "idle", data: null, error: "" });
   const [tokenAdjust, setTokenAdjust] = useState({ uid: "", amount: "", reason: "" });
   const [notice, setNotice] = useState("");
-  const [longForm, setLongForm] = useState({
-    codingStandards: settings.codingStandards || "",
-    gameSpec: settings.gameSpec || "",
+  const updateSetting = useCallback(async (patch) => {
+    const result = await updateSettings(patch);
+    if (!result.ok) setNotice(result.error || "Setting could not be saved.");
+    return result;
+  }, [updateSettings]);
+  const {
+    longForm,
+    longFormDirty,
+    saveLongForm,
+    updateLongFormField,
+  } = useSettingsLongForm({
+    settings,
+    userId: user?.uid,
+    saveSettings: updateSetting,
   });
 
   const navItems = useMemo(() => {
@@ -610,10 +626,6 @@ export default function SettingsPage() {
   const publishingPreference = settings.assetPublishingPreference || "auto_explicit_request";
   const publishingPreferenceDetails = ASSET_PUBLISHING_OPTIONS.find((option) => option.value === publishingPreference)
     || ASSET_PUBLISHING_OPTIONS[0];
-  const longFormDirty =
-    longForm.codingStandards !== (settings.codingStandards || "") ||
-    longForm.gameSpec !== (settings.gameSpec || "");
-
   const setRobloxActionError = useCallback((error, fallbackMessage) => {
     const retryable = isRetryableApiError(error);
     setRobloxState((state) => ({
@@ -653,15 +665,6 @@ export default function SettingsPage() {
     if (robloxResult === "connected") setNotice("Roblox connection updated.");
     if (robloxResult === "error") setNotice(params.get("message") || "Roblox authorization failed.");
   }, [location.search]);
-
-  useEffect(() => {
-    if (!longFormDirty) {
-      setLongForm({
-        codingStandards: settings.codingStandards || "",
-        gameSpec: settings.gameSpec || "",
-      });
-    }
-  }, [longFormDirty, settings.codingStandards, settings.gameSpec]);
 
   const setTab = useCallback((tab) => {
     const nextTab = resolveSettingsTab({
@@ -778,12 +781,6 @@ export default function SettingsPage() {
     if (activeTab === "admin") loadAdmin();
     if (activeTab === "roblox") loadRoblox();
   }, [activeTab, loadAdmin, loadRoblox, loadTeams]);
-
-  const updateSetting = useCallback(async (patch) => {
-    const result = await updateSettings(patch);
-    if (!result.ok) setNotice(result.error || "Setting could not be saved.");
-    return result;
-  }, [updateSettings]);
 
   const createTeam = async (event) => {
     event.preventDefault();
@@ -1017,7 +1014,7 @@ export default function SettingsPage() {
         title="Project context"
         description="Long-form instructions save explicitly so accidental edits do not overwrite your workspace defaults."
         actions={
-          <Button type="button" onClick={() => updateSetting(longForm)} disabled={!longFormDirty || saveStatus === "saving"}>
+          <Button type="button" onClick={saveLongForm} disabled={!longFormDirty || saveStatus === "saving"}>
             {saveStatus === "saving" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {saveStatus === "saving" ? "Saving context…" : "Save context"}
           </Button>
@@ -1036,7 +1033,7 @@ export default function SettingsPage() {
             <Textarea
               id="codingStandards"
               value={longForm.codingStandards}
-              onChange={(event) => setLongForm((draft) => ({ ...draft, codingStandards: event.target.value }))}
+              onChange={(event) => updateLongFormField("codingStandards", event.target.value)}
               rows={10}
               placeholder="Preferred patterns, naming, validation rules, and Studio constraints."
             />
@@ -1046,7 +1043,7 @@ export default function SettingsPage() {
             <Textarea
               id="gameSpec"
               value={longForm.gameSpec}
-              onChange={(event) => setLongForm((draft) => ({ ...draft, gameSpec: event.target.value }))}
+              onChange={(event) => updateLongFormField("gameSpec", event.target.value)}
               rows={10}
               placeholder="Current game genre, systems, folders, monetization, and known constraints."
             />
@@ -1209,25 +1206,21 @@ export default function SettingsPage() {
                       {robloxAction === "reauthorize" && <Loader2 className="h-4 w-4 animate-spin" />}
                       {robloxAction === "reauthorize" ? "Reauthorizing…" : "Reauthorize"}
                     </Button>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      onClick={async () => {
-                        setRobloxAction("revoke");
+                    <ConfirmationAction
+                      trigger={<Button type="button" variant="destructive">Revoke access</Button>}
+                      title="Revoke Roblox access?"
+                      description="NexusRBX will lose its Roblox OAuth authorization. Studio-only work remains available, and you can reconnect later."
+                      actionLabel="Revoke access"
+                      onConfirm={async () => {
                         try {
                           await revokeRobloxOAuth();
                           await loadRoblox();
                         } catch (error) {
                           setRobloxActionError(error, "Could not revoke Roblox access.");
-                        } finally {
-                          setRobloxAction("");
+                          throw error;
                         }
                       }}
-                      disabled={robloxAction === "revoke"}
-                    >
-                      {robloxAction === "revoke" && <Loader2 className="h-4 w-4 animate-spin" />}
-                      {robloxAction === "revoke" ? "Revoking…" : "Revoke access"}
-                    </Button>
+                    />
                   </>
                 )}
               </div>
@@ -1559,11 +1552,11 @@ export default function SettingsPage() {
             type="button"
             variant="outline"
             onClick={() => {
-              localStorage.removeItem("nexus_tutorial_completed");
+              requestTutorialRestart();
               navigate("/ai");
             }}
           >
-            Restart walkthrough
+            Restart guide
           </Button>
           <Button asChild>
             <Link to="/ai">

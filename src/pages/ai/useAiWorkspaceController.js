@@ -165,6 +165,13 @@ export function evaluateIntentAwareStudioSubmissionPreflight({ prompt, ...studio
   return evaluateStudioSubmissionPreflight(studioOptions);
 }
 
+export function studioPlaceSelectionMessage(options = []) {
+  const candidates = Array.isArray(options) ? options : [];
+  return candidates.some(canBindStudioTargetToProject)
+    ? "Choose which Studio place this chat should edit before sending."
+    : "Nexus could not verify a complete live identity for the open Studio project. Refresh Studio and choose it again before using Agent Build.";
+}
+
 const MODE_COLORS = {
   general: { primary: "var(--ds-accent)", secondary: "var(--ds-info)" },
   ui: { primary: "var(--ds-accent)", secondary: "var(--ds-accent)" },
@@ -1175,9 +1182,7 @@ export function useAiWorkspaceController() {
         options,
       });
       if (gate.status === "needs_selection") {
-        const selectionMessage = options.some(canBindStudioTargetToProject)
-          ? "Choose which Studio place this chat should edit before sending."
-          : "Publish an open Studio place to Roblox before using Agent Build.";
+        const selectionMessage = studioPlaceSelectionMessage(options);
         notify({
           message: selectionMessage,
           type: "error",

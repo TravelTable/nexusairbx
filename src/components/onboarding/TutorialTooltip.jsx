@@ -83,8 +83,8 @@ export default function TutorialTooltip({
               type="button"
               onClick={onSkip}
               className="focus-ring -mr-1 -mt-1 flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-[10px] text-[var(--ds-text-muted)] transition-colors duration-150 hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] motion-reduce:transition-none"
-              title="Dismiss guide"
-              aria-label="Dismiss creator milestones"
+              title="Skip guide for now"
+              aria-label="Skip creator milestones for now"
             >
               <X className="h-4 w-4" />
             </button>
@@ -137,7 +137,7 @@ export default function TutorialTooltip({
               onClick={onSkip}
               className="focus-ring min-h-11 rounded-[10px] px-2 text-xs font-semibold text-[var(--ds-text-muted)] transition-colors duration-150 hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] motion-reduce:transition-none"
             >
-              Dismiss guide
+              Skip for now
             </button>
 
             <div className="flex items-center gap-2">

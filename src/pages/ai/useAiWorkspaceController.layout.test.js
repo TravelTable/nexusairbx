@@ -4,6 +4,7 @@ import {
   shouldCloseProjectSidebarOnViewportChange,
   shouldOpenProjectSidebarByDefault,
   shouldRequireStudioPlaceSelection,
+  studioPlaceSelectionMessage,
 } from "./useAiWorkspaceController";
 
 describe("AI workspace project-sidebar defaults", () => {
@@ -49,5 +50,24 @@ describe("AI workspace Studio-place gate", () => {
       .toBe(true);
     expect(shouldRequireStudioPlaceSelection("Fix the inventory bug"))
       .toBe(true);
+  });
+
+  test("accepts opaque local targets and describes incomplete identities without requiring publication", () => {
+    const localMessage = studioPlaceSelectionMessage([{
+      id: "studio_target_local",
+      label: "Local Arena",
+      placeId: null,
+      universeId: null,
+    }]);
+    expect(localMessage).toBe("Choose which Studio place this chat should edit before sending.");
+
+    const incompleteMessage = studioPlaceSelectionMessage([{
+      label: "Incomplete Studio project",
+      placeId: "123",
+      universeId: null,
+    }]);
+    expect(incompleteMessage).toContain("complete live identity");
+    expect(incompleteMessage).not.toMatch(/publish/i);
+    expect(studioPlaceSelectionMessage(null)).toContain("complete live identity");
   });
 });

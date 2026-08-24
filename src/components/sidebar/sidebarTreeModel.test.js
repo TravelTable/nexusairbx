@@ -1,10 +1,69 @@
 import {
   buildSidebarTree,
   formatSidebarTimestamp,
+  isActiveRunStatus,
   searchSidebar,
 } from "./sidebarTreeModel";
+import {
+  ACTIVE_AGENT_STATES,
+  TERMINAL_AGENT_STATES,
+} from "../../lib/agentRuntimeV2Api";
+
+const EXPECTED_ACTIVE_AGENT_STATES = [
+  "active",
+  "in_progress",
+  "running",
+  "queued",
+  "planning",
+  "waiting_user",
+  "waiting_studio",
+  "awaiting_studio_target",
+  "awaiting_approval",
+  "waiting_external",
+  "reconnecting",
+  "verifying",
+];
+
+const EXPECTED_TERMINAL_AGENT_STATES = [
+  "completed",
+  "failed",
+  "cancelled",
+];
 
 describe("sidebarTreeModel", () => {
+  test("uses the exhaustive canonical V2 active and terminal status definitions", () => {
+    expect([...ACTIVE_AGENT_STATES]).toEqual(EXPECTED_ACTIVE_AGENT_STATES);
+    expect([...TERMINAL_AGENT_STATES]).toEqual(EXPECTED_TERMINAL_AGENT_STATES);
+
+    for (const status of EXPECTED_ACTIVE_AGENT_STATES) {
+      expect(isActiveRunStatus(status)).toBe(true);
+    }
+    for (const status of EXPECTED_TERMINAL_AGENT_STATES) {
+      expect(isActiveRunStatus(status)).toBe(false);
+    }
+    expect(isActiveRunStatus(" WAITING_STUDIO ")).toBe(true);
+    expect(isActiveRunStatus("waiting")).toBe(false);
+    expect(isActiveRunStatus("unknown")).toBe(false);
+  });
+
+  test.each([
+    "waiting_user",
+    "waiting_studio",
+    "awaiting_studio_target",
+  ])("counts %s as active in project ordering", (status) => {
+    const tree = buildSidebarTree({
+      projects: [
+        { projectId: "idle", title: "Idle", updatedAt: 900 },
+        { projectId: "waiting", title: "Waiting", updatedAt: 100 },
+      ],
+      chats: [{ id: "waiting-chat", projectId: "waiting", updatedAt: 100 }],
+      activeAgentStatusByChat: { "waiting-chat": status },
+    });
+
+    expect(tree.projects.map((project) => project.projectId)).toEqual(["waiting", "idle"]);
+    expect(tree.projects[0].activeRunCount).toBe(1);
+  });
+
   test("keeps unassigned chats in General and nests assigned chats under projects", () => {
     const tree = buildSidebarTree({
       projects: [
@@ -57,7 +116,7 @@ describe("sidebarTreeModel", () => {
         { id: "pinned", updatedAt: 50 },
       ],
       pinnedChatIds: new Set(["pinned"]),
-      activeAgentStatusByChat: { active: "waiting" },
+      activeAgentStatusByChat: { active: "waiting_user" },
     });
 
     expect(tree.generalChats.map((chat) => chat.id)).toEqual([

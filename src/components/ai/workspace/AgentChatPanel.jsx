@@ -29,6 +29,7 @@ export default function AgentChatPanel({
   onOpenArtifact,
   onQuickStart,
   onStartGuide,
+  startGuideLabel,
   onRenameChat,
   onOpenNavigation,
   onRetryMessage,
@@ -57,6 +58,7 @@ export default function AgentChatPanel({
   studioPlaceOptions = [],
   studioPlacePickerOpen = null,
   onStudioPlacePickerOpenChange = null,
+  onStudioConnectionOpen = null,
   onSelectStudioPlace = null,
   studioCollaborators,
   // roblox cloud
@@ -248,6 +250,7 @@ export default function AgentChatPanel({
               onRefine={onRefine}
               onQuickStart={onQuickStart}
               onStartGuide={onStartGuide}
+              startGuideLabel={startGuideLabel}
               notify={notify}
               onApproveStep={onApproveStep}
               approvingStepId={approvingStepId}
@@ -344,6 +347,7 @@ export default function AgentChatPanel({
           studioPlaceOptions={studioPlaceOptions}
           studioPlacePickerOpen={studioPlacePickerOpen}
           onStudioPlacePickerOpenChange={onStudioPlacePickerOpenChange}
+          onStudioConnectionOpen={onStudioConnectionOpen}
           onSelectStudioPlace={onSelectStudioPlace || onSelectStudioTarget}
           selectingStudioTargetId={selectingStudioTargetId}
           robloxConnected={robloxConnected}

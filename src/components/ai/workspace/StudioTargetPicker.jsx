@@ -9,6 +9,52 @@ function optionLabel(option) {
   return option?.label || option?.displayName || option?.placeName || option?.name || "Untitled Studio project";
 }
 
+function comparableLabel(option) {
+  return String(optionLabel(option))
+    .replace(/\s+\(\d+\)$/u, "")
+    .trim()
+    .toLocaleLowerCase();
+}
+
+function optionConnectionLabel(option) {
+  const connectionType = String(option?.connectionType || "").trim();
+  const source = String(option?.source || "").trim();
+  const hasPlugin = connectionType === "plugin_bridge"
+    || source === "plugin"
+    || Boolean(option?.pluginSessionId);
+  const hasMcp = connectionType === "mcp_local"
+    || source === "mcp"
+    || Boolean(option?.mcpSessionId);
+
+  if (hasPlugin && hasMcp) return "Studio plugin + Roblox Studio MCP";
+  if (hasPlugin) return "Recommended · Studio plugin";
+  if (hasMcp) return "Advanced · Roblox Studio MCP";
+  return null;
+}
+
+function ambiguousOptionIds(options) {
+  const labelCounts = new Map();
+  const placeCounts = new Map();
+
+  options.forEach((option) => {
+    const label = comparableLabel(option);
+    const placeId = String(option?.placeId || "").trim();
+    if (label) labelCounts.set(label, (labelCounts.get(label) || 0) + 1);
+    if (placeId && placeId !== "0") {
+      placeCounts.set(placeId, (placeCounts.get(placeId) || 0) + 1);
+    }
+  });
+
+  return new Set(options.flatMap((option) => {
+    const id = optionId(option);
+    const label = comparableLabel(option);
+    const placeId = String(option?.placeId || "").trim();
+    const hasDuplicateLabel = label && (labelCounts.get(label) || 0) > 1;
+    const hasDuplicatePlace = placeId && placeId !== "0" && (placeCounts.get(placeId) || 0) > 1;
+    return id && (hasDuplicateLabel || hasDuplicatePlace) ? [id] : [];
+  }));
+}
+
 export default function StudioTargetPicker({
   selection,
   onSelect,
@@ -18,6 +64,7 @@ export default function StudioTargetPicker({
   if (!options.length) return null;
 
   const selected = options.find((option) => optionId(option) === selectingTargetId) || null;
+  const ambiguousIds = ambiguousOptionIds(options);
 
   return (
     <section
@@ -42,6 +89,9 @@ export default function StudioTargetPicker({
           const isSelecting = id === selectingTargetId;
           const disabledReason = String(option?.disabledReason || "").trim();
           const isUnavailable = option?.disabled === true;
+          const connectionLabel = ambiguousIds.has(id)
+            ? optionConnectionLabel(option)
+            : null;
           const selectableOption = option.id ? option : { ...option, id };
           return (
             <button
@@ -53,6 +103,11 @@ export default function StudioTargetPicker({
             >
               <span className="min-w-0">
                 <span className="block truncate">{optionLabel(option)}</span>
+                {connectionLabel && (
+                  <span className="mt-0.5 block text-[11px] font-medium text-[var(--ds-text-secondary)]">
+                    {connectionLabel}
+                  </span>
+                )}
                 {disabledReason && (
                   <span className="mt-0.5 block text-[11px] font-medium text-[var(--ds-text-muted)]">
                     {disabledReason}

@@ -26,6 +26,10 @@ import {
   getStudioSessionId,
   MCP_CAPABILITY_LABELS,
 } from "../../lib/studioConnection";
+import StudioSetupVisual, {
+  getStudioSetupVisual,
+  STUDIO_SETUP_VISUALS,
+} from "../onboarding/StudioSetupVisual";
 import {
   computeAnchoredMenuPosition,
   getWorkspaceMenuHost,
@@ -192,6 +196,101 @@ function HealthRow({ label, healthy, waitingLabel = "Not detected" }) {
   );
 }
 
+export const STUDIO_SETUP_VISUAL_PREFERENCE_KEY =
+  "nexus_studio_setup_visual_v1";
+
+function readStudioSetupVisualPreference() {
+  try {
+    const stored = localStorage.getItem(STUDIO_SETUP_VISUAL_PREFERENCE_KEY);
+    return STUDIO_SETUP_VISUALS.some((visual) => visual.id === stored)
+      ? stored
+      : STUDIO_SETUP_VISUALS[0].id;
+  } catch {
+    return STUDIO_SETUP_VISUALS[0].id;
+  }
+}
+
+function writeStudioSetupVisualPreference(visualId) {
+  try {
+    localStorage.setItem(STUDIO_SETUP_VISUAL_PREFERENCE_KEY, visualId);
+  } catch {
+    // The selector still works for the current open dialog when storage is blocked.
+  }
+}
+
+function StudioPluginSetupReference({ suggestedVisualId }) {
+  const [selectedVisualId, setSelectedVisualId] = useState(
+    () => suggestedVisualId || readStudioSetupVisualPreference(),
+  );
+  const previousSuggestedVisualIdRef = useRef(suggestedVisualId);
+  const selectedVisual = getStudioSetupVisual(selectedVisualId);
+
+  useEffect(() => {
+    const previousSuggestedVisualId = previousSuggestedVisualIdRef.current;
+    previousSuggestedVisualIdRef.current = suggestedVisualId;
+    if (suggestedVisualId) {
+      setSelectedVisualId(suggestedVisualId);
+    } else if (previousSuggestedVisualId) {
+      setSelectedVisualId(readStudioSetupVisualPreference());
+    }
+  }, [suggestedVisualId]);
+
+  const selectVisual = useCallback((visualId) => {
+    const nextVisual = getStudioSetupVisual(visualId);
+    setSelectedVisualId(nextVisual.id);
+    writeStudioSetupVisualPreference(nextVisual.id);
+  }, []);
+
+  return (
+    <section
+      className="border-y border-[var(--ds-border-subtle)] py-3"
+      aria-labelledby="studio-plugin-setup-heading"
+    >
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <h3
+          id="studio-plugin-setup-heading"
+          className="text-xs font-bold text-[var(--ds-text)]"
+        >
+          Plugin setup reference
+        </h3>
+        <a
+          href="/docs/installation"
+          className="inline-flex min-h-11 items-center gap-1 text-[10px] font-bold text-[var(--ds-text-secondary)] underline decoration-[var(--ds-border-strong)] underline-offset-4 hover:text-[var(--ds-text)]"
+        >
+          Full install guide <ExternalLink className="h-3 w-3" />
+        </a>
+      </div>
+
+      <label
+        htmlFor="studio-plugin-setup-step"
+        className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-[var(--ds-text-muted)]"
+      >
+        Setup step
+      </label>
+      <select
+        id="studio-plugin-setup-step"
+        value={selectedVisual.id}
+        onChange={(event) => selectVisual(event.target.value)}
+        aria-describedby="studio-plugin-setup-instruction"
+        className="min-h-11 w-full rounded border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] px-3 text-xs font-bold text-[var(--ds-text)] outline-none focus-visible:border-[var(--ds-border-strong)] focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)]"
+      >
+        {STUDIO_SETUP_VISUALS.map((visual, index) => (
+          <option key={visual.id} value={visual.id}>
+            {index + 1}. {visual.title}
+          </option>
+        ))}
+      </select>
+      <p
+        id="studio-plugin-setup-instruction"
+        className="my-3 text-[11px] leading-relaxed text-[var(--ds-text-secondary)]"
+      >
+        {selectedVisual.instruction}
+      </p>
+      <StudioSetupVisual visualId={selectedVisual.id} />
+    </section>
+  );
+}
+
 /** Optionally connects the NexusRBX Studio plugin or a local MCP transport. */
 export default function StudioPairControl({
   connection = null,
@@ -200,6 +299,9 @@ export default function StudioPairControl({
   refresh,
   notify,
   requireUser,
+  open: controlledOpen = null,
+  onOpenChange = null,
+  returnFocusRef = null,
 }) {
   const pluginConnected = connection
     ? Boolean(connection.pluginConnected)
@@ -233,7 +335,8 @@ export default function StudioPairControl({
       compatibility.missingCapabilities?.includes("instanceMutation"));
   const transportSelection = connection?.transportSelection || {};
 
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen == null ? internalOpen : Boolean(controlledOpen);
   const [activeMethod, setActiveMethod] = useState("plugin");
   const [menuPosition, setMenuPosition] = useState(null);
   const [pairing, setPairing] = useState({ plugin: null, mcp: null });
@@ -248,8 +351,19 @@ export default function StudioPairControl({
   const buttonRef = useRef(null);
   const menuRef = useRef(null);
   const copyResetTimerRef = useRef(null);
+  const ownTriggerOpenRequestedRef = useRef(false);
+  const dialogReturnFocusRef = useRef(null);
   const activePair = pairing[activeMethod];
   const overallConnected = pluginConnected || mcpConnected;
+
+  const requestOpenChange = useCallback(
+    (nextOpen) => {
+      const resolvedOpen = Boolean(nextOpen);
+      if (controlledOpen == null) setInternalOpen(resolvedOpen);
+      onOpenChange?.(resolvedOpen);
+    },
+    [controlledOpen, onOpenChange],
+  );
 
   const updateMenuPosition = useCallback(() => {
     setMenuPosition(
@@ -260,6 +374,23 @@ export default function StudioPairControl({
     );
   }, []);
 
+  const handleMethodTabKeyDown = useCallback((event) => {
+    const nextMethod = {
+      ArrowRight: "mcp",
+      ArrowDown: "mcp",
+      End: "mcp",
+      ArrowLeft: "plugin",
+      ArrowUp: "plugin",
+      Home: "plugin",
+    }[event.key];
+    if (!nextMethod) return;
+    event.preventDefault();
+    setActiveMethod(nextMethod);
+    menuRef.current
+      ?.querySelector(`[data-studio-connection-method="${nextMethod}"]`)
+      ?.focus();
+  }, []);
+
   useEffect(() => {
     if (!open) return undefined;
     const onClickOutside = (event) => {
@@ -268,26 +399,39 @@ export default function StudioPairControl({
         menuRef.current?.contains(event.target)
       )
         return;
-      setOpen(false);
+      requestOpenChange(false);
     };
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
-  }, [open]);
+  }, [open, requestOpenChange]);
 
   useEffect(() => {
     if (!open) return undefined;
+    dialogReturnFocusRef.current = ownTriggerOpenRequestedRef.current
+      ? buttonRef.current
+      : returnFocusRef?.current || buttonRef.current;
+    ownTriggerOpenRequestedRef.current = false;
     menuRef.current
       ?.querySelector('[role="tab"][aria-selected="true"]')
       ?.focus();
     const onKeyDown = (event) => {
       if (event.key !== "Escape") return;
       event.preventDefault();
-      setOpen(false);
-      buttonRef.current?.focus();
+      requestOpenChange(false);
+      const focusTarget = dialogReturnFocusRef.current;
+      if (
+        focusTarget &&
+        typeof focusTarget.focus === "function" &&
+        (focusTarget.isConnected === undefined || focusTarget.isConnected)
+      ) {
+        focusTarget.focus();
+      } else {
+        buttonRef.current?.focus();
+      }
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open]);
+  }, [open, requestOpenChange, returnFocusRef]);
 
   useEffect(
     () => () => {
@@ -479,8 +623,8 @@ export default function StudioPairControl({
             plugin: "Connected via NexusRBX Studio Plugin",
             mcp: "Connected via Roblox Studio MCP",
             degraded: "Connector connected, Roblox Studio MCP not detected",
-            export_only: "Export only — Studio is optional",
-            disconnected: "Export only — Studio is optional",
+            export_only: "Browser chat available — Studio not connected",
+            disconnected: "Browser chat available — Studio not connected",
           }[connectionState] || "Connection degraded";
 
   const transportLabel = (selection) => {
@@ -513,7 +657,7 @@ export default function StudioPairControl({
           <div
             id="studio-connection-dialog"
             ref={menuRef}
-            className="z-[9999] overflow-y-auto rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] p-4 shadow-2xl scrollbar-subtle"
+            className="z-[9999] overflow-y-auto rounded border border-[var(--ds-border-strong)] bg-[var(--ds-surface-overlay)] p-4 scrollbar-subtle"
             style={{
               position: menuPosition?.strategy || "fixed",
               top: menuPosition?.top ?? 0,
@@ -572,40 +716,65 @@ export default function StudioPairControl({
               </button>
             </div>
 
+            <p className="mb-3 text-[11px] leading-relaxed text-[var(--ds-text-secondary)]">
+              Browser chat stays available without Studio. Connect only when
+              NexusRBX needs to inspect, change, or verify the open place.
+            </p>
+
             <div
-              className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-[var(--ds-fill-hover)] p-1"
+              className="mb-4 grid border-y border-[var(--ds-border-subtle)] sm:grid-cols-2"
               role="tablist"
               aria-label="Studio connection method"
             >
               <button
+                id="studio-connection-plugin-tab"
                 type="button"
                 role="tab"
+                aria-label="Recommended: Studio plugin"
                 aria-selected={activeMethod === "plugin"}
+                aria-controls="studio-connection-plugin-panel"
+                tabIndex={activeMethod === "plugin" ? 0 : -1}
                 onClick={() => setActiveMethod("plugin")}
-                className={`rounded-lg px-3 py-2 text-left transition-all ${activeMethod === "plugin" ? "bg-[var(--ds-fill-hover)] text-[var(--ds-text)]" : "text-[var(--ds-text-muted)] hover:text-[var(--ds-text-secondary)]"}`}
+                onKeyDown={handleMethodTabKeyDown}
+                data-studio-connection-method="plugin"
+                className={`min-h-11 border-l-2 px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--ds-focus-ring)] ${activeMethod === "plugin" ? "border-l-[var(--ds-accent)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text)]" : "border-l-transparent text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text-secondary)]"}`}
               >
-                <span className="block text-[10px] font-black uppercase tracking-widest text-[var(--ds-accent)]">
-                  Direct apply
+                <span className="block text-xs font-bold">
+                  Recommended: Studio plugin
                 </span>
-                <span className="block text-xs font-bold">Studio Plugin</span>
+                <span
+                  className="mt-1 block text-[10px] font-normal leading-snug text-[var(--ds-text-muted)]"
+                  aria-hidden="true"
+                >
+                  Project context, guarded apply, and recovery
+                </span>
               </button>
               <button
+                id="studio-connection-mcp-tab"
                 type="button"
                 role="tab"
+                aria-label="Advanced: Connector / Roblox Studio MCP"
                 aria-selected={activeMethod === "mcp"}
+                aria-controls="studio-connection-mcp-panel"
+                tabIndex={activeMethod === "mcp" ? 0 : -1}
                 onClick={() => setActiveMethod("mcp")}
-                className={`rounded-lg px-3 py-2 text-left transition-all ${activeMethod === "mcp" ? "bg-[var(--ds-fill-hover)] text-[var(--ds-text)]" : "text-[var(--ds-text-muted)] hover:text-[var(--ds-text-secondary)]"}`}
+                onKeyDown={handleMethodTabKeyDown}
+                data-studio-connection-method="mcp"
+                className={`min-h-11 border-l-2 px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--ds-focus-ring)] ${activeMethod === "mcp" ? "border-l-[var(--ds-accent)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text)]" : "border-l-transparent text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text-secondary)]"}`}
               >
-                <span className="block text-[10px] font-semibold text-[var(--ds-accent)]">
-                  Live tools
-                </span>
                 <span className="block text-xs font-bold">
-                  Roblox Studio MCP
+                  Advanced: Connector / Roblox Studio MCP
+                </span>
+                <span
+                  className="mt-1 block text-[10px] font-normal leading-snug text-[var(--ds-text-muted)]"
+                  aria-hidden="true"
+                >
+                  Optional local MCP transport
                 </span>
               </button>
             </div>
 
-            <div className="mb-4 grid grid-cols-2 gap-2 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2.5 text-[10px]">
+            <div className="mb-4 grid grid-cols-2 gap-2 border-y border-[var(--ds-border-subtle)] py-2.5 text-[10px]">
               <div>
                 <span className="text-[var(--ds-text-muted)]">
                   Chat inspection
@@ -625,8 +794,13 @@ export default function StudioPairControl({
             </div>
 
             {activeMethod === "plugin" ? (
-              <div className="space-y-3">
-                <div className="rounded-xl border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] p-3">
+              <div
+                id="studio-connection-plugin-panel"
+                className="space-y-3"
+                role="tabpanel"
+                aria-labelledby="studio-connection-plugin-tab"
+              >
+                <div className="border-l-2 border-l-[var(--ds-accent)] pl-3">
                   <div className="mb-1 flex items-center gap-2 text-xs font-bold text-[var(--ds-text)]">
                     <Radio className="h-4 w-4 text-[var(--ds-accent)]" />{" "}
                     NexusRBX Studio Plugin
@@ -637,6 +811,15 @@ export default function StudioPairControl({
                     workflows, validation, and safe recovery.
                   </p>
                 </div>
+                <StudioPluginSetupReference
+                  suggestedVisualId={
+                    pluginConnected
+                      ? "connected-state"
+                      : pairing.plugin?.code
+                        ? "enter-pair-code"
+                        : null
+                  }
+                />
                 {pluginConnected ? (
                   <>
                     {pluginUpdateRequired ? (
@@ -759,11 +942,16 @@ export default function StudioPairControl({
                 )}
               </div>
             ) : (
-              <div className="space-y-3">
-                <div className="rounded-xl border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] p-3">
+              <div
+                id="studio-connection-mcp-panel"
+                className="space-y-3"
+                role="tabpanel"
+                aria-labelledby="studio-connection-mcp-tab"
+              >
+                <div className="border-l-2 border-l-[var(--ds-border-strong)] pl-3">
                   <div className="mb-1 flex items-center gap-2 text-xs font-bold text-[var(--ds-text)]">
                     <Terminal className="h-4 w-4 text-[var(--ds-accent)]" />{" "}
-                    Roblox Studio MCP
+                    Connector / Roblox Studio MCP
                   </div>
                   <p className="text-[11px] leading-relaxed text-[var(--ds-text-secondary)]">
                     Connect through the optional NexusRBX Local Connector for
@@ -913,7 +1101,7 @@ export default function StudioPairControl({
                       type="button"
                       onClick={() => generateCode("mcp")}
                       disabled={busyMethod === "mcp"}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-3 py-2.5 text-xs font-semibold text-[var(--ds-accent)] transition-colors hover:bg-[var(--ds-fill-hover)] disabled:opacity-50"
+                      className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-3 py-2.5 text-xs font-semibold text-[var(--ds-accent)] transition-colors hover:bg-[var(--ds-fill-hover)] disabled:opacity-50"
                     >
                       {busyMethod === "mcp" ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -983,7 +1171,7 @@ export default function StudioPairControl({
               ? "Studio"
               : degraded
                 ? "Studio · Check"
-                : "Studio · Offline";
+                : "Connect Roblox Studio";
 
   return (
     <div className="relative" ref={rootRef}>
@@ -991,8 +1179,10 @@ export default function StudioPairControl({
         ref={buttonRef}
         type="button"
         onClick={() => {
+          const nextOpen = !open;
+          ownTriggerOpenRequestedRef.current = nextOpen;
           updateMenuPosition();
-          setOpen((current) => !current);
+          requestOpenChange(nextOpen);
         }}
         className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all xl:min-h-0 ${
           pluginUpdateRequired
@@ -1008,11 +1198,7 @@ export default function StudioPairControl({
                     : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
         }`}
         title={statusCopy}
-        aria-label={
-          buttonLabel === "Studio · Offline"
-            ? "Pair Studio — Studio offline"
-            : buttonLabel
-        }
+        aria-label={buttonLabel}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls="studio-connection-dialog"

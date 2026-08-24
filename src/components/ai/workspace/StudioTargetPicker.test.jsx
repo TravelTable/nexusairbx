@@ -43,6 +43,48 @@ describe("StudioTargetPicker", () => {
     expect(onSelect).not.toHaveBeenCalled();
   });
 
+  test("identifies the transport when the same Studio place is connected twice", () => {
+    const onSelect = jest.fn();
+    render(
+      <StudioTargetPicker
+        selection={{
+          prompt: "Switch Studio place",
+          options: [
+            {
+              id: "plugin-target",
+              placeId: "123",
+              label: "Place1",
+              connectionType: "plugin_bridge",
+              source: "plugin",
+            },
+            {
+              id: "mcp-target",
+              placeId: "123",
+              label: "Place1 (2)",
+              connectionType: "mcp_local",
+              source: "mcp",
+            },
+          ],
+        }}
+        onSelect={onSelect}
+      />
+    );
+
+    const pluginChoice = screen.getByRole("button", {
+      name: /Place1 Recommended · Studio plugin/i,
+    });
+    const mcpChoice = screen.getByRole("button", {
+      name: /Place1 \(2\) Advanced · Roblox Studio MCP/i,
+    });
+
+    fireEvent.click(mcpChoice);
+    expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({
+      id: "mcp-target",
+      connectionType: "mcp_local",
+    }));
+    expect(pluginChoice).toBeTruthy();
+  });
+
   test("explains why a local place cannot be selected", () => {
     const onSelect = jest.fn();
     render(
@@ -53,7 +95,7 @@ describe("StudioTargetPicker", () => {
             id: "local-place",
             label: "LocalPlace.rbxl",
             disabled: true,
-            disabledReason: "Publish to Roblox before using Agent Build",
+            disabledReason: "Complete live Studio identity required",
           }],
         }}
         onSelect={onSelect}
@@ -61,7 +103,7 @@ describe("StudioTargetPicker", () => {
     );
 
     const button = screen.getByRole("button", {
-      name: /LocalPlace\.rbxl Publish to Roblox before using Agent Build/i,
+      name: /LocalPlace\.rbxl Complete live Studio identity required/i,
     });
     expect(button.disabled).toBe(true);
     fireEvent.click(button);

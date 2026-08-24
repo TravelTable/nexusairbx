@@ -2876,7 +2876,9 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
 
   const handleRenameChat = async (chatId, title) => {
     const nextTitle = String(title || "").trim();
-    if (!authReady || !user?.uid || auth.currentUser?.uid !== user.uid || !chatId || !nextTitle) return;
+    if (!authReady || !user?.uid || auth.currentUser?.uid !== user.uid || !chatId || !nextTitle) {
+      return { ok: false, error: "Sign in and enter a chat title before renaming." };
+    }
     try {
       await assertCanWrite();
       await updateDoc(doc(db, "users", user.uid, "chats", chatId), sanitizeChatWritePayload({
@@ -2887,8 +2889,11 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         setCurrentChatMeta((current) => current ? { ...current, title: nextTitle } : current);
       }
       notify({ message: "Chat renamed", type: "success" });
+      return { ok: true, title: nextTitle };
     } catch (err) {
-      notify({ message: err?.message || "Failed to rename chat", type: "error" });
+      const message = err?.message || "Failed to rename chat";
+      notify({ message, type: "error" });
+      return { ok: false, error: message };
     }
   };
 

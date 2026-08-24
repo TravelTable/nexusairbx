@@ -363,7 +363,11 @@ export default function PricingCatalog() {
             Every plan uses the same project-first workflow. Capacity, history,
             model access, and creator tools change as the work grows.
           </p>
-          <div className={styles.interval} aria-label="Billing period">
+          <div
+            className={styles.interval}
+            role="group"
+            aria-label="Billing period"
+          >
             <span>Billing period</span>
             <button
               type="button"

@@ -144,6 +144,26 @@ describe("ProjectTreeSidebar", () => {
     expect(billing.getAttribute("href")).toBe("/billing");
   });
 
+  it("shows a recoverable project loading error instead of a false empty state", () => {
+    const onRetryProjects = jest.fn();
+    renderSidebar({
+      projects: [],
+      projectsError: "Projects are temporarily unavailable.",
+      onRetryProjects,
+    });
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Projects are temporarily unavailable.");
+    expect(screen.queryByRole("button", { name: "Detect open Studio project" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Retry loading projects" }));
+    expect(onRetryProjects).toHaveBeenCalledTimes(1);
+  });
+
+  it("exposes project detection progress in the empty state", () => {
+    renderSidebar({ projects: [], creatingProject: true });
+
+    expect(screen.getByRole("button", { name: "Detecting Studio project…" })).toBeDisabled();
+  });
+
   it("searches files without changing expansion state", async () => {
     renderSidebar();
     fireEvent.click(screen.getByRole("button", { name: "Sword Simulator" }));
@@ -170,6 +190,24 @@ describe("ProjectTreeSidebar", () => {
     fireEvent.click(await screen.findByRole("menuitem", { name: "General" }));
 
     expect(props.onMoveChat).toHaveBeenCalledWith("combat-chat", null);
+  });
+
+  it("keeps a project rename editable and explains a rejected save", async () => {
+    const onRenameProject = jest.fn().mockResolvedValue({
+      ok: false,
+      error: "Project names are temporarily unavailable.",
+    });
+    renderSidebar({ onRenameProject });
+
+    fireEvent.click(screen.getByRole("button", { name: "Actions for Sword Simulator" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Rename" }));
+    const input = screen.getByRole("textbox", { name: "Rename" });
+    fireEvent.change(input, { target: { value: "Sword Arena" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    await waitFor(() => expect(onRenameProject).toHaveBeenCalledWith("project-a", "Sword Arena"));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Project names are temporarily unavailable.");
+    expect(screen.getByRole("textbox", { name: "Rename" })).toHaveValue("Sword Arena");
   });
 
   it("marks only newly inserted chats for the one-shot row entrance", async () => {

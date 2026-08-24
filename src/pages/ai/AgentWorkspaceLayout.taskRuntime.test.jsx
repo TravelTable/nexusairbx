@@ -5,6 +5,7 @@ const mockUseTaskRuntime = jest.fn();
 const mockUseActiveAgents = jest.fn();
 const mockTaskProgressPanel = jest.fn();
 const mockAgentChatPanel = jest.fn();
+const mockStudioPairControl = jest.fn();
 const mockCodeWorkspace = jest.fn();
 
 jest.mock("../../hooks/useTaskRuntime", () => ({
@@ -77,7 +78,13 @@ jest.mock("../../components/ProNudgeModal", () => () => null);
 jest.mock("../../components/StarterPromoModal", () => () => null);
 jest.mock("../../components/NotificationToast", () => () => null);
 jest.mock("../../components/ai/ModelSwitcher", () => () => null);
-jest.mock("../../components/ai/StudioPairControl", () => () => null);
+jest.mock("../../components/ai/StudioPairControl", () => ({
+  __esModule: true,
+  default: (props) => {
+    mockStudioPairControl(props);
+    return null;
+  },
+}));
 jest.mock("../../components/ai/ProjectArchitecturePanel", () => () => null);
 jest.mock("../../components/ai/AiComponents", () => ({ ProjectContextStatus: () => null }));
 jest.mock("../../components/site/SiteHeader", () => (props) => {
@@ -141,6 +148,16 @@ jest.mock("../../components/ai/workspace/AgentChatPanel", () => ({
         { type: "button", onClick: props.onStop },
         "stop generation",
       ),
+      ReactModule.createElement(
+        "button",
+        {
+          type: "button",
+          onClick: (event) =>
+            props.onStudioConnectionOpen?.(event.currentTarget),
+          "aria-label": "Connect Studio from composer",
+        },
+        "connect studio",
+      ),
     );
   },
 }));
@@ -153,7 +170,10 @@ jest.mock("../../components/onboarding/useTutorial", () => ({
     activeStep: 0,
     isActive: false,
     shouldOfferTutorial: false,
+    hasSavedProgress: false,
     startTutorial: jest.fn(),
+    resumeTutorial: jest.fn(),
+    restartTutorial: jest.fn(),
     nextStep: jest.fn(),
     prevStep: jest.fn(),
     skipTutorial: jest.fn(),
@@ -286,6 +306,39 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
     expect(screen.getByRole("main").getAttribute("id")).toBe("ai-workspace-main");
     expect(screen.getByRole("main").getAttribute("tabindex")).toBe("-1");
     expect(screen.getByRole("group", { name: "Workspace mode" })).toBeTruthy();
+  });
+
+  test("lifts composer connection requests into the shared Studio dialog", () => {
+    mockUseTaskRuntime.mockReturnValue({
+      taskId: "",
+      task: null,
+      events: [],
+      connectionState: "idle",
+      error: null,
+      busyAction: "",
+      selectTask: jest.fn(),
+    });
+
+    render(<AgentWorkspaceLayout controller={makeController()} />);
+
+    const composerTrigger = screen.getByRole("button", {
+      name: "Connect Studio from composer",
+    });
+    expect(mockStudioPairControl.mock.calls.at(-1)[0].open).toBe(false);
+
+    fireEvent.click(composerTrigger);
+
+    const openDialogProps = mockStudioPairControl.mock.calls.at(-1)[0];
+    expect(openDialogProps.open).toBe(true);
+    expect(openDialogProps.returnFocusRef.current).toBe(composerTrigger);
+    expect(mockAgentChatPanel.mock.calls.at(-1)[0]).toEqual(
+      expect.objectContaining({
+        onStudioConnectionOpen: expect.any(Function),
+      }),
+    );
+
+    act(() => openDialogProps.onOpenChange(false));
+    expect(mockStudioPairControl.mock.calls.at(-1)[0].open).toBe(false);
   });
 
   test("cancels the authoritative run after locally aborting an uncoordinated flow", async () => {

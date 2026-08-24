@@ -4,9 +4,14 @@ import { render, screen } from "@testing-library/react";
 
 import AgentChatPanel from "./AgentChatPanel";
 
+const mockChatComposer = jest.fn();
+
 jest.mock("../chat/ChatComposer", () => ({
   __esModule: true,
-  default: () => null,
+  default: (props) => {
+    mockChatComposer(props);
+    return null;
+  },
 }));
 
 jest.mock("./PlanWorkspace", () => ({
@@ -40,6 +45,7 @@ jest.mock("../../ai-elements/conversation", () => {
 });
 
 test("threads authoritative workspace context into the empty chat surface", () => {
+  const onStudioConnectionOpen = jest.fn();
   render(
     <AgentChatPanel
       currentChatId="chat_42"
@@ -51,6 +57,7 @@ test("threads authoritative workspace context into the empty chat surface", () =
       pendingMessages={[]}
       studioConnected
       studioLoading={false}
+      onStudioConnectionOpen={onStudioConnectionOpen}
       studioPlacePreference={{
         targetId: "studio_target_42",
         placeId: "123456",
@@ -63,4 +70,7 @@ test("threads authoritative workspace context into the empty chat surface", () =
   expect(context).toHaveTextContent("ProjectSkybound Adventure");
   expect(context).toHaveTextContent("PlaceCrystal CavesPlace 123456");
   expect(context).toHaveTextContent("StudioConnected");
+  expect(mockChatComposer).toHaveBeenCalledWith(
+    expect.objectContaining({ onStudioConnectionOpen }),
+  );
 });

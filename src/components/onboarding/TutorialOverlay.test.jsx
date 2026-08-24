@@ -121,10 +121,10 @@ describe("TutorialOverlay", () => {
       />
     );
 
-    expect(screen.getByRole("button", { name: "Dismiss creator milestones" }).className).toContain(
+    expect(screen.getByRole("button", { name: "Skip creator milestones for now" }).className).toContain(
       "min-h-11"
     );
-    expect(screen.getByRole("button", { name: "Dismiss guide" }).className).toContain("min-h-11");
+    expect(screen.getByRole("button", { name: "Skip for now" }).className).toContain("min-h-11");
     expect(screen.getByRole("button", { name: /Next milestone/i }).className).toContain("min-h-11");
     expect(
       document.querySelector(".motion-reduce\\:transition-none")

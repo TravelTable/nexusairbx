@@ -91,7 +91,7 @@ function RunBadge({ status, generating = false }) {
   return null;
 }
 
-function InlineRename({ value, onCommit, onCancel }) {
+function InlineRename({ value, onCommit, onCancel, disabled = false }) {
   const [draft, setDraft] = useState(value);
   const inputRef = useRef(null);
 
@@ -106,6 +106,7 @@ function InlineRename({ value, onCommit, onCancel }) {
       value={draft}
       maxLength={120}
       aria-label="Rename"
+      disabled={disabled}
       onChange={(event) => setDraft(event.target.value)}
       onClick={(event) => event.stopPropagation()}
       onBlur={() => onCommit(draft)}
@@ -143,6 +144,7 @@ export default function ProjectTreeSidebar({
   generatingChatIds = [],
   activeAgentStatusByChat = {},
   projectsLoading = false,
+  projectsError = null,
   creatingProject = false,
   studioOptions = [],
   onNewChat = () => {},
@@ -154,6 +156,7 @@ export default function ProjectTreeSidebar({
   onDeleteChat = () => {},
   onDeleteProject = () => {},
   onDetectProject = () => {},
+  onRetryProjects = () => {},
   onChooseStudioOption = () => {},
   onCollapse = () => {},
 }) {
@@ -169,6 +172,9 @@ export default function ProjectTreeSidebar({
   const deferredQuery = useDeferredValue(query);
   const [menu, setMenu] = useState(null);
   const [renaming, setRenaming] = useState(null);
+  const [renameBusy, setRenameBusy] = useState(false);
+  const [renameError, setRenameError] = useState("");
+  const renameBusyRef = useRef(false);
   const [focusedId, setFocusedId] = useState(GENERAL_ROOT_ID);
   const [scrollEdges, setScrollEdges] = useState({ top: false, bottom: false });
   const [generalChatsLimit, setGeneralChatsLimit] = useState(GENERAL_CHATS_PAGE_SIZE);
@@ -332,7 +338,10 @@ export default function ProjectTreeSidebar({
         id: "rename",
         label: "Rename",
         icon: Pencil,
-        onSelect: () => setRenaming({ type: "project", id: project.projectId }),
+        onSelect: () => {
+          setRenameError("");
+          setRenaming({ type: "project", id: project.projectId });
+        },
       },
       {
         id: "pin",
@@ -359,7 +368,10 @@ export default function ProjectTreeSidebar({
         id: "rename",
         label: "Rename",
         icon: Pencil,
-        onSelect: () => setRenaming({ type: "chat", id: chat.id }),
+        onSelect: () => {
+          setRenameError("");
+          setRenaming({ type: "chat", id: chat.id });
+        },
       },
       {
         id: "pin",
@@ -472,11 +484,31 @@ export default function ProjectTreeSidebar({
   });
 
   const commitRename = async (type, id, title) => {
+    if (renameBusyRef.current) return;
     const nextTitle = String(title || "").trim();
-    setRenaming(null);
-    if (!nextTitle) return;
-    if (type === "chat") await onRenameChat(id, nextTitle);
-    else await onRenameProject(id, nextTitle);
+    if (!nextTitle) {
+      setRenaming(null);
+      setRenameError("");
+      return;
+    }
+    renameBusyRef.current = true;
+    setRenameBusy(true);
+    setRenameError("");
+    try {
+      const result = type === "chat"
+        ? await onRenameChat(id, nextTitle)
+        : await onRenameProject(id, nextTitle);
+      if (result?.ok === false) {
+        setRenameError(result.error || `Failed to rename ${type}`);
+        return;
+      }
+      setRenaming(null);
+    } catch (error) {
+      setRenameError(error?.message || `Failed to rename ${type}`);
+    } finally {
+      renameBusyRef.current = false;
+      setRenameBusy(false);
+    }
   };
 
   const renderChat = (chat, projectId = null, parentId = GENERAL_ROOT_ID) => {
@@ -503,7 +535,11 @@ export default function ProjectTreeSidebar({
             <InlineRename
               value={chat.title || "Untitled chat"}
               onCommit={(title) => commitRename("chat", chat.id, title)}
-              onCancel={() => setRenaming(null)}
+              onCancel={() => {
+                setRenaming(null);
+                setRenameError("");
+              }}
+              disabled={renameBusy}
             />
             <RunBadge
               status={activeAgentStatusByChat[chat.id]}
@@ -607,6 +643,19 @@ export default function ProjectTreeSidebar({
                 {option.label || option.placeName}
               </button>
             ))}
+          </div>
+        )}
+        {renameError && (
+          <div role="alert" className="mt-2 flex items-start gap-2 border-l border-[var(--ds-danger)] px-2 py-1.5 text-[11px] text-[var(--ds-danger)]">
+            <span className="min-w-0 flex-1">{renameError}</span>
+            <button
+              type="button"
+              aria-label="Dismiss rename error"
+              onClick={() => setRenameError("")}
+              className="nexus-sidebar-icon-action rounded p-1 hover:bg-[var(--ds-fill-hover)]"
+            >
+              <X className="h-3 w-3" />
+            </button>
           </div>
         )}
       </div>
@@ -813,7 +862,11 @@ export default function ProjectTreeSidebar({
                                 <InlineRename
                                   value={project.title || "Untitled project"}
                                   onCommit={(title) => commitRename("project", project.projectId, title)}
-                                  onCancel={() => setRenaming(null)}
+                                  onCancel={() => {
+                                    setRenaming(null);
+                                    setRenameError("");
+                                  }}
+                                  disabled={renameBusy}
                                 />
                               </div>
                             ) : (
@@ -874,15 +927,28 @@ export default function ProjectTreeSidebar({
                         </div>
                       );
                     })}
-                    {!projectsLoading && !tree.projects.length && (
+                    {!projectsLoading && projectsError && (
+                      <div role="alert" className="ml-3 flex flex-col items-start gap-2 px-2 py-3 text-[11px] text-[var(--ds-danger)]">
+                        <span>{String(projectsError)}</span>
+                        <button
+                          type="button"
+                          onClick={onRetryProjects}
+                          className="nexus-sidebar-row-action min-h-11 rounded-md px-2 text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+                        >
+                          Retry loading projects
+                        </button>
+                      </div>
+                    )}
+                    {!projectsLoading && !projectsError && !tree.projects.length && (
                       <div className="ml-3 flex flex-col items-start gap-1.5 py-2">
                         <button
                           type="button"
                           onClick={onDetectProject}
+                          disabled={creatingProject}
                           className="nexus-sidebar-row-action flex min-h-11 items-center gap-2 rounded-md px-2 text-[11px] text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text-secondary)]"
                         >
                           <Link2 className="h-3 w-3" />
-                          Detect a published Studio game
+                          {creatingProject ? "Detecting Studio project…" : "Detect open Studio project"}
                         </button>
                       </div>
                     )}

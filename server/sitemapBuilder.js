@@ -10,6 +10,7 @@ const {
   prerenderIconLimit,
   selectPrerenderIcons,
 } = require("./prerenderIcons");
+const { PUBLIC_INDEXABLE_ROUTES } = require("./productionRouting");
 
 const CORE_ROUTES = [
   { path: "/", lastmod: null },
@@ -42,14 +43,9 @@ const DOC_ROUTES = [
   { path: "/docs/ui-generation", lastmod: null },
 ];
 
-const LEGAL_ROUTES = [
-  { path: "/legal", lastmod: null },
-  { path: "/legal/acceptable-use", lastmod: null },
-  { path: "/legal/cookies", lastmod: null },
-  { path: "/legal/privacy", lastmod: null },
-  { path: "/legal/refunds", lastmod: null },
-  { path: "/legal/terms", lastmod: null },
-];
+const LEGAL_ROUTES = [...PUBLIC_INDEXABLE_ROUTES]
+  .filter((routePath) => routePath === "/legal" || routePath.startsWith("/legal/"))
+  .map((routePath) => ({ path: routePath, lastmod: null }));
 
 const EXAMPLE_ROUTES = [
   { path: "/roblox-script-generator", lastmod: null },
