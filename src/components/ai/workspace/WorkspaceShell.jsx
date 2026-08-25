@@ -443,6 +443,7 @@ export default function WorkspaceShell({
       data-stage-open={presence.present ? "true" : "false"}
       data-stage-modal={isModalStageOpen ? "true" : "false"}
       data-stage-fullscreen={fullscreen ? "true" : "false"}
+      data-evidence-launcher={!activePanel && !hideEvidenceLauncher ? "true" : "false"}
       style={{ "--workspace-drawer-width": `${safeDrawerWidth}px` }}
       aria-label="AI workspace"
     >

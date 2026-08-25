@@ -9,6 +9,27 @@
   box-shadow: none;
 }
 
+.nexus-project-tree__primary-action {
+  min-height: 36px;
+}
+
+.nexus-project-tree__chat-row {
+  min-height: 36px;
+  border-bottom: 1px solid var(--nx-rule-quiet);
+  border-radius: var(--nx-radius-control);
+  transition:
+    color var(--nx-motion-fast) var(--nx-ease-state),
+    background-color var(--nx-motion-fast) var(--nx-ease-state);
+}
+
+.nexus-project-tree__chat-row + .nexus-project-tree__chat-row {
+  margin-top: 1px;
+}
+
+.nexus-project-tree__chat-button {
+  min-height: 36px;
+}
+
 .nexus-project-tree__brand-mark {
   display: grid;
   width: 24px;
@@ -245,11 +266,19 @@
 
   .nexus-project-tree__search input,
   .nexus-project-tree__row,
-  .nexus-project-tree__row > button:first-child {
+  .nexus-project-tree__row > button:first-child,
+  .nexus-project-tree__chat-row,
+  .nexus-project-tree__chat-button {
     min-height: 44px;
   }
 
   .nexus-project-tree__row-action {
+    min-width: 44px;
+    min-height: 44px;
+    opacity: 1;
+  }
+
+  .nexus-project-tree__chat-action {
     min-width: 44px;
     min-height: 44px;
     opacity: 1;

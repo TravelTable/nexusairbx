@@ -152,21 +152,13 @@
 }
 
 .agent-chat-panel[data-empty="true"] {
-  justify-content: center;
-  overflow-y: auto;
-  padding-block: clamp(16px, 3vh, 28px);
-}
-
-.agent-chat-panel[data-empty="true"] .agent-chat-panel__content,
-.agent-chat-panel[data-empty="true"] .nexus-chat-switch,
-.agent-chat-panel[data-empty="true"] .nexus-conversation-surface {
-  height: auto;
-  min-height: 0;
-  flex: 0 0 auto;
+  justify-content: flex-start;
+  overflow: hidden;
+  padding-block: 0;
 }
 
 .agent-chat-panel[data-empty="true"] .nexus-composer-region {
-  margin-top: var(--nx-space-4);
+  margin-top: 0;
 }
 
 .nexus-composer-region {
@@ -183,6 +175,70 @@
   border-radius: var(--nx-radius-feature) !important;
   background: var(--nx-card) !important;
   box-shadow: var(--nx-shadow-floating) !important;
+}
+
+.nexus-composer__body {
+  display: grid;
+  min-height: 56px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--nx-space-2);
+  padding: var(--nx-space-2);
+}
+
+.nexus-composer__request-label {
+  display: none;
+}
+
+.nexus-composer__input-shell {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.nexus-composer__toolbar {
+  display: contents;
+}
+
+.nexus-composer__toolbar-start {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.nexus-composer__toolbar-end {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.nexus-composer[data-expanded="true"] .nexus-composer__body {
+  grid-template-rows: auto minmax(0, 1fr);
+  align-items: start;
+}
+
+.nexus-composer[data-expanded="true"] .nexus-composer__input-shell {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+.nexus-composer[data-state="submitting"] .nexus-composer__input {
+  opacity: 0.68;
+}
+
+.nexus-composer[data-state="success"] {
+  border-color: var(--nx-success) !important;
+  box-shadow:
+    var(--nx-shadow-floating),
+    0 0 0 3px color-mix(in srgb, var(--nx-success) 16%, transparent) !important;
+}
+
+.nexus-composer[data-state="error"] {
+  border-color: var(--nx-danger) !important;
+  box-shadow:
+    var(--nx-shadow-floating),
+    0 0 0 3px color-mix(in srgb, var(--nx-danger) 14%, transparent) !important;
+}
+
+.nexus-composer[data-state="disabled"] {
+  box-shadow: none !important;
 }
 
 .nexus-composer:focus-within {
@@ -203,27 +259,6 @@
   outline: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
-}
-
-.nexus-composer__request-label {
-  display: flex;
-  min-height: 26px;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 var(--nx-space-3);
-  color: var(--nx-text-secondary);
-  font-size: 0.6875rem;
-  font-weight: 650;
-  letter-spacing: 0.01em;
-}
-
-.nexus-composer__request-label span {
-  color: var(--nx-text-muted);
-  font-family: var(--nx-font-code);
-  font-size: 0.625rem;
-  font-weight: 500;
-  letter-spacing: 0;
-  text-transform: none;
 }
 
 .studio-place-chip__signal {
@@ -546,7 +581,7 @@
 @media (max-width: 680px) {
   .agent-chat-panel[data-empty="true"] {
     justify-content: flex-start;
-    padding-block: var(--nx-space-4);
+    padding-block: 0;
   }
 
   .nexus-chat-header {

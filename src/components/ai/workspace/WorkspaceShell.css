@@ -416,7 +416,7 @@
 }
 
 @container workspace-shell (max-width: 599px) {
-  .workspace-shell__primary {
+  .workspace-shell[data-evidence-launcher="true"] .workspace-shell__primary {
     padding-bottom: calc(
       var(--nx-header-height-touch) + env(safe-area-inset-bottom)
     );

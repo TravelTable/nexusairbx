@@ -476,7 +476,7 @@ const localCount = (output.match(/^local /gm) || []).length;
 // export declarations can contain multiple names on one line, so leave enough
 // headroom for those names and compiler temporaries instead of building right up
 // to the runtime ceiling.
-const MAX_TOP_LEVEL_LOCAL_STATEMENTS = 185;
+const MAX_TOP_LEVEL_LOCAL_STATEMENTS = 160;
 
 if (localCount > MAX_TOP_LEVEL_LOCAL_STATEMENTS) {
   throw new Error(

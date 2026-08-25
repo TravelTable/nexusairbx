@@ -9,7 +9,6 @@ import {
   Loader,
   Plus,
   SlidersHorizontal,
-  Square,
   X,
 } from "lib/icons";
 import { TokenBar } from "../AiComponents";
@@ -29,6 +28,9 @@ import {
   getActiveComposerMention,
 } from "../../../lib/composerCommands";
 import { messageHasRefineableFiles } from "../../../lib/chatRefine";
+
+const COMPOSER_MIN_HEIGHT = 40;
+const COMPOSER_MAX_HEIGHT = 176;
 
 function ModeSelector({ mode, onModeChange, disabled }) {
   const [open, setOpen] = useState(false);
@@ -396,7 +398,10 @@ export default function ChatComposer({
   const [mentionQuery, setMentionQuery] = useState("");
   const [mentionRange, setMentionRange] = useState(null);
   const [mentionIndex, setMentionIndex] = useState(0);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const textareaRef = useRef(null);
+  const wasGeneratingRef = useRef(Boolean(isGenerating));
   const fileInputRef = useRef(null);
   const controlsButtonRef = useRef(null);
   const controlsPanelRef = useRef(null);
@@ -429,6 +434,7 @@ export default function ChatComposer({
   }
   const draftRevision = `draft:${draftIdentityRef.current.revision}`;
   const activeOperationStatus = operationState?.active?.status || operationState?.lastStatus || null;
+  const operationFailed = ["failed", "error"].includes(String(activeOperationStatus || "").toLowerCase());
   const queuedOperations = Array.isArray(operationState?.queue) ? operationState.queue : [];
   const mentionCommands = filterComposerCommands(mentionQuery, COMPOSER_COMMANDS);
   const contextItems = [
@@ -457,10 +463,28 @@ export default function ChatComposer({
     const textarea = textareaRef.current;
     if (!textarea) return;
     textarea.style.height = "0px";
-    const nextHeight = Math.min(Math.max(textarea.scrollHeight, 72), 160);
+    const measuredHeight = prompt ? textarea.scrollHeight : COMPOSER_MIN_HEIGHT;
+    const nextHeight = Math.min(Math.max(measuredHeight, COMPOSER_MIN_HEIGHT), COMPOSER_MAX_HEIGHT);
     textarea.style.height = `${nextHeight}px`;
-    textarea.style.overflowY = textarea.scrollHeight > 160 ? "auto" : "hidden";
+    textarea.style.overflowY = measuredHeight > COMPOSER_MAX_HEIGHT ? "auto" : "hidden";
+    setIsExpanded((current) => {
+      const next = measuredHeight > COMPOSER_MIN_HEIGHT;
+      return current === next ? current : next;
+    });
   }, [prompt]);
+
+  useEffect(() => {
+    const wasGenerating = wasGeneratingRef.current;
+    wasGeneratingRef.current = Boolean(isGenerating);
+    if (isGenerating) {
+      setShowSuccess(false);
+      return undefined;
+    }
+    if (!wasGenerating || operationFailed) return undefined;
+    setShowSuccess(true);
+    const timer = window.setTimeout(() => setShowSuccess(false), 1400);
+    return () => window.clearTimeout(timer);
+  }, [isGenerating, operationFailed]);
 
   useEffect(() => {
     if (!controlsOpen && !contextOpen) return undefined;
@@ -680,6 +704,9 @@ export default function ChatComposer({
     <div className="nexus-composer-region pc-page-gutter bg-[var(--ds-bg-workspace)] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
       <div
         data-tour="prompt-composer"
+        data-expanded={isExpanded ? "true" : "false"}
+        data-state={disabled ? "disabled" : isGenerating ? "submitting" : operationFailed ? "error" : showSuccess ? "success" : prompt?.trim() ? "typing" : "idle"}
+        aria-busy={isGenerating ? "true" : "false"}
         className={`nexus-composer nx-composer-shine relative z-20 mx-auto max-w-[760px] overflow-visible rounded-[14px] border border-[var(--ds-border)] bg-[var(--ds-surface-1)] transition-colors duration-150 focus-within:border-[var(--ds-border-strong)] ${isGenerating ? "nx-composer-shine--active" : ""}`}
       >
         {(activeOperationStatus || queuedOperations.length > 0) && (
@@ -858,7 +885,7 @@ export default function ChatComposer({
           </div>
         ) : null}
 
-        <div className="relative">
+        <div className="nexus-composer__body relative">
           {mentionOpen && (
             <ComposerCommandMenu
               query={mentionQuery}
@@ -880,12 +907,12 @@ export default function ChatComposer({
                     : "Acts automatically · uses safe assumptions"}
             </span>
           </div>
-          <div className="relative min-h-[72px] px-3 pt-1">
+          <div className="nexus-composer__input-shell relative min-w-0">
             <textarea
               ref={textareaRef}
               id="tour-prompt-box"
               data-tour="prompt-input"
-              className="nexus-composer__input min-h-[72px] w-full resize-none border-none bg-transparent px-0 py-2 text-[16px] leading-relaxed text-[var(--ds-text)] outline-none transition-[height,color,opacity] duration-150 placeholder:text-[var(--ds-text-muted)] focus:ring-0 disabled:opacity-50 xl:text-[15px]"
+              className="nexus-composer__input min-h-10 w-full resize-none border-none bg-transparent px-0 py-2 text-[16px] leading-6 text-[var(--ds-text)] outline-none transition-[height,color,opacity] duration-150 placeholder:text-[var(--ds-text-muted)] focus:ring-0 disabled:opacity-50 xl:text-[15px]"
               rows={1}
               placeholder={placeholder}
               value={prompt}
@@ -900,8 +927,8 @@ export default function ChatComposer({
             />
           </div>
 
-          <div className="flex items-center justify-between gap-2 px-1 pb-2 pt-1 sm:px-2">
-            <div className="flex min-w-0 items-center gap-1">
+          <div className="nexus-composer__toolbar flex items-center justify-between gap-2">
+            <div className="nexus-composer__toolbar-start flex min-w-0 items-center gap-1">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -926,7 +953,7 @@ export default function ChatComposer({
               <ModeSelector mode={mode} onModeChange={onModeChange} disabled={disabled || isGenerating} />
             </div>
 
-            <div className="flex shrink-0 items-center gap-1">
+            <div className="nexus-composer__toolbar-end flex shrink-0 items-center gap-1">
               <div className="relative">
                 <button
                   ref={controlsButtonRef}
@@ -1052,7 +1079,9 @@ export default function ChatComposer({
                 title={isGenerating ? "Stop generation" : studioBuildBlocked ? studioBlockerMessage : "Send prompt"}
               >
                 {isGenerating ? (
-                  <Square className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
+                  <Loader className="h-4 w-4 animate-spin" aria-hidden="true" />
+                ) : showSuccess ? (
+                  <Check className="h-4 w-4" aria-hidden="true" />
                 ) : (
                   <ArrowUp className="h-4 w-4" aria-hidden="true" />
                 )}

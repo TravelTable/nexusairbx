@@ -2290,8 +2290,8 @@ do
 	end
 end
 
-local pairSection = makeSection("Pairing")
-makeText(pairSection, "PairTitle", "Sign in to Nexus", 22, 15, true)
+UI_HELPERS.pairSection = makeSection("Pairing")
+makeText(UI_HELPERS.pairSection, "PairTitle", "Sign in to Nexus", 22, 15, true)
 codeBox = Instance.new("TextBox")
 codeBox.Name = "PairingCode"
 codeBox.Size = UDim2.new(1, 0, 0, 34)
@@ -2302,13 +2302,13 @@ codeBox.ClearTextOnFocus = false
 codeBox.Text = ""
 codeBox.Font = Enum.Font.Gotham
 codeBox.TextSize = 14
-codeBox.Parent = pairSection
+codeBox.Parent = UI_HELPERS.pairSection
 applyCorner(codeBox, 6)
 applyStroke(codeBox, COLORS.primary, 0.45)
-pairButton = makeButton(pairSection, "PairButton", "Continue", COLORS.primary)
+pairButton = makeButton(UI_HELPERS.pairSection, "PairButton", "Continue", COLORS.primary)
 
 setupSteps = makeText(
-	pairSection,
+	UI_HELPERS.pairSection,
 	"SetupSteps",
 	table.concat({
 		"<b>Setup</b>",
@@ -2328,10 +2328,10 @@ setupSteps = makeText(
 setupSteps.TextWrapped = true
 setupSteps.Text = "Enter the one-time code from Nexus. You will return straight to chat next time."
 
-checkSetupButton = makeButton(pairSection, "CheckSetupButton", "Check setup", themeColor(Enum.StudioStyleGuideColor.Button))
+checkSetupButton = makeButton(UI_HELPERS.pairSection, "CheckSetupButton", "Check setup", themeColor(Enum.StudioStyleGuideColor.Button))
 checkSetupButton.Visible = false
 
-setupResult = makeText(pairSection, "SetupResult", "", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
+setupResult = makeText(UI_HELPERS.pairSection, "SetupResult", "", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
 setupResult.TextWrapped = true
 setupResult.Visible = false
 
@@ -2346,54 +2346,60 @@ local AGENT_PHASE_LABELS = {
 	done = "Done",
 }
 
-local agentSection = makeSection("AgentActivity")
-makeText(agentSection, "AgentTitle", "Agent", 18, 13, true)
-local phaseStrip = Instance.new("Frame")
-phaseStrip.Name = "PhaseStrip"
-phaseStrip.BackgroundTransparency = 1
-phaseStrip.Size = UDim2.new(1, 0, 0, 22)
-phaseStrip.Parent = agentSection
-local phaseLayout = Instance.new("UIListLayout")
-phaseLayout.FillDirection = Enum.FillDirection.Horizontal
-phaseLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-phaseLayout.SortOrder = Enum.SortOrder.LayoutOrder
-phaseLayout.Padding = UDim.new(0, 6)
-phaseLayout.Parent = phaseStrip
-for index, phase in ipairs(AGENT_PHASES) do
-	if phase ~= "idle" then
-		local chip = Instance.new("TextLabel")
-		chip.Name = "Phase_" .. phase
-		chip.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.MainBackground)
-		chip.BackgroundTransparency = 0.2
-		chip.TextColor3 = themeColor(Enum.StudioStyleGuideColor.DimmedText)
-		chip.Font = Enum.Font.GothamMedium
-		chip.TextSize = 10
-		chip.Text = " " .. AGENT_PHASE_LABELS[phase] .. " "
-		chip.AutomaticSize = Enum.AutomaticSize.X
-		chip.Size = UDim2.new(0, 0, 1, 0)
-		chip.LayoutOrder = index
-		chip.Parent = phaseStrip
-		applyCorner(chip, 9)
-		local chipPad = Instance.new("UIPadding")
-		chipPad.PaddingLeft = UDim.new(0, 8)
-		chipPad.PaddingRight = UDim.new(0, 8)
-		chipPad.Parent = chip
-		agentPhaseDots[phase] = chip
+UI_HELPERS.agentSection = makeSection("AgentActivity")
+makeText(UI_HELPERS.agentSection, "AgentTitle", "Agent", 18, 13, true)
+-- Construction-only instances stay in a short scope so the bundled module
+-- remains comfortably below Luau's 200-live-register ceiling.
+do
+	local phaseStrip = Instance.new("Frame")
+	phaseStrip.Name = "PhaseStrip"
+	phaseStrip.BackgroundTransparency = 1
+	phaseStrip.Size = UDim2.new(1, 0, 0, 22)
+	phaseStrip.Parent = UI_HELPERS.agentSection
+	local phaseLayout = Instance.new("UIListLayout")
+	phaseLayout.FillDirection = Enum.FillDirection.Horizontal
+	phaseLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	phaseLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	phaseLayout.Padding = UDim.new(0, 6)
+	phaseLayout.Parent = phaseStrip
+	for index, phase in ipairs(AGENT_PHASES) do
+		if phase ~= "idle" then
+			local chip = Instance.new("TextLabel")
+			chip.Name = "Phase_" .. phase
+			chip.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.MainBackground)
+			chip.BackgroundTransparency = 0.2
+			chip.TextColor3 = themeColor(Enum.StudioStyleGuideColor.DimmedText)
+			chip.Font = Enum.Font.GothamMedium
+			chip.TextSize = 10
+			chip.Text = " " .. AGENT_PHASE_LABELS[phase] .. " "
+			chip.AutomaticSize = Enum.AutomaticSize.X
+			chip.Size = UDim2.new(0, 0, 1, 0)
+			chip.LayoutOrder = index
+			chip.Parent = phaseStrip
+			applyCorner(chip, 9)
+			local chipPad = Instance.new("UIPadding")
+			chipPad.PaddingLeft = UDim.new(0, 8)
+			chipPad.PaddingRight = UDim.new(0, 8)
+			chipPad.Parent = chip
+			agentPhaseDots[phase] = chip
+		end
 	end
 end
 
-local manifestSection = makeSection("Manifest")
-makeText(manifestSection, "ManifestTitle", "Project Index", 18, 13, true)
-manifestSummaryLabel = makeText(manifestSection, "ManifestSummary", "Not indexed yet", 18, 12, false, themeColor(Enum.StudioStyleGuideColor.MainText))
-manifestFreshnessLabel = makeText(manifestSection, "ManifestFreshness", "Rescan runs from the website when needed.", 16, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
+UI_HELPERS.manifestSection = makeSection("Manifest")
+makeText(UI_HELPERS.manifestSection, "ManifestTitle", "Project Index", 18, 13, true)
+manifestSummaryLabel = makeText(UI_HELPERS.manifestSection, "ManifestSummary", "Not indexed yet", 18, 12, false, themeColor(Enum.StudioStyleGuideColor.MainText))
+manifestFreshnessLabel = makeText(UI_HELPERS.manifestSection, "ManifestFreshness", "Rescan runs from the website when needed.", 16, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
 
 -- Conversation is the plugin's primary surface. Tool execution stays visible,
 -- but it is rendered as compact Studio events between the user's prompt and the
 -- assistant result instead of requiring a separate activity dashboard.
 conversationSection = makeSection("Conversation")
 conversationSection.BackgroundColor3 = COLORS.canvas
-local conversationTitle = makeText(conversationSection, "ConversationTitle", "Nexus chat", 20, 14, true, COLORS.text)
-conversationTitle.Visible = false
+do
+	local conversationTitle = makeText(conversationSection, "ConversationTitle", "Nexus chat", 20, 14, true, COLORS.text)
+	conversationTitle.Visible = false
+end
 chatEmptyLabel = makeText(
 	conversationSection,
 	"ChatEmpty",
@@ -2845,82 +2851,86 @@ do
 	end)
 end
 
-local activitySection = makeSection("Activity")
-makeText(activitySection, "ActivityTitle", "Bridge Activity", 18, 13, true)
-progressLabel = makeText(activitySection, "Progress", "Run: none", 20, 12, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
-activeLabel = makeText(activitySection, "Active", "Active tool: none", 20, 13, false)
+UI_HELPERS.activitySection = makeSection("Activity")
+makeText(UI_HELPERS.activitySection, "ActivityTitle", "Bridge Activity", 18, 13, true)
+progressLabel = makeText(UI_HELPERS.activitySection, "Progress", "Run: none", 20, 12, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
+activeLabel = makeText(UI_HELPERS.activitySection, "Active", "Active tool: none", 20, 13, false)
 
 -- Playtest observer surface: reads captured LogService output on demand. Wired in
 -- Main.server.lua where the collectOutput handler is in scope. Exported (no local)
 -- so it lands on the bundler's shared export table without a new top-level local.
-playtestLogsButton = makeButton(activitySection, "PlaytestLogs", "Check playtest output", themeColor(Enum.StudioStyleGuideColor.Button))
-playtestStrip = makeText(activitySection, "PlaytestStrip", "", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
+playtestLogsButton = makeButton(UI_HELPERS.activitySection, "PlaytestLogs", "Check playtest output", themeColor(Enum.StudioStyleGuideColor.Button))
+playtestStrip = makeText(UI_HELPERS.activitySection, "PlaytestStrip", "", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
 playtestStrip.TextWrapped = true
 playtestStrip.Visible = false
 
-local feedScroll = Instance.new("ScrollingFrame")
-feedScroll.Name = "ActivityFeed"
-feedScroll.Size = UDim2.new(1, 0, 0, 140)
-feedScroll.BackgroundTransparency = 1
-feedScroll.BorderSizePixel = 0
-feedScroll.ScrollBarThickness = 4
-feedScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-feedScroll.CanvasSize = UDim2.new()
-feedScroll.Parent = activitySection
+UI_HELPERS.feedList = Instance.new("Frame")
+do
+	local feedScroll = Instance.new("ScrollingFrame")
+	feedScroll.Name = "ActivityFeed"
+	feedScroll.Size = UDim2.new(1, 0, 0, 140)
+	feedScroll.BackgroundTransparency = 1
+	feedScroll.BorderSizePixel = 0
+	feedScroll.ScrollBarThickness = 4
+	feedScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	feedScroll.CanvasSize = UDim2.new()
+	feedScroll.Parent = UI_HELPERS.activitySection
 
-local feedList = Instance.new("Frame")
-feedList.Name = "FeedList"
-feedList.Size = UDim2.new(1, 0, 0, 0)
-feedList.AutomaticSize = Enum.AutomaticSize.Y
-feedList.BackgroundTransparency = 1
-feedList.Parent = feedScroll
+	UI_HELPERS.feedList.Name = "FeedList"
+	UI_HELPERS.feedList.Size = UDim2.new(1, 0, 0, 0)
+	UI_HELPERS.feedList.AutomaticSize = Enum.AutomaticSize.Y
+	UI_HELPERS.feedList.BackgroundTransparency = 1
+	UI_HELPERS.feedList.Parent = feedScroll
 
-local feedLayout = Instance.new("UIListLayout")
-feedLayout.Padding = UDim.new(0, 4)
-feedLayout.SortOrder = Enum.SortOrder.LayoutOrder
-feedLayout.Parent = feedList
+	local feedLayout = Instance.new("UIListLayout")
+	feedLayout.Padding = UDim.new(0, 4)
+	feedLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	feedLayout.Parent = UI_HELPERS.feedList
+end
 
-feedEmptyLabel = makeText(feedList, "FeedEmpty", "No commands yet. Pair Studio and push from the website.", 36, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
+feedEmptyLabel = makeText(UI_HELPERS.feedList, "FeedEmpty", "No commands yet. Pair Studio and push from the website.", 36, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
 feedEmptyLabel.TextWrapped = true
 
-local safetySection = makeSection("Safety")
-makeText(safetySection, "SafetyTitle", "Recovery", 18, 13, true)
-snapshotLabel = makeText(safetySection, "Snapshots", "Snapshots: 0 local", 18, 12, false)
+UI_HELPERS.safetySection = makeSection("Safety")
+makeText(UI_HELPERS.safetySection, "SafetyTitle", "Recovery", 18, 13, true)
+snapshotLabel = makeText(UI_HELPERS.safetySection, "Snapshots", "Snapshots: 0 local", 18, 12, false)
 
-local snapshotScroll = Instance.new("ScrollingFrame")
-snapshotScroll.Name = "SnapshotList"
-snapshotScroll.Size = UDim2.new(1, 0, 0, 96)
-snapshotScroll.BackgroundTransparency = 1
-snapshotScroll.BorderSizePixel = 0
-snapshotScroll.ScrollBarThickness = 4
-snapshotScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-snapshotScroll.CanvasSize = UDim2.new()
-snapshotScroll.Visible = false
-snapshotScroll.Parent = safetySection
+UI_HELPERS.snapshotScroll = Instance.new("ScrollingFrame")
+UI_HELPERS.snapshotScroll.Name = "SnapshotList"
+UI_HELPERS.snapshotScroll.Size = UDim2.new(1, 0, 0, 96)
+UI_HELPERS.snapshotScroll.BackgroundTransparency = 1
+UI_HELPERS.snapshotScroll.BorderSizePixel = 0
+UI_HELPERS.snapshotScroll.ScrollBarThickness = 4
+UI_HELPERS.snapshotScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+UI_HELPERS.snapshotScroll.CanvasSize = UDim2.new()
+UI_HELPERS.snapshotScroll.Visible = false
+UI_HELPERS.snapshotScroll.Parent = UI_HELPERS.safetySection
 
-local snapshotList = Instance.new("Frame")
-snapshotList.Name = "SnapshotRows"
-snapshotList.Size = UDim2.new(1, 0, 0, 0)
-snapshotList.AutomaticSize = Enum.AutomaticSize.Y
-snapshotList.BackgroundTransparency = 1
-snapshotList.Parent = snapshotScroll
+UI_HELPERS.snapshotList = Instance.new("Frame")
+UI_HELPERS.snapshotList.Name = "SnapshotRows"
+UI_HELPERS.snapshotList.Size = UDim2.new(1, 0, 0, 0)
+UI_HELPERS.snapshotList.AutomaticSize = Enum.AutomaticSize.Y
+UI_HELPERS.snapshotList.BackgroundTransparency = 1
+UI_HELPERS.snapshotList.Parent = UI_HELPERS.snapshotScroll
 
-local snapshotLayout = Instance.new("UIListLayout")
-snapshotLayout.Padding = UDim.new(0, 4)
-snapshotLayout.SortOrder = Enum.SortOrder.LayoutOrder
-snapshotLayout.Parent = snapshotList
+do
+	local snapshotLayout = Instance.new("UIListLayout")
+	snapshotLayout.Padding = UDim.new(0, 4)
+	snapshotLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	snapshotLayout.Parent = UI_HELPERS.snapshotList
+end
 
-restoreButton = makeButton(safetySection, "RestoreButton", "Restore Selected Snapshots", COLORS.accent)
-undoBatchButton = makeButton(safetySection, "UndoBatchButton", "Undo Last Batch", themeColor(Enum.StudioStyleGuideColor.Button))
+restoreButton = makeButton(UI_HELPERS.safetySection, "RestoreButton", "Restore Selected Snapshots", COLORS.accent)
+undoBatchButton = makeButton(UI_HELPERS.safetySection, "UndoBatchButton", "Undo Last Batch", themeColor(Enum.StudioStyleGuideColor.Button))
 
-local settingsSection = makeSection("Settings")
-makeText(settingsSection, "SettingsTitle", "Settings", 18, 13, true)
-approvalToggleButton = makeButton(settingsSection, "ApprovalToggle", "Review before apply: OFF", themeColor(Enum.StudioStyleGuideColor.Button))
-makeText(settingsSection, "AccountStatus", "Signed in to Nexus", 18, 12, false, COLORS.text)
-local studioTargetTitle = makeText(settingsSection, "StudioTargetTitle", "Studio connection", 17, 12, true)
-studioTargetLabel = makeText(settingsSection, "StudioTargetStatus", "Checking the open place...", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
+UI_HELPERS.settingsSection = makeSection("Settings")
+makeText(UI_HELPERS.settingsSection, "SettingsTitle", "Settings", 18, 13, true)
+approvalToggleButton = makeButton(UI_HELPERS.settingsSection, "ApprovalToggle", "Review before apply: OFF", themeColor(Enum.StudioStyleGuideColor.Button))
+makeText(UI_HELPERS.settingsSection, "AccountStatus", "Signed in to Nexus", 18, 12, false, COLORS.text)
+makeText(UI_HELPERS.settingsSection, "StudioTargetTitle", "Studio connection", 17, 12, true)
+studioTargetLabel = makeText(UI_HELPERS.settingsSection, "StudioTargetStatus", "Checking the open place...", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
 studioTargetLabel.TextWrapped = true
-studioFreshnessLabel = makeText(settingsSection, "StudioFreshness", "Heartbeat -- · Commands -- · Place --", nil, 10, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
+studioFreshnessLabel = makeText(UI_HELPERS.settingsSection, "StudioFreshness", "Heartbeat -- · Commands -- · Place --", nil, 10, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
 studioFreshnessLabel.TextWrapped = true
 -- Informational only: this does not pair, start, stop, or otherwise control
 -- the desktop MCP companion.
@@ -2931,7 +2941,7 @@ do
 	companionSection.BackgroundTransparency = 0.25
 	companionSection.Size = UDim2.new(1, 0, 0, 0)
 	companionSection.AutomaticSize = Enum.AutomaticSize.Y
-	companionSection.Parent = settingsSection
+	companionSection.Parent = UI_HELPERS.settingsSection
 	applyCorner(companionSection, 6)
 	applyStroke(companionSection, COLORS.accent, 0.55)
 	local companionPadding = Instance.new("UIPadding")
@@ -2959,100 +2969,103 @@ do
 end
 -- Team Create awareness: who else is editing this place (masked identity).
 -- Populated from the consolidated /api/studio/session/ping heartbeat response.
-collaboratorsLabel = makeText(settingsSection, "Collaborators", "Collaborators: checking...", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
+collaboratorsLabel = makeText(UI_HELPERS.settingsSection, "Collaborators", "Collaborators: checking...", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
 collaboratorsLabel.TextWrapped = true
 collaboratorsLabel.Visible = false
 studioFreshnessLabel.Visible = false
 
-local advancedButton, openWebButton
-advancedButton = makeButton(settingsSection, "AdvancedToggle", "Advanced", themeColor(Enum.StudioStyleGuideColor.Button))
-advancedButton.MouseButton1Click:Connect(function()
-	local visible = studioFreshnessLabel.Visible ~= true
-	studioFreshnessLabel.Visible = visible
-	collaboratorsLabel.Visible = visible
-	advancedButton.Text = visible and "Hide advanced" or "Advanced"
-end)
-openWebButton = makeButton(settingsSection, "OpenOnWeb", "Open conversation on web", COLORS.primary)
-openWebButton.MouseButton1Click:Connect(function()
-	if chatRuntime.chatId == "" then return end
-	local ok = pcall(function()
-		Services.GuiService:OpenBrowserWindow(
-			"https://nexusrbx.com/ai?chat=" .. Services.HttpService:UrlEncode(chatRuntime.chatId)
-		)
+do
+	local advancedButton = makeButton(UI_HELPERS.settingsSection, "AdvancedToggle", "Advanced", themeColor(Enum.StudioStyleGuideColor.Button))
+	advancedButton.MouseButton1Click:Connect(function()
+		local visible = studioFreshnessLabel.Visible ~= true
+		studioFreshnessLabel.Visible = visible
+		collaboratorsLabel.Visible = visible
+		advancedButton.Text = visible and "Hide advanced" or "Advanced"
 	end)
-	if not ok then showToast("Open nexusrbx.com to continue this conversation", "info") end
-end)
+	local openWebButton = makeButton(UI_HELPERS.settingsSection, "OpenOnWeb", "Open conversation on web", COLORS.primary)
+	openWebButton.MouseButton1Click:Connect(function()
+		if chatRuntime.chatId == "" then return end
+		local ok = pcall(function()
+			Services.GuiService:OpenBrowserWindow(
+				"https://nexusrbx.com/ai?chat=" .. Services.HttpService:UrlEncode(chatRuntime.chatId)
+			)
+		end)
+		if not ok then showToast("Open nexusrbx.com to continue this conversation", "info") end
+	end)
+end
 
-local footer = Instance.new("Frame")
-footer.Name = "Footer"
-footer.BackgroundTransparency = 1
-footer.Size = UDim2.new(1, 0, 0, 0)
-footer.AutomaticSize = Enum.AutomaticSize.Y
-footer.Parent = scrollRoot
-local footerList = Instance.new("UIListLayout")
-footerList.Padding = UDim.new(0, 8)
-footerList.SortOrder = Enum.SortOrder.LayoutOrder
-footerList.Parent = footer
-pullButton = makeButton(footer, "PullButton", "Pull Latest", COLORS.primary)
-disconnectButton = makeButton(footer, "DisconnectButton", "Disconnect Studio", COLORS.error)
+UI_HELPERS.footer = Instance.new("Frame")
+UI_HELPERS.footer.Name = "Footer"
+UI_HELPERS.footer.BackgroundTransparency = 1
+UI_HELPERS.footer.Size = UDim2.new(1, 0, 0, 0)
+UI_HELPERS.footer.AutomaticSize = Enum.AutomaticSize.Y
+UI_HELPERS.footer.Parent = scrollRoot
+do
+	local footerList = Instance.new("UIListLayout")
+	footerList.Padding = UDim.new(0, 8)
+	footerList.SortOrder = Enum.SortOrder.LayoutOrder
+	footerList.Parent = UI_HELPERS.footer
+end
+pullButton = makeButton(UI_HELPERS.footer, "PullButton", "Pull Latest", COLORS.primary)
+disconnectButton = makeButton(UI_HELPERS.footer, "DisconnectButton", "Disconnect Studio", COLORS.error)
 
-local toast = Instance.new("TextLabel")
-toast.Name = "Toast"
-toast.AnchorPoint = Vector2.new(0.5, 1)
-toast.Position = UDim2.new(0.5, 0, 1, -8)
-toast.Size = UDim2.new(1, -24, 0, 0)
-toast.AutomaticSize = Enum.AutomaticSize.Y
-toast.BackgroundColor3 = Color3.fromRGB(30, 32, 38)
-toast.BackgroundTransparency = 0.08
-toast.TextColor3 = Color3.fromRGB(255, 255, 255)
-toast.Font = Enum.Font.Gotham
-toast.TextSize = 12
-toast.TextWrapped = true
-toast.Visible = false
-toast.ZIndex = 20
-toast.Parent = root
-applyCorner(toast, 6)
-applyStroke(toast, COLORS.primary, 0.5)
+UI_HELPERS.toast = Instance.new("TextLabel")
+UI_HELPERS.toast.Name = "Toast"
+UI_HELPERS.toast.AnchorPoint = Vector2.new(0.5, 1)
+UI_HELPERS.toast.Position = UDim2.new(0.5, 0, 1, -8)
+UI_HELPERS.toast.Size = UDim2.new(1, -24, 0, 0)
+UI_HELPERS.toast.AutomaticSize = Enum.AutomaticSize.Y
+UI_HELPERS.toast.BackgroundColor3 = Color3.fromRGB(30, 32, 38)
+UI_HELPERS.toast.BackgroundTransparency = 0.08
+UI_HELPERS.toast.TextColor3 = Color3.fromRGB(255, 255, 255)
+UI_HELPERS.toast.Font = Enum.Font.Gotham
+UI_HELPERS.toast.TextSize = 12
+UI_HELPERS.toast.TextWrapped = true
+UI_HELPERS.toast.Visible = false
+UI_HELPERS.toast.ZIndex = 20
+UI_HELPERS.toast.Parent = root
+applyCorner(UI_HELPERS.toast, 6)
+applyStroke(UI_HELPERS.toast, COLORS.primary, 0.5)
 
-local confirmOverlay = Instance.new("Frame")
-confirmOverlay.Name = "RestoreConfirmation"
-confirmOverlay.Size = UDim2.fromScale(1, 1)
-confirmOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-confirmOverlay.BackgroundTransparency = 0.35
-confirmOverlay.Visible = false
-confirmOverlay.ZIndex = 10
-confirmOverlay.Parent = root
+UI_HELPERS.confirmOverlay = Instance.new("Frame")
+UI_HELPERS.confirmOverlay.Name = "RestoreConfirmation"
+UI_HELPERS.confirmOverlay.Size = UDim2.fromScale(1, 1)
+UI_HELPERS.confirmOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+UI_HELPERS.confirmOverlay.BackgroundTransparency = 0.35
+UI_HELPERS.confirmOverlay.Visible = false
+UI_HELPERS.confirmOverlay.ZIndex = 10
+UI_HELPERS.confirmOverlay.Parent = root
 
-local confirmSheet = Instance.new("Frame")
-confirmSheet.Name = "Sheet"
-confirmSheet.AnchorPoint = Vector2.new(0.5, 0.5)
-confirmSheet.Position = UDim2.fromScale(0.5, 0.52)
-confirmSheet.Size = UDim2.new(1, -32, 0, 0)
-confirmSheet.AutomaticSize = Enum.AutomaticSize.Y
-confirmSheet.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.MainBackground)
-confirmSheet.ZIndex = 11
-confirmSheet.Parent = confirmOverlay
-applyCorner(confirmSheet, 6)
-applyStroke(confirmSheet)
+UI_HELPERS.confirmSheet = Instance.new("Frame")
+UI_HELPERS.confirmSheet.Name = "Sheet"
+UI_HELPERS.confirmSheet.AnchorPoint = Vector2.new(0.5, 0.5)
+UI_HELPERS.confirmSheet.Position = UDim2.fromScale(0.5, 0.52)
+UI_HELPERS.confirmSheet.Size = UDim2.new(1, -32, 0, 0)
+UI_HELPERS.confirmSheet.AutomaticSize = Enum.AutomaticSize.Y
+UI_HELPERS.confirmSheet.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.MainBackground)
+UI_HELPERS.confirmSheet.ZIndex = 11
+UI_HELPERS.confirmSheet.Parent = UI_HELPERS.confirmOverlay
+applyCorner(UI_HELPERS.confirmSheet, 6)
+applyStroke(UI_HELPERS.confirmSheet)
 local sheetPadding = Instance.new("UIPadding")
 sheetPadding.PaddingTop = UDim.new(0, 12)
 sheetPadding.PaddingBottom = UDim.new(0, 12)
 sheetPadding.PaddingLeft = UDim.new(0, 12)
 sheetPadding.PaddingRight = UDim.new(0, 12)
-sheetPadding.Parent = confirmSheet
+sheetPadding.Parent = UI_HELPERS.confirmSheet
 local sheetList = Instance.new("UIListLayout")
 sheetList.Padding = UDim.new(0, 8)
 sheetList.SortOrder = Enum.SortOrder.LayoutOrder
-sheetList.Parent = confirmSheet
-makeText(confirmSheet, "ConfirmTitle", "Restore snapshots?", 22, 14, true)
-local confirmCopy = makeText(confirmSheet, "ConfirmCopy", "This restores selected local snapshots from NexusRBX changes.", 38, 12, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
-confirmCopy.TextWrapped = true
+sheetList.Parent = UI_HELPERS.confirmSheet
+makeText(UI_HELPERS.confirmSheet, "ConfirmTitle", "Restore snapshots?", 22, 14, true)
+UI_HELPERS.confirmCopy = makeText(UI_HELPERS.confirmSheet, "ConfirmCopy", "This restores selected local snapshots from NexusRBX changes.", 38, 12, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
+UI_HELPERS.confirmCopy.TextWrapped = true
 -- By default restore keeps instances the user edited after the agent's write.
 -- This toggle forces a full revert. State is stored on confirmRestoreButton so no
 -- extra module-scope local is needed. Wrapped in a do-block to keep its locals
 -- off the bundler's top-level budget.
 do
-	local forceToggleButton = makeButton(confirmSheet, "ForceToggle", "Also revert my edits: OFF", themeColor(Enum.StudioStyleGuideColor.Button))
+	local forceToggleButton = makeButton(UI_HELPERS.confirmSheet, "ForceToggle", "Also revert my edits: OFF", themeColor(Enum.StudioStyleGuideColor.Button))
 	forceToggleButton.MouseButton1Click:Connect(function()
 		local nextValue = confirmRestoreButton:GetAttribute("ForceRestore") ~= true
 		confirmRestoreButton:SetAttribute("ForceRestore", nextValue)
@@ -3062,85 +3075,85 @@ do
 		forceToggleButton.Text = nextValue and "Also revert my edits: ON" or "Also revert my edits: OFF"
 	end)
 end
-local confirmRow = makeRow(confirmSheet, "ConfirmActions", 34)
+local confirmRow = makeRow(UI_HELPERS.confirmSheet, "ConfirmActions", 34)
 confirmRestoreButton = makeButton(confirmRow, "ConfirmRestoreButton", "Restore", COLORS.accent)
 confirmRestoreButton.Size = UDim2.new(0.5, -4, 0, 34)
 cancelRestoreButton = makeButton(confirmRow, "CancelRestoreButton", "Cancel", themeColor(Enum.StudioStyleGuideColor.Button))
 cancelRestoreButton.Size = UDim2.new(0.5, -4, 0, 34)
 
-local approvalOverlay = Instance.new("Frame")
-approvalOverlay.Name = "ApprovalOverlay"
-approvalOverlay.Size = UDim2.fromScale(1, 1)
-approvalOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-approvalOverlay.BackgroundTransparency = 0.35
-approvalOverlay.Visible = false
-approvalOverlay.ZIndex = 12
-approvalOverlay.Parent = root
+UI_HELPERS.approvalOverlay = Instance.new("Frame")
+UI_HELPERS.approvalOverlay.Name = "ApprovalOverlay"
+UI_HELPERS.approvalOverlay.Size = UDim2.fromScale(1, 1)
+UI_HELPERS.approvalOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+UI_HELPERS.approvalOverlay.BackgroundTransparency = 0.35
+UI_HELPERS.approvalOverlay.Visible = false
+UI_HELPERS.approvalOverlay.ZIndex = 12
+UI_HELPERS.approvalOverlay.Parent = root
 
-local approvalSheet = Instance.new("Frame")
-approvalSheet.Name = "ApprovalSheet"
-approvalSheet.AnchorPoint = Vector2.new(0.5, 0.5)
-approvalSheet.Position = UDim2.fromScale(0.5, 0.5)
-approvalSheet.Size = UDim2.new(1, -32, 0, 0)
-approvalSheet.AutomaticSize = Enum.AutomaticSize.Y
-approvalSheet.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.MainBackground)
-approvalSheet.ZIndex = 13
-approvalSheet.Parent = approvalOverlay
-applyCorner(approvalSheet, 6)
-applyStroke(approvalSheet)
+UI_HELPERS.approvalSheet = Instance.new("Frame")
+UI_HELPERS.approvalSheet.Name = "ApprovalSheet"
+UI_HELPERS.approvalSheet.AnchorPoint = Vector2.new(0.5, 0.5)
+UI_HELPERS.approvalSheet.Position = UDim2.fromScale(0.5, 0.5)
+UI_HELPERS.approvalSheet.Size = UDim2.new(1, -32, 0, 0)
+UI_HELPERS.approvalSheet.AutomaticSize = Enum.AutomaticSize.Y
+UI_HELPERS.approvalSheet.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.MainBackground)
+UI_HELPERS.approvalSheet.ZIndex = 13
+UI_HELPERS.approvalSheet.Parent = UI_HELPERS.approvalOverlay
+applyCorner(UI_HELPERS.approvalSheet, 6)
+applyStroke(UI_HELPERS.approvalSheet)
 local approvalPadding = Instance.new("UIPadding")
 approvalPadding.PaddingTop = UDim.new(0, 12)
 approvalPadding.PaddingBottom = UDim.new(0, 12)
 approvalPadding.PaddingLeft = UDim.new(0, 12)
 approvalPadding.PaddingRight = UDim.new(0, 12)
-approvalPadding.Parent = approvalSheet
+approvalPadding.Parent = UI_HELPERS.approvalSheet
 local approvalList = Instance.new("UIListLayout")
 approvalList.Padding = UDim.new(0, 8)
 approvalList.SortOrder = Enum.SortOrder.LayoutOrder
-approvalList.Parent = approvalSheet
-makeText(approvalSheet, "ApprovalTitle", "Review command", 22, 14, true)
-approvalCopy = makeText(approvalSheet, "ApprovalCopy", "", nil, 12, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
+approvalList.Parent = UI_HELPERS.approvalSheet
+makeText(UI_HELPERS.approvalSheet, "ApprovalTitle", "Review command", 22, 14, true)
+approvalCopy = makeText(UI_HELPERS.approvalSheet, "ApprovalCopy", "", nil, 12, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
 approvalCopy.TextWrapped = true
-local approvalRow = makeRow(approvalSheet, "ApprovalActions", 34)
+local approvalRow = makeRow(UI_HELPERS.approvalSheet, "ApprovalActions", 34)
 approvalConfirmButton = makeButton(approvalRow, "ApprovalConfirm", "Apply", COLORS.primary)
 approvalConfirmButton.Size = UDim2.new(0.5, -4, 0, 34)
 approvalDeclineButton = makeButton(approvalRow, "ApprovalDecline", "Decline", COLORS.error)
 approvalDeclineButton.Size = UDim2.new(0.5, -4, 0, 34)
 
-local onboardingOverlay = Instance.new("Frame")
-onboardingOverlay.Name = "OnboardingOverlay"
-onboardingOverlay.Size = UDim2.fromScale(1, 1)
-onboardingOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-onboardingOverlay.BackgroundTransparency = 0.35
-onboardingOverlay.Visible = false
-onboardingOverlay.ZIndex = 14
-onboardingOverlay.Active = false
-onboardingOverlay.Parent = root
+UI_HELPERS.onboardingOverlay = Instance.new("Frame")
+UI_HELPERS.onboardingOverlay.Name = "OnboardingOverlay"
+UI_HELPERS.onboardingOverlay.Size = UDim2.fromScale(1, 1)
+UI_HELPERS.onboardingOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+UI_HELPERS.onboardingOverlay.BackgroundTransparency = 0.35
+UI_HELPERS.onboardingOverlay.Visible = false
+UI_HELPERS.onboardingOverlay.ZIndex = 14
+UI_HELPERS.onboardingOverlay.Active = false
+UI_HELPERS.onboardingOverlay.Parent = root
 
-local onboardingSheet = Instance.new("Frame")
-onboardingSheet.Name = "OnboardingSheet"
-onboardingSheet.AnchorPoint = Vector2.new(0.5, 0.5)
-onboardingSheet.Position = UDim2.fromScale(0.5, 0.5)
-onboardingSheet.Size = UDim2.new(1, -32, 0, 0)
-onboardingSheet.AutomaticSize = Enum.AutomaticSize.Y
-onboardingSheet.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.MainBackground)
-onboardingSheet.ZIndex = 15
-onboardingSheet.Parent = onboardingOverlay
-applyCorner(onboardingSheet, 6)
-applyStroke(onboardingSheet)
+UI_HELPERS.onboardingSheet = Instance.new("Frame")
+UI_HELPERS.onboardingSheet.Name = "OnboardingSheet"
+UI_HELPERS.onboardingSheet.AnchorPoint = Vector2.new(0.5, 0.5)
+UI_HELPERS.onboardingSheet.Position = UDim2.fromScale(0.5, 0.5)
+UI_HELPERS.onboardingSheet.Size = UDim2.new(1, -32, 0, 0)
+UI_HELPERS.onboardingSheet.AutomaticSize = Enum.AutomaticSize.Y
+UI_HELPERS.onboardingSheet.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.MainBackground)
+UI_HELPERS.onboardingSheet.ZIndex = 15
+UI_HELPERS.onboardingSheet.Parent = UI_HELPERS.onboardingOverlay
+applyCorner(UI_HELPERS.onboardingSheet, 6)
+applyStroke(UI_HELPERS.onboardingSheet)
 local onboardingPadding = Instance.new("UIPadding")
 onboardingPadding.PaddingTop = UDim.new(0, 14)
 onboardingPadding.PaddingBottom = UDim.new(0, 14)
 onboardingPadding.PaddingLeft = UDim.new(0, 14)
 onboardingPadding.PaddingRight = UDim.new(0, 14)
-onboardingPadding.Parent = onboardingSheet
+onboardingPadding.Parent = UI_HELPERS.onboardingSheet
 local onboardingList = Instance.new("UIListLayout")
 onboardingList.Padding = UDim.new(0, 10)
 onboardingList.SortOrder = Enum.SortOrder.LayoutOrder
-onboardingList.Parent = onboardingSheet
-makeText(onboardingSheet, "OnboardingTitle", "Welcome to NexusRBX", 24, 15, true)
+onboardingList.Parent = UI_HELPERS.onboardingSheet
+makeText(UI_HELPERS.onboardingSheet, "OnboardingTitle", "Welcome to NexusRBX", 24, 15, true)
 local onboardingCopy = makeText(
-	onboardingSheet,
+	UI_HELPERS.onboardingSheet,
 	"OnboardingCopy",
 	table.concat({
 		"Connect this plugin to your NexusRBX workspace:",
@@ -3157,7 +3170,7 @@ local onboardingCopy = makeText(
 	themeColor(Enum.StudioStyleGuideColor.DimmedText)
 )
 onboardingCopy.TextWrapped = true
-onboardingDismissButton = makeButton(onboardingSheet, "OnboardingDismiss", "Got it", COLORS.primary)
+onboardingDismissButton = makeButton(UI_HELPERS.onboardingSheet, "OnboardingDismiss", "Got it", COLORS.primary)
 
 function UI_HELPERS.formatTime(ts)
 	if not ts then
@@ -3228,17 +3241,17 @@ function UI_HELPERS.refreshApprovalToggle()
 end
 
 function UI_HELPERS.rebuildSnapshotList()
-	for _, child in ipairs(snapshotList:GetChildren()) do
+	for _, child in ipairs(UI_HELPERS.snapshotList:GetChildren()) do
 		if child:IsA("Frame") then
 			child:Destroy()
 		end
 	end
 	selectedSnapshotIds = {}
 	if #localSnapshots == 0 then
-		snapshotScroll.Visible = false
+		UI_HELPERS.snapshotScroll.Visible = false
 		return
 	end
-	snapshotScroll.Visible = true
+	UI_HELPERS.snapshotScroll.Visible = true
 	for index, snap in ipairs(localSnapshots) do
 		if type(snap) ~= "table" then
 			continue
@@ -3248,7 +3261,7 @@ function UI_HELPERS.rebuildSnapshotList()
 		row.Size = UDim2.new(1, 0, 0, 0)
 		row.AutomaticSize = Enum.AutomaticSize.Y
 		row.BackgroundTransparency = 1
-		row.Parent = snapshotList
+		row.Parent = UI_HELPERS.snapshotList
 		local rowLayout = Instance.new("UIListLayout")
 		rowLayout.Padding = UDim.new(0, 2)
 		rowLayout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -3293,17 +3306,17 @@ refreshControls = function()
 	-- The default plugin is chat, not a dashboard. Settings is a temporary
 	-- secondary surface opened from the header.
 	tabBar.Visible = false
-	pairSection.Visible = not paired
-	agentSection.Visible = false
-	manifestSection.Visible = false
+	UI_HELPERS.pairSection.Visible = not paired
+	UI_HELPERS.agentSection.Visible = false
+	UI_HELPERS.manifestSection.Visible = false
 	conversationSection.Visible = paired and not chatRuntime.settingsOpen
 	if promptSection then
 		promptSection.Visible = paired and not chatRuntime.settingsOpen
 	end
-	activitySection.Visible = false
-	safetySection.Visible = paired and chatRuntime.settingsOpen
-	settingsSection.Visible = paired and chatRuntime.settingsOpen
-	footer.Visible = paired and chatRuntime.settingsOpen
+	UI_HELPERS.activitySection.Visible = false
+	UI_HELPERS.safetySection.Visible = paired and chatRuntime.settingsOpen
+	UI_HELPERS.settingsSection.Visible = paired and chatRuntime.settingsOpen
+	UI_HELPERS.footer.Visible = paired and chatRuntime.settingsOpen
 	local composerReserve = promptSection and promptSection.Visible and (promptSection.Size.Y.Offset + 24) or 0
 	scroll.Position = UDim2.new(0, 0, 0, 53)
 	scroll.Size = UDim2.new(1, 0, 1, -(53 + composerReserve))
@@ -3643,10 +3656,10 @@ pushActivity = function(entry)
 		detailText
 	)
 	row.LayoutOrder = os.time()
-	row.Parent = feedList
+	row.Parent = UI_HELPERS.feedList
 
 	local entries = {}
-	for _, child in ipairs(feedList:GetChildren()) do
+	for _, child in ipairs(UI_HELPERS.feedList:GetChildren()) do
 		if child:IsA("TextLabel") and child.Name == "ActivityEntry" then
 			table.insert(entries, child)
 		end
@@ -3665,17 +3678,17 @@ showToast = function(message, kind)
 	if text == "" then
 		return
 	end
-	toast.Text = "  " .. text .. "  "
-	toast.BackgroundColor3 = kind == "error" and COLORS.error or (kind == "success" and COLORS.success or Color3.fromRGB(30, 32, 38))
-	toast.Visible = true
-	toast.BackgroundTransparency = 0.08
-	TweenService:Create(toast, TweenInfo.new(0.15), { BackgroundTransparency = 0 }):Play()
+	UI_HELPERS.toast.Text = "  " .. text .. "  "
+	UI_HELPERS.toast.BackgroundColor3 = kind == "error" and COLORS.error or (kind == "success" and COLORS.success or Color3.fromRGB(30, 32, 38))
+	UI_HELPERS.toast.Visible = true
+	UI_HELPERS.toast.BackgroundTransparency = 0.08
+	TweenService:Create(UI_HELPERS.toast, TweenInfo.new(0.15), { BackgroundTransparency = 0 }):Play()
 	task.delay(3.5, function()
-		if toast.Text:find(text, 1, true) then
-			local fade = TweenService:Create(toast, TweenInfo.new(0.25), { BackgroundTransparency = 1 })
+		if UI_HELPERS.toast.Text:find(text, 1, true) then
+			local fade = TweenService:Create(UI_HELPERS.toast, TweenInfo.new(0.25), { BackgroundTransparency = 1 })
 			fade:Play()
 			fade.Completed:Connect(function()
-				toast.Visible = false
+				UI_HELPERS.toast.Visible = false
 			end)
 		end
 	end)
@@ -3702,22 +3715,22 @@ showRestoreConfirmation = function()
 		setLast("no local snapshots to restore")
 		return false
 	end
-	confirmCopy.Text = ("Restore all %d local snapshot(s)? Edits you made after the agent's changes are kept unless you turn on full revert."):format(#localSnapshots)
+	UI_HELPERS.confirmCopy.Text = ("Restore all %d local snapshot(s)? Edits you made after the agent's changes are kept unless you turn on full revert."):format(#localSnapshots)
 	-- Reset the force toggle each time the sheet opens.
 	confirmRestoreButton:SetAttribute("ForceRestore", false)
-	local forceToggleButton = confirmSheet:FindFirstChild("ForceToggle")
+	local forceToggleButton = UI_HELPERS.confirmSheet:FindFirstChild("ForceToggle")
 	if forceToggleButton then
 		local baseColor = themeColor(Enum.StudioStyleGuideColor.Button)
 		forceToggleButton:SetAttribute("BaseColor", baseColor)
 		forceToggleButton.BackgroundColor3 = baseColor
 		forceToggleButton.Text = "Also revert my edits: OFF"
 	end
-	confirmOverlay.Visible = true
+	UI_HELPERS.confirmOverlay.Visible = true
 	return true
 end
 
 hideRestoreConfirmation = function()
-	confirmOverlay.Visible = false
+	UI_HELPERS.confirmOverlay.Visible = false
 end
 
 -- Render the same-place collaborators list into the Connect tab.
@@ -3827,12 +3840,12 @@ showApprovalGate = function(command)
 			end
 		end)
 	end
-	approvalOverlay.Visible = false
+	UI_HELPERS.approvalOverlay.Visible = false
 	setActiveTab("Chat")
 end
 
 hideApprovalGate = function()
-	approvalOverlay.Visible = false
+	UI_HELPERS.approvalOverlay.Visible = false
 	if pendingApproval and pendingApproval.messageId then
 		local message = updateChatMessage(
 			pendingApproval.messageId,
@@ -3987,11 +4000,11 @@ runSetupCheck = function()
 end
 
 showOnboarding = function()
-	onboardingOverlay.Visible = true
+	UI_HELPERS.onboardingOverlay.Visible = true
 end
 
 hideOnboarding = function()
-	onboardingOverlay.Visible = false
+	UI_HELPERS.onboardingOverlay.Visible = false
 	plugin:SetSetting("nexusrbxOnboardingSeen", true)
 end
 

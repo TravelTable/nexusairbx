@@ -1,6 +1,6 @@
 import React from "react";
 import "@testing-library/jest-dom";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { TokenBar } from "../AiComponents";
 import ChatComposer from "./ChatComposer";
 
@@ -460,7 +460,23 @@ describe("ChatComposer compact interactions", () => {
     expect(onStop).toHaveBeenCalledTimes(2);
   });
 
-  test("textarea grows from 72px to 160px and then scrolls internally", () => {
+  test("shows brief success feedback when generation completes", () => {
+    jest.useFakeTimers();
+    try {
+      const { rerender } = renderComposer({ isGenerating: true, onStop: jest.fn() });
+      rerender(<ChatComposer {...baseProps} isGenerating={false} />);
+
+      const composer = screen.getByRole("textbox", { name: "Prompt input" }).closest("[data-tour='prompt-composer']");
+      expect(composer.dataset.state).toBe("success");
+
+      act(() => jest.advanceTimersByTime(1400));
+      expect(composer.dataset.state).toBe("idle");
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  test("textarea starts slim, expands to 176px, and then scrolls internally", () => {
     const { rerender } = renderComposer({ prompt: "short" });
     const textarea = screen.getByRole("textbox", { name: "Prompt input" });
     Object.defineProperty(textarea, "scrollHeight", {
@@ -469,16 +485,18 @@ describe("ChatComposer compact interactions", () => {
     });
 
     rerender(<ChatComposer {...baseProps} prompt="long\ncontent" />);
-    expect(textarea.style.height).toBe("160px");
+    expect(textarea.style.height).toBe("176px");
     expect(textarea.style.overflowY).toBe("auto");
+    expect(textarea.closest("[data-tour='prompt-composer']").dataset.expanded).toBe("true");
 
     Object.defineProperty(textarea, "scrollHeight", {
       configurable: true,
       value: 20,
     });
     rerender(<ChatComposer {...baseProps} prompt="short again" />);
-    expect(textarea.style.height).toBe("72px");
+    expect(textarea.style.height).toBe("40px");
     expect(textarea.style.overflowY).toBe("hidden");
+    expect(textarea.closest("[data-tour='prompt-composer']").dataset.expanded).toBe("false");
   });
 });
 
