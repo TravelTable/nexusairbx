@@ -327,6 +327,15 @@ test("a guarded mutation is post-read exactly and only then marked verified", as
   assert.equal(result.verified, true);
   assert.deepEqual(result.verificationChecks, [{ type: "source_exact_match", path: READ_PATH, passed: true }]);
   assert.deepEqual(result.resultingHashes, { [READ_PATH]: sha256("new") });
+  assert.deepEqual(result.verification, {
+    verified: true,
+    source: "studio_readback",
+    evidence: {
+      commandType: "patch_script",
+      baselineSourceHash: sha256("old"),
+      readbackHash: sha256("new"),
+    },
+  });
   assert.equal(mcp.sources.get(READ_PATH), "new");
   assert.deepEqual(mcp.calls.map((call) => call.name), ["script_read", "multi_edit", "script_read"]);
 });
@@ -506,6 +515,14 @@ test("decodes the numbered source presentation returned by Roblox Studio MCP", a
   const created = await executor.execute(command("create_script", { path: createdPath, className: "Script", source }));
   assert.equal(created.success, true);
   assert.equal(created.verified, true);
+  assert.deepEqual(created.verification, {
+    verified: true,
+    source: "studio_readback",
+    evidence: {
+      commandType: "create_script",
+      readbackHash: sha256(source),
+    },
+  });
   assert.equal(mcp.sources.get(createdPath), source);
 });
 

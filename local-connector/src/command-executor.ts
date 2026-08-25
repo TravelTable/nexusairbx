@@ -134,9 +134,15 @@ export class CommandExecutor {
       return await this.rollbackRoutineMutation(data, "The script was created but its post-write read failed.", error);
     }
     if (actualSource !== source) return await this.rollbackRoutineMutation(data, "The created script source did not match after rereading it.");
+    const resultingHash = sha256(actualSource);
     return successBase(command, true, {
-      operation: command.type, ...data, affectedPaths: [path], resultingHashes: { [path]: sha256(actualSource) },
+      operation: command.type, ...data, affectedPaths: [path], resultingHashes: { [path]: resultingHash },
       hashAlgorithm: "sha256", verificationChecks: [{ type: "source_exact_match", path, passed: true }],
+      verification: {
+        verified: true,
+        source: "studio_readback",
+        evidence: { commandType: command.type, readbackHash: resultingHash },
+      },
     });
   }
 
@@ -514,13 +520,23 @@ export class CommandExecutor {
       });
     }
     const resultingHash = sha256(actualSource);
+    const baselineHash = currentSource === null ? null : sha256(currentSource);
     return successBase(command, true, {
       operation: command.type,
       affectedPaths: [path],
-      previousHashes: currentSource === null ? {} : { [path]: sha256(currentSource) },
+      previousHashes: baselineHash === null ? {} : { [path]: baselineHash },
       resultingHashes: { [path]: resultingHash },
       hashAlgorithm: "sha256",
       verificationChecks: [{ type: "source_exact_match", path, passed: true }],
+      verification: {
+        verified: true,
+        source: "studio_readback",
+        evidence: {
+          commandType: command.type,
+          ...(baselineHash === null ? {} : { baselineSourceHash: baselineHash }),
+          readbackHash: resultingHash,
+        },
+      },
       output: normalizeToolOutput(toolResult),
     });
   }
