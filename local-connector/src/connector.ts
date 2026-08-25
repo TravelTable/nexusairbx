@@ -26,8 +26,8 @@ import type {
 import { EMPTY_CAPABILITIES } from "./types.js";
 import { CONNECTOR_PROTOCOL_VERSION } from "./version.js";
 
-const MUTATING_COMMANDS = new Set(["create_script", "write_script", "patch_script", "create_instance", "update_properties", "update_attributes", "update_tags", "rename_instance", "move_instance", "duplicate_instance", "delete_instance", "batch_operations", "restore_snapshot", "undo_last_batch", "insert_creator_store_asset", "run_test_service", "run_play_test", "stop_play_test"]);
-const TARGET_BOUND_COMMANDS = new Set([...MUTATING_COMMANDS, "create_snapshot"]);
+const MUTATING_COMMANDS = new Set(["create_script", "write_script", "patch_script", "create_instance", "update_properties", "update_attributes", "update_tags", "rename_instance", "move_instance", "duplicate_instance", "delete_instance", "batch_operations", "create_snapshot", "restore_snapshot", "undo_last_batch", "insert_creator_store_asset", "run_test_service", "run_play_test", "stop_play_test"]);
+const TARGET_BOUND_COMMANDS = new Set(MUTATING_COMMANDS);
 const INITIAL_STUDIO_DISCOVERY_ATTEMPTS = 12;
 const INITIAL_STUDIO_DISCOVERY_RETRY_MS = 500;
 

@@ -139,7 +139,8 @@ class FakeMcp implements McpClientLike {
       const match = /__nexus_run\(("(?:\\.|[^"\\])*")\)\s*$/.exec(code);
       assert.ok(match?.[1]);
       const input = JSON.parse(JSON.parse(match[1])) as { nonce: string; operation: string; payload: JsonObject };
-      const path = String(input.payload.path || "Workspace/Part");
+      const firstPayloadPath = Array.isArray(input.payload.paths) ? input.payload.paths[0] : null;
+      const path = String(input.payload.path || firstPayloadPath || "Workspace/Part");
       if (this.routineFailurePath && path === this.routineFailurePath) {
         return { content: [{ type: "text", text: JSON.stringify({
           version: 1,
@@ -162,6 +163,8 @@ class FakeMcp implements McpClientLike {
       } else if (input.operation === "create_script") {
         this.sources.set(path, this.createdSourceOverride ?? String(input.payload.source || ""));
         data = { instance: { path }, snapshots, resultingHash };
+      } else if (input.operation === "create_snapshot") {
+        data = { snapshots, snapshotCount: snapshots.length };
       } else if (input.operation === "delete_instance") {
         data = { snapshots, resultingHash, verified: true };
       } else {
@@ -405,6 +408,21 @@ test("stop playtest fails closed when Edit mode is not observed before the deadl
   assert.equal(result.success, false);
   assert.equal(errorCode(result), "PLAYTEST_TIMEOUT");
   assert.equal(mcp.calls.filter((call) => call.name === "start_stop_play").length, 1);
+});
+
+test("snapshot creation is returned as a verified place mutation", async () => {
+  const mcp = new FakeMcp();
+  const executor = new CommandExecutor(mcp, new ToolCatalog(tools));
+
+  const result = await executor.execute(command("create_snapshot", {
+    paths: ["game/ServerScriptService/Main"],
+    recursive: false,
+  }));
+
+  assert.equal(result.success, true, JSON.stringify(result));
+  assert.equal(result.verified, true);
+  assert.equal(result.snapshotCount, 1);
+  assert.equal(Array.isArray(result.snapshots), true);
 });
 
 test("a failed StudioMCP start is typed and does not issue a conflicting stop while Studio remains in Edit mode", async () => {

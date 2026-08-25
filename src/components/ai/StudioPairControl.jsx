@@ -38,7 +38,7 @@ import {
 
 const MENU_WIDTH = 400;
 const MENU_MAX_HEIGHT = 520;
-const CURRENT_CONNECTOR_VERSION = "0.2.12";
+const CURRENT_CONNECTOR_VERSION = "0.2.13";
 
 /** @deprecated Prefer computeAnchoredMenuPosition — kept for existing Studio pair tests. */
 export function computeStudioPairMenuPosition(buttonRect, options) {

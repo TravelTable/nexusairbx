@@ -1314,6 +1314,61 @@ test("verified local writes attest the advanced signature and the next write use
   ]);
 });
 
+test("snapshot creation attests the advanced place signature", async () => {
+  const controller = new AbortController();
+  const backend = new FakeBackend(controller);
+  const mcp = new FakeMcp();
+  const journal = new MemoryCommandJournal();
+  mcp.toolPages = [[executeLuauTool, ...targetTools]];
+  mcp.studios = [{
+    studio_id: "studio-1",
+    place_id: "0",
+    place_name: "Local Fixture",
+    universe_id: "0",
+    place_signature: "fixture-signature-before-snapshot",
+  }];
+  mcp.callToolHandler = async (name, args) => {
+    if (name !== "execute_luau") return undefined;
+    const match = /__nexus_run\(("(?:\\.|[^"\\])*")\)\s*$/.exec(String(args.code || ""));
+    assert.ok(match?.[1]);
+    const input = JSON.parse(JSON.parse(match[1])) as { nonce: string; operation: string };
+    assert.equal(input.operation, "create_snapshot");
+    mcp.studios[0]!.place_signature = "fixture-signature-after-snapshot";
+    return { content: [{ type: "text", text: JSON.stringify({
+      version: 1,
+      nonce: input.nonce,
+      ok: true,
+      data: {
+        snapshots: [{ snapshotId: input.nonce, path: "game/ServerScriptService/Main", preHash: "before", postHash: "before" }],
+        snapshotCount: 1,
+      },
+    }) }] };
+  };
+  backend.pollHandler = async () => reliableCommand({
+    id: "snapshot-signature-advance",
+    type: "create_snapshot",
+    payload: { paths: ["game/ServerScriptService/Main"], recursive: false },
+    targetFence: 1,
+    expectedStudioWindowId: "studio-1",
+    expectedPlaceSignature: "fixture-signature-before-snapshot",
+    unpublishedMcp: true,
+  });
+
+  await new NexusLocalConnector({
+    config,
+    connectorVersion: "0.2.13-test",
+    backend,
+    mcp,
+    logger,
+    commandJournal: journal,
+  }).run("PAIR-CODE", controller.signal);
+
+  const terminal = backend.acknowledgements.find(({ status }) => status === "succeeded");
+  assert.equal(terminal?.result.verified, true, JSON.stringify(backend.acknowledgements));
+  assert.equal((terminal?.result.targetAttestation as JsonObject)?.studioWindowId, "studio-1");
+  assert.equal((terminal?.result.targetAttestation as JsonObject)?.placeSignature, "fixture-signature-after-snapshot");
+});
+
 test("a verified mutation with failed post-write target attestation is durably demoted to outcome_unknown", async () => {
   const controller = new AbortController();
   const backend = new FakeBackend(controller);

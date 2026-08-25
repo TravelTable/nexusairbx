@@ -96,7 +96,9 @@ export class CommandExecutor {
       throw new ConnectorError("PLAYTEST_CONFIRMATION_REQUIRED", "TestService execution requires explicit confirmation.");
     }
     const data = await this.#routines.run(command.type, command.payload, signal);
-    const mutation = command.type !== "get_selection" && command.type !== "create_snapshot";
+    // Snapshot creation writes connector-owned state into the place and advances
+    // its signature, even though it does not alter the selected user instance.
+    const mutation = command.type !== "get_selection";
     return successBase(command, mutation, {
       operation: command.type,
       ...data,
