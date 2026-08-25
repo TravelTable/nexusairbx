@@ -151,3 +151,17 @@ test("generated install artifact contains target diagnostics and the current bui
   assert.match(artifact, /cannot be duplicated into its own descendant tree/);
   assert.match(artifact, /Heartbeat %s · Commands %s · Place %s/);
 });
+
+test("safe GUI properties accept planner shapes and participate in readback verification", () => {
+  const pathTools = read("src/studio/path.lua");
+  const serialization = read("src/studio/serialization.lua");
+
+  assert.match(pathTools, /value\["\$type"\]/);
+  assert.match(pathTools, /typeof\(value\.X\) == "table" and typeof\(value\.Y\) == "table"/);
+  assert.match(pathTools, /key == "TextColor3"[\s\S]*inst\.TextColor3 = value/);
+  assert.match(pathTools, /key == "BackgroundColor3"[\s\S]*inst\.BackgroundColor3 = value/);
+  assert.match(pathTools, /key == "TextSize"[\s\S]*inst\.TextSize = math\.max/);
+  for (const property of ["BackgroundColor3", "TextColor3", "TextSize"]) {
+    assert.match(serialization, new RegExp(`"${property}"`));
+  }
+});

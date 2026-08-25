@@ -4,7 +4,7 @@
 
 local TweenService = game:GetService("TweenService")
 
-local displayPluginVersion, displayProtocolVersion, MAX_ACTIVITY_ENTRIES = PLUGIN_VERSION or "0.13.1-single-session", STUDIO_PROTOCOL_VERSION or "2026-07-30-script-context", 25
+local displayPluginVersion, displayProtocolVersion, MAX_ACTIVITY_ENTRIES = PLUGIN_VERSION or "0.13.2-single-session", STUDIO_PROTOCOL_VERSION or "2026-07-30-script-context", 25
 
 local toolbar = plugin:CreateToolbar("NexusRBX")
 local toggleButton = toolbar:CreateButton("NexusRBX", "Open Nexus", "")

@@ -7,14 +7,14 @@
 
 local BACKEND_URL = "https://api.nexusrbx.com"
 local BACKEND_HOST = "api.nexusrbx.com"
-local PLUGIN_VERSION = "0.13.1-single-session"
+local PLUGIN_VERSION = "0.13.2-single-session"
 local STUDIO_PROTOCOL_VERSION = "2026-07-30-script-context"
 
 -- This identifies the exact release artifact, independently of the user-facing
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.13.1-single-session.1"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.13.2-single-session.1"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the
@@ -739,6 +739,9 @@ propertiesOf = function(inst)
 		"Position",
 		"AnchorPoint",
 		"BackgroundTransparency",
+		"BackgroundColor3",
+		"TextColor3",
+		"TextSize",
 		"TextTransparency",
 		"ImageTransparency",
 		"Image",
@@ -986,16 +989,32 @@ end
 
 safeSetProperty = function(inst, key, value)
 	local ok, err = pcall(function()
-		if typeof(value) == "table" and value.type == "UDim2" then
-			value = UDim2.new(value.xScale or 0, value.xOffset or 0, value.yScale or 0, value.yOffset or 0)
-		elseif typeof(value) == "table" and value.type == "UDim" then
-			value = UDim.new(value.scale or 0, value.offset or 0)
-		elseif typeof(value) == "table" and value.type == "Color3" then
-			value = Color3.new(value.r or 0, value.g or 0, value.b or 0)
-		elseif typeof(value) == "table" and value.type == "Vector2" then
-			value = Vector2.new(value.x or 0, value.y or 0)
-		elseif typeof(value) == "table" and value.type == "Vector3" then
-			value = Vector3.new(value.x or 0, value.y or 0, value.z or 0)
+		if typeof(value) == "table" then
+			local valueType = tostring(value.type or value["$type"] or "")
+			if valueType == "UDim2" then
+				value = UDim2.new(value.xScale or 0, value.xOffset or 0, value.yScale or 0, value.yOffset or 0)
+			elseif (key == "Size" or key == "Position") and typeof(value.X) == "table" and typeof(value.Y) == "table" then
+				-- The planner's structured-output schema uses Roblox's X/Y shape.
+				-- Accept it at the trust boundary and convert it to the canonical
+				-- UDim2 representation used by manifest readback.
+				value = UDim2.new(
+					value.X.Scale or value.X.scale or 0,
+					value.X.Offset or value.X.offset or 0,
+					value.Y.Scale or value.Y.scale or 0,
+					value.Y.Offset or value.Y.offset or 0
+				)
+			elseif valueType == "UDim" then
+				value = UDim.new(value.scale or 0, value.offset or 0)
+			elseif valueType == "Color3" or (
+				(key == "TextColor3" or key == "BackgroundColor3")
+				and value.r ~= nil and value.g ~= nil and value.b ~= nil
+			) then
+				value = Color3.new(value.r or 0, value.g or 0, value.b or 0)
+			elseif valueType == "Vector2" then
+				value = Vector2.new(value.x or 0, value.y or 0)
+			elseif valueType == "Vector3" then
+				value = Vector3.new(value.x or 0, value.y or 0, value.z or 0)
+			end
 		end
 		if key == "Value" and inst:IsA("ValueBase") then
 			inst.Value = value
@@ -1015,6 +1034,12 @@ safeSetProperty = function(inst, key, value)
 			inst.Position = value
 		elseif key == "BackgroundTransparency" and inst:IsA("GuiObject") then
 			inst.BackgroundTransparency = tonumber(value) or inst.BackgroundTransparency
+		elseif key == "BackgroundColor3" and inst:IsA("GuiObject") and typeof(value) == "Color3" then
+			inst.BackgroundColor3 = value
+		elseif key == "TextColor3" and (inst:IsA("TextLabel") or inst:IsA("TextButton") or inst:IsA("TextBox")) and typeof(value) == "Color3" then
+			inst.TextColor3 = value
+		elseif key == "TextSize" and (inst:IsA("TextLabel") or inst:IsA("TextButton") or inst:IsA("TextBox")) then
+			inst.TextSize = math.max(1, math.min(100, tonumber(value) or inst.TextSize))
 		elseif key == "TextTransparency" and (inst:IsA("TextLabel") or inst:IsA("TextButton") or inst:IsA("TextBox")) then
 			inst.TextTransparency = tonumber(value) or inst.TextTransparency
 		elseif key == "ImageTransparency" and (inst:IsA("ImageLabel") or inst:IsA("ImageButton")) then
@@ -1925,7 +1950,7 @@ do
 
 local TweenService = game:GetService("TweenService")
 
-local displayPluginVersion, displayProtocolVersion, MAX_ACTIVITY_ENTRIES = PLUGIN_VERSION or "0.13.1-single-session", STUDIO_PROTOCOL_VERSION or "2026-07-30-script-context", 25
+local displayPluginVersion, displayProtocolVersion, MAX_ACTIVITY_ENTRIES = PLUGIN_VERSION or "0.13.2-single-session", STUDIO_PROTOCOL_VERSION or "2026-07-30-script-context", 25
 
 local toolbar = plugin:CreateToolbar("NexusRBX")
 toggleButton = toolbar:CreateButton("NexusRBX", "Open Nexus", "")
