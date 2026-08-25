@@ -24,7 +24,6 @@ import {
   getStudioSessionId,
   selectMcpStudioSession,
   selectPluginStudioSession,
-  STUDIO_CONNECTION_TYPES,
 } from "../lib/studioConnection";
 import { describeChatAttachments, messageToConversationEntry, normalizeChatAttachments } from "../lib/chatAttachments";
 import { normalizeRewindMode, shouldWriteUserMessageAfterRewind } from "../lib/chatTranscriptRewind";
@@ -43,7 +42,6 @@ import {
   sanitizeFirestoreValue,
   sanitizeTranscriptMessagePayload,
 } from "../lib/firestorePayloads";
-import { normalizeRobloxPlaceId } from "../lib/robloxPlaceId";
 
 export function reconcileUnifiedPendingMessages(generationPending = [], orchestrationPending = []) {
   return reconcileAssistantTurns([
@@ -93,34 +91,15 @@ function decisionMessage(decision) {
   return reason?.trim() || "This request cannot start yet.";
 }
 
-async function resolvePreferredStudioTarget(studioEnabled, preferredTarget = null) {
+async function resolveStudioContextSession(studioEnabled) {
   if (!studioEnabled) {
     return { studioSessionId: null, studioConnectionType: null };
   }
   const studioStatus = await getStudioStatus();
   const sessions = studioStatus.sessions || [];
-  const preferredTargetId = String(
-    preferredTarget?.studioTargetId || preferredTarget?.targetId || preferredTarget?.id || ""
-  ).trim();
-  const preferredPluginSessionId = String(preferredTarget?.pluginSessionId || "").trim();
-  const preferredMcpSessionId = String(preferredTarget?.mcpSessionId || "").trim();
-  const eligibleSessions =
-    preferredTargetId || preferredPluginSessionId || preferredMcpSessionId
-      ? sessions.filter((session) => {
-          const connectionType = getStudioConnectionType(session);
-          const sessionId = String(getStudioSessionId(session) || "").trim();
-          const explicitSessionId =
-            connectionType === STUDIO_CONNECTION_TYPES.MCP_LOCAL ? preferredMcpSessionId : preferredPluginSessionId;
-          if (explicitSessionId) return explicitSessionId === sessionId;
-          const sessionTargetId = String(
-            session?.studioTargetId || session?.targetingTargetId || session?.studio?.targetId || ""
-          ).trim();
-          return Boolean(preferredTargetId && sessionTargetId === preferredTargetId);
-        })
-      : sessions;
   const activeSession =
-    selectMcpStudioSession(eligibleSessions, { capability: "readProject" }) ||
-    selectPluginStudioSession(eligibleSessions, { compatibleOnly: true });
+    selectMcpStudioSession(sessions, { capability: "readProject" }) ||
+    selectPluginStudioSession(sessions, { compatibleOnly: true });
   return {
     studioSessionId: getStudioSessionId(activeSession),
     studioConnectionType: activeSession ? getStudioConnectionType(activeSession) : null,
@@ -231,24 +210,11 @@ function buildWorkflowTargeting(submissionOptions = {}, fallbackTargeting = {}) 
     submissionOptions?.targeting && typeof submissionOptions.targeting === "object" ? submissionOptions.targeting : {};
   const fallback = fallbackTargeting && typeof fallbackTargeting === "object" ? fallbackTargeting : {};
   const projectId = submissionOptions?.projectId ?? supplied.projectId ?? fallback.projectId ?? null;
-  const studioTarget =
-    submissionOptions?.studioTarget ??
-    submissionOptions?.studioTargetPreference ??
-    supplied.studioTarget ??
-    fallback.studioTarget ??
-    null;
   const studioConnected =
     submissionOptions?.studioConnected ?? supplied.studioConnected ?? fallback.studioConnected ?? false;
   return {
     projectId: projectId == null || projectId === "" ? null : String(projectId),
     studioConnected: Boolean(studioConnected),
-    studioTarget:
-      studioTarget && typeof studioTarget === "object"
-        ? {
-            ...studioTarget,
-            placeId: normalizeRobloxPlaceId(studioTarget.placeId ?? studioTarget.targetPlaceId),
-          }
-        : studioTarget,
   };
 }
 
@@ -437,13 +403,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
   // Ensure a chat exists, returning its id (creating + opening if needed).
   const ensureChat = useCallback(
-    async (titleSeed, { projectId = null, studioTargetPreference = null } = {}) => {
+    async (titleSeed, { projectId = null } = {}) => {
       let activeChatId = chat.currentChatId;
       if (!activeChatId) {
-        activeChatId = await chat.startNewChat({
-          projectId,
-          studioTargetPreference,
-        });
+        activeChatId = await chat.startNewChat({ projectId });
         const seed = String(titleSeed || "New chat");
         if (activeChatId && seed !== "New chat") {
           await updateDoc(
@@ -624,7 +587,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           autoPushToStudio,
           autoPushPolicy: runtimeAutoPushPolicy(settings),
           targeting,
-          studioTarget: targeting.studioTarget || null,
           ...(approvedPlan ? { approvedPlan } : {}),
           chatMode: mode === "debug" ? "debug" : "agent",
           selectedExampleIds: Array.isArray(submissionOptions.selectedExampleIds)
@@ -712,11 +674,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           projectId: decision?.projectId ?? planTargeting.projectId ?? submissionContext.projectId,
           studioConnected:
             decision?.studioConnected ?? planTargeting.studioConnected ?? submissionContext.studioConnected,
-          studioTarget:
-            decision?.studioTarget ??
-            planTargeting.studioTarget ??
-            submissionContext.studioTarget ??
-            submissionContext.studioTargetPreference,
         },
         buildWorkflowTargeting(submissionContext)
       );
@@ -762,7 +719,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             attachments: attMeta,
             projectId: targeting.projectId,
             studioConnected: targeting.studioConnected,
-            studioTarget: targeting.studioTarget,
             targeting,
             requestMode: submissionContext.mode || "plan",
             templateId: decision.templateId || submissionContext.templateId || null,
@@ -798,7 +754,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           templateId: decision.templateId || structuredPlan?.templateId || submissionContext.templateId || null,
           projectId: targeting.projectId,
           studioConnected: targeting.studioConnected,
-          studioTarget: targeting.studioTarget,
           targeting,
           originPrompt,
           attachments: attMeta,
@@ -986,10 +941,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       let studioConnectionType = null;
       if (studioEnabled) {
         try {
-          const studioTarget = await resolvePreferredStudioTarget(
-            studioEnabled,
-            buildWorkflowTargeting(submissionOptions).studioTarget
-          );
+          const studioTarget = await resolveStudioContextSession(studioEnabled);
           studioSessionId = studioTarget.studioSessionId;
           studioConnectionType = studioTarget.studioConnectionType;
           if (studioSessionId) {
@@ -1365,7 +1317,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             gameSpec: effectiveGameSpec,
             projectId: workflowTargeting.projectId,
             studioConnected: workflowTargeting.studioConnected,
-            studioTarget: workflowTargeting.studioTarget,
             targeting: workflowTargeting,
             templateId: effectiveOptions.templateId || null,
             idempotencyKey: effectiveOptions.idempotencyKey,
@@ -1440,8 +1391,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           ...submissionOptions,
           projectId: submissionOptions.projectId ?? message.projectId,
           studioConnected: submissionOptions.studioConnected ?? message.studioConnected,
-          studioTarget:
-            submissionOptions.studioTarget ?? submissionOptions.studioTargetPreference ?? message.studioTarget,
           targeting: {
             ...(message.targeting && typeof message.targeting === "object" ? message.targeting : {}),
             ...(submissionOptions.targeting && typeof submissionOptions.targeting === "object"
@@ -1497,7 +1446,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           gameSpec: effectiveGameSpec,
           projectId: effectiveTargeting.projectId,
           studioConnected: effectiveTargeting.studioConnected,
-          studioTarget: effectiveTargeting.studioTarget,
           targeting: effectiveTargeting,
           templateId: message.templateId || submissionOptions.templateId || null,
           idempotencyKey: submissionOptions.idempotencyKey || requestId,

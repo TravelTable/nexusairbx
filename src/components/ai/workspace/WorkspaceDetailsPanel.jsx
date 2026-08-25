@@ -17,10 +17,8 @@ export default function WorkspaceDetailsPanel({
   artifact,
   agentRun,
   onApproveStep,
-  onSelectStudioTarget,
   onRestoreRun,
   approvingStepId,
-  selectingStudioTargetId,
   restoringRun,
   notify,
 }) {
@@ -43,10 +41,8 @@ export default function WorkspaceDetailsPanel({
             artifact={artifact}
             agentRun={agentRun}
             onApproveStep={onApproveStep}
-            onSelectStudioTarget={onSelectStudioTarget}
             onRestoreRun={onRestoreRun}
             approvingStepId={approvingStepId}
-            selectingStudioTargetId={selectingStudioTargetId}
             restoringRun={restoringRun}
             notify={notify}
           />

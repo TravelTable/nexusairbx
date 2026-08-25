@@ -419,11 +419,8 @@ describe("useAiChat", () => {
         lastSeenAt: 200,
       }],
       {
-        studioSessionId: "mcp_1",
-        studioConnectionType: "mcp_local",
         routingMode: "hybrid",
-        targetPlaceId: null,
-        autoPushToStudio: false,
+        autoPushToStudio: true,
       },
     ],
     [
@@ -449,11 +446,8 @@ describe("useAiChat", () => {
         },
       ],
       {
-        studioSessionId: "mcp_1",
-        studioConnectionType: "mcp_local",
         routingMode: "hybrid",
-        targetPlaceId: null,
-        autoPushToStudio: false,
+        autoPushToStudio: true,
       },
     ],
     [
@@ -477,11 +471,8 @@ describe("useAiChat", () => {
         },
       ],
       {
-        studioSessionId: "mcp_1",
-        studioConnectionType: "mcp_local",
         routingMode: "hybrid",
-        targetPlaceId: null,
-        autoPushToStudio: false,
+        autoPushToStudio: true,
       },
     ],
   ])("%s", async (_, sessions, expectedStudioContext) => {
@@ -528,10 +519,15 @@ describe("useAiChat", () => {
     }
 
     const [, request] = global.fetch.mock.calls[0];
-    expect(JSON.parse(request.body)).toEqual(expect.objectContaining({
+    const requestBody = JSON.parse(request.body);
+    expect(requestBody).toEqual(expect.objectContaining({
       studioEnabled: true,
       ...expectedStudioContext,
     }));
+    expect(requestBody).not.toHaveProperty("studioSessionId");
+    expect(requestBody).not.toHaveProperty("studioConnectionType");
+    expect(requestBody).not.toHaveProperty("targetPlaceId");
+    expect(requestBody).not.toHaveProperty("studioTargetId");
   });
 
   test("uses the artifact request as the only task intake and binds its top-level task id", async () => {

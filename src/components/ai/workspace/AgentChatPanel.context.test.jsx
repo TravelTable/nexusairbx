@@ -68,7 +68,8 @@ test("threads authoritative workspace context into the empty chat surface", () =
 
   const context = screen.getByRole("group", { name: "Current build context" });
   expect(context).toHaveTextContent("ProjectSkybound Adventure");
-  expect(context).toHaveTextContent("PlaceCrystal CavesPlace 123456");
+  expect(context).not.toHaveTextContent("Crystal Caves");
+  expect(context).not.toHaveTextContent("123456");
   expect(context).toHaveTextContent("StudioConnected");
   expect(mockChatComposer).toHaveBeenCalledWith(
     expect.objectContaining({ onStudioConnectionOpen }),

@@ -134,13 +134,13 @@ describe("usePlanWorkspace", () => {
     expect(startPlanExecution).toHaveBeenCalledWith("plan-1", 4, "hash-4");
     expect(checkWorkflowPlanReadiness).toHaveBeenCalledWith("plan-1", expect.objectContaining({
       projectId: "project-current-chat",
-      studioTarget,
     }));
+    expect(checkWorkflowPlanReadiness.mock.calls[0][1]).not.toHaveProperty("studioTarget");
+    expect(checkWorkflowPlanReadiness.mock.calls[0][1].targeting).not.toHaveProperty("studioTarget");
     expect(onExecute).toHaveBeenCalledTimes(1);
     expect(onExecute).toHaveBeenCalledWith(expect.objectContaining({
       result: executionResult,
       projectId: "project-current-chat",
-      studioTarget,
       plan: expect.objectContaining({
         sections: expect.objectContaining({ goal: "Keep the current HUD and add inventory beside it" }),
       }),

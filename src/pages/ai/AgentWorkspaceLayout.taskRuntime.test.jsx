@@ -511,12 +511,9 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
     expect(submitCall[2]).toEqual({
       projectId: "project_1",
       studioConnected: true,
-      studioTarget: { placeId: "place_22", universeId: "universe_8" },
-      studioTargetPreference: { placeId: "place_22", universeId: "universe_8" },
       targeting: {
         projectId: "project_1",
         studioConnected: true,
-        studioTarget: { placeId: "place_22", universeId: "universe_8" },
       },
       activeTaskId: "task_active",
       showPlan: true,

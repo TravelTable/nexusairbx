@@ -4,7 +4,7 @@
 
 local TweenService = game:GetService("TweenService")
 
-local displayPluginVersion, displayProtocolVersion, MAX_ACTIVITY_ENTRIES = PLUGIN_VERSION or "0.13.0-project-first", STUDIO_PROTOCOL_VERSION or "2026-07-30-script-context", 25
+local displayPluginVersion, displayProtocolVersion, MAX_ACTIVITY_ENTRIES = PLUGIN_VERSION or "0.13.1-single-session", STUDIO_PROTOCOL_VERSION or "2026-07-30-script-context", 25
 
 local toolbar = plugin:CreateToolbar("NexusRBX")
 local toggleButton = toolbar:CreateButton("NexusRBX", "Open Nexus", "")
@@ -26,7 +26,8 @@ local widget = plugin:CreateDockWidgetPluginGui("NexusRBXStudioBridge", widgetIn
 widget.Title = "NexusRBX"
 
 -- `localSnapshots` is initialized in the bundled shared preamble before snapshot.lua.
-local applying, pollingActive, lastErrorText, diagnosticsOpen, pendingApproval, selectedSnapshotIds = false, false, nil, false, nil, {}
+applying = false
+local pollingActive, lastErrorText, diagnosticsOpen, pendingApproval, selectedSnapshotIds = false, nil, false, nil, {}
 
 -- Tabbed navigation state. Sections are grouped into tabs and shown/hidden by
 -- `setActiveTab`; `refreshControls` derives per-section visibility from the
@@ -1523,18 +1524,15 @@ function setConnectionDiagnostics(summary)
 	if studioTargetLabel then
 		local identity = tostring(target.placeName or "Open Studio game")
 		if target.targetBound and target.targetReady == false then
-			studioTargetLabel.Text = "Blocked · " .. identity
+			studioTargetLabel.Text = "Connection changed · " .. identity
 			studioTargetLabel.TextColor3 = COLORS.error
-		elseif target.targetBound then
-			studioTargetLabel.Text = "Ready · " .. identity
-			studioTargetLabel.TextColor3 = COLORS.success
 		else
-			studioTargetLabel.Text = "Open · " .. identity .. " · awaiting website target"
-			studioTargetLabel.TextColor3 = COLORS.muted
+			studioTargetLabel.Text = "Studio active · " .. identity
+			studioTargetLabel.TextColor3 = COLORS.success
 		end
 	end
 	if target.targetBound and target.targetReady == false and currentBridgeState ~= "working" then
-		setBridgeState("target_changed", target.detail or "Website target does not match this open place")
+		setBridgeState("target_changed", target.detail or "The Studio session changed; reconnect to refresh it")
 	end
 end
 

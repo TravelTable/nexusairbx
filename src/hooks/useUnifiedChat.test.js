@@ -1208,11 +1208,9 @@ describe("useUnifiedChat", () => {
         generatorMode: "agent_build",
         executionIntent: "live_fix",
         studioEnabled: true,
-        studioTarget,
         targeting: expect.objectContaining({
           projectId: "project_1",
           studioConnected: true,
-          studioTarget,
         }),
         applyMode: "manual_review",
         routingMode: "hybrid",
@@ -1231,6 +1229,8 @@ describe("useUnifiedChat", () => {
       })
     );
     const canonicalRunInput = createAgentRunV2.mock.calls[0][0];
+    expect(canonicalRunInput).not.toHaveProperty("studioTarget");
+    expect(canonicalRunInput.targeting).not.toHaveProperty("studioTarget");
     expect(canonicalRunInput).not.toHaveProperty("studioSessionId");
     expect(canonicalRunInput).not.toHaveProperty("studioConnectionType");
     expect(canonicalRunInput).not.toHaveProperty("capabilitySnapshotId");

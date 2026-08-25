@@ -2,7 +2,6 @@ import React from "react";
 import { Loader2, ListChecks, RotateCcw } from "lib/icons";
 import AgentStepList from "./AgentStepList";
 import { FEATURE_FLAGS } from "../../../lib/featureFlags";
-import StudioTargetPicker from "./StudioTargetPicker";
 import StudioRunBlockNotice, { getStudioRunBlock } from "./StudioRunBlockNotice";
 
 // Build progress + plan + unified tool steps for the current agent run.
@@ -12,8 +11,6 @@ export default function AgentPlanPanel({
   onApproveStep,
   onRestoreRun,
   approvingStepId,
-  onSelectStudioTarget,
-  selectingStudioTargetId,
   restoring = false,
 }) {
   const active = [
@@ -66,11 +63,6 @@ export default function AgentPlanPanel({
       )}
 
       <StudioRunBlockNotice value={agentRun} />
-      <StudioTargetPicker
-        selection={agentRun?.targetSelection}
-        onSelect={onSelectStudioTarget}
-        selectingTargetId={selectingStudioTargetId}
-      />
 
       {agentRun?.status === "failed" && (
         <div className="rounded-xl border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] px-3 py-2 text-xs text-[var(--ds-danger)] ">

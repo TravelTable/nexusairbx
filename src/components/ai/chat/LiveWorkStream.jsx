@@ -16,7 +16,6 @@ import {
   ChainOfThoughtHeader,
   ChainOfThoughtStep,
 } from "../../ai-elements/chain-of-thought";
-import StudioTargetPicker from "../workspace/StudioTargetPicker";
 import StudioRunBlockNotice from "../workspace/StudioRunBlockNotice";
 import AnimatedStatusText from "./AnimatedStatusText";
 import NexusDisplayIcon from "../../icons/NexusDisplayIcon";
@@ -118,8 +117,6 @@ export default function LiveWorkStream({
   generationStage,
   onApproveStep,
   approvingStepId,
-  onSelectStudioTarget,
-  selectingStudioTargetId,
   hideThinkingRows = false,
 }) {
   const streamState = pendingMessage?.streamState;
@@ -184,11 +181,6 @@ export default function LiveWorkStream({
         </ChainOfThoughtHeader>
         <ChainOfThoughtContent>
           <StudioRunBlockNotice value={pendingMessage} className="mb-2" />
-          <StudioTargetPicker
-            selection={pendingMessage?.targetSelection}
-            onSelect={onSelectStudioTarget}
-            selectingTargetId={selectingStudioTargetId}
-          />
           {activity.length ? (
             activity.map((item) => {
               const step =

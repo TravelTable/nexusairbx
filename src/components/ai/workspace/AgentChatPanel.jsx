@@ -35,8 +35,6 @@ export default function AgentChatPanel({
   notify,
   onApproveStep,
   approvingStepId,
-  onSelectStudioTarget,
-  selectingStudioTargetId,
   // studio
   studioConnected,
   studioConnectionType,
@@ -52,12 +50,7 @@ export default function AgentChatPanel({
   studioAutoPushPolicy,
   onStudioAutoPushPolicyChange,
   studioAutoPushAuthorized,
-  studioPlacePreference = null,
-  studioPlaceOptions = [],
-  studioPlacePickerOpen = null,
-  onStudioPlacePickerOpenChange = null,
   onStudioConnectionOpen = null,
-  onSelectStudioPlace = null,
   studioCollaborators,
   // roblox cloud
   robloxConnected,
@@ -173,12 +166,9 @@ export default function AgentChatPanel({
             notify={notify}
             onApproveStep={onApproveStep}
             approvingStepId={approvingStepId}
-            onSelectStudioTarget={onSelectStudioTarget}
-            selectingStudioTargetId={selectingStudioTargetId}
             studioConnected={studioConnected}
             studioConnectionState={studioConnectionState}
             studioLoading={studioLoading}
-            studioPlacePreference={studioPlacePreference}
             onRenameChat={onRenameChat}
             onOpenNavigation={onOpenNavigation}
             onEditMessage={handleEditMessage}
@@ -258,13 +248,7 @@ export default function AgentChatPanel({
           onStudioAutoPushPolicyChange={onStudioAutoPushPolicyChange}
           studioAutoPushAuthorized={studioAutoPushAuthorized}
           studioCollaborators={studioCollaborators}
-          studioPlacePreference={studioPlacePreference}
-          studioPlaceOptions={studioPlaceOptions}
-          studioPlacePickerOpen={studioPlacePickerOpen}
-          onStudioPlacePickerOpenChange={onStudioPlacePickerOpenChange}
           onStudioConnectionOpen={onStudioConnectionOpen}
-          onSelectStudioPlace={onSelectStudioPlace || onSelectStudioTarget}
-          selectingStudioTargetId={selectingStudioTargetId}
           robloxConnected={robloxConnected}
           robloxLoading={robloxLoading}
           robloxSelectedCreator={robloxSelectedCreator}

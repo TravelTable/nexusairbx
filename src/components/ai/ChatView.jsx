@@ -39,12 +39,9 @@ export default function ChatView({
   isBusy,
   onApproveStep,
   approvingStepId,
-  onSelectStudioTarget,
-  selectingStudioTargetId,
   studioConnected,
   studioConnectionState,
   studioLoading,
-  studioPlacePreference,
   onRenameChat,
   onOpenNavigation,
   onOpenPlan,
@@ -98,7 +95,6 @@ export default function ChatView({
                 projectId={projectId}
                 studioConnected={studioConnected}
                 studioLoading={studioLoading}
-                studioPlacePreference={studioPlacePreference}
               />
             ) : (
               <MessageList
@@ -119,8 +115,6 @@ export default function ChatView({
                 isBusy={isBusy}
                 onApproveStep={onApproveStep}
                 approvingStepId={approvingStepId}
-                onSelectStudioTarget={onSelectStudioTarget}
-                selectingStudioTargetId={selectingStudioTargetId}
                 onEditMessage={onEditMessage}
                 onRetryMessage={onRetryMessage}
                 onRestoreRun={onRestoreRun}

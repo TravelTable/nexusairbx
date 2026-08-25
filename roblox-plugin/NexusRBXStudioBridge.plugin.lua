@@ -7,14 +7,14 @@
 
 local BACKEND_URL = "https://api.nexusrbx.com"
 local BACKEND_HOST = "api.nexusrbx.com"
-local PLUGIN_VERSION = "0.13.0-project-first"
+local PLUGIN_VERSION = "0.13.1-single-session"
 local STUDIO_PROTOCOL_VERSION = "2026-07-30-script-context"
 
 -- This identifies the exact release artifact, independently of the user-facing
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.13.0-project-first.1"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.13.1-single-session.1"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the
@@ -1918,7 +1918,6 @@ end
 -- END src/ui/ToolActivity.lua
 
 -- BEGIN src/ui/BridgePanel.lua
-local setStatus, setLast, setBusy, setActive, setRun, setProgress, pushActivity, showToast, setHealth, setPollingPulse, showApprovalGate, hideApprovalGate, waitForApproval, getApprovalModeEnabledExport, handleSessionExpired, applying, pairButton, codeBox, pullButton, restoreButton, disconnectButton, confirmRestoreButton, cancelRestoreButton, approvalToggleButton, approvalConfirmButton, approvalDeclineButton, refreshControls, runSetupCheck, showOnboarding, hideOnboarding, checkSetupButton, onboardingDismissButton, showRestoreConfirmation, hideRestoreConfirmation, updateSnapshotLabel, widget, toggleButton, healthLabel, progressLabel, feedEmptyLabel, approvalCopy, playtestLogsButton, playtestStrip, setButtonEnabled, collaboratorsLabel, updateCollaborators, setMcpCompanionStatus, setConnectionDiagnostics, bootstrapStudioConversation, refreshStudioSelection
 do
 -- Nexus inside Roblox Studio.
 -- The normal surface is intentionally only a header, conversation, and composer;
@@ -1926,7 +1925,7 @@ do
 
 local TweenService = game:GetService("TweenService")
 
-local displayPluginVersion, displayProtocolVersion, MAX_ACTIVITY_ENTRIES = PLUGIN_VERSION or "0.13.0-project-first", STUDIO_PROTOCOL_VERSION or "2026-07-30-script-context", 25
+local displayPluginVersion, displayProtocolVersion, MAX_ACTIVITY_ENTRIES = PLUGIN_VERSION or "0.13.1-single-session", STUDIO_PROTOCOL_VERSION or "2026-07-30-script-context", 25
 
 local toolbar = plugin:CreateToolbar("NexusRBX")
 toggleButton = toolbar:CreateButton("NexusRBX", "Open Nexus", "")
@@ -1948,7 +1947,8 @@ widget = plugin:CreateDockWidgetPluginGui("NexusRBXStudioBridge", widgetInfo)
 widget.Title = "NexusRBX"
 
 -- `localSnapshots` is initialized in the bundled shared preamble before snapshot.lua.
-local applying, pollingActive, lastErrorText, diagnosticsOpen, pendingApproval, selectedSnapshotIds = false, false, nil, false, nil, {}
+applying = false
+local pollingActive, lastErrorText, diagnosticsOpen, pendingApproval, selectedSnapshotIds = false, nil, false, nil, {}
 
 -- Tabbed navigation state. Sections are grouped into tabs and shown/hidden by
 -- `setActiveTab`; `refreshControls` derives per-section visibility from the
@@ -3445,18 +3445,15 @@ setConnectionDiagnostics = function(summary)
 	if studioTargetLabel then
 		local identity = tostring(target.placeName or "Open Studio game")
 		if target.targetBound and target.targetReady == false then
-			studioTargetLabel.Text = "Blocked · " .. identity
+			studioTargetLabel.Text = "Connection changed · " .. identity
 			studioTargetLabel.TextColor3 = COLORS.error
-		elseif target.targetBound then
-			studioTargetLabel.Text = "Ready · " .. identity
-			studioTargetLabel.TextColor3 = COLORS.success
 		else
-			studioTargetLabel.Text = "Open · " .. identity .. " · awaiting website target"
-			studioTargetLabel.TextColor3 = COLORS.muted
+			studioTargetLabel.Text = "Studio active · " .. identity
+			studioTargetLabel.TextColor3 = COLORS.success
 		end
 	end
 	if target.targetBound and target.targetReady == false and currentBridgeState ~= "working" then
-		setBridgeState("target_changed", target.detail or "Website target does not match this open place")
+		setBridgeState("target_changed", target.detail or "The Studio session changed; reconnect to refresh it")
 	end
 end
 

@@ -154,8 +154,6 @@ function SingleMessageList({
   isBusy,
   onApproveStep,
   approvingStepId,
-  onSelectStudioTarget,
-  selectingStudioTargetId,
   onEditMessage,
   onRetryMessage,
   onRestoreRun,
@@ -337,8 +335,6 @@ function SingleMessageList({
                     generationStage={generationStage}
                     onApproveStep={onApproveStep}
                     approvingStepId={approvingStepId}
-                    onSelectStudioTarget={onSelectStudioTarget}
-                    selectingStudioTargetId={selectingStudioTargetId}
                     embedded
                     hideThinkingRows={hasRawReasoning}
                   />

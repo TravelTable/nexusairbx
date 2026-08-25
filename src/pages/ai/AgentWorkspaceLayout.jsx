@@ -299,7 +299,6 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     track,
     notify,
     handleApproveStep,
-    handleSelectStudioTarget,
     handleRestoreRun,
     handleStudioEnabledChange,
     handleStudioApplyModeChange,
@@ -1177,12 +1176,9 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     () => ({
       projectId: currentProjectId,
       studioConnected: Boolean(studio?.connected),
-      studioTarget: studio?.placePreference || null,
-      studioTargetPreference: studio?.placePreference || null,
       targeting: {
         projectId: currentProjectId || null,
         studioConnected: Boolean(studio?.connected),
-        studioTarget: studio?.placePreference || null,
       },
       activeTaskId: taskRuntime.taskId || "",
       showPlan: chat.activeMode === "plan",
@@ -1192,7 +1188,6 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
       chat.activeMode,
       currentProjectId,
       studio?.connected,
-      studio?.placePreference,
       taskRuntime.selectTask,
       taskRuntime.taskId,
     ]
@@ -1341,8 +1336,6 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     project?.activeProject?.title ||
     projectContext?.name ||
     projectContext?.title ||
-    studio?.placePreference?.placeName ||
-    studio?.placePreference?.name ||
     "Workspace";
 
   const modelControl = (
@@ -1448,10 +1441,8 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         artifact={workspace.activeArtifact}
         agentRun={workspace.agentRun}
         onApproveStep={handleApproveStep}
-        onSelectStudioTarget={handleSelectStudioTarget}
         onRestoreRun={handleRestoreRun}
         approvingStepId={studio?.approvingStepId}
-        selectingStudioTargetId={studio?.selectingStudioTargetId}
         restoringRun={studio?.restoringRun}
         studioConnected={studio?.connected}
         studioConnectionType={studio?.connectionType}
@@ -1468,12 +1459,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         studioAutoPushPolicy={studio?.autoPushPolicy}
         onStudioAutoPushPolicyChange={handleStudioAutoPushPolicyChange}
         studioAutoPushAuthorized={studioAutoPushAuthorized}
-        studioPlacePreference={studio?.placePreference || null}
-        studioPlaceOptions={studio?.placeOptions || []}
-        studioPlacePickerOpen={studio?.placePickerOpen}
-        onStudioPlacePickerOpenChange={studio?.setPlacePickerOpen}
         onStudioConnectionOpen={handleStudioConnectionOpen}
-        onSelectStudioPlace={handleSelectStudioTarget}
         robloxConnected={roblox?.connected}
         robloxLoading={roblox?.loading}
         robloxSelectedCreator={roblox?.selectedCreator}
@@ -1820,10 +1806,8 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
           artifact={workspace.activeArtifact}
           agentRun={workspace.agentRun}
           onApproveStep={handleApproveStep}
-          onSelectStudioTarget={handleSelectStudioTarget}
           onRestoreRun={handleRestoreRun}
           approvingStepId={studio?.approvingStepId}
-          selectingStudioTargetId={studio?.selectingStudioTargetId}
           restoringRun={studio?.restoringRun}
           notify={notify}
         />

@@ -150,7 +150,6 @@ export async function orchestrate({
   gameSpec = "",
   projectId = null,
   studioConnected = false,
-  studioTarget = null,
   targeting = null,
   templateId = null,
   idempotencyKey = null,
@@ -170,12 +169,10 @@ export async function orchestrate({
         gameSpec,
         projectId,
         studioConnected: Boolean(studioConnected),
-        studioTarget,
         templateId,
-        targeting: targeting || {
-          projectId,
-          studioTarget,
-          studioConnected: Boolean(studioConnected),
+        targeting: {
+          projectId: targeting?.projectId ?? projectId,
+          studioConnected: Boolean(targeting?.studioConnected ?? studioConnected),
         },
         attachments: (attachments || []).map((a) => ({ name: a.name, type: a.type })),
       },
@@ -268,13 +265,8 @@ export function checkWorkflowPlanReadiness(planId, {
   hash,
   projectId,
   studioConnected,
-  studioTarget,
   targeting,
 } = {}) {
-  const capabilityRegistry = studioTarget?.capabilityRegistry || null;
-  const capabilitySnapshotId = studioTarget?.capabilitySnapshotId
-    || capabilityRegistry?.capabilitySnapshotId
-    || null;
   return workflowRequestWithFallback(getPlanPathCandidates(planId, "/readiness"), {
     method: "POST",
     body: {
@@ -282,15 +274,9 @@ export function checkWorkflowPlanReadiness(planId, {
       hash,
       projectId: projectId || null,
       studioConnected: Boolean(studioConnected),
-      studioTarget: studioTarget || null,
-      ...(capabilitySnapshotId ? { capabilitySnapshotId } : {}),
-      ...(capabilityRegistry ? { capabilityRegistry } : {}),
-      targeting: targeting || {
-        projectId: projectId || null,
-        studioConnected: Boolean(studioConnected),
-        studioTarget: studioTarget || null,
-        ...(capabilitySnapshotId ? { capabilitySnapshotId } : {}),
-        ...(capabilityRegistry ? { capabilityRegistry } : {}),
+      targeting: {
+        projectId: targeting?.projectId ?? projectId ?? null,
+        studioConnected: Boolean(targeting?.studioConnected ?? studioConnected),
       },
     },
   }).then((payload) => validateObjectResponse(payload, "readiness"));

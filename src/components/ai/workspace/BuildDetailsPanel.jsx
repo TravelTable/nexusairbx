@@ -15,8 +15,6 @@ export default function BuildDetailsPanel({
   onApproveStep,
   onRestoreRun,
   approvingStepId,
-  onSelectStudioTarget,
-  selectingStudioTargetId,
   restoringRun = false,
   notify,
 }) {
@@ -75,8 +73,6 @@ export default function BuildDetailsPanel({
         onApproveStep={onApproveStep}
         onRestoreRun={onRestoreRun}
         approvingStepId={approvingStepId}
-        onSelectStudioTarget={onSelectStudioTarget}
-        selectingStudioTargetId={selectingStudioTargetId}
         restoring={restoringRun}
       />
       <NativeModelReviewPanel artifact={artifact} notify={notify} />

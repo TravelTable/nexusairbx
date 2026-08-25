@@ -642,11 +642,9 @@ export default function usePlanWorkspace({
           hash: current.hash,
           projectId,
           studioConnected,
-          studioTarget,
           targeting: {
             projectId: projectId || null,
             studioConnected: Boolean(studioConnected),
-            studioTarget: studioTarget || null,
           },
         })
         : { issues: [] };
@@ -850,7 +848,6 @@ export default function usePlanWorkspace({
           sourceMessage,
           projectId,
           studioConnected: Boolean(studioConnected),
-          studioTarget,
         });
       } catch (callbackError) {
         notify?.({

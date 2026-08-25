@@ -15,7 +15,7 @@ test("presents a calm, text-led Roblox construction start", () => {
   expect(container.querySelector(".grid.sm\\:grid-cols-3")).not.toBeInTheDocument();
 });
 
-test("shows only authoritative project, place, and Studio context", () => {
+test("shows only the organizational project and read-only Studio connection", () => {
   const { rerender } = render(
     <ChatEmptyState
       onQuickStart={jest.fn()}
@@ -33,7 +33,8 @@ test("shows only authoritative project, place, and Studio context", () => {
 
   const context = screen.getByRole("group", { name: "Current build context" });
   expect(context).toHaveTextContent("ProjectSkybound Adventure");
-  expect(context).toHaveTextContent("PlaceCrystal CavesPlace 123456");
+  expect(context).not.toHaveTextContent("Crystal Caves");
+  expect(context).not.toHaveTextContent("123456");
   expect(context).toHaveTextContent("StudioConnected");
 
   rerender(

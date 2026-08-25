@@ -44,7 +44,6 @@ function resolveBuildContext({
   projectId,
   studioConnected,
   studioLoading,
-  studioPlacePreference,
 }) {
   const normalizedProjectId = cleanContextValue(projectId);
   const normalizedProjectTitle = cleanContextValue(projectTitle);
@@ -55,33 +54,11 @@ function resolveBuildContext({
       ? normalizedProjectTitle
       : "";
 
-  const studioTarget =
-    studioPlacePreference && typeof studioPlacePreference === "object"
-      ? studioPlacePreference
-      : null;
-  const targetId = cleanContextValue(
-    studioTarget?.targetId || studioTarget?.studioTargetId || studioTarget?.id,
-  );
-  const placeId = cleanContextValue(
-    studioTarget?.placeId || studioTarget?.targetPlaceId,
-  );
-  const hasSelectedPlace = Boolean(targetId || placeId);
-  const selectedPlaceTitle = hasSelectedPlace
-    ? cleanContextValue(
-        studioTarget?.placeName ||
-          studioTarget?.label ||
-          studioTarget?.experienceName ||
-          studioTarget?.displayName ||
-          studioTarget?.name,
-      ) || (placeId ? `Place ${placeId}` : "Selected Studio place")
-    : "";
   const hasStudioStatus =
     studioLoading === false && typeof studioConnected === "boolean";
 
   return {
     projectTitle: selectedProjectTitle,
-    placeTitle: selectedPlaceTitle,
-    placeId,
     hasStudioStatus,
     studioConnected: studioConnected === true,
   };
@@ -95,18 +72,15 @@ export default function ChatEmptyState({
   projectId,
   studioConnected,
   studioLoading,
-  studioPlacePreference,
 }) {
   const buildContext = resolveBuildContext({
     projectTitle,
     projectId,
     studioConnected,
     studioLoading,
-    studioPlacePreference,
   });
   const hasBuildContext = Boolean(
     buildContext.projectTitle ||
-      buildContext.placeTitle ||
       buildContext.hasStudioStatus,
   );
 
@@ -121,8 +95,8 @@ export default function ChatEmptyState({
             <p className="chat-empty-state__eyebrow">Start building</p>
             <h1 id="workspace-start-title">What should Nexus build?</h1>
             <p>
-              Describe the result you want. Nexus will inspect the paired
-              project, make safe assumptions, build the change, and return
+              Describe the result you want. Nexus will inspect the connected
+              Studio session, make safe assumptions, build the change, and return
               verification evidence for review.
             </p>
           </div>
@@ -141,19 +115,6 @@ export default function ChatEmptyState({
                 <dt>Project</dt>
                 <dd title={buildContext.projectTitle}>
                   {buildContext.projectTitle}
-                </dd>
-              </div>
-            ) : null}
-            {buildContext.placeTitle ? (
-              <div>
-                <dt>Place</dt>
-                <dd title={buildContext.placeTitle}>
-                  {buildContext.placeTitle}
-                  {buildContext.placeId &&
-                  buildContext.placeTitle !==
-                    `Place ${buildContext.placeId}` ? (
-                    <small>Place {buildContext.placeId}</small>
-                  ) : null}
                 </dd>
               </div>
             ) : null}

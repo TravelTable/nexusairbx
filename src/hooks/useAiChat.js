@@ -43,14 +43,6 @@ import {
   upsertAgentStep,
 } from "../lib/agentSteps";
 import { resolveGameSpecForPrompt } from "../lib/gameProfile";
-import { getStudioStatus } from "../lib/studioBridgeApi";
-import {
-  getStudioConnectionType,
-  getStudioSessionId,
-  selectMcpStudioSession,
-  selectPluginStudioSession,
-  STUDIO_CONNECTION_TYPES,
-} from "../lib/studioConnection";
 import { getAgentRun } from "../lib/workflowApi";
 import {
   applyStreamActivity,
@@ -83,10 +75,8 @@ import {
 } from "../lib/clientFirestoreWriteMetrics";
 import {
   sanitizeChatWritePayload,
-  sanitizeStudioTargetPreference,
   sanitizeTranscriptMessagePayload,
 } from "../lib/firestorePayloads";
-import { normalizeRobloxPlaceId } from "../lib/robloxPlaceId";
 import { requireVerifiedFirestoreUser } from "../lib/verifiedFirestoreUser";
 import {
   isServerConfirmedUserCancellation,
@@ -1501,9 +1491,6 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           updatedAt: serverTimestamp(),
         };
         newChatPayload.projectId = selectedProjectId;
-        if (submissionOptions?.studioTargetPreference) {
-          newChatPayload.studioTargetPreference = submissionOptions.studioTargetPreference;
-        }
         const newChatRef = await addDoc(
           collection(db, "users", user.uid, "chats"),
           sanitizeChatWritePayload(newChatPayload)
@@ -1547,61 +1534,6 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       const studioEnabled = FEATURE_FLAGS.unifiedAgent && getStudioEnabledPreference();
       const autoPushToStudio = Boolean(settings?.studioAutoPushEnabled);
       const autoPushPolicy = settings?.studioAutoPushPolicy || "after_validation";
-      let studioSessionId = null;
-      let studioConnectionType = null;
-      // Canonical runs are admitted and targeted by the server. Only the legacy
-      // artifact path may resolve a browser-owned Studio transport session.
-      if (studioEnabled && !authoritativeEnvelope) {
-        try {
-          const studioStatus = await getStudioStatus();
-          const studioSession =
-            selectMcpStudioSession(studioStatus.sessions, { capability: "readProject" }) ||
-            selectPluginStudioSession(studioStatus.sessions, { compatibleOnly: true });
-          studioSessionId = getStudioSessionId(studioSession);
-          studioConnectionType = studioSession
-            ? getStudioConnectionType(studioSession)
-            : null;
-        } catch (_) {
-          /* non-fatal: codegen still works without Studio */
-        }
-      }
-
-      const preferredTarget =
-        (submissionOptions?.studioTargetPreference && typeof submissionOptions.studioTargetPreference === "object"
-          ? submissionOptions.studioTargetPreference
-          : null)
-        || currentChatMeta?.studioTargetPreference
-        || null;
-      const preferredTargetId = String(preferredTarget?.targetId || "").trim() || null;
-      const preferredPlaceId = normalizeRobloxPlaceId(preferredTarget?.placeId);
-      const preferredLabel = String(preferredTarget?.label || "").trim() || null;
-      if (preferredTargetId || preferredPlaceId) {
-        try {
-          await updateDoc(
-            doc(db, "users", user.uid, "chats", activeChatId),
-            sanitizeChatWritePayload({
-              studioTargetPreference: sanitizeStudioTargetPreference({
-                targetId: preferredTargetId,
-                placeId: preferredPlaceId,
-                label: preferredLabel || "Untitled Studio project",
-                updatedAt: serverTimestamp(),
-              }),
-              updatedAt: serverTimestamp(),
-            })
-          );
-          setCurrentChatMeta((prev) => ({
-            ...(prev || {}),
-            studioTargetPreference: {
-              targetId: preferredTargetId,
-              placeId: preferredPlaceId,
-              label: preferredLabel || "Untitled Studio project",
-            },
-          }));
-        } catch (_) {
-          /* preference persistence is best-effort; createRun still receives explicit fields */
-        }
-      }
-
       let jobData;
       if (authoritativeEnvelope?.run?.runId) {
         jobData = authoritativeEnvelope.run;
@@ -1625,18 +1557,11 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           mode: currentMode,
           conversation: messages.slice(-10).map(messageToConversationEntry).filter(Boolean),
           attachments: normalizedAttachments,
-          studioEnabled: studioEnabled && Boolean(studioSessionId),
+          studioEnabled,
           applyMode: getStudioApplyMode(),
-          studioSessionId,
-          studioConnectionType,
           routingMode: "hybrid",
-          targetPlaceId: preferredPlaceId,
-          studioTargetId: preferredTargetId,
-          studioTargetConfirmed: Boolean(preferredTargetId),
           autoPushToStudio:
-            autoPushToStudio &&
-            Boolean(studioSessionId) &&
-            studioConnectionType === STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE,
+            autoPushToStudio,
           autoPushPolicy,
           baseArtifact,
           ...(submissionOptions?.isRefinement ? { isRefinement: true } : {}),
@@ -2758,7 +2683,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
               publishStage(message, { id: "idle-pulse", status: "Working" });
             },
             getActivitySeq: () => streamStatesRef.current[runStreamKey(activeChatId)]?.activitySeq || 0,
-            getContext: () => ({ studioConnected: Boolean(studioSessionId) }),
+            getContext: () => ({ studioConnected: Boolean(studioEnabled) }),
           });
           idlePulse.start();
         };
@@ -3002,7 +2927,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     };
   }, [assertCanWrite, authReady, currentChatId, messages, user?.uid]);
 
-  const startNewChat = useCallback(async ({ projectId = null, studioTargetPreference = null } = {}) => {
+  const startNewChat = useCallback(async ({ projectId = null } = {}) => {
     if (!authReady || !user?.uid || auth.currentUser?.uid !== user.uid) return null;
     await assertCanWrite();
     const selectedProjectId = String(projectId || "").trim();
@@ -3019,9 +2944,6 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       updatedAt: serverTimestamp(),
       projectId: selectedProjectId,
     };
-    if (studioTargetPreference) {
-      payload.studioTargetPreference = sanitizeStudioTargetPreference(studioTargetPreference);
-    }
     const persistedPayload = sanitizeChatWritePayload(payload);
     await setDoc(doc(db, "users", user.uid, "chats", chatId), persistedPayload);
     closeChatSubscriptions();

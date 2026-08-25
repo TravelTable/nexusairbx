@@ -34,7 +34,6 @@ import {
   getAgentRun,
   restoreAgentRun,
   restoreChatCheckpoint,
-  selectAgentStudioTarget,
 } from "../../lib/workflowApi";
 import { CHAT_OPERATION_STATUS, ChatOperationCoordinator } from "../../lib/chatOperationCoordinator";
 import { AgentRuntimeUnavailableError, cancelAgentRunV2, getAgentRunV2 } from "../../lib/agentRuntimeV2Api";
@@ -53,25 +52,12 @@ import {
   isStudioSessionLive,
   STUDIO_CONNECTION_TYPES,
 } from "../../lib/studioConnection";
-import {
-  buildProjectBindingPayloadFromIdentity,
-  buildStudioTargetPreference,
-  normalizeStudioTargetOption,
-  readChatStudioPreference,
-  targetingOptionsFromStatus,
-} from "../../lib/studioPlaceBinding";
 import { restoreFailedPromptDraft } from "../../lib/promptDraftRecovery";
 import {
-  findOrCreateProjectBinding,
   getProjectBinding,
   projectBindingRecoveryMessage,
   PROJECT_RESOLUTION_STATES,
 } from "../../lib/projectBindingsApi";
-import {
-  isFirestorePermissionDenied,
-  resolveAwaitingStudioTargetRunId,
-  resumeStudioTargetSelection,
-} from "../../lib/studioTargetSelection";
 import { AI_EVENTS, emitAiEvent, onAiEvent } from "../../lib/aiEvents";
 import { useAiNotifications } from "./useAiNotifications";
 import { useStarterPromo } from "../../hooks/useStarterPromo";
@@ -121,7 +107,6 @@ import {
 } from "../../lib/pendingAuthAction";
 import { normalizeChatAttachments } from "../../lib/chatAttachments";
 import { sanitizeChatWritePayload, sanitizeTranscriptMessagePayload } from "../../lib/firestorePayloads";
-import { normalizeRobloxPlaceId } from "../../lib/robloxPlaceId";
 import { normalizeAuthoritativeRunStatus } from "../../lib/runCancellation";
 
 export const PROJECT_SIDEBAR_DESKTOP_MIN_WIDTH = 1200;
@@ -381,10 +366,6 @@ export function useAiWorkspaceController() {
   const [projectRestorePending, setProjectRestorePending] = useState(false);
   const [assetLibraryOpen, setAssetLibraryOpen] = useState(false);
   const [approvingStepId, setApprovingStepId] = useState(null);
-  const [selectingStudioTargetId, setSelectingStudioTargetId] = useState(null);
-  const [studioPlacePickerOpen, setStudioPlacePickerOpen] = useState(false);
-  // Optimistic place label for empty/new chats (no Firestore chat doc yet).
-  const [optimisticStudioPlacePreference, setOptimisticStudioPlacePreference] = useState(null);
   const [restoringRun, setRestoringRun] = useState(false);
   const [chatProjectSnapshot, setChatProjectSnapshot] = useState(null);
   const studioConnection = useStudioConnection();
@@ -864,9 +845,6 @@ export function useAiWorkspaceController() {
         }
         await updateSettings({ activeProjectId: project.projectId });
         setSelectedProjectId(project.projectId);
-        // A selected game is authoritative; a target from the prior chat must
-        // be chosen again before Agent can write to Studio.
-        setOptimisticStudioPlacePreference(null);
         await chat.startNewChat({ projectId: project.projectId });
         emitAiEvent(AI_EVENTS.PROJECTS_CHANGED, {
           projectId: project.projectId,
@@ -1247,138 +1225,6 @@ export function useAiWorkspaceController() {
     updateSettings,
   ]);
 
-  const studioPlaceOptions = useMemo(() => targetingOptionsFromStatus(studioConnection), [studioConnection]);
-  const chatStudioPreference = useMemo(() => readChatStudioPreference(chat.currentChatMeta), [chat.currentChatMeta]);
-
-  // Keep optimistic preference across empty-chat → first-chat creation; only drop it
-  // when switching between existing chats or once Firestore meta matches.
-  const previousChatIdRef = useRef(chat.currentChatId);
-  useEffect(() => {
-    const previousChatId = previousChatIdRef.current;
-    previousChatIdRef.current = chat.currentChatId;
-    if (previousChatId != null && chat.currentChatId != null && previousChatId !== chat.currentChatId) {
-      setOptimisticStudioPlacePreference(null);
-    }
-  }, [chat.currentChatId]);
-
-  useEffect(() => {
-    if (!optimisticStudioPlacePreference || !chatStudioPreference) return;
-    const sameTarget =
-      (optimisticStudioPlacePreference.targetId &&
-        chatStudioPreference.targetId === optimisticStudioPlacePreference.targetId) ||
-      (optimisticStudioPlacePreference.placeId &&
-        chatStudioPreference.placeId === optimisticStudioPlacePreference.placeId);
-    if (sameTarget) setOptimisticStudioPlacePreference(null);
-  }, [chatStudioPreference, optimisticStudioPlacePreference]);
-
-  const storedStudioPlacePreference = optimisticStudioPlacePreference || chatStudioPreference;
-  // Persist only the user's opaque selection, but always rehydrate it from the
-  // current connection snapshot before readiness/run submission. Session ids,
-  // target attestation, and capability evidence are volatile and must not be
-  // treated as durable browser authority.
-  const effectiveStudioPlacePreference = useMemo(() => {
-    if (!storedStudioPlacePreference) return null;
-    const targetId = String(
-      storedStudioPlacePreference.targetId || storedStudioPlacePreference.studioTargetId || ""
-    ).trim();
-    const matchingLiveTarget = targetId
-      ? studioPlaceOptions.find((option) => option?.id === targetId || option?.studioTargetId === targetId)
-      : null;
-    return matchingLiveTarget ? { ...storedStudioPlacePreference, ...matchingLiveTarget } : storedStudioPlacePreference;
-  }, [storedStudioPlacePreference, studioPlaceOptions]);
-
-  const ensureStudioProjectBinding = useCallback(async (option) => {
-    const target = normalizeStudioTargetOption(option) || option;
-    const placeId = normalizeRobloxPlaceId(target?.placeId || target?.targetPlaceId);
-    const universeId = String(target?.universeId || "").trim();
-    const result = await findOrCreateProjectBinding(
-      buildProjectBindingPayloadFromIdentity({
-        title: target?.experienceName || target?.placeName || target?.label,
-        placeId,
-        universeId,
-        studioTargetId: target?.studioTargetId || target?.id,
-        studioTargetLabel: target?.label,
-      })
-    );
-    const project = result?.project || null;
-    const projectId = String(project?.projectId || result?.projectId || "").trim();
-    if (!projectId) throw new Error("The selected Studio place could not be linked to a workspace project.");
-    return { project, projectId };
-  }, []);
-
-  const bindChatStudioPlace = useCallback(
-    async (option) => {
-      const preference = buildStudioTargetPreference(option);
-      if (!preference || !user) return null;
-      try {
-        const selectedUniverseId = String(activeProject?.universeId || "").trim();
-        const selectedPlaceId = normalizeRobloxPlaceId(activeProject?.placeId || activeProject?.defaultPlaceId);
-        const targetUniverseId = String(option?.universeId || "").trim();
-        const targetPlaceId = normalizeRobloxPlaceId(option?.placeId || option?.targetPlaceId);
-        const targetMatchesSelectedGame =
-          activeProjectId &&
-          ((selectedUniverseId && targetUniverseId && selectedUniverseId === targetUniverseId) ||
-            (selectedPlaceId && targetPlaceId && selectedPlaceId === targetPlaceId));
-        if (activeProjectId && !targetMatchesSelectedGame) {
-          throw new Error(
-            `Studio is open to a different game than ${activeProject?.title || "the selected project"}. Open the matching game in Studio or change the Nexus project first.`
-          );
-        }
-        const binding = targetMatchesSelectedGame
-          ? { project: activeProject, projectId: activeProjectId }
-          : await ensureStudioProjectBinding(option);
-        if (chat.currentChatId) {
-          await chat.assertCanWrite();
-          await updateDoc(
-            doc(db, "users", user.uid, "chats", chat.currentChatId),
-            sanitizeChatWritePayload({
-              studioTargetPreference: {
-                ...preference,
-                updatedAt: serverTimestamp(),
-              },
-              projectId: binding.projectId,
-              updatedAt: serverTimestamp(),
-            })
-          );
-        }
-        const boundPreference = { ...preference, projectId: binding.projectId };
-        chat.setCurrentChatMeta?.((current) =>
-          current
-            ? {
-                ...current,
-                projectId: binding.projectId,
-                studioTargetPreference: boundPreference,
-              }
-            : current
-        );
-        setSelectedProjectId(binding.projectId);
-        if (settings?.activeProjectId !== binding.projectId) {
-          await updateSettings({ activeProjectId: binding.projectId });
-        }
-        setOptimisticStudioPlacePreference(boundPreference);
-        return boundPreference;
-      } catch (error) {
-        notify({
-          message: error?.message || "Could not select this Studio place.",
-          type: "error",
-        });
-        setStudioPlacePickerOpen(true);
-        return null;
-      }
-    },
-    [
-      activeProject,
-      activeProjectId,
-      chat,
-      ensureStudioProjectBinding,
-      notify,
-      setSelectedProjectId,
-      settings?.activeProjectId,
-      updateSettings,
-      user,
-    ]
-  );
-
   const cancelRewind = useCallback(() => {
     setRewindTarget(null);
   }, []);
@@ -1445,10 +1291,8 @@ export function useAiWorkspaceController() {
           submissionOptions?.projectId ||
             chat.currentChatMeta?.projectId ||
             activeProjectId ||
-            effectiveStudioPlacePreference?.projectId ||
             ""
         ).trim() || null;
-      let studioTargetPreference = submissionOptions?.studioTargetPreference || effectiveStudioPlacePreference;
       if (
         activeConversationMode === "agent"
       ) {
@@ -1520,13 +1364,11 @@ export function useAiWorkspaceController() {
         : rewindTarget;
       const effectiveSubmissionOptions = {
         ...restSubmissionOptions,
-        ...(studioTargetPreference ? { studioTargetPreference } : {}),
         projectId: runtimeProjectId,
         studioConnected: Boolean(studioConnection.connected),
         targeting: {
           projectId: runtimeProjectId,
           studioConnected: Boolean(studioConnection.connected),
-          studioTarget: studioTargetPreference || null,
         },
         ...(activeRewind?.messageId
           ? {
@@ -1580,7 +1422,6 @@ export function useAiWorkspaceController() {
       settings?.modelVersion,
       setGeneratorMode,
       studioConnection,
-      effectiveStudioPlacePreference,
       chat,
       notify,
     ]
@@ -1610,12 +1451,9 @@ export function useAiWorkspaceController() {
         connected: studioConnection.connected,
         connectionType: getStudioConnectionType(studioConnection),
         mode: activeConversationMode,
-        preference: submissionOptions?.studioTargetPreference || effectiveStudioPlacePreference,
-        options: studioPlaceOptions,
       });
       if (studioPreflight.status === "blocked") {
         notify({ message: studioPreflight.message, type: "error" });
-        setStudioPlacePickerOpen(true);
         return undefined;
       }
 
@@ -1703,7 +1541,6 @@ export function useAiWorkspaceController() {
         setPrompt("");
         setAttachments([]);
         setRewindTarget(null);
-        setStudioPlacePickerOpen(false);
       }
       if (!clearedComposerDraft) return admission.promise;
       return admission.promise.catch((error) => {
@@ -1720,7 +1557,6 @@ export function useAiWorkspaceController() {
       attachments,
       activeConversationMode,
       chat.currentChatId,
-      effectiveStudioPlacePreference,
       executePromptOperation,
       generatorMode,
       notify,
@@ -1729,7 +1565,6 @@ export function useAiWorkspaceController() {
       refineTarget,
       studioConnection,
       studioEnabled,
-      studioPlaceOptions,
       unified,
       user,
     ]
@@ -2324,106 +2159,6 @@ export function useAiWorkspaceController() {
     [chat, unified, user]
   );
 
-  const handleSelectStudioTarget = useCallback(
-    async (option) => {
-      const runId = resolveAwaitingStudioTargetRunId({
-        pendingMessage: unified.pendingMessage,
-        agentRun: workspace.agentRun,
-      });
-      const targetId = typeof option === "string" ? option : option?.id || option?.targetId || option?.studioTargetId;
-      if (!targetId || !user || selectingStudioTargetId) return false;
-      // Choosing an exact live target is an explicit Studio action. Keep the
-      // execution preference in lockstep with that choice so the subsequent
-      // submit cannot discard the target's project binding and fall back to
-      // the legacy artifact route.
-      handleStudioEnabledChange(true);
-      setSelectingStudioTargetId(targetId);
-      // Paint the chip immediately so empty chats (no Firestore doc yet) still show the place.
-      const immediatePreference = buildStudioTargetPreference(typeof option === "string" ? { id: option } : option);
-      if (immediatePreference) setOptimisticStudioPlacePreference(immediatePreference);
-      try {
-        const { preference, bindError, result, resumed } = await resumeStudioTargetSelection({
-          option,
-          runId,
-          bindPreference: bindChatStudioPlace,
-          selectTarget: selectAgentStudioTarget,
-        });
-        const bindDenied = isFirestorePermissionDenied(bindError);
-        if (!resumed) {
-          if (!preference) {
-            setOptimisticStudioPlacePreference(null);
-            setStudioPlacePickerOpen(true);
-            if (bindError) {
-              notify({
-                message: bindError?.message || "Could not select this Studio place.",
-                type: "error",
-              });
-            }
-            return false;
-          }
-          setStudioPlacePickerOpen(false);
-          if (bindDenied) {
-            notify({
-              message: "Could not save this place to the chat, but you can still send with it selected.",
-              type: "info",
-            });
-          } else {
-            const label = preference?.label || immediatePreference?.label;
-            notify({
-              message: label ? `This chat will edit ${label}` : "Studio place selected for this chat",
-              type: "success",
-            });
-          }
-          return true;
-        }
-        await syncAgentRunSteps(runId, null, result?.run || null);
-        if (result?.conflict) {
-          setOptimisticStudioPlacePreference(null);
-          setStudioPlacePickerOpen(true);
-          notify({
-            message:
-              result?.message || "That Studio project is no longer available. Choose another project to continue.",
-            type: "error",
-          });
-          return false;
-        } else {
-          setStudioPlacePickerOpen(false);
-          notify({
-            message: result?.run?.placeName ? `Continuing in ${result.run.placeName}` : "Continuing in Studio",
-            type: "success",
-          });
-          if (bindDenied) {
-            notify({
-              message: "Could not save this place preference to the chat (permissions).",
-              type: "info",
-            });
-          }
-          return true;
-        }
-      } catch (err) {
-        setOptimisticStudioPlacePreference(null);
-        setStudioPlacePickerOpen(true);
-        notify({
-          message: err?.message || "Could not continue in that Studio project",
-          type: "error",
-        });
-        return false;
-      } finally {
-        setSelectingStudioTargetId(null);
-      }
-    },
-    [
-      bindChatStudioPlace,
-      handleStudioEnabledChange,
-      notify,
-      selectingStudioTargetId,
-      syncAgentRunSteps,
-      unified.pendingMessage,
-      user,
-      workspace.agentRun,
-    ]
-  );
-
   const handleApproveStep = useCallback(
     async (step) => {
       const runId = unified.pendingMessage?.runId || workspace.agentRun?.runId;
@@ -2459,7 +2194,6 @@ export function useAiWorkspaceController() {
           } else {
             const recoveryMessage = projectBindingRecoveryMessage(resolution);
             if (recoveryMessage) {
-              setStudioPlacePickerOpen(true);
               throw new Error(recoveryMessage);
             }
           }
@@ -3203,7 +2937,6 @@ export function useAiWorkspaceController() {
       emitAiEvent,
 
       handleApproveStep,
-      handleSelectStudioTarget,
       handleRestoreRun,
       handleStudioEnabledChange,
       handleStudioApplyModeChange,
@@ -3223,14 +2956,8 @@ export function useAiWorkspaceController() {
       autoPushPolicy: settings?.studioAutoPushPolicy || "after_validation",
       lastAuthorizedSessionId: settings?.lastAuthorizedStudioSessionId || null,
       approvingStepId,
-      selectingStudioTargetId,
       restoringRun,
       unifiedAgent: FEATURE_FLAGS.unifiedAgent,
-      placeOptions: studioPlaceOptions,
-      placePreference: effectiveStudioPlacePreference,
-      placePickerOpen: studioPlacePickerOpen,
-      setPlacePickerOpen: setStudioPlacePickerOpen,
-      bindPlace: bindChatStudioPlace,
     },
     roblox: {
       connected: robloxStatus?.connected === true,

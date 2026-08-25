@@ -1,5 +1,5 @@
 import React from "react";
-import { MapPin, ShieldAlert } from "lib/icons";
+import { ShieldAlert } from "lib/icons";
 
 const TARGET_CODES = new Set([
   "STUDIO_TARGET_SELECTION_REQUIRED",
@@ -59,23 +59,26 @@ export function getStudioRunBlock(value = {}) {
     const isMismatch = code === "STUDIO_TARGET_MISMATCH" || code === "MCP_PLACE_MISMATCH" || fallback === "MCP_PLACE_MISMATCH";
     const isStale = code === "STUDIO_TARGET_STALE" || code === "STUDIO_TARGET_CHANGED" || code === "STUDIO_TARGET_SELECTION_CONFLICT";
     return {
-      kind: "target",
+      kind: "connection",
       code,
       targetSelection,
       recovery,
-      title: isMismatch
-        ? "Studio target needs your confirmation"
-        : isStale
-          ? "Studio project changed"
-          : "Choose a Studio project to continue",
-      message: isMismatch
-        ? "The selected Studio connection does not match this project. No Studio command was sent."
-        : isStale
-          ? "That Studio project changed or disconnected. Choose a live project to continue."
-          : "NexusRBX paused before sending the next Studio command so you can confirm which open place to use.",
+      title: "Reconnect Studio to continue",
+      message: isMismatch || isStale
+        ? "The previous Studio connection is no longer active. Nexus will use your account's paired Studio plugin when you retry."
+        : "No active Studio plugin is available for this task. Connect Studio, then retry.",
     };
   }
-  if (PLUGIN_CODES.has(code) || value?.status === "awaiting_plugin_update" || value?.status === "awaiting_studio_reconnect") {
+  if (value?.status === "awaiting_studio_reconnect") {
+    return {
+      kind: "connection",
+      code,
+      recovery,
+      title: "Reconnect Studio to continue",
+      message: "The Studio plugin disconnected. Reconnect it, then retry; Nexus will use that sole live session automatically.",
+    };
+  }
+  if (PLUGIN_CODES.has(code) || value?.status === "awaiting_plugin_update") {
     return {
       kind: "plugin",
       code,
@@ -114,26 +117,24 @@ export default function StudioRunBlockNotice({ value, className = "" }) {
   const block = getStudioRunBlock(value);
   if (!block) return null;
 
-  const isTarget = block.kind === "target";
+  const isConnection = block.kind === "connection";
   return (
     <div
       className={`rounded-xl border px-3 py-2.5 text-xs ${
-        isTarget
+        isConnection
           ? "border-[color-mix(in_srgb,var(--ds-info)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-info)_10%,transparent)] text-[var(--ds-info)] "
           : " border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)]  text-[var(--ds-warning)] "
       } ${className}`}
       role="status"
     >
       <div className="flex items-start gap-2">
-        {isTarget ? <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[var(--ds-info)]" /> : <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-[var(--ds-warning)] " />}
+        <ShieldAlert className={`mt-0.5 h-4 w-4 shrink-0 ${isConnection ? "text-[var(--ds-info)]" : "text-[var(--ds-warning)]"}`} />
         <div className="min-w-0">
           <div className="font-semibold">{block.title}</div>
           <p className="mt-0.5 leading-relaxed text-current/80">{block.message}</p>
-          {block.kind === "target" && (
+          {block.kind === "connection" && (
             <p className="mt-1 leading-relaxed text-current/80">
-              {Array.isArray(block.targetSelection?.options) && block.targetSelection.options.length
-                ? "Pick the Studio project below, then the agent will continue."
-                : "Choose the intended Studio project in the task controls, then retry the task."}
+              Open the NexusRBX plugin in Studio and connect it, then retry the task.
             </p>
           )}
           {block.kind === "mcp-fallback" && (
