@@ -90,7 +90,7 @@ export class StudioTargetManager {
 
   async attestCommandTarget(command: StudioCommand, signal?: AbortSignal): Promise<JsonObject> {
     return this.withTargetLock(async () => {
-      await this.refreshUnlocked(signal);
+      await this.refreshUnlocked(signal, { allowSignatureAdvance: true });
       // A verified write may legitimately advance the place signature. Recheck
       // every immutable fence against the freshly discovered target, but use
       // the new nonempty signature as the terminal attestation.
@@ -114,7 +114,10 @@ export class StudioTargetManager {
     }, signal);
   }
 
-  private async refreshUnlocked(signal?: AbortSignal): Promise<void> {
+  private async refreshUnlocked(
+    signal?: AbortSignal,
+    { allowSignatureAdvance = false }: { allowSignatureAdvance?: boolean } = {},
+  ): Promise<void> {
     try {
       const listed = await this.mcp.callTool("list_roblox_studios", {}, signal);
       assertTargetToolSucceeded(listed, "Studio target discovery failed.");
@@ -160,7 +163,9 @@ export class StudioTargetManager {
       }
       assertCompatibleIdentity("place", confirmedState.placeId || target?.placeId || "", probe.placeId);
       assertCompatibleIdentity("universe", confirmedState.universeId || target?.universeId || "", probe.universeId);
-      assertCompatibleIdentity("place signature", confirmedState.placeSignature || target?.placeSignature || "", probe.placeSignature);
+      if (!allowSignatureAdvance) {
+        assertCompatibleIdentity("place signature", confirmedState.placeSignature || target?.placeSignature || "", probe.placeSignature);
+      }
       this.activeStudioId = wanted;
       this.placeId = probe.placeId || confirmedState.placeId || target?.placeId || "";
       this.placeName = probe.placeName || confirmedState.placeName || target?.placeName || "";

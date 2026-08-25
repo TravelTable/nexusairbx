@@ -152,6 +152,50 @@ test("an unpublished local place is targetable when its Studio window and signat
   });
 });
 
+test("post-mutation attestation accepts a fresh probe signature while MCP target metadata catches up", async () => {
+  const mcp = new FakeMcp();
+  mcp.studios = [{
+    studio_id: "studio-local",
+    place_id: "0",
+    universe_id: "0",
+    place_name: "LocalArena.rbxl",
+    place_signature: "signature-before",
+  }];
+  mcp.probeIdentity = {
+    result: {
+      placeId: "0",
+      universeId: "0",
+      placeName: "LocalArena.rbxl",
+      placeSignature: "signature-before",
+    },
+  };
+  const manager = new StudioTargetManager(mcp, true);
+  await manager.refresh();
+
+  mcp.probeIdentity = {
+    result: {
+      placeId: "0",
+      universeId: "0",
+      placeName: "LocalArena.rbxl",
+      placeSignature: "signature-after",
+    },
+  };
+  const attestation = await manager.attestCommandTarget({
+    id: "mutation-command",
+    type: "create_script",
+    payload: {},
+    connectionType: "mcp_local",
+    expectedPlaceId: "0",
+    expectedUniverseId: "0",
+    expectedPlaceSignature: "signature-before",
+    expectedStudioWindowId: "studio-local",
+  });
+
+  assert.equal(attestation.studioWindowId, "studio-local");
+  assert.equal(attestation.placeSignature, "signature-after");
+  assert.equal(manager.placeSignature, "signature-after");
+});
+
 test("the identity probe cannot override a conflicting declared place", async () => {
   const mcp = new FakeMcp();
   mcp.studios = [{ studio_id: "studio-a", place_id: "101" }];

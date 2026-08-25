@@ -799,7 +799,7 @@ export class NexusLocalConnector {
     }
     if (capabilityRegistrationRequiredFromResponse(response)) {
       // A backend hot-deploy can introduce a stronger target/capability
-      // binding after this 0.2.11 process already registered with the previous
+      // binding after this process already registered with the previous
       // backend. Re-publish immediately without requiring a reconnect or
       // failing already-queued work as unsupported.
       this.#toolsDirty = true;
