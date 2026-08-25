@@ -70,6 +70,7 @@ test("native model safety tables are exported into the bundled command scope", (
     "NATIVE_BASE_PART_CLASSES",
     "NATIVE_CONSTRAINT_CLASSES",
     "NATIVE_LIGHT_CLASSES",
+    "NETWORKING_CLASSES",
     "NATIVE_PROPERTY_ALLOWLIST",
     "NATIVE_REFERENCE_FIELDS",
   ]) {

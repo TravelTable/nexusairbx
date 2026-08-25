@@ -463,7 +463,7 @@ end
 -- END src/net/chatClient.lua
 
 -- BEGIN src/studio/serialization.lua
-local SCRIPT_CLASSES, ensureManagedId, stableHash, nowMs, readManagedId, attributesOf, propertyHash, scriptHash, verifyExpectedScriptHash, propertiesOf, safePropertyValue, structuredUnsupported, lastBatchSnapshots, AGENT_ARTIFACT_ID_ATTRIBUTE, AGENT_FILE_ID_ATTRIBUTE, CREATABLE_CLASSES, NATIVE_MODEL_LIMITS, NATIVE_CLASSES, NATIVE_BASE_PART_CLASSES, NATIVE_CONSTRAINT_CLASSES, NATIVE_LIGHT_CLASSES, NATIVE_PROPERTY_ALLOWLIST, NATIVE_REFERENCE_FIELDS, escapePattern, escapeReplacement
+local SCRIPT_CLASSES, ensureManagedId, stableHash, nowMs, readManagedId, attributesOf, propertyHash, scriptHash, verifyExpectedScriptHash, propertiesOf, safePropertyValue, structuredUnsupported, lastBatchSnapshots, AGENT_ARTIFACT_ID_ATTRIBUTE, AGENT_FILE_ID_ATTRIBUTE, CREATABLE_CLASSES, NATIVE_MODEL_LIMITS, NATIVE_CLASSES, NATIVE_BASE_PART_CLASSES, NATIVE_CONSTRAINT_CLASSES, NATIVE_LIGHT_CLASSES, NETWORKING_CLASSES, NATIVE_PROPERTY_ALLOWLIST, NATIVE_REFERENCE_FIELDS, escapePattern, escapeReplacement
 do
 NATIVE_MODEL_LIMITS = {
 	maxInstances = 750,
@@ -598,7 +598,7 @@ SCRIPT_CLASSES = {
 	ModuleScript = true,
 }
 
-local NETWORKING_CLASSES = {
+NETWORKING_CLASSES = {
 	RemoteEvent = true,
 	RemoteFunction = true,
 	UnreliableRemoteEvent = true,
