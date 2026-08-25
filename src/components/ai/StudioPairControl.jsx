@@ -6,6 +6,7 @@ import {
   ChevronDown,
   Copy,
   ExternalLink,
+  Info,
   Link2,
   Loader2,
   Radio,
@@ -39,6 +40,24 @@ import {
 const MENU_WIDTH = 400;
 const MENU_MAX_HEIGHT = 520;
 const CURRENT_CONNECTOR_VERSION = "0.2.15";
+
+function InfoTooltip({ children }) {
+  return (
+    <span
+      className="group relative inline-flex cursor-help"
+      aria-label={`More information: ${children}`}
+      role="img"
+    >
+      <Info className="h-3.5 w-3.5 text-[var(--ds-text-muted)] transition-colors group-hover:text-[var(--ds-text-secondary)]" aria-hidden="true" />
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-52 -translate-x-1/2 rounded-lg border border-[var(--ds-border-strong)] bg-[var(--ds-surface-overlay)] px-2.5 py-2 text-[10px] font-normal leading-relaxed text-[var(--ds-text-secondary)] opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100"
+      >
+        {children}
+      </span>
+    </span>
+  );
+}
 
 /** @deprecated Prefer computeAnchoredMenuPosition — kept for existing Studio pair tests. */
 export function computeStudioPairMenuPosition(buttonRect, options) {
@@ -251,13 +270,13 @@ function StudioPluginSetupReference({ suggestedVisualId }) {
           id="studio-plugin-setup-heading"
           className="text-xs font-bold text-[var(--ds-text)]"
         >
-          Plugin setup reference
+          Setup
         </h3>
         <a
           href="/docs/installation"
           className="inline-flex min-h-11 items-center gap-1 text-[10px] font-bold text-[var(--ds-text-secondary)] underline decoration-[var(--ds-border-strong)] underline-offset-4 hover:text-[var(--ds-text)]"
         >
-          Full install guide <ExternalLink className="h-3 w-3" />
+          Install guide <ExternalLink className="h-3 w-3" />
         </a>
       </div>
 
@@ -265,10 +284,11 @@ function StudioPluginSetupReference({ suggestedVisualId }) {
         htmlFor="studio-plugin-setup-step"
         className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-[var(--ds-text-muted)]"
       >
-        Setup step
+        Step
       </label>
       <select
         id="studio-plugin-setup-step"
+        aria-label="Setup step"
         value={selectedVisual.id}
         onChange={(event) => selectVisual(event.target.value)}
         aria-describedby="studio-plugin-setup-instruction"
@@ -627,11 +647,6 @@ export default function StudioPairControl({
             disconnected: "Browser chat available — Studio not connected",
           }[connectionState] || "Connection degraded";
 
-  const transportLabel = (selection) => {
-    if (!selection) return "Unavailable";
-    return selection.connectionType === "mcp_local" ? "MCP" : "Plugin";
-  };
-
   const mcpPlace =
     latestMcpSession?.studio?.placeName ||
     latestMcpSession?.studio?.placeId ||
@@ -717,8 +732,7 @@ export default function StudioPairControl({
             </div>
 
             <p className="mb-3 text-[11px] leading-relaxed text-[var(--ds-text-secondary)]">
-              Browser chat stays available without Studio. Connect only when
-              NexusRBX needs to inspect, change, or verify the open place.
+              Use Studio to inspect, edit, or verify your place.
             </p>
 
             <div
@@ -739,14 +753,17 @@ export default function StudioPairControl({
                 data-studio-connection-method="plugin"
                 className={`min-h-11 border-l-2 px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--ds-focus-ring)] ${activeMethod === "plugin" ? "border-l-[var(--ds-accent)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text)]" : "border-l-transparent text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text-secondary)]"}`}
               >
-                <span className="block text-xs font-bold">
-                  Recommended: Studio plugin
+                <span className="flex items-center gap-1 text-xs font-bold">
+                  Studio plugin
+                  <InfoTooltip>
+                    Direct access to the open project, including context, edits, validation, and recovery.
+                  </InfoTooltip>
                 </span>
                 <span
                   className="mt-1 block text-[10px] font-normal leading-snug text-[var(--ds-text-muted)]"
                   aria-hidden="true"
                 >
-                  Project context, guarded apply, and recovery
+                  Recommended
                 </span>
               </button>
               <button
@@ -762,35 +779,19 @@ export default function StudioPairControl({
                 data-studio-connection-method="mcp"
                 className={`min-h-11 border-l-2 px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--ds-focus-ring)] ${activeMethod === "mcp" ? "border-l-[var(--ds-accent)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text)]" : "border-l-transparent text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text-secondary)]"}`}
               >
-                <span className="block text-xs font-bold">
-                  Advanced: Connector / Roblox Studio MCP
+                <span className="flex items-center gap-1 text-xs font-bold">
+                  Studio MCP
+                  <InfoTooltip>
+                    An advanced local MCP connection for compatible Studio tools.
+                  </InfoTooltip>
                 </span>
                 <span
                   className="mt-1 block text-[10px] font-normal leading-snug text-[var(--ds-text-muted)]"
                   aria-hidden="true"
                 >
-                  Optional local MCP transport
+                  Advanced
                 </span>
               </button>
-            </div>
-
-            <div className="mb-4 grid grid-cols-2 gap-2 border-y border-[var(--ds-border-subtle)] py-2.5 text-[10px]">
-              <div>
-                <span className="text-[var(--ds-text-muted)]">
-                  Chat inspection
-                </span>
-                <strong className="ml-1.5 text-[var(--ds-text)]">
-                  {transportLabel(transportSelection.chatInspection)}
-                </strong>
-              </div>
-              <div>
-                <span className="text-[var(--ds-text-muted)]">
-                  Full manifest
-                </span>
-                <strong className="ml-1.5 text-[var(--ds-text)]">
-                  {transportLabel(transportSelection.manifestCollection)}
-                </strong>
-              </div>
             </div>
 
             {activeMethod === "plugin" ? (
@@ -803,12 +804,10 @@ export default function StudioPairControl({
                 <div className="border-l-2 border-l-[var(--ds-accent)] pl-3">
                   <div className="mb-1 flex items-center gap-2 text-xs font-bold text-[var(--ds-text)]">
                     <Radio className="h-4 w-4 text-[var(--ds-accent)]" />{" "}
-                    NexusRBX Studio Plugin
+                    Studio plugin
                   </div>
                   <p className="text-[11px] leading-relaxed text-[var(--ds-text-secondary)]">
-                    Best for most users. It connects directly to your open
-                    project and supports project context, script editing, model
-                    workflows, validation, and safe recovery.
+                    Direct access to your open project.
                   </p>
                 </div>
                 <StudioPluginSetupReference

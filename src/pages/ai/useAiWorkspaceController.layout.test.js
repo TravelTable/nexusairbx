@@ -4,6 +4,7 @@ import {
   shouldCloseProjectSidebarOnViewportChange,
   shouldOpenProjectSidebarByDefault,
   shouldRequireStudioPlaceSelection,
+  studioChatIdFromSearch,
   studioPlaceSelectionMessage,
 } from "./useAiWorkspaceController";
 
@@ -25,6 +26,13 @@ describe("AI workspace project-sidebar defaults", () => {
     expect(shouldCloseProjectSidebarOnViewportChange(1200, 375)).toBe(true);
     expect(shouldCloseProjectSidebarOnViewportChange(1199, 375)).toBe(false);
     expect(shouldCloseProjectSidebarOnViewportChange(1440, 1200)).toBe(false);
+  });
+});
+
+describe("Studio conversation deep links", () => {
+  test("opens the canonical Nexus chat named by the plugin handoff", () => {
+    expect(studioChatIdFromSearch("?chat=chat_studio_123&source=studio")).toBe("chat_studio_123");
+    expect(studioChatIdFromSearch("?source=studio")).toBe("");
   });
 });
 

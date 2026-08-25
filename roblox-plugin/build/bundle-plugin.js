@@ -10,9 +10,14 @@ const sources = [
   "src/config.lua",
   "src/ui/components.lua",
   "src/net/httpClient.lua",
+  "src/net/chatClient.lua",
   "src/studio/serialization.lua",
   "src/studio/path.lua",
   "src/studio/snapshot.lua",
+  "src/ui/PluginHeader.lua",
+  "src/ui/ChatMessage.lua",
+  "src/ui/Composer.lua",
+  "src/ui/ToolActivity.lua",
   "src/ui/BridgePanel.lua",
   "src/commands/readTools.lua",
   "src/studio/targetIntegrity.lua",
@@ -42,9 +47,14 @@ const SERVICE_NAMES = [
 
 const WRAPPED_SOURCES = new Set([
   "src/net/httpClient.lua",
+  "src/net/chatClient.lua",
   "src/studio/serialization.lua",
   "src/studio/path.lua",
   "src/studio/snapshot.lua",
+  "src/ui/PluginHeader.lua",
+  "src/ui/ChatMessage.lua",
+  "src/ui/Composer.lua",
+  "src/ui/ToolActivity.lua",
   "src/ui/BridgePanel.lua",
   "src/commands/readTools.lua",
   "src/studio/targetIntegrity.lua",
@@ -57,6 +67,28 @@ const WRAPPED_SOURCES = new Set([
 ]);
 
 const MODULE_EXPORTS = {
+  "src/net/chatClient.lua": [
+    "studioChatEncoded",
+    "studioChatBootstrap",
+    "studioChatCreateConversation",
+    "studioChatLoadMessages",
+    "studioChatSendMessage",
+    "studioChatReadEvents",
+    "studioChatCancelRun",
+    "studioChatApproveRun",
+    "studioChatUndoRun",
+  ],
+  "src/ui/PluginHeader.lua": ["nexusHeaderButton", "createNexusPluginHeader"],
+  "src/ui/ChatMessage.lua": [
+    "nexusChatAddCorner",
+    "nexusChatAddPadding",
+    "createNexusChatMessage",
+    "updateNexusChatMessage",
+    "nexusChatNearBottom",
+    "scrollNexusChatToBottom",
+  ],
+  "src/ui/Composer.lua": ["nexusComposerRounded", "nexusComposerButton", "createNexusComposer"],
+  "src/ui/ToolActivity.lua": ["friendlyStudioActivity"],
   "src/ui/BridgePanel.lua": [
     "setStatus",
     "setLast",
@@ -106,6 +138,8 @@ const MODULE_EXPORTS = {
     "updateCollaborators",
     "setMcpCompanionStatus",
     "setConnectionDiagnostics",
+    "bootstrapStudioConversation",
+    "refreshStudioSelection",
   ],
   "src/studio/serialization.lua": [
     "SCRIPT_CLASSES",

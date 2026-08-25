@@ -103,7 +103,7 @@ describe("StudioPairControl", () => {
       "studio-connection-plugin-panel",
     );
     expect(
-      screen.getByText(/Browser chat stays available without Studio/i),
+      screen.getByText(/Use Studio to inspect, edit, or verify your place/i),
     ).toBeTruthy();
     expect(
       screen.getByRole("tabpanel", { name: "Recommended: Studio plugin" }),
@@ -406,7 +406,6 @@ describe("StudioPairControl", () => {
     expect(screen.getAllByText("Studio plugin update required").length).toBeGreaterThan(0);
     expect(screen.getByText(/This plugin release is no longer supported/i)).toBeTruthy();
     expect(screen.getByText(/NexusRBXStudioBridge\.plugin\.lua/i)).toBeTruthy();
-    expect(screen.getByText("Full manifest").parentElement.textContent).toContain("Unavailable");
   });
 
   test("makes a missing Create Instance command recoverable without disconnecting", () => {

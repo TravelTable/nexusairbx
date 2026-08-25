@@ -4,28 +4,48 @@ const path = require("node:path");
 const test = require("node:test");
 
 const pluginRoot = path.resolve(__dirname, "..");
+const read = (relativePath) => fs.readFileSync(path.join(pluginRoot, relativePath), "utf8");
+const sourceUi = [
+  "src/ui/PluginHeader.lua",
+  "src/ui/ChatMessage.lua",
+  "src/ui/Composer.lua",
+  "src/ui/ToolActivity.lua",
+  "src/ui/BridgePanel.lua",
+  "src/net/chatClient.lua",
+].map(read).join("\n");
 
-function read(relativePath) {
-  return fs.readFileSync(path.join(pluginRoot, relativePath), "utf8");
-}
-
-for (const relativePath of ["src/ui/BridgePanel.lua", "NexusRBXStudioBridge.plugin.lua"]) {
-  test(`${relativePath} keeps chat primary, dark, and synchronized`, () => {
-    const source = read(relativePath);
-    assert.match(source, /activeTab[^\n]+"Chat"/);
-    assert.match(source, /local TAB_ORDER = \{ "Chat", "Activity", "Recovery", "Settings" \}/);
+for (const [name, source] of [
+  ["componentized Studio UI", sourceUi],
+  ["bundled Studio plugin", read("NexusRBXStudioBridge.plugin.lua")],
+]) {
+  test(`${name} is a project-aware streaming Nexus chat`, () => {
     assert.match(source, /canvas = Color3\.fromRGB\(17, 18, 20\)/);
-    assert.match(source, /conversationSection = makeSection\("Conversation"\)/);
-    assert.match(source, /promptSection\.Parent = root/);
-    assert.match(source, /promptSection\.AnchorPoint = Vector2\.new\(0, 1\)/);
-    assert.match(source, /\/api\/studio\/agent\/chat\/messages\?limit=30/);
-    assert.match(source, /\/api\/studio\/agent\/runs\/" \.\. runId/);
+    assert.match(source, /createNexusPluginHeader/);
+    assert.match(source, /createNexusChatMessage/);
+    assert.match(source, /createNexusComposer/);
+    assert.match(source, /\{ "Plan", "Ask", "Agent" \}/);
+    assert.match(source, /What do you want to build\?/);
+    assert.match(source, /tabBar\.Visible = false/);
+    assert.match(source, /studioChatBootstrap/);
+    assert.match(source, /\/api\/studio\/chat\/bootstrap/);
+    assert.match(source, /\/api\/studio\/chat\/runs\//);
+    assert.match(source, /eventType == "delta"/);
+    assert.match(source, /eventType == "tool_step"/);
+    assert.match(source, /studioChatCancelRun/);
+    assert.match(source, /studioChatApproveRun/);
+    assert.match(source, /studioChatUndoRun/);
+    assert.match(source, /resumeRunId/);
+    assert.match(source, /refreshStudioSelection/);
+    assert.match(source, /nexusChatNearBottom/);
     assert.match(source, /appendChatMessage\(approvalId, "assistant"/);
-    assert.match(source, /approvalOverlay\.Visible = false\s+setActiveTab\("Chat"\)/);
-    assert.match(source, /local UI_HELPERS = \{\}/);
-    assert.doesNotMatch(
-      source,
-      /^local function (formatTime|stateFromLegacy|clearErrorBanner|setBanner|getApprovalModeEnabled|refreshApprovalToggle|rebuildSnapshotList|resizeStatusPill|errorHelpFor|describeAffectedPaths)\(/m,
-    );
+    assert.doesNotMatch(source, /ProjectIdInput|nexusrbxProjectId/);
+    assert.doesNotMatch(source, /Script mode|Quick Script/i);
   });
 }
+
+test("chat UI responsibilities stay split into focused source files", () => {
+  for (const file of ["PluginHeader.lua", "ChatMessage.lua", "Composer.lua", "ToolActivity.lua"]) {
+    assert.ok(fs.existsSync(path.join(pluginRoot, "src", "ui", file)), `${file} should exist`);
+  }
+  assert.ok(fs.existsSync(path.join(pluginRoot, "src", "net", "chatClient.lua")));
+});

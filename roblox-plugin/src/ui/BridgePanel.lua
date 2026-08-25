@@ -1,14 +1,13 @@
--- NexusRBX Studio Bridge UI
--- Dock panel: pairing, activity feed, recovery, approval gate, health.
+-- Nexus inside Roblox Studio.
+-- The normal surface is intentionally only a header, conversation, and composer;
+-- legacy connection and recovery controls remain available inside Settings.
 
 local TweenService = game:GetService("TweenService")
 
-local displayPluginVersion = PLUGIN_VERSION or "0.12.0-script-context"
-local displayProtocolVersion = STUDIO_PROTOCOL_VERSION or "2026-07-30-script-context"
-local MAX_ACTIVITY_ENTRIES = 25
+local displayPluginVersion, displayProtocolVersion, MAX_ACTIVITY_ENTRIES = PLUGIN_VERSION or "0.12.0-script-context", STUDIO_PROTOCOL_VERSION or "2026-07-30-script-context", 25
 
 local toolbar = plugin:CreateToolbar("NexusRBX")
-local toggleButton = toolbar:CreateButton("NexusRBX", "Open NexusRBX Studio Bridge", "")
+local toggleButton = toolbar:CreateButton("NexusRBX", "Open Nexus", "")
 toggleButton.ClickableWhenViewportHidden = true
 
 -- Open as a floating, draggable window instead of docked to the side. Studio
@@ -27,8 +26,7 @@ local widget = plugin:CreateDockWidgetPluginGui("NexusRBXStudioBridge", widgetIn
 widget.Title = "NexusRBX"
 
 -- `localSnapshots` is initialized in the bundled shared preamble before snapshot.lua.
-local applying = false
-local pollingActive, lastErrorText, diagnosticsOpen, pendingApproval, selectedSnapshotIds = false, nil, false, nil, {}
+local applying, pollingActive, lastErrorText, diagnosticsOpen, pendingApproval, selectedSnapshotIds = false, false, nil, false, nil, {}
 
 -- Tabbed navigation state. Sections are grouped into tabs and shown/hidden by
 -- `setActiveTab`; `refreshControls` derives per-section visibility from the
@@ -36,7 +34,23 @@ local pollingActive, lastErrorText, diagnosticsOpen, pendingApproval, selectedSn
 -- bundler's top-level local budget.
 local tabButtons, activeTab, setActiveTab, tabBar, promptSection = {}, "Chat", nil, nil, nil
 local conversationSection, chatMessageList, chatEmptyLabel, chatSuggestions, appendChatMessage, updateChatMessage, syncChatMessages
-local UI_HELPERS = {}
+local nexusHeader, chatComposer, chatRuntime, UI_HELPERS
+UI_HELPERS = {}
+
+chatRuntime = {
+	chatId = tostring(plugin:GetSetting("nexusrbxActiveChatId") or ""),
+	runId = "",
+	messageId = "",
+	requestId = "",
+	afterSeq = 0,
+	afterCursor = "",
+	streaming = false,
+	resumeRunId = "",
+	resumeMessageId = "",
+	selection = nil,
+	settingsOpen = false,
+	bootstrapping = false,
+}
 
 local function themeColor(color)
 	-- NexusRBX remains a dark, low-glare workspace even when Studio itself uses
@@ -293,6 +307,10 @@ do
 	statusPillPad.PaddingLeft = UDim.new(0, STATUS_PILL_PAD)
 	statusPillPad.PaddingRight = UDim.new(0, STATUS_PILL_PAD)
 	statusPillPad.Parent = statusPill
+	header.Visible = false
+	nexusHeader = createNexusPluginHeader(root, COLORS)
+	scroll.Position = UDim2.new(0, 0, 0, 53)
+	scroll.Size = UDim2.new(1, 0, 1, -53)
 end
 
 local banner = Instance.new("TextButton")
@@ -351,7 +369,7 @@ do
 end
 
 local pairSection = makeSection("Pairing")
-makeText(pairSection, "PairTitle", "Pair Studio", 18, 13, true)
+makeText(pairSection, "PairTitle", "Sign in to Nexus", 22, 15, true)
 codeBox = Instance.new("TextBox")
 codeBox.Name = "PairingCode"
 codeBox.Size = UDim2.new(1, 0, 0, 34)
@@ -365,7 +383,7 @@ codeBox.TextSize = 14
 codeBox.Parent = pairSection
 applyCorner(codeBox, 6)
 applyStroke(codeBox, COLORS.primary, 0.45)
-pairButton = makeButton(pairSection, "PairButton", "Pair Studio", COLORS.primary)
+pairButton = makeButton(pairSection, "PairButton", "Continue", COLORS.primary)
 
 setupSteps = makeText(
 	pairSection,
@@ -386,8 +404,10 @@ setupSteps = makeText(
 	true
 )
 setupSteps.TextWrapped = true
+setupSteps.Text = "Enter the one-time code from Nexus. You will return straight to chat next time."
 
 checkSetupButton = makeButton(pairSection, "CheckSetupButton", "Check setup", themeColor(Enum.StudioStyleGuideColor.Button))
+checkSetupButton.Visible = false
 
 setupResult = makeText(pairSection, "SetupResult", "", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
 setupResult.TextWrapped = true
@@ -450,11 +470,12 @@ manifestFreshnessLabel = makeText(manifestSection, "ManifestFreshness", "Rescan 
 -- assistant result instead of requiring a separate activity dashboard.
 conversationSection = makeSection("Conversation")
 conversationSection.BackgroundColor3 = COLORS.canvas
-makeText(conversationSection, "ConversationTitle", "Nexus chat", 20, 14, true, COLORS.text)
+local conversationTitle = makeText(conversationSection, "ConversationTitle", "Nexus chat", 20, 14, true, COLORS.text)
+conversationTitle.Visible = false
 chatEmptyLabel = makeText(
 	conversationSection,
 	"ChatEmpty",
-	"Ask Nexus to build, inspect, explain, or fix something in this place.",
+	"What do you want to build?",
 	nil,
 	13,
 	false,
@@ -515,40 +536,24 @@ appendChatMessage = function(id, role, content, state, detail)
 	end
 	chatEmptyLabel.Visible = false
 	chatSuggestions.Visible = false
-	local message = Instance.new("Frame")
-	message.Name = "ChatMessage"
-	message:SetAttribute("ChatMessageId", messageId)
-	message:SetAttribute("ChatRole", tostring(role or "assistant"))
-	message.Size = UDim2.new(1, 0, 0, 0)
-	message.AutomaticSize = Enum.AutomaticSize.Y
-	message.BackgroundColor3 = role == "user" and Color3.fromRGB(56, 35, 94)
-		or (role == "event" and COLORS.surfaceRaised or COLORS.surface)
-	message.BackgroundTransparency = role == "event" and 0.2 or 0
-	message.BorderSizePixel = 0
-	message.Parent = chatMessageList
-	applyCorner(message, role == "event" and 6 or 10)
-	applyStroke(message, role == "user" and COLORS.accent or COLORS.border, role == "event" and 0.55 or 0.35)
-	local messagePadding = Instance.new("UIPadding")
-	messagePadding.PaddingTop = UDim.new(0, role == "event" and 7 or 9)
-	messagePadding.PaddingBottom = UDim.new(0, role == "event" and 7 or 9)
-	messagePadding.PaddingLeft = UDim.new(0, 10)
-	messagePadding.PaddingRight = UDim.new(0, 10)
-	messagePadding.Parent = message
-	local messageLayout = Instance.new("UIListLayout")
-	messageLayout.Padding = UDim.new(0, 4)
-	messageLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	messageLayout.Parent = message
-	local author = role == "user" and "You" or (role == "event" and "Studio" or "Nexus")
-	makeText(message, "Author", author, 16, 11, true, role == "assistant" and Color3.fromRGB(183, 157, 239) or COLORS.textMuted)
-	local body = makeText(message, "Body", tostring(content or ""), nil, role == "event" and 12 or 13, false, COLORS.text)
-	body.TextWrapped = true
-	local status = makeText(message, "Status", chatStateText(state, detail), nil, 11, false, state == "failed" and COLORS.error or COLORS.textMuted)
-	status.TextWrapped = true
-	status.Visible = status.Text ~= ""
-	task.defer(function()
-		local maxY = math.max(0, scroll.AbsoluteCanvasSize.Y - scroll.AbsoluteSize.Y)
-		scroll.CanvasPosition = Vector2.new(0, maxY)
-	end)
+	local wasNearBottom = nexusChatNearBottom(scroll, 84)
+	local message = createNexusChatMessage(chatMessageList, {
+		id = messageId,
+		role = role,
+		content = tostring(content or ""),
+		status = chatStateText(state, detail),
+		failed = state == "failed",
+		colors = {
+			canvas = COLORS.canvas,
+			raised = COLORS.surfaceRaised,
+			user = Color3.fromRGB(56, 35, 94),
+			text = COLORS.text,
+			muted = COLORS.textMuted,
+			accentText = Color3.fromRGB(183, 157, 239),
+			error = COLORS.error,
+		},
+	})
+	if wasNearBottom then scrollNexusChatToBottom(scroll) end
 	return message
 end
 
@@ -556,16 +561,13 @@ updateChatMessage = function(id, content, state, detail)
 	local messageId = tostring(id or "")
 	for _, child in ipairs(chatMessageList:GetChildren()) do
 		if child:GetAttribute("ChatMessageId") == messageId then
-			local body = child:FindFirstChild("Body")
-			local status = child:FindFirstChild("Status")
-			if body and content ~= nil and tostring(content) ~= "" then
-				body.Text = tostring(content)
-			end
-			if status then
-				status.Text = chatStateText(state, detail)
-				status.TextColor3 = state == "failed" and COLORS.error or COLORS.textMuted
-				status.Visible = status.Text ~= ""
-			end
+			local wasNearBottom = nexusChatNearBottom(scroll, 84)
+			updateNexusChatMessage(child, {
+				content = content,
+				status = chatStateText(state, detail),
+				statusColor = state == "failed" and COLORS.error or COLORS.textMuted,
+			})
+			if wasNearBottom then scrollNexusChatToBottom(scroll) end
 			return child
 		end
 	end
@@ -574,14 +576,23 @@ end
 
 syncChatMessages = function()
 	local token = getToken and getToken() or nil
-	if not token then return false end
-	local ok, data = request("GET", "/api/studio/agent/chat/messages?limit=30", nil, token)
+	if not token or chatRuntime.chatId == "" then return false end
+	local ok, data = studioChatLoadMessages(token, chatRuntime.chatId, 50)
 	if not ok or type(data) ~= "table" or type(data.messages) ~= "table" then
 		return false
 	end
+	chatRuntime.resumeRunId = ""
+	chatRuntime.resumeMessageId = ""
+	for _, child in ipairs(chatMessageList:GetChildren()) do
+		if child:IsA("Frame") and child:GetAttribute("ChatMessageId") then child:Destroy() end
+	end
 	for _, message in ipairs(data.messages) do
 		local content = tostring(message.content or "")
-		if content == "" and message.state == "working" then
+		local resumableRunId = message.state == "working" and tostring(message.runId or "") or ""
+		if resumableRunId ~= "" then
+			chatRuntime.resumeRunId = resumableRunId
+			chatRuntime.resumeMessageId = tostring(message.id or "")
+		elseif content == "" and message.state == "working" then
 			content = "Working on the Studio request..."
 		elseif content == "" and message.error then
 			content = tostring(message.error)
@@ -592,188 +603,324 @@ syncChatMessages = function()
 		end
 		appendChatMessage(message.id, message.role, content, message.state, detail)
 	end
+	chatEmptyLabel.Visible = #data.messages == 0
+	chatSuggestions.Visible = #data.messages == 0
 	return true
 end
 
--- In-Studio prompt bar (Agent tab). Starts the full agent for the paired user;
--- resulting commands flow back through the normal poll/execute/approval loop and
--- the run is mirrored to the website chat. Wrapped in a do-block so its locals
--- stay off the bundler's top-level budget; promptSection is module-scope so
--- refreshControls can toggle its visibility per tab.
+-- Compact conversational composer. Studio identity and project association are
+-- resolved by the authenticated session, so the user never selects a project.
 do
-	promptSection = makeSection("StudioPrompt")
-	local promptTitle = makeText(promptSection, "PromptTitle", "Message Nexus", 18, 13, true)
-	local promptHint = makeText(promptSection, "PromptHint", "Nexus uses the paired place and your current project context.", 28, 11, false, COLORS.textMuted)
-	promptTitle.Visible = false
-	promptHint.Visible = false
-	local projectBox = Instance.new("TextBox")
-	projectBox.Name = "ProjectIdInput"
-	projectBox.Size = UDim2.new(1, 0, 0, 30)
-	projectBox.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.MainBackground)
-	projectBox.TextColor3 = themeColor(Enum.StudioStyleGuideColor.MainText)
-	projectBox.PlaceholderText = "Nexus project ID (needed only if this place is not linked)"
-	projectBox.ClearTextOnFocus = false
-	projectBox.Text = tostring(plugin:GetSetting("nexusrbxProjectId") or "")
-	projectBox.Font = Enum.Font.Gotham
-	projectBox.TextSize = 13
-	projectBox.Visible = false
-	projectBox.Parent = promptSection
-	applyCorner(projectBox, 6)
-	applyStroke(projectBox, COLORS.border, 0.55)
-	projectBox.FocusLost:Connect(function()
-		plugin:SetSetting("nexusrbxProjectId", (projectBox.Text or ""):gsub("^%s+", ""):gsub("%s+$", ""))
-	end)
-	local promptBox = Instance.new("TextBox")
-	promptBox.Name = "PromptInput"
-	promptBox.Size = UDim2.new(1, 0, 0, 60)
-	promptBox.BackgroundColor3 = themeColor(Enum.StudioStyleGuideColor.MainBackground)
-	promptBox.TextColor3 = themeColor(Enum.StudioStyleGuideColor.MainText)
-	promptBox.PlaceholderText = "Ask Nexus about this place..."
-	promptBox.ClearTextOnFocus = false
-	promptBox.MultiLine = true
-	promptBox.TextWrapped = true
-	promptBox.TextXAlignment = Enum.TextXAlignment.Left
-	promptBox.TextYAlignment = Enum.TextYAlignment.Top
-	promptBox.Text = ""
-	promptBox.Font = Enum.Font.Gotham
-	promptBox.TextSize = 14
-	promptBox.Parent = promptSection
-	applyCorner(promptBox, 6)
-	applyStroke(promptBox, COLORS.accent, 0.45)
-	local promptPad = Instance.new("UIPadding")
-	promptPad.PaddingTop = UDim.new(0, 6)
-	promptPad.PaddingBottom = UDim.new(0, 6)
-	promptPad.PaddingLeft = UDim.new(0, 8)
-	promptPad.PaddingRight = UDim.new(0, 8)
-	promptPad.Parent = promptBox
-	local sendButton = makeButton(promptSection, "PromptSend", "Send", COLORS.primary)
-
+	local storedMode = tostring(plugin:GetSetting("nexusrbxChatMode") or "agent")
+	chatComposer = createNexusComposer(root, COLORS, storedMode)
+	promptSection = chatComposer.root
 	for index, suggestion in ipairs({
-		{ "Build UI", "Build a clean interface for the selected gameplay system." },
-		{ "Fix errors", "Check the latest playtest errors and fix the root cause." },
-		{ "Explain", "Explain how the selected scripts work together." },
+		{ "Fix a bug", "Investigate the current game and fix the most relevant error." },
+		{ "Build a system", "Build the gameplay system I describe in this game." },
+		{ "Improve selection", "Improve the selected Studio UI or instance." },
 	}) do
 		local suggestionButton = makeButton(chatSuggestions, "Suggestion" .. tostring(index), suggestion[1], COLORS.surfaceRaised, true)
 		suggestionButton.Size = UDim2.new(0.333, -4, 0, 32)
 		suggestionButton.MouseButton1Click:Connect(function()
-			promptBox.Text = suggestion[2]
-			promptBox:CaptureFocus()
+			chatComposer.input.Text = suggestion[2]
+			chatComposer.input:CaptureFocus()
 		end)
 	end
 
-	local function setProjectFallbackVisible(visible)
-		projectBox.Visible = visible == true
-		promptSection.Size = UDim2.new(1, -24, 0, visible and 160 or 122)
-		if promptSection.Visible then
-			scroll.Size = UDim2.new(1, 0, 1, -(promptSection.Size.Y.Offset + 24))
+	local function messageById(messageId)
+		for _, child in ipairs(chatMessageList:GetChildren()) do
+			if child:GetAttribute("ChatMessageId") == tostring(messageId or "") then return child end
 		end
+		return nil
 	end
 
-	-- Keep the composer anchored to the bottom of the dock. The primary scroll
-	-- area is resized in refreshControls so messages never disappear behind it.
-	promptSection.Parent = root
-	promptSection.AnchorPoint = Vector2.new(0, 1)
-	promptSection.Position = UDim2.new(0, 12, 1, -12)
-	promptSection.AutomaticSize = Enum.AutomaticSize.None
-	promptSection.BackgroundColor3 = COLORS.surface
-	promptSection.ZIndex = 3
-	setProjectFallbackVisible(false)
-	for _, descendant in ipairs(promptSection:GetDescendants()) do
-		if descendant:IsA("GuiObject") then
-			descendant.ZIndex = 3
+	local function clearConversationView()
+		for _, child in ipairs(chatMessageList:GetChildren()) do
+			if child:IsA("Frame") and child:GetAttribute("ChatMessageId") then child:Destroy() end
 		end
+		chatEmptyLabel.Visible = true
+		chatSuggestions.Visible = true
 	end
 
-	local function submitPrompt()
-		if sendButton:GetAttribute("NexusEnabled") == false then
-			return
-		end
-		local token = getToken and getToken() or nil
-		if not token then
-			showToast("Pair Studio first", "error")
-			return
-		end
-		local text = (promptBox.Text or ""):gsub("^%s+", ""):gsub("%s+$", "")
-		local projectId = (projectBox.Text or ""):gsub("^%s+", ""):gsub("%s+$", "")
-		if text == "" then
-			showToast("Enter a prompt", "info")
-			promptBox:CaptureFocus()
-			return
-		end
-		setButtonEnabled(sendButton, false, "Sending...")
-		local operationId = HttpService:GenerateGUID(false)
-		appendChatMessage(operationId .. "-user", "user", text, "", "")
-		appendChatMessage(operationId .. "-assistant", "assistant", "Starting the Studio agent...", "working", "Sending")
-		if projectId ~= "" then
-			plugin:SetSetting("nexusrbxProjectId", projectId)
-		end
-		local ok, dataOrError = request("POST", "/api/studio/agent/prompt", {
-			prompt = text,
-			projectId = projectId,
-			chatMode = "agent",
-			requestId = operationId,
-		}, token, {
-			idempotent = true,
-			idempotencyKey = operationId,
-		})
-		setButtonEnabled(sendButton, true, "Send")
-		if ok then
-			promptBox.Text = ""
-			local resolvedProjectId = tostring(dataOrError.projectId or projectId or "")
-			if resolvedProjectId ~= "" then
-				projectBox.Text = resolvedProjectId
-				plugin:SetSetting("nexusrbxProjectId", resolvedProjectId)
-				setProjectFallbackVisible(false)
+	local function addUndoAction(message, runId)
+		if not message or runId == "" then return end
+		local bubble = message:FindFirstChild("Bubble") or message
+		if bubble:FindFirstChild("UndoAction") then return end
+		local undo = makeButton(bubble, "UndoAction", "Undo", COLORS.surfaceRaised, true)
+		undo.Size = UDim2.new(0, 64, 0, 26)
+		undo.MouseButton1Click:Connect(function()
+			setButtonEnabled(undo, false, "Undoing...")
+			local token = getToken and getToken() or nil
+			local ok, result
+			if token then
+				ok, result = studioChatUndoRun(
+					token,
+					runId,
+					chatRuntime.chatId,
+					HttpService:GenerateGUID(false)
+				)
+			else
+				ok, result = false, "Studio is disconnected"
 			end
-			setLast("agent run started from Studio")
-			pushActivity({
-				commandType = "agent_prompt",
-				status = "succeeded",
-				detail = text:sub(1, 80),
-			})
-			showToast("Nexus is working in this place", "success")
-			local runId = tostring(dataOrError.runId or "")
-			if runId ~= "" then
-				task.spawn(function()
-					local attempts = 0
-					while attempts < 900 and getToken and getToken() do
-						attempts = attempts + 1
-						local runOk, runData = request("GET", "/api/studio/agent/runs/" .. runId, nil, getToken())
-						if runOk and type(runData) == "table" then
-							local assistant = type(runData.assistant) == "table" and runData.assistant or {}
-							local detail = tostring(assistant.stage or runData.status or "Working")
-							if type(assistant.files) == "table" and #assistant.files > 0 then
-								detail = detail .. "  ·  " .. tostring(#assistant.files) .. " file(s)"
-							end
-							local content = tostring(assistant.content or "")
-							if assistant.state == "failed" and tostring(assistant.error or "") ~= "" then
-								content = tostring(assistant.error)
-							end
-							updateChatMessage(operationId .. "-assistant", content, assistant.state or "working", detail)
-							if assistant.state == "completed" or assistant.state == "failed" then
-								break
-							end
-						end
-						task.wait(2)
+			if ok then
+				undo.Text = "Undo queued"
+				showToast("Restoring the previous version", "success")
+			else
+				setButtonEnabled(undo, true, "Undo")
+				showToast(tostring(result or "Undo is unavailable"), "error")
+			end
+		end)
+	end
+
+	local function addApprovalAction(message, runId, stepId)
+		if not message or runId == "" or tostring(stepId or "") == "" then return end
+		local bubble = message:FindFirstChild("Bubble") or message
+		local actionName = "ApprovalAction-" .. tostring(stepId)
+		if bubble:FindFirstChild(actionName) then return end
+		local actions = makeRow(bubble, actionName, 32)
+		local apply = makeButton(actions, "Apply", "Apply", COLORS.primary, true)
+		apply.Size = UDim2.new(0.5, -4, 0, 32)
+		local decline = makeButton(actions, "Decline", "Cancel", COLORS.surfaceRaised, true)
+		decline.Size = UDim2.new(0.5, -4, 0, 32)
+		local function decide(decision)
+			setButtonEnabled(apply, false, decision == "approve" and "Applying..." or "Apply")
+			setButtonEnabled(decline, false, decision == "decline" and "Cancelling..." or "Cancel")
+			task.spawn(function()
+				local ok, result = studioChatApproveRun(getToken(), runId, chatRuntime.chatId, stepId, decision)
+				if ok then
+					actions:Destroy()
+					updateChatMessage(message:GetAttribute("ChatMessageId"), nil, "working", decision == "approve" and "Applying approved change" or "Cancelled")
+				else
+					setButtonEnabled(apply, true, "Apply")
+					setButtonEnabled(decline, true, "Cancel")
+					showToast(tostring(result or "That decision could not be saved"), "error")
+				end
+			end)
+		end
+		apply.MouseButton1Click:Connect(function() decide("approve") end)
+		decline.MouseButton1Click:Connect(function() decide("decline") end)
+	end
+
+	local function streamRun(runId, messageId)
+		chatRuntime.runId = tostring(runId or "")
+		chatRuntime.messageId = tostring(messageId or "")
+		chatRuntime.afterSeq = 0
+		chatRuntime.afterCursor = ""
+		chatRuntime.streaming = chatRuntime.runId ~= ""
+		chatRuntime.seenEvents = {}
+		chatComposer:setStreaming(chatRuntime.streaming)
+		local failures = 0
+		while chatRuntime.streaming and chatRuntime.runId == runId and getToken and getToken() do
+			local ok, data = studioChatReadEvents(
+				getToken(),
+				runId,
+				chatRuntime.chatId,
+				chatRuntime.afterSeq,
+				chatRuntime.afterCursor,
+				12000
+			)
+			if not chatRuntime.streaming or chatRuntime.runId ~= runId then break end
+			if not ok then
+				failures = failures + 1
+				updateChatMessage(messageId, nil, "working", failures < 3 and "Reconnecting..." or "Studio connection interrupted")
+				if failures >= 6 then
+					updateChatMessage(messageId, "I lost the connection while following that task. Your last confirmed Studio changes are safe.", "failed", "Reconnect · Try again")
+					break
+				end
+				task.wait(math.min(failures * 1.5, 8))
+				continue
+			end
+			failures = 0
+			chatRuntime.afterSeq = tonumber(data.nextSeq) or chatRuntime.afterSeq
+			chatRuntime.afterCursor = tostring(data.nextCursor or chatRuntime.afterCursor)
+			for _, event in ipairs(type(data.events) == "table" and data.events or {}) do
+				local eventId = tostring(event.eventId or (event.type .. ":" .. tostring(event.seq or "")))
+				if chatRuntime.seenEvents[eventId] then continue end
+				chatRuntime.seenEvents[eventId] = true
+				local eventType = tostring(event.type or "")
+				local eventData = type(event.data) == "table" and event.data or {}
+				local message = messageById(messageId)
+				if eventType == "delta" then
+					local shouldFollow = nexusChatNearBottom(scroll, 84)
+					updateNexusChatMessage(message, { delta = tostring(eventData.text or ""), status = "" })
+					if shouldFollow then scrollNexusChatToBottom(scroll) end
+				elseif eventType == "tool_step" then
+					local label, state = friendlyStudioActivity(eventData.type, eventData.label, eventData.status)
+					updateChatMessage(messageId, nil, state, label)
+					if eventData.requiresApproval == true then
+						addApprovalAction(messageById(messageId), runId, eventData.id)
 					end
-					syncChatMessages()
-				end)
+				elseif eventType == "stage" or eventType == "heartbeat" then
+					updateChatMessage(messageId, nil, "working", tostring(eventData.message or "Working"))
+				elseif eventType == "done" then
+					local content = tostring(eventData.content or "Done.")
+					local detail = type(eventData.files) == "table" and #eventData.files > 0
+						and (tostring(#eventData.files) .. " file(s) changed") or "Done"
+					updateChatMessage(messageId, content, "completed", detail)
+					if eventData.undoAvailable == true then addUndoAction(messageById(messageId), runId) end
+				elseif eventType == "error" then
+					updateChatMessage(messageId, tostring(eventData.message or "That request did not complete."), "failed", eventData.retryable and "Try again" or "")
+				end
 			end
-		else
-			local message = tostring(dataOrError or "Prompt failed")
-			setLast("agent prompt failed: " .. message)
-			updateChatMessage(operationId .. "-assistant", message, "failed", "Try again")
-			local loweredMessage = string.lower(message)
-			if string.find(loweredMessage, "choose the nexus project for this studio place")
-				or string.find(loweredMessage, "project could not be bound") then
-				setProjectFallbackVisible(true)
-				projectBox:CaptureFocus()
-			end
-			showToast(message, "error")
+			if data.terminal == true then break end
+		end
+		if chatRuntime.runId == runId then
+			chatRuntime.streaming = false
+			chatRuntime.runId = ""
+			chatComposer:setStreaming(false)
+			syncChatMessages()
 		end
 	end
 
-	sendButton.MouseButton1Click:Connect(submitPrompt)
+	function bootstrapStudioConversation(force)
+		local token = getToken and getToken() or nil
+		if not token or chatRuntime.bootstrapping then return false end
+		if not force and chatRuntime.chatId ~= "" and conversationSection:GetAttribute("HistoryLoaded") == true then
+			return true
+		end
+		chatRuntime.bootstrapping = true
+		local ok, data = studioChatBootstrap(token, chatRuntime.chatId)
+		if not ok or type(data) ~= "table" then
+			chatRuntime.bootstrapping = false
+			showToast(tostring(data or "Nexus could not load this game yet"), "error")
+			return false
+		end
+		local project = type(data.project) == "table" and data.project or {}
+		local studioContext = type(data.studioContext) == "table" and data.studioContext or {}
+		nexusHeader.gameLabel.Text = tostring(project.title or studioContext.placeName or game.Name)
+		local active = type(data.activeConversation) == "table" and data.activeConversation or nil
+		if not active then
+			local createdOk, createdData = studioChatCreateConversation(token, chatComposer.mode)
+			if createdOk and type(createdData) == "table" then active = createdData.conversation end
+		end
+		if type(active) ~= "table" or tostring(active.id or "") == "" then
+			chatRuntime.bootstrapping = false
+			showToast("Nexus could not open a conversation for this game", "error")
+			return false
+		end
+		local nextChatId = tostring(active.id)
+		if chatRuntime.streaming and chatRuntime.chatId ~= "" and chatRuntime.chatId ~= nextChatId then
+			local previousRunId, previousChatId = chatRuntime.runId, chatRuntime.chatId
+			chatRuntime.streaming = false
+			chatRuntime.runId = ""
+			chatComposer:setStreaming(false)
+			task.spawn(function()
+				if previousRunId ~= "" then studioChatCancelRun(token, previousRunId, previousChatId) end
+			end)
+		end
+		chatRuntime.chatId = nextChatId
+		plugin:SetSetting("nexusrbxActiveChatId", chatRuntime.chatId)
+		chatComposer:setMode(active.activeMode or chatComposer.mode)
+		local historyLoaded = syncChatMessages()
+		conversationSection:SetAttribute("HistoryLoaded", historyLoaded)
+		chatRuntime.bootstrapping = false
+		if historyLoaded and not chatRuntime.streaming and chatRuntime.resumeRunId ~= "" then
+			local resumeRunId, resumeMessageId = chatRuntime.resumeRunId, chatRuntime.resumeMessageId
+			task.spawn(function() streamRun(resumeRunId, resumeMessageId) end)
+		end
+		return true
+	end
+
+	function refreshStudioSelection()
+		local ok, result = pcall(function() return getSelectionTool() end)
+		local selected = ok and type(result) == "table" and result.selection or {}
+		if type(selected) ~= "table" or #selected == 0 then
+			chatRuntime.selection = nil
+			chatComposer:setSelection("")
+			return
+		end
+		local items = {}
+		for index = 1, math.min(#selected, 5) do
+			local item = selected[index]
+			table.insert(items, {
+				name = tostring(item.name or item.path or "Selection"),
+				className = tostring(item.className or "Instance"),
+				path = tostring(item.path or ""),
+			})
+		end
+		local targetOk, target = pcall(function() return currentStudioTargetAttestation(false) end)
+		chatRuntime.selection = {
+			items = items,
+			capturedAt = DateTime.now().UnixTimestampMillis,
+			targetGeneration = targetOk and tonumber(target.targetGeneration) or 1,
+		}
+		local first = items[1]
+		local suffix = #items > 1 and (" +" .. tostring(#items - 1)) or ""
+		chatComposer:setSelection(first.className .. " “" .. first.name .. "”" .. suffix)
+	end
+
+	chatComposer.onClearSelection = function()
+		chatRuntime.selection = nil
+		chatComposer:setSelection("")
+	end
+
+	chatComposer.onStop = function()
+		if not chatRuntime.streaming or chatRuntime.runId == "" then return end
+		local runId = chatRuntime.runId
+		chatRuntime.streaming = false
+		chatRuntime.runId = ""
+		chatComposer:setStreaming(false)
+		updateChatMessage(chatRuntime.messageId, nil, "working", "Stopping...")
+		task.spawn(function()
+			local ok, result = studioChatCancelRun(getToken(), runId, chatRuntime.chatId)
+			updateChatMessage(chatRuntime.messageId, nil, ok and "completed" or "failed", ok and "Stopped" or tostring(result or "Could not stop"))
+		end)
+	end
+
+	chatComposer.onSubmit = function()
+		if chatRuntime.streaming then return end
+		local token = getToken and getToken() or nil
+		if not token then showToast("Sign in to Nexus first", "error") return end
+		local text = tostring(chatComposer.input.Text or ""):gsub("^%s+", ""):gsub("%s+$", "")
+		if text == "" then chatComposer.input:CaptureFocus() return end
+		if chatRuntime.chatId == "" and not bootstrapStudioConversation(true) then return end
+		local requestId = HttpService:GenerateGUID(false)
+		local messageId = requestId .. "-assistant"
+		appendChatMessage(requestId .. "-user", "user", text, "", "")
+		appendChatMessage(messageId, "assistant", "", "working", "Thinking...")
+		chatRuntime.streaming = true
+		chatComposer:setStreaming(true)
+		local ok, data = studioChatSendMessage(
+			token,
+			chatRuntime.chatId,
+			text,
+			chatComposer.mode,
+			chatRuntime.selection,
+			requestId
+		)
+		if not ok or type(data) ~= "table" then
+			chatRuntime.streaming = false
+			chatComposer:setStreaming(false)
+			updateChatMessage(messageId, tostring(data or "Nexus could not start that request."), "failed", "Try again")
+			return
+		end
+		chatComposer.input.Text = ""
+		local runId = tostring(data.runId or "")
+		if runId == "" then
+			chatRuntime.streaming = false
+			chatComposer:setStreaming(false)
+			updateChatMessage(messageId, nil, "working", "Queued")
+			task.delay(2, syncChatMessages)
+			return
+		end
+		task.spawn(function() streamRun(runId, messageId) end)
+	end
+
+	nexusHeader.newChat.MouseButton1Click:Connect(function()
+		if chatRuntime.streaming then showToast("Stop the current response before starting a new chat", "info") return end
+		local token = getToken and getToken() or nil
+		if not token then return end
+		local ok, data = studioChatCreateConversation(token, chatComposer.mode)
+		if ok and type(data) == "table" and type(data.conversation) == "table" then
+			chatRuntime.chatId = tostring(data.conversation.id or "")
+			plugin:SetSetting("nexusrbxActiveChatId", chatRuntime.chatId)
+			conversationSection:SetAttribute("HistoryLoaded", true)
+			clearConversationView()
+			chatComposer.input:CaptureFocus()
+		else
+			showToast(tostring(data or "Could not start a new chat"), "error")
+		end
+	end)
 end
 
 local activitySection = makeSection("Activity")
@@ -847,7 +994,8 @@ undoBatchButton = makeButton(safetySection, "UndoBatchButton", "Undo Last Batch"
 local settingsSection = makeSection("Settings")
 makeText(settingsSection, "SettingsTitle", "Settings", 18, 13, true)
 approvalToggleButton = makeButton(settingsSection, "ApprovalToggle", "Review before apply: OFF", themeColor(Enum.StudioStyleGuideColor.Button))
-makeText(settingsSection, "StudioTargetTitle", "Studio target", 17, 12, true)
+makeText(settingsSection, "AccountStatus", "Signed in to Nexus", 18, 12, false, COLORS.text)
+local studioTargetTitle = makeText(settingsSection, "StudioTargetTitle", "Studio connection", 17, 12, true)
 studioTargetLabel = makeText(settingsSection, "StudioTargetStatus", "Checking the open place...", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
 studioTargetLabel.TextWrapped = true
 studioFreshnessLabel = makeText(settingsSection, "StudioFreshness", "Heartbeat -- · Commands -- · Place --", nil, 10, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
@@ -874,12 +1022,12 @@ do
 	companionList.Padding = UDim.new(0, 3)
 	companionList.SortOrder = Enum.SortOrder.LayoutOrder
 	companionList.Parent = companionSection
-	makeText(companionSection, "McpCompanionTitle", "MCP Companion (optional)", 17, 12, true)
+	makeText(companionSection, "McpCompanionTitle", "Enhanced connection", 17, 12, true)
 	mcpCompanionLabel = makeText(companionSection, "McpCompanionStatus", "Not configured", 17, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
 	mcpCompanionHelpLabel = makeText(
 		companionSection,
 		"McpCompanionHelp",
-		"Core bridge is live. The optional desktop connector adds inspection tools.",
+		"Recommended for the best Nexus experience. The Studio plugin works independently.",
 		nil,
 		11,
 		false,
@@ -891,6 +1039,27 @@ end
 -- Populated from the consolidated /api/studio/session/ping heartbeat response.
 collaboratorsLabel = makeText(settingsSection, "Collaborators", "Collaborators: checking...", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
 collaboratorsLabel.TextWrapped = true
+collaboratorsLabel.Visible = false
+studioFreshnessLabel.Visible = false
+
+local advancedButton, openWebButton
+advancedButton = makeButton(settingsSection, "AdvancedToggle", "Advanced", themeColor(Enum.StudioStyleGuideColor.Button))
+advancedButton.MouseButton1Click:Connect(function()
+	local visible = studioFreshnessLabel.Visible ~= true
+	studioFreshnessLabel.Visible = visible
+	collaboratorsLabel.Visible = visible
+	advancedButton.Text = visible and "Hide advanced" or "Advanced"
+end)
+openWebButton = makeButton(settingsSection, "OpenOnWeb", "Open conversation on web", COLORS.primary)
+openWebButton.MouseButton1Click:Connect(function()
+	if chatRuntime.chatId == "" then return end
+	local ok = pcall(function()
+		Services.GuiService:OpenBrowserWindow(
+			"https://nexusrbx.com/ai?chat=" .. HttpService:UrlEncode(chatRuntime.chatId)
+		)
+	end)
+	if not ok then showToast("Open nexusrbx.com to continue this conversation", "info") end
+end)
 
 local footer = Instance.new("Frame")
 footer.Name = "Footer"
@@ -1133,7 +1302,7 @@ function UI_HELPERS.refreshApprovalToggle()
 	local enabled = UI_HELPERS.getApprovalModeEnabled()
 	approvalToggleButton:SetAttribute("BaseColor", enabled and COLORS.warning or themeColor(Enum.StudioStyleGuideColor.Button))
 	approvalToggleButton.BackgroundColor3 = approvalToggleButton:GetAttribute("BaseColor")
-	approvalToggleButton.Text = enabled and "Review before apply: ON" or "Review before apply: OFF"
+	approvalToggleButton.Text = enabled and "Automatic apply: OFF" or "Automatic apply: ON"
 end
 
 function UI_HELPERS.rebuildSnapshotList()
@@ -1199,42 +1368,50 @@ end
 local function refreshControls()
 	local paired = getToken ~= nil and getToken() ~= nil
 	local busy = applying == true
-	-- Tabs only exist once paired; unpaired the panel is just the pairing card.
-	local tab = paired and activeTab or "Settings"
-	tabBar.Visible = paired
+	-- The default plugin is chat, not a dashboard. Settings is a temporary
+	-- secondary surface opened from the header.
+	tabBar.Visible = false
 	pairSection.Visible = not paired
 	agentSection.Visible = false
 	manifestSection.Visible = false
-	conversationSection.Visible = paired and tab == "Chat"
+	conversationSection.Visible = paired and not chatRuntime.settingsOpen
 	if promptSection then
-		promptSection.Visible = paired and tab == "Chat"
+		promptSection.Visible = paired and not chatRuntime.settingsOpen
 	end
-	activitySection.Visible = paired and tab == "Activity"
-	safetySection.Visible = paired and tab == "Recovery"
-	settingsSection.Visible = paired and tab == "Settings"
-	footer.Visible = paired and tab == "Settings"
+	activitySection.Visible = false
+	safetySection.Visible = paired and chatRuntime.settingsOpen
+	settingsSection.Visible = paired and chatRuntime.settingsOpen
+	footer.Visible = paired and chatRuntime.settingsOpen
 	local composerReserve = promptSection and promptSection.Visible and (promptSection.Size.Y.Offset + 24) or 0
-	scroll.Size = UDim2.new(1, 0, 1, -composerReserve)
+	scroll.Position = UDim2.new(0, 0, 0, 53)
+	scroll.Size = UDim2.new(1, 0, 1, -(53 + composerReserve))
 	if paired and conversationSection:GetAttribute("HistoryLoaded") ~= true then
-		conversationSection:SetAttribute("HistoryLoaded", true)
 		task.spawn(function()
-			if not syncChatMessages() then
-				conversationSection:SetAttribute("HistoryLoaded", false)
-			end
+			bootstrapStudioConversation(false)
 		end)
 	elseif not paired then
 		conversationSection:SetAttribute("HistoryLoaded", false)
 	end
 	local cleanCode = string.upper((codeBox.Text or ""):gsub("%s+", ""))
-	setButtonEnabled(pairButton, (not paired) and (not busy) and cleanCode ~= "", busy and "Pairing..." or "Pair Studio")
+	setButtonEnabled(pairButton, (not paired) and (not busy) and cleanCode ~= "", busy and "Signing in..." or "Continue")
 	setButtonEnabled(pullButton, paired and (not busy), busy and "Working..." or "Pull Latest")
 	local hasSnapshots = #localSnapshots > 0
 	setButtonEnabled(restoreButton, paired and (not busy) and hasSnapshots, hasSnapshots and "Restore All Snapshots" or "No Snapshots Yet")
 	local hasBatch = type(lastBatchSnapshots) == "table" and #lastBatchSnapshots > 0
 	setButtonEnabled(undoBatchButton, paired and (not busy) and hasBatch, hasBatch and "Undo Last Batch" or "No Batch To Undo")
 	setButtonEnabled(disconnectButton, paired and (not busy), busy and "Command Running" or "Disconnect Studio")
+	if nexusHeader then
+		nexusHeader.indicator.BackgroundColor3 = paired and BRIDGE_STATES[currentBridgeState].color or COLORS.muted
+		nexusHeader.settings.TextColor3 = chatRuntime.settingsOpen and Color3.fromRGB(255, 255, 255) or COLORS.textMuted
+	end
 	UI_HELPERS.refreshApprovalToggle()
 end
+
+nexusHeader.settings.MouseButton1Click:Connect(function()
+	chatRuntime.settingsOpen = not chatRuntime.settingsOpen
+	refreshControls()
+	if not chatRuntime.settingsOpen then scrollNexusChatToBottom(scroll) end
+end)
 
 -- Restyle the tab buttons for the active view, persist the choice, and refresh
 -- section visibility. Assigned to the forward-declared `setActiveTab` upvalue so
@@ -1286,6 +1463,9 @@ function setBridgeState(state, detail)
 	statusPill.Text = def.label
 	UI_HELPERS.resizeStatusPill(def.label)
 	TweenService:Create(statusPill, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundColor3 = def.color }):Play()
+	if nexusHeader then
+		TweenService:Create(nexusHeader.indicator, TweenInfo.new(0.16), { BackgroundColor3 = def.color }):Play()
+	end
 	if detail ~= nil and tostring(detail) ~= "" and (key == "working" or key == "degraded" or key == "reconciling" or key == "target_changed" or key == "target_stale") then
 		activeLabel.Text = "Active tool: " .. tostring(detail)
 	end
@@ -1328,12 +1508,7 @@ function setConnectionDiagnostics(summary)
 		)
 	end
 	if studioTargetLabel then
-		local identity = ("%s · place %s · universe %s · gen %s"):format(
-			tostring(target.placeName or "Unnamed place"),
-			tostring(target.placeId or "--"),
-			tostring(target.universeId or "--"),
-			tostring(target.targetGeneration or "--")
-		)
+		local identity = tostring(target.placeName or "Open Studio game")
 		if target.targetBound and target.targetReady == false then
 			studioTargetLabel.Text = "Blocked · " .. identity
 			studioTargetLabel.TextColor3 = COLORS.error
@@ -1356,7 +1531,7 @@ function setMcpCompanionStatus(summary)
 	local labels = {
 		not_configured = "Not configured",
 		connector_offline = "Offline",
-		studio_mcp_unavailable = "Studio MCP unavailable",
+		studio_mcp_unavailable = "Unavailable",
 		ready = "Ready",
 	}
 	local colors = {
@@ -1366,15 +1541,15 @@ function setMcpCompanionStatus(summary)
 		ready = COLORS.success,
 	}
 	local help = {
-		not_configured = "Core bridge is live. The optional desktop connector adds inspection tools.",
-		connector_offline = "Core bridge is live. Enable Studio Assistant's MCP server for inspection tools.",
-		studio_mcp_unavailable = "Core bridge is live. Update Studio, then enable Assistant's MCP server.",
-		ready = "Direct Studio inspection tools are available.",
+		not_configured = "Recommended for the best Nexus experience. The Studio plugin remains fully available.",
+		connector_offline = "The enhanced connection is offline. Nexus will continue through the Studio plugin.",
+		studio_mcp_unavailable = "The enhanced connection is unavailable. Nexus will continue through the Studio plugin.",
+		ready = "The enhanced connection is ready.",
 	}
 	local commandCount = tonumber(summary.supportedCommandCount) or 0
-	mcpCompanionLabel.Text = (labels[state] or "Unavailable") .. " · " .. tostring(commandCount) .. " commands"
+	mcpCompanionLabel.Text = labels[state] or "Unavailable"
 	mcpCompanionLabel.TextColor3 = colors[state] or COLORS.muted
-	mcpCompanionHelpLabel.Text = help[state] or "Core bridge is live. Reconnect the optional desktop companion to restore inspection tools."
+	mcpCompanionHelpLabel.Text = help[state] or "The Studio connection remains available while Nexus reconnects enhanced features."
 end
 
 function UI_HELPERS.errorHelpFor(value)
@@ -1506,21 +1681,9 @@ function pushActivity(entry)
 	local status = tostring(entry.status or "info")
 	local colorHex = status == "succeeded" and "#39A65C" or (status == "failed" and "#D64550" or "#6C757D")
 	local commandType = tostring(entry.commandType or "command")
-	if commandType ~= "agent_prompt" and commandType ~= "pair" then
-		local friendly = commandType:gsub("_", " ")
-		friendly = string.upper(string.sub(friendly, 1, 1)) .. string.sub(friendly, 2)
-		local chatState = status == "failed" and "failed" or (status == "succeeded" and "completed" or "working")
-		local chatDetail = entry.verified == true and "Verified" or (entry.verified == false and "Needs review" or status)
-		if entry.snapshotCount and entry.snapshotCount > 0 then
-			chatDetail = chatDetail .. "  ·  " .. tostring(entry.snapshotCount) .. " snapshot(s)"
-		end
-		appendChatMessage(
-			"activity-" .. HttpService:GenerateGUID(false),
-			"event",
-			friendly,
-			chatState,
-			chatDetail
-		)
+	if commandType ~= "agent_prompt" and commandType ~= "pair" and chatRuntime.streaming and chatRuntime.messageId ~= "" then
+		local friendly, chatState = friendlyStudioActivity(commandType, entry.label, status)
+		updateChatMessage(chatRuntime.messageId, nil, chatState, friendly)
 	end
 	local icon
 	if string.find(commandType, "read") or string.find(commandType, "inspect") or string.find(commandType, "manifest") or string.find(commandType, "search") then
@@ -1722,8 +1885,9 @@ function showApprovalGate(command)
 		summary = summary .. " This affects " .. tostring(#paths) .. " item(s)."
 	end
 	local message = appendChatMessage(approvalId, "assistant", summary, "working", "Approval required")
-	if not message:FindFirstChild("ApprovalActions") then
-		local actions = makeRow(message, "ApprovalActions", 36)
+	local bubble = message:FindFirstChild("Bubble") or message
+	if not bubble:FindFirstChild("ApprovalActions") then
+		local actions = makeRow(bubble, "ApprovalActions", 36)
 		local applyButton = makeButton(actions, "Apply", "Apply", COLORS.primary, true)
 		applyButton.Size = UDim2.new(0.5, -4, 0, 36)
 		local declineButton = makeButton(actions, "Decline", "Decline", COLORS.surfaceRaised, true)
@@ -1754,7 +1918,8 @@ function hideApprovalGate()
 			pendingApproval.approved and "completed" or "failed",
 			pendingApproval.approved and "Approved" or "Declined"
 		)
-		local actions = message and message:FindFirstChild("ApprovalActions")
+		local bubble = message and (message:FindFirstChild("Bubble") or message)
+		local actions = bubble and bubble:FindFirstChild("ApprovalActions")
 		if actions then actions.Visible = false end
 	end
 	pendingApproval = nil
@@ -1803,7 +1968,7 @@ approvalToggleButton.MouseButton1Click:Connect(function()
 	local nextValue = not UI_HELPERS.getApprovalModeEnabled()
 	plugin:SetSetting("nexusrbxApprovalMode", nextValue)
 	UI_HELPERS.refreshApprovalToggle()
-	showToast(nextValue and "Review before apply enabled" or "Review before apply disabled", "info")
+	showToast(nextValue and "Automatic apply disabled" or "Automatic apply enabled", "info")
 end)
 
 undoBatchButton.MouseButton1Click:Connect(function()

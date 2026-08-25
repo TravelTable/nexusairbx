@@ -29,6 +29,7 @@ local PLUGIN_CAPABILITIES = {
 
 local Services = {
 	HttpService = game:GetService("HttpService"),
+	GuiService = game:GetService("GuiService"),
 	AssetService = game:GetService("AssetService"),
 	ChangeHistoryService = game:GetService("ChangeHistoryService"),
 	CollectionService = game:GetService("CollectionService"),

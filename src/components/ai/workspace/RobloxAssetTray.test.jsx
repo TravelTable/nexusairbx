@@ -2,135 +2,97 @@ import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import RobloxAssetTray from "./RobloxAssetTray";
 
-jest.mock("../../../lib/assetPlatformApi", () => ({
-  formatAssetPlatformError: jest.fn((error, fallback) => error?.summary || error?.message || fallback),
-  getRobloxUploadStatus: jest.fn(),
-  listAssets: jest.fn(),
-  publishAssetToRoblox: jest.fn(),
-}));
-
-jest.mock("../../assets/CanonicalAssetPreview", () => function CanonicalAssetPreview({ asset, alt }) {
-  return <div aria-label={alt}>{asset.assetId}</div>;
-});
-
-const {
-  getRobloxUploadStatus,
-  listAssets,
-  publishAssetToRoblox,
-} = require("../../../lib/assetPlatformApi");
+const attachedAsset = {
+  assetId: "9001",
+  name: "Inventory decal",
+  assetType: "Decal",
+  thumbnailUrl: "/api/roblox/thumbnail?assetId=9001&size=420x420",
+  openUrl: "https://create.roblox.com/store/asset/9001",
+};
 
 describe("RobloxAssetTray", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: jest.fn().mockResolvedValue(undefined),
+      },
+    });
   });
 
-  test("loads canonical project assets and keeps Roblox writes disabled without consent", async () => {
-    listAssets.mockResolvedValue({
-      assets: [
-        {
-          assetId: "asset_coin",
-          name: "Coin icon",
-          kind: "icon",
-          lifecycle: "ready_to_publish",
-        },
-        {
-          assetId: "asset_banner",
-          name: "Shop banner",
-          kind: "banner",
-          lifecycle: "roblox_processing",
-          robloxOperationId: "op_1",
-        },
-      ],
-    });
+  test("renders an explicit no-chat state", () => {
+    render(<RobloxAssetTray />);
 
+    expect(screen.getByText("No active chat")).toBeTruthy();
+    expect(screen.getByText(/Start or open a chat/i)).toBeTruthy();
+  });
+
+  test("renders loading, empty, and retryable error states", () => {
+    const onRefresh = jest.fn();
+    const { rerender } = render(
+      <RobloxAssetTray projectId="chat-1" loading onRefresh={onRefresh} />
+    );
+
+    expect(screen.getByText("Loading attached assets…")).toBeTruthy();
+
+    rerender(<RobloxAssetTray projectId="chat-1" onRefresh={onRefresh} />);
+    expect(screen.getByText("No Roblox assets attached yet")).toBeTruthy();
+
+    rerender(
+      <RobloxAssetTray
+        projectId="chat-1"
+        error={Object.assign(new Error("Asset access denied"), { requestId: "req-1" })}
+        onRefresh={onRefresh}
+      />
+    );
+    expect(screen.getByRole("alert").textContent).toContain("Support ID: req-1");
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  test("shows controller-provided attachments and copies the Roblox URI", async () => {
     render(
       <RobloxAssetTray
-        projectId="project_1"
+        projectId="chat-1"
+        assets={[attachedAsset]}
         robloxConnected
-        uploadAvailable
-        assetUploadsEnabled={false}
-        selectedCreator={{ type: "User", id: "123" }}
-        notify={jest.fn()}
       />
     );
 
-    expect(await screen.findByText("Coin icon")).toBeTruthy();
+    expect(screen.getByText("Inventory decal")).toBeTruthy();
+    expect(screen.getByText("Decal · 9001")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Open Inventory decal on Roblox" }).getAttribute("href"))
+      .toBe("https://create.roblox.com/store/asset/9001");
 
-    expect(listAssets).toHaveBeenCalledWith({
-      scope: "project",
-      projectId: "project_1",
-      sort: "updated_desc",
-      limit: 8,
-    });
-    expect(screen.getByRole("button", { name: "Refresh asset library" }).className).toContain("min-h-[44px]");
-    expect(screen.getByRole("button", { name: "Refresh asset library" }).className).toContain("min-w-[44px]");
-    expect(screen.getByRole("button", { name: "Retry Upload" }).disabled).toBe(true);
-    expect(screen.getByRole("button", { name: "Retry Upload" }).className).toContain("min-h-[44px]");
-    expect(screen.getByText("Auto Upload Assets is off. Assets stay in NexusRBX until you enable it.")).toBeTruthy();
-    expect(screen.getByText("Ready to publish")).toBeTruthy();
-    expect(screen.getByText("Roblox processing")).toBeTruthy();
-    expect(screen.queryByText("Approve")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Copy Inventory decal Roblox asset URI" }));
+    await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith("rbxassetid://9001"));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Inventory decal Roblox asset URI copied" })).toBeTruthy());
   });
 
-  test("publishes an eligible canonical asset to the normalized selected creator", async () => {
+  test("requires an inline confirmation before removing an attachment", async () => {
+    const onRemove = jest.fn().mockResolvedValue({ assets: [] });
     const notify = jest.fn();
-    listAssets.mockResolvedValue({
-      assets: [{
-        assetId: "asset_coin",
-        name: "Coin icon",
-        lifecycle: "ready_to_publish",
-      }],
-    });
-    publishAssetToRoblox.mockResolvedValue({ assetId: "asset_coin", lifecycle: "publishing" });
-
     render(
       <RobloxAssetTray
-        projectId="project_1"
-        robloxConnected
-        uploadAvailable
-        assetUploadsEnabled
-        selectedCreator={{ type: "group", id: "42" }}
+        projectId="chat-1"
+        assets={[attachedAsset]}
+        onRemove={onRemove}
         notify={notify}
       />
     );
 
-    const publishButton = await screen.findByRole("button", { name: "Retry Upload" });
-    await waitFor(() => expect(publishButton.disabled).toBe(false));
-    fireEvent.click(publishButton);
+    fireEvent.click(screen.getByRole("button", { name: "Remove Inventory decal from this chat" }));
+    expect(onRemove).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Confirm removing Inventory decal" })).toBeTruthy();
 
-    await waitFor(() => expect(publishAssetToRoblox).toHaveBeenCalledWith("asset_coin", {
-      projectId: "project_1",
-      creatorTarget: { type: "Group", id: "42" },
-    }));
-    expect(notify).toHaveBeenCalledWith({ type: "success", message: "Roblox publishing started" });
+    fireEvent.click(screen.getByRole("button", { name: "Confirm removing Inventory decal" }));
+    await waitFor(() => expect(onRemove).toHaveBeenCalledWith("9001"));
+    expect(notify).toHaveBeenCalledWith({ type: "success", message: "Inventory decal removed from this chat" });
   });
 
-  test("polls a pending canonical Roblox operation without requiring write consent", async () => {
-    listAssets.mockResolvedValue({
-      assets: [{
-        assetId: "asset_banner",
-        name: "Shop banner",
-        lifecycle: "under_moderation",
-        robloxOperationId: "op_1",
-      }],
-    });
-    getRobloxUploadStatus.mockResolvedValue({ assetId: "asset_banner", lifecycle: "under_moderation" });
+  test("keeps attachments visible while Roblox is disconnected", () => {
+    render(<RobloxAssetTray projectId="chat-1" assets={[attachedAsset]} robloxConnected={false} />);
 
-    render(
-      <RobloxAssetTray
-        projectId="project_1"
-        assetUploadsEnabled={false}
-        notify={jest.fn()}
-      />
-    );
-
-    const pollButton = await screen.findByRole("button", { name: "Poll" });
-    await waitFor(() => expect(pollButton.disabled).toBe(false));
-    fireEvent.click(pollButton);
-
-    await waitFor(() => expect(getRobloxUploadStatus).toHaveBeenCalledWith("asset_banner", {
-      projectId: "project_1",
-      operationId: "op_1",
-    }));
+    expect(screen.getByText("Inventory decal")).toBeTruthy();
+    expect(screen.getByText(/These assets remain attached/i)).toBeTruthy();
   });
 });

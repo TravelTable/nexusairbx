@@ -26,6 +26,7 @@ test("selects a real Roblox experience using its visual card", () => {
     <ProjectSelectionModal
       open
       connected
+      gameAccessGranted
       experiences={experiences}
       onSelect={onSelect}
       onClose={jest.fn()}
@@ -42,6 +43,24 @@ test("selects a real Roblox experience using its visual card", () => {
   expect(onSelect).toHaveBeenCalledWith(experiences[1]);
 });
 
+test("provides a close button when no game has been selected", () => {
+  const onClose = jest.fn();
+  render(
+    <ProjectSelectionModal
+      open
+      canClose
+      connected
+      gameAccessGranted
+      error="API route not found"
+      onClose={onClose}
+      onRetry={jest.fn()}
+    />
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: "Close modal" }));
+  expect(onClose).toHaveBeenCalledTimes(1);
+});
+
 test("shows connection, loading, and searchable many-game states", () => {
   const onConnect = jest.fn();
   const { rerender } = render(
@@ -50,7 +69,7 @@ test("shows connection, loading, and searchable many-game states", () => {
   fireEvent.click(screen.getByRole("button", { name: "Connect Roblox" }));
   expect(onConnect).toHaveBeenCalledTimes(1);
 
-  rerender(<ProjectSelectionModal open connected loading experiences={[]} />);
+  rerender(<ProjectSelectionModal open connected gameAccessGranted loading experiences={[]} />);
   expect(screen.getByRole("status")).toHaveTextContent("Loading your Roblox games");
 
   const manyExperiences = Array.from({ length: 9 }, (_, index) => ({
@@ -59,10 +78,53 @@ test("shows connection, loading, and searchable many-game states", () => {
     name: index === 8 ? "Only Match" : `Game ${index + 1}`,
     creator: { type: "User", id: "302", name: "BuilderJack" },
   }));
-  rerender(<ProjectSelectionModal open connected experiences={manyExperiences} onSelect={jest.fn()} />);
+  rerender(<ProjectSelectionModal open connected gameAccessGranted experiences={manyExperiences} onSelect={jest.fn()} />);
   fireEvent.change(screen.getByRole("searchbox", { name: "Search games" }), {
     target: { value: "Only Match" },
   });
   expect(screen.getByRole("button", { name: "Work on Only Match by BuilderJack" })).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Work on Game 1 by BuilderJack" })).toBeNull();
+});
+
+test("distinguishes game permission, empty grants, partial results, and private games", () => {
+  const onConnect = jest.fn();
+  const onChangeAccess = jest.fn();
+  const { rerender } = render(
+    <ProjectSelectionModal open connected onConnect={onConnect} experiences={[]} />
+  );
+
+  expect(screen.getByRole("heading", { name: "Grant game access" })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Grant game access" }));
+  expect(onConnect).toHaveBeenCalledTimes(1);
+
+  rerender(
+    <ProjectSelectionModal
+      open
+      connected
+      gameAccessGranted
+      authorization={{ authorizedUniverseCount: 0 }}
+      experiences={[]}
+      onChangeAccess={onChangeAccess}
+    />
+  );
+  expect(screen.getByRole("heading", { name: "No games shared with Nexus" })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Choose Roblox games" }));
+  expect(onChangeAccess).toHaveBeenCalledTimes(1);
+
+  rerender(
+    <ProjectSelectionModal
+      open
+      connected
+      gameAccessGranted
+      authorization={{ authorizedUniverseCount: 1 }}
+      partial
+      warnings={[{ message: "Some private Roblox games could not be loaded." }]}
+      experiences={[{ ...experiences[0], visibility: "private" }]}
+      onSelect={jest.fn()}
+      onChangeAccess={onChangeAccess}
+    />
+  );
+  expect(screen.getByRole("status")).toHaveTextContent("Some private Roblox games could not be loaded");
+  expect(screen.getByText("Private")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Change Roblox access" })).toBeTruthy();
 });

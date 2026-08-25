@@ -3,6 +3,7 @@ import { useProjectAssets } from "./useProjectAssets";
 import {
   getGeneratedAssetUploadStatus,
   listProjectAssets,
+  removeProjectAsset,
 } from "../lib/robloxAssetLibraryApi";
 
 jest.mock("../lib/robloxAssetLibraryApi", () => ({
@@ -116,5 +117,22 @@ describe("useProjectAssets", () => {
     });
 
     expect(getGeneratedAssetUploadStatus).not.toHaveBeenCalled();
+  });
+
+  test("restores attachments and rejects when removal fails", async () => {
+    const asset = { assetId: "9001", name: "Inventory decal" };
+    listProjectAssets.mockResolvedValue({
+      assets: [asset],
+      uploadSettings: null,
+      uploadStatus: { status: "idle", records: [] },
+    });
+    const removalError = new Error("Removal failed");
+    removeProjectAsset.mockRejectedValue(removalError);
+
+    const { result } = renderHook(() => useProjectAssets("project_1", { enabled: true }));
+    await waitFor(() => expect(result.current.assets).toEqual([asset]));
+
+    await expect(act(async () => result.current.removeAsset("9001"))).rejects.toBe(removalError);
+    expect(result.current.assets).toEqual([asset]);
   });
 });

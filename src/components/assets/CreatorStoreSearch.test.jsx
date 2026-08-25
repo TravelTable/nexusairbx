@@ -196,6 +196,29 @@ describe("CreatorStoreSearch", () => {
     await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith("123"));
   });
 
+  test("attaches a Creator Store result to the current chat", async () => {
+    const onAttachAsset = jest.fn().mockResolvedValue({ assets: [asset] });
+    searchCreatorStore.mockResolvedValueOnce({ results: [asset], nextCursor: null });
+    getCreatorStoreAsset.mockResolvedValueOnce({ asset });
+
+    render(
+      <CreatorStoreSearch
+        projectId="chat-123"
+        onAttachAsset={onAttachAsset}
+      />
+    );
+    fireEvent.change(screen.getByLabelText("Search Creator Store"), { target: { value: "tree" } });
+    fireEvent.click(screen.getByRole("button", { name: /^Search$/ }));
+    expect(await screen.findByText("Low Poly Tree")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "View details for Low Poly Tree" }));
+
+    const attachButton = await screen.findByRole("button", { name: "Attach to chat" });
+    fireEvent.click(attachButton);
+
+    await waitFor(() => expect(onAttachAsset).toHaveBeenCalledWith([asset]));
+    expect(screen.getByRole("button", { name: "Attached to chat" }).disabled).toBe(true);
+  });
+
   test("shows import action for Model and queues after confirmation", async () => {
     jest.useFakeTimers();
     searchCreatorStore.mockResolvedValueOnce({ results: [asset], nextCursor: null });

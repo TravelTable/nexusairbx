@@ -102,9 +102,11 @@ export function useProjectAssets(projectId, { enabled = true, notify } = {}) {
     try {
       const data = await removeProjectAsset(projectId, assetId);
       setAssets(Array.isArray(data.assets) ? data.assets : []);
+      return data;
     } catch (err) {
       setAssets(previous);
       notify?.({ type: "error", message: err?.message || "Failed to remove asset" });
+      throw err;
     }
   }, [assets, projectId, notify]);
 

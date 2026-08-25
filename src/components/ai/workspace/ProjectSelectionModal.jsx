@@ -23,9 +23,9 @@ function ProjectThumbnail({ experience }) {
   );
 }
 
-function EmptyState({ icon, title, description, action }) {
+function EmptyState({ icon, title, description, action, role }) {
   return (
-    <div className="project-selection__empty">
+    <div className="project-selection__empty" role={role}>
       <span className="project-selection__empty-icon" aria-hidden="true">
         {icon}
       </span>
@@ -41,16 +41,26 @@ export default function ProjectSelectionModal({
   canClose = false,
   connected = false,
   loading = false,
+  authorizationLoading = false,
   error = "",
+  errorCode = "",
+  gameAccessGranted = false,
+  authorization = null,
+  partial = false,
+  warnings = [],
   experiences = [],
   selectingUniverseId = "",
   onClose,
   onConnect,
+  onChangeAccess,
   onRetry,
   onSelect,
 }) {
   const [query, setQuery] = useState("");
   const searchRef = useRef(null);
+  const accessRequired = !gameAccessGranted
+    || errorCode === "ROBLOX_EXPERIENCE_READ_REAUTHORIZATION_REQUIRED";
+  const authorizedUniverseCount = Number(authorization?.authorizedUniverseCount || 0);
   const showSearch = experiences.length > 8;
   const filteredExperiences = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -76,11 +86,29 @@ export default function ProjectSelectionModal({
       bodyClassName="project-selection__body"
       overlayClassName="project-selection__overlay"
     >
-      <p className="project-selection__intro">
-        Nexus keeps chats, plans, and Studio actions attached to the game you select.
-      </p>
+      <div className="project-selection__intro-row">
+        <p className="project-selection__intro">
+          Nexus keeps chats, plans, and Studio actions attached to the game you select.
+        </p>
+        {connected && gameAccessGranted && !loading ? (
+          <button
+            type="button"
+            className="project-selection__access"
+            onClick={onChangeAccess}
+            disabled={authorizationLoading}
+          >
+            {authorizationLoading ? "Opening Roblox…" : "Change Roblox access"}
+          </button>
+        ) : null}
+      </div>
 
-      {showSearch && connected && !loading && !error ? (
+      {partial && warnings.length ? (
+        <div className="project-selection__warning" role="status">
+          {warnings[0].message}
+        </div>
+      ) : null}
+
+      {showSearch && connected && !accessRequired && !loading && !error ? (
         <label className="project-selection__search">
           <Search aria-hidden="true" />
           <span className="sr-only">Search games</span>
@@ -105,8 +133,29 @@ export default function ProjectSelectionModal({
           title="Connect Roblox"
           description="Use your existing Nexus Roblox connection to find the experiences you can work on."
           action={
-            <button type="button" className="project-selection__primary" onClick={onConnect}>
-              Connect Roblox
+            <button
+              type="button"
+              className="project-selection__primary"
+              onClick={onConnect}
+              disabled={authorizationLoading}
+            >
+              {authorizationLoading ? "Opening Roblox…" : "Connect Roblox"}
+            </button>
+          }
+        />
+      ) : accessRequired ? (
+        <EmptyState
+          icon={<Gamepad2 />}
+          title="Grant game access"
+          description="Allow Nexus to find the published and private Roblox games you choose. This is read-only access."
+          action={
+            <button
+              type="button"
+              className="project-selection__primary"
+              onClick={onConnect}
+              disabled={authorizationLoading}
+            >
+              {authorizationLoading ? "Opening Roblox…" : "Grant game access"}
             </button>
           }
         />
@@ -115,20 +164,37 @@ export default function ProjectSelectionModal({
           icon={<RefreshCw />}
           title="Games could not be loaded"
           description={error}
+          role="alert"
           action={
             <button type="button" className="project-selection__primary" onClick={onRetry}>
               Try again
             </button>
           }
         />
-      ) : experiences.length === 0 ? (
+      ) : experiences.length === 0 && authorizedUniverseCount === 0 ? (
         <EmptyState
           icon={<Gamepad2 />}
-          title="No experiences found"
-          description="Nexus could not find a published experience owned by your Roblox account or authorized groups."
+          title="No games shared with Nexus"
+          description="Choose which Roblox games Nexus can see, including private or unpublished experiences."
+          action={
+            <button
+              type="button"
+              className="project-selection__primary"
+              onClick={onChangeAccess}
+              disabled={authorizationLoading}
+            >
+              {authorizationLoading ? "Opening Roblox…" : "Choose Roblox games"}
+            </button>
+          }
+        />
+      ) : experiences.length === 0 ? (
+        <EmptyState
+          icon={<RefreshCw />}
+          title="Game details are unavailable"
+          description="Roblox shared your game access, but its project details could not be loaded yet."
           action={
             <button type="button" className="project-selection__secondary" onClick={onRetry}>
-              Refresh
+              Try again
             </button>
           }
         />
@@ -150,7 +216,12 @@ export default function ProjectSelectionModal({
                 <ProjectThumbnail experience={experience} />
                 <span className="project-selection__copy">
                   <strong>{experience.name}</strong>
-                  {experience.creator?.name ? <span>{experience.creator.name}</span> : null}
+                  <span className="project-selection__meta">
+                    {experience.creator?.name ? <span>{experience.creator.name}</span> : null}
+                    {experience.visibility === "private" ? (
+                      <span className="project-selection__privacy">Private</span>
+                    ) : null}
+                  </span>
                 </span>
                 {selecting ? <Loader className="project-selection__spinner" aria-hidden="true" /> : null}
               </button>

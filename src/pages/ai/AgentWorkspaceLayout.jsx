@@ -315,6 +315,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     closeProjectSelector,
     loadRobloxExperiences,
     connectRobloxForProjects,
+    changeRobloxProjectAccess,
     selectRobloxExperience,
   } = handlers;
 
@@ -1801,8 +1802,15 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
           planKey={planKey}
           devOverride={devOverride}
           roblox={roblox}
-          projectId={roblox?.selectedAssetProjectId || currentProjectId}
-          onAttached={roblox?.refreshProjectAssets}
+          attachmentProjectId={roblox?.selectedAssetProjectId || ""}
+          canonicalProjectId={roblox?.assetProjectId || currentProjectId || ""}
+          attachedAssets={roblox?.selectedAssets || []}
+          attachedAssetsLoading={roblox?.projectAssetLoading}
+          attachedAssetsSaving={roblox?.projectAssetSaving}
+          attachedAssetsError={roblox?.projectAssetError}
+          onRefreshAttachedAssets={roblox?.refreshProjectAssets}
+          onAttachAssets={handleConfirmProjectAssets}
+          onRemoveAttachedAsset={handleRemoveProjectAsset}
           onAuthRequired={handleAuthRequired}
           notify={notify}
         />
@@ -1945,11 +1953,18 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
           canClose={project?.selectorCanClose}
           connected={roblox?.connected}
           loading={roblox?.loading || project?.experiencesLoading}
+          authorizationLoading={project?.authorizationLoading}
           error={project?.experiencesError}
+          errorCode={project?.experiencesErrorCode}
+          gameAccessGranted={project?.gameAccessGranted}
+          authorization={project?.experienceAuthorization}
+          partial={project?.experiencesPartial}
+          warnings={project?.experienceWarnings}
           experiences={project?.experiences || []}
           selectingUniverseId={project?.selectingUniverseId}
           onClose={closeProjectSelector}
           onConnect={connectRobloxForProjects}
+          onChangeAccess={changeRobloxProjectAccess}
           onRetry={loadRobloxExperiences}
           onSelect={selectRobloxExperience}
         />

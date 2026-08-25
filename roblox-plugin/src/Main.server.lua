@@ -24,6 +24,7 @@ local function studioAttestationPayload()
 		universeId = target.universeId,
 		placeSignature = target.placeSignature,
 		targetGeneration = target.targetGeneration,
+		placeChanged = target.placeChanged == true,
 		attestedAt = target.attestedAt,
 		pluginVersion = attestation.pluginVersion,
 		protocolVersion = attestation.protocolVersion,
@@ -177,6 +178,10 @@ local function pairStudio()
 	})
 	showToast("Studio paired", "success")
 	refreshControls()
+	task.spawn(function()
+		bootstrapStudioConversation(true)
+		refreshStudioSelection()
+	end)
 end
 
 pairButton.MouseButton1Click:Connect(pairStudio)
@@ -304,6 +309,7 @@ disconnectButton.MouseButton1Click:Connect(function()
 	end)
 	plugin:SetSetting("nexusrbxStudioToken", nil)
 	plugin:SetSetting("nexusrbxStudioSessionId", nil)
+	plugin:SetSetting("nexusrbxActiveChatId", nil)
 	clearStudioServerTarget()
 	resetCompatibilityHandshake()
 	codeBox.Text = ""
@@ -313,6 +319,10 @@ disconnectButton.MouseButton1Click:Connect(function()
 	setLast("disconnected")
 	showToast("Studio disconnected", "info")
 	refreshControls()
+end)
+
+Selection.SelectionChanged:Connect(function()
+	refreshStudioSelection()
 end)
 
 toggleButton.Click:Connect(function()
@@ -415,7 +425,14 @@ task.spawn(function()
 			if ok then
 				failureCount = 0
 				setHealth(os.time(), latency)
+				if studio.placeChanged == true then
+					task.spawn(function()
+						bootstrapStudioConversation(true)
+						refreshStudioSelection()
+					end)
+				end
 				if type(heartbeat) == "table" then
+					refreshStudioSelection()
 					updateCollaborators(heartbeat.collaborators)
 					if type(heartbeat.mcp) == "table" then
 						setMcpCompanionStatus(heartbeat.mcp)
@@ -454,6 +471,10 @@ updateSnapshotLabel()
 publishStudioConnectionDiagnostics(currentStudioTargetAttestation(true))
 if getToken() then
 	setBridgeState("connecting")
+	task.spawn(function()
+		bootstrapStudioConversation(true)
+		refreshStudioSelection()
+	end)
 else
 	setBridgeState("unpaired")
 end

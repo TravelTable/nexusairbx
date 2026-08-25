@@ -209,18 +209,40 @@ export function normalizeRobloxExperience(rawExperience = {}) {
     updatedAt: rawExperience.updatedAt || null,
     playing: Number.isFinite(Number(rawExperience.playing)) ? Number(rawExperience.playing) : null,
     visits: Number.isFinite(Number(rawExperience.visits)) ? Number(rawExperience.visits) : null,
+    visibility: firstString(rawExperience.visibility).toLowerCase() === "private" ? "private" : "unknown",
+    authorized: rawExperience.authorized === true,
   };
 }
 
-export async function getRobloxExperiences({ limit = 200 } = {}) {
+export async function getRobloxExperienceCatalog({ limit = 200 } = {}) {
   return withApiRetryCooldown("roblox-oauth:experiences", "Failed to load Roblox games", async () => {
     const res = await authedFetch(`/api/roblox/oauth/experiences?limit=${encodeURIComponent(String(limit))}`, {
       method: "GET",
       noCache: true,
     });
     const data = await readJsonOrThrow(res, "Failed to load Roblox games");
-    return asArray(data?.experiences).map(normalizeRobloxExperience).filter(Boolean);
+    return {
+      experiences: asArray(data?.experiences).map(normalizeRobloxExperience).filter(Boolean),
+      authorization: {
+        scopeGranted: data?.authorization?.scopeGranted === true,
+        authorizedUniverseCount: Number.isFinite(Number(data?.authorization?.authorizedUniverseCount))
+          ? Number(data.authorization.authorizedUniverseCount)
+          : 0,
+      },
+      partial: data?.partial === true,
+      warnings: asArray(data?.warnings)
+        .map((item) => ({
+          code: firstString(item?.code),
+          message: firstString(item?.message),
+        }))
+        .filter((item) => item.message),
+    };
   });
+}
+
+export async function getRobloxExperiences(options = {}) {
+  const catalog = await getRobloxExperienceCatalog(options);
+  return catalog.experiences;
 }
 
 export async function startRobloxOAuth({
@@ -242,14 +264,31 @@ export async function startRobloxOAuth({
   });
 }
 
-export async function reauthorizeRoblox({ bundles = ["core"], returnPath = "/settings?tab=roblox" } = {}) {
+export async function reauthorizeRoblox({
+  bundles,
+  capabilities,
+  returnPath = "/settings?tab=roblox",
+  pendingAction = null,
+} = {}) {
+  const requestedCapabilities = capabilities ? normalizeCapabilities(capabilities) : undefined;
+  const requestedBundles = bundles || (requestedCapabilities ? undefined : ["core"]);
   return withApiRetryCooldown("roblox-oauth:reauthorize", "Failed to start Roblox reauthorization", async () => {
     const res = await authedFetch("/api/roblox/oauth/reauthorize", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bundles, returnPath }),
+      body: JSON.stringify({
+        ...(requestedBundles ? { bundles: requestedBundles } : {}),
+        returnPath,
+        ...(requestedCapabilities ? { capabilities: requestedCapabilities } : {}),
+        ...(pendingAction ? { pendingAction } : {}),
+      }),
     });
-    return readJsonOrThrow(res, "Failed to start Roblox reauthorization");
+    const data = await readJsonOrThrow(res, "Failed to start Roblox reauthorization");
+    if (data.authorizationUrl) {
+      persistPendingAction(pendingAction, returnPath);
+      window.location.assign(data.authorizationUrl);
+    }
+    return data;
   });
 }
 
@@ -263,6 +302,7 @@ export const ROBLOX_PRODUCT_DEFAULT_CAPABILITIES = [
 ];
 export const ROBLOX_UPLOAD_ASSET_CAPABILITIES = ["roblox_upload_asset"];
 export const CREATOR_STORE_READ_CAPABILITIES = ["roblox_search_creator_store"];
+export const ROBLOX_PROJECT_DISCOVERY_CAPABILITIES = ["roblox_list_experiences"];
 
 function normalizeCapabilities(capabilities) {
   const values = Array.isArray(capabilities) ? capabilities : [capabilities];
@@ -275,6 +315,8 @@ function capabilitiesForBundles(bundles = ["product_default"]) {
   for (const bundle of Array.isArray(bundles) ? bundles : [bundles]) {
     if (bundle === "creator_store_read") {
       ids.add("roblox_search_creator_store");
+    } else if (bundle === "project_discovery") {
+      ids.add("roblox_list_experiences");
     } else {
       ROBLOX_PRODUCT_DEFAULT_CAPABILITIES.forEach((capability) => ids.add(capability));
     }
@@ -399,7 +441,15 @@ export async function beginRobloxOAuth(options) {
 }
 
 export async function beginRobloxReauthorization(options) {
-  const { bundles, capabilities, returnPath, pendingAction } = options || {};
+  const { bundles, capabilities, returnPath, pendingAction, force = false } = options || {};
+  if (force) {
+    return reauthorizeRoblox({
+      bundles,
+      capabilities: capabilities || capabilitiesForBundles(bundles),
+      returnPath: returnPath || "/settings?tab=roblox",
+      pendingAction,
+    });
+  }
   return ensureRobloxCapabilities({
     capabilities: capabilities || capabilitiesForBundles(bundles),
     returnPath: returnPath || "/settings?tab=roblox",
@@ -450,9 +500,14 @@ export function isCreatorStoreReadAuthorized(robloxStatus) {
   return isCapabilityAuthorized(robloxStatus, "roblox_search_creator_store");
 }
 
+export function isRobloxProjectDiscoveryAuthorized(robloxStatus) {
+  return isCapabilityAuthorized(robloxStatus, "roblox_list_experiences");
+}
+
 export function isRobloxReauthorizationError(code) {
   return (
     code === "ROBLOX_REAUTHORIZATION_REQUIRED" ||
+    code === "ROBLOX_EXPERIENCE_READ_REAUTHORIZATION_REQUIRED" ||
     code === "CREATOR_STORE_REAUTHORIZATION_REQUIRED" ||
     code === "ROBLOX_AUTH_REQUIRED"
   );

@@ -22,7 +22,12 @@ function safeResults(value) {
   return Array.isArray(value?.results) ? value.results : [];
 }
 
-export default function CreatorStoreSearch({ notify, className = "mx-3 mb-2" }) {
+export default function CreatorStoreSearch({
+  notify,
+  className = "mx-3 mb-2",
+  projectId = "",
+  onAttachAsset,
+}) {
   const [query, setQuery] = useState("");
   const [assetTypes, setAssetTypes] = useState(DEFAULT_ASSET_TYPES);
   const [results, setResults] = useState([]);
@@ -248,6 +253,8 @@ export default function CreatorStoreSearch({ notify, className = "mx-3 mb-2" }) 
           asset={selectedAsset}
           loading={detailsLoading}
           notify={notify}
+          projectId={projectId}
+          onAttachAsset={onAttachAsset}
           onClose={() => {
             setSelectedAsset(null);
             setDetailsError("");

@@ -7,12 +7,12 @@ const pluginRoot = path.resolve(__dirname, "..");
 const read = (relativePath) => fs.readFileSync(path.join(pluginRoot, relativePath), "utf8");
 
 for (const target of ["src/ui/BridgePanel.lua", "NexusRBXStudioBridge.plugin.lua"]) {
-  test(`${target} keeps optional companion failures distinct from the core bridge`, () => {
+  test(`${target} presents MCP as an optional enhanced connection`, () => {
     const source = read(target);
-    assert.match(source, /MCP Companion \(optional\)/);
-    assert.match(source, /Core bridge is live\. Enable Studio Assistant's MCP server/);
-    assert.match(source, /Core bridge is live\. Update Studio/);
-    assert.match(source, /Direct Studio inspection tools are available\./);
-    assert.doesNotMatch(source, /connector_offline = "Connector offline"/);
+    assert.match(source, /Enhanced connection/);
+    assert.match(source, /Studio plugin remains fully available/);
+    assert.match(source, /continue through the Studio plugin/);
+    assert.match(source, /enhanced connection is ready/i);
+    assert.doesNotMatch(source, /Install MCP to continue|Nexus requires MCP/);
   });
 }

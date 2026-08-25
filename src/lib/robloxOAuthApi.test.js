@@ -1,17 +1,21 @@
 import {
   beginCreatorStoreReauthorization,
+  beginRobloxReauthorization,
   ensureRobloxCapabilities,
   creatorStoreAccessError,
   getRobloxExperiences,
+  getRobloxExperienceCatalog,
   getRobloxOAuthStatus,
   isCapabilityAuthorized,
   isCreatorStoreReadAuthorized,
   isRobloxReauthorizationError,
+  isRobloxProjectDiscoveryAuthorized,
   needsRobloxUpgrade,
   normalizeRobloxExperience,
   normalizeRobloxConnectionStatus,
   readPendingRobloxAction,
   ROBLOX_PRODUCT_DEFAULT_CAPABILITIES,
+  ROBLOX_PROJECT_DISCOVERY_CAPABILITIES,
   revokeRobloxOAuth,
 } from "./robloxOAuthApi";
 import { clearApiRetryCooldown } from "./apiErrors";
@@ -28,6 +32,8 @@ describe("robloxOAuthApi capability helpers", () => {
     clearApiRetryCooldown("roblox-oauth:ensure");
     clearApiRetryCooldown("roblox-oauth:status");
     clearApiRetryCooldown("roblox-oauth:revoke");
+    clearApiRetryCooldown("roblox-oauth:reauthorize");
+    clearApiRetryCooldown("roblox-oauth:experiences");
     window.sessionStorage.clear();
     delete window.location;
     window.location = { assign: jest.fn() };
@@ -59,6 +65,7 @@ describe("robloxOAuthApi capability helpers", () => {
 
   test("isRobloxReauthorizationError recognizes auth error codes", () => {
     expect(isRobloxReauthorizationError("CREATOR_STORE_REAUTHORIZATION_REQUIRED")).toBe(true);
+    expect(isRobloxReauthorizationError("ROBLOX_EXPERIENCE_READ_REAUTHORIZATION_REQUIRED")).toBe(true);
     expect(isRobloxReauthorizationError("ROBLOX_AUTH_REQUIRED")).toBe(true);
     expect(isRobloxReauthorizationError("PROJECT_NOT_FOUND")).toBe(false);
   });
@@ -148,6 +155,22 @@ describe("robloxOAuthApi capability helpers", () => {
     expect(authedFetch).toHaveBeenCalledWith("/api/roblox/oauth/revoke", { method: "POST" });
   });
 
+  test("project discovery authorization is exposed as a dedicated capability", () => {
+    expect(ROBLOX_PROJECT_DISCOVERY_CAPABILITIES).toEqual(["roblox_list_experiences"]);
+    expect(isRobloxProjectDiscoveryAuthorized({
+      connected: true,
+      capabilities: {
+        roblox_list_experiences: { authorized: true, missingScopes: [] },
+      },
+    })).toBe(true);
+    expect(isRobloxProjectDiscoveryAuthorized({
+      connected: true,
+      capabilities: {
+        roblox_list_experiences: { authorized: false, missingScopes: ["universe:read"] },
+      },
+    })).toBe(false);
+  });
+
   test("getRobloxExperiences returns normalized real project metadata", async () => {
     authedFetch.mockResolvedValue({
       ok: true,
@@ -181,6 +204,62 @@ describe("robloxOAuthApi capability helpers", () => {
       noCache: true,
     });
     expect(normalizeRobloxExperience({ universeId: 1, rootPlaceId: null })).toBeNull();
+  });
+
+  test("getRobloxExperienceCatalog preserves authorization and partial-result metadata", async () => {
+    authedFetch.mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({
+        experiences: [{
+          universeId: 101,
+          rootPlaceId: 202,
+          name: "Private Obby",
+          visibility: "private",
+          authorized: true,
+        }],
+        authorization: { scopeGranted: true, authorizedUniverseCount: 3 },
+        partial: true,
+        warnings: [{ code: "ROBLOX_AUTHORIZED_EXPERIENCES_PARTIAL", message: "Some games were unavailable." }],
+      }),
+    });
+
+    await expect(getRobloxExperienceCatalog()).resolves.toEqual({
+      experiences: [expect.objectContaining({
+        name: "Private Obby",
+        visibility: "private",
+        authorized: true,
+      })],
+      authorization: { scopeGranted: true, authorizedUniverseCount: 3 },
+      partial: true,
+      warnings: [{
+        code: "ROBLOX_AUTHORIZED_EXPERIENCES_PARTIAL",
+        message: "Some games were unavailable.",
+      }],
+    });
+  });
+
+  test("forced project reauthorization persists the selector action and redirects", async () => {
+    authedFetch.mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ authorizationUrl: "https://roblox.example/project-consent" }),
+    });
+
+    await beginRobloxReauthorization({
+      capabilities: ROBLOX_PROJECT_DISCOVERY_CAPABILITIES,
+      returnPath: "/ai",
+      pendingAction: { type: "select_project" },
+      force: true,
+    });
+
+    expect(authedFetch).toHaveBeenCalledWith("/api/roblox/oauth/reauthorize", expect.objectContaining({
+      body: JSON.stringify({
+        returnPath: "/ai",
+        capabilities: ["roblox_list_experiences"],
+        pendingAction: { type: "select_project" },
+      }),
+    }));
+    expect(readPendingRobloxAction()).toEqual(expect.objectContaining({ type: "select_project", returnPath: "/ai" }));
+    expect(window.location.assign).toHaveBeenCalledWith("https://roblox.example/project-consent");
   });
 
   test("ensureRobloxCapabilities can request multiple capabilities in one call", async () => {

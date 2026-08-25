@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Check, Copy, ImageIcon, Loader2, Send, ShieldCheck, X } from "lib/icons";
+import { Check, Copy, ImageIcon, Link2, Loader2, Send, ShieldCheck, X } from "lib/icons";
 import { BACKEND_URL } from "../../config";
 import {
   getStudioCommand,
@@ -38,7 +38,14 @@ function commandFailure(command) {
   };
 }
 
-export default function CreatorStoreAssetDetails({ asset, loading = false, onClose, notify }) {
+export default function CreatorStoreAssetDetails({
+  asset,
+  loading = false,
+  onClose,
+  notify,
+  projectId = "",
+  onAttachAsset,
+}) {
   const [imageFailed, setImageFailed] = useState(false);
   const [copied, setCopied] = useState(false);
   const [studioChecking, setStudioChecking] = useState(false);
@@ -49,6 +56,8 @@ export default function CreatorStoreAssetDetails({ asset, loading = false, onClo
   const [commandId, setCommandId] = useState("");
   const [receipt, setReceipt] = useState(null);
   const [importError, setImportError] = useState(null);
+  const [attachState, setAttachState] = useState("idle");
+  const [attachError, setAttachError] = useState("");
   const pollTimerRef = useRef(null);
 
   const name = asset?.name || "Creator Store asset";
@@ -154,6 +163,19 @@ export default function CreatorStoreAssetDetails({ asset, loading = false, onClo
     }
   };
 
+  const attachToChat = async () => {
+    if (!projectId || !onAttachAsset || !assetId || attachState === "attaching") return;
+    setAttachState("attaching");
+    setAttachError("");
+    try {
+      await onAttachAsset([asset]);
+      setAttachState("attached");
+    } catch (error) {
+      setAttachState("failed");
+      setAttachError(error?.message || "The asset could not be attached to this chat.");
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[color-mix(in_srgb,var(--ds-bg-canvas)_72%,transparent)] px-4 py-6" role="dialog" aria-modal="true" aria-label="Creator Store asset details">
       <div className="w-full max-w-3xl overflow-hidden rounded-[14px] bg-[var(--ds-surface-overlay)] shadow-[var(--ds-shadow-overlay)]">
@@ -227,6 +249,20 @@ export default function CreatorStoreAssetDetails({ asset, loading = false, onClo
                     </dd>
                   </div>
                 </dl>
+                {projectId && onAttachAsset ? (
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      onClick={attachToChat}
+                      disabled={attachState === "attaching" || attachState === "attached" || !assetId}
+                      className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-3 py-2 text-[11px] font-semibold text-[var(--ds-accent)] transition-colors hover:bg-[var(--ds-fill-hover)] disabled:cursor-not-allowed disabled:opacity-40 focus-ring"
+                    >
+                      {attachState === "attaching" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : attachState === "attached" ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}
+                      {attachState === "attaching" ? "Attaching" : attachState === "attached" ? "Attached to chat" : "Attach to chat"}
+                    </button>
+                    {attachError ? <p className="mt-2 text-[11px] text-[var(--ds-danger)]" role="alert">{attachError}</p> : null}
+                  </div>
+                ) : null}
                 {canImportAsset && (
                   <div className="mt-6 rounded-[14px] bg-[var(--ds-fill-subtle)] p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

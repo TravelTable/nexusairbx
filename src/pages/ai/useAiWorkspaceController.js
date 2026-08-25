@@ -80,10 +80,13 @@ import { useAiNotifications } from "./useAiNotifications";
 import { useStarterPromo } from "../../hooks/useStarterPromo";
 import {
   getRobloxOAuthStatus,
-  getRobloxExperiences,
+  getRobloxExperienceCatalog,
   beginRobloxOAuth,
+  beginRobloxReauthorization,
   beginCreatorStoreReauthorization,
   isCreatorStoreReadAuthorized,
+  isRobloxProjectDiscoveryAuthorized,
+  ROBLOX_PROJECT_DISCOVERY_CAPABILITIES,
   readPendingRobloxAction,
   clearPendingRobloxAction,
 } from "../../lib/robloxOAuthApi";
@@ -125,6 +128,10 @@ import { normalizeRobloxPlaceId } from "../../lib/robloxPlaceId";
 import { normalizeAuthoritativeRunStatus } from "../../lib/runCancellation";
 
 export const PROJECT_SIDEBAR_DESKTOP_MIN_WIDTH = 1200;
+
+export function studioChatIdFromSearch(search = "") {
+  return String(new URLSearchParams(search).get("chat") || "").trim();
+}
 
 export function shouldOpenProjectSidebarByDefault(viewportWidth) {
   const width = Number(viewportWidth);
@@ -360,6 +367,13 @@ export function useAiWorkspaceController() {
   const [robloxExperiencesLoading, setRobloxExperiencesLoading] = useState(false);
   const [robloxExperiencesLoaded, setRobloxExperiencesLoaded] = useState(false);
   const [robloxExperiencesError, setRobloxExperiencesError] = useState("");
+  const [robloxExperiencesErrorCode, setRobloxExperiencesErrorCode] = useState("");
+  const [robloxProjectAuthorizationLoading, setRobloxProjectAuthorizationLoading] = useState(false);
+  const [robloxExperienceCatalog, setRobloxExperienceCatalog] = useState({
+    authorization: { scopeGranted: false, authorizedUniverseCount: 0 },
+    partial: false,
+    warnings: [],
+  });
   const [projectSelectorOpen, setProjectSelectorOpen] = useState(false);
   const [selectingUniverseId, setSelectingUniverseId] = useState("");
   const [restoredActiveProject, setRestoredActiveProject] = useState(null);
@@ -398,6 +412,7 @@ export function useAiWorkspaceController() {
   const autoIntentInFlightRef = useRef(null);
   const pendingAuthResumeRef = useRef(null);
   const pendingRobloxResumeRef = useRef(false);
+  const studioDeepLinkRef = useRef("");
   const runQuickScriptRef = useRef(null);
   const chatOperationCoordinatorRef = useRef(null);
   if (!chatOperationCoordinatorRef.current) {
@@ -469,6 +484,28 @@ export function useAiWorkspaceController() {
   }, [authReady, billingError, billingLoading, isFreeUsagePlan, isStarterOrAbove, openStarterPromo, user]);
 
   const chat = unified;
+  const openStudioChatById = chat.openChatById;
+
+  useEffect(() => {
+    if (!authReady || !user?.uid) return;
+    const chatId = studioChatIdFromSearch(location.search);
+    if (!chatId || studioDeepLinkRef.current === chatId) return;
+    studioDeepLinkRef.current = chatId;
+    openStudioChatById(chatId);
+
+    const params = new URLSearchParams(location.search);
+    params.delete("chat");
+    const nextSearch = params.toString();
+    navigate(
+      {
+        pathname: location.pathname,
+        search: nextSearch ? `?${nextSearch}` : "",
+        hash: location.hash,
+      },
+      { replace: true, state: location.state }
+    );
+  }, [authReady, location.hash, location.pathname, location.search, location.state, navigate, openStudioChatById, user?.uid]);
+
   const projectBindings = useProjectBindings(user, { authReady });
   const {
     projects: projectBindingProjects,
@@ -642,28 +679,33 @@ export function useAiWorkspaceController() {
   }, []);
 
   const loadRobloxExperiences = useCallback(async () => {
-    if (!user || robloxStatus?.connected !== true) {
+    const accessGranted = isRobloxProjectDiscoveryAuthorized(robloxStatus);
+    if (!user || robloxStatus?.connected !== true || !accessGranted) {
       setRobloxExperiences([]);
       setRobloxExperiencesError("");
+      setRobloxExperiencesErrorCode("");
       setRobloxExperiencesLoaded(false);
       return [];
     }
     setRobloxExperiencesLoading(true);
     setRobloxExperiencesError("");
+    setRobloxExperiencesErrorCode("");
     try {
-      const experiences = await getRobloxExperiences({ limit: 200 });
-      setRobloxExperiences(experiences);
+      const catalog = await getRobloxExperienceCatalog({ limit: 200 });
+      setRobloxExperiences(catalog.experiences);
+      setRobloxExperienceCatalog(catalog);
       setRobloxExperiencesLoaded(true);
-      return experiences;
+      return catalog.experiences;
     } catch (error) {
       setRobloxExperiences([]);
       setRobloxExperiencesLoaded(true);
+      setRobloxExperiencesErrorCode(String(error?.code || ""));
       setRobloxExperiencesError(error?.message || "Roblox games could not be loaded right now.");
       return [];
     } finally {
       setRobloxExperiencesLoading(false);
     }
-  }, [robloxStatus?.connected, user]);
+  }, [robloxStatus, user]);
 
   useEffect(() => {
     let cancelled = false;
@@ -710,7 +752,11 @@ export function useAiWorkspaceController() {
       return;
     }
     setProjectSelectorOpen(true);
-    if (robloxStatus.connected === true && !robloxExperiencesLoaded) {
+    if (
+      robloxStatus.connected === true
+      && isRobloxProjectDiscoveryAuthorized(robloxStatus)
+      && !robloxExperiencesLoaded
+    ) {
       void loadRobloxExperiences();
     }
   }, [
@@ -746,17 +792,19 @@ export function useAiWorkspaceController() {
       return;
     }
     setProjectSelectorOpen(true);
-    if (robloxStatus?.connected === true) void loadRobloxExperiences();
-  }, [chat.currentChatId, loadRobloxExperiences, notify, robloxStatus?.connected, unified.isGenerating]);
+    if (isRobloxProjectDiscoveryAuthorized(robloxStatus)) void loadRobloxExperiences();
+  }, [chat.currentChatId, loadRobloxExperiences, notify, robloxStatus, unified.isGenerating]);
 
   const closeProjectSelector = useCallback(() => {
-    if (activeProjectId) setProjectSelectorOpen(false);
-  }, [activeProjectId]);
+    setProjectSelectorOpen(false);
+  }, []);
 
   const connectRobloxForProjects = useCallback(async () => {
+    if (robloxProjectAuthorizationLoading) return;
+    setRobloxProjectAuthorizationLoading(true);
     try {
       await beginRobloxOAuth({
-        bundles: ["core"],
+        capabilities: ROBLOX_PROJECT_DISCOVERY_CAPABILITIES,
         returnPath: "/ai",
         pendingAction: { type: "select_project" },
       });
@@ -765,8 +813,30 @@ export function useAiWorkspaceController() {
         message: error?.message || "Could not start the Roblox connection.",
         type: "error",
       });
+    } finally {
+      setRobloxProjectAuthorizationLoading(false);
     }
-  }, [notify]);
+  }, [notify, robloxProjectAuthorizationLoading]);
+
+  const changeRobloxProjectAccess = useCallback(async () => {
+    if (robloxProjectAuthorizationLoading) return;
+    setRobloxProjectAuthorizationLoading(true);
+    try {
+      await beginRobloxReauthorization({
+        capabilities: ROBLOX_PROJECT_DISCOVERY_CAPABILITIES,
+        returnPath: "/ai",
+        pendingAction: { type: "select_project" },
+        force: true,
+      });
+    } catch (error) {
+      notify({
+        message: error?.message || "Could not update Roblox game access.",
+        type: "error",
+      });
+    } finally {
+      setRobloxProjectAuthorizationLoading(false);
+    }
+  }, [notify, robloxProjectAuthorizationLoading]);
 
   const selectRobloxExperience = useCallback(
     async (experience) => {
@@ -3055,10 +3125,16 @@ export function useAiWorkspaceController() {
       projects: projectBindingProjects,
       loading: projectBindingsLoading,
       selectorOpen: projectSelectorOpen,
-      selectorCanClose: Boolean(activeProjectId),
+      selectorCanClose: true,
       experiences: robloxExperiences,
       experiencesLoading: robloxExperiencesLoading,
       experiencesError: robloxExperiencesError,
+      experiencesErrorCode: robloxExperiencesErrorCode,
+      authorizationLoading: robloxProjectAuthorizationLoading,
+      gameAccessGranted: isRobloxProjectDiscoveryAuthorized(robloxStatus),
+      experienceAuthorization: robloxExperienceCatalog.authorization,
+      experiencesPartial: robloxExperienceCatalog.partial,
+      experienceWarnings: robloxExperienceCatalog.warnings,
       selectingUniverseId,
     },
     uiState: {
@@ -3121,6 +3197,7 @@ export function useAiWorkspaceController() {
       closeProjectSelector,
       loadRobloxExperiences,
       connectRobloxForProjects,
+      changeRobloxProjectAccess,
       selectRobloxExperience,
 
       handlePromptSubmit,
@@ -3195,6 +3272,8 @@ export function useAiWorkspaceController() {
       selectedAssets: projectAssets.assets,
       projectAssetSaving: projectAssets.saving,
       projectAssetLoading: projectAssets.loading,
+      projectAssetError: projectAssets.error,
+      projectAssetAccessBlockedError: projectAssets.accessBlockedError,
       assetLibraryOpen,
       assetLibraryAvailable: Boolean(
         user && robloxStatus?.connected === true && isCreatorStoreReadAuthorized(robloxStatus)

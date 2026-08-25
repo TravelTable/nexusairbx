@@ -1175,7 +1175,6 @@ local function finalizeCommandOutcome(command, applyOk, resultOrError)
 			affectedPaths = type(resultOrError) == "table" and resultOrError.affectedPaths or nil,
 		})
 		setAgentPhase("done")
-		showToast(commandType .. " succeeded", "success")
 		return "succeeded"
 	end
 
