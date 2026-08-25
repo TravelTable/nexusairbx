@@ -36,6 +36,19 @@ atomically repairs stale stored attestation, and acknowledges one of five
 states: `compatible`, `repairing`, `degraded`, `update_required`, or `unknown`.
 Only `compatible` and `degraded` sessions may poll commands.
 
+Each account has one authoritative plugin session. Claiming a new plugin pair
+code atomically marks every earlier connected plugin session as `replaced` and
+updates the account singleton. A replaced token receives
+`STUDIO_SESSION_REPLACED`; disconnect only clears the singleton when it still
+names that exact session. MCP pairing is unchanged and never counts as the
+primary plugin singleton.
+
+Heartbeat and chat bootstrap responses include the authorized account
+`activeProjectId`, project title, and revision marker. Projects are
+organizational folders, not Studio target identities. The plugin refreshes its
+conversation when this marker changes, while commands continue to use the
+plugin-attested place, universe, target generation, and signature.
+
 - `repairing` means the authenticated handshake has not completed. Clients show
   “Restoring Studio connection” and retry with bounded backoff and jitter.
 - `degraded` keeps every advertised command available. An unavailable requested
@@ -205,7 +218,7 @@ profiles or check IDs fail closed.
 9. Queue `insert_creator_store_asset` for a public Model and confirm Studio inserts it under `Workspace/NexusImports` after removing scripts, remotes, and bindables.
 10. Confirm an uploaded-model insertion from a trusted upload receipt and confirm Studio receives `insert_uploaded_roblox_model` with only the backend-supplied asset ID under `Workspace/NexusImports`.
 11. Run `/api/studio/validations/prepare`, `/api/studio/validations`, and the report endpoint against a native model receipt and confirm stale browser paths are ignored.
-12. With two Studio windows open, confirm mutations are blocked until one enumerated target is selected, then confirm no command reaches the other place.
+12. Pair one Studio, then pair a second Studio to the same account. Confirm the first receives `STUDIO_SESSION_REPLACED`, the second is the only live plugin target, and no command can reach the revoked session.
 13. Replace the stored session attestation with stale metadata, keep the current generated plugin installed, and confirm one successful heartbeat clears the warning without reinstalling, restarting, disconnecting, or re-pairing.
 14. Repeat an identical heartbeat and confirm no attestation write occurs; remove one advertised command and confirm the session becomes `degraded` while another supported write still succeeds.
 15. Queue the missing command and confirm claim-time validation returns `studio_tool_unavailable`; attest an unaccepted build identity and confirm no queued command reaches Studio.
@@ -221,6 +234,9 @@ profiles or check IDs fail closed.
 25. Put client API names only in comments and ordinary strings and confirm they do not change the inferred context. Then use `game:GetService("DataStoreService")` in executable code and confirm server context is detected.
 26. Attempt to change an existing script class without `allowClassChange`, an inspected class, a source hash, or a snapshot; confirm each incomplete request fails before mutation. Confirm the fully explicit conversion succeeds only after inspection.
 27. Connect an older plugin build and confirm project inspection remains available while AI mutations require the current plugin upgrade.
+28. Open or create a website project and confirm a fresh chat opens without selecting a Roblox game. Send an Agent prompt and confirm it reaches the sole paired Studio regardless of legacy project place metadata.
+29. Change the active website project while the plugin remains open. Confirm the next heartbeat refreshes the plugin conversation and plugin-submitted prompts appear only under the newly active project.
+30. Disconnect the plugin and confirm Ask and Plan still work while Agent shows “Connect Studio to apply changes.” Pair MCP alone and confirm it does not become the primary Agent target.
 
 ## Firestore Notes
 

@@ -26,6 +26,8 @@ const NexusRBXSignInPageContainer = lazy(() => import("./pages/SignInPage"));
 const NexusRBXForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
 const NexusRBXSignUpPageContainer = lazy(() => import("./pages/SignUpPage"));
 const NexusRBXVerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
+const NexusRBXTermsPage = lazy(() => import("./pages/TermsPage"));
+const NexusRBXPrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const NexusRBXSettingsPageContainer = lazy(() => import("./pages/SettingsPage"));
 const NexusRBXIconGeneratorPage = lazy(() => import("./pages/IconGeneratorPage"));
 const NexusRBXIconGeneratorUnavailablePage = lazy(() => import("./pages/IconGeneratorUnavailablePage"));
@@ -105,6 +107,11 @@ function App() {
           <Route path="/signup" element={withSiteShell(<NexusRBXSignUpPageContainer />, "auth")} />
           <Route path="/forgot-password" element={withSiteShell(<NexusRBXForgotPasswordPage />, "auth")} />
           <Route path="/verify-email" element={withSiteShell(<NexusRBXVerifyEmailPage />, "auth")} />
+          <Route path="/legal" element={<Navigate to="/legal/terms" replace />} />
+          <Route path="/legal/terms" element={withSiteShell(<NexusRBXTermsPage />, "legal")} />
+          <Route path="/legal/privacy" element={withSiteShell(<NexusRBXPrivacyPage />, "legal")} />
+          <Route path="/terms" element={<Navigate to="/legal/terms" replace />} />
+          <Route path="/privacy" element={<Navigate to="/legal/privacy" replace />} />
           <Route path="/tools/icon-generator" element={withSiteShell(<IconGeneratorRouteContent />, "tools")} />
           <Route path="/assets" element={withSiteShell(<AssetLibraryRouteContent />, "tools")} />
           <Route path="/assets/:assetId" element={withSiteShell(<AssetDetailRouteContent />, "tools")} />

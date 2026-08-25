@@ -18,7 +18,6 @@ import {
 import CodeFileTree from "../../components/ai/workspace/CodeFileTree";
 import CodeWorkspace from "../../components/ai/workspace/CodeWorkspace";
 import AgentChatPanel from "../../components/ai/workspace/AgentChatPanel";
-import ProjectSelectionModal from "../../components/ai/workspace/ProjectSelectionModal";
 import TaskProgressPanel from "../../components/ai/workspace/TaskProgressPanel";
 import ActiveAgentsTray from "../../components/ai/workspace/ActiveAgentsTray";
 import WorkspaceAssetsPanel from "../../components/ai/workspace/WorkspaceAssetsPanel";
@@ -312,11 +311,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     handleConfirmProjectAssets,
     handleRemoveProjectAsset,
     openProjectSelector,
-    closeProjectSelector,
-    loadRobloxExperiences,
-    connectRobloxForProjects,
-    changeRobloxProjectAccess,
-    selectRobloxExperience,
+    openWorkspaceProject,
   } = handlers;
 
   const requestedCreationMode = new URLSearchParams(locationSearch).get("mode");
@@ -1856,7 +1851,10 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
           onRenameChat={
             creationMode === "agent" ? (title) => chat.handleRenameChat(chat.currentChatId, title) : undefined
           }
-          onChangeProject={openProjectSelector}
+          onChangeProject={() => {
+            openProjectSelector();
+            setSidebarOpen(true);
+          }}
           onOpenEvidence={() => handleDockPanelChange(activeDockPanel ? null : "details")}
           evidenceOpen={Boolean(activeDockPanel)}
           evidenceCount={evidenceCount}
@@ -1890,8 +1888,8 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
                   scripts={scripts}
                   currentChatId={chat.currentChatId}
                   currentProjectId={currentProjectId || null}
-                  studioConnected={Boolean(studio?.connected)}
-                  studioPlacePreference={studio?.placePreference}
+                  showProjectList={Boolean(project?.selectorOpen)}
+                  onOpenProject={openWorkspaceProject}
                   generatingChatIds={unified.generatingChatIds}
                   activeAgentStatusByChat={activeAgentStatusByChat}
                   onSelectChat={(id) => {
@@ -1939,35 +1937,6 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
             )}
           </main>
         </div>
-
-        <ProjectSelectionModal
-          open={Boolean(
-            project?.selectorOpen &&
-            authReady &&
-            user &&
-            !showSignInNudge &&
-            !showProNudge &&
-            !starterPromo?.isOpen &&
-            !tutorial.isActive
-          )}
-          canClose={project?.selectorCanClose}
-          connected={roblox?.connected}
-          loading={roblox?.loading || project?.experiencesLoading}
-          authorizationLoading={project?.authorizationLoading}
-          error={project?.experiencesError}
-          errorCode={project?.experiencesErrorCode}
-          gameAccessGranted={project?.gameAccessGranted}
-          authorization={project?.experienceAuthorization}
-          partial={project?.experiencesPartial}
-          warnings={project?.experienceWarnings}
-          experiences={project?.experiences || []}
-          selectingUniverseId={project?.selectingUniverseId}
-          onClose={closeProjectSelector}
-          onConnect={connectRobloxForProjects}
-          onChangeAccess={changeRobloxProjectAccess}
-          onRetry={loadRobloxExperiences}
-          onSelect={selectRobloxExperience}
-        />
 
         <SignInNudgeModal
           isOpen={showSignInNudge}

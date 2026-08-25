@@ -16,7 +16,6 @@ import { TokenBar } from "../AiComponents";
 import { CHAT_MODES } from "../chatConstants";
 import { normalizeChatMode } from "../../../lib/chatModes";
 import StudioControls from "../workspace/StudioControls";
-import StudioPlaceChip from "../workspace/StudioPlaceChip";
 import RobloxCloudControls from "../workspace/RobloxCloudControls";
 import AssetLibraryModal from "../workspace/AssetLibraryModal";
 import RefineChips from "../RefineChips";
@@ -30,7 +29,6 @@ import {
   getActiveComposerMention,
 } from "../../../lib/composerCommands";
 import { messageHasRefineableFiles } from "../../../lib/chatRefine";
-import { canBindStudioTargetToProject, evaluateStudioPlaceGate } from "../../../lib/studioPlaceBinding";
 
 function ModeSelector({ mode, onModeChange, disabled }) {
   const [open, setOpen] = useState(false);
@@ -370,13 +368,7 @@ export default function ChatComposer({
   studioAutoPushPolicy,
   onStudioAutoPushPolicyChange,
   studioAutoPushAuthorized,
-  studioPlacePreference = null,
-  studioPlaceOptions = [],
-  studioPlacePickerOpen = null,
-  onStudioPlacePickerOpenChange = null,
   onStudioConnectionOpen = null,
-  onSelectStudioPlace = null,
-  selectingStudioTargetId = null,
   robloxConnected,
   robloxLoading,
   robloxSelectedCreator,
@@ -417,23 +409,13 @@ export default function ChatComposer({
   const controlsPresence = useMotionPresence(controlsOpen, 180);
   const controlsId = "chat-composer-controls";
   const canSendWithContext = Boolean(prompt?.trim()) || attachments.length > 0 || robloxProjectAssets.length > 0;
-  const studioPlaceGate = evaluateStudioPlaceGate({
-    studioEnabled,
-    connected: Boolean(studioConnected),
-    preference: studioPlacePreference,
-    options: studioPlaceOptions,
-  });
-  const selectedStudioTargetCannotBind =
-    studioPlaceGate.status === "ready" && !canBindStudioTargetToProject(studioPlaceGate.target);
+  const primaryPluginConnected = Boolean(
+    studioConnected && studioConnectionType !== "mcp_local"
+  );
   const studioBuildBlocked =
     ["agent", "debug"].includes(normalizedMode) &&
-    Boolean(studioEnabled) &&
-    (studioPlaceGate.status !== "ready" || selectedStudioTargetCannotBind);
-  const studioBlockerMessage = selectedStudioTargetCannotBind
-    ? "Nexus could not verify a complete live identity for the selected Studio project. Refresh Studio and choose it again."
-    : studioPlaceGate.status === "needs_selection"
-      ? "Choose which Studio place Nexus should edit before starting this build."
-      : "Connect Studio and open the project you want Nexus to build in.";
+    !primaryPluginConnected;
+  const studioBlockerMessage = "Connect Studio to apply changes.";
   const draftSignature = JSON.stringify({
     prompt: String(prompt || ""),
     attachments: attachments.map((file) => [file?.name || "", file?.size || 0, file?.type || ""]),
@@ -529,7 +511,7 @@ export default function ChatComposer({
       if (!command) return;
       switch (command.action) {
         case "open_studio_place":
-          onStudioPlacePickerOpenChange?.(true);
+          onStudioConnectionOpen?.();
           break;
         case "open_asset_library":
           onOpenAssetLibrary?.();
@@ -550,7 +532,7 @@ export default function ChatComposer({
           break;
       }
     },
-    [onImprovePrompt, onOpenAssetLibrary, onStartRefine, onStudioPlacePickerOpenChange, prompt]
+    [onImprovePrompt, onOpenAssetLibrary, onStartRefine, onStudioConnectionOpen, prompt]
   );
 
   useEffect(() => {
@@ -660,26 +642,10 @@ export default function ChatComposer({
   const renderContextItem = (item) => {
     if (item.kind === "studio") {
       return (
-        <StudioPlaceChip
-          key={item.key}
-          preference={studioPlacePreference}
-          options={studioPlaceOptions}
-          connected={studioConnected}
-          studioEnabled={studioEnabled}
-          selectingTargetId={selectingStudioTargetId}
-          pickerOpen={studioPlacePickerOpen}
-          onPickerOpenChange={onStudioPlacePickerOpenChange}
-          onSelectPlace={onSelectStudioPlace}
-          onRequestConnect={
-            typeof onStudioConnectionOpen === "function"
-              ? (trigger) => {
-                  setContextOpen(false);
-                  setControlsOpen(false);
-                  onStudioConnectionOpen(trigger);
-                }
-              : undefined
-          }
-        />
+        <span key={item.key} className={`inline-flex h-7 items-center gap-1.5 rounded-md border px-2 text-[10px] font-bold ${primaryPluginConnected ? "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]" : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)]"}`} title={primaryPluginConnected ? "The paired Studio plugin is the execution target" : "Connect the Studio plugin to apply changes"}>
+          {primaryPluginConnected ? <Check className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+          {primaryPluginConnected ? "Studio connected" : "Studio disconnected"}
+        </span>
       );
     }
     if (item.kind === "upload") {
@@ -874,18 +840,14 @@ export default function ChatComposer({
             <button
               type="button"
               onClick={(event) => {
-                if (studioPlaceGate.status === "needs_connect") {
-                  setControlsOpen(false);
-                  onStudioConnectionOpen?.(event.currentTarget);
-                } else {
-                  onStudioPlacePickerOpenChange?.(true);
-                }
+                setControlsOpen(false);
+                onStudioConnectionOpen?.(event.currentTarget);
               }}
-              aria-haspopup={studioPlaceGate.status === "needs_connect" ? "dialog" : undefined}
-              aria-controls={studioPlaceGate.status === "needs_connect" ? "studio-connection-dialog" : undefined}
+              aria-haspopup="dialog"
+              aria-controls="studio-connection-dialog"
               className="inline-flex min-h-11 shrink-0 items-center rounded-md border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)] px-2 font-bold transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_16%,transparent)] focus-ring xl:min-h-8"
             >
-              {studioPlaceGate.status === "needs_connect" ? "Studio options" : "Choose place"}
+              Connect Studio
             </button>
           </div>
         ) : null}

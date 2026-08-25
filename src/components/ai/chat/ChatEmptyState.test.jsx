@@ -5,21 +5,14 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import ChatEmptyState from "./ChatEmptyState";
 
 test("presents a calm, text-led Roblox construction start", () => {
-  const onQuickStart = jest.fn();
-  const { container } = render(<ChatEmptyState onQuickStart={onQuickStart} />);
-  const cards = screen.getAllByRole("button");
+  const { container } = render(<ChatEmptyState />);
 
   expect(screen.getByRole("heading", { name: "What should Nexus build?" })).toBeVisible();
   expect(screen.getByText(/make safe assumptions/i)).toBeVisible();
   expect(container.querySelectorAll("[data-nexus-display-icon]")).toHaveLength(0);
   expect(screen.queryByRole("group", { name: "Current build context" })).not.toBeInTheDocument();
-  expect(cards).toHaveLength(3);
-  expect(cards[0]).toHaveClass("chat-empty-state__starter");
+  expect(screen.queryByRole("button")).not.toBeInTheDocument();
   expect(container.querySelector(".grid.sm\\:grid-cols-3")).not.toBeInTheDocument();
-  expect(screen.getByText("Design a simulator loop")).toBeVisible();
-
-  fireEvent.click(screen.getByRole("button", { name: /Design a simulator loop/i }));
-  expect(onQuickStart).toHaveBeenCalledWith(expect.stringContaining("Roblox simulator"));
 });
 
 test("shows only authoritative project, place, and Studio context", () => {

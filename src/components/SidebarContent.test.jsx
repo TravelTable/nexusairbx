@@ -4,7 +4,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import SidebarContent from "./SidebarContent";
 
 const mockDeleteProject = jest.fn();
-const mockOpenGameProject = jest.fn();
+const mockCreateProject = jest.fn();
 const mockRenameProject = jest.fn();
 const mockRefreshProjects = jest.fn();
 
@@ -23,7 +23,7 @@ jest.mock("../hooks/useProjectBindings", () => ({
     projects: [{ projectId: "project-1", title: "Sword Simulator" }],
     loading: false,
     error: null,
-    openGameProject: mockOpenGameProject,
+    createProject: mockCreateProject,
     deleteProject: mockDeleteProject,
     renameProject: mockRenameProject,
     refresh: mockRefreshProjects,
@@ -62,7 +62,7 @@ describe("SidebarContent destructive project confirmation", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Actions for Sword Simulator" }));
     fireEvent.click(screen.getByRole("menuitem", { name: "Delete project" }));
-    expect(screen.getByRole("dialog", { name: "Delete game project?" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Delete project?" })).toBeInTheDocument();
 
     rerender(
       <SidebarContent
@@ -76,68 +76,36 @@ describe("SidebarContent destructive project confirmation", () => {
     expect(mockDeleteProject).not.toHaveBeenCalled();
   });
 
-  test("adds a selected local Studio target without published ids", async () => {
-    mockGetStudioStatus.mockResolvedValue({
-      targeting: {
-        targets: [{
-          id: "studio_target_local",
-          studioTargetId: "studio_target_local",
-          label: "Local Arena",
-          placeId: null,
-          universeId: null,
-        }],
-      },
-    });
-    mockOpenGameProject.mockResolvedValue({
-      projectId: "project-local",
-      title: "Local Arena",
-      status: "draft",
-    });
+  test("creates an organizational project and opens it", async () => {
+    mockCreateProject.mockResolvedValue({ projectId: "project-local", title: "Movement Lab" });
     const notify = jest.fn();
-    renderSidebar({ notify });
+    const onOpenProject = jest.fn();
+    renderSidebar({ notify, onOpenProject });
 
-    fireEvent.click(screen.getByRole("button", { name: "Detect project from Studio" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Local Arena" }));
+    fireEvent.click(screen.getByRole("button", { name: "New project" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Project name" }), { target: { value: "Movement Lab" } });
+    fireEvent.click(screen.getByRole("button", { name: "Create" }));
 
-    await waitFor(() => expect(mockOpenGameProject).toHaveBeenCalledWith(expect.objectContaining({
-      title: "Local Arena",
-      placeId: null,
-      universeId: null,
-      studioTargetId: "studio_target_local",
-      studioTargetLabel: "Local Arena",
-      source: "studio",
-    })));
+    await waitFor(() => expect(mockCreateProject).toHaveBeenCalledWith("Movement Lab"));
+    await waitFor(() => expect(onOpenProject).toHaveBeenCalledWith("project-local"));
     await waitFor(() => expect(notify).toHaveBeenCalledWith({
-      message: "Added Local Arena to Projects",
+      message: "Created Movement Lab",
       type: "success",
     }));
   });
 
-  test("keeps a Studio choice available when an add completion becomes stale", async () => {
-    mockGetStudioStatus.mockResolvedValue({
-      targeting: {
-        targets: [{
-          id: "studio_target_local",
-          studioTargetId: "studio_target_local",
-          label: "Local Arena",
-          placeId: null,
-          universeId: null,
-        }],
-      },
-    });
-    mockOpenGameProject.mockResolvedValue(null);
+  test("keeps the project form open when creation does not complete", async () => {
+    mockCreateProject.mockResolvedValue(null);
     const notify = jest.fn();
     renderSidebar({ notify });
 
-    fireEvent.click(screen.getByRole("button", { name: "Detect project from Studio" }));
-    const option = await screen.findByRole("button", { name: "Local Arena" });
-    fireEvent.click(option);
+    fireEvent.click(screen.getByRole("button", { name: "New project" }));
+    const input = screen.getByRole("textbox", { name: "Project name" });
+    fireEvent.change(input, { target: { value: "Movement Lab" } });
+    fireEvent.click(screen.getByRole("button", { name: "Create" }));
 
-    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.objectContaining({
-      type: "info",
-      message: expect.stringContaining("Project state changed"),
-    })));
-    expect(screen.getByRole("button", { name: "Local Arena" })).toBeInTheDocument();
+    await waitFor(() => expect(mockCreateProject).toHaveBeenCalledWith("Movement Lab"));
+    expect(screen.getByRole("textbox", { name: "Project name" })).toHaveValue("Movement Lab");
     expect(notify).not.toHaveBeenCalledWith(expect.objectContaining({ type: "success" }));
   });
 
@@ -170,7 +138,7 @@ describe("SidebarContent destructive project confirmation", () => {
       type: "info",
       message: expect.stringContaining("Project state changed"),
     })));
-    expect(screen.getByRole("dialog", { name: "Delete game project?" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Delete project?" })).toBeInTheDocument();
     expect(notify).not.toHaveBeenCalledWith(expect.objectContaining({ type: "success" }));
   });
 });

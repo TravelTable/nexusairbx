@@ -1491,30 +1491,18 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     try {
       if (!activeChatId) {
         const selectedProjectId = String(submissionOptions?.projectId || "").trim();
+        if (!selectedProjectId) {
+          throw new Error("Open a project before starting a chat.");
+        }
         const newChatPayload = {
           title: displayContent.slice(0, 30) + (displayContent.length > 30 ? "..." : ""),
           activeMode: expertMode,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         };
-        if (selectedProjectId) newChatPayload.projectId = selectedProjectId;
+        newChatPayload.projectId = selectedProjectId;
         if (submissionOptions?.studioTargetPreference) {
           newChatPayload.studioTargetPreference = submissionOptions.studioTargetPreference;
-        } else if (selectedProjectId) {
-          try {
-            const { getProjectBinding } = await import("../lib/projectBindingsApi");
-            const result = await getProjectBinding(selectedProjectId);
-            const project = result?.project;
-            if (project?.studioTargetId || project?.defaultPlaceId || project?.placeId) {
-              newChatPayload.studioTargetPreference = {
-                targetId: project.studioTargetId || null,
-                placeId: project.defaultPlaceId || project.placeId || null,
-                label: project.studioTargetLabel || project.title || "Untitled Studio project",
-              };
-            }
-          } catch (_) {
-            /* non-fatal */
-          }
         }
         const newChatRef = await addDoc(
           collection(db, "users", user.uid, "chats"),
@@ -3018,6 +3006,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     if (!authReady || !user?.uid || auth.currentUser?.uid !== user.uid) return null;
     await assertCanWrite();
     const selectedProjectId = String(projectId || "").trim();
+    if (!selectedProjectId) throw new Error("Open a project before starting a chat.");
     const chatId = uuidv4();
     const draftId = uuidv4();
     const payload = {
@@ -3028,7 +3017,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       chatId,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-      projectId: selectedProjectId || null,
+      projectId: selectedProjectId,
     };
     if (studioTargetPreference) {
       payload.studioTargetPreference = sanitizeStudioTargetPreference(studioTargetPreference);

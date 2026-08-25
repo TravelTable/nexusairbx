@@ -24,9 +24,11 @@ test("owns the password-reset deep link", () => {
   expect(appSource).toContain('<Route path="/forgot-password"');
 });
 
-test("uses canonical public legal routes without SPA-owned legacy aliases", () => {
-  expect(appSource).not.toContain('<Route path="/privacy"');
-  expect(appSource).not.toContain('<Route path="/terms"');
+test("keeps canonical legal pages reachable through the app router and legacy aliases", () => {
+  expect(appSource).toContain('<Route path="/legal/terms"');
+  expect(appSource).toContain('<Route path="/legal/privacy"');
+  expect(appSource).toContain('<Route path="/privacy" element={<Navigate to="/legal/privacy" replace />}');
+  expect(appSource).toContain('<Route path="/terms" element={<Navigate to="/legal/terms" replace />}');
   expect(headerSource).toContain('STATIC_PUBLIC_PATHS = ["/docs", "/pricing", "/legal"]');
   expect(navigationSource).toContain('{ href: "/legal", label: "Legal documents"');
   expect(signUpSource).toContain('href="/legal/terms"');

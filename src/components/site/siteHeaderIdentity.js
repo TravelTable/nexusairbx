@@ -75,7 +75,12 @@ export function getHeaderVariantForPath(pathname = "/") {
   ) {
     return "account";
   }
-  if (pathname === "/privacy" || pathname === "/terms") return "legal";
+  if (
+    pathname === "/privacy" ||
+    pathname === "/terms" ||
+    pathname === "/legal" ||
+    pathname.startsWith("/legal/")
+  ) return "legal";
   if (
     pathname.startsWith("/tools/") ||
     pathname === "/icons-market" ||

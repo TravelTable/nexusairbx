@@ -5,8 +5,6 @@ import { AI_EVENTS, emitAiEvent, onAiEvent } from "../lib/aiEvents";
 import { useAiLibrary } from "../hooks/useAiLibrary";
 import { useProjectBindings } from "../hooks/useProjectBindings";
 import { useBilling } from "../context/BillingContext";
-import { resolveGameIdentityFromStudioStatus, resolveGameTitleFromTarget } from "../lib/studioPlaceBinding";
-import { getStudioStatus } from "../lib/studioBridgeApi";
 import { isActiveRunStatus } from "./sidebar/sidebarTreeModel";
 
 const STALE_PROJECT_ACTION_MESSAGE =
@@ -16,8 +14,6 @@ export default function SidebarContent({
   scripts = [],
   currentChatId,
   currentProjectId = null,
-  studioConnected = false,
-  studioPlacePreference = null,
   onSelectChat,
   onDeleteChat = () => {},
   onRenameChat = () => {},
@@ -30,6 +26,8 @@ export default function SidebarContent({
   isMobile = false,
   onSelect = () => {},
   onCollapse = () => {},
+  showProjectList = false,
+  onOpenProject = () => {},
 }) {
   const { isFreeUsagePlan, limits, plan } = useBilling();
   const retentionDays =
@@ -39,13 +37,12 @@ export default function SidebarContent({
     projects,
     loading: projectsLoading,
     error: projectsError,
-    openGameProject,
+    createProject,
     deleteProject,
     renameProject,
     refresh: refreshProjects,
   } = useProjectBindings(user, { authReady });
   const [creatingProject, setCreatingProject] = useState(false);
-  const [studioOptions, setStudioOptions] = useState([]);
   const [deleteChatId, setDeleteChatId] = useState(null);
   const [deleteProjectId, setDeleteProjectId] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -57,18 +54,6 @@ export default function SidebarContent({
       }),
     [refreshProjects]
   );
-  const connectedProjectId = useMemo(() => {
-    if (!studioConnected) return null;
-    const targetId = String(studioPlacePreference?.targetId || studioPlacePreference?.studioTargetId || "").trim();
-    const placeId = String(studioPlacePreference?.placeId || "").trim();
-    const match = projects.find(
-      (project) =>
-        (targetId && String(project.studioTargetId || "").trim() === targetId) ||
-        (placeId && String(project.placeId || project.defaultPlaceId || "").trim() === placeId)
-    );
-    return match?.projectId || null;
-  }, [projects, studioConnected, studioPlacePreference]);
-
   const finishMobileSelection = () => {
     if (isMobile) onSelect();
   };
@@ -87,66 +72,18 @@ export default function SidebarContent({
     emitAiEvent(AI_EVENTS.OPEN_CODE_DRAWER, { scriptId: id });
     finishMobileSelection();
   };
-  const adoptIdentity = async (identity) => {
-    const project = await openGameProject(identity);
-    if (!project) {
-      notify({ message: STALE_PROJECT_ACTION_MESSAGE, type: "info" });
+  const createWorkspaceProject = async (title) => {
+    if (!user || creatingProject) return null;
+    setCreatingProject(true);
+    try {
+      const created = await createProject(title);
+      if (!created) return null;
+      notify({ message: `Created ${created.title || "project"}`, type: "success" });
+      await onOpenProject(created.projectId);
+      return created;
+    } catch (error) {
+      notify({ message: error.message || "Could not create project", type: "error" });
       return null;
-    }
-    setStudioOptions([]);
-    notify({
-      message: `Added ${project?.title || "game"} to Projects`,
-      type: "success",
-    });
-    return project;
-  };
-  const openFromStudio = async () => {
-    if (!user) {
-      notify({
-        message: "Sign in before adding a Studio game to Projects.",
-        type: "error",
-      });
-      return;
-    }
-    if (creatingProject) return;
-    setCreatingProject(true);
-    try {
-      const identity = resolveGameIdentityFromStudioStatus(await getStudioStatus());
-      if (identity.status === "needs_connect") {
-        throw new Error("Connect Roblox Studio to detect the open project.");
-      }
-      if (identity.status === "needs_selection") {
-        setStudioOptions(identity.options || []);
-        return;
-      }
-      await adoptIdentity(identity);
-    } catch (error) {
-      notify({
-        message: error.message || "Could not detect the open Studio project",
-        type: "error",
-      });
-    } finally {
-      setCreatingProject(false);
-    }
-  };
-  const chooseStudioOption = async (option) => {
-    setCreatingProject(true);
-    try {
-      const title = resolveGameTitleFromTarget(option);
-      await adoptIdentity({
-        title,
-        placeId: option.placeId,
-        universeId: option.universeId,
-        studioTargetId: option.studioTargetId || option.id,
-        studioTargetLabel: option.label || title,
-        source: "studio",
-        target: option,
-      });
-    } catch (error) {
-      notify({
-        message: error.message || "Could not open that game",
-        type: "error",
-      });
     } finally {
       setCreatingProject(false);
     }
@@ -192,7 +129,7 @@ export default function SidebarContent({
       }
       setDeleteProjectId(null);
       notify({
-        message: `Deleted game project and ${result?.counts?.chats || 0} chats. Roblox content was not changed.`,
+        message: `Deleted project and ${result?.counts?.chats || 0} chats. Roblox content was not changed.`,
         type: "success",
       });
     } catch (error) {
@@ -229,24 +166,23 @@ export default function SidebarContent({
         scripts={scripts}
         currentChatId={currentChatId}
         currentProjectId={currentProjectId}
-        connectedProjectId={connectedProjectId}
         generatingChatIds={generatingChatIds}
         activeAgentStatusByChat={activeAgentStatusByChat}
         projectsLoading={projectsLoading}
         projectsError={projectsError}
         creatingProject={creatingProject}
-        studioOptions={studioOptions}
+        showProjectList={showProjectList}
         onNewChat={createChat}
         onOpenChat={openChat}
+        onOpenProject={onOpenProject}
+        onCreateProject={createWorkspaceProject}
         onOpenCreation={openScript}
         onRenameChat={onRenameChat}
         onRenameProject={renameGameProject}
         onMoveChat={onMoveChat}
         onDeleteChat={setDeleteChatId}
         onDeleteProject={setDeleteProjectId}
-        onDetectProject={openFromStudio}
         onRetryProjects={refreshProjects}
-        onChooseStudioOption={chooseStudioOption}
         onCollapse={onCollapse}
       />
 
@@ -276,10 +212,10 @@ export default function SidebarContent({
         </div>
       </Modal>
 
-      <Modal isOpen={Boolean(deleteProjectId)} onClose={() => setDeleteProjectId(null)} title="Delete game project?">
+      <Modal isOpen={Boolean(deleteProjectId)} onClose={() => setDeleteProjectId(null)} title="Delete project?">
         <p className="text-sm text-muted-foreground">
           This removes {projectCounts.chats} chats, {projectCounts.creations} creations, their messages, Nexus asset
-          records, and Nexus-hosted files. It never deletes the Roblox experience or assets already uploaded to Roblox.
+          records, and Nexus-hosted files. It never deletes content already applied in Roblox Studio.
         </p>
         <p className="mt-3 text-xs text-muted-foreground">
           An active agent run must be finished or cancelled first. Partial failures can be retried.

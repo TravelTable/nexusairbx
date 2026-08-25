@@ -409,6 +409,8 @@ end)
 -- plus companion health summaries. The backend throttles persistence.
 task.spawn(function()
 	local failureCount = 0
+	local activeWorkspaceProjectId = ""
+	local activeWorkspaceRevision = ""
 	while true do
 		if getToken() then
 			local studio = studioAttestationPayload()
@@ -432,6 +434,20 @@ task.spawn(function()
 					end)
 				end
 				if type(heartbeat) == "table" then
+					local workspace = type(heartbeat.workspace) == "table" and heartbeat.workspace or {}
+					local nextProjectId = tostring(workspace.activeProjectId or "")
+					local nextRevision = tostring(workspace.revision or "")
+					local projectIdentityChanged = activeWorkspaceProjectId ~= "" and nextProjectId ~= "" and (
+						nextProjectId ~= activeWorkspaceProjectId
+					)
+					local projectChanged = activeWorkspaceProjectId ~= "" and nextProjectId ~= "" and (
+						nextProjectId ~= activeWorkspaceProjectId or nextRevision ~= activeWorkspaceRevision
+					)
+					activeWorkspaceProjectId = nextProjectId
+					activeWorkspaceRevision = nextRevision
+					if projectChanged then
+						task.spawn(function() bootstrapStudioConversation(true, projectIdentityChanged) end)
+					end
 					refreshStudioSelection()
 					updateCollaborators(heartbeat.collaborators)
 					if type(heartbeat.mcp) == "table" then
@@ -441,7 +457,8 @@ task.spawn(function()
 			elseif authExpired then
 				failureCount = 0
 				resetCompatibilityHandshake()
-				handleSessionExpired()
+				local replaced = type(heartbeat) == "table" and heartbeat.code == "STUDIO_SESSION_REPLACED"
+				handleSessionExpired(replaced and "replaced" or nil)
 			else
 				failureCount = math.min(failureCount + 1, 8)
 				if not compatibilityHandshakeReady and not hadCompatibility then

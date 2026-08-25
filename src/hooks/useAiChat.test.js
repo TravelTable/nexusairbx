@@ -246,7 +246,7 @@ describe("useAiChat", () => {
     auth.currentUser = null;
   });
 
-  test("keeps a projectless New Chat on legacy execution without fabricating an agent id", async () => {
+  test("requires every new chat to belong to a project", async () => {
     const user = { uid: "user_1", getIdToken: jest.fn().mockResolvedValue("token_1") };
     auth.currentUser = user;
     const settings = {};
@@ -254,20 +254,10 @@ describe("useAiChat", () => {
     const notify = jest.fn();
     const { result } = renderHook(() => useAiChat(user, settings, refreshBilling, notify));
 
-    let chatId;
-    await act(async () => {
-      chatId = await result.current.startNewChat();
-    });
-    expect(chatId).toEqual(expect.any(String));
-    const creationCall = setDoc.mock.calls.find(([, payload]) => payload?.chatId === chatId);
-    expect(creationCall).toBeTruthy();
-    expect(creationCall[1]).toEqual(expect.objectContaining({
-      chatId,
-      projectId: null,
-    }));
-    expect(creationCall[1]).not.toHaveProperty("agentId");
-    expect(creationCall[1]).not.toHaveProperty("agentRuntimeStatus");
-    expect(creationCall[1]).not.toHaveProperty("agentRuntimeError");
+    await expect(act(async () => result.current.startNewChat())).rejects.toThrow(
+      "Open a project before starting a chat."
+    );
+    expect(setDoc).not.toHaveBeenCalled();
     expect(resolveChatAgentProjectionV2).not.toHaveBeenCalled();
   });
 

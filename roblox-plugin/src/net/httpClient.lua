@@ -273,8 +273,8 @@ function pingSession(token, placeSignature, studio)
 		body.studio = studio
 	end
 	local result = requestOnce("POST", "/api/studio/session/ping", body, token, { maxAttempts = 1 })
-	if result.status == 401 or result.status == 403 then
-		return false, result.latencyMs or lastLatencyMs, true, nil
+	if result.status == 401 or result.status == 403 or (result.status == 409 and type(result.data) == "table" and result.data.code == "STUDIO_SESSION_REPLACED") then
+		return false, result.latencyMs or lastLatencyMs, true, result.data
 	end
 	return result.ok == true, result.latencyMs or lastLatencyMs, false, result.data
 end

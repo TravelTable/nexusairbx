@@ -4,7 +4,7 @@
 
 local TweenService = game:GetService("TweenService")
 
-local displayPluginVersion, displayProtocolVersion, MAX_ACTIVITY_ENTRIES = PLUGIN_VERSION or "0.12.0-script-context", STUDIO_PROTOCOL_VERSION or "2026-07-30-script-context", 25
+local displayPluginVersion, displayProtocolVersion, MAX_ACTIVITY_ENTRIES = PLUGIN_VERSION or "0.13.0-project-first", STUDIO_PROTOCOL_VERSION or "2026-07-30-script-context", 25
 
 local toolbar = plugin:CreateToolbar("NexusRBX")
 local toggleButton = toolbar:CreateButton("NexusRBX", "Open Nexus", "")
@@ -772,14 +772,14 @@ do
 		end
 	end
 
-	function bootstrapStudioConversation(force)
+	function bootstrapStudioConversation(force, freshConversation)
 		local token = getToken and getToken() or nil
 		if not token or chatRuntime.bootstrapping then return false end
 		if not force and chatRuntime.chatId ~= "" and conversationSection:GetAttribute("HistoryLoaded") == true then
 			return true
 		end
 		chatRuntime.bootstrapping = true
-		local ok, data = studioChatBootstrap(token, chatRuntime.chatId)
+		local ok, data = studioChatBootstrap(token, freshConversation and "" or chatRuntime.chatId)
 		if not ok or type(data) ~= "table" then
 			chatRuntime.bootstrapping = false
 			showToast(tostring(data or "Nexus could not load this game yet"), "error")
@@ -788,8 +788,8 @@ do
 		local project = type(data.project) == "table" and data.project or {}
 		local studioContext = type(data.studioContext) == "table" and data.studioContext or {}
 		nexusHeader.gameLabel.Text = tostring(project.title or studioContext.placeName or game.Name)
-		local active = type(data.activeConversation) == "table" and data.activeConversation or nil
-		if not active then
+		local active = freshConversation ~= true and type(data.activeConversation) == "table" and data.activeConversation or nil
+		if freshConversation == true or not active then
 			local createdOk, createdData = studioChatCreateConversation(token, chatComposer.mode)
 			if createdOk and type(createdData) == "table" then active = createdData.conversation end
 		end
@@ -1939,12 +1939,13 @@ function getApprovalModeEnabledExport()
 	return UI_HELPERS.getApprovalModeEnabled()
 end
 
-function handleSessionExpired()
+function handleSessionExpired(reason)
 	setToken(nil)
 	plugin:SetSetting("nexusrbxStudioSessionId", nil)
-	setStatus("session expired - re-pair")
-	setLast("session expired - enter a new pairing code")
-	UI_HELPERS.setBanner("error", "Session expired. Pair Studio again from the website.")
+	local replaced = reason == "replaced"
+	setStatus(replaced and "replaced by another Studio" or "session expired - re-pair")
+	setLast(replaced and "Another Studio became active for this account" or "session expired - enter a new pairing code")
+	UI_HELPERS.setBanner("error", replaced and "This session was replaced. Pair again to make this Studio active." or "Session expired. Pair Studio again from the website.")
 	setProgress({})
 	setActive("none")
 	refreshControls()

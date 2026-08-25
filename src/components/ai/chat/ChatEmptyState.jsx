@@ -1,27 +1,6 @@
 import React from "react";
 import { Boxes, FileCode2, FolderTree, Radio, ShieldCheck } from "lib/icons";
 
-const STARTERS = [
-  {
-    phase: "New game",
-    title: "Design a simulator loop",
-    prompt:
-      "Plan a Roblox simulator with a satisfying upgrade loop, retention systems, monetization options, and a small first version I can playtest today.",
-  },
-  {
-    phase: "Add a system",
-    title: "Add an inventory that fits this game",
-    prompt:
-      "Inspect my project and build an inventory UI that matches the existing visual style, works on mobile, and saves player items safely.",
-  },
-  {
-    phase: "Find and fix",
-    title: "Find the break, fix it, prove it",
-    prompt:
-      "Inspect my paired Studio place, trace the broken gameplay flow, fix it safely, and show the playtest evidence before I approve the result.",
-  },
-];
-
 const BUILD_PATH = [
   { label: "Project", icon: FolderTree },
   { label: "Approach", icon: Radio },
@@ -109,7 +88,6 @@ function resolveBuildContext({
 }
 
 export default function ChatEmptyState({
-  onQuickStart,
   onOpenTemplates,
   onStartGuide,
   startGuideLabel = "Show the 5-step creator guide",
@@ -196,33 +174,6 @@ export default function ChatEmptyState({
             ) : null}
           </dl>
         ) : null}
-
-        <div
-          className="chat-empty-state__starters"
-          aria-label="Roblox starter requests"
-        >
-          {STARTERS.map((starter) => (
-            <button
-              key={starter.title}
-              type="button"
-              onClick={() => onQuickStart?.(starter.prompt)}
-              className="chat-empty-state__starter focus-ring"
-            >
-              <span className="chat-empty-state__starter-copy">
-                <span>
-                  <small>{starter.phase}</small>
-                  <strong>{starter.title}</strong>
-                </span>
-              </span>
-              <span
-                className="chat-empty-state__starter-action"
-                aria-hidden="true"
-              >
-                Load request →
-              </span>
-            </button>
-          ))}
-        </div>
 
         {onOpenTemplates || onStartGuide ? (
           <div className="chat-empty-state__footer">

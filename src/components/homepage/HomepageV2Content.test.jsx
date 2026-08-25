@@ -64,6 +64,11 @@ describe("HomepageV2Content", () => {
 
   test("presents the build stack and accessible FAQ", () => {
     const { container } = render(<HomepageV2Content navigate={jest.fn()} />);
+    expect(document.getElementById("product")).toBeTruthy();
+    expect(document.getElementById("workflow")).toBeTruthy();
+    expect(document.getElementById("context")).toBeTruthy();
+    expect(document.getElementById("proof")).toBeTruthy();
+    expect(document.getElementById("faq")).toBeTruthy();
     expect(container.querySelectorAll("[class*='stackGrid'] article")).toHaveLength(6);
     expect(screen.getByText("Can Nexus work with an existing Roblox game?")).toBeTruthy();
     expect(screen.getByText(/reads the current project first/i)).toBeTruthy();

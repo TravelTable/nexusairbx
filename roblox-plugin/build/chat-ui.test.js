@@ -49,3 +49,13 @@ test("chat UI responsibilities stay split into focused source files", () => {
   }
   assert.ok(fs.existsSync(path.join(pluginRoot, "src", "net", "chatClient.lua")));
 });
+
+test("active project identity changes always start a fresh Studio conversation", () => {
+  const main = read("src/Main.server.lua");
+  const panel = read("src/ui/BridgePanel.lua");
+  assert.match(main, /projectIdentityChanged/);
+  assert.match(main, /bootstrapStudioConversation\(true, projectIdentityChanged\)/);
+  assert.match(panel, /function bootstrapStudioConversation\(force, freshConversation\)/);
+  assert.match(panel, /freshConversation == true or not active/);
+  assert.match(panel, /studioChatCreateConversation\(token, chatComposer\.mode\)/);
+});

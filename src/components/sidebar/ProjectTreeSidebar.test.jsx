@@ -1,298 +1,64 @@
 import React from "react";
 import "@testing-library/jest-dom";
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import ProjectTreeSidebar from "./ProjectTreeSidebar";
 
 const projects = [
-  {
-    projectId: "project-a",
-    title: "Sword Simulator",
-    updatedAt: 100,
-  },
+  { projectId: "project-a", title: "Sword Simulator", updatedAt: 200 },
+  { projectId: "project-b", title: "City Builder", updatedAt: 100 },
 ];
-
 const chats = [
-  {
-    id: "general-chat",
-    title: "DataStore question",
-    updatedAt: 300,
-  },
-  {
-    id: "combat-chat",
-    projectId: "project-a",
-    title: "Combat refactor",
-    updatedAt: 200,
-  },
+  { id: "chat-a", projectId: "project-a", title: "Combat refactor", updatedAt: 200 },
+  { id: "chat-b", projectId: "project-b", title: "Traffic system", updatedAt: 100 },
+  { id: "legacy-general", title: "Legacy general chat", updatedAt: 300 },
 ];
 
 function renderSidebar(overrides = {}) {
   const props = {
-    userKey: "user-1",
     projects,
     chats,
-    scripts: [
-      {
-        id: "script-1",
-        title: "Inventory Controller",
-        path: "ReplicatedStorage/InventoryController.lua",
-      },
-    ],
+    onOpenProject: jest.fn(),
     onOpenChat: jest.fn(),
-    onOpenCreation: jest.fn(),
-    onMoveChat: jest.fn(),
+    onNewChat: jest.fn(),
+    onCreateProject: jest.fn(async (title) => ({ projectId: "project-new", title })),
     ...overrides,
   };
-
-  return {
-    ...render(<ProjectTreeSidebar {...props} />),
-    props,
-  };
+  return { ...render(<ProjectTreeSidebar {...props} />), props };
 }
 
-describe("ProjectTreeSidebar", () => {
-  beforeEach(() => {
-    window.localStorage.clear();
-  });
+test("project view lists folders and creates a name-only project", async () => {
+  const { props } = renderSidebar({ showProjectList: true });
+  expect(screen.getByRole("button", { name: "Sword Simulator" })).toBeInTheDocument();
+  expect(screen.queryByText("Combat refactor")).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "New project" }));
+  fireEvent.change(screen.getByLabelText("Project name"), { target: { value: "Movement Lab" } });
+  fireEvent.click(screen.getByRole("button", { name: "Create" }));
+  await waitFor(() => expect(props.onCreateProject).toHaveBeenCalledWith("Movement Lab"));
+});
 
-  it("collapses and expands General like a folder", async () => {
-    renderSidebar();
+test("opening a project delegates the fresh-chat transition", () => {
+  const { props } = renderSidebar({ showProjectList: true });
+  fireEvent.click(screen.getByRole("button", { name: "Sword Simulator" }));
+  expect(props.onOpenProject).toHaveBeenCalledWith("project-a");
+});
 
-    expect(screen.getByRole("button", { name: /^DataStore question/ })).toBeTruthy();
+test("open-project view shows only that project's chats", () => {
+  renderSidebar({ currentProjectId: "project-a" });
+  expect(screen.getByText("Combat refactor")).toBeInTheDocument();
+  expect(screen.queryByText("Traffic system")).not.toBeInTheDocument();
+  expect(screen.queryByText("Legacy general chat")).not.toBeInTheDocument();
+});
 
-    fireEvent.click(screen.getByRole("button", { name: /^General/ }));
-    expect(screen.queryByRole("button", { name: /^DataStore question/ })).toBeNull();
+test("project chat search is scoped and back navigation returns to folders", () => {
+  const { props } = renderSidebar({ currentProjectId: "project-a" });
+  fireEvent.change(screen.getByPlaceholderText("Search Sword Simulator"), { target: { value: "missing" } });
+  expect(screen.getByText("No chats match your search.")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Back to Projects" }));
+  expect(props.onOpenProject).toHaveBeenCalledWith(null);
+});
 
-    fireEvent.click(screen.getByRole("button", { name: /^General/ }));
-    expect(screen.getByRole("button", { name: /^DataStore question/ })).toBeTruthy();
-
-    await waitFor(() => {
-      expect(JSON.parse(
-        window.localStorage.getItem("nexusrbx:sidebar:user-1:expanded")
-      )).toEqual(expect.arrayContaining(["__general__"]));
-    });
-  });
-
-  it("opens nested project chats directly and persists the exact expansion state", async () => {
-    const { props } = renderSidebar();
-
-    fireEvent.click(screen.getByRole("button", { name: "Sword Simulator" }));
-    fireEvent.click(screen.getByRole("button", { name: /^Combat refactor/ }));
-
-    expect(props.onOpenChat).toHaveBeenCalledWith("combat-chat");
-    await waitFor(() => {
-      expect(JSON.parse(
-        window.localStorage.getItem("nexusrbx:sidebar:user-1:expanded")
-      )).toEqual(expect.arrayContaining(["__projects__", "project-a"]));
-    });
-  });
-
-  it("names every tree level explicitly for assistive technology", () => {
-    renderSidebar();
-
-    const general = screen.getByRole("treeitem", { name: "General" });
-    const generalChat = screen.getByRole("treeitem", { name: "DataStore question" });
-    const projectsRoot = screen.getByRole("treeitem", { name: "Projects" });
-    const project = screen.getByRole("treeitem", { name: "Sword Simulator" });
-
-    expect(general.getAttribute("aria-level")).toBe("1");
-    expect(generalChat.getAttribute("aria-level")).toBe("2");
-    expect(projectsRoot.getAttribute("aria-level")).toBe("1");
-    expect(project.getAttribute("aria-level")).toBe("2");
-
-    fireEvent.click(within(project).getByRole("button", { name: "Sword Simulator" }));
-    const projectChat = screen.getByRole("treeitem", { name: "Combat refactor" });
-    expect(projectChat.getAttribute("aria-level")).toBe("3");
-    expect(within(projectChat).getByRole("button", { name: "Combat refactor" })).toBeTruthy();
-  });
-
-  it("announces selection and removes collapsed descendants from interaction", () => {
-    renderSidebar({ currentChatId: "general-chat" });
-
-    const general = screen.getByRole("treeitem", { name: "General" });
-    const generalChat = screen.getByRole("treeitem", { name: "DataStore question" });
-    const children = general.nextElementSibling;
-    expect(generalChat.getAttribute("aria-selected")).toBe("true");
-    expect(children.hasAttribute("inert")).toBe(false);
-
-    fireEvent.click(within(general).getByRole("button", { name: "General chats" }));
-    expect(children.hasAttribute("inert")).toBe(true);
-    expect(children.getAttribute("aria-hidden")).toBe("true");
-  });
-
-  it("keeps tree keyboard navigation and touch-action hooks intact", () => {
-    const { container } = renderSidebar();
-    const general = screen.getByRole("treeitem", { name: "General" });
-    const generalChat = screen.getByRole("treeitem", { name: "DataStore question" });
-
-    act(() => general.focus());
-    fireEvent.keyDown(general, { key: "ArrowDown" });
-    expect(generalChat).toHaveFocus();
-
-    expect(screen.getByRole("button", { name: /^New chat/ }))
-      .toHaveClass("nexus-project-tree__new-chat");
-    expect(container.querySelectorAll(".nexus-sidebar-icon-action").length).toBeGreaterThan(2);
-  });
-
-  it("keeps mobile Settings and Plan destinations on the touch-target style contract", () => {
-    renderSidebar();
-
-    const settings = screen.getByRole("link", { name: "Settings" });
-    const billing = screen.getByRole("link", { name: "Plan & usage" });
-    expect(settings).toHaveClass("nexus-project-tree__destination");
-    expect(billing).toHaveClass("nexus-project-tree__destination");
-    expect(settings.getAttribute("href")).toBe("/settings");
-    expect(billing.getAttribute("href")).toBe("/billing");
-  });
-
-  it("shows a recoverable project loading error instead of a false empty state", () => {
-    const onRetryProjects = jest.fn();
-    renderSidebar({
-      projects: [],
-      projectsError: "Projects are temporarily unavailable.",
-      onRetryProjects,
-    });
-
-    expect(screen.getByRole("alert")).toHaveTextContent("Projects are temporarily unavailable.");
-    expect(screen.queryByRole("button", { name: "Detect open Studio project" })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Retry loading projects" }));
-    expect(onRetryProjects).toHaveBeenCalledTimes(1);
-  });
-
-  it("exposes project detection progress in the empty state", () => {
-    renderSidebar({ projects: [], creatingProject: true });
-
-    expect(screen.getByRole("button", { name: "Detecting Studio project…" })).toBeDisabled();
-  });
-
-  it("searches files without changing expansion state", async () => {
-    renderSidebar();
-    fireEvent.click(screen.getByRole("button", { name: "Sword Simulator" }));
-
-    fireEvent.keyDown(window, { key: "k", metaKey: true });
-    const search = screen.getByPlaceholderText("Search projects and chats");
-    expect(screen.getByRole("textbox", { name: "Search projects and chats" })).toBe(search);
-    expect(document.activeElement).toBe(search);
-    fireEvent.change(search, { target: { value: "inventory" } });
-
-    expect(await screen.findByText("Files & creations")).toBeTruthy();
-    expect(screen.getByText("Inventory Controller")).toBeTruthy();
-
-    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
-    expect(screen.getByRole("button", { name: /^Combat refactor/ })).toBeTruthy();
-  });
-
-  it("moves a project chat to General from its context menu", async () => {
-    const { props } = renderSidebar();
-    fireEvent.click(screen.getByRole("button", { name: "Sword Simulator" }));
-
-    fireEvent.contextMenu(screen.getByRole("button", { name: /^Combat refactor/ }));
-    fireEvent.click(screen.getByRole("menuitem", { name: "Move to" }));
-    fireEvent.click(await screen.findByRole("menuitem", { name: "General" }));
-
-    expect(props.onMoveChat).toHaveBeenCalledWith("combat-chat", null);
-  });
-
-  it("keeps a project rename editable and explains a rejected save", async () => {
-    const onRenameProject = jest.fn().mockResolvedValue({
-      ok: false,
-      error: "Project names are temporarily unavailable.",
-    });
-    renderSidebar({ onRenameProject });
-
-    fireEvent.click(screen.getByRole("button", { name: "Actions for Sword Simulator" }));
-    fireEvent.click(screen.getByRole("menuitem", { name: "Rename" }));
-    const input = screen.getByRole("textbox", { name: "Rename" });
-    fireEvent.change(input, { target: { value: "Sword Arena" } });
-    fireEvent.keyDown(input, { key: "Enter" });
-
-    await waitFor(() => expect(onRenameProject).toHaveBeenCalledWith("project-a", "Sword Arena"));
-    expect(await screen.findByRole("alert")).toHaveTextContent("Project names are temporarily unavailable.");
-    expect(screen.getByRole("textbox", { name: "Rename" })).toHaveValue("Sword Arena");
-  });
-
-  it("marks only newly inserted chats for the one-shot row entrance", async () => {
-    const { props, rerender } = renderSidebar();
-    const addedChat = {
-      id: "new-chat",
-      title: "Fresh conversation",
-      updatedAt: 400,
-    };
-
-    rerender(
-      <ProjectTreeSidebar
-        {...props}
-        chats={[addedChat, ...chats]}
-      />
-    );
-
-    const newChatButton = await screen.findByRole("button", {
-      name: /^Fresh conversation/,
-    });
-    const existingChatButton = screen.getByRole("button", {
-      name: /^DataStore question/,
-    });
-
-    await waitFor(() => {
-      expect(
-        newChatButton
-          .closest(".nexus-tree-row")
-          .classList.contains("nexus-tree-row-in")
-      ).toBe(true);
-    });
-    expect(
-      existingChatButton
-        .closest(".nexus-tree-row")
-        .classList.contains("nexus-tree-row-in")
-    ).toBe(false);
-  });
-
-  it("shows the 10 most recent general chats and loads more on demand", () => {
-    const manyGeneralChats = Array.from({ length: 23 }, (_, index) => ({
-      id: `general-${index}`,
-      title: `General chat ${index}`,
-      updatedAt: 1000 - index,
-    }));
-
-    renderSidebar({ chats: manyGeneralChats });
-
-    expect(screen.getByRole("button", { name: /^General chat 0/ })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /^General chat 9/ })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /^General chat 10/ })).toBeNull();
-    expect(screen.getByRole("button", { name: /^Load more/ }).textContent).toContain("13 more");
-
-    fireEvent.click(screen.getByRole("button", { name: /^Load more/ }));
-
-    expect(screen.getByRole("button", { name: /^General chat 10/ })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /^General chat 19/ })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /^General chat 20/ })).toBeNull();
-    expect(screen.getByRole("button", { name: /^Load more/ }).textContent).toContain("3 more");
-
-    fireEvent.click(screen.getByRole("button", { name: /^Load more/ }));
-
-    expect(screen.getByRole("button", { name: /^General chat 22/ })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /^Load more/ })).toBeNull();
-  });
-
-  it("expands the general chat page enough to keep the selected chat visible", () => {
-    const manyGeneralChats = Array.from({ length: 25 }, (_, index) => ({
-      id: `general-${index}`,
-      title: `General chat ${index}`,
-      updatedAt: 1000 - index,
-    }));
-
-    const { rerender, props } = renderSidebar({ chats: manyGeneralChats });
-
-    expect(screen.queryByRole("button", { name: /^General chat 12/ })).toBeNull();
-
-    rerender(
-      <ProjectTreeSidebar
-        {...props}
-        chats={manyGeneralChats}
-        currentChatId="general-12"
-      />
-    );
-
-    expect(screen.getByRole("button", { name: /^General chat 12/ })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /^Load more/ }).textContent).toContain("5 more");
-  });
+test("new chat remains within the open project", () => {
+  const { props } = renderSidebar({ currentProjectId: "project-a" });
+  fireEvent.click(screen.getByRole("button", { name: "New chat" }));
+  expect(props.onNewChat).toHaveBeenCalledWith("project-a");
 });

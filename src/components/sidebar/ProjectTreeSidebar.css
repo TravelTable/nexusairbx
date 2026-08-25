@@ -135,8 +135,8 @@
 }
 
 .nexus-project-sidebar {
-  flex-basis: 248px;
-  width: 248px;
+  flex-basis: 232px;
+  width: 232px;
   transition:
     flex-basis var(--nx-motion-spatial) var(--nx-ease-state),
     width var(--nx-motion-spatial) var(--nx-ease-state),
@@ -171,8 +171,7 @@
   min-height: 44px;
   align-items: center;
   gap: var(--nx-space-2);
-  border-radius: 0;
-  border-bottom: 1px solid transparent;
+  border-radius: 6px;
   padding-inline: var(--nx-space-2);
   color: var(--nx-text-muted);
   font-size: 0.75rem;
@@ -181,7 +180,6 @@
 }
 
 .nexus-project-tree__destination:hover {
-  border-bottom-color: var(--nx-rule);
   background: var(--nx-field);
   color: var(--nx-text);
 }
@@ -238,10 +236,23 @@
   }
 
   .nexus-project-tree__new-chat,
+  .nexus-project-tree__primary-action,
   .nexus-project-tree__search,
   .nexus-sidebar-row-action,
   .nexus-project-tree .nexus-tree-row {
     min-height: 44px;
+  }
+
+  .nexus-project-tree__search input,
+  .nexus-project-tree__row,
+  .nexus-project-tree__row > button:first-child {
+    min-height: 44px;
+  }
+
+  .nexus-project-tree__row-action {
+    min-width: 44px;
+    min-height: 44px;
+    opacity: 1;
   }
 
   .nexus-project-tree .nexus-tree-row {

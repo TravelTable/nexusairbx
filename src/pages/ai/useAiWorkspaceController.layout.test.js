@@ -36,7 +36,7 @@ describe("Studio conversation deep links", () => {
   });
 });
 
-describe("AI workspace Studio-place gate", () => {
+describe("AI workspace single-plugin gate", () => {
   test("does not block projectless conversation just because Studio is connected", () => {
     expect(shouldRequireStudioPlaceSelection(
       'Reply with exactly "AUDIT CHAT OK". Do not use Studio, create files, or create assets.'
@@ -53,29 +53,26 @@ describe("AI workspace Studio-place gate", () => {
     })).toEqual({ status: "ready" });
   });
 
-  test("still requires a Studio place for implementation requests", () => {
+  test("still requires the Studio plugin for implementation requests", () => {
     expect(shouldRequireStudioPlaceSelection("Build a round system"))
       .toBe(true);
     expect(shouldRequireStudioPlaceSelection("Fix the inventory bug"))
       .toBe(true);
   });
 
-  test("accepts opaque local targets and describes incomplete identities without requiring publication", () => {
-    const localMessage = studioPlaceSelectionMessage([{
-      id: "studio_target_local",
-      label: "Local Arena",
-      placeId: null,
-      universeId: null,
-    }]);
-    expect(localMessage).toBe("Choose which Studio place this chat should edit before sending.");
-
-    const incompleteMessage = studioPlaceSelectionMessage([{
-      label: "Incomplete Studio project",
-      placeId: "123",
-      universeId: null,
-    }]);
-    expect(incompleteMessage).toContain("complete live identity");
-    expect(incompleteMessage).not.toMatch(/publish/i);
-    expect(studioPlaceSelectionMessage(null)).toContain("complete live identity");
+  test("allows Ask and Plan, accepts the plugin, and excludes MCP as primary", () => {
+    expect(studioPlaceSelectionMessage()).toBe("Connect Studio to apply changes.");
+    expect(evaluateIntentAwareStudioSubmissionPreflight({
+      prompt: "Build a round system", mode: "ask", connected: false,
+    })).toEqual({ status: "ready" });
+    expect(evaluateIntentAwareStudioSubmissionPreflight({
+      prompt: "Build a round system", mode: "plan", connected: false,
+    })).toEqual({ status: "ready" });
+    expect(evaluateIntentAwareStudioSubmissionPreflight({
+      prompt: "Build a round system", mode: "agent", connected: true, connectionType: "plugin_bridge",
+    })).toEqual({ status: "ready" });
+    expect(evaluateIntentAwareStudioSubmissionPreflight({
+      prompt: "Build a round system", mode: "agent", connected: true, connectionType: "mcp_local",
+    })).toEqual({ status: "blocked", message: "Connect Studio to apply changes." });
   });
 });

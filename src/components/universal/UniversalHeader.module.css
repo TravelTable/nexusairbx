@@ -583,9 +583,14 @@
   min-height: var(--nx-control-height);
   border: 0;
   outline: 0;
+  border-radius: var(--nx-radius-field);
   background: transparent;
   color: var(--nx-text);
   font-size: 1rem;
+}
+.commandInput:focus-visible {
+  outline: 2px solid var(--nx-purple);
+  outline-offset: 3px;
 }
 .commandInput::placeholder {
   color: var(--nx-text-muted);

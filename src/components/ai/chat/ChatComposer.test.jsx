@@ -65,6 +65,8 @@ const baseProps = {
   onModeChange: jest.fn(),
   mode: "agent",
   studioEnabled: false,
+  studioConnected: true,
+  studioConnectionType: "plugin_bridge",
   studioPlaceOptions: [],
   robloxImageUploads: [],
   robloxProjectAssets: [],
@@ -222,6 +224,7 @@ describe("ChatComposer compact interactions", () => {
       },
       onCancelRefine,
       onSubmit,
+      mode: "ask",
       studioConnected: false,
     });
 
@@ -343,42 +346,20 @@ describe("ChatComposer compact interactions", () => {
     );
   });
 
-  test("blocks Agent Build until an opaque live Studio target is selected", () => {
+  test("uses the sole plugin without a place selector and does not treat MCP as primary", () => {
     const onSubmit = jest.fn();
-    const onStudioPlacePickerOpenChange = jest.fn();
-    const onStudioConnectionOpen = jest.fn();
-    const studioPlaceOptions = [
-      {
-        id: "studio_target_1",
-        studioTargetId: "studio_target_1",
-        label: "Local project",
-        placeId: null,
-        universeId: null,
-      },
-    ];
     const { rerender } = renderComposer({
       prompt: "Build a fly GUI",
       onSubmit,
       studioEnabled: true,
       studioConnected: true,
-      studioPlaceOptions,
-      onStudioPlacePickerOpenChange,
-      onStudioConnectionOpen,
+      studioConnectionType: "plugin_bridge",
     });
-
-    expect(screen.getByRole("alert").textContent).toContain("Build paused");
-    expect(screen.getByRole("alert").textContent).toContain("Choose which Studio place");
-    expect(
-      screen.getByRole("button", { name: /Choose which Studio place Nexus should edit/i })
-    ).toBeDisabled();
-
-    fireEvent.click(screen.getByRole("button", { name: "Choose place" }));
-    expect(onStudioPlacePickerOpenChange).toHaveBeenCalledWith(true);
-    expect(onStudioConnectionOpen).not.toHaveBeenCalled();
+    expect(screen.queryByRole("alert")).toBeNull();
     fireEvent.keyDown(screen.getByRole("textbox", { name: "Prompt input" }), {
       key: "Enter",
     });
-    expect(onSubmit).not.toHaveBeenCalled();
+    expect(onSubmit).toHaveBeenCalledTimes(1);
 
     rerender(
       <ChatComposer
@@ -387,43 +368,28 @@ describe("ChatComposer compact interactions", () => {
         onSubmit={onSubmit}
         studioEnabled
         studioConnected
-        studioPlaceOptions={studioPlaceOptions}
-        studioPlacePreference={{
-          targetId: "studio_target_1",
-          placeId: null,
-          label: "Local project",
-        }}
+        studioConnectionType="mcp_local"
       />,
     );
-
-    expect(screen.queryByRole("alert")).toBeNull();
-    expect(screen.getByRole("button", { name: "Send prompt" }).disabled).toBe(false);
+    expect(screen.getByRole("alert").textContent).toContain("Connect Studio to apply changes.");
+    expect(screen.getByRole("button", { name: "Connect Studio to apply changes." })).toBeDisabled();
   });
 
-  test("opens Studio connection directly from both disconnected recovery controls", () => {
+  test("opens Studio connection from the disconnected recovery action", () => {
     const onStudioConnectionOpen = jest.fn();
-    const onStudioPlacePickerOpenChange = jest.fn();
     renderComposer({
       prompt: "Build a fly GUI",
       studioEnabled: true,
       studioConnected: false,
       onStudioConnectionOpen,
-      onStudioPlacePickerOpenChange,
     });
 
     expect(screen.getByRole("alert").textContent).toContain(
-      "Connect Studio and open the project you want Nexus to build in.",
+      "Connect Studio to apply changes.",
     );
-    expect(screen.getByRole("alert").textContent).not.toContain("published");
-
-    const disconnectedChip = screen.getByRole("button", {
-      name: "Studio disconnected · Connect",
-    });
-    fireEvent.click(disconnectedChip);
-    expect(onStudioConnectionOpen).toHaveBeenLastCalledWith(disconnectedChip);
 
     const recoveryAction = screen.getByRole("button", {
-      name: "Studio options",
+      name: "Connect Studio",
     });
     expect(recoveryAction.getAttribute("aria-haspopup")).toBe("dialog");
     expect(recoveryAction.getAttribute("aria-controls")).toBe(
@@ -431,8 +397,7 @@ describe("ChatComposer compact interactions", () => {
     );
     fireEvent.click(recoveryAction);
     expect(onStudioConnectionOpen).toHaveBeenLastCalledWith(recoveryAction);
-    expect(onStudioConnectionOpen).toHaveBeenCalledTimes(2);
-    expect(onStudioPlacePickerOpenChange).not.toHaveBeenCalled();
+    expect(onStudioConnectionOpen).toHaveBeenCalledTimes(1);
     expect(
       screen.queryByRole("dialog", { name: "Workspace options" }),
     ).toBeNull();

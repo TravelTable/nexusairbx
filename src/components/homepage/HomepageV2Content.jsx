@@ -193,7 +193,7 @@ function Hero({ surface, navigate, inputRef }) {
 
 function FocusedTools() {
   return (
-    <section className={styles.focusedTools} aria-labelledby="focused-tools-heading">
+    <section id="product" className={styles.focusedTools} aria-labelledby="focused-tools-heading">
       <div className={styles.sectionHeading}>
         <span className={styles.eyebrow}>FOCUSED ROBLOX TOOLS</span>
         <h2 id="focused-tools-heading">Start with the scripting task you need.</h2>
@@ -215,7 +215,7 @@ function FocusedTools() {
 
 function ProofRail() {
   return (
-    <section className={styles.proofSection} aria-labelledby="proof-heading">
+    <section id="proof" className={styles.proofSection} aria-labelledby="proof-heading">
       <div className={styles.sectionHeading}>
         <h2 id="proof-heading">Show what creators are building with Nexus</h2>
         <p>
@@ -280,7 +280,7 @@ function ToolShowcase() {
 
 function StackSection() {
   return (
-    <section className={styles.stackSection} aria-labelledby="stack-heading">
+    <section id="context" className={styles.stackSection} aria-labelledby="stack-heading">
       <div className={styles.sectionHeading}>
         <h2 id="stack-heading">One workspace. Your whole Roblox build stack.</h2>
         <p>
@@ -306,7 +306,7 @@ function StackSection() {
 
 function FaqSection() {
   return (
-    <section className={styles.faqSection} aria-labelledby="faq-heading">
+    <section id="faq" className={styles.faqSection} aria-labelledby="faq-heading">
       <div className={styles.sectionHeading}>
         <h2 id="faq-heading">Frequently asked questions</h2>
       </div>

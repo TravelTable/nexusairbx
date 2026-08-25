@@ -56,9 +56,6 @@ import {
 import {
   buildProjectBindingPayloadFromIdentity,
   buildStudioTargetPreference,
-  canBindStudioTargetToProject,
-  evaluateStudioPlaceGate,
-  evaluateStudioSubmissionPreflight,
   normalizeStudioTargetOption,
   readChatStudioPreference,
   targetingOptionsFromStatus,
@@ -149,15 +146,19 @@ export function shouldRequireStudioPlaceSelection(prompt) {
 }
 
 export function evaluateIntentAwareStudioSubmissionPreflight({ prompt, ...studioOptions }) {
-  if (!shouldRequireStudioPlaceSelection(prompt)) return { status: "ready" };
-  return evaluateStudioSubmissionPreflight(studioOptions);
+  const mode = normalizeChatMode(studioOptions.mode);
+  if (mode === "ask" || mode === "plan" || !shouldRequireStudioPlaceSelection(prompt)) {
+    return { status: "ready" };
+  }
+  const pluginConnected = studioOptions.connected === true
+    && studioOptions.connectionType === STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE;
+  return pluginConnected
+    ? { status: "ready" }
+    : { status: "blocked", message: "Connect Studio to apply changes." };
 }
 
-export function studioPlaceSelectionMessage(options = []) {
-  const candidates = Array.isArray(options) ? options : [];
-  return candidates.some(canBindStudioTargetToProject)
-    ? "Choose which Studio place this chat should edit before sending."
-    : "Nexus could not verify a complete live identity for the open Studio project. Refresh Studio and choose it again before using Agent Build.";
+export function studioPlaceSelectionMessage() {
+  return "Connect Studio to apply changes.";
 }
 
 const MODE_COLORS = {
@@ -365,7 +366,7 @@ export function useAiWorkspaceController() {
   const [robloxLoading, setRobloxLoading] = useState(false);
   const [robloxExperiences, setRobloxExperiences] = useState([]);
   const [robloxExperiencesLoading, setRobloxExperiencesLoading] = useState(false);
-  const [robloxExperiencesLoaded, setRobloxExperiencesLoaded] = useState(false);
+  const [, setRobloxExperiencesLoaded] = useState(false);
   const [robloxExperiencesError, setRobloxExperiencesError] = useState("");
   const [robloxExperiencesErrorCode, setRobloxExperiencesErrorCode] = useState("");
   const [robloxProjectAuthorizationLoading, setRobloxProjectAuthorizationLoading] = useState(false);
@@ -744,7 +745,7 @@ export function useAiWorkspaceController() {
   }, [listedPersistedProject, persistedProjectId, projectBindingsLoading, updateSettings]);
 
   useEffect(() => {
-    if (!authReady || !user || robloxLoading || !robloxStatus || projectBindingsLoading || projectRestorePending) {
+    if (!authReady || !user || projectBindingsLoading || projectRestorePending) {
       return;
     }
     if (activeProjectId) {
@@ -752,25 +753,11 @@ export function useAiWorkspaceController() {
       return;
     }
     setProjectSelectorOpen(true);
-    if (
-      robloxStatus.connected === true
-      && isRobloxProjectDiscoveryAuthorized(robloxStatus)
-      && !robloxExperiencesLoaded
-    ) {
-      void loadRobloxExperiences();
-    }
   }, [
     activeProjectId,
     authReady,
-    loadRobloxExperiences,
-    persistedProject,
-    persistedProjectId,
     projectBindingsLoading,
     projectRestorePending,
-    robloxExperiencesLoaded,
-    robloxLoading,
-    robloxStatus,
-    updateSettings,
     user,
   ]);
 
@@ -786,14 +773,34 @@ export function useAiWorkspaceController() {
     const operation = chatOperationCoordinatorRef.current.snapshot(chat.currentChatId || "draft");
     if (unified.isGenerating || operation.isBusy) {
       notify({
-        message: "Stop the current work before changing games.",
+        message: "Stop the current work before changing projects.",
         type: "info",
       });
       return;
     }
     setProjectSelectorOpen(true);
-    if (isRobloxProjectDiscoveryAuthorized(robloxStatus)) void loadRobloxExperiences();
-  }, [chat.currentChatId, loadRobloxExperiences, notify, robloxStatus, unified.isGenerating]);
+  }, [chat.currentChatId, notify, unified.isGenerating]);
+
+  const openWorkspaceProject = useCallback(async (projectId) => {
+    const nextProjectId = String(projectId || "").trim();
+    if (!nextProjectId) {
+      setProjectSelectorOpen(true);
+      return null;
+    }
+    const operation = chatOperationCoordinatorRef.current.snapshot(chat.currentChatId || "draft");
+    if (unified.isGenerating || operation.isBusy) {
+      notify({ message: "Stop the current work before changing projects.", type: "info" });
+      return null;
+    }
+    const ownedProject = projectBindingProjects.find((item) => item.projectId === nextProjectId)
+      || { projectId: nextProjectId };
+    await updateSettings({ activeProjectId: nextProjectId });
+    setSelectedProjectId(nextProjectId);
+    await chat.startNewChat({ projectId: nextProjectId });
+    setProjectSelectorOpen(false);
+    emitAiEvent(AI_EVENTS.PROJECTS_CHANGED, { projectId: nextProjectId });
+    return ownedProject;
+  }, [chat, notify, projectBindingProjects, setSelectedProjectId, unified.isGenerating, updateSettings]);
 
   const closeProjectSelector = useCallback(() => {
     setProjectSelectorOpen(false);
@@ -1443,44 +1450,13 @@ export function useAiWorkspaceController() {
         ).trim() || null;
       let studioTargetPreference = submissionOptions?.studioTargetPreference || effectiveStudioPlacePreference;
       if (
-        studioEnabled &&
-        studioConnection.connected &&
-        shouldRequireStudioPlaceSelection(promptToSend) &&
         activeConversationMode === "agent"
       ) {
-        let options = studioPlaceOptions;
-        if (!options.length) {
-          try {
-            const status = await getStudioStatus();
-            assertOperationActive();
-            options = targetingOptionsFromStatus(status);
-          } catch (error) {
-            if (operationSignal?.aborted) throw error;
-            options = [];
-          }
-        }
-        const gate = evaluateStudioPlaceGate({
-          studioEnabled: true,
-          connected: Boolean(studioConnection.connected),
-          requirePlugin: false,
-          preference: studioTargetPreference,
-          options,
-        });
-        if (gate.status === "needs_selection") {
-          const selectionMessage = studioPlaceSelectionMessage(options);
-          notify({
-            message: selectionMessage,
-            type: "error",
-          });
-          setStudioPlacePickerOpen(true);
-          throw new Error(selectionMessage);
-        }
-        if (gate.status === "ready") {
-          studioTargetPreference = buildStudioTargetPreference(gate.target) || studioTargetPreference;
-          const binding = await bindChatStudioPlace(gate.target);
-          assertOperationActive();
-          if (!binding?.projectId) throw new Error("The selected Studio place could not be linked.");
-          runtimeProjectId = binding.projectId;
+        const connectionType = getStudioConnectionType(studioConnection);
+        if (!studioConnection.connected || connectionType !== STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE) {
+          const connectionMessage = "Connect Studio to apply changes.";
+          notify({ message: connectionMessage, type: "error" });
+          throw new Error(connectionMessage);
         }
       }
 
@@ -1603,12 +1579,8 @@ export function useAiWorkspaceController() {
       activeProjectId,
       settings?.modelVersion,
       setGeneratorMode,
-      studioEnabled,
-      studioConnection.connected,
-      studioConnection.pluginConnected,
-      studioPlaceOptions,
+      studioConnection,
       effectiveStudioPlacePreference,
-      bindChatStudioPlace,
       chat,
       notify,
     ]
@@ -1636,6 +1608,7 @@ export function useAiWorkspaceController() {
         prompt: currentPrompt,
         studioEnabled,
         connected: studioConnection.connected,
+        connectionType: getStudioConnectionType(studioConnection),
         mode: activeConversationMode,
         preference: submissionOptions?.studioTargetPreference || effectiveStudioPlacePreference,
         options: studioPlaceOptions,
@@ -1754,7 +1727,7 @@ export function useAiWorkspaceController() {
       projectAssets.assets.length,
       prompt,
       refineTarget,
-      studioConnection.connected,
+      studioConnection,
       studioEnabled,
       studioPlaceOptions,
       unified,
@@ -3194,6 +3167,7 @@ export function useAiWorkspaceController() {
       dismissToast,
       updateSettings,
       openProjectSelector,
+      openWorkspaceProject,
       closeProjectSelector,
       loadRobloxExperiences,
       connectRobloxForProjects,

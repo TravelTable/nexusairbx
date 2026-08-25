@@ -7,7 +7,7 @@ export const COMPOSER_COMMANDS = Object.freeze([
   {
     id: "studio",
     label: "@studio",
-    description: "Choose which Studio place this chat edits",
+    description: "View the active Studio plugin connection",
     action: "open_studio_place",
   },
   {
@@ -44,7 +44,7 @@ export const COMPOSER_COMMANDS = Object.freeze([
 
 export const COMPOSER_PLACEHOLDER_HINTS = Object.freeze([
   "Ask the Studio agent to build, inspect, wire, or fix…",
-  "Type @studio to choose a Studio place",
+  "Type @studio to open the Studio connection",
   "Type @asset to attach Roblox assets",
   "Type @file to upload an image or script",
   "Type @controls for Live Studio settings",

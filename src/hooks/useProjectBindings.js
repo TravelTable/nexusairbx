@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  createProjectBinding,
   deleteProjectBinding,
   findOrCreateProjectBinding,
   listProjectBindings,
@@ -166,6 +167,12 @@ export function useProjectBindings(user, { authReady = true } = {}) {
     return result;
   }, [beginMutation, isCurrentMutation]);
 
+  const createProject = useCallback(async (title) => {
+    const operation = beginMutation("project:create");
+    const result = await createProjectBinding({ title });
+    return adoptProject(result?.project || null, operation);
+  }, [adoptProject, beginMutation]);
+
   const renameProject = useCallback(async (projectId, title) => {
     const operation = beginMutation(`project:${String(projectId || "").trim()}`);
     const result = await renameProjectBinding(projectId, title);
@@ -225,6 +232,7 @@ export function useProjectBindings(user, { authReady = true } = {}) {
     selectedProjectId: visibleSelectedProjectId,
     selectedProject,
     setSelectedProjectId,
+    createProject,
     deleteProject,
     renameProject,
     openGameProject,

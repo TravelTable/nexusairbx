@@ -163,7 +163,8 @@ service cloud.firestore {
         && request.resource.data.keys().hasAll([
           'title',
           'createdAt',
-          'updatedAt'
+          'updatedAt',
+          'projectId'
         ])
         && isShortString(request.resource.data.title, 160)
         && isTimestamp(request.resource.data.createdAt)
@@ -176,10 +177,7 @@ service cloud.firestore {
           !request.resource.data.keys().hasAny(['lastMessage'])
           || isShortString(request.resource.data.lastMessage, 500)
         )
-        && (
-          !request.resource.data.keys().hasAny(['projectId'])
-          || isNullableShortString(request.resource.data.projectId, 120)
-        )
+        && isShortString(request.resource.data.projectId, 120)
         && (
           !request.resource.data.keys().hasAny(['studioTargetPreference'])
           || validStudioTargetPreference(request.resource.data.studioTargetPreference)
@@ -234,7 +232,7 @@ service cloud.firestore {
             .diff(resource.data)
             .affectedKeys()
             .hasAny(['projectId'])
-          || isNullableShortString(request.resource.data.projectId, 120)
+          || isShortString(request.resource.data.projectId, 120)
         )
         && (
           !request.resource.data

@@ -7,14 +7,14 @@
 
 local BACKEND_URL = "https://api.nexusrbx.com"
 local BACKEND_HOST = "api.nexusrbx.com"
-local PLUGIN_VERSION = "0.12.0-script-context"
+local PLUGIN_VERSION = "0.13.0-project-first"
 local STUDIO_PROTOCOL_VERSION = "2026-07-30-script-context"
 
 -- This identifies the exact release artifact, independently of the user-facing
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.12.0-script-context.3"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.13.0-project-first.1"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the
@@ -364,8 +364,8 @@ function pingSession(token, placeSignature, studio)
 		body.studio = studio
 	end
 	local result = requestOnce("POST", "/api/studio/session/ping", body, token, { maxAttempts = 1 })
-	if result.status == 401 or result.status == 403 then
-		return false, result.latencyMs or lastLatencyMs, true, nil
+	if result.status == 401 or result.status == 403 or (result.status == 409 and type(result.data) == "table" and result.data.code == "STUDIO_SESSION_REPLACED") then
+		return false, result.latencyMs or lastLatencyMs, true, result.data
 	end
 	return result.ok == true, result.latencyMs or lastLatencyMs, false, result.data
 end
@@ -1926,7 +1926,7 @@ do
 
 local TweenService = game:GetService("TweenService")
 
-local displayPluginVersion, displayProtocolVersion, MAX_ACTIVITY_ENTRIES = PLUGIN_VERSION or "0.12.0-script-context", STUDIO_PROTOCOL_VERSION or "2026-07-30-script-context", 25
+local displayPluginVersion, displayProtocolVersion, MAX_ACTIVITY_ENTRIES = PLUGIN_VERSION or "0.13.0-project-first", STUDIO_PROTOCOL_VERSION or "2026-07-30-script-context", 25
 
 local toolbar = plugin:CreateToolbar("NexusRBX")
 toggleButton = toolbar:CreateButton("NexusRBX", "Open Nexus", "")
@@ -2694,14 +2694,14 @@ do
 		end
 	end
 
-	function bootstrapStudioConversation(force)
+	function bootstrapStudioConversation(force, freshConversation)
 		local token = getToken and getToken() or nil
 		if not token or chatRuntime.bootstrapping then return false end
 		if not force and chatRuntime.chatId ~= "" and conversationSection:GetAttribute("HistoryLoaded") == true then
 			return true
 		end
 		chatRuntime.bootstrapping = true
-		local ok, data = studioChatBootstrap(token, chatRuntime.chatId)
+		local ok, data = studioChatBootstrap(token, freshConversation and "" or chatRuntime.chatId)
 		if not ok or type(data) ~= "table" then
 			chatRuntime.bootstrapping = false
 			showToast(tostring(data or "Nexus could not load this game yet"), "error")
@@ -2710,8 +2710,8 @@ do
 		local project = type(data.project) == "table" and data.project or {}
 		local studioContext = type(data.studioContext) == "table" and data.studioContext or {}
 		nexusHeader.gameLabel.Text = tostring(project.title or studioContext.placeName or game.Name)
-		local active = type(data.activeConversation) == "table" and data.activeConversation or nil
-		if not active then
+		local active = freshConversation ~= true and type(data.activeConversation) == "table" and data.activeConversation or nil
+		if freshConversation == true or not active then
 			local createdOk, createdData = studioChatCreateConversation(token, chatComposer.mode)
 			if createdOk and type(createdData) == "table" then active = createdData.conversation end
 		end
@@ -3861,12 +3861,13 @@ getApprovalModeEnabledExport = function()
 	return UI_HELPERS.getApprovalModeEnabled()
 end
 
-handleSessionExpired = function()
+handleSessionExpired = function(reason)
 	setToken(nil)
 	plugin:SetSetting("nexusrbxStudioSessionId", nil)
-	setStatus("session expired - re-pair")
-	setLast("session expired - enter a new pairing code")
-	UI_HELPERS.setBanner("error", "Session expired. Pair Studio again from the website.")
+	local replaced = reason == "replaced"
+	setStatus(replaced and "replaced by another Studio" or "session expired - re-pair")
+	setLast(replaced and "Another Studio became active for this account" or "session expired - enter a new pairing code")
+	UI_HELPERS.setBanner("error", replaced and "This session was replaced. Pair again to make this Studio active." or "Session expired. Pair Studio again from the website.")
 	setProgress({})
 	setActive("none")
 	refreshControls()
@@ -10424,6 +10425,8 @@ end)
 -- plus companion health summaries. The backend throttles persistence.
 task.spawn(function()
 	local failureCount = 0
+	local activeWorkspaceProjectId = ""
+	local activeWorkspaceRevision = ""
 	while true do
 		if getToken() then
 			local studio = studioAttestationPayload()
@@ -10447,6 +10450,20 @@ task.spawn(function()
 					end)
 				end
 				if type(heartbeat) == "table" then
+					local workspace = type(heartbeat.workspace) == "table" and heartbeat.workspace or {}
+					local nextProjectId = tostring(workspace.activeProjectId or "")
+					local nextRevision = tostring(workspace.revision or "")
+					local projectIdentityChanged = activeWorkspaceProjectId ~= "" and nextProjectId ~= "" and (
+						nextProjectId ~= activeWorkspaceProjectId
+					)
+					local projectChanged = activeWorkspaceProjectId ~= "" and nextProjectId ~= "" and (
+						nextProjectId ~= activeWorkspaceProjectId or nextRevision ~= activeWorkspaceRevision
+					)
+					activeWorkspaceProjectId = nextProjectId
+					activeWorkspaceRevision = nextRevision
+					if projectChanged then
+						task.spawn(function() bootstrapStudioConversation(true, projectIdentityChanged) end)
+					end
 					refreshStudioSelection()
 					updateCollaborators(heartbeat.collaborators)
 					if type(heartbeat.mcp) == "table" then
@@ -10456,7 +10473,8 @@ task.spawn(function()
 			elseif authExpired then
 				failureCount = 0
 				resetCompatibilityHandshake()
-				handleSessionExpired()
+				local replaced = type(heartbeat) == "table" and heartbeat.code == "STUDIO_SESSION_REPLACED"
+				handleSessionExpired(replaced and "replaced" or nil)
 			else
 				failureCount = math.min(failureCount + 1, 8)
 				if not compatibilityHandshakeReady and not hadCompatibility then
