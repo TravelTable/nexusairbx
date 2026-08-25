@@ -1,4 +1,5 @@
 import React from "react";
+import "@testing-library/jest-dom";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { TokenBar } from "../AiComponents";
 import ChatComposer from "./ChatComposer";
@@ -87,13 +88,9 @@ describe("ChatComposer compact interactions", () => {
   test("preserves integration hooks and starts with settings collapsed", () => {
     renderComposer();
 
-    expect(
-      document.getElementById("tour-prompt-box").getAttribute("data-tour"),
-    ).toBe("prompt-input");
-    expect(document.getElementById("chat-composer-file-upload")).toBeTruthy();
-    expect(
-      document.getElementById("tour-generate-button").getAttribute("data-tour"),
-    ).toBe("generate-btn");
+    expect(screen.getByRole("textbox", { name: "Prompt input" }).getAttribute("data-tour")).toBe("prompt-input");
+    expect(screen.getByLabelText("Attach files")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Send prompt" }).getAttribute("data-tour")).toBe("generate-btn");
     expect(
       screen.queryByRole("dialog", { name: "Workspace options" }),
     ).toBeNull();
@@ -135,64 +132,60 @@ describe("ChatComposer compact interactions", () => {
     expect(
       screen.getByRole("listbox", { name: "Conversation mode" }),
     ).toBeTruthy();
-    const build = screen.getByRole("option", { name: /Build Builds autonomously/i });
+    const agent = screen.getByRole("option", { name: /Agent Builds autonomously/i });
     const plan = screen.getByRole("option", { name: /Plan Discusses the approach/i });
-    await waitFor(() => expect(document.activeElement).toBe(build));
+    const ask = screen.getByRole("option", { name: /Ask Talks through the project/i });
+    await waitFor(() => expect(agent).toHaveFocus());
 
-    fireEvent.keyDown(build, { key: "ArrowDown" });
-    expect(document.activeElement).toBe(plan);
-    fireEvent.keyDown(plan, { key: "End" });
-    expect(document.activeElement).toBe(plan);
-    fireEvent.keyDown(plan, { key: "Home" });
-    expect(document.activeElement).toBe(build);
-    fireEvent.keyDown(build, { key: "ArrowUp" });
-    expect(document.activeElement).toBe(plan);
+    fireEvent.keyDown(agent, { key: "ArrowDown" });
+    expect(plan).toHaveFocus();
+    fireEvent.keyDown(plan, { key: "ArrowDown" });
+    expect(ask).toHaveFocus();
+    fireEvent.keyDown(ask, { key: "End" });
+    expect(agent).toHaveFocus();
+    fireEvent.keyDown(agent, { key: "Home" });
+    expect(plan).toHaveFocus();
+    fireEvent.keyDown(plan, { key: "ArrowUp" });
+    expect(agent).toHaveFocus();
+    fireEvent.keyDown(agent, { key: "ArrowDown" });
+    expect(plan).toHaveFocus();
     fireEvent.keyDown(plan, { key: "Enter" });
 
     expect(onModeChange).toHaveBeenCalledWith("plan");
     expect(
       screen.queryByRole("listbox", { name: "Conversation mode" }),
     ).toBeNull();
-    expect(document.activeElement).toBe(trigger);
+    expect(trigger).toHaveFocus();
 
     fireEvent.click(trigger);
     await waitFor(() =>
-      expect(document.activeElement).toBe(
-        screen.getByRole("option", { name: /Build Builds autonomously/i }),
-      ),
+      expect(screen.getByRole("option", { name: /Agent Builds autonomously/i })).toHaveFocus(),
     );
     fireEvent.keyDown(
-      screen.getByRole("option", { name: /Build Builds autonomously/i }),
+      screen.getByRole("option", { name: /Agent Builds autonomously/i }),
       { key: "Escape" },
     );
     expect(
       screen.queryByRole("listbox", { name: "Conversation mode" }),
     ).toBeNull();
-    expect(document.activeElement).toBe(trigger);
+    expect(trigger).toHaveFocus();
 
     fireEvent.keyDown(trigger, { key: "ArrowUp" });
     await waitFor(() =>
-      expect(document.activeElement).toBe(
-        screen.getByRole("option", { name: /Plan Discusses the approach/i }),
-      ),
+      expect(screen.getByRole("option", { name: /Agent Builds autonomously/i })).toHaveFocus(),
     );
   });
 
-  test("explains autonomous Build and read-only Plan behavior in the composer", () => {
-    const { container, rerender } = renderComposer();
-    expect(container.querySelector(".nexus-composer__request-label")?.textContent).toContain(
-      "What should Nexus build?",
-    );
-    expect(container.querySelector(".nexus-composer__request-label")?.textContent).toContain(
-      "Starts automatically",
-    );
+  test("explains Agent, Plan, and Ask behavior in the composer", () => {
+    const { rerender } = renderComposer();
+    expect(screen.getByText(/What should Nexus do\?/).textContent).toContain("Acts automatically");
 
     rerender(<ChatComposer {...baseProps} mode="plan" />);
-    expect(container.querySelector(".nexus-composer__request-label")?.textContent).toContain(
-      "What should Nexus plan?",
-    );
-    expect(container.querySelector(".nexus-composer__request-label")?.textContent).toContain(
-      "no changes until you approve",
+    expect(screen.getByText(/What should Nexus plan\?/).textContent).toContain("no changes until you proceed");
+
+    rerender(<ChatComposer {...baseProps} mode="ask" />);
+    expect(screen.getByText(/What do you want to know\?/).textContent).toContain(
+      "Answers with project context · no changes"
     );
   });
 
@@ -275,7 +268,7 @@ describe("ChatComposer compact interactions", () => {
         screen.queryByRole("dialog", { name: "Workspace options" }),
       ).toBeNull(),
     );
-    expect(document.activeElement).toBe(settingsButton);
+    expect(settingsButton).toHaveFocus();
 
     fireEvent.click(settingsButton);
     await screen.findByRole("dialog", { name: "Workspace options" });
@@ -323,7 +316,7 @@ describe("ChatComposer compact interactions", () => {
   test("forwards file selection and preserves send disablement", () => {
     const onFileUpload = jest.fn();
     const { rerender } = renderComposer({ onFileUpload });
-    const input = document.getElementById("chat-composer-file-upload");
+    const input = screen.getByLabelText("Attach files");
     const file = new File(["print('hi')"], "main.lua", { type: "text/plain" });
     const inputClick = jest.spyOn(input, "click");
 
@@ -375,7 +368,9 @@ describe("ChatComposer compact interactions", () => {
 
     expect(screen.getByRole("alert").textContent).toContain("Build paused");
     expect(screen.getByRole("alert").textContent).toContain("Choose which Studio place");
-    expect(document.getElementById("tour-generate-button").disabled).toBe(true);
+    expect(
+      screen.getByRole("button", { name: /Choose which Studio place Nexus should edit/i })
+    ).toBeDisabled();
 
     fireEvent.click(screen.getByRole("button", { name: "Choose place" }));
     expect(onStudioPlacePickerOpenChange).toHaveBeenCalledWith(true);

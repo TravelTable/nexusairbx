@@ -51,6 +51,8 @@ jest.mock("lib/icons", () => {
     History: Icon,
     FileCode2: Icon,
     MessageSquare: Icon,
+    Gamepad2: Icon,
+    Loader: Icon,
     Pencil: Icon,
     ClipboardList: Icon,
     Layers: Icon,
@@ -278,6 +280,12 @@ function makeController({
     ),
     studio,
     roblox: { connected: false, selectedAssetProjectId },
+    project: {
+      activeProjectId: selectedAssetProjectId,
+      activeProject: selectedAssetProjectId ? { id: selectedAssetProjectId, title: "Selected game" } : null,
+      selectorOpen: false,
+      experiences: [],
+    },
     starterPromo: {},
   };
 }
@@ -690,7 +698,7 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
     });
   });
 
-  test("does not expose a no-op project-sidebar control in Quick mode", () => {
+  test("treats obsolete Quick mode state as the normal Agent workspace", () => {
     mockUseTaskRuntime.mockReturnValue({
       enabled: false,
       taskId: "",
@@ -707,9 +715,8 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
       sidebarOpen: true,
     })} />);
 
-    expect(screen.queryByRole("button", { name: "Toggle project navigation" })).toBeNull();
-    expect(document.querySelector("#project-sidebar")).toBeNull();
-    expect(screen.getByRole("main").hasAttribute("inert")).toBe(false);
+    expect(screen.getAllByRole("button", { name: "Toggle project navigation" }).length).toBeGreaterThan(0);
+    expect(document.querySelector("#project-sidebar")).not.toBeNull();
   });
 
   test("routes generated OPEN_CODE_DRAWER content into the Stage code workspace", async () => {

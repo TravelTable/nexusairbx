@@ -1,21 +1,27 @@
 export const DEFAULT_CHAT_MODE = "agent";
 
 export function normalizeChatMode(mode) {
-  return String(mode || "").trim().toLowerCase() === "plan"
-    ? "plan"
-    : DEFAULT_CHAT_MODE;
+  const normalized = String(mode || "")
+    .trim()
+    .toLowerCase();
+  if (normalized === "plan" || normalized === "ask") return normalized;
+  return DEFAULT_CHAT_MODE;
 }
 
 export function formatChatModeLabel(mode) {
-  switch (String(mode || "").trim().toLowerCase()) {
+  switch (
+    String(mode || "")
+      .trim()
+      .toLowerCase()
+  ) {
     case "agent":
     case "act":
     case "debug":
-      return "Build";
+      return "Agent";
     case "plan":
       return "Plan";
     case "ask":
-      return "Read only";
+      return "Ask";
     default:
       return "";
   }

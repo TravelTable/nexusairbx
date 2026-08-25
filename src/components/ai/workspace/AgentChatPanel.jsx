@@ -1,8 +1,6 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback } from "react";
 import ChatView from "../ChatView";
 import ChatComposer from "../chat/ChatComposer";
-import PlanWorkspace from "./PlanWorkspace";
-import FEATURE_FLAGS from "../../../lib/featureFlags";
 
 // Primary Studio agent surface. Chat drives the workflow; deeper build state
 // lives in the workspace dock so the conversation keeps the available width.
@@ -118,82 +116,30 @@ export default function AgentChatPanel({
   themePrimary,
   themeSecondary,
   onModeChange,
-  onPlanTaskAccepted,
-  executionTask,
   workspaceControls = null,
   navigationOpen = false,
   navigationControls = undefined,
   navigationButtonRef = null,
-  workspaceView,
-  onWorkspaceViewChange,
 }) {
-  const [internalView, setInternalView] = useState("chat");
-  const view = workspaceView ?? internalView;
-  const setView = useCallback(
-    (nextView) => {
-      setInternalView(nextView);
-      onWorkspaceViewChange?.(nextView);
-    },
-    [onWorkspaceViewChange],
-  );
-  const [selectedTemplateId, setSelectedTemplateId] = useState("");
-  const openPlanWorkspace = useCallback(() => setView("plan"), [setView]);
-  const hasReviewablePlan = Boolean(
-    executionTask ||
-    messages?.some((message) =>
-      ["plan", "plan_approved"].includes(
-        String(message?.stage || "").toLowerCase(),
-      ),
-    ),
-  );
-
-  useEffect(() => {
-    setView("chat");
-  }, [currentChatId, setView]);
-
-  const handlePlanExecute = useCallback(
-    async ({ result }) => {
-      const task =
-        result?.task || result?.execution?.task || result?.run || null;
-      const taskId =
-        task?.taskId ||
-        task?.id ||
-        result?.taskId ||
-        result?.execution?.taskId ||
-        result?.runId ||
-        "";
-      if (!taskId)
-        throw new Error("NexusRBX did not return an execution task.");
-      onPlanTaskAccepted?.(task || taskId);
-    },
-    [onPlanTaskAccepted],
-  );
-
   const handleComposerSubmit = useCallback(
     (event, overridePrompt = null, composerOptions = {}) => {
-      const submission = onSubmit?.(event, overridePrompt, {
-        ...composerOptions,
-        ...(selectedTemplateId ? { templateId: selectedTemplateId } : {}),
-      });
-      setSelectedTemplateId("");
-      return submission;
+      return onSubmit?.(event, overridePrompt, composerOptions);
     },
-    [onSubmit, selectedTemplateId],
+    [onSubmit]
   );
 
   const handleEditMessage = useCallback(
     (message) => {
       const messageId = String(message?.id || "").trim();
       setPrompt?.(String(message?.content || ""));
-      if (Array.isArray(message?.attachments))
-        setAttachments?.(message.attachments);
+      if (Array.isArray(message?.attachments)) setAttachments?.(message.attachments);
       if (messageId) {
         setRewindTarget?.({ messageId, mode: "replace" });
       } else {
         setRewindTarget?.(null);
       }
     },
-    [setAttachments, setPrompt, setRewindTarget],
+    [setAttachments, setPrompt, setRewindTarget]
   );
 
   return (
@@ -202,82 +148,49 @@ export default function AgentChatPanel({
       data-empty={messages?.length === 0 && !pendingMessage ? "true" : "false"}
     >
       <div className="agent-chat-panel__content flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col">
-        {view === "plan" && FEATURE_FLAGS.newPlanningMode ? (
-          <div className="min-h-0 min-w-0 w-full max-w-full flex-1 overflow-y-auto scrollbar-subtle">
-            <PlanWorkspace
-              enabled
-              messages={messages}
-              userId={user?.uid || "guest"}
-              chatId={currentChatId || "chat"}
-              projectId={projectId}
-              studioConnected={Boolean(studioConnected)}
-              studioTarget={studioPlacePreference}
-              executionTask={executionTask}
-              onExecute={handlePlanExecute}
-              onViewProgress={() => setView("chat")}
-              notify={notify}
-              onUseTemplate={(starterPrompt, templateId) => {
-                setPrompt(starterPrompt);
-                setSelectedTemplateId(String(templateId || ""));
-                onModeChange?.("plan");
-                setView("chat");
-              }}
-            />
-          </div>
-        ) : (
-          <div className="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col">
-            <ChatView
-              chatId={currentChatId}
-              chatTitle={chatTitle}
-              projectTitle={projectTitle}
-              projectId={projectId}
-              messages={messages}
-              pendingMessage={pendingMessage}
-              pendingMessages={pendingMessages}
-              generationStage={generationStage}
-              user={user}
-              profile={profile}
-              activeMode={activeMode}
-              isBusy={isBusy}
-              onApprovePlan={
-                FEATURE_FLAGS.newPlanningMode ? undefined : onApprovePlan
-              }
-              onClarifySubmit={onClarifySubmit}
-              onEditPlan={
-                FEATURE_FLAGS.newPlanningMode ? openPlanWorkspace : onEditPlan
-              }
-              onViewUi={onOpenArtifact}
-              onRefine={onRefine}
-              onQuickStart={onQuickStart}
-              onStartGuide={onStartGuide}
-              startGuideLabel={startGuideLabel}
-              notify={notify}
-              onApproveStep={onApproveStep}
-              approvingStepId={approvingStepId}
-              onSelectStudioTarget={onSelectStudioTarget}
-              selectingStudioTargetId={selectingStudioTargetId}
-              studioConnected={studioConnected}
-              studioConnectionState={studioConnectionState}
-              studioLoading={studioLoading}
-              studioPlacePreference={studioPlacePreference}
-              onRenameChat={onRenameChat}
-              onOpenNavigation={onOpenNavigation}
-              onOpenPlan={
-                FEATURE_FLAGS.newPlanningMode && hasReviewablePlan
-                  ? openPlanWorkspace
-                  : undefined
-              }
-              onEditMessage={handleEditMessage}
-              onRetryMessage={onRetryMessage}
-              onRestoreRun={onRestoreRun}
-              workspaceControls={workspaceControls}
-              navigationOpen={navigationOpen}
-              navigationControls={navigationControls}
-              navigationButtonRef={navigationButtonRef}
-              showHeader={false}
-            />
-          </div>
-        )}
+        <div className="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col">
+          <ChatView
+            chatId={currentChatId}
+            chatTitle={chatTitle}
+            projectTitle={projectTitle}
+            projectId={projectId}
+            messages={messages}
+            pendingMessage={pendingMessage}
+            pendingMessages={pendingMessages}
+            generationStage={generationStage}
+            user={user}
+            profile={profile}
+            activeMode={activeMode}
+            isBusy={isBusy}
+            onApprovePlan={onApprovePlan}
+            onClarifySubmit={onClarifySubmit}
+            onEditPlan={onEditPlan}
+            onViewUi={onOpenArtifact}
+            onRefine={onRefine}
+            onQuickStart={onQuickStart}
+            onStartGuide={onStartGuide}
+            startGuideLabel={startGuideLabel}
+            notify={notify}
+            onApproveStep={onApproveStep}
+            approvingStepId={approvingStepId}
+            onSelectStudioTarget={onSelectStudioTarget}
+            selectingStudioTargetId={selectingStudioTargetId}
+            studioConnected={studioConnected}
+            studioConnectionState={studioConnectionState}
+            studioLoading={studioLoading}
+            studioPlacePreference={studioPlacePreference}
+            onRenameChat={onRenameChat}
+            onOpenNavigation={onOpenNavigation}
+            onEditMessage={handleEditMessage}
+            onRetryMessage={onRetryMessage}
+            onRestoreRun={onRestoreRun}
+            workspaceControls={workspaceControls}
+            navigationOpen={navigationOpen}
+            navigationControls={navigationControls}
+            navigationButtonRef={navigationButtonRef}
+            showHeader={false}
+          />
+        </div>
       </div>
 
       <div className="shrink-0">
@@ -300,8 +213,10 @@ export default function AgentChatPanel({
             refineTarget
               ? "Describe the exact Studio change..."
               : activeMode === "plan"
-                ? "Describe what you want to plan before building..."
-                : "Describe the outcome you want Nexus to build..."
+                ? "Describe what you want to plan…"
+                : activeMode === "ask"
+                  ? "Ask Nexus about this project…"
+                  : "Tell Nexus what to build or fix…"
           }
           refineTarget={refineTarget}
           onCancelRefine={onCancelRefine}

@@ -52,14 +52,13 @@ const normalizeClarificationOption = (option, index) => {
 
 const clarificationQuestionId = (question, index) => question.id || `question-${index + 1}`;
 
-const isMultiSelectQuestion = (question) => (
-  question.kind === "multi"
-  || question.type === "multi"
-  || question.type === "multi_select"
-  || question.selectionMode === "multiple"
-  || question.multiple === true
-  || question.multiSelect === true
-);
+const isMultiSelectQuestion = (question) =>
+  question.kind === "multi" ||
+  question.type === "multi" ||
+  question.type === "multi_select" ||
+  question.selectionMode === "multiple" ||
+  question.multiple === true ||
+  question.multiSelect === true;
 
 const configuredAnswerValues = (value) => {
   const values = Array.isArray(value) ? value : value == null ? [] : [value];
@@ -74,48 +73,39 @@ const configuredAnswerValues = (value) => {
     .filter(Boolean);
 };
 
-const initialClarificationAnswers = (questions) => questions.reduce((initial, question, questionIndex) => {
-  const questionId = clarificationQuestionId(question, questionIndex);
-  const options = Array.isArray(question.options)
-    ? question.options.map(normalizeClarificationOption)
-    : [];
-  const configured = configuredAnswerValues(
-    question.answer
-      ?? question.defaultValues
-      ?? question.defaultOptionIds
-      ?? question.defaultValue
-      ?? question.defaultOptionId,
-  );
-  const optionDefaults = options
-    .filter((option) => option.defaultSelected)
-    .map((option) => option.value);
-  const defaults = [...new Set([
-    ...configured,
-    ...optionDefaults,
-  ])];
+const initialClarificationAnswers = (questions) =>
+  questions.reduce((initial, question, questionIndex) => {
+    const questionId = clarificationQuestionId(question, questionIndex);
+    const options = Array.isArray(question.options) ? question.options.map(normalizeClarificationOption) : [];
+    const configured = configuredAnswerValues(
+      question.answer ??
+        question.defaultValues ??
+        question.defaultOptionIds ??
+        question.defaultValue ??
+        question.defaultOptionId
+    );
+    const optionDefaults = options.filter((option) => option.defaultSelected).map((option) => option.value);
+    const defaults = [...new Set([...configured, ...optionDefaults])];
 
-  if (isMultiSelectQuestion(question)) {
-    if (defaults.length) initial[questionId] = defaults;
-  } else if (defaults.length) {
-    initial[questionId] = defaults[0];
-  }
-  return initial;
-}, {});
+    if (isMultiSelectQuestion(question)) {
+      if (defaults.length) initial[questionId] = defaults;
+    } else if (defaults.length) {
+      initial[questionId] = defaults[0];
+    }
+    return initial;
+  }, {});
 
-const clarificationAnswerHasValue = (value) => (
+const clarificationAnswerHasValue = (value) =>
   Array.isArray(value)
     ? value.some((entry) => String(entry || "").trim() !== "")
-    : value != null && String(value).trim() !== ""
-);
+    : value != null && String(value).trim() !== "";
 
 const recommendedClarificationAnswers = (questions) => {
   const recommended = {};
   for (let questionIndex = 0; questionIndex < questions.length; questionIndex += 1) {
     const question = questions[questionIndex];
     const questionId = clarificationQuestionId(question, questionIndex);
-    const options = Array.isArray(question.options)
-      ? question.options.map(normalizeClarificationOption)
-      : [];
+    const options = Array.isArray(question.options) ? question.options.map(normalizeClarificationOption) : [];
     const values = options.filter((option) => option.recommended).map((option) => option.value);
     if (isMultiSelectQuestion(question) && values.length) {
       recommended[questionId] = values;
@@ -131,11 +121,11 @@ const recommendedClarificationAnswers = (questions) => {
 function InlineBlockingQuestion({ message }) {
   const firstQuestion = Array.isArray(message.questions) ? message.questions[0] : null;
   const prompt = String(
-    firstQuestion?.question
-      || firstQuestion?.prompt
-      || message.content
-      || message.explanation
-      || "I need one detail before I can safely continue.",
+    firstQuestion?.question ||
+      firstQuestion?.prompt ||
+      message.content ||
+      message.explanation ||
+      "I need one detail before I can safely continue."
   ).trim();
 
   return (
@@ -194,9 +184,7 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
   if (!activeQuestion) return null;
 
   const questionId = clarificationQuestionId(activeQuestion, activeQuestionIndex);
-  const options = Array.isArray(activeQuestion.options)
-    ? activeQuestion.options.map(normalizeClarificationOption)
-    : [];
+  const options = Array.isArray(activeQuestion.options) ? activeQuestion.options.map(normalizeClarificationOption) : [];
   const optionValues = options.map((option) => option.value);
   const multiSelect = isMultiSelectQuestion(activeQuestion);
   const allowCustom = activeQuestion.allowCustom !== false && activeQuestion.customAllowed !== false;
@@ -206,8 +194,7 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
     : answers[questionId] && !optionValues.includes(answers[questionId])
       ? String(answers[questionId])
       : "";
-  const currentQuestionAnswered = activeQuestion.required === false
-    || clarificationAnswerHasValue(answers[questionId]);
+  const currentQuestionAnswered = activeQuestion.required === false || clarificationAnswerHasValue(answers[questionId]);
   const onLastQuestion = activeQuestionIndex === questions.length - 1;
   const progress = ((activeQuestionIndex + 1) / questions.length) * 100;
   const customIsOpen = options.length === 0 || customOpen[questionId] === true || Boolean(customAnswer);
@@ -218,10 +205,7 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
       return;
     }
     const optionSelections = currentValues.filter((value) => optionValues.includes(value));
-    setAnswer(questionId, [
-      ...optionSelections,
-      ...(nextCustomAnswer ? [nextCustomAnswer] : []),
-    ]);
+    setAnswer(questionId, [...optionSelections, ...(nextCustomAnswer ? [nextCustomAnswer] : [])]);
   };
 
   return (
@@ -276,7 +260,10 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
                   disabled={disabled}
                   onClick={() => {
                     if (!multiSelect) {
-                      setCustomOpen((previous) => ({ ...previous, [questionId]: false }));
+                      setCustomOpen((previous) => ({
+                        ...previous,
+                        [questionId]: false,
+                      }));
                       setAnswer(questionId, option.value);
                       return;
                     }
@@ -284,10 +271,7 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
                     const nextSelections = selected
                       ? optionSelections.filter((value) => value !== option.value)
                       : [...optionSelections, option.value];
-                    setAnswer(questionId, [
-                      ...nextSelections,
-                      ...(customAnswer ? [customAnswer] : []),
-                    ]);
+                    setAnswer(questionId, [...nextSelections, ...(customAnswer ? [customAnswer] : [])]);
                   }}
                   className={`group min-h-[56px] rounded-xl border px-4 py-3 text-left transition-[background-color,border-color,color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ds-surface-1)] ${
                     selected
@@ -297,11 +281,14 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
                   aria-pressed={selected}
                 >
                   <span className="flex items-start gap-3">
-                    <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
-                      selected
-                        ? "border-[var(--ds-accent)] bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)]"
-                        : "border-[var(--ds-border-strong)] text-transparent"
-                    }`} aria-hidden="true">
+                    <span
+                      className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                        selected
+                          ? "border-[var(--ds-accent)] bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)]"
+                          : "border-[var(--ds-border-strong)] text-transparent"
+                      }`}
+                      aria-hidden="true"
+                    >
                       <Check className="h-3 w-3" />
                     </span>
                     <span className="min-w-0 flex-1">
@@ -332,7 +319,10 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
             disabled={disabled}
             aria-expanded={customIsOpen}
             onClick={() => {
-              setCustomOpen((previous) => ({ ...previous, [questionId]: true }));
+              setCustomOpen((previous) => ({
+                ...previous,
+                [questionId]: true,
+              }));
               if (!multiSelect && optionValues.includes(answers[questionId])) setAnswer(questionId, "");
             }}
             className={`mt-2 flex min-h-[48px] w-full items-center gap-3 rounded-xl border px-4 py-2.5 text-left text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] ${
@@ -417,10 +407,12 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
   const approved = message.stage === "plan_approved";
   const label = CLASSIFICATION_LABELS[message.classification] || "Artifact";
   const lifecycle = Array.isArray(message.planSteps) ? message.planSteps : [];
-  const opensEditableWorkspace = typeof onApprove !== "function" && typeof onEdit === "function";
 
   return (
-    <Plan defaultOpen className="border-[color-mix(in_srgb,var(--ds-plan)_40%,transparent)] bg-[color-mix(in_srgb,var(--ds-plan)_8%,transparent)]">
+    <Plan
+      defaultOpen
+      className="border-[color-mix(in_srgb,var(--ds-plan)_40%,transparent)] bg-[color-mix(in_srgb,var(--ds-plan)_8%,transparent)]"
+    >
       <PlanHeader className="pb-4">
         <div className="space-y-1">
           <PlanTitle className="flex items-center gap-2 text-sm font-semibold text-[var(--ds-plan)]">
@@ -431,7 +423,10 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
           ) : null}
         </div>
         <PlanAction className="flex items-center gap-1">
-          <Badge variant="outline" className="border-[color-mix(in_srgb,var(--ds-plan)_35%,transparent)] text-[10px] font-semibold text-[var(--ds-plan)]">
+          <Badge
+            variant="outline"
+            className="border-[color-mix(in_srgb,var(--ds-plan)_35%,transparent)] text-[10px] font-semibold text-[var(--ds-plan)]"
+          >
             {label}
           </Badge>
           <PlanTrigger />
@@ -452,7 +447,9 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
 
             {steps.length > 0 && (
               <div className="space-y-2">
-                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-muted)]">Implementation</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-muted)]">
+                  Implementation
+                </div>
                 <ol className="space-y-2">
                   {steps.map((step, idx) => (
                     <li key={idx} className="flex items-start gap-3 text-[13px] text-[var(--ds-text-secondary)]">
@@ -468,7 +465,9 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
 
             {assumptions.length > 0 && (
               <div className="space-y-2">
-                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-muted)]">Assumptions</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-muted)]">
+                  Assumptions
+                </div>
                 <ul className="space-y-1.5">
                   {assumptions.map((assumption, idx) => (
                     <li key={idx} className="text-[13px] text-[var(--ds-text-secondary)] leading-relaxed">
@@ -513,22 +512,11 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
         ) : (
           <>
             <div className="text-[12px] text-[var(--ds-text-secondary)] leading-relaxed">
-              {opensEditableWorkspace
-                ? "Review, edit, and check this plan before starting execution."
-                : <>Reply with <span className="font-bold text-[var(--ds-text)]">Start build</span> to approve this plan, or tell me what you want changed.</>}
+              Reply with <span className="font-bold text-[var(--ds-text)]">Start build</span> to approve this plan, or
+              tell me what you want changed.
             </div>
-            {opensEditableWorkspace ? (
-              <Button
-                type="button"
-                disabled={disabled}
-                onClick={() => onEdit(message)}
-                className="flex-1 bg-[var(--ds-plan)] text-[var(--ds-plan-foreground)] font-semibold hover:opacity-90"
-              >
-                {disabled ? <Loader className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
-                Review &amp; edit plan
-              </Button>
-            ) : (
-              <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
+              {typeof onApprove === "function" ? (
                 <Button
                   type="button"
                   disabled={disabled}
@@ -538,6 +526,8 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
                   {disabled ? <Loader className="w-4 h-4" /> : <SendPrompt className="w-4 h-4" />}
                   Approve &amp; Build
                 </Button>
+              ) : null}
+              {typeof onEdit === "function" ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -545,10 +535,10 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
                   onClick={() => onEdit?.(message)}
                   className="font-medium"
                 >
-                  <Pencil className="w-3.5 h-3.5" /> Edit
+                  <Pencil className="w-3.5 h-3.5" /> Discuss changes
                 </Button>
-              </div>
-            )}
+              ) : null}
+            </div>
           </>
         )}
       </PlanFooter>

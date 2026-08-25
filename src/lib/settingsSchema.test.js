@@ -1,9 +1,4 @@
-import {
-  DEFAULT_SETTINGS,
-  mergeSettingsPatch,
-  normalizeSettings,
-  sanitizeSettingsPatch,
-} from "./settingsSchema";
+import { DEFAULT_SETTINGS, mergeSettingsPatch, normalizeSettings, sanitizeSettingsPatch } from "./settingsSchema";
 
 describe("settingsSchema", () => {
   it("normalizes stale local settings with defaults and model aliases", () => {
@@ -61,6 +56,14 @@ describe("settingsSchema", () => {
     });
   });
 
+  it("persists a bounded active workspace project identity", () => {
+    expect(normalizeSettings({ activeProjectId: " project-1 " }).activeProjectId).toBe("project-1");
+    expect(sanitizeSettingsPatch({ activeProjectId: null })).toEqual({
+      patch: { activeProjectId: null },
+      invalidKeys: [],
+    });
+  });
+
   it("rejects unknown keys and malformed values", () => {
     const { patch, invalidKeys } = sanitizeSettingsPatch({
       robloxAssetUploadsEnabled: "yes",
@@ -75,14 +78,23 @@ describe("settingsSchema", () => {
 
   it("merges partial patches while preserving Roblox asset consent", () => {
     const merged = mergeSettingsPatch(
-      { robloxAssetUploadsEnabled: true, useExamples: true, selectedExampleIds: ["itemshopui"], verbosity: "detailed" },
-      { chatMode: "debug" }
+      {
+        robloxAssetUploadsEnabled: true,
+        useExamples: true,
+        selectedExampleIds: ["itemshopui"],
+        verbosity: "detailed",
+      },
+      { chatMode: "ask" }
     );
 
     expect(merged.robloxAssetUploadsEnabled).toBe(true);
     expect(merged.useExamples).toBe(true);
     expect(merged.selectedExampleIds).toEqual(["itemshopui"]);
     expect(merged.verbosity).toBe("detailed");
-    expect(merged.chatMode).toBe("debug");
+    expect(merged.chatMode).toBe("ask");
+  });
+
+  it("migrates an obsolete Debug preference to Agent", () => {
+    expect(normalizeSettings({ chatMode: "debug" }).chatMode).toBe("agent");
   });
 });

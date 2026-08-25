@@ -1,10 +1,4 @@
-import {
-  useState,
-  useEffect,
-  useRef,
-  useMemo,
-  useCallback,
-} from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import { onAuthStateChanged } from "firebase/auth";
@@ -26,10 +20,7 @@ import { useSettings } from "../../context/SettingsContext";
 import { useUnifiedChat } from "../../hooks/useUnifiedChat";
 import { useArtifactWorkspace } from "../../hooks/useArtifactWorkspace";
 import { resolveGameSpecForPrompt } from "../../lib/gameProfile";
-import {
-  classifyUserIntent,
-  isImplementationIntent,
-} from "../../lib/intentClassifier";
+import { classifyUserIntent, isImplementationIntent } from "../../lib/intentClassifier";
 import { useAiScripts } from "../../hooks/useAiScripts";
 import { CHAT_MODES } from "../../components/ai/chatConstants";
 import { normalizeChatMode } from "../../lib/chatModes";
@@ -45,15 +36,8 @@ import {
   restoreChatCheckpoint,
   selectAgentStudioTarget,
 } from "../../lib/workflowApi";
-import {
-  CHAT_OPERATION_STATUS,
-  ChatOperationCoordinator,
-} from "../../lib/chatOperationCoordinator";
-import {
-  AgentRuntimeUnavailableError,
-  cancelAgentRunV2,
-  getAgentRunV2,
-} from "../../lib/agentRuntimeV2Api";
+import { CHAT_OPERATION_STATUS, ChatOperationCoordinator } from "../../lib/chatOperationCoordinator";
+import { AgentRuntimeUnavailableError, cancelAgentRunV2, getAgentRunV2 } from "../../lib/agentRuntimeV2Api";
 import {
   getStudioApplyMode,
   getStudioEnabledPreference,
@@ -96,20 +80,19 @@ import { useAiNotifications } from "./useAiNotifications";
 import { useStarterPromo } from "../../hooks/useStarterPromo";
 import {
   getRobloxOAuthStatus,
+  getRobloxExperiences,
+  beginRobloxOAuth,
   beginCreatorStoreReauthorization,
   isCreatorStoreReadAuthorized,
   readPendingRobloxAction,
   clearPendingRobloxAction,
 } from "../../lib/robloxOAuthApi";
 import { useProjectAssets } from "../../hooks/useProjectAssets";
+import { useProjectBindings } from "../../hooks/useProjectBindings";
 import { useRobloxImageUpload, isRobloxDecalImage } from "../../hooks/useRobloxImageUpload";
 import { useWorkspaceArtifactPersistence } from "../../hooks/useWorkspaceArtifactPersistence";
 import { createImprovePromptError, formatImprovePromptErrorMessage } from "../../lib/aiPromptErrors";
-import {
-  consumeGenerationIntent,
-  restoreGenerationIntent,
-} from "../../lib/generationIntent";
-import { resolveInitialGeneratorMode } from "../../lib/experiments";
+import { consumeGenerationIntent, restoreGenerationIntent } from "../../lib/generationIntent";
 import { categorizePrompt, trackProductEvent } from "../../lib/productAnalytics";
 import {
   createQuickScriptIdempotencyKey,
@@ -137,10 +120,7 @@ import {
   readPendingAuthAction,
 } from "../../lib/pendingAuthAction";
 import { normalizeChatAttachments } from "../../lib/chatAttachments";
-import {
-  sanitizeChatWritePayload,
-  sanitizeTranscriptMessagePayload,
-} from "../../lib/firestorePayloads";
+import { sanitizeChatWritePayload, sanitizeTranscriptMessagePayload } from "../../lib/firestorePayloads";
 import { normalizeRobloxPlaceId } from "../../lib/robloxPlaceId";
 import { normalizeAuthoritativeRunStatus } from "../../lib/runCancellation";
 
@@ -152,8 +132,9 @@ export function shouldOpenProjectSidebarByDefault(viewportWidth) {
 }
 
 export function shouldCloseProjectSidebarOnViewportChange(previousViewportWidth, nextViewportWidth) {
-  return shouldOpenProjectSidebarByDefault(previousViewportWidth)
-    && !shouldOpenProjectSidebarByDefault(nextViewportWidth);
+  return (
+    shouldOpenProjectSidebarByDefault(previousViewportWidth) && !shouldOpenProjectSidebarByDefault(nextViewportWidth)
+  );
 }
 
 export function shouldRequireStudioPlaceSelection(prompt) {
@@ -209,7 +190,7 @@ async function waitForAgentRunTerminal(runId, { attempts = 20, readRun = getAgen
       // read must not let the stopped operation regain transcript ownership.
     }
     await new Promise((resolve) => {
-      setTimeout(resolve, Math.min(300 + (attempt * 100), 1200));
+      setTimeout(resolve, Math.min(300 + attempt * 100, 1200));
     });
   }
   return latest;
@@ -251,17 +232,21 @@ function quickScriptKind(scriptType = "") {
 
 function quickScriptArtifact(result) {
   if (
-    !result?.code
-    || result?.validation?.status === "blocked"
-    || !["Script", "LocalScript", "ModuleScript"].includes(result?.scriptType)
-    || !String(result?.studioLocation || "").trim()
-  ) return null;
+    !result?.code ||
+    result?.validation?.status === "blocked" ||
+    !["Script", "LocalScript", "ModuleScript"].includes(result?.scriptType) ||
+    !String(result?.studioLocation || "").trim()
+  )
+    return null;
   const title = result.title || "Quick";
-  const targetPath = String(result.targetPath || "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
-  const name = result.scriptName
-    || targetPath.split("/").filter(Boolean).pop()
-    || title.replace(/[^a-z0-9_-]+/gi, "_").replace(/^_+|_+$/g, "")
-    || "QuickScript";
+  const targetPath = String(result.targetPath || "")
+    .replace(/\\/g, "/")
+    .replace(/^\/+|\/+$/g, "");
+  const name =
+    result.scriptName ||
+    targetPath.split("/").filter(Boolean).pop() ||
+    title.replace(/[^a-z0-9_-]+/gi, "_").replace(/^_+|_+$/g, "") ||
+    "QuickScript";
   const kind = quickScriptKind(result.scriptType);
   return {
     artifactId: `quick-script:${Date.now()}`,
@@ -329,20 +314,18 @@ export function useAiWorkspaceController() {
   const [mobileTab, setMobileTab] = useState("chat");
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth < 1024 : false);
   const previousViewportWidthRef = useRef(typeof window !== "undefined" ? window.innerWidth : 0);
-  const [sidebarOpen, setSidebarOpen] = useState(() => (
-    typeof window !== "undefined"
-      ? shouldOpenProjectSidebarByDefault(window.innerWidth)
-      : false
-  ));
+  const [sidebarOpen, setSidebarOpen] = useState(() =>
+    typeof window !== "undefined" ? shouldOpenProjectSidebarByDefault(window.innerWidth) : false
+  );
 
   const [prompt, setPrompt] = useState("");
   const [rewindTarget, setRewindTarget] = useState(null); // { messageId, mode }
-  const [generatorMode, setGeneratorModeState] = useState(() => (
-    resolveInitialGeneratorMode({ restoredSession: loadQuickScriptSession() })
-  ));
+  const [generatorMode, setGeneratorModeState] = useState("agent_build");
   const [quickScript, setQuickScript] = useState(() => {
     const restored = loadQuickScriptSession();
-    const restoredResult = restored?.result ? normalizeQuickScriptResult(restored.result, restored?.prompt || "") : null;
+    const restoredResult = restored?.result
+      ? normalizeQuickScriptResult(restored.result, restored?.prompt || "")
+      : null;
     return {
       prompt: restored?.prompt || "",
       status: restored?.status || "idle",
@@ -373,6 +356,14 @@ export function useAiWorkspaceController() {
   const [studioApplyMode, setStudioApplyModeState] = useState(() => getStudioApplyMode());
   const [robloxStatus, setRobloxStatus] = useState(null);
   const [robloxLoading, setRobloxLoading] = useState(false);
+  const [robloxExperiences, setRobloxExperiences] = useState([]);
+  const [robloxExperiencesLoading, setRobloxExperiencesLoading] = useState(false);
+  const [robloxExperiencesLoaded, setRobloxExperiencesLoaded] = useState(false);
+  const [robloxExperiencesError, setRobloxExperiencesError] = useState("");
+  const [projectSelectorOpen, setProjectSelectorOpen] = useState(false);
+  const [selectingUniverseId, setSelectingUniverseId] = useState("");
+  const [restoredActiveProject, setRestoredActiveProject] = useState(null);
+  const [projectRestorePending, setProjectRestorePending] = useState(false);
   const [assetLibraryOpen, setAssetLibraryOpen] = useState(false);
   const [approvingStepId, setApprovingStepId] = useState(null);
   const [selectingStudioTargetId, setSelectingStudioTargetId] = useState(null);
@@ -414,22 +405,22 @@ export function useAiWorkspaceController() {
   }
   const [, setChatOperationRevision] = useState(0);
 
-  useEffect(() => (
-    chatOperationCoordinatorRef.current.subscribe(() => {
-      setChatOperationRevision((revision) => revision + 1);
-    })
-  ), []);
+  useEffect(
+    () =>
+      chatOperationCoordinatorRef.current.subscribe(() => {
+        setChatOperationRevision((revision) => revision + 1);
+      }),
+    []
+  );
 
-  const {
-    notify: queueNotify,
-    toasts,
-    currentToast,
-    dismissToast,
-  } = useAiNotifications();
+  const { notify: queueNotify, toasts, currentToast, dismissToast } = useAiNotifications();
 
-  const notify = useCallback((payload) => {
-    queueNotify(payload || {});
-  }, [queueNotify]);
+  const notify = useCallback(
+    (payload) => {
+      queueNotify(payload || {});
+    },
+    [queueNotify]
+  );
 
   const planKey = plan?.toLowerCase() || "free";
 
@@ -451,7 +442,9 @@ export function useAiWorkspaceController() {
           actionLabel: actionLabel(PENDING_AUTH_ACTIONS.CHAT_SUBMIT),
         },
       });
-      setSignInNudgeReason("Sign up to continue this workspace conversation and keep your generated work attached to your account.");
+      setSignInNudgeReason(
+        "Sign up to continue this workspace conversation and keep your generated work attached to your account."
+      );
       setShowSignInNudge(true);
     },
     isPremium,
@@ -473,20 +466,26 @@ export function useAiWorkspaceController() {
     if (!authReady || !user || billingLoading || billingError) return;
     if (!isFreeUsagePlan || isStarterOrAbove) return;
     openStarterPromo("post_sign_in", { force: true });
-  }, [
-    authReady,
-    billingError,
-    billingLoading,
-    isFreeUsagePlan,
-    isStarterOrAbove,
-    openStarterPromo,
-    user,
-  ]);
+  }, [authReady, billingError, billingLoading, isFreeUsagePlan, isStarterOrAbove, openStarterPromo, user]);
 
   const chat = unified;
-  const activeConversationMode = normalizeChatMode(
-    chat.activeMode || settings?.chatMode,
-  );
+  const projectBindings = useProjectBindings(user, { authReady });
+  const {
+    projects: projectBindingProjects,
+    loading: projectBindingsLoading,
+    setSelectedProjectId,
+    openGameProject,
+  } = projectBindings;
+  const chatProjectId = String(chat.currentChatMeta?.projectId || "").trim();
+  const persistedProjectId = String(settings?.activeProjectId || "").trim();
+  const listedPersistedProject =
+    projectBindingProjects.find((project) => project.projectId === persistedProjectId) || null;
+  const persistedProject =
+    listedPersistedProject || (restoredActiveProject?.projectId === persistedProjectId ? restoredActiveProject : null);
+  const activeProjectId = chatProjectId || persistedProject?.projectId || "";
+  const activeProject =
+    projectBindingProjects.find((project) => project.projectId === activeProjectId) || persistedProject || null;
+  const activeConversationMode = normalizeChatMode(chat.activeMode || settings?.chatMode);
   const chatOperationKey = chat.currentChatId || "draft";
   const chatOperationState = chatOperationCoordinatorRef.current.snapshot(chatOperationKey);
   const scriptManager = useAiScripts(user, notify, { authReady });
@@ -523,18 +522,19 @@ export function useAiWorkspaceController() {
 
     const coordinator = chatOperationCoordinatorRef.current;
     const requestId = String(
-      pendingRun?.operationId
-      || pendingRun?.requestId
-      || pendingRun?.clientMessageId
-      || pendingRun?.metadata?.requestId
-      || ""
+      pendingRun?.operationId ||
+        pendingRun?.requestId ||
+        pendingRun?.clientMessageId ||
+        pendingRun?.metadata?.requestId ||
+        ""
     ).trim();
     const cancellationMarker = requestId
-      ? (chat.messages || []).find((message) => (
-          String(message?.requestId || "").trim() === requestId
-          && message?.stage === "canceled"
-          && message?.metadata?.cancellationPending === true
-        ))
+      ? (chat.messages || []).find(
+          (message) =>
+            String(message?.requestId || "").trim() === requestId &&
+            message?.stage === "canceled" &&
+            message?.metadata?.cancellationPending === true
+        )
       : null;
     const cancelProjectedRun = async (operation) => {
       unified.cancelCurrentFlow?.();
@@ -547,7 +547,11 @@ export function useAiWorkspaceController() {
     if (cancellationMarker && requestId) {
       if (terminalStatus === "canceled") {
         void unified.reconcileCancelledRun?.(runId, { chatId, requestId });
-        coordinator.reconcile(chatId, { ...pendingRun, runId, status: rawStatus });
+        coordinator.reconcile(chatId, {
+          ...pendingRun,
+          runId,
+          status: rawStatus,
+        });
         return;
       }
       if (!terminalStatus) {
@@ -571,7 +575,11 @@ export function useAiWorkspaceController() {
       }
     }
     if (terminalStatus) {
-      coordinator.reconcile(chatId, { ...pendingRun, runId, status: rawStatus });
+      coordinator.reconcile(chatId, {
+        ...pendingRun,
+        runId,
+        status: rawStatus,
+      });
       return;
     }
     if (!unified.isGenerating && !rawStatus) return;
@@ -586,18 +594,8 @@ export function useAiWorkspaceController() {
       runId,
       onCancel: cancelProjectedRun,
     });
-  }, [
-    chat.currentChatId,
-    unified,
-    unified.isGenerating,
-    unified.pendingMessage,
-    workspace.agentRun,
-    chat.messages,
-  ]);
-  const {
-    isGenerating: unifiedIsGenerating,
-    handleSubmit: submitUnifiedPrompt,
-  } = unified;
+  }, [chat.currentChatId, unified, unified.isGenerating, unified.pendingMessage, workspace.agentRun, chat.messages]);
+  const { isGenerating: unifiedIsGenerating, handleSubmit: submitUnifiedPrompt } = unified;
 
   const activeModeData = useMemo(
     () => CHAT_MODES.find((m) => m.id === activeConversationMode) || CHAT_MODES[0],
@@ -614,16 +612,24 @@ export function useAiWorkspaceController() {
     [activeConversationMode]
   );
 
-  const track = useCallback((event, metadata = {}, options = {}) => {
-    void trackProductEvent(event, {
-      surface: "ai_page",
-      generator_mode: metadata.generator_mode || (generatorMode === "quick_script" ? "quick_script" : activeConversationMode),
-      ...metadata,
-    }, options);
-  }, [activeConversationMode, generatorMode]);
+  const track = useCallback(
+    (event, metadata = {}, options = {}) => {
+      void trackProductEvent(
+        event,
+        {
+          surface: "ai_page",
+          generator_mode:
+            metadata.generator_mode || (generatorMode === "quick_script" ? "quick_script" : activeConversationMode),
+          ...metadata,
+        },
+        options
+      );
+    },
+    [activeConversationMode, generatorMode]
+  );
 
-  const setGeneratorMode = useCallback((mode, source = "manual") => {
-    const normalized = mode === "agent_build" ? "agent_build" : "quick_script";
+  const setGeneratorMode = useCallback((_mode, source = "manual") => {
+    const normalized = "agent_build";
     setGeneratorModeState((prev) => {
       if (prev === normalized) return prev;
       void trackProductEvent("generator_mode_selected", {
@@ -634,6 +640,176 @@ export function useAiWorkspaceController() {
       return normalized;
     });
   }, []);
+
+  const loadRobloxExperiences = useCallback(async () => {
+    if (!user || robloxStatus?.connected !== true) {
+      setRobloxExperiences([]);
+      setRobloxExperiencesError("");
+      setRobloxExperiencesLoaded(false);
+      return [];
+    }
+    setRobloxExperiencesLoading(true);
+    setRobloxExperiencesError("");
+    try {
+      const experiences = await getRobloxExperiences({ limit: 200 });
+      setRobloxExperiences(experiences);
+      setRobloxExperiencesLoaded(true);
+      return experiences;
+    } catch (error) {
+      setRobloxExperiences([]);
+      setRobloxExperiencesLoaded(true);
+      setRobloxExperiencesError(error?.message || "Roblox games could not be loaded right now.");
+      return [];
+    } finally {
+      setRobloxExperiencesLoading(false);
+    }
+  }, [robloxStatus?.connected, user]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!persistedProjectId) {
+      setRestoredActiveProject(null);
+      setProjectRestorePending(false);
+      return undefined;
+    }
+    if (listedPersistedProject) {
+      setRestoredActiveProject(listedPersistedProject);
+      setProjectRestorePending(false);
+      return undefined;
+    }
+    if (projectBindingsLoading) return undefined;
+
+    setProjectRestorePending(true);
+    void getProjectBinding(persistedProjectId)
+      .then((resolution) => {
+        if (cancelled) return;
+        if (resolution?.state === PROJECT_RESOLUTION_STATES.MISSING || !resolution?.project) {
+          setRestoredActiveProject(null);
+          void updateSettings({ activeProjectId: null });
+          return;
+        }
+        setRestoredActiveProject(resolution.project);
+      })
+      .catch(() => {
+        // A transient lookup failure should not discard a persisted boundary.
+      })
+      .finally(() => {
+        if (!cancelled) setProjectRestorePending(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [listedPersistedProject, persistedProjectId, projectBindingsLoading, updateSettings]);
+
+  useEffect(() => {
+    if (!authReady || !user || robloxLoading || !robloxStatus || projectBindingsLoading || projectRestorePending) {
+      return;
+    }
+    if (activeProjectId) {
+      setProjectSelectorOpen(false);
+      return;
+    }
+    setProjectSelectorOpen(true);
+    if (robloxStatus.connected === true && !robloxExperiencesLoaded) {
+      void loadRobloxExperiences();
+    }
+  }, [
+    activeProjectId,
+    authReady,
+    loadRobloxExperiences,
+    persistedProject,
+    persistedProjectId,
+    projectBindingsLoading,
+    projectRestorePending,
+    robloxExperiencesLoaded,
+    robloxLoading,
+    robloxStatus,
+    updateSettings,
+    user,
+  ]);
+
+  useEffect(() => {
+    if (!chatProjectId) return;
+    setSelectedProjectId(chatProjectId);
+    if (settings?.activeProjectId !== chatProjectId) {
+      void updateSettings({ activeProjectId: chatProjectId });
+    }
+  }, [chatProjectId, setSelectedProjectId, settings?.activeProjectId, updateSettings]);
+
+  const openProjectSelector = useCallback(() => {
+    const operation = chatOperationCoordinatorRef.current.snapshot(chat.currentChatId || "draft");
+    if (unified.isGenerating || operation.isBusy) {
+      notify({
+        message: "Stop the current work before changing games.",
+        type: "info",
+      });
+      return;
+    }
+    setProjectSelectorOpen(true);
+    if (robloxStatus?.connected === true) void loadRobloxExperiences();
+  }, [chat.currentChatId, loadRobloxExperiences, notify, robloxStatus?.connected, unified.isGenerating]);
+
+  const closeProjectSelector = useCallback(() => {
+    if (activeProjectId) setProjectSelectorOpen(false);
+  }, [activeProjectId]);
+
+  const connectRobloxForProjects = useCallback(async () => {
+    try {
+      await beginRobloxOAuth({
+        bundles: ["core"],
+        returnPath: "/ai",
+        pendingAction: { type: "select_project" },
+      });
+    } catch (error) {
+      notify({
+        message: error?.message || "Could not start the Roblox connection.",
+        type: "error",
+      });
+    }
+  }, [notify]);
+
+  const selectRobloxExperience = useCallback(
+    async (experience) => {
+      const universeId = String(experience?.universeId || "").trim();
+      const rootPlaceId = String(experience?.rootPlaceId || "").trim();
+      if (!universeId || !rootPlaceId || selectingUniverseId) return;
+      setSelectingUniverseId(universeId);
+      try {
+        const project = await openGameProject({
+          title: experience.name,
+          name: experience.name,
+          universeId,
+          placeId: rootPlaceId,
+          defaultPlaceId: rootPlaceId,
+        });
+        if (!project?.projectId) {
+          throw new Error("This game could not be opened as a Nexus project.");
+        }
+        await updateSettings({ activeProjectId: project.projectId });
+        setSelectedProjectId(project.projectId);
+        // A selected game is authoritative; a target from the prior chat must
+        // be chosen again before Agent can write to Studio.
+        setOptimisticStudioPlacePreference(null);
+        await chat.startNewChat({ projectId: project.projectId });
+        emitAiEvent(AI_EVENTS.PROJECTS_CHANGED, {
+          projectId: project.projectId,
+        });
+        setProjectSelectorOpen(false);
+        notify({
+          message: `${experience.name} is now the active project.`,
+          type: "success",
+        });
+      } catch (error) {
+        notify({
+          message: error?.message || "This game could not be selected.",
+          type: "error",
+        });
+      } finally {
+        setSelectingUniverseId("");
+      }
+    },
+    [chat, notify, openGameProject, selectingUniverseId, setSelectedProjectId, updateSettings]
+  );
 
   useEffect(() => {
     saveQuickScriptSession({
@@ -678,11 +854,7 @@ export function useAiWorkspaceController() {
     let cancelled = false;
     firebaseAppCheckReady.then(({ available, disabled, error }) => {
       if (cancelled) return;
-      setAppCheckError(
-        available || disabled
-          ? null
-          : (error || new Error("Firebase App Check is unavailable."))
-      );
+      setAppCheckError(available || disabled ? null : error || new Error("Firebase App Check is unavailable."));
     });
     return () => {
       cancelled = true;
@@ -706,7 +878,8 @@ export function useAiWorkspaceController() {
       // A user object alone is not sufficient proof that Firestore has a
       // usable credential. Refresh the ID token before exposing this user to
       // any Firestore hook, without logging the token itself.
-      void firebaseUser.getIdToken(true)
+      void firebaseUser
+        .getIdToken(true)
         .then(() => {
           if (disposed || changeId !== authChangeId) return;
           setUser(firebaseUser);
@@ -734,9 +907,7 @@ export function useAiWorkspaceController() {
   useEffect(() => {
     if (!authReady) return;
     if (!user) {
-      setSignInNudgeReason(
-        "Sign in or create a free account to use Quick Script, Agent Build, and your saved AI workspace."
-      );
+      setSignInNudgeReason("Sign in or create a free account to use Agent, Assets, and your saved AI workspace.");
       setShowSignInNudge(true);
       return;
     }
@@ -754,11 +925,7 @@ export function useAiWorkspaceController() {
       return;
     }
 
-    const q = query(
-      collection(db, "users", user.uid, "scripts"),
-      orderBy("updatedAt", "desc"),
-      limit(scriptsLimit)
-    );
+    const q = query(collection(db, "users", user.uid, "scripts"), orderBy("updatedAt", "desc"), limit(scriptsLimit));
 
     let cancelled = false;
     getDocs(q)
@@ -817,13 +984,16 @@ export function useAiWorkspaceController() {
       const intent = restoreGenerationIntent(intentId);
       if (intent) {
         if (intent.mode === "asset") {
-          navigate("/tools/icon-generator", { replace: true, state: { generationIntentId: intent.id } });
+          navigate("/tools/icon-generator", {
+            replace: true,
+            state: { generationIntentId: intent.id },
+          });
           return;
         }
         restoredIntentIdRef.current = intent.id;
         setPrompt(intent.prompt);
-        setPendingGenerationIntent(intent);
-        setGeneratorMode(intent.mode === "agent_build" || intent.mode === "agent" ? "agent_build" : "quick_script", "generation_intent");
+        setPendingGenerationIntent({ ...intent, mode: "agent" });
+        setGeneratorMode("agent_build", "generation_intent");
         void trackProductEvent("generation_intent_restored", {
           surface: "ai_page",
           source: intent.source,
@@ -838,7 +1008,7 @@ export function useAiWorkspaceController() {
 
     if (location.state.initialPrompt) {
       setPrompt(location.state.initialPrompt);
-      setGeneratorMode(location.state.generatorMode === "agent_build" ? "agent_build" : "quick_script", "location_state");
+      setGeneratorMode("agent_build", "location_state");
       delete nextState.initialPrompt;
       delete nextState.aiResult;
       delete nextState.generatorMode;
@@ -867,14 +1037,17 @@ export function useAiWorkspaceController() {
     const intent = restoreGenerationIntent();
     if (!intent) return;
     if (intent.mode === "asset") {
-      navigate("/tools/icon-generator", { replace: true, state: { generationIntentId: intent.id } });
+      navigate("/tools/icon-generator", {
+        replace: true,
+        state: { generationIntentId: intent.id },
+      });
       return;
     }
 
     restoredIntentIdRef.current = intent.id;
     setPrompt(intent.prompt);
-    setPendingGenerationIntent(intent);
-    setGeneratorMode(intent.mode === "agent_build" || intent.mode === "agent" ? "agent_build" : "quick_script", "generation_intent");
+    setPendingGenerationIntent({ ...intent, mode: "agent" });
+    setGeneratorMode("agent_build", "generation_intent");
     void trackProductEvent("generation_intent_restored", {
       surface: "ai_page",
       source: intent.source,
@@ -886,7 +1059,7 @@ export function useAiWorkspaceController() {
 
   useEffect(() => {
     const unbindStartDraft = onAiEvent(AI_EVENTS.START_DRAFT, (event) => {
-      const projectId = String(event?.detail?.projectId || "").trim();
+      const projectId = String(event?.detail?.projectId || activeProjectId || "").trim();
       void chat.startNewChat({ projectId: projectId || null });
       setActiveTab("chat");
     });
@@ -898,7 +1071,13 @@ export function useAiWorkspaceController() {
       }
 
       const { name, code } = e.detail || {};
-      await scriptManager.handleCreateScript(name, code, "logic", chat.currentChatId, chat.currentChatMeta?.projectId || null);
+      await scriptManager.handleCreateScript(
+        name,
+        code,
+        "logic",
+        chat.currentChatId,
+        chat.currentChatMeta?.projectId || null
+      );
       notify({ message: `Saved ${name} to creations`, type: "success" });
       track("project_saved", { output_type: "script" });
     });
@@ -907,7 +1086,7 @@ export function useAiWorkspaceController() {
       unbindStartDraft();
       unbindSaveScript();
     };
-  }, [chat, isStarterOrAbove, notify, scriptManager, track, starterPromo]);
+  }, [activeProjectId, chat, isStarterOrAbove, notify, scriptManager, starterPromo, track]);
 
   useEffect(() => {
     if (!authReady || !user?.uid || auth.currentUser?.uid !== user.uid) {
@@ -966,18 +1145,17 @@ export function useAiWorkspaceController() {
     if (!user || studioConnection.loading) return;
     const savedSessionId = settings?.lastAuthorizedStudioSessionId;
     if (!savedSessionId) return;
-    if (
-      studioConnection.pluginConnected &&
-      getStudioSessionId(studioConnection.pluginSession) === savedSessionId
-    ) return;
+    if (studioConnection.pluginConnected && getStudioSessionId(studioConnection.pluginSession) === savedSessionId)
+      return;
 
     getStudioStatus()
       .then(({ sessions }) => {
-        const stillExists = (sessions || []).some((session) => (
-          getStudioSessionId(session) === savedSessionId &&
-          getStudioConnectionType(session) === STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE &&
-          isStudioSessionLive(session)
-        ));
+        const stillExists = (sessions || []).some(
+          (session) =>
+            getStudioSessionId(session) === savedSessionId &&
+            getStudioConnectionType(session) === STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE &&
+            isStudioSessionLive(session)
+        );
         if (!stillExists) {
           updateSettings({ lastAuthorizedStudioSessionId: null }).catch(() => {});
         }
@@ -992,14 +1170,8 @@ export function useAiWorkspaceController() {
     updateSettings,
   ]);
 
-  const studioPlaceOptions = useMemo(
-    () => targetingOptionsFromStatus(studioConnection),
-    [studioConnection]
-  );
-  const chatStudioPreference = useMemo(
-    () => readChatStudioPreference(chat.currentChatMeta),
-    [chat.currentChatMeta]
-  );
+  const studioPlaceOptions = useMemo(() => targetingOptionsFromStatus(studioConnection), [studioConnection]);
+  const chatStudioPreference = useMemo(() => readChatStudioPreference(chat.currentChatMeta), [chat.currentChatMeta]);
 
   // Keep optimistic preference across empty-chat → first-chat creation; only drop it
   // when switching between existing chats or once Firestore meta matches.
@@ -1007,11 +1179,7 @@ export function useAiWorkspaceController() {
   useEffect(() => {
     const previousChatId = previousChatIdRef.current;
     previousChatIdRef.current = chat.currentChatId;
-    if (
-      previousChatId != null &&
-      chat.currentChatId != null &&
-      previousChatId !== chat.currentChatId
-    ) {
+    if (previousChatId != null && chat.currentChatId != null && previousChatId !== chat.currentChatId) {
       setOptimisticStudioPlacePreference(null);
     }
   }, [chat.currentChatId]);
@@ -1037,614 +1205,677 @@ export function useAiWorkspaceController() {
       storedStudioPlacePreference.targetId || storedStudioPlacePreference.studioTargetId || ""
     ).trim();
     const matchingLiveTarget = targetId
-      ? studioPlaceOptions.find((option) => (
-          option?.id === targetId || option?.studioTargetId === targetId
-        ))
+      ? studioPlaceOptions.find((option) => option?.id === targetId || option?.studioTargetId === targetId)
       : null;
-    return matchingLiveTarget
-      ? { ...storedStudioPlacePreference, ...matchingLiveTarget }
-      : storedStudioPlacePreference;
+    return matchingLiveTarget ? { ...storedStudioPlacePreference, ...matchingLiveTarget } : storedStudioPlacePreference;
   }, [storedStudioPlacePreference, studioPlaceOptions]);
 
   const ensureStudioProjectBinding = useCallback(async (option) => {
     const target = normalizeStudioTargetOption(option) || option;
     const placeId = normalizeRobloxPlaceId(target?.placeId || target?.targetPlaceId);
     const universeId = String(target?.universeId || "").trim();
-    const result = await findOrCreateProjectBinding(buildProjectBindingPayloadFromIdentity({
-      title: target?.experienceName || target?.placeName || target?.label,
-      placeId,
-      universeId,
-      studioTargetId: target?.studioTargetId || target?.id,
-      studioTargetLabel: target?.label,
-    }));
+    const result = await findOrCreateProjectBinding(
+      buildProjectBindingPayloadFromIdentity({
+        title: target?.experienceName || target?.placeName || target?.label,
+        placeId,
+        universeId,
+        studioTargetId: target?.studioTargetId || target?.id,
+        studioTargetLabel: target?.label,
+      })
+    );
     const project = result?.project || null;
     const projectId = String(project?.projectId || result?.projectId || "").trim();
     if (!projectId) throw new Error("The selected Studio place could not be linked to a workspace project.");
     return { project, projectId };
   }, []);
 
-  const bindChatStudioPlace = useCallback(async (option) => {
-    const preference = buildStudioTargetPreference(option);
-    if (!preference || !user) return null;
-    try {
-      const binding = await ensureStudioProjectBinding(option);
-      if (chat.currentChatId) {
-        await chat.assertCanWrite();
-        await updateDoc(doc(db, "users", user.uid, "chats", chat.currentChatId), sanitizeChatWritePayload({
-          studioTargetPreference: {
-            ...preference,
-            updatedAt: serverTimestamp(),
-          },
-          projectId: binding.projectId,
-          updatedAt: serverTimestamp(),
-        }));
+  const bindChatStudioPlace = useCallback(
+    async (option) => {
+      const preference = buildStudioTargetPreference(option);
+      if (!preference || !user) return null;
+      try {
+        const selectedUniverseId = String(activeProject?.universeId || "").trim();
+        const selectedPlaceId = normalizeRobloxPlaceId(activeProject?.placeId || activeProject?.defaultPlaceId);
+        const targetUniverseId = String(option?.universeId || "").trim();
+        const targetPlaceId = normalizeRobloxPlaceId(option?.placeId || option?.targetPlaceId);
+        const targetMatchesSelectedGame =
+          activeProjectId &&
+          ((selectedUniverseId && targetUniverseId && selectedUniverseId === targetUniverseId) ||
+            (selectedPlaceId && targetPlaceId && selectedPlaceId === targetPlaceId));
+        if (activeProjectId && !targetMatchesSelectedGame) {
+          throw new Error(
+            `Studio is open to a different game than ${activeProject?.title || "the selected project"}. Open the matching game in Studio or change the Nexus project first.`
+          );
+        }
+        const binding = targetMatchesSelectedGame
+          ? { project: activeProject, projectId: activeProjectId }
+          : await ensureStudioProjectBinding(option);
+        if (chat.currentChatId) {
+          await chat.assertCanWrite();
+          await updateDoc(
+            doc(db, "users", user.uid, "chats", chat.currentChatId),
+            sanitizeChatWritePayload({
+              studioTargetPreference: {
+                ...preference,
+                updatedAt: serverTimestamp(),
+              },
+              projectId: binding.projectId,
+              updatedAt: serverTimestamp(),
+            })
+          );
+        }
+        const boundPreference = { ...preference, projectId: binding.projectId };
+        chat.setCurrentChatMeta?.((current) =>
+          current
+            ? {
+                ...current,
+                projectId: binding.projectId,
+                studioTargetPreference: boundPreference,
+              }
+            : current
+        );
+        setSelectedProjectId(binding.projectId);
+        if (settings?.activeProjectId !== binding.projectId) {
+          await updateSettings({ activeProjectId: binding.projectId });
+        }
+        setOptimisticStudioPlacePreference(boundPreference);
+        return boundPreference;
+      } catch (error) {
+        notify({
+          message: error?.message || "Could not select this Studio place.",
+          type: "error",
+        });
+        setStudioPlacePickerOpen(true);
+        return null;
       }
-      const boundPreference = { ...preference, projectId: binding.projectId };
-      setOptimisticStudioPlacePreference(boundPreference);
-      return boundPreference;
-    } catch (error) {
-      notify({ message: error?.message || "Could not select this Studio place.", type: "error" });
-      setStudioPlacePickerOpen(true);
-      return null;
-    }
-  }, [chat, ensureStudioProjectBinding, notify, user]);
+    },
+    [
+      activeProject,
+      activeProjectId,
+      chat,
+      ensureStudioProjectBinding,
+      notify,
+      setSelectedProjectId,
+      settings?.activeProjectId,
+      updateSettings,
+      user,
+    ]
+  );
 
   const cancelRewind = useCallback(() => {
     setRewindTarget(null);
   }, []);
 
-  const executePromptOperation = useCallback(async (e, overridePrompt = null, submissionOptions = {}) => {
-    if (e && typeof e.preventDefault === "function") e.preventDefault();
+  const executePromptOperation = useCallback(
+    async (e, overridePrompt = null, submissionOptions = {}) => {
+      if (e && typeof e.preventDefault === "function") e.preventDefault();
 
-    const operationSignal = submissionOptions?.operationSignal || null;
-    const assertOperationActive = () => {
-      if (!operationSignal?.aborted) return;
-      throw operationSignal.reason instanceof Error
-        ? operationSignal.reason
-        : new DOMException("The operation was stopped.", "AbortError");
-    };
-    assertOperationActive();
+      const operationSignal = submissionOptions?.operationSignal || null;
+      const assertOperationActive = () => {
+        if (!operationSignal?.aborted) return;
+        throw operationSignal.reason instanceof Error
+          ? operationSignal.reason
+          : new DOMException("The operation was stopped.", "AbortError");
+      };
+      assertOperationActive();
 
-    const currentPrompt = (overridePrompt ?? prompt).trim();
-    const currentAttachments = Array.isArray(submissionOptions?.attachmentsOverride)
-      ? [...submissionOptions.attachmentsOverride]
-      : [...attachments];
-    const hasProjectAssets = projectAssets.assets.length > 0;
+      const currentPrompt = (overridePrompt ?? prompt).trim();
+      const currentAttachments = Array.isArray(submissionOptions?.attachmentsOverride)
+        ? [...submissionOptions.attachmentsOverride]
+        : [...attachments];
+      const hasProjectAssets = projectAssets.assets.length > 0;
 
-    if (!currentPrompt && currentAttachments.length === 0 && !hasProjectAssets) return;
+      if (!currentPrompt && currentAttachments.length === 0 && !hasProjectAssets) return;
 
-    const promptToSend =
-      currentPrompt || (hasProjectAssets ? "Use the attached Roblox assets in this project." : "");
+      const promptToSend = currentPrompt || (hasProjectAssets ? "Use the attached Roblox assets in this project." : "");
 
-    if (activeTab !== "chat") setActiveTab("chat");
-    if (isMobile) setMobileTab("chat");
+      if (activeTab !== "chat") setActiveTab("chat");
+      if (isMobile) setMobileTab("chat");
 
-    const canUseQuickScript = !refineTarget && currentAttachments.length === 0 && !hasProjectAssets;
-    if (canUseQuickScript && generatorMode === "quick_script") {
-      setGeneratorMode("quick_script", user ? "free_workspace_submit" : "anonymous_workspace_submit");
-      setPrompt("");
-      return runQuickScriptRef.current?.(promptToSend, {
-        source: user ? "free_workspace_submit" : "anonymous_workspace_submit",
-      });
-    }
+      const canUseQuickScript = !refineTarget && currentAttachments.length === 0 && !hasProjectAssets;
+      if (canUseQuickScript && generatorMode === "quick_script") {
+        setGeneratorMode("quick_script", user ? "free_workspace_submit" : "anonymous_workspace_submit");
+        setPrompt("");
+        return runQuickScriptRef.current?.(promptToSend, {
+          source: user ? "free_workspace_submit" : "anonymous_workspace_submit",
+        });
+      }
 
-    // Agent Build, attachments, and saved workspace features need an account.
-    if (!user) {
-      createPendingAuthAction({
-        action: PENDING_AUTH_ACTIONS.CHAT_SUBMIT,
-        returnPath: "/ai",
-        workspace: generatorMode,
-        source: "chat_submit",
-        payload: {
-          prompt: currentPrompt,
-          attachments: normalizeChatAttachments(currentAttachments),
-          chatMode: activeConversationMode,
-          modelVersion: settings?.modelVersion || "",
-          generatorMode,
-          promptCategory: categorizePrompt(currentPrompt),
-          actionLabel: actionLabel(PENDING_AUTH_ACTIONS.CHAT_SUBMIT),
-        },
-      });
-      setSignInNudgeReason("Create a free account to use Agent Build, attachments, and saved workspace features. Quick Script stays available without an account.");
-      setShowSignInNudge(true);
-      return;
-    }
+      // Agent Build, attachments, and saved workspace features need an account.
+      if (!user) {
+        createPendingAuthAction({
+          action: PENDING_AUTH_ACTIONS.CHAT_SUBMIT,
+          returnPath: "/ai",
+          workspace: generatorMode,
+          source: "chat_submit",
+          payload: {
+            prompt: currentPrompt,
+            attachments: normalizeChatAttachments(currentAttachments),
+            chatMode: activeConversationMode,
+            modelVersion: settings?.modelVersion || "",
+            generatorMode,
+            promptCategory: categorizePrompt(currentPrompt),
+            actionLabel: actionLabel(PENDING_AUTH_ACTIONS.CHAT_SUBMIT),
+          },
+        });
+        setSignInNudgeReason("Create a free account to use Agent, attachments, and saved workspace features.");
+        setShowSignInNudge(true);
+        return;
+      }
 
-    let runtimeProjectId = String(
-      submissionOptions?.projectId
-      || chat.currentChatMeta?.projectId
-      || effectiveStudioPlacePreference?.projectId
-      || ""
-    ).trim() || null;
-    let studioTargetPreference = submissionOptions?.studioTargetPreference || effectiveStudioPlacePreference;
-    if (
-      studioEnabled &&
-      studioConnection.connected &&
-      shouldRequireStudioPlaceSelection(promptToSend) &&
-      activeConversationMode === "agent"
-    ) {
-      let options = studioPlaceOptions;
-      if (!options.length) {
-        try {
-          const status = await getStudioStatus();
+      let runtimeProjectId =
+        String(
+          submissionOptions?.projectId ||
+            chat.currentChatMeta?.projectId ||
+            activeProjectId ||
+            effectiveStudioPlacePreference?.projectId ||
+            ""
+        ).trim() || null;
+      let studioTargetPreference = submissionOptions?.studioTargetPreference || effectiveStudioPlacePreference;
+      if (
+        studioEnabled &&
+        studioConnection.connected &&
+        shouldRequireStudioPlaceSelection(promptToSend) &&
+        activeConversationMode === "agent"
+      ) {
+        let options = studioPlaceOptions;
+        if (!options.length) {
+          try {
+            const status = await getStudioStatus();
+            assertOperationActive();
+            options = targetingOptionsFromStatus(status);
+          } catch (error) {
+            if (operationSignal?.aborted) throw error;
+            options = [];
+          }
+        }
+        const gate = evaluateStudioPlaceGate({
+          studioEnabled: true,
+          connected: Boolean(studioConnection.connected),
+          requirePlugin: false,
+          preference: studioTargetPreference,
+          options,
+        });
+        if (gate.status === "needs_selection") {
+          const selectionMessage = studioPlaceSelectionMessage(options);
+          notify({
+            message: selectionMessage,
+            type: "error",
+          });
+          setStudioPlacePickerOpen(true);
+          throw new Error(selectionMessage);
+        }
+        if (gate.status === "ready") {
+          studioTargetPreference = buildStudioTargetPreference(gate.target) || studioTargetPreference;
+          const binding = await bindChatStudioPlace(gate.target);
           assertOperationActive();
-          options = targetingOptionsFromStatus(status);
-        } catch (error) {
-          if (operationSignal?.aborted) throw error;
-          options = [];
+          if (!binding?.projectId) throw new Error("The selected Studio place could not be linked.");
+          runtimeProjectId = binding.projectId;
         }
       }
-      const gate = evaluateStudioPlaceGate({
-        studioEnabled: true,
-        connected: Boolean(studioConnection.connected),
-        requirePlugin: false,
-        preference: studioTargetPreference,
-        options,
-      });
-      if (gate.status === "needs_selection") {
-        const selectionMessage = studioPlaceSelectionMessage(options);
-        notify({
-          message: selectionMessage,
-          type: "error",
-        });
-        setStudioPlacePickerOpen(true);
-        throw new Error(selectionMessage);
-      }
-      if (gate.status === "ready") {
-        studioTargetPreference = buildStudioTargetPreference(gate.target) || studioTargetPreference;
-        const binding = await bindChatStudioPlace(gate.target);
-        assertOperationActive();
-        if (!binding?.projectId) throw new Error("The selected Studio place could not be linked.");
-        runtimeProjectId = binding.projectId;
-      }
-    }
 
-    if (runtimeProjectId) {
-      try {
-        const resolution = await getProjectBinding(runtimeProjectId);
-        assertOperationActive();
-        if (resolution?.state === PROJECT_RESOLUTION_STATES.MISSING) {
-          const staleProjectId = runtimeProjectId;
-          runtimeProjectId = null;
-          const shouldClearChatProject =
-            Boolean(chat.currentChatId)
-            && chat.currentChatMeta?.projectId === staleProjectId;
-          if (typeof chat.setCurrentChatMeta === "function" && shouldClearChatProject) {
-            chat.setCurrentChatMeta((prev) => (
-              prev && prev.projectId === staleProjectId
-                ? { ...prev, projectId: null }
-                : prev
-            ));
-          }
-          if (user && shouldClearChatProject) {
-            try {
-              await chat.assertCanWrite();
-              await updateDoc(
-                doc(db, "users", user.uid, "chats", chat.currentChatId),
-                sanitizeChatWritePayload({
-                  projectId: null,
-                  updatedAt: serverTimestamp(),
-                })
+      if (runtimeProjectId) {
+        try {
+          const resolution = await getProjectBinding(runtimeProjectId);
+          assertOperationActive();
+          if (resolution?.state === PROJECT_RESOLUTION_STATES.MISSING) {
+            const staleProjectId = runtimeProjectId;
+            runtimeProjectId = null;
+            const shouldClearChatProject =
+              Boolean(chat.currentChatId) && chat.currentChatMeta?.projectId === staleProjectId;
+            if (typeof chat.setCurrentChatMeta === "function" && shouldClearChatProject) {
+              chat.setCurrentChatMeta((prev) =>
+                prev && prev.projectId === staleProjectId ? { ...prev, projectId: null } : prev
               );
-            } catch (_) {
-              /* non-fatal: submit can continue without the binding */
+            }
+            if (user && shouldClearChatProject) {
+              try {
+                await chat.assertCanWrite();
+                await updateDoc(
+                  doc(db, "users", user.uid, "chats", chat.currentChatId),
+                  sanitizeChatWritePayload({
+                    projectId: null,
+                    updatedAt: serverTimestamp(),
+                  })
+                );
+              } catch (_) {
+                /* non-fatal: submit can continue without the binding */
+              }
+            }
+          } else {
+            const recoveryMessage = projectBindingRecoveryMessage(resolution);
+            if (recoveryMessage) {
+              notify({ message: recoveryMessage, type: "info" });
             }
           }
-        } else {
-          const recoveryMessage = projectBindingRecoveryMessage(resolution);
-          if (recoveryMessage) {
-            notify({ message: recoveryMessage, type: "info" });
-          }
+        } catch (error) {
+          notify({
+            message: error?.message || "This workspace project is not available.",
+            type: "error",
+          });
+          throw error;
         }
-      } catch (error) {
-        notify({
-          message: error?.message || "This workspace project is not available.",
-          type: "error",
-        });
-        throw error;
       }
-    }
 
-    // Build this once after all project/Studio repair has completed. Refine and
-    // first-generation must submit the same effective identity inputs so a
-    // retry cannot bind one idempotency key to two different agent payloads.
-    const {
-      attachmentsOverride: _attachmentsOverride,
-      rewindFromMessageId: submissionRewindId,
-      rewindMode: submissionRewindMode,
-      ...restSubmissionOptions
-    } = submissionOptions || {};
-    const activeRewind = submissionRewindId
-      ? {
-          messageId: String(submissionRewindId),
-          mode: submissionRewindMode === "after" ? "after" : "replace",
-        }
-      : rewindTarget;
-    const effectiveSubmissionOptions = {
-      ...restSubmissionOptions,
-      ...(studioTargetPreference ? { studioTargetPreference } : {}),
-      projectId: runtimeProjectId,
-      studioConnected: Boolean(studioConnection.connected),
-      targeting: {
+      // Build this once after all project/Studio repair has completed. Refine and
+      // first-generation must submit the same effective identity inputs so a
+      // retry cannot bind one idempotency key to two different agent payloads.
+      const {
+        attachmentsOverride: _attachmentsOverride,
+        rewindFromMessageId: submissionRewindId,
+        rewindMode: submissionRewindMode,
+        ...restSubmissionOptions
+      } = submissionOptions || {};
+      const activeRewind = submissionRewindId
+        ? {
+            messageId: String(submissionRewindId),
+            mode: submissionRewindMode === "after" ? "after" : "replace",
+          }
+        : rewindTarget;
+      const effectiveSubmissionOptions = {
+        ...restSubmissionOptions,
+        ...(studioTargetPreference ? { studioTargetPreference } : {}),
         projectId: runtimeProjectId,
         studioConnected: Boolean(studioConnection.connected),
-        studioTarget: studioTargetPreference || null,
-      },
-      ...(activeRewind?.messageId
-        ? {
-            rewindFromMessageId: activeRewind.messageId,
-            rewindMode: activeRewind.mode === "after" ? "after" : "replace",
-          }
-        : {}),
-    };
+        targeting: {
+          projectId: runtimeProjectId,
+          studioConnected: Boolean(studioConnection.connected),
+          studioTarget: studioTargetPreference || null,
+        },
+        ...(activeRewind?.messageId
+          ? {
+              rewindFromMessageId: activeRewind.messageId,
+              rewindMode: activeRewind.mode === "after" ? "after" : "replace",
+            }
+          : {}),
+      };
 
-    if (refineTarget) {
-      const target = refineTarget;
-      setRefineTarget(null);
-      const ok = await unified.refineArtifact(
-        target,
-        currentPrompt,
-        workspace.projectArtifactSnapshot,
-        {
+      if (refineTarget) {
+        const target = refineTarget;
+        setRefineTarget(null);
+        const ok = await unified.refineArtifact(target, currentPrompt, workspace.projectArtifactSnapshot, {
           ...effectiveSubmissionOptions,
           refineMode: studioConnection.pluginConnected ? "studio" : "workspace",
+        });
+        if (!ok) setRefineTarget(target);
+        return;
+      }
+
+      if (user) {
+        track("prompt_submitted", {
+          attachment_count: currentAttachments.length,
+          prompt_length: promptToSend.length,
+          prompt_category: categorizePrompt(promptToSend),
+        });
+      }
+
+      await unified.handleSubmit(
+        promptToSend,
+        currentAttachments,
+        workspace.projectArtifactSnapshot,
+        effectiveSubmissionOptions
+      );
+    },
+    [
+      user,
+      prompt,
+      attachments,
+      projectAssets.assets,
+      activeTab,
+      isMobile,
+      refineTarget,
+      rewindTarget,
+      unified,
+      workspace.projectArtifactSnapshot,
+      track,
+      generatorMode,
+      activeConversationMode,
+      activeProjectId,
+      settings?.modelVersion,
+      setGeneratorMode,
+      studioEnabled,
+      studioConnection.connected,
+      studioConnection.pluginConnected,
+      studioPlaceOptions,
+      effectiveStudioPlacePreference,
+      bindChatStudioPlace,
+      chat,
+      notify,
+    ]
+  );
+
+  const handlePromptSubmit = useCallback(
+    (e, overridePrompt = null, submissionOptions = {}) => {
+      if (e && typeof e.preventDefault === "function") e.preventDefault();
+
+      const currentPrompt = String(overridePrompt ?? prompt ?? "").trim();
+      const currentAttachments = Array.isArray(submissionOptions?.attachmentsOverride)
+        ? [...submissionOptions.attachmentsOverride]
+        : [...attachments];
+      const hasProjectAssets = projectAssets.assets.length > 0;
+      if (!currentPrompt && currentAttachments.length === 0 && !hasProjectAssets) return undefined;
+
+      // Quick Script and the sign-in gate do not create a chat operation. Their
+      // existing local lifecycle remains independent from Agent chat queues.
+      const canUseQuickScript = !refineTarget && currentAttachments.length === 0 && !hasProjectAssets;
+      if (!user || (canUseQuickScript && generatorMode === "quick_script")) {
+        return executePromptOperation(e, overridePrompt, submissionOptions);
+      }
+
+      const studioPreflight = evaluateIntentAwareStudioSubmissionPreflight({
+        prompt: currentPrompt,
+        studioEnabled,
+        connected: studioConnection.connected,
+        mode: activeConversationMode,
+        preference: submissionOptions?.studioTargetPreference || effectiveStudioPlacePreference,
+        options: studioPlaceOptions,
+      });
+      if (studioPreflight.status === "blocked") {
+        notify({ message: studioPreflight.message, type: "error" });
+        setStudioPlacePickerOpen(true);
+        return undefined;
+      }
+
+      const coordinator = chatOperationCoordinatorRef.current;
+      const operationId = String(submissionOptions?.operationId || uuidv4());
+      const operationType = String(submissionOptions?.operationType || "submit");
+      const draftRevision = String(submissionOptions?.draftRevision || `${operationType}:${operationId}`);
+      const sourceChatKey = chat.currentChatId || "draft";
+      const promptToSend = currentPrompt || (hasProjectAssets ? "Use the attached Roblox assets in this project." : "");
+      const checkpointMetadata = submissionOptions?.checkpointMetadata || null;
+
+      const admission = coordinator.admit(
+        {
+          id: operationId,
+          chatId: sourceChatKey,
+          type: operationType,
+          prompt: promptToSend,
+          attachments: currentAttachments,
+          draftRevision,
+          checkpointMetadata,
+          interrupt: submissionOptions?.interrupt === true,
+          retainOnFailure: operationType === "retry",
+          onCancel: async (operation) => {
+            unified.cancelCurrentFlow?.();
+            if (!operation?.runId) {
+              await unified.persistPendingCancellation?.({
+                chatId: operation?.chatId || chat.currentChatId || null,
+                requestId: operation?.id || operationId,
+              });
+              return;
+            }
+            try {
+              await cancelCoordinatedAgentRun(operation, operation.chatId || chat.currentChatId || null);
+            } catch (error) {
+              // A local abort has already fenced the transcript. Reconciliation can
+              // recover the server terminal state after a transient cancel failure.
+              const message = String(error?.message || "").toLowerCase();
+              if (!message.includes("already") && !message.includes("not found")) throw error;
+            }
+            await unified.reconcileCancelledRun?.(operation.runId, {
+              chatId: operation.chatId || chat.currentChatId || null,
+              requestId: operation.id,
+            });
+          },
+        },
+        async (operation) => {
+          const effectiveOptions = {
+            ...submissionOptions,
+            attachmentsOverride: currentAttachments,
+            operationId,
+            operationSignal: operation.signal,
+            clientMessageId: operationId,
+            idempotencyKey: operationId,
+            onChatReady: (nextChatId) => operation.rekey(nextChatId),
+            onRunId: (runId) => {
+              operation.setRunId(runId);
+              operation.update({ status: CHAT_OPERATION_STATUS.RUNNING });
+            },
+            onOperationStatus: (status) => operation.update({ status }),
+          };
+
+          if (operationType === "retry" && checkpointMetadata?.targetRunId) {
+            operation.update({ status: CHAT_OPERATION_STATUS.RESTORING });
+            await restoreChatCheckpoint({
+              chatId: chat.currentChatId,
+              targetRunId: checkpointMetadata.targetRunId,
+              transcriptPivot: checkpointMetadata.transcriptPivot || null,
+              signal: operation.signal,
+              idempotencyKey: `${operationId}:restore`,
+            });
+            if (operation.signal.aborted) {
+              throw new DOMException("The operation was stopped.", "AbortError");
+            }
+            operation.update({ status: CHAT_OPERATION_STATUS.PREPARING });
+            delete effectiveOptions.rewindFromMessageId;
+            delete effectiveOptions.rewindMode;
+          }
+
+          return executePromptOperation(null, promptToSend, effectiveOptions);
         }
       );
-      if (!ok) setRefineTarget(target);
-      return;
-    }
 
-    if (user) {
-      track("prompt_submitted", {
-        attachment_count: currentAttachments.length,
-        prompt_length: promptToSend.length,
-        prompt_category: categorizePrompt(promptToSend),
+      const clearedComposerDraft = !admission.duplicate && overridePrompt == null;
+      if (clearedComposerDraft) {
+        setPrompt("");
+        setAttachments([]);
+        setRewindTarget(null);
+        setStudioPlacePickerOpen(false);
+      }
+      if (!clearedComposerDraft) return admission.promise;
+      return admission.promise.catch((error) => {
+        restoreFailedPromptDraft({
+          prompt: currentPrompt,
+          attachments: currentAttachments,
+          setPrompt,
+          setAttachments,
+        });
+        throw error;
       });
-    }
-
-    await unified.handleSubmit(
-      promptToSend,
-      currentAttachments,
-      workspace.projectArtifactSnapshot,
-      effectiveSubmissionOptions
-    );
-  }, [
-    user,
-    prompt,
-    attachments,
-    projectAssets.assets,
-    activeTab,
-    isMobile,
-    refineTarget,
-    rewindTarget,
-    unified,
-    workspace.projectArtifactSnapshot,
-    track,
-    generatorMode,
-    activeConversationMode,
-    settings?.modelVersion,
-    setGeneratorMode,
-    studioEnabled,
-    studioConnection.connected,
-    studioConnection.pluginConnected,
-    studioPlaceOptions,
-    effectiveStudioPlacePreference,
-    bindChatStudioPlace,
-    chat,
-    notify,
-  ]);
-
-  const handlePromptSubmit = useCallback((e, overridePrompt = null, submissionOptions = {}) => {
-    if (e && typeof e.preventDefault === "function") e.preventDefault();
-
-    const currentPrompt = String(overridePrompt ?? prompt ?? "").trim();
-    const currentAttachments = Array.isArray(submissionOptions?.attachmentsOverride)
-      ? [...submissionOptions.attachmentsOverride]
-      : [...attachments];
-    const hasProjectAssets = projectAssets.assets.length > 0;
-    if (!currentPrompt && currentAttachments.length === 0 && !hasProjectAssets) return undefined;
-
-    // Quick Script and the sign-in gate do not create a chat operation. Their
-    // existing local lifecycle remains independent from Agent chat queues.
-    const canUseQuickScript = !refineTarget && currentAttachments.length === 0 && !hasProjectAssets;
-    if (!user || (canUseQuickScript && generatorMode === "quick_script")) {
-      return executePromptOperation(e, overridePrompt, submissionOptions);
-    }
-
-    const studioPreflight = evaluateIntentAwareStudioSubmissionPreflight({
-      prompt: currentPrompt,
+    },
+    [
+      attachments,
+      activeConversationMode,
+      chat.currentChatId,
+      effectiveStudioPlacePreference,
+      executePromptOperation,
+      generatorMode,
+      notify,
+      projectAssets.assets.length,
+      prompt,
+      refineTarget,
+      studioConnection.connected,
       studioEnabled,
-      connected: studioConnection.connected,
-      mode: activeConversationMode,
-      preference: submissionOptions?.studioTargetPreference || effectiveStudioPlacePreference,
-      options: studioPlaceOptions,
-    });
-    if (studioPreflight.status === "blocked") {
-      notify({ message: studioPreflight.message, type: "error" });
-      setStudioPlacePickerOpen(true);
-      return undefined;
-    }
+      studioPlaceOptions,
+      unified,
+      user,
+    ]
+  );
 
-    const coordinator = chatOperationCoordinatorRef.current;
-    const operationId = String(submissionOptions?.operationId || uuidv4());
-    const operationType = String(submissionOptions?.operationType || "submit");
-    const draftRevision = String(
-      submissionOptions?.draftRevision
-      || `${operationType}:${operationId}`
-    );
-    const sourceChatKey = chat.currentChatId || "draft";
-    const promptToSend = currentPrompt
-      || (hasProjectAssets ? "Use the attached Roblox assets in this project." : "");
-    const checkpointMetadata = submissionOptions?.checkpointMetadata || null;
-
-    const admission = coordinator.admit({
-      id: operationId,
-      chatId: sourceChatKey,
-      type: operationType,
-      prompt: promptToSend,
-      attachments: currentAttachments,
-      draftRevision,
-      checkpointMetadata,
-      interrupt: submissionOptions?.interrupt === true,
-      retainOnFailure: operationType === "retry",
-      onCancel: async (operation) => {
-        unified.cancelCurrentFlow?.();
-        if (!operation?.runId) {
-          await unified.persistPendingCancellation?.({
-            chatId: operation?.chatId || chat.currentChatId || null,
-            requestId: operation?.id || operationId,
-          });
-          return;
-        }
-        try {
-          await cancelCoordinatedAgentRun(
-            operation,
-            operation.chatId || chat.currentChatId || null,
-          );
-        } catch (error) {
-          // A local abort has already fenced the transcript. Reconciliation can
-          // recover the server terminal state after a transient cancel failure.
-          const message = String(error?.message || "").toLowerCase();
-          if (!message.includes("already") && !message.includes("not found")) throw error;
-        }
-        await unified.reconcileCancelledRun?.(operation.runId, {
-          chatId: operation.chatId || chat.currentChatId || null,
-          requestId: operation.id,
-        });
-      },
-    }, async (operation) => {
-      const effectiveOptions = {
-        ...submissionOptions,
-        attachmentsOverride: currentAttachments,
-        operationId,
-        operationSignal: operation.signal,
-        clientMessageId: operationId,
-        idempotencyKey: operationId,
-        onChatReady: (nextChatId) => operation.rekey(nextChatId),
-        onRunId: (runId) => {
-          operation.setRunId(runId);
-          operation.update({ status: CHAT_OPERATION_STATUS.RUNNING });
-        },
-        onOperationStatus: (status) => operation.update({ status }),
-      };
-
-      if (operationType === "retry" && checkpointMetadata?.targetRunId) {
-        operation.update({ status: CHAT_OPERATION_STATUS.RESTORING });
-        await restoreChatCheckpoint({
-          chatId: chat.currentChatId,
-          targetRunId: checkpointMetadata.targetRunId,
-          transcriptPivot: checkpointMetadata.transcriptPivot || null,
-          signal: operation.signal,
-          idempotencyKey: `${operationId}:restore`,
-        });
-        if (operation.signal.aborted) {
-          throw new DOMException("The operation was stopped.", "AbortError");
-        }
-        operation.update({ status: CHAT_OPERATION_STATUS.PREPARING });
-        delete effectiveOptions.rewindFromMessageId;
-        delete effectiveOptions.rewindMode;
-      }
-
-      return executePromptOperation(null, promptToSend, effectiveOptions);
-    });
-
-    const clearedComposerDraft = !admission.duplicate && overridePrompt == null;
-    if (clearedComposerDraft) {
-      setPrompt("");
-      setAttachments([]);
-      setRewindTarget(null);
-      setStudioPlacePickerOpen(false);
-    }
-    if (!clearedComposerDraft) return admission.promise;
-    return admission.promise.catch((error) => {
-      restoreFailedPromptDraft({
-        prompt: currentPrompt,
-        attachments: currentAttachments,
-        setPrompt,
-        setAttachments,
-      });
-      throw error;
-    });
-  }, [
-    attachments,
-    activeConversationMode,
-    chat.currentChatId,
-    effectiveStudioPlacePreference,
-    executePromptOperation,
-    generatorMode,
-    notify,
-    projectAssets.assets.length,
-    prompt,
-    refineTarget,
-    studioConnection.connected,
-    studioEnabled,
-    studioPlaceOptions,
-    unified,
-    user,
-  ]);
-
-  const recordPendingAuthGate = useCallback((actionType, source = "quick_script_gate") => {
-    const currentPrompt = quickScript.prompt || prompt;
-    const pending = createPendingAuthAction({
-      action: actionType,
-      returnPath: "/ai",
-      workspace: generatorMode,
-      source,
-      payload: {
-        quickScriptResultId: quickScript.claim?.anonymousResultId || "",
-        quickScriptClaimAvailable: Boolean(quickScript.claim?.anonymousResultId && quickScript.claim?.claimToken),
-        studioConnected: Boolean(studioConnection.pluginConnected),
-        generatorMode,
-        promptCategory: categorizePrompt(currentPrompt),
-        actionLabel: actionLabel(actionType),
-      },
-    });
-    setSignInNudgeReason(`Sign up to ${actionLabel(actionType)}. Your generated code and prompt will stay in this workspace.`);
-    track("signin_nudge_viewed", {
-      generator_mode: generatorMode,
-      prompt_category: categorizePrompt(currentPrompt),
-      gated_action: actionType,
-      pending_action_id: pending.id,
-    }, { dedupeKey: `signin_nudge:${pending.id}` });
-    return pending;
-  }, [
-    generatorMode,
-    prompt,
-    quickScript.claim?.anonymousResultId,
-    quickScript.claim?.claimToken,
-    quickScript.prompt,
-    studioConnection.pluginConnected,
-    track,
-  ]);
-
-  const runQuickScript = useCallback(async (overridePrompt = null, options = {}) => {
-    const currentPrompt = String(overridePrompt ?? prompt ?? quickScript.prompt ?? "").trim();
-    if (!currentPrompt) {
-      notify({ message: "Type a prompt before generating", type: "info" });
-      return null;
-    }
-    if (quickScript.status === "generating") return null;
-    if (!authReady || !user) {
-      if (authReady) {
-        recordPendingAuthGate(PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION, "quick_script_generation");
-      }
-      setShowSignInNudge(true);
-      return null;
-    }
-
-    const idempotencyKey = options.retry && quickScript.idempotencyKey
-      ? quickScript.idempotencyKey
-      : createQuickScriptIdempotencyKey();
-    const source = options.source || quickScript.source || "direct";
-    const startedAt = Date.now();
-
-    setGeneratorMode("quick_script", source);
-    setPrompt(currentPrompt);
-    setAttachments([]);
-    if (activeTab !== "chat") setActiveTab("chat");
-    if (isMobile) setMobileTab("chat");
-    setQuickScript((prev) => ({
-      ...prev,
-      prompt: currentPrompt,
-      status: "generating",
-      stage: "Generating focused Luau...",
-      error: null,
-      idempotencyKey,
-      source,
-    }));
-    track("generation_started", {
-      generator_mode: "quick_script",
-      output_type: "luau_script",
-      prompt_length: currentPrompt.length,
-      prompt_category: categorizePrompt(currentPrompt),
-      source,
-    }, { dedupeKey: `quick_script_started:${idempotencyKey}` });
-
-    try {
-      const priorResult = quickScript.result?.code && !options.retry
-        ? quickScript.result
-        : null;
-      const response = await generateQuickScript({
-        prompt: currentPrompt,
-        priorResult,
-        idempotencyKey,
-      });
-      const next = {
-        prompt: currentPrompt,
-        status: "succeeded",
-        stage: response?.result?.validation?.status === "adjusted"
-          ? "Result ready · script context adjusted"
-          : response?.anonymous ? "Anonymous result ready" : "Result ready",
-        result: response?.result
-          ? normalizeQuickScriptResult(response.result, currentPrompt)
-          : null,
-        error: null,
-        claim: response?.claim || null,
-        anonymous: Boolean(response?.anonymous),
-        idempotencyKey,
+  const recordPendingAuthGate = useCallback(
+    (actionType, source = "quick_script_gate") => {
+      const currentPrompt = quickScript.prompt || prompt;
+      const pending = createPendingAuthAction({
+        action: actionType,
+        returnPath: "/ai",
+        workspace: generatorMode,
         source,
-        projectId: null,
-        project: null,
-        updatedAt: Date.now(),
-      };
-      setQuickScript(next);
-      track("generation_completed", {
-        generator_mode: "quick_script",
-        output_type: "luau_script",
-        prompt_category: categorizePrompt(currentPrompt),
-        generation_latency_ms: Date.now() - startedAt,
-        anonymous: Boolean(response?.anonymous),
-      }, { dedupeKey: `quick_script_completed:${idempotencyKey}` });
-      if (options.intentId) consumeGenerationIntent(options.intentId);
-      if (user) refreshBilling?.();
-      return response;
-    } catch (err) {
-      const code = err?.code || err?.payload?.code || "QUICK_SCRIPT_FAILED";
-      const nextStatus = code === "AGENT_BUILD_RECOMMENDED" ? "needs_agent_build" : "failed";
-      const error = {
-        code,
-        message: err?.message || "Quick generation failed. Please try again.",
-        retryable: err?.retryable !== false,
-        authRequired: Boolean(err?.authRequired),
-        status: err?.status || null,
-        recommendedMode: err?.payload?.recommendedMode || null,
-        reasons: err?.payload?.reasons || [],
-      };
+        payload: {
+          quickScriptResultId: quickScript.claim?.anonymousResultId || "",
+          quickScriptClaimAvailable: Boolean(quickScript.claim?.anonymousResultId && quickScript.claim?.claimToken),
+          studioConnected: Boolean(studioConnection.pluginConnected),
+          generatorMode,
+          promptCategory: categorizePrompt(currentPrompt),
+          actionLabel: actionLabel(actionType),
+        },
+      });
+      setSignInNudgeReason(
+        `Sign up to ${actionLabel(actionType)}. Your generated code and prompt will stay in this workspace.`
+      );
+      track(
+        "signin_nudge_viewed",
+        {
+          generator_mode: generatorMode,
+          prompt_category: categorizePrompt(currentPrompt),
+          gated_action: actionType,
+          pending_action_id: pending.id,
+        },
+        { dedupeKey: `signin_nudge:${pending.id}` }
+      );
+      return pending;
+    },
+    [
+      generatorMode,
+      prompt,
+      quickScript.claim?.anonymousResultId,
+      quickScript.claim?.claimToken,
+      quickScript.prompt,
+      studioConnection.pluginConnected,
+      track,
+    ]
+  );
+
+  const runQuickScript = useCallback(
+    async (overridePrompt = null, options = {}) => {
+      const currentPrompt = String(overridePrompt ?? prompt ?? quickScript.prompt ?? "").trim();
+      if (!currentPrompt) {
+        notify({ message: "Type a prompt before generating", type: "info" });
+        return null;
+      }
+      if (quickScript.status === "generating") return null;
+      if (!authReady || !user) {
+        if (authReady) {
+          recordPendingAuthGate(PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION, "quick_script_generation");
+        }
+        setShowSignInNudge(true);
+        return null;
+      }
+
+      const idempotencyKey =
+        options.retry && quickScript.idempotencyKey ? quickScript.idempotencyKey : createQuickScriptIdempotencyKey();
+      const source = options.source || quickScript.source || "direct";
+      const startedAt = Date.now();
+
+      setGeneratorMode("quick_script", source);
+      setPrompt(currentPrompt);
+      setAttachments([]);
+      if (activeTab !== "chat") setActiveTab("chat");
+      if (isMobile) setMobileTab("chat");
       setQuickScript((prev) => ({
         ...prev,
         prompt: currentPrompt,
-        status: nextStatus,
-        stage: nextStatus === "needs_agent_build" ? "Agent Build recommended" : "Generation failed",
-        error,
+        status: "generating",
+        stage: "Generating focused Luau...",
+        error: null,
         idempotencyKey,
         source,
       }));
-      track("generation_failed", {
-        generator_mode: "quick_script",
-        output_type: "luau_script",
-        prompt_category: categorizePrompt(currentPrompt),
-        error_category: code,
-      }, { dedupeKey: `quick_script_failed:${idempotencyKey}:${code}` });
-      if (options.intentId && nextStatus !== "failed") consumeGenerationIntent(options.intentId);
-      return null;
-    }
-  }, [
-    activeTab,
-    authReady,
-    isMobile,
-    notify,
-    prompt,
-    quickScript.prompt,
-    quickScript.source,
-    quickScript.status,
-    quickScript.idempotencyKey,
-    quickScript.result,
-    recordPendingAuthGate,
-    refreshBilling,
-    setGeneratorMode,
-    track,
-    user,
-  ]);
+      track(
+        "generation_started",
+        {
+          generator_mode: "quick_script",
+          output_type: "luau_script",
+          prompt_length: currentPrompt.length,
+          prompt_category: categorizePrompt(currentPrompt),
+          source,
+        },
+        { dedupeKey: `quick_script_started:${idempotencyKey}` }
+      );
+
+      try {
+        const priorResult = quickScript.result?.code && !options.retry ? quickScript.result : null;
+        const response = await generateQuickScript({
+          prompt: currentPrompt,
+          priorResult,
+          idempotencyKey,
+        });
+        const next = {
+          prompt: currentPrompt,
+          status: "succeeded",
+          stage:
+            response?.result?.validation?.status === "adjusted"
+              ? "Result ready · script context adjusted"
+              : response?.anonymous
+                ? "Anonymous result ready"
+                : "Result ready",
+          result: response?.result ? normalizeQuickScriptResult(response.result, currentPrompt) : null,
+          error: null,
+          claim: response?.claim || null,
+          anonymous: Boolean(response?.anonymous),
+          idempotencyKey,
+          source,
+          projectId: null,
+          project: null,
+          updatedAt: Date.now(),
+        };
+        setQuickScript(next);
+        track(
+          "generation_completed",
+          {
+            generator_mode: "quick_script",
+            output_type: "luau_script",
+            prompt_category: categorizePrompt(currentPrompt),
+            generation_latency_ms: Date.now() - startedAt,
+            anonymous: Boolean(response?.anonymous),
+          },
+          { dedupeKey: `quick_script_completed:${idempotencyKey}` }
+        );
+        if (options.intentId) consumeGenerationIntent(options.intentId);
+        if (user) refreshBilling?.();
+        return response;
+      } catch (err) {
+        const code = err?.code || err?.payload?.code || "QUICK_SCRIPT_FAILED";
+        const nextStatus = code === "AGENT_BUILD_RECOMMENDED" ? "needs_agent_build" : "failed";
+        const error = {
+          code,
+          message: err?.message || "Quick generation failed. Please try again.",
+          retryable: err?.retryable !== false,
+          authRequired: Boolean(err?.authRequired),
+          status: err?.status || null,
+          recommendedMode: err?.payload?.recommendedMode || null,
+          reasons: err?.payload?.reasons || [],
+        };
+        setQuickScript((prev) => ({
+          ...prev,
+          prompt: currentPrompt,
+          status: nextStatus,
+          stage: nextStatus === "needs_agent_build" ? "Agent Build recommended" : "Generation failed",
+          error,
+          idempotencyKey,
+          source,
+        }));
+        track(
+          "generation_failed",
+          {
+            generator_mode: "quick_script",
+            output_type: "luau_script",
+            prompt_category: categorizePrompt(currentPrompt),
+            error_category: code,
+          },
+          { dedupeKey: `quick_script_failed:${idempotencyKey}:${code}` }
+        );
+        if (options.intentId && nextStatus !== "failed") consumeGenerationIntent(options.intentId);
+        return null;
+      }
+    },
+    [
+      activeTab,
+      authReady,
+      isMobile,
+      notify,
+      prompt,
+      quickScript.prompt,
+      quickScript.source,
+      quickScript.status,
+      quickScript.idempotencyKey,
+      quickScript.result,
+      recordPendingAuthGate,
+      refreshBilling,
+      setGeneratorMode,
+      track,
+      user,
+    ]
+  );
 
   useEffect(() => {
     runQuickScriptRef.current = runQuickScript;
@@ -1696,17 +1927,19 @@ export function useAiWorkspaceController() {
         setAttachments([]);
         setPendingGenerationIntent(null);
         consumeGenerationIntent(intent.id);
-        await submitUnifiedPrompt(
-          intent.prompt,
-          [],
-          workspace.projectArtifactSnapshot,
-          { mode: intent.mode || "agent", source: "generation_intent", intentId: intent.id }
-        );
+        await submitUnifiedPrompt(intent.prompt, [], workspace.projectArtifactSnapshot, {
+          mode: intent.mode || "agent",
+          source: "generation_intent",
+          intentId: intent.id,
+        });
       } catch (err) {
         if (!cancelled) {
           setPendingGenerationIntent(intent);
           setPrompt(intent.prompt);
-          notify({ message: err?.message || "Could not start the saved prompt", type: "error" });
+          notify({
+            message: err?.message || "Could not start the saved prompt",
+            type: "error",
+          });
         }
       } finally {
         if (!cancelled && autoIntentInFlightRef.current === intent.id) {
@@ -1738,25 +1971,29 @@ export function useAiWorkspaceController() {
     // Streamed artifacts are provisional until the Studio run finishes. Persisting
     // an intermediate stream can make the backend treat the same run as a
     // competing project edit and abort the refinement with a false conflict.
-    enabled: Boolean(
-      user && !unifiedIsGenerating && workspace.activeArtifactSnapshot?.artifactId,
-    ),
+    enabled: Boolean(user && !unifiedIsGenerating && workspace.activeArtifactSnapshot?.artifactId),
     debounceMs: 400,
     source: "workspace",
   });
 
-  const handleStartRefine = useCallback((message) => {
-    setRefineTarget(message || null);
-    setActiveTab("chat");
-    if (isMobile) setMobileTab("chat");
-  }, [isMobile]);
+  const handleStartRefine = useCallback(
+    (message) => {
+      setRefineTarget(message || null);
+      setActiveTab("chat");
+      if (isMobile) setMobileTab("chat");
+    },
+    [isMobile]
+  );
 
   const cancelRefine = useCallback(() => setRefineTarget(null), []);
 
-  const handleOpenArtifact = useCallback((message) => {
-    if (message?.id) workspace.openArtifact(message.id);
-    if (isMobile) setMobileTab("code");
-  }, [workspace, isMobile]);
+  const handleOpenArtifact = useCallback(
+    (message) => {
+      if (message?.id) workspace.openArtifact(message.id);
+      if (isMobile) setMobileTab("code");
+    },
+    [workspace, isMobile]
+  );
 
   const handleImprovePrompt = useCallback(async () => {
     const current = prompt.trim();
@@ -1775,8 +2012,14 @@ export function useAiWorkspaceController() {
       const token = await user.getIdToken();
       const res = await fetch(`${BACKEND_URL}/api/ai/improve-prompt`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ prompt: current, gameSpec: resolveGameSpecForPrompt(settings?.gameSpec) }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          prompt: current,
+          gameSpec: resolveGameSpecForPrompt(settings?.gameSpec),
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -1785,7 +2028,10 @@ export function useAiWorkspaceController() {
       const improved = (data?.improvedPrompt || "").trim();
       if (improved && improved !== current) {
         setPrompt(improved);
-        notify({ message: "Prompt improved — review and edit before sending", type: "success" });
+        notify({
+          message: "Prompt improved — review and edit before sending",
+          type: "success",
+        });
       } else {
         notify({ message: "Prompt already looks good", type: "info" });
       }
@@ -1799,44 +2045,50 @@ export function useAiWorkspaceController() {
     }
   }, [prompt, user, isImproving, settings, notify]);
 
-  const handleQuickStart = useCallback(async (item) => {
-    const promptText = typeof item === "string" ? item : item?.prompt || "";
-    await handlePromptSubmit(null, promptText);
-  }, [handlePromptSubmit]);
+  const handleQuickStart = useCallback(
+    async (item) => {
+      const promptText = typeof item === "string" ? item : item?.prompt || "";
+      await handlePromptSubmit(null, promptText);
+    },
+    [handlePromptSubmit]
+  );
 
   const handleEditPlan = useCallback((message) => {
     setPrompt(message?.originPrompt || "");
   }, []);
 
-  const handleFileUpload = useCallback(async (e) => {
-    const files = Array.from(e.target.files || []);
-    if (e.target) e.target.value = "";
-    if (!files.length) return;
+  const handleFileUpload = useCallback(
+    async (e) => {
+      const files = Array.from(e.target.files || []);
+      if (e.target) e.target.value = "";
+      if (!files.length) return;
 
-    const imageFiles = files.filter((file) => file.type?.startsWith("image/") || isRobloxDecalImage(file));
-    const textFiles = files.filter((file) => !file.type?.startsWith("image/") && !isRobloxDecalImage(file));
+      const imageFiles = files.filter((file) => file.type?.startsWith("image/") || isRobloxDecalImage(file));
+      const textFiles = files.filter((file) => !file.type?.startsWith("image/") && !isRobloxDecalImage(file));
 
-    if (imageFiles.length) {
-      await robloxImageUpload.uploadImages(imageFiles);
-    }
+      if (imageFiles.length) {
+        await robloxImageUpload.uploadImages(imageFiles);
+      }
 
-    textFiles.forEach((file) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAttachments((prev) => [
-          ...prev,
-          {
-            name: file.name,
-            type: file.type,
-            size: file.size,
-            data: reader.result,
-            isImage: false,
-          },
-        ]);
-      };
-      reader.readAsText(file);
-    });
-  }, [robloxImageUpload]);
+      textFiles.forEach((file) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setAttachments((prev) => [
+            ...prev,
+            {
+              name: file.name,
+              type: file.type,
+              size: file.size,
+              data: reader.result,
+              isImage: false,
+            },
+          ]);
+        };
+        reader.readAsText(file);
+      });
+    },
+    [robloxImageUpload]
+  );
 
   const handleStudioEnabledChange = useCallback((enabled) => {
     setStudioEnabled(enabled);
@@ -1848,33 +2100,45 @@ export function useAiWorkspaceController() {
     setStudioApplyMode(mode);
   }, []);
 
-  const handleStudioAutoPushEnabledChange = useCallback((enabled) => {
-    updateSettings({
-      studioAutoPushEnabled: Boolean(enabled),
-    }).catch(() => {});
-  }, [updateSettings]);
+  const handleStudioAutoPushEnabledChange = useCallback(
+    (enabled) => {
+      updateSettings({
+        studioAutoPushEnabled: Boolean(enabled),
+      }).catch(() => {});
+    },
+    [updateSettings]
+  );
 
-  const handleStudioAutoPushPolicyChange = useCallback((policy) => {
-    const nextPolicy = ["after_validation", "after_playtest", "manual_only"].includes(policy)
-      ? policy
-      : "after_validation";
-    updateSettings({
-      studioAutoPushPolicy: nextPolicy,
-    }).catch(() => {});
-  }, [updateSettings]);
+  const handleStudioAutoPushPolicyChange = useCallback(
+    (policy) => {
+      const nextPolicy = ["after_validation", "after_playtest", "manual_only"].includes(policy)
+        ? policy
+        : "after_validation";
+      updateSettings({
+        studioAutoPushPolicy: nextPolicy,
+      }).catch(() => {});
+    },
+    [updateSettings]
+  );
 
-  const handleRobloxAssetUploadsEnabledChange = useCallback(async (enabled) => {
-    if (!selectedAssetProjectId) {
-      notify({ message: "Open or create a chat before enabling generated asset uploads", type: "info" });
-      return;
-    }
-    try {
-      await projectAssets.setAutoUploadEnabled(Boolean(enabled));
-      updateSettings({ robloxAssetUploadsEnabled: Boolean(enabled) }).catch(() => {});
-    } catch (_) {
-      // The project asset hook already surfaces the backend's typed error.
-    }
-  }, [notify, projectAssets, selectedAssetProjectId, updateSettings]);
+  const handleRobloxAssetUploadsEnabledChange = useCallback(
+    async (enabled) => {
+      if (!selectedAssetProjectId) {
+        notify({
+          message: "Open or create a chat before enabling generated asset uploads",
+          type: "info",
+        });
+        return;
+      }
+      try {
+        await projectAssets.setAutoUploadEnabled(Boolean(enabled));
+        updateSettings({ robloxAssetUploadsEnabled: Boolean(enabled) }).catch(() => {});
+      } catch (_) {
+        // The project asset hook already surfaces the backend's typed error.
+      }
+    },
+    [notify, projectAssets, selectedAssetProjectId, updateSettings]
+  );
 
   const handleOpenAssetLibrary = useCallback(async () => {
     if (!user) {
@@ -1882,13 +2146,22 @@ export function useAiWorkspaceController() {
       return;
     }
     if (robloxStatus?.connected !== true) {
-      notify({ message: "Connect Roblox before selecting assets", type: "info" });
+      notify({
+        message: "Connect Roblox before selecting assets",
+        type: "info",
+      });
       return;
     }
     if (!isCreatorStoreReadAuthorized(robloxStatus)) {
-      notify({ message: "Reauthorize Roblox to browse your assets.", type: "info" });
+      notify({
+        message: "Reauthorize Roblox to browse your assets.",
+        type: "info",
+      });
       beginCreatorStoreReauthorization("/ai").catch((err) => {
-        notify({ message: err?.message || "Failed to start Roblox reauthorization.", type: "error" });
+        notify({
+          message: err?.message || "Failed to start Roblox reauthorization.",
+          type: "error",
+        });
       });
       return;
     }
@@ -1900,16 +2173,22 @@ export function useAiWorkspaceController() {
       try {
         await unified.ensureChat("New chat");
       } catch (err) {
-        notify({ message: err?.message || "Could not create a chat for these assets", type: "error" });
+        notify({
+          message: err?.message || "Could not create a chat for these assets",
+          type: "error",
+        });
         return;
       }
     }
     setAssetLibraryOpen(true);
   }, [notify, robloxStatus, selectedAssetProjectId, unified, user]);
 
-  const handleConfirmProjectAssets = useCallback(async (assets) => {
-    await projectAssets.attachAssets(assets);
-  }, [projectAssets]);
+  const handleConfirmProjectAssets = useCallback(
+    async (assets) => {
+      await projectAssets.attachAssets(assets);
+    },
+    [projectAssets]
+  );
 
   const syncAgentRunSteps = useCallback(
     async (runId, fallbackStep = null, fallbackRun = null) => {
@@ -1926,23 +2205,23 @@ export function useAiWorkspaceController() {
 
       if (!run && !steps.length) return;
 
-      const normalizedRunStatus = run
-        ? normalizeAuthoritativeRunStatus(run.status, run) || run.status
-        : null;
+      const normalizedRunStatus = run ? normalizeAuthoritativeRunStatus(run.status, run) || run.status : null;
       const runWasCancelled = normalizedRunStatus === "canceled";
-      const runPatch = run ? {
-        runStatus: normalizedRunStatus,
-        targetSelection: run.targetSelection || null,
-        studioPlaceName: run.placeName || null,
-        errorCode: run.errorCode || run.blocker?.code || run.error?.code || null,
-        errorDetails: run.errorDetails || run.blocker?.details || run.error?.details || null,
-        recovery: run.recovery || run.blocker?.recovery || run.error?.recovery || null,
-        stage: runWasCancelled
-          ? "Stopped"
-          : run.status === "awaiting_studio_target"
-          ? "Waiting for your Studio project choice"
-          : run.summary || (run.placeName ? `Continuing in ${run.placeName}...` : undefined),
-      } : {};
+      const runPatch = run
+        ? {
+            runStatus: normalizedRunStatus,
+            targetSelection: run.targetSelection || null,
+            studioPlaceName: run.placeName || null,
+            errorCode: run.errorCode || run.blocker?.code || run.error?.code || null,
+            errorDetails: run.errorDetails || run.blocker?.details || run.error?.details || null,
+            recovery: run.recovery || run.blocker?.recovery || run.error?.recovery || null,
+            stage: runWasCancelled
+              ? "Stopped"
+              : run.status === "awaiting_studio_target"
+                ? "Waiting for your Studio project choice"
+                : run.summary || (run.placeName ? `Continuing in ${run.placeName}...` : undefined),
+          }
+        : {};
 
       if (unified.setPendingMessage) {
         unified.setPendingMessage((prev) => {
@@ -1952,12 +2231,14 @@ export function useAiWorkspaceController() {
             ...runPatch,
             steps,
             runId,
-            ...(runWasCancelled ? {
-              content: "Generation canceled.",
-              pending: false,
-              stage: "canceled",
-              metadata: { ...(prev.metadata || {}), runState: "canceled" },
-            } : {}),
+            ...(runWasCancelled
+              ? {
+                  content: "Generation canceled.",
+                  pending: false,
+                  stage: "canceled",
+                  metadata: { ...(prev.metadata || {}), runState: "canceled" },
+                }
+              : {}),
           };
         });
       }
@@ -1967,24 +2248,34 @@ export function useAiWorkspaceController() {
         .find((m) => m.role === "assistant" && m.runId === runId);
       if (targetMessage?.id && chat.currentChatId) {
         await chat.assertCanWrite();
-        await updateDoc(doc(db, "users", user.uid, "chats", chat.currentChatId, "messages", targetMessage.id), sanitizeTranscriptMessagePayload({
-          steps,
-          runId,
-          ...(run ? {
-            runStatus: normalizedRunStatus,
-            targetSelection: run.targetSelection || null,
-            studioPlaceName: run.placeName || null,
-            errorCode: run.errorCode || run.blocker?.code || run.error?.code || null,
-            errorDetails: run.errorDetails || run.blocker?.details || run.error?.details || null,
-            recovery: run.recovery || run.blocker?.recovery || run.error?.recovery || null,
-            ...(runWasCancelled ? {
-              content: "Generation canceled.",
-              pending: false,
-              stage: "canceled",
-              metadata: { ...(targetMessage.metadata || {}), runState: "canceled" },
-            } : {}),
-          } : {}),
-        })).catch(() => {});
+        await updateDoc(
+          doc(db, "users", user.uid, "chats", chat.currentChatId, "messages", targetMessage.id),
+          sanitizeTranscriptMessagePayload({
+            steps,
+            runId,
+            ...(run
+              ? {
+                  runStatus: normalizedRunStatus,
+                  targetSelection: run.targetSelection || null,
+                  studioPlaceName: run.placeName || null,
+                  errorCode: run.errorCode || run.blocker?.code || run.error?.code || null,
+                  errorDetails: run.errorDetails || run.blocker?.details || run.error?.details || null,
+                  recovery: run.recovery || run.blocker?.recovery || run.error?.recovery || null,
+                  ...(runWasCancelled
+                    ? {
+                        content: "Generation canceled.",
+                        pending: false,
+                        stage: "canceled",
+                        metadata: {
+                          ...(targetMessage.metadata || {}),
+                          runState: "canceled",
+                        },
+                      }
+                    : {}),
+                }
+              : {}),
+          })
+        ).catch(() => {});
       }
     },
     [chat, unified, user]
@@ -1996,9 +2287,7 @@ export function useAiWorkspaceController() {
         pendingMessage: unified.pendingMessage,
         agentRun: workspace.agentRun,
       });
-      const targetId = typeof option === "string"
-        ? option
-        : option?.id || option?.targetId || option?.studioTargetId;
+      const targetId = typeof option === "string" ? option : option?.id || option?.targetId || option?.studioTargetId;
       if (!targetId || !user || selectingStudioTargetId) return false;
       // Choosing an exact live target is an explicit Studio action. Keep the
       // execution preference in lockstep with that choice so the subsequent
@@ -2007,9 +2296,7 @@ export function useAiWorkspaceController() {
       handleStudioEnabledChange(true);
       setSelectingStudioTargetId(targetId);
       // Paint the chip immediately so empty chats (no Firestore doc yet) still show the place.
-      const immediatePreference = buildStudioTargetPreference(
-        typeof option === "string" ? { id: option } : option
-      );
+      const immediatePreference = buildStudioTargetPreference(typeof option === "string" ? { id: option } : option);
       if (immediatePreference) setOptimisticStudioPlacePreference(immediatePreference);
       try {
         const { preference, bindError, result, resumed } = await resumeStudioTargetSelection({
@@ -2051,16 +2338,15 @@ export function useAiWorkspaceController() {
           setOptimisticStudioPlacePreference(null);
           setStudioPlacePickerOpen(true);
           notify({
-            message: result?.message || "That Studio project is no longer available. Choose another project to continue.",
+            message:
+              result?.message || "That Studio project is no longer available. Choose another project to continue.",
             type: "error",
           });
           return false;
         } else {
           setStudioPlacePickerOpen(false);
           notify({
-            message: result?.run?.placeName
-              ? `Continuing in ${result.run.placeName}`
-              : "Continuing in Studio",
+            message: result?.run?.placeName ? `Continuing in ${result.run.placeName}` : "Continuing in Studio",
             type: "success",
           });
           if (bindDenied) {
@@ -2074,7 +2360,10 @@ export function useAiWorkspaceController() {
       } catch (err) {
         setOptimisticStudioPlacePreference(null);
         setStudioPlacePickerOpen(true);
-        notify({ message: err?.message || "Could not continue in that Studio project", type: "error" });
+        notify({
+          message: err?.message || "Could not continue in that Studio project",
+          type: "error",
+        });
         return false;
       } finally {
         setSelectingStudioTargetId(null);
@@ -2104,15 +2393,11 @@ export function useAiWorkspaceController() {
         if (projectId) {
           const resolution = await getProjectBinding(projectId);
           if (resolution?.state === PROJECT_RESOLUTION_STATES.MISSING) {
-            const shouldClearChatProject =
-              Boolean(chat.currentChatId)
-              && chat.currentChatMeta?.projectId === projectId;
+            const shouldClearChatProject = Boolean(chat.currentChatId) && chat.currentChatMeta?.projectId === projectId;
             if (typeof chat.setCurrentChatMeta === "function" && shouldClearChatProject) {
-              chat.setCurrentChatMeta((prev) => (
-                prev && prev.projectId === projectId
-                  ? { ...prev, projectId: null }
-                  : prev
-              ));
+              chat.setCurrentChatMeta((prev) =>
+                prev && prev.projectId === projectId ? { ...prev, projectId: null } : prev
+              );
             }
             if (shouldClearChatProject) {
               try {
@@ -2141,13 +2426,19 @@ export function useAiWorkspaceController() {
         if (updated && unified.setPendingMessage) {
           unified.setPendingMessage((prev) => {
             if (!prev) return prev;
-            return { ...prev, steps: upsertAgentStep(prev.steps || [], updated) };
+            return {
+              ...prev,
+              steps: upsertAgentStep(prev.steps || [], updated),
+            };
           });
         }
         await syncAgentRunSteps(runId, updated);
         notify({ message: "Studio step approved", type: "success" });
       } catch (err) {
-        notify({ message: err?.message || "Could not approve step", type: "error" });
+        notify({
+          message: err?.message || "Could not approve step",
+          type: "error",
+        });
       } finally {
         setApprovingStepId(null);
       }
@@ -2163,96 +2454,114 @@ export function useAiWorkspaceController() {
       const pivotKey = String(transcriptPivot?.messageId || transcriptPivot?.id || "run");
       const operationId = uuidv4();
       const restoreRevision = `restore:${runId}:${pivotKey}`;
-      const admission = coordinator.admit({
-        id: operationId,
-        chatId,
-        type: "restore",
-        draftRevision: restoreRevision,
-        checkpointMetadata: { targetRunId: runId, transcriptPivot },
-        interrupt: true,
-        onCancel: async (operation) => {
-          unified.cancelCurrentFlow?.();
-          if (operation?.runId) {
-            await cancelCoordinatedAgentRun(
-              operation,
-              operation.chatId || chat.currentChatId || null,
-            );
-            await unified.reconcileCancelledRun?.(operation.runId, {
-              chatId: operation.chatId || chat.currentChatId || null,
-              requestId: operation.id,
-            });
-          }
-        },
-      }, async ({ signal }) => {
-        setRestoringRun(true);
-        try {
-          const result = chat.currentChatId
-            ? await restoreChatCheckpoint({
-                chatId: chat.currentChatId,
-                targetRunId: runId,
-                transcriptPivot,
-                signal,
-                idempotencyKey: operationId,
-              })
-            : await restoreAgentRun(runId, {
-                signal,
-                idempotencyKey: operationId,
-                chatId: chat.currentChatId || null,
+      const admission = coordinator.admit(
+        {
+          id: operationId,
+          chatId,
+          type: "restore",
+          draftRevision: restoreRevision,
+          checkpointMetadata: { targetRunId: runId, transcriptPivot },
+          interrupt: true,
+          onCancel: async (operation) => {
+            unified.cancelCurrentFlow?.();
+            if (operation?.runId) {
+              await cancelCoordinatedAgentRun(operation, operation.chatId || chat.currentChatId || null);
+              await unified.reconcileCancelledRun?.(operation.runId, {
+                chatId: operation.chatId || chat.currentChatId || null,
+                requestId: operation.id,
               });
-          await syncAgentRunSteps(runId, result?.step || null);
-          coordinator.pause(chat.currentChatId || chatId, CHAT_OPERATION_STATUS.STOPPED);
-          notify({ message: "Checkpoint restored", type: "success" });
-          return result;
-        } catch (err) {
-          notify({ message: err?.message || "Could not restore snapshots", type: "error" });
-          throw err;
-        } finally {
-          setRestoringRun(false);
+            }
+          },
+        },
+        async ({ signal }) => {
+          setRestoringRun(true);
+          try {
+            const result = chat.currentChatId
+              ? await restoreChatCheckpoint({
+                  chatId: chat.currentChatId,
+                  targetRunId: runId,
+                  transcriptPivot,
+                  signal,
+                  idempotencyKey: operationId,
+                })
+              : await restoreAgentRun(runId, {
+                  signal,
+                  idempotencyKey: operationId,
+                  chatId: chat.currentChatId || null,
+                });
+            await syncAgentRunSteps(runId, result?.step || null);
+            coordinator.pause(chat.currentChatId || chatId, CHAT_OPERATION_STATUS.STOPPED);
+            notify({ message: "Checkpoint restored", type: "success" });
+            return result;
+          } catch (err) {
+            notify({
+              message: err?.message || "Could not restore snapshots",
+              type: "error",
+            });
+            throw err;
+          } finally {
+            setRestoringRun(false);
+          }
         }
-      });
+      );
       return admission.promise;
     },
     [chat.currentChatId, user, unified, syncAgentRunSteps, notify]
   );
 
-  const stopChatOperation = useCallback(() => (
-    chatOperationCoordinatorRef.current.stop(chat.currentChatId || "draft")
-  ), [chat.currentChatId]);
+  const stopChatOperation = useCallback(
+    () => chatOperationCoordinatorRef.current.stop(chat.currentChatId || "draft"),
+    [chat.currentChatId]
+  );
 
-  const resumeChatQueue = useCallback(() => (
-    chatOperationCoordinatorRef.current.resume(chat.currentChatId || "draft")
-  ), [chat.currentChatId]);
+  const resumeChatQueue = useCallback(
+    () => chatOperationCoordinatorRef.current.resume(chat.currentChatId || "draft"),
+    [chat.currentChatId]
+  );
 
-  const sendNextChatOperation = useCallback(() => (
-    chatOperationCoordinatorRef.current.sendNext(chat.currentChatId || "draft")
-  ), [chat.currentChatId]);
+  const sendNextChatOperation = useCallback(
+    () => chatOperationCoordinatorRef.current.sendNext(chat.currentChatId || "draft"),
+    [chat.currentChatId]
+  );
 
-  const removeQueuedChatOperation = useCallback((operationId) => (
-    chatOperationCoordinatorRef.current.removeQueued(chat.currentChatId || "draft", operationId)
-  ), [chat.currentChatId]);
+  const removeQueuedChatOperation = useCallback(
+    (operationId) => chatOperationCoordinatorRef.current.removeQueued(chat.currentChatId || "draft", operationId),
+    [chat.currentChatId]
+  );
 
-  const gateQuickScriptAction = useCallback((action) => {
-    if (user) return true;
-    const pending = recordPendingAuthGate(action, "quick_script_action");
-    track("gated_action_attempted", {
-      generator_mode: "quick_script",
-      gated_action: action,
-      prompt_category: categorizePrompt(quickScript.prompt || prompt),
-      pending_action_id: pending.id,
-    }, { dedupeKey: `quick_script_gate:${pending.id}` });
-    setShowSignInNudge(true);
-    return false;
-  }, [prompt, quickScript.prompt, recordPendingAuthGate, track, user]);
+  const gateQuickScriptAction = useCallback(
+    (action) => {
+      if (user) return true;
+      const pending = recordPendingAuthGate(action, "quick_script_action");
+      track(
+        "gated_action_attempted",
+        {
+          generator_mode: "quick_script",
+          gated_action: action,
+          prompt_category: categorizePrompt(quickScript.prompt || prompt),
+          pending_action_id: pending.id,
+        },
+        { dedupeKey: `quick_script_gate:${pending.id}` }
+      );
+      setShowSignInNudge(true);
+      return false;
+    },
+    [prompt, quickScript.prompt, recordPendingAuthGate, track, user]
+  );
 
   const handleQuickScriptCopy = useCallback(async () => {
     const code = quickScript.result?.code || "";
     if (!code) return;
     try {
       await navigator.clipboard.writeText(code);
-      track("code_copied", {
-        generator_mode: "quick_script",
-        output_type: "luau_script",
-      }, { dedupeKey: `quick_script_copy:${quickScript.idempotencyKey || ""}` });
+      track(
+        "code_copied",
+        {
+          generator_mode: "quick_script",
+          output_type: "luau_script",
+        },
+        { dedupeKey: `quick_script_copy:${quickScript.idempotencyKey || ""}` }
+      );
       notify({ message: "Quick copied", type: "success" });
     } catch (_) {
       notify({ message: "Could not copy code", type: "error" });
@@ -2280,14 +2589,23 @@ export function useAiWorkspaceController() {
         stage: "Saved to projects",
         updatedAt: Date.now(),
       }));
-      track("project_saved", {
-        generator_mode: "quick_script",
-        output_type: "luau_script",
-        has_project: Boolean(savedProjectId),
-      }, { dedupeKey: `quick_script_saved:${savedProjectId || quickScript.idempotencyKey || ""}` });
+      track(
+        "project_saved",
+        {
+          generator_mode: "quick_script",
+          output_type: "luau_script",
+          has_project: Boolean(savedProjectId),
+        },
+        {
+          dedupeKey: `quick_script_saved:${savedProjectId || quickScript.idempotencyKey || ""}`,
+        }
+      );
       notify({ message: "Quick saved to projects", type: "success" });
     } catch (err) {
-      notify({ message: err?.message || "Could not save Quick", type: "error" });
+      notify({
+        message: err?.message || "Could not save Quick",
+        type: "error",
+      });
     }
   }, [
     gateQuickScriptAction,
@@ -2306,32 +2624,45 @@ export function useAiWorkspaceController() {
     if (!result?.code || !gateQuickScriptAction(PENDING_AUTH_ACTIONS.EXPORT_PROJECT)) return;
     const filename = `${(result.title || "QuickScript").replace(/[^a-z0-9_-]+/gi, "_")}.lua`;
     downloadText(filename, result.code);
-    track("artifact_downloaded", {
-      generator_mode: "quick_script",
-      output_type: "luau_script",
-      download_type: "single_file",
-    }, { dedupeKey: `quick_script_export:${quickScript.idempotencyKey || ""}` });
+    track(
+      "artifact_downloaded",
+      {
+        generator_mode: "quick_script",
+        output_type: "luau_script",
+        download_type: "single_file",
+      },
+      { dedupeKey: `quick_script_export:${quickScript.idempotencyKey || ""}` }
+    );
   }, [gateQuickScriptAction, quickScript.idempotencyKey, quickScript.result, track]);
 
   const handleQuickScriptStudioPush = useCallback(async () => {
     const result = quickScript.result;
     if (!result?.code || !gateQuickScriptAction(PENDING_AUTH_ACTIONS.PUSH_TO_STUDIO)) return;
     if (
-      result?.validation?.status === "blocked"
-      || !["Script", "LocalScript", "ModuleScript"].includes(result?.scriptType)
-      || !String(result?.studioLocation || "").trim()
+      result?.validation?.status === "blocked" ||
+      !["Script", "LocalScript", "ModuleScript"].includes(result?.scriptType) ||
+      !String(result?.studioLocation || "").trim()
     ) {
-      notify({ message: "This script is blocked until its class and Studio location pass validation", type: "error" });
+      notify({
+        message: "This script is blocked until its class and Studio location pass validation",
+        type: "error",
+      });
       return;
     }
     const pluginSessionId = getStudioSessionId(studioConnection.pluginSession);
     if (!studioConnection.pluginConnected || !pluginSessionId) {
-      notify({ message: "Connect the NexusRBX Studio Plugin before pushing this script", type: "info" });
+      notify({
+        message: "Connect the NexusRBX Studio Plugin before pushing this script",
+        type: "info",
+      });
       return;
     }
     const artifact = quickScriptArtifact(result);
     if (!artifact) {
-      notify({ message: "This script cannot be pushed because its Studio context is incomplete", type: "error" });
+      notify({
+        message: "This script cannot be pushed because its Studio context is incomplete",
+        type: "error",
+      });
       return;
     }
     try {
@@ -2339,13 +2670,22 @@ export function useAiWorkspaceController() {
         artifact: buildBaseArtifactSnapshot(artifact),
         sessionId: pluginSessionId,
       });
-      track("quick_script_studio_push_queued", {
-        generator_mode: "quick_script",
-        output_type: "luau_script",
-      }, { dedupeKey: `quick_script_studio:${queued?.commandId || quickScript.idempotencyKey || ""}` });
+      track(
+        "quick_script_studio_push_queued",
+        {
+          generator_mode: "quick_script",
+          output_type: "luau_script",
+        },
+        {
+          dedupeKey: `quick_script_studio:${queued?.commandId || quickScript.idempotencyKey || ""}`,
+        }
+      );
       notify({ message: "Queued Quick Studio push", type: "success" });
     } catch (err) {
-      notify({ message: err?.message || "Could not push Quick to Studio", type: "error" });
+      notify({
+        message: err?.message || "Could not push Quick to Studio",
+        type: "error",
+      });
     }
   }, [
     gateQuickScriptAction,
@@ -2385,21 +2725,28 @@ export function useAiWorkspaceController() {
     }
     if (quickScript.projectId) {
       try {
-        const upgraded = await upgradeQuickScriptProjectToAgent({ projectId: quickScript.projectId });
+        const upgraded = await upgradeQuickScriptProjectToAgent({
+          projectId: quickScript.projectId,
+        });
         setQuickScript((prev) => ({
           ...prev,
           projectId: upgraded.project?.projectId || prev.projectId,
           project: upgraded.project || prev.project,
           updatedAt: Date.now(),
         }));
-        track("quick_script_upgraded_to_agent", {
-          generator_mode: "agent_build",
-          previous_mode: upgraded.previousMode || "quick_script",
-          has_project: true,
-        }, { dedupeKey: `quick_script_agent_upgrade:${quickScript.projectId}` });
+        track(
+          "quick_script_upgraded_to_agent",
+          {
+            generator_mode: "agent_build",
+            previous_mode: upgraded.previousMode || "quick_script",
+            has_project: true,
+          },
+          { dedupeKey: `quick_script_agent_upgrade:${quickScript.projectId}` }
+        );
       } catch (err) {
         notify({
-          message: err?.message || "Could not update the saved project yet; opening Agent Build with the preserved context.",
+          message:
+            err?.message || "Could not update the saved project yet; opening Agent Build with the preserved context.",
           type: "error",
         });
       }
@@ -2420,19 +2767,26 @@ export function useAiWorkspaceController() {
     user,
   ]);
 
-  const handleAuthRequired = useCallback((actionType = PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION, source = "workspace_gate") => {
-    recordPendingAuthGate(actionType, source);
-    setShowSignInNudge(true);
-  }, [recordPendingAuthGate]);
+  const handleAuthRequired = useCallback(
+    (actionType = PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION, source = "workspace_gate") => {
+      recordPendingAuthGate(actionType, source);
+      setShowSignInNudge(true);
+    },
+    [recordPendingAuthGate]
+  );
 
   useEffect(() => {
     const expired = consumeExpiredPendingAuthAction();
     if (!expired) return;
-    track("pending_action_expired", {
-      generator_mode: expired.workspace || generatorMode,
-      gated_action: expired.action,
-      prompt_category: expired.payload?.promptCategory,
-    }, { dedupeKey: `pending_expired:${expired.id}` });
+    track(
+      "pending_action_expired",
+      {
+        generator_mode: expired.workspace || generatorMode,
+        gated_action: expired.action,
+        prompt_category: expired.payload?.promptCategory,
+      },
+      { dedupeKey: `pending_expired:${expired.id}` }
+    );
     notify({
       message: `Your sign-in action expired. The workspace is still here; click ${actionLabel(expired.action)} again to continue.`,
       type: "info",
@@ -2458,8 +2812,7 @@ export function useAiWorkspaceController() {
       await refreshRobloxStatus();
       if (pending.requiresFileReselect) {
         notify({
-          message:
-            "Roblox authorization is ready. Select your local files again to continue the upload.",
+          message: "Roblox authorization is ready. Select your local files again to continue the upload.",
           type: "info",
           duration: 8000,
         });
@@ -2468,6 +2821,16 @@ export function useAiWorkspaceController() {
       if (pending.type === "creator_store_search") {
         notify({
           message: "Roblox authorization is ready. Continue your Creator Store search.",
+          type: "success",
+          duration: 6000,
+        });
+        return;
+      }
+      if (pending.type === "select_project") {
+        setRobloxExperiencesLoaded(false);
+        setProjectSelectorOpen(true);
+        notify({
+          message: "Roblox is connected. Choose the game you want to work on.",
           type: "success",
           duration: 6000,
         });
@@ -2494,11 +2857,15 @@ export function useAiWorkspaceController() {
     let cancelled = false;
 
     const resume = async () => {
-      track("pending_action_restored", {
-        generator_mode: pending.workspace || generatorMode,
-        gated_action: pending.action,
-        prompt_category: pending.payload?.promptCategory,
-      }, { dedupeKey: `pending_restored:${pending.id}` });
+      track(
+        "pending_action_restored",
+        {
+          generator_mode: pending.workspace || generatorMode,
+          gated_action: pending.action,
+          prompt_category: pending.payload?.promptCategory,
+        },
+        { dedupeKey: `pending_restored:${pending.id}` }
+      );
 
       let claimed = false;
       if (quickScript.claim?.anonymousResultId && quickScript.claim?.claimToken) {
@@ -2508,13 +2875,22 @@ export function useAiWorkspaceController() {
             claimToken: quickScript.claim.claimToken,
           });
           claimed = true;
-          track("anonymous_project_claimed", {
-            generator_mode: "quick_script",
-            output_type: "luau_script",
-          }, { dedupeKey: `anonymous_claimed:${quickScript.claim.anonymousResultId}` });
+          track(
+            "anonymous_project_claimed",
+            {
+              generator_mode: "quick_script",
+              output_type: "luau_script",
+            },
+            {
+              dedupeKey: `anonymous_claimed:${quickScript.claim.anonymousResultId}`,
+            }
+          );
         } catch (err) {
           if (!["QUICK_SCRIPT_ALREADY_CLAIMED"].includes(String(err?.code || ""))) {
-            notify({ message: err?.message || "Could not claim the anonymous Quick result", type: "error" });
+            notify({
+              message: err?.message || "Could not claim the anonymous Quick result",
+              type: "error",
+            });
           }
         }
       }
@@ -2551,9 +2927,7 @@ export function useAiWorkspaceController() {
           case PENDING_AUTH_ACTIONS.CHAT_SUBMIT: {
             const resumedPrompt = String(pending.payload?.prompt || "").trim();
             const resumedAttachments = normalizeChatAttachments(pending.payload?.attachments);
-            const resumedMode = normalizeChatMode(
-              pending.payload?.chatMode || settings?.chatMode,
-            );
+            const resumedMode = normalizeChatMode(pending.payload?.chatMode || settings?.chatMode);
             const resumedModel = pending.payload?.modelVersion || "";
             if (resumedModel && resumedModel !== settings?.modelVersion) {
               await updateSettings({ modelVersion: resumedModel });
@@ -2563,12 +2937,9 @@ export function useAiWorkspaceController() {
             setPrompt("");
             setAttachments([]);
             if (resumedPrompt || resumedAttachments.length) {
-              await unified.handleSubmit(
-                resumedPrompt,
-                resumedAttachments,
-                workspace.projectArtifactSnapshot,
-                { mode: resumedMode }
-              );
+              await unified.handleSubmit(resumedPrompt, resumedAttachments, workspace.projectArtifactSnapshot, {
+                mode: resumedMode,
+              });
             } else {
               outcome = "restored";
               notify({
@@ -2580,7 +2951,9 @@ export function useAiWorkspaceController() {
             break;
           }
           case PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION:
-            await runQuickScript(quickScript.prompt || prompt, { source: "pending_auth_resume" });
+            await runQuickScript(quickScript.prompt || prompt, {
+              source: "pending_auth_resume",
+            });
             break;
           default:
             outcome = "restored";
@@ -2595,12 +2968,16 @@ export function useAiWorkspaceController() {
           resumedOutcome: outcome,
           quickScriptClaimAvailable: claimed,
         });
-        track("pending_action_completed", {
-          generator_mode: pending.workspace || generatorMode,
-          gated_action: pending.action,
-          prompt_category: pending.payload?.promptCategory,
-          resumed_outcome: outcome,
-        }, { dedupeKey: `pending_completed:${pending.id}` });
+        track(
+          "pending_action_completed",
+          {
+            generator_mode: pending.workspace || generatorMode,
+            gated_action: pending.action,
+            prompt_category: pending.payload?.promptCategory,
+            resumed_outcome: outcome,
+          },
+          { dedupeKey: `pending_completed:${pending.id}` }
+        );
         if (outcome === "completed") {
           notify({
             message: `Sign-in complete. Resumed ${actionLabel(pending.action)}.`,
@@ -2610,7 +2987,10 @@ export function useAiWorkspaceController() {
         }
       } catch (err) {
         completePendingAuthAction(pending.id, { resumedOutcome: "failed" });
-        notify({ message: err?.message || `Could not resume ${actionLabel(pending.action)}`, type: "error" });
+        notify({
+          message: err?.message || `Could not resume ${actionLabel(pending.action)}`,
+          type: "error",
+        });
       }
     };
 
@@ -2650,9 +3030,9 @@ export function useAiWorkspaceController() {
       paygRemaining,
       subLimit,
       resetsAt,
-    isPremium,
-    isStarterOrAbove,
-    isAdmin,
+      isPremium,
+      isStarterOrAbove,
+      isAdmin,
       unlimitedTokens,
       devOverride,
       flags,
@@ -2668,6 +3048,18 @@ export function useAiWorkspaceController() {
     navigation: {
       navigate,
       location,
+    },
+    project: {
+      activeProjectId,
+      activeProject,
+      projects: projectBindingProjects,
+      loading: projectBindingsLoading,
+      selectorOpen: projectSelectorOpen,
+      selectorCanClose: Boolean(activeProjectId),
+      experiences: robloxExperiences,
+      experiencesLoading: robloxExperiencesLoading,
+      experiencesError: robloxExperiencesError,
+      selectingUniverseId,
     },
     uiState: {
       user,
@@ -2725,6 +3117,11 @@ export function useAiWorkspaceController() {
       setProNudgeReason,
       dismissToast,
       updateSettings,
+      openProjectSelector,
+      closeProjectSelector,
+      loadRobloxExperiences,
+      connectRobloxForProjects,
+      selectRobloxExperience,
 
       handlePromptSubmit,
       stopChatOperation,
@@ -2739,9 +3136,8 @@ export function useAiWorkspaceController() {
       handleQuickScriptContinueEditing,
       handleQuickScriptOpenAgentBuild,
       handleAuthRequired,
-      onApprovePlan: (message, submissionOptions = {}) => (
-        unified.approvePlan(message, workspace.projectArtifactSnapshot, submissionOptions)
-      ),
+      onApprovePlan: (message, submissionOptions = {}) =>
+        unified.approvePlan(message, workspace.projectArtifactSnapshot, submissionOptions),
       onClarifySubmit: unified.submitClarifyAnswers,
       onRefineArtifact: unified.refineArtifact,
       handleStartRefine,
@@ -2806,10 +3202,10 @@ export function useAiWorkspaceController() {
       assetLibraryDisabledReason: !user
         ? "Sign in before selecting Roblox assets."
         : robloxStatus?.connected !== true
-            ? "Connect Roblox before selecting assets."
-            : !isCreatorStoreReadAuthorized(robloxStatus)
-              ? "Reauthorize Roblox to browse your assets."
-              : "",
+          ? "Connect Roblox before selecting assets."
+          : !isCreatorStoreReadAuthorized(robloxStatus)
+            ? "Reauthorize Roblox to browse your assets."
+            : "",
       uploadStatus: projectAssets.uploadStatus,
       refresh: refreshRobloxStatus,
       refreshProjectAssets: projectAssets.refresh,

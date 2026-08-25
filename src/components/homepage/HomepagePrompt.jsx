@@ -19,11 +19,6 @@ const CREATION_MODES = [
     description: "Plan and build",
   },
   {
-    id: "script",
-    label: "Script",
-    description: "Focused Luau",
-  },
-  {
     id: "asset",
     label: "Asset",
     description: "Image assets",
@@ -31,14 +26,6 @@ const CREATION_MODES = [
 ];
 
 function ModeIcon({ mode }) {
-  if (mode === "script") {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="m8.5 7-5 5 5 5M15.5 7l5 5-5 5M14 4l-4 16" />
-      </svg>
-    );
-  }
-
   if (mode === "asset") {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -129,11 +116,14 @@ export default function HomepagePrompt({
   const messageId = `${promptId}-message`;
   const selectedMode = CREATION_MODES.find(({ id }) => id === creationMode) || CREATION_MODES[0];
 
-  const assignInputRef = useCallback((node) => {
-    internalInputRef.current = node;
-    if (typeof inputRef === "function") inputRef(node);
-    else if (inputRef) inputRef.current = node;
-  }, [inputRef]);
+  const assignInputRef = useCallback(
+    (node) => {
+      internalInputRef.current = node;
+      if (typeof inputRef === "function") inputRef(node);
+      else if (inputRef) inputRef.current = node;
+    },
+    [inputRef]
+  );
 
   const updatePromptOverflow = useCallback(() => {
     const node = internalInputRef.current;
@@ -225,7 +215,7 @@ export default function HomepagePrompt({
         styles.composer,
         prompt.trim() && styles.composerReady,
         submitting && styles.composerSubmitting,
-        className,
+        className
       )}
       onSubmit={handleSubmit}
       data-generation-intent-form="homepage"
@@ -246,7 +236,9 @@ export default function HomepagePrompt({
             <span key={selectedMode.id} className={styles.currentModeIcon}>
               <ModeIcon mode={selectedMode.id} />
             </span>
-            <span className={styles.modeAddBadge}><PlusIcon /></span>
+            <span className={styles.modeAddBadge}>
+              <PlusIcon />
+            </span>
           </button>
           <div
             className={cn(styles.modeMenu, modeMenuOpen && styles.modeMenuOpen)}
@@ -269,7 +261,9 @@ export default function HomepagePrompt({
                   setModeMenuOpen(false);
                 }}
               >
-                <span className={styles.modeIcon}><ModeIcon mode={id} /></span>
+                <span className={styles.modeIcon}>
+                  <ModeIcon mode={id} />
+                </span>
                 <strong>{label}</strong>
               </button>
             ))}

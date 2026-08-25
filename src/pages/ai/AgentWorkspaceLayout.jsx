@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Activity, Search, RefreshCw } from "lib/icons";
 
 import SidebarContent from "../../components/SidebarContent";
@@ -24,6 +18,7 @@ import {
 import CodeFileTree from "../../components/ai/workspace/CodeFileTree";
 import CodeWorkspace from "../../components/ai/workspace/CodeWorkspace";
 import AgentChatPanel from "../../components/ai/workspace/AgentChatPanel";
+import ProjectSelectionModal from "../../components/ai/workspace/ProjectSelectionModal";
 import TaskProgressPanel from "../../components/ai/workspace/TaskProgressPanel";
 import ActiveAgentsTray from "../../components/ai/workspace/ActiveAgentsTray";
 import WorkspaceAssetsPanel from "../../components/ai/workspace/WorkspaceAssetsPanel";
@@ -35,7 +30,6 @@ import WorkspaceShell, {
 } from "../../components/ai/workspace/WorkspaceShell";
 import useTaskRuntime from "../../hooks/useTaskRuntime";
 import useActiveAgents from "../../hooks/useActiveAgents";
-import QuickScriptWorkspace from "./QuickScriptWorkspace";
 import WorkspaceRibbon from "./WorkspaceRibbon";
 import {
   getStudioCommand,
@@ -46,13 +40,9 @@ import {
 import { TERMINAL_AGENT_STATES } from "../../lib/agentRuntimeV2Api";
 import { PENDING_AUTH_ACTIONS } from "../../lib/pendingAuthAction";
 import { getStudioSessionId } from "../../lib/studioConnection";
-import {
-  buildRefineTargetFromWorkspace,
-  messageHasRefineableFiles,
-} from "../../lib/chatRefine";
+import { buildRefineTargetFromWorkspace, messageHasRefineableFiles } from "../../lib/chatRefine";
 import { AI_EVENTS, onAiEvent } from "../../lib/aiEvents";
 import { createGenerationIntent } from "../../lib/generationIntent";
-import FEATURE_FLAGS from "../../lib/featureFlags";
 import TutorialOverlay from "../../components/onboarding/TutorialOverlay";
 import { useTutorial } from "../../components/onboarding/useTutorial";
 import useAiPageZoom from "../../hooks/useAiPageZoom";
@@ -75,17 +65,14 @@ export function buildOpenedCodeArtifact(request) {
   const title = String(request.title || "Script").trim() || "Script";
   const fileName = safeOpenedCodeName(title);
   const code = typeof request.code === "string" ? request.code : "";
-  const originalCode =
-    typeof request.originalCode === "string" ? request.originalCode : code;
+  const originalCode = typeof request.originalCode === "string" ? request.originalCode : code;
   const dirty = code !== originalCode;
   const id = `opened-code:${request.requestKey || request.scriptId || fileName}`;
   return {
     id,
     artifactId: id,
     title,
-    summary:
-      request.summary ||
-      (request.scriptId ? "Saved creation" : "Generated script"),
+    summary: request.summary || (request.scriptId ? "Saved creation" : "Generated script"),
     explanation: String(request.explanation || ""),
     source: request.scriptId ? "saved_creation" : "generated_script",
     dirtyCount: dirty ? 1 : 0,
@@ -147,9 +134,7 @@ function readWorkspaceDrawerWidth() {
   if (typeof window === "undefined") return WORKSPACE_DRAWER_DEFAULT_WIDTH;
   try {
     const storedWidth = window.localStorage.getItem(WORKSPACE_DRAWER_WIDTH_KEY);
-    return storedWidth == null
-      ? WORKSPACE_DRAWER_DEFAULT_WIDTH
-      : clampWorkspaceDrawerWidth(storedWidth);
+    return storedWidth == null ? WORKSPACE_DRAWER_DEFAULT_WIDTH : clampWorkspaceDrawerWidth(storedWidth);
   } catch {
     return WORKSPACE_DRAWER_DEFAULT_WIDTH;
   }
@@ -159,8 +144,7 @@ async function pollStudioCommand(commandId, { timeoutMs = 30000 } = {}) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const command = await getStudioCommand(commandId);
-    if (command.status === "succeeded" || command.status === "failed")
-      return command;
+    if (command.status === "succeeded" || command.status === "failed") return command;
     await new Promise((resolve) => setTimeout(resolve, 1200));
   }
   throw new Error("Studio command timed out");
@@ -175,9 +159,8 @@ function AssetModeWorkspace({ prompt, setPrompt, onContinue }) {
         <span>ASSET CREATION</span>
         <h1>Describe the visual your game needs.</h1>
         <p>
-          Your request moves to the asset generator, where you review the
-          project, output mode, style, settings, and credit estimate before
-          anything runs.
+          Your request moves to the asset generator, where you review the project, output mode, style, settings, and
+          credit estimate before anything runs.
         </p>
       </div>
       <form
@@ -203,9 +186,7 @@ function AssetModeWorkspace({ prompt, setPrompt, onContinue }) {
           aria-invalid={Boolean(error)}
         />
         <div className="asset-mode-workspace__footer">
-          <p id="ai-asset-handoff-note">
-            No auto-generation. You will confirm cost and settings next.
-          </p>
+          <p id="ai-asset-handoff-note">No auto-generation. You will confirm cost and settings next.</p>
           <button type="submit">Review in asset generator</button>
         </div>
         {error ? (
@@ -214,10 +195,7 @@ function AssetModeWorkspace({ prompt, setPrompt, onContinue }) {
           </p>
         ) : null}
       </form>
-      <div
-        className="asset-mode-workspace__facts"
-        aria-label="Asset handoff steps"
-      >
+      <div className="asset-mode-workspace__facts" aria-label="Asset handoff steps">
         <span>
           <b>1</b> Describe
         </span>
@@ -232,13 +210,8 @@ function AssetModeWorkspace({ prompt, setPrompt, onContinue }) {
   );
 }
 
-export default function AgentWorkspaceLayout({
-  controller,
-  locationSearch = "",
-  navigateTo = null,
-}) {
-  const { billing, uiState, modules, handlers, studio, roblox, starterPromo } =
-    controller;
+export default function AgentWorkspaceLayout({ controller, locationSearch = "", navigateTo = null }) {
+  const { billing, uiState, modules, handlers, studio, roblox, project, starterPromo } = controller;
   const {
     planKey,
     totalRemaining,
@@ -259,7 +232,6 @@ export default function AgentWorkspaceLayout({
     user,
     sidebarOpen,
     generatorMode,
-    quickScript,
     prompt,
     isImproving,
     refineTarget,
@@ -291,17 +263,11 @@ export default function AgentWorkspaceLayout({
     return statuses;
   }, [activeAgentRuntime.agents]);
   const studioCommandSessionId =
-    getStudioSessionId(studio?.manifestSession) ||
-    getStudioSessionId(studio?.compatiblePluginSession) ||
-    null;
+    getStudioSessionId(studio?.manifestSession) || getStudioSessionId(studio?.compatiblePluginSession) || null;
   const studioCapabilities = getActiveStudioCapabilities(studio);
-  const studioManifestSupported = selectedStudioSupportsCommand(
-    studio,
-    "get_project_manifest",
-  );
+  const studioManifestSupported = selectedStudioSupportsCommand(studio, "get_project_manifest");
   const studioAutoPushAuthorized = isCurrentPluginAutoPushAuthorized(studio);
-  const currentProjectId =
-    chat.currentChatMeta?.projectId || roblox?.selectedAssetProjectId || "";
+  const currentProjectId = chat.currentChatMeta?.projectId || project?.activeProjectId || "";
 
   const {
     setSidebarOpen,
@@ -321,13 +287,6 @@ export default function AgentWorkspaceLayout({
     resumeChatQueue,
     sendNextChatOperation,
     removeQueuedChatOperation,
-    runQuickScript,
-    handleQuickScriptCopy,
-    handleQuickScriptSave,
-    handleQuickScriptExport,
-    handleQuickScriptStudioPush,
-    handleQuickScriptContinueEditing,
-    handleQuickScriptOpenAgentBuild,
     handleAuthRequired,
     onApprovePlan,
     onClarifySubmit,
@@ -352,36 +311,31 @@ export default function AgentWorkspaceLayout({
     handleCloseAssetLibrary,
     handleConfirmProjectAssets,
     handleRemoveProjectAsset,
+    openProjectSelector,
+    closeProjectSelector,
+    loadRobloxExperiences,
+    connectRobloxForProjects,
+    selectRobloxExperience,
   } = handlers;
 
   const requestedCreationMode = new URLSearchParams(locationSearch).get("mode");
-  const creationMode = ["agent", "script", "asset"].includes(
-    requestedCreationMode,
-  )
-    ? requestedCreationMode
-    : generatorMode === "quick_script"
-      ? "script"
-      : "agent";
+  const creationMode = requestedCreationMode === "asset" ? "asset" : "agent";
 
   useEffect(() => {
-    if (requestedCreationMode === "agent" && generatorMode !== "agent_build") {
+    if (generatorMode !== "agent_build") {
       setGeneratorMode("agent_build", "mode_query");
     }
-    if (
-      requestedCreationMode === "script" &&
-      generatorMode !== "quick_script"
-    ) {
-      setGeneratorMode("quick_script", "mode_query");
+    if (requestedCreationMode === "script" && navigateTo) {
+      navigateTo("/ai?mode=agent", { replace: true });
     }
-  }, [generatorMode, requestedCreationMode, setGeneratorMode]);
+  }, [generatorMode, navigateTo, requestedCreationMode, setGeneratorMode]);
 
   const handleCreationModeChange = useCallback(
     (mode) => {
       if (mode === "agent") setGeneratorMode("agent_build", "mode_control");
-      if (mode === "script") setGeneratorMode("quick_script", "mode_control");
       if (navigateTo) navigateTo(`/ai?mode=${mode}`, { replace: true });
     },
-    [navigateTo, setGeneratorMode],
+    [navigateTo, setGeneratorMode]
   );
 
   const handleAssetHandoff = useCallback(
@@ -396,8 +350,7 @@ export default function AgentWorkspaceLayout({
           navigateTo("/tools/icon-generator", {
             state: { generationIntentId: intent.id },
           });
-        else if (typeof window !== "undefined")
-          window.location.assign("/tools/icon-generator");
+        else if (typeof window !== "undefined") window.location.assign("/tools/icon-generator");
       } catch (error) {
         notify({
           message: error?.message || "Could not save the asset request.",
@@ -405,11 +358,10 @@ export default function AgentWorkspaceLayout({
         });
       }
     },
-    [navigateTo, notify],
+    [navigateTo, notify]
   );
 
   const [activeDockPanel, setActiveDockPanel] = useState(null);
-  const [agentWorkspaceView, setAgentWorkspaceView] = useState("chat");
   const [drawerWidth, setDrawerWidth] = useState(readWorkspaceDrawerWidth);
   const [detailsView, setDetailsView] = useState("build");
   const [hasUnseenArtifact, setHasUnseenArtifact] = useState(false);
@@ -424,8 +376,7 @@ export default function AgentWorkspaceLayout({
   const evidenceButtonRef = useRef(null);
   const studioConnectionReturnFocusRef = useRef(null);
   const projectSidebarModalViewport = useProjectSidebarModalViewport();
-  const projectSidebarIsModal =
-    creationMode === "agent" && sidebarOpen && projectSidebarModalViewport;
+  const projectSidebarIsModal = creationMode === "agent" && sidebarOpen && projectSidebarModalViewport;
   useAiPageZoom(aiPageRef);
 
   const closeProjectSidebar = useCallback(
@@ -439,7 +390,7 @@ export default function AgentWorkspaceLayout({
         window.setTimeout(focusToggle, 0);
       }
     },
-    [setSidebarOpen],
+    [setSidebarOpen]
   );
 
   const handleStudioConnectionOpen = useCallback((trigger = null) => {
@@ -467,30 +418,18 @@ export default function AgentWorkspaceLayout({
 
       const focusable = Array.from(
         projectSidebarRef.current?.querySelectorAll(
-          'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-        ) || [],
-      ).filter(
-        (element) =>
-          !element.hasAttribute("hidden") &&
-          element.getAttribute("aria-hidden") !== "true",
-      );
+          'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        ) || []
+      ).filter((element) => !element.hasAttribute("hidden") && element.getAttribute("aria-hidden") !== "true");
       if (!focusable.length) return;
 
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
-      const focusIsInside = projectSidebarRef.current?.contains(
-        document.activeElement,
-      );
-      if (
-        event.shiftKey &&
-        (!focusIsInside || document.activeElement === first)
-      ) {
+      const focusIsInside = projectSidebarRef.current?.contains(document.activeElement);
+      if (event.shiftKey && (!focusIsInside || document.activeElement === first)) {
         event.preventDefault();
         last.focus();
-      } else if (
-        !event.shiftKey &&
-        (!focusIsInside || document.activeElement === last)
-      ) {
+      } else if (!event.shiftKey && (!focusIsInside || document.activeElement === last)) {
         event.preventDefault();
         first.focus();
       }
@@ -502,7 +441,7 @@ export default function AgentWorkspaceLayout({
       const focusFirstControl = () => {
         projectSidebarRef.current
           ?.querySelector(
-            'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+            'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
           )
           ?.focus();
       };
@@ -515,18 +454,14 @@ export default function AgentWorkspaceLayout({
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       if (focusFrame == null) return;
-      if (typeof window.cancelAnimationFrame === "function")
-        window.cancelAnimationFrame(focusFrame);
+      if (typeof window.cancelAnimationFrame === "function") window.cancelAnimationFrame(focusFrame);
       else window.clearTimeout(focusFrame);
     };
   }, [closeProjectSidebar, projectSidebarIsModal, sidebarOpen]);
 
   useEffect(() => {
     try {
-      window.localStorage.setItem(
-        WORKSPACE_DRAWER_WIDTH_KEY,
-        String(drawerWidth),
-      );
+      window.localStorage.setItem(WORKSPACE_DRAWER_WIDTH_KEY, String(drawerWidth));
     } catch {
       // Storage may be disabled; the drawer remains resizable for this session.
     }
@@ -562,11 +497,10 @@ export default function AgentWorkspaceLayout({
           originalCode: code,
           loading: Boolean(scriptId && !hasCode),
         });
-        if (generatorMode !== "agent_build")
-          setGeneratorMode("agent_build", "open_code_stage");
+        if (generatorMode !== "agent_build") setGeneratorMode("agent_build", "open_code_stage");
         handleDockPanelChange("code");
       }),
-    [generatorMode, handleDockPanelChange, scriptManager, setGeneratorMode],
+    [generatorMode, handleDockPanelChange, scriptManager, setGeneratorMode]
   );
 
   useEffect(() => {
@@ -578,17 +512,10 @@ export default function AgentWorkspaceLayout({
       scriptManager.currentScript?.id === scriptId
         ? scriptManager.currentScript
         : scripts.find((script) => script.id === scriptId);
-    const versions = Array.isArray(scriptManager.versionHistory)
-      ? scriptManager.versionHistory
-      : [];
+    const versions = Array.isArray(scriptManager.versionHistory) ? scriptManager.versionHistory : [];
     const selectedVersion =
-      versions.find(
-        (version) => version.id === scriptManager.selectedVersionId,
-      ) ||
-      versions[0] ||
-      null;
-    const code =
-      typeof selectedVersion?.code === "string" ? selectedVersion.code : "";
+      versions.find((version) => version.id === scriptManager.selectedVersionId) || versions[0] || null;
+    const code = typeof selectedVersion?.code === "string" ? selectedVersion.code : "";
     setOpenedCodeRequest((current) => {
       if (current?.scriptId !== scriptId || !current.loading) return current;
       return {
@@ -608,21 +535,14 @@ export default function AgentWorkspaceLayout({
     });
   }, [openedCodeRequest, scriptManager, scripts]);
 
-  const openedCodeArtifact = useMemo(
-    () => buildOpenedCodeArtifact(openedCodeRequest),
-    [openedCodeRequest],
-  );
+  const openedCodeArtifact = useMemo(() => buildOpenedCodeArtifact(openedCodeRequest), [openedCodeRequest]);
 
   const handleOpenedCodeChange = useCallback((_artifactId, _fileId, code) => {
-    setOpenedCodeRequest((current) =>
-      current ? { ...current, code } : current,
-    );
+    setOpenedCodeRequest((current) => (current ? { ...current, code } : current));
   }, []);
 
   const revertOpenedCode = useCallback(() => {
-    setOpenedCodeRequest((current) =>
-      current ? { ...current, code: current.originalCode || "" } : current,
-    );
+    setOpenedCodeRequest((current) => (current ? { ...current, code: current.originalCode || "" } : current));
   }, []);
 
   useEffect(() => {
@@ -644,8 +564,7 @@ export default function AgentWorkspaceLayout({
       tutorial.restartTutorial();
     };
     window.addEventListener("nexus-restart-tour", handleRestartTour);
-    return () =>
-      window.removeEventListener("nexus-restart-tour", handleRestartTour);
+    return () => window.removeEventListener("nexus-restart-tour", handleRestartTour);
   }, [tutorial]);
   const [studioManifest, setStudioManifest] = useState([]);
   const [studioSearch, setStudioSearch] = useState("");
@@ -668,29 +587,13 @@ export default function AgentWorkspaceLayout({
     () => ({
       files: hasUnseenArtifact,
       code: hasUnseenArtifact,
-      activity:
-        activeAgentRuntime.agents.length ||
-        Boolean(taskRuntime.task && !taskRuntime.isTerminal),
+      activity: activeAgentRuntime.agents.length || Boolean(taskRuntime.task && !taskRuntime.isTerminal),
     }),
-    [
-      activeAgentRuntime.agents.length,
-      hasUnseenArtifact,
-      taskRuntime.isTerminal,
-      taskRuntime.task,
-    ],
+    [activeAgentRuntime.agents.length, hasUnseenArtifact, taskRuntime.isTerminal, taskRuntime.task]
   );
   const evidenceCount = Object.values(evidenceBadges).reduce(
-    (total, badge) =>
-      total + (typeof badge === "number" ? badge : badge ? 1 : 0),
-    0,
-  );
-  const hasReviewablePlan = Boolean(
-    taskRuntime.task ||
-    chat.messages?.some((message) =>
-      ["plan", "plan_approved"].includes(
-        String(message?.stage || "").toLowerCase(),
-      ),
-    ),
+    (total, badge) => total + (typeof badge === "number" ? badge : badge ? 1 : 0),
+    0
   );
 
   const toStudioFile = useCallback(
@@ -703,12 +606,7 @@ export default function AgentWorkspaceLayout({
           .pop(),
       path: script.path,
       placement: String(script.path || "").split("/")[0] || "ReplicatedStorage",
-      kind:
-        script.className === "LocalScript"
-          ? "client"
-          : script.className === "Script"
-            ? "server"
-            : "module",
+      kind: script.className === "LocalScript" ? "client" : script.className === "Script" ? "server" : "module",
       language: "luau",
       content: script.source || "",
       originalContent: script.source || "",
@@ -717,7 +615,7 @@ export default function AgentWorkspaceLayout({
       dirty: false,
       status: "synced",
     }),
-    [],
+    []
   );
 
   const fetchManifestPage = useCallback(
@@ -738,7 +636,7 @@ export default function AgentWorkspaceLayout({
       } while (nextCursor);
       return items;
     },
-    [studioCommandSessionId],
+    [studioCommandSessionId]
   );
 
   const waitForManifestCompletion = useCallback(
@@ -765,14 +663,12 @@ export default function AgentWorkspaceLayout({
           const readyRevision = status?.lastCompleteRevision || "";
           const manifestFailed =
             status?.conflicted === true ||
-            ["failed", "conflicted"].includes(
-              String(status?.continuationStatus || "").toLowerCase(),
-            );
+            ["failed", "conflicted"].includes(String(status?.continuationStatus || "").toLowerCase());
           if (manifestFailed) {
             const error = new Error(
               status?.error ||
                 status?.terminalError ||
-                "Studio manifest refresh failed because the project index conflicted. Rescan the project and try again.",
+                "Studio manifest refresh failed because the project index conflicted. Rescan the project and try again."
             );
             error.code = status?.code || "STUDIO_MANIFEST_CONFLICTED";
             throw error;
@@ -801,7 +697,7 @@ export default function AgentWorkspaceLayout({
         }
       }
     },
-    [studioCommandSessionId],
+    [studioCommandSessionId]
   );
 
   const refreshStudioManifest = useCallback(
@@ -814,10 +710,7 @@ export default function AgentWorkspaceLayout({
 
       const MANIFEST_FRESH_TTL_MS = 5 * 60 * 1000;
       const pluginLive = Boolean(studio?.pluginConnected);
-      const canQueuePluginManifest =
-        pluginLive &&
-        studioManifestSupported &&
-        Boolean(studioCommandSessionId);
+      const canQueuePluginManifest = pluginLive && studioManifestSupported && Boolean(studioCommandSessionId);
 
       const refreshPromise = (async () => {
         setStudioBusy(true);
@@ -830,10 +723,7 @@ export default function AgentWorkspaceLayout({
               sessionId: studioCommandSessionId,
             });
             previousStatus = previous.status || null;
-            previousRevision =
-              previous.status?.lastCompleteRevision ||
-              previous.status?.activeRevision ||
-              "";
+            previousRevision = previous.status?.lastCompleteRevision || previous.status?.activeRevision || "";
           } catch (_) {
             previousRevision = "";
           }
@@ -847,14 +737,11 @@ export default function AgentWorkspaceLayout({
           const isFresh =
             Boolean(previousStatus?.lastCompleteRevision) &&
             !previousStatus?.conflicted &&
-            (!lastCompleteAt ||
-              Date.now() - lastCompleteAt < MANIFEST_FRESH_TTL_MS);
+            (!lastCompleteAt || Date.now() - lastCompleteAt < MANIFEST_FRESH_TTL_MS);
 
           if (!force && isFresh) {
             const items = await fetchManifestPage(
-              previousStatus.lastCompleteRevision ||
-                previousStatus.activeRevision ||
-                "",
+              previousStatus.lastCompleteRevision || previousStatus.activeRevision || ""
             );
             setStudioManifest(items);
             return;
@@ -889,43 +776,27 @@ export default function AgentWorkspaceLayout({
             label: force ? "Rescan Studio project" : "Refresh Studio manifest",
             applyMode: "unrestricted_dev",
           });
-          const manifestCommand = await pollStudioCommand(
-            queuedManifest.commandId,
-            { timeoutMs: 60000 },
-          );
+          const manifestCommand = await pollStudioCommand(queuedManifest.commandId, { timeoutMs: 60000 });
           if (manifestCommand.status === "failed") {
-            const error = new Error(
-              manifestCommand.error || "Studio manifest refresh failed",
-            );
+            const error = new Error(manifestCommand.error || "Studio manifest refresh failed");
             error.code = manifestCommand.code || "STUDIO_MANIFEST_FAILED";
             throw error;
           }
           const expectedRevision = String(
-            manifestCommand.result?.revision ||
-              manifestCommand.result?.manifest?.revision ||
-              "",
+            manifestCommand.result?.revision || manifestCommand.result?.manifest?.revision || ""
           ).trim();
-          const status = await waitForManifestCompletion(
-            previousRevision,
-            expectedRevision,
-          );
-          const items = await fetchManifestPage(
-            status.lastCompleteRevision || status.activeRevision || "",
-          );
+          const status = await waitForManifestCompletion(previousRevision, expectedRevision);
+          const items = await fetchManifestPage(status.lastCompleteRevision || status.activeRevision || "");
           setStudioManifest(items);
         } catch (err) {
           const conflictCode = String(err?.code || "");
           const isConflict =
             conflictCode === "STUDIO_MANIFEST_CONFLICTED" ||
             /project index conflicted|manifest revision .+ conflicted|overlapping[_ ]canonical/i.test(
-              String(err?.message || ""),
+              String(err?.message || "")
             );
           const recoveryKey = `${studioCommandSessionId || "none"}:${previousRevision || "none"}`;
-          if (
-            isConflict &&
-            !isRecovery &&
-            !manifestRecoveryAttemptedRef.current.has(recoveryKey)
-          ) {
+          if (isConflict && !isRecovery && !manifestRecoveryAttemptedRef.current.has(recoveryKey)) {
             manifestRecoveryAttemptedRef.current.add(recoveryKey);
             setStudioBusy(false);
             manifestRefreshInFlightRef.current = null;
@@ -958,14 +829,13 @@ export default function AgentWorkspaceLayout({
       studioCommandSessionId,
       studioManifestSupported,
       waitForManifestCompletion,
-    ],
+    ]
   );
 
   useEffect(() => {
     const sessionId = studioCommandSessionId;
     // Plugin-owned manifest only — never auto-queue against MCP-only sessions.
-    if (!sessionId || !studio?.pluginConnected || !studioManifestSupported)
-      return;
+    if (!sessionId || !studio?.pluginConnected || !studioManifestSupported) return;
 
     const autoRefreshKey = `${sessionId}:plugin-live`;
     if (autoManifestRefreshKeyRef.current === autoRefreshKey) return;
@@ -974,23 +844,12 @@ export default function AgentWorkspaceLayout({
     refreshStudioManifest().catch(() => {
       autoManifestRefreshKeyRef.current = "";
     });
-  }, [
-    refreshStudioManifest,
-    studio?.pluginConnected,
-    studioCommandSessionId,
-    studioManifestSupported,
-  ]);
+  }, [refreshStudioManifest, studio?.pluginConnected, studioCommandSessionId, studioManifestSupported]);
 
   const studioResults = useMemo(() => {
     const query = studioSearch.trim().toLowerCase();
     return (studioManifest || [])
-      .filter(
-        (item) =>
-          !query ||
-          `${item.canonicalPath || item.path} ${item.className}`
-            .toLowerCase()
-            .includes(query),
-      )
+      .filter((item) => !query || `${item.canonicalPath || item.path} ${item.className}`.toLowerCase().includes(query))
       .slice(0, 200);
   }, [studioManifest, studioSearch]);
 
@@ -1015,11 +874,9 @@ export default function AgentWorkspaceLayout({
           applyMode: "unrestricted_dev",
         });
         const command = await pollStudioCommand(queued.commandId);
-        if (command.status === "failed")
-          throw new Error(command.error || "Studio read failed");
+        if (command.status === "failed") throw new Error(command.error || "Studio read failed");
         const script = command.result?.scripts?.[0];
-        if (!script || script.error)
-          throw new Error(script?.error || "Script source unavailable");
+        if (!script || script.error) throw new Error(script?.error || "Script source unavailable");
         const nextFile = toStudioFile(script);
         setStudioFiles((prev) => [...prev, nextFile]);
         setActiveStudioFileId(nextFile.id);
@@ -1032,7 +889,7 @@ export default function AgentWorkspaceLayout({
         setStudioBusy(false);
       }
     },
-    [notify, studioCommandSessionId, studioFiles, toStudioFile],
+    [notify, studioCommandSessionId, studioFiles, toStudioFile]
   );
 
   const studioArtifact = useMemo(() => {
@@ -1041,9 +898,7 @@ export default function AgentWorkspaceLayout({
     return {
       id: "studio-live",
       title: "Studio live workspace",
-      summary: dirtyCount
-        ? `${dirtyCount} unsaved Studio edit(s)`
-        : "Live Studio files",
+      summary: dirtyCount ? `${dirtyCount} unsaved Studio edit(s)` : "Live Studio files",
       files: studioFiles,
       dirtyCount,
     };
@@ -1064,11 +919,7 @@ export default function AgentWorkspaceLayout({
 
   const studioActiveFile = useMemo(() => {
     if (!studioFiles.length) return workspace.activeFile;
-    return (
-      studioFiles.find((file) => file.id === activeStudioFileId) ||
-      studioFiles[0] ||
-      null
-    );
+    return studioFiles.find((file) => file.id === activeStudioFileId) || studioFiles[0] || null;
   }, [activeStudioFileId, studioFiles, workspace.activeFile]);
 
   const stageArtifact = openedCodeArtifact || studioArtifact;
@@ -1084,17 +935,16 @@ export default function AgentWorkspaceLayout({
                   ...file,
                   content,
                   dirty: content !== file.originalContent,
-                  status:
-                    content !== file.originalContent ? "edited" : "synced",
+                  status: content !== file.originalContent ? "edited" : "synced",
                 }
-              : file,
-          ),
+              : file
+          )
         );
       } else {
         workspace.updateFileContent(_artifactId, _fileId, content);
       }
     },
-    [studioFiles.length, workspace],
+    [studioFiles.length, workspace]
   );
 
   const refreshStudioFile = useCallback(
@@ -1110,15 +960,11 @@ export default function AgentWorkspaceLayout({
           applyMode: "unrestricted_dev",
         });
         const command = await pollStudioCommand(queued.commandId);
-        if (command.status === "failed")
-          throw new Error(command.error || "Studio refresh failed");
+        if (command.status === "failed") throw new Error(command.error || "Studio refresh failed");
         const script = command.result?.scripts?.[0];
-        if (!script || script.error)
-          throw new Error(script?.error || "Script source unavailable");
+        if (!script || script.error) throw new Error(script?.error || "Script source unavailable");
         const refreshed = toStudioFile(script);
-        setStudioFiles((prev) =>
-          prev.map((entry) => (entry.id === file.id ? refreshed : entry)),
-        );
+        setStudioFiles((prev) => prev.map((entry) => (entry.id === file.id ? refreshed : entry)));
         setStudioConflict((prev) => (prev?.fileId === file.id ? null : prev));
       } catch (err) {
         notify?.({
@@ -1129,7 +975,7 @@ export default function AgentWorkspaceLayout({
         setStudioBusy(false);
       }
     },
-    [notify, studioCommandSessionId, toStudioFile],
+    [notify, studioCommandSessionId, toStudioFile]
   );
 
   const saveStudioFile = useCallback(
@@ -1143,8 +989,7 @@ export default function AgentWorkspaceLayout({
             path: file.path,
             className: file.className || "ModuleScript",
             source: options.sourceOverride ?? file.content ?? "",
-            expectedSourceHash:
-              options.overrideSourceHash ?? file.sourceHash ?? "",
+            expectedSourceHash: options.overrideSourceHash ?? file.sourceHash ?? "",
             createParents: false,
             snapshot: true,
           },
@@ -1154,10 +999,7 @@ export default function AgentWorkspaceLayout({
         });
         const command = await pollStudioCommand(queued.commandId);
         if (command.status === "failed") {
-          if (
-            command.result?.code === "source_conflict" ||
-            command.result?.error?.code === "source_conflict"
-          ) {
+          if (command.result?.code === "source_conflict" || command.result?.error?.code === "source_conflict") {
             const read = await queueStudioTool({
               type: "read_script",
               payload: { paths: [file.path], maxChars: 200000 },
@@ -1182,13 +1024,12 @@ export default function AgentWorkspaceLayout({
                           ...entry,
                           content: latestScript.source || "",
                           originalContent: latestScript.source || "",
-                          sourceHash:
-                            latestScript.sourceHash || entry.sourceHash,
+                          sourceHash: latestScript.sourceHash || entry.sourceHash,
                           dirty: false,
                           status: "synced",
                         }
-                      : entry,
-                  ),
+                      : entry
+                  )
                 );
                 setStudioConflict(null);
               },
@@ -1224,8 +1065,8 @@ export default function AgentWorkspaceLayout({
                   dirty: false,
                   status: "synced",
                 }
-              : entry,
-          ),
+              : entry
+          )
         );
         setStudioConflict((prev) => (prev?.fileId === file.id ? null : prev));
         notify?.({ message: "Saved to Studio", type: "success" });
@@ -1238,7 +1079,7 @@ export default function AgentWorkspaceLayout({
         setStudioBusy(false);
       }
     },
-    [notify, studioCommandSessionId],
+    [notify, studioCommandSessionId]
   );
 
   const saveAllStudioFiles = useCallback(
@@ -1249,7 +1090,7 @@ export default function AgentWorkspaceLayout({
         await saveStudioFile(file);
       }
     },
-    [saveStudioFile],
+    [saveStudioFile]
   );
 
   const closeStudioFile = useCallback(
@@ -1263,7 +1104,7 @@ export default function AgentWorkspaceLayout({
       });
       setStudioConflict((prev) => (prev?.fileId === fileId ? null : prev));
     },
-    [activeStudioFileId],
+    [activeStudioFileId]
   );
 
   const revertStudioFile = useCallback((file) => {
@@ -1277,8 +1118,8 @@ export default function AgentWorkspaceLayout({
               dirty: false,
               status: "synced",
             }
-          : entry,
-      ),
+          : entry
+      )
     );
     setStudioConflict((prev) => (prev?.fileId === file.id ? null : prev));
   }, []);
@@ -1290,17 +1131,13 @@ export default function AgentWorkspaceLayout({
         content: file.originalContent || "",
         dirty: false,
         status: "synced",
-      })),
+      }))
     );
     setStudioConflict(null);
   }, []);
 
   const requireUser = useCallback(
-    (
-      fallback,
-      actionType = PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION,
-      source = "workspace_gate",
-    ) => {
+    (fallback, actionType = PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION, source = "workspace_gate") => {
       if (!user) {
         handleAuthRequired?.(actionType, source);
         return false;
@@ -1308,7 +1145,7 @@ export default function AgentWorkspaceLayout({
       if (typeof fallback === "function") fallback();
       return true;
     },
-    [user, handleAuthRequired],
+    [user, handleAuthRequired]
   );
 
   const requireStarterOrAbove = useCallback(
@@ -1321,7 +1158,7 @@ export default function AgentWorkspaceLayout({
       if (typeof next === "function") next();
       return true;
     },
-    [requireUser, isStarterOrAbove, starterPromo],
+    [requireUser, isStarterOrAbove, starterPromo]
   );
 
   const onRefine = (m) => {
@@ -1362,7 +1199,7 @@ export default function AgentWorkspaceLayout({
       studio?.placePreference,
       taskRuntime.selectTask,
       taskRuntime.taskId,
-    ],
+    ]
   );
 
   const handleAgentPromptSubmit = useCallback(
@@ -1381,54 +1218,33 @@ export default function AgentWorkspaceLayout({
         ...planSubmissionOptions,
       });
     },
-    [handlePromptSubmit, taskSubmissionOptions],
+    [handlePromptSubmit, taskSubmissionOptions]
   );
 
   const onStartRefineCommand = useCallback(() => {
     if (!requireStarterOrAbove("Refinement & Iteration")) return;
     const latestRefineable = [...(chat.messages || [])]
       .reverse()
-      .find(
-        (message) =>
-          message?.role === "assistant" && messageHasRefineableFiles(message),
-      );
-    const target = buildRefineTargetFromWorkspace(
-      workspace.projectArtifactSnapshot,
-      latestRefineable || null,
-    );
+      .find((message) => message?.role === "assistant" && messageHasRefineableFiles(message));
+    const target = buildRefineTargetFromWorkspace(workspace.projectArtifactSnapshot, latestRefineable || null);
     if (!target) {
       notify?.({
-        message:
-          "Nothing to refine yet. Generate a project first, then use @refine.",
+        message: "Nothing to refine yet. Generate a project first, then use @refine.",
         type: "info",
       });
       return;
     }
     handleStartRefine(target);
-  }, [
-    chat.messages,
-    handleStartRefine,
-    notify,
-    requireStarterOrAbove,
-    workspace.projectArtifactSnapshot,
-  ]);
+  }, [chat.messages, handleStartRefine, notify, requireStarterOrAbove, workspace.projectArtifactSnapshot]);
 
   const handleRetryMessage = useCallback(
     (payload) => {
-      const nextPrompt = String(
-        (typeof payload === "string" ? payload : payload?.prompt) || "",
-      ).trim();
+      const nextPrompt = String((typeof payload === "string" ? payload : payload?.prompt) || "").trim();
       if (!nextPrompt) return undefined;
-      const message =
-        typeof payload === "object" && payload ? payload.message : null;
-      const sourceUserMessage =
-        typeof payload === "object" && payload
-          ? payload.sourceUserMessage
-          : null;
+      const message = typeof payload === "object" && payload ? payload.message : null;
+      const sourceUserMessage = typeof payload === "object" && payload ? payload.sourceUserMessage : null;
       const pivotMessage = message?.id ? message : null;
-      const retryPivotMessage = sourceUserMessage?.id
-        ? sourceUserMessage
-        : pivotMessage;
+      const retryPivotMessage = sourceUserMessage?.id ? sourceUserMessage : pivotMessage;
       const retryAttachments =
         pivotMessage?.role === "user"
           ? Array.isArray(pivotMessage.attachments)
@@ -1452,9 +1268,7 @@ export default function AgentWorkspaceLayout({
         checkpointMetadata: targetRunId
           ? {
               targetRunId,
-              transcriptPivot: retryPivotMessage?.id
-                ? { messageId: retryPivotMessage.id, mode: "replace" }
-                : null,
+              transcriptPivot: retryPivotMessage?.id ? { messageId: retryPivotMessage.id, mode: "replace" } : null,
             }
           : null,
         attachmentsOverride: retryAttachments,
@@ -1466,21 +1280,21 @@ export default function AgentWorkspaceLayout({
           : {}),
       });
     },
-    [handlePromptSubmit, taskSubmissionOptions],
+    [handlePromptSubmit, taskSubmissionOptions]
   );
 
   const handleAgentApprovePlan = useCallback(
     (message) => {
       return onApprovePlan(message, taskSubmissionOptions);
     },
-    [onApprovePlan, taskSubmissionOptions],
+    [onApprovePlan, taskSubmissionOptions]
   );
 
   const handleAgentClarifySubmit = useCallback(
     (message, answers) => {
       return onClarifySubmit(message, answers, taskSubmissionOptions);
     },
-    [onClarifySubmit, taskSubmissionOptions],
+    [onClarifySubmit, taskSubmissionOptions]
   );
 
   const handleStopActiveWork = useCallback(async () => {
@@ -1491,21 +1305,16 @@ export default function AgentWorkspaceLayout({
     // cancelled, so always fall through to the active-agent projection.
     const stoppedLocalFlow = Boolean(unified.cancelCurrentFlow?.());
 
-    const currentAgent = activeAgentRuntime.agents.find(
-      (agent) => agent.chatId === chat.currentChatId,
-    );
+    const currentAgent = activeAgentRuntime.agents.find((agent) => agent.chatId === chat.currentChatId);
     const currentRuns = [
       ...(currentAgent?.currentRun ? [currentAgent.currentRun] : []),
       ...(Array.isArray(currentAgent?.runs) ? currentAgent.runs : []),
     ];
     const currentRun = [...currentRuns].reverse().find((run) => {
       const status = String(run?.status || run?.state || "").toLowerCase();
-      return (
-        !status || (!TERMINAL_AGENT_STATES.has(status) && status !== "canceled")
-      );
+      return !status || (!TERMINAL_AGENT_STATES.has(status) && status !== "canceled");
     });
-    const runId =
-      unified.pendingMessage?.runId || currentRun?.runId || currentRun?.id;
+    const runId = unified.pendingMessage?.runId || currentRun?.runId || currentRun?.id;
 
     if (!runId) {
       if (stoppedCoordinatedOperation !== false || stoppedLocalFlow) return;
@@ -1517,9 +1326,7 @@ export default function AgentWorkspaceLayout({
     }
 
     Promise.resolve(activeAgentRuntime.cancelRun(runId))
-      .then(() =>
-        chat.reconcileCancelledRun?.(runId, { chatId: chat.currentChatId }),
-      )
+      .then(() => chat.reconcileCancelledRun?.(runId, { chatId: chat.currentChatId }))
       .catch((error) => {
         notify?.({
           message: error?.message || "The agent run could not be stopped.",
@@ -1535,6 +1342,7 @@ export default function AgentWorkspaceLayout({
   };
 
   const workspaceProjectTitle =
+    project?.activeProject?.title ||
     projectContext?.name ||
     projectContext?.title ||
     studio?.placePreference?.placeName ||
@@ -1569,13 +1377,7 @@ export default function AgentWorkspaceLayout({
       open={studioConnectionOpen}
       onOpenChange={handleStudioConnectionOpenChange}
       returnFocusRef={studioConnectionReturnFocusRef}
-      requireUser={(next) =>
-        requireUser(
-          next,
-          PENDING_AUTH_ACTIONS.STUDIO_CONNECTION,
-          "studio_pair_control",
-        )
-      }
+      requireUser={(next) => requireUser(next, PENDING_AUTH_ACTIONS.STUDIO_CONNECTION, "studio_pair_control")}
     />
   );
 
@@ -1591,9 +1393,7 @@ export default function AgentWorkspaceLayout({
         pendingMessages={unified.pendingMessages}
         generationStage={unified.generationStage}
         user={user}
-        profile={
-          roblox?.connected ? roblox?.status?.connection?.profile || null : null
-        }
+        profile={roblox?.connected ? roblox?.status?.connection?.profile || null : null}
         activeMode={chat.activeMode}
         isBusy={Boolean(chatOperationState?.isBusy || unified.isGenerating)}
         operationState={chatOperationState}
@@ -1606,20 +1406,12 @@ export default function AgentWorkspaceLayout({
         onStartRefine={onStartRefineCommand}
         onOpenArtifact={openArtifactOnStage}
         onQuickStart={handleQuickStart}
-        onStartGuide={
-          tutorial.shouldOfferTutorial ? tutorial.resumeTutorial : undefined
-        }
+        onStartGuide={tutorial.shouldOfferTutorial ? tutorial.resumeTutorial : undefined}
         startGuideLabel={
-          tutorial.hasSavedProgress
-            ? "Resume the 5-step creator guide"
-            : "Show the 5-step creator guide"
+          tutorial.hasSavedProgress ? "Resume the 5-step creator guide" : "Show the 5-step creator guide"
         }
-        onRenameChat={(title) =>
-          chat.handleRenameChat(chat.currentChatId, title)
-        }
-        onOpenNavigation={() =>
-          sidebarOpen ? closeProjectSidebar(true) : setSidebarOpen(true)
-        }
+        onRenameChat={(title) => chat.handleRenameChat(chat.currentChatId, title)}
+        onOpenNavigation={() => (sidebarOpen ? closeProjectSidebar(true) : setSidebarOpen(true))}
         onRetryMessage={handleRetryMessage}
         notify={notify}
         prompt={prompt}
@@ -1694,9 +1486,7 @@ export default function AgentWorkspaceLayout({
         robloxUploadDisabledReason={roblox?.uploadDisabledReason}
         robloxAssetUploadsEnabled={roblox?.assetUploadsEnabled}
         robloxAssetProjectId={roblox?.assetProjectId}
-        onRobloxAssetUploadsEnabledChange={
-          handleRobloxAssetUploadsEnabledChange
-        }
+        onRobloxAssetUploadsEnabledChange={handleRobloxAssetUploadsEnabledChange}
         robloxAssetLibraryAvailable={roblox?.assetLibraryAvailable}
         robloxAssetLibraryDisabledReason={roblox?.assetLibraryDisabledReason}
         robloxProjectAssets={roblox?.selectedAssets || []}
@@ -1712,8 +1502,6 @@ export default function AgentWorkspaceLayout({
         navigationOpen={sidebarOpen}
         navigationControls="project-sidebar"
         navigationButtonRef={sidebarToggleRef}
-        workspaceView={agentWorkspaceView}
-        onWorkspaceViewChange={setAgentWorkspaceView}
       />
     </div>
   );
@@ -1724,7 +1512,7 @@ export default function AgentWorkspaceLayout({
       code,
       "logic",
       chat.currentChatId,
-      chat.currentChatMeta?.projectId || null,
+      chat.currentChatMeta?.projectId || null
     );
     if (!scriptId) return;
     notify({ message: "Script saved to creations", type: "success" });
@@ -1737,7 +1525,7 @@ export default function AgentWorkspaceLayout({
             originalCode: code,
             summary: "Saved creation - Version 1",
           }
-        : current,
+        : current
     );
   };
 
@@ -1758,9 +1546,7 @@ export default function AgentWorkspaceLayout({
           workspace.openFile(workspace.activeArtifact?.id, fileId);
         }
       }}
-      onChangeContent={
-        openedCodeArtifact ? handleOpenedCodeChange : handleStudioFileChange
-      }
+      onChangeContent={openedCodeArtifact ? handleOpenedCodeChange : handleStudioFileChange}
       onRevertEdits={
         openedCodeArtifact
           ? revertOpenedCode
@@ -1768,26 +1554,12 @@ export default function AgentWorkspaceLayout({
             ? revertAllStudioFiles
             : workspace.revertArtifactEdits
       }
-      onRevertFile={
-        !openedCodeArtifact && studioFiles.length ? revertStudioFile : null
-      }
-      onRefreshFile={
-        !openedCodeArtifact && studioFiles.length ? refreshStudioFile : null
-      }
-      onCloseFile={
-        !openedCodeArtifact && studioFiles.length ? closeStudioFile : null
-      }
-      onSaveFile={
-        !openedCodeArtifact && studioFiles.length ? saveStudioFile : null
-      }
-      onSaveAllFiles={
-        !openedCodeArtifact && studioFiles.length ? saveAllStudioFiles : null
-      }
-      onSaveToCreations={
-        openedCodeArtifact && !openedCodeRequest?.scriptId && user
-          ? saveOpenedCodeToCreations
-          : null
-      }
+      onRevertFile={!openedCodeArtifact && studioFiles.length ? revertStudioFile : null}
+      onRefreshFile={!openedCodeArtifact && studioFiles.length ? refreshStudioFile : null}
+      onCloseFile={!openedCodeArtifact && studioFiles.length ? closeStudioFile : null}
+      onSaveFile={!openedCodeArtifact && studioFiles.length ? saveStudioFile : null}
+      onSaveAllFiles={!openedCodeArtifact && studioFiles.length ? saveAllStudioFiles : null}
+      onSaveToCreations={openedCodeArtifact && !openedCodeRequest?.scriptId && user ? saveOpenedCodeToCreations : null}
       saving={studioBusy}
       conflict={openedCodeArtifact ? null : studioConflict}
       notify={notify}
@@ -1802,13 +1574,9 @@ export default function AgentWorkspaceLayout({
   const fileTree = (
     <div className="p-2">
       <CodeFileTree
-        artifact={
-          openedCodeArtifact ||
-          (studioFiles.length ? studioArtifact : workspace.activeArtifact)
-        }
+        artifact={openedCodeArtifact || (studioFiles.length ? studioArtifact : workspace.activeArtifact)}
         activeFileId={
-          openedCodeArtifact?.files?.[0]?.id ||
-          (studioFiles.length ? studioActiveFile?.id : workspace.activeFile?.id)
+          openedCodeArtifact?.files?.[0]?.id || (studioFiles.length ? studioActiveFile?.id : workspace.activeFile?.id)
         }
         onSelectFile={(fileId) => {
           if (openedCodeArtifact) {
@@ -1839,9 +1607,7 @@ export default function AgentWorkspaceLayout({
                 : "Manifest rescan is unavailable for the selected MCP session"
             }
           >
-            <RefreshCw
-              className={`w-3.5 h-3.5 ${studioBusy ? "animate-spin" : ""}`}
-            />
+            <RefreshCw className={`w-3.5 h-3.5 ${studioBusy ? "animate-spin" : ""}`} />
           </button>
         </div>
         <label className="flex items-center gap-2 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2 py-1.5">
@@ -1855,9 +1621,7 @@ export default function AgentWorkspaceLayout({
         </label>
         <div className="space-y-0.5 pr-1">
           {studioResults.map((item) => {
-            const isScript = ["Script", "LocalScript", "ModuleScript"].includes(
-              item.className,
-            );
+            const isScript = ["Script", "LocalScript", "ModuleScript"].includes(item.className);
             return (
               <button
                 key={item.id || item.canonicalPath}
@@ -1876,14 +1640,10 @@ export default function AgentWorkspaceLayout({
                 } disabled:opacity-40`}
                 title={item.canonicalPath || item.path}
               >
-                <div className="truncate">
-                  {item.canonicalPath || item.path}
-                </div>
+                <div className="truncate">{item.canonicalPath || item.path}</div>
                 <div className="text-[10px] text-[var(--ds-text-muted)]">
                   {item.className}
-                  {item.sourceHash
-                    ? ` · ${String(item.sourceHash).slice(0, 8)}`
-                    : ""}
+                  {item.sourceHash ? ` · ${String(item.sourceHash).slice(0, 8)}` : ""}
                 </div>
               </button>
             );
@@ -1910,12 +1670,11 @@ export default function AgentWorkspaceLayout({
             .then(() =>
               chat.reconcileCancelledRun?.(runId, {
                 chatId: chat.currentChatId,
-              }),
+              })
             )
             .catch((error) => {
               notify?.({
-                message:
-                  error?.message || "The agent run could not be cancelled.",
+                message: error?.message || "The agent run could not be cancelled.",
                 type: "error",
               });
             });
@@ -1931,19 +1690,12 @@ export default function AgentWorkspaceLayout({
             busyAction={taskRuntime.busyAction}
             onRetry={() => invokeTaskAction(taskRuntime.retry)}
             onCancel={() => invokeTaskAction(taskRuntime.cancel)}
-            onAmend={(payload) =>
-              invokeTaskAction(() => taskRuntime.amend(payload))
-            }
-            onApprove={(payload) =>
-              invokeTaskAction(() => taskRuntime.approve(payload))
-            }
+            onAmend={(payload) => invokeTaskAction(() => taskRuntime.amend(payload))}
+            onApprove={(payload) => invokeTaskAction(() => taskRuntime.approve(payload))}
           />
         </div>
       ) : activeAgentRuntime.agents.length ? (
-        <div
-          className="min-h-0 flex-1 overflow-y-auto p-3 scrollbar-subtle"
-          aria-label="Current agent runs"
-        >
+        <div className="min-h-0 flex-1 overflow-y-auto p-3 scrollbar-subtle" aria-label="Current agent runs">
           <div className="space-y-2">
             {activeAgentRuntime.agents.map((agent) => {
               const agentRuns = [
@@ -1951,13 +1703,7 @@ export default function AgentWorkspaceLayout({
                 ...(Array.isArray(agent?.runs) ? agent.runs : []),
               ].filter((run, index, runs) => {
                 const runId = run?.runId || run?.id;
-                return (
-                  runId &&
-                  runs.findIndex(
-                    (candidate) =>
-                      (candidate?.runId || candidate?.id) === runId,
-                  ) === index
-                );
+                return runId && runs.findIndex((candidate) => (candidate?.runId || candidate?.id) === runId) === index;
               });
               return (
                 <section
@@ -1966,11 +1712,7 @@ export default function AgentWorkspaceLayout({
                   aria-label={agent.title || "Active agent"}
                 >
                   <div className="flex items-center gap-2">
-                    <span
-                      className="nx-state-mark"
-                      data-state="success"
-                      aria-hidden="true"
-                    />
+                    <span className="nx-state-mark" data-state="success" aria-hidden="true" />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-xs font-semibold text-[var(--ds-text)]">
                         {agent.title || "Active agent"}
@@ -1984,9 +1726,10 @@ export default function AgentWorkspaceLayout({
                     <div className="mt-3 space-y-2">
                       {agentRuns.map((run) => {
                         const runId = run.runId || run.id;
-                        const status = String(
-                          run.status || run.state || agent.status || "running",
-                        ).replaceAll("_", " ");
+                        const status = String(run.status || run.state || agent.status || "running").replaceAll(
+                          "_",
+                          " "
+                        );
                         return (
                           <div
                             key={runId}
@@ -1996,9 +1739,7 @@ export default function AgentWorkspaceLayout({
                               <div className="truncate text-[11px] font-medium text-[var(--ds-text)]">
                                 Run {String(runId).slice(-8)}
                               </div>
-                              <div className="text-[11px] capitalize text-[var(--ds-text-secondary)]">
-                                {status}
-                              </div>
+                              <div className="text-[11px] capitalize text-[var(--ds-text-secondary)]">{status}</div>
                             </div>
                             {!isTerminalAgentRun(run) && (
                               <button
@@ -2009,13 +1750,11 @@ export default function AgentWorkspaceLayout({
                                     .then(() =>
                                       chat.reconcileCancelledRun?.(runId, {
                                         chatId: chat.currentChatId,
-                                      }),
+                                      })
                                     )
                                     .catch((error) => {
                                       notify?.({
-                                        message:
-                                          error?.message ||
-                                          "The agent run could not be cancelled.",
+                                        message: error?.message || "The agent run could not be cancelled.",
                                         type: "error",
                                       });
                                     })
@@ -2051,11 +1790,7 @@ export default function AgentWorkspaceLayout({
 
   const renderDockPanel = (panelId) => {
     if (panelId === "files") {
-      return (
-        <div className="h-full overflow-y-auto scrollbar-subtle">
-          {fileTree}
-        </div>
-      );
+      return <div className="h-full overflow-y-auto scrollbar-subtle">{fileTree}</div>;
     }
     if (panelId === "code") return codeWorkspace;
     if (panelId === "activity") return activityPanel;
@@ -2096,10 +1831,7 @@ export default function AgentWorkspaceLayout({
 
   return (
     <div className="nexus-studio-root fixed inset-0 overflow-hidden">
-      <div
-        ref={aiPageRef}
-        className="ai-page nexus-studio-page relative flex flex-col overflow-hidden font-sans"
-      >
+      <div ref={aiPageRef} className="ai-page nexus-studio-page relative flex flex-col overflow-hidden font-sans">
         <SkipToMainContent targetId="ai-workspace-main" />
         <WorkspaceRibbon
           mode={creationMode}
@@ -2112,24 +1844,12 @@ export default function AgentWorkspaceLayout({
           navigationOpen={sidebarOpen}
           navigationControls="project-sidebar"
           navigationButtonRef={sidebarToggleRef}
-          onToggleNavigation={() =>
-            sidebarOpen ? closeProjectSidebar(true) : setSidebarOpen(true)
-          }
+          onToggleNavigation={() => (sidebarOpen ? closeProjectSidebar(true) : setSidebarOpen(true))}
           onRenameChat={
-            creationMode === "agent"
-              ? (title) => chat.handleRenameChat(chat.currentChatId, title)
-              : undefined
+            creationMode === "agent" ? (title) => chat.handleRenameChat(chat.currentChatId, title) : undefined
           }
-          onOpenPlan={
-            creationMode === "agent" &&
-            FEATURE_FLAGS.newPlanningMode &&
-            hasReviewablePlan
-              ? () => setAgentWorkspaceView("plan")
-              : undefined
-          }
-          onOpenEvidence={() =>
-            handleDockPanelChange(activeDockPanel ? null : "details")
-          }
+          onChangeProject={openProjectSelector}
+          onOpenEvidence={() => handleDockPanelChange(activeDockPanel ? null : "details")}
           evidenceOpen={Boolean(activeDockPanel)}
           evidenceCount={evidenceCount}
           evidenceButtonRef={evidenceButtonRef}
@@ -2194,41 +1914,7 @@ export default function AgentWorkspaceLayout({
             inert={projectSidebarIsModal ? "" : undefined}
           >
             {creationMode === "asset" ? (
-              <AssetModeWorkspace
-                prompt={prompt}
-                setPrompt={setPrompt}
-                onContinue={handleAssetHandoff}
-              />
-            ) : creationMode === "script" ? (
-              <div className="flex-1 min-h-0 flex flex-col">
-                <QuickScriptWorkspace
-                  prompt={prompt}
-                  setPrompt={setPrompt}
-                  quickScript={quickScript}
-                  studioConnected={Boolean(studio?.connected)}
-                  user={user}
-                  authReady={authReady}
-                  onGenerate={(generationPrompt) =>
-                    runQuickScript(generationPrompt || prompt, {
-                      source: "composer",
-                    })
-                  }
-                  onRetry={() =>
-                    runQuickScript(quickScript?.prompt || prompt, {
-                      source: quickScript?.source || "retry",
-                      retry: true,
-                    })
-                  }
-                  onCopy={handleQuickScriptCopy}
-                  onSave={handleQuickScriptSave}
-                  onExport={handleQuickScriptExport}
-                  onStudioPush={handleQuickScriptStudioPush}
-                  onContinueEditing={handleQuickScriptContinueEditing}
-                  onOpenAgentBuild={handleQuickScriptOpenAgentBuild}
-                  onImprovePrompt={handleImprovePrompt}
-                  isImproving={isImproving}
-                />
-              </div>
+              <AssetModeWorkspace prompt={prompt} setPrompt={setPrompt} onContinue={handleAssetHandoff} />
             ) : (
               <WorkspaceShell
                 activePanel={activeDockPanel}
@@ -2246,17 +1932,35 @@ export default function AgentWorkspaceLayout({
           </main>
         </div>
 
+        <ProjectSelectionModal
+          open={Boolean(
+            project?.selectorOpen &&
+            authReady &&
+            user &&
+            !showSignInNudge &&
+            !showProNudge &&
+            !starterPromo?.isOpen &&
+            !tutorial.isActive
+          )}
+          canClose={project?.selectorCanClose}
+          connected={roblox?.connected}
+          loading={roblox?.loading || project?.experiencesLoading}
+          error={project?.experiencesError}
+          experiences={project?.experiences || []}
+          selectingUniverseId={project?.selectingUniverseId}
+          onClose={closeProjectSelector}
+          onConnect={connectRobloxForProjects}
+          onRetry={loadRobloxExperiences}
+          onSelect={selectRobloxExperience}
+        />
+
         <SignInNudgeModal
           isOpen={showSignInNudge}
           onClose={() => setShowSignInNudge(false)}
           reason={signInNudgeReason}
           blocking={authReady && !user}
         />
-        <ProNudgeModal
-          isOpen={showProNudge}
-          onClose={() => setShowProNudge(false)}
-          reason={proNudgeReason}
-        />
+        <ProNudgeModal isOpen={showProNudge} onClose={() => setShowProNudge(false)} reason={proNudgeReason} />
         <StarterPromoModal
           isOpen={starterPromo?.isOpen}
           blocking={starterPromo?.blocking}
@@ -2271,12 +1975,7 @@ export default function AgentWorkspaceLayout({
 
         <TutorialOverlay
           activeStep={tutorial.activeStep}
-          isActive={
-            tutorial.isActive &&
-            !showSignInNudge &&
-            !showProNudge &&
-            !starterPromo?.isOpen
-          }
+          isActive={tutorial.isActive && !showSignInNudge && !showProNudge && !starterPromo?.isOpen}
           nextStep={tutorial.nextStep}
           prevStep={tutorial.prevStep}
           skipTutorial={tutorial.skipTutorial}
@@ -2287,9 +1986,7 @@ export default function AgentWorkspaceLayout({
             <NotificationToast
               key={currentToast.id}
               message={
-                currentToast.count > 1
-                  ? `${currentToast.message} (x${currentToast.count})`
-                  : currentToast.message
+                currentToast.count > 1 ? `${currentToast.message} (x${currentToast.count})` : currentToast.message
               }
               type={currentToast.type}
               duration={currentToast.duration}

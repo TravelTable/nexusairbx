@@ -16,6 +16,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   studioAutoPushEnabled: false,
   studioAutoPushPolicy: "after_validation",
   lastAuthorizedStudioSessionId: null,
+  activeProjectId: null,
   robloxAssetUploadsEnabled: false,
   assetPublishingPreference: "auto_explicit_request",
   allowPlaceholderAssets: false,
@@ -35,7 +36,7 @@ const ENUMS = {
   codeStyle: new Set(["optimized", "safe", "verbose"]),
   verbosity: new Set(["concise", "balanced", "detailed"]),
   theme: new Set(["system", "dark", "light"]),
-  chatMode: new Set(["agent", "plan", "debug", "ask"]),
+  chatMode: new Set(["agent", "plan", "ask"]),
   studioAutoPushPolicy: new Set(["after_validation", "manual_review", "off"]),
   assetPublishingPreference: new Set([
     "review_every_asset",
@@ -89,7 +90,16 @@ function sanitizeValue(key, value, { strict = false } = {}) {
     return value;
   }
 
-  if (["enableGameWizard", "showThinking", "studioAutoPushEnabled", "robloxAssetUploadsEnabled", "allowPlaceholderAssets", "useExamples"].includes(key)) {
+  if (
+    [
+      "enableGameWizard",
+      "showThinking",
+      "studioAutoPushEnabled",
+      "robloxAssetUploadsEnabled",
+      "allowPlaceholderAssets",
+      "useExamples",
+    ].includes(key)
+  ) {
     if (typeof value !== "boolean") {
       if (strict) throw new Error(`${key} must be a boolean`);
       return DEFAULT_SETTINGS[key];
@@ -113,13 +123,13 @@ function sanitizeValue(key, value, { strict = false } = {}) {
     return ids.slice(0, 12);
   }
 
-  if (key === "lastAuthorizedStudioSessionId") {
+  if (key === "lastAuthorizedStudioSessionId" || key === "activeProjectId") {
     if (value == null || value === "") return null;
     if (typeof value !== "string") {
-      if (strict) throw new Error("lastAuthorizedStudioSessionId must be a string or null");
-      return DEFAULT_SETTINGS.lastAuthorizedStudioSessionId;
+      if (strict) throw new Error(`${key} must be a string or null`);
+      return DEFAULT_SETTINGS[key];
     }
-    return truncateString(value, 160);
+    return truncateString(value, key === "activeProjectId" ? 128 : 160).trim() || null;
   }
 
   if (key === "robloxWritePolicy") {

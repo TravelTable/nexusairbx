@@ -599,7 +599,7 @@ describe("MessageList conversation layout", () => {
     );
 
     expect(screen.getByRole("region", { name: "Run context" })).toBeTruthy();
-    expect(screen.getByText("Build")).toBeTruthy();
+    expect(screen.getByText("Agent")).toBeTruthy();
     expect(screen.getByText(/Selected place · connected/)).toBeTruthy();
     expect(screen.queryByText(/target_1/)).toBeNull();
     expect(screen.getByText("Studio read/write")).toBeTruthy();

@@ -1,7 +1,4 @@
-import {
-  submitHomepagePrompt,
-  trackHomepagePromptStarted,
-} from "./homepageActivation";
+import { submitHomepagePrompt, trackHomepagePromptStarted } from "./homepageActivation";
 import { EXPERIMENT_IDS, resetExperimentsForTests } from "./experiments";
 
 function createHarness(overrides = {}) {
@@ -131,7 +128,7 @@ describe("homepageActivation", () => {
     });
   });
 
-  test("mobile homepage submissions create a QuickScript intent", () => {
+  test("mobile homepage submissions create an Agent intent", () => {
     Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 });
     const harness = createHarness();
 
@@ -143,10 +140,10 @@ describe("homepageActivation", () => {
 
     expect(harness.createIntent).toHaveBeenCalledWith({
       prompt: "Create a round system",
-      mode: "quick_script",
+      mode: "agent_build",
       source: "homepage",
     });
-    expect(harness.navigate).toHaveBeenCalledWith("/ai?mode=script", expect.any(Object));
+    expect(harness.navigate).toHaveBeenCalledWith("/ai?mode=agent", expect.any(Object));
   });
 
   test("desktop homepage submissions create an Agent Build intent", () => {
@@ -214,10 +211,7 @@ describe("homepageActivation", () => {
   });
 
   test("complex homepage prompts are routed to Agent Build regardless of experiment defaults", () => {
-    localStorage.setItem(
-      `nexusrbx:experiments:force:${EXPERIMENT_IDS.GENERATOR_DEFAULT}`,
-      "quick_script_default"
-    );
+    localStorage.setItem(`nexusrbx:experiments:force:${EXPERIMENT_IDS.GENERATOR_DEFAULT}`, "quick_script_default");
     const harness = createHarness();
 
     const result = submitHomepagePrompt({
@@ -241,10 +235,7 @@ describe("homepageActivation", () => {
   });
 
   test("desktop homepage submissions stay in Agent Build even when the old experiment is forced", () => {
-    localStorage.setItem(
-      `nexusrbx:experiments:force:${EXPERIMENT_IDS.GENERATOR_DEFAULT}`,
-      "agent_build_default"
-    );
+    localStorage.setItem(`nexusrbx:experiments:force:${EXPERIMENT_IDS.GENERATOR_DEFAULT}`, "agent_build_default");
     const harness = createHarness();
 
     submitHomepagePrompt({
@@ -259,7 +250,6 @@ describe("homepageActivation", () => {
       source: "homepage",
     });
   });
-
 
   test("failed navigation restores submission state and shows an error", () => {
     const harness = createHarness({

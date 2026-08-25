@@ -1,14 +1,11 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Modal from "./Modal";
 import ProjectTreeSidebar from "./sidebar/ProjectTreeSidebar";
-import { AI_EVENTS, emitAiEvent } from "../lib/aiEvents";
+import { AI_EVENTS, emitAiEvent, onAiEvent } from "../lib/aiEvents";
 import { useAiLibrary } from "../hooks/useAiLibrary";
 import { useProjectBindings } from "../hooks/useProjectBindings";
 import { useBilling } from "../context/BillingContext";
-import {
-  resolveGameIdentityFromStudioStatus,
-  resolveGameTitleFromTarget,
-} from "../lib/studioPlaceBinding";
+import { resolveGameIdentityFromStudioStatus, resolveGameTitleFromTarget } from "../lib/studioPlaceBinding";
 import { getStudioStatus } from "../lib/studioBridgeApi";
 import { isActiveRunStatus } from "./sidebar/sidebarTreeModel";
 
@@ -35,8 +32,8 @@ export default function SidebarContent({
   onCollapse = () => {},
 }) {
   const { isFreeUsagePlan, limits, plan } = useBilling();
-  const retentionDays = limits?.chatRetentionDays
-    ?? (isFreeUsagePlan ? 7 : (String(plan || "").toUpperCase() === "STARTER" ? 30 : null));
+  const retentionDays =
+    limits?.chatRetentionDays ?? (isFreeUsagePlan ? 7 : String(plan || "").toUpperCase() === "STARTER" ? 30 : null);
   const { allChats } = useAiLibrary(user, { retentionDays, authReady });
   const {
     projects,
@@ -52,16 +49,23 @@ export default function SidebarContent({
   const [deleteChatId, setDeleteChatId] = useState(null);
   const [deleteProjectId, setDeleteProjectId] = useState(null);
   const [deleting, setDeleting] = useState(false);
+
+  useEffect(
+    () =>
+      onAiEvent(AI_EVENTS.PROJECTS_CHANGED, () => {
+        void refreshProjects();
+      }),
+    [refreshProjects]
+  );
   const connectedProjectId = useMemo(() => {
     if (!studioConnected) return null;
-    const targetId = String(
-      studioPlacePreference?.targetId || studioPlacePreference?.studioTargetId || ""
-    ).trim();
+    const targetId = String(studioPlacePreference?.targetId || studioPlacePreference?.studioTargetId || "").trim();
     const placeId = String(studioPlacePreference?.placeId || "").trim();
-    const match = projects.find((project) => (
-      (targetId && String(project.studioTargetId || "").trim() === targetId)
-      || (placeId && String(project.placeId || project.defaultPlaceId || "").trim() === placeId)
-    ));
+    const match = projects.find(
+      (project) =>
+        (targetId && String(project.studioTargetId || "").trim() === targetId) ||
+        (placeId && String(project.placeId || project.defaultPlaceId || "").trim() === placeId)
+    );
     return match?.projectId || null;
   }, [projects, studioConnected, studioPlacePreference]);
 
@@ -69,7 +73,9 @@ export default function SidebarContent({
     if (isMobile) onSelect();
   };
   const createChat = (projectId = null) => {
-    emitAiEvent(AI_EVENTS.START_DRAFT, { projectId: projectId || null });
+    emitAiEvent(AI_EVENTS.START_DRAFT, {
+      projectId: projectId || currentProjectId || null,
+    });
     finishMobileSelection();
   };
   const openChat = (id) => {
@@ -88,12 +94,18 @@ export default function SidebarContent({
       return null;
     }
     setStudioOptions([]);
-    notify({ message: `Added ${project?.title || "game"} to Projects`, type: "success" });
+    notify({
+      message: `Added ${project?.title || "game"} to Projects`,
+      type: "success",
+    });
     return project;
   };
   const openFromStudio = async () => {
     if (!user) {
-      notify({ message: "Sign in before adding a Studio game to Projects.", type: "error" });
+      notify({
+        message: "Sign in before adding a Studio game to Projects.",
+        type: "error",
+      });
       return;
     }
     if (creatingProject) return;
@@ -131,7 +143,10 @@ export default function SidebarContent({
         target: option,
       });
     } catch (error) {
-      notify({ message: error.message || "Could not open that game", type: "error" });
+      notify({
+        message: error.message || "Could not open that game",
+        type: "error",
+      });
     } finally {
       setCreatingProject(false);
     }
@@ -161,13 +176,10 @@ export default function SidebarContent({
     }
   };
   const hasActiveRunForProject = (projectId) => {
-    const projectChatIds = new Set(
-      allChats.filter((chat) => chat.projectId === projectId).map((chat) => chat.id)
+    const projectChatIds = new Set(allChats.filter((chat) => chat.projectId === projectId).map((chat) => chat.id));
+    return [...projectChatIds].some(
+      (chatId) => generatingChatIds.includes(chatId) || isActiveRunStatus(activeAgentStatusByChat[chatId])
     );
-    return [...projectChatIds].some((chatId) => (
-      generatingChatIds.includes(chatId)
-      || isActiveRunStatus(activeAgentStatusByChat[chatId])
-    ));
   };
   const confirmProjectDelete = async () => {
     if (!deleteProjectId || hasActiveRunForProject(deleteProjectId)) return;
@@ -199,13 +211,12 @@ export default function SidebarContent({
     );
     return {
       chats: projectChatIds.size,
-      creations: scripts.filter((script) => (
-        script.workspaceProjectId === deleteProjectId || projectChatIds.has(script.chatId)
-      )).length,
-      activeRuns: [...projectChatIds].filter((chatId) => (
-        generatingChatIds.includes(chatId)
-        || isActiveRunStatus(activeAgentStatusByChat[chatId])
-      )).length,
+      creations: scripts.filter(
+        (script) => script.workspaceProjectId === deleteProjectId || projectChatIds.has(script.chatId)
+      ).length,
+      activeRuns: [...projectChatIds].filter(
+        (chatId) => generatingChatIds.includes(chatId) || isActiveRunStatus(activeAgentStatusByChat[chatId])
+      ).length,
     };
   }, [activeAgentStatusByChat, allChats, deleteProjectId, generatingChatIds, scripts]);
 
@@ -239,11 +250,7 @@ export default function SidebarContent({
         onCollapse={onCollapse}
       />
 
-      <Modal
-        isOpen={Boolean(deleteChatId)}
-        onClose={() => setDeleteChatId(null)}
-        title="Delete chat?"
-      >
+      <Modal isOpen={Boolean(deleteChatId)} onClose={() => setDeleteChatId(null)} title="Delete chat?">
         <p className="text-sm text-muted-foreground">
           This removes the chat and all its messages. Saved creations will remain.
         </p>
@@ -269,22 +276,18 @@ export default function SidebarContent({
         </div>
       </Modal>
 
-      <Modal
-        isOpen={Boolean(deleteProjectId)}
-        onClose={() => setDeleteProjectId(null)}
-        title="Delete game project?"
-      >
+      <Modal isOpen={Boolean(deleteProjectId)} onClose={() => setDeleteProjectId(null)} title="Delete game project?">
         <p className="text-sm text-muted-foreground">
-          This removes {projectCounts.chats} chats, {projectCounts.creations} creations,
-          their messages, Nexus asset records, and Nexus-hosted files. It never deletes the
-          Roblox experience or assets already uploaded to Roblox.
+          This removes {projectCounts.chats} chats, {projectCounts.creations} creations, their messages, Nexus asset
+          records, and Nexus-hosted files. It never deletes the Roblox experience or assets already uploaded to Roblox.
         </p>
         <p className="mt-3 text-xs text-muted-foreground">
           An active agent run must be finished or cancelled first. Partial failures can be retried.
         </p>
         {projectCounts.activeRuns > 0 && (
           <p role="status" className="mt-3 text-sm text-[var(--ds-warning)]">
-            Finish or cancel {projectCounts.activeRuns === 1 ? "the active run" : `${projectCounts.activeRuns} active runs`} first.
+            Finish or cancel{" "}
+            {projectCounts.activeRuns === 1 ? "the active run" : `${projectCounts.activeRuns} active runs`} first.
           </p>
         )}
         <div className="mt-6 flex justify-end gap-2">

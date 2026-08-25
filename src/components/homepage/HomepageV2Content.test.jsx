@@ -45,7 +45,7 @@ describe("HomepageV2Content", () => {
     const { container } = render(<HomepageV2Content navigate={jest.fn()} />);
     expect(screen.getByRole("heading", { name: "AI Roblox Script Generator and Studio Agent", level: 1 })).toBeTruthy();
     expect(screen.getByLabelText("Build your Roblox game. Make it playable.")).toBeTruthy();
-    expect(container.querySelectorAll("[data-image-placeholder]")).toHaveLength(12);
+    expect(container.querySelectorAll("[data-image-placeholder]")).toHaveLength(11);
     expect(container.querySelectorAll("img")).toHaveLength(1);
     expect(screen.getByRole("img", { name: /Roblox character running beside a simple block/i }).getAttribute("src")).toBe(
       "/assets/nexusrbx-roblox-gameplay-hero.png",

@@ -9,26 +9,17 @@ export function shouldHideLocalSignInNudge({
 } = {}) {
   return (
     environment === "development" &&
-    ["localhost", "127.0.0.1", "::1", "[::1]"].includes(
-      String(hostname || "").toLowerCase(),
-    )
+    ["localhost", "127.0.0.1", "::1", "[::1]"].includes(String(hostname || "").toLowerCase())
   );
 }
 
-export default function SignInNudgeModal({
-  isOpen,
-  onClose,
-  reason = "",
-  blocking = false,
-}) {
+export default function SignInNudgeModal({ isOpen, onClose, reason = "", blocking = false }) {
   const navigate = useNavigate();
   const location = useLocation();
   if (shouldHideLocalSignInNudge()) return null;
 
   const aiFrom = location?.pathname === "/ai" ? location : { pathname: "/ai" };
-  const title = blocking
-    ? "Sign in to use NexusRBX AI"
-    : "Sign in to save and continue your work";
+  const title = blocking ? "Sign in to use NexusRBX AI" : "Sign in to save and continue your work";
 
   return (
     <Modal
@@ -74,8 +65,8 @@ export default function SignInNudgeModal({
         <p className="mb-4 text-[15px] leading-relaxed text-[var(--ds-text-muted)]">
           {reason ||
             (blocking
-              ? "Sign in or create a free account to use Quick Script, Agent Build, and your saved AI workspace."
-              : "Create a free account to save your work and continue with Agent Build.")}
+              ? "Sign in or create a free account to use Nexus and your saved AI workspace."
+              : "Create a free account to save your work and continue with Agent.")}
         </p>
 
         <div className="mb-4 grid grid-cols-2 gap-2">
@@ -83,18 +74,14 @@ export default function SignInNudgeModal({
             <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-2)] text-[var(--nx-purple-strong)]">
               <Zap className="h-4 w-4" />
             </div>
-            <div className="text-xs font-bold leading-tight text-[var(--ds-text)]">
-              Free Agent Build access
-            </div>
+            <div className="text-xs font-bold leading-tight text-[var(--ds-text)]">Free Agent access</div>
           </div>
 
           <div className="flex min-h-16 items-center gap-2 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2 text-left">
             <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-2)] text-[var(--nx-purple-strong)]">
               <Save className="h-4 w-4" />
             </div>
-            <div className="text-xs font-bold leading-tight text-[var(--ds-text)]">
-              Resume this workspace
-            </div>
+            <div className="text-xs font-bold leading-tight text-[var(--ds-text)]">Resume this workspace</div>
           </div>
         </div>
 

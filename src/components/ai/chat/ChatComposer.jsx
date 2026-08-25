@@ -1,11 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   ArrowUp,
@@ -37,10 +30,7 @@ import {
   getActiveComposerMention,
 } from "../../../lib/composerCommands";
 import { messageHasRefineableFiles } from "../../../lib/chatRefine";
-import {
-  canBindStudioTargetToProject,
-  evaluateStudioPlaceGate,
-} from "../../../lib/studioPlaceBinding";
+import { canBindStudioTargetToProject, evaluateStudioPlaceGate } from "../../../lib/studioPlaceBinding";
 
 function ModeSelector({ mode, onModeChange, disabled }) {
   const [open, setOpen] = useState(false);
@@ -55,7 +45,7 @@ function ModeSelector({ mode, onModeChange, disabled }) {
   const normalizedMode = normalizeChatMode(mode);
   const currentIndex = Math.max(
     0,
-    CHAT_MODES.findIndex((item) => item.id === normalizedMode),
+    CHAT_MODES.findIndex((item) => item.id === normalizedMode)
   );
   const current = CHAT_MODES[currentIndex] || CHAT_MODES[0];
 
@@ -64,25 +54,19 @@ function ModeSelector({ mode, onModeChange, disabled }) {
     if (!rect) return;
 
     const menuWidth = 256;
-    const menuHeight = 180;
+    const menuHeight = 236;
     const gutter = 8;
     const spaceAbove = rect.top;
     const spaceBelow = window.innerHeight - rect.bottom;
     const openUp = spaceAbove >= menuHeight || spaceAbove > spaceBelow;
 
     setMenuPosition({
-      left: Math.min(
-        Math.max(gutter, rect.left),
-        window.innerWidth - menuWidth - gutter,
-      ),
+      left: Math.min(Math.max(gutter, rect.left), window.innerWidth - menuWidth - gutter),
       top: openUp ? rect.top - gutter : rect.bottom + gutter,
       transform: openUp ? "translateY(-100%)" : "none",
       transformOrigin: openUp ? "bottom left" : "top left",
       width: menuWidth,
-      maxHeight: Math.max(
-        160,
-        openUp ? spaceAbove - gutter * 2 : spaceBelow - gutter * 2,
-      ),
+      maxHeight: Math.max(160, openUp ? spaceAbove - gutter * 2 : spaceBelow - gutter * 2),
     });
   }, []);
 
@@ -101,7 +85,7 @@ function ModeSelector({ mode, onModeChange, disabled }) {
         updateMenuPosition();
       }
     },
-    [currentIndex, updateMenuPosition],
+    [currentIndex, updateMenuPosition]
   );
 
   const focusOption = useCallback((nextIndex) => {
@@ -116,16 +100,12 @@ function ModeSelector({ mode, onModeChange, disabled }) {
       onModeChange?.(nextMode);
       closeMenu(true);
     },
-    [closeMenu, onModeChange],
+    [closeMenu, onModeChange]
   );
 
   useEffect(() => {
     const onClickOutside = (event) => {
-      if (
-        rootRef.current?.contains(event.target) ||
-        menuRef.current?.contains(event.target)
-      )
-        return;
+      if (rootRef.current?.contains(event.target) || menuRef.current?.contains(event.target)) return;
       closeMenu();
     };
     document.addEventListener("mousedown", onClickOutside);
@@ -216,9 +196,7 @@ function ModeSelector({ mode, onModeChange, disabled }) {
       >
         {current.icon}
         {current.label}
-        <ChevronDown
-          className={`h-3 w-3 transition-transform duration-150 ${open ? "rotate-180" : ""}`}
-        />
+        <ChevronDown className={`h-3 w-3 transition-transform duration-150 ${open ? "rotate-180" : ""}`} />
       </button>
 
       {menuPresence.present && menuPosition && typeof document !== "undefined"
@@ -227,9 +205,7 @@ function ModeSelector({ mode, onModeChange, disabled }) {
               ref={menuRef}
               id={listboxId}
               className={`fixed z-[90] overflow-y-auto rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-overlay)] p-1.5 scrollbar-subtle transition-[opacity,transform] duration-150 ${
-                menuPresence.entering
-                  ? "opacity-100"
-                  : "pointer-events-none opacity-0"
+                menuPresence.entering ? "opacity-100" : "pointer-events-none opacity-0"
               }`}
               style={{
                 left: menuPosition.left,
@@ -270,12 +246,8 @@ function ModeSelector({ mode, onModeChange, disabled }) {
                     <span className={`mt-0.5 ${item.color}`}>{item.icon}</span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-[var(--ds-text)]">
-                          {item.label}
-                        </span>
-                        {selected && (
-                          <Check className="h-3 w-3 text-[var(--ds-accent)]" />
-                        )}
+                        <span className="text-xs font-bold text-[var(--ds-text)]">{item.label}</span>
+                        {selected && <Check className="h-3 w-3 text-[var(--ds-accent)]" />}
                       </span>
                       <span className="mt-0.5 block text-[10px] leading-snug text-[var(--ds-text-muted)]">
                         {item.description}
@@ -285,7 +257,7 @@ function ModeSelector({ mode, onModeChange, disabled }) {
                 );
               })}
             </div>,
-            document.body,
+            document.body
           )
         : null}
     </div>
@@ -297,9 +269,7 @@ function ImageUploadChip({ upload }) {
   return (
     <div className="flex h-7 max-w-[140px] shrink-0 items-center gap-1.5 rounded-md border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] px-2 transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
       <Loader className="h-3 w-3 shrink-0 animate-spin text-[var(--ds-warning)] " />
-      <span className="min-w-0 truncate text-[10px] font-bold text-[var(--ds-warning)] ">
-        Uploading {name}
-      </span>
+      <span className="min-w-0 truncate text-[10px] font-bold text-[var(--ds-warning)] ">Uploading {name}</span>
     </div>
   );
 }
@@ -308,9 +278,7 @@ function FileContextChip({ file, index, onRemove }) {
   const name = file?.name || "Attachment";
   return (
     <div className="relative flex h-7 max-w-[140px] shrink-0 items-center rounded-md border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] pl-2 pr-7 transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
-      <span className="min-w-0 truncate text-[10px] font-bold text-[var(--ds-text-secondary)]">
-        {name}
-      </span>
+      <span className="min-w-0 truncate text-[10px] font-bold text-[var(--ds-text-secondary)]">{name}</span>
       <button
         type="button"
         onClick={() => onRemove(index)}
@@ -330,19 +298,13 @@ function RobloxAssetContextChip({ asset, onRemove }) {
   return (
     <div className="relative flex h-7 max-w-[140px] shrink-0 items-center gap-1.5 rounded-md border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] pl-1 pr-7 transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
       {asset?.thumbnailUrl ? (
-        <img
-          src={asset.thumbnailUrl}
-          alt=""
-          className="h-5 w-5 shrink-0 rounded object-cover"
-        />
+        <img src={asset.thumbnailUrl} alt="" className="h-5 w-5 shrink-0 rounded object-cover" />
       ) : (
         <span className="inline-flex h-5 max-w-[42px] shrink-0 items-center truncate rounded border border-[var(--ds-accent-border)] bg-[var(--ds-fill-subtle)] px-1 text-[7px] font-black uppercase text-[var(--ds-accent)]">
           {type}
         </span>
       )}
-      <span className="min-w-0 truncate text-[10px] font-bold text-[var(--ds-text)]">
-        {name}
-      </span>
+      <span className="min-w-0 truncate text-[10px] font-bold text-[var(--ds-text)]">{name}</span>
       <button
         type="button"
         onClick={() => onRemove?.(asset?.assetId)}
@@ -448,15 +410,13 @@ export default function ChatComposer({
   const controlsPanelRef = useRef(null);
   const contextButtonRef = useRef(null);
   const contextPanelRef = useRef(null);
-  const isPlanMode = normalizeChatMode(mode) === "plan";
   const normalizedMode = normalizeChatMode(mode);
+  const isPlanMode = normalizedMode === "plan";
+  const isAskMode = normalizedMode === "ask";
   const draftIdentityRef = useRef({ signature: null, revision: 0 });
   const controlsPresence = useMotionPresence(controlsOpen, 180);
   const controlsId = "chat-composer-controls";
-  const canSendWithContext =
-    Boolean(prompt?.trim()) ||
-    attachments.length > 0 ||
-    robloxProjectAssets.length > 0;
+  const canSendWithContext = Boolean(prompt?.trim()) || attachments.length > 0 || robloxProjectAssets.length > 0;
   const studioPlaceGate = evaluateStudioPlaceGate({
     studioEnabled,
     connected: Boolean(studioConnected),
@@ -464,8 +424,7 @@ export default function ChatComposer({
     options: studioPlaceOptions,
   });
   const selectedStudioTargetCannotBind =
-    studioPlaceGate.status === "ready" &&
-    !canBindStudioTargetToProject(studioPlaceGate.target);
+    studioPlaceGate.status === "ready" && !canBindStudioTargetToProject(studioPlaceGate.target);
   const studioBuildBlocked =
     ["agent", "debug"].includes(normalizedMode) &&
     Boolean(studioEnabled) &&
@@ -477,14 +436,8 @@ export default function ChatComposer({
       : "Connect Studio and open the project you want Nexus to build in.";
   const draftSignature = JSON.stringify({
     prompt: String(prompt || ""),
-    attachments: attachments.map((file) => [
-      file?.name || "",
-      file?.size || 0,
-      file?.type || "",
-    ]),
-    assets: robloxProjectAssets.map(
-      (asset) => asset?.assetId || asset?.id || "",
-    ),
+    attachments: attachments.map((file) => [file?.name || "", file?.size || 0, file?.type || ""]),
+    assets: robloxProjectAssets.map((asset) => asset?.assetId || asset?.id || ""),
   });
   if (draftIdentityRef.current.signature !== draftSignature) {
     draftIdentityRef.current = {
@@ -493,15 +446,9 @@ export default function ChatComposer({
     };
   }
   const draftRevision = `draft:${draftIdentityRef.current.revision}`;
-  const activeOperationStatus =
-    operationState?.active?.status || operationState?.lastStatus || null;
-  const queuedOperations = Array.isArray(operationState?.queue)
-    ? operationState.queue
-    : [];
-  const mentionCommands = filterComposerCommands(
-    mentionQuery,
-    COMPOSER_COMMANDS,
-  );
+  const activeOperationStatus = operationState?.active?.status || operationState?.lastStatus || null;
+  const queuedOperations = Array.isArray(operationState?.queue) ? operationState.queue : [];
+  const mentionCommands = filterComposerCommands(mentionQuery, COMPOSER_COMMANDS);
   const contextItems = [
     ...(studioEnabled ? [{ kind: "studio", key: "studio-target" }] : []),
     ...robloxImageUploads.map((upload) => ({
@@ -522,10 +469,7 @@ export default function ChatComposer({
     })),
   ];
   const visibleContextItems = contextItems.slice(0, 3);
-  const hiddenContextCount = Math.max(
-    0,
-    contextItems.length - visibleContextItems.length,
-  );
+  const hiddenContextCount = Math.max(0, contextItems.length - visibleContextItems.length);
 
   useLayoutEffect(() => {
     const textarea = textareaRef.current;
@@ -606,13 +550,7 @@ export default function ChatComposer({
           break;
       }
     },
-    [
-      onImprovePrompt,
-      onOpenAssetLibrary,
-      onStartRefine,
-      onStudioPlacePickerOpenChange,
-      prompt,
-    ],
+    [onImprovePrompt, onOpenAssetLibrary, onStartRefine, onStudioPlacePickerOpenChange, prompt]
   );
 
   useEffect(() => {
@@ -639,7 +577,7 @@ export default function ChatComposer({
         draftRevision: `quick-refine:${draftRevision}:${next}`,
       });
     },
-    [disabled, draftRevision, onSubmit, studioBuildBlocked],
+    [disabled, draftRevision, onSubmit, studioBuildBlocked]
   );
 
   const submitDraft = useCallback(
@@ -647,7 +585,7 @@ export default function ChatComposer({
       if (disabled || studioBuildBlocked || !canSendWithContext) return undefined;
       return onSubmit?.(event, null, { draftRevision, interrupt });
     },
-    [canSendWithContext, disabled, draftRevision, onSubmit, studioBuildBlocked],
+    [canSendWithContext, disabled, draftRevision, onSubmit, studioBuildBlocked]
   );
 
   const applyMentionCommand = useCallback(
@@ -664,19 +602,15 @@ export default function ChatComposer({
         const textarea = textareaRef.current;
         if (!textarea) return;
         textarea.focus();
-        const caret = mentionRange
-          ? mentionRange.start + command.id.length + 2
-          : next.length;
+        const caret = mentionRange ? mentionRange.start + command.id.length + 2 : next.length;
         textarea.setSelectionRange(caret, caret);
       });
     },
-    [mentionRange, prompt, runComposerCommand, setPrompt],
+    [mentionRange, prompt, runComposerCommand, setPrompt]
   );
 
   const removeAttachment = (index) => {
-    setAttachments((current) =>
-      current.filter((_, itemIndex) => itemIndex !== index),
-    );
+    setAttachments((current) => current.filter((_, itemIndex) => itemIndex !== index));
   };
 
   const handlePromptChange = (event) => {
@@ -694,17 +628,12 @@ export default function ChatComposer({
       }
       if (event.key === "ArrowUp") {
         event.preventDefault();
-        setMentionIndex(
-          (current) =>
-            (current - 1 + mentionCommands.length) % mentionCommands.length,
-        );
+        setMentionIndex((current) => (current - 1 + mentionCommands.length) % mentionCommands.length);
         return;
       }
       if (event.key === "Enter" || event.key === "Tab") {
         event.preventDefault();
-        applyMentionCommand(
-          mentionCommands[mentionIndex] || mentionCommands[0],
-        );
+        applyMentionCommand(mentionCommands[mentionIndex] || mentionCommands[0]);
         return;
       }
       if (event.key === "Escape") {
@@ -714,12 +643,7 @@ export default function ChatComposer({
       }
     }
 
-    if (
-      event.key === "Enter" &&
-      !event.shiftKey &&
-      !isComposing &&
-      !event.nativeEvent?.isComposing
-    ) {
+    if (event.key === "Enter" && !event.shiftKey && !isComposing && !event.nativeEvent?.isComposing) {
       event.preventDefault();
       submitDraft(event, {
         interrupt: Boolean(event.metaKey || event.ctrlKey),
@@ -762,22 +686,9 @@ export default function ChatComposer({
       return <ImageUploadChip key={item.key} upload={item.upload} />;
     }
     if (item.kind === "file") {
-      return (
-        <FileContextChip
-          key={item.key}
-          file={item.file}
-          index={item.index}
-          onRemove={removeAttachment}
-        />
-      );
+      return <FileContextChip key={item.key} file={item.file} index={item.index} onRemove={removeAttachment} />;
     }
-    return (
-      <RobloxAssetContextChip
-        key={item.key}
-        asset={item.asset}
-        onRemove={onRemoveProjectAsset}
-      />
-    );
+    return <RobloxAssetContextChip key={item.key} asset={item.asset} onRemove={onRemoveProjectAsset} />;
   };
 
   const usage = (
@@ -794,9 +705,7 @@ export default function ChatComposer({
       isFreeUsagePlan={isFreeUsagePlan}
       usageLoading={billingLoading}
       usageUnavailable={
-        !unlimitedTokens &&
-        (Boolean(billingError) ||
-          (isFreeUsagePlan && !billingLoading && !dailyUsage))
+        !unlimitedTokens && (Boolean(billingError) || (isFreeUsagePlan && !billingLoading && !dailyUsage))
       }
     />
   );
@@ -808,24 +717,18 @@ export default function ChatComposer({
         className={`nexus-composer nx-composer-shine relative z-20 mx-auto max-w-[760px] overflow-visible rounded-[14px] border border-[var(--ds-border)] bg-[var(--ds-surface-1)] transition-colors duration-150 focus-within:border-[var(--ds-border-strong)] ${isGenerating ? "nx-composer-shine--active" : ""}`}
       >
         {(activeOperationStatus || queuedOperations.length > 0) && (
-          <div
-            className="border-b border-[var(--ds-border-subtle)] px-2 py-1.5"
-            aria-label="Chat operation status"
-          >
+          <div className="border-b border-[var(--ds-border-subtle)] px-2 py-1.5" aria-label="Chat operation status">
             <div className="flex items-center gap-2 text-[10px]">
               {activeOperationStatus ? (
                 <span className="inline-flex items-center gap-1.5 font-bold text-[var(--ds-text-secondary)]">
-                  {(operationState?.isBusy ||
-                    activeOperationStatus === "Stopping") && (
+                  {(operationState?.isBusy || activeOperationStatus === "Stopping") && (
                     <Loader className="h-3 w-3 animate-spin text-[var(--ds-accent)]" />
                   )}
                   {activeOperationStatus}
                 </span>
               ) : null}
               {queuedOperations.length > 0 ? (
-                <span className="text-[var(--ds-text-muted)]">
-                  {queuedOperations.length} queued
-                </span>
+                <span className="text-[var(--ds-text-muted)]">{queuedOperations.length} queued</span>
               ) : null}
               {operationState?.paused && queuedOperations.length > 0 ? (
                 <span className="ml-auto flex items-center gap-1">
@@ -834,9 +737,7 @@ export default function ChatComposer({
                     onClick={onSendNext}
                     className="rounded-md border border-[var(--ds-border-subtle)] px-2 py-1 font-bold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring"
                   >
-                    {queuedOperations[0]?.status === "Failed"
-                      ? "Retry failed"
-                      : "Send next"}
+                    {queuedOperations[0]?.status === "Failed" ? "Retry failed" : "Send next"}
                   </button>
                   <button
                     type="button"
@@ -855,12 +756,8 @@ export default function ChatComposer({
                     key={operation.id}
                     className="flex items-center gap-2 rounded-md bg-[var(--ds-fill-subtle)] px-2 py-1 text-[10px] text-[var(--ds-text-secondary)]"
                   >
-                    <span className="shrink-0 font-bold text-[var(--ds-text-muted)]">
-                      {index + 1}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate">
-                      {operation.prompt || operation.type}
-                    </span>
+                    <span className="shrink-0 font-bold text-[var(--ds-text-muted)]">{index + 1}</span>
+                    <span className="min-w-0 flex-1 truncate">{operation.prompt || operation.type}</span>
                     <button
                       type="button"
                       onClick={() => onRemoveQueued?.(operation.id)}
@@ -875,29 +772,22 @@ export default function ChatComposer({
             ) : null}
           </div>
         )}
-        {(refineTarget ||
-          rewindTarget?.messageId ||
-          contextItems.length > 0) && (
+        {(refineTarget || rewindTarget?.messageId || contextItems.length > 0) && (
           <div className="flex min-h-9 items-center gap-1.5 overflow-visible border-b border-[var(--ds-border-subtle)] px-2 py-1">
             {refineTarget && (
               <div className="inline-flex h-7 max-w-[280px] shrink-0 items-center gap-1.5 rounded-md border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 text-[10px] font-bold text-[var(--ds-accent)] transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
                 <SlidersHorizontal className="h-3 w-3 shrink-0" />
                 <span className="truncate">
-                  {studioConnected
-                    ? "Refining in Studio: "
-                    : "Refining workspace: "}
+                  {studioConnected ? "Refining in Studio: " : "Refining workspace: "}
                   {refineTarget.title || "current project"}
                   {messageHasRefineableFiles(refineTarget)
                     ? ` · ${
-                        Array.isArray(refineTarget.files) &&
-                        refineTarget.files.length
+                        Array.isArray(refineTarget.files) && refineTarget.files.length
                           ? `${refineTarget.files.length} file${refineTarget.files.length === 1 ? "" : "s"}`
                           : "1 script"
                       }`
                     : ""}
-                  {refineTarget.revision
-                    ? ` · rev ${String(refineTarget.revision).slice(0, 8)}`
-                    : ""}
+                  {refineTarget.revision ? ` · rev ${String(refineTarget.revision).slice(0, 8)}` : ""}
                 </span>
                 <button
                   type="button"
@@ -913,9 +803,7 @@ export default function ChatComposer({
             {rewindTarget?.messageId ? (
               <div className="inline-flex h-7 max-w-[220px] shrink-0 items-center gap-1.5 rounded-md border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] px-2 text-[10px] font-bold text-[var(--ds-warning)] transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
                 <Edit className="h-3 w-3 shrink-0" />
-                <span className="truncate">
-                  Continuing from earlier message
-                </span>
+                <span className="truncate">Continuing from earlier message</span>
                 <button
                   type="button"
                   onClick={onCancelRewind}
@@ -927,10 +815,7 @@ export default function ChatComposer({
                 </button>
               </div>
             ) : null}
-            <div
-              className="flex min-w-0 items-center gap-1.5 overflow-hidden"
-              aria-label="Prompt context items"
-            >
+            <div className="flex min-w-0 items-center gap-1.5 overflow-hidden" aria-label="Prompt context items">
               {visibleContextItems.map(renderContextItem)}
             </div>
             {hiddenContextCount > 0 && (
@@ -984,8 +869,7 @@ export default function ChatComposer({
           >
             <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <p className="min-w-0 flex-1 leading-relaxed">
-              <span className="font-bold">Build paused.</span>{" "}
-              {studioBlockerMessage}
+              <span className="font-bold">Build paused.</span> {studioBlockerMessage}
             </p>
             <button
               type="button"
@@ -997,29 +881,18 @@ export default function ChatComposer({
                   onStudioPlacePickerOpenChange?.(true);
                 }
               }}
-              aria-haspopup={
-                studioPlaceGate.status === "needs_connect" ? "dialog" : undefined
-              }
-              aria-controls={
-                studioPlaceGate.status === "needs_connect"
-                  ? "studio-connection-dialog"
-                  : undefined
-              }
+              aria-haspopup={studioPlaceGate.status === "needs_connect" ? "dialog" : undefined}
+              aria-controls={studioPlaceGate.status === "needs_connect" ? "studio-connection-dialog" : undefined}
               className="inline-flex min-h-11 shrink-0 items-center rounded-md border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)] px-2 font-bold transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_16%,transparent)] focus-ring xl:min-h-8"
             >
-              {studioPlaceGate.status === "needs_connect"
-                ? "Studio options"
-                : "Choose place"}
+              {studioPlaceGate.status === "needs_connect" ? "Studio options" : "Choose place"}
             </button>
           </div>
         ) : null}
 
         {refineTarget ? (
           <div className="border-b border-[var(--ds-border-subtle)] px-2 py-1.5">
-            <RefineChips
-              onRefine={submitQuickRefine}
-              isRefining={isGenerating}
-            />
+            <RefineChips onRefine={submitQuickRefine} isRefining={isGenerating} />
           </div>
         ) : null}
 
@@ -1034,13 +907,15 @@ export default function ChatComposer({
           )}
 
           <div className="nexus-composer__request-label" aria-hidden="true">
-            {isPlanMode ? "What should Nexus plan?" : "What should Nexus build?"}{" "}
+            {isPlanMode ? "What should Nexus plan?" : isAskMode ? "What do you want to know?" : "What should Nexus do?"}{" "}
             <span>
               {isGenerating
                 ? "Enter queues · Ctrl/⌘ Enter steers · Esc stops"
                 : isPlanMode
-                  ? "Discuss first · no changes until you approve"
-                  : "Starts automatically · uses safe assumptions"}
+                  ? "Discuss first · no changes until you proceed"
+                  : isAskMode
+                    ? "Answers with project context · no changes"
+                    : "Acts automatically · uses safe assumptions"}
             </span>
           </div>
           <div className="relative min-h-[72px] px-3 pt-1">
@@ -1058,12 +933,8 @@ export default function ChatComposer({
               onCompositionStart={() => setIsComposing(true)}
               onCompositionEnd={() => setIsComposing(false)}
               onKeyDown={handlePromptKeyDown}
-              onClick={(event) =>
-                syncMentionState(prompt, event.target.selectionStart || 0)
-              }
-              onSelect={(event) =>
-                syncMentionState(prompt, event.target.selectionStart || 0)
-              }
+              onClick={(event) => syncMentionState(prompt, event.target.selectionStart || 0)}
+              onSelect={(event) => syncMentionState(prompt, event.target.selectionStart || 0)}
             />
           </div>
 
@@ -1073,6 +944,7 @@ export default function ChatComposer({
                 ref={fileInputRef}
                 type="file"
                 id="chat-composer-file-upload"
+                aria-label="Attach files"
                 className="hidden"
                 multiple
                 onChange={onFileUpload}
@@ -1087,17 +959,9 @@ export default function ChatComposer({
                 title="Attach context"
                 aria-label="Upload image to Roblox or attach a code/text file"
               >
-                {robloxImageUploading ? (
-                  <Loader className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Plus className="h-4 w-4" />
-                )}
+                {robloxImageUploading ? <Loader className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
               </button>
-              <ModeSelector
-                mode={mode}
-                onModeChange={onModeChange}
-                disabled={disabled || isGenerating}
-              />
+              <ModeSelector mode={mode} onModeChange={onModeChange} disabled={disabled || isGenerating} />
             </div>
 
             <div className="flex shrink-0 items-center gap-1">
@@ -1133,12 +997,8 @@ export default function ChatComposer({
                     }`}
                   >
                     <div className="mb-3">
-                      <h2 className="text-sm font-bold text-[var(--ds-text)]">
-                        Workspace options
-                      </h2>
-                      <p className="text-[10px] text-[var(--ds-text-muted)]">
-                        Usage, Studio, and Roblox context
-                      </p>
+                      <h2 className="text-sm font-bold text-[var(--ds-text)]">Workspace options</h2>
+                      <p className="text-[10px] text-[var(--ds-text-muted)]">Usage, Studio, and Roblox context</p>
                     </div>
                     <div className="flex max-h-[min(24rem,50vh)] flex-col gap-3 overflow-y-auto scrollbar-subtle">
                       <section
@@ -1166,28 +1026,24 @@ export default function ChatComposer({
                         onAutoPushPolicyChange={onStudioAutoPushPolicyChange}
                         autoPushAuthorized={studioAutoPushAuthorized}
                       />
-                      {studioConnected &&
-                        Array.isArray(studioCollaborators) &&
-                        studioCollaborators.length > 0 && (
-                          <span
-                            className="inline-flex w-fit items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] px-2 py-0.5 text-[11px] text-[var(--ds-warning)] "
-                            title={studioCollaborators
-                              .map(
-                                (collaborator) =>
-                                  `${collaborator.label || "collaborator"}${
-                                    Array.isArray(collaborator.activePaths) &&
-                                    collaborator.activePaths.length
-                                      ? ` — ${collaborator.activePaths.slice(0, 3).join(", ")}`
-                                      : ""
-                                  }`,
-                              )
-                              .join("\n")}
-                          >
-                            {studioCollaborators.length} collaborator
-                            {studioCollaborators.length === 1 ? "" : "s"} on
-                            this place
-                          </span>
-                        )}
+                      {studioConnected && Array.isArray(studioCollaborators) && studioCollaborators.length > 0 && (
+                        <span
+                          className="inline-flex w-fit items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] px-2 py-0.5 text-[11px] text-[var(--ds-warning)] "
+                          title={studioCollaborators
+                            .map(
+                              (collaborator) =>
+                                `${collaborator.label || "collaborator"}${
+                                  Array.isArray(collaborator.activePaths) && collaborator.activePaths.length
+                                    ? ` — ${collaborator.activePaths.slice(0, 3).join(", ")}`
+                                    : ""
+                                }`
+                            )
+                            .join("\n")}
+                        >
+                          {studioCollaborators.length} collaborator
+                          {studioCollaborators.length === 1 ? "" : "s"} on this place
+                        </span>
+                      )}
                       <RobloxCloudControls
                         connected={robloxConnected}
                         loading={robloxLoading}
@@ -1196,15 +1052,11 @@ export default function ChatComposer({
                         uploadState={robloxUploadState}
                         uploadDisabledReason={robloxUploadDisabledReason}
                         assetUploadsEnabled={robloxAssetUploadsEnabled}
-                        onAssetUploadsEnabledChange={
-                          onRobloxAssetUploadsEnabledChange
-                        }
+                        onAssetUploadsEnabledChange={onRobloxAssetUploadsEnabledChange}
                         selectedAssetCount={robloxProjectAssets.length}
                         onOpenAssetLibrary={onOpenAssetLibrary}
                         assetLibraryAvailable={robloxAssetLibraryAvailable}
-                        assetLibraryDisabledReason={
-                          robloxAssetLibraryDisabledReason
-                        }
+                        assetLibraryDisabledReason={robloxAssetLibraryDisabledReason}
                       />
                     </div>
                   </div>
@@ -1225,39 +1077,20 @@ export default function ChatComposer({
                 type="button"
                 id="tour-generate-button"
                 data-tour="generate-btn"
-                onClick={(event) =>
-                  isGenerating ? onStop?.() : submitDraft(event)
-                }
-                disabled={
-                  isGenerating
-                    ? disabled || !onStop
-                    : disabled || studioBuildBlocked || !canSendWithContext
-                }
+                onClick={(event) => (isGenerating ? onStop?.() : submitDraft(event))}
+                disabled={isGenerating ? disabled || !onStop : disabled || studioBuildBlocked || !canSendWithContext}
                 className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition-[background-color,color,opacity,transform] duration-150 active:scale-95 focus-ring disabled:opacity-40 disabled:active:scale-100 xl:h-9 xl:w-9 ${
                   isGenerating
                     ? "border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] text-[var(--ds-danger)] hover:bg-[color-mix(in_srgb,var(--ds-danger)_20%,transparent)]"
                     : "bg-primary text-primary-foreground hover:opacity-90"
                 }`}
                 aria-label={
-                  isGenerating
-                    ? "Stop generation"
-                    : studioBuildBlocked
-                      ? studioBlockerMessage
-                      : "Send prompt"
+                  isGenerating ? "Stop generation" : studioBuildBlocked ? studioBlockerMessage : "Send prompt"
                 }
-                title={
-                  isGenerating
-                    ? "Stop generation"
-                    : studioBuildBlocked
-                      ? studioBlockerMessage
-                      : "Send prompt"
-                }
+                title={isGenerating ? "Stop generation" : studioBuildBlocked ? studioBlockerMessage : "Send prompt"}
               >
                 {isGenerating ? (
-                  <Square
-                    className="h-3.5 w-3.5 fill-current"
-                    aria-hidden="true"
-                  />
+                  <Square className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
                 ) : (
                   <ArrowUp className="h-4 w-4" aria-hidden="true" />
                 )}

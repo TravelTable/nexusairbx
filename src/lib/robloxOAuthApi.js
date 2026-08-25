@@ -19,10 +19,9 @@ function asArray(value) {
 }
 
 function firstString(...values) {
-  const value = values.find((entry) => (
-    (typeof entry === "string" && entry.trim())
-    || (typeof entry === "number" && Number.isFinite(entry))
-  ));
+  const value = values.find(
+    (entry) => (typeof entry === "string" && entry.trim()) || (typeof entry === "number" && Number.isFinite(entry))
+  );
   return value === undefined || value === null ? "" : String(value);
 }
 
@@ -78,13 +77,11 @@ function sanitizeProfile(rawProfile, fallbackUserId) {
  */
 export function normalizeRobloxConnectionStatus(rawStatus = {}) {
   const status = rawStatus && typeof rawStatus === "object" ? rawStatus : {};
-  const rawConnection = status.connection && typeof status.connection === "object"
-    ? status.connection
-    : {};
-  const sensitiveKeysPresent = [...SENSITIVE_CONNECTION_KEYS].some((key) => (
-    Object.prototype.hasOwnProperty.call(status, key)
-    || Object.prototype.hasOwnProperty.call(rawConnection, key)
-  ));
+  const rawConnection = status.connection && typeof status.connection === "object" ? status.connection : {};
+  const sensitiveKeysPresent = [...SENSITIVE_CONNECTION_KEYS].some(
+    (key) =>
+      Object.prototype.hasOwnProperty.call(status, key) || Object.prototype.hasOwnProperty.call(rawConnection, key)
+  );
   const profile = sanitizeProfile(
     rawConnection.profile || status.profile || status.user,
     firstString(rawConnection.robloxUserId, status.robloxUserId)
@@ -94,14 +91,21 @@ export function normalizeRobloxConnectionStatus(rawStatus = {}) {
   );
   const creators = creatorCandidates.map(normalizeCreator).filter(Boolean);
   const selectedCreator = normalizeCreator(rawConnection.selectedCreator || status.selectedCreator);
-  const personalCreator = creators.find((creator) => creator.type === "User")
-    || (profile?.id ? normalizeCreator({ type: "User", id: profile.id, name: profile.displayName || profile.username }) : null);
+  const personalCreator =
+    creators.find((creator) => creator.type === "User") ||
+    (profile?.id
+      ? normalizeCreator({
+          type: "User",
+          id: profile.id,
+          name: profile.displayName || profile.username,
+        })
+      : null);
   const groups = creators.filter((creator) => creator.type === "Group");
   const universes = asArray(
-    status.accessibleUniverses?.length
-      ? status.accessibleUniverses
-      : rawConnection.universes || status.universes
-  ).map(normalizeUniverse).filter(Boolean);
+    status.accessibleUniverses?.length ? status.accessibleUniverses : rawConnection.universes || status.universes
+  )
+    .map(normalizeUniverse)
+    .filter(Boolean);
   const grantedScopes = asArray(status.grantedScopes?.length ? status.grantedScopes : rawConnection.scopes).map(String);
   const missingScopes = asArray(status.missingScopes).map(String);
   const tokenHealthRaw = status.tokenHealth && typeof status.tokenHealth === "object" ? status.tokenHealth : {};
@@ -111,17 +115,24 @@ export function normalizeRobloxConnectionStatus(rawStatus = {}) {
     lastRefreshAt: tokenHealthRaw.lastRefreshAt || null,
     hasRefreshToken: tokenHealthRaw.hasRefreshToken === true,
   };
-  const lastSuccessfulOperation = status.lastSuccessfulOperation && typeof status.lastSuccessfulOperation === "object"
-    ? {
-      type: firstString(status.lastSuccessfulOperation.type, status.lastSuccessfulOperation.operationType),
-      occurredAt: status.lastSuccessfulOperation.occurredAt || status.lastSuccessfulOperation.completedAt || status.lastSuccessfulOperation.createdAt || null,
-      creator: normalizeCreator(status.lastSuccessfulOperation.creator),
-    }
-    : null;
-  const missingPermissions = Array.from(new Set([
-    ...creators.flatMap((creator) => creator.missingPermissions),
-    ...universes.flatMap((universe) => universe.missingPermissions),
-  ]));
+  const lastSuccessfulOperation =
+    status.lastSuccessfulOperation && typeof status.lastSuccessfulOperation === "object"
+      ? {
+          type: firstString(status.lastSuccessfulOperation.type, status.lastSuccessfulOperation.operationType),
+          occurredAt:
+            status.lastSuccessfulOperation.occurredAt ||
+            status.lastSuccessfulOperation.completedAt ||
+            status.lastSuccessfulOperation.createdAt ||
+            null,
+          creator: normalizeCreator(status.lastSuccessfulOperation.creator),
+        }
+      : null;
+  const missingPermissions = Array.from(
+    new Set([
+      ...creators.flatMap((creator) => creator.missingPermissions),
+      ...universes.flatMap((universe) => universe.missingPermissions),
+    ])
+  );
 
   return {
     connected: status.connected === true,
@@ -132,33 +143,41 @@ export function normalizeRobloxConnectionStatus(rawStatus = {}) {
     missingCapabilities: asArray(status.missingCapabilities).map(String),
     authorizedCreators: creators,
     accessibleUniverses: universes,
-    permissions: status.permissions && typeof status.permissions === "object" ? {
-      resourceValidationStatus: firstString(status.permissions.resourceValidationStatus) || "unknown",
-      resourcesValidatedAt: status.permissions.resourcesValidatedAt || null,
-    } : { resourceValidationStatus: "unknown", resourcesValidatedAt: null },
+    permissions:
+      status.permissions && typeof status.permissions === "object"
+        ? {
+            resourceValidationStatus: firstString(status.permissions.resourceValidationStatus) || "unknown",
+            resourcesValidatedAt: status.permissions.resourcesValidatedAt || null,
+          }
+        : { resourceValidationStatus: "unknown", resourcesValidatedAt: null },
     policy: status.policy && typeof status.policy === "object" ? status.policy : {},
     tokenHealth,
     lastSuccessfulOperation,
-    connection: Object.keys(rawConnection).length || status.connected ? {
-      status: firstString(rawConnection.status) || (status.connected ? "connected" : "disconnected"),
-      profile,
-      identity: profile ? {
-        userId: profile.id,
-        username: profile.username,
-        displayName: profile.displayName,
-        picture: profile.picture,
-      } : null,
-      selectedCreator,
-      creators,
-      personalCreator,
-      groups,
-      universes,
-      grantedScopes,
-      missingScopes,
-      missingPermissions,
-      tokenHealth,
-      lastSuccessfulOperation,
-    } : null,
+    connection:
+      Object.keys(rawConnection).length || status.connected
+        ? {
+            status: firstString(rawConnection.status) || (status.connected ? "connected" : "disconnected"),
+            profile,
+            identity: profile
+              ? {
+                  userId: profile.id,
+                  username: profile.username,
+                  displayName: profile.displayName,
+                  picture: profile.picture,
+                }
+              : null,
+            selectedCreator,
+            creators,
+            personalCreator,
+            groups,
+            universes,
+            grantedScopes,
+            missingScopes,
+            missingPermissions,
+            tokenHealth,
+            lastSuccessfulOperation,
+          }
+        : null,
     // Kept private to tests/telemetry callers; never includes the values.
     credentialFieldsDiscarded: sensitiveKeysPresent,
   };
@@ -166,18 +185,58 @@ export function normalizeRobloxConnectionStatus(rawStatus = {}) {
 
 export async function getRobloxOAuthStatus() {
   return withApiRetryCooldown("roblox-oauth:status", "Failed to load Roblox connection", async () => {
-    const res = await authedFetch("/api/roblox/oauth/status", { method: "GET", noCache: true });
+    const res = await authedFetch("/api/roblox/oauth/status", {
+      method: "GET",
+      noCache: true,
+    });
     const status = await readJsonOrThrow(res, "Failed to load Roblox connection");
     return normalizeRobloxConnectionStatus(status);
   });
 }
 
-export async function startRobloxOAuth({ bundles = ["core"], returnPath = "/settings?tab=roblox", prompt = null } = {}) {
+export function normalizeRobloxExperience(rawExperience = {}) {
+  const universeId = firstString(rawExperience.universeId, rawExperience.id);
+  const rootPlaceId = firstString(rawExperience.rootPlaceId, rawExperience.rootPlace?.id);
+  if (!/^\d+$/.test(universeId) || !/^\d+$/.test(rootPlaceId)) return null;
+  return {
+    universeId,
+    rootPlaceId,
+    name: firstString(rawExperience.name, rawExperience.title) || "Untitled experience",
+    description: firstString(rawExperience.description),
+    creator: normalizeCreator(rawExperience.creator),
+    thumbnailUrl: firstString(rawExperience.thumbnailUrl, rawExperience.imageUrl) || null,
+    createdAt: rawExperience.createdAt || null,
+    updatedAt: rawExperience.updatedAt || null,
+    playing: Number.isFinite(Number(rawExperience.playing)) ? Number(rawExperience.playing) : null,
+    visits: Number.isFinite(Number(rawExperience.visits)) ? Number(rawExperience.visits) : null,
+  };
+}
+
+export async function getRobloxExperiences({ limit = 200 } = {}) {
+  return withApiRetryCooldown("roblox-oauth:experiences", "Failed to load Roblox games", async () => {
+    const res = await authedFetch(`/api/roblox/oauth/experiences?limit=${encodeURIComponent(String(limit))}`, {
+      method: "GET",
+      noCache: true,
+    });
+    const data = await readJsonOrThrow(res, "Failed to load Roblox games");
+    return asArray(data?.experiences).map(normalizeRobloxExperience).filter(Boolean);
+  });
+}
+
+export async function startRobloxOAuth({
+  bundles = ["core"],
+  returnPath = "/settings?tab=roblox",
+  prompt = null,
+} = {}) {
   return withApiRetryCooldown("roblox-oauth:start", "Failed to start Roblox authorization", async () => {
     const res = await authedFetch("/api/roblox/oauth/start", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bundles, returnPath, ...(prompt ? { prompt } : {}) }),
+      body: JSON.stringify({
+        bundles,
+        returnPath,
+        ...(prompt ? { prompt } : {}),
+      }),
     });
     return readJsonOrThrow(res, "Failed to start Roblox authorization");
   });
@@ -260,7 +319,11 @@ export function clearPendingRobloxAction() {
   }
 }
 
-export async function ensureRobloxCapabilities({ capabilities, returnPath = "/settings?tab=roblox", pendingAction = null } = {}) {
+export async function ensureRobloxCapabilities({
+  capabilities,
+  returnPath = "/settings?tab=roblox",
+  pendingAction = null,
+} = {}) {
   const requestedCapabilities = normalizeCapabilities(capabilities);
   const data = await withApiRetryCooldown("roblox-oauth:ensure", "Failed to verify Roblox authorization", async () => {
     const res = await authedFetch("/api/roblox/oauth/ensure", {
@@ -283,14 +346,18 @@ export async function ensureRobloxCapabilities({ capabilities, returnPath = "/se
 
 export async function disconnectRobloxOAuth() {
   return withApiRetryCooldown("roblox-oauth:disconnect", "Failed to disconnect Roblox", async () => {
-    const res = await authedFetch("/api/roblox/oauth/disconnect", { method: "POST" });
+    const res = await authedFetch("/api/roblox/oauth/disconnect", {
+      method: "POST",
+    });
     return readJsonOrThrow(res, "Failed to disconnect Roblox");
   });
 }
 
 export async function revokeRobloxOAuth() {
   return withApiRetryCooldown("roblox-oauth:revoke", "Failed to revoke Roblox access", async () => {
-    const res = await authedFetch("/api/roblox/oauth/revoke", { method: "POST" });
+    const res = await authedFetch("/api/roblox/oauth/revoke", {
+      method: "POST",
+    });
     return readJsonOrThrow(res, "Failed to revoke Roblox access");
   });
 }
@@ -307,7 +374,10 @@ export async function setRobloxTargetCreator(creator) {
 }
 
 export async function getRobloxCapabilities() {
-  const res = await authedFetch("/api/roblox/capabilities", { method: "GET", noCache: true });
+  const res = await authedFetch("/api/roblox/capabilities", {
+    method: "GET",
+    noCache: true,
+  });
   return readJsonOrThrow(res, "Failed to load Roblox capabilities");
 }
 
@@ -341,18 +411,14 @@ export function getRobloxCapability(robloxStatus, capabilityId) {
   const caps = robloxStatus?.capabilities;
   if (!caps) return null;
   if (caps[capabilityId]) return caps[capabilityId];
-  const fromGranted = Array.isArray(caps.granted)
-    ? caps.granted.find((item) => item.id === capabilityId)
-    : null;
+  const fromGranted = Array.isArray(caps.granted) ? caps.granted.find((item) => item.id === capabilityId) : null;
   if (fromGranted) {
     return {
       authorized: fromGranted.available !== false,
       missingScopes: Array.isArray(fromGranted.missingScopes) ? fromGranted.missingScopes : [],
     };
   }
-  const fromMissing = Array.isArray(caps.missing)
-    ? caps.missing.find((item) => item.id === capabilityId)
-    : null;
+  const fromMissing = Array.isArray(caps.missing) ? caps.missing.find((item) => item.id === capabilityId) : null;
   if (fromMissing) {
     return {
       authorized: false,
@@ -370,7 +436,10 @@ export function isCapabilityAuthorized(robloxStatus, capabilityId) {
 }
 
 export function needsRobloxUpgrade(robloxStatus) {
-  return robloxStatus?.upgradeRequired === true || (Array.isArray(robloxStatus?.missingScopes) && robloxStatus.missingScopes.length > 0);
+  return (
+    robloxStatus?.upgradeRequired === true ||
+    (Array.isArray(robloxStatus?.missingScopes) && robloxStatus.missingScopes.length > 0)
+  );
 }
 
 export function formatRobloxApiError(error) {
@@ -382,9 +451,11 @@ export function isCreatorStoreReadAuthorized(robloxStatus) {
 }
 
 export function isRobloxReauthorizationError(code) {
-  return code === "ROBLOX_REAUTHORIZATION_REQUIRED"
-    || code === "CREATOR_STORE_REAUTHORIZATION_REQUIRED"
-    || code === "ROBLOX_AUTH_REQUIRED";
+  return (
+    code === "ROBLOX_REAUTHORIZATION_REQUIRED" ||
+    code === "CREATOR_STORE_REAUTHORIZATION_REQUIRED" ||
+    code === "ROBLOX_AUTH_REQUIRED"
+  );
 }
 
 export function creatorStoreAccessError() {

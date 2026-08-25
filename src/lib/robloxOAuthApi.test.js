@@ -2,11 +2,13 @@ import {
   beginCreatorStoreReauthorization,
   ensureRobloxCapabilities,
   creatorStoreAccessError,
+  getRobloxExperiences,
   getRobloxOAuthStatus,
   isCapabilityAuthorized,
   isCreatorStoreReadAuthorized,
   isRobloxReauthorizationError,
   needsRobloxUpgrade,
+  normalizeRobloxExperience,
   normalizeRobloxConnectionStatus,
   readPendingRobloxAction,
   ROBLOX_PRODUCT_DEFAULT_CAPABILITIES,
@@ -144,6 +146,41 @@ describe("robloxOAuthApi capability helpers", () => {
 
     await expect(revokeRobloxOAuth()).resolves.toEqual({ revoked: true });
     expect(authedFetch).toHaveBeenCalledWith("/api/roblox/oauth/revoke", { method: "POST" });
+  });
+
+  test("getRobloxExperiences returns normalized real project metadata", async () => {
+    authedFetch.mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({
+        experiences: [
+          {
+            universeId: 101,
+            rootPlaceId: 202,
+            name: "Blade Arena",
+            thumbnailUrl: "https://tr.rbxcdn.com/game.webp",
+            creator: { type: "Group", id: 303, name: "TravelTable" },
+            visits: 42,
+          },
+          { universeId: "invalid", rootPlaceId: 1, name: "Ignored" },
+        ],
+      }),
+    });
+
+    await expect(getRobloxExperiences()).resolves.toEqual([
+      expect.objectContaining({
+        universeId: "101",
+        rootPlaceId: "202",
+        name: "Blade Arena",
+        thumbnailUrl: "https://tr.rbxcdn.com/game.webp",
+        creator: expect.objectContaining({ type: "Group", id: "303", name: "TravelTable" }),
+        visits: 42,
+      }),
+    ]);
+    expect(authedFetch).toHaveBeenCalledWith("/api/roblox/oauth/experiences?limit=200", {
+      method: "GET",
+      noCache: true,
+    });
+    expect(normalizeRobloxExperience({ universeId: 1, rootPlaceId: null })).toBeNull();
   });
 
   test("ensureRobloxCapabilities can request multiple capabilities in one call", async () => {

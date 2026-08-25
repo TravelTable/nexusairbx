@@ -8,11 +8,7 @@ import { FEATURE_FLAGS } from "../lib/featureFlags";
 import { getStudioApplyMode, getStudioEnabledPreference } from "../lib/agentSteps";
 import { getStudioStatus } from "../lib/studioBridgeApi";
 import { resolveGameSpecForPrompt } from "../lib/gameProfile";
-import {
-  approveWorkflowPlan,
-  orchestrate,
-  startPlanExecution,
-} from "../lib/workflowApi";
+import { approveWorkflowPlan, orchestrate, startPlanExecution } from "../lib/workflowApi";
 import { getProjectBinding } from "../lib/projectBindingsApi";
 import {
   classifyExecutionIntent,
@@ -151,8 +147,8 @@ describe("useUnifiedChat", () => {
     });
     selectAgentRuntimeRoute.mockImplementation((capabilities, { projectId } = {}) => {
       if (!capabilities) return "unknown";
-      if (capabilities.executionOwner !== "canonical_task_runtime"
-        || capabilities.canonicalAgentRuns?.enabled !== true) return "legacy";
+      if (capabilities.executionOwner !== "canonical_task_runtime" || capabilities.canonicalAgentRuns?.enabled !== true)
+        return "legacy";
       if (capabilities.canonicalAgentRuns?.requiresProject === true && !projectId) return "legacy";
       return "canonical";
     });
@@ -194,62 +190,93 @@ describe("useUnifiedChat", () => {
 
   test("reconciles orchestration and generation pending state for the same request", () => {
     const pendingMessages = reconcileUnifiedPendingMessages(
-      [{
-        role: "assistant",
-        requestId: "req-shared",
-        runId: "run-live",
-        jobId: "job-live",
-        prompt: "Build the lobby",
-        stage: "Writing runtime files...",
-        targetSelection: { selected: ["ServerScriptService"] },
-        streamState: {
-          activitySeq: 4,
-          activity: [
-            { id: "shared-stage", type: "stage", text: "Writing runtime files..." },
-            { id: "runtime-file", type: "file_chunk", text: "Writing LobbyService" },
+      [
+        {
+          role: "assistant",
+          requestId: "req-shared",
+          runId: "run-live",
+          jobId: "job-live",
+          prompt: "Build the lobby",
+          stage: "Writing runtime files...",
+          targetSelection: { selected: ["ServerScriptService"] },
+          streamState: {
+            activitySeq: 4,
+            activity: [
+              {
+                id: "shared-stage",
+                type: "stage",
+                text: "Writing runtime files...",
+              },
+              {
+                id: "runtime-file",
+                type: "file_chunk",
+                text: "Writing LobbyService",
+              },
+            ],
+            files: [{ id: "lobby", path: "ServerScriptService/LobbyService.lua" }],
+          },
+          steps: [
+            {
+              id: "write-lobby",
+              label: "Write LobbyService",
+              status: "running",
+            },
           ],
-          files: [{ id: "lobby", path: "ServerScriptService/LobbyService.lua" }],
         },
-        steps: [{ id: "write-lobby", label: "Write LobbyService", status: "running" }],
-      }],
-      [{
-        role: "assistant",
-        requestId: "req-shared",
-        prompt: "Build the lobby",
-        stage: "Understanding your task...",
-        streamState: {
-          activitySeq: 2,
-          activity: [
-            { id: "shared-stage", type: "stage", text: "Understanding your task..." },
-            { id: "orchestration-plan", type: "stage", text: "Planning lobby" },
-          ],
+      ],
+      [
+        {
+          role: "assistant",
+          requestId: "req-shared",
+          prompt: "Build the lobby",
+          stage: "Understanding your task...",
+          streamState: {
+            activitySeq: 2,
+            activity: [
+              {
+                id: "shared-stage",
+                type: "stage",
+                text: "Understanding your task...",
+              },
+              {
+                id: "orchestration-plan",
+                type: "stage",
+                text: "Planning lobby",
+              },
+            ],
+          },
         },
-      }]
+      ]
     );
 
     expect(pendingMessages).toHaveLength(1);
-    expect(pendingMessages[0]).toEqual(expect.objectContaining({
-      requestId: "req-shared",
-      runId: "run-live",
-      jobId: "job-live",
-      stage: "Writing runtime files...",
-      targetSelection: { selected: ["ServerScriptService"] },
-      steps: [expect.objectContaining({ id: "write-lobby" })],
-    }));
+    expect(pendingMessages[0]).toEqual(
+      expect.objectContaining({
+        requestId: "req-shared",
+        runId: "run-live",
+        jobId: "job-live",
+        stage: "Writing runtime files...",
+        targetSelection: { selected: ["ServerScriptService"] },
+        steps: [expect.objectContaining({ id: "write-lobby" })],
+      })
+    );
     expect(pendingMessages[0].streamState.activitySeq).toBe(4);
-    expect(pendingMessages[0].streamState.activity).toEqual(expect.arrayContaining([
-      expect.objectContaining({ id: "shared-stage", text: "Writing runtime files..." }),
-      expect.objectContaining({ id: "orchestration-plan" }),
-      expect.objectContaining({ id: "runtime-file" }),
-    ]));
+    expect(pendingMessages[0].streamState.activity).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "shared-stage",
+          text: "Writing runtime files...",
+        }),
+        expect.objectContaining({ id: "orchestration-plan" }),
+        expect.objectContaining({ id: "runtime-file" }),
+      ])
+    );
   });
 
   test("nudges sign-in instead of submitting when a signed-out user enters a prompt", async () => {
     const onSignInNudge = jest.fn();
 
-    const { result } = renderHook(() =>
-      useUnifiedChat(null, {}, jest.fn(), jest.fn(), { onSignInNudge })
-    );
+    const { result } = renderHook(() => useUnifiedChat(null, {}, jest.fn(), jest.fn(), { onSignInNudge }));
 
     await act(async () => {
       await result.current.handleSubmit("Build a lobby system", []);
@@ -273,15 +300,17 @@ describe("useUnifiedChat", () => {
     FEATURE_FLAGS.unifiedAgent = true;
     getStudioEnabledPreference.mockReturnValue(true);
     getStudioStatus.mockResolvedValue({
-      sessions: [{
-        id: "mcp_exact",
-        connectionType: "mcp_local",
-        status: "connected",
-        live: true,
-        connectorLive: true,
-        mcpServerAvailable: true,
-        capabilities: { readProject: true },
-      }],
+      sessions: [
+        {
+          id: "mcp_exact",
+          connectionType: "mcp_local",
+          status: "connected",
+          live: true,
+          connectorLive: true,
+          mcpServerAvailable: true,
+          capabilities: { readProject: true },
+        },
+      ],
     });
     const setPendingForChat = jest.fn();
     useAiChat.mockReturnValue({
@@ -298,7 +327,8 @@ describe("useUnifiedChat", () => {
       setPendingForChat,
     });
     const reader = {
-      read: jest.fn()
+      read: jest
+        .fn()
         .mockResolvedValueOnce({
           done: false,
           value: Uint8Array.from(Array.from("Studio answer").map((character) => character.charCodeAt(0))),
@@ -309,26 +339,31 @@ describe("useUnifiedChat", () => {
       ok: true,
       body: { getReader: () => reader },
     });
-    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const user = {
+      uid: "user-1",
+      getIdToken: jest.fn().mockResolvedValue("token"),
+    };
 
-    const { result } = renderHook(() =>
-      useUnifiedChat(user, {}, jest.fn(), jest.fn())
-    );
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
 
     await act(async () => {
-      await result.current.handleSubmit("What does Main do?", [], null, { mode: "ask" });
+      await result.current.handleSubmit("What does Main do?", [], null, {
+        mode: "ask",
+      });
     });
 
     const request = JSON.parse(global.fetch.mock.calls[0][1].body);
-    expect(request).toEqual(expect.objectContaining({
-      studioEnabled: true,
-      studioSessionId: "mcp_exact",
-      studioConnectionType: "mcp_local",
-    }));
+    expect(request).toEqual(
+      expect.objectContaining({
+        studioEnabled: true,
+        studioSessionId: "mcp_exact",
+        studioConnectionType: "mcp_local",
+      })
+    );
     expect(setPendingForChat).toHaveBeenCalled();
-    expect(setDoc.mock.calls.some(([, payload]) => (
-      payload?.role === "assistant" && payload?.content === "Studio answer"
-    ))).toBe(true);
+    expect(
+      setDoc.mock.calls.some(([, payload]) => payload?.role === "assistant" && payload?.content === "Studio answer")
+    ).toBe(true);
     expect(createAgentRunV2).not.toHaveBeenCalled();
   });
 
@@ -349,9 +384,18 @@ describe("useUnifiedChat", () => {
     });
     orchestrate.mockResolvedValue({
       status: "needs_clarification",
-      questions: [{ id: "scope", question: "Keep the current UI?", options: ["Yes", "No"] }],
+      questions: [
+        {
+          id: "scope",
+          question: "Keep the current UI?",
+          options: ["Yes", "No"],
+        },
+      ],
     });
-    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const user = {
+      uid: "user-1",
+      getIdToken: jest.fn().mockResolvedValue("token"),
+    };
     const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
 
     await act(async () => {
@@ -362,15 +406,17 @@ describe("useUnifiedChat", () => {
       });
     });
 
-    expect(orchestrate).toHaveBeenCalledWith(expect.objectContaining({
-      prompt: "Fix the inventory bug",
-      mode: "plan",
-      projectId: "project-1",
-      templateId: "fix_bug",
-    }));
-    expect(setDoc.mock.calls.some(([, payload]) => (
-      payload?.stage === "clarify" && payload?.templateId === "fix_bug"
-    ))).toBe(true);
+    expect(orchestrate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: "Fix the inventory bug",
+        mode: "plan",
+        projectId: "project-1",
+        templateId: "fix_bug",
+      })
+    );
+    expect(
+      setDoc.mock.calls.some(([, payload]) => payload?.stage === "clarify" && payload?.templateId === "fix_bug")
+    ).toBe(true);
   });
 
   test("routes approval language through the exact structured plan execution command", async () => {
@@ -386,17 +432,19 @@ describe("useUnifiedChat", () => {
       generationStage: "",
       handleSubmit: chatHandleSubmit,
       isGenerating: false,
-      messages: [{
-        id: "plan-message-1",
-        role: "assistant",
-        stage: "plan",
-        planId: "plan-1",
-        planVersion: 4,
-        planHash: "hash-4",
-        projectId: "project-1",
-        classification: "script",
-        originPrompt: "Build inventory",
-      }],
+      messages: [
+        {
+          id: "plan-message-1",
+          role: "assistant",
+          stage: "plan",
+          planId: "plan-1",
+          planVersion: 4,
+          planHash: "hash-4",
+          projectId: "project-1",
+          classification: "script",
+          originPrompt: "Build inventory",
+        },
+      ],
       openChatById: jest.fn(),
       pendingMessage: null,
       setPendingForChat: jest.fn(),
@@ -410,7 +458,10 @@ describe("useUnifiedChat", () => {
         hash: "hash-4",
       },
     });
-    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const user = {
+      uid: "user-1",
+      getIdToken: jest.fn().mockResolvedValue("token"),
+    };
     const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
 
     await act(async () => {
@@ -458,7 +509,10 @@ describe("useUnifiedChat", () => {
       aiSteps: ["Step 1"],
       aiAssumptions: [],
     });
-    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const user = {
+      uid: "user-1",
+      getIdToken: jest.fn().mockResolvedValue("token"),
+    };
     const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
 
     await act(async () => {
@@ -470,16 +524,18 @@ describe("useUnifiedChat", () => {
           requestMode: "plan",
           targeting: { projectId: "stale-project" },
         },
-        { implementation_intent: "Implement it" },
+        { implementation_intent: "Implement it" }
       );
     });
 
     expect(getProjectBinding).toHaveBeenCalledWith("stale-project");
-    expect(orchestrate).toHaveBeenCalledWith(expect.objectContaining({
-      prompt: "Build a shop",
-      projectId: null,
-      targeting: expect.objectContaining({ projectId: null }),
-    }));
+    expect(orchestrate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: "Build a shop",
+        projectId: null,
+        targeting: expect.objectContaining({ projectId: null }),
+      })
+    );
   });
 
   test("keeps Ask available when the optional runtime projection is disconnected", async () => {
@@ -500,7 +556,8 @@ describe("useUnifiedChat", () => {
       setPendingForChat,
     });
     const reader = {
-      read: jest.fn()
+      read: jest
+        .fn()
         .mockResolvedValueOnce({
           done: false,
           value: Uint8Array.from(Array.from("Read-only answer").map((character) => character.charCodeAt(0))),
@@ -511,13 +568,14 @@ describe("useUnifiedChat", () => {
       ok: true,
       body: { getReader: () => reader },
     });
-    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const user = {
+      uid: "user-1",
+      getIdToken: jest.fn().mockResolvedValue("token"),
+    };
     const consoleWarn = jest.spyOn(console, "warn").mockImplementation(() => {});
 
     try {
-      const { result } = renderHook(() =>
-        useUnifiedChat(user, {}, jest.fn(), jest.fn())
-      );
+      const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
 
       await act(async () => {
         await result.current.handleSubmit("Explain this architecture", [], null, { mode: "ask" });
@@ -552,7 +610,8 @@ describe("useUnifiedChat", () => {
       setPendingForChat,
     });
     const reader = {
-      read: jest.fn()
+      read: jest
+        .fn()
         .mockResolvedValueOnce({
           done: false,
           value: Uint8Array.from(Array.from("Projectless answer").map((character) => character.charCodeAt(0))),
@@ -563,45 +622,41 @@ describe("useUnifiedChat", () => {
       ok: true,
       body: { getReader: () => reader },
     });
-    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const user = {
+      uid: "user-1",
+      getIdToken: jest.fn().mockResolvedValue("token"),
+    };
     const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
 
     await act(async () => {
-      await result.current.handleSubmit("Explain RemoteEvents", [], null, { mode: "agent" });
+      await result.current.handleSubmit("Explain RemoteEvents", [], null, {
+        mode: "agent",
+      });
     });
 
     expect(global.fetch).toHaveBeenCalledWith(
       expect.stringContaining("/api/ai/chat"),
       expect.objectContaining({ method: "POST" })
     );
-    expect(JSON.parse(global.fetch.mock.calls[0][1].body)).toEqual(expect.objectContaining({
-      studioEnabled: false,
-      studioSessionId: null,
-      studioConnectionType: null,
-    }));
+    expect(JSON.parse(global.fetch.mock.calls[0][1].body)).toEqual(
+      expect.objectContaining({
+        studioEnabled: false,
+        studioSessionId: null,
+        studioConnectionType: null,
+      })
+    );
     expect(getStudioStatus).not.toHaveBeenCalled();
     expect(setDoc.mock.calls.some(([, payload]) => payload?.content === "Projectless answer")).toBe(true);
     expect(chatHandleSubmit).not.toHaveBeenCalled();
     expect(createAgentRunV2).not.toHaveBeenCalled();
   });
 
-  test("sends conversational Agent prompts to the authoritative backend decision service", async () => {
+  test("keeps conversational Agent prompts read-only even with a selected project", async () => {
     FEATURE_FLAGS.unifiedAgent = true;
     getStudioEnabledPreference.mockReturnValue(true);
     classifyUserIntent.mockReturnValue("GENERAL_QUESTION");
     isImplementationIntent.mockReturnValue(false);
-    classifyExecutionIntent.mockReturnValue("inspect");
-    getStudioStatus.mockResolvedValue({
-      sessions: [{
-        id: "mcp_agent_exact",
-        connectionType: "mcp_local",
-        status: "connected",
-        live: true,
-        connectorLive: true,
-        mcpServerAvailable: true,
-        capabilities: { readProject: true },
-      }],
-    });
+    explicitlyDisablesStudioContext.mockReturnValue(true);
     const setPendingForChat = jest.fn();
     useAiChat.mockReturnValue({
       activeMode: "agent",
@@ -616,12 +671,25 @@ describe("useUnifiedChat", () => {
       pendingMessage: null,
       setPendingForChat,
     });
-    global.fetch = jest.fn();
-    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const reader = {
+      read: jest
+        .fn()
+        .mockResolvedValueOnce({
+          done: false,
+          value: Uint8Array.from(Array.from("Project answer").map((character) => character.charCodeAt(0))),
+        })
+        .mockResolvedValueOnce({ done: true, value: undefined }),
+    };
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      body: { getReader: () => reader },
+    });
+    const user = {
+      uid: "user-1",
+      getIdToken: jest.fn().mockResolvedValue("token"),
+    };
 
-    const { result } = renderHook(() =>
-      useUnifiedChat(user, {}, jest.fn(), jest.fn())
-    );
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
 
     await act(async () => {
       await result.current.handleSubmit("What files can you see in Studio?", [], null, {
@@ -631,20 +699,18 @@ describe("useUnifiedChat", () => {
       });
     });
 
-    expect(createAgentRunV2).toHaveBeenCalledWith(expect.objectContaining({
-      mode: "agent",
-      prompt: "What files can you see in Studio?",
-      studioEnabled: true,
-      executionIntent: "inspect",
-    }));
-    const canonicalRunInput = createAgentRunV2.mock.calls[0][0];
-    expect(canonicalRunInput).not.toHaveProperty("studioSessionId");
-    expect(canonicalRunInput).not.toHaveProperty("studioConnectionType");
-    expect(canonicalRunInput.signal).toBeInstanceOf(AbortSignal);
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/ai/chat"),
+      expect.objectContaining({ method: "POST" })
+    );
+    expect(JSON.parse(global.fetch.mock.calls[0][1].body)).toEqual(
+      expect.objectContaining({ projectId: "project_1", studioEnabled: false })
+    );
+    expect(createAgentRunV2).not.toHaveBeenCalled();
     expect(getStudioStatus).not.toHaveBeenCalled();
-    expect(global.fetch).not.toHaveBeenCalled();
     expect(orchestrate).not.toHaveBeenCalled();
-    expect(chatHandleSubmit).toHaveBeenCalledTimes(1);
+    expect(chatHandleSubmit).not.toHaveBeenCalled();
+    expect(setDoc.mock.calls.some(([, payload]) => payload?.content === "Project answer")).toBe(true);
   });
 
   test("passes task intake candidates only to direct implementation generation", async () => {
@@ -667,25 +733,28 @@ describe("useUnifiedChat", () => {
       pendingMessage: null,
       setPendingForChat: jest.fn(),
     });
-    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const user = {
+      uid: "user-1",
+      getIdToken: jest.fn().mockResolvedValue("token"),
+    };
 
-    const { result } = renderHook(() =>
-      useUnifiedChat(user, {}, jest.fn(), jest.fn())
-    );
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
 
     await act(async () => {
       await result.current.handleSubmit("Build a lobby system", [], null, taskOptions);
     });
 
     expect(chatHandleSubmit).toHaveBeenCalledTimes(1);
-    expect(createAgentRunV2).toHaveBeenCalledWith(expect.objectContaining({
-      chatId: "chat-1",
-      agentId: "agent-1",
-      idempotencyKey: expect.stringMatching(/^run-/),
-      mode: "agent",
-      projectId: "project_1",
-      prompt: "Build a lobby system",
-    }));
+    expect(createAgentRunV2).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chatId: "chat-1",
+        agentId: "agent-1",
+        idempotencyKey: expect.stringMatching(/^run-/),
+        mode: "agent",
+        projectId: "project_1",
+        prompt: "Build a lobby system",
+      })
+    );
     expect(chatHandleSubmit).toHaveBeenCalledWith(
       "Build a lobby system",
       "chat-1",
@@ -701,7 +770,7 @@ describe("useUnifiedChat", () => {
           executionDisposition: "launched",
           run: expect.objectContaining({ runId: "run-1", jobId: "job-1" }),
         }),
-      }),
+      })
     );
     expect(orchestrate).not.toHaveBeenCalled();
   });
@@ -718,18 +787,24 @@ describe("useUnifiedChat", () => {
       isGenerating: false,
       messages: [
         { role: "user", content: priorRequest },
-        { role: "assistant", content: "Could you clarify the flight controls?" },
+        {
+          role: "assistant",
+          content: "Could you clarify the flight controls?",
+        },
       ],
       openChatById: jest.fn(),
       pendingMessage: null,
       setPendingForChat: jest.fn(),
     });
     isExplicitPlanApproval.mockImplementation((value) => String(value).trim() === "just start");
-    classifyUserIntent.mockImplementation((value) => (
+    classifyUserIntent.mockImplementation((value) =>
       String(value).includes("Build a fly GUI") ? "BUILD_REQUEST" : "CONTINUATION"
-    ));
+    );
     isImplementationIntent.mockReturnValue(true);
-    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const user = {
+      uid: "user-1",
+      getIdToken: jest.fn().mockResolvedValue("token"),
+    };
     const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
 
     await act(async () => {
@@ -743,12 +818,12 @@ describe("useUnifiedChat", () => {
       "Implement the following request now. Infer safe defaults instead of asking optional questions:",
       priorRequest,
     ].join("\n\n");
-    expect(createAgentRunV2).toHaveBeenCalledWith(expect.objectContaining({
-      prompt: expectedPrompt,
-      conversation: expect.arrayContaining([
-        expect.objectContaining({ role: "user", content: priorRequest }),
-      ]),
-    }));
+    expect(createAgentRunV2).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: expectedPrompt,
+        conversation: expect.arrayContaining([expect.objectContaining({ role: "user", content: priorRequest })]),
+      })
+    );
     expect(chatHandleSubmit).toHaveBeenCalledWith(
       expectedPrompt,
       "chat-1",
@@ -757,11 +832,11 @@ describe("useUnifiedChat", () => {
       true,
       [],
       null,
-      expect.objectContaining({ projectId: "project_1" }),
+      expect.objectContaining({ projectId: "project_1" })
     );
-    expect(setDoc.mock.calls.some(([, payload]) => (
-      payload?.role === "user" && payload?.content === "just start"
-    ))).toBe(true);
+    expect(setDoc.mock.calls.some(([, payload]) => payload?.role === "user" && payload?.content === "just start")).toBe(
+      true
+    );
   });
 
   test("uses legacy execution when canonical intake reports the legacy runtime owner", async () => {
@@ -778,21 +853,21 @@ describe("useUnifiedChat", () => {
       pendingMessage: null,
       setPendingForChat: jest.fn(),
     });
-    createAgentRunV2.mockRejectedValueOnce(Object.assign(
-      new Error("Canonical task intake is disabled while the legacy runtime owns execution."),
-      {
+    createAgentRunV2.mockRejectedValueOnce(
+      Object.assign(new Error("Canonical task intake is disabled while the legacy runtime owns execution."), {
         status: 503,
         payload: {
           code: "CAPABILITY_UNSUPPORTED",
           details: { runtimeOwner: "legacy_agent_adapter" },
         },
-      }
-    ));
-    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
-
-    const { result } = renderHook(() =>
-      useUnifiedChat(user, {}, jest.fn(), jest.fn())
+      })
     );
+    const user = {
+      uid: "user-1",
+      getIdToken: jest.fn().mockResolvedValue("token"),
+    };
+
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
 
     await act(async () => {
       await result.current.handleSubmit("Build a lobby system", [], null, {
@@ -831,17 +906,20 @@ describe("useUnifiedChat", () => {
       pendingMessage: null,
       setPendingForChat: jest.fn(),
     });
-    createAgentRunV2.mockRejectedValueOnce(Object.assign(new Error("Runtime unavailable"), {
-      status: 503,
-      payload: { code: "SERVICE_UNAVAILABLE", details: {} },
-    }));
-    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    createAgentRunV2.mockRejectedValueOnce(
+      Object.assign(new Error("Runtime unavailable"), {
+        status: 503,
+        payload: { code: "SERVICE_UNAVAILABLE", details: {} },
+      })
+    );
+    const user = {
+      uid: "user-1",
+      getIdToken: jest.fn().mockResolvedValue("token"),
+    };
     const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
 
     try {
-      const { result } = renderHook(() =>
-        useUnifiedChat(user, {}, jest.fn(), notify)
-      );
+      const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), notify));
 
       await act(async () => {
         await result.current.handleSubmit("Build a lobby system", [], null, {
@@ -854,7 +932,10 @@ describe("useUnifiedChat", () => {
     }
 
     expect(chatHandleSubmit).not.toHaveBeenCalled();
-    expect(notify).toHaveBeenCalledWith({ message: "Runtime unavailable", type: "error" });
+    expect(notify).toHaveBeenCalledWith({
+      message: "Runtime unavailable",
+      type: "error",
+    });
   });
 
   test("uses the natural-identity resolver once when a chat changes project binding", async () => {
@@ -875,11 +956,12 @@ describe("useUnifiedChat", () => {
       agent: { agentId: "agent-2", chatId: "chat-1", projectId: "project_2" },
       resolution: "created",
     });
-    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const user = {
+      uid: "user-1",
+      getIdToken: jest.fn().mockResolvedValue("token"),
+    };
 
-    const { result } = renderHook(() =>
-      useUnifiedChat(user, {}, jest.fn(), jest.fn())
-    );
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
 
     await act(async () => {
       await result.current.handleSubmit("Build a lobby system", [], null, {
@@ -894,10 +976,12 @@ describe("useUnifiedChat", () => {
       storedAgentId: undefined,
       allowLegacyCreate: false,
     });
-    expect(createAgentRunV2).toHaveBeenCalledWith(expect.objectContaining({
-      agentId: "agent-2",
-      projectId: "project_2",
-    }));
+    expect(createAgentRunV2).toHaveBeenCalledWith(
+      expect.objectContaining({
+        agentId: "agent-2",
+        projectId: "project_2",
+      })
+    );
   });
 
   test("routes directly to legacy generation when capabilities name the legacy owner", async () => {
@@ -919,7 +1003,10 @@ describe("useUnifiedChat", () => {
       pendingMessage: null,
       setPendingForChat: jest.fn(),
     });
-    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const user = {
+      uid: "user-1",
+      getIdToken: jest.fn().mockResolvedValue("token"),
+    };
     const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
 
     await act(async () => {
@@ -959,16 +1046,21 @@ describe("useUnifiedChat", () => {
       messages: [],
       setPendingForChat: jest.fn(),
     });
-    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const user = {
+      uid: "user-1",
+      getIdToken: jest.fn().mockResolvedValue("token"),
+    };
     const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
 
-    await expect(act(async () => {
-      await result.current.handleSubmit("Inspect the current Studio project", [], null, {
-        clientMessageId: "request-live-inspect",
-        projectId: "project_1",
-        propagateErrors: true,
-      });
-    })).rejects.toMatchObject({ code: "STUDIO_LIVE_RUNTIME_REQUIRED" });
+    await expect(
+      act(async () => {
+        await result.current.handleSubmit("Inspect the current Studio project", [], null, {
+          clientMessageId: "request-live-inspect",
+          projectId: "project_1",
+          propagateErrors: true,
+        });
+      })
+    ).rejects.toMatchObject({ code: "STUDIO_LIVE_RUNTIME_REQUIRED" });
 
     expect(chatHandleSubmit).not.toHaveBeenCalled();
     expect(createAgentRunV2).not.toHaveBeenCalled();
@@ -996,7 +1088,8 @@ describe("useUnifiedChat", () => {
       setPendingForChat,
     });
     const reader = {
-      read: jest.fn()
+      read: jest
+        .fn()
         .mockResolvedValueOnce({
           done: false,
           value: Uint8Array.from(Array.from("Projectless answer").map((character) => character.charCodeAt(0))),
@@ -1007,22 +1100,29 @@ describe("useUnifiedChat", () => {
       ok: true,
       body: { getReader: () => reader },
     });
-    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const user = {
+      uid: "user-1",
+      getIdToken: jest.fn().mockResolvedValue("token"),
+    };
     const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
 
     await act(async () => {
-      await result.current.handleSubmit("Explain RemoteEvents", [], null, { mode: "agent" });
+      await result.current.handleSubmit("Explain RemoteEvents", [], null, {
+        mode: "agent",
+      });
     });
 
     expect(global.fetch).toHaveBeenCalledWith(
       expect.stringContaining("/api/ai/chat"),
       expect.objectContaining({ method: "POST" })
     );
-    expect(JSON.parse(global.fetch.mock.calls[0][1].body)).toEqual(expect.objectContaining({
-      studioEnabled: false,
-      studioSessionId: null,
-      studioConnectionType: null,
-    }));
+    expect(JSON.parse(global.fetch.mock.calls[0][1].body)).toEqual(
+      expect.objectContaining({
+        studioEnabled: false,
+        studioSessionId: null,
+        studioConnectionType: null,
+      })
+    );
     expect(getStudioStatus).not.toHaveBeenCalled();
     expect(setDoc.mock.calls.some(([, payload]) => payload?.content === "Projectless answer")).toBe(true);
     expect(chatHandleSubmit).not.toHaveBeenCalled();
@@ -1033,7 +1133,10 @@ describe("useUnifiedChat", () => {
     classifyExecutionIntent.mockReturnValue("live_fix");
     getStudioEnabledPreference.mockReturnValue(true);
     getStudioApplyMode.mockReturnValue("manual_review");
-    const baseArtifact = { artifactId: "artifact-1", files: [{ path: "src/Main.lua" }] };
+    const baseArtifact = {
+      artifactId: "artifact-1",
+      files: [{ path: "src/Main.lua" }],
+    };
     useAiChat.mockReturnValue({
       activeMode: "agent",
       assertCanWrite: jest.fn(() => Promise.resolve()),
@@ -1059,7 +1162,10 @@ describe("useUnifiedChat", () => {
       useExamples: true,
       selectedExampleIds: ["example-1"],
     };
-    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const user = {
+      uid: "user-1",
+      getIdToken: jest.fn().mockResolvedValue("token"),
+    };
     const studioTarget = {
       targetId: "studio_target_live",
       placeId: "116714509720053",
@@ -1092,36 +1198,38 @@ describe("useUnifiedChat", () => {
       });
     });
 
-    expect(createAgentRunV2).toHaveBeenCalledWith(expect.objectContaining({
-      chatId: "chat-1",
-      agentId: "agent-1",
-      prompt: "Fix the round manager",
-      mode: "debug",
-      projectId: "project_1",
-      generatorMode: "agent_build",
-      executionIntent: "live_fix",
-      studioEnabled: true,
-      studioTarget,
-      targeting: expect.objectContaining({
+    expect(createAgentRunV2).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chatId: "chat-1",
+        agentId: "agent-1",
+        prompt: "Fix the round manager",
+        mode: "debug",
         projectId: "project_1",
-        studioConnected: true,
+        generatorMode: "agent_build",
+        executionIntent: "live_fix",
+        studioEnabled: true,
         studioTarget,
-      }),
-      applyMode: "manual_review",
-      routingMode: "hybrid",
-      autoPushToStudio: true,
-      autoPushPolicy: "manual_only",
-      chatMode: "debug",
-      settings: expect.objectContaining({
-        modelVersion: "nexus-free-auto",
-        gameSpec: "Round-based game",
-        studioAutoPushEnabled: true,
-      }),
-      conversation: [expect.objectContaining({ role: "assistant" })],
-      baseArtifact,
-      approvedPlan: { planId: "plan-1", version: 2, hash: "plan-hash" },
-      selectedExampleIds: ["example-1"],
-    }));
+        targeting: expect.objectContaining({
+          projectId: "project_1",
+          studioConnected: true,
+          studioTarget,
+        }),
+        applyMode: "manual_review",
+        routingMode: "hybrid",
+        autoPushToStudio: true,
+        autoPushPolicy: "manual_only",
+        chatMode: "debug",
+        settings: expect.objectContaining({
+          modelVersion: "nexus-free-auto",
+          gameSpec: "Round-based game",
+          studioAutoPushEnabled: true,
+        }),
+        conversation: [expect.objectContaining({ role: "assistant" })],
+        baseArtifact,
+        approvedPlan: { planId: "plan-1", version: 2, hash: "plan-hash" },
+        selectedExampleIds: ["example-1"],
+      })
+    );
     const canonicalRunInput = createAgentRunV2.mock.calls[0][0];
     expect(canonicalRunInput).not.toHaveProperty("studioSessionId");
     expect(canonicalRunInput).not.toHaveProperty("studioConnectionType");
@@ -1154,7 +1262,10 @@ describe("useUnifiedChat", () => {
       pendingMessage: null,
       setPendingForChat: jest.fn(),
     });
-    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const user = {
+      uid: "user-1",
+      getIdToken: jest.fn().mockResolvedValue("token"),
+    };
     const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
 
     await act(async () => {
@@ -1166,24 +1277,36 @@ describe("useUnifiedChat", () => {
 
     expect(createAgentRunV2).toHaveBeenCalledTimes(1);
     expect(chatHandleSubmit).toHaveBeenCalledTimes(1);
-    expect(chatHandleSubmit.mock.calls[0][7]).toEqual(expect.objectContaining({
-      authoritativeRun: expect.objectContaining({
-        executionDisposition: "queued",
-        run: expect.objectContaining({ runId: "run-queued", jobId: null }),
-      }),
-    }));
+    expect(chatHandleSubmit.mock.calls[0][7]).toEqual(
+      expect.objectContaining({
+        authoritativeRun: expect.objectContaining({
+          executionDisposition: "queued",
+          run: expect.objectContaining({ runId: "run-queued", jobId: null }),
+        }),
+      })
+    );
   });
 
   test("retry rewind truncates after the user turn and does not write a duplicate user message", async () => {
     const rewindTranscript = jest.fn().mockResolvedValue({
       kept: [
-        { id: "u1", role: "user", content: "Build a lobby system", createdAt: 1 },
+        {
+          id: "u1",
+          role: "user",
+          content: "Build a lobby system",
+          createdAt: 1,
+        },
       ],
       removed: [
         { id: "a1", role: "assistant", content: "Done", createdAt: 2 },
         { id: "u2", role: "user", content: "Also add shops", createdAt: 3 },
       ],
-      pivot: { id: "u1", role: "user", content: "Build a lobby system", createdAt: 1 },
+      pivot: {
+        id: "u1",
+        role: "user",
+        content: "Build a lobby system",
+        createdAt: 1,
+      },
       mode: "after",
     });
     useAiChat.mockReturnValue({
@@ -1195,7 +1318,12 @@ describe("useUnifiedChat", () => {
       handleSubmit: chatHandleSubmit,
       isGenerating: false,
       messages: [
-        { id: "u1", role: "user", content: "Build a lobby system", createdAt: 1 },
+        {
+          id: "u1",
+          role: "user",
+          content: "Build a lobby system",
+          createdAt: 1,
+        },
         { id: "a1", role: "assistant", content: "Done", createdAt: 2 },
         { id: "u2", role: "user", content: "Also add shops", createdAt: 3 },
       ],
@@ -1204,7 +1332,10 @@ describe("useUnifiedChat", () => {
       setPendingForChat: jest.fn(),
       rewindTranscript,
     });
-    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const user = {
+      uid: "user-1",
+      getIdToken: jest.fn().mockResolvedValue("token"),
+    };
     const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
 
     await act(async () => {
@@ -1217,10 +1348,12 @@ describe("useUnifiedChat", () => {
 
     expect(rewindTranscript).toHaveBeenCalledWith("u1", "after");
     expect(setDoc.mock.calls.some(([, payload]) => payload?.role === "user")).toBe(false);
-    expect(createAgentRunV2).toHaveBeenCalledWith(expect.objectContaining({
-      prompt: "Build a lobby system",
-      conversation: [],
-    }));
+    expect(createAgentRunV2).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: "Build a lobby system",
+        conversation: [],
+      })
+    );
     expect(chatHandleSubmit).toHaveBeenCalledTimes(1);
   });
 
@@ -1228,10 +1361,20 @@ describe("useUnifiedChat", () => {
     const rewindTranscript = jest.fn().mockResolvedValue({
       kept: [],
       removed: [
-        { id: "u1", role: "user", content: "Build a lobby system", createdAt: 1 },
+        {
+          id: "u1",
+          role: "user",
+          content: "Build a lobby system",
+          createdAt: 1,
+        },
         { id: "a1", role: "assistant", content: "Done", createdAt: 2 },
       ],
-      pivot: { id: "u1", role: "user", content: "Build a lobby system", createdAt: 1 },
+      pivot: {
+        id: "u1",
+        role: "user",
+        content: "Build a lobby system",
+        createdAt: 1,
+      },
       mode: "replace",
     });
     useAiChat.mockReturnValue({
@@ -1243,7 +1386,12 @@ describe("useUnifiedChat", () => {
       handleSubmit: chatHandleSubmit,
       isGenerating: false,
       messages: [
-        { id: "u1", role: "user", content: "Build a lobby system", createdAt: 1 },
+        {
+          id: "u1",
+          role: "user",
+          content: "Build a lobby system",
+          createdAt: 1,
+        },
         { id: "a1", role: "assistant", content: "Done", createdAt: 2 },
       ],
       openChatById: jest.fn(),
@@ -1251,7 +1399,10 @@ describe("useUnifiedChat", () => {
       setPendingForChat: jest.fn(),
       rewindTranscript,
     });
-    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const user = {
+      uid: "user-1",
+      getIdToken: jest.fn().mockResolvedValue("token"),
+    };
     const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
 
     await act(async () => {
@@ -1263,20 +1414,24 @@ describe("useUnifiedChat", () => {
     });
 
     expect(rewindTranscript).toHaveBeenCalledWith("u1", "replace");
-    expect(setDoc.mock.calls.some(([, payload]) => (
-      payload?.role === "user" && payload?.content === "Build a better lobby"
-    ))).toBe(true);
-    expect(createAgentRunV2).toHaveBeenCalledWith(expect.objectContaining({
-      prompt: "Build a better lobby",
-      conversation: [],
-    }));
+    expect(
+      setDoc.mock.calls.some(([, payload]) => payload?.role === "user" && payload?.content === "Build a better lobby")
+    ).toBe(true);
+    expect(createAgentRunV2).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: "Build a better lobby",
+        conversation: [],
+      })
+    );
   });
 
   test("publishes a run id accepted during an early Stop before throwing the local abort", async () => {
     let resolveRun;
-    createAgentRunV2.mockReturnValueOnce(new Promise((resolve) => {
-      resolveRun = resolve;
-    }));
+    createAgentRunV2.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveRun = resolve;
+      })
+    );
     useAiChat.mockReturnValue({
       activeMode: "agent",
       assertCanWrite: jest.fn(() => Promise.resolve()),
@@ -1291,7 +1446,10 @@ describe("useUnifiedChat", () => {
       pendingMessage: null,
       setPendingForChat: jest.fn(),
     });
-    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const user = {
+      uid: "user-1",
+      getIdToken: jest.fn().mockResolvedValue("token"),
+    };
     const controller = new AbortController();
     const onRunId = jest.fn();
     const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
@@ -1308,7 +1466,9 @@ describe("useUnifiedChat", () => {
       });
     });
     while (!createAgentRunV2.mock.calls.length) {
-      await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
     }
 
     controller.abort();

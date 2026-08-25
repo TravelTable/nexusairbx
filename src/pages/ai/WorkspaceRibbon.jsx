@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ClipboardList, ListChecks, Menu, Pencil } from "lib/icons";
+import { ChevronDown, ClipboardList, Menu, Pencil } from "lib/icons";
 import UniversalWorkspaceRibbon from "../../components/universal/WorkspaceRibbon";
 import "./WorkspaceRibbon.css";
 
@@ -22,16 +22,14 @@ export default function WorkspaceRibbon({
   navigationButtonRef = null,
   onToggleNavigation,
   onRenameChat,
-  onOpenPlan,
+  onChangeProject,
   onOpenEvidence,
   evidenceOpen = false,
   evidenceCount = 0,
   evidenceButtonRef = null,
 }) {
-  const visibleProjectTitle =
-    mode === "script" ? "Quick Script" : projectTitle || "Workspace";
-  const visibleChatTitle =
-    mode === "script" ? "Untitled script" : chatTitle || "New chat";
+  const visibleProjectTitle = projectTitle || "Choose game";
+  const visibleChatTitle = chatTitle || "New chat";
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(chatTitle || "New chat");
   const inputRef = useRef(null);
@@ -72,10 +70,17 @@ export default function WorkspaceRibbon({
               <span>Projects</span>
             </button>
           ) : null}
-          <div className="ai-workspace-ribbon__project" title={projectTitle}>
-            <span className="ai-workspace-ribbon__project-name">
-              {visibleProjectTitle}
-            </span>
+          <div className="ai-workspace-ribbon__project">
+            <button
+              type="button"
+              className="ai-workspace-ribbon__project-switch focus-ring"
+              onClick={onChangeProject}
+              title="Change game"
+              aria-label={`Change game. Current game: ${visibleProjectTitle}`}
+            >
+              <span className="ai-workspace-ribbon__project-name">{visibleProjectTitle}</span>
+              <ChevronDown aria-hidden="true" />
+            </button>
             <i aria-hidden="true">/</i>
             {editing ? (
               <input
@@ -105,15 +110,8 @@ export default function WorkspaceRibbon({
                 <Pencil aria-hidden="true" />
               </button>
             ) : (
-              <strong className="ai-workspace-ribbon__static-title">
-                {visibleChatTitle}
-              </strong>
+              <strong className="ai-workspace-ribbon__static-title">{visibleChatTitle}</strong>
             )}
-            {mode !== "script" ? (
-              <span className="ai-workspace-ribbon__mode-badge">
-                {mode === "agent" ? "Agent build" : "Asset request"}
-              </span>
-            ) : null}
           </div>
         </>
       }
@@ -135,14 +133,6 @@ export default function WorkspaceRibbon({
             </button>
             <button
               type="button"
-              data-active={mode === "script" ? "true" : "false"}
-              aria-pressed={mode === "script"}
-              onClick={() => onModeChange("script")}
-            >
-              Script
-            </button>
-            <button
-              type="button"
               data-active={mode === "asset" ? "true" : "false"}
               aria-pressed={mode === "asset"}
               onClick={() => onModeChange("asset")}
@@ -150,23 +140,10 @@ export default function WorkspaceRibbon({
               Asset
             </button>
           </div>
-          {modelControl ? (
-            <div className="ai-workspace-ribbon__model">{modelControl}</div>
-          ) : null}
+          {modelControl ? <div className="ai-workspace-ribbon__model">{modelControl}</div> : null}
           <div data-tour="studio-pair" className="ai-workspace-ribbon__studio">
             {studioControl}
           </div>
-          {mode === "agent" && onOpenPlan ? (
-            <button
-              type="button"
-              className="ai-workspace-ribbon__utility focus-ring"
-              onClick={onOpenPlan}
-              aria-label="Review plan"
-            >
-              <ListChecks aria-hidden="true" />
-              <span>Review</span>
-            </button>
-          ) : null}
           {mode === "agent" ? (
             <button
               ref={evidenceButtonRef}
@@ -188,11 +165,7 @@ export default function WorkspaceRibbon({
           ) : null}
           {isBusy ? (
             <span className="ai-workspace-ribbon__run" role="status">
-              <i
-                className="nx-build-signal"
-                data-active="true"
-                aria-hidden="true"
-              />
+              <i className="nx-build-signal" data-active="true" aria-hidden="true" />
               Building
             </span>
           ) : null}

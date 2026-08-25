@@ -1,20 +1,10 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import {
-  doc,
-  setDoc,
-  updateDoc,
-  serverTimestamp,
-} from "firebase/firestore";
+import { doc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import { BACKEND_URL } from "../config";
 import { v4 as uuidv4 } from "uuid";
 import { useAiChat } from "./useAiChat";
-import {
-  orchestrate,
-  approveWorkflowPlan,
-  getChatOperationStatus,
-  startPlanExecution,
-} from "../lib/workflowApi";
+import { orchestrate, approveWorkflowPlan, getChatOperationStatus, startPlanExecution } from "../lib/workflowApi";
 import { isExplicitPlanApproval } from "../lib/planApproval";
 import {
   classifyExecutionIntent,
@@ -22,11 +12,7 @@ import {
   explicitlyDisablesStudioContext,
   isImplementationIntent,
 } from "../lib/intentClassifier";
-import {
-  applyStreamActivity,
-  createPendingStreamState,
-  getPendingStreamSnapshot,
-} from "../lib/streaming";
+import { applyStreamActivity, createPendingStreamState, getPendingStreamSnapshot } from "../lib/streaming";
 import { stageSlug } from "../lib/streamEngagement";
 import { resolveGameSpecForPrompt } from "../lib/gameProfile";
 import { categorizePrompt, trackProductEvent } from "../lib/productAnalytics";
@@ -40,15 +26,8 @@ import {
   selectPluginStudioSession,
   STUDIO_CONNECTION_TYPES,
 } from "../lib/studioConnection";
-import {
-  describeChatAttachments,
-  messageToConversationEntry,
-  normalizeChatAttachments,
-} from "../lib/chatAttachments";
-import {
-  normalizeRewindMode,
-  shouldWriteUserMessageAfterRewind,
-} from "../lib/chatTranscriptRewind";
+import { describeChatAttachments, messageToConversationEntry, normalizeChatAttachments } from "../lib/chatAttachments";
+import { normalizeRewindMode, shouldWriteUserMessageAfterRewind } from "../lib/chatTranscriptRewind";
 import {
   AgentRuntimeUnavailableError,
   createAgentRunV2,
@@ -58,11 +37,7 @@ import {
   selectAgentRuntimeRoute,
 } from "../lib/agentRuntimeV2Api";
 import { reconcileAssistantTurns } from "../lib/assistantTurnIdentity";
-import {
-  getProjectBinding,
-  PROJECT_RESOLUTION_STATES,
-  projectBindingRecoveryMessage,
-} from "../lib/projectBindingsApi";
+import { getProjectBinding, PROJECT_RESOLUTION_STATES, projectBindingRecoveryMessage } from "../lib/projectBindingsApi";
 import {
   sanitizeChatWritePayload,
   sanitizeFirestoreValue,
@@ -72,8 +47,14 @@ import { normalizeRobloxPlaceId } from "../lib/robloxPlaceId";
 
 export function reconcileUnifiedPendingMessages(generationPending = [], orchestrationPending = []) {
   return reconcileAssistantTurns([
-    ...(generationPending || []).map((turn) => ({ turn, source: "generation" })),
-    ...(orchestrationPending || []).map((turn) => ({ turn, source: "orchestration" })),
+    ...(generationPending || []).map((turn) => ({
+      turn,
+      source: "generation",
+    })),
+    ...(orchestrationPending || []).map((turn) => ({
+      turn,
+      source: "orchestration",
+    })),
   ]);
 }
 
@@ -123,28 +104,26 @@ async function resolvePreferredStudioTarget(studioEnabled, preferredTarget = nul
   ).trim();
   const preferredPluginSessionId = String(preferredTarget?.pluginSessionId || "").trim();
   const preferredMcpSessionId = String(preferredTarget?.mcpSessionId || "").trim();
-  const eligibleSessions = preferredTargetId || preferredPluginSessionId || preferredMcpSessionId
-    ? sessions.filter((session) => {
-        const connectionType = getStudioConnectionType(session);
-        const sessionId = String(getStudioSessionId(session) || "").trim();
-        const explicitSessionId = connectionType === STUDIO_CONNECTION_TYPES.MCP_LOCAL
-          ? preferredMcpSessionId
-          : preferredPluginSessionId;
-        if (explicitSessionId) return explicitSessionId === sessionId;
-        const sessionTargetId = String(
-          session?.studioTargetId || session?.targetingTargetId || session?.studio?.targetId || ""
-        ).trim();
-        return Boolean(preferredTargetId && sessionTargetId === preferredTargetId);
-      })
-    : sessions;
+  const eligibleSessions =
+    preferredTargetId || preferredPluginSessionId || preferredMcpSessionId
+      ? sessions.filter((session) => {
+          const connectionType = getStudioConnectionType(session);
+          const sessionId = String(getStudioSessionId(session) || "").trim();
+          const explicitSessionId =
+            connectionType === STUDIO_CONNECTION_TYPES.MCP_LOCAL ? preferredMcpSessionId : preferredPluginSessionId;
+          if (explicitSessionId) return explicitSessionId === sessionId;
+          const sessionTargetId = String(
+            session?.studioTargetId || session?.targetingTargetId || session?.studio?.targetId || ""
+          ).trim();
+          return Boolean(preferredTargetId && sessionTargetId === preferredTargetId);
+        })
+      : sessions;
   const activeSession =
     selectMcpStudioSession(eligibleSessions, { capability: "readProject" }) ||
     selectPluginStudioSession(eligibleSessions, { compatibleOnly: true });
   return {
     studioSessionId: getStudioSessionId(activeSession),
-    studioConnectionType: activeSession
-      ? getStudioConnectionType(activeSession)
-      : null,
+    studioConnectionType: activeSession ? getStudioConnectionType(activeSession) : null,
   };
 }
 
@@ -219,9 +198,7 @@ function buildOrchestrationPending(state, stage, metadata = {}) {
 function buildRuntimeSettings(settings = {}, gameSpec = null) {
   const normalized = {
     modelVersion: String(settings?.modelVersion || ""),
-    creativity: Number.isFinite(Number(settings?.creativity))
-      ? Number(settings.creativity)
-      : 0.7,
+    creativity: Number.isFinite(Number(settings?.creativity)) ? Number(settings.creativity) : 0.7,
     codeStyle: String(settings?.codeStyle || "optimized"),
     verbosity: String(settings?.verbosity || "concise"),
     codingStandards: String(settings?.codingStandards || ""),
@@ -250,48 +227,42 @@ function normalizeApprovedPlanReference(value) {
 }
 
 function buildWorkflowTargeting(submissionOptions = {}, fallbackTargeting = {}) {
-  const supplied = submissionOptions?.targeting && typeof submissionOptions.targeting === "object"
-    ? submissionOptions.targeting
-    : {};
-  const fallback = fallbackTargeting && typeof fallbackTargeting === "object"
-    ? fallbackTargeting
-    : {};
-  const projectId = submissionOptions?.projectId
-    ?? supplied.projectId
-    ?? fallback.projectId
-    ?? null;
-  const studioTarget = submissionOptions?.studioTarget
-    ?? submissionOptions?.studioTargetPreference
-    ?? supplied.studioTarget
-    ?? fallback.studioTarget
-    ?? null;
-  const studioConnected = submissionOptions?.studioConnected
-    ?? supplied.studioConnected
-    ?? fallback.studioConnected
-    ?? false;
+  const supplied =
+    submissionOptions?.targeting && typeof submissionOptions.targeting === "object" ? submissionOptions.targeting : {};
+  const fallback = fallbackTargeting && typeof fallbackTargeting === "object" ? fallbackTargeting : {};
+  const projectId = submissionOptions?.projectId ?? supplied.projectId ?? fallback.projectId ?? null;
+  const studioTarget =
+    submissionOptions?.studioTarget ??
+    submissionOptions?.studioTargetPreference ??
+    supplied.studioTarget ??
+    fallback.studioTarget ??
+    null;
+  const studioConnected =
+    submissionOptions?.studioConnected ?? supplied.studioConnected ?? fallback.studioConnected ?? false;
   return {
     projectId: projectId == null || projectId === "" ? null : String(projectId),
     studioConnected: Boolean(studioConnected),
-    studioTarget: studioTarget && typeof studioTarget === "object"
-      ? {
-          ...studioTarget,
-          placeId: normalizeRobloxPlaceId(studioTarget.placeId ?? studioTarget.targetPlaceId),
-        }
-      : studioTarget,
+    studioTarget:
+      studioTarget && typeof studioTarget === "object"
+        ? {
+            ...studioTarget,
+            placeId: normalizeRobloxPlaceId(studioTarget.placeId ?? studioTarget.targetPlaceId),
+          }
+        : studioTarget,
   };
 }
 
 function runtimeAutoPushPolicy(settings = {}) {
   const policy = String(settings?.studioAutoPushPolicy || "").trim();
-  return policy === "after_validation" || policy === "after_playtest"
-    ? policy
-    : "manual_only";
+  return policy === "after_validation" || policy === "after_playtest" ? policy : "manual_only";
 }
 
 function isLegacyRuntimeOwnershipError(error) {
-  return error?.status === 503
-    && error?.payload?.code === "CAPABILITY_UNSUPPORTED"
-    && error?.payload?.details?.runtimeOwner === "legacy_agent_adapter";
+  return (
+    error?.status === 503 &&
+    error?.payload?.code === "CAPABILITY_UNSUPPORTED" &&
+    error?.payload?.details?.runtimeOwner === "legacy_agent_adapter"
+  );
 }
 
 function isAbortError(error) {
@@ -316,10 +287,7 @@ function throwIfAborted(signal) {
  */
 export function useUnifiedChat(user, settings, refreshBilling, notify, options = {}) {
   const { onSignInNudge, authReady = true } = options;
-  const effectiveGameSpec = useMemo(
-    () => resolveGameSpecForPrompt(settings?.gameSpec),
-    [settings?.gameSpec]
-  );
+  const effectiveGameSpec = useMemo(() => resolveGameSpecForPrompt(settings?.gameSpec), [settings?.gameSpec]);
 
   const chat = useAiChat(user, settings, refreshBilling, notify, { authReady });
 
@@ -363,14 +331,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       ...prev,
       [chatId]: {
         ...(prev[chatId] || {}),
-        [requestId]: buildOrchestrationPending(
-          orchestrationStreamRef.current[streamKey],
-          label,
-          {
-            requestId,
-            prompt: prev[chatId]?.[requestId]?.prompt,
-          }
-        ),
+        [requestId]: buildOrchestrationPending(orchestrationStreamRef.current[streamKey], label, {
+          requestId,
+          prompt: prev[chatId]?.[requestId]?.prompt,
+        }),
       },
     }));
   }, []);
@@ -408,7 +372,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     const controller = new AbortController();
     const abortFromExternal = () => controller.abort();
     if (externalSignal?.aborted) controller.abort();
-    else externalSignal?.addEventListener?.("abort", abortFromExternal, { once: true });
+    else
+      externalSignal?.addEventListener?.("abort", abortFromExternal, {
+        once: true,
+      });
     flowAbortControllersRef.current[`${chatId}:${requestId}`] = {
       chatId,
       requestId,
@@ -428,8 +395,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   const cancelCurrentFlow = useCallback(() => {
     const currentChatId = chat.currentChatId;
     if (!currentChatId) return false;
-    const activeFlows = Object.values(flowAbortControllersRef.current)
-      .filter((flow) => flow.chatId === currentChatId);
+    const activeFlows = Object.values(flowAbortControllersRef.current).filter((flow) => flow.chatId === currentChatId);
     activeFlows.forEach(({ chatId, requestId, controller }) => {
       controller.abort();
       delete flowAbortControllersRef.current[`${chatId}:${requestId}`];
@@ -442,10 +408,14 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
   const isGenerating = chat.isGenerating || flowBusy;
 
-  const pendingMessages = useMemo(() => reconcileUnifiedPendingMessages(
-    chat.pendingMessages,
-    Object.values(orchestrationPendingByChat[chat.currentChatId] || {}).filter(Boolean)
-  ), [chat.pendingMessages, chat.currentChatId, orchestrationPendingByChat]);
+  const pendingMessages = useMemo(
+    () =>
+      reconcileUnifiedPendingMessages(
+        chat.pendingMessages,
+        Object.values(orchestrationPendingByChat[chat.currentChatId] || {}).filter(Boolean)
+      ),
+    [chat.pendingMessages, chat.currentChatId, orchestrationPendingByChat]
+  );
   const pendingMessage = pendingMessages[pendingMessages.length - 1] || null;
 
   const generationStage = useMemo(() => {
@@ -470,14 +440,20 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     async (titleSeed, { projectId = null, studioTargetPreference = null } = {}) => {
       let activeChatId = chat.currentChatId;
       if (!activeChatId) {
-        activeChatId = await chat.startNewChat({ projectId, studioTargetPreference });
+        activeChatId = await chat.startNewChat({
+          projectId,
+          studioTargetPreference,
+        });
         const seed = String(titleSeed || "New chat");
         if (activeChatId && seed !== "New chat") {
-          await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), sanitizeChatWritePayload({
-            title: seed.slice(0, 30) + (seed.length > 30 ? "..." : ""),
-            lifecycle: "active",
-            updatedAt: serverTimestamp(),
-          }));
+          await updateDoc(
+            doc(db, "users", user.uid, "chats", activeChatId),
+            sanitizeChatWritePayload({
+              title: seed.slice(0, 30) + (seed.length > 30 ? "..." : ""),
+              lifecycle: "active",
+              updatedAt: serverTimestamp(),
+            })
+          );
         }
       }
       return activeChatId;
@@ -488,10 +464,13 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   const touchChat = useCallback(
     async (activeChatId, lastMessage) => {
       try {
-        await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), sanitizeChatWritePayload({
-          lastMessage: String(lastMessage || "").slice(0, 140),
-          updatedAt: serverTimestamp(),
-        }));
+        await updateDoc(
+          doc(db, "users", user.uid, "chats", activeChatId),
+          sanitizeChatWritePayload({
+            lastMessage: String(lastMessage || "").slice(0, 140),
+            updatedAt: serverTimestamp(),
+          })
+        );
       } catch (_) {
         // non-fatal: the message itself is already written
       }
@@ -518,88 +497,184 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     [user, touchChat]
   );
 
-  const ensureRuntimeAgentProjection = useCallback(async (
-    activeChatId,
-    submitOptions = {},
-    { required = false } = {}
-  ) => {
-    try {
-      const projectId = submitOptions.projectId || null;
+  const ensureRuntimeAgentProjection = useCallback(
+    async (activeChatId, submitOptions = {}, { required = false } = {}) => {
+      try {
+        const projectId = submitOptions.projectId || null;
+        let capabilities = null;
+        try {
+          capabilities = await getRuntimeCapabilitiesV2();
+        } catch (error) {
+          if (!(error instanceof AgentRuntimeUnavailableError)) throw error;
+        }
+        if (selectAgentRuntimeRoute(capabilities, { projectId }) === "legacy") {
+          return null;
+        }
+        const storedAgentId = chat.currentChatId === activeChatId ? chat.currentChatMeta?.agentId : null;
+        const resolved = await resolveChatAgentProjectionV2({
+          chatId: activeChatId,
+          projectId,
+          storedAgentId,
+          allowLegacyCreate: capabilities == null,
+        });
+        const agent = normalizeAgentProjection(resolved);
+        if (!agent?.agentId) throw new Error("Agent runtime did not return an agent id");
+        return agent;
+      } catch (error) {
+        console.warn("Could not refresh the v2 agent projection.", error);
+        if (required) throw error;
+        return null;
+      }
+    },
+    [chat.currentChatId, chat.currentChatMeta?.agentId]
+  );
+
+  const launchAuthoritativeRun = useCallback(
+    async ({
+      activeChatId,
+      requestId,
+      prompt,
+      mode,
+      attachments = [],
+      baseArtifact = null,
+      submissionOptions = {},
+      conversationMessages = null,
+      signal = null,
+      onRunId = null,
+    }) => {
+      throwIfAborted(signal);
       let capabilities = null;
       try {
         capabilities = await getRuntimeCapabilitiesV2();
       } catch (error) {
         if (!(error instanceof AgentRuntimeUnavailableError)) throw error;
       }
-      if (selectAgentRuntimeRoute(capabilities, { projectId }) === "legacy") {
-        return null;
-      }
-      const storedAgentId = chat.currentChatId === activeChatId
-        ? chat.currentChatMeta?.agentId
-        : null;
-      const resolved = await resolveChatAgentProjectionV2({
-        chatId: activeChatId,
-        projectId,
-        storedAgentId,
-        allowLegacyCreate: capabilities == null,
+      throwIfAborted(signal);
+      const runtimeRoute = selectAgentRuntimeRoute(capabilities, {
+        projectId: submissionOptions.projectId,
       });
-      const agent = normalizeAgentProjection(resolved);
-      if (!agent?.agentId) throw new Error("Agent runtime did not return an agent id");
-      return agent;
-    } catch (error) {
-      console.warn("Could not refresh the v2 agent projection.", error);
-      if (required) throw error;
-      return null;
-    }
-  }, [chat.currentChatId, chat.currentChatMeta?.agentId]);
-
-  const launchAuthoritativeRun = useCallback(async ({
-    activeChatId,
-    requestId,
-    prompt,
-    mode,
-    attachments = [],
-    baseArtifact = null,
-    submissionOptions = {},
-    conversationMessages = null,
-    signal = null,
-    onRunId = null,
-  }) => {
-    throwIfAborted(signal);
-    let capabilities = null;
-    try {
-      capabilities = await getRuntimeCapabilitiesV2();
-    } catch (error) {
-      if (!(error instanceof AgentRuntimeUnavailableError)) throw error;
-    }
-    throwIfAborted(signal);
-    const runtimeRoute = selectAgentRuntimeRoute(capabilities, {
-      projectId: submissionOptions.projectId,
-    });
-    const studioEnabled = getStudioEnabledPreference() === true;
-    const targeting = buildWorkflowTargeting(submissionOptions);
-    const executionIntent = classifyExecutionIntent(prompt, {
-      studioEnabled,
-      generatorMode: submissionOptions.generatorMode || "agent_build",
-    });
-    const requiresLiveRuntime = ["inspect", "live_build", "live_fix", "playtest", "quick_script"]
-      .includes(executionIntent);
-    const launchLegacyGeneration = () => {
-      if (requiresLiveRuntime) {
-        const error = new Error(
-          "This request requires the live Studio command runtime. NexusRBX will not replace it with a generated artifact."
+      const studioEnabled = getStudioEnabledPreference() === true;
+      const targeting = buildWorkflowTargeting(submissionOptions);
+      const executionIntent = classifyExecutionIntent(prompt, {
+        studioEnabled,
+        generatorMode: submissionOptions.generatorMode || "agent_build",
+      });
+      const requiresLiveRuntime = ["inspect", "live_build", "live_fix", "playtest", "quick_script"].includes(
+        executionIntent
+      );
+      const launchLegacyGeneration = () => {
+        if (requiresLiveRuntime) {
+          const error = new Error(
+            "This request requires the live Studio command runtime. NexusRBX will not replace it with a generated artifact."
+          );
+          error.code = "STUDIO_LIVE_RUNTIME_REQUIRED";
+          error.executionIntent = executionIntent;
+          throw error;
+        }
+        if (capabilities && capabilities.legacyGeneration?.enabled !== true) {
+          throw new Error("No executable generation transport is currently available.");
+        }
+        const legacySubmissionOptions = { ...submissionOptions };
+        delete legacySubmissionOptions.authoritativeRun;
+        delete legacySubmissionOptions.authoritativeSignal;
+        return chat.handleSubmit(
+          prompt,
+          activeChatId,
+          requestId,
+          mode === "debug" ? "debug" : "agent",
+          true,
+          attachments,
+          baseArtifact,
+          legacySubmissionOptions
         );
-        error.code = "STUDIO_LIVE_RUNTIME_REQUIRED";
-        error.executionIntent = executionIntent;
-        throw error;
+      };
+      if (runtimeRoute === "legacy") return launchLegacyGeneration();
+
+      const agent = await ensureRuntimeAgentProjection(activeChatId, submissionOptions, { required: true });
+      throwIfAborted(signal);
+      if (!agent) return launchLegacyGeneration();
+      const autoPushToStudio = studioEnabled && settings?.studioAutoPushEnabled === true;
+      const approvedPlan = normalizeApprovedPlanReference(submissionOptions.approvedPlan);
+      let runtimeEnvelope;
+      try {
+        throwIfAborted(signal);
+        runtimeEnvelope = await createAgentRunV2({
+          chatId: activeChatId,
+          agentId: agent.agentId,
+          idempotencyKey: `${submissionOptions.idempotencyKey || requestId}:agent`,
+          signal,
+          prompt,
+          mode,
+          projectId: submissionOptions.projectId || agent.projectId,
+          attachments: normalizeChatAttachments(attachments),
+          settings: buildRuntimeSettings(settings, effectiveGameSpec),
+          conversation: (conversationMessages || chat.messages || [])
+            .slice(-10)
+            .map(messageToConversationEntry)
+            .filter(Boolean),
+          baseArtifact: baseArtifact || null,
+          ...(submissionOptions.isRefinement ? { isRefinement: true } : {}),
+          ...(submissionOptions.baseArtifactRef ? { baseArtifactRef: submissionOptions.baseArtifactRef } : {}),
+          ...(submissionOptions.parentJobId ? { parentJobId: submissionOptions.parentJobId } : {}),
+          generatorMode: "agent_build",
+          executionIntent,
+          studioEnabled,
+          applyMode: getStudioApplyMode(),
+          routingMode: studioEnabled ? "hybrid" : "cloud",
+          autoPushToStudio,
+          autoPushPolicy: runtimeAutoPushPolicy(settings),
+          targeting,
+          studioTarget: targeting.studioTarget || null,
+          ...(approvedPlan ? { approvedPlan } : {}),
+          chatMode: mode === "debug" ? "debug" : "agent",
+          selectedExampleIds: Array.isArray(submissionOptions.selectedExampleIds)
+            ? submissionOptions.selectedExampleIds
+            : [],
+          showPlan: submissionOptions.showPlan === true,
+        });
+        // The server may accept and create the durable run while the user is
+        // clicking Stop. Publish its authoritative id before honoring the local
+        // abort so the coordinator can deliver the retained cancellation intent
+        // instead of orphaning a live run behind a stopped composer.
+        if (runtimeEnvelope?.run?.runId) onRunId?.(runtimeEnvelope.run.runId);
+        throwIfAborted(signal);
+      } catch (error) {
+        if (!FEATURE_FLAGS.legacyAgentFallback || !isLegacyRuntimeOwnershipError(error)) {
+          throw error;
+        }
+
+        return launchLegacyGeneration();
       }
-      if (capabilities && capabilities.legacyGeneration?.enabled !== true) {
-        throw new Error("No executable generation transport is currently available.");
+      if (!runtimeEnvelope?.run?.runId) {
+        const decision = runtimeEnvelope?.decision || null;
+        if (!decision) {
+          throw new Error("The durable agent runtime did not return a decision.");
+        }
+        const content = decisionMessage(decision);
+        await setDoc(
+          doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`),
+          sanitizeTranscriptMessagePayload({
+            role: "assistant",
+            content,
+            explanation: content,
+            stage: decisionStage(decision),
+            pending: false,
+            requestId,
+            decision,
+            executionDisposition: runtimeEnvelope.executionDisposition || null,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            metadata: {
+              mode: decision.effectiveMode || mode,
+              type: "decision",
+            },
+          }),
+          { merge: true }
+        );
+        await touchChat(activeChatId, content);
+        return runtimeEnvelope;
       }
-      const legacySubmissionOptions = { ...submissionOptions };
-      delete legacySubmissionOptions.authoritativeRun;
-      delete legacySubmissionOptions.authoritativeSignal;
-      return chat.handleSubmit(
+      await chat.handleSubmit(
         prompt,
         activeChatId,
         requestId,
@@ -607,145 +682,44 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         true,
         attachments,
         baseArtifact,
-        legacySubmissionOptions
+        {
+          ...submissionOptions,
+          authoritativeRun: runtimeEnvelope,
+          authoritativeSignal: signal,
+        }
       );
-    };
-    if (runtimeRoute === "legacy") return launchLegacyGeneration();
-
-    const agent = await ensureRuntimeAgentProjection(
-      activeChatId,
-      submissionOptions,
-      { required: true }
-    );
-    throwIfAborted(signal);
-    if (!agent) return launchLegacyGeneration();
-    const autoPushToStudio = studioEnabled && settings?.studioAutoPushEnabled === true;
-    const approvedPlan = normalizeApprovedPlanReference(submissionOptions.approvedPlan);
-    let runtimeEnvelope;
-    try {
-      throwIfAborted(signal);
-      runtimeEnvelope = await createAgentRunV2({
-        chatId: activeChatId,
-        agentId: agent.agentId,
-        idempotencyKey: `${submissionOptions.idempotencyKey || requestId}:agent`,
-        signal,
-        prompt,
-        mode,
-        projectId: submissionOptions.projectId || agent.projectId,
-        attachments: normalizeChatAttachments(attachments),
-        settings: buildRuntimeSettings(settings, effectiveGameSpec),
-        conversation: (conversationMessages || chat.messages || [])
-          .slice(-10)
-          .map(messageToConversationEntry)
-          .filter(Boolean),
-        baseArtifact: baseArtifact || null,
-        ...(submissionOptions.isRefinement ? { isRefinement: true } : {}),
-        ...(submissionOptions.baseArtifactRef
-          ? { baseArtifactRef: submissionOptions.baseArtifactRef }
-          : {}),
-        ...(submissionOptions.parentJobId
-          ? { parentJobId: submissionOptions.parentJobId }
-          : {}),
-        generatorMode: "agent_build",
-        executionIntent,
-        studioEnabled,
-        applyMode: getStudioApplyMode(),
-        routingMode: studioEnabled ? "hybrid" : "cloud",
-        autoPushToStudio,
-        autoPushPolicy: runtimeAutoPushPolicy(settings),
-        targeting,
-        studioTarget: targeting.studioTarget || null,
-        ...(approvedPlan ? { approvedPlan } : {}),
-        chatMode: mode === "debug" ? "debug" : "agent",
-        selectedExampleIds: Array.isArray(submissionOptions.selectedExampleIds)
-          ? submissionOptions.selectedExampleIds
-          : [],
-        showPlan: submissionOptions.showPlan === true,
-      });
-      // The server may accept and create the durable run while the user is
-      // clicking Stop. Publish its authoritative id before honoring the local
-      // abort so the coordinator can deliver the retained cancellation intent
-      // instead of orphaning a live run behind a stopped composer.
-      if (runtimeEnvelope?.run?.runId) onRunId?.(runtimeEnvelope.run.runId);
-      throwIfAborted(signal);
-    } catch (error) {
-      if (!FEATURE_FLAGS.legacyAgentFallback || !isLegacyRuntimeOwnershipError(error)) {
-        throw error;
-      }
-
-      return launchLegacyGeneration();
-    }
-    if (!runtimeEnvelope?.run?.runId) {
-      const decision = runtimeEnvelope?.decision || null;
-      if (!decision) {
-        throw new Error("The durable agent runtime did not return a decision.");
-      }
-      const content = decisionMessage(decision);
-      await setDoc(
-        doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`),
-        sanitizeTranscriptMessagePayload({
-          role: "assistant",
-          content,
-          explanation: content,
-          stage: decisionStage(decision),
-          pending: false,
-          requestId,
-          decision,
-          executionDisposition: runtimeEnvelope.executionDisposition || null,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          metadata: {
-            mode: decision.effectiveMode || mode,
-            type: "decision",
-          },
-        }),
-        { merge: true }
-      );
-      await touchChat(activeChatId, content);
       return runtimeEnvelope;
-    }
-    await chat.handleSubmit(
-      prompt,
-      activeChatId,
-      requestId,
-      mode === "debug" ? "debug" : "agent",
-      true,
-      attachments,
-      baseArtifact,
-      {
-        ...submissionOptions,
-        authoritativeRun: runtimeEnvelope,
-        authoritativeSignal: signal,
-      }
-    );
-    return runtimeEnvelope;
-  }, [chat, effectiveGameSpec, ensureRuntimeAgentProjection, settings, touchChat, user]);
+    },
+    [chat, effectiveGameSpec, ensureRuntimeAgentProjection, settings, touchChat, user]
+  );
 
   const writeOrchestrationResult = useCallback(
     async (activeChatId, requestId, decision, originPrompt, attachments, submissionContext = {}) => {
       const attMeta = normalizeChatAttachments(attachments);
-      const structuredPlanCandidate = decision?.structuredPlan
-        || decision?.plan?.structuredPlan
-        || decision?.plan
-        || null;
-      const structuredPlan = structuredPlanCandidate && typeof structuredPlanCandidate === "object"
-        && !Array.isArray(structuredPlanCandidate)
-        ? structuredPlanCandidate
-        : null;
-      const planTargeting = structuredPlan?.targeting && typeof structuredPlan.targeting === "object"
-        ? structuredPlan.targeting
-        : {};
-      const targeting = buildWorkflowTargeting({
-        targeting: decision?.targeting || planTargeting,
-        projectId: decision?.projectId ?? planTargeting.projectId ?? submissionContext.projectId,
-        studioConnected: decision?.studioConnected
-          ?? planTargeting.studioConnected
-          ?? submissionContext.studioConnected,
-        studioTarget: decision?.studioTarget
-          ?? planTargeting.studioTarget
-          ?? submissionContext.studioTarget
-          ?? submissionContext.studioTargetPreference,
-      }, buildWorkflowTargeting(submissionContext));
+      const structuredPlanCandidate =
+        decision?.structuredPlan || decision?.plan?.structuredPlan || decision?.plan || null;
+      const structuredPlan =
+        structuredPlanCandidate &&
+        typeof structuredPlanCandidate === "object" &&
+        !Array.isArray(structuredPlanCandidate)
+          ? structuredPlanCandidate
+          : null;
+      const planTargeting =
+        structuredPlan?.targeting && typeof structuredPlan.targeting === "object" ? structuredPlan.targeting : {};
+      const targeting = buildWorkflowTargeting(
+        {
+          targeting: decision?.targeting || planTargeting,
+          projectId: decision?.projectId ?? planTargeting.projectId ?? submissionContext.projectId,
+          studioConnected:
+            decision?.studioConnected ?? planTargeting.studioConnected ?? submissionContext.studioConnected,
+          studioTarget:
+            decision?.studioTarget ??
+            planTargeting.studioTarget ??
+            submissionContext.studioTarget ??
+            submissionContext.studioTargetPreference,
+        },
+        buildWorkflowTargeting(submissionContext)
+      );
       const decisionEnvelope = decision?.decision || decision?.chatDecision || null;
 
       if (decision.status === "conversation") {
@@ -769,11 +743,15 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       }
 
       if (decision.status === "needs_clarification") {
-        void trackProductEvent("clarification_requested", {
-          generator_mode: chat.activeMode || "agent",
-          prompt_category: categorizePrompt(originPrompt),
-          attachment_count: attachments?.length || 0,
-        }, { dedupeKey: `clarify:${activeChatId}:${requestId}` });
+        void trackProductEvent(
+          "clarification_requested",
+          {
+            generator_mode: chat.activeMode || "agent",
+            prompt_category: categorizePrompt(originPrompt),
+            attachment_count: attachments?.length || 0,
+          },
+          { dedupeKey: `clarify:${activeChatId}:${requestId}` }
+        );
         await setDoc(
           doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-clarify`),
           sanitizeTranscriptMessagePayload({
@@ -816,9 +794,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             : Array.isArray(structuredPlan?.capabilities)
               ? structuredPlan.capabilities
               : [],
-          clarificationAnswers: decision.clarificationAnswers
-            || structuredPlan?.clarificationAnswers
-            || null,
+          clarificationAnswers: decision.clarificationAnswers || structuredPlan?.clarificationAnswers || null,
           templateId: decision.templateId || structuredPlan?.templateId || submissionContext.templateId || null,
           projectId: targeting.projectId,
           studioConnected: targeting.studioConnected,
@@ -831,11 +807,17 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           requestId,
         })
       );
-      void trackProductEvent("plan_displayed", {
-        generator_mode: chat.activeMode || "agent",
-        output_type: decision.classification || "script",
-        prompt_category: categorizePrompt(originPrompt),
-      }, { dedupeKey: `plan:${activeChatId}:${requestId}:${decision.planId || ""}` });
+      void trackProductEvent(
+        "plan_displayed",
+        {
+          generator_mode: chat.activeMode || "agent",
+          output_type: decision.classification || "script",
+          prompt_category: categorizePrompt(originPrompt),
+        },
+        {
+          dedupeKey: `plan:${activeChatId}:${requestId}:${decision.planId || ""}`,
+        }
+      );
       await touchChat(activeChatId, decision.aiSummary || "Build plan ready");
     },
     [user, touchChat, chat.activeMode]
@@ -844,14 +826,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   // Dispatch generation for an approved plan. The backend owns the sole
   // canonical agent -> act mapping at its execution boundary.
   const runGeneration = useCallback(
-    async (
-      activeChatId,
-      classification,
-      prompt,
-      attachments,
-      baseArtifact = null,
-      submissionOptions = {}
-    ) => {
+    async (activeChatId, classification, prompt, attachments, baseArtifact = null, submissionOptions = {}) => {
       const requestId = uuidv4();
       const flowController = createFlowAbortController(activeChatId, requestId);
       try {
@@ -896,21 +871,23 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       if (FEATURE_FLAGS.newPlanningMode) {
         const execution = await startPlanExecution(message.planId, version, planHash);
         const task = execution?.task || execution?.execution?.task || execution?.run || null;
-        const taskId = task?.taskId
-          || task?.id
-          || execution?.taskId
-          || execution?.execution?.taskId
-          || execution?.runId
-          || "";
+        const taskId =
+          task?.taskId || task?.id || execution?.taskId || execution?.execution?.taskId || execution?.runId || "";
         if (!taskId) {
           throw new Error("NexusRBX accepted the plan but did not return an execution task.");
         }
         effectiveSubmissionOptions.onTaskAccepted?.(task || taskId);
-        void trackProductEvent("plan_approved", {
-          generator_mode: chat.activeMode || "agent",
-          output_type: message.classification || "script",
-          prompt_category: categorizePrompt(message.originPrompt || ""),
-        }, { dedupeKey: `plan_approved:${message.planId}:${version}:${planHash || ""}` });
+        void trackProductEvent(
+          "plan_approved",
+          {
+            generator_mode: chat.activeMode || "agent",
+            output_type: message.classification || "script",
+            prompt_category: categorizePrompt(message.originPrompt || ""),
+          },
+          {
+            dedupeKey: `plan_approved:${message.planId}:${version}:${planHash || ""}`,
+          }
+        );
         try {
           await updateDoc(
             doc(db, "users", user.uid, "chats", activeChatId, "messages", message.id),
@@ -930,11 +907,15 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         version,
         hash: planHash,
       });
-      void trackProductEvent("plan_approved", {
-        generator_mode: chat.activeMode || "agent",
-        output_type: message.classification || "script",
-        prompt_category: categorizePrompt(message.originPrompt || ""),
-      }, { dedupeKey: `plan_approved:${message.planId}` });
+      void trackProductEvent(
+        "plan_approved",
+        {
+          generator_mode: chat.activeMode || "agent",
+          output_type: message.classification || "script",
+          prompt_category: categorizePrompt(message.originPrompt || ""),
+        },
+        { dedupeKey: `plan_approved:${message.planId}` }
+      );
       // The server approval is authoritative. Persisting this UI marker is
       // useful, but must not prevent generation when an older deployed ruleset
       // rejects an otherwise valid transcript update.
@@ -987,17 +968,20 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       const normalizedAttachments = normalizeChatAttachments(attachments);
       const requestPrompt =
         prompt || describeChatAttachments(normalizedAttachments) || "Please review the attached file(s).";
-      chat.setPendingForChat(activeChatId, {
-        role: "assistant",
-        content: "",
-        type: "chat",
-        prompt: requestPrompt,
-        stage: "Thinking...",
-      }, requestId);
+      chat.setPendingForChat(
+        activeChatId,
+        {
+          role: "assistant",
+          content: "",
+          type: "chat",
+          prompt: requestPrompt,
+          stage: "Thinking...",
+        },
+        requestId
+      );
 
-      const studioEnabled = FEATURE_FLAGS.unifiedAgent
-        && getStudioEnabledPreference()
-        && !explicitlyDisablesStudioContext(requestPrompt);
+      const studioEnabled =
+        FEATURE_FLAGS.unifiedAgent && getStudioEnabledPreference() && !explicitlyDisablesStudioContext(requestPrompt);
       let studioSessionId = null;
       let studioConnectionType = null;
       if (studioEnabled) {
@@ -1011,7 +995,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           if (studioSessionId) {
             chat.setPendingForChat(
               activeChatId,
-              (prev) => prev ? { ...prev, stage: "Reading Studio project..." } : prev,
+              (prev) => (prev ? { ...prev, stage: "Reading Studio project..." } : prev),
               requestId
             );
           }
@@ -1020,9 +1004,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         }
       }
 
-      const conversationSource = Array.isArray(conversationMessages)
-        ? conversationMessages
-        : (chat.messages || []);
+      const conversationSource = Array.isArray(conversationMessages) ? conversationMessages : chat.messages || [];
       let full = "";
       try {
         const res = await fetch(`${BACKEND_URL}/api/ai/chat`, {
@@ -1035,6 +1017,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           },
           body: JSON.stringify({
             chatId: activeChatId,
+            projectId: String(submissionOptions?.projectId || "").trim() || null,
             prompt: requestPrompt,
             attachments: normalizedAttachments,
             modelVersion: settings?.modelVersion || "",
@@ -1056,10 +1039,14 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             throwIfAborted(signal);
             await new Promise((resolve, reject) => {
               const timer = window.setTimeout(resolve, 250);
-              signal?.addEventListener("abort", () => {
-                window.clearTimeout(timer);
-                reject(new DOMException("The operation was stopped.", "AbortError"));
-              }, { once: true });
+              signal?.addEventListener(
+                "abort",
+                () => {
+                  window.clearTimeout(timer);
+                  reject(new DOMException("The operation was stopped.", "AbortError"));
+                },
+                { once: true }
+              );
             });
             operation = (await getChatOperationStatus(idempotencyKey, { signal }))?.operation || null;
           }
@@ -1127,21 +1114,29 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       const mode = options?.mode || chat.activeMode || "agent";
       if (!prompt && currentAttachments.length === 0) {
         if (!user && onSignInNudge) {
-          void trackProductEvent("signin_nudge_viewed", {
-            landing_page: "/ai",
-            generator_mode: mode,
-            prompt_category: "empty",
-          }, { dedupeKey: `signin_nudge:empty:${mode}` });
+          void trackProductEvent(
+            "signin_nudge_viewed",
+            {
+              landing_page: "/ai",
+              generator_mode: mode,
+              prompt_category: "empty",
+            },
+            { dedupeKey: `signin_nudge:empty:${mode}` }
+          );
           onSignInNudge();
         }
         return;
       }
       if (!user) {
-        void trackProductEvent("signin_nudge_viewed", {
-          landing_page: "/ai",
-          generator_mode: mode,
-          prompt_category: categorizePrompt(prompt),
-        }, { dedupeKey: `signin_nudge:${prompt.slice(0, 40)}:${mode}` });
+        void trackProductEvent(
+          "signin_nudge_viewed",
+          {
+            landing_page: "/ai",
+            generator_mode: mode,
+            prompt_category: categorizePrompt(prompt),
+          },
+          { dedupeKey: `signin_nudge:${prompt.slice(0, 40)}:${mode}` }
+        );
         onSignInNudge?.();
         return;
       }
@@ -1156,11 +1151,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       // and Stop can cancel auth/project/Studio preparation immediately.
       submitLocksRef.current[submitLockKey] = true;
       let flowChatId = chat.currentChatId || "__draft__";
-      const flowController = createFlowAbortController(
-        flowChatId,
-        requestId,
-        options?.operationSignal || null
-      );
+      const flowController = createFlowAbortController(flowChatId, requestId, options?.operationSignal || null);
       const bindFlowToChat = (nextChatId) => {
         if (!nextChatId || nextChatId === flowChatId) return;
         const previousKey = `${flowChatId}:${requestId}`;
@@ -1189,7 +1180,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         } catch (err) {
           if (!isAbortError(err)) {
             console.error("Project validation error:", err);
-            notify?.({ message: err?.message || "This project is not available.", type: "error" });
+            notify?.({
+              message: err?.message || "This project is not available.",
+              type: "error",
+            });
           }
           if (propagateOperationError) throw err;
           return;
@@ -1210,15 +1204,16 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           idempotencyKey: options?.idempotencyKey || `run-${requestId}`,
         };
         const titleSeed = prompt || describeChatAttachments(currentAttachments) || "New chat";
-        const pendingPlan = [...(chat.messages || [])]
-          .reverse()
-          .find((m) => m?.stage === "plan" && m.planId);
+        const pendingPlan = [...(chat.messages || [])].reverse().find((m) => m?.stage === "plan" && m.planId);
         if (pendingPlan && isExplicitPlanApproval(prompt)) {
           try {
             await approvePlanInternal(pendingPlan, baseArtifact, effectiveOptions);
           } catch (err) {
             console.error("Approve/generate error:", err);
-            notify?.({ message: err?.message || "Build failed. You can try again.", type: "error" });
+            notify?.({
+              message: err?.message || "Build failed. You can try again.",
+              type: "error",
+            });
             if (propagateOperationError) throw err;
           }
           return;
@@ -1247,7 +1242,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             );
           } catch (err) {
             console.error("Rewind error:", err);
-            notify?.({ message: err?.message || "Could not rewind the chat.", type: "error" });
+            notify?.({
+              message: err?.message || "Could not rewind the chat.",
+              type: "error",
+            });
             if (propagateOperationError) throw err;
             return;
           }
@@ -1278,7 +1276,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             }
             onOperationStatus?.("Running");
             const userIntent = classifyUserIntent(implementationPrompt);
-            if (!effectiveOptions.projectId && !isImplementationIntent(userIntent)) {
+            // A question stays conversational even when Agent is selected and
+            // the chat already has a project. Project context enriches the
+            // answer; it must not turn a question into an execution request.
+            if (!isImplementationIntent(userIntent)) {
               await handleAskSubmit(
                 implementationPrompt,
                 currentAttachments,
@@ -1293,7 +1294,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             }
             if (!effectiveOptions.projectId) {
               const projectError = new Error(
-                "Choose a project before starting Agent Build. General chats remain available for questions and discussion."
+                "Choose a project before Agent starts development work. Ask remains available for questions and discussion."
               );
               projectError.code = "PROJECT_REQUIRED";
               throw projectError;
@@ -1313,7 +1314,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           } catch (err) {
             if (!isAbortError(err)) {
               console.error("Generation error:", err);
-              notify?.({ message: err?.message || "Build failed. You can try again.", type: "error" });
+              notify?.({
+                message: err?.message || "Build failed. You can try again.",
+                type: "error",
+              });
             }
             if (propagateOperationError) throw err;
           }
@@ -1369,19 +1373,18 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           });
 
           publishOrchestrationStage(activeChatId, requestId, "Preparing response...");
-          await writeOrchestrationResult(
-            activeChatId,
-            requestId,
-            decision,
-            prompt,
-            currentAttachments,
-            { ...effectiveOptions, mode, targeting: workflowTargeting }
-          );
-
+          await writeOrchestrationResult(activeChatId, requestId, decision, prompt, currentAttachments, {
+            ...effectiveOptions,
+            mode,
+            targeting: workflowTargeting,
+          });
         } catch (err) {
           if (!isAbortError(err)) {
             console.error("Orchestration error:", err);
-            notify?.({ message: err?.message || "Could not start the build", type: "error" });
+            notify?.({
+              message: err?.message || "Could not start the build",
+              type: "error",
+            });
           }
           if (propagateOperationError) throw err;
         } finally {
@@ -1432,20 +1435,22 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         requestId,
         submissionOptions.operationSignal || null
       );
-      const workflowTargeting = buildWorkflowTargeting({
-        ...submissionOptions,
-        projectId: submissionOptions.projectId ?? message.projectId,
-        studioConnected: submissionOptions.studioConnected ?? message.studioConnected,
-        studioTarget: submissionOptions.studioTarget
-          ?? submissionOptions.studioTargetPreference
-          ?? message.studioTarget,
-        targeting: {
-          ...(message.targeting && typeof message.targeting === "object" ? message.targeting : {}),
-          ...(submissionOptions.targeting && typeof submissionOptions.targeting === "object"
-            ? submissionOptions.targeting
-            : {}),
+      const workflowTargeting = buildWorkflowTargeting(
+        {
+          ...submissionOptions,
+          projectId: submissionOptions.projectId ?? message.projectId,
+          studioConnected: submissionOptions.studioConnected ?? message.studioConnected,
+          studioTarget:
+            submissionOptions.studioTarget ?? submissionOptions.studioTargetPreference ?? message.studioTarget,
+          targeting: {
+            ...(message.targeting && typeof message.targeting === "object" ? message.targeting : {}),
+            ...(submissionOptions.targeting && typeof submissionOptions.targeting === "object"
+              ? submissionOptions.targeting
+              : {}),
+          },
         },
-      }, message.targeting);
+        message.targeting
+      );
       setFlowBusyForChat(activeChatId, requestId, true);
       try {
         throwIfAborted(flowController.signal);
@@ -1462,11 +1467,11 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         };
 
         const answerText = Object.entries(answers || {})
-          .filter(([, value]) => (
+          .filter(([, value]) =>
             Array.isArray(value)
               ? value.some((entry) => String(entry || "").trim() !== "")
               : value != null && String(value).trim() !== ""
-          ))
+          )
           .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(", ") : value}`)
           .join("\n");
         beginOrchestrationPending(activeChatId, requestId, answerText);
@@ -1500,24 +1505,20 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         });
 
         publishOrchestrationStage(activeChatId, requestId, "Preparing response...");
-        await writeOrchestrationResult(
-          activeChatId,
-          requestId,
-          decision,
-          prompt,
-          attachments,
-          {
-            ...submissionOptions,
-            mode: message.requestMode || "plan",
-            templateId: message.templateId || submissionOptions.templateId || null,
-            targeting: effectiveTargeting,
-            ...effectiveTargeting,
-          }
-        );
+        await writeOrchestrationResult(activeChatId, requestId, decision, prompt, attachments, {
+          ...submissionOptions,
+          mode: message.requestMode || "plan",
+          templateId: message.templateId || submissionOptions.templateId || null,
+          targeting: effectiveTargeting,
+          ...effectiveTargeting,
+        });
       } catch (err) {
         if (!isAbortError(err)) {
           console.error("Clarify error:", err);
-          notify?.({ message: err?.message || "Could not continue", type: "error" });
+          notify?.({
+            message: err?.message || "Could not continue",
+            type: "error",
+          });
         }
       } finally {
         releaseFlowAbortController(activeChatId, requestId);
@@ -1526,7 +1527,20 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         delete submitLocksRef.current[submitLockKey];
       }
     },
-    [user, chat, effectiveGameSpec, writeUserMessage, writeOrchestrationResult, setFlowBusyForChat, beginOrchestrationPending, publishOrchestrationStage, clearOrchestrationPending, createFlowAbortController, releaseFlowAbortController, notify]
+    [
+      user,
+      chat,
+      effectiveGameSpec,
+      writeUserMessage,
+      writeOrchestrationResult,
+      setFlowBusyForChat,
+      beginOrchestrationPending,
+      publishOrchestrationStage,
+      clearOrchestrationPending,
+      createFlowAbortController,
+      releaseFlowAbortController,
+      notify,
+    ]
   );
 
   // Stage 3 (plan): user approves the plan -> generate.
@@ -1536,7 +1550,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         await approvePlanInternal(message, baseArtifact, submissionOptions);
       } catch (err) {
         console.error("Approve/generate error:", err);
-        notify?.({ message: err?.message || "Build failed. You can try again.", type: "error" });
+        notify?.({
+          message: err?.message || "Build failed. You can try again.",
+          type: "error",
+        });
       }
     },
     [approvePlanInternal, notify]
@@ -1552,26 +1569,21 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       if (!activeChatId) return false;
 
       try {
-        const ownedProject = await resolveOwnedProjectId(
-          submissionOptions.projectId || message?.projectId
-        );
+        const ownedProject = await resolveOwnedProjectId(submissionOptions.projectId || message?.projectId);
         if (ownedProject.recoveryMessage) {
           notify?.({ message: ownedProject.recoveryMessage, type: "info" });
         }
-        const existingFiles = Array.isArray(workspaceArtifact?.files) && workspaceArtifact.files.length
-          ? workspaceArtifact.files
-          : Array.isArray(message?.files) && message.files.length
-            ? message.files
-            : message?.code
-              ? [{ name: message.title || "Script", content: message.code }]
-            : [];
+        const existingFiles =
+          Array.isArray(workspaceArtifact?.files) && workspaceArtifact.files.length
+            ? workspaceArtifact.files
+            : Array.isArray(message?.files) && message.files.length
+              ? message.files
+              : message?.code
+                ? [{ name: message.title || "Script", content: message.code }]
+                : [];
 
         const artifactId =
-          workspaceArtifact?.artifactId ||
-          workspaceArtifact?.id ||
-          message?.artifactId ||
-          message?.projectId ||
-          null;
+          workspaceArtifact?.artifactId || workspaceArtifact?.id || message?.artifactId || message?.projectId || null;
         const revision = workspaceArtifact?.revision || message?.revision || null;
 
         if (!artifactId && existingFiles.length === 0) {
@@ -1589,9 +1601,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           ...(message?.jobId ? { parentJobId: String(message.jobId) } : {}),
         };
 
-        const augmentedPrompt = existingFiles.length || artifactId
-          ? `You are refining an existing multi-file Roblox project. Apply this change:\n\n${refinePrompt}\n\nPrefer surgical edits to existing files when possible. Return workspace file operations (<patch> when enabled, otherwise <file> upserts) rather than dumping Luau as chat markdown. Modify only what's necessary and keep unaffected files intact, preserving their structure and placement.`
-          : refinePrompt;
+        const augmentedPrompt =
+          existingFiles.length || artifactId
+            ? `You are refining an existing multi-file Roblox project. Apply this change:\n\n${refinePrompt}\n\nPrefer surgical edits to existing files when possible. Return workspace file operations (<patch> when enabled, otherwise <file> upserts) rather than dumping Luau as chat markdown. Modify only what's necessary and keep unaffected files intact, preserving their structure and placement.`
+            : refinePrompt;
 
         const effectiveSubmissionOptions = {
           ...submissionOptions,
@@ -1608,14 +1621,15 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           message?.classification || "project",
           augmentedPrompt,
           [],
-          workspaceArtifact || (existingFiles.length
-            ? {
-                artifactId: artifactId || undefined,
-                revision: revision || undefined,
-                title: message?.title || workspaceArtifact?.title || "Project",
-                files: existingFiles,
-              }
-            : null),
+          workspaceArtifact ||
+            (existingFiles.length
+              ? {
+                  artifactId: artifactId || undefined,
+                  revision: revision || undefined,
+                  title: message?.title || workspaceArtifact?.title || "Project",
+                  files: existingFiles,
+                }
+              : null),
           effectiveSubmissionOptions
         );
         return true;

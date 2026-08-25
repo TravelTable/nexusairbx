@@ -7,7 +7,8 @@
 
 .ai-workspace-ribbon__nav,
 .ai-workspace-ribbon__utility,
-.ai-workspace-ribbon__title {
+.ai-workspace-ribbon__title,
+.ai-workspace-ribbon__project-switch {
   display: inline-flex;
   min-height: 36px;
   align-items: center;
@@ -45,6 +46,24 @@
   gap: var(--nx-space-1);
   padding: 0;
   text-align: left;
+}
+
+.ai-workspace-ribbon__project-switch {
+  min-width: 0;
+  gap: 4px;
+  padding: 0 3px;
+  border-radius: var(--nx-radius-control);
+}
+
+.ai-workspace-ribbon__project-switch:hover {
+  background: var(--nx-muted-surface);
+  color: var(--nx-text);
+}
+
+.ai-workspace-ribbon__project-switch svg {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
 }
 
 .ai-workspace-ribbon__title svg {
@@ -270,8 +289,15 @@
 }
 
 @media (max-width: 480px) {
-  .ai-workspace-ribbon__project {
+  .ai-workspace-ribbon__project i,
+  .ai-workspace-ribbon__title,
+  .ai-workspace-ribbon__static-title {
     display: none;
+  }
+
+  .ai-workspace-ribbon__project-name {
+    display: block;
+    max-width: 22vw;
   }
 
   .ai-workspace-ribbon__utility b {

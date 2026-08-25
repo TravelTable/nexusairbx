@@ -101,9 +101,7 @@ describe("TutorialOverlay", () => {
       screen.getByRole("region", { name: "Describe the game in your head" })
     ).toBeTruthy();
     expect(screen.queryByRole("dialog")).toBeNull();
-    expect(
-      screen.getByText(/Open Quick Script or Agent Build when you are ready/i)
-    ).toBeTruthy();
+    expect(screen.getByText(/Choose Agent for project work or Asset for visuals/i)).toBeTruthy();
     expect(document.querySelector('[data-placement="docked"]')).toBeTruthy();
     expect(nextStep).not.toHaveBeenCalled();
     expect(Element.prototype.scrollIntoView).not.toHaveBeenCalled();

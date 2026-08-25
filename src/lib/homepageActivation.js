@@ -1,5 +1,4 @@
 import { createGenerationIntent } from "./generationIntent";
-import { chooseHomepageGeneratorMode } from "./experiments";
 import { categorizePrompt, trackProductEvent } from "./productAnalytics";
 
 export function trackHomepagePromptStarted({
@@ -43,13 +42,7 @@ export function submitHomepagePrompt({
   if (submittingRef) submittingRef.current = true;
   setLoading?.(true);
   const selectedMode = String(creationMode || "").toLowerCase();
-  const mode = selectedMode === "agent"
-    ? "agent_build"
-    : selectedMode === "script"
-      ? "quick_script"
-      : selectedMode === "asset"
-        ? "asset"
-        : chooseHomepageGeneratorMode(prompt);
+  const mode = selectedMode === "asset" ? "asset" : "agent_build";
 
   void trackEvent("homepage_prompt_submitted", {
     surface,
@@ -74,7 +67,7 @@ export function submitHomepagePrompt({
       prompt_category: categorizePrompt(prompt),
     });
 
-    const creationModeQuery = mode === "quick_script" ? "script" : mode === "asset" ? "asset" : "agent";
+    const creationModeQuery = mode === "asset" ? "asset" : "agent";
     const target = mode === "asset" ? "/tools/icon-generator" : `/ai?mode=${creationModeQuery}`;
     navigate?.(target, {
       state: {

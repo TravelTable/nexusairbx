@@ -10,7 +10,11 @@ describe("interactive planning cards", () => {
       stage: "clarify",
       requestMode: "plan",
       questions: [
-        { id: "placement", question: "Replace the inventory UI?", options: ["Replace it", "Keep both"] },
+        {
+          id: "placement",
+          question: "Replace the inventory UI?",
+          options: ["Replace it", "Keep both"],
+        },
         { id: "saving", question: "Save data between sessions?" },
         { id: "notes", question: "Any extra constraints?", required: false },
       ],
@@ -49,16 +53,18 @@ describe("interactive planning cards", () => {
       id: "clarify-multi",
       stage: "clarify",
       requestMode: "plan",
-      questions: [{
-        id: "scope",
-        question: "Which changes should be included?",
-        type: "multi_select",
-        allowCustom: false,
-        options: [
-          { id: "keep_ui", label: "Keep the current UI", recommended: true },
-          { id: "save_data", label: "Save player data" },
-        ],
-      }],
+      questions: [
+        {
+          id: "scope",
+          question: "Which changes should be included?",
+          type: "multi_select",
+          allowCustom: false,
+          options: [
+            { id: "keep_ui", label: "Keep the current UI", recommended: true },
+            { id: "save_data", label: "Save player data" },
+          ],
+        },
+      ],
     };
 
     render(<ClarifyCard message={message} onSubmit={onSubmit} />);
@@ -96,7 +102,7 @@ describe("interactive planning cards", () => {
     expect(screen.queryByRole("button")).toBeNull();
   });
 
-  test("opens the editable workspace instead of presenting legacy execution copy", () => {
+  test("keeps plan editing inside the conversation", () => {
     const onEdit = jest.fn();
     const message = {
       id: "plan-1",
@@ -108,9 +114,9 @@ describe("interactive planning cards", () => {
     render(<PlanCard message={message} onEdit={onEdit} />);
 
     expect(screen.queryByRole("button", { name: "Approve & Build" })).toBeNull();
-    expect(screen.getByText("Review, edit, and check this plan before starting execution.")).toBeTruthy();
+    expect(screen.getByText(/Reply with/)).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "Review & edit plan" }));
+    fireEvent.click(screen.getByRole("button", { name: "Discuss changes" }));
     expect(onEdit).toHaveBeenCalledWith(message);
   });
 });

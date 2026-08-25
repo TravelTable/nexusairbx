@@ -5,6 +5,7 @@ export const AI_EVENTS = Object.freeze({
   APPLY_CODE_PATCH: "nexus:applyCodePatch",
   OPEN_CHAT: "nexus:openChat",
   STREAM_METRIC: "nexus:streamMetric",
+  PROJECTS_CHANGED: "nexus:projectsChanged",
 });
 
 export function emitAiEvent(eventName, detail = {}) {
