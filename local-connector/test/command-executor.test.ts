@@ -423,6 +423,19 @@ test("snapshot creation is returned as a verified place mutation", async () => {
   assert.equal(result.verified, true);
   assert.equal(result.snapshotCount, 1);
   assert.equal(Array.isArray(result.snapshots), true);
+  assert.deepEqual(result.verification, {
+    verified: true,
+    source: "studio_readback",
+    evidence: {
+      commandType: "create_snapshot",
+      checks: [{
+        kind: "snapshot_record",
+        path: "game/ServerScriptService/Main",
+        snapshotId: String((result.snapshots as JsonObject[])[0]?.snapshotId || ""),
+        ok: true,
+      }],
+    },
+  });
 });
 
 test("a failed StudioMCP start is typed and does not issue a conflicting stop while Studio remains in Edit mode", async () => {

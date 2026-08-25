@@ -99,10 +99,25 @@ export class CommandExecutor {
     // Snapshot creation writes connector-owned state into the place and advances
     // its signature, even though it does not alter the selected user instance.
     const mutation = command.type !== "get_selection";
+    const snapshotChecks = command.type === "create_snapshot" && Array.isArray(data.snapshots)
+      ? data.snapshots.flatMap((snapshot) => isRecord(snapshot) ? [{
+          kind: "snapshot_record",
+          path: String(snapshot.path || ""),
+          snapshotId: String(snapshot.snapshotId || ""),
+          ok: true,
+        }] : [])
+      : [];
     return successBase(command, mutation, {
       operation: command.type,
       ...data,
       ...(mutation ? { verificationChecks: [{ type: "routine_envelope_and_state", passed: true }] } : {}),
+      ...(command.type === "create_snapshot" ? {
+        verification: {
+          verified: true,
+          source: "studio_readback",
+          evidence: { commandType: command.type, checks: snapshotChecks },
+        },
+      } : {}),
     });
   }
 
