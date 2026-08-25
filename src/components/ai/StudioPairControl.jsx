@@ -353,8 +353,6 @@ export default function StudioPairControl({
     pluginDegraded &&
     (compatibility.missingCommands?.includes("create_instance") ||
       compatibility.missingCapabilities?.includes("instanceMutation"));
-  const transportSelection = connection?.transportSelection || {};
-
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen == null ? internalOpen : Boolean(controlledOpen);
   const [activeMethod, setActiveMethod] = useState("plugin");
