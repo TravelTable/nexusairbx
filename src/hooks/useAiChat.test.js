@@ -3,6 +3,7 @@ import {
   readPendingAgentRun,
   resolveResultUrl,
   useAiChat,
+  waitForAuthoritativeTaskCompletion,
   waitForAuthoritativeRunJob,
 } from "./useAiChat";
 import { auth } from "../firebase";
@@ -275,6 +276,42 @@ describe("useAiChat", () => {
       run: { runId: "agent_run_v2_test", status: "running" },
     });
     expect(getAgentRunV2).toHaveBeenCalledWith("agent_run_v2_test");
+  });
+
+  test("keeps following an authoritative task after generation finishes", async () => {
+    const onProgress = jest.fn();
+    const readRun = jest.fn()
+      .mockResolvedValueOnce({ run: { id: "studio-run", status: "waiting_for_tool", summary: "Applying in Studio" } })
+      .mockResolvedValueOnce({ run: { id: "studio-run", status: "verifying", summary: "Verifying changes" } })
+      .mockResolvedValueOnce({ run: { id: "studio-run", status: "succeeded", summary: "Verified" } });
+
+    await expect(waitForAuthoritativeTaskCompletion({
+      runId: "studio-run",
+      readRun,
+      waitForNext: jest.fn().mockResolvedValue(),
+      onProgress,
+    })).resolves.toEqual({
+      run: { id: "studio-run", status: "succeeded", summary: "Verified" },
+      terminalStatus: "completed",
+    });
+
+    expect(readRun).toHaveBeenCalledTimes(3);
+    expect(onProgress).toHaveBeenNthCalledWith(1, expect.objectContaining({ status: "waiting_for_tool" }));
+    expect(onProgress).toHaveBeenNthCalledWith(2, expect.objectContaining({ status: "verifying" }));
+    expect(onProgress).toHaveBeenNthCalledWith(3, expect.objectContaining({ status: "succeeded" }));
+  });
+
+  test("does not treat a blocked authoritative task as successful generation", async () => {
+    await expect(waitForAuthoritativeTaskCompletion({
+      runId: "studio-run",
+      readRun: jest.fn().mockResolvedValue({
+        run: { id: "studio-run", status: "blocked", summary: "Studio disconnected" },
+      }),
+      waitForNext: jest.fn(),
+    })).resolves.toEqual({
+      run: { id: "studio-run", status: "blocked", summary: "Studio disconnected" },
+      terminalStatus: "failed",
+    });
   });
 
   test("finalizes a completed assistant message without rewriting createdAt", async () => {

@@ -176,6 +176,30 @@ export function readPendingAgentRun(runId) {
     : getAgentRun(runId);
 }
 
+export async function waitForAuthoritativeTaskCompletion({
+  runId,
+  readRun = readPendingAgentRun,
+  waitForNext = delay,
+  onProgress = null,
+  signal = null,
+  pollMs = 1500,
+}) {
+  const normalizedRunId = String(runId || "").trim();
+  if (!normalizedRunId) return null;
+
+  while (true) {
+    throwIfAborted(signal);
+    const snapshot = await readRun(normalizedRunId);
+    throwIfAborted(signal);
+    const run = snapshot?.run || snapshot || null;
+    if (!run) return null;
+    onProgress?.(run);
+    const terminalStatus = normalizeTerminalRunStatus(run.status, run);
+    if (terminalStatus) return { run, terminalStatus };
+    await waitForNext(Math.max(1, Number(pollMs) || 1500));
+  }
+}
+
 function findAuthoritativeRunOutput(run) {
   const candidates = [
     run?.summary,
@@ -2301,11 +2325,84 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
 
         const finalizeWithData = async (data, source = "done") => {
           if (finalized) return;
-          finalized = true;
           receivedDone = true;
           eventSource?.close?.();
-          detachAuthoritativeAbort();
           try {
+            if (agentRunId) {
+              publishStage("Generation complete — applying and verifying...", {
+                id: "stage-task-continuation",
+                status: "running",
+              });
+              const authoritativeCompletion = await waitForAuthoritativeTaskCompletion({
+                runId: agentRunId,
+                signal: authoritativeSignal,
+                onProgress: (run) => {
+                  const steps = Array.isArray(run?.steps)
+                    ? run.steps.map(normalizeToolStep)
+                    : [];
+                  for (const step of steps) {
+                    recordStreamActivity({
+                      type: "tool_step",
+                      id: step.id ? `tool-${step.id}` : undefined,
+                      status: step.status,
+                      text: step.label || step.type,
+                      stepType: step.type,
+                      path: step.result?.path || "",
+                    }, false);
+                  }
+                  const nextStage = run.summary
+                    || statusCopyForAuthoritativeRun(run.status)
+                    || "Applying and verifying in Studio...";
+                  publishStage(nextStage, {
+                    id: `stage-${stageSlug(nextStage)}`,
+                    status: run.status,
+                  });
+                  setPending((previous) => previous ? {
+                    ...previous,
+                    steps: steps.length ? steps : previous.steps,
+                    runId: run.runId || run.id || previous.runId || agentRunId,
+                    runStatus: run.status || previous.runStatus,
+                    stage: nextStage,
+                    targetSelection: Object.prototype.hasOwnProperty.call(run, "targetSelection")
+                      ? run.targetSelection
+                      : previous.targetSelection,
+                    metadata: {
+                      ...(previous.metadata || {}),
+                      runState: run.status || previous.metadata?.runState || "running",
+                    },
+                  } : previous);
+                },
+              });
+              if (authoritativeCompletion) {
+                const { run, terminalStatus } = authoritativeCompletion;
+                if (terminalStatus !== "completed") {
+                  const taskError = new Error(
+                    run?.error?.message
+                    || run?.error
+                    || run?.summary
+                    || `The task ${terminalStatus}.`
+                  );
+                  taskError.code = run?.failureCode
+                    || run?.errorCode
+                    || run?.error?.code
+                    || `TASK_${String(terminalStatus).toUpperCase()}`;
+                  throw taskError;
+                }
+                const authoritativeSteps = Array.isArray(run?.steps)
+                  ? run.steps.map(normalizeToolStep)
+                  : [];
+                data = {
+                  ...data,
+                  ...(run?.summary ? { summary: run.summary } : {}),
+                  ...(authoritativeSteps.length ? { steps: authoritativeSteps } : {}),
+                  runId: run?.runId || run?.id || data?.runId || agentRunId,
+                  runState: run?.status || data?.runState || "succeeded",
+                };
+              }
+            }
+
+            finalized = true;
+            detachAuthoritativeAbort();
             progressPersistence.cancel();
             stopIdlePulse();
             clearWallTimer();
