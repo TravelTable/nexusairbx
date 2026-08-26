@@ -1,5 +1,6 @@
 import {
   evaluateIntentAwareStudioSubmissionPreflight,
+  isHandledPromptSubmissionError,
   PROJECT_SIDEBAR_DESKTOP_MIN_WIDTH,
   shouldCloseProjectSidebarOnViewportChange,
   shouldOpenProjectSidebarByDefault,
@@ -74,5 +75,13 @@ describe("AI workspace single-plugin gate", () => {
     expect(evaluateIntentAwareStudioSubmissionPreflight({
       prompt: "Build a round system", mode: "agent", connected: true, connectionType: "mcp_local",
     })).toEqual({ status: "blocked", message: "Connect Studio to apply changes." });
+  });
+});
+
+describe("AI workspace prompt error handling", () => {
+  test("consumes expected project and Studio action blocks at the UI boundary", () => {
+    expect(isHandledPromptSubmissionError({ code: "STUDIO_LIVE_RUNTIME_REQUIRED" })).toBe(true);
+    expect(isHandledPromptSubmissionError({ code: "PROJECT_REQUIRED" })).toBe(true);
+    expect(isHandledPromptSubmissionError({ code: "INTERNAL_ERROR" })).toBe(false);
   });
 });

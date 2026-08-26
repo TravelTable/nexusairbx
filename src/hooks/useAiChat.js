@@ -21,6 +21,7 @@ import {
   cancelAgentRunV2,
   extractAgentEvents,
   getAgentEventsV2,
+  getAgentRunV2,
   getAgentV2,
 } from "../lib/agentRuntimeV2Api";
 import { auth, db, firebaseConfig } from "../firebase";
@@ -98,11 +99,21 @@ const CHAT_LIVE_TAIL_LIMIT = 20;
 const CLEAR_CHAT_MESSAGE_LIMIT = 200;
 const PENDING_RUN_POLL_MS = 30_000;
 const QUEUED_RUN_POLL_MS = 1500;
+
+function optionalWallTimeout(rawValue, fallbackMs) {
+  if (rawValue === undefined || rawValue === null || String(rawValue).trim() === "") {
+    return fallbackMs;
+  }
+  const parsed = Number(rawValue);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallbackMs;
+}
+
 const QUEUED_RUN_WALL_TIMEOUT_MS = Number(
   process.env.REACT_APP_QUEUED_RUN_WALL_TIMEOUT_MS || 3 * 60 * 1000
 );
-const PENDING_RUN_RECOVERY_WALL_TIMEOUT_MS = Number(
-  process.env.REACT_APP_PENDING_RUN_RECOVERY_WALL_TIMEOUT_MS || 12 * 60 * 1000
+const PENDING_RUN_RECOVERY_WALL_TIMEOUT_MS = optionalWallTimeout(
+  process.env.REACT_APP_PENDING_RUN_RECOVERY_WALL_TIMEOUT_MS,
+  12 * 60 * 1000
 );
 const AUTHORITATIVE_RUN_RECOVERY_REQUEST_TIMEOUT_MS = Number(
   process.env.REACT_APP_AUTHORITATIVE_RUN_RECOVERY_REQUEST_TIMEOUT_MS || 10_000
@@ -157,6 +168,12 @@ function findAuthoritativeRun(projection, runId) {
   return (Array.isArray(runs) ? runs : []).find((candidate) => (
     String(candidate?.runId || candidate?.id || "") === String(runId || "")
   )) || null;
+}
+
+export function readPendingAgentRun(runId) {
+  return String(runId || "").startsWith("agent_run_v2_")
+    ? getAgentRunV2(runId)
+    : getAgentRun(runId);
 }
 
 function findAuthoritativeRunOutput(run) {
@@ -436,8 +453,9 @@ export async function waitForAuthoritativeRunJob({
 // Absolute frontend backstop: if the stream never delivers a terminal event
 // (done/error) within this window, poll once for a result and otherwise hand the
 // job off to the background so the UI can never spin/pulse forever.
-const GENERATION_WALL_TIMEOUT_MS = Number(
-  process.env.REACT_APP_GENERATION_WALL_TIMEOUT_MS || 12 * 60 * 1000
+const GENERATION_WALL_TIMEOUT_MS = optionalWallTimeout(
+  process.env.REACT_APP_GENERATION_WALL_TIMEOUT_MS,
+  12 * 60 * 1000
 );
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -1222,7 +1240,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
 
         if (res.status === 202) {
           if (currentPending.runId) {
-            const runResult = await getAgentRun(currentPending.runId);
+            const runResult = await readPendingAgentRun(currentPending.runId);
             if (cancelled || stopped) return;
             const steps = Array.isArray(runResult?.run?.steps)
               ? runResult.run.steps.map(normalizeToolStep)
@@ -1334,14 +1352,16 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       pollPendingRun,
       pending.jobId ? PENDING_RUN_POLL_MS : QUEUED_RUN_POLL_MS
     );
-    wallTimerId = setTimeout(() => {
-      const currentPending = pendingRecoveryRef.current || pending;
-      if (!cancelled && !stopped && currentPending) {
-        void handoffRecoveryToBackground(currentPending, {
-          keepRecovering: !currentPending.jobId,
-        });
-      }
-    }, PENDING_RUN_RECOVERY_WALL_TIMEOUT_MS);
+    if (PENDING_RUN_RECOVERY_WALL_TIMEOUT_MS > 0) {
+      wallTimerId = setTimeout(() => {
+        const currentPending = pendingRecoveryRef.current || pending;
+        if (!cancelled && !stopped && currentPending) {
+          void handoffRecoveryToBackground(currentPending, {
+            keepRecovering: !currentPending.jobId,
+          });
+        }
+      }, PENDING_RUN_RECOVERY_WALL_TIMEOUT_MS);
+    }
     return () => {
       cancelled = true;
       recoveryController.abort();
@@ -2216,6 +2236,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
 
         const startWallTimer = () => {
           clearWallTimer();
+          if (GENERATION_WALL_TIMEOUT_MS <= 0) return;
           wallTimer = setTimeout(async () => {
             if (finalized || receivedDone) return;
             try {

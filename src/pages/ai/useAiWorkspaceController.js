@@ -142,6 +142,15 @@ export function evaluateIntentAwareStudioSubmissionPreflight({ prompt, ...studio
     : { status: "blocked", message: "Connect Studio to apply changes." };
 }
 
+const HANDLED_PROMPT_SUBMISSION_ERROR_CODES = new Set([
+  "PROJECT_REQUIRED",
+  "STUDIO_LIVE_RUNTIME_REQUIRED",
+]);
+
+export function isHandledPromptSubmissionError(error) {
+  return HANDLED_PROMPT_SUBMISSION_ERROR_CODES.has(String(error?.code || "").trim());
+}
+
 export function studioPlaceSelectionMessage() {
   return "Connect Studio to apply changes.";
 }
@@ -1542,14 +1551,24 @@ export function useAiWorkspaceController() {
         setAttachments([]);
         setRewindTarget(null);
       }
-      if (!clearedComposerDraft) return admission.promise;
       return admission.promise.catch((error) => {
-        restoreFailedPromptDraft({
-          prompt: currentPrompt,
-          attachments: currentAttachments,
-          setPrompt,
-          setAttachments,
-        });
+        if (clearedComposerDraft) {
+          restoreFailedPromptDraft({
+            prompt: currentPrompt,
+            attachments: currentAttachments,
+            setPrompt,
+            setAttachments,
+          });
+        }
+        if (isHandledPromptSubmissionError(error)) {
+          if (error?.userNotificationEmitted !== true) {
+            notify({
+              message: error?.message || "Connect Studio to continue.",
+              type: "error",
+            });
+          }
+          return undefined;
+        }
         throw error;
       });
     },

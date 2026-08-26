@@ -10030,3 +10030,617 @@ Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
 Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
 
 webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+[eslint] 
+src\hooks\useUnifiedChat.js
+  Line 27:3:  'STUDIO_CONNECTION_TYPES' is defined but never used  no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+WARNING in [eslint] 
+src\hooks\useUnifiedChat.js
+  Line 27:3:  'STUDIO_CONNECTION_TYPES' is defined but never used  no-unused-vars
+
+webpack compiled with 2 warnings
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+[eslint] 
+src\pages\ai\useAiWorkspaceController.js
+  Line 1561:5:  React Hook useCallback has an unnecessary dependency: 'effectiveStudioPlacePreference'. Either exclude it or remove the dependency array                            react-hooks/exhaustive-deps
+  Line 1712:5:  React Hook useCallback has unnecessary dependencies: 'effectiveStudioPlacePreference' and 'studioPlaceOptions'. Either exclude them or remove the dependency array  react-hooks/exhaustive-deps
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+WARNING in [eslint] 
+src\pages\ai\useAiWorkspaceController.js
+  Line 1561:5:  React Hook useCallback has an unnecessary dependency: 'effectiveStudioPlacePreference'. Either exclude it or remove the dependency array                            react-hooks/exhaustive-deps
+  Line 1712:5:  React Hook useCallback has unnecessary dependencies: 'effectiveStudioPlacePreference' and 'studioPlaceOptions'. Either exclude them or remove the dependency array  react-hooks/exhaustive-deps
+
+webpack compiled with 2 warnings
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+[eslint] 
+src\pages\ai\useAiWorkspaceController.js
+  Line 385:10:  'studioPlacePickerOpen' is assigned a value but never used           no-unused-vars
+  Line 1279:9:  'effectiveStudioPlacePreference' is assigned a value but never used  no-unused-vars
+  Line 2317:9:  'handleSelectStudioTarget' is assigned a value but never used        no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+WARNING in [eslint] 
+src\pages\ai\useAiWorkspaceController.js
+  Line 385:10:  'studioPlacePickerOpen' is assigned a value but never used           no-unused-vars
+  Line 1279:9:  'effectiveStudioPlacePreference' is assigned a value but never used  no-unused-vars
+  Line 2317:9:  'handleSelectStudioTarget' is assigned a value but never used        no-unused-vars
+
+webpack compiled with 2 warnings
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+[eslint] 
+src\pages\ai\useAiWorkspaceController.js
+  Line 385:10:  'studioPlacePickerOpen' is assigned a value but never used           no-unused-vars
+  Line 1279:9:  'effectiveStudioPlacePreference' is assigned a value but never used  no-unused-vars
+  Line 2317:9:  'handleSelectStudioTarget' is assigned a value but never used        no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+WARNING in [eslint] 
+src\pages\ai\useAiWorkspaceController.js
+  Line 385:10:  'studioPlacePickerOpen' is assigned a value but never used           no-unused-vars
+  Line 1279:9:  'effectiveStudioPlacePreference' is assigned a value but never used  no-unused-vars
+  Line 2317:9:  'handleSelectStudioTarget' is assigned a value but never used        no-unused-vars
+
+webpack compiled with 2 warnings
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+[eslint] 
+src\pages\ai\useAiWorkspaceController.js
+  Line 385:10:  'studioPlacePickerOpen' is assigned a value but never used           no-unused-vars
+  Line 1279:9:  'effectiveStudioPlacePreference' is assigned a value but never used  no-unused-vars
+  Line 2317:9:  'handleSelectStudioTarget' is assigned a value but never used        no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+WARNING in [eslint] 
+src\pages\ai\useAiWorkspaceController.js
+  Line 385:10:  'studioPlacePickerOpen' is assigned a value but never used           no-unused-vars
+  Line 1279:9:  'effectiveStudioPlacePreference' is assigned a value but never used  no-unused-vars
+  Line 2317:9:  'handleSelectStudioTarget' is assigned a value but never used        no-unused-vars
+
+webpack compiled with 2 warnings
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+[eslint] 
+src\pages\ai\useAiWorkspaceController.js
+  Line 385:10:  'studioPlacePickerOpen' is assigned a value but never used           no-unused-vars
+  Line 1279:9:  'effectiveStudioPlacePreference' is assigned a value but never used  no-unused-vars
+  Line 2317:9:  'handleSelectStudioTarget' is assigned a value but never used        no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+WARNING in [eslint] 
+src\pages\ai\useAiWorkspaceController.js
+  Line 385:10:  'studioPlacePickerOpen' is assigned a value but never used           no-unused-vars
+  Line 1279:9:  'effectiveStudioPlacePreference' is assigned a value but never used  no-unused-vars
+  Line 2317:9:  'handleSelectStudioTarget' is assigned a value but never used        no-unused-vars
+
+webpack compiled with 2 warnings
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+[eslint] 
+src\components\ai\StudioPairControl.jsx
+  Line 365:10:  'selectingTarget' is assigned a value but never used  no-unused-vars
+  Line 614:9:   'selectMcpTarget' is assigned a value but never used  no-unused-vars
+
+src\pages\ai\useAiWorkspaceController.js
+  Line 385:10:  'studioPlacePickerOpen' is assigned a value but never used           no-unused-vars
+  Line 1279:9:  'effectiveStudioPlacePreference' is assigned a value but never used  no-unused-vars
+  Line 2317:9:  'handleSelectStudioTarget' is assigned a value but never used        no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+WARNING in [eslint] 
+src\components\ai\StudioPairControl.jsx
+  Line 365:10:  'selectingTarget' is assigned a value but never used  no-unused-vars
+  Line 614:9:   'selectMcpTarget' is assigned a value but never used  no-unused-vars
+
+src\pages\ai\useAiWorkspaceController.js
+  Line 385:10:  'studioPlacePickerOpen' is assigned a value but never used           no-unused-vars
+  Line 1279:9:  'effectiveStudioPlacePreference' is assigned a value but never used  no-unused-vars
+  Line 2317:9:  'handleSelectStudioTarget' is assigned a value but never used        no-unused-vars
+
+webpack compiled with 2 warnings
+Compiling...
+Failed to compile.
+
+[eslint] 
+src\pages\ai\useAiWorkspaceController.js
+  Line 850:9:    'setOptimisticStudioPlacePreference' is not defined  no-undef
+  Line 1547:9:   'setStudioPlacePickerOpen' is not defined            no-undef
+  Line 2168:21:  'resolveAwaitingStudioTargetRunId' is not defined    no-undef
+  Line 2173:33:  'selectingStudioTargetId' is not defined             no-undef
+  Line 2179:7:   'setSelectingStudioTargetId' is not defined          no-undef
+  Line 2181:35:  'buildStudioTargetPreference' is not defined         no-undef
+  Line 2182:32:  'setOptimisticStudioPlacePreference' is not defined  no-undef
+  Line 2184:66:  'resumeStudioTargetSelection' is not defined         no-undef
+  Line 2187:27:  'bindChatStudioPlace' is not defined                 no-undef
+  Line 2188:25:  'selectAgentStudioTarget' is not defined             no-undef
+  Line 2190:28:  'isFirestorePermissionDenied' is not defined         no-undef
+  Line 2193:13:  'setOptimisticStudioPlacePreference' is not defined  no-undef
+  Line 2194:13:  'setStudioPlacePickerOpen' is not defined            no-undef
+  Line 2203:11:  'setStudioPlacePickerOpen' is not defined            no-undef
+  Line 2220:11:  'setOptimisticStudioPlacePreference' is not defined  no-undef
+  Line 2221:11:  'setStudioPlacePickerOpen' is not defined            no-undef
+  Line 2229:11:  'setStudioPlacePickerOpen' is not defined            no-undef
+  Line 2243:9:   'setOptimisticStudioPlacePreference' is not defined  no-undef
+  Line 2244:9:   'setStudioPlacePickerOpen' is not defined            no-undef
+  Line 2251:9:   'setSelectingStudioTargetId' is not defined          no-undef
+  Line 2255:7:   'bindChatStudioPlace' is not defined                 no-undef
+  Line 2258:7:   'selectingStudioTargetId' is not defined             no-undef
+  Line 2301:15:  'setStudioPlacePickerOpen' is not defined            no-undef
+  Line 3064:7:   'selectingStudioTargetId' is not defined             no-undef
+
+Search for the keywords to learn more about each error.
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+WARNING in [eslint] 
+src\components\ai\StudioPairControl.jsx
+  Line 365:10:  'selectingTarget' is assigned a value but never used  no-unused-vars
+  Line 614:9:   'selectMcpTarget' is assigned a value but never used  no-unused-vars
+
+src\pages\ai\useAiWorkspaceController.js
+  Line 2166:9:  'handleSelectStudioTarget' is assigned a value but never used                                                                                                                                                                                                                                no-unused-vars
+  Line 2254:5:  React Hook useCallback has unnecessary dependencies: 'bindChatStudioPlace' and 'selectingStudioTargetId'. Either exclude them or remove the dependency array. Outer scope values like 'bindChatStudioPlace' aren't valid dependencies because mutating them doesn't re-render the component  react-hooks/exhaustive-deps
+
+ERROR in [eslint] 
+src\pages\ai\useAiWorkspaceController.js
+  Line 850:9:    'setOptimisticStudioPlacePreference' is not defined  no-undef
+  Line 1547:9:   'setStudioPlacePickerOpen' is not defined            no-undef
+  Line 2168:21:  'resolveAwaitingStudioTargetRunId' is not defined    no-undef
+  Line 2173:33:  'selectingStudioTargetId' is not defined             no-undef
+  Line 2179:7:   'setSelectingStudioTargetId' is not defined          no-undef
+  Line 2181:35:  'buildStudioTargetPreference' is not defined         no-undef
+  Line 2182:32:  'setOptimisticStudioPlacePreference' is not defined  no-undef
+  Line 2184:66:  'resumeStudioTargetSelection' is not defined         no-undef
+  Line 2187:27:  'bindChatStudioPlace' is not defined                 no-undef
+  Line 2188:25:  'selectAgentStudioTarget' is not defined             no-undef
+  Line 2190:28:  'isFirestorePermissionDenied' is not defined         no-undef
+  Line 2193:13:  'setOptimisticStudioPlacePreference' is not defined  no-undef
+  Line 2194:13:  'setStudioPlacePickerOpen' is not defined            no-undef
+  Line 2203:11:  'setStudioPlacePickerOpen' is not defined            no-undef
+  Line 2220:11:  'setOptimisticStudioPlacePreference' is not defined  no-undef
+  Line 2221:11:  'setStudioPlacePickerOpen' is not defined            no-undef
+  Line 2229:11:  'setStudioPlacePickerOpen' is not defined            no-undef
+  Line 2243:9:   'setOptimisticStudioPlacePreference' is not defined  no-undef
+  Line 2244:9:   'setStudioPlacePickerOpen' is not defined            no-undef
+  Line 2251:9:   'setSelectingStudioTargetId' is not defined          no-undef
+  Line 2255:7:   'bindChatStudioPlace' is not defined                 no-undef
+  Line 2258:7:   'selectingStudioTargetId' is not defined             no-undef
+  Line 2301:15:  'setStudioPlacePickerOpen' is not defined            no-undef
+  Line 3064:7:   'selectingStudioTargetId' is not defined             no-undef
+
+Search for the keywords to learn more about each error.
+
+webpack compiled with 1 error and 2 warnings
+Compiling...
+Failed to compile.
+
+[eslint] 
+src\pages\ai\useAiWorkspaceController.js
+  Line 850:9:    'setOptimisticStudioPlacePreference' is not defined  no-undef
+  Line 1547:9:   'setStudioPlacePickerOpen' is not defined            no-undef
+  Line 2201:15:  'setStudioPlacePickerOpen' is not defined            no-undef
+  Line 2964:7:   'selectingStudioTargetId' is not defined             no-undef
+
+Search for the keywords to learn more about each error.
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+WARNING in [eslint] 
+src\components\ai\StudioPairControl.jsx
+  Line 365:10:  'selectingTarget' is assigned a value but never used  no-unused-vars
+  Line 614:9:   'selectMcpTarget' is assigned a value but never used  no-unused-vars
+
+ERROR in [eslint] 
+src\pages\ai\useAiWorkspaceController.js
+  Line 850:9:    'setOptimisticStudioPlacePreference' is not defined  no-undef
+  Line 1547:9:   'setStudioPlacePickerOpen' is not defined            no-undef
+  Line 2201:15:  'setStudioPlacePickerOpen' is not defined            no-undef
+  Line 2964:7:   'selectingStudioTargetId' is not defined             no-undef
+
+Search for the keywords to learn more about each error.
+
+webpack compiled with 1 error and 2 warnings
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+[eslint] 
+src\components\ai\StudioPairControl.jsx
+  Line 365:10:  'selectingTarget' is assigned a value but never used  no-unused-vars
+  Line 614:9:   'selectMcpTarget' is assigned a value but never used  no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+WARNING in [eslint] 
+src\components\ai\StudioPairControl.jsx
+  Line 365:10:  'selectingTarget' is assigned a value but never used  no-unused-vars
+  Line 614:9:   'selectMcpTarget' is assigned a value but never used  no-unused-vars
+
+webpack compiled with 2 warnings
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+webpack compiled with 1 warning
+Compiling...
+Failed to compile.
+
+[eslint] 
+src\hooks\useAiChat.js
+  Line 2686:59:  'studioSessionId' is not defined  no-undef
+
+Search for the keywords to learn more about each error.
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+ERROR in [eslint] 
+src\hooks\useAiChat.js
+  Line 2686:59:  'studioSessionId' is not defined  no-undef
+
+Search for the keywords to learn more about each error.
+
+webpack compiled with 1 error and 1 warning
+Compiling...
+Failed to compile.
+
+[eslint] 
+src\hooks\useAiChat.js
+  Line 2686:59:  'studioSessionId' is not defined  no-undef
+
+Search for the keywords to learn more about each error.
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+ERROR in [eslint] 
+src\hooks\useAiChat.js
+  Line 2686:59:  'studioSessionId' is not defined  no-undef
+
+Search for the keywords to learn more about each error.
+
+webpack compiled with 1 error and 1 warning
+Compiling...
+Failed to compile.
+
+[eslint] 
+src\hooks\useAiChat.js
+  Line 2686:59:  'studioSessionId' is not defined  no-undef
+
+Search for the keywords to learn more about each error.
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+ERROR in [eslint] 
+src\hooks\useAiChat.js
+  Line 2686:59:  'studioSessionId' is not defined  no-undef
+
+Search for the keywords to learn more about each error.
+
+webpack compiled with 1 error and 1 warning
+Compiling...
+Failed to compile.
+
+[eslint] 
+src\hooks\useAiChat.js
+  Line 2686:59:  'studioSessionId' is not defined  no-undef
+
+Search for the keywords to learn more about each error.
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+ERROR in [eslint] 
+src\hooks\useAiChat.js
+  Line 2686:59:  'studioSessionId' is not defined  no-undef
+
+Search for the keywords to learn more about each error.
+
+webpack compiled with 1 error and 1 warning
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/rehype-harden/dist/index.js
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts' file: Error: ENOENT: no such file or directory, open 'C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\rehype-harden\src\index.ts'
+
+webpack compiled with 1 warning

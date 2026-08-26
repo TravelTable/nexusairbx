@@ -235,6 +235,15 @@ function isAbortError(error) {
   return error?.name === "AbortError" || error?.code === "ABORT_ERR";
 }
 
+const EXPECTED_USER_ACTION_ERROR_CODES = new Set([
+  "PROJECT_REQUIRED",
+  "STUDIO_LIVE_RUNTIME_REQUIRED",
+]);
+
+function isExpectedUserActionError(error) {
+  return EXPECTED_USER_ACTION_ERROR_CODES.has(String(error?.code || "").trim());
+}
+
 function throwIfAborted(signal) {
   if (!signal?.aborted) return;
   const error = new Error("Generation canceled.");
@@ -1265,11 +1274,19 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             });
           } catch (err) {
             if (!isAbortError(err)) {
-              console.error("Generation error:", err);
-              notify?.({
-                message: err?.message || "Build failed. You can try again.",
-                type: "error",
-              });
+              const expectedUserActionError = isExpectedUserActionError(err);
+              if (!expectedUserActionError) {
+                console.error("Generation error:", err);
+              }
+              if (typeof notify === "function") {
+                notify({
+                  message: err?.message || "Build failed. You can try again.",
+                  type: "error",
+                });
+                if (expectedUserActionError && err && typeof err === "object") {
+                  err.userNotificationEmitted = true;
+                }
+              }
             }
             if (propagateOperationError) throw err;
           }

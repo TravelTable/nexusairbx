@@ -17,6 +17,7 @@ describe("AgentStepList", () => {
     const disclosure = screen.getByText("2 Studio steps completed").closest("details");
     expect(disclosure).toBeTruthy();
     expect(disclosure.open).toBe(false);
+    expect(disclosure.className).not.toMatch(/border|background|\bbg-/);
     expect(screen.getByText("Show activity")).toBeTruthy();
   });
 

@@ -66,20 +66,20 @@ export default function AgentStepList({
 }) {
   if (!steps.length) {
     return (
-      <div className={`rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-3 py-2 text-xs text-[var(--ds-text-muted)] ${compact ? "" : ""}`}>
+      <div className={`py-1 text-xs text-[var(--ds-text-muted)] ${compact ? "" : ""}`}>
         {emptyLabel}
       </div>
     );
   }
 
   const stepList = (
-    <div className={`overflow-y-auto rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] divide-y divide-[var(--ds-border-subtle)] scrollbar-subtle ${maxHeight}`}>
+    <div className={`space-y-2 overflow-y-auto scrollbar-subtle ${maxHeight}`}>
       {steps.map((step) => {
         const awaiting = step.status === "awaiting_approval";
         const terminal = TERMINAL_STEP_STATUSES.has(step.status);
         const waitLabel = describeStepWait(step);
         return (
-          <div key={step.id || `${step.type}-${step.label}`} className="px-3 py-2 flex items-start gap-2">
+          <div key={step.id || `${step.type}-${step.label}`} className="flex items-start gap-2 py-1">
             <div className="mt-0.5">
               <StepStatusIcon status={step.status} />
             </div>
@@ -151,8 +151,8 @@ export default function AgentStepList({
   if (!collapsible || hasActionableStep) return stepList;
 
   return (
-    <details className="group rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)]">
-      <summary className="flex min-h-10 cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-[var(--ds-text-secondary)] outline-none transition-colors hover:bg-[var(--ds-fill-hover)] focus-visible:ring-2 focus-visible:ring-[var(--ds-info)] [&::-webkit-details-marker]:hidden">
+    <details className="group">
+      <summary className="flex min-h-8 cursor-pointer list-none items-center gap-2 py-1 text-xs font-semibold text-[var(--ds-text-secondary)] outline-none transition-colors hover:text-[var(--ds-text)] focus-visible:ring-2 focus-visible:ring-[var(--ds-info)] [&::-webkit-details-marker]:hidden">
         <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-[var(--ds-accent)]" aria-hidden="true" />
         <span>{completedActivityLabel(steps)}</span>
         <span className="ml-auto text-[11px] font-medium text-[var(--ds-text-muted)] group-open:hidden">
@@ -162,7 +162,7 @@ export default function AgentStepList({
           Hide activity
         </span>
       </summary>
-      <div className="border-t border-[var(--ds-border-subtle)] p-1.5">
+      <div className="pl-5 pt-2">
         {stepList}
       </div>
     </details>

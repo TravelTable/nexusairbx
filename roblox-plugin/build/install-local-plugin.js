@@ -5,6 +5,7 @@ const path = require("path");
 const { resolvePluginsDirectory } = require("./plugin-install-path.js");
 const { CANONICAL_PLUGIN_NAME, quarantineStaleNexusPlugins } = require("./plugin-install-cleanup.js");
 const { buildRbxmx } = require("./rbxmx-artifact.js");
+const { applyPluginBackendOverride } = require("./plugin-backend-override.js");
 
 const pluginRoot = path.resolve(__dirname, "..");
 const bundledPath = path.join(pluginRoot, "NexusRBXStudioBridge.plugin.lua");
@@ -20,6 +21,11 @@ const pluginsDir = resolvePluginsDirectory({
 const installedPath = path.join(pluginsDir, CANONICAL_PLUGIN_NAME);
 const buildOnly = process.argv.includes("--build-only");
 const fromBundle = process.argv.includes("--from-bundle");
+const backendUrlIndex = process.argv.indexOf("--backend-url");
+const backendUrl = backendUrlIndex >= 0 ? process.argv[backendUrlIndex + 1] : "";
+if (backendUrlIndex >= 0 && !backendUrl) {
+  throw new Error("--backend-url requires a URL");
+}
 
 if (!fromBundle) {
   require("./bundle-plugin.js");
@@ -30,11 +36,14 @@ if (!fs.existsSync(bundledPath)) {
   throw new Error(`Missing bundled plugin: ${bundledPath}`);
 }
 
-const source = fs.readFileSync(bundledPath, "utf8");
+const canonicalSource = fs.readFileSync(bundledPath, "utf8");
+const source = applyPluginBackendOverride(canonicalSource, backendUrl);
 const rbxmx = buildRbxmx(source);
 
-fs.mkdirSync(path.dirname(buildRbxmxPath), { recursive: true });
-fs.writeFileSync(buildRbxmxPath, rbxmx, "utf8");
+if (!backendUrl) {
+  fs.mkdirSync(path.dirname(buildRbxmxPath), { recursive: true });
+  fs.writeFileSync(buildRbxmxPath, rbxmx, "utf8");
+}
 
 if (!buildOnly) {
   fs.mkdirSync(pluginsDir, { recursive: true });
@@ -46,7 +55,8 @@ if (!buildOnly) {
   }
 
   console.log(`Installed local plugin: ${installedPath}`);
+  if (backendUrl) console.log(`Local plugin API: ${backendUrl}`);
 }
 
-console.log(`Build artifact: ${buildRbxmxPath}`);
+if (!backendUrl) console.log(`Build artifact: ${buildRbxmxPath}`);
 console.log(`Source bytes: ${source.length}`);

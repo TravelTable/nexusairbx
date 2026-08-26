@@ -13,14 +13,10 @@ import { kindMeta } from "../workspace/workspaceMeta";
 import {
   ChainOfThought,
   ChainOfThoughtContent,
-  ChainOfThoughtHeader,
   ChainOfThoughtStep,
 } from "../../ai-elements/chain-of-thought";
+import { Shimmer } from "../../ai-elements/shimmer";
 import StudioRunBlockNotice from "../workspace/StudioRunBlockNotice";
-import AnimatedStatusText from "./AnimatedStatusText";
-import NexusDisplayIcon from "../../icons/NexusDisplayIcon";
-import NBlockLoader from "../../ui/NBlockLoader";
-import "./LiveWorkStream.css";
 
 function cleanText(value = "") {
   return String(value || "").replace(/<\/?(thinking|progress)>/gi, "").trim();
@@ -158,31 +154,24 @@ export default function LiveWorkStream({
         : "Stream interrupted — reconnecting..."
     : backendStage || "Working...";
 
-  const headerLabel = reconnecting
-    ? status
-    : activity.length
-      ? status
-      : "Starting work...";
+  const headerLabel = status;
 
   return (
-    <div className="nexus-build-loader px-5 py-5">
-      <ChainOfThought defaultOpen className="w-full space-y-3">
-        <ChainOfThoughtHeader className="nexus-build-loader__header">
-          {pendingMessage?.targetSelection ? null : (
-            <span className="nexus-build-loader__status">
-              {reconnecting ? (
-                <NexusDisplayIcon name="debug" size={32} className="h-8 w-8" />
-              ) : (
-                <NBlockLoader size={44} aria-label="Nexus is building" />
-              )}
-              <AnimatedStatusText value={headerLabel} />
-            </span>
-          )}
-        </ChainOfThoughtHeader>
-        <ChainOfThoughtContent>
+    <div className="w-full py-1" data-testid="live-work-stream">
+      <div
+        className="min-h-6 text-sm font-medium text-[var(--ds-text-secondary)]"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        <Shimmer as="span" duration={1.8} spread={1.5}>
+          {headerLabel}
+        </Shimmer>
+      </div>
+      <ChainOfThought open className="mt-3 w-full space-y-0">
+        <ChainOfThoughtContent className="mt-0 space-y-3">
           <StudioRunBlockNotice value={pendingMessage} className="mb-2" />
-          {activity.length ? (
-            activity.map((item) => {
+          {activity.map((item) => {
               const step =
                 item.type === "tool_step"
                   ? (pendingMessage?.steps || []).find(
@@ -235,15 +224,7 @@ export default function LiveWorkStream({
                   ) : null}
                 </ChainOfThoughtStep>
               );
-            })
-          ) : (
-            <ChainOfThoughtStep
-              icon={Loader2}
-              label="Starting work..."
-              status="active"
-              motionStatus="active"
-            />
-          )}
+            })}
         </ChainOfThoughtContent>
       </ChainOfThought>
     </div>

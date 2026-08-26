@@ -1,5 +1,10 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { resolveResultUrl, useAiChat, waitForAuthoritativeRunJob } from "./useAiChat";
+import {
+  readPendingAgentRun,
+  resolveResultUrl,
+  useAiChat,
+  waitForAuthoritativeRunJob,
+} from "./useAiChat";
 import { auth } from "../firebase";
 import { useBilling } from "../context/BillingContext";
 import { ensureStreamSession } from "../lib/streamSession";
@@ -18,6 +23,7 @@ import {
   cancelAgentRunV2,
   extractAgentEvents,
   getAgentEventsV2,
+  getAgentRunV2,
   getAgentV2,
   getRuntimeCapabilitiesV2,
   resolveChatAgentProjectionV2,
@@ -100,6 +106,7 @@ jest.mock("../lib/agentRuntimeV2Api", () => ({
   cancelAgentRunV2: jest.fn(() => Promise.resolve({ run: { status: "cancelled" } })),
   extractAgentEvents: jest.fn((value) => value?.events || value?.data?.events || []),
   getAgentEventsV2: jest.fn(),
+  getAgentRunV2: jest.fn(),
   getAgentV2: jest.fn(),
   getRuntimeCapabilitiesV2: jest.fn(() => Promise.resolve(null)),
   normalizeAgentProjection: jest.fn((value) => value?.agent || value),
@@ -259,6 +266,15 @@ describe("useAiChat", () => {
     );
     expect(setDoc).not.toHaveBeenCalled();
     expect(resolveChatAgentProjectionV2).not.toHaveBeenCalled();
+  });
+
+  test("reads canonical pending runs from the v2 runtime", async () => {
+    getAgentRunV2.mockResolvedValue({ run: { runId: "agent_run_v2_test", status: "running" } });
+
+    await expect(readPendingAgentRun("agent_run_v2_test")).resolves.toEqual({
+      run: { runId: "agent_run_v2_test", status: "running" },
+    });
+    expect(getAgentRunV2).toHaveBeenCalledWith("agent_run_v2_test");
   });
 
   test("finalizes a completed assistant message without rewriting createdAt", async () => {

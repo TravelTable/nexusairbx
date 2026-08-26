@@ -1050,18 +1050,25 @@ describe("useUnifiedChat", () => {
       uid: "user-1",
       getIdToken: jest.fn().mockResolvedValue("token"),
     };
-    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
+    const notify = jest.fn();
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), notify));
 
-    await expect(
-      act(async () => {
-        await result.current.handleSubmit("Inspect the current Studio project", [], null, {
-          clientMessageId: "request-live-inspect",
-          projectId: "project_1",
-          propagateErrors: true,
-        });
-      })
-    ).rejects.toMatchObject({ code: "STUDIO_LIVE_RUNTIME_REQUIRED" });
+    try {
+      await expect(
+        act(async () => {
+          await result.current.handleSubmit("Inspect the current Studio project", [], null, {
+            clientMessageId: "request-live-inspect",
+            projectId: "project_1",
+            propagateErrors: true,
+          });
+        })
+      ).rejects.toMatchObject({ code: "STUDIO_LIVE_RUNTIME_REQUIRED" });
+    } finally {
+      consoleError.mockRestore();
+    }
 
+    expect(consoleError).not.toHaveBeenCalled();
     expect(chatHandleSubmit).not.toHaveBeenCalled();
     expect(createAgentRunV2).not.toHaveBeenCalled();
   });
