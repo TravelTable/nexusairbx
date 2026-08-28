@@ -72,6 +72,8 @@
     "@babel/plugin-transform-numeric-separator": "^7.18.9",
     "@babel/plugin-transform-private-property-in-object": "^7.21.11",
     "@hugeicons/mcp-server": "^0.2.2",
+    "@types/react": "18.3.31",
+    "@types/react-dom": "18.3.7",
     "autoprefixer": "^10.4.21",
     "eslint": "^8.57.0",
     "eslint-plugin-jest": "25.7.0",
