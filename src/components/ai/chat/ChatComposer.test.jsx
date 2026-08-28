@@ -122,7 +122,7 @@ describe("ChatComposer compact interactions", () => {
     expect(settings.className).toContain("w-11");
     expect(send.className).toContain("w-11");
     expect(screen.queryByTitle("Plan before making changes")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Usage" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Usage" })).toBeInTheDocument();
   });
 
   test("supports complete keyboard navigation and focus restoration in the mode listbox", async () => {

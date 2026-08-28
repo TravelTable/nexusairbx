@@ -74,12 +74,17 @@ describe("HomepageV2Content", () => {
     expect(screen.getByText(/reads the current project first/i)).toBeTruthy();
   });
 
-  test("keeps one composer action plus explicit hero links", () => {
+  test("keeps one composer action plus the connector and explicit hero links", () => {
     const { container } = render(<HomepageV2Content navigate={jest.fn()} />);
     const hero = container.querySelector("[data-home-hero]");
     expect(hero.querySelectorAll("button[type='submit']")).toHaveLength(1);
-    expect(hero.querySelectorAll("a")).toHaveLength(2);
-    expect(Array.from(hero.querySelectorAll("a")).map((link) => link.getAttribute("href"))).toEqual(["/ai", "/pricing"]);
+    expect(hero.querySelectorAll("a")).toHaveLength(3);
+    expect(Array.from(hero.querySelectorAll("a")).map((link) => link.getAttribute("href"))).toEqual([
+      "/downloads",
+      "/ai",
+      "/pricing",
+    ]);
+    expect(screen.getByRole("link", { name: "Download" })).toBeTruthy();
     expect(hero.querySelector("button[type='submit']").textContent).toBe("Start building");
   });
 

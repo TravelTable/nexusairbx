@@ -173,6 +173,9 @@ local CREATABLE_CLASSES = {
 	Script = true,
 	LocalScript = true,
 	ModuleScript = true,
+	KeyframeSequence = true,
+	Keyframe = true,
+	Pose = true,
 }
 
 local AGENT_ARTIFACT_ID_ATTRIBUTE = "AgentArtifactId"
@@ -250,6 +253,12 @@ local function safePropertyValue(inst, key)
 		return { type = "Vector2", x = value.X, y = value.Y }
 	elseif valueType == "Vector3" then
 		return { type = "Vector3", x = value.X, y = value.Y, z = value.Z }
+	elseif valueType == "CFrame" then
+		local x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22 = value:GetComponents()
+		return {
+			type = "CFrame",
+			components = { x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22 },
+		}
 	elseif valueType == "EnumItem" then
 		return tostring(value)
 	end
@@ -284,6 +293,13 @@ local function propertiesOf(inst)
 		"TextureId",
 		"SoundId",
 		"AnimationId",
+		"Loop",
+		"Priority",
+		"Time",
+		"Weight",
+		"CFrame",
+		"EasingStyle",
+		"EasingDirection",
 		"ZIndex",
 		"LayoutOrder",
 		"SortOrder",

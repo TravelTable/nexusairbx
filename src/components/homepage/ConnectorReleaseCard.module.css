@@ -1,0 +1,135 @@
+.card {
+  position: relative;
+  display: flex;
+  width: 320px;
+  min-height: 214px;
+  flex-direction: column;
+  gap: 32px;
+  overflow: hidden;
+  padding: 16px 32px;
+  border: 1px solid color-mix(in srgb, var(--nx-text-muted) 20%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--nx-card) 88%, transparent);
+  box-shadow: var(--nx-shadow-floating);
+  color: var(--nx-text);
+  text-align: left;
+}
+
+.tiles {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  display: flex;
+  pointer-events: none;
+  user-select: none;
+  flex-wrap: wrap;
+}
+
+.tileRow {
+  display: flex;
+  width: 100%;
+  height: 16px;
+  border-bottom: 1px dashed color-mix(in srgb, var(--nx-text-muted) 20%, transparent);
+}
+
+.tile {
+  position: relative;
+  width: 15px;
+  height: 16px;
+  flex: 0 0 15px;
+  border-right: 1px dashed color-mix(in srgb, var(--nx-text-muted) 20%, transparent);
+}
+
+.tileGlow {
+  position: absolute;
+  inset: 0;
+  background: rgba(var(--nx-purple-rgb), 0.16);
+  opacity: 0;
+  animation: connector-tiles ease infinite;
+}
+
+.copy,
+.download {
+  position: relative;
+  z-index: 1;
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.titleRow h2 {
+  flex: 0 0 auto;
+  color: var(--nx-text);
+  font-size: 1.1rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.titleRow span {
+  display: inline-flex;
+  margin-left: 0;
+  padding: 1px 3px;
+  border: 1px solid var(--nx-rule-strong);
+  border-radius: 3px;
+  color: var(--nx-text-secondary);
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.copy p {
+  margin: 4px 0 0;
+  color: var(--nx-text-muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.download {
+  display: inline-flex;
+  width: 100%;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  margin-top: auto;
+  border: 1px solid color-mix(in srgb, var(--nx-text-muted) 22%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--nx-text-muted) 14%, transparent);
+  color: var(--nx-text-secondary);
+  font-size: 0.9rem;
+  font-weight: 650;
+  text-decoration: none;
+  backdrop-filter: blur(12px);
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.download:hover {
+  border-color: color-mix(in srgb, var(--nx-text-muted) 40%, transparent);
+  background: color-mix(in srgb, var(--nx-text-muted) 24%, transparent);
+  color: var(--nx-text);
+}
+
+.download:focus-visible {
+  outline: 3px solid var(--nx-purple-wash);
+  outline-offset: 2px;
+}
+
+@keyframes connector-tiles {
+  0%, 40%, 80% { opacity: 0; }
+  20%, 60% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tileGlow { animation: none; }
+}
+
+@media (forced-colors: active) {
+  .card,
+  .download { border-color: CanvasText; }
+  .tileGlow { display: none; }
+}

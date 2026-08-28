@@ -36,7 +36,7 @@ function formatContext(len) {
   return `${len} ctx`;
 }
 
-function ModelRow({ model, selected, locked, onSelect }) {
+function ModelRow({ model, selected, locked, onSelect, recommendedOverride = null }) {
   const billingCategory = model.billingCategory || (model.tier === "pro" ? "PREMIUM_DIRECT" : "INCLUDED");
   const billingLabel = model.billingLabel || (billingCategory === "PREMIUM_DIRECT" ? "Premium Balance" : "Included");
   const ctx = formatContext(model.contextLength);
@@ -55,7 +55,9 @@ function ModelRow({ model, selected, locked, onSelect }) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
           <span className="text-xs font-bold text-[var(--ds-text)] truncate">{model.name}</span>
-          {model.recommended && <CheckCircle2 className="h-3 w-3 shrink-0 text-[var(--ds-accent)]" />}
+          {(recommendedOverride ?? model.recommended) && (
+            <CheckCircle2 aria-label="Recommended" title="Recommended" className="h-3 w-3 shrink-0 text-[var(--ds-accent)]" />
+          )}
         </div>
         <div className="flex items-center gap-2 mt-0.5">
           {ctx && <span className="text-[9px] text-[var(--ds-text-muted)] font-mono">{ctx}</span>}
@@ -87,6 +89,7 @@ export default function ModelSwitcher({
   onProNudge,
   onStarterNudge,
   fullWidth = false,
+  recommendedModelId = null,
 }) {
   const { models, loading } = useModelCatalog();
   const [open, setOpen] = useState(false);
@@ -222,6 +225,7 @@ export default function ModelSwitcher({
                     selected={model.id === normalizedValue || model.id === value}
                     locked={!isModelSelectable(model, modelSelectOpts)}
                     onSelect={handleSelect}
+                    recommendedOverride={recommendedModelId ? model.id === recommendedModelId : null}
                   />
                 ))}
               </div>
@@ -257,6 +261,7 @@ export default function ModelSwitcher({
                             selected={model.id === normalizedValue || model.id === value}
                             locked={!isModelSelectable(model, modelSelectOpts)}
                             onSelect={handleSelect}
+                            recommendedOverride={recommendedModelId ? model.id === recommendedModelId : null}
                           />
                         ))}
                       </div>

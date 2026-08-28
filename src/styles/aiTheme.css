@@ -19,7 +19,7 @@
   --ai-info: var(--nx-info);
   --ai-danger: var(--nx-danger);
 
-  background-color: var(--nx-depth);
+  background-color: transparent !important;
   color: var(--nx-text);
   width: 100%;
   height: 100%;

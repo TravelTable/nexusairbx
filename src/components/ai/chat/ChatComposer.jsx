@@ -28,6 +28,9 @@ import {
   getActiveComposerMention,
 } from "../../../lib/composerCommands";
 import { messageHasRefineableFiles } from "../../../lib/chatRefine";
+import { BorderBeam } from "../../ui/border-beam";
+import { Alert, AlertContent, AlertDescription, AlertIcon, AlertTitle } from "../../ui/alert-1";
+import { AppleStyleDock } from "./AppleStyleDock";
 
 const COMPOSER_MIN_HEIGHT = 40;
 const COMPOSER_MAX_HEIGHT = 176;
@@ -390,6 +393,13 @@ export default function ChatComposer({
   projectAssetSaving = false,
   assetProjectId = null,
   robloxStatus,
+  onDockNewChat,
+  onDockOpenAssets,
+  onDockOpenActivity,
+  onDockOpenBuildOptions,
+  openBuildOptions = false,
+  onCloseBuildOptions,
+  renderDockNavigation,
 }) {
   const [controlsOpen, setControlsOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
@@ -400,10 +410,10 @@ export default function ChatComposer({
   const [mentionIndex, setMentionIndex] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [studioAlertDismissed, setStudioAlertDismissed] = useState(false);
   const textareaRef = useRef(null);
   const wasGeneratingRef = useRef(Boolean(isGenerating));
   const fileInputRef = useRef(null);
-  const controlsButtonRef = useRef(null);
   const controlsPanelRef = useRef(null);
   const contextButtonRef = useRef(null);
   const contextPanelRef = useRef(null);
@@ -413,6 +423,17 @@ export default function ChatComposer({
   const draftIdentityRef = useRef({ signature: null, revision: 0 });
   const controlsPresence = useMotionPresence(controlsOpen, 180);
   const controlsId = "chat-composer-controls";
+
+  const closeControls = useCallback(() => {
+    setControlsOpen(false);
+    if (openBuildOptions) onCloseBuildOptions?.();
+  }, [onCloseBuildOptions, openBuildOptions]);
+
+  useEffect(() => {
+    if (openBuildOptions && !controlsOpen) {
+      setControlsOpen(true);
+    }
+  }, [openBuildOptions, controlsOpen]);
   const canSendWithContext = Boolean(prompt?.trim()) || attachments.length > 0 || robloxProjectAssets.length > 0;
   const primaryPluginConnected = Boolean(
     studioConnected && studioConnectionType !== "mcp_local"
@@ -421,6 +442,10 @@ export default function ChatComposer({
     ["agent", "debug"].includes(normalizedMode) &&
     !primaryPluginConnected;
   const studioBlockerMessage = "Connect Studio to apply changes.";
+
+  useEffect(() => {
+    if (!studioBuildBlocked) setStudioAlertDismissed(false);
+  }, [studioBuildBlocked]);
   const draftSignature = JSON.stringify({
     prompt: String(prompt || ""),
     attachments: attachments.map((file) => [file?.name || "", file?.size || 0, file?.type || ""]),
@@ -490,21 +515,19 @@ export default function ChatComposer({
     if (!controlsOpen && !contextOpen) return undefined;
     const onPointerDown = (event) => {
       if (
-        controlsButtonRef.current?.contains(event.target) ||
         controlsPanelRef.current?.contains(event.target) ||
         contextButtonRef.current?.contains(event.target) ||
         contextPanelRef.current?.contains(event.target)
       )
         return;
-      setControlsOpen(false);
+      closeControls();
       setContextOpen(false);
     };
     const onKeyDown = (event) => {
       if (event.key !== "Escape") return;
       event.preventDefault();
-      if (controlsOpen) controlsButtonRef.current?.focus();
+      if (controlsOpen) closeControls();
       else contextButtonRef.current?.focus();
-      setControlsOpen(false);
       setContextOpen(false);
     };
     document.addEventListener("mousedown", onPointerDown);
@@ -513,7 +536,7 @@ export default function ChatComposer({
       document.removeEventListener("mousedown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [contextOpen, controlsOpen]);
+  }, [closeControls, contextOpen, controlsOpen]);
 
   const syncMentionState = useCallback((value, caret) => {
     const mention = getActiveComposerMention(value, caret);
@@ -700,15 +723,97 @@ export default function ChatComposer({
     />
   );
 
+  const workspaceOptionsContent = (
+    <div className="flex flex-col gap-3">
+      <section
+        className="rounded-lg border border-[var(--ds-border-subtle)] p-2.5"
+        aria-label="Usage details"
+      >
+        <h3 className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[var(--ds-text-muted)]">
+          Usage
+        </h3>
+        {usage}
+      </section>
+      <StudioControls
+        connected={studioConnected}
+        connectionType={studioConnectionType}
+        connectionState={studioConnectionState}
+        capabilities={studioCapabilities}
+        loading={studioLoading}
+        studioEnabled={studioEnabled}
+        onStudioEnabledChange={onStudioEnabledChange}
+        applyMode={studioApplyMode}
+        onApplyModeChange={onStudioApplyModeChange}
+        autoPushEnabled={studioAutoPushEnabled}
+        onAutoPushEnabledChange={onStudioAutoPushEnabledChange}
+        autoPushPolicy={studioAutoPushPolicy}
+        onAutoPushPolicyChange={onStudioAutoPushPolicyChange}
+        autoPushAuthorized={studioAutoPushAuthorized}
+      />
+      {studioConnected && Array.isArray(studioCollaborators) && studioCollaborators.length > 0 && (
+        <span
+          className="inline-flex w-fit items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] px-2 py-0.5 text-[11px] text-[var(--ds-warning)]"
+          title={studioCollaborators
+            .map(
+              (collaborator) =>
+                `${collaborator.label || "collaborator"}${
+                  Array.isArray(collaborator.activePaths) && collaborator.activePaths.length
+                    ? ` — ${collaborator.activePaths.slice(0, 3).join(", ")}`
+                    : ""
+                }`
+            )
+            .join("\n")}
+        >
+          {studioCollaborators.length} collaborator
+          {studioCollaborators.length === 1 ? "" : "s"} on this place
+        </span>
+      )}
+      <RobloxCloudControls
+        connected={robloxConnected}
+        loading={robloxLoading}
+        selectedCreator={robloxSelectedCreator}
+        uploadAvailable={robloxUploadAvailable}
+        uploadState={robloxUploadState}
+        uploadDisabledReason={robloxUploadDisabledReason}
+        assetUploadsEnabled={robloxAssetUploadsEnabled}
+        onAssetUploadsEnabledChange={onRobloxAssetUploadsEnabledChange}
+        selectedAssetCount={robloxProjectAssets.length}
+        onOpenAssetLibrary={onOpenAssetLibrary}
+        assetLibraryAvailable={robloxAssetLibraryAvailable}
+        assetLibraryDisabledReason={robloxAssetLibraryDisabledReason}
+      />
+    </div>
+  );
+
   return (
     <div className="nexus-composer-region pc-page-gutter bg-[var(--ds-bg-workspace)] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
-      <div
-        data-tour="prompt-composer"
-        data-expanded={isExpanded ? "true" : "false"}
-        data-state={disabled ? "disabled" : isGenerating ? "submitting" : operationFailed ? "error" : showSuccess ? "success" : prompt?.trim() ? "typing" : "idle"}
-        aria-busy={isGenerating ? "true" : "false"}
-        className={`nexus-composer nx-composer-shine relative z-20 mx-auto max-w-[760px] overflow-visible rounded-[14px] border border-[var(--ds-border)] bg-[var(--ds-surface-1)] transition-colors duration-150 focus-within:border-[var(--ds-border-strong)] ${isGenerating ? "nx-composer-shine--active" : ""}`}
+      <div className="relative mx-auto h-36 w-full max-w-[760px]">
+        <AppleStyleDock
+          onNewChat={onDockNewChat}
+          onOpenAssets={onDockOpenAssets}
+          onOpenActivity={onDockOpenActivity}
+          onOpenBuildOptions={onDockOpenBuildOptions}
+          usageContent={usage}
+          buildOptionsContent={workspaceOptionsContent}
+          renderNavigation={renderDockNavigation}
+        />
+      </div>
+      <BorderBeam
+        className="nexus-composer-beam relative z-20 mx-auto w-full max-w-[760px]"
+        size="md"
+        colorVariant="colorful"
+        theme="dark"
+        strength={disabled ? 0.28 : isGenerating ? 1 : 0.72}
+        duration={isGenerating ? 1.65 : 3.2}
+        active={!disabled}
       >
+        <div
+          data-tour="prompt-composer"
+          data-expanded={isExpanded ? "true" : "false"}
+          data-state={disabled ? "disabled" : isGenerating ? "submitting" : operationFailed ? "error" : showSuccess ? "success" : prompt?.trim() ? "typing" : "idle"}
+          aria-busy={isGenerating ? "true" : "false"}
+          className={`nexus-composer nx-composer-shine relative w-full overflow-visible rounded-[14px] border border-[var(--ds-border)] bg-[var(--ds-surface-1)] transition-colors duration-150 focus-within:border-[var(--ds-border-strong)] ${isGenerating ? "nx-composer-shine--active" : ""}`}
+        >
         {(activeOperationStatus || queuedOperations.length > 0) && (
           <div className="border-b border-[var(--ds-border-subtle)] px-2 py-1.5" aria-label="Chat operation status">
             <div className="flex items-center gap-2 text-[10px]">
@@ -854,20 +959,26 @@ export default function ChatComposer({
           </div>
         )}
 
-        {studioBuildBlocked ? (
-          <div
-            role="alert"
+        {studioBuildBlocked && !studioAlertDismissed ? (
+          <Alert
+            variant="warning"
+            close
+            onClose={() => setStudioAlertDismissed(true)}
             aria-live="polite"
-            className="flex items-start gap-2 border-b border-[color-mix(in_srgb,var(--ds-warning)_30%,transparent)] bg-[color-mix(in_srgb,var(--ds-warning)_10%,transparent)] px-3 py-2 text-[11px] text-[var(--ds-warning)]"
+            className="border-x-0 border-t-0 text-[11px]"
           >
-            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-            <p className="min-w-0 flex-1 leading-relaxed">
-              <span className="font-bold">Build paused.</span> {studioBlockerMessage}
-            </p>
+            <AlertIcon>
+              <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+            </AlertIcon>
+            <AlertContent className="flex min-w-0 items-center gap-2">
+              <AlertDescription className="min-w-0 flex-1">
+                <AlertTitle className="inline">Build paused.</AlertTitle>{" "}
+                {studioBlockerMessage}
+              </AlertDescription>
             <button
               type="button"
               onClick={(event) => {
-                setControlsOpen(false);
+                closeControls();
                 onStudioConnectionOpen?.(event.currentTarget);
               }}
               aria-haspopup="dialog"
@@ -876,7 +987,8 @@ export default function ChatComposer({
             >
               Connect Studio
             </button>
-          </div>
+            </AlertContent>
+          </Alert>
         ) : null}
 
         {refineTarget ? (
@@ -955,23 +1067,6 @@ export default function ChatComposer({
 
             <div className="nexus-composer__toolbar-end flex shrink-0 items-center gap-1">
               <div className="relative">
-                <button
-                  ref={controlsButtonRef}
-                  type="button"
-                  onClick={() => setControlsOpen((value) => !value)}
-                  className={`flex h-11 w-11 items-center justify-center rounded-md transition-[background-color,color,opacity,transform] duration-150 active:scale-95 focus-ring xl:h-9 xl:w-9 ${
-                    controlsOpen
-                      ? "bg-[var(--ds-fill-hover)] text-[var(--ds-text)]"
-                      : "text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
-                  }`}
-                  aria-expanded={controlsOpen}
-                  aria-controls={controlsId}
-                  aria-haspopup="dialog"
-                  aria-label="Open workspace options"
-                  title="Build options"
-                >
-                  <SlidersHorizontal className="h-3.5 w-3.5" />
-                </button>
                 {controlsPresence.present && (
                   <div
                     ref={controlsPanelRef}
@@ -989,64 +1084,8 @@ export default function ChatComposer({
                       <h2 className="text-sm font-bold text-[var(--ds-text)]">Workspace options</h2>
                       <p className="text-[10px] text-[var(--ds-text-muted)]">Usage, Studio, and Roblox context</p>
                     </div>
-                    <div className="flex max-h-[min(24rem,50vh)] flex-col gap-3 overflow-y-auto scrollbar-subtle">
-                      <section
-                        className="rounded-lg border border-[var(--ds-border-subtle)] p-2.5"
-                        aria-label="Usage details"
-                      >
-                        <h3 className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[var(--ds-text-muted)]">
-                          Usage
-                        </h3>
-                        {usage}
-                      </section>
-                      <StudioControls
-                        connected={studioConnected}
-                        connectionType={studioConnectionType}
-                        connectionState={studioConnectionState}
-                        capabilities={studioCapabilities}
-                        loading={studioLoading}
-                        studioEnabled={studioEnabled}
-                        onStudioEnabledChange={onStudioEnabledChange}
-                        applyMode={studioApplyMode}
-                        onApplyModeChange={onStudioApplyModeChange}
-                        autoPushEnabled={studioAutoPushEnabled}
-                        onAutoPushEnabledChange={onStudioAutoPushEnabledChange}
-                        autoPushPolicy={studioAutoPushPolicy}
-                        onAutoPushPolicyChange={onStudioAutoPushPolicyChange}
-                        autoPushAuthorized={studioAutoPushAuthorized}
-                      />
-                      {studioConnected && Array.isArray(studioCollaborators) && studioCollaborators.length > 0 && (
-                        <span
-                          className="inline-flex w-fit items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] px-2 py-0.5 text-[11px] text-[var(--ds-warning)] "
-                          title={studioCollaborators
-                            .map(
-                              (collaborator) =>
-                                `${collaborator.label || "collaborator"}${
-                                  Array.isArray(collaborator.activePaths) && collaborator.activePaths.length
-                                    ? ` — ${collaborator.activePaths.slice(0, 3).join(", ")}`
-                                    : ""
-                                }`
-                            )
-                            .join("\n")}
-                        >
-                          {studioCollaborators.length} collaborator
-                          {studioCollaborators.length === 1 ? "" : "s"} on this place
-                        </span>
-                      )}
-                      <RobloxCloudControls
-                        connected={robloxConnected}
-                        loading={robloxLoading}
-                        selectedCreator={robloxSelectedCreator}
-                        uploadAvailable={robloxUploadAvailable}
-                        uploadState={robloxUploadState}
-                        uploadDisabledReason={robloxUploadDisabledReason}
-                        assetUploadsEnabled={robloxAssetUploadsEnabled}
-                        onAssetUploadsEnabledChange={onRobloxAssetUploadsEnabledChange}
-                        selectedAssetCount={robloxProjectAssets.length}
-                        onOpenAssetLibrary={onOpenAssetLibrary}
-                        assetLibraryAvailable={robloxAssetLibraryAvailable}
-                        assetLibraryDisabledReason={robloxAssetLibraryDisabledReason}
-                      />
+                    <div className="max-h-[min(24rem,50vh)] overflow-y-auto scrollbar-subtle">
+                      {workspaceOptionsContent}
                     </div>
                   </div>
                 )}
@@ -1089,7 +1128,8 @@ export default function ChatComposer({
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      </BorderBeam>
 
       <AssetLibraryModal
         open={assetLibraryOpen}

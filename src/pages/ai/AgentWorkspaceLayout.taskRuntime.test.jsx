@@ -166,6 +166,10 @@ jest.mock("../../components/ai/workspace/AgentChatPanel", () => ({
 jest.mock("../../components/ai/workspace/BuildDetailsPanel", () => () => null);
 jest.mock("../../components/ai/workspace/RobloxDecalUploadDropdown", () => () => null);
 jest.mock("./QuickScriptWorkspace", () => () => null);
+jest.mock("./AnimateWorkspace", () => () => {
+  const ReactModule = require("react");
+  return ReactModule.createElement("div", null, "Animation workspace ready");
+});
 jest.mock("../../components/onboarding/TutorialOverlay", () => () => null);
 jest.mock("../../components/onboarding/useTutorial", () => ({
   useTutorial: () => ({
@@ -314,6 +318,24 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
     expect(screen.getByRole("main").getAttribute("id")).toBe("ai-workspace-main");
     expect(screen.getByRole("main").getAttribute("tabindex")).toBe("-1");
     expect(screen.getByRole("group", { name: "Workspace mode" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Animate" })).toBeTruthy();
+  });
+
+  test("opens the dedicated animation workspace from the animate URL mode", () => {
+    mockUseTaskRuntime.mockReturnValue({
+      taskId: "",
+      task: null,
+      events: [],
+      connectionState: "idle",
+      error: null,
+      busyAction: "",
+      selectTask: jest.fn(),
+    });
+
+    render(<AgentWorkspaceLayout controller={makeController()} locationSearch="?mode=animate" />);
+
+    expect(screen.getByText("Animation workspace ready")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Animate" }).getAttribute("aria-pressed")).toBe("true");
   });
 
   test("lifts composer connection requests into the shared Studio dialog", () => {

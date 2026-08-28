@@ -4,7 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import { AuthCheckbox, AuthSubmitButton, NexusAuthShell } from "./NexusAuthShell";
 
 describe("NexusAuthShell", () => {
-  test("renders a focused auth card without marketing content", () => {
+  test("renders a focused, centered auth action without a side panel", () => {
     render(
       <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <NexusAuthShell
@@ -19,10 +19,9 @@ describe("NexusAuthShell", () => {
     );
 
     expect(screen.getByRole("heading", { level: 1, name: "Welcome back" })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "NexusRBX home" }).getAttribute("href")).toBe("/");
     expect(screen.getByRole("button", { name: "Sign in" })).toBeTruthy();
-    expect(screen.getByText("Roblox production studio")).toBeTruthy();
     expect(document.querySelector('[data-nexus-surface="auth"]')).toBeTruthy();
+    expect(document.querySelector(".nexus-auth-record")).toBeNull();
     expect(screen.queryByText("Marketing headline")).toBeNull();
     expect(screen.queryByText("Feature pitch")).toBeNull();
     expect(screen.queryByText("Personal build workspace")).toBeNull();

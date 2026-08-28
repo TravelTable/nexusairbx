@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { homepageFocusedTools } from "../../content/homepageV2";
 import HomepageFooter from "./HomepageFooter";
 import HomepagePrompt from "./HomepagePrompt";
+import ConnectorReleaseCard from "./ConnectorReleaseCard";
 import styles from "./HomepageCinematic.module.css";
 
 const HERO_WORDS = ["playable", "testable", "reviewable", "real"];
@@ -157,6 +158,9 @@ function Hero({ surface, navigate, inputRef }) {
         <h1 id="homepage-hero-heading" className={styles.heroHeading}>
           AI Roblox Script Generator <span>and Studio Agent</span>
         </h1>
+        <div className={styles.connectorReleaseSlot}>
+          <ConnectorReleaseCard />
+        </div>
         <AnimatedHeroPromise />
         <p>
           Talk to your project in plain language. Plan systems, generate Luau, review changes, and move approved work

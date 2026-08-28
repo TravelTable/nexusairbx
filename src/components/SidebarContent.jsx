@@ -27,6 +27,7 @@ export default function SidebarContent({
   onSelect = () => {},
   onCollapse = () => {},
   showProjectList = false,
+  showAllChats = false,
   onOpenProject = () => {},
 }) {
   const { isFreeUsagePlan, limits, plan } = useBilling();
@@ -172,6 +173,7 @@ export default function SidebarContent({
         projectsError={projectsError}
         creatingProject={creatingProject}
         showProjectList={showProjectList}
+        showAllChats={showAllChats}
         onNewChat={createChat}
         onOpenChat={openChat}
         onOpenProject={onOpenProject}

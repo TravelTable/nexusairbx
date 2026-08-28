@@ -79,6 +79,14 @@
   justify-items: center;
   text-align: center;
 }
+.connectorReleaseSlot {
+  position: absolute;
+  z-index: 4;
+  top: 106px;
+  right: calc((960px - 100vw) / 2 + 20px);
+  transform: scale(0.78);
+  transform-origin: top right;
+}
 .eyebrow {
   display: inline-flex;
   align-items: center;
@@ -616,6 +624,9 @@
   line-height: 1.6;
 }
 @media (max-width: 900px) {
+  .connectorReleaseSlot {
+    display: none;
+  }
   .hero {
     padding-top: 60px;
   }

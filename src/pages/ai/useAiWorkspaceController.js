@@ -59,7 +59,7 @@ import {
   PROJECT_RESOLUTION_STATES,
 } from "../../lib/projectBindingsApi";
 import { AI_EVENTS, emitAiEvent, onAiEvent } from "../../lib/aiEvents";
-import { useAiNotifications } from "./useAiNotifications";
+import { notifyToast } from "../../components/ui/toast-1";
 import { useStarterPromo } from "../../hooks/useStarterPromo";
 import {
   getRobloxOAuthStatus,
@@ -419,13 +419,11 @@ export function useAiWorkspaceController() {
     []
   );
 
-  const { notify: queueNotify, toasts, currentToast, dismissToast } = useAiNotifications();
-
   const notify = useCallback(
     (payload) => {
-      queueNotify(payload || {});
+      notifyToast(payload || {});
     },
-    [queueNotify]
+    []
   );
 
   const planKey = plan?.toLowerCase() || "free";
@@ -2839,6 +2837,7 @@ export function useAiWorkspaceController() {
       isFreeUsagePlan,
       billingLoading,
       billingError,
+      refresh: refreshBilling,
     },
     starterPromo,
     navigation: {
@@ -2890,8 +2889,6 @@ export function useAiWorkspaceController() {
       proNudgeReason,
       currentTheme,
       activeModeData,
-      currentToast,
-      toasts,
       chatOperationState,
     },
     refs: {
@@ -2917,7 +2914,6 @@ export function useAiWorkspaceController() {
       setShowSignInNudge,
       setShowProNudge,
       setProNudgeReason,
-      dismissToast,
       updateSettings,
       openProjectSelector,
       openWorkspaceProject,

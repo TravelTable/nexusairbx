@@ -7,14 +7,14 @@
 
 local BACKEND_URL = "https://api.nexusrbx.com"
 local BACKEND_HOST = "api.nexusrbx.com"
-local PLUGIN_VERSION = "0.13.2-single-session"
-local STUDIO_PROTOCOL_VERSION = "2026-07-30-script-context"
+local PLUGIN_VERSION = "0.14.0-r15-animation"
+local STUDIO_PROTOCOL_VERSION = "2026-08-27-r15-animation"
 
 -- This identifies the exact release artifact, independently of the user-facing
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.13.2-single-session.1"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.14.0-r15-animation.1"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the
@@ -29,6 +29,7 @@ local PLUGIN_CAPABILITIES = {
 	diagnostics = true,
 	nativeModel = true,
 	assetInsert = true,
+	r15Animation = true,
 }
 
 local Services = {
@@ -640,6 +641,9 @@ CREATABLE_CLASSES = {
 	Script = true,
 	LocalScript = true,
 	ModuleScript = true,
+	KeyframeSequence = true,
+	Keyframe = true,
+	Pose = true,
 }
 
 AGENT_ARTIFACT_ID_ATTRIBUTE = "AgentArtifactId"
@@ -717,6 +721,12 @@ safePropertyValue = function(inst, key)
 		return { type = "Vector2", x = value.X, y = value.Y }
 	elseif valueType == "Vector3" then
 		return { type = "Vector3", x = value.X, y = value.Y, z = value.Z }
+	elseif valueType == "CFrame" then
+		local x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22 = value:GetComponents()
+		return {
+			type = "CFrame",
+			components = { x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22 },
+		}
 	elseif valueType == "EnumItem" then
 		return tostring(value)
 	end
@@ -751,6 +761,13 @@ propertiesOf = function(inst)
 		"TextureId",
 		"SoundId",
 		"AnimationId",
+		"Loop",
+		"Priority",
+		"Time",
+		"Weight",
+		"CFrame",
+		"EasingStyle",
+		"EasingDirection",
 		"ZIndex",
 		"LayoutOrder",
 		"SortOrder",
@@ -1014,6 +1031,8 @@ safeSetProperty = function(inst, key, value)
 				value = Vector2.new(value.x or 0, value.y or 0)
 			elseif valueType == "Vector3" then
 				value = Vector3.new(value.x or 0, value.y or 0, value.z or 0)
+			elseif valueType == "CFrame" and typeof(value.components) == "table" and #value.components == 12 then
+				value = CFrame.new(table.unpack(value.components))
 			end
 		end
 		if key == "Value" and inst:IsA("ValueBase") then
@@ -1059,6 +1078,23 @@ safeSetProperty = function(inst, key, value)
 			inst.CornerRadius = value
 		elseif key == "Thickness" and inst:IsA("UIStroke") then
 			inst.Thickness = tonumber(value) or inst.Thickness
+		elseif key == "Loop" and inst:IsA("KeyframeSequence") then
+			inst.Loop = value == true
+		elseif key == "Priority" and inst:IsA("KeyframeSequence") then
+			local enumName = tostring(value):match("%.([%w_]+)$") or tostring(value)
+			inst.Priority = Enum.AnimationPriority[enumName] or Enum.AnimationPriority.Action
+		elseif key == "Time" and inst:IsA("Keyframe") then
+			inst.Time = tonumber(value) or 0
+		elseif key == "Weight" and inst:IsA("Pose") then
+			inst.Weight = tonumber(value) or 1
+		elseif key == "CFrame" and inst:IsA("Pose") and typeof(value) == "CFrame" then
+			inst.CFrame = value
+		elseif key == "EasingStyle" and inst:IsA("Pose") then
+			local enumName = tostring(value):match("%.([%w_]+)$") or tostring(value)
+			inst.EasingStyle = Enum.PoseEasingStyle[enumName] or Enum.PoseEasingStyle.Cubic
+		elseif key == "EasingDirection" and inst:IsA("Pose") then
+			local enumName = tostring(value):match("%.([%w_]+)$") or tostring(value)
+			inst.EasingDirection = Enum.PoseEasingDirection[enumName] or Enum.PoseEasingDirection.InOut
 		elseif key == "Name" then
 			inst.Name = tostring(value)
 		else
@@ -1950,7 +1986,7 @@ do
 
 local TweenService = game:GetService("TweenService")
 
-local displayPluginVersion, displayProtocolVersion, MAX_ACTIVITY_ENTRIES = PLUGIN_VERSION or "0.13.2-single-session", STUDIO_PROTOCOL_VERSION or "2026-07-30-script-context", 25
+local displayPluginVersion, displayProtocolVersion, MAX_ACTIVITY_ENTRIES = PLUGIN_VERSION or "0.14.0-r15-animation", STUDIO_PROTOCOL_VERSION or "2026-08-27-r15-animation", 25
 
 local toolbar = plugin:CreateToolbar("NexusRBX")
 toggleButton = toolbar:CreateButton("NexusRBX", "Open Nexus", "")
@@ -8638,6 +8674,269 @@ function ImportedAsset.insertTrustedRobloxAsset(payload, commandType)
 end
 -- END src/commands/importedAsset.lua
 
+-- BEGIN src/commands/animation.lua
+local createAnimationSequence, animationSequenceHash
+do
+local R15_ANIMATION_PARTS = {
+	"Head",
+	"UpperTorso",
+	"LowerTorso",
+	"LeftUpperArm",
+	"LeftLowerArm",
+	"LeftHand",
+	"RightUpperArm",
+	"RightLowerArm",
+	"RightHand",
+	"LeftUpperLeg",
+	"LeftLowerLeg",
+	"LeftFoot",
+	"RightUpperLeg",
+	"RightLowerLeg",
+	"RightFoot",
+}
+
+local R15_POSE_PARENT = {
+	LowerTorso = "HumanoidRootPart",
+	UpperTorso = "LowerTorso",
+	Head = "UpperTorso",
+	LeftUpperArm = "UpperTorso",
+	LeftLowerArm = "LeftUpperArm",
+	LeftHand = "LeftLowerArm",
+	RightUpperArm = "UpperTorso",
+	RightLowerArm = "RightUpperArm",
+	RightHand = "RightLowerArm",
+	LeftUpperLeg = "LowerTorso",
+	LeftLowerLeg = "LeftUpperLeg",
+	LeftFoot = "LeftLowerLeg",
+	RightUpperLeg = "LowerTorso",
+	RightLowerLeg = "RightUpperLeg",
+	RightFoot = "RightLowerLeg",
+}
+
+local animationFailure, findR15Rig, resolveAnimationRig, quaternionCFrame, poseSignature, addPose, buildKeyframe
+
+animationFailure = function(code, message, details)
+	local result = details or {}
+	result.ok = false
+	result.success = false
+	result.code = code
+	result.error = tostring(message or "Animation command failed")
+	result.retryable = false
+	return result
+end
+
+findR15Rig = function(candidate)
+	local current = candidate
+	while current and current ~= game do
+		if current:IsA("Model") then
+			local humanoid = current:FindFirstChildOfClass("Humanoid")
+			local valid = humanoid == nil or humanoid.RigType == Enum.HumanoidRigType.R15
+			if valid and current:FindFirstChild("HumanoidRootPart", true) then
+				for _, partName in ipairs(R15_ANIMATION_PARTS) do
+					local part = current:FindFirstChild(partName, true)
+					if not part or not part:IsA("BasePart") then
+						valid = false
+						break
+					end
+				end
+				if valid then return current end
+			end
+		end
+		current = current.Parent
+	end
+	return nil
+end
+
+resolveAnimationRig = function(payload)
+	local requestedPath = tostring(payload.rigPath or "")
+	if requestedPath ~= "" then
+		return findR15Rig(resolvePath(requestedPath)), requestedPath
+	end
+	local selected = Services.Selection:Get()
+	local candidate = selected[1]
+	return findR15Rig(candidate), candidate and fullPath(candidate) or ""
+end
+
+quaternionCFrame = function(value)
+	if type(value) ~= "table" or #value ~= 4 then return CFrame.new() end
+	local x = tonumber(value[1]) or 0
+	local y = tonumber(value[2]) or 0
+	local z = tonumber(value[3]) or 0
+	local w = tonumber(value[4]) or 1
+	local length = math.sqrt(x * x + y * y + z * z + w * w)
+	if length <= 0.000001 then return CFrame.new() end
+	x, y, z, w = x / length, y / length, z / length, w / length
+	local xx, yy, zz = x * x, y * y, z * z
+	local xy, xz, yz = x * y, x * z, y * z
+	local xw, yw, zw = x * w, y * w, z * w
+	return CFrame.new(
+		0, 0, 0,
+		1 - 2 * (yy + zz), 2 * (xy - zw), 2 * (xz + yw),
+		2 * (xy + zw), 1 - 2 * (xx + zz), 2 * (yz - xw),
+		2 * (xz - yw), 2 * (yz + xw), 1 - 2 * (xx + yy)
+	)
+end
+
+poseSignature = function(pose, pieces)
+	local components = { pose.CFrame:GetComponents() }
+	local formatted = {}
+	for index, component in ipairs(components) do
+		formatted[index] = string.format("%.6f", component)
+	end
+	table.insert(pieces, table.concat({
+		fullPath(pose),
+		table.concat(formatted, ","),
+		tostring(pose.Weight),
+		tostring(pose.EasingStyle),
+		tostring(pose.EasingDirection),
+	}, "|"))
+end
+
+animationSequenceHash = function(sequence)
+	if not sequence or not sequence:IsA("KeyframeSequence") then return nil end
+	local pieces = { sequence.Name, tostring(sequence.Loop), tostring(sequence.Priority) }
+	local keyframes = {}
+	for _, child in ipairs(sequence:GetChildren()) do
+		if child:IsA("Keyframe") then table.insert(keyframes, child) end
+	end
+	table.sort(keyframes, function(a, b)
+		if a.Time == b.Time then return a.Name < b.Name end
+		return a.Time < b.Time
+	end)
+	for _, keyframe in ipairs(keyframes) do
+		table.insert(pieces, string.format("time:%.6f", keyframe.Time))
+		local poses = {}
+		for _, descendant in ipairs(keyframe:GetDescendants()) do
+			if descendant:IsA("Pose") then table.insert(poses, descendant) end
+		end
+		table.sort(poses, function(a, b) return fullPath(a) < fullPath(b) end)
+		for _, pose in ipairs(poses) do poseSignature(pose, pieces) end
+	end
+	return stableHash(table.concat(pieces, "\n"))
+end
+
+addPose = function(parent, name, transform, easingStyle, easingDirection)
+	local pose = Instance.new("Pose")
+	pose.Name = name
+	pose.Weight = 1
+	pose.CFrame = quaternionCFrame(transform and transform.rotation)
+	pose.EasingStyle = Enum.PoseEasingStyle[easingStyle] or Enum.PoseEasingStyle.Cubic
+	pose.EasingDirection = Enum.PoseEasingDirection[easingDirection] or Enum.PoseEasingDirection.InOut
+	parent:AddSubPose(pose)
+	return pose
+end
+
+buildKeyframe = function(frame)
+	local keyframe = Instance.new("Keyframe")
+	keyframe.Time = (tonumber(frame.timeMs) or 0) / 1000
+	local rootPose = Instance.new("Pose")
+	rootPose.Name = "HumanoidRootPart"
+	rootPose.Weight = 0
+	keyframe:AddPose(rootPose)
+	local poses = { HumanoidRootPart = rootPose }
+	for _, jointName in ipairs(R15_ANIMATION_PARTS) do
+		local parentName = R15_POSE_PARENT[jointName]
+		local parent = poses[parentName]
+		if not parent then error("Missing R15 pose parent for " .. tostring(jointName)) end
+		poses[jointName] = addPose(
+			parent,
+			jointName,
+			(frame.joints or {})[jointName],
+			tostring(frame.easingStyle or "Cubic"),
+			tostring(frame.easingDirection or "InOut")
+		)
+	end
+	return keyframe
+end
+
+createAnimationSequence = function(payload)
+	local rig, requestedPath = resolveAnimationRig(payload)
+	if not rig then
+		return animationFailure(
+			"r15_rig_required",
+			"Select a complete R15 rig in Studio before applying this animation",
+			{ requestedRigPath = requestedPath }
+		)
+	end
+	local name = tostring(payload.name or "Nexus Animation")
+	local animSaves = rig:FindFirstChild("AnimSaves")
+	if animSaves and not animSaves:IsA("Folder") then
+		return animationFailure("animation_folder_conflict", "The rig already has a non-Folder child named AnimSaves", {
+			rigPath = fullPath(rig),
+		})
+	end
+	local existing = animSaves and animSaves:FindFirstChild(name) or nil
+	if existing and not existing:IsA("KeyframeSequence") then
+		return animationFailure("animation_name_conflict", "An incompatible instance already uses this animation name", {
+			path = fullPath(existing),
+		})
+	end
+	if existing then
+		local currentHash = animationSequenceHash(existing)
+		local expectedHash = tostring(payload.expectedSequenceHash or "")
+		if expectedHash == "" then
+			return animationFailure("animation_sequence_hash_required", "Inspect the existing animation before replacing it", {
+				path = fullPath(existing),
+				currentSequenceHash = currentHash,
+			})
+		end
+		if expectedHash ~= currentHash then
+			return animationFailure("animation_sequence_conflict", "The existing animation changed after it was inspected", {
+				path = fullPath(existing),
+				expectedSequenceHash = expectedHash,
+				currentSequenceHash = currentHash,
+			})
+		end
+	end
+
+	local rigPath = fullPath(rig)
+	local animSavesPath = rigPath .. "/AnimSaves"
+	local sequencePath = animSavesPath .. "/" .. name
+	local snapshots = {}
+	if not animSaves then table.insert(snapshots, snapshotInstance(animSavesPath)) end
+	if existing then appendSnapshotTree(existing, snapshots) else table.insert(snapshots, snapshotInstance(sequencePath)) end
+
+	local ok, sequenceOrError = pcall(function()
+		if not animSaves then
+			animSaves = Instance.new("Folder")
+			animSaves.Name = "AnimSaves"
+			animSaves.Parent = rig
+		end
+		if existing then existing:Destroy() end
+		local sequence = Instance.new("KeyframeSequence")
+		sequence.Name = name
+		sequence.Loop = payload.loop == true
+		sequence.Priority = Enum.AnimationPriority[tostring(payload.priority or "Action")] or Enum.AnimationPriority.Action
+		sequence:SetAttribute("NexusGenerated", true)
+		sequence:SetAttribute("NexusAnimationSchemaVersion", tonumber(payload.animationSchemaVersion) or 1)
+		sequence:SetAttribute("NexusAnimationContentHash", tostring(payload.contentHash or ""))
+		sequence:SetAttribute("NexusSourceAnimationHash", tostring(payload.sourceContentHash or ""))
+		for _, frame in ipairs(payload.keyframes or {}) do sequence:AddKeyframe(buildKeyframe(frame)) end
+		sequence.Parent = animSaves
+		return sequence
+	end)
+	if not ok then
+		return rollbackMutation(snapshots, "create_animation_sequence_failed", tostring(sequenceOrError), {
+			path = sequencePath,
+			rigPath = rigPath,
+		})
+	end
+	local sequence = sequenceOrError
+	return {
+		ok = true,
+		path = fullPath(sequence),
+		rigPath = rigPath,
+		className = sequence.ClassName,
+		keyframeCount = #(payload.keyframes or {}),
+		durationMs = tonumber(payload.durationMs) or 0,
+		sequenceHash = animationSequenceHash(sequence),
+		contentHash = tostring(payload.contentHash or ""),
+		snapshots = snapshots,
+	}
+end
+end
+-- END src/commands/animation.lua
+
 -- BEGIN src/commands/registry.lua
 local pullOnce, executeCommand, ack, TOOL_HANDLERS, getPluginAttestation, getStoredCommandReceipt, storeCommandReceipt, reconcileStoredCommandReceipt
 do
@@ -8665,6 +8964,7 @@ local MUTATING_COMMANDS = {
 	build_native_model = true,
 	insert_creator_store_asset = true,
 	insert_uploaded_roblox_model = true,
+	create_animation_sequence = true,
 	apply_native_model_patch = true,
 	restore_snapshot = true,
 	undo_last_batch = true,
@@ -8691,6 +8991,7 @@ TOOL_HANDLERS = {
 	insert_uploaded_roblox_model = function(payload)
 		return ImportedAsset.insertTrustedRobloxAsset(payload, "insert_uploaded_roblox_model")
 	end,
+	create_animation_sequence = createAnimationSequence,
 	get_project_manifest = inspectPlace,
 	list_children = listChildren,
 	inspect_place = inspectPlace,
@@ -9398,6 +9699,31 @@ local function verifyCommandOutcome(command, payload, result)
 			expectedClassName = result.insertedRootClass,
 			actualClassName = inst and inst.ClassName or nil,
 		})
+	elseif commandType == "create_animation_sequence" then
+		local target = result.path
+		local sequence = resolvePath(target)
+		local actualHash = sequence and animationSequenceHash(sequence) or nil
+		local expectedHash = result.sequenceHash
+		local keyframeCount = 0
+		if sequence and sequence:IsA("KeyframeSequence") then
+			for _, child in ipairs(sequence:GetChildren()) do
+				if child:IsA("Keyframe") then keyframeCount = keyframeCount + 1 end
+			end
+		end
+		local verified = sequence ~= nil
+			and sequence:IsA("KeyframeSequence")
+			and expectedHash ~= nil
+			and actualHash == expectedHash
+			and keyframeCount == tonumber(result.keyframeCount or -1)
+			and tostring(sequence:GetAttribute("NexusAnimationContentHash") or "") == tostring(payload.contentHash or "")
+		addCheck("animation_sequence", target, verified, {
+			expectedHash = expectedHash,
+			actualHash = actualHash,
+			expectedKeyframeCount = result.keyframeCount,
+			actualKeyframeCount = keyframeCount,
+			className = sequence and sequence.ClassName or nil,
+		})
+		evidence.readbackHash = actualHash
 	elseif commandType == "build_native_model" then
 		local target = result.insertedRootPath
 		local modelId = payload.spec and payload.spec.modelId or result.modelId

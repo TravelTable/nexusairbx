@@ -6,10 +6,19 @@
   min-height: 0;
 }
 
-.nexus-studio-root,
-.nexus-studio-page,
-.nexus-studio-main {
+.nexus-studio-root {
   background: var(--nx-depth);
+}
+
+.nexus-studio-page,
+.nexus-studio-layout,
+.nexus-studio-main {
+  background: transparent;
+}
+
+.nexus-studio-page {
+  position: relative;
+  z-index: 1;
 }
 
 .nexus-studio-root {
@@ -36,7 +45,7 @@
   isolation: isolate;
   border-left: 0;
   border-radius: var(--nx-radius-panel);
-  background: var(--nx-card);
+  background: transparent;
   box-shadow: var(--nx-shadow-card);
 }
 

@@ -1,6 +1,6 @@
 # Studio Tool Protocol
 
-Active protocol version: `2026-07-30-script-context`
+Active protocol version: `2026-08-27-r15-animation`
 
 This protocol integrates Creator Store import, native model construction/refinement, trusted Roblox Open Cloud upload, server-owned asset-reference application, uploaded-model Studio insertion, the script execution-context quality gate, and the Phase 9 Studio validation quality gate. Uploaded assets, uploaded models, and validation targets must come from backend-held receipts; the browser never submits a trusted Roblox asset ID, Studio root path, inserted root path, model revision, insertion identity, or validation status for trusted commands.
 
@@ -104,6 +104,7 @@ the heartbeat endpoint.
 - Native model tools: `build_native_model` constructs one validated editable Roblox-native model from a declarative `NativeModelSpec`; `inspect_native_model` and `apply_native_model_patch` support transactional refinement of managed native models.
 - Creator Store import: `insert_creator_store_asset` imports a server-verified Creator Store `Model` or `Mesh` through Studio asset loading, sanitizes executable/networking descendants while unparented, then places it under an allowed Studio destination.
 - Uploaded Roblox model import: `insert_uploaded_roblox_model` imports a backend-verified uploaded Roblox `Model` asset. The command can only be queued by the backend insertion review flow. The payload is generated from the trusted upload receipt and contains `uploadId`, `insertionId`, `assetId`, `assetName`, `assetType`, `targetParentPath`, `requestedName`, `placement`, `anchoredPolicy`, `collisionPolicy`, `sanitizationMode`, `trustedSource`, and `idempotencyKey`.
+- R15 animation creation: `create_animation_sequence` accepts only a server-normalized animation document with 2–61 ordered keyframes, standard R15 joint names, normalized quaternions, in-place root motion, and a 0.5–10 second duration. The plugin uses the selected R15 rig when `rigPath` is omitted, snapshots `AnimSaves/<name>`, creates a native `KeyframeSequence`/`Keyframe`/`Pose` hierarchy, and verifies the sequence fingerprint and keyframe count after the write. Replacing an existing sequence requires its current Studio fingerprint.
 - Asset references: `apply_asset_reference` applies one exact, server-trusted Roblox asset ID to one inspected Studio instance. Its backend-only payload is `{ path, className, property, robloxAssetId, assetRecordId }`. Allowed targets are `ImageLabel.Image`, `ImageButton.Image`, `Decal.Texture`, `Texture.Texture`, `MeshPart.MeshId`, `MeshPart.TextureID`, `SpecialMesh.MeshId`, `SpecialMesh.TextureId`, `Sound.SoundId`, and `Animation.AnimationId`. The plugin snapshots before mutation, writes `rbxassetid://<id>`, reads the property back, and returns the previous/current value, changed instance, and snapshot receipt. Generic property/create commands cannot bypass this server-owned path, and browser-supplied asset IDs are never authoritative.
 - Coordination: `batch_operations` runs deterministic sub-operations and rolls back snapshots when `atomic` is true.
 
@@ -218,6 +219,9 @@ profiles or check IDs fail closed.
 9. Queue `insert_creator_store_asset` for a public Model and confirm Studio inserts it under `Workspace/NexusImports` after removing scripts, remotes, and bindables.
 10. Confirm an uploaded-model insertion from a trusted upload receipt and confirm Studio receives `insert_uploaded_roblox_model` with only the backend-supplied asset ID under `Workspace/NexusImports`.
 11. Run `/api/studio/validations/prepare`, `/api/studio/validations`, and the report endpoint against a native model receipt and confirm stale browser paths are ignored.
+12. Select a complete R15 rig, queue `create_animation_sequence`, approve the manual-review prompt, and confirm `AnimSaves/<name>` contains a `KeyframeSequence` with `HumanoidRootPart` → `LowerTorso` → `UpperTorso` pose hierarchy.
+13. Inspect the animation acknowledgement and confirm `verification.evidence` includes a successful `animation_sequence` check with matching sequence fingerprints and keyframe counts.
+14. Edit or replace that sequence in Studio, retry an overwrite with the old `expectedSequenceHash`, and confirm `animation_sequence_conflict`. Then run `undo_last_batch` and verify the prior keyframe tree is restored.
 12. Pair one Studio, then pair a second Studio to the same account. Confirm the first receives `STUDIO_SESSION_REPLACED`, the second is the only live plugin target, and no command can reach the revoked session.
 13. Replace the stored session attestation with stale metadata, keep the current generated plugin installed, and confirm one successful heartbeat clears the warning without reinstalling, restarting, disconnecting, or re-pairing.
 14. Repeat an identical heartbeat and confirm no attestation write occurs; remove one advertised command and confirm the session becomes `degraded` while another supported write still succeeds.

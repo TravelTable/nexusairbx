@@ -56,7 +56,7 @@ export default function WorkspaceRibbon({
       label=""
       left={
         <>
-          {mode === "agent" ? (
+          {mode === "agent" && typeof onToggleNavigation === "function" ? (
             <button
               ref={navigationButtonRef}
               type="button"
@@ -138,6 +138,14 @@ export default function WorkspaceRibbon({
               onClick={() => onModeChange("asset")}
             >
               Asset
+            </button>
+            <button
+              type="button"
+              data-active={mode === "animate" ? "true" : "false"}
+              aria-pressed={mode === "animate"}
+              onClick={() => onModeChange("animate")}
+            >
+              Animate
             </button>
           </div>
           {modelControl ? <div className="ai-workspace-ribbon__model">{modelControl}</div> : null}

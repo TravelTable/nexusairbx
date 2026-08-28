@@ -22,6 +22,7 @@ local MUTATING_COMMANDS = {
 	build_native_model = true,
 	insert_creator_store_asset = true,
 	insert_uploaded_roblox_model = true,
+	create_animation_sequence = true,
 	apply_native_model_patch = true,
 	restore_snapshot = true,
 	undo_last_batch = true,
@@ -48,6 +49,7 @@ local TOOL_HANDLERS = {
 	insert_uploaded_roblox_model = function(payload)
 		return ImportedAsset.insertTrustedRobloxAsset(payload, "insert_uploaded_roblox_model")
 	end,
+	create_animation_sequence = createAnimationSequence,
 	get_project_manifest = inspectPlace,
 	list_children = listChildren,
 	inspect_place = inspectPlace,
@@ -755,6 +757,31 @@ local function verifyCommandOutcome(command, payload, result)
 			expectedClassName = result.insertedRootClass,
 			actualClassName = inst and inst.ClassName or nil,
 		})
+	elseif commandType == "create_animation_sequence" then
+		local target = result.path
+		local sequence = resolvePath(target)
+		local actualHash = sequence and animationSequenceHash(sequence) or nil
+		local expectedHash = result.sequenceHash
+		local keyframeCount = 0
+		if sequence and sequence:IsA("KeyframeSequence") then
+			for _, child in ipairs(sequence:GetChildren()) do
+				if child:IsA("Keyframe") then keyframeCount = keyframeCount + 1 end
+			end
+		end
+		local verified = sequence ~= nil
+			and sequence:IsA("KeyframeSequence")
+			and expectedHash ~= nil
+			and actualHash == expectedHash
+			and keyframeCount == tonumber(result.keyframeCount or -1)
+			and tostring(sequence:GetAttribute("NexusAnimationContentHash") or "") == tostring(payload.contentHash or "")
+		addCheck("animation_sequence", target, verified, {
+			expectedHash = expectedHash,
+			actualHash = actualHash,
+			expectedKeyframeCount = result.keyframeCount,
+			actualKeyframeCount = keyframeCount,
+			className = sequence and sequence.ClassName or nil,
+		})
+		evidence.readbackHash = actualHash
 	elseif commandType == "build_native_model" then
 		local target = result.insertedRootPath
 		local modelId = payload.spec and payload.spec.modelId or result.modelId

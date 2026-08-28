@@ -177,6 +177,14 @@
   box-shadow: var(--nx-shadow-floating) !important;
 }
 
+.nexus-composer-beam {
+  border-radius: var(--nx-radius-feature);
+}
+
+.nexus-composer-beam:focus-within {
+  filter: saturate(1.08);
+}
+
 .nexus-composer__body {
   display: grid;
   min-height: 56px;
@@ -313,110 +321,6 @@
   color: var(--nx-text-muted);
   font-size: 0.9375rem;
   line-height: 1.5;
-}
-
-.chat-empty-state__build-path {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  width: min(100%, 620px);
-  margin: 0 auto var(--nx-space-4);
-  padding: var(--nx-space-2);
-  border: 1px solid var(--nx-rule);
-  border-radius: var(--nx-radius-card);
-  background:
-    radial-gradient(circle at 50% 0, var(--nx-purple-wash), transparent 64%),
-    var(--nx-card);
-  box-shadow: var(--nx-inner-highlight), var(--nx-shadow-card);
-  list-style: none;
-}
-
-.chat-empty-state__build-path li {
-  position: relative;
-  display: grid;
-  min-width: 0;
-  justify-items: center;
-  gap: var(--nx-space-1);
-  color: var(--nx-text-muted);
-  font-size: 0.6875rem;
-  font-weight: 650;
-}
-
-.chat-empty-state__build-node {
-  position: relative;
-  z-index: 2;
-  display: grid;
-  width: 28px;
-  height: 28px;
-  place-items: center;
-  border: 1px solid var(--nx-rule-strong);
-  border-radius: var(--nx-radius-control);
-  background: var(--nx-muted-surface);
-  box-shadow: var(--nx-shadow-control);
-  color: var(--nx-purple-strong);
-}
-
-.chat-empty-state__build-node svg {
-  width: 15px;
-  height: 15px;
-}
-
-.chat-empty-state__build-path li > i {
-  position: absolute;
-  z-index: 1;
-  top: 13px;
-  left: calc(50% + 14px);
-  width: calc(100% - 28px);
-  height: 1px;
-  overflow: hidden;
-  background: var(--nx-rule-strong);
-}
-
-.chat-empty-state__build-path li > i::after {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--nx-purple),
-    transparent
-  );
-  content: "";
-  transform: translateX(-100%);
-  animation: chat-build-signal 3.2s var(--nx-ease-spatial) infinite;
-  animation-delay: calc(var(--signal-index, 0) * 160ms);
-}
-
-.chat-empty-state__build-path li:nth-child(2) > i::after {
-  animation-delay: 160ms;
-}
-.chat-empty-state__build-path li:nth-child(3) > i::after {
-  animation-delay: 320ms;
-}
-.chat-empty-state__build-path li:nth-child(4) > i::after {
-  animation-delay: 480ms;
-}
-
-.chat-empty-state__build-path
-  li[data-ready="true"]
-  .chat-empty-state__build-node {
-  border-color: var(--ds-success-border);
-  color: var(--nx-success);
-}
-
-@keyframes chat-build-signal {
-  0%,
-  18% {
-    opacity: 0;
-    transform: translateX(-100%);
-  }
-  35% {
-    opacity: 1;
-  }
-  58%,
-  100% {
-    opacity: 0;
-    transform: translateX(100%);
-  }
 }
 
 .chat-empty-state__context {
@@ -631,24 +535,6 @@
     grid-template-columns: 1fr;
   }
 
-  .chat-empty-state__build-path {
-    width: 100%;
-    padding: var(--nx-space-2) var(--nx-space-1);
-  }
-
-  .chat-empty-state__build-path li {
-    font-size: 0.625rem;
-  }
-  .chat-empty-state__build-node {
-    width: 28px;
-    height: 28px;
-  }
-  .chat-empty-state__build-path li > i {
-    top: 13px;
-    left: calc(50% + 14px);
-    width: calc(100% - 28px);
-  }
-
   .chat-empty-state__starters {
     grid-template-columns: 1fr;
   }
@@ -689,11 +575,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .nexus-composer-beam {
+    filter: none;
+  }
+
   .chat-empty-state__starter {
     transition: none;
-  }
-  .chat-empty-state__build-path li > i::after {
-    display: none;
   }
 }
 

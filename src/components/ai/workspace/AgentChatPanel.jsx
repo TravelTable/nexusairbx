@@ -113,6 +113,13 @@ export default function AgentChatPanel({
   navigationOpen = false,
   navigationControls = undefined,
   navigationButtonRef = null,
+  onDockNewChat,
+  onDockOpenAssets,
+  onDockOpenActivity,
+  onDockOpenBuildOptions,
+  isDockBuildOptionsOpen,
+  onDockBuildOptionsClose,
+  renderDockNavigation,
 }) {
   const handleComposerSubmit = useCallback(
     (event, overridePrompt = null, composerOptions = {}) => {
@@ -268,6 +275,13 @@ export default function AgentChatPanel({
           projectAssetSaving={projectAssetSaving}
           assetProjectId={selectedAssetProjectId}
           robloxStatus={robloxStatus}
+          onDockNewChat={onDockNewChat}
+          onDockOpenAssets={onDockOpenAssets}
+          onDockOpenActivity={onDockOpenActivity}
+          onDockOpenBuildOptions={onDockOpenBuildOptions}
+          openBuildOptions={isDockBuildOptionsOpen}
+          onCloseBuildOptions={onDockBuildOptionsClose}
+          renderDockNavigation={renderDockNavigation}
         />
       </div>
     </div>

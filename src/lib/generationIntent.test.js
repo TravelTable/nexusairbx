@@ -3,6 +3,8 @@ import {
   consumeGenerationIntent,
   createGenerationIntent,
   creationModeFromIntent,
+  deactivateGenerationIntent,
+  getActiveGenerationIntentId,
   normalizeGenerationIntentMode,
   restoreGenerationIntent,
 } from "./generationIntent";
@@ -59,6 +61,21 @@ describe("generationIntent", () => {
     expect(consumeGenerationIntent(intent.id)).toBe(true);
     expect(restoreGenerationIntent(intent.id)).toBeNull();
     expect(restoreGenerationIntent()).toBeNull();
+  });
+
+  test("deactivates an intent without deleting the saved handoff", () => {
+    const intent = createGenerationIntent({
+      prompt: "Create an inventory icon",
+      mode: "asset",
+    });
+
+    expect(deactivateGenerationIntent(intent.id)).toBe(true);
+    expect(getActiveGenerationIntentId()).toBeNull();
+    expect(restoreGenerationIntent(intent.id)).toMatchObject({
+      id: intent.id,
+      prompt: "Create an inventory icon",
+      mode: "asset",
+    });
   });
 
   test("normalizes legacy and UI-facing creation modes to canonical intent modes", () => {

@@ -8,7 +8,7 @@
   flex: 1;
   grid-template-columns: minmax(0, 1fr);
   overflow: hidden;
-  background: var(--nx-depth);
+  background: transparent;
 }
 
 .workspace-shell__primary {
@@ -23,7 +23,11 @@
 
 .workspace-shell .nexus-conversation-surface,
 .workspace-shell .nexus-composer-region {
-  background: var(--nx-depth);
+  background: transparent;
+}
+
+.workspace-shell .nexus-composer-region {
+  background: transparent !important;
 }
 
 .workspace-evidence-edge {

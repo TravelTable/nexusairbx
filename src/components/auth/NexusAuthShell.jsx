@@ -1,5 +1,12 @@
-import { ArrowRight, Check, CheckCircle, Eye, EyeOff, Loader, AlertCircle } from "lib/icons";
-import { Link } from "react-router-dom";
+import {
+  AlertCircle,
+  ArrowRight,
+  Check,
+  CheckCircle,
+  Eye,
+  EyeOff,
+  Loader,
+} from "lib/icons";
 import { Button } from "../shadcn/button";
 import { Input } from "../shadcn/input";
 import { Label } from "../shadcn/label";
@@ -21,33 +28,7 @@ export function NexusAuthShell({
       className="min-h-dvh overflow-x-hidden bg-[var(--ds-bg-canvas)] text-[var(--ds-text)]"
     >
       <main id="main-content" className="nexus-auth-layout">
-        <aside className="nexus-auth-record" aria-label="NexusRBX access record">
-          <Link
-            to="/"
-            aria-label="NexusRBX home"
-            className="nexus-auth-brand focus-ring"
-          >
-            <span className="grid leading-tight">
-              <span className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--ds-text)]">NEXUS/RBX</span>
-              <span className="mt-0.5 text-[11px] font-medium text-[var(--ds-text-muted)]">Roblox production studio</span>
-            </span>
-          </Link>
-
-          <div className="nexus-auth-record__copy">
-            <p>ACCESS RECORD / CREATOR</p>
-            <h2>A known creator. A readable project.</h2>
-            <p>Authentication protects project context, build history, Studio permissions, and the evidence returned for review.</p>
-          </div>
-
-          <ol className="nexus-auth-record__index">
-            <li><span>01</span>Project context</li>
-            <li><span>02</span>Change record</li>
-            <li><span>03</span>Test evidence</li>
-          </ol>
-        </aside>
-
         <section className="nexus-auth-form">
-
           <header className="nexus-auth-form__header">
             <p>ACCOUNT / CONTINUE</p>
             <Heading>

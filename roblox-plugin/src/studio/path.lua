@@ -150,6 +150,8 @@ local function safeSetProperty(inst, key, value)
 				value = Vector2.new(value.x or 0, value.y or 0)
 			elseif valueType == "Vector3" then
 				value = Vector3.new(value.x or 0, value.y or 0, value.z or 0)
+			elseif valueType == "CFrame" and typeof(value.components) == "table" and #value.components == 12 then
+				value = CFrame.new(table.unpack(value.components))
 			end
 		end
 		if key == "Value" and inst:IsA("ValueBase") then
@@ -195,6 +197,23 @@ local function safeSetProperty(inst, key, value)
 			inst.CornerRadius = value
 		elseif key == "Thickness" and inst:IsA("UIStroke") then
 			inst.Thickness = tonumber(value) or inst.Thickness
+		elseif key == "Loop" and inst:IsA("KeyframeSequence") then
+			inst.Loop = value == true
+		elseif key == "Priority" and inst:IsA("KeyframeSequence") then
+			local enumName = tostring(value):match("%.([%w_]+)$") or tostring(value)
+			inst.Priority = Enum.AnimationPriority[enumName] or Enum.AnimationPriority.Action
+		elseif key == "Time" and inst:IsA("Keyframe") then
+			inst.Time = tonumber(value) or 0
+		elseif key == "Weight" and inst:IsA("Pose") then
+			inst.Weight = tonumber(value) or 1
+		elseif key == "CFrame" and inst:IsA("Pose") and typeof(value) == "CFrame" then
+			inst.CFrame = value
+		elseif key == "EasingStyle" and inst:IsA("Pose") then
+			local enumName = tostring(value):match("%.([%w_]+)$") or tostring(value)
+			inst.EasingStyle = Enum.PoseEasingStyle[enumName] or Enum.PoseEasingStyle.Cubic
+		elseif key == "EasingDirection" and inst:IsA("Pose") then
+			local enumName = tostring(value):match("%.([%w_]+)$") or tostring(value)
+			inst.EasingDirection = Enum.PoseEasingDirection[enumName] or Enum.PoseEasingDirection.InOut
 		elseif key == "Name" then
 			inst.Name = tostring(value)
 		else

@@ -5,7 +5,6 @@ import SidebarContent from "../../components/SidebarContent";
 import SignInNudgeModal from "../../components/SignInNudgeModal";
 import ProNudgeModal from "../../components/ProNudgeModal";
 import StarterPromoModal from "../../components/StarterPromoModal";
-import NotificationToast from "../../components/NotificationToast";
 import SkipToMainContent from "../../components/site/SkipToMainContent";
 import ModelSwitcher from "../../components/ai/ModelSwitcher";
 import StudioPairControl from "../../components/ai/StudioPairControl";
@@ -30,6 +29,7 @@ import WorkspaceShell, {
 import useTaskRuntime from "../../hooks/useTaskRuntime";
 import useActiveAgents from "../../hooks/useActiveAgents";
 import WorkspaceRibbon from "./WorkspaceRibbon";
+import AnimateWorkspace from "./AnimateWorkspace";
 import {
   getStudioCommand,
   getStudioManifest,
@@ -46,6 +46,7 @@ import TutorialOverlay from "../../components/onboarding/TutorialOverlay";
 import { useTutorial } from "../../components/onboarding/useTutorial";
 import useAiPageZoom from "../../hooks/useAiPageZoom";
 import "./AgentWorkspaceLayout.css";
+import { Hero } from "../../components/ui/tailwind-css-background-snippet";
 
 const WORKSPACE_DRAWER_WIDTH_KEY = "nexusrbx:workspace-drawer-width";
 const PROJECT_SIDEBAR_MODAL_QUERY = "(max-width: 1199px)";
@@ -226,6 +227,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     isFreeUsagePlan,
     billingLoading,
     billingError,
+    refresh: refreshBilling,
   } = billing;
   const {
     user,
@@ -245,7 +247,6 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     showProNudge,
     proNudgeReason,
     currentTheme,
-    currentToast,
     authReady,
     chatOperationState,
   } = uiState;
@@ -279,7 +280,6 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     setShowSignInNudge,
     setShowProNudge,
     setProNudgeReason,
-    dismissToast,
     updateSettings,
     handlePromptSubmit,
     stopChatOperation,
@@ -314,7 +314,9 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
   } = handlers;
 
   const requestedCreationMode = new URLSearchParams(locationSearch).get("mode");
-  const creationMode = requestedCreationMode === "asset" ? "asset" : "agent";
+  const creationMode = requestedCreationMode === "asset" || requestedCreationMode === "animate"
+    ? requestedCreationMode
+    : "agent";
 
   useEffect(() => {
     if (generatorMode !== "agent_build") {
@@ -357,6 +359,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
   );
 
   const [activeDockPanel, setActiveDockPanel] = useState(null);
+  const [dockBuildOptionsOpen, setDockBuildOptionsOpen] = useState(false);
   const [drawerWidth, setDrawerWidth] = useState(readWorkspaceDrawerWidth);
   const [detailsView, setDetailsView] = useState("build");
   const [hasUnseenArtifact, setHasUnseenArtifact] = useState(false);
@@ -467,6 +470,14 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     if (panelId === "files" || panelId === "code") {
       setHasUnseenArtifact(false);
     }
+  }, []);
+
+  const handleOpenDockBuildOptions = useCallback(() => {
+    setDockBuildOptionsOpen(true);
+  }, []);
+
+  const handleCloseDockBuildOptions = useCallback(() => {
+    setDockBuildOptionsOpen(false);
   }, []);
 
   useEffect(
@@ -1343,6 +1354,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
       value={settings.modelVersion}
       isPremium={isPremium}
       isStarterOrAbove={isStarterOrAbove}
+      recommendedModelId={creationMode === "animate" ? "anthropic/claude-sonnet-5" : null}
       onChange={(id) => updateSettings({ modelVersion: id })}
       onProNudge={(reason) => {
         if (!requireUser()) return;
@@ -1367,6 +1379,45 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
       onOpenChange={handleStudioConnectionOpenChange}
       returnFocusRef={studioConnectionReturnFocusRef}
       requireUser={(next) => requireUser(next, PENDING_AUTH_ACTIONS.STUDIO_CONNECTION, "studio_pair_control")}
+    />
+  );
+
+  const handleDockNewChat = async () => {
+    if (!currentProjectId) {
+      openProjectSelector();
+      return;
+    }
+    try {
+      await chat.startNewChat({ projectId: currentProjectId });
+    } catch (error) {
+      notify?.({ message: error?.message || "Could not start a new chat", type: "error" });
+    }
+  };
+
+  const renderDockNavigation = ({ view, onClose }) => (
+    <SidebarContent
+      scripts={scripts}
+      currentChatId={chat.currentChatId}
+      currentProjectId={currentProjectId}
+      onSelectChat={chat.openChatById}
+      onDeleteChat={chat.handleDeleteChat}
+      onRenameChat={chat.handleRenameChat}
+      onMoveChat={chat.handleMoveChat}
+      generatingChatIds={chat.generatingChatIds || unified.generatingChatIds}
+      activeAgentStatusByChat={activeAgentStatusByChat}
+      user={user}
+      authReady={authReady}
+      notify={notify}
+      isMobile
+      onSelect={onClose}
+      onCollapse={onClose}
+      showProjectList={view === "projects"}
+      showAllChats={view === "chats"}
+      onOpenProject={async (projectId) => {
+        if (!projectId) return;
+        await openWorkspaceProject(projectId);
+        onClose();
+      }}
     />
   );
 
@@ -1400,7 +1451,6 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
           tutorial.hasSavedProgress ? "Resume the 5-step creator guide" : "Show the 5-step creator guide"
         }
         onRenameChat={(title) => chat.handleRenameChat(chat.currentChatId, title)}
-        onOpenNavigation={() => (sidebarOpen ? closeProjectSidebar(true) : setSidebarOpen(true))}
         onRetryMessage={handleRetryMessage}
         notify={notify}
         prompt={prompt}
@@ -1444,6 +1494,13 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         onRestoreRun={handleRestoreRun}
         approvingStepId={studio?.approvingStepId}
         restoringRun={studio?.restoringRun}
+        onDockNewChat={handleDockNewChat}
+        onDockOpenAssets={handleOpenAssetLibrary}
+        onDockOpenActivity={() => handleDockPanelChange("activity")}
+        onDockOpenBuildOptions={handleOpenDockBuildOptions}
+        isDockBuildOptionsOpen={dockBuildOptionsOpen}
+        onDockBuildOptionsClose={handleCloseDockBuildOptions}
+        renderDockNavigation={renderDockNavigation}
         studioConnected={studio?.connected}
         studioConnectionType={studio?.connectionType}
         studioConnectionState={studio?.connectionState}
@@ -1481,9 +1538,6 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         selectedAssetProjectId={roblox?.selectedAssetProjectId}
         robloxStatus={roblox?.status}
         workspaceControls={null}
-        navigationOpen={sidebarOpen}
-        navigationControls="project-sidebar"
-        navigationButtonRef={sidebarToggleRef}
       />
     </div>
   );
@@ -1818,83 +1872,29 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
 
   return (
     <div className="nexus-studio-root fixed inset-0 overflow-hidden">
+      <Hero />
       <div ref={aiPageRef} className="ai-page nexus-studio-page relative flex flex-col overflow-hidden font-sans">
         <SkipToMainContent targetId="ai-workspace-main" />
-        <WorkspaceRibbon
-          mode={creationMode}
-          onModeChange={handleCreationModeChange}
-          projectTitle={workspaceProjectTitle}
-          chatTitle={chat.currentChatMeta?.title || "New chat"}
-          modelControl={modelControl}
-          studioControl={studioControl}
-          isBusy={Boolean(chatOperationState?.isBusy || unified.isGenerating)}
-          navigationOpen={sidebarOpen}
-          navigationControls="project-sidebar"
-          navigationButtonRef={sidebarToggleRef}
-          onToggleNavigation={() => (sidebarOpen ? closeProjectSidebar(true) : setSidebarOpen(true))}
-          onRenameChat={
-            creationMode === "agent" ? (title) => chat.handleRenameChat(chat.currentChatId, title) : undefined
-          }
-          onChangeProject={() => {
-            openProjectSelector();
-            setSidebarOpen(true);
-          }}
+      <WorkspaceRibbon
+        mode={creationMode}
+        onModeChange={handleCreationModeChange}
+        projectTitle={workspaceProjectTitle}
+        chatTitle={chat.currentChatMeta?.title || "New chat"}
+        modelControl={modelControl}
+        studioControl={studioControl}
+        isBusy={Boolean(chatOperationState?.isBusy || unified.isGenerating)}
+        onRenameChat={
+          creationMode === "agent" ? (title) => chat.handleRenameChat(chat.currentChatId, title) : undefined
+        }
+        onChangeProject={() => {
+          openProjectSelector();
+        }}
           onOpenEvidence={() => handleDockPanelChange(activeDockPanel ? null : "details")}
           evidenceOpen={Boolean(activeDockPanel)}
           evidenceCount={evidenceCount}
           evidenceButtonRef={evidenceButtonRef}
         />
         <div className="nexus-studio-layout flex min-h-0 flex-1 overflow-hidden">
-          {/* LEFT: projects and chats */}
-          {creationMode === "agent" && (
-            <>
-              <button
-                type="button"
-                aria-label="Close project sidebar"
-                className="nexus-project-sidebar-backdrop"
-                data-open={sidebarOpen}
-                tabIndex={-1}
-                aria-hidden="true"
-                onClick={() => closeProjectSidebar(true)}
-              />
-              <aside
-                id="project-sidebar"
-                ref={projectSidebarRef}
-                className="nexus-project-sidebar z-40 flex min-h-0 shrink-0 flex-col overflow-hidden border-r border-[var(--ds-border-subtle)] bg-[var(--ds-bg-sidebar)]"
-                data-open={sidebarOpen}
-                aria-label="Project sidebar"
-                role={projectSidebarIsModal ? "dialog" : undefined}
-                aria-modal={projectSidebarIsModal ? "true" : undefined}
-                aria-hidden={!sidebarOpen}
-                inert={sidebarOpen ? undefined : ""}
-              >
-                <SidebarContent
-                  scripts={scripts}
-                  currentChatId={chat.currentChatId}
-                  currentProjectId={currentProjectId || null}
-                  showProjectList={Boolean(project?.selectorOpen)}
-                  onOpenProject={openWorkspaceProject}
-                  generatingChatIds={unified.generatingChatIds}
-                  activeAgentStatusByChat={activeAgentStatusByChat}
-                  onSelectChat={(id) => {
-                    chat.openChatById(id);
-                    setActiveTab("chat");
-                    if (projectSidebarModalViewport) closeProjectSidebar(true);
-                  }}
-                  onDeleteChat={chat.handleDeleteChat}
-                  onRenameChat={chat.handleRenameChat}
-                  onMoveChat={chat.handleMoveChat}
-                  user={user}
-                  authReady={authReady}
-                  notify={notify}
-                  isMobile={projectSidebarModalViewport}
-                  onSelect={() => closeProjectSidebar(true)}
-                  onCollapse={() => closeProjectSidebar(true)}
-                />
-              </aside>
-            </>
-          )}
-
           {/* CENTER: Studio agent chat */}
           <main
             id="ai-workspace-main"
@@ -1905,6 +1905,8 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
           >
             {creationMode === "asset" ? (
               <AssetModeWorkspace prompt={prompt} setPrompt={setPrompt} onContinue={handleAssetHandoff} />
+            ) : creationMode === "animate" ? (
+              <AnimateWorkspace modelVersion={settings.modelVersion} onBillingRefresh={refreshBilling} />
             ) : (
               <WorkspaceShell
                 activePanel={activeDockPanel}
@@ -1949,21 +1951,6 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
           skipTutorial={tutorial.skipTutorial}
         />
 
-        {currentToast && (
-          <div className="fixed inset-x-3 bottom-[max(1rem,env(safe-area-inset-bottom))] z-[120] sm:inset-x-auto sm:bottom-8 sm:right-8">
-            <NotificationToast
-              key={currentToast.id}
-              message={
-                currentToast.count > 1 ? `${currentToast.message} (x${currentToast.count})` : currentToast.message
-              }
-              type={currentToast.type}
-              duration={currentToast.duration}
-              cta={currentToast.cta}
-              secondary={currentToast.secondary}
-              onClose={() => dismissToast(currentToast.id)}
-            />
-          </div>
-        )}
       </div>
     </div>
   );

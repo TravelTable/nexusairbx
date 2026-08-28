@@ -6,12 +6,13 @@
  * Display rows only when the id exists in the live catalog.
  */
 const SUGGESTED_MODEL_IDS = Object.freeze([
+  "anthropic/claude-sonnet-5",
+  "anthropic/claude-opus-5",
+  "openai/gpt-5.6-terra",
+  "google/gemini-3.1-pro-preview",
+  "google/gemini-3.6-flash",
   "openai/gpt-5-mini",
   "deepseek/deepseek-v4-flash",
-  "anthropic/claude-sonnet-4.6",
-  "openai/gpt-5.4",
-  "google/gemini-2.5-pro",
-  "google/gemini-2.5-flash",
 ]);
 
 const SUGGESTED_MODEL_RANK = Object.freeze(

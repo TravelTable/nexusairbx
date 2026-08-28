@@ -145,6 +145,16 @@ export function getActiveGenerationIntentId() {
   return storage?.getItem(ACTIVE_INTENT_KEY) || null;
 }
 
+export function deactivateGenerationIntent(intentId = null) {
+  const storage = getStorage();
+  if (!storage) return false;
+
+  const activeId = storage.getItem(ACTIVE_INTENT_KEY);
+  if (!activeId || (intentId && activeId !== intentId)) return false;
+  storage.removeItem(ACTIVE_INTENT_KEY);
+  return true;
+}
+
 export function consumeGenerationIntent(intentId) {
   const storage = getStorage();
   if (!storage || !intentId) return false;

@@ -1,37 +1,4 @@
 import React from "react";
-import { Boxes, FileCode2, FolderTree, Radio, ShieldCheck } from "lib/icons";
-
-const BUILD_PATH = [
-  { label: "Project", icon: FolderTree },
-  { label: "Approach", icon: Radio },
-  { label: "Files", icon: FileCode2 },
-  { label: "Studio", icon: Boxes },
-  { label: "Proof", icon: ShieldCheck },
-];
-
-function BuildPathMap({ studioConnected }) {
-  return (
-    <ol
-      className="chat-empty-state__build-path"
-      aria-label="Nexus build path: project, approach, files, Studio, and proof"
-    >
-      {BUILD_PATH.map(({ label, icon: Icon }, index) => (
-        <li
-          key={label}
-          data-ready={
-            label === "Studio" && studioConnected ? "true" : undefined
-          }
-        >
-          <span className="chat-empty-state__build-node">
-            <Icon aria-hidden="true" />
-          </span>
-          <span>{label}</span>
-          {index < BUILD_PATH.length - 1 ? <i aria-hidden="true" /> : null}
-        </li>
-      ))}
-    </ol>
-  );
-}
 
 function cleanContextValue(value) {
   return String(value ?? "")
@@ -101,8 +68,6 @@ export default function ChatEmptyState({
             </p>
           </div>
         </div>
-
-        <BuildPathMap studioConnected={buildContext.studioConnected} />
 
         {hasBuildContext ? (
           <dl

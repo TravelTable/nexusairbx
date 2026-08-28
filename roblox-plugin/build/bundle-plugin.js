@@ -25,6 +25,7 @@ const sources = [
   "src/commands/writeTools.lua",
   "src/commands/nativeModel.lua",
   "src/commands/importedAsset.lua",
+  "src/commands/animation.lua",
   "src/commands/registry.lua",
   "src/Main.server.lua",
 ];
@@ -62,6 +63,7 @@ const WRAPPED_SOURCES = new Set([
   "src/commands/writeTools.lua",
   "src/commands/nativeModel.lua",
   "src/commands/importedAsset.lua",
+  "src/commands/animation.lua",
   "src/commands/registry.lua",
   "src/Main.server.lua",
 ]);
@@ -260,6 +262,7 @@ const MODULE_EXPORTS = {
     "applyNativeModelPatch",
   ],
   "src/commands/importedAsset.lua": ["ImportedAsset"],
+  "src/commands/animation.lua": ["createAnimationSequence", "animationSequenceHash"],
   "src/commands/registry.lua": [
     "pullOnce",
     "executeCommand",
