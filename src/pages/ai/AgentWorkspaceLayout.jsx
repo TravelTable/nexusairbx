@@ -271,7 +271,6 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
 
   const {
     setSidebarOpen,
-    setActiveTab,
     setPrompt,
     setRewindTarget,
     cancelRewind,
