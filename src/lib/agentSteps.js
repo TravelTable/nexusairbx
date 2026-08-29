@@ -328,7 +328,12 @@ export function summarizeStepResult(step) {
     const items = hasItems ? result.items.length : 0;
     const pageSize = Number(result.pageSize || payload.pageSize || 0) || items;
     const cursor = Math.max(0, Number(result.cursor ?? payload.cursor ?? 0) || 0);
-    const pageItems = hasItems ? items : (result.nextCursor || total > 0 ? pageSize : 0);
+    const explicitPageItems = Number(result.pageItemCount);
+    const pageItems = hasItems
+      ? items
+      : (Number.isFinite(explicitPageItems) && explicitPageItems >= 0
+        ? explicitPageItems
+        : (result.nextCursor || total > 0 ? pageSize : 0));
     if (total > 0 || pageItems > 0 || result.nextCursor) {
       const start = pageItems > 0 ? cursor : 0;
       const end = pageItems > 0 ? cursor + Math.max(pageItems, 1) - 1 : cursor;

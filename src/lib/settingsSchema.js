@@ -13,6 +13,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   enableGameWizard: true,
   chatMode: "agent",
   showThinking: true,
+  animateWorkspaceEnabled: false,
   studioAutoPushEnabled: false,
   studioAutoPushPolicy: "after_validation",
   lastAuthorizedStudioSessionId: null,
@@ -94,6 +95,7 @@ function sanitizeValue(key, value, { strict = false } = {}) {
     [
       "enableGameWizard",
       "showThinking",
+      "animateWorkspaceEnabled",
       "studioAutoPushEnabled",
       "robloxAssetUploadsEnabled",
       "allowPlaceholderAssets",

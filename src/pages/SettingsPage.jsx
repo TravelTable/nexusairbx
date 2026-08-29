@@ -1584,6 +1584,18 @@ export default function SettingsPage() {
     return (
       <div className="space-y-6">
         <Panel
+          title="Experimental workspaces"
+          description="Control developer-only workspace surfaces before they are ready for public access."
+        >
+          <ToggleRow
+            label="Show Animate workspace"
+            description="Adds the Animate tab to the AI workspace for this developer account. It is hidden by default."
+            checked={settings.animateWorkspaceEnabled === true}
+            onCheckedChange={(animateWorkspaceEnabled) => updateSetting({ animateWorkspaceEnabled })}
+          />
+        </Panel>
+
+        <Panel
           title="Admin overview"
           description="Developer-only usage and user inspection tools."
           actions={<Button type="button" variant="outline" size="sm" onClick={loadAdmin}><RefreshCcw className="h-4 w-4" />Refresh</Button>}

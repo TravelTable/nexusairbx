@@ -314,7 +314,9 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
   } = handlers;
 
   const requestedCreationMode = new URLSearchParams(locationSearch).get("mode");
-  const creationMode = requestedCreationMode === "asset" || requestedCreationMode === "animate"
+  const canAccessAnimateWorkspace = Boolean(devOverride || billing.isAdmin || billing.flags?.isAdmin);
+  const animateWorkspaceEnabled = canAccessAnimateWorkspace && settings.animateWorkspaceEnabled === true;
+  const creationMode = requestedCreationMode === "asset" || (requestedCreationMode === "animate" && animateWorkspaceEnabled)
     ? requestedCreationMode
     : "agent";
 
@@ -322,10 +324,10 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     if (generatorMode !== "agent_build") {
       setGeneratorMode("agent_build", "mode_query");
     }
-    if (requestedCreationMode === "script" && navigateTo) {
+    if ((requestedCreationMode === "script" || (requestedCreationMode === "animate" && !animateWorkspaceEnabled)) && navigateTo) {
       navigateTo("/ai?mode=agent", { replace: true });
     }
-  }, [generatorMode, navigateTo, requestedCreationMode, setGeneratorMode]);
+  }, [animateWorkspaceEnabled, generatorMode, navigateTo, requestedCreationMode, setGeneratorMode]);
 
   const handleCreationModeChange = useCallback(
     (mode) => {
@@ -709,6 +711,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
   const refreshStudioManifest = useCallback(
     async (options = {}) => {
       const force = options?.force === true;
+      const cacheOnly = options?.cacheOnly === true;
       const isRecovery = options?.recovery === true;
       if (manifestRefreshInFlightRef.current) {
         return manifestRefreshInFlightRef.current;
@@ -745,13 +748,18 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
             !previousStatus?.conflicted &&
             (!lastCompleteAt || Date.now() - lastCompleteAt < MANIFEST_FRESH_TTL_MS);
 
-          if (!force && isFresh) {
+          if (!force && (isFresh || (cacheOnly && previousStatus?.lastCompleteRevision))) {
             const items = await fetchManifestPage(
               previousStatus.lastCompleteRevision || previousStatus.activeRevision || ""
             );
             setStudioManifest(items);
             return;
           }
+
+          // Connection hydration is read-only. Agent runs own their manifest
+          // revision lifecycle, so mounting the workspace must not start a
+          // competing scan that can supersede a run's in-progress revision.
+          if (cacheOnly) return;
 
           // MCP-only sessions must never queue plugin-owned get_project_manifest.
           if (!canQueuePluginManifest) {
@@ -847,7 +855,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     if (autoManifestRefreshKeyRef.current === autoRefreshKey) return;
     autoManifestRefreshKeyRef.current = autoRefreshKey;
 
-    refreshStudioManifest().catch(() => {
+    refreshStudioManifest({ cacheOnly: true }).catch(() => {
       autoManifestRefreshKeyRef.current = "";
     });
   }, [refreshStudioManifest, studio?.pluginConnected, studioCommandSessionId, studioManifestSupported]);
@@ -1894,6 +1902,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
       <WorkspaceRibbon
         mode={creationMode}
         onModeChange={handleCreationModeChange}
+        animateEnabled={animateWorkspaceEnabled}
         projectTitle={workspaceProjectTitle}
         chatTitle={chat.currentChatMeta?.title || "New chat"}
         modelControl={modelControl}

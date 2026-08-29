@@ -173,6 +173,19 @@ describe("agentSteps", () => {
         },
       })
     ).toBe("page 1 · no items returned of 2152 (more queued)");
+    expect(
+      summarizeStepResult({
+        type: "get_project_manifest",
+        status: "succeeded",
+        payload: { cursor: "", pageSize: 500 },
+        result: {
+          totalInstances: 1732,
+          items: { _summarized: true, count: 500 },
+          pageItemCount: 500,
+          nextCursor: "500",
+        },
+      })
+    ).toBe("page 1 · 0–499 of 1732 (more queued)");
   });
 
   test("countStepSnapshots sums snapshotCount", () => {

@@ -56,6 +56,15 @@ describe("settingsSchema", () => {
     });
   });
 
+  it("keeps the Animate workspace hidden unless explicitly enabled", () => {
+    expect(DEFAULT_SETTINGS.animateWorkspaceEnabled).toBe(false);
+    expect(normalizeSettings({}).animateWorkspaceEnabled).toBe(false);
+    expect(sanitizeSettingsPatch({ animateWorkspaceEnabled: true })).toEqual({
+      patch: { animateWorkspaceEnabled: true },
+      invalidKeys: [],
+    });
+  });
+
   it("persists a bounded active workspace project identity", () => {
     expect(normalizeSettings({ activeProjectId: " project-1 " }).activeProjectId).toBe("project-1");
     expect(sanitizeSettingsPatch({ activeProjectId: null })).toEqual({

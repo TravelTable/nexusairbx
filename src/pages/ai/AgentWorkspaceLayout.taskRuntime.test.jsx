@@ -216,6 +216,7 @@ function openStageView(label) {
 }
 
 function makeController({
+  billing = {},
   activeMode = "build",
   handlers = {},
   currentChatMeta = { projectId: "project_1" },
@@ -226,9 +227,10 @@ function makeController({
   unified = { isGenerating: false },
   chatOverrides = {},
   scriptManager = {},
+  settings = {},
 } = {}) {
   return {
-    billing: {},
+    billing,
     uiState: {
       user: { uid: "user_1" },
       isMobile: false,
@@ -277,7 +279,7 @@ function makeController({
         openFile: noop,
         revertArtifactEdits: noop,
       },
-      settings: { modelVersion: "default" },
+      settings: { modelVersion: "default", animateWorkspaceEnabled: false, ...settings },
     },
     handlers: new Proxy(
       { notify: noop, dismissToast: noop, ...handlers },
@@ -319,7 +321,7 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
     expect(screen.getByRole("main").getAttribute("id")).toBe("ai-workspace-main");
     expect(screen.getByRole("main").getAttribute("tabindex")).toBe("-1");
     expect(screen.getByRole("group", { name: "Workspace mode" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Animate" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Animate" })).toBeNull();
   });
 
   test("opens the dedicated animation workspace from the animate URL mode", () => {
@@ -333,10 +335,42 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
       selectTask: jest.fn(),
     });
 
-    render(<AgentWorkspaceLayout controller={makeController()} locationSearch="?mode=animate" />);
+    render(
+      <AgentWorkspaceLayout
+        controller={makeController({
+          billing: { isAdmin: true },
+          settings: { animateWorkspaceEnabled: true },
+        })}
+        locationSearch="?mode=animate"
+      />,
+    );
 
     expect(screen.getByText("Animation workspace ready")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Animate" }).getAttribute("aria-pressed")).toBe("true");
+  });
+
+  test("redirects a disabled Animate deep link to Agent", () => {
+    mockUseTaskRuntime.mockReturnValue({
+      taskId: "",
+      task: null,
+      events: [],
+      connectionState: "idle",
+      error: null,
+      busyAction: "",
+      selectTask: jest.fn(),
+    });
+    const navigateTo = jest.fn();
+
+    render(
+      <AgentWorkspaceLayout
+        controller={makeController({ settings: { animateWorkspaceEnabled: true } })}
+        locationSearch="?mode=animate"
+        navigateTo={navigateTo}
+      />,
+    );
+
+    expect(screen.queryByText("Animation workspace ready")).toBeNull();
+    expect(navigateTo).toHaveBeenCalledWith("/ai?mode=agent", { replace: true });
   });
 
   test("lifts composer connection requests into the shared Studio dialog", () => {

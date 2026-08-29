@@ -12,6 +12,7 @@ function cleanTitle(value) {
 export default function WorkspaceRibbon({
   mode,
   onModeChange,
+  animateEnabled = false,
   projectTitle,
   chatTitle,
   modelControl,
@@ -139,14 +140,16 @@ export default function WorkspaceRibbon({
             >
               Asset
             </button>
-            <button
-              type="button"
-              data-active={mode === "animate" ? "true" : "false"}
-              aria-pressed={mode === "animate"}
-              onClick={() => onModeChange("animate")}
-            >
-              Animate
-            </button>
+            {animateEnabled ? (
+              <button
+                type="button"
+                data-active={mode === "animate" ? "true" : "false"}
+                aria-pressed={mode === "animate"}
+                onClick={() => onModeChange("animate")}
+              >
+                Animate
+              </button>
+            ) : null}
           </div>
           {modelControl ? <div className="ai-workspace-ribbon__model">{modelControl}</div> : null}
           <div data-tour="studio-pair" className="ai-workspace-ribbon__studio">
