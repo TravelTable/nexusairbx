@@ -154,7 +154,6 @@ function Hero({ surface, navigate, inputRef }) {
   return (
     <section className={styles.hero} aria-labelledby="homepage-hero-heading" data-home-hero>
       <div className={styles.heroCopy}>
-        <span className={styles.eyebrow}>AI BUILD WORKSPACE FOR ROBLOX</span>
         <h1 id="homepage-hero-heading" className={styles.heroHeading}>
           AI Roblox Script Generator <span>and Studio Agent</span>
         </h1>

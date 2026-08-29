@@ -151,6 +151,14 @@
   padding-inline: clamp(14px, 3vw, 40px);
 }
 
+/* Keep the jump-to-latest control in the conversation gutter so it cannot
+   cover streamed generation steps in the readable column. */
+.nexus-conversation-scroll-button {
+  right: max(var(--nx-space-3), calc((100% - 820px) / 2 + var(--nx-space-3)));
+  left: auto;
+  transform: none;
+}
+
 .agent-chat-panel[data-empty="true"] {
   justify-content: flex-start;
   overflow: hidden;

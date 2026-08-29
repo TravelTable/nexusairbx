@@ -55,6 +55,7 @@ jest.mock("lib/icons", () => {
     Loader: Icon,
     Pencil: Icon,
     ClipboardList: Icon,
+    ShieldCheck: Icon,
     Layers: Icon,
     ListChecks: Icon,
     Maximize2: Icon,
@@ -775,7 +776,7 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
     expect(props.activeFile.content).toBe("print('stage')");
     expect(props.activeFile.name).toBe("Round Manager");
     expect(props.onSaveToCreations).toEqual(expect.any(Function));
-    expect(screen.getByRole("heading", { name: "Code" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Editor" })).toBeTruthy();
 
     await act(async () => props.onSaveToCreations(props.artifact.title, props.activeFile.content));
     expect(handleCreateScript).toHaveBeenCalledWith(

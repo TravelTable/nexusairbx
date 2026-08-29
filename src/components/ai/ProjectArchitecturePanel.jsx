@@ -99,9 +99,12 @@ export default function ProjectArchitecturePanel({ context, onClose, onSync, emb
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-subtle">
         {!hasAny ? (
-          <div className="rounded-xl bg-[var(--ds-fill-subtle)] border border-[var(--ds-border-subtle)] p-6 text-center">
-            <p className="text-sm text-[var(--ds-text-secondary)] mb-2">No project context yet.</p>
-            <p className="text-xs text-[var(--ds-text-muted)] mb-4">Add your game's Remotes, Modules, and services so the AI can generate code that fits your project.</p>
+          <div className="workspace-stage-empty !p-0">
+            <div className="workspace-stage-empty__content">
+              <Layout className="mb-2 h-5 w-5 text-[var(--ds-accent)]" />
+              <span className="workspace-stage-empty__eyebrow">Awaiting structure</span>
+              <h3>No project structure yet</h3>
+              <p>Add your game's remotes, modules, and services so generated work fits the existing architecture.</p>
             {onSync && (
               <button
                 type="button"
@@ -111,6 +114,7 @@ export default function ProjectArchitecturePanel({ context, onClose, onSync, emb
                 Add Project Context
               </button>
             )}
+            </div>
           </div>
         ) : (
           <>

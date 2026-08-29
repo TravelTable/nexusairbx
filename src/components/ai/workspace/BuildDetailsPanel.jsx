@@ -17,6 +17,7 @@ export default function BuildDetailsPanel({
   approvingStepId,
   restoringRun = false,
   notify,
+  includeValidation = true,
 }) {
   const hasNativeModel = Boolean(artifact?.nativeModelSpec || artifact?.nativeModel?.spec || artifact?.nativeBuild?.spec);
   const hasContent =
@@ -56,11 +57,13 @@ export default function BuildDetailsPanel({
     ].includes(agentRun?.status)
   ) {
     return (
-      <div className="px-4 py-10 text-center">
-        <ClipboardList className="w-8 h-8 text-[var(--ds-text-muted)] mx-auto mb-2" />
-        <p className="text-xs text-[var(--ds-text-muted)]">
-          Setup, testing, and security notes appear here after the agent builds something.
-        </p>
+      <div className="workspace-stage-empty">
+        <div className="workspace-stage-empty__content">
+          <ClipboardList className="mb-2 h-5 w-5 text-[var(--ds-accent)]" />
+          <span className="workspace-stage-empty__eyebrow">Waiting for a build</span>
+          <h3>No report yet</h3>
+          <p>Build decisions, setup steps, and verification evidence will appear after the agent produces an artifact.</p>
+        </div>
       </div>
     );
   }
@@ -78,7 +81,7 @@ export default function BuildDetailsPanel({
       <NativeModelReviewPanel artifact={artifact} notify={notify} />
       <SetupStepsPanel steps={artifact?.setupSteps} />
       <TestingStepsPanel steps={artifact?.testingSteps} />
-      <ValidationReportPanel artifact={artifact} />
+      {includeValidation ? <ValidationReportPanel artifact={artifact} /> : null}
     </div>
   );
 }

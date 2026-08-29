@@ -81,7 +81,7 @@ describe("WorkspaceAssetsPanel", () => {
 
   test("passes the chat attachment contract into Creator Store", () => {
     const { props } = renderPanel();
-    fireEvent.click(screen.getByRole("button", { name: "Store" }));
+    fireEvent.click(screen.getByRole("button", { name: "Browse" }));
 
     expect(screen.getByTestId("store-project-id").textContent).toBe("chat-123");
     fireEvent.click(screen.getByRole("button", { name: "Attach store mock" }));
@@ -91,14 +91,14 @@ describe("WorkspaceAssetsPanel", () => {
   test("preserves Store and GLB state while switching views", () => {
     renderPanel();
 
-    fireEvent.click(screen.getByRole("button", { name: "Store" }));
+    fireEvent.click(screen.getByRole("button", { name: "Browse" }));
     fireEvent.change(screen.getByLabelText("Store state"), { target: { value: "tree" } });
-    fireEvent.click(screen.getByRole("button", { name: "GLB" }));
+    fireEvent.click(screen.getByRole("button", { name: "Import 3D" }));
     fireEvent.change(screen.getByLabelText("GLB state"), { target: { value: "castle.glb" } });
     fireEvent.click(screen.getByRole("button", { name: "Project" }));
-    fireEvent.click(screen.getByRole("button", { name: "Store" }));
+    fireEvent.click(screen.getByRole("button", { name: "Browse" }));
     expect(screen.getByLabelText("Store state").value).toBe("tree");
-    fireEvent.click(screen.getByRole("button", { name: "GLB" }));
+    fireEvent.click(screen.getByRole("button", { name: "Import 3D" }));
     expect(screen.getByLabelText("GLB state").value).toBe("castle.glb");
   });
 });

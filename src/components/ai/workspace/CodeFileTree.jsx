@@ -50,9 +50,13 @@ export default function CodeFileTree({ artifact, activeFileId, onSelectFile }) {
 
   if (!artifact || !artifact.files?.length) {
     return (
-      <div className="px-4 py-8 text-center">
-        <FileQuestion className="w-8 h-8 text-[var(--ds-text-muted)] mx-auto mb-2" />
-        <p className="text-xs text-[var(--ds-text-muted)]">No files yet. Describe what you want to build and the agent will generate them here.</p>
+      <div className="workspace-stage-empty !p-0">
+        <div className="workspace-stage-empty__content">
+          <FileQuestion className="mb-2 h-5 w-5 text-[var(--ds-accent)]" />
+          <span className="workspace-stage-empty__eyebrow">Waiting for files</span>
+          <h3>No workspace files yet</h3>
+          <p>Describe a build in the conversation, open a saved creation, or scan the paired Studio place.</p>
+        </div>
       </div>
     );
   }

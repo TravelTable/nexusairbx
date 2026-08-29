@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import UniversalHeaderFrame from "../universal/UniversalHeaderFrame";
 import WorkspaceRibbon from "../universal/WorkspaceRibbon";
+import { Avatar, AvatarFallback, AvatarImage } from "../shadcn/avatar";
 import { universalPrimaryNavigation, universalSiteIndexSections } from "../../content/universalNavigation";
 import useHeaderIdentity from "./useHeaderIdentity";
 import { getHeaderVariantForPath } from "./siteHeaderIdentity";
@@ -58,6 +59,28 @@ function UnreadCount({ count }) {
   return <span className={styles.unread} aria-label={`${count} unread support messages`}>{count > 99 ? "99+" : count}</span>;
 }
 
+function AccountAvatar({ identity, menu = false }) {
+  const avatar = identity.avatar || {};
+  return (
+    <Avatar
+      className={`${styles.accountAvatar} ${menu ? styles.accountAvatarMenu : ""}`}
+      data-avatar-source={avatar.source || "initials"}
+    >
+      {avatar.src ? (
+        <AvatarImage
+          src={avatar.src}
+          alt=""
+          className={styles.accountAvatarImage}
+          referrerPolicy="no-referrer"
+        />
+      ) : null}
+      <AvatarFallback className={styles.accountAvatarFallback} delayMs={avatar.src ? 250 : 0}>
+        {avatar.fallback || "NX"}
+      </AvatarFallback>
+    </Avatar>
+  );
+}
+
 function AccountControl({ identity, mobile = false, compact = false, showWorkspaceAction = true }) {
   const [open, setOpen] = useState(false);
   const buttonRef = useRef(null);
@@ -97,13 +120,14 @@ function AccountControl({ identity, mobile = false, compact = false, showWorkspa
         <button
           ref={buttonRef}
           type="button"
-          className={styles.accountButton}
+          className={`${styles.accountButton} ${styles.accountAvatarButton}`}
           aria-haspopup="menu"
           aria-expanded={open}
+          aria-label={`Open account menu for ${identity.displayName || identity.email || "your account"}`}
+          title={identity.displayName || identity.email || "Account"}
           onClick={() => setOpen((value) => !value)}
         >
-          {identity.displayName || "Account"}
-          {compact ? <span className={styles.compactPlan}>{identity.planLabel}</span> : null}
+          <AccountAvatar identity={identity} />
           <UnreadCount count={identity.supportUnreadCount} />
         </button>
         {open ? (
@@ -114,9 +138,12 @@ function AccountControl({ identity, mobile = false, compact = false, showWorkspa
             className={`${styles.accountMenu} ${mobile ? styles.accountMenuMobile : ""}`}
           >
             <div className={styles.accountIdentity}>
-              <strong>{identity.displayName}</strong>
-              <span>{identity.email}</span>
-              <span>{identity.planLabel} access</span>
+              <AccountAvatar identity={identity} menu />
+              <div className={styles.accountIdentityCopy}>
+                <strong>{identity.displayName}</strong>
+                <span>{identity.email}</span>
+                <span>{identity.planLabel} access</span>
+              </div>
             </div>
             <nav>
               <AppLink role="menuitem" to="/billing" className={styles.menuItem} onClick={() => setOpen(false)}>Billing</AppLink>

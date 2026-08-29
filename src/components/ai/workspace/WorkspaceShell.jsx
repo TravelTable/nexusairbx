@@ -76,7 +76,7 @@ export const WORKSPACE_DOCK_PANELS = [
   },
   {
     id: "code",
-    label: "Code",
+    label: "Editor",
     description: "Inspect and edit the selected Roblox script",
     icon: FileCode2,
   },
@@ -94,8 +94,8 @@ export const WORKSPACE_DOCK_PANELS = [
   },
   {
     id: "details",
-    label: "Project",
-    description: "Build summary, architecture, and diagnostics",
+    label: "Report",
+    description: "Build summary, project structure, and validation evidence",
     icon: ClipboardList,
   },
 ];
@@ -104,7 +104,7 @@ export function WorkspaceEmptyState({ title, description, action }) {
   return (
     <div className="workspace-stage-empty">
       <div className="workspace-stage-empty__content">
-        <span className="workspace-stage-empty__eyebrow">No evidence yet</span>
+        <span className="workspace-stage-empty__eyebrow">Waiting for evidence</span>
         <h3>{title}</h3>
         {description ? <p>{description}</p> : null}
         {action ? (

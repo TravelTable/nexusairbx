@@ -11,8 +11,8 @@ import RobloxDecalUploadDropdown from "./RobloxDecalUploadDropdown";
 
 const ASSET_VIEWS = [
   { id: "project", label: "Project", icon: Boxes },
-  { id: "store", label: "Store", icon: Search },
-  { id: "glb", label: "GLB", icon: FileArchive },
+  { id: "store", label: "Browse", icon: Search },
+  { id: "glb", label: "Import 3D", icon: FileArchive },
 ];
 
 export default function WorkspaceAssetsPanel({

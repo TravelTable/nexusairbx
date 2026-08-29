@@ -44,9 +44,9 @@ function chooseStageView(label) {
   });
   if (launcher) fireEvent.click(launcher);
   const stage =
-    screen.queryByRole("dialog", { name: /Files|Code|Run|Assets|Project/ }) ||
+    screen.queryByRole("dialog", { name: /Files|Editor|Run|Assets|Report/ }) ||
     screen.getByRole("complementary", {
-      name: /Files|Code|Run|Assets|Project/,
+      name: /Files|Editor|Run|Assets|Report/,
     });
   const target = within(stage).getByRole("tab", {
     name: `Open ${label} evidence`,
@@ -82,14 +82,14 @@ describe("WorkspaceShell", () => {
       screen.getByRole("button", { name: "Open Stage evidence" }),
     );
     const stage =
-      screen.queryByRole("dialog", { name: "Project" }) ||
-      screen.getByRole("complementary", { name: "Project" });
+      screen.queryByRole("dialog", { name: "Report" }) ||
+      screen.getByRole("complementary", { name: "Report" });
     const files = within(stage).getByRole("tab", {
       name: "Open Files evidence",
     });
-    const code = within(stage).getByRole("tab", { name: "Open Code evidence" });
+    const code = within(stage).getByRole("tab", { name: "Open Editor evidence" });
     const project = within(stage).getByRole("tab", {
-      name: "Open Project evidence",
+      name: "Open Report evidence",
     });
     files.focus();
     expect(files).toHaveFocus();
@@ -131,7 +131,7 @@ describe("WorkspaceShell", () => {
       name: "Open Files evidence",
     });
     const codeTab = within(stage).getByRole("tab", {
-      name: "Open Code evidence",
+      name: "Open Editor evidence",
     });
     const panel = within(stage).getByRole("tabpanel");
     expect(filesTab).toHaveAttribute("tabindex", "0");
@@ -214,8 +214,8 @@ describe("WorkspaceShell", () => {
 
     try {
       render(<Harness />);
-      chooseStageView("Code");
-      const dialog = screen.getByRole("dialog", { name: "Code" });
+      chooseStageView("Editor");
+      const dialog = screen.getByRole("dialog", { name: "Editor" });
       expect(
         within(dialog).getByRole("button", { name: "Back to conversation" }),
       ).toHaveFocus();
@@ -245,12 +245,12 @@ describe("WorkspaceShell", () => {
       chooseStageView("Files");
       const dialog = screen.getByRole("dialog", { name: "Files" });
       const codeTab = within(dialog).getByRole("tab", {
-        name: "Open Code evidence",
+        name: "Open Editor evidence",
       });
       codeTab.focus();
       fireEvent.click(codeTab);
 
-      expect(screen.getByRole("dialog", { name: "Code" })).toBeTruthy();
+      expect(screen.getByRole("dialog", { name: "Editor" })).toBeTruthy();
       expect(codeTab).toHaveFocus();
     } finally {
       global.ResizeObserver = OriginalResizeObserver;
@@ -294,13 +294,13 @@ describe("WorkspaceShell", () => {
 
   test("can promote inline Stage to a full-screen modal and exit again", () => {
     render(<Harness />);
-    chooseStageView("Project");
-    expect(screen.getByRole("complementary", { name: "Project" })).toBeTruthy();
+    chooseStageView("Report");
+    expect(screen.getByRole("complementary", { name: "Report" })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Enter full screen" }));
-    expect(screen.getByRole("dialog", { name: "Project" })).toBeTruthy();
+    expect(screen.getByRole("dialog", { name: "Report" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Exit full screen" }));
-    expect(screen.getByRole("complementary", { name: "Project" })).toBeTruthy();
+    expect(screen.getByRole("complementary", { name: "Report" })).toBeTruthy();
   });
 
   test("full-screen Stage spans the complete workspace grid", () => {

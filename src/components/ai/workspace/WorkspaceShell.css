@@ -342,18 +342,19 @@
 }
 
 .workspace-stage-empty {
-  display: flex;
-  min-height: 240px;
-  height: 100%;
-  align-items: flex-start;
-  padding: var(--nx-space-4) var(--nx-space-3);
+  display: block;
+  min-height: 0;
+  height: auto;
+  padding: var(--nx-space-3);
   text-align: left;
 }
 
 .workspace-stage-empty__content {
-  max-width: 32rem;
-  border-top: 1px solid var(--nx-rule);
-  padding-top: var(--nx-space-3);
+  max-width: none;
+  padding: var(--nx-space-4);
+  border: 1px dashed var(--nx-rule-strong);
+  border-radius: var(--nx-radius-panel);
+  background: var(--nx-depth);
 }
 
 .workspace-stage-empty__eyebrow {
@@ -365,19 +366,19 @@
 }
 
 .workspace-stage-empty h3 {
-  margin: var(--nx-space-2) 0 0;
-  color: var(--nx-purple);
+  margin: var(--nx-space-1) 0 0;
+  color: var(--nx-text);
   font-family: var(--nx-font-display);
-  font-size: 1.5rem;
+  font-size: 0.9375rem;
   font-weight: 650;
-  line-height: 1.05;
+  line-height: 1.25;
 }
 
 .workspace-stage-empty p {
-  margin: var(--nx-space-2) 0 0;
+  margin: var(--nx-space-1) 0 0;
   color: var(--nx-text-muted);
-  font-size: 0.8125rem;
-  line-height: 1.55;
+  font-size: 0.75rem;
+  line-height: 1.5;
 }
 
 .workspace-stage-empty__action {

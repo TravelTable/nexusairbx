@@ -121,7 +121,7 @@ export default function ChatView({
               />
             )}
           </ConversationContent>
-          <ConversationScrollButton />
+          <ConversationScrollButton className="nexus-conversation-scroll-button" />
         </Conversation>
       </div>
     </div>

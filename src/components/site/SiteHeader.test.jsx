@@ -3,26 +3,31 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 
-jest.mock("./useHeaderIdentity", () => () => ({
-  authReady: true,
-  user: null,
-  avatar: { src: "", fallback: "N" },
-  displayName: "Guest",
-  email: "",
-  planLabel: "Free",
-  robloxAction: "connect",
-  robloxConnected: false,
-  robloxError: "",
-  robloxLoading: false,
-  robloxUsername: "",
-  supportUnreadCount: 0,
-  isSupportStaff: false,
-  connectRoblox: jest.fn(),
-  reconnectRoblox: jest.fn(),
-  signOutUser: jest.fn(),
-}));
+jest.mock("./useHeaderIdentity", () => ({ __esModule: true, default: jest.fn() }));
 
+import useHeaderIdentity from "./useHeaderIdentity";
 import SiteHeader, { resolveStaticPublicHref } from "./SiteHeader";
+
+beforeEach(() => {
+  useHeaderIdentity.mockReturnValue({
+    authReady: true,
+    user: null,
+    avatar: { src: "", fallback: "N" },
+    displayName: "Guest",
+    email: "",
+    planLabel: "Free",
+    robloxAction: "connect",
+    robloxConnected: false,
+    robloxError: "",
+    robloxLoading: false,
+    robloxUsername: "",
+    supportUnreadCount: 0,
+    isSupportStaff: false,
+    connectRoblox: jest.fn(),
+    reconnectRoblox: jest.fn(),
+    signOutUser: jest.fn(),
+  });
+});
 
 test("connects Docs and Pricing to the configured public frontend", () => {
   expect(resolveStaticPublicHref("/docs", "http://localhost:4173/")).toBe(
@@ -100,4 +105,39 @@ test("makes the homepage skip link the first keyboard target", async () => {
   expect(
     screen.getByRole("link", { name: /^Legal\b/ }).getAttribute("href"),
   ).toBe("/legal");
+});
+
+test("uses the resolved account picture and keeps the account menu accessible", () => {
+  useHeaderIdentity.mockReturnValue({
+    authReady: true,
+    user: { uid: "creator-1" },
+    avatar: { src: "https://example.com/roblox-headshot.png", source: "roblox", fallback: "RB" },
+    displayName: "Roblox Builder",
+    email: "builder@example.com",
+    planLabel: "Free",
+    robloxAction: "",
+    robloxConnected: true,
+    robloxError: "",
+    robloxLoading: false,
+    robloxUsername: "RobloxBuilder",
+    supportUnreadCount: 0,
+    isSupportStaff: false,
+    connectRoblox: jest.fn(),
+    reconnectRoblox: jest.fn(),
+    signOutUser: jest.fn(),
+  });
+
+  render(
+    <MemoryRouter initialEntries={["/"]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <SiteHeader variant="marketing" />
+    </MemoryRouter>,
+  );
+
+  const accountButtons = screen.getAllByRole("button", { name: "Open account menu for Roblox Builder" });
+  expect(accountButtons.length).toBeGreaterThan(0);
+  expect(accountButtons[0].querySelector('[data-avatar-source="roblox"]')).toBeTruthy();
+
+  fireEvent.click(accountButtons[0]);
+  expect(screen.getByRole("menu", { name: "Account menu" })).toBeTruthy();
+  expect(screen.getByText("builder@example.com")).toBeTruthy();
 });

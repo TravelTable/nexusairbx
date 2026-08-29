@@ -60,13 +60,15 @@
     "avoid": []
   },
   "decisions": [
+    "Signed-in header account controls are avatar-first: show the connected Roblox profile image when available, otherwise the authenticated provider photo, then identity initials; keep the full identity and plan details inside the accessible account menu.",
     "Settings sidebar icons use short, tab-specific hover and keyboard-focus animations inspired by the 21st Animated Sidebar pattern; motion is disabled when reduced motion is requested.",
     "The Settings desktop navigation uses a compact 260px application sidebar with a small identity block, restrained section label, icon-led rounded rows, and a soft purple selected state while preserving the existing tab order and behavior.",
     "Settings is a full-width application page with a viewport-spanning header, persistent desktop navigation rail, and flexible content pane; mobile retains the section drawer.",
     "Settings Usage uses an accessible included-usage meter, a concise KPI strip, 7-day and 30-day trend views, workflow distribution, and searchable expandable events backed by real usage records.",
     "Settings uses a premium control-center hierarchy with grouped searchable navigation, visible section titles and inline guidance, restrained elevated panels, actionable readiness rows, and deep analytics only in Plan and usage.",
     "Pricing stays an open access ledger with underlined choices, short feature labels, and keyboard- and touch-accessible question-mark disclosures for audience, billing, finder, and feature detail.",
-    "Downloads uses compact icon-led platform tabs and question-mark dev tips so only essential release and setup text remains visible."
+    "Downloads uses compact icon-led platform tabs and question-mark dev tips so only essential release and setup text remains visible.",
+    "The Evidence Stage uses five narrow-panel lenses: Files, Editor, Run, Assets, and Report. Empty states remain compact and actionable; Run uses searchable expandable real-event rows; Report separates summary, structure, and validation evidence."
   ],
   "evidence": [
     {

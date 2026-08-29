@@ -82,12 +82,14 @@ export const ConversationScrollButton = ({
 
   return (
     <Button
+      aria-label="Scroll to latest message"
       className={cn(
         "absolute bottom-4 left-[50%] translate-x-[-50%] rounded-full dark:bg-background dark:hover:bg-muted",
         className
       )}
       onClick={handleScrollToBottom}
       size="icon"
+      title="Scroll to latest message"
       type="button"
       variant="outline"
       {...props}

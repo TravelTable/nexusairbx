@@ -18,6 +18,7 @@ import CodeFileTree from "../../components/ai/workspace/CodeFileTree";
 import CodeWorkspace from "../../components/ai/workspace/CodeWorkspace";
 import AgentChatPanel from "../../components/ai/workspace/AgentChatPanel";
 import TaskProgressPanel from "../../components/ai/workspace/TaskProgressPanel";
+import RunEventLog from "../../components/ai/workspace/RunEventLog";
 import ActiveAgentsTray from "../../components/ai/workspace/ActiveAgentsTray";
 import WorkspaceAssetsPanel from "../../components/ai/workspace/WorkspaceAssetsPanel";
 import WorkspaceDetailsPanel from "../../components/ai/workspace/WorkspaceDetailsPanel";
@@ -360,7 +361,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
   const [activeDockPanel, setActiveDockPanel] = useState(null);
   const [dockBuildOptionsOpen, setDockBuildOptionsOpen] = useState(false);
   const [drawerWidth, setDrawerWidth] = useState(readWorkspaceDrawerWidth);
-  const [detailsView, setDetailsView] = useState("build");
+  const [detailsView, setDetailsView] = useState("summary");
   const [hasUnseenArtifact, setHasUnseenArtifact] = useState(false);
   const [openedCodeRequest, setOpenedCodeRequest] = useState(null);
   const [studioConnectionOpen, setStudioConnectionOpen] = useState(false);
@@ -1606,10 +1607,19 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     />
   );
 
+  const fileTreeArtifact = openedCodeArtifact || (studioFiles.length ? studioArtifact : workspace.activeArtifact);
+  const fileTreeCount = fileTreeArtifact?.files?.length || 0;
   const fileTree = (
     <div className="p-2">
+      <div className="mb-2 flex items-center justify-between gap-3 px-1.5 py-1">
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-widest text-[var(--ds-text-secondary)]">Workspace files</div>
+          <div className="mt-0.5 text-[10px] text-[var(--ds-text-muted)]">Generated, opened, and edited scripts</div>
+        </div>
+        <span className="min-w-6 border border-[var(--ds-border-subtle)] px-1.5 py-1 text-center font-mono text-[10px] text-[var(--ds-text-muted)]" aria-label={`${fileTreeCount} workspace files`}>{fileTreeCount}</span>
+      </div>
       <CodeFileTree
-        artifact={openedCodeArtifact || (studioFiles.length ? studioArtifact : workspace.activeArtifact)}
+        artifact={fileTreeArtifact}
         activeFileId={
           openedCodeArtifact?.files?.[0]?.id || (studioFiles.length ? studioActiveFile?.id : workspace.activeFile?.id)
         }
@@ -1629,7 +1639,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
       <div className="mt-4 border-t border-[var(--ds-border-subtle)] pt-3 space-y-2">
         <div className="flex items-center justify-between gap-2 px-1">
           <div className="text-[10px] font-bold text-[var(--ds-text-muted)] uppercase tracking-widest">
-            Studio Manifest
+            Live Studio
           </div>
           <button
             type="button"
@@ -1645,13 +1655,14 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
             <RefreshCw className={`w-3.5 h-3.5 ${studioBusy ? "animate-spin" : ""}`} />
           </button>
         </div>
-        <label className="flex items-center gap-2 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2 py-1.5">
+        <label className="flex items-center gap-2 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2 py-1.5 focus-within:border-[var(--ds-accent-border)] focus-within:ring-2 focus-within:ring-[var(--ds-accent-soft)]">
           <Search className="w-3.5 h-3.5 text-[var(--ds-text-muted)]" />
           <input
             value={studioSearch}
             onChange={(e) => setStudioSearch(e.target.value)}
             placeholder="Search Studio paths..."
-            className="min-w-0 flex-1 bg-transparent text-xs text-[var(--ds-text)] placeholder:text-[var(--ds-text-muted)] outline-none"
+            aria-label="Search Studio paths"
+            className="min-w-0 flex-1 bg-transparent text-xs text-[var(--ds-text)] placeholder:text-[var(--ds-text-muted)]"
           />
         </label>
         <div className="space-y-0.5 pr-1">
@@ -1686,8 +1697,8 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
           {!studioResults.length && (
             <div className="px-2 py-4 text-center text-xs text-[var(--ds-text-muted)]">
               {studioManifestSupported
-                ? "No persisted Studio manifest yet."
-                : "No place index on MCP sessions — Ask uses live script search instead."}
+                ? "No saved Studio index yet. Refresh after pairing Studio to scan the active place."
+                : "This connection searches Studio live. Ask the agent for a script or path to open it here."}
             </div>
           )}
         </div>
@@ -1728,6 +1739,9 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
             onAmend={(payload) => invokeTaskAction(() => taskRuntime.amend(payload))}
             onApprove={(payload) => invokeTaskAction(() => taskRuntime.approve(payload))}
           />
+          <div className="mt-3">
+            <RunEventLog events={taskRuntime.events} agents={activeAgentRuntime.agents} />
+          </div>
         </div>
       ) : activeAgentRuntime.agents.length ? (
         <div className="min-h-0 flex-1 overflow-y-auto p-3 scrollbar-subtle" aria-label="Current agent runs">
@@ -1811,6 +1825,9 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
                 </section>
               );
             })}
+          </div>
+          <div className="mt-3">
+            <RunEventLog events={[]} agents={activeAgentRuntime.agents} />
           </div>
         </div>
       ) : (

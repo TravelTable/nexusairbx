@@ -115,8 +115,8 @@ export default function useHeaderIdentity({
   const robloxUsername = getRobloxUsername(robloxProfile);
   const robloxConnected = effectiveRobloxStatus?.connected === true;
   const avatar = useMemo(
-    () => selectHeaderAvatar({ user, robloxProfile }),
-    [robloxProfile, user]
+    () => selectHeaderAvatar({ user, robloxProfile: robloxConnected ? robloxProfile : null }),
+    [robloxConnected, robloxProfile, user]
   );
 
   const returnPath = `${location.pathname}${location.search}${location.hash}`;
