@@ -19,9 +19,9 @@ import {
   Search,
   Settings,
   ShoppingBag,
-  Sparkles,
   X,
 } from "lucide-react";
+import BotMessageSquareIcon from "./BotMessageSquareIcon";
 import UniversalBrand, { renderLink } from "./UniversalBrand";
 import styles from "./UniversalHeader.module.css";
 
@@ -43,7 +43,7 @@ const routeIcons = {
   plug: Plug,
   settings: Settings,
   signin: LogIn,
-  sparkles: Sparkles,
+  sparkles: BotMessageSquareIcon,
   store: ShoppingBag,
   support: LifeBuoy,
   usage: Gauge,

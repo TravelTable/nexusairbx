@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import publicPlanCatalog from "../../src/data/publicPlanCatalog.json";
-import styles from "./PricingLedger.module.css";
+import styles from "./PricingWorkspace.module.css";
 
 const comparisonFacts = {
   FREE: ["Nexus Auto", "1 task", "7-day chat history", "1 active project"],
@@ -31,6 +31,23 @@ const comparisonFacts = {
     "Icon Generator · 2–50 seats",
   ],
 };
+
+const featureLabels = {
+  FREE: ["Nexus Auto", "1 task", "7-day history", "1 project"],
+  STARTER: ["Model choice", "2 tasks", "30-day history", "3 projects"],
+  PRO: ["More usage", "Premium models", "Icon Generator", "90-day history"],
+  PRO_PLUS: ["Highest solo usage", "Premium models", "Icon Generator", "90-day history"],
+  TEAM: ["Pooled usage", "Premium models", "Icon Generator", "2–50 seats"],
+};
+
+function DevTip({ label, children }) {
+  return (
+    <details className={styles.devTip}>
+      <summary aria-label={label}>?</summary>
+      <div role="note">{children}</div>
+    </details>
+  );
+}
 
 function money(value) {
   return Number(value).toLocaleString("en-US", {
@@ -128,7 +145,8 @@ function PlanFinder({
 }) {
   const groups = [
     {
-      label: "Who is building?",
+      label: "Builder",
+      help: "Who is building? Choose solo for one creator or team for shared billing.",
       value: teamMode,
       onChange: onTeamModeChange,
       options: [
@@ -137,7 +155,8 @@ function PlanFinder({
       ],
     },
     {
-      label: "How often?",
+      label: "Pace",
+      help: "How often will you run reviewed builds? This changes the suggested capacity.",
       value: pace,
       onChange: onPaceChange,
       options: [
@@ -147,7 +166,8 @@ function PlanFinder({
       ],
     },
     {
-      label: "Main workflow",
+      label: "Focus",
+      help: "Choose the workflow you expect to use most. Every plan can still access the core creator flow.",
       value: focus,
       onChange: onFocusChange,
       options: [
@@ -162,16 +182,20 @@ function PlanFinder({
     <section className={styles.finder} aria-labelledby="plan-finder-title">
       <div className={styles.finderIntro}>
         <p className={styles.phase}>Plan finder</p>
-        <h2 id="plan-finder-title">Find a sensible starting point.</h2>
-        <p>
-          This guide only highlights an existing plan. Prices and checkout stay
-          exactly the same.
-        </p>
+        <div className={styles.headingWithTip}>
+          <h2 id="plan-finder-title">Find a sensible starting point.</h2>
+          <DevTip label="About the plan finder">
+            This guide only highlights an existing plan. Prices and checkout stay exactly the same.
+          </DevTip>
+        </div>
       </div>
       <div className={styles.finderControls}>
         {groups.map((group) => (
           <div className={styles.finderGroup} key={group.label}>
-            <span>{group.label}</span>
+            <div className={styles.fieldLabel}>
+              <span>{group.label}</span>
+              <DevTip label={`About ${group.label}`}>{group.help}</DevTip>
+            </div>
             <div role="group" aria-label={group.label}>
               {group.options.map(([value, label]) => (
                 <button
@@ -188,8 +212,7 @@ function PlanFinder({
         ))}
       </div>
       <div className={styles.finderResult} role="status" aria-live="polite">
-        <i className="nx-build-signal" data-active="true" aria-hidden="true" />
-        <span>Suggested starting point</span>
+        <span>Suggested</span>
         <strong>{recommendation.name}</strong>
         <a
           href={`#plan-${recommendation.id.toLowerCase().replaceAll("_", "-")}`}
@@ -220,9 +243,11 @@ function AccessRecord({
       id={`plan-${plan.id.toLowerCase().replaceAll("_", "-")}`}
     >
       <header className={styles.planIdentity}>
-        <span>{recommended ? "Suggested for you" : "Nexus plan"}</span>
-        <h2>{plan.name}</h2>
-        <p>{plan.audience}</p>
+        <span>Access tier</span>
+        <div className={styles.headingWithTip}>
+          <h2>{plan.name}</h2>
+          <DevTip label={`Who ${plan.name} is for`}>{plan.audience}</DevTip>
+        </div>
       </header>
 
       <div className={styles.price}>
@@ -265,8 +290,9 @@ function AccessRecord({
       <ul className={styles.features}>
         {plan.features.map((feature, index) => (
           <li key={feature}>
-            <span>{String(index + 1).padStart(2, "0")}</span>
-            {feature}
+            <span aria-hidden="true">✓</span>
+            <strong>{featureLabels[plan.id][index]}</strong>
+            <DevTip label={`About ${featureLabels[plan.id][index]}`}>{feature}</DevTip>
           </li>
         ))}
       </ul>
@@ -356,19 +382,20 @@ export default function PricingCatalog() {
       <section className={styles.intro} aria-labelledby="pricing-title">
         <div>
           <p className={styles.phase}>Plans and usage</p>
-          <h1 id="pricing-title">Choose how long the build can run.</h1>
+          <div className={styles.headingWithTip}>
+            <h1 id="pricing-title">Choose how long the build can run.</h1>
+            <DevTip label="How NexusRBX plans differ">
+              Every plan uses the same project-first workflow. Capacity, history, model access, and creator tools change as the work grows.
+            </DevTip>
+          </div>
         </div>
         <div className={styles.introCopy}>
-          <p>
-            Every plan uses the same project-first workflow. Capacity, history,
-            model access, and creator tools change as the work grows.
-          </p>
           <div
             className={styles.interval}
             role="group"
             aria-label="Billing period"
           >
-            <span>Billing period</span>
+            <span>Billing</span>
             <button
               type="button"
               aria-pressed={interval === "month"}
@@ -384,7 +411,9 @@ export default function PricingCatalog() {
               Yearly
             </button>
           </div>
-          <small>Prices are in USD. Starter is available monthly only.</small>
+          <DevTip label="Billing details">
+            Prices are in USD. Starter is available monthly only. Checkout confirms the amount and interval before purchase.
+          </DevTip>
         </div>
       </section>
 
@@ -413,38 +442,43 @@ export default function PricingCatalog() {
       />
 
       <section className={styles.comparison} aria-labelledby="comparison-title">
-        <header>
-          <p className={styles.phase}>Compare plans</p>
-          <h2 id="comparison-title">What changes between plans</h2>
-        </header>
-        <div
-          className={styles.tableWrap}
-          role="region"
-          aria-label="Plan comparison table"
-          tabIndex="0"
-        >
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">Plan</th>
-                <th scope="col">Model access</th>
-                <th scope="col">Parallel pace</th>
-                <th scope="col">History</th>
-                <th scope="col">Creator tools</th>
-              </tr>
-            </thead>
-            <tbody>
-              {publicPlanCatalog.map((plan) => (
-                <tr key={plan.id}>
-                  <th scope="row">{plan.name}</th>
-                  {comparisonFacts[plan.id].map((fact) => (
-                    <td key={fact}>{fact}</td>
-                  ))}
+        <details>
+          <summary>
+            <span>
+              <small className={styles.phase}>Compare plans</small>
+              <strong id="comparison-title">What changes between plans</strong>
+            </span>
+            <b aria-hidden="true">+</b>
+          </summary>
+          <div
+            className={styles.tableWrap}
+            role="region"
+            aria-label="Plan comparison table"
+            tabIndex="0"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Plan</th>
+                  <th scope="col">Model access</th>
+                  <th scope="col">Parallel pace</th>
+                  <th scope="col">History</th>
+                  <th scope="col">Creator tools</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {publicPlanCatalog.map((plan) => (
+                  <tr key={plan.id}>
+                    <th scope="row">{plan.name}</th>
+                    {comparisonFacts[plan.id].map((fact) => (
+                      <td key={fact}>{fact}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
       </section>
     </main>
   );

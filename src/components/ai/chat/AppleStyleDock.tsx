@@ -1,8 +1,8 @@
 import {
   Activity,
   Component,
-  HomeIcon,
   LineChart,
+  Plus,
   SlidersHorizontal,
   Package,
   ScrollText,
@@ -259,7 +259,7 @@ const data: DockDataItem[] = [
   {
     title: 'New chat',
     icon: (
-      <HomeIcon className='h-full w-full text-neutral-600 dark:text-neutral-300' />
+      <Plus className='h-full w-full text-neutral-600 dark:text-neutral-300' />
     ),
     action: 'new-chat',
   },

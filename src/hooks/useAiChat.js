@@ -132,6 +132,12 @@ function createAbortError() {
   return error;
 }
 
+function createProjectRequiredError() {
+  const error = new Error("Open a project before starting a chat.");
+  error.code = "PROJECT_REQUIRED";
+  return error;
+}
+
 function isAbortError(error) {
   return error?.name === "AbortError" || error?.code === "ABORT_ERR";
 }
@@ -1525,9 +1531,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     try {
       if (!activeChatId) {
         const selectedProjectId = String(submissionOptions?.projectId || "").trim();
-        if (!selectedProjectId) {
-          throw new Error("Open a project before starting a chat.");
-        }
+        if (!selectedProjectId) throw createProjectRequiredError();
         const newChatPayload = {
           title: displayContent.slice(0, 30) + (displayContent.length > 30 ? "..." : ""),
           activeMode: expertMode,
@@ -3049,7 +3053,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     if (!authReady || !user?.uid || auth.currentUser?.uid !== user.uid) return null;
     await assertCanWrite();
     const selectedProjectId = String(projectId || "").trim();
-    if (!selectedProjectId) throw new Error("Open a project before starting a chat.");
+    if (!selectedProjectId) throw createProjectRequiredError();
     const chatId = uuidv4();
     const draftId = uuidv4();
     const payload = {

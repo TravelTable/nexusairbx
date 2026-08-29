@@ -373,16 +373,14 @@
   font-weight: 450;
 }
 
-.chat-empty-state__status {
-  width: 7px;
-  height: 7px;
-  flex: 0 0 auto;
-  border: 1px solid var(--nx-text-muted);
+.chat-empty-state__context dd.chat-empty-state__connected,
+.chat-empty-state__connected-icon {
+  color: var(--ds-success);
 }
 
-.chat-empty-state__status[data-connected="true"] {
-  border-color: var(--nx-success);
-  background: var(--nx-success);
+.chat-empty-state__context dd.chat-empty-state__disconnected,
+.chat-empty-state__disconnected-icon {
+  color: var(--ds-danger);
 }
 
 .chat-empty-state__starters {

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import {
@@ -6,7 +7,6 @@ import {
   AlertTriangle,
   ArrowRight,
   Bot,
-  CheckCircle2,
   ChevronRight,
   CreditCard,
   Database,
@@ -16,6 +16,7 @@ import {
   Menu,
   RefreshCcw,
   Save,
+  Search,
   Settings,
   Shield,
   PlugZap,
@@ -44,9 +45,9 @@ import { CHAT_MODES } from "../components/ai/chatConstants";
 import { formatChatModeLabel, normalizeChatMode } from "../lib/chatModes";
 import ModelSwitcher from "../components/ai/ModelSwitcher";
 import BrutalAuditor from "../components/ai/BrutalAuditor";
-import FreeUsageMeter from "../components/FreeUsageMeter";
 import ProNudgeModal from "../components/ProNudgeModal";
 import SettingsSignInAction from "../components/settings/SettingsSignInAction";
+import UsageInsights from "../components/settings/UsageInsights";
 import { Alert, AlertDescription, AlertTitle } from "../components/shadcn/alert";
 import {
   AlertDialog,
@@ -60,7 +61,7 @@ import {
   AlertDialogTrigger,
 } from "../components/shadcn/alert-dialog";
 import { Button as BaseButton } from "../components/shadcn/button";
-import { CardContent, CardDescription, CardHeader, CardTitle } from "../components/shadcn/card";
+import { CardContent, CardHeader, CardTitle } from "../components/shadcn/card";
 import { Input } from "../components/shadcn/input";
 import { Label } from "../components/shadcn/label";
 import {
@@ -83,22 +84,49 @@ import { Skeleton } from "../components/shadcn/skeleton";
 import { Switch } from "../components/shadcn/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/shadcn/table";
 import { Textarea } from "../components/shadcn/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../components/shadcn/tooltip";
 import { cn } from "../lib/utils";
 import { resolveSettingsTab } from "../lib/settingsNavigation";
 import { useSettingsLongForm } from "../hooks/useSettingsLongForm";
 import { requestTutorialRestart } from "../components/onboarding/useTutorial";
 import "./SettingsLedger.css";
 
-const NAV_ITEMS = [
-  { id: "overview", label: "Overview", icon: Activity },
-  { id: "appearance", label: "Interface", icon: Settings },
-  { id: "ai", label: "AI", icon: Bot },
-  { id: "roblox", label: "Roblox + Studio", icon: PlugZap },
-  { id: "billing", label: "Billing", icon: CreditCard },
-  { id: "team", label: "Team", icon: Users },
-  { id: "account", label: "Account/Data", icon: Database },
-  { id: "help", label: "Help", icon: HelpCircle },
+const NAV_GROUPS = [
+  {
+    label: "Workspace",
+    items: [
+      { id: "overview", label: "Overview", icon: Activity, searchTerms: "status usage readiness" },
+      { id: "ai", label: "AI defaults", icon: Bot, searchTerms: "model mode code creativity project context" },
+    ],
+  },
+  {
+    label: "Connections",
+    items: [
+      { id: "roblox", label: "Roblox & Studio", icon: PlugZap, searchTerms: "oauth publish creator handoff" },
+    ],
+  },
+  {
+    label: "Account",
+    items: [
+      { id: "billing", label: "Plan & usage", icon: CreditCard, searchTerms: "billing tokens balance subscription" },
+      { id: "team", label: "Team", icon: Users, searchTerms: "members workspace roles" },
+      { id: "account", label: "Security & data", icon: Database, searchTerms: "profile session chats scripts delete" },
+    ],
+  },
+  {
+    label: "Support",
+    items: [
+      { id: "help", label: "Support & diagnostics", icon: HelpCircle, searchTerms: "guide help onboarding diagnostics" },
+    ],
+  },
 ];
+
+const ANONYMOUS_NAV_GROUPS = [{ label: "Interface", items: [{ id: "appearance", label: "Interface", icon: Settings }] }];
 
 const SECTION_META = {
   overview: {
@@ -118,20 +146,20 @@ const SECTION_META = {
     description: "Manage publishing consent, Roblox authorization, creator targets, and Studio handoff.",
   },
   billing: {
-    label: "Billing",
-    description: "Review your plan and balances, then manage checkout or subscription changes.",
+    label: "Plan & usage",
+    description: "Understand your plan, token consumption, balances, and billing controls.",
   },
   team: {
     label: "Team",
     description: "Create and review the workspaces available to your account.",
   },
   account: {
-    label: "Account and data",
-    description: "Review your signed-in identity, session, and irreversible account-data actions.",
+    label: "Security & data",
+    description: "Manage your signed-in identity, session, stored work, and irreversible data actions.",
   },
   help: {
-    label: "Help",
-    description: "Restart onboarding or return to the main AI workspace.",
+    label: "Support & diagnostics",
+    description: "Restart onboarding, inspect connection readiness, or return to the workspace.",
   },
   admin: {
     label: "Admin",
@@ -139,7 +167,7 @@ const SECTION_META = {
   },
 };
 
-const ADMIN_ITEM = { id: "admin", label: "Admin", icon: Shield };
+const ADMIN_GROUP = { label: "Developer", items: [{ id: "admin", label: "Admin", icon: Shield, searchTerms: "users tokens audit developer" }] };
 const RETRYABLE_ROBLOX_MESSAGE =
   "Roblox connection is temporarily unavailable while the database is busy. Existing connection data is preserved.";
 const CODE_STYLE_OPTIONS = [
@@ -214,99 +242,35 @@ function statusTone(state) {
   return "border-border bg-muted/40 text-muted-foreground";
 }
 
-function UsageTrendChart({ data }) {
-  const width = 720;
-  const height = 240;
-  const padding = { top: 18, right: 18, bottom: 34, left: 52 };
-  const plotWidth = width - padding.left - padding.right;
-  const plotHeight = height - padding.top - padding.bottom;
-  const values = data.map((entry) => Math.max(0, Number(entry.tokens) || 0));
-  const maximum = Math.max(1, ...values);
-  const points = values.map((value, index) => {
-    const ratio = values.length === 1 ? 0.5 : index / (values.length - 1);
-    return {
-      x: padding.left + ratio * plotWidth,
-      y: padding.top + plotHeight - (value / maximum) * plotHeight,
-    };
-  });
-  const linePoints = points.map(({ x, y }) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
-  const firstPoint = points[0];
-  const lastPoint = points[points.length - 1];
-  const areaPath = [
-    `M ${firstPoint.x.toFixed(1)} ${(padding.top + plotHeight).toFixed(1)}`,
-    ...points.map(({ x, y }) => `L ${x.toFixed(1)} ${y.toFixed(1)}`),
-    `L ${lastPoint.x.toFixed(1)} ${(padding.top + plotHeight).toFixed(1)} Z`,
-  ].join(" ");
-  const gridValues = [maximum, maximum / 2, 0];
+function DevTip({ children, label = "More information", side = "top" }) {
+  if (!children) return null;
 
   return (
-    <div className="rounded-xl border border-border bg-muted/20 p-3 sm:p-4">
-      <svg
-        className="h-56 w-full overflow-visible"
-        viewBox={`0 0 ${width} ${height}`}
-        role="img"
-        aria-labelledby="usage-trend-title usage-trend-description"
-      >
-        <title id="usage-trend-title">Recent included usage</title>
-        <desc id="usage-trend-description">
-          Usage ranges from 0 to {formatNumber(maximum)} across {data.length} recorded dates.
-        </desc>
-        {gridValues.map((value, index) => {
-          const y = padding.top + (index / (gridValues.length - 1)) * plotHeight;
-          return (
-            <g key={value}>
-              <line
-                x1={padding.left}
-                x2={width - padding.right}
-                y1={y}
-                y2={y}
-                stroke="var(--ds-border)"
-                strokeDasharray="5 7"
-              />
-              <text
-                x={padding.left - 10}
-                y={y + 4}
-                textAnchor="end"
-                fill="var(--ds-text-muted)"
-                fontSize="12"
-              >
-                {formatNumber(Math.round(value))}
-              </text>
-            </g>
-          );
-        })}
-        <path d={areaPath} fill="var(--ds-accent-soft)" />
-        <polyline
-          points={linePoints}
-          fill="none"
-          stroke="var(--ds-accent)"
-          strokeWidth="4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          vectorEffect="non-scaling-stroke"
-        />
-        {points.map(({ x, y }, index) => (
-          <circle
-            key={`${data[index]?.date || index}-${values[index]}`}
-            cx={x}
-            cy={y}
-            r="4"
-            fill="var(--ds-surface-1)"
-            stroke="var(--ds-accent)"
-            strokeWidth="3"
-            vectorEffect="non-scaling-stroke"
-          />
-        ))}
-      </svg>
-      <div className="flex justify-between gap-4 px-1 text-xs text-muted-foreground" aria-hidden="true">
-        <span>{data[0]?.date || "First record"}</span>
-        <span>{data[data.length - 1]?.date || "Latest record"}</span>
-      </div>
+    <TooltipProvider delayDuration={140}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button type="button" className="settings-dev-tip" aria-label={label}>
+            <HelpCircle aria-hidden="true" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side={side} sideOffset={8} className="settings-dev-tip__content">
+          {children}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
+function FieldLabel({ htmlFor, children, tip }) {
+  return (
+    <div className="settings-field-label">
+      <Label htmlFor={htmlFor}>{children}</Label>
+      <DevTip label={`About ${children}`}>{tip}</DevTip>
     </div>
   );
 }
 
-function SaveStatus({ status, error, lastSavedAt, onRetry }) {
+function SaveStatus({ status, error, onRetry }) {
   if (status === "saving") {
     return (
       <div role="status" aria-live="polite" aria-atomic="true">
@@ -333,100 +297,106 @@ function SaveStatus({ status, error, lastSavedAt, onRetry }) {
     );
   }
   if (status === "saved") {
-    return (
-      <div role="status" aria-live="polite" aria-atomic="true">
-        <span
-          className="settings-ledger-state"
-          data-tone="success"
-          title={lastSavedAt ? `Last saved ${formatDate(lastSavedAt)}` : undefined}
-        >
-          <CheckCircle2 className="h-3 w-3" />
-          All changes saved
-        </span>
-      </div>
-    );
+    return null;
   }
-  return (
-    <div role="status" aria-live="polite" aria-atomic="true">
-      <span className="settings-ledger-state">Changes save automatically</span>
-    </div>
-  );
+  return null;
 }
 
-function NavList({ items, activeTab, onSelect }) {
+function NavList({ groups, activeTab, onSelect }) {
+  const [query, setQuery] = useState("");
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredGroups = groups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !normalizedQuery
+        || `${item.label} ${item.searchTerms || ""}`.toLowerCase().includes(normalizedQuery)),
+    }))
+    .filter((group) => group.items.length > 0);
+
   return (
-    <nav className="space-y-1" aria-label="Settings sections">
-      {items.map((item) => {
-        const Icon = item.icon;
-        const active = item.id === activeTab;
-        return (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => onSelect(item.id)}
-            className={cn(
-              "relative flex min-h-11 w-full items-center justify-between rounded-[8px] px-3 py-2 text-left text-sm font-medium transition-colors before:absolute before:bottom-2 before:left-0 before:top-2 before:w-px before:scale-y-0 before:bg-[var(--ds-accent)] before:transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-              active
-                ? "bg-[var(--ds-fill-selected)] text-foreground before:scale-y-100"
-                : "text-muted-foreground hover:bg-[var(--ds-fill-hover)] hover:text-foreground"
-            )}
-            aria-current={active ? "page" : undefined}
-          >
-            <span className="flex min-w-0 items-center gap-2">
-              <Icon className="h-4 w-4 shrink-0" />
-              <span className="truncate">{item.label}</span>
-            </span>
-            {active && <ChevronRight className="h-4 w-4" />}
-          </button>
-        );
-      })}
-    </nav>
+    <div className="settings-navigation">
+      <label className="settings-navigation-search">
+        <Search aria-hidden="true" />
+        <span className="sr-only">Search settings sections</span>
+        <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search settings" />
+      </label>
+      <nav className="settings-tab-groups" aria-label="Settings sections">
+        {filteredGroups.map((group) => (
+          <div className="settings-tab-group" key={group.label}>
+            <p className="settings-sidebar-group-label">{group.label}</p>
+            <div className="settings-tab-list">
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const active = item.id === activeTab;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => onSelect(item.id)}
+                    className={cn(
+                      "relative flex min-h-11 w-full items-center justify-between rounded-[8px] px-3 py-2 text-left text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                      active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                    )}
+                    aria-current={active ? "page" : undefined}
+                    data-settings-tab={item.id}
+                  >
+                    <span className="flex min-w-0 items-center gap-2">
+                      <Icon className="settings-tab-icon h-4 w-4 shrink-0" aria-hidden="true" />
+                      <span className="truncate">{item.label}</span>
+                    </span>
+                    {active && <ChevronRight className="settings-tab-chevron h-4 w-4" aria-hidden="true" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+        {filteredGroups.length === 0 ? <p className="settings-navigation-empty">No matching sections</p> : null}
+      </nav>
+    </div>
   );
 }
 
 function Panel({ title, description, actions, children, className, tone = "default" }) {
   return (
-    <section className={cn("border-t border-border/70", tone === "danger" && "border-destructive/50", className)}>
+    <section className={cn("settings-panel", tone === "danger" && "settings-panel--danger", className)}>
       <CardHeader
         className={cn(
-          "flex gap-4 px-0 pb-3 pt-7 sm:flex-row sm:items-start sm:justify-between sm:space-y-0 sm:pt-8",
+          "settings-panel-header flex gap-4 px-0 pb-3 pt-7 sm:flex-row sm:items-start sm:justify-between sm:space-y-0 sm:pt-8",
           tone === "danger" && "text-destructive"
         )}
       >
-        <div className="space-y-1.5">
+        <div className="settings-panel-heading">
           <CardTitle className={cn("text-base", tone === "danger" && "text-destructive")}>{title}</CardTitle>
-          {description && <CardDescription>{description}</CardDescription>}
+          {description ? <p>{description}</p> : null}
         </div>
         {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
       </CardHeader>
-      <CardContent className="px-0 pb-9 pt-4">{children}</CardContent>
+      <CardContent className="settings-panel-body px-0 pb-9 pt-4">{children}</CardContent>
     </section>
   );
 }
 
 function EmptyState({ icon: Icon = HelpCircle, title, description, action }) {
   return (
-    <div className="border-y border-dashed border-border/80 py-9 text-center">
-      <Icon className="mx-auto h-8 w-8 text-muted-foreground" />
-      <h3 className="mt-3 text-sm font-semibold text-foreground">{title}</h3>
-      {description && <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">{description}</p>}
-      {action && <div className="mt-4">{action}</div>}
+    <div className="settings-empty-state">
+      <span className="settings-empty-state__icon"><Icon aria-hidden="true" /></span>
+      <div><h3>{title}</h3><p>{description}</p></div>
+      {action ? <div className="settings-empty-state__action">{action}</div> : null}
     </div>
   );
 }
 
 function HealthTile({ icon: Icon, label, value, detail, state = "neutral", action }) {
   return (
-    <div className={cn("border-l-2 p-4", statusTone(state))}>
-      <div className="flex items-start justify-between gap-3">
-        <Icon className="mt-0.5 h-5 w-5 shrink-0" />
-        {action}
+    <div className={cn("settings-health-record", statusTone(state))}>
+      <span className="settings-health-record__icon"><Icon aria-hidden="true" /></span>
+      <div className="settings-health-record__copy">
+        <span>{label}</span>
+        <strong>{value}</strong>
+        <small>{detail}</small>
       </div>
-      <div className="mt-3">
-        <div className="text-xs font-medium text-current/75">{label}</div>
-        <div className="mt-1 text-base font-semibold text-foreground">{value}</div>
-        {detail && <p className="mt-1 text-sm text-muted-foreground">{detail}</p>}
-      </div>
+      {action ? <div className="settings-health-record__action">{action}</div> : null}
     </div>
   );
 }
@@ -435,10 +405,10 @@ function ToggleRow({ label, description, checked, onCheckedChange, disabled }) {
   const switchId = React.useId();
 
   return (
-    <div className="flex min-h-20 items-start justify-between gap-5 border-b border-border/70 py-5 last:border-b-0">
-      <div className="space-y-1">
-        <Label htmlFor={switchId} className="text-sm font-semibold">{label}</Label>
-        {description && <p className="text-sm text-muted-foreground">{description}</p>}
+    <div className="settings-toggle-row flex items-center justify-between gap-5 border-b border-border/70 py-4 last:border-b-0">
+      <div className="settings-toggle-copy">
+        <Label htmlFor={switchId}>{label}</Label>
+        <p>{description}</p>
       </div>
       <Switch id={switchId} checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} />
     </div>
@@ -553,6 +523,7 @@ function DataStateAlert({ state, onRetry, label }) {
 }
 
 export default function SettingsPage() {
+  const [headerStatusTarget, setHeaderStatusTarget] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
   const {
@@ -563,7 +534,6 @@ export default function SettingsPage() {
     loading: settingsLoading,
     saveStatus,
     saveError,
-    lastSavedAt,
   } = useSettings();
   const billing = useBilling() || {};
   const isAdmin = Boolean(billing.isAdmin || billing.flags?.isAdmin);
@@ -595,10 +565,11 @@ export default function SettingsPage() {
     saveSettings: updateSetting,
   });
 
-  const navItems = useMemo(() => {
-    if (!user) return NAV_ITEMS.filter((item) => item.id === "appearance");
-    return isAdmin ? [...NAV_ITEMS, ADMIN_ITEM] : NAV_ITEMS;
+  const navGroups = useMemo(() => {
+    if (!user) return ANONYMOUS_NAV_GROUPS;
+    return isAdmin ? [...NAV_GROUPS, ADMIN_GROUP] : NAV_GROUPS;
   }, [isAdmin, user]);
+  const navItems = useMemo(() => navGroups.flatMap((group) => group.items), [navGroups]);
   const fallbackTab = user ? "overview" : "appearance";
   const permissionsReady = !user || billing.loading !== true;
   const activeSection = SECTION_META[activeTab] || SECTION_META.overview;
@@ -854,17 +825,19 @@ export default function SettingsPage() {
     const health = [
       {
         icon: Bot,
-        label: "AI model",
+        label: "AI defaults",
         value: settings.modelVersion || DEFAULT_SETTINGS.modelVersion,
         detail: `${formatChatModeLabel(settings.chatMode) || "Build"} mode`,
         state: "good",
+        action: <Button type="button" variant="outline" size="sm" onClick={() => setTab("ai")}>Manage</Button>,
       },
       {
         icon: CreditCard,
-        label: "Billing",
+        label: "Plan & usage",
         value: billing.loading ? "Loading" : billing.plan || "FREE",
         detail: billing.error || `${formatNumber(billing.totalRemaining)} tokens available`,
         state: billing.error ? "warn" : "good",
+        action: <Button type="button" variant="outline" size="sm" onClick={() => setTab("billing")}>Review</Button>,
       },
       {
         icon: PlugZap,
@@ -872,21 +845,23 @@ export default function SettingsPage() {
         value: robloxConnected ? "Connected" : "Not connected",
         detail: selectedCreator ? `${selectedCreator.type} ${selectedCreator.id}` : "No creator target selected",
         state: robloxConnected ? "good" : "warn",
+        action: <Button type="button" variant="outline" size="sm" onClick={() => setTab("roblox")}>{robloxConnected ? "Manage" : "Connect"}</Button>,
       },
       {
         icon: Save,
-        label: "Asset upload consent",
-        value: settings.robloxAssetUploadsEnabled ? "Auto upload enabled" : "Manual only",
-        detail: settings.robloxAssetUploadsEnabled ? "Generated assets can upload to Roblox." : "No Roblox asset writes are allowed.",
-        state: settings.robloxAssetUploadsEnabled ? "good" : "neutral",
+        label: "Studio handoff",
+        value: settings.studioAutoPushEnabled ? "Enabled" : "Manual review",
+        detail: settings.studioAutoPushEnabled ? "Approved changes can move toward Studio." : "You approve changes before handoff.",
+        state: settings.studioAutoPushEnabled ? "good" : "neutral",
+        action: <Button type="button" variant="outline" size="sm" onClick={() => setTab("roblox")}>Configure</Button>,
       },
     ];
 
     return (
       <div className="space-y-6">
         <Panel
-          title="Connection health"
-          description="A quick read on the services NexusRBX needs for generation, billing, Roblox publishing, and Studio handoff."
+          title="Workspace readiness"
+          description="Your important defaults, connections, plan, and Studio handoff state."
           actions={
             <Button type="button" variant="outline" size="sm" onClick={() => { loadUsage(); loadRoblox(); billing.refresh?.(); }}>
               <RefreshCcw className="h-4 w-4" />
@@ -894,45 +869,31 @@ export default function SettingsPage() {
             </Button>
           }
         >
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="settings-readiness-grid">
             {health.map((item) => (
               <HealthTile key={item.label} {...item} />
             ))}
           </div>
         </Panel>
 
-        <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
-          <Panel
-            title="Usage"
-            description="Recent token activity from your account."
-            actions={<Button type="button" variant="outline" size="sm" onClick={loadUsage}><RefreshCcw className="h-4 w-4" />Refresh</Button>}
-          >
-            <DataStateAlert state={usageState} onRetry={loadUsage} label="Usage" />
-            {usageState.status === "ready" && usageState.chartData.length > 0 && (
-              <UsageTrendChart data={usageState.chartData} />
-            )}
-            {usageState.status === "ready" && usageState.chartData.length === 0 && (
-              <EmptyState
-                icon={Activity}
-                title="No usage yet"
-                description="Usage will appear here after you run AI generation or Studio-assisted work."
-                action={<Button asChild><Link to="/ai">Open AI workspace</Link></Button>}
-              />
-            )}
-          </Panel>
-
-          <Panel title="Workspace shortcut" description="Jump back with your current readiness state in view.">
-            <div className="space-y-4">
-              <FreeUsageMeter dailyUsage={billing.dailyUsage} fairUse={billing.fairUse} />
-              <Button asChild className="w-full">
-                <Link to="/ai">
-                  Open AI workspace
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-          </Panel>
-        </div>
+        <Panel
+          title="Usage & insights"
+          description="Monitor token consumption, runway, workflows, and recent activity."
+          actions={<Button type="button" variant="outline" size="sm" onClick={loadUsage}><RefreshCcw className="h-4 w-4" />Refresh</Button>}
+        >
+          <DataStateAlert state={usageState} onRetry={loadUsage} label="Usage" />
+          {usageState.status === "ready" && usageState.chartData.length > 0 ? (
+            <UsageInsights data={usageState.chartData} logs={usageState.logs} billing={billing} compact />
+          ) : null}
+          {usageState.status === "ready" && usageState.chartData.length === 0 ? (
+            <EmptyState
+              icon={Activity}
+              title="No usage yet"
+              description="Your usage dashboard will populate after the first AI generation or Studio-assisted task."
+              action={<Button asChild><Link to="/ai">Start a build</Link></Button>}
+            />
+          ) : null}
+        </Panel>
       </div>
     );
   };
@@ -942,7 +903,10 @@ export default function SettingsPage() {
       <Panel title="AI defaults" description="These defaults are used when new chats and generation runs start.">
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="space-y-2" role="group" aria-labelledby="model-setting-label">
-            <Label id="model-setting-label">Model</Label>
+            <div className="settings-field-label">
+              <Label id="model-setting-label">Model</Label>
+              <DevTip label="About the default model">Used for new chats and generation runs unless you change it in the workspace.</DevTip>
+            </div>
             <ModelSwitcher
               value={settings.modelVersion}
               isPremium={billing.isPremium}
@@ -954,7 +918,7 @@ export default function SettingsPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="chat-mode">Conversation mode</Label>
+            <FieldLabel htmlFor="chat-mode" tip="Sets the starting workflow for each new conversation.">Conversation mode</FieldLabel>
             <Select value={normalizeChatMode(settings.chatMode)} onValueChange={(chatMode) => updateSetting({ chatMode })}>
               <SelectTrigger id="chat-mode"><SelectValue placeholder="Select mode" /></SelectTrigger>
               <SelectContent>
@@ -965,7 +929,7 @@ export default function SettingsPage() {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="code-style">Code style</Label>
+            <FieldLabel htmlFor="code-style" tip="Controls how aggressively generated code prioritizes optimization, safe edits, or explanation.">Code style</FieldLabel>
             <Select value={settings.codeStyle} onValueChange={(codeStyle) => updateSetting({ codeStyle })}>
               <SelectTrigger id="code-style"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -974,7 +938,7 @@ export default function SettingsPage() {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="response-detail">Response detail</Label>
+            <FieldLabel htmlFor="response-detail" tip="Sets the default amount of explanation shown with generated work.">Response detail</FieldLabel>
             <Select value={settings.verbosity} onValueChange={(verbosity) => updateSetting({ verbosity })}>
               <SelectTrigger id="response-detail"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -984,7 +948,7 @@ export default function SettingsPage() {
           </div>
           <div className="space-y-2 lg:col-span-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="creativity">Creativity</Label>
+              <FieldLabel htmlFor="creativity" tip="Lower values favor repeatable solutions; higher values explore more alternatives.">Creativity</FieldLabel>
               <span className="text-sm text-muted-foreground">{Math.round(Number(settings.creativity) * 100)}%</span>
             </div>
             <Input
@@ -1029,7 +993,7 @@ export default function SettingsPage() {
         )}
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="codingStandards">Coding standards</Label>
+            <FieldLabel htmlFor="codingStandards" tip="Naming, architecture, validation, and Studio rules applied to generated code.">Coding standards</FieldLabel>
             <Textarea
               id="codingStandards"
               value={longForm.codingStandards}
@@ -1039,7 +1003,7 @@ export default function SettingsPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="gameSpec">Game context</Label>
+            <FieldLabel htmlFor="gameSpec" tip="Your game genre, systems, folder layout, monetization, and current constraints.">Game context</FieldLabel>
             <Textarea
               id="gameSpec"
               value={longForm.gameSpec}
@@ -1080,12 +1044,14 @@ export default function SettingsPage() {
         <div className="space-y-4 rounded-lg border border-border bg-muted/20 p-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h3 className="text-base font-semibold">Auto Upload Assets</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <div className="settings-panel-title">
+                <h3 className="text-base font-semibold">Auto Upload Assets</h3>
+                <DevTip label="About automatic Roblox uploads" side="right">
                 {settings.robloxAssetUploadsEnabled
                   ? "Generated assets may upload immediately through your connected Roblox OAuth account."
                   : "No Roblox asset writes are allowed. Generation can continue and assets stay saved in NexusRBX."}
-              </p>
+                </DevTip>
+              </div>
             </div>
             <Switch
               checked={settings.robloxAssetUploadsEnabled}
@@ -1096,7 +1062,14 @@ export default function SettingsPage() {
           <Separator />
           <div className="grid gap-2 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:items-start">
             <div className="space-y-2">
-              <Label htmlFor="asset-publishing-preference">Publishing preference</Label>
+              <FieldLabel
+                htmlFor="asset-publishing-preference"
+                tip={settings.robloxAssetUploadsEnabled
+                  ? publishingPreferenceDetails.description
+                  : "Turn on Auto Upload Assets before choosing a publishing policy."}
+              >
+                Publishing preference
+              </FieldLabel>
               <Select
                 value={publishingPreference}
                 onValueChange={(assetPublishingPreference) => updateSetting({ assetPublishingPreference })}
@@ -1112,11 +1085,9 @@ export default function SettingsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <p id="asset-publishing-preference-help" className="text-sm leading-6 text-muted-foreground">
-              {settings.robloxAssetUploadsEnabled
-                ? publishingPreferenceDetails.description
-                : "Turn on Auto Upload Assets to configure publishing. NexusRBX will not publish while the master switch is off."}
-            </p>
+            <span id="asset-publishing-preference-help" className="sr-only">
+              {settings.robloxAssetUploadsEnabled ? publishingPreferenceDetails.description : "Publishing is disabled."}
+            </span>
           </div>
         </div>
       </Panel>
@@ -1239,7 +1210,7 @@ export default function SettingsPage() {
                 )}
                 <div className="grid gap-4 lg:grid-cols-2">
                   <div className="space-y-2">
-                  <Label htmlFor="roblox-creator-target">Creator target</Label>
+                  <FieldLabel htmlFor="roblox-creator-target" tip="The Roblox user or group that receives approved published assets.">Creator target</FieldLabel>
                   <Select
                     value={selectedCreatorKey}
                     onValueChange={async (value) => {
@@ -1265,7 +1236,10 @@ export default function SettingsPage() {
                   </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Granted scopes</Label>
+                    <div className="settings-field-label">
+                      <Label>Granted scopes</Label>
+                      <DevTip label="About granted Roblox scopes">Permissions currently available to NexusRBX through Roblox OAuth.</DevTip>
+                    </div>
                     <div className="flex min-h-10 flex-wrap gap-2 rounded-md border border-border bg-muted/20 p-2">
                       {grantedScopes.length > 0 ? (
                         grantedScopes.slice(0, 10).map((scope) => (
@@ -1374,7 +1348,7 @@ export default function SettingsPage() {
             onCheckedChange={(studioAutoPushEnabled) => updateSetting({ studioAutoPushEnabled })}
           />
           <div className="space-y-2 rounded-lg border border-border bg-muted/20 p-4">
-            <Label htmlFor="studio-push-policy">Push policy</Label>
+            <FieldLabel htmlFor="studio-push-policy" tip="Determines when validated work may move into the active Studio session.">Push policy</FieldLabel>
             <Select value={settings.studioAutoPushPolicy} onValueChange={(studioAutoPushPolicy) => updateSetting({ studioAutoPushPolicy })}>
               <SelectTrigger id="studio-push-policy"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -1415,8 +1389,8 @@ export default function SettingsPage() {
   const renderBilling = () => (
     <div className="space-y-6">
       <Panel
-        title="Billing plan"
-        description="A read-only account summary. Checkout, top-ups, receipts, and subscription management live on the dedicated Billing page."
+        title="Plan summary"
+        description="Your subscription, included allocation, and optional Premium Balance."
         actions={<Button type="button" variant="outline" size="sm" onClick={billing.refresh}><RefreshCcw className="h-4 w-4" />Refresh</Button>}
       >
         {billing.error && (
@@ -1442,11 +1416,30 @@ export default function SettingsPage() {
         <div className="mt-6 border-t border-border/70 pt-5">
           <Button asChild>
             <Link to="/billing">
-              Open Billing
+              Manage billing
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
         </div>
+      </Panel>
+
+      <Panel
+        title="Usage & insights"
+        description="Explore consumption over time, workflow breakdowns, runway, and recent token events."
+        actions={<Button type="button" variant="outline" size="sm" onClick={loadUsage}><RefreshCcw className="h-4 w-4" />Refresh</Button>}
+      >
+        <DataStateAlert state={usageState} onRetry={loadUsage} label="Usage" />
+        {usageState.status === "ready" && usageState.chartData.length > 0 ? (
+          <UsageInsights data={usageState.chartData} logs={usageState.logs} billing={billing} />
+        ) : null}
+        {usageState.status === "ready" && usageState.chartData.length === 0 ? (
+          <EmptyState
+            icon={Activity}
+            title="No usage yet"
+            description="Token history, workflow breakdowns, and forecasts will appear after your first recorded generation."
+            action={<Button asChild><Link to="/ai">Start a build</Link></Button>}
+          />
+        ) : null}
       </Panel>
     </div>
   );
@@ -1671,22 +1664,40 @@ export default function SettingsPage() {
     return renderOverview();
   };
 
+  useEffect(() => {
+    setHeaderStatusTarget(document.getElementById("settings-header-status"));
+  }, []);
+
   return (
     <main className="settings-ledger-page min-h-screen bg-background text-foreground">
-      <div className="settings-ledger-shell mx-auto flex w-full max-w-[1280px] flex-col gap-10 px-4 py-12 sm:px-8 sm:py-16 lg:gap-14 lg:px-14 lg:py-20">
+      {headerStatusTarget
+        ? createPortal(
+            <div className="settings-header-save-status">
+              <SaveStatus
+                status={saveStatus}
+                error={saveError}
+                onRetry={() => reloadSettings()}
+              />
+            </div>,
+            headerStatusTarget
+          )
+        : null}
+      <div className="settings-ledger-shell flex w-full flex-col">
         <header className="settings-ledger-header flex flex-col gap-7 border-b border-border/70 pb-9 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex items-start gap-4">
             <Settings className="mt-1 h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
             <div>
               <p className="settings-ledger-phase">ACCOUNT RECORD / SETTINGS</p>
-              <h1 className="font-[var(--ds-font-display)] text-4xl font-semibold leading-tight tracking-[-0.04em] sm:text-5xl">Set the operating rules.</h1>
-              <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
-                Configure AI defaults, Roblox consent, billing, team access, and account data from one place.
-              </p>
+              <div className="settings-title-row">
+                <h1 className="font-[var(--ds-font-display)] text-4xl font-semibold leading-tight tracking-[-0.04em] sm:text-5xl">Settings</h1>
+                <DevTip label="About settings" side="right">
+                  Configure AI defaults, Roblox consent, billing, team access, and account data.
+                </DevTip>
+              </div>
             </div>
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3 lg:justify-end">
-            <SaveStatus status={saveStatus} error={saveError} lastSavedAt={lastSavedAt} onRetry={() => reloadSettings()} />
+            <span className="settings-mobile-current lg:hidden">{activeSection.label}</span>
             <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
               <SheetTrigger asChild>
                 <Button type="button" variant="outline" className="lg:hidden" aria-label="Open settings sections">
@@ -1700,7 +1711,7 @@ export default function SettingsPage() {
                   <SheetDescription>Choose a settings section.</SheetDescription>
                 </SheetHeader>
                 <div className="mt-6">
-                  <NavList items={navItems} activeTab={activeTab} onSelect={setTab} />
+                  <NavList groups={navGroups} activeTab={activeTab} onSelect={setTab} />
                 </div>
               </SheetContent>
             </Sheet>
@@ -1725,19 +1736,21 @@ export default function SettingsPage() {
             />
           </Panel>
         ) : (
-          <div className="grid gap-12 lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-16">
-            <aside className="hidden lg:block">
-              <div className="sticky top-8 p-1">
-                <NavList items={navItems} activeTab={activeTab} onSelect={setTab} />
+          <div className="settings-ledger-layout grid lg:grid-cols-[16rem_minmax(0,1fr)]">
+            <aside className="settings-ledger-sidebar hidden lg:block">
+              <div className="settings-sidebar-inner sticky top-8">
+                <NavList groups={navGroups} activeTab={activeTab} onSelect={setTab} />
               </div>
             </aside>
             <section className="min-w-0" aria-labelledby="settings-section-title">
-              <div className="mb-9">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Account settings</p>
-                <h2 id="settings-section-title" className="mt-3 text-2xl font-semibold tracking-[-0.02em]">
-                  {activeSection.label}
-                </h2>
-                <p className="mt-3 max-w-3xl text-base leading-7 text-muted-foreground">{activeSection.description}</p>
+              <div className="settings-section-heading mb-7">
+                <div>
+                  <span className="settings-section-eyebrow">Settings</span>
+                  <h2 id="settings-section-title" className="text-2xl font-semibold tracking-[-0.02em]">
+                    {activeSection.label}
+                  </h2>
+                  <p>{activeSection.description}</p>
+                </div>
               </div>
               {settingsLoading ? (
                 <div className="space-y-4">

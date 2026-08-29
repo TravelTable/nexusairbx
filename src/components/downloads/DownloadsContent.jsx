@@ -2,17 +2,26 @@
 
 import { useEffect, useState } from "react";
 import {
+  Apple,
   ArrowRight,
+  Check,
   CheckCircle2,
-  ChevronDown,
+  CircleHelp,
   Copy,
   Download,
   Globe,
+  Link2,
   Monitor,
   RefreshCw,
   ShieldCheck,
   TriangleAlert,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../shadcn/tooltip";
 import {
   detectCompanionPlatform,
   fetchCompanionManifest,
@@ -26,7 +35,7 @@ const PLATFORM_COPY = {
     code: "MAC / UNIVERSAL",
     name: "macOS (Universal)",
     shortName: "macOS",
-    detail: "One installer for Apple Silicon and Intel Macs",
+    icon: Apple,
     compatibility: "Apple Silicon and Intel Macs",
     machines: ["Apple Silicon (M1 or newer)", "Intel Mac"],
     signing: "Developer ID signed and Apple notarized",
@@ -40,7 +49,7 @@ const PLATFORM_COPY = {
     code: "WIN / X64",
     name: "Windows (64-bit)",
     shortName: "Windows",
-    detail: "For Windows 10 and 11 on Intel or AMD PCs",
+    icon: Monitor,
     compatibility: "Windows 10 and 11 · Intel or AMD x64",
     machines: ["Intel or AMD x64 PC"],
     signing: "Unsigned installer — Windows may show “Unknown publisher”",
@@ -52,49 +61,80 @@ const PLATFORM_COPY = {
   },
 };
 
-function ConnectionDiagram() {
+function DevTip({ label, children, side = "top" }) {
   return (
-    <div className={styles.bridgeCard} aria-label="Nexus workspace connects to Roblox Studio through the local desktop connector">
-      <div className={styles.bridgeHeader}>
-        <span>LOCAL BRIDGE</span>
-        <span className={styles.liveStatus}><span aria-hidden="true" /> Runs on your machine</span>
-      </div>
-      <div className={styles.bridgeFlow}>
-        <div className={styles.bridgeNode}>
-          <Globe aria-hidden="true" />
-          <span>Nexus</span>
-          <small>Browser workspace</small>
-        </div>
-        <div className={styles.bridgeLine} aria-hidden="true"><span /></div>
-        <div className={`${styles.bridgeNode} ${styles.bridgeNodeActive}`}>
-          <ShieldCheck aria-hidden="true" />
-          <span>Connector</span>
-          <small>Verifiable local bridge</small>
-        </div>
-        <div className={styles.bridgeLine} aria-hidden="true"><span /></div>
-        <div className={styles.bridgeNode}>
-          <Monitor aria-hidden="true" />
-          <span>Roblox Studio</span>
-          <small>Studio MCP</small>
-        </div>
-      </div>
-      <p>Pair once in your browser. The connector keeps Nexus beside Studio without sending your full place source by default.</p>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button type="button" className={styles.devTip} aria-label={label}>
+          <CircleHelp aria-hidden="true" />
+          <span className={styles.srOnly}>{children}</span>
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side={side} sideOffset={8} className={styles.devTipContent}>
+        {children}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function PlatformTabs({ selectedPlatform, detectedPlatform, onChange }) {
+  const moveFocus = (event) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    const tabs = Array.from(event.currentTarget.querySelectorAll('[role="tab"]'));
+    const current = tabs.indexOf(document.activeElement);
+    let next = current;
+    if (event.key === "ArrowRight") next = (current + 1) % tabs.length;
+    if (event.key === "ArrowLeft") next = (current - 1 + tabs.length) % tabs.length;
+    if (event.key === "Home") next = 0;
+    if (event.key === "End") next = tabs.length - 1;
+    event.preventDefault();
+    tabs[next]?.focus();
+  };
+
+  return (
+    <div className={styles.platformTabs} role="tablist" aria-label="Connector platform" onKeyDown={moveFocus}>
+      {Object.entries(PLATFORM_COPY).map(([id, copy]) => {
+        const Icon = copy.icon;
+        const active = selectedPlatform === id;
+        return (
+          <button
+            key={id}
+            id={`platform-tab-${id}`}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            aria-controls="connector-download-panel"
+            aria-label={`View ${copy.name} download`}
+            tabIndex={active ? 0 : -1}
+            className={styles.platformTab}
+            data-active={active ? "true" : "false"}
+            onClick={() => onChange(id)}
+          >
+            <span className={styles.platformIcon}><Icon aria-hidden="true" /></span>
+            <span>
+              <strong>{copy.shortName}</strong>
+              <small>{copy.code}</small>
+            </span>
+            {detectedPlatform === id ? <span className={styles.detectedDot} title="Detected" /> : null}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-function DownloadControl({ platform, release, status, onDownload, className }) {
+function DownloadControl({ platform, release, status, onDownload }) {
   const copy = PLATFORM_COPY[platform];
   if (release) {
     return (
       <a
-        className={className}
+        className={styles.primaryDownload}
         href={release.url}
         aria-label={`Download ${copy.name}`}
         onClick={() => onDownload(platform)}
       >
         <Download aria-hidden="true" />
-        <span>Download for {copy.shortName}</span>
+        <span>Download</span>
         <ArrowRight aria-hidden="true" />
       </a>
     );
@@ -102,123 +142,136 @@ function DownloadControl({ platform, release, status, onDownload, className }) {
 
   return (
     <button
-      className={className}
+      className={styles.primaryDownload}
       type="button"
       disabled
       aria-label={status === "loading" ? `Checking ${copy.name} release` : `${copy.name} unavailable`}
     >
       {status === "loading" ? <RefreshCw className={styles.spinner} aria-hidden="true" /> : <TriangleAlert aria-hidden="true" />}
-      <span>{status === "loading" ? "Checking current release…" : "Downloads unavailable"}</span>
+      <span>{status === "loading" ? "Checking release" : "Unavailable"}</span>
     </button>
   );
 }
 
-function WindowsDisclosure() {
+function ConnectionDiagram() {
   return (
-    <details className={styles.platformNotice}>
-      <summary>
-        <TriangleAlert aria-hidden="true" />
-        <span>
-          <strong>Windows may show “Unknown publisher”</strong>
-          <small>This release is currently unsigned. See the safe SmartScreen steps.</small>
-        </span>
-        <ChevronDown aria-hidden="true" />
-      </summary>
-      <div className={styles.noticeBody}>
-        <p>Download only from this page and compare the SHA-256 checksum below. If SmartScreen appears:</p>
-        <ol>
-          <li>Select <strong>More info</strong>.</li>
-          <li>Confirm the app is <strong>NexusRBX Connector</strong>.</li>
-          <li>Select <strong>Run anyway</strong>.</li>
-        </ol>
-        <a href="/docs/troubleshooting">Read the complete troubleshooting guide <ArrowRight aria-hidden="true" /></a>
+    <aside className={styles.bridgeCard} aria-label="Local bridge connection">
+      <header className={styles.bridgeHeader}>
+        <span>LOCAL BRIDGE</span>
+        <span className={styles.liveStatus}><span aria-hidden="true" /> On-device</span>
+        <DevTip label="How the local bridge works" side="left">
+          Pair once in your browser. The connector keeps Nexus beside Studio without sending your full place source by default.
+        </DevTip>
+      </header>
+      <div className={styles.bridgeFlow}>
+        <div className={styles.bridgeNode}><Globe aria-hidden="true" /><strong>Nexus</strong></div>
+        <ArrowRight className={styles.bridgeArrow} aria-hidden="true" />
+        <div className={`${styles.bridgeNode} ${styles.bridgeNodeActive}`}><ShieldCheck aria-hidden="true" /><strong>Connector</strong></div>
+        <ArrowRight className={styles.bridgeArrow} aria-hidden="true" />
+        <div className={styles.bridgeNode}><Monitor aria-hidden="true" /><strong>Studio</strong></div>
       </div>
-    </details>
+    </aside>
   );
 }
 
-function InstallerDetails({
-  platform,
-  release,
-  status,
-  detectedPlatform,
-  onDownload,
-  onPlatformChange,
-  checksumCopied,
-  onCopyChecksum,
-}) {
+function InstallerPanel({ platform, release, status, detectedPlatform, onDownload, checksumCopied, onCopyChecksum }) {
   const copy = PLATFORM_COPY[platform];
-  const alternatePlatform = platform === "windows" ? "mac" : "windows";
-  const alternateCopy = PLATFORM_COPY[alternatePlatform];
-  const isDetected = platform === detectedPlatform;
+  const Icon = copy.icon;
+  const verified = Boolean(release);
 
   return (
-    <article className={styles.installerCard}>
-      <div className={styles.installerOverview}>
-        <div className={styles.platformEyebrow}>
-          <span>{copy.code}</span>
-          <small>{isDetected ? "Detected for this machine" : detectedPlatform ? "Alternate platform" : "Selected platform"}</small>
+    <article
+      id="connector-download-panel"
+      className={styles.installerPanel}
+      role="tabpanel"
+      aria-labelledby={`platform-tab-${platform}`}
+    >
+      <header className={styles.installerHeader}>
+        <span className={styles.installerIcon}><Icon aria-hidden="true" /></span>
+        <div>
+          <span className={styles.platformCode}>{copy.code}</span>
+          <h2>{copy.name}</h2>
         </div>
-        <h3>{copy.name}</h3>
-        <p>{copy.detail}</p>
-        <div className={styles.verificationStatus} data-tone={platform === "windows" ? "warning" : "success"}>
-          {platform === "windows" ? <TriangleAlert aria-hidden="true" /> : <CheckCircle2 aria-hidden="true" />}
-          <span>{copy.signing}</span>
+        {platform === detectedPlatform ? <span className={styles.detectedBadge}>Detected for this machine</span> : null}
+      </header>
+
+      <div className={styles.releaseFacts} aria-label="Release summary">
+        <div><span>Version</span><strong>{release ? `v${release.version}` : "—"}</strong></div>
+        <div><span>Size</span><strong>{release ? formatCompanionFileSize(release.size) : "—"}</strong></div>
+        <div data-tone={verified ? "success" : "warning"}>
+          {verified ? <ShieldCheck aria-hidden="true" /> : <TriangleAlert aria-hidden="true" />}
+          <strong>{verified ? "Verified" : status === "loading" ? "Checking" : "Offline"}</strong>
         </div>
       </div>
 
-      <dl className={styles.facts}>
-        <div><dt>Version</dt><dd>{release ? `v${release.version}` : "—"}</dd></div>
-        <div><dt>File size</dt><dd>{release ? formatCompanionFileSize(release.size) : "—"}</dd></div>
-        <div><dt>Compatibility</dt><dd>{copy.compatibility}</dd></div>
-        <div>
-          <dt>Machines</dt>
-          <dd>{copy.machines.map((machine, index) => (
-            <span key={machine}>{index ? " · " : ""}<span>{machine}</span></span>
-          ))}</dd>
+      <div className={styles.downloadRow}>
+        <DownloadControl platform={platform} release={release} status={status} onDownload={onDownload} />
+        <div className={styles.tipRail} aria-label="Installer details">
+          <DevTip label={`Compatibility details for ${copy.name}`}>
+            <span>{copy.compatibility}</span>
+            {copy.machines.map((machine) => <span key={machine}>{machine}</span>)}
+          </DevTip>
+          <DevTip label={`Signing details for ${copy.name}`}><span>{copy.signing}</span></DevTip>
+          <DevTip label="Release policy"><span>Only the current verified release is offered from this page.</span></DevTip>
         </div>
-      </dl>
+      </div>
 
-      <div className={styles.installerActions}>
-        {release ? (
-          <a
-            className={styles.secondaryDownload}
-            href={release.url}
-            aria-label={`Download ${copy.name} from installer details`}
-            onClick={() => onDownload(platform)}
-          >
-            <Download aria-hidden="true" /> Download installer
-          </a>
-        ) : (
-          <button type="button" className={styles.secondaryDownload} disabled>
-            {status === "loading" ? "Checking release…" : "Installer unavailable"}
-          </button>
-        )}
-        <button
-          type="button"
-          className={styles.alternatePlatform}
-          onClick={() => onPlatformChange(alternatePlatform)}
-        >
-          View {alternateCopy.name} download <ArrowRight aria-hidden="true" />
+      {platform === "windows" ? (
+        <div className={styles.compactNotice} data-tone="warning">
+          <TriangleAlert aria-hidden="true" />
+          <strong>Unknown publisher</strong>
+          <DevTip label="Windows SmartScreen steps">
+            <span>Download only from this page. If SmartScreen appears, select More info, confirm NexusRBX Connector, then choose Run anyway.</span>
+          </DevTip>
+        </div>
+      ) : (
+        <div className={styles.compactNotice} data-tone="success">
+          <CheckCircle2 aria-hidden="true" />
+          <strong>Signed &amp; notarized</strong>
+          <DevTip label="Apple verification details"><span>Verified by Apple before distribution.</span></DevTip>
+        </div>
+      )}
+
+      <div className={styles.checksumRow}>
+        <ShieldCheck aria-hidden="true" />
+        <code>{release?.sha256 ? `${release.sha256.slice(0, 10)}…${release.sha256.slice(-8)}` : "Checksum unavailable"}</code>
+        <DevTip label="About the SHA-256 checksum">
+          <span>Use the SHA-256 checksum to verify the downloaded installer matches the published release.</span>
+        </DevTip>
+        <button type="button" disabled={!release?.sha256} onClick={onCopyChecksum} aria-label="Copy SHA-256 checksum">
+          {checksumCopied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+          <span>{checksumCopied ? "Copied" : "Copy"}</span>
         </button>
       </div>
-
-      <details className={styles.checksum}>
-        <summary>
-          <ShieldCheck aria-hidden="true" />
-          <span>SHA-256 checksum</span>
-          <ChevronDown aria-hidden="true" />
-        </summary>
-        <div>
-          <code>{release?.sha256 || "Available after release verification"}</code>
-          <button type="button" disabled={!release?.sha256} onClick={onCopyChecksum}>
-            {checksumCopied ? <CheckCircle2 aria-hidden="true" /> : <Copy aria-hidden="true" />}
-            {checksumCopied ? "Copied" : "Copy"}
-          </button>
-        </div>
-      </details>
-      <p className={styles.releasePolicy}>Only the current verified release is offered from this page.</p>
     </article>
+  );
+}
+
+function SetupSteps({ steps }) {
+  const icons = [Download, Monitor, Link2];
+  return (
+    <section className={styles.setupSection} aria-labelledby="setup-title">
+      <header>
+        <span>SETUP</span>
+        <h2 id="setup-title">Three clicks to Studio.</h2>
+        <DevTip label="About automatic updates">
+          <span>The connector checks the verified release feed, downloads updates in the background, and installs them when you restart or quit the app.</span>
+        </DevTip>
+      </header>
+      <ol>
+        {steps.map((step, index) => {
+          const Icon = icons[index];
+          return (
+            <li key={step.title}>
+              <span className={styles.stepIcon}><Icon aria-hidden="true" /></span>
+              <strong>{step.title}</strong>
+              <DevTip label={`${step.title} instructions`}><span>{step.detail}</span></DevTip>
+            </li>
+          );
+        })}
+      </ol>
+      <a href="/docs/troubleshooting">Troubleshooting <ArrowRight aria-hidden="true" /></a>
+    </section>
   );
 }
 
@@ -252,9 +305,7 @@ export default function DownloadsContent() {
   }, []);
 
   const selectedCopy = PLATFORM_COPY[selectedPlatform];
-  const selectedRelease = manifest
-    ? { ...manifest.platforms[selectedPlatform], version: manifest.version }
-    : null;
+  const selectedRelease = manifest ? { ...manifest.platforms[selectedPlatform], version: manifest.version } : null;
 
   function handleDownload(platform) {
     void trackProductEvent("connector_download_selected", {
@@ -280,110 +331,41 @@ export default function DownloadsContent() {
   }
 
   return (
-    <main className={styles.main} id="main-content">
-      <section className={styles.hero}>
-        <div className={styles.heroCopy}>
-          <p className={styles.phase}>DESKTOP CONNECTOR</p>
-          <h1>Connect Nexus to <span>Roblox Studio.</span></h1>
-          <p className={styles.lead}>Install the desktop connector, pair it once, and work with your Studio project from Nexus through a verifiable local bridge.</p>
+    <TooltipProvider delayDuration={120}>
+      <main className={styles.main} id="main-content">
+        <section className={styles.hero}>
+          <div className={styles.heroCopy}>
+            <p className={styles.phase}>DESKTOP CONNECTOR</p>
+            <h1>Nexus <span>↔</span> Roblox Studio.</h1>
+            <p className={styles.lead}>One local bridge. Pair once.</p>
 
-          <div className={styles.heroActions}>
-            <DownloadControl
+            <PlatformTabs selectedPlatform={selectedPlatform} detectedPlatform={detectedPlatform} onChange={handlePlatformChange} />
+            <InstallerPanel
               platform={selectedPlatform}
               release={selectedRelease}
               status={status}
+              detectedPlatform={detectedPlatform}
               onDownload={handleDownload}
-              className={styles.primaryDownload}
+              checksumCopied={checksumCopied}
+              onCopyChecksum={handleCopyChecksum}
             />
-            <button
-              type="button"
-              className={styles.platformSwitch}
-              onClick={() => handlePlatformChange(selectedPlatform === "windows" ? "mac" : "windows")}
-            >
-              {selectedPlatform === "windows" ? "Need macOS?" : "Need Windows?"}
-            </button>
           </div>
+          <ConnectionDiagram />
+        </section>
 
-          <ul className={styles.trustStrip} aria-label="Release details">
-            <li><span>Version</span><strong>{manifest ? `v${manifest.version}` : "—"}</strong></li>
-            <li><span>Size</span><strong>{selectedRelease ? formatCompanionFileSize(selectedRelease.size) : "—"}</strong></li>
-            <li><span>System</span><strong>{selectedCopy.shortName}</strong></li>
-            <li data-tone={selectedRelease ? "success" : status === "loading" ? "pending" : "warning"}>
-              {selectedRelease
-                ? <ShieldCheck aria-hidden="true" />
-                : status === "loading"
-                  ? <RefreshCw className={styles.spinner} aria-hidden="true" />
-                  : <TriangleAlert aria-hidden="true" />}
-              <strong>{selectedRelease ? "SHA-256 published" : status === "loading" ? "Checksum pending" : "Checksum unavailable"}</strong>
-            </li>
-          </ul>
-
-          {selectedPlatform === "windows" ? <WindowsDisclosure /> : (
-            <div className={styles.signedNotice}>
-              <CheckCircle2 aria-hidden="true" />
-              <span><strong>Signed and notarized</strong> Developer ID verified by Apple.</span>
-            </div>
-          )}
-        </div>
-
-        <ConnectionDiagram />
-      </section>
-
-      {status === "unavailable" ? (
-        <div role="alert" className={styles.alert}>
-          <TriangleAlert aria-hidden="true" />
-          <span><strong>Downloads temporarily unavailable</strong> We could not verify the current release feed, so installers remain disabled. Please try again shortly.</span>
-        </div>
-      ) : null}
-
-      <section className={styles.installerSection} aria-labelledby="installer-title">
-        <header className={styles.sectionHeader}>
-          <div>
-            <p className={styles.phase}>CURRENT RELEASE</p>
-            <h2 id="installer-title">Installer details</h2>
+        {status === "unavailable" ? (
+          <div role="alert" className={styles.alert}>
+            <TriangleAlert aria-hidden="true" />
+            <strong>Downloads temporarily unavailable</strong>
+            <DevTip label="Why downloads are unavailable" side="left">
+              <span>We could not verify the current release feed, so installers remain disabled. Please try again shortly.</span>
+            </DevTip>
           </div>
-          <p>{detectedPlatform
-            ? `${PLATFORM_COPY[detectedPlatform].name} was detected. You can switch platforms without leaving this page.`
-            : "Choose the installer that matches the machine running Roblox Studio."}</p>
-        </header>
+        ) : null}
 
-        <InstallerDetails
-          platform={selectedPlatform}
-          release={selectedRelease}
-          status={status}
-          detectedPlatform={detectedPlatform}
-          onDownload={handleDownload}
-          onPlatformChange={handlePlatformChange}
-          checksumCopied={checksumCopied}
-          onCopyChecksum={handleCopyChecksum}
-        />
-      </section>
-
-      <section className={styles.operations} aria-labelledby="connector-operations-title">
-        <header>
-          <p className={styles.phase}>AFTER DOWNLOAD</p>
-          <h2 id="connector-operations-title">Three steps to Studio</h2>
-          <p>The instructions update with your selected platform.</p>
-        </header>
-        <ol>
-          {selectedCopy.steps.map((step, index) => (
-            <li key={step.title}>
-              <span>{String(index + 1).padStart(2, "0")}</span>
-              <div><strong>{step.title}</strong><p>{step.detail}</p></div>
-            </li>
-          ))}
-        </ol>
-        <div className={styles.updatesCard}>
-          <RefreshCw aria-hidden="true" />
-          <div>
-            <h3>Verified updates, automatically</h3>
-            <p>The connector checks the verified release feed, downloads updates in the background, and installs them when you restart or quit the app.</p>
-            <a href="/docs/troubleshooting">Troubleshooting guide <ArrowRight aria-hidden="true" /></a>
-          </div>
-        </div>
-      </section>
-
-      <p className={styles.disclaimer}>NexusRBX is not affiliated with or endorsed by Roblox Corporation.</p>
-    </main>
+        <SetupSteps steps={selectedCopy.steps} />
+        <p className={styles.disclaimer}>NexusRBX is not affiliated with or endorsed by Roblox Corporation.</p>
+      </main>
+    </TooltipProvider>
   );
 }

@@ -1,4 +1,7 @@
 import React from "react";
+import { Shimmer } from "../../ai-elements/shimmer";
+import LinkIcon from "../../ui/LinkIcon";
+import LinkSlashIcon from "../../ui/LinkSlashIcon";
 
 function cleanContextValue(value) {
   return String(value ?? "")
@@ -60,7 +63,17 @@ export default function ChatEmptyState({
         <div className="chat-empty-state__intro">
           <div className="chat-empty-state__copy">
             <p className="chat-empty-state__eyebrow">Start building</p>
-            <h1 id="workspace-start-title">What should Nexus build?</h1>
+            <h1 id="workspace-start-title">
+              <Shimmer
+                as="span"
+                duration={2.4}
+                spread={1.5}
+                baseColor="var(--nx-text)"
+                highlightColor="var(--nx-purple-strong)"
+              >
+                What should Nexus build?
+              </Shimmer>
+            </h1>
             <p>
               Describe the result you want. Nexus will inspect the connected
               Studio session, make safe assumptions, build the change, and return
@@ -86,14 +99,20 @@ export default function ChatEmptyState({
             {buildContext.hasStudioStatus ? (
               <div>
                 <dt>Studio</dt>
-                <dd>
-                  <span
-                    className="chat-empty-state__status"
-                    data-connected={
-                      buildContext.studioConnected ? "true" : "false"
-                    }
-                    aria-hidden="true"
-                  />
+                <dd className={buildContext.studioConnected ? "chat-empty-state__connected" : "chat-empty-state__disconnected"}>
+                  {buildContext.studioConnected ? (
+                    <LinkIcon
+                      className="chat-empty-state__connected-icon"
+                      size={14}
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <LinkSlashIcon
+                      className="chat-empty-state__disconnected-icon"
+                      size={14}
+                      aria-hidden="true"
+                    />
+                  )}
                   {buildContext.studioConnected ? "Connected" : "Disconnected"}
                 </dd>
               </div>

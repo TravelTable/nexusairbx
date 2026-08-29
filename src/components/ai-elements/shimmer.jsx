@@ -8,7 +8,9 @@ const ShimmerComponent = ({
   as: Component = "p",
   className,
   duration = 2,
-  spread = 2
+  spread = 2,
+  baseColor = "var(--ds-text-muted)",
+  highlightColor = "var(--ds-surface-1)",
 }) => {
   const childLength = typeof children === "string" || typeof children === "number"
     ? String(children).length
@@ -22,16 +24,18 @@ const ShimmerComponent = ({
     <Component
       className={cn(
         "nexus-shimmer relative inline-block bg-[length:250%_100%,auto] bg-clip-text text-transparent",
-        "[--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--ds-surface-1),#0000_calc(50%+var(--spread)))] [background-repeat:no-repeat,padding-box]",
+        "[background-repeat:no-repeat,padding-box]",
         className
       )}
       style={
         {
           "--spread": `${dynamicSpread}px`,
           "--nexus-shimmer-duration": `${resolvedDuration}s`,
+          "--nexus-shimmer-base": baseColor,
+          "--nexus-shimmer-highlight": highlightColor,
 
           backgroundImage:
-            "var(--bg), linear-gradient(var(--ds-text-muted), var(--ds-text-muted))"
+            "linear-gradient(90deg, #0000 calc(50% - var(--spread)), var(--nexus-shimmer-highlight), #0000 calc(50% + var(--spread))), linear-gradient(var(--nexus-shimmer-base), var(--nexus-shimmer-base))"
         }
       }>
       {children}

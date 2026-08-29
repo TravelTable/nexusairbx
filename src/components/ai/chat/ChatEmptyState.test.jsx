@@ -36,6 +36,8 @@ test("shows only the organizational project and read-only Studio connection", ()
   expect(context).not.toHaveTextContent("Crystal Caves");
   expect(context).not.toHaveTextContent("123456");
   expect(context).toHaveTextContent("StudioConnected");
+  expect(context.querySelector(".chat-empty-state__connected")).toBeInTheDocument();
+  expect(context.querySelector(".chat-empty-state__connected-icon svg")).toBeInTheDocument();
 
   rerender(
     <ChatEmptyState
@@ -62,6 +64,9 @@ test("reports a verified disconnected Studio snapshot without inventing a target
 
   const context = screen.getByRole("group", { name: "Current build context" });
   expect(context).toHaveTextContent("StudioDisconnected");
+  expect(context.querySelector(".chat-empty-state__disconnected")).toBeInTheDocument();
+  expect(context.querySelector(".chat-empty-state__disconnected-icon svg")).toBeInTheDocument();
+  expect(context.querySelector(".chat-empty-state__connected-icon")).not.toBeInTheDocument();
   expect(context).not.toHaveTextContent("Project");
   expect(context).not.toHaveTextContent("Place");
 });

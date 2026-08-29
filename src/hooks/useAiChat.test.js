@@ -262,9 +262,10 @@ describe("useAiChat", () => {
     const notify = jest.fn();
     const { result } = renderHook(() => useAiChat(user, settings, refreshBilling, notify));
 
-    await expect(act(async () => result.current.startNewChat())).rejects.toThrow(
-      "Open a project before starting a chat."
-    );
+    await expect(act(async () => result.current.startNewChat())).rejects.toMatchObject({
+      message: "Open a project before starting a chat.",
+      code: "PROJECT_REQUIRED",
+    });
     expect(setDoc).not.toHaveBeenCalled();
     expect(resolveChatAgentProjectionV2).not.toHaveBeenCalled();
   });

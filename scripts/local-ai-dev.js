@@ -6,7 +6,9 @@ const { spawn } = require("node:child_process");
 
 const root = path.resolve(__dirname, "..");
 const backendRoot = path.join(root, "backend");
+const publicFrontendRoot = path.join(root, "public-frontend");
 const reactStart = path.join(root, "node_modules", "react-scripts", "scripts", "start.js");
+const nextDev = path.join(root, "node_modules", "next", "dist", "bin", "next");
 const children = new Set();
 let shuttingDown = false;
 
@@ -61,10 +63,15 @@ function assertPortAvailable(port) {
 }
 
 async function main() {
-  await Promise.all([assertPortAvailable(3000), assertPortAvailable(5001)]);
+  await Promise.all([
+    assertPortAvailable(3000),
+    assertPortAvailable(4173),
+    assertPortAvailable(5001),
+  ]);
 
   console.log("NexusRBX local AI environment");
   console.log("  Website:        http://localhost:3000/ai");
+  console.log("  Docs & pricing: http://localhost:4173");
   console.log("  Local API:      http://localhost:5001");
   console.log("  Roblox redirect http://localhost:5001/api/roblox/oauth/callback");
   console.log("  AI worker:      enabled (real configured provider)\n");
@@ -93,10 +100,15 @@ async function main() {
     JOB_WORKER_POLL_MS: "1000",
   });
 
+  startProcess("public frontend", [nextDev, "dev", "-p", "4173"], publicFrontendRoot, {
+    NODE_ENV: "development",
+  });
+
   startProcess("frontend", [reactStart], root, {
     NODE_ENV: "development",
     PORT: "3000",
     REACT_APP_BACKEND_URL: "http://localhost:5001",
+    REACT_APP_PUBLIC_SITE_ORIGIN: "http://localhost:4173",
     REACT_APP_APP_CHECK_ENABLED: "false",
     REACT_APP_GENERATION_WALL_TIMEOUT_MS: "0",
     REACT_APP_PENDING_RUN_RECOVERY_WALL_TIMEOUT_MS: "0",

@@ -1,0 +1,67 @@
+.icon {
+  animation: bot-bob 2.15s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.bubble {
+  animation: bot-breathe 2.15s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.eye {
+  animation: bot-blink 2.15s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.eyeLeft {
+  animation-delay: 100ms;
+}
+
+.eyeRight {
+  animation-delay: 200ms;
+}
+
+.dot {
+  animation: bot-dot 1.2s ease-in-out infinite;
+  animation-delay: var(--bot-dot-delay);
+  fill: currentColor;
+}
+
+@keyframes bot-bob {
+  0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+  18% { transform: translateY(1.5px) rotate(-3deg) scale(1.03); }
+  38% { transform: translateY(-1.5px) rotate(3deg) scale(1); }
+  58%, 82% { transform: translateY(0) rotate(0deg) scale(1); }
+}
+
+@keyframes bot-breathe {
+  0%, 100% { transform: scale(1); }
+  28% { transform: scale(1.04); }
+  55% { transform: scale(1); }
+}
+
+@keyframes bot-blink {
+  0%, 18%, 38%, 100% { transform: scaleY(1); }
+  27% { transform: scaleY(0.1); }
+}
+
+@keyframes bot-dot {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon,
+  .bubble,
+  .eye,
+  .dot {
+    animation: none;
+  }
+
+  .dot {
+    opacity: 0.45;
+  }
+}

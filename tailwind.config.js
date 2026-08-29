@@ -6,6 +6,8 @@ module.exports = {
   content: [
     path.join(__dirname, "src/**/*.{js,jsx,ts,tsx}"),
     path.join(__dirname, "public-frontend/**/*.{js,jsx,ts,tsx}"),
+    `!${path.join(__dirname, "public-frontend/{out,.next}/**/*")}`,
+    `!${path.join(__dirname, "build/**/*")}`,
   ],
   theme: {
     extend: {

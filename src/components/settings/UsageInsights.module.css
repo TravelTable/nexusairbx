@@ -1,0 +1,434 @@
+.root {
+  display: grid;
+  gap: var(--nx-space-4);
+}
+
+.primaryCard,
+.chartCard,
+.breakdownCard,
+.activityCard {
+  border: 1px solid var(--nx-rule);
+  border-radius: var(--nx-radius-panel);
+  background: var(--nx-card);
+  box-shadow: var(--nx-inner-highlight);
+}
+
+.primaryCard {
+  padding: var(--nx-space-5);
+}
+
+.primaryHeader,
+.chartHeader,
+.activityHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--nx-space-4);
+}
+
+.eyebrow {
+  color: var(--nx-purple-strong);
+  font-size: 0.6875rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.primaryHeader h3 {
+  margin: var(--nx-space-1) 0 0;
+  color: var(--nx-text);
+  font-family: var(--nx-font-display);
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.primaryHeader h3 small {
+  color: var(--nx-text-muted);
+  font-family: var(--nx-font-body);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.planBadge {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  padding: 0 var(--nx-space-3);
+  border: 1px solid var(--nx-purple-border);
+  border-radius: var(--nx-radius-pill);
+  background: var(--nx-purple-soft);
+  color: var(--nx-purple-strong);
+  font-size: 0.6875rem;
+  font-weight: 750;
+}
+
+.meterLabels {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--nx-space-4);
+  margin-top: var(--nx-space-5);
+  color: var(--nx-text-muted);
+  font-size: 0.75rem;
+}
+
+.meterTrack,
+.breakdownTrack {
+  display: block;
+  overflow: hidden;
+  border-radius: var(--nx-radius-pill);
+  background: var(--nx-field);
+}
+
+.meterTrack {
+  height: 7px;
+  margin-top: var(--nx-space-2);
+}
+
+.meterTrack > span,
+.breakdownTrack > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--nx-purple);
+}
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid var(--nx-rule);
+  border-radius: var(--nx-radius-panel);
+  background: var(--nx-muted-surface);
+}
+
+.metricGrid > div {
+  min-width: 0;
+  padding: var(--nx-space-4);
+}
+
+.metricGrid > div + div {
+  border-left: 1px solid var(--nx-rule);
+}
+
+.metricGrid span,
+.metricGrid small {
+  display: block;
+  color: var(--nx-text-muted);
+  font-size: 0.6875rem;
+}
+
+.metricGrid strong {
+  display: block;
+  overflow: hidden;
+  margin: 5px 0 3px;
+  color: var(--nx-text);
+  font-family: var(--nx-font-display);
+  font-size: 1.35rem;
+  letter-spacing: -0.025em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chartCard,
+.breakdownCard {
+  padding: var(--nx-space-5);
+}
+
+.chartHeader h4,
+.breakdownCard h4,
+.activityHeader h4 {
+  margin: 0;
+  color: var(--nx-text);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.chartHeader p,
+.breakdownCard p,
+.activityHeader p {
+  margin: 3px 0 0;
+  color: var(--nx-text-muted);
+  font-size: 0.75rem;
+}
+
+.rangeTabs {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--nx-rule);
+  border-radius: var(--nx-radius-control);
+  background: var(--nx-field);
+}
+
+.rangeTabs button {
+  min-width: 42px;
+  min-height: 30px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--nx-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.rangeTabs button[aria-pressed="true"] {
+  background: var(--nx-raised-surface);
+  color: var(--nx-text);
+  box-shadow: var(--nx-shadow-control);
+}
+
+.rangeTabs button:focus-visible,
+.activityItem button:focus-visible {
+  outline: 2px solid var(--nx-focus);
+  outline-offset: 2px;
+}
+
+.chartWrap {
+  margin-top: var(--nx-space-4);
+}
+
+.chartWrap svg {
+  display: block;
+  width: 100%;
+  min-height: 220px;
+}
+
+.gridLine {
+  stroke: var(--nx-rule);
+  stroke-dasharray: 4 8;
+}
+
+.axisLabel {
+  fill: var(--nx-text-muted);
+  font-family: var(--nx-font-code);
+  font-size: 11px;
+}
+
+.area {
+  fill: var(--nx-purple-wash);
+}
+
+.line {
+  fill: none;
+  stroke: var(--nx-purple);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3;
+}
+
+.point {
+  fill: var(--nx-card);
+  stroke: var(--nx-purple-strong);
+  stroke-width: 2.5;
+}
+
+.chartDates {
+  display: flex;
+  justify-content: space-between;
+  color: var(--nx-text-muted);
+  font-size: 0.6875rem;
+}
+
+.chartEmpty,
+.activityEmpty {
+  display: grid;
+  min-height: 180px;
+  place-items: center;
+  color: var(--nx-text-muted);
+  font-size: 0.8125rem;
+}
+
+.breakdownList {
+  display: grid;
+  gap: var(--nx-space-3);
+  margin-top: var(--nx-space-5);
+}
+
+.breakdownList > div > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--nx-space-4);
+  color: var(--nx-text-secondary);
+  font-size: 0.75rem;
+}
+
+.breakdownList strong {
+  color: var(--nx-text);
+  font-family: var(--nx-font-code);
+}
+
+.breakdownTrack {
+  height: 5px;
+  margin-top: 7px;
+}
+
+.activityCard {
+  overflow: hidden;
+}
+
+.activityHeader {
+  align-items: center;
+  padding: var(--nx-space-4) var(--nx-space-5);
+  border-bottom: 1px solid var(--nx-rule);
+}
+
+.searchField {
+  position: relative;
+  width: min(260px, 45%);
+}
+
+.searchField > svg {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 10px;
+  width: 15px;
+  height: 15px;
+  color: var(--nx-text-muted);
+  transform: translateY(-50%);
+}
+
+.searchField input {
+  min-height: 36px;
+  padding-left: 32px;
+}
+
+.activityItem + .activityItem {
+  border-top: 1px solid var(--nx-rule-quiet);
+}
+
+.activityItem button {
+  display: grid;
+  width: 100%;
+  min-height: 52px;
+  grid-template-columns: auto minmax(120px, 0.8fr) minmax(140px, 1fr) minmax(145px, auto) auto;
+  align-items: center;
+  gap: var(--nx-space-3);
+  padding: 10px var(--nx-space-4);
+  border: 0;
+  background: transparent;
+  color: var(--nx-text-secondary);
+  text-align: left;
+}
+
+.activityItem button:hover {
+  background: var(--nx-muted-surface);
+}
+
+.activityItem button > svg {
+  width: 15px;
+  height: 15px;
+  color: var(--nx-text-muted);
+  transition: transform var(--nx-motion-color) ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.activityType,
+.activityModel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activityType {
+  color: var(--nx-text);
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.activityModel,
+.activityItem time {
+  color: var(--nx-text-muted);
+  font-size: 0.75rem;
+}
+
+.activityItem strong {
+  color: var(--nx-text-secondary);
+  font-family: var(--nx-font-code);
+  font-size: 0.75rem;
+  text-align: right;
+}
+
+.activityDetails {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--nx-space-4);
+  margin: 0;
+  padding: var(--nx-space-4) var(--nx-space-6);
+  border-top: 1px solid var(--nx-rule-quiet);
+  background: var(--nx-depth);
+}
+
+.activityDetails dt {
+  color: var(--nx-text-muted);
+  font-size: 0.6875rem;
+}
+
+.activityDetails dd {
+  overflow-wrap: anywhere;
+  margin: 4px 0 0;
+  color: var(--nx-text-secondary);
+  font-family: var(--nx-font-code);
+  font-size: 0.75rem;
+}
+
+@media (max-width: 760px) {
+  .metricGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .metricGrid > div:nth-child(3) {
+    border-left: 0;
+  }
+
+  .metricGrid > div:nth-child(n + 3) {
+    border-top: 1px solid var(--nx-rule);
+  }
+
+  .activityItem button {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .activityModel,
+  .activityItem time {
+    display: none;
+  }
+
+  .activityDetails {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .primaryHeader,
+  .activityHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .searchField {
+    width: 100%;
+  }
+
+  .meterLabels {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .chartCard,
+  .breakdownCard,
+  .primaryCard {
+    padding: var(--nx-space-4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .activityItem button > svg {
+    transition: none;
+  }
+}

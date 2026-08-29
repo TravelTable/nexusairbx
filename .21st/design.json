@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "project": {
+    "name": "nexusrbx-react",
+    "productType": null,
+    "stack": [
+      "nextjs",
+      "react",
+      "shadcn",
+      "tailwind-v3"
+    ]
+  },
+  "sources": {
+    "tokens": [
+      "src/index.css",
+      "src/app.css"
+    ],
+    "components": [
+      "src/components/ui"
+    ],
+    "assets": [
+      "public/assets"
+    ],
+    "instructions": [
+      "DESIGN.md",
+      "AGENTS.md"
+    ]
+  },
+  "design": {
+    "colorMode": "unknown",
+    "colors": {},
+    "typography": {},
+    "spacing": {},
+    "radius": {},
+    "shadows": {},
+    "motion": {},
+    "density": "unknown"
+  },
+  "components": {
+    "installed": [
+      "alert-1",
+      "border-beam",
+      "dock",
+      "LinkIcon",
+      "LinkSlashIcon",
+      "NBlockLoader",
+      "NexusLoader",
+      "NexusLoader.test",
+      "Segmented.test",
+      "tailwind-css-background-snippet",
+      "toast-1"
+    ],
+    "preferredPrimitives": [
+      "radix-ui"
+    ],
+    "patterns": []
+  },
+  "constraints": {
+    "must": [],
+    "avoid": []
+  },
+  "decisions": [
+    "Settings sidebar icons use short, tab-specific hover and keyboard-focus animations inspired by the 21st Animated Sidebar pattern; motion is disabled when reduced motion is requested.",
+    "The Settings desktop navigation uses a compact 260px application sidebar with a small identity block, restrained section label, icon-led rounded rows, and a soft purple selected state while preserving the existing tab order and behavior.",
+    "Settings is a full-width application page with a viewport-spanning header, persistent desktop navigation rail, and flexible content pane; mobile retains the section drawer.",
+    "Settings Usage uses an accessible included-usage meter, a concise KPI strip, 7-day and 30-day trend views, workflow distribution, and searchable expandable events backed by real usage records.",
+    "Settings uses a premium control-center hierarchy with grouped searchable navigation, visible section titles and inline guidance, restrained elevated panels, actionable readiness rows, and deep analytics only in Plan and usage.",
+    "Pricing stays an open access ledger with underlined choices, short feature labels, and keyboard- and touch-accessible question-mark disclosures for audience, billing, finder, and feature detail.",
+    "Downloads uses compact icon-led platform tabs and question-mark dev tips so only essential release and setup text remains visible."
+  ],
+  "evidence": [
+    {
+      "fact": "components.installed",
+      "source": "src/components/ui"
+    },
+    {
+      "fact": "design.tokens",
+      "source": "src/app.css"
+    },
+    {
+      "fact": "design.tokens",
+      "source": "src/index.css"
+    },
+    {
+      "fact": "project.instructions",
+      "source": "AGENTS.md"
+    },
+    {
+      "fact": "project.instructions",
+      "source": "DESIGN.md"
+    },
+    {
+      "fact": "project.stack:nextjs",
+      "source": "package.json"
+    },
+    {
+      "fact": "project.stack:react",
+      "source": "package.json"
+    },
+    {
+      "fact": "project.stack:shadcn",
+      "source": "components.json"
+    },
+    {
+      "fact": "project.stack:tailwind-v3",
+      "source": "package.json"
+    }
+  ],
+  "generatedAt": "2026-08-29T04:59:51.420Z"
+}

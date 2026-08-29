@@ -21,6 +21,7 @@ export default function UniversalHeaderFrame({
   accountSlot = null,
   mobileAccountSlot = accountSlot,
   compactAccountSlot = mobileAccountSlot,
+  routeSlot = null,
   before = null,
 }) {
   const [indexOpen, setIndexOpen] = useState(false);
@@ -153,6 +154,7 @@ export default function UniversalHeaderFrame({
                 strokeWidth={2}
               />
             </button>
+            {routeSlot ? <div className={styles.routeSlot}>{routeSlot}</div> : null}
           </div>
         </div>
       </header>

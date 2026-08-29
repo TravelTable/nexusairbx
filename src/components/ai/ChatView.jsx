@@ -82,7 +82,7 @@ export default function ChatView({
         ) : null}
         <Conversation className="nexus-conversation-surface h-full min-h-0 w-full flex-1">
           <ConversationContent
-            className="nexus-conversation-content mx-auto min-h-full gap-7 py-6 md:py-9"
+            className={`nexus-conversation-content mx-auto min-h-full gap-7 py-6 md:py-9 ${showEmpty ? "h-full" : ""}`}
             scrollClassName="nexus-chat-scroll scrollbar-subtle"
           >
             {showEmpty ? (

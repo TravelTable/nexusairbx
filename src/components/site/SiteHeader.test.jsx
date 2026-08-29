@@ -22,7 +22,17 @@ jest.mock("./useHeaderIdentity", () => () => ({
   signOutUser: jest.fn(),
 }));
 
-import SiteHeader from "./SiteHeader";
+import SiteHeader, { resolveStaticPublicHref } from "./SiteHeader";
+
+test("connects Docs and Pricing to the configured public frontend", () => {
+  expect(resolveStaticPublicHref("/docs", "http://localhost:4173/")).toBe(
+    "http://localhost:4173/docs",
+  );
+  expect(resolveStaticPublicHref("/pricing", "http://localhost:4173")).toBe(
+    "http://localhost:4173/pricing",
+  );
+  expect(resolveStaticPublicHref("/docs", "")).toBe("/docs");
+});
 
 test("makes the homepage skip link the first keyboard target", async () => {
   render(

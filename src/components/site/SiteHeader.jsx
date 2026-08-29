@@ -10,9 +10,23 @@ import styles from "./SiteHeaderLedger.module.css";
 
 const STATIC_PUBLIC_PATHS = ["/docs", "/pricing", "/legal"];
 
+export function resolveStaticPublicHref(to, publicSiteOrigin = process.env.REACT_APP_PUBLIC_SITE_ORIGIN) {
+  let resolvedOrigin = publicSiteOrigin;
+  if (
+    !resolvedOrigin &&
+    process.env.NODE_ENV === "development" &&
+    typeof window !== "undefined" &&
+    window.location.port === "3000"
+  ) {
+    resolvedOrigin = `${window.location.protocol}//${window.location.hostname}:4173`;
+  }
+  const origin = String(resolvedOrigin || "").trim().replace(/\/+$/, "");
+  return origin && String(to || "").startsWith("/") ? `${origin}${to}` : to;
+}
+
 function AppLink({ to, children, ...props }) {
   if (STATIC_PUBLIC_PATHS.some((path) => to === path || to.startsWith(`${path}/`))) {
-    return <a href={to} {...props}>{children}</a>;
+    return <a href={resolveStaticPublicHref(to)} {...props}>{children}</a>;
   }
   return <Link to={to} {...props}>{children}</Link>;
 }
@@ -182,6 +196,7 @@ export default function SiteHeader({
       accountSlot={<AccountControl identity={identity} />}
       mobileAccountSlot={<AccountControl identity={identity} mobile />}
       compactAccountSlot={<AccountControl identity={identity} compact showWorkspaceAction={false} />}
+      routeSlot={location.pathname === "/settings" ? <div id="settings-header-status" /> : null}
       before={<SkipToMainContent targetId={skipTargetId} />}
     />
   );

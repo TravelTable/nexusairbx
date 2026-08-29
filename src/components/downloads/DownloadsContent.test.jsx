@@ -63,7 +63,7 @@ describe("DownloadsContent", () => {
     expect(screen.getByText(/Only the current verified release is offered/)).toBeTruthy();
     expect(screen.getByText("Developer ID signed and Apple notarized")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "View Windows (64-bit) download" }));
+    fireEvent.click(screen.getByRole("tab", { name: "View Windows (64-bit) download" }));
     const windowsDownload = screen.getByRole("link", { name: "Download Windows (64-bit)" });
     expect(windowsDownload.getAttribute("href")).toBe("/connector/NexusRBX-Connector-0.1.0-Windows.exe");
     expect(screen.getByText("Intel or AMD x64 PC")).toBeTruthy();
@@ -81,7 +81,7 @@ describe("DownloadsContent", () => {
 
     expect((await screen.findByRole("alert")).textContent).toContain("Downloads temporarily unavailable");
     await waitFor(() => expect(screen.getByRole("button", { name: "macOS (Universal) unavailable" }).disabled).toBe(true));
-    fireEvent.click(screen.getByRole("button", { name: "View Windows (64-bit) download" }));
+    fireEvent.click(screen.getByRole("tab", { name: "View Windows (64-bit) download" }));
     expect(screen.getByRole("button", { name: "Windows (64-bit) unavailable" }).disabled).toBe(true);
     expect(screen.queryByRole("link", { name: /Download for/i })).toBeNull();
   });
