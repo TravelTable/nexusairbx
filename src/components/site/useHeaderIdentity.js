@@ -4,8 +4,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 import { auth } from "../../firebase";
 import { useBilling } from "../../context/BillingContext";
+import { useRobloxConnection } from "../../context/RobloxConnectionContext";
 import { isRetryableApiError } from "../../lib/apiErrors";
-import { beginRobloxOAuth, beginRobloxReauthorization, getRobloxOAuthStatus } from "../../lib/robloxOAuthApi";
+import { beginRobloxOAuth, beginRobloxReauthorization } from "../../lib/robloxOAuthApi";
 import { getSupportUnreadCount } from "../../lib/supportApi";
 import {
   formatHeaderPlan,
@@ -19,52 +20,39 @@ export default function useHeaderIdentity({
   robloxLoadingOverride,
 } = {}) {
   const billing = useBilling() || {};
+  const sharedRoblox = useRobloxConnection();
   const user = billing.user || null;
   const authReady = billing.authReady === true;
   const location = useLocation();
   const navigate = useNavigate();
-  const [robloxStatus, setRobloxStatus] = useState(null);
-  const [robloxLoading, setRobloxLoading] = useState(false);
   const [robloxError, setRobloxError] = useState("");
   const [robloxAction, setRobloxAction] = useState("");
   const [supportUnreadCount, setSupportUnreadCount] = useState(0);
   const [isSupportStaff, setIsSupportStaff] = useState(false);
 
   const hasRobloxStatusOverride = typeof robloxStatusOverride !== "undefined";
-  const effectiveRobloxStatus = hasRobloxStatusOverride ? robloxStatusOverride : robloxStatus;
+  const effectiveRobloxStatus = hasRobloxStatusOverride ? robloxStatusOverride : sharedRoblox.status;
   const effectiveRobloxLoading =
-    typeof robloxLoadingOverride === "boolean" ? robloxLoadingOverride : robloxLoading;
+    typeof robloxLoadingOverride === "boolean" ? robloxLoadingOverride : sharedRoblox.loading;
 
   const refreshRobloxStatus = useCallback(async () => {
     if (!user || hasRobloxStatusOverride) return null;
-    setRobloxLoading(true);
     setRobloxError("");
     try {
-      const status = await getRobloxOAuthStatus();
-      setRobloxStatus(status);
-      return status;
+      return await sharedRoblox.refresh({ force: true });
     } catch (err) {
       if (isRetryableApiError(err)) {
         setRobloxError("Roblox connection is temporarily unavailable while the database is busy.");
       } else {
         setRobloxError(err?.message || "Could not check Roblox connection.");
-        setRobloxStatus(null);
       }
       return null;
-    } finally {
-      setRobloxLoading(false);
     }
-  }, [hasRobloxStatusOverride, user]);
+  }, [hasRobloxStatusOverride, sharedRoblox, user]);
 
   useEffect(() => {
-    if (!user) {
-      setRobloxStatus(null);
-      setRobloxError("");
-      return;
-    }
-    if (hasRobloxStatusOverride) return;
-    void refreshRobloxStatus();
-  }, [hasRobloxStatusOverride, refreshRobloxStatus, user]);
+    if (!user) setRobloxError("");
+  }, [user]);
 
   const refreshSupportUnreadCount = useCallback(async () => {
     if (!user) {
@@ -184,7 +172,7 @@ export default function useHeaderIdentity({
     robloxUsername,
     robloxConnected,
     robloxLoading: effectiveRobloxLoading,
-    robloxError,
+    robloxError: robloxError || sharedRoblox.error?.message || "",
     robloxAction,
     refreshRobloxStatus,
     refreshSupportUnreadCount,

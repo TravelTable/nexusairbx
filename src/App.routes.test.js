@@ -14,10 +14,20 @@ test("keeps capability and authenticated icon routes explicit and collision-free
 });
 
 test("keeps both asset deep links owned when capability reads are disabled", () => {
-  expect(appSource).toContain('<Route path="/assets" element={withSiteShell(<AssetLibraryRouteContent />');
-  expect(appSource).toContain('<Route path="/assets/:assetId" element={withSiteShell(<AssetDetailRouteContent />');
+  expect(appSource).toContain('<Route path="/assets" element={withRobloxConnectionGate(withSiteShell(<AssetLibraryRouteContent />');
+  expect(appSource).toContain('<Route path="/assets/:assetId" element={withRobloxConnectionGate(withSiteShell(<AssetDetailRouteContent />');
   expect(appSource).toContain('<NexusRBXAssetPlatformUnavailablePage view="library" />');
   expect(appSource).toContain('<NexusRBXAssetPlatformUnavailablePage view="detail" />');
+});
+
+test("gates creation routes while keeping Roblox recovery explicit", () => {
+  expect(appSource).toContain('<Route path="/connect-roblox"');
+  for (const route of ["/ai", "/tools/icon-generator", "/assets", "/assets/:assetId", "/script/:id"]) {
+    expect(appSource).toContain(`<Route path="${route}" element={withRobloxConnectionGate(`);
+  }
+  for (const route of ["/settings", "/billing", "/support", "/subscribe", "/icons-market"]) {
+    expect(appSource).toContain(`<Route path="${route}"`);
+  }
 });
 
 test("owns the password-reset deep link", () => {

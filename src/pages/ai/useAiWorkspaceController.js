@@ -16,6 +16,7 @@ import {
 
 import { appCheckReady as firebaseAppCheckReady, auth, db } from "../../firebase";
 import { useBilling } from "../../context/BillingContext";
+import { useRobloxConnection } from "../../context/RobloxConnectionContext";
 import { useSettings } from "../../context/SettingsContext";
 import { useUnifiedChat } from "../../hooks/useUnifiedChat";
 import { useArtifactWorkspace } from "../../hooks/useArtifactWorkspace";
@@ -26,7 +27,7 @@ import { CHAT_MODES } from "../../components/ai/chatConstants";
 import { normalizeChatMode } from "../../lib/chatModes";
 import { BACKEND_URL } from "../../config";
 import { authedFetch } from "../../lib/billing";
-import { isRetryableApiError, readJsonResponse, withApiRetryCooldown } from "../../lib/apiErrors";
+import { readJsonResponse, withApiRetryCooldown } from "../../lib/apiErrors";
 import { FEATURE_FLAGS } from "../../lib/featureFlags";
 import {
   approveAgentStep,
@@ -62,7 +63,6 @@ import { AI_EVENTS, emitAiEvent, onAiEvent } from "../../lib/aiEvents";
 import { notifyToast } from "../../components/ui/toast-1";
 import { useStarterPromo } from "../../hooks/useStarterPromo";
 import {
-  getRobloxOAuthStatus,
   getRobloxExperienceCatalog,
   beginRobloxOAuth,
   beginRobloxReauthorization,
@@ -303,6 +303,8 @@ export function useAiWorkspaceController() {
     isFreeUsagePlan,
   } = useBilling();
   const { settings, updateSettings } = useSettings();
+  const sharedRoblox = useRobloxConnection();
+  const sharedRobloxRefresh = sharedRoblox.refresh;
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -356,8 +358,8 @@ export function useAiWorkspaceController() {
   const [pendingGenerationIntent, setPendingGenerationIntent] = useState(null);
   const [studioEnabled, setStudioEnabled] = useState(() => getStudioEnabledPreference());
   const [studioApplyMode, setStudioApplyModeState] = useState(() => getStudioApplyMode());
-  const [robloxStatus, setRobloxStatus] = useState(null);
-  const [robloxLoading, setRobloxLoading] = useState(false);
+  const robloxStatus = sharedRoblox.status;
+  const robloxLoading = sharedRoblox.loading;
   const [robloxExperiences, setRobloxExperiences] = useState([]);
   const [robloxExperiencesLoading, setRobloxExperiencesLoading] = useState(false);
   const [, setRobloxExperiencesLoaded] = useState(false);
@@ -379,23 +381,10 @@ export function useAiWorkspaceController() {
   const [chatProjectSnapshot, setChatProjectSnapshot] = useState(null);
   const studioConnection = useStudioConnection();
 
-  const refreshRobloxStatus = useCallback(async () => {
-    if (!user) {
-      setRobloxStatus(null);
-      return;
-    }
-    setRobloxLoading(true);
-    try {
-      const status = await getRobloxOAuthStatus();
-      setRobloxStatus(status);
-    } catch (err) {
-      if (!isRetryableApiError(err)) {
-        setRobloxStatus({ connected: false });
-      }
-    } finally {
-      setRobloxLoading(false);
-    }
-  }, [user]);
+  const refreshRobloxStatus = useCallback(
+    () => sharedRobloxRefresh({ force: true }),
+    [sharedRobloxRefresh]
+  );
 
   const chatEndRef = useRef(null);
   const pageViewTrackedRef = useRef(false);

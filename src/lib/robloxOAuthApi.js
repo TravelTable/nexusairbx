@@ -109,6 +109,7 @@ export function normalizeRobloxConnectionStatus(rawStatus = {}) {
   const grantedScopes = asArray(status.grantedScopes?.length ? status.grantedScopes : rawConnection.scopes).map(String);
   const missingScopes = asArray(status.missingScopes).map(String);
   const tokenHealthRaw = status.tokenHealth && typeof status.tokenHealth === "object" ? status.tokenHealth : {};
+  const onboardingRaw = status.onboarding && typeof status.onboarding === "object" ? status.onboarding : {};
   const tokenHealth = {
     status: firstString(tokenHealthRaw.status) || (status.connected ? "unknown" : "not_connected"),
     accessTokenExpiresAt: tokenHealthRaw.accessTokenExpiresAt || null,
@@ -152,6 +153,12 @@ export function normalizeRobloxConnectionStatus(rawStatus = {}) {
         : { resourceValidationStatus: "unknown", resourcesValidatedAt: null },
     policy: status.policy && typeof status.policy === "object" ? status.policy : {},
     tokenHealth,
+    onboarding: {
+      required: onboardingRaw.required === true,
+      requiredCapabilities: asArray(onboardingRaw.requiredCapabilities).map(String),
+      satisfied: onboardingRaw.satisfied !== false,
+      gateActive: onboardingRaw.gateActive === true,
+    },
     lastSuccessfulOperation,
     connection:
       Object.keys(rawConnection).length || status.connected
@@ -191,6 +198,16 @@ export async function getRobloxOAuthStatus() {
     });
     const status = await readJsonOrThrow(res, "Failed to load Roblox connection");
     return normalizeRobloxConnectionStatus(status);
+  });
+}
+
+export async function requireRobloxOnboarding() {
+  return withApiRetryCooldown("roblox-oauth:onboarding-require", "Failed to prepare Roblox onboarding", async () => {
+    const res = await authedFetch("/api/roblox/oauth/onboarding/require", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+    return readJsonOrThrow(res, "Failed to prepare Roblox onboarding");
   });
 }
 

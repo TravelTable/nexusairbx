@@ -8,12 +8,19 @@ const mockClearRedirectContext = jest.fn();
 const mockConsumeAuthRedirectResult = jest.fn();
 const mockReadRedirectContext = jest.fn();
 const mockStoreAuthRedirectError = jest.fn();
+const mockGetAdditionalUserInfo = jest.fn();
+const mockRegisterRobloxSignupRequirement = jest.fn();
+
+jest.mock("firebase/auth", () => ({
+  getAdditionalUserInfo: (...args) => mockGetAdditionalUserInfo(...args),
+}));
 
 jest.mock("../firebase", () => ({ auth: {} }));
 
 jest.mock("../lib/firebaseAuth", () => ({
   clearRedirectContext: () => mockClearRedirectContext(),
   consumeAuthRedirectResult: (...args) => mockConsumeAuthRedirectResult(...args),
+  getFriendlyAuthErrorMessage: (error) => error?.message || "Authentication failed.",
   readRedirectContext: () => mockReadRedirectContext(),
   storeAuthRedirectError: (...args) => mockStoreAuthRedirectError(...args),
 }));
@@ -25,6 +32,10 @@ jest.mock("../lib/deferredClientLog", () => ({
 jest.mock("../lib/pendingAuthAction", () => ({
   getPendingAuthReturnPath: jest.fn(() => "/ai"),
   readPendingAuthAction: jest.fn(() => null),
+}));
+
+jest.mock("../lib/signupRobloxOnboarding", () => ({
+  registerRobloxSignupRequirement: (...args) => mockRegisterRobloxSignupRequirement(...args),
 }));
 
 function LocationProbe() {
@@ -48,6 +59,8 @@ beforeEach(() => {
   mockConsumeAuthRedirectResult
     .mockResolvedValueOnce({ user: { getIdToken: jest.fn(() => Promise.resolve("token")) } })
     .mockResolvedValue(null);
+  mockGetAdditionalUserInfo.mockReturnValue({ isNewUser: false });
+  mockRegisterRobloxSignupRequirement.mockResolvedValue("/connect-roblox?return=%2Fai");
 });
 
 test("restores the complete stored OAuth return path", async () => {
@@ -62,6 +75,48 @@ test("restores the complete stored OAuth return path", async () => {
     "/subscribe?plan=PRO_PLUS&interval=year"
   ));
   expect(mockClearRedirectContext).toHaveBeenCalled();
+});
+
+test("registers Roblox onboarding for a genuinely new redirect signup", async () => {
+  const user = { uid: "new-user", getIdToken: jest.fn(() => Promise.resolve("token")) };
+  mockConsumeAuthRedirectResult.mockReset();
+  mockConsumeAuthRedirectResult.mockResolvedValueOnce({ user }).mockResolvedValue(null);
+  mockGetAdditionalUserInfo.mockReturnValue({ isNewUser: true });
+  mockReadRedirectContext.mockReturnValue({
+    intent: "signup",
+    method: "google",
+    returnPath: "/ai?project=one",
+  });
+  mockRegisterRobloxSignupRequirement.mockResolvedValue(
+    "/connect-roblox?return=%2Fai%3Fproject%3Done"
+  );
+
+  renderHandler({ pathname: "/ai", search: "?project=one" });
+
+  await waitFor(() => expect(mockRegisterRobloxSignupRequirement).toHaveBeenCalledWith(
+    user,
+    "/ai?project=one"
+  ));
+  expect(screen.getByTestId("location")).toHaveTextContent(
+    "/connect-roblox?return=%2Fai%3Fproject%3Done"
+  );
+});
+
+test("returns a failed signup registration to signup so its pending record can retry", async () => {
+  const user = { uid: "new-user", getIdToken: jest.fn(() => Promise.resolve("token")) };
+  mockConsumeAuthRedirectResult.mockReset();
+  mockConsumeAuthRedirectResult.mockResolvedValueOnce({ user }).mockResolvedValue(null);
+  mockGetAdditionalUserInfo.mockReturnValue({ isNewUser: true });
+  mockReadRedirectContext.mockReturnValue({
+    intent: "signup",
+    method: "github",
+    returnPath: "/assets/123",
+  });
+  mockRegisterRobloxSignupRequirement.mockRejectedValue(new Error("Registration unavailable"));
+
+  renderHandler({ pathname: "/assets/123" });
+
+  await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("/signup"));
 });
 
 test("keeps search and hash from router state when redirect storage is unavailable", async () => {

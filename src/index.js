@@ -13,6 +13,7 @@ import "./design/nexus-primitives.css";
 import "./design/nexus-motion.css";
 import { SettingsProvider } from "./context/SettingsContext";
 import { BillingProvider } from "./context/BillingContext";
+import { RobloxConnectionProvider } from "./context/RobloxConnectionContext";
 import { SiteToastProvider } from "./components/ui/toast-1";
 import { auth } from "./firebase";
 import { applyAuthPersistence, readAuthPersistencePreference } from "./lib/firebaseAuth";
@@ -60,11 +61,13 @@ function renderApp() {
     <React.StrictMode>
       <HelmetProvider>
         <BillingProvider>
-          <SiteToastProvider>
-            <SettingsProvider>
-              <App />
-            </SettingsProvider>
-          </SiteToastProvider>
+          <RobloxConnectionProvider>
+            <SiteToastProvider>
+              <SettingsProvider>
+                <App />
+              </SettingsProvider>
+            </SiteToastProvider>
+          </RobloxConnectionProvider>
         </BillingProvider>
       </HelmetProvider>
     </React.StrictMode>

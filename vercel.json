@@ -290,6 +290,10 @@
       "destination": "/api/render?path=/verify-email"
     },
     {
+      "source": "/connect-roblox",
+      "destination": "/api/render?path=/connect-roblox"
+    },
+    {
       "source": "/__/auth/:path*",
       "destination": "https://nexusrbx.firebaseapp.com/__/auth/:path*"
     },

@@ -13,6 +13,7 @@ import { appCheckReady, firebaseAppCheckEnabled } from "../firebase";
 export const AUTH_REDIRECT_RETURN_KEY = "nexusrbx:authRedirectReturn";
 export const AUTH_REDIRECT_METHOD_KEY = "nexusrbx:authRedirectMethod";
 export const AUTH_REDIRECT_ERROR_KEY = "nexusrbx:authRedirectError";
+export const AUTH_REDIRECT_INTENT_KEY = "nexusrbx:authRedirectIntent";
 export const AUTH_PERSISTENCE_PREFERENCE_KEY = "nexusrbx:authPersistencePreference";
 
 // Public OAuth web client used by Firebase Google provider config.
@@ -152,6 +153,7 @@ export async function signInWithGoogleProvider(
     rememberMe = true,
     returnPath = "/",
     hostname = typeof window !== "undefined" ? window.location?.hostname : "",
+    intent = "signin",
   } = {}
 ) {
   if (shouldUseFirebaseGooglePopup(hostname)) {
@@ -160,6 +162,7 @@ export async function signInWithGoogleProvider(
       returnPath,
       method: "google",
       redirectFallback: false,
+      intent,
     });
   }
 
@@ -171,6 +174,7 @@ export async function signInWithGoogleProvider(
       rememberMe,
       returnPath,
       method: "google",
+      intent,
     });
   }
 }
@@ -232,10 +236,11 @@ export async function applyAuthPersistence(auth, rememberMe = false) {
   await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
 }
 
-function storeRedirectContext(returnPath, method) {
+function storeRedirectContext(returnPath, method, intent = "signin") {
   try {
     sessionStorage.setItem(AUTH_REDIRECT_RETURN_KEY, returnPath || "/");
     if (method) sessionStorage.setItem(AUTH_REDIRECT_METHOD_KEY, method);
+    sessionStorage.setItem(AUTH_REDIRECT_INTENT_KEY, intent === "signup" ? "signup" : "signin");
   } catch (_) {
     // Ignore storage failures; redirect may still work on same-origin flows.
   }
@@ -246,9 +251,10 @@ export function readRedirectContext() {
     return {
       returnPath: sessionStorage.getItem(AUTH_REDIRECT_RETURN_KEY) || "/",
       method: sessionStorage.getItem(AUTH_REDIRECT_METHOD_KEY) || null,
+      intent: sessionStorage.getItem(AUTH_REDIRECT_INTENT_KEY) || "signin",
     };
   } catch (_) {
-    return { returnPath: "/", method: null };
+    return { returnPath: "/", method: null, intent: "signin" };
   }
 }
 
@@ -256,6 +262,7 @@ export function clearRedirectContext() {
   try {
     sessionStorage.removeItem(AUTH_REDIRECT_RETURN_KEY);
     sessionStorage.removeItem(AUTH_REDIRECT_METHOD_KEY);
+    sessionStorage.removeItem(AUTH_REDIRECT_INTENT_KEY);
   } catch (_) {}
 }
 
@@ -287,6 +294,7 @@ export async function signInWithOAuthProvider(
     returnPath = "/",
     method = "oauth",
     redirectFallback = true,
+    intent = "signin",
   } = {}
 ) {
   await applyAuthPersistence(auth, rememberMe);
@@ -304,7 +312,7 @@ export async function signInWithOAuthProvider(
       throw error;
     }
 
-    storeRedirectContext(returnPath, method);
+    storeRedirectContext(returnPath, method, intent);
     await signInWithRedirect(auth, provider);
     return null;
   }
@@ -313,14 +321,14 @@ export async function signInWithOAuthProvider(
 export async function redirectSignInWithOAuthProvider(
   auth,
   ProviderClass,
-  { rememberMe = false, returnPath = "/", method = "oauth" } = {}
+  { rememberMe = false, returnPath = "/", method = "oauth", intent = "signin" } = {}
 ) {
   await applyAuthPersistence(auth, rememberMe);
   const provider = new ProviderClass();
   if (method === "google" && typeof provider.setCustomParameters === "function") {
     provider.setCustomParameters({ prompt: "select_account" });
   }
-  storeRedirectContext(returnPath, method);
+  storeRedirectContext(returnPath, method, intent);
   await signInWithRedirect(auth, provider);
   return null;
 }

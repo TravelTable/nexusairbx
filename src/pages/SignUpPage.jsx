@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Github, Mail, User } from "lib/icons";
 import { auth } from "../firebase";
 import {
   createUserWithEmailAndPassword,
+  getAdditionalUserInfo,
   GithubAuthProvider,
   onAuthStateChanged,
   sendEmailVerification,
@@ -19,6 +20,7 @@ import {
 } from "../lib/firebaseAuth";
 import { trackProductEvent } from "../lib/productAnalytics";
 import { getPendingAuthReturnPath, readPendingAuthAction } from "../lib/pendingAuthAction";
+import { readPendingRobloxSignup, registerRobloxSignupRequirement } from "../lib/signupRobloxOnboarding";
 import { cn } from "../lib/utils";
 import {
   AuthCheckbox,
@@ -76,6 +78,8 @@ export default function NexusRBXSignUpPageContainer() {
   const emailInputRef = useRef(null);
   const passwordInputRef = useRef(null);
   const confirmPasswordInputRef = useRef(null);
+  const activeSignupRef = useRef(false);
+  const postSignupDestinationRef = useRef(authReturnPath || "/ai");
   const [formStatus, setFormStatus] = useState({
     status: "idle", // idle, submitting, success, error
     message: ""
@@ -86,16 +90,19 @@ export default function NexusRBXSignUpPageContainer() {
     feedback: ""
   });
 
-  const redirectAfterSignup = async (user = auth.currentUser) => {
+  const redirectAfterSignup = useCallback(async (
+    user = auth.currentUser,
+    destination = postSignupDestinationRef.current || authReturnPath || "/ai"
+  ) => {
     if (!user?.emailVerified) {
       navigate("/verify-email", {
         replace: true,
-        state: { returnPath: authReturnPath || "/ai" },
+        state: { returnPath: destination },
       });
       return;
     }
-    navigate(authReturnPath || "/ai", { replace: true });
-  };
+    navigate(destination, { replace: true });
+  }, [authReturnPath, navigate]);
 
   useEffect(() => {
     const redirectError =
@@ -111,6 +118,25 @@ export default function NexusRBXSignUpPageContainer() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (!currentUser || formStatus.status === "submitting") return;
+      if (activeSignupRef.current) return;
+      const pendingSignup = readPendingRobloxSignup(currentUser.uid);
+      if (pendingSignup) {
+        activeSignupRef.current = true;
+        setFormStatus({ status: "submitting", message: "Resuming Roblox account setup..." });
+        void registerRobloxSignupRequirement(currentUser, pendingSignup.returnPath)
+          .then((destination) => {
+            postSignupDestinationRef.current = destination;
+            return redirectAfterSignup(currentUser, destination);
+          })
+          .catch((error) => {
+            activeSignupRef.current = false;
+            setFormStatus({
+              status: "error",
+              message: getFriendlyAuthErrorMessage(error),
+            });
+          });
+        return;
+      }
       if (!currentUser.emailVerified) {
         navigate("/verify-email", {
           replace: true,
@@ -121,7 +147,7 @@ export default function NexusRBXSignUpPageContainer() {
       navigate(authReturnPath || "/ai", { replace: true });
     });
     return () => unsubscribe();
-  }, [authReturnPath, formStatus.status, navigate, pendingAction]);
+  }, [authReturnPath, formStatus.status, navigate, pendingAction, redirectAfterSignup]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -208,6 +234,7 @@ export default function NexusRBXSignUpPageContainer() {
       status: "submitting",
       message: "Creating your account..."
     });
+    activeSignupRef.current = true;
     void trackProductEvent("signup_started", {
       landing_page: from,
       method: "password",
@@ -219,6 +246,8 @@ export default function NexusRBXSignUpPageContainer() {
       writeAuthPersistencePreference(rememberMe);
       const credential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       await credential.user.getIdToken();
+      const destination = await registerRobloxSignupRequirement(credential.user, authReturnPath || "/ai");
+      postSignupDestinationRef.current = destination;
       await sendEmailVerification(credential.user);
       setFormStatus({
         status: "success",
@@ -230,7 +259,7 @@ export default function NexusRBXSignUpPageContainer() {
         entry_offer: "free_workspace",
       }, { dedupeKey: `signup_completed:${credential.user.uid}` });
       setTimeout(() => {
-        void redirectAfterSignup(credential.user);
+        void redirectAfterSignup(credential.user, destination);
       }, 800);
     } catch (error) {
       setFormStatus({
@@ -245,6 +274,7 @@ export default function NexusRBXSignUpPageContainer() {
       status: "submitting",
       message: "Connecting to Google..."
     });
+    activeSignupRef.current = true;
     void trackProductEvent("signup_started", {
       landing_page: from,
       method: "google",
@@ -256,23 +286,31 @@ export default function NexusRBXSignUpPageContainer() {
       const credential = await signInWithGoogleProvider(auth, {
         rememberMe,
         returnPath: authReturnPath || "/ai",
+        intent: "signup",
       });
       if (!credential) return;
       await credential.user.getIdToken();
+      const isNewUser = getAdditionalUserInfo(credential)?.isNewUser === true;
+      const destination = isNewUser
+        ? await registerRobloxSignupRequirement(credential.user, authReturnPath || "/ai")
+        : authReturnPath || "/ai";
+      postSignupDestinationRef.current = destination;
       if (!credential.user.emailVerified) await sendEmailVerification(credential.user);
       setFormStatus({
         status: "success",
         message: credential.user.emailVerified
-          ? "Google sign up successful! Opening your workspace..."
-          : "Account created. Check your inbox to verify your email before continuing."
+          ? isNewUser ? "Account created. Continue by connecting Roblox." : "Account found. Opening your workspace..."
+          : "Check your inbox to verify your email before continuing."
       });
-      void trackProductEvent("signup_completed", {
-        landing_page: from,
-        method: "google",
-        entry_offer: "free_workspace",
-      }, { dedupeKey: `signup_completed:${credential.user.uid}` });
+      if (isNewUser) {
+        void trackProductEvent("signup_completed", {
+          landing_page: from,
+          method: "google",
+          entry_offer: "free_workspace",
+        }, { dedupeKey: `signup_completed:${credential.user.uid}` });
+      }
       setTimeout(() => {
-        void redirectAfterSignup(credential.user);
+        void redirectAfterSignup(credential.user, destination);
       }, 800);
     } catch (error) {
       setFormStatus({
@@ -287,6 +325,7 @@ export default function NexusRBXSignUpPageContainer() {
       status: "submitting",
       message: "Connecting to GitHub..."
     });
+    activeSignupRef.current = true;
     void trackProductEvent("signup_started", {
       landing_page: from,
       method: "github",
@@ -299,23 +338,31 @@ export default function NexusRBXSignUpPageContainer() {
         rememberMe,
         returnPath: authReturnPath || "/ai",
         method: "github",
+        intent: "signup",
       });
       if (!credential) return;
       await credential.user.getIdToken();
+      const isNewUser = getAdditionalUserInfo(credential)?.isNewUser === true;
+      const destination = isNewUser
+        ? await registerRobloxSignupRequirement(credential.user, authReturnPath || "/ai")
+        : authReturnPath || "/ai";
+      postSignupDestinationRef.current = destination;
       if (!credential.user.emailVerified) await sendEmailVerification(credential.user);
       setFormStatus({
         status: "success",
         message: credential.user.emailVerified
-          ? "GitHub sign up successful! Opening your workspace..."
-          : "Account created. Check your inbox to verify your email before continuing."
+          ? isNewUser ? "Account created. Continue by connecting Roblox." : "Account found. Opening your workspace..."
+          : "Check your inbox to verify your email before continuing."
       });
-      void trackProductEvent("signup_completed", {
-        landing_page: from,
-        method: "github",
-        entry_offer: "free_workspace",
-      }, { dedupeKey: `signup_completed:${credential.user.uid}` });
+      if (isNewUser) {
+        void trackProductEvent("signup_completed", {
+          landing_page: from,
+          method: "github",
+          entry_offer: "free_workspace",
+        }, { dedupeKey: `signup_completed:${credential.user.uid}` });
+      }
       setTimeout(() => {
-        void redirectAfterSignup(credential.user);
+        void redirectAfterSignup(credential.user, destination);
       }, 800);
     } catch (error) {
       setFormStatus({

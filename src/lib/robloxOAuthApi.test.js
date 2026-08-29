@@ -14,6 +14,7 @@ import {
   normalizeRobloxExperience,
   normalizeRobloxConnectionStatus,
   readPendingRobloxAction,
+  requireRobloxOnboarding,
   ROBLOX_PRODUCT_DEFAULT_CAPABILITIES,
   ROBLOX_PROJECT_DISCOVERY_CAPABILITIES,
   revokeRobloxOAuth,
@@ -34,6 +35,7 @@ describe("robloxOAuthApi capability helpers", () => {
     clearApiRetryCooldown("roblox-oauth:revoke");
     clearApiRetryCooldown("roblox-oauth:reauthorize");
     clearApiRetryCooldown("roblox-oauth:experiences");
+    clearApiRetryCooldown("roblox-oauth:onboarding-require");
     window.sessionStorage.clear();
     delete window.location;
     window.location = { assign: jest.fn() };
@@ -153,6 +155,24 @@ describe("robloxOAuthApi capability helpers", () => {
 
     await expect(revokeRobloxOAuth()).resolves.toEqual({ revoked: true });
     expect(authedFetch).toHaveBeenCalledWith("/api/roblox/oauth/revoke", { method: "POST" });
+  });
+
+  test("requireRobloxOnboarding registers the server-owned signup requirement", async () => {
+    authedFetch.mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({
+        ok: true,
+        onboarding: { required: true, satisfied: false, gateActive: true },
+      }),
+    });
+
+    await expect(requireRobloxOnboarding()).resolves.toMatchObject({
+      onboarding: { required: true, gateActive: true },
+    });
+    expect(authedFetch).toHaveBeenCalledWith("/api/roblox/oauth/onboarding/require", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
   });
 
   test("project discovery authorization is exposed as a dedicated capability", () => {
@@ -335,6 +355,12 @@ describe("robloxOAuthApi capability helpers", () => {
       ],
       grantedScopes: ["openid", "asset:write"],
       tokenHealth: { status: "healthy", hasRefreshToken: true, accessTokenExpiresAt: "2026-07-22T03:00:00Z" },
+      onboarding: {
+        required: true,
+        requiredCapabilities: ROBLOX_PRODUCT_DEFAULT_CAPABILITIES,
+        satisfied: true,
+        gateActive: false,
+      },
       lastSuccessfulOperation: { type: "asset_publish", completedAt: "2026-07-22T02:30:00Z" },
     });
 
@@ -343,6 +369,7 @@ describe("robloxOAuthApi capability helpers", () => {
       credentialFieldsDiscarded: true,
       grantedScopes: ["openid", "asset:write"],
       tokenHealth: { status: "healthy", hasRefreshToken: true },
+      onboarding: { required: true, satisfied: true, gateActive: false },
       connection: {
         identity: { userId: "101", username: "BuilderOne", displayName: "Builder One" },
         selectedCreator: { type: "Group", id: "202", name: "Build Group" },

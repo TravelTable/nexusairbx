@@ -65,18 +65,23 @@
 .accountAvatarButton {
   position: relative;
   width: var(--nx-control-height);
+  height: var(--nx-control-height);
   min-width: var(--nx-control-height);
+  min-height: var(--nx-control-height);
+  box-sizing: border-box;
   padding: 2px;
+  border-color: color-mix(in srgb, var(--nx-purple) 42%, var(--nx-rule));
   border-radius: 50%;
+  box-shadow: var(--nx-shadow-control), inset 0 0 0 1px color-mix(in srgb, white 5%, transparent);
 }
 
 .accountAvatar {
   width: 100%;
   height: 100%;
-  border: 1px solid color-mix(in srgb, var(--nx-purple) 28%, var(--nx-rule));
+  border: 0;
   background: var(--nx-muted-surface);
   color: var(--nx-purple);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, white 4%, transparent);
+  box-shadow: none;
 }
 
 .accountAvatarImage {
@@ -311,7 +316,9 @@
 
   .accountAvatarButton {
     width: var(--nx-touch-target);
+    height: var(--nx-touch-target);
     min-width: var(--nx-touch-target);
+    min-height: var(--nx-touch-target);
   }
 }
 

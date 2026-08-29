@@ -20,10 +20,12 @@ import { signInWithPopup, signInWithRedirect } from "firebase/auth";
 import {
   AUTH_PERSISTENCE_PREFERENCE_KEY,
   AUTH_REDIRECT_ERROR_KEY,
+  AUTH_REDIRECT_INTENT_KEY,
   consumeAuthRedirectError,
   getFriendlyAuthErrorMessage,
   isMissingRedirectStateError,
   readAuthPersistencePreference,
+  readRedirectContext,
   redirectSignInWithOAuthProvider,
   shouldFallbackToAuthRedirect,
   shouldUseFirebaseGooglePopup,
@@ -161,6 +163,7 @@ describe("firebaseAuth", () => {
     await expect(
       redirectSignInWithOAuthProvider({}, GoogleProvider, {
         method: "google",
+        intent: "signup",
         rememberMe: true,
         returnPath: "/ai?project=one",
       })
@@ -169,6 +172,11 @@ describe("firebaseAuth", () => {
     expect(setCustomParameters).toHaveBeenCalledWith({ prompt: "select_account" });
     expect(signInWithRedirect).toHaveBeenCalledWith({}, expect.any(GoogleProvider));
     expect(sessionStorage.getItem("nexusrbx:authRedirectReturn")).toBe("/ai?project=one");
+    expect(sessionStorage.getItem(AUTH_REDIRECT_INTENT_KEY)).toBe("signup");
+    expect(readRedirectContext()).toEqual(expect.objectContaining({
+      intent: "signup",
+      returnPath: "/ai?project=one",
+    }));
   });
 
   test("does not fall back to redirect on auth/internal-error", async () => {

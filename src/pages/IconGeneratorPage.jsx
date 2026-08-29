@@ -25,13 +25,13 @@ import {
   normalizePack,
   publishAssetToRoblox,
 } from "../lib/assetPlatformApi";
-import { getRobloxOAuthStatus } from "../lib/robloxOAuthApi";
 import {
   consumeGenerationIntent,
   getActiveGenerationIntentId,
   restoreGenerationIntent,
 } from "../lib/generationIntent";
 import { useBilling } from "../context/BillingContext";
+import { useRobloxConnection } from "../context/RobloxConnectionContext";
 import { useSettings } from "../context/SettingsContext";
 import "../components/assets/assetPlatform.css";
 import "../components/assets/assetLedgerOverrides.css";
@@ -140,9 +140,10 @@ export default function IconGeneratorPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, authReady, totalRemaining, refresh: refreshBilling } = useBilling();
+  const { status: sharedRobloxStatus } = useRobloxConnection();
   const { settings, updateSettings, loading: settingsLoading } = useSettings();
   const [context, setContext] = useState({});
-  const [connection, setConnection] = useState({ connected: false });
+  const connection = sharedRobloxStatus || { connected: false };
   const [assets, setAssets] = useState([]);
   const [packs, setPacks] = useState([]);
   const [styleProfiles, setStyleProfiles] = useState([]);
@@ -176,10 +177,9 @@ export default function IconGeneratorPage() {
       listAssets({ ...query, limit: 40, sort: "updated_desc" }),
       listAssetPacks({ ...query, limit: 30, sort: "updated_desc" }),
       listStyleProfiles(query),
-      getRobloxOAuthStatus(),
     ]);
 
-    const [contextResult, assetsResult, packsResult, stylesResult, connectionResult] = results;
+    const [contextResult, assetsResult, packsResult, stylesResult] = results;
     if (contextResult.status === "fulfilled") {
       const nextContext = contextBody(contextResult.value);
       const projects = getProjects(nextContext);
@@ -199,8 +199,6 @@ export default function IconGeneratorPage() {
     if (assetsResult.status === "fulfilled") setAssets(assetsResult.value.assets);
     if (packsResult.status === "fulfilled") setPacks(packsResult.value.packs);
     if (stylesResult.status === "fulfilled") setStyleProfiles(stylesResult.value.styleProfiles);
-    if (connectionResult.status === "fulfilled") setConnection(connectionResult.value);
-
     if (contextResult.status === "fulfilled" && assetsResult.status === "rejected" && packsResult.status === "rejected") {
       setError(formatAssetPlatformError(assetsResult.reason, "Existing assets could not be loaded."));
     }

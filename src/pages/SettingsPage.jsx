@@ -25,6 +25,7 @@ import {
 } from "lib/icons";
 import { auth } from "../firebase";
 import { useBilling } from "../context/BillingContext";
+import { useRobloxConnection } from "../context/RobloxConnectionContext";
 import { useSettings } from "../context/SettingsContext";
 import { authedFetch } from "../lib/billing";
 import { isRetryableApiError, readJsonResponse, withApiRetryCooldown } from "../lib/apiErrors";
@@ -32,7 +33,6 @@ import {
   beginRobloxOAuth,
   beginRobloxReauthorization,
   ensureRobloxCapabilities,
-  getRobloxOAuthStatus,
   getRobloxOperations,
   needsRobloxUpgrade,
   ROBLOX_PRODUCT_DEFAULT_CAPABILITIES,
@@ -536,6 +536,8 @@ export default function SettingsPage() {
     saveError,
   } = useSettings();
   const billing = useBilling() || {};
+  const sharedRoblox = useRobloxConnection();
+  const refreshSharedRoblox = sharedRoblox.refresh;
   const isAdmin = Boolean(billing.isAdmin || billing.flags?.isAdmin);
   const [activeTab, setActiveTab] = useState(() => (user ? "overview" : "appearance"));
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -543,7 +545,7 @@ export default function SettingsPage() {
   const [usageState, setUsageState] = useState({ status: "idle", logs: [], chartData: [], error: "" });
   const [teamState, setTeamState] = useState({ status: "idle", teams: [], error: "" });
   const [teamName, setTeamName] = useState("");
-  const [robloxState, setRobloxState] = useState({ status: "idle", statusData: null, operations: [], error: "" });
+  const [robloxState, setRobloxState] = useState({ status: "idle", operations: [], error: "" });
   const [robloxAction, setRobloxAction] = useState("");
   const [adminState, setAdminState] = useState({ status: "idle", stats: null, users: [], error: "" });
   const [adminInspector, setAdminInspector] = useState({ uid: "", status: "idle", data: null, error: "" });
@@ -573,7 +575,7 @@ export default function SettingsPage() {
   const fallbackTab = user ? "overview" : "appearance";
   const permissionsReady = !user || billing.loading !== true;
   const activeSection = SECTION_META[activeTab] || SECTION_META.overview;
-  const robloxStatus = robloxState.statusData;
+  const robloxStatus = sharedRoblox.status;
   const robloxConnected = Boolean(robloxStatus?.connected);
   const robloxUpgradeRequired = needsRobloxUpgrade(robloxStatus);
   const robloxConnection = robloxStatus?.connection || null;
@@ -700,12 +702,20 @@ export default function SettingsPage() {
     setRobloxState((state) => ({ ...state, status: "loading", error: "" }));
     try {
       const [statusData, operationsData] = await Promise.all([
-        getRobloxOAuthStatus(),
+        refreshSharedRoblox({ force: true }),
         getRobloxOperations({ limit: 20 }).catch(() => ({ operations: [] })),
       ]);
+      if (!statusData) {
+        setRobloxState((state) => ({
+          ...state,
+          status: "error",
+          error: "Could not check the Roblox connection right now.",
+          retryable: true,
+        }));
+        return;
+      }
       setRobloxState({
         status: "ready",
-        statusData,
         operations: Array.isArray(operationsData.operations) ? operationsData.operations : [],
         error: "",
       });
@@ -720,7 +730,7 @@ export default function SettingsPage() {
         };
       });
     }
-  }, [user]);
+  }, [refreshSharedRoblox, user]);
 
   const loadAdmin = useCallback(async () => {
     if (!user || !isAdmin) return;
