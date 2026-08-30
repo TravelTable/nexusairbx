@@ -184,7 +184,6 @@ export default function AgentChatPanel({
             onEditMessage={handleEditMessage}
             onRetryMessage={onRetryMessage}
             onRestoreRun={onRestoreRun}
-            dockPendingActivity={compactRunVisible}
             workspaceControls={workspaceControls}
             navigationOpen={navigationOpen}
             navigationControls={navigationControls}

@@ -296,6 +296,57 @@ describe("useUnifiedChat", () => {
     );
   });
 
+  test("opens the visible stream synchronously before submit preflight resolves", async () => {
+    let resolvePreflight;
+    const assertCanWrite = jest.fn(() => new Promise((resolve) => {
+      resolvePreflight = resolve;
+    }));
+    useAiChat.mockReturnValue({
+      activeMode: "agent",
+      assertCanWrite,
+      currentChatId: null,
+      generatingChatIds: [],
+      generationStage: "",
+      handleSubmit: chatHandleSubmit,
+      isGenerating: false,
+      messages: [],
+      openChatById: jest.fn(),
+      pendingMessage: null,
+      pendingMessages: [],
+      setPendingForChat: jest.fn(),
+    });
+    const user = {
+      uid: "user-1",
+      getIdToken: jest.fn().mockResolvedValue("token"),
+    };
+    const controller = new AbortController();
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
+
+    let submission;
+    act(() => {
+      submission = result.current.handleSubmit("Build a lobby system", [], null, {
+        mode: "agent",
+        projectId: "project-1",
+        clientMessageId: "request-instant-stream",
+        operationSignal: controller.signal,
+      });
+    });
+
+    expect(assertCanWrite).toHaveBeenCalledTimes(1);
+    expect(result.current.isGenerating).toBe(true);
+    expect(result.current.pendingMessage).toEqual(expect.objectContaining({
+      requestId: "request-instant-stream",
+      prompt: "Build a lobby system",
+      stage: "Starting your request...",
+    }));
+
+    controller.abort();
+    resolvePreflight();
+    await act(async () => {
+      await expect(submission).rejects.toMatchObject({ name: "AbortError" });
+    });
+  });
+
   test("sends the exact selected MCP session and transport type for Ask mode", async () => {
     FEATURE_FLAGS.unifiedAgent = true;
     getStudioEnabledPreference.mockReturnValue(true);

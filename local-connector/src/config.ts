@@ -50,13 +50,19 @@ export function loadConfig(
     }
     if (argument === "--help" || argument === "--version") continue;
     if (!argument?.startsWith("--")) throw new ConnectorError("CONFIG_INVALID", `Unknown argument: ${argument}`);
+    if (argument === "--mcp-arg") {
+      const value = argv[index + 1];
+      if (value === undefined) throw new ConnectorError("CONFIG_INVALID", `Missing value for ${argument}.`);
+      mcpArgs.push(value);
+      index += 1;
+      continue;
+    }
     const value = argv[index + 1];
     if (value === undefined || value.startsWith("--")) {
       throw new ConnectorError("CONFIG_INVALID", `Missing value for ${argument}.`);
     }
     index += 1;
-    if (argument === "--mcp-arg") mcpArgs.push(value);
-    else values.set(argument, value);
+    values.set(argument, value);
   }
 
   const apiUrl = stripTrailingSlash(values.get("--api-url") ?? env.NEXUSRBX_API_URL ?? "https://api.nexusrbx.com");

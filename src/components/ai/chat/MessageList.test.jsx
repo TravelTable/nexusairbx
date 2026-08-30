@@ -35,7 +35,7 @@ const baseProps = {
 };
 
 describe("MessageList pending activity", () => {
-  test("keeps generated source out of Agent chat while files are streaming", () => {
+  test("streams explanation and generated source in Agent chat", () => {
     render(
       <MessageList
         {...baseProps}
@@ -51,8 +51,9 @@ describe("MessageList pending activity", () => {
     );
 
     expect(screen.getByText("Writing files...")).toBeTruthy();
-    expect(screen.queryByText("Streaming Code")).toBeNull();
-    expect(screen.queryByText(/secretCode/)).toBeNull();
+    expect(screen.getByText("Creating the controller.")).toBeTruthy();
+    expect(screen.getByText("Streaming Code")).toBeTruthy();
+    expect(screen.getByText(/secretCode/)).toBeTruthy();
   });
 
   test("still shows short code snippets in read-only chat modes", () => {
@@ -292,6 +293,65 @@ describe("MessageList pending activity", () => {
     expect(screen.getByText("Understanding your task...")).toBeTruthy();
     expect(screen.getAllByText("Analyzing request...").length).toBeGreaterThan(0);
     expect(screen.queryByText("Nexus is working")).toBeNull();
+  });
+
+  test("streams every visible work channel even when a compact run bar is also present", () => {
+    render(
+      <MessageList
+        {...baseProps}
+        activeMode="agent"
+        dockPendingActivity
+        pendingMessage={{
+          role: "assistant",
+          requestId: "request-visible-stream",
+          content: "<explanation>Building the runtime.</explanation><code>local Runtime = {}</code>Ready for review.",
+          stage: "Writing Studio files...",
+          streamState: {
+            rawReasoning: "Checking the existing project structure.",
+            activity: [
+              {
+                id: "stage-visible-stream",
+                type: "stage",
+                text: "Inspecting the Studio project",
+                status: "running",
+              },
+              {
+                id: "thinking-visible-stream",
+                type: "thinking",
+                text: "Choosing safe script locations.",
+                status: "running",
+              },
+              {
+                id: "file-visible-stream",
+                type: "file_chunk",
+                text: "Writing ServerScriptService/Main.server.lua",
+                status: "writing",
+                code: "print('streamed file')",
+              },
+            ],
+          },
+          steps: [
+            {
+              id: "validate-visible-stream",
+              type: "validate_project",
+              label: "Validate Studio project",
+              status: "running",
+            },
+          ],
+        }}
+      />
+    );
+
+    expect(screen.getByTestId("live-work-stream")).toBeTruthy();
+    expect(screen.getByText(/Checking the existing project structure/)).toBeTruthy();
+    expect(screen.getByText("Inspecting the Studio project")).toBeTruthy();
+    expect(screen.getByText("Choosing safe script locations.")).toBeTruthy();
+    expect(screen.getByText("Writing ServerScriptService/Main.server.lua")).toBeTruthy();
+    expect(screen.getByText(/streamed file/)).toBeTruthy();
+    expect(screen.getByText("Validate Studio project")).toBeTruthy();
+    expect(screen.getByText("Building the runtime.")).toBeTruthy();
+    expect(screen.getByText(/local Runtime/)).toBeTruthy();
+    expect(screen.getByText("Ready for review.")).toBeTruthy();
   });
 
   test("shows raw reasoning panel when streamState includes rawReasoning", () => {

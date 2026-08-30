@@ -43,6 +43,8 @@ import {
   sanitizeTranscriptMessagePayload,
 } from "../lib/firestorePayloads";
 
+const DRAFT_CHAT_KEY = "__draft__";
+
 export function reconcileUnifiedPendingMessages(generationPending = [], orchestrationPending = []) {
   return reconcileAssistantTurns([
     ...(generationPending || []).map((turn) => ({
@@ -288,7 +290,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     });
   }, []);
 
-  const flowBusy = Object.values(flowBusyChats[chat.currentChatId] || {}).some(Boolean);
+  const currentFlowChatKey = chat.currentChatId || DRAFT_CHAT_KEY;
+  const flowBusy = Object.values(flowBusyChats[currentFlowChatKey] || {}).some(Boolean);
 
   const publishOrchestrationStage = useCallback((chatId, requestId, label) => {
     if (!chatId || !label) return;
@@ -343,6 +346,48 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     });
   }, []);
 
+  const moveFlowUiToChat = useCallback((fromChatId, toChatId, requestId) => {
+    if (!fromChatId || !toChatId || fromChatId === toChatId) return;
+    const fromStreamKey = `${fromChatId}:${requestId}`;
+    const toStreamKey = `${toChatId}:${requestId}`;
+    if (orchestrationStreamRef.current[fromStreamKey]) {
+      orchestrationStreamRef.current[toStreamKey] = orchestrationStreamRef.current[fromStreamKey];
+      delete orchestrationStreamRef.current[fromStreamKey];
+    }
+    setFlowBusyChats((prev) => {
+      const sourceRuns = prev[fromChatId] || {};
+      if (!sourceRuns[requestId]) return prev;
+      const nextSourceRuns = { ...sourceRuns };
+      delete nextSourceRuns[requestId];
+      const next = {
+        ...prev,
+        [toChatId]: {
+          ...(prev[toChatId] || {}),
+          [requestId]: true,
+        },
+      };
+      if (Object.keys(nextSourceRuns).length) next[fromChatId] = nextSourceRuns;
+      else delete next[fromChatId];
+      return next;
+    });
+    setOrchestrationPendingByChat((prev) => {
+      const pending = prev[fromChatId]?.[requestId];
+      if (!pending) return prev;
+      const sourcePending = { ...(prev[fromChatId] || {}) };
+      delete sourcePending[requestId];
+      const next = {
+        ...prev,
+        [toChatId]: {
+          ...(prev[toChatId] || {}),
+          [requestId]: pending,
+        },
+      };
+      if (Object.keys(sourcePending).length) next[fromChatId] = sourcePending;
+      else delete next[fromChatId];
+      return next;
+    });
+  }, []);
+
   const createFlowAbortController = useCallback((chatId, requestId, externalSignal = null) => {
     const controller = new AbortController();
     const abortFromExternal = () => controller.abort();
@@ -368,15 +413,14 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   }, []);
 
   const cancelCurrentFlow = useCallback(() => {
-    const currentChatId = chat.currentChatId;
-    if (!currentChatId) return false;
+    const currentChatId = chat.currentChatId || DRAFT_CHAT_KEY;
     const activeFlows = Object.values(flowAbortControllersRef.current).filter((flow) => flow.chatId === currentChatId);
     activeFlows.forEach(({ chatId, requestId, controller }) => {
       controller.abort();
       delete flowAbortControllersRef.current[`${chatId}:${requestId}`];
       setFlowBusyForChat(chatId, requestId, false);
       clearOrchestrationPending(chatId, requestId);
-      chat.setPendingForChat(chatId, null, requestId);
+      if (chatId !== DRAFT_CHAT_KEY) chat.setPendingForChat(chatId, null, requestId);
     });
     return activeFlows.length > 0;
   }, [chat, clearOrchestrationPending, setFlowBusyForChat]);
@@ -387,9 +431,9 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     () =>
       reconcileUnifiedPendingMessages(
         chat.pendingMessages,
-        Object.values(orchestrationPendingByChat[chat.currentChatId] || {}).filter(Boolean)
+        Object.values(orchestrationPendingByChat[currentFlowChatKey] || {}).filter(Boolean)
       ),
-    [chat.pendingMessages, chat.currentChatId, orchestrationPendingByChat]
+    [chat.pendingMessages, currentFlowChatKey, orchestrationPendingByChat]
   );
   const pendingMessage = pendingMessages[pendingMessages.length - 1] || null;
 
@@ -405,7 +449,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   const generatingChatIds = useMemo(() => {
     const set = new Set(chat.generatingChatIds || []);
     Object.keys(flowBusyChats).forEach((id) => {
-      if (Object.values(flowBusyChats[id] || {}).some(Boolean)) set.add(id);
+      if (id !== DRAFT_CHAT_KEY && Object.values(flowBusyChats[id] || {}).some(Boolean)) set.add(id);
     });
     return Array.from(set);
   }, [chat.generatingChatIds, flowBusyChats]);
@@ -1111,14 +1155,23 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       // first await. Rapid keyboard/mouse events cannot both enter preflight,
       // and Stop can cancel auth/project/Studio preparation immediately.
       submitLocksRef.current[submitLockKey] = true;
-      let flowChatId = chat.currentChatId || "__draft__";
+      let flowChatId = chat.currentChatId || DRAFT_CHAT_KEY;
       const flowController = createFlowAbortController(flowChatId, requestId, options?.operationSignal || null);
+      setFlowBusyForChat(flowChatId, requestId, true);
+      beginOrchestrationPending(
+        flowChatId,
+        requestId,
+        prompt,
+        mode === "agent" || mode === "debug" ? "Starting your request..." : "Understanding your task..."
+      );
       const bindFlowToChat = (nextChatId) => {
         if (!nextChatId || nextChatId === flowChatId) return;
+        const previousChatId = flowChatId;
         const previousKey = `${flowChatId}:${requestId}`;
         const entry = flowAbortControllersRef.current[previousKey];
         delete flowAbortControllersRef.current[previousKey];
         flowChatId = nextChatId;
+        moveFlowUiToChat(previousChatId, nextChatId, requestId);
         if (entry) {
           entry.chatId = nextChatId;
           flowAbortControllersRef.current[`${flowChatId}:${requestId}`] = entry;
@@ -1231,13 +1284,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             bindFlowToChat(activeChatId);
             onChatReady?.(activeChatId);
             throwIfAborted(flowController.signal);
-            setFlowBusyForChat(activeChatId, requestId, true);
-            beginOrchestrationPending(
-              activeChatId,
-              requestId,
-              prompt,
-              "Starting your request..."
-            );
             if (writeUserTurn) {
               await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
               throwIfAborted(flowController.signal);
@@ -1298,9 +1344,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
               }
             }
             if (propagateOperationError) throw err;
-          } finally {
-            setFlowBusyForChat(activeChatId, requestId, false);
-            clearOrchestrationPending(activeChatId, requestId);
           }
           return;
         }
@@ -1311,8 +1354,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           bindFlowToChat(activeChatId);
           onChatReady?.(activeChatId);
           throwIfAborted(flowController.signal);
-          setFlowBusyForChat(activeChatId, requestId, true);
-          beginOrchestrationPending(activeChatId, requestId, prompt);
           if (writeUserTurn) {
             await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
             throwIfAborted(flowController.signal);
@@ -1367,11 +1408,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             });
           }
           if (propagateOperationError) throw err;
-        } finally {
-          setFlowBusyForChat(activeChatId, requestId, false);
-          clearOrchestrationPending(activeChatId, requestId);
         }
       } finally {
+        setFlowBusyForChat(flowChatId, requestId, false);
+        clearOrchestrationPending(flowChatId, requestId);
         releaseFlowAbortController(flowChatId, requestId);
         delete submitLocksRef.current[submitLockKey];
       }
@@ -1384,6 +1424,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       beginOrchestrationPending,
       publishOrchestrationStage,
       clearOrchestrationPending,
+      moveFlowUiToChat,
       createFlowAbortController,
       releaseFlowAbortController,
       chat,

@@ -28,6 +28,17 @@ test("configuration uses the documented Windows MCP launcher", () => {
   assert.deepEqual(config.mcpArgs, ["/d", "/s", "/c", "%LOCALAPPDATA%\\Roblox\\mcp.bat"]);
 });
 
+test("configuration accepts MCP executable flags as repeatable argument values", () => {
+  const config = loadConfig(
+    ["--verbose", "--mcp-arg", "--stdio", "--mcp-arg", "--verbose"],
+    {},
+    "darwin",
+  );
+
+  assert.deepEqual(config.mcpArgs, ["--stdio", "--verbose"]);
+  assert.equal(config.verbose, true);
+});
+
 test("configuration fails closed for unsafe URLs, malformed values, and unknown Linux defaults", () => {
   assert.throws(
     () => loadConfig(["--api-url", "http://remote.example"], {}, "darwin"),

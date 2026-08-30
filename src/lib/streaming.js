@@ -1,5 +1,4 @@
 const STREAM_CHANNELS = new Set(["thought", "reasoning", "explanation", "code", "content"]);
-const MAX_ACTIVITY_ITEMS = 80;
 const MAX_CODE_PREVIEW_CHARS = 1800;
 
 function countLines(value = "") {
@@ -38,7 +37,7 @@ function nextActivityId(base, type) {
 }
 
 function trimActivity(items = []) {
-  return items.length > MAX_ACTIVITY_ITEMS ? items.slice(items.length - MAX_ACTIVITY_ITEMS) : items;
+  return items;
 }
 
 function recentCodePreview(content = "") {
@@ -84,7 +83,7 @@ function buildFileActivity(event, file, existing = null) {
       name: file.name,
       kind: file.kind,
       status: "Writing",
-      text: `${existing ? "Editing" : "Creating"} ${file.path}`,
+      text: `${existing || event?.operation === "patch" ? "Editing" : "Creating"} ${file.path}`,
     };
   }
   if (eventName === "file_chunk") {

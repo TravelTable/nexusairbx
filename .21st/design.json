@@ -60,7 +60,7 @@
   },
   "decisions": [
     "Roblox UI Creator inherits the Agent workspace design contract: Nexus dark surfaces, --nx-* and --ds-* tokens, typography, spacing, radii, controls, status feedback, focus treatment, motion, composer behavior, and responsive drawers. It remains a dense preview-first authoring workspace with Chat/Layers on the left, an unobstructed device canvas in the center, Properties/Actions/Assets plus checkpoint history on the right, and rendered Roblox UI that may use each design's own tokens.",
-    "Current Studio activity is docked as a compact, collapsed status bar immediately above the prompt composer; detailed steps remain available through an explicit activity disclosure.",
+    "Current Studio activity may also appear in a compact status bar above the composer, but it never replaces or filters the inline live stream; status stages, display-safe reasoning, tool actions, file writes and code excerpts, reconnect states, and streamed response text remain visible together in the conversation while work is running.",
     "Signed-in header account controls are avatar-first: show the connected Roblox profile image when available, otherwise the authenticated provider photo, then identity initials; keep the full identity and plan details inside the accessible account menu.",
     "Settings sidebar icons use short, tab-specific hover and keyboard-focus animations inspired by the 21st Animated Sidebar pattern; motion is disabled when reduced motion is requested.",
     "The Settings desktop navigation uses a compact 260px application sidebar with a small identity block, restrained section label, icon-led rounded rows, and a soft purple selected state while preserving the existing tab order and behavior.",

@@ -84,6 +84,22 @@ describe("streaming utils", () => {
     expect(state.activity[0].text).toBe("Reconnecting again...");
   });
 
+  test("preserves the complete activity history for long-running work", () => {
+    let state = createPendingStreamState();
+    for (let index = 0; index < 120; index += 1) {
+      state = applyStreamActivity(state, {
+        id: `stage-${index}`,
+        type: "stage",
+        text: `Work event ${index}`,
+        status: "running",
+      });
+    }
+
+    expect(state.activity).toHaveLength(120);
+    expect(state.activity[0].text).toBe("Work event 0");
+    expect(state.activity[119].text).toBe("Work event 119");
+  });
+
   test("builds ordered work-stream activity from reasoning, stage, file, and tool events", () => {
     let state = createPendingStreamState();
     state = applyStreamDelta(state, { seq: 1, channel: "reasoning", text: "I will split the system into server and shared modules." });

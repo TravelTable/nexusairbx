@@ -157,7 +157,6 @@ function SingleMessageList({
   onEditMessage,
   onRetryMessage,
   onRestoreRun,
-  dockPendingActivity = false,
   hideMessages = false,
   arrivalMessageId = null,
 }) {
@@ -176,27 +175,15 @@ function SingleMessageList({
     return hasCompletedResponse ? null : pendingMessageProp;
   }, [messages, pendingMessageProp]);
   const pendingParsed = parsePendingStreamContent(pendingMessage?.content || "");
-  const hidesGeneratedSource = ["agent", "debug"].includes(
-    String(activeMode || "").trim().toLowerCase(),
-  );
   const showLiveWorkStream = Boolean(
     pendingMessage?.targetSelection ||
     pendingMessage?.streamState ||
     (Array.isArray(pendingMessage?.files) && pendingMessage.files.length) ||
     (Array.isArray(pendingMessage?.steps) && pendingMessage.steps.length)
   );
-  // Real output = files/steps or non-thinking activity. Used to auto-collapse the
-  // reasoning stream once the model starts producing results.
   const streamState = pendingMessage?.streamState;
-  const hasStreamOutput = Boolean(
-    (Array.isArray(streamState?.files) && streamState.files.length) ||
-    (Array.isArray(pendingMessage?.files) && pendingMessage.files.length) ||
-    (Array.isArray(pendingMessage?.steps) && pendingMessage.steps.length) ||
-    (Array.isArray(streamState?.activity) &&
-      streamState.activity.some((a) => a?.type && a.type !== "thinking"))
-  );
   const hasRawReasoning = Boolean(String(streamState?.rawReasoning || "").trim());
-  const reasoningStreaming = Boolean(pendingMessage) && !hasStreamOutput;
+  const reasoningStreaming = Boolean(pendingMessage);
   const visibleMessages = useMemo(
     () => hideMessages
       ? []
@@ -321,7 +308,7 @@ function SingleMessageList({
               {pendingMessage.decision ? (
                 <RunContextBar decision={pendingMessage.decision} />
               ) : null}
-              {showLiveWorkStream && !dockPendingActivity ? (
+              {showLiveWorkStream ? (
                 <div className="w-full max-w-[840px]">
                   <div className="px-4 pt-3">
                     <ReasoningPanel
@@ -337,10 +324,9 @@ function SingleMessageList({
                     onApproveStep={onApproveStep}
                     approvingStepId={approvingStepId}
                     embedded
-                    hideThinkingRows={hasRawReasoning}
                   />
                 </div>
-              ) : !showLiveWorkStream ? (
+              ) : (
                 <>
                   <ReasoningPanel
                     text={streamState?.rawReasoning}
@@ -353,13 +339,19 @@ function SingleMessageList({
                     parsed={pendingParsed}
                   />
                 </>
-              ) : null}
+              )}
 
-              {pendingMessage.content && !showLiveWorkStream ? (
+              {pendingMessage.content ? (
                 <div className="nexus-streaming-caret w-full max-w-[840px] space-y-4">
                   {pendingParsed.hasStructured ? (
                     <div className="space-y-4">
-                      {pendingParsed.code && !hidesGeneratedSource && (
+                      {pendingParsed.explanation ? (
+                        <MarkdownMessage
+                          text={pendingParsed.explanation}
+                          className="text-[var(--ds-text-secondary)]"
+                        />
+                      ) : null}
+                      {pendingParsed.code && (
                         <div className="rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-hover)] overflow-hidden">
                           <div className="px-3 py-2 border-b border-[var(--ds-border-subtle)] text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-muted)]">
                             Streaming Code
@@ -373,12 +365,11 @@ function SingleMessageList({
                         <MarkdownMessage text={pendingParsed.plain} className="text-[var(--ds-text-secondary)]" />
                       )}
                     </div>
-                  ) : !hidesGeneratedSource ? (
+                  ) : (
                     <MarkdownMessage text={stripTags(pendingMessage.content)} />
-                  ) : null}
+                  )}
                   {pendingMessage.type === "ui" && <SkeletonArtifact type="ui" />}
                   {pendingMessage.type === "chat" &&
-                    !hidesGeneratedSource &&
                     (pendingMessage.content?.includes("```") || pendingParsed.code) && (
                       <SkeletonArtifact type="code" />
                     )}

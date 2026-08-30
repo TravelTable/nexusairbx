@@ -166,8 +166,8 @@ test("homepage raw HTML is meaningful before client JavaScript", () => {
   assert.equal(extractCanonical(html), "https://www.nexusrbx.com/");
   assert.match(html, /aria-label="Creation mode"/);
   assert.match(html, /<button[^>]*aria-label="Agent"[^>]*>/);
-  assert.match(html, /<button[^>]*aria-label="Script"[^>]*>/);
   assert.match(html, /<button[^>]*aria-label="Asset"[^>]*>/);
+  assert.doesNotMatch(html, /<button[^>]*aria-label="Script"[^>]*>/);
   assert.match(html, /aria-busy="false"/);
   assert.match(html, /<button[^>]*type="submit"[^>]*disabled=""[^>]*>[\s\S]*?Start building[\s\S]*?<\/button>/);
   assert.match(html, /id="homepage-hero-prompt-message"[^>]*>[\s\S]*?Your request is saved before the workspace opens\./);
@@ -227,14 +227,14 @@ test("downloads raw HTML is meaningful and fails closed before release verificat
     extractMetaContent(html, "description"),
     "Download the NexusRBX Connector for macOS (Developer ID signed and notarized) or Windows 10 and 11 (currently unsigned).",
   );
-  assert.equal(extractH1(html), "Connect Nexus to Roblox Studio.");
+  assert.equal(extractH1(html), "Nexus ↔ Roblox Studio.");
   assert.equal(extractCanonical(html), "https://www.nexusrbx.com/downloads");
   assert.equal(countCanonical(html), 1);
   assert.match(html, /macOS \(Universal\)/);
-  assert.match(html, /Need macOS\?/);
+  assert.match(html, /View macOS \(Universal\) download/);
   assert.match(html, /Windows \(64-bit\)/);
-  assert.match(html, /For Windows 10 and 11 on Intel or AMD PCs/);
-  assert.match(html, /Checking current release/);
+  assert.match(html, /Windows 10 and 11 · Intel or AMD x64/);
+  assert.match(html, /Checking release/);
   assert.match(html, /href="\/downloads"/);
   assert.match(html, /href="\/docs\/troubleshooting"/);
   assert.doesNotMatch(html, /href="\/#features"|href="#features"/);

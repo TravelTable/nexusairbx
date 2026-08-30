@@ -28,13 +28,13 @@ function codeTail(value = "", maxLines = 18) {
 }
 
 function synthesizeActivity(streamState = {}, pendingMessage = {}) {
-  const activity = Array.isArray(streamState.activity) ? streamState.activity : [];
-  if (activity.length) return activity;
-
-  const out = [];
+  const out = Array.isArray(streamState.activity) ? [...streamState.activity] : [];
   const thought = cleanText(streamState.thought);
-  if (thought) out.push({ id: "thinking-fallback", type: "thinking", text: thought });
+  if (thought && !out.some((item) => item?.type === "thinking")) {
+    out.push({ id: "thinking-fallback", type: "thinking", text: thought });
+  }
   for (const file of streamState.files || pendingMessage.files || []) {
+    if (out.some((item) => item?.fileId === file.id || (item?.path && item.path === file.path))) continue;
     out.push({
       id: `file-${file.id || file.path}`,
       type: file.status === "ready" ? "file_ready" : "file_chunk",
@@ -47,6 +47,7 @@ function synthesizeActivity(streamState = {}, pendingMessage = {}) {
     });
   }
   for (const step of pendingMessage.steps || []) {
+    if (out.some((item) => item?.id === `tool-${step.id}` || item?.id === step.id)) continue;
     out.push({
       id: `tool-${step.id || step.type}`,
       type: "tool_step",
