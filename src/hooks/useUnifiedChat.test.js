@@ -775,6 +775,73 @@ describe("useUnifiedChat", () => {
     expect(orchestrate).not.toHaveBeenCalled();
   });
 
+  test("shows Agent setup progress before the durable run request resolves", async () => {
+    let resolveRun;
+    createAgentRunV2.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveRun = resolve;
+      })
+    );
+    useAiChat.mockReturnValue({
+      activeMode: "agent",
+      assertCanWrite: jest.fn(() => Promise.resolve()),
+      currentChatId: "chat-slow-start",
+      currentChatMeta: { agentId: "agent-1" },
+      generatingChatIds: [],
+      generationStage: "",
+      handleSubmit: chatHandleSubmit,
+      isGenerating: false,
+      messages: [],
+      openChatById: jest.fn(),
+      pendingMessage: null,
+      pendingMessages: [],
+      setPendingForChat: jest.fn(),
+    });
+    const user = {
+      uid: "user-1",
+      getIdToken: jest.fn().mockResolvedValue("token"),
+    };
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
+
+    let submission;
+    act(() => {
+      submission = result.current.handleSubmit("Build a lobby system", [], null, {
+        mode: "agent",
+        projectId: "project-1",
+        operationId: "request-slow-start",
+        clientMessageId: "request-slow-start",
+      });
+    });
+    while (!createAgentRunV2.mock.calls.length) {
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+    }
+
+    expect(result.current.isGenerating).toBe(true);
+    expect(result.current.pendingMessage).toEqual(
+      expect.objectContaining({
+        requestId: "request-slow-start",
+        prompt: "Build a lobby system",
+        stage: "Preparing the agent runtime...",
+      })
+    );
+
+    resolveRun({
+      run: {
+        runId: "run-slow-start",
+        agentId: "agent-1",
+        jobId: "job-slow-start",
+        status: "running",
+      },
+      authoritativeExecution: true,
+      executionDisposition: "launched",
+    });
+    await act(async () => {
+      await submission;
+    });
+  });
+
   test("binds a terse start approval to the latest concrete build request", async () => {
     const priorRequest = "Build a fly GUI with a shop and money system";
     useAiChat.mockReturnValue({
@@ -1490,7 +1557,9 @@ describe("useUnifiedChat", () => {
       executionDisposition: "launched",
     });
 
-    await expect(submission).rejects.toMatchObject({ name: "AbortError" });
+    await act(async () => {
+      await expect(submission).rejects.toMatchObject({ name: "AbortError" });
+    });
     expect(onRunId).toHaveBeenCalledWith("run-created-during-stop");
     expect(chatHandleSubmit).not.toHaveBeenCalled();
   });

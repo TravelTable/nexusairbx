@@ -8,6 +8,23 @@ backend/
 
 # testing
 /coverage
+/playwright-report/
+/test-results/
+/.playwright-mcp/
+
+# generated review and QA evidence
+/*.png
+/*.jpg
+/*.jpeg
+/*.webp
+/design.md
+/.21st/DESIGN.md
+/artifacts/**/*.png
+/artifacts/**/*.jpg
+/artifacts/**/*.jpeg
+/artifacts/**/*.webp
+/artifacts/local-dev/
+/artifacts/overnight-qa/**/downloads/
 
 # production
 /build

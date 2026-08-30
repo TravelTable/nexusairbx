@@ -693,6 +693,70 @@ local function verifyCommandOutcome(command, payload, result)
 				end
 			end
 		end
+		local uiEvidence = {}
+		for _, uiRoot in ipairs(result.uiRoots or {}) do
+			local path = tostring(uiRoot.path or "")
+			local root = resolvePath(path)
+			local actualTreeHash = root and UiArtifact.treeHash(root) or nil
+			local expectedTreeHash = tostring(uiRoot.treeHash or "")
+			local actualNodeIds = {}
+			if root then
+				for _, descendant in ipairs(root:GetDescendants()) do
+					local nodeId = tostring(descendant:GetAttribute("NexusNodeId") or "")
+					if nodeId ~= "" then
+						table.insert(actualNodeIds, nodeId)
+					end
+				end
+			end
+			table.sort(actualNodeIds)
+			local nodeIdsMatch = #actualNodeIds == #(uiRoot.nodeIds or {})
+			if nodeIdsMatch then
+				for index, expectedNodeId in ipairs(uiRoot.nodeIds or {}) do
+					if actualNodeIds[index] ~= expectedNodeId then
+						nodeIdsMatch = false
+						break
+					end
+				end
+			end
+			local actualArtifactId = root and tostring(root:GetAttribute(AGENT_ARTIFACT_ID_ATTRIBUTE) or "") or ""
+			local actualRootId = root and tostring(root:GetAttribute("NexusRootId") or "") or ""
+			local actualDesignId = root and tostring(root:GetAttribute("NexusDesignId") or "") or ""
+			local actualRevision = root and tostring(root:GetAttribute("NexusRevision") or "") or ""
+			local storedTreeHash = root and tostring(root:GetAttribute("NexusTreeHash") or "") or ""
+			local rootVerified = root ~= nil
+				and root.ClassName == "ScreenGui"
+				and actualArtifactId == tostring(uiRoot.artifactId or "")
+				and actualRootId == tostring(uiRoot.rootId or "")
+				and actualDesignId == tostring(uiRoot.designId or "")
+				and actualRevision == tostring(uiRoot.documentRevision or "")
+				and #actualNodeIds == tonumber(uiRoot.nodeCount or -1)
+				and nodeIdsMatch
+				and expectedTreeHash ~= ""
+				and actualTreeHash == expectedTreeHash
+				and storedTreeHash == expectedTreeHash
+			local details = {
+				rootId = uiRoot.rootId,
+				designId = uiRoot.designId,
+				documentRevision = uiRoot.documentRevision,
+				documentTreeHash = uiRoot.documentTreeHash,
+				expectedTreeHash = expectedTreeHash,
+				actualTreeHash = actualTreeHash,
+				storedTreeHash = storedTreeHash,
+				expectedNodeCount = uiRoot.nodeCount,
+				actualNodeCount = #actualNodeIds,
+				nodeIdsMatch = nodeIdsMatch,
+				sourceHashes = uiRoot.sourceHashes or {},
+				actualArtifactId = actualArtifactId,
+				actualRootId = actualRootId,
+				actualDesignId = actualDesignId,
+				actualRevision = actualRevision,
+			}
+			addCheck("artifact_ui_root", path, rootVerified, details)
+			table.insert(uiEvidence, details)
+		end
+		if #uiEvidence > 0 then
+			evidence.uiRoots = uiEvidence
+		end
 		for _, op in ipairs(payload.operations or {}) do
 			if op.type == "delete" then
 				local path = tostring(op.path or "")
@@ -986,6 +1050,13 @@ local function executeCommand(command)
 		for _, file in ipairs(result.managedFiles) do
 			if type(file) == "table" and file.canonicalPath then
 				addAffectedPath(file.canonicalPath)
+			end
+		end
+	end
+	if result.uiRoots then
+		for _, uiRoot in ipairs(result.uiRoots) do
+			if type(uiRoot) == "table" and uiRoot.path then
+				addAffectedPath(uiRoot.path)
 			end
 		end
 	end

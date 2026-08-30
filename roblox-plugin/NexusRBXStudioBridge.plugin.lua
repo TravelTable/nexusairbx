@@ -14,7 +14,7 @@ local STUDIO_PROTOCOL_VERSION = "2026-08-27-r15-animation"
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.14.0-r15-animation.1"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.14.0-r15-animation.2-ui"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the
@@ -632,6 +632,11 @@ CREATABLE_CLASSES = {
 	UIPadding = true,
 	UICorner = true,
 	UIStroke = true,
+	UIGradient = true,
+	UIAspectRatioConstraint = true,
+	UISizeConstraint = true,
+	UITextSizeConstraint = true,
+	UIScale = true,
 	StringValue = true,
 	BoolValue = true,
 	NumberValue = true,
@@ -729,6 +734,21 @@ safePropertyValue = function(inst, key)
 		}
 	elseif valueType == "EnumItem" then
 		return tostring(value)
+	elseif valueType == "ColorSequence" then
+		local keypoints = {}
+		for _, keypoint in ipairs(value.Keypoints) do
+			table.insert(keypoints, {
+				time = keypoint.Time,
+				color = { r = keypoint.Value.R, g = keypoint.Value.G, b = keypoint.Value.B },
+			})
+		end
+		return { type = "ColorSequence", keypoints = keypoints }
+	elseif valueType == "NumberSequence" then
+		local keypoints = {}
+		for _, keypoint in ipairs(value.Keypoints) do
+			table.insert(keypoints, { time = keypoint.Time, value = keypoint.Value, envelope = keypoint.Envelope })
+		end
+		return { type = "NumberSequence", keypoints = keypoints }
 	end
 	return nil
 end
@@ -743,18 +763,34 @@ propertiesOf = function(inst)
 		"Enabled",
 		"ResetOnSpawn",
 		"IgnoreGuiInset",
+		"DisplayOrder",
 		"Text",
+		"PlaceholderText",
 		"Visible",
 		"Size",
 		"Position",
 		"AnchorPoint",
 		"BackgroundTransparency",
 		"BackgroundColor3",
+		"BorderSizePixel",
+		"ClipsDescendants",
+		"Rotation",
 		"TextColor3",
 		"TextSize",
+		"TextWrapped",
+		"TextScaled",
+		"TextXAlignment",
+		"TextYAlignment",
+		"Font",
 		"TextTransparency",
 		"ImageTransparency",
 		"Image",
+		"ImageColor3",
+		"ScaleType",
+		"CanvasSize",
+		"AutomaticCanvasSize",
+		"ScrollBarThickness",
+		"AutoButtonColor",
 		"Texture",
 		"MeshId",
 		"TextureID",
@@ -772,7 +808,24 @@ propertiesOf = function(inst)
 		"LayoutOrder",
 		"SortOrder",
 		"Padding",
+		"PaddingTop",
+		"PaddingRight",
+		"PaddingBottom",
+		"PaddingLeft",
+		"FillDirection",
+		"HorizontalAlignment",
+		"VerticalAlignment",
+		"CellSize",
+		"CellPadding",
 		"CornerRadius",
+		"Color",
+		"Transparency",
+		"AspectRatio",
+		"MinSize",
+		"MaxSize",
+		"MinTextSize",
+		"MaxTextSize",
+		"Scale",
 		"Thickness",
 	}
 	for _, key in ipairs(candidates) do
@@ -1004,6 +1057,17 @@ ensureParent = function(path, createParents)
 	return current, parts[#parts]
 end
 
+SAFE_UI_RESTORE_PROPERTIES = {
+	Enabled = true, DisplayOrder = true, PlaceholderText = true, BorderSizePixel = true, ClipsDescendants = true,
+	Rotation = true, TextWrapped = true, TextScaled = true, TextXAlignment = true,
+	TextYAlignment = true, Font = true, ImageColor3 = true, ScaleType = true, CanvasSize = true,
+	AutomaticCanvasSize = true, ScrollBarThickness = true, AutoButtonColor = true,
+	PaddingTop = true, PaddingRight = true, PaddingBottom = true, PaddingLeft = true,
+	FillDirection = true, HorizontalAlignment = true, VerticalAlignment = true, CellSize = true,
+	CellPadding = true, SortOrder = true, Color = true, Transparency = true, AspectRatio = true,
+	MinSize = true, MaxSize = true, MinTextSize = true, MaxTextSize = true, Scale = true,
+}
+
 safeSetProperty = function(inst, key, value)
 	local ok, err = pcall(function()
 		if typeof(value) == "table" then
@@ -1023,7 +1087,7 @@ safeSetProperty = function(inst, key, value)
 			elseif valueType == "UDim" then
 				value = UDim.new(value.scale or 0, value.offset or 0)
 			elseif valueType == "Color3" or (
-				(key == "TextColor3" or key == "BackgroundColor3")
+				(key == "TextColor3" or key == "BackgroundColor3" or key == "ImageColor3" or key == "Color")
 				and value.r ~= nil and value.g ~= nil and value.b ~= nil
 			) then
 				value = Color3.new(value.r or 0, value.g or 0, value.b or 0)
@@ -1033,6 +1097,32 @@ safeSetProperty = function(inst, key, value)
 				value = Vector3.new(value.x or 0, value.y or 0, value.z or 0)
 			elseif valueType == "CFrame" and typeof(value.components) == "table" and #value.components == 12 then
 				value = CFrame.new(table.unpack(value.components))
+			elseif valueType == "ColorSequence" then
+				local keypoints = {}
+				for _, keypoint in ipairs(value.keypoints or {}) do
+					local color = keypoint.color or {}
+					table.insert(keypoints, ColorSequenceKeypoint.new(
+						keypoint.time or 0,
+						Color3.new(color.r or 0, color.g or 0, color.b or 0)
+					))
+				end
+				value = ColorSequence.new(keypoints)
+			elseif valueType == "NumberSequence" then
+				local keypoints = {}
+				for _, keypoint in ipairs(value.keypoints or {}) do
+					table.insert(keypoints, NumberSequenceKeypoint.new(
+						keypoint.time or 0,
+						keypoint.value or 0,
+						keypoint.envelope or 0
+					))
+				end
+				value = NumberSequence.new(keypoints)
+			end
+		end
+		if type(value) == "string" then
+			local enumType, enumItem = value:match("^Enum%.([%w_]+)%.([%w_]+)$")
+			if enumType and enumItem and Enum[enumType] then
+				value = Enum[enumType][enumItem] or value
 			end
 		end
 		if key == "Value" and inst:IsA("ValueBase") then
@@ -1069,6 +1159,8 @@ safeSetProperty = function(inst, key, value)
 			inst.ZIndex = tonumber(value) or inst.ZIndex
 		elseif key == "LayoutOrder" and inst:IsA("GuiObject") then
 			inst.LayoutOrder = tonumber(value) or inst.LayoutOrder
+		elseif key == "Padding" and inst:IsA("UIListLayout") and typeof(value) == "UDim" then
+			inst.Padding = value
 		elseif key == "Padding" and inst:IsA("UIPadding") and typeof(value) == "UDim" then
 			inst.PaddingTop = value
 			inst.PaddingBottom = value
@@ -1078,6 +1170,8 @@ safeSetProperty = function(inst, key, value)
 			inst.CornerRadius = value
 		elseif key == "Thickness" and inst:IsA("UIStroke") then
 			inst.Thickness = tonumber(value) or inst.Thickness
+		elseif SAFE_UI_RESTORE_PROPERTIES[key] then
+			inst[key] = value
 		elseif key == "Loop" and inst:IsA("KeyframeSequence") then
 			inst.Loop = value == true
 		elseif key == "Priority" and inst:IsA("KeyframeSequence") then
@@ -1233,6 +1327,16 @@ snapshotStateHash = function(inst)
 	end
 	if SCRIPT_CLASSES[inst.ClassName] then
 		return scriptHash(inst)
+	end
+	-- Managed UI roots need a whole-tree fingerprint so undo/restore keeps a
+	-- creator's node additions, removals, property edits, and source edits made
+	-- after Nexus applied the artifact. UiArtifact is initialized before any
+	-- command can execute, even though snapshot helpers are bundled earlier.
+	if inst:IsA("ScreenGui") and type(UiArtifact) == "table" and type(UiArtifact.treeHash) == "function" then
+		local treeOk, treeHash = pcall(UiArtifact.treeHash, inst)
+		if treeOk then
+			return treeHash
+		end
 	end
 	local ok, hashValue = pcall(propertyHash, inst)
 	return ok and hashValue or nil
@@ -1408,6 +1512,7 @@ restoreSnapshots = function(payload)
 	-- the agent's write. `force` bypasses that protection for a full revert.
 	local kept = 0
 	local errors = {}
+	local deferredHashChecks = {}
 	local force = type(payload) == "table" and payload.force == true
 	local snapshots = (type(payload) == "table" and payload.snapshots) or localSnapshots
 	if type(snapshots) ~= "table" then
@@ -1440,12 +1545,16 @@ restoreSnapshots = function(payload)
 				-- state), a human edited it since -> keep their edits.
 				if not force and snap.postHash then
 					local current = resolvePath(snap.path)
-					if current then
-						local currentHash = snapshotStateHash(current)
-						if currentHash and currentHash ~= snap.postHash and currentHash ~= snap.preHash then
-							kept = kept + 1
-							return
-						end
+					if not current then
+						-- The instance existed immediately after Nexus wrote it but is now
+						-- missing, so a creator removed or renamed it. Keep that edit.
+						kept = kept + 1
+						return
+					end
+					local currentHash = snapshotStateHash(current)
+					if currentHash and currentHash ~= snap.postHash and currentHash ~= snap.preHash then
+						kept = kept + 1
+						return
 					end
 				end
 				local inst = createOrReplaceInstance(snap.path, snap.className, snap.properties or {}, true)
@@ -1473,13 +1582,19 @@ restoreSnapshots = function(payload)
 				end
 				local restoredHash = snapshotStateHash(inst)
 				if snap.preHash and restoredHash ~= snap.preHash then
-					error(
-						"Restored state hash does not match the pre-mutation snapshot (expected "
-							.. tostring(snap.preHash)
-							.. ", got "
-							.. tostring(restoredHash)
-							.. ")"
-					)
+					if inst:IsA("ScreenGui") and type(UiArtifact) == "table" and type(UiArtifact.treeHash) == "function" then
+						-- The root is restored before its descendant snapshots. Verify its
+						-- complete tree after the reverse-order restore has finished.
+						table.insert(deferredHashChecks, snap)
+					else
+						error(
+							"Restored state hash does not match the pre-mutation snapshot (expected "
+								.. tostring(snap.preHash)
+								.. ", got "
+								.. tostring(restoredHash)
+								.. ")"
+						)
+					end
 				end
 				restored = restored + 1
 			end
@@ -1489,6 +1604,21 @@ restoreSnapshots = function(payload)
 				snapshotId = snap and snap.id or nil,
 				path = snap and snap.path or "",
 				message = tostring(restoreErr),
+			})
+		end
+	end
+	for _, snap in ipairs(deferredHashChecks) do
+		local current = resolvePath(snap.path)
+		local restoredHash = snapshotStateHash(current)
+		if not current or restoredHash ~= snap.preHash then
+			table.insert(errors, {
+				snapshotId = snap.id,
+				path = snap.path or "",
+				message = "Restored UI tree hash does not match the pre-mutation snapshot (expected "
+					.. tostring(snap.preHash)
+					.. ", got "
+					.. tostring(restoredHash)
+					.. ")",
 			})
 		end
 	end
@@ -7053,6 +7183,443 @@ local function buildManagedFileRecord(inst, spec, knownSourceHash)
 	}
 end
 
+UiArtifact = {}
+UiArtifact.NODE_CLASSES = {
+	Frame = true,
+	TextLabel = true,
+	TextButton = true,
+	ImageLabel = true,
+	ImageButton = true,
+	TextBox = true,
+	ScrollingFrame = true,
+}
+
+UiArtifact.color = function(hex, fallback)
+	local value = tostring(hex or "")
+	if not value:match("^#%x%x%x%x%x%x$") then
+		return fallback or Color3.new(1, 1, 1)
+	end
+	return Color3.fromRGB(
+		tonumber(value:sub(2, 3), 16),
+		tonumber(value:sub(4, 5), 16),
+		tonumber(value:sub(6, 7), 16)
+	)
+end
+
+UiArtifact.udim2 = function(value)
+	value = type(value) == "table" and value or {}
+	local x = type(value.x) == "table" and value.x or {}
+	local y = type(value.y) == "table" and value.y or {}
+	return UDim2.new(tonumber(x.scale) or 0, tonumber(x.offset) or 0, tonumber(y.scale) or 0, tonumber(y.offset) or 0)
+end
+
+UiArtifact.applyProperties = function(inst, properties, order)
+	properties = type(properties) == "table" and properties or {}
+	local ok, err = pcall(function()
+		inst.Position = UiArtifact.udim2(properties.position)
+		inst.Size = UiArtifact.udim2(properties.size)
+		inst.AnchorPoint = Vector2.new(
+			tonumber(properties.anchorPoint and properties.anchorPoint.x) or 0,
+			tonumber(properties.anchorPoint and properties.anchorPoint.y) or 0
+		)
+		inst.BackgroundColor3 = UiArtifact.color(properties.backgroundColor, Color3.fromRGB(36, 31, 37))
+		inst.BackgroundTransparency = tonumber(properties.backgroundTransparency) or 0
+		inst.Visible = properties.visible ~= false
+		inst.ClipsDescendants = properties.clipsDescendants == true
+		inst.Rotation = tonumber(properties.rotation) or 0
+		inst.ZIndex = tonumber(properties.zIndex) or 1
+		inst.LayoutOrder = tonumber(order) or 0
+		inst.BorderSizePixel = 0
+		if inst:IsA("TextLabel") or inst:IsA("TextButton") or inst:IsA("TextBox") then
+			inst.Text = tostring(properties.text or "")
+			inst.TextColor3 = UiArtifact.color(properties.textColor, Color3.new(1, 1, 1))
+			inst.TextSize = tonumber(properties.textSize) or 18
+			inst.TextWrapped = properties.textWrapped ~= false
+			inst.TextXAlignment = Enum.TextXAlignment[tostring(properties.textXAlignment or "Center")] or Enum.TextXAlignment.Center
+			inst.TextYAlignment = Enum.TextYAlignment[tostring(properties.textYAlignment or "Center")] or Enum.TextYAlignment.Center
+			inst.TextTransparency = tonumber(properties.textTransparency) or 0
+			inst.Font = Enum.Font[tostring(properties.font or "Gotham")] or Enum.Font.Gotham
+			if inst:IsA("TextBox") then
+				inst.PlaceholderText = tostring(properties.placeholderText or "")
+			end
+		end
+		if inst:IsA("TextButton") or inst:IsA("ImageButton") then
+			inst.AutoButtonColor = false
+		end
+		if inst:IsA("ImageLabel") or inst:IsA("ImageButton") then
+			inst.Image = tostring(properties.image or "")
+			inst.ImageColor3 = UiArtifact.color(properties.imageColor, Color3.new(1, 1, 1))
+			inst.ImageTransparency = tonumber(properties.imageTransparency) or 0
+			inst.ScaleType = Enum.ScaleType[tostring(properties.scaleType or "Fit")] or Enum.ScaleType.Fit
+		end
+		if inst:IsA("ScrollingFrame") then
+			inst.CanvasSize = UiArtifact.udim2(properties.canvasSize)
+			inst.AutomaticCanvasSize = Enum.AutomaticSize[tostring(properties.automaticCanvasSize or "Y")] or Enum.AutomaticSize.Y
+			inst.ScrollBarThickness = tonumber(properties.scrollBarThickness) or 6
+		end
+	end)
+	return ok, ok and nil or tostring(err)
+end
+
+UiArtifact.applyDecorators = function(inst, spec)
+	local style = type(spec.style) == "table" and spec.style or {}
+	local layout = type(spec.layout) == "table" and spec.layout or nil
+	local constraints = type(spec.constraints) == "table" and spec.constraints or {}
+	local ok, err = pcall(function()
+		if (tonumber(style.cornerRadius) or 0) > 0 then
+			local corner = Instance.new("UICorner")
+			corner.Name = "NexusCorner"
+			corner.CornerRadius = UDim.new(0, tonumber(style.cornerRadius) or 0)
+			corner.Parent = inst
+		end
+		if type(style.stroke) == "table" then
+			local stroke = Instance.new("UIStroke")
+			stroke.Name = "NexusStroke"
+			stroke.Color = UiArtifact.color(style.stroke.color, Color3.new(1, 1, 1))
+			stroke.Thickness = tonumber(style.stroke.thickness) or 1
+			stroke.Transparency = tonumber(style.stroke.transparency) or 0
+			stroke.Parent = inst
+		end
+		if type(style.gradient) == "table" then
+			local gradient = Instance.new("UIGradient")
+			gradient.Name = "NexusGradient"
+			gradient.Color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, UiArtifact.color(style.gradient.from, Color3.new(0, 0, 0))),
+				ColorSequenceKeypoint.new(1, UiArtifact.color(style.gradient.to, Color3.new(1, 1, 1))),
+			})
+			gradient.Rotation = tonumber(style.gradient.rotation) or 90
+			gradient.Parent = inst
+		end
+		if type(style.padding) == "table" then
+			local padding = Instance.new("UIPadding")
+			padding.Name = "NexusPadding"
+			padding.PaddingTop = UDim.new(0, tonumber(style.padding.top) or 0)
+			padding.PaddingRight = UDim.new(0, tonumber(style.padding.right) or 0)
+			padding.PaddingBottom = UDim.new(0, tonumber(style.padding.bottom) or 0)
+			padding.PaddingLeft = UDim.new(0, tonumber(style.padding.left) or 0)
+			padding.Parent = inst
+		end
+		if layout then
+			if layout.type == "grid" then
+				local grid = Instance.new("UIGridLayout")
+				grid.Name = "NexusGridLayout"
+				grid.CellSize = UiArtifact.udim2(layout.cellSize)
+				grid.CellPadding = UDim2.fromOffset(tonumber(layout.padding) or 0, tonumber(layout.padding) or 0)
+				grid.HorizontalAlignment = Enum.HorizontalAlignment[tostring(layout.horizontalAlignment or "Left")] or Enum.HorizontalAlignment.Left
+				grid.VerticalAlignment = Enum.VerticalAlignment[tostring(layout.verticalAlignment or "Top")] or Enum.VerticalAlignment.Top
+				grid.Parent = inst
+			else
+				local list = Instance.new("UIListLayout")
+				list.Name = "NexusListLayout"
+				list.FillDirection = layout.direction == "horizontal" and Enum.FillDirection.Horizontal or Enum.FillDirection.Vertical
+				list.Padding = UDim.new(0, tonumber(layout.padding) or 0)
+				list.HorizontalAlignment = Enum.HorizontalAlignment[tostring(layout.horizontalAlignment or "Left")] or Enum.HorizontalAlignment.Left
+				list.VerticalAlignment = Enum.VerticalAlignment[tostring(layout.verticalAlignment or "Top")] or Enum.VerticalAlignment.Top
+				list.SortOrder = Enum.SortOrder.LayoutOrder
+				list.Parent = inst
+			end
+		end
+		if constraints.aspectRatio then
+			local aspect = Instance.new("UIAspectRatioConstraint")
+			aspect.Name = "NexusAspectConstraint"
+			aspect.AspectRatio = tonumber(constraints.aspectRatio) or 1
+			aspect.Parent = inst
+		end
+		if type(constraints.minSize) == "table" or type(constraints.maxSize) == "table" then
+			local sizeConstraint = Instance.new("UISizeConstraint")
+			sizeConstraint.Name = "NexusSizeConstraint"
+			if type(constraints.minSize) == "table" then
+				sizeConstraint.MinSize = Vector2.new(
+					tonumber(constraints.minSize.x and constraints.minSize.x.offset) or 0,
+					tonumber(constraints.minSize.y and constraints.minSize.y.offset) or 0
+				)
+			end
+			if type(constraints.maxSize) == "table" then
+				sizeConstraint.MaxSize = Vector2.new(
+					tonumber(constraints.maxSize.x and constraints.maxSize.x.offset) or 100000,
+					tonumber(constraints.maxSize.y and constraints.maxSize.y.offset) or 100000
+				)
+			end
+			sizeConstraint.Parent = inst
+		end
+		if constraints.textSizeMin or constraints.textSizeMax then
+			local textConstraint = Instance.new("UITextSizeConstraint")
+			textConstraint.Name = "NexusTextConstraint"
+			textConstraint.MinTextSize = tonumber(constraints.textSizeMin) or 1
+			textConstraint.MaxTextSize = tonumber(constraints.textSizeMax) or 100
+			textConstraint.Parent = inst
+			if inst:IsA("TextLabel") or inst:IsA("TextButton") or inst:IsA("TextBox") then
+				inst.TextScaled = true
+			end
+		end
+		if tonumber(spec.properties and spec.properties.uiScale) and tonumber(spec.properties.uiScale) ~= 1 then
+			local scale = Instance.new("UIScale")
+			scale.Name = "NexusScale"
+			scale.Scale = tonumber(spec.properties.uiScale)
+			scale.Parent = inst
+		end
+	end)
+	return ok, ok and nil or tostring(err)
+end
+
+UiArtifact.treeHash = function(root)
+	local rows = {}
+	local instances = { root }
+	for _, descendant in ipairs(root:GetDescendants()) do
+		table.insert(instances, descendant)
+	end
+	for _, inst in ipairs(instances) do
+		local values = {
+			fullPath(inst),
+			inst.ClassName,
+			tostring(inst:GetAttribute(AGENT_ARTIFACT_ID_ATTRIBUTE) or ""),
+			tostring(inst:GetAttribute(AGENT_FILE_ID_ATTRIBUTE) or ""),
+			tostring(inst:GetAttribute("NexusRootId") or ""),
+			tostring(inst:GetAttribute("NexusNodeId") or ""),
+			tostring(inst:GetAttribute("NexusDesignId") or ""),
+			tostring(inst:GetAttribute("NexusRevision") or ""),
+			tostring(inst:GetAttribute("NexusDesiredTreeHash") or ""),
+		}
+		for _, propertyName in ipairs({
+			"ResetOnSpawn", "IgnoreGuiInset", "DisplayOrder", "Enabled",
+			"Position", "Size", "AnchorPoint", "BackgroundColor3", "BackgroundTransparency", "Visible",
+			"ClipsDescendants", "Rotation", "ZIndex", "LayoutOrder", "BorderSizePixel",
+			"Text", "PlaceholderText", "TextColor3", "TextSize", "TextWrapped", "TextScaled",
+			"TextXAlignment", "TextYAlignment", "TextTransparency", "Font",
+			"Image", "ImageColor3", "ImageTransparency", "ScaleType", "AutoButtonColor",
+			"CanvasSize", "AutomaticCanvasSize", "ScrollBarThickness",
+			"CornerRadius", "Color", "Transparency", "Thickness",
+			"Padding", "PaddingTop", "PaddingRight", "PaddingBottom", "PaddingLeft",
+			"FillDirection", "HorizontalAlignment", "VerticalAlignment", "SortOrder", "CellSize", "CellPadding",
+			"AspectRatio", "MinSize", "MaxSize", "MinTextSize", "MaxTextSize", "Scale",
+		}) do
+			local propertyOk, propertyValue = pcall(function()
+				return inst[propertyName]
+			end)
+			if propertyOk then
+				table.insert(values, propertyName .. "=" .. tostring(propertyValue))
+			end
+		end
+		if SCRIPT_CLASSES[inst.ClassName] then
+			table.insert(values, "SourceHash=" .. tostring(scriptHash(inst) or ""))
+		end
+		table.insert(rows, table.concat(values, "|"))
+	end
+	table.sort(rows)
+	return stableHash(table.concat(rows, "\n"))
+end
+
+UiArtifact.preflightRoot = function(rootSpec, artifactId)
+	local targetPath = tostring(rootSpec.targetPath or "")
+	if not targetPath:match("^StarterGui/NexusRBX_UI/[^/]+$") then
+		return { ok = false, code = "ui_root_path_invalid", error = "UI roots must be direct children of StarterGui/NexusRBX_UI", path = targetPath }
+	end
+	if tostring(rootSpec.rootId or "") == "" or tostring(rootSpec.designId or "") == "" or tostring(rootSpec.documentRevision or "") == "" then
+		return { ok = false, code = "ui_root_identity_invalid", error = "UI roots require root, design, and revision identity", path = targetPath }
+	end
+	if tostring(artifactId or "") == "" or tostring(rootSpec.designId or "") ~= tostring(artifactId or "") then
+		return { ok = false, code = "ui_artifact_identity_mismatch", error = "UI root design identity does not match the artifact", path = targetPath }
+	end
+	local container = resolvePath("StarterGui/NexusRBX_UI")
+	if container and (container.ClassName ~= "Folder"
+		or (container:GetAttribute("NexusUiContainer") ~= true and #container:GetChildren() > 0)) then
+		return {
+			ok = false,
+			code = "ui_foreign_collision",
+			error = "StarterGui/NexusRBX_UI is not an empty or Nexus-managed UI container",
+			path = "StarterGui/NexusRBX_UI",
+		}
+	end
+	if #(rootSpec.nodes or {}) > 240 then
+		return { ok = false, code = "ui_node_limit_exceeded", error = "UI roots support at most 240 nodes", path = targetPath }
+	end
+	local byId = {}
+	for _, nodeSpec in ipairs(rootSpec.nodes or {}) do
+		local nodeId = tostring(nodeSpec.nodeId or "")
+		local parentId = tostring(nodeSpec.parentId or "")
+		local nodeName = tostring(nodeSpec.name or "")
+		if nodeId == "" or byId[nodeId] then
+			return { ok = false, code = "ui_node_id_invalid", error = "UI node IDs must be non-empty and unique", path = targetPath }
+		end
+		if not UiArtifact.NODE_CLASSES[tostring(nodeSpec.className or "")] then
+			return { ok = false, code = "ui_node_class_unsupported", error = "Unsupported UI node class", path = targetPath }
+		end
+		if parentId == "" and (nodeName == "Hooks" or nodeName == "NexusInteractions") then
+			return { ok = false, code = "ui_node_name_reserved", error = nodeName .. " is reserved for the generated UI runtime", path = targetPath }
+		end
+		byId[nodeId] = nodeSpec
+	end
+	for nodeId, nodeSpec in pairs(byId) do
+		local parentId = tostring(nodeSpec.parentId or "")
+		local visited = { [nodeId] = true }
+		local depth = 0
+		while parentId ~= "" do
+			if not byId[parentId] then
+				return { ok = false, code = "ui_node_parent_invalid", error = "UI node parent does not exist", path = targetPath }
+			end
+			if visited[parentId] then
+				return { ok = false, code = "ui_node_parent_cycle", error = "UI node parent cycle detected", path = targetPath }
+			end
+			visited[parentId] = true
+			depth = depth + 1
+			if depth > 32 then
+				return { ok = false, code = "ui_node_depth_exceeded", error = "UI node depth exceeds 32", path = targetPath }
+			end
+			parentId = tostring(byId[parentId].parentId or "")
+		end
+	end
+
+	local existing = resolvePath(targetPath)
+	if not existing then
+		return {
+			ok = true,
+			path = targetPath,
+			container = container,
+			adoptContainer = container ~= nil and container:GetAttribute("NexusUiContainer") ~= true,
+		}
+	end
+	local identityMatches = existing.ClassName == "ScreenGui"
+		and tostring(existing:GetAttribute(AGENT_ARTIFACT_ID_ATTRIBUTE) or "") == tostring(artifactId or "")
+		and tostring(existing:GetAttribute("NexusRootId") or "") == tostring(rootSpec.rootId or "")
+		and tostring(existing:GetAttribute("NexusDesignId") or "") == tostring(rootSpec.designId or "")
+	if not identityMatches then
+		return {
+			ok = false,
+			code = "ui_foreign_collision",
+			error = "A non-managed or differently managed instance already exists at the UI root path",
+			path = targetPath,
+		}
+	end
+	local expectedTreeHash = tostring(rootSpec.expectedTreeHash or "")
+	local actualTreeHash = UiArtifact.treeHash(existing)
+	if expectedTreeHash == "" and rootSpec.replaceModifiedRoot ~= true then
+		return {
+			ok = false,
+			code = "ui_tree_precondition_required",
+			error = "Keep the Studio copy or explicitly replace it",
+			path = targetPath,
+			currentTreeHash = actualTreeHash,
+		}
+	end
+	if expectedTreeHash ~= "" and actualTreeHash ~= expectedTreeHash and rootSpec.replaceModifiedRoot ~= true then
+		return {
+			ok = false,
+			code = "ui_tree_conflict",
+			error = ("Expected UI tree %s but found %s"):format(expectedTreeHash, actualTreeHash),
+			path = targetPath,
+			expectedTreeHash = expectedTreeHash,
+			currentTreeHash = actualTreeHash,
+		}
+	end
+	return {
+		ok = true,
+		path = targetPath,
+		existing = existing,
+		container = container,
+		adoptContainer = container ~= nil and container:GetAttribute("NexusUiContainer") ~= true,
+		currentTreeHash = actualTreeHash,
+	}
+end
+
+UiArtifact.applyRoot = function(rootSpec, artifactId, snapshots, seenPaths)
+	local targetPath = tostring(rootSpec.targetPath or "")
+	local preflight = UiArtifact.preflightRoot(rootSpec, artifactId)
+	if not preflight.ok then
+		error(tostring(preflight.code or "ui_root_invalid") .. ": " .. tostring(preflight.error or "UI root preflight failed"))
+	end
+	local existing = preflight.existing
+	if preflight.adoptContainer and preflight.container then
+		snapshotOnce(preflight.container, snapshots, seenPaths)
+	end
+	if existing then
+		snapshotOnce(existing, snapshots, seenPaths)
+		existing:Destroy()
+	else
+		snapshotOnce(targetPath, snapshots, seenPaths)
+	end
+
+	local parent, leaf = ensureParent(targetPath, true)
+	if not parent or not leaf then
+		error("ui_root_parent_missing: could not create " .. targetPath)
+	end
+	if parent.ClassName ~= "Folder" then
+		error("ui_foreign_collision: StarterGui/NexusRBX_UI is not a Folder")
+	end
+	parent:SetAttribute("NexusUiContainer", true)
+	local root = Instance.new("ScreenGui")
+	root.Name = leaf
+	root.ResetOnSpawn = rootSpec.properties and rootSpec.properties.resetOnSpawn ~= false
+	root.IgnoreGuiInset = rootSpec.properties and rootSpec.properties.ignoreGuiInset ~= false
+	root.DisplayOrder = tonumber(rootSpec.properties and rootSpec.properties.displayOrder) or 0
+	root.Enabled = not rootSpec.properties or rootSpec.properties.enabled ~= false
+	root:SetAttribute(AGENT_ARTIFACT_ID_ATTRIBUTE, tostring(artifactId or ""))
+	root:SetAttribute("NexusRootId", tostring(rootSpec.rootId or ""))
+	root:SetAttribute("NexusDesignId", tostring(rootSpec.designId or ""))
+	root:SetAttribute("NexusRevision", tostring(rootSpec.documentRevision or ""))
+	root:SetAttribute("NexusDesiredTreeHash", tostring(rootSpec.treeHash or ""))
+	root.Parent = parent
+
+	local byId = {}
+	local remaining = {}
+	local expectedNodeIds = {}
+	for _, nodeSpec in ipairs(rootSpec.nodes or {}) do
+		table.insert(remaining, nodeSpec)
+		table.insert(expectedNodeIds, tostring(nodeSpec.nodeId or ""))
+	end
+	table.sort(expectedNodeIds)
+	local applied = 0
+	while #remaining > 0 do
+		local progressed = false
+		for index = #remaining, 1, -1 do
+			local nodeSpec = remaining[index]
+			local parentId = tostring(nodeSpec.parentId or "")
+			local nodeParent = parentId == "" and root or byId[parentId]
+			if nodeParent then
+				if not UiArtifact.NODE_CLASSES[tostring(nodeSpec.className or "")] then
+					error("ui_node_class_unsupported: " .. tostring(nodeSpec.className or ""))
+				end
+				local node = Instance.new(nodeSpec.className)
+				node.Name = tostring(nodeSpec.name or nodeSpec.nodeId or nodeSpec.className)
+				local propertiesOk, propertiesError = UiArtifact.applyProperties(node, nodeSpec.properties, nodeSpec.order)
+				if not propertiesOk then
+					error("ui_property_apply_failed: " .. tostring(propertiesError))
+				end
+				local decoratorOk, decoratorError = UiArtifact.applyDecorators(node, nodeSpec)
+				if not decoratorOk then
+					error("ui_decorator_apply_failed: " .. tostring(decoratorError))
+				end
+				node:SetAttribute(AGENT_ARTIFACT_ID_ATTRIBUTE, tostring(artifactId or ""))
+				node:SetAttribute("NexusDesignId", tostring(rootSpec.designId or ""))
+				node:SetAttribute("NexusNodeId", tostring(nodeSpec.nodeId or ""))
+				node:SetAttribute("NexusRevision", tostring(rootSpec.documentRevision or ""))
+				node.Parent = nodeParent
+				byId[tostring(nodeSpec.nodeId or "")] = node
+				table.remove(remaining, index)
+				applied = applied + 1
+				progressed = true
+			end
+		end
+		if not progressed then
+			error("ui_tree_invalid: node parents could not be resolved")
+		end
+	end
+
+	local appliedTreeHash = UiArtifact.treeHash(root)
+	root:SetAttribute("NexusTreeHash", appliedTreeHash)
+	return {
+		rootId = tostring(rootSpec.rootId or ""),
+		designId = tostring(rootSpec.designId or ""),
+		artifactId = tostring(artifactId or ""),
+		path = fullPath(root),
+		nodeCount = applied,
+		nodeIds = expectedNodeIds,
+		treeHash = appliedTreeHash,
+		documentTreeHash = tostring(rootSpec.treeHash or ""),
+		expectedPreviousTreeHash = tostring(rootSpec.expectedTreeHash or ""),
+		documentRevision = tostring(rootSpec.documentRevision or ""),
+	}
+end
+
 applyArtifact = function(payload)
 	if tonumber(payload.schemaVersion or 1) < 2 then
 		return applyArtifactLegacy(payload)
@@ -7067,6 +7634,7 @@ applyArtifact = function(payload)
 	local contextValidation = ScriptContextGuard.validateManagedScriptContexts(payload, indexes)
 	local managedFiles = {}
 	local finalFiles = {}
+	local uiRootResults = {}
 
 	for _, spec in pairs(indexes.fileById) do
 		table.insert(finalFiles, spec)
@@ -7083,6 +7651,30 @@ applyArtifact = function(payload)
 			snapshots = snapshots,
 		}
 	end
+	for _, rootSpec in ipairs(payload.uiRoots or {}) do
+		local preflight = UiArtifact.preflightRoot(rootSpec, payload.artifactId)
+		if not preflight.ok then
+			return {
+				ok = false,
+				code = tostring(preflight.code or "ui_root_invalid"),
+				error = tostring(preflight.error or "UI root preflight failed"),
+				retryable = false,
+				files = fileResults,
+				managedFiles = {},
+				uiRoots = {
+					{
+						rootId = tostring(rootSpec.rootId or ""),
+						designId = tostring(rootSpec.designId or ""),
+						path = tostring(preflight.path or rootSpec.targetPath or ""),
+						expectedTreeHash = preflight.expectedTreeHash,
+						currentTreeHash = preflight.currentTreeHash,
+					},
+				},
+				validation = { failures = 1, total = #operations + #(payload.uiRoots or {}) },
+				snapshots = snapshots,
+			}
+		end
+	end
 
 	local function pushResult(base, ok, err)
 		local row = base
@@ -7094,6 +7686,10 @@ applyArtifact = function(payload)
 	end
 
 	local executionOk, executionErr = pcall(function()
+		for _, rootSpec in ipairs(payload.uiRoots or {}) do
+			table.insert(uiRootResults, UiArtifact.applyRoot(rootSpec, payload.artifactId, snapshots, seenPaths))
+		end
+
 		for _, phase in ipairs({ "rename", "delete", "upsert" }) do
 			for _, op in ipairs(operations) do
 				if op.type == phase then
@@ -7207,13 +7803,66 @@ applyArtifact = function(payload)
 				managedFiles[fileId] = buildManagedFileRecord(resolved.instance, spec)
 			end
 		end
+
+		for _, uiResult in ipairs(uiRootResults) do
+			local root = resolvePath(uiResult.path)
+			if not root or root.ClassName ~= "ScreenGui" then
+				error("ui_readback_failed: managed ScreenGui is missing at " .. tostring(uiResult.path or ""))
+			end
+			if tostring(root:GetAttribute(AGENT_ARTIFACT_ID_ATTRIBUTE) or "") ~= tostring(uiResult.artifactId or "")
+				or tostring(root:GetAttribute("NexusRootId") or "") ~= tostring(uiResult.rootId or "")
+				or tostring(root:GetAttribute("NexusDesignId") or "") ~= tostring(uiResult.designId or "")
+				or tostring(root:GetAttribute("NexusRevision") or "") ~= tostring(uiResult.documentRevision or "") then
+				error("ui_readback_failed: managed ScreenGui identity does not match the applied UI root")
+			end
+			local readbackNodeCount = 0
+			local readbackNodeIds = {}
+			local sourceHashes = {}
+			for _, descendant in ipairs(root:GetDescendants()) do
+				local nodeId = tostring(descendant:GetAttribute("NexusNodeId") or "")
+				if nodeId ~= "" then
+					readbackNodeCount = readbackNodeCount + 1
+					table.insert(readbackNodeIds, nodeId)
+				end
+				if SCRIPT_CLASSES[descendant.ClassName] then
+					table.insert(sourceHashes, {
+						path = fullPath(descendant),
+						className = descendant.ClassName,
+						sourceHash = scriptHash(descendant),
+					})
+				end
+			end
+			table.sort(readbackNodeIds)
+			table.sort(sourceHashes, function(a, b)
+				return tostring(a.path or "") < tostring(b.path or "")
+			end)
+			if readbackNodeCount ~= tonumber(uiResult.nodeCount) then
+				error(("ui_readback_failed: expected %d nodes but found %d at %s"):format(
+					tonumber(uiResult.nodeCount) or 0,
+					readbackNodeCount,
+					tostring(uiResult.path or "")
+				))
+			end
+			for index, expectedNodeId in ipairs(uiResult.nodeIds or {}) do
+				if readbackNodeIds[index] ~= expectedNodeId then
+					error("ui_readback_failed: managed UI node IDs do not match the applied document")
+				end
+			end
+			uiResult.nodeIds = readbackNodeIds
+			uiResult.sourceHashes = sourceHashes
+			uiResult.treeHash = UiArtifact.treeHash(root)
+			root:SetAttribute("NexusTreeHash", uiResult.treeHash)
+		end
 	end)
 
 	if not executionOk then
-		return rollbackMutation(snapshots, "apply_artifact_failed", tostring(executionErr), {
+		local executionMessage = tostring(executionErr)
+		local mutationCode = executionMessage:match("(ui_[%w_]+):") or "apply_artifact_failed"
+		return rollbackMutation(snapshots, mutationCode, executionMessage, {
 			files = fileResults,
-			validation = { failures = 1, total = #operations },
+			validation = { failures = 1, total = #operations + #(payload.uiRoots or {}) },
 			managedFiles = {},
+			uiRoots = uiRootResults,
 		})
 	end
 
@@ -7228,7 +7877,8 @@ applyArtifact = function(payload)
 		revision = payload.revision,
 		files = fileResults,
 		managedFiles = managedList,
-		validation = { failures = 0, total = #operations },
+		uiRoots = uiRootResults,
+		validation = { failures = 0, total = #operations + #(payload.uiRoots or {}) },
 		warnings = payload.warnings or {},
 		snapshots = snapshots,
 	}
@@ -9635,6 +10285,70 @@ local function verifyCommandOutcome(command, payload, result)
 				end
 			end
 		end
+		local uiEvidence = {}
+		for _, uiRoot in ipairs(result.uiRoots or {}) do
+			local path = tostring(uiRoot.path or "")
+			local root = resolvePath(path)
+			local actualTreeHash = root and UiArtifact.treeHash(root) or nil
+			local expectedTreeHash = tostring(uiRoot.treeHash or "")
+			local actualNodeIds = {}
+			if root then
+				for _, descendant in ipairs(root:GetDescendants()) do
+					local nodeId = tostring(descendant:GetAttribute("NexusNodeId") or "")
+					if nodeId ~= "" then
+						table.insert(actualNodeIds, nodeId)
+					end
+				end
+			end
+			table.sort(actualNodeIds)
+			local nodeIdsMatch = #actualNodeIds == #(uiRoot.nodeIds or {})
+			if nodeIdsMatch then
+				for index, expectedNodeId in ipairs(uiRoot.nodeIds or {}) do
+					if actualNodeIds[index] ~= expectedNodeId then
+						nodeIdsMatch = false
+						break
+					end
+				end
+			end
+			local actualArtifactId = root and tostring(root:GetAttribute(AGENT_ARTIFACT_ID_ATTRIBUTE) or "") or ""
+			local actualRootId = root and tostring(root:GetAttribute("NexusRootId") or "") or ""
+			local actualDesignId = root and tostring(root:GetAttribute("NexusDesignId") or "") or ""
+			local actualRevision = root and tostring(root:GetAttribute("NexusRevision") or "") or ""
+			local storedTreeHash = root and tostring(root:GetAttribute("NexusTreeHash") or "") or ""
+			local rootVerified = root ~= nil
+				and root.ClassName == "ScreenGui"
+				and actualArtifactId == tostring(uiRoot.artifactId or "")
+				and actualRootId == tostring(uiRoot.rootId or "")
+				and actualDesignId == tostring(uiRoot.designId or "")
+				and actualRevision == tostring(uiRoot.documentRevision or "")
+				and #actualNodeIds == tonumber(uiRoot.nodeCount or -1)
+				and nodeIdsMatch
+				and expectedTreeHash ~= ""
+				and actualTreeHash == expectedTreeHash
+				and storedTreeHash == expectedTreeHash
+			local details = {
+				rootId = uiRoot.rootId,
+				designId = uiRoot.designId,
+				documentRevision = uiRoot.documentRevision,
+				documentTreeHash = uiRoot.documentTreeHash,
+				expectedTreeHash = expectedTreeHash,
+				actualTreeHash = actualTreeHash,
+				storedTreeHash = storedTreeHash,
+				expectedNodeCount = uiRoot.nodeCount,
+				actualNodeCount = #actualNodeIds,
+				nodeIdsMatch = nodeIdsMatch,
+				sourceHashes = uiRoot.sourceHashes or {},
+				actualArtifactId = actualArtifactId,
+				actualRootId = actualRootId,
+				actualDesignId = actualDesignId,
+				actualRevision = actualRevision,
+			}
+			addCheck("artifact_ui_root", path, rootVerified, details)
+			table.insert(uiEvidence, details)
+		end
+		if #uiEvidence > 0 then
+			evidence.uiRoots = uiEvidence
+		end
 		for _, op in ipairs(payload.operations or {}) do
 			if op.type == "delete" then
 				local path = tostring(op.path or "")
@@ -9928,6 +10642,13 @@ executeCommand = function(command)
 		for _, file in ipairs(result.managedFiles) do
 			if type(file) == "table" and file.canonicalPath then
 				addAffectedPath(file.canonicalPath)
+			end
+		end
+	end
+	if result.uiRoots then
+		for _, uiRoot in ipairs(result.uiRoots) do
+			if type(uiRoot) == "table" and uiRoot.path then
+				addAffectedPath(uiRoot.path)
 			end
 		end
 	end

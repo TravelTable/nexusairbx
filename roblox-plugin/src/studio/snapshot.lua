@@ -8,6 +8,16 @@ local function snapshotStateHash(inst)
 	if SCRIPT_CLASSES[inst.ClassName] then
 		return scriptHash(inst)
 	end
+	-- Managed UI roots need a whole-tree fingerprint so undo/restore keeps a
+	-- creator's node additions, removals, property edits, and source edits made
+	-- after Nexus applied the artifact. UiArtifact is initialized before any
+	-- command can execute, even though snapshot helpers are bundled earlier.
+	if inst:IsA("ScreenGui") and type(UiArtifact) == "table" and type(UiArtifact.treeHash) == "function" then
+		local treeOk, treeHash = pcall(UiArtifact.treeHash, inst)
+		if treeOk then
+			return treeHash
+		end
+	end
 	local ok, hashValue = pcall(propertyHash, inst)
 	return ok and hashValue or nil
 end
@@ -182,6 +192,7 @@ local function restoreSnapshots(payload)
 	-- the agent's write. `force` bypasses that protection for a full revert.
 	local kept = 0
 	local errors = {}
+	local deferredHashChecks = {}
 	local force = type(payload) == "table" and payload.force == true
 	local snapshots = (type(payload) == "table" and payload.snapshots) or localSnapshots
 	if type(snapshots) ~= "table" then
@@ -214,12 +225,16 @@ local function restoreSnapshots(payload)
 				-- state), a human edited it since -> keep their edits.
 				if not force and snap.postHash then
 					local current = resolvePath(snap.path)
-					if current then
-						local currentHash = snapshotStateHash(current)
-						if currentHash and currentHash ~= snap.postHash and currentHash ~= snap.preHash then
-							kept = kept + 1
-							return
-						end
+					if not current then
+						-- The instance existed immediately after Nexus wrote it but is now
+						-- missing, so a creator removed or renamed it. Keep that edit.
+						kept = kept + 1
+						return
+					end
+					local currentHash = snapshotStateHash(current)
+					if currentHash and currentHash ~= snap.postHash and currentHash ~= snap.preHash then
+						kept = kept + 1
+						return
 					end
 				end
 				local inst = createOrReplaceInstance(snap.path, snap.className, snap.properties or {}, true)
@@ -247,13 +262,19 @@ local function restoreSnapshots(payload)
 				end
 				local restoredHash = snapshotStateHash(inst)
 				if snap.preHash and restoredHash ~= snap.preHash then
-					error(
-						"Restored state hash does not match the pre-mutation snapshot (expected "
-							.. tostring(snap.preHash)
-							.. ", got "
-							.. tostring(restoredHash)
-							.. ")"
-					)
+					if inst:IsA("ScreenGui") and type(UiArtifact) == "table" and type(UiArtifact.treeHash) == "function" then
+						-- The root is restored before its descendant snapshots. Verify its
+						-- complete tree after the reverse-order restore has finished.
+						table.insert(deferredHashChecks, snap)
+					else
+						error(
+							"Restored state hash does not match the pre-mutation snapshot (expected "
+								.. tostring(snap.preHash)
+								.. ", got "
+								.. tostring(restoredHash)
+								.. ")"
+						)
+					end
 				end
 				restored = restored + 1
 			end
@@ -263,6 +284,21 @@ local function restoreSnapshots(payload)
 				snapshotId = snap and snap.id or nil,
 				path = snap and snap.path or "",
 				message = tostring(restoreErr),
+			})
+		end
+	end
+	for _, snap in ipairs(deferredHashChecks) do
+		local current = resolvePath(snap.path)
+		local restoredHash = snapshotStateHash(current)
+		if not current or restoredHash ~= snap.preHash then
+			table.insert(errors, {
+				snapshotId = snap.id,
+				path = snap.path or "",
+				message = "Restored UI tree hash does not match the pre-mutation snapshot (expected "
+					.. tostring(snap.preHash)
+					.. ", got "
+					.. tostring(restoredHash)
+					.. ")",
 			})
 		end
 	end

@@ -39,7 +39,18 @@ test("keeps canonical legal pages reachable through the app router and legacy al
   expect(appSource).toContain('<Route path="/legal/privacy"');
   expect(appSource).toContain('<Route path="/privacy" element={<Navigate to="/legal/privacy" replace />}');
   expect(appSource).toContain('<Route path="/terms" element={<Navigate to="/legal/terms" replace />}');
-  expect(headerSource).toContain('STATIC_PUBLIC_PATHS = ["/docs", "/pricing", "/legal"]');
+  for (const route of [
+    "/docs",
+    "/pricing",
+    "/legal",
+    "/roblox-script-generator",
+    "/roblox-ai-scripter",
+    "/roblox-lua-script-generator",
+    "/roblox-studio-script-generator",
+    "/roblox-gui-maker",
+  ]) {
+    expect(headerSource).toContain(`"${route}"`);
+  }
   expect(navigationSource).toContain('{ href: "/legal", label: "Legal documents"');
   expect(signUpSource).toContain('href="/legal/terms"');
   expect(signUpSource).toContain('href="/legal/privacy"');

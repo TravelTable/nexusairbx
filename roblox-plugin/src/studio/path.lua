@@ -123,6 +123,17 @@ local function ensureParent(path, createParents)
 	return current, parts[#parts]
 end
 
+SAFE_UI_RESTORE_PROPERTIES = {
+	Enabled = true, DisplayOrder = true, PlaceholderText = true, BorderSizePixel = true, ClipsDescendants = true,
+	Rotation = true, TextWrapped = true, TextScaled = true, TextXAlignment = true,
+	TextYAlignment = true, Font = true, ImageColor3 = true, ScaleType = true, CanvasSize = true,
+	AutomaticCanvasSize = true, ScrollBarThickness = true, AutoButtonColor = true,
+	PaddingTop = true, PaddingRight = true, PaddingBottom = true, PaddingLeft = true,
+	FillDirection = true, HorizontalAlignment = true, VerticalAlignment = true, CellSize = true,
+	CellPadding = true, SortOrder = true, Color = true, Transparency = true, AspectRatio = true,
+	MinSize = true, MaxSize = true, MinTextSize = true, MaxTextSize = true, Scale = true,
+}
+
 local function safeSetProperty(inst, key, value)
 	local ok, err = pcall(function()
 		if typeof(value) == "table" then
@@ -142,7 +153,7 @@ local function safeSetProperty(inst, key, value)
 			elseif valueType == "UDim" then
 				value = UDim.new(value.scale or 0, value.offset or 0)
 			elseif valueType == "Color3" or (
-				(key == "TextColor3" or key == "BackgroundColor3")
+				(key == "TextColor3" or key == "BackgroundColor3" or key == "ImageColor3" or key == "Color")
 				and value.r ~= nil and value.g ~= nil and value.b ~= nil
 			) then
 				value = Color3.new(value.r or 0, value.g or 0, value.b or 0)
@@ -152,6 +163,32 @@ local function safeSetProperty(inst, key, value)
 				value = Vector3.new(value.x or 0, value.y or 0, value.z or 0)
 			elseif valueType == "CFrame" and typeof(value.components) == "table" and #value.components == 12 then
 				value = CFrame.new(table.unpack(value.components))
+			elseif valueType == "ColorSequence" then
+				local keypoints = {}
+				for _, keypoint in ipairs(value.keypoints or {}) do
+					local color = keypoint.color or {}
+					table.insert(keypoints, ColorSequenceKeypoint.new(
+						keypoint.time or 0,
+						Color3.new(color.r or 0, color.g or 0, color.b or 0)
+					))
+				end
+				value = ColorSequence.new(keypoints)
+			elseif valueType == "NumberSequence" then
+				local keypoints = {}
+				for _, keypoint in ipairs(value.keypoints or {}) do
+					table.insert(keypoints, NumberSequenceKeypoint.new(
+						keypoint.time or 0,
+						keypoint.value or 0,
+						keypoint.envelope or 0
+					))
+				end
+				value = NumberSequence.new(keypoints)
+			end
+		end
+		if type(value) == "string" then
+			local enumType, enumItem = value:match("^Enum%.([%w_]+)%.([%w_]+)$")
+			if enumType and enumItem and Enum[enumType] then
+				value = Enum[enumType][enumItem] or value
 			end
 		end
 		if key == "Value" and inst:IsA("ValueBase") then
@@ -188,6 +225,8 @@ local function safeSetProperty(inst, key, value)
 			inst.ZIndex = tonumber(value) or inst.ZIndex
 		elseif key == "LayoutOrder" and inst:IsA("GuiObject") then
 			inst.LayoutOrder = tonumber(value) or inst.LayoutOrder
+		elseif key == "Padding" and inst:IsA("UIListLayout") and typeof(value) == "UDim" then
+			inst.Padding = value
 		elseif key == "Padding" and inst:IsA("UIPadding") and typeof(value) == "UDim" then
 			inst.PaddingTop = value
 			inst.PaddingBottom = value
@@ -197,6 +236,8 @@ local function safeSetProperty(inst, key, value)
 			inst.CornerRadius = value
 		elseif key == "Thickness" and inst:IsA("UIStroke") then
 			inst.Thickness = tonumber(value) or inst.Thickness
+		elseif SAFE_UI_RESTORE_PROPERTIES[key] then
+			inst[key] = value
 		elseif key == "Loop" and inst:IsA("KeyframeSequence") then
 			inst.Loop = value == true
 		elseif key == "Priority" and inst:IsA("KeyframeSequence") then

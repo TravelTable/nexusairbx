@@ -12,6 +12,7 @@ function cleanTitle(value) {
 export default function WorkspaceRibbon({
   mode,
   onModeChange,
+  uiEnabled = true,
   animateEnabled = false,
   projectTitle,
   chatTitle,
@@ -132,6 +133,16 @@ export default function WorkspaceRibbon({
             >
               Agent
             </button>
+            {uiEnabled ? (
+              <button
+                type="button"
+                data-active={mode === "ui" ? "true" : "false"}
+                aria-pressed={mode === "ui"}
+                onClick={() => onModeChange("ui")}
+              >
+                UI
+              </button>
+            ) : null}
             <button
               type="button"
               data-active={mode === "asset" ? "true" : "false"}

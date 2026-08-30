@@ -991,6 +991,85 @@
   gap: 12px;
 }
 
+.asset-icon-generator-page .asset-prompt-composer-field {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.asset-icon-generator-page .asset-prompt-composer-beam,
+.asset-icon-generator-page .asset-prompt-composer {
+  max-width: none !important;
+}
+
+.asset-icon-generator-page .asset-prompt-composer {
+  border-radius: var(--nx-radius-feature, 14px) !important;
+}
+
+.asset-icon-generator-page .asset-prompt-composer .nexus-composer__body {
+  min-height: 56px;
+  padding: 8px;
+}
+
+.asset-icon-generator-page .asset-prompt-composer__kind,
+.asset-icon-generator-page .asset-prompt-composer__submit {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+}
+
+.asset-icon-generator-page .asset-prompt-composer__kind {
+  color: var(--ds-text-muted);
+}
+
+.asset-icon-generator-page .asset-prompt-composer__kind svg,
+.asset-icon-generator-page .asset-prompt-composer__submit svg {
+  width: 16px;
+  height: 16px;
+}
+
+.asset-icon-generator-page .asset-prompt-composer__submit {
+  color: var(--ds-accent-foreground);
+  background: var(--ds-accent);
+  cursor: pointer;
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+.asset-icon-generator-page .asset-prompt-composer__submit:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.asset-icon-generator-page .asset-prompt-composer__submit:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.asset-icon-generator-page .asset-prompt-composer__submit:focus-visible {
+  outline: 2px solid var(--ds-focus-ring);
+  outline-offset: 2px;
+}
+
+.asset-icon-generator-page .asset-prompt-composer__submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.asset-icon-generator-page .asset-prompt-composer .nexus-composer__input {
+  width: 100%;
+  min-height: 40px;
+  max-height: 176px;
+  padding: 8px 0;
+  resize: none;
+  color: var(--ds-text);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
 .asset-icon-generator-page .asset-generation-form__row {
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 12px;

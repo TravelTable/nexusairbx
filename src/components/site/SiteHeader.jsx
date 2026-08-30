@@ -9,7 +9,23 @@ import { getHeaderVariantForPath } from "./siteHeaderIdentity";
 import SkipToMainContent from "./SkipToMainContent";
 import styles from "./SiteHeaderLedger.module.css";
 
-const STATIC_PUBLIC_PATHS = ["/docs", "/pricing", "/legal"];
+// These pages are rendered by the public Next.js frontend rather than the
+// authenticated React application. They must use document navigation or the
+// SPA catch-all will turn a valid public URL into the in-app 404 page.
+export const STATIC_PUBLIC_PATHS = [
+  "/docs",
+  "/pricing",
+  "/legal",
+  "/roblox-script-generator",
+  "/roblox-ai-scripter",
+  "/roblox-lua-script-generator",
+  "/roblox-studio-script-generator",
+  "/roblox-gui-maker",
+];
+
+export function isStaticPublicPath(to) {
+  return STATIC_PUBLIC_PATHS.some((path) => to === path || to.startsWith(`${path}/`));
+}
 
 export function resolveStaticPublicHref(to, publicSiteOrigin = process.env.REACT_APP_PUBLIC_SITE_ORIGIN) {
   let resolvedOrigin = publicSiteOrigin;
@@ -26,7 +42,7 @@ export function resolveStaticPublicHref(to, publicSiteOrigin = process.env.REACT
 }
 
 function AppLink({ to, children, ...props }) {
-  if (STATIC_PUBLIC_PATHS.some((path) => to === path || to.startsWith(`${path}/`))) {
+  if (isStaticPublicPath(to)) {
     return <a href={resolveStaticPublicHref(to)} {...props}>{children}</a>;
   }
   return <Link to={to} {...props}>{children}</Link>;

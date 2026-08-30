@@ -400,6 +400,8 @@ export default function ChatComposer({
   openBuildOptions = false,
   onCloseBuildOptions,
   renderDockNavigation,
+  showDock = true,
+  studioConnectionRequired = true,
 }) {
   const [controlsOpen, setControlsOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
@@ -414,6 +416,7 @@ export default function ChatComposer({
   const textareaRef = useRef(null);
   const wasGeneratingRef = useRef(Boolean(isGenerating));
   const fileInputRef = useRef(null);
+  const controlsButtonRef = useRef(null);
   const controlsPanelRef = useRef(null);
   const contextButtonRef = useRef(null);
   const contextPanelRef = useRef(null);
@@ -424,9 +427,10 @@ export default function ChatComposer({
   const controlsPresence = useMotionPresence(controlsOpen, 180);
   const controlsId = "chat-composer-controls";
 
-  const closeControls = useCallback(() => {
+  const closeControls = useCallback((restoreTriggerFocus = false) => {
     setControlsOpen(false);
     if (openBuildOptions) onCloseBuildOptions?.();
+    if (restoreTriggerFocus) controlsButtonRef.current?.focus();
   }, [onCloseBuildOptions, openBuildOptions]);
 
   useEffect(() => {
@@ -439,6 +443,7 @@ export default function ChatComposer({
     studioConnected && studioConnectionType !== "mcp_local"
   );
   const studioBuildBlocked =
+    studioConnectionRequired &&
     ["agent", "debug"].includes(normalizedMode) &&
     !primaryPluginConnected;
   const studioBlockerMessage = "Connect Studio to apply changes.";
@@ -515,6 +520,7 @@ export default function ChatComposer({
     if (!controlsOpen && !contextOpen) return undefined;
     const onPointerDown = (event) => {
       if (
+        controlsButtonRef.current?.contains(event.target) ||
         controlsPanelRef.current?.contains(event.target) ||
         contextButtonRef.current?.contains(event.target) ||
         contextPanelRef.current?.contains(event.target)
@@ -526,7 +532,7 @@ export default function ChatComposer({
     const onKeyDown = (event) => {
       if (event.key !== "Escape") return;
       event.preventDefault();
-      if (controlsOpen) closeControls();
+      if (controlsOpen) closeControls(true);
       else contextButtonRef.current?.focus();
       setContextOpen(false);
     };
@@ -787,17 +793,19 @@ export default function ChatComposer({
 
   return (
     <div className="nexus-composer-region pc-page-gutter bg-[var(--ds-bg-workspace)] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
-      <div className="relative mx-auto h-36 w-full max-w-[760px]">
-        <AppleStyleDock
-          onNewChat={onDockNewChat}
-          onOpenAssets={onDockOpenAssets}
-          onOpenActivity={onDockOpenActivity}
-          onOpenBuildOptions={onDockOpenBuildOptions}
-          usageContent={usage}
-          buildOptionsContent={workspaceOptionsContent}
-          renderNavigation={renderDockNavigation}
-        />
-      </div>
+      {showDock ? (
+        <div className="relative mx-auto h-36 w-full max-w-[760px]">
+          <AppleStyleDock
+            onNewChat={onDockNewChat}
+            onOpenAssets={onDockOpenAssets}
+            onOpenActivity={onDockOpenActivity}
+            onOpenBuildOptions={onDockOpenBuildOptions}
+            usageContent={usage}
+            buildOptionsContent={workspaceOptionsContent}
+            renderNavigation={renderDockNavigation}
+          />
+        </div>
+      ) : null}
       <BorderBeam
         className="nexus-composer-beam relative z-20 mx-auto w-full max-w-[760px]"
         size="md"
@@ -1089,6 +1097,23 @@ export default function ChatComposer({
                     </div>
                   </div>
                 )}
+                <button
+                  ref={controlsButtonRef}
+                  type="button"
+                  onClick={() => {
+                    if (controlsOpen) closeControls();
+                    else setControlsOpen(true);
+                  }}
+                  disabled={disabled}
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[var(--ds-text-muted)] transition-[background-color,color,opacity,transform] duration-150 hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] active:scale-95 focus-ring disabled:cursor-not-allowed disabled:opacity-40 xl:h-9 xl:w-9"
+                  aria-label="Open workspace options"
+                  aria-haspopup="dialog"
+                  aria-expanded={controlsOpen}
+                  aria-controls={controlsId}
+                  title="Workspace options"
+                >
+                  <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+                </button>
               </div>
               {isGenerating && canSendWithContext ? (
                 <button

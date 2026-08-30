@@ -16,6 +16,14 @@ describe("settingsSchema", () => {
     expect(settings.unsupported).toBeUndefined();
   });
 
+  it("preserves an explicit current GPT-5 mini selection", () => {
+    expect(normalizeSettings({ modelVersion: "openai/gpt-5-mini" }).modelVersion).toBe("openai/gpt-5-mini");
+    expect(sanitizeSettingsPatch({ modelVersion: "openai/gpt-5-mini" })).toEqual({
+      patch: { modelVersion: "openai/gpt-5-mini" },
+      invalidKeys: [],
+    });
+  });
+
   it("sanitizes valid partial patches without requiring full settings", () => {
     const { patch, invalidKeys } = sanitizeSettingsPatch({
       theme: "light",

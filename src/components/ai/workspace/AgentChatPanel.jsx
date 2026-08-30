@@ -1,6 +1,7 @@
 import React, { useCallback } from "react";
 import ChatView from "../ChatView";
 import ChatComposer from "../chat/ChatComposer";
+import CompactAgentRunBar, { getCompactRunMeta } from "./CompactAgentRunBar";
 
 // Primary Studio agent surface. Chat drives the workflow; deeper build state
 // lives in the workspace dock so the conversation keeps the available width.
@@ -35,6 +36,7 @@ export default function AgentChatPanel({
   notify,
   onApproveStep,
   approvingStepId,
+  agentRun,
   // studio
   studioConnected,
   studioConnectionType,
@@ -121,6 +123,7 @@ export default function AgentChatPanel({
   onDockBuildOptionsClose,
   renderDockNavigation,
 }) {
+  const compactRunVisible = Boolean(getCompactRunMeta(agentRun));
   const handleComposerSubmit = useCallback(
     (event, overridePrompt = null, composerOptions = {}) => {
       return onSubmit?.(event, overridePrompt, composerOptions);
@@ -181,6 +184,7 @@ export default function AgentChatPanel({
             onEditMessage={handleEditMessage}
             onRetryMessage={onRetryMessage}
             onRestoreRun={onRestoreRun}
+            dockPendingActivity={compactRunVisible}
             workspaceControls={workspaceControls}
             navigationOpen={navigationOpen}
             navigationControls={navigationControls}
@@ -189,6 +193,14 @@ export default function AgentChatPanel({
           />
         </div>
       </div>
+
+      {compactRunVisible ? (
+        <CompactAgentRunBar
+          agentRun={agentRun}
+          onApproveStep={onApproveStep}
+          approvingStepId={approvingStepId}
+        />
+      ) : null}
 
       <div className="shrink-0">
         <ChatComposer

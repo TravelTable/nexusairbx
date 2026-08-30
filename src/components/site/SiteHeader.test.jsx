@@ -6,7 +6,7 @@ import { MemoryRouter } from "react-router-dom";
 jest.mock("./useHeaderIdentity", () => ({ __esModule: true, default: jest.fn() }));
 
 import useHeaderIdentity from "./useHeaderIdentity";
-import SiteHeader, { resolveStaticPublicHref } from "./SiteHeader";
+import SiteHeader, { isStaticPublicPath, resolveStaticPublicHref } from "./SiteHeader";
 
 beforeEach(() => {
   useHeaderIdentity.mockReturnValue({
@@ -37,6 +37,26 @@ test("connects Docs and Pricing to the configured public frontend", () => {
     "http://localhost:4173/pricing",
   );
   expect(resolveStaticPublicHref("/docs", "")).toBe("/docs");
+});
+
+test("sends every Next-owned landing page through document navigation", () => {
+  for (const path of [
+    "/docs",
+    "/docs/installation",
+    "/pricing",
+    "/legal/privacy",
+    "/roblox-script-generator",
+    "/roblox-ai-scripter",
+    "/roblox-lua-script-generator",
+    "/roblox-studio-script-generator",
+    "/roblox-gui-maker",
+  ]) {
+    expect(isStaticPublicPath(path)).toBe(true);
+  }
+
+  for (const path of ["/ai", "/assets", "/settings", "/connect-roblox"]) {
+    expect(isStaticPublicPath(path)).toBe(false);
+  }
 });
 
 test("makes the homepage skip link the first keyboard target", async () => {

@@ -164,6 +164,11 @@ local CREATABLE_CLASSES = {
 	UIPadding = true,
 	UICorner = true,
 	UIStroke = true,
+	UIGradient = true,
+	UIAspectRatioConstraint = true,
+	UISizeConstraint = true,
+	UITextSizeConstraint = true,
+	UIScale = true,
 	StringValue = true,
 	BoolValue = true,
 	NumberValue = true,
@@ -261,6 +266,21 @@ local function safePropertyValue(inst, key)
 		}
 	elseif valueType == "EnumItem" then
 		return tostring(value)
+	elseif valueType == "ColorSequence" then
+		local keypoints = {}
+		for _, keypoint in ipairs(value.Keypoints) do
+			table.insert(keypoints, {
+				time = keypoint.Time,
+				color = { r = keypoint.Value.R, g = keypoint.Value.G, b = keypoint.Value.B },
+			})
+		end
+		return { type = "ColorSequence", keypoints = keypoints }
+	elseif valueType == "NumberSequence" then
+		local keypoints = {}
+		for _, keypoint in ipairs(value.Keypoints) do
+			table.insert(keypoints, { time = keypoint.Time, value = keypoint.Value, envelope = keypoint.Envelope })
+		end
+		return { type = "NumberSequence", keypoints = keypoints }
 	end
 	return nil
 end
@@ -275,18 +295,34 @@ local function propertiesOf(inst)
 		"Enabled",
 		"ResetOnSpawn",
 		"IgnoreGuiInset",
+		"DisplayOrder",
 		"Text",
+		"PlaceholderText",
 		"Visible",
 		"Size",
 		"Position",
 		"AnchorPoint",
 		"BackgroundTransparency",
 		"BackgroundColor3",
+		"BorderSizePixel",
+		"ClipsDescendants",
+		"Rotation",
 		"TextColor3",
 		"TextSize",
+		"TextWrapped",
+		"TextScaled",
+		"TextXAlignment",
+		"TextYAlignment",
+		"Font",
 		"TextTransparency",
 		"ImageTransparency",
 		"Image",
+		"ImageColor3",
+		"ScaleType",
+		"CanvasSize",
+		"AutomaticCanvasSize",
+		"ScrollBarThickness",
+		"AutoButtonColor",
 		"Texture",
 		"MeshId",
 		"TextureID",
@@ -304,7 +340,24 @@ local function propertiesOf(inst)
 		"LayoutOrder",
 		"SortOrder",
 		"Padding",
+		"PaddingTop",
+		"PaddingRight",
+		"PaddingBottom",
+		"PaddingLeft",
+		"FillDirection",
+		"HorizontalAlignment",
+		"VerticalAlignment",
+		"CellSize",
+		"CellPadding",
 		"CornerRadius",
+		"Color",
+		"Transparency",
+		"AspectRatio",
+		"MinSize",
+		"MaxSize",
+		"MinTextSize",
+		"MaxTextSize",
+		"Scale",
 		"Thickness",
 	}
 	for _, key in ipairs(candidates) do

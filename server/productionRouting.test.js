@@ -311,6 +311,7 @@ test("vercel rewrites enumerate route owners without a broad fallback", () => {
     "/signin",
     "/signup",
     "/forgot-password",
+    "/connect-roblox",
     "/subscribe",
     "/contact",
     "/support",

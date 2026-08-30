@@ -48,6 +48,7 @@ export default function ChatView({
   onEditMessage,
   onRetryMessage,
   onRestoreRun,
+  dockPendingActivity = false,
   workspaceControls,
   navigationOpen,
   navigationControls,
@@ -118,6 +119,7 @@ export default function ChatView({
                 onEditMessage={onEditMessage}
                 onRetryMessage={onRetryMessage}
                 onRestoreRun={onRestoreRun}
+                dockPendingActivity={dockPendingActivity}
               />
             )}
           </ConversationContent>

@@ -314,14 +314,14 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     }));
   }, []);
 
-  const beginOrchestrationPending = useCallback((chatId, requestId, prompt = "") => {
-    const state = seedOrchestrationStream();
+  const beginOrchestrationPending = useCallback((chatId, requestId, prompt = "", stage = "Understanding your task...") => {
+    const state = seedOrchestrationStream(stage);
     orchestrationStreamRef.current[`${chatId}:${requestId}`] = state;
     setOrchestrationPendingByChat((prev) => ({
       ...prev,
       [chatId]: {
         ...(prev[chatId] || {}),
-        [requestId]: buildOrchestrationPending(state, "Understanding your task...", {
+        [requestId]: buildOrchestrationPending(state, stage, {
           requestId,
           prompt,
         }),
@@ -1231,6 +1231,13 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             bindFlowToChat(activeChatId);
             onChatReady?.(activeChatId);
             throwIfAborted(flowController.signal);
+            setFlowBusyForChat(activeChatId, requestId, true);
+            beginOrchestrationPending(
+              activeChatId,
+              requestId,
+              prompt,
+              "Starting your request..."
+            );
             if (writeUserTurn) {
               await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
               throwIfAborted(flowController.signal);
@@ -1241,6 +1248,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             // the chat already has a project. Project context enriches the
             // answer; it must not turn a question into an execution request.
             if (!isImplementationIntent(userIntent)) {
+              publishOrchestrationStage(activeChatId, requestId, "Preparing a response...");
               await handleAskSubmit(
                 implementationPrompt,
                 currentAttachments,
@@ -1260,6 +1268,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
               projectError.code = "PROJECT_REQUIRED";
               throw projectError;
             }
+            publishOrchestrationStage(activeChatId, requestId, "Preparing the agent runtime...");
             await launchAuthoritativeRun({
               activeChatId,
               requestId,
@@ -1289,6 +1298,9 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
               }
             }
             if (propagateOperationError) throw err;
+          } finally {
+            setFlowBusyForChat(activeChatId, requestId, false);
+            clearOrchestrationPending(activeChatId, requestId);
           }
           return;
         }

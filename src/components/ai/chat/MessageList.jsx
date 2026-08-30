@@ -157,6 +157,7 @@ function SingleMessageList({
   onEditMessage,
   onRetryMessage,
   onRestoreRun,
+  dockPendingActivity = false,
   hideMessages = false,
   arrivalMessageId = null,
 }) {
@@ -320,7 +321,7 @@ function SingleMessageList({
               {pendingMessage.decision ? (
                 <RunContextBar decision={pendingMessage.decision} />
               ) : null}
-              {showLiveWorkStream ? (
+              {showLiveWorkStream && !dockPendingActivity ? (
                 <div className="w-full max-w-[840px]">
                   <div className="px-4 pt-3">
                     <ReasoningPanel
@@ -339,7 +340,7 @@ function SingleMessageList({
                     hideThinkingRows={hasRawReasoning}
                   />
                 </div>
-              ) : (
+              ) : !showLiveWorkStream ? (
                 <>
                   <ReasoningPanel
                     text={streamState?.rawReasoning}
@@ -352,7 +353,7 @@ function SingleMessageList({
                     parsed={pendingParsed}
                   />
                 </>
-              )}
+              ) : null}
 
               {pendingMessage.content && !showLiveWorkStream ? (
                 <div className="nexus-streaming-caret w-full max-w-[840px] space-y-4">

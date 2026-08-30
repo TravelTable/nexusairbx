@@ -2,6 +2,10 @@
 
 Active protocol version: `2026-08-27-r15-animation`
 
+Current plugin build: `nexusrbx-studio-0.14.0-r15-animation.2-ui`. The build
+identity changed for UI artifact v3 even though the transport protocol version
+did not; an older build must not receive a v3 `uiRoots` payload.
+
 This protocol integrates Creator Store import, native model construction/refinement, trusted Roblox Open Cloud upload, server-owned asset-reference application, uploaded-model Studio insertion, the script execution-context quality gate, and the Phase 9 Studio validation quality gate. Uploaded assets, uploaded models, and validation targets must come from backend-held receipts; the browser never submits a trusted Roblox asset ID, Studio root path, inserted root path, model revision, insertion identity, or validation status for trusted commands.
 
 The backend validates every Studio command in `backend/src/lib/studioToolProtocol.js` before it is queued. The plugin acknowledges each command with a structured result containing:
@@ -105,6 +109,7 @@ the heartbeat endpoint.
 - Creator Store import: `insert_creator_store_asset` imports a server-verified Creator Store `Model` or `Mesh` through Studio asset loading, sanitizes executable/networking descendants while unparented, then places it under an allowed Studio destination.
 - Uploaded Roblox model import: `insert_uploaded_roblox_model` imports a backend-verified uploaded Roblox `Model` asset. The command can only be queued by the backend insertion review flow. The payload is generated from the trusted upload receipt and contains `uploadId`, `insertionId`, `assetId`, `assetName`, `assetType`, `targetParentPath`, `requestedName`, `placement`, `anchoredPolicy`, `collisionPolicy`, `sanitizationMode`, `trustedSource`, and `idempotencyKey`.
 - R15 animation creation: `create_animation_sequence` accepts only a server-normalized animation document with 2–61 ordered keyframes, standard R15 joint names, normalized quaternions, in-place root motion, and a 0.5–10 second duration. The plugin uses the selected R15 rig when `rigPath` is omitted, snapshots `AnimSaves/<name>`, creates a native `KeyframeSequence`/`Keyframe`/`Pose` hierarchy, and verifies the sequence fingerprint and keyframe count after the write. Replacing an existing sequence requires its current Studio fingerprint.
+- UI artifact v3: `apply_artifact` may carry one validated `uiRoots` entry that creates an editable managed `ScreenGui` tree under `StarterGui/NexusRBX_UI`. The browser never supplies HTML, CSS, JavaScript, or executable Luau for the tree; only the allowlisted document projection and separately validated generated runtime/hook scripts reach Studio.
 - Asset references: `apply_asset_reference` applies one exact, server-trusted Roblox asset ID to one inspected Studio instance. Its backend-only payload is `{ path, className, property, robloxAssetId, assetRecordId }`. Allowed targets are `ImageLabel.Image`, `ImageButton.Image`, `Decal.Texture`, `Texture.Texture`, `MeshPart.MeshId`, `MeshPart.TextureID`, `SpecialMesh.MeshId`, `SpecialMesh.TextureId`, `Sound.SoundId`, and `Animation.AnimationId`. The plugin snapshots before mutation, writes `rbxassetid://<id>`, reads the property back, and returns the previous/current value, changed instance, and snapshot receipt. Generic property/create commands cannot bypass this server-owned path, and browser-supplied asset IDs are never authoritative.
 - Coordination: `batch_operations` runs deterministic sub-operations and rolls back snapshots when `atomic` is true.
 
@@ -113,6 +118,97 @@ Every mutation of an existing `Script`, `LocalScript`, or `ModuleScript` must in
 Mutation snapshots are mandatory; a caller-provided `snapshot: false` is ignored. The plugin snapshots both the target and any missing parent path segments before it mutates Studio. A failed mutation returns a rollback receipt. `rolledBack: true` is emitted only after every snapshot is restored and its pre-mutation state is verified; an incomplete restore fails with `rollback_failed` and includes the per-path restore errors.
 
 Unknown top-level and nested command types fail with `STUDIO_TOOL_UNSUPPORTED`; they are never remapped to `inspect_place`. Plugin attestation advertises only executable handlers. `format_script`, `run_test_service`, `run_play_test`, and `stop_play_test` remain available only as structured compatibility errors for stale queued commands and are omitted from `supportedCommands`.
+
+## UI Artifact v3
+
+UI Creator compilation uses `apply_artifact` schema version `3`. The UI
+document remains canonical; the payload is a reproducible projection for one
+Studio apply and cannot be used to round-trip arbitrary Studio edits.
+
+```json
+{
+  "schemaVersion": 3,
+  "artifactId": "design_123",
+  "revision": "9f0f4d4bb8c2f30cd0a19aa1",
+  "kind": "ui",
+  "uiRoots": [
+    {
+      "rootId": "main",
+      "designId": "design_123",
+      "targetPath": "StarterGui/NexusRBX_UI/Shop_UI",
+      "expectedTreeHash": "a1b2c3d4",
+      "replaceModifiedRoot": false,
+      "treeHash": "<canonical-document-projection-sha256>",
+      "documentRevision": "9f0f4d4bb8c2f30cd0a19aa1",
+      "className": "ScreenGui",
+      "properties": {
+        "resetOnSpawn": false,
+        "ignoreGuiInset": true,
+        "displayOrder": 0,
+        "enabled": true
+      },
+      "nodes": []
+    }
+  ],
+  "files": [],
+  "operations": []
+}
+```
+
+V1 accepts exactly one root and at most 240 nodes with a maximum hierarchy
+depth of 32. The root must be a direct child of `StarterGui/NexusRBX_UI`.
+`artifactId`, `designId`, `rootId`, artifact `revision`, and
+`documentRevision` are required and cross-checked. Node IDs must be stable and
+unique; missing parents, cycles, unsupported classes, malformed constraints,
+reserved top-level runtime names, additional roots, nested target paths, and
+malformed hashes are rejected before queueing.
+
+Allowed node classes are `Frame`, `TextLabel`, `TextButton`, `ImageLabel`,
+`ImageButton`, `TextBox`, and `ScrollingFrame`. The projection also supports
+the compiler-owned allowlisted decorators and constraints: list/grid layout,
+padding, corners, strokes, two-stop gradients, aspect/size/text constraints,
+and `UIScale`. Image properties accept only an empty value or a canonical
+`rbxassetid://<positive-id>` reference resolved from the server-owned asset
+record. `ViewportFrame`, world-space UI, arbitrary Instances, imported model
+scripts, and document-provided executable code are rejected.
+
+On first apply, the target must not exist. On later applies, the plugin requires
+the opaque `treeHash` returned by the preceding successful Studio receipt as
+`expectedTreeHash`. The hash covers the complete managed descendant hierarchy,
+all properties emitted by the UI compiler, managed identity/revision
+attributes, and generated script source. A changed property, renamed node,
+added descendant, removed node, changed source, or changed managed identity
+therefore returns `ui_tree_conflict` before mutation. A root at the target path
+whose artifact, root, or design identity does not match returns
+`ui_foreign_collision`. Omitting the prior hash for an existing root returns
+`ui_tree_precondition_required`.
+
+`StarterGui/NexusRBX_UI` is a shared Folder stamped `NexusUiContainer = true`.
+The plugin may adopt an existing empty Folder after snapshotting it, but rejects
+a non-Folder or a populated, unstamped container as a foreign collision.
+
+`replaceModifiedRoot: true` is accepted only as the explicit “Replace Studio”
+choice. It bypasses a missing/stale tree hash but never takes ownership of a
+foreign root. “Keep Studio” performs no write. There is no implicit merge or
+Studio-to-browser import in v1.
+
+Before replacement, the plugin snapshots the complete previous root, including
+nodes, UI decorators/constraints, attributes, tags, image references, and the
+full source of generated scripts. The new native tree is created first; the
+generated interaction `LocalScript` and editable hook `ModuleScript` are then
+applied through the existing source-hash-aware artifact path. Any failure rolls
+back all UI and script snapshots in reverse dependency order. A rollback is not
+reported as successful until restored state hashes match the snapshots.
+
+The success receipt includes `uiRoots` entries with the resolved path, root,
+artifact and design identities, document revision, canonical document tree
+hash, actual Studio tree hash, sorted node IDs, node count, and generated script
+source hashes. It also includes the normal snapshot IDs and managed-file source
+hashes. Command-bound verification re-resolves the root and independently
+checks its class, identities, revision, exact node set/count, stored tree hash,
+recomputed tree hash, and generated script source. UI-only artifacts therefore
+produce an `artifact_ui_root` readback check instead of falling through to a
+generic path-existence check.
 
 ## Script Execution Context Gate
 
@@ -241,6 +337,21 @@ profiles or check IDs fail closed.
 28. Open or create a website project and confirm a fresh chat opens without selecting a Roblox game. Send an Agent prompt and confirm it reaches the sole paired Studio regardless of legacy project place metadata.
 29. Change the active website project while the plugin remains open. Confirm the next heartbeat refreshes the plugin conversation and plugin-submitted prompts appear only under the newly active project.
 30. Disconnect the plugin and confirm Ask and Plan still work while Agent shows “Connect Studio to apply changes.” Pair MCP alone and confirm it does not become the primary Agent target.
+
+### UI artifact v3 manual verification
+
+1. Install the current `.2-ui` plugin build, pair Studio, create a UI design, and apply it. Confirm `StarterGui/NexusRBX_UI/<design>` is a native editable `ScreenGui`, not a Folder or an opaque model.
+2. Inspect the root and nodes. Confirm the root has `AgentArtifactId`, `NexusRootId`, `NexusDesignId`, `NexusRevision`, `NexusDesiredTreeHash`, and `NexusTreeHash`; confirm every document node has `AgentArtifactId`, `NexusDesignId`, `NexusNodeId`, and `NexusRevision`.
+3. Confirm `NexusInteractions` is a `LocalScript`, `Hooks` is a `ModuleScript`, their source hashes appear in both `managedFiles` and the UI-root receipt, and no other document-provided script was created.
+4. Inspect the acknowledgement. Confirm `uiRoots[0]` contains the exact resolved path, node count and sorted node IDs, document revision/hash, Studio tree hash, and source hashes. Confirm `verification.evidence.checks` contains a successful `artifact_ui_root` check and successful generated-file checks.
+5. Reapply the unchanged design with the previous receipt’s Studio tree hash. Confirm the apply succeeds, produces a complete pre-replacement snapshot set, and returns a new verified receipt without duplicate roots or runtime scripts.
+6. Change one node property in Studio, then reapply with the old hash and `replaceModifiedRoot: false`. Confirm `ui_tree_conflict`, the current hash is returned, no snapshot is created, and nothing in the UI tree changes.
+7. Choose Keep Studio and confirm no command is queued. Then choose Replace Studio, confirm the request sets `replaceModifiedRoot: true`, the complete prior tree is snapshotted, and the canonical Nexus tree replaces it.
+8. Put an unmanaged `ScreenGui`, a Folder, or a managed root from another design at the target path. Confirm `ui_foreign_collision` even when explicit replacement is requested, with no mutation or ownership-attribute changes.
+9. After a successful replacement, run `restore_snapshot` (or `undo_last_batch`). Confirm the previous ScreenGui, every node/decorator/constraint, image reference, attributes, tags, and both script sources return, and every restored state hash verifies.
+10. Force a failure after the new tree is created but before all scripts finish (for example, with a controlled invalid test fixture). Confirm the command returns the specific UI mutation code plus a verified rollback receipt, and no partially applied root, script, or auto-created parent remains.
+11. Manually change text wrapping/alignment, font, gradient color/transparency/rotation, padding, layout direction/alignment, a size/text constraint, `UIScale`, or a generated script source. Confirm each change produces a different tree hash and blocks a stale non-force apply.
+12. Apply an image node with an unresolved/temporary URL and confirm the backend blocks Studio apply. Publish the image, compile again, and confirm Studio receives only the final `rbxassetid://<id>` value; attempt `rbxassetid://0` or an HTTP URL and confirm protocol validation removes/rejects it before Studio mutation.
 
 ## Firestore Notes
 

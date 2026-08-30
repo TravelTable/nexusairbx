@@ -31,6 +31,7 @@ import useTaskRuntime from "../../hooks/useTaskRuntime";
 import useActiveAgents from "../../hooks/useActiveAgents";
 import WorkspaceRibbon from "./WorkspaceRibbon";
 import AnimateWorkspace from "./AnimateWorkspace";
+import UiCreatorWorkspace from "./ui/UiCreatorWorkspace";
 import {
   getStudioCommand,
   getStudioManifest,
@@ -316,7 +317,8 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
   const requestedCreationMode = new URLSearchParams(locationSearch).get("mode");
   const canAccessAnimateWorkspace = Boolean(devOverride || billing.isAdmin || billing.flags?.isAdmin);
   const animateWorkspaceEnabled = canAccessAnimateWorkspace && settings.animateWorkspaceEnabled === true;
-  const creationMode = requestedCreationMode === "asset" || (requestedCreationMode === "animate" && animateWorkspaceEnabled)
+  const uiCreatorEnabled = String(process.env.REACT_APP_ROBLOX_UI_CREATOR_ENABLED || "true").toLowerCase() !== "false";
+  const creationMode = requestedCreationMode === "asset" || (requestedCreationMode === "ui" && uiCreatorEnabled) || (requestedCreationMode === "animate" && animateWorkspaceEnabled)
     ? requestedCreationMode
     : "agent";
 
@@ -324,10 +326,10 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     if (generatorMode !== "agent_build") {
       setGeneratorMode("agent_build", "mode_query");
     }
-    if ((requestedCreationMode === "script" || (requestedCreationMode === "animate" && !animateWorkspaceEnabled)) && navigateTo) {
+    if ((requestedCreationMode === "script" || (requestedCreationMode === "animate" && !animateWorkspaceEnabled) || (requestedCreationMode === "ui" && !uiCreatorEnabled)) && navigateTo) {
       navigateTo("/ai?mode=agent", { replace: true });
     }
-  }, [animateWorkspaceEnabled, generatorMode, navigateTo, requestedCreationMode, setGeneratorMode]);
+  }, [animateWorkspaceEnabled, generatorMode, navigateTo, requestedCreationMode, setGeneratorMode, uiCreatorEnabled]);
 
   const handleCreationModeChange = useCallback(
     (mode) => {
@@ -1902,6 +1904,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
       <WorkspaceRibbon
         mode={creationMode}
         onModeChange={handleCreationModeChange}
+        uiEnabled={uiCreatorEnabled}
         animateEnabled={animateWorkspaceEnabled}
         projectTitle={workspaceProjectTitle}
         chatTitle={chat.currentChatMeta?.title || "New chat"}
@@ -1928,7 +1931,22 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
             aria-hidden={projectSidebarIsModal ? "true" : undefined}
             inert={projectSidebarIsModal ? "" : undefined}
           >
-            {creationMode === "asset" ? (
+            {creationMode === "ui" ? (
+              <UiCreatorWorkspace
+                user={user}
+                projectId={currentProjectId}
+                projectTitle={workspaceProjectTitle}
+                modelVersion={settings.modelVersion}
+                studio={studio}
+                studioSessionId={studioCommandSessionId}
+                isStarterOrAbove={isStarterOrAbove}
+                onRequireStarter={() => starterPromo?.notifyStarterGate("Roblox UI Creator")}
+                onRequireAuth={() => handleAuthRequired?.(PENDING_AUTH_ACTIONS.RESTRICTED_GENERATION, "ui_creator")}
+                onBillingRefresh={refreshBilling}
+                notify={notify}
+                navigateTo={navigateTo}
+              />
+            ) : creationMode === "asset" ? (
               <AssetModeWorkspace prompt={prompt} setPrompt={setPrompt} onContinue={handleAssetHandoff} />
             ) : creationMode === "animate" ? (
               <AnimateWorkspace modelVersion={settings.modelVersion} onBillingRefresh={refreshBilling} />

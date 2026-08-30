@@ -691,7 +691,7 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
     }));
   });
 
-  test("uses document semantics and manages sidebar focus across open, Escape, and close", async () => {
+  test("uses document semantics and exposes project and chat navigation through the composer dock", () => {
     mockUseTaskRuntime.mockReturnValue({
       enabled: false,
       taskId: "",
@@ -703,53 +703,33 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
       selectTask: jest.fn(),
     });
 
-    function SidebarHarness() {
-      const [sidebarOpen, setSidebarOpen] = React.useState(false);
-      return (
-        <AgentWorkspaceLayout
-          controller={makeController({ sidebarOpen, handlers: { setSidebarOpen } })}
-        />
-      );
-    }
-
-    render(<SidebarHarness />);
+    render(<AgentWorkspaceLayout controller={makeController()} />);
 
     expect(screen.queryByRole("application")).toBeNull();
     const workspaceMain = screen.getByRole("main");
-    const sidebar = document.querySelector("#project-sidebar");
-    expect(sidebar).not.toBeNull();
-    expect(sidebar.hasAttribute("inert")).toBe(true);
-    expect(screen.queryByRole("button", { name: "First sidebar action" })).toBeNull();
+    expect(workspaceMain.hasAttribute("inert")).toBe(false);
+    expect(document.querySelector("#project-sidebar")).toBeNull();
 
-    const toggle = screen
-      .getAllByRole("button", { name: "Toggle project navigation" })
-      .find((button) => button.className.includes("h-11"));
-    expect(toggle).toBeTruthy();
-    expect(toggle.getAttribute("aria-controls")).toBe(sidebar.id);
-    expect(toggle.className).toContain("h-11");
-    expect(toggle.className).toContain("w-11");
-    fireEvent.click(toggle);
+    const { renderDockNavigation } = mockAgentChatPanel.mock.calls.at(-1)[0];
+    expect(renderDockNavigation).toEqual(expect.any(Function));
+    const onClose = jest.fn();
+    const projectsNavigation = renderDockNavigation({ view: "projects", onClose });
+    const chatsNavigation = renderDockNavigation({ view: "chats", onClose });
 
-    await waitFor(() => {
-      expect(sidebar.hasAttribute("inert")).toBe(false);
-      expect(sidebar.getAttribute("role")).toBe("dialog");
-      expect(sidebar.getAttribute("aria-modal")).toBe("true");
-      expect(workspaceMain.hasAttribute("inert")).toBe(true);
-      expect(workspaceMain.getAttribute("aria-hidden")).toBe("true");
-      expect(screen.getByRole("button", { name: "First sidebar action" })).toBe(document.activeElement);
-    });
-
-    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
-    expect(screen.getByRole("button", { name: "Last sidebar action" })).toBe(document.activeElement);
-    fireEvent.keyDown(document, { key: "Tab" });
-    expect(screen.getByRole("button", { name: "First sidebar action" })).toBe(document.activeElement);
-
-    fireEvent.keyDown(document, { key: "Escape" });
-    await waitFor(() => {
-      expect(sidebar.hasAttribute("inert")).toBe(true);
-      expect(workspaceMain.hasAttribute("inert")).toBe(false);
-      expect(toggle).toBe(document.activeElement);
-    });
+    expect(projectsNavigation.props).toEqual(expect.objectContaining({
+      isMobile: true,
+      onSelect: onClose,
+      onCollapse: onClose,
+      showProjectList: true,
+      showAllChats: false,
+    }));
+    expect(chatsNavigation.props).toEqual(expect.objectContaining({
+      isMobile: true,
+      onSelect: onClose,
+      onCollapse: onClose,
+      showProjectList: false,
+      showAllChats: true,
+    }));
   });
 
   test("treats obsolete Quick mode state as the normal Agent workspace", () => {
@@ -769,8 +749,10 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
       sidebarOpen: true,
     })} />);
 
-    expect(screen.getAllByRole("button", { name: "Toggle project navigation" }).length).toBeGreaterThan(0);
-    expect(document.querySelector("#project-sidebar")).not.toBeNull();
+    expect(mockAgentChatPanel.mock.calls.at(-1)[0]).toEqual(expect.objectContaining({
+      renderDockNavigation: expect.any(Function),
+    }));
+    expect(document.querySelector("#project-sidebar")).toBeNull();
   });
 
   test("routes generated OPEN_CODE_DRAWER content into the Stage code workspace", async () => {
@@ -867,7 +849,7 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
     expect(props.onSaveToCreations).toBeNull();
   });
 
-  test("reactively isolates an open sidebar when the viewport crosses into overlay mode", async () => {
+  test("closes project dock navigation after opening a project", async () => {
     mockUseTaskRuntime.mockReturnValue({
       enabled: false,
       taskId: "",
@@ -878,37 +860,19 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
       busyAction: "",
       selectTask: jest.fn(),
     });
-
-    const originalMatchMedia = window.matchMedia;
-    let changeListener = null;
-    let mobileMatches = false;
-    window.matchMedia = jest.fn(() => ({
-      matches: mobileMatches,
-      addEventListener: (_event, listener) => { changeListener = listener; },
-      removeEventListener: jest.fn(),
-    }));
-
-    const rendered = render(
-      <AgentWorkspaceLayout controller={makeController({ sidebarOpen: true })} />,
+    const openWorkspaceProject = jest.fn().mockResolvedValue(undefined);
+    render(
+      <AgentWorkspaceLayout controller={makeController({ handlers: { openWorkspaceProject } })} />,
     );
-    const sidebar = document.querySelector("#project-sidebar");
-    const workspaceMain = screen.getByRole("main");
-    expect(sidebar.getAttribute("role")).toBeNull();
-    expect(workspaceMain.hasAttribute("inert")).toBe(false);
 
-    mobileMatches = true;
-    act(() => changeListener({ matches: true }));
+    const { renderDockNavigation } = mockAgentChatPanel.mock.calls.at(-1)[0];
+    const onClose = jest.fn();
+    const projectsNavigation = renderDockNavigation({ view: "projects", onClose });
 
-    await waitFor(() => {
-      expect(sidebar.getAttribute("role")).toBe("dialog");
-      expect(sidebar.getAttribute("aria-modal")).toBe("true");
-      expect(workspaceMain.hasAttribute("inert")).toBe(true);
-      expect(workspaceMain.getAttribute("aria-hidden")).toBe("true");
-      expect(screen.getByRole("button", { name: "First sidebar action" })).toBe(document.activeElement);
-    });
+    await act(async () => projectsNavigation.props.onOpenProject("project_2"));
 
-    rendered.unmount();
-    window.matchMedia = originalMatchMedia;
+    expect(openWorkspaceProject).toHaveBeenCalledWith("project_2");
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   test("does not let Escape close the persistent desktop project navigation", () => {

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Copy, ImageIcon, ImagePlus, Layers, Library, RefreshCw, RotateCcw } from "../lib/icons";
 import { Button } from "../components/ui";
+import Modal from "../components/Modal";
 import AssetLifecycleBadge from "../components/assets/AssetLifecycleBadge";
 import AssetLifecycleTimeline from "../components/assets/AssetLifecycleTimeline";
 import CanonicalAssetPreview from "../components/assets/CanonicalAssetPreview";
@@ -25,6 +26,7 @@ import {
   verifyAssetInStudio,
 } from "../lib/assetPlatformApi";
 import { useBilling } from "../context/BillingContext";
+import { useRobloxConnection } from "../context/RobloxConnectionContext";
 import { useSettings } from "../context/SettingsContext";
 import "../components/assets/assetPlatform.css";
 import "../components/assets/assetLedgerOverrides.css";
@@ -187,6 +189,7 @@ export default function AssetDetailPage() {
   const { assetId = "" } = useParams();
   const navigate = useNavigate();
   const { user, authReady } = useBilling();
+  const { status: robloxStatus } = useRobloxConnection();
   const { settings } = useSettings();
   const [asset, setAsset] = useState(null);
   const [pack, setPack] = useState(null);
@@ -201,6 +204,7 @@ export default function AssetDetailPage() {
   const [implementationReceipt, setImplementationReceipt] = useState(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [publishingReviewOpen, setPublishingReviewOpen] = useState(false);
 
   useEffect(() => {
     if (authReady && !user) navigate("/signin", { replace: true, state: { from: `/assets/${assetId}` } });
@@ -264,6 +268,17 @@ export default function AssetDetailPage() {
   const canVerify = canAssetPlatformAction(capabilities, "verify_asset_in_studio");
   const canArchive = canAssetPlatformAction(capabilities, "archive_asset");
   const hasMutationAction = canGenerate || canValidate || canPublish || canAttach || canImplement || canArchive;
+  const robloxConnection = robloxStatus?.connection || robloxStatus || {};
+  const robloxConnected = robloxStatus?.connected === true || robloxConnection.connected === true;
+  const selectedCreator = robloxConnection.selectedCreator || null;
+  const selectedCreatorId = String(selectedCreator?.id || selectedCreator?.creatorId || "").trim();
+  const selectedCreatorType = String(selectedCreator?.type || selectedCreator?.creatorType || "").toLowerCase() === "group" ? "Group" : "User";
+  const publishingProjectId = asset?.sourceProjectId || context.selectedProjectId || context.project?.projectId || "";
+  const publishingUniverseId = asset?.universeId || context.selectedUniverseId || "";
+  const publishingPermissionReady = canPublish
+    && robloxConnected
+    && Boolean(selectedCreatorId)
+    && settings.robloxAssetUploadsEnabled;
   const studioHistory = useMemo(
     () => implementationHistory(asset, implementationReceipt),
     [asset, implementationReceipt]
@@ -351,6 +366,22 @@ export default function AssetDetailPage() {
     }
   };
 
+  const confirmRobloxPublishing = () => {
+    setPublishingReviewOpen(false);
+    return runAssetAction({
+      actionName: "publish_asset_to_roblox",
+      busyKey: "publish",
+      request: () => publishAssetToRoblox(asset.assetId, {
+        ...(publishingProjectId ? { projectId: publishingProjectId } : {}),
+        ...(publishingUniverseId ? { universeId: publishingUniverseId } : {}),
+        ...(selectedCreatorId ? { creatorTarget: { type: selectedCreatorType, id: selectedCreatorId } } : {}),
+      }),
+      successMessage: "Roblox publishing started. NexusRBX will keep tracking the operation.",
+      failureMessage: "The asset could not be published to Roblox.",
+      requiresUploadConsent: true,
+    });
+  };
+
   if (!authReady || !user || loading) {
     return (
       <main className="asset-platform-page">
@@ -392,6 +423,7 @@ export default function AssetDetailPage() {
         </header>
 
         {!hasMutationAction ? <div className="asset-inline-notice" role="status">This canonical record is available in read-only mode. Actions appear only when the server advertises the matching project capability.</div> : null}
+        {!asset.robloxAssetId && !canPublish ? <div className="asset-inline-notice" role="status">Roblox publishing is unavailable for the current environment or connection. The Nexus asset remains saved and previewable.</div> : null}
         {error ? <div className="asset-inline-notice asset-inline-notice--error" role="alert">{error}</div> : null}
         {notice ? <div className="asset-inline-notice asset-inline-notice--success" role="status">{notice}</div> : null}
 
@@ -417,14 +449,7 @@ export default function AssetDetailPage() {
                     variant="secondary"
                     icon={lifecycle === "upload_failed" ? RotateCcw : ImagePlus}
                     disabled={Boolean(busyAction)}
-                    onClick={() => runAssetAction({
-                      actionName: "publish_asset_to_roblox",
-                      busyKey: "publish",
-                      request: () => publishAssetToRoblox(asset.assetId),
-                      successMessage: "Roblox publishing started. NexusRBX will keep tracking the operation.",
-                      failureMessage: "The asset could not be published to Roblox.",
-                      requiresUploadConsent: true,
-                    })}
+                    onClick={() => setPublishingReviewOpen(true)}
                   >
                     {busyAction === "publish" ? "Publishing…" : lifecycle === "upload_failed" ? "Retry upload" : "Publish to Roblox"}
                   </Button>
@@ -503,14 +528,7 @@ export default function AssetDetailPage() {
                     <Button
                       size="sm"
                       disabled={Boolean(busyAction)}
-                      onClick={() => runAssetAction({
-                        actionName: "publish_asset_to_roblox",
-                        busyKey: "publish",
-                        request: () => publishAssetToRoblox(asset.assetId),
-                        successMessage: "Roblox publishing started. NexusRBX will keep tracking the operation.",
-                        failureMessage: "The asset could not be published to Roblox.",
-                        requiresUploadConsent: true,
-                      })}
+                      onClick={() => setPublishingReviewOpen(true)}
                     >
                       {busyAction === "publish" ? "Publishing…" : "Publish to Roblox"}
                     </Button>
@@ -728,6 +746,28 @@ export default function AssetDetailPage() {
           </section>
         </div>
       </div>
+      <Modal
+        isOpen={publishingReviewOpen}
+        onClose={() => setPublishingReviewOpen(false)}
+        title="Confirm Roblox publishing"
+        panelClassName="max-w-xl p-6"
+      >
+        <p className="mb-4 text-sm leading-relaxed">Review the exact external write before Nexus uploads this image to Roblox.</p>
+        <dl className="asset-detail-grid">
+          <div><dt>Asset name</dt><dd>{asset.name}</dd></div>
+          <div><dt>Creator target</dt><dd>{selectedCreatorId ? `${selectedCreator?.name || selectedCreatorType} (${selectedCreatorId})` : "No creator selected"}</dd></div>
+          <div><dt>Project</dt><dd>{publishingProjectId || "No project selected"}</dd></div>
+          <div><dt>Universe</dt><dd>{publishingUniverseId || "Project default"}</dd></div>
+          <div><dt>Estimated usage</dt><dd>One Roblox image upload</dd></div>
+          <div><dt>Estimated cost</dt><dd>No additional Nexus generation credits; Roblox upload quota applies</dd></div>
+          <div><dt>Permission</dt><dd>{publishingPermissionReady ? "Ready for explicit approval" : !robloxConnected ? "Roblox is not connected" : !selectedCreatorId ? "Choose a creator target" : !settings.robloxAssetUploadsEnabled ? "Auto Upload Assets is off" : "Publishing is unavailable"}</dd></div>
+          <div><dt>Current state</dt><dd>{lifecycle}</dd></div>
+        </dl>
+        <div className="mt-6 flex justify-end gap-3">
+          <Button variant="ghost" onClick={() => setPublishingReviewOpen(false)}>Cancel</Button>
+          <Button disabled={!publishingPermissionReady || Boolean(busyAction)} onClick={confirmRobloxPublishing}>Confirm upload</Button>
+        </div>
+      </Modal>
     </main>
   );
 }

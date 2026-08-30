@@ -35,4 +35,16 @@ describe("WorkspaceRibbon Animate visibility", () => {
     fireEvent.click(screen.getByRole("button", { name: "Animate" }));
     expect(baseProps.onModeChange).toHaveBeenCalledWith("animate");
   });
+
+  it("keeps the shared model control in the top ribbon for UI mode", () => {
+    render(
+      <WorkspaceRibbon
+        {...baseProps}
+        mode="ui"
+        modelControl={<button type="button">Choose model</button>}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Choose model" })).toBeInTheDocument();
+  });
 });
