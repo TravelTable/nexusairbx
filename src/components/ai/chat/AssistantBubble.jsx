@@ -76,6 +76,7 @@ export default function AssistantBubble({
   retrySourceMessage = null,
   retryRunId = null,
   onViewUi, // mapped to "open artifact in editor"
+  onOpenFile,
   onRefine,
   onApprovePlan,
   onClarifySubmit,
@@ -98,7 +99,7 @@ export default function AssistantBubble({
   if (m.stage === "plan" || m.stage === "plan_approved") {
     return (
       <BubbleShell activeMode={activeMode} grouped={grouped}>
-        <PlanCard message={m} onApprove={onApprovePlan} onEdit={onEditPlan} disabled={isBusy} />
+        <PlanCard message={m} onApprove={onApprovePlan} onEdit={onEditPlan} onOpenFile={onOpenFile} disabled={isBusy} />
       </BubbleShell>
     );
   }
@@ -146,9 +147,9 @@ export default function AssistantBubble({
         )}
 
         {m.summary ? (
-          <MarkdownMessage text={stripTags(m.summary)} />
+          <MarkdownMessage text={stripTags(m.summary)} onOpenFile={onOpenFile} />
         ) : m.content && !hasArtifact ? (
-          <MarkdownMessage text={stripTags(m.content)} />
+          <MarkdownMessage text={stripTags(m.content)} onOpenFile={onOpenFile} />
         ) : null}
       </div>
 

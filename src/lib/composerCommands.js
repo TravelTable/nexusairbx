@@ -58,7 +58,12 @@ export function filterComposerCommands(query = "", commands = COMPOSER_COMMANDS)
   return commands.filter((command) => {
     const id = String(command.id || "").toLowerCase();
     const label = String(command.label || "").toLowerCase().replace(/^@/, "");
-    return id.startsWith(q) || label.startsWith(q) || id.includes(q) || label.includes(q);
+    const description = String(command.description || "").toLowerCase();
+    return id.startsWith(q)
+      || label.startsWith(q)
+      || id.includes(q)
+      || label.includes(q)
+      || (command.kind === "file" && description.includes(q));
   });
 }
 
@@ -77,14 +82,43 @@ export function getActiveComposerMention(text = "", caret = 0) {
   return { start, end: pos, query };
 }
 
-export function applyComposerMention(text = "", mention, commandId) {
+export function applyComposerMention(text = "", mention, commandId, insertionToken = null) {
   const value = String(text || "");
+  const token = String(insertionToken || `@${commandId}`).trim();
   if (!mention || typeof mention.start !== "number") {
     const needsSpace = value && !/\s$/.test(value);
-    return `${value}${needsSpace ? " " : ""}@${commandId} `;
+    return `${value}${needsSpace ? " " : ""}${token} `;
   }
   const before = value.slice(0, mention.start);
   const after = value.slice(mention.end);
-  const insertion = `@${commandId} `;
+  const insertion = `${token} `;
   return `${before}${insertion}${after}`;
+}
+
+export function extractComposerFileReferences(text = "") {
+  const references = [];
+  const seen = new Set();
+  const matcher = /@\{([^}\r\n]+)\}/g;
+  let match = matcher.exec(String(text || ""));
+  while (match) {
+    const path = String(match[1] || "").trim();
+    const key = path.toLowerCase();
+    if (path && !seen.has(key)) {
+      seen.add(key);
+      references.push({ path, token: match[0] });
+    }
+    match = matcher.exec(String(text || ""));
+  }
+  return references;
+}
+
+export function removeComposerFileReference(text = "", path = "") {
+  const target = String(path || "").trim().toLowerCase();
+  if (!target) return String(text || "");
+  return String(text || "")
+    .replace(/@\{([^}\r\n]+)\}\s*/g, (token, candidate) => (
+      String(candidate || "").trim().toLowerCase() === target ? "" : token
+    ))
+    .replace(/[ \t]{2,}/g, " ")
+    .trimStart();
 }

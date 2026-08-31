@@ -26,6 +26,7 @@ export default function ChatView({
   profile,
   activeMode = "general",
   onViewUi,
+  onOpenFile,
   onQuickStart,
   onOpenTemplates,
   onStartGuide,
@@ -106,6 +107,7 @@ export default function ChatView({
                 activeMode={activeMode}
                 generationStage={generationStage}
                 onViewUi={onViewUi}
+                onOpenFile={onOpenFile}
                 onRefine={onRefine}
                 onFixUiAudit={onFixUiAudit}
                 onApprovePlan={onApprovePlan}

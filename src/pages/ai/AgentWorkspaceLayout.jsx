@@ -1348,6 +1348,45 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     />
   );
 
+  const chatReferenceFiles = [
+    ...(openedCodeArtifact?.files || []),
+    ...studioFiles,
+    ...(workspace.activeArtifact?.files || []),
+  ].filter((file, index, files) => {
+    const identity = String(file?.path || file?.name || "").toLowerCase();
+    return identity && files.findIndex((candidate) => (
+      String(candidate?.path || candidate?.name || "").toLowerCase() === identity
+    )) === index;
+  });
+
+  const handleOpenFileReference = (reference) => {
+    const requestedPath = String(reference?.path || reference || "").trim().toLowerCase();
+    if (!requestedPath) return;
+    const matches = (file) => [file?.path, file?.name]
+      .some((value) => String(value || "").trim().toLowerCase() === requestedPath);
+    const openedMatch = openedCodeArtifact?.files?.find(matches);
+    const studioMatch = studioFiles.find(matches);
+    const artifactMatch = workspace.activeArtifact?.files?.find(matches);
+    if (openedMatch) {
+      handleDockPanelChange("code");
+      return;
+    }
+    if (studioMatch) {
+      setActiveStudioFileId(studioMatch.id);
+      handleDockPanelChange("code");
+      return;
+    }
+    if (artifactMatch) {
+      workspace.openFile(workspace.activeArtifact?.id, artifactMatch.id);
+      handleDockPanelChange("code");
+      return;
+    }
+    notify?.({
+      message: "That referenced file is not loaded yet. Open it from Studio or generate it first.",
+      type: "info",
+    });
+  };
+
   const agentChat = (
     <div className="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col">
       <AgentChatPanel
@@ -1372,6 +1411,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         onRefine={onRefine}
         onStartRefine={onStartRefineCommand}
         onOpenArtifact={openArtifactOnStage}
+        onOpenFileReference={handleOpenFileReference}
         onQuickStart={handleQuickStart}
         onStartGuide={tutorial.shouldOfferTutorial ? tutorial.resumeTutorial : undefined}
         startGuideLabel={
@@ -1385,6 +1425,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         setRewindTarget={setRewindTarget}
         attachments={attachments}
         setAttachments={setAttachments}
+        referenceFiles={chatReferenceFiles}
         robloxImageUploading={robloxImageUploading}
         robloxImageUploads={robloxImageUploads}
         onSubmit={handleAgentPromptSubmit}

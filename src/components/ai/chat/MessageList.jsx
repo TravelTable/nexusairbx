@@ -145,6 +145,7 @@ function SingleMessageList({
   activeMode,
   generationStage,
   onViewUi,
+  onOpenFile,
   onRefine,
   onFixUiAudit,
   onApprovePlan,
@@ -267,6 +268,7 @@ function SingleMessageList({
                       : null
                   }
                   onViewUi={onViewUi}
+                  onOpenFile={onOpenFile}
                   onRefine={onRefine}
                   onFixUiAudit={onFixUiAudit}
                   onApprovePlan={onApprovePlan}

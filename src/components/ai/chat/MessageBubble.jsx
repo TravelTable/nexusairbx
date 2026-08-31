@@ -1,6 +1,28 @@
 import React from "react";
 import AssistantBubble from "./AssistantBubble";
+import FileReferenceTag from "./FileReferenceTag";
 import MessageActions from "./MessageActions";
+
+function UserMessageContent({ content, onOpenFile }) {
+  const text = String(content || "");
+  const parts = [];
+  const matcher = /@\{([^}\r\n]+)\}/g;
+  let cursor = 0;
+  let match = matcher.exec(text);
+  while (match) {
+    if (match.index > cursor) parts.push(text.slice(cursor, match.index));
+    const path = String(match[1] || "").trim();
+    parts.push(
+      <FileReferenceTag key={`${path}-${match.index}`} path={path} action="read" onOpenFile={onOpenFile}>
+        {path.split(/[\\/]/).pop() || path}
+      </FileReferenceTag>
+    );
+    cursor = match.index + match[0].length;
+    match = matcher.exec(text);
+  }
+  if (cursor < text.length) parts.push(text.slice(cursor));
+  return parts.length ? parts : text;
+}
 
 function MessageAttachments({ attachments }) {
   if (!Array.isArray(attachments) || attachments.length === 0) return null;
@@ -42,6 +64,7 @@ export default function MessageBubble({
   retrySourceMessage = null,
   retryRunId = null,
   onViewUi,
+  onOpenFile,
   onRefine,
   onFixUiAudit,
   onApprovePlan,
@@ -61,7 +84,7 @@ export default function MessageBubble({
           <MessageAttachments attachments={m.attachments} />
           <div className="rounded-[12px_12px_4px_12px] border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-hover)] px-3.5 py-[11px]">
             <div className="whitespace-pre-wrap text-[15px] font-normal leading-relaxed text-[var(--ds-text)]">
-              {m.content}
+              <UserMessageContent content={m.content} onOpenFile={onOpenFile} />
             </div>
           </div>
           <MessageActions
@@ -88,6 +111,7 @@ export default function MessageBubble({
       retrySourceMessage={retrySourceMessage}
       retryRunId={retryRunId}
       onViewUi={onViewUi}
+      onOpenFile={onOpenFile}
       onRefine={onRefine}
       onFixUiAudit={onFixUiAudit}
       onApprovePlan={onApprovePlan}

@@ -1,5 +1,5 @@
 import React from "react";
-import { Hash } from "lib/icons";
+import { FileCode, Hash } from "lib/icons";
 import { COMPOSER_COMMANDS, filterComposerCommands } from "../../../lib/composerCommands";
 
 export default function ComposerCommandMenu({
@@ -20,7 +20,7 @@ export default function ComposerCommandMenu({
     >
       <div className="flex items-center gap-1.5 border-b border-[var(--ds-border-subtle)] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--ds-text-muted)]">
         <Hash className="h-3 w-3" />
-        Commands
+        References &amp; commands
       </div>
       <ul className="max-h-56 overflow-y-auto py-1 scrollbar-subtle">
         {filtered.map((command, index) => {
@@ -40,8 +40,9 @@ export default function ComposerCommandMenu({
                   active ? "bg-[var(--ds-fill-hover)]" : "hover:bg-[var(--ds-fill-subtle)]"
                 }`}
               >
-                <span className="mt-0.5 font-mono text-[12px] font-semibold text-[var(--ds-info)]">
-                  {command.label}
+                <span className="mt-0.5 inline-flex min-w-0 items-center gap-1.5 font-mono text-[12px] font-semibold text-[var(--ds-info)]">
+                  {command.kind === "file" ? <FileCode className="h-3 w-3 shrink-0" /> : null}
+                  <span className="truncate">{command.label}</span>
                 </span>
                 <span className="min-w-0 flex-1 text-[11px] leading-snug text-[var(--ds-text-secondary)]">
                   {command.description}

@@ -113,6 +113,9 @@ describe("interactive planning cards", () => {
 
     render(<PlanCard message={message} onEdit={onEdit} />);
 
+    const plan = document.querySelector('[data-slot="plan"]');
+    expect(plan.className).toContain("bg-transparent");
+    expect(plan.className).not.toContain("var(--ds-plan)_8%");
     expect(screen.queryByRole("button", { name: "Approve & Build" })).toBeNull();
     expect(screen.getByText(/Reply with/)).toBeTruthy();
 

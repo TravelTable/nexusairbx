@@ -1,8 +1,10 @@
 import {
   COMPOSER_COMMANDS,
   applyComposerMention,
+  extractComposerFileReferences,
   filterComposerCommands,
   getActiveComposerMention,
+  removeComposerFileReference,
 } from "./composerCommands";
 
 describe("composerCommands", () => {
@@ -35,5 +37,14 @@ describe("composerCommands", () => {
   test("applies a mention replacement", () => {
     const mention = getActiveComposerMention("fix @a", 7);
     expect(applyComposerMention("fix @a", mention, "asset")).toBe("fix @asset ");
+  });
+
+  test("applies, extracts, and removes workspace file references", () => {
+    const mention = getActiveComposerMention("inspect @invent", 15);
+    const path = "ServerScriptService/InventoryService.server.lua";
+    const prompt = applyComposerMention("inspect @invent", mention, "workspace-file-1", `@{${path}}`);
+    expect(prompt).toBe(`inspect @{${path}} `);
+    expect(extractComposerFileReferences(prompt)).toEqual([{ path, token: `@{${path}}` }]);
+    expect(removeComposerFileReference(prompt, path)).toBe("inspect ");
   });
 });

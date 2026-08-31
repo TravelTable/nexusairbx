@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   AlertTriangle,
   Check,
   ChevronDown,
   Edit,
+  FileCode,
   Loader,
   X,
 } from "lib/icons";
@@ -21,8 +22,10 @@ import { useMotionPresence } from "../../../hooks/useMotionPresence";
 import {
   COMPOSER_COMMANDS,
   applyComposerMention,
+  extractComposerFileReferences,
   filterComposerCommands,
   getActiveComposerMention,
+  removeComposerFileReference,
 } from "../../../lib/composerCommands";
 import { messageHasRefineableFiles } from "../../../lib/chatRefine";
 import { BorderBeam } from "../../ui/border-beam";
@@ -297,6 +300,26 @@ function FileContextChip({ file, index, onRemove }) {
   );
 }
 
+function FileReferenceContextChip({ reference, onRemove }) {
+  const path = String(reference?.path || "");
+  const name = path.split(/[\\/]/).pop() || path;
+  return (
+    <div className="relative flex h-7 max-w-[220px] shrink-0 items-center gap-1.5 rounded-md border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] pl-2 pr-7 transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up" title={path}>
+      <FileCode className="h-3 w-3 shrink-0 text-[var(--ds-accent)]" />
+      <span className="min-w-0 truncate font-mono text-[10px] font-semibold text-[var(--ds-text)]">{name}</span>
+      <button
+        type="button"
+        onClick={() => onRemove(path)}
+        className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-1 text-[var(--ds-accent)] transition-colors hover:bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] hover:text-[var(--ds-danger)] focus-ring"
+        aria-label={`Remove file reference ${path}`}
+        title={`Remove ${path}`}
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </div>
+  );
+}
+
 function RobloxAssetContextChip({ asset, onRemove }) {
   const name = asset?.name || `Asset ${asset?.assetId}`;
   const type = asset?.assetType || "Asset";
@@ -328,6 +351,7 @@ export default function ChatComposer({
   setPrompt,
   attachments = [],
   setAttachments,
+  referenceFiles = [],
   robloxImageUploading = false,
   robloxImageUploads = [],
   onSubmit,
@@ -494,7 +518,27 @@ export default function ChatComposer({
   const activeOperationStatus = operationState?.active?.status || operationState?.lastStatus || null;
   const operationFailed = ["failed", "error"].includes(String(activeOperationStatus || "").toLowerCase());
   const queuedOperations = Array.isArray(operationState?.queue) ? operationState.queue : [];
-  const mentionCommands = filterComposerCommands(mentionQuery, COMPOSER_COMMANDS);
+  const referenceCommands = useMemo(() => {
+    const seen = new Set();
+    return (Array.isArray(referenceFiles) ? referenceFiles : [])
+      .map((file, index) => {
+        const path = String(file?.path || file?.name || "").trim();
+        if (!path || seen.has(path.toLowerCase())) return null;
+        seen.add(path.toLowerCase());
+        return {
+          id: `workspace-file-${index + 1}`,
+          label: String(file?.name || path.split(/[\\/]/).pop() || path),
+          description: path,
+          action: "reference_file",
+          kind: "file",
+          insertionToken: `@{${path}}`,
+        };
+      })
+      .filter(Boolean)
+      .slice(0, 60);
+  }, [referenceFiles]);
+  const mentionCommands = filterComposerCommands(mentionQuery, [...COMPOSER_COMMANDS, ...referenceCommands]);
+  const fileReferences = extractComposerFileReferences(prompt);
   const contextItems = [
     ...(studioEnabled ? [{ kind: "studio", key: "studio-target" }] : []),
     ...robloxImageUploads.map((upload) => ({
@@ -507,6 +551,11 @@ export default function ChatComposer({
       key: `file-${file?.name || "attachment"}-${index}`,
       file,
       index,
+    })),
+    ...fileReferences.map((reference) => ({
+      kind: "file-reference",
+      key: `file-reference-${reference.path}`,
+      reference,
     })),
     ...robloxProjectAssets.map((asset) => ({
       kind: "asset",
@@ -663,7 +712,7 @@ export default function ChatComposer({
   const applyMentionCommand = useCallback(
     (command) => {
       if (!command) return;
-      const next = applyComposerMention(prompt, mentionRange, command.id);
+      const next = applyComposerMention(prompt, mentionRange, command.id, command.insertionToken);
       setPrompt(next);
       setMentionOpen(false);
       setMentionQuery("");
@@ -674,7 +723,8 @@ export default function ChatComposer({
         const textarea = textareaRef.current;
         if (!textarea) return;
         textarea.focus();
-        const caret = mentionRange ? mentionRange.start + command.id.length + 2 : next.length;
+        const insertedToken = String(command.insertionToken || `@${command.id}`);
+        const caret = mentionRange ? mentionRange.start + insertedToken.length + 1 : next.length;
         textarea.setSelectionRange(caret, caret);
       });
     },
@@ -683,6 +733,10 @@ export default function ChatComposer({
 
   const removeAttachment = (index) => {
     setAttachments((current) => current.filter((_, itemIndex) => itemIndex !== index));
+  };
+
+  const removeFileReference = (path) => {
+    setPrompt(removeComposerFileReference(prompt, path));
   };
 
   const openAttachmentControl = () => {
@@ -751,6 +805,9 @@ export default function ChatComposer({
     }
     if (item.kind === "file") {
       return <FileContextChip key={item.key} file={item.file} index={item.index} onRemove={removeAttachment} />;
+    }
+    if (item.kind === "file-reference") {
+      return <FileReferenceContextChip key={item.key} reference={item.reference} onRemove={removeFileReference} />;
     }
     return <RobloxAssetContextChip key={item.key} asset={item.asset} onRemove={onRemoveProjectAsset} />;
   };

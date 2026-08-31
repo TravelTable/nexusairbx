@@ -347,7 +347,7 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
               onChange={(event) => updateCustomAnswer(event.target.value)}
               placeholder={activeQuestion.placeholder || "Describe what you have in mind…"}
               aria-label={`Custom answer for ${activeQuestion.question || activeQuestion.prompt || `question ${activeQuestionIndex + 1}`}`}
-              className="min-h-[48px] w-full rounded-xl border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-3.5 py-2.5 text-[14px] text-[var(--ds-text)] placeholder:text-[var(--ds-text-muted)] focus:border-[var(--ds-accent-border)] focus:outline-none focus:ring-2 focus:ring-[var(--ds-focus-ring)]"
+              className="min-h-[48px] w-full rounded-xl border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] px-3.5 py-2.5 text-[14px] text-[var(--ds-text)] placeholder:text-[var(--ds-text-muted)] focus:border-[var(--ds-accent-border)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ds-focus-ring)]"
             />
           </label>
         ) : null}
@@ -399,7 +399,7 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
  * PlanCard: rendered for assistant messages with stage "plan" / "plan_approved".
  * Shows the build summary + steps with a single Approve & Build action.
  */
-export function PlanCard({ message, onApprove, onEdit, disabled }) {
+export function PlanCard({ message, onApprove, onEdit, onOpenFile, disabled }) {
   const steps = Array.isArray(message.aiSteps) ? message.aiSteps : [];
   const assumptions = Array.isArray(message.aiAssumptions) ? message.aiAssumptions : [];
   const planMarkdown = String(message.planMarkdown || "").trim();
@@ -411,7 +411,7 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
   return (
     <Plan
       defaultOpen
-      className="border-[color-mix(in_srgb,var(--ds-plan)_40%,transparent)] bg-[color-mix(in_srgb,var(--ds-plan)_8%,transparent)]"
+      className="border-[color-mix(in_srgb,var(--ds-plan)_40%,transparent)] bg-transparent"
     >
       <PlanHeader className="pb-4">
         <div className="space-y-1">
@@ -435,7 +435,7 @@ export function PlanCard({ message, onApprove, onEdit, disabled }) {
 
       <PlanContent className="space-y-4 pt-0">
         {hasMarkdownPlan ? (
-          <MarkdownMessage text={planMarkdown} />
+          <MarkdownMessage text={planMarkdown} onOpenFile={onOpenFile} />
         ) : (
           <>
             {message.aiSummary && (

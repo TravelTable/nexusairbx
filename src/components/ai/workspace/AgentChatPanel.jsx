@@ -26,6 +26,7 @@ export default function AgentChatPanel({
   onRefine,
   onStartRefine,
   onOpenArtifact,
+  onOpenFileReference,
   onQuickStart,
   onStartGuide,
   startGuideLabel,
@@ -82,6 +83,7 @@ export default function AgentChatPanel({
   setRewindTarget,
   attachments,
   setAttachments,
+  referenceFiles = [],
   robloxImageUploading = false,
   robloxImageUploads = [],
   onSubmit,
@@ -170,6 +172,7 @@ export default function AgentChatPanel({
             onClarifySubmit={onClarifySubmit}
             onEditPlan={onEditPlan}
             onViewUi={onOpenArtifact}
+            onOpenFile={onOpenFileReference}
             onRefine={onRefine}
             onQuickStart={onQuickStart}
             onStartGuide={onStartGuide}
@@ -208,6 +211,7 @@ export default function AgentChatPanel({
           setPrompt={setPrompt}
           attachments={attachments}
           setAttachments={setAttachments}
+          referenceFiles={referenceFiles}
           robloxImageUploading={robloxImageUploading}
           robloxImageUploads={robloxImageUploads}
           onSubmit={handleComposerSubmit}

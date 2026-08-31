@@ -280,6 +280,7 @@ export const MessageResponse = memo(({
   <Streamdown
     className={cn("ai-message-response size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0", className)}
     plugins={streamdownPlugins}
+    controls={{ mermaid: { download: true, copy: true, fullscreen: true, panZoom: true } }}
     {...props} />
 ), (prevProps, nextProps) =>
   prevProps.children === nextProps.children &&
