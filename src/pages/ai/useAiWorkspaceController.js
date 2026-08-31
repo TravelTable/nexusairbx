@@ -135,9 +135,12 @@ export function evaluateIntentAwareStudioSubmissionPreflight({ prompt, ...studio
   if (mode === "ask" || mode === "plan" || !shouldRequireStudioPlaceSelection(prompt)) {
     return { status: "ready" };
   }
-  const pluginConnected = studioOptions.connected === true
-    && studioOptions.connectionType === STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE;
-  return pluginConnected
+  const supportedTransportConnected = studioOptions.connected === true
+    && [
+      STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE,
+      STUDIO_CONNECTION_TYPES.MCP_LOCAL,
+    ].includes(studioOptions.connectionType);
+  return supportedTransportConnected
     ? { status: "ready" }
     : { status: "blocked", message: "Connect Studio to apply changes." };
 }
@@ -1293,7 +1296,11 @@ export function useAiWorkspaceController() {
         activeConversationMode === "agent"
       ) {
         const connectionType = getStudioConnectionType(studioConnection);
-        if (!studioConnection.connected || connectionType !== STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE) {
+        const supportedTransportConnected = studioConnection.connected && [
+          STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE,
+          STUDIO_CONNECTION_TYPES.MCP_LOCAL,
+        ].includes(connectionType);
+        if (!supportedTransportConnected) {
           const connectionMessage = "Connect Studio to apply changes.";
           notify({ message: connectionMessage, type: "error" });
           throw new Error(connectionMessage);
@@ -1379,7 +1386,7 @@ export function useAiWorkspaceController() {
         setRefineTarget(null);
         const ok = await unified.refineArtifact(target, currentPrompt, workspace.projectArtifactSnapshot, {
           ...effectiveSubmissionOptions,
-          refineMode: studioConnection.pluginConnected ? "studio" : "workspace",
+          refineMode: studioConnection.connected ? "studio" : "workspace",
         });
         if (!ok) setRefineTarget(target);
         return;

@@ -439,13 +439,14 @@ export default function ChatComposer({
     }
   }, [openBuildOptions, controlsOpen]);
   const canSendWithContext = Boolean(prompt?.trim()) || attachments.length > 0 || robloxProjectAssets.length > 0;
-  const primaryPluginConnected = Boolean(
-    studioConnected && studioConnectionType !== "mcp_local"
+  const studioRuntimeConnected = Boolean(
+    studioConnected && ["plugin_bridge", "mcp_local"].includes(studioConnectionType)
   );
+  const studioTransportLabel = studioConnectionType === "mcp_local" ? "Studio MCP" : "Studio plugin";
   const studioBuildBlocked =
     studioConnectionRequired &&
     ["agent", "debug"].includes(normalizedMode) &&
-    !primaryPluginConnected;
+    !studioRuntimeConnected;
   const studioBlockerMessage = "Connect Studio to apply changes.";
 
   useEffect(() => {
@@ -695,9 +696,9 @@ export default function ChatComposer({
   const renderContextItem = (item) => {
     if (item.kind === "studio") {
       return (
-        <span key={item.key} className={`inline-flex h-7 items-center gap-1.5 rounded-md border px-2 text-[10px] font-bold ${primaryPluginConnected ? "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]" : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)]"}`} title={primaryPluginConnected ? "The paired Studio plugin is the execution target" : "Connect the Studio plugin to apply changes"}>
-          {primaryPluginConnected ? <Check className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
-          {primaryPluginConnected ? "Studio connected" : "Studio disconnected"}
+        <span key={item.key} className={`inline-flex h-7 items-center gap-1.5 rounded-md border px-2 text-[10px] font-bold ${studioRuntimeConnected ? "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]" : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)]"}`} title={studioRuntimeConnected ? `The connected ${studioTransportLabel} is the execution target` : "Connect Studio to apply changes"}>
+          {studioRuntimeConnected ? <Check className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+          {studioRuntimeConnected ? "Studio connected" : "Studio disconnected"}
         </span>
       );
     }

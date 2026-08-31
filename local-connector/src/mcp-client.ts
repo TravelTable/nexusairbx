@@ -70,6 +70,10 @@ export class RobloxStudioMcpClient implements McpClientLike {
     try {
       await client.connect(transport, this.requestOptions(signal));
     } catch (error) {
+      this.options.logger.debug("Roblox Studio MCP handshake failed.", {
+        name: error instanceof Error ? error.name : "UnknownError",
+        message: error instanceof Error ? error.message : String(error),
+      });
       await this.disconnect();
       throw new ConnectorError("MCP_CONNECT_FAILED", "Could not connect to Roblox Studio MCP.", {
         retryable: true,

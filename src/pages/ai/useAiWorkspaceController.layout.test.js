@@ -37,7 +37,7 @@ describe("Studio conversation deep links", () => {
   });
 });
 
-describe("AI workspace single-plugin gate", () => {
+describe("AI workspace Studio transport gate", () => {
   test("does not block projectless conversation just because Studio is connected", () => {
     expect(shouldRequireStudioPlaceSelection(
       'Reply with exactly "AUDIT CHAT OK". Do not use Studio, create files, or create assets.'
@@ -54,14 +54,14 @@ describe("AI workspace single-plugin gate", () => {
     })).toEqual({ status: "ready" });
   });
 
-  test("still requires the Studio plugin for implementation requests", () => {
+  test("still requires a live Studio transport for implementation requests", () => {
     expect(shouldRequireStudioPlaceSelection("Build a round system"))
       .toBe(true);
     expect(shouldRequireStudioPlaceSelection("Fix the inventory bug"))
       .toBe(true);
   });
 
-  test("allows Ask and Plan, accepts the plugin, and excludes MCP as primary", () => {
+  test("allows Ask and Plan and accepts either supported Studio transport", () => {
     expect(studioPlaceSelectionMessage()).toBe("Connect Studio to apply changes.");
     expect(evaluateIntentAwareStudioSubmissionPreflight({
       prompt: "Build a round system", mode: "ask", connected: false,
@@ -74,6 +74,9 @@ describe("AI workspace single-plugin gate", () => {
     })).toEqual({ status: "ready" });
     expect(evaluateIntentAwareStudioSubmissionPreflight({
       prompt: "Build a round system", mode: "agent", connected: true, connectionType: "mcp_local",
+    })).toEqual({ status: "ready" });
+    expect(evaluateIntentAwareStudioSubmissionPreflight({
+      prompt: "Build a round system", mode: "agent", connected: true, connectionType: "unknown",
     })).toEqual({ status: "blocked", message: "Connect Studio to apply changes." });
   });
 });
