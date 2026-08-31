@@ -408,6 +408,29 @@ describe("StudioPairControl", () => {
     expect(screen.getByText(/NexusRBXStudioBridge\.plugin\.lua/i)).toBeTruthy();
   });
 
+  test("shows the update gate for an accepted read-only legacy release", () => {
+    const connection = normalizeStudioConnectionSnapshot({
+      pluginStatus: {
+        compatibility: {
+          status: "compatible",
+          acceptedRelease: true,
+          currentRelease: false,
+        },
+        sessions: [{
+          id: "plugin_legacy_read_only",
+          connectionType: "plugin_bridge",
+          status: "connected",
+          live: true,
+        }],
+      },
+    });
+
+    render(<StudioPairControl connection={connection} refresh={jest.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: /Studio · Update/i }));
+
+    expect(screen.getAllByText("Studio plugin update required").length).toBeGreaterThan(0);
+  });
+
   test("makes a missing Create Instance command recoverable without disconnecting", () => {
     const refresh = jest.fn();
     const connection = normalizeStudioConnectionSnapshot({

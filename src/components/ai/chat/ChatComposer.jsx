@@ -487,19 +487,25 @@ export default function ChatComposer({
   const normalizedStudioPlaceName = String(studioPlaceName || "").trim();
   const studioStatusLabel = studioRuntimeConnected
     ? `Studio ready${normalizedStudioPlaceName ? ` — ${normalizedStudioPlaceName}` : ""}`
-    : studioConnectionState === "mcp"
+    : studioConnectionState === "plugin_update_required"
+      ? "Studio plugin update required"
+      : studioConnectionState === "mcp"
       ? "Studio plugin required"
       : "Studio disconnected";
   const studioStatusTitle = studioRuntimeConnected
     ? `${normalizedStudioPlaceName || "The active Studio place"} is the verified execution project`
-    : studioConnectionState === "mcp"
+    : studioConnectionState === "plugin_update_required"
+      ? "Install the current NexusRBX Studio plugin before starting place work"
+      : studioConnectionState === "mcp"
       ? "MCP is available for auxiliary tools, but the NexusRBX Studio plugin is required for execution"
       : "Connect the NexusRBX Studio plugin to apply changes";
   const studioBuildBlocked =
     studioConnectionRequired &&
     ["agent", "debug"].includes(normalizedMode) &&
     !studioRuntimeConnected;
-  const studioBlockerMessage = "Connect Studio to apply changes.";
+  const studioBlockerMessage = studioConnectionState === "plugin_update_required"
+    ? "Update the Studio plugin to apply changes."
+    : "Connect Studio to apply changes.";
 
   useEffect(() => {
     if (!studioBuildBlocked) setStudioAlertDismissed(false);

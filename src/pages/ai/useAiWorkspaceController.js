@@ -1293,7 +1293,7 @@ export function useAiWorkspaceController() {
         activeConversationMode === "agent"
       ) {
         const connectionType = getStudioConnectionType(studioConnection);
-        const supportedTransportConnected = studioConnection.connected
+        const supportedTransportConnected = (studioConnection.executionReady ?? studioConnection.connected)
           && connectionType === STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE;
         if (!supportedTransportConnected) {
           const connectionMessage = "Connect Studio to apply changes.";
@@ -1446,7 +1446,7 @@ export function useAiWorkspaceController() {
       const studioPreflight = evaluateIntentAwareStudioSubmissionPreflight({
         prompt: currentPrompt,
         studioEnabled,
-        connected: studioConnection.connected,
+        connected: studioConnection.executionReady ?? studioConnection.connected,
         connectionType: getStudioConnectionType(studioConnection),
         mode: activeConversationMode,
       });

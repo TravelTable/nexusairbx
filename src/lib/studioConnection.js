@@ -212,6 +212,8 @@ export function normalizeStudioPluginCompatibility(value = null) {
     expectedProtocolVersion,
     installedBuildIdentity: raw.installedBuildId || raw.installedBuildIdentity || value?.buildId || value?.buildIdentity || value?.studio?.buildId || value?.studio?.buildIdentity || null,
     expectedBuildIdentity: raw.expectedBuildId || raw.expectedBuildIdentity || null,
+    acceptedRelease: typeof raw.acceptedRelease === "boolean" ? raw.acceptedRelease : null,
+    currentRelease: typeof raw.currentRelease === "boolean" ? raw.currentRelease : null,
     reasonCode: raw.reasonCode || null,
     reasonCodes: Array.isArray(raw.reasonCodes)
       ? raw.reasonCodes
@@ -352,6 +354,11 @@ export function normalizeStudioConnectionSnapshot({ pluginStatus = null, mcpStat
   const manifestSession = compatiblePluginSession;
   const latestMcpSession = mcpSession || selectMcpStudioSession(sessions, { liveOnly: false });
   const pluginConnected = Boolean(pluginSession);
+  const pluginMutationReady = Boolean(
+    pluginSession
+    && isRunnableStudioPluginCompatibility(compatibility.status)
+    && compatibility.currentRelease !== false
+  );
   const mcpConnected = Boolean(mcpSession);
   const connectorDetected = firstReportedBoolean(
     latestMcpSession?.connectorLive,
@@ -405,8 +412,12 @@ export function normalizeStudioConnectionSnapshot({ pluginStatus = null, mcpStat
     // or choose the project target by itself.
     connected: pluginConnected,
     transportConnected: pluginConnected || mcpConnected,
-    executionReady: pluginConnected,
-    readinessState: pluginConnected ? "ready" : (mcpConnected ? "plugin_required" : "disconnected"),
+    executionReady: pluginMutationReady,
+    readinessState: pluginMutationReady
+      ? "ready"
+      : pluginConnected && compatibility.currentRelease === false
+        ? "plugin_update_required"
+        : (mcpConnected ? "plugin_required" : "disconnected"),
     activePlaceName: activePlaceName || null,
     sessionId: getStudioSessionId(activeSession),
     connectionType: activeSession ? getStudioConnectionType(activeSession) : null,

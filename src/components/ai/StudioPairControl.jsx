@@ -340,7 +340,10 @@ export default function StudioPairControl({
   const compatibility =
     connection?.compatibility || pluginSession?.compatibility || {};
   const pluginUpdateRequired =
-    pluginConnected && compatibility.status === "update_required";
+    pluginConnected && (
+      compatibility.status === "update_required" ||
+      compatibility.currentRelease === false
+    );
   const pluginRepairing =
     pluginConnected && compatibility.status === "repairing";
   const pluginDegraded = pluginConnected && compatibility.status === "degraded";

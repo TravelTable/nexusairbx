@@ -163,6 +163,32 @@ describe("studio connection selection", () => {
     expect(snapshot.mcpSession.id).toBe("mcp");
   });
 
+  test("keeps a legacy plugin connected for inspection but blocks game mutations", () => {
+    const snapshot = normalizeStudioConnectionSnapshot({
+      pluginStatus: {
+        compatibility: {
+          status: "compatible",
+          acceptedRelease: true,
+          currentRelease: false,
+          installedBuildId: "nexusrbx-studio-legacy",
+          expectedBuildId: "nexusrbx-studio-current",
+        },
+        sessions: [{
+          id: "plugin_legacy",
+          connectionType: "plugin_bridge",
+          status: "connected",
+          live: true,
+        }],
+      },
+    });
+
+    expect(snapshot.connected).toBe(true);
+    expect(snapshot.pluginConnected).toBe(true);
+    expect(snapshot.executionReady).toBe(false);
+    expect(snapshot.readinessState).toBe("plugin_update_required");
+    expect(snapshot.compatibility.currentRelease).toBe(false);
+  });
+
   test("keeps a live MCP-only session auxiliary", () => {
     const snapshot = normalizeStudioConnectionSnapshot({
       mcpStatus: {

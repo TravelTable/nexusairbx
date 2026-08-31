@@ -380,6 +380,21 @@ describe("ChatComposer compact interactions", () => {
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 
+  test("explains when a connected legacy plugin must be updated before building", () => {
+    renderComposer({
+      prompt: "Build a running game",
+      studioEnabled: true,
+      studioConnected: false,
+      studioConnectionType: "plugin_bridge",
+      studioConnectionState: "plugin_update_required",
+    });
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Update the Studio plugin to apply changes."
+    );
+    expect(screen.getByText("Studio plugin update required")).toBeInTheDocument();
+  });
+
   test("opens Studio connection from the disconnected recovery action", () => {
     const onStudioConnectionOpen = jest.fn();
     renderComposer({

@@ -1110,13 +1110,17 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
       });
   };
 
+  const studioExecutionReady = Boolean(
+    studio?.executionReady ?? studio?.connected
+  );
+
   const taskSubmissionOptions = useMemo(
     () => ({
       projectId: currentProjectId,
-      studioConnected: Boolean(studio?.connected),
+      studioConnected: studioExecutionReady,
       targeting: {
         projectId: currentProjectId || null,
-        studioConnected: Boolean(studio?.connected),
+        studioConnected: studioExecutionReady,
       },
       activeTaskId: taskRuntime.taskId || "",
       showPlan: chat.activeMode === "plan",
@@ -1125,7 +1129,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     [
       chat.activeMode,
       currentProjectId,
-      studio?.connected,
+      studioExecutionReady,
       taskRuntime.selectTask,
       taskRuntime.taskId,
     ]
@@ -1469,10 +1473,12 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         isDockBuildOptionsOpen={dockBuildOptionsOpen}
         onDockBuildOptionsClose={handleCloseDockBuildOptions}
         renderDockNavigation={renderDockNavigation}
-        studioConnected={studio?.connected}
+        studioConnected={studioExecutionReady}
         studioPlaceName={studio?.activePlaceName}
         studioConnectionType={studio?.connectionType}
-        studioConnectionState={studio?.connectionState}
+        studioConnectionState={studio?.readinessState === "plugin_update_required"
+          ? "plugin_update_required"
+          : studio?.connectionState}
         studioCapabilities={studioCapabilities}
         studioCollaborators={studio?.collaborators}
         studioLoading={studio?.loading}
