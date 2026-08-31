@@ -1,6 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  ArrowRight,
+  Check,
+  ChevronDown,
+  CircleHelp,
+  Minus,
+  Plus,
+  Sparkles,
+} from "lucide-react";
 import publicPlanCatalog from "../../src/data/publicPlanCatalog.json";
 import styles from "./PricingWorkspace.module.css";
 
@@ -36,14 +45,53 @@ const featureLabels = {
   FREE: ["Nexus Auto", "1 task", "7-day history", "1 project"],
   STARTER: ["Model choice", "2 tasks", "30-day history", "3 projects"],
   PRO: ["More usage", "Premium models", "Icon Generator", "90-day history"],
-  PRO_PLUS: ["Highest solo usage", "Premium models", "Icon Generator", "90-day history"],
+  PRO_PLUS: [
+    "Highest solo usage",
+    "Premium models",
+    "Icon Generator",
+    "90-day history",
+  ],
   TEAM: ["Pooled usage", "Premium models", "Icon Generator", "2–50 seats"],
 };
+
+const finderGroups = [
+  {
+    label: "Builder",
+    help: "Who is building? Choose solo for one creator or team for shared billing.",
+    stateKey: "teamMode",
+    options: [
+      ["solo", "Just me"],
+      ["team", "A team"],
+    ],
+  },
+  {
+    label: "Pace",
+    help: "How often will you run reviewed builds? This changes the suggested capacity.",
+    stateKey: "pace",
+    options: [
+      ["explore", "Exploring"],
+      ["regular", "Regularly"],
+      ["heavy", "Frequently"],
+    ],
+  },
+  {
+    label: "Focus",
+    help: "Choose the workflow you expect to use most. Every plan can still access the core creator flow.",
+    stateKey: "focus",
+    options: [
+      ["scripts", "Scripts"],
+      ["agent", "Agent builds"],
+      ["assets", "Assets"],
+    ],
+  },
+];
 
 function DevTip({ label, children }) {
   return (
     <details className={styles.devTip}>
-      <summary aria-label={label}>?</summary>
+      <summary aria-label={label} title={label}>
+        <CircleHelp aria-hidden="true" size={15} strokeWidth={1.8} />
+      </summary>
       <div role="note">{children}</div>
     </details>
   );
@@ -71,32 +119,42 @@ function priceRecord(plan, interval, seats = 1) {
       amount: "$0",
       cadence: "forever",
       bill: "No billing details required",
+      savings: null,
     };
   }
+
   if (interval === "year" && plan.yearly != null) {
+    const yearlySavings = plan.monthly * 12 - plan.yearly;
     return {
       amount: money((plan.yearly / 12) * (plan.perSeat ? seats : 1)),
       cadence: plan.perSeat ? `/ month for ${seats} seats` : "/ month",
       bill: plan.perSeat
         ? `${money(plan.yearly * seats)} billed yearly · ${money(plan.yearly)} per user`
         : `${money(plan.yearly)} billed yearly`,
+      savings: plan.perSeat
+        ? `Save ${money(yearlySavings)} per user yearly`
+        : `Save ${money(yearlySavings)} yearly`,
     };
   }
+
   return {
     amount: money(plan.monthly * (plan.perSeat ? seats : 1)),
     cadence: plan.perSeat ? `/ month for ${seats} seats` : "/ month",
     bill: plan.perSeat
       ? `${money(plan.monthly)} per user, billed monthly`
       : "Billed monthly",
+    savings: null,
   };
 }
 
 function PlanAction({ plan, interval, seats, disabled, managePlan }) {
   const selectedInterval = plan.yearly == null ? "month" : interval;
+
   if (managePlan && plan.id !== "FREE") {
     return (
       <a className={styles.action} href="/billing">
-        Manage plan →
+        <span>Manage plan</span>
+        <ArrowRight aria-hidden="true" size={16} />
       </a>
     );
   }
@@ -129,7 +187,8 @@ function PlanAction({ plan, interval, seats, disabled, managePlan }) {
       href={checkoutHref(plan, selectedInterval, seats)}
       onClick={trackSelection}
     >
-      {plan.cta} →
+      <span>{plan.cta}</span>
+      <ArrowRight aria-hidden="true" size={16} />
     </a>
   );
 }
@@ -143,40 +202,12 @@ function PlanFinder({
   onFocusChange,
   recommendation,
 }) {
-  const groups = [
-    {
-      label: "Builder",
-      help: "Who is building? Choose solo for one creator or team for shared billing.",
-      value: teamMode,
-      onChange: onTeamModeChange,
-      options: [
-        ["solo", "Just me"],
-        ["team", "A team"],
-      ],
-    },
-    {
-      label: "Pace",
-      help: "How often will you run reviewed builds? This changes the suggested capacity.",
-      value: pace,
-      onChange: onPaceChange,
-      options: [
-        ["explore", "Exploring"],
-        ["regular", "Regularly"],
-        ["heavy", "Frequently"],
-      ],
-    },
-    {
-      label: "Focus",
-      help: "Choose the workflow you expect to use most. Every plan can still access the core creator flow.",
-      value: focus,
-      onChange: onFocusChange,
-      options: [
-        ["scripts", "Scripts"],
-        ["agent", "Agent builds"],
-        ["assets", "Assets"],
-      ],
-    },
-  ];
+  const values = { teamMode, pace, focus };
+  const setters = {
+    teamMode: onTeamModeChange,
+    pace: onPaceChange,
+    focus: onFocusChange,
+  };
 
   return (
     <section className={styles.finder} aria-labelledby="plan-finder-title">
@@ -188,12 +219,15 @@ function PlanFinder({
             This guide only highlights an existing plan. Prices and checkout stay exactly the same.
           </DevTip>
         </div>
+        <p>Three quick choices. No email required.</p>
       </div>
+
       <div className={styles.finderControls}>
-        {groups.map((group) => (
+        {finderGroups.map((group, index) => (
           <div className={styles.finderGroup} key={group.label}>
             <div className={styles.fieldLabel}>
-              <span>{group.label}</span>
+              <span aria-hidden="true">0{index + 1}</span>
+              <strong>{group.label}</strong>
               <DevTip label={`About ${group.label}`}>{group.help}</DevTip>
             </div>
             <div role="group" aria-label={group.label}>
@@ -201,8 +235,8 @@ function PlanFinder({
                 <button
                   key={value}
                   type="button"
-                  aria-pressed={group.value === value}
-                  onClick={() => group.onChange(value)}
+                  aria-pressed={values[group.stateKey] === value}
+                  onClick={() => setters[group.stateKey](value)}
                 >
                   {label}
                 </button>
@@ -211,13 +245,13 @@ function PlanFinder({
           </div>
         ))}
       </div>
+
       <div className={styles.finderResult} role="status" aria-live="polite">
-        <span>Suggested</span>
+        <Sparkles aria-hidden="true" size={17} />
+        <span>Your match</span>
         <strong>{recommendation.name}</strong>
-        <a
-          href={`#plan-${recommendation.id.toLowerCase().replaceAll("_", "-")}`}
-        >
-          View plan ↓
+        <a href={`#plan-${recommendation.slug}`}>
+          View plan <ArrowRight aria-hidden="true" size={14} />
         </a>
       </div>
     </section>
@@ -231,29 +265,38 @@ function AccessRecord({
   managePlan,
   onSeatsChange,
   recommended,
+  index,
 }) {
   const price = priceRecord(plan, interval, seats);
   const annualUnavailable =
     interval === "year" && plan.yearly == null && plan.id !== "FREE";
+
   return (
     <article
       className={styles.plan}
       data-plan={plan.id}
       data-recommended={recommended ? "true" : "false"}
-      id={`plan-${plan.id.toLowerCase().replaceAll("_", "-")}`}
+      id={`plan-${plan.slug}`}
     >
       <header className={styles.planIdentity}>
-        <span>Access tier</span>
+        <div className={styles.planEyebrow}>
+          <span>{String(index + 1).padStart(2, "0")}</span>
+          <span>{recommended ? "Your finder match" : "Access tier"}</span>
+        </div>
         <div className={styles.headingWithTip}>
           <h2>{plan.name}</h2>
           <DevTip label={`Who ${plan.name} is for`}>{plan.audience}</DevTip>
         </div>
+        <p>{plan.audience}</p>
       </header>
 
       <div className={styles.price}>
-        <strong>{price.amount}</strong>
-        <span>{price.cadence}</span>
+        <div>
+          <strong>{price.amount}</strong>
+          <span>{price.cadence}</span>
+        </div>
         <small>{price.bill}</small>
+        {price.savings ? <em>{price.savings}</em> : null}
         {plan.id === "TEAM" ? (
           <div className={styles.seats}>
             <label htmlFor="team-seat-count">Seats</label>
@@ -263,10 +306,11 @@ function AccessRecord({
               disabled={seats <= plan.minimumSeats}
               onClick={() => onSeatsChange(seats - 1)}
             >
-              −
+              <Minus aria-hidden="true" size={14} />
             </button>
             <input
               id="team-seat-count"
+              aria-label="Team seat count"
               inputMode="numeric"
               min={plan.minimumSeats}
               max={plan.maximumSeats}
@@ -280,7 +324,7 @@ function AccessRecord({
               disabled={seats >= plan.maximumSeats}
               onClick={() => onSeatsChange(seats + 1)}
             >
-              +
+              <Plus aria-hidden="true" size={14} />
             </button>
             <span>2–50</span>
           </div>
@@ -288,11 +332,13 @@ function AccessRecord({
       </div>
 
       <ul className={styles.features}>
-        {plan.features.map((feature, index) => (
+        {plan.features.map((feature, featureIndex) => (
           <li key={feature}>
-            <span aria-hidden="true">✓</span>
-            <strong>{featureLabels[plan.id][index]}</strong>
-            <DevTip label={`About ${featureLabels[plan.id][index]}`}>{feature}</DevTip>
+            <Check aria-hidden="true" size={15} strokeWidth={2.2} />
+            <strong>{featureLabels[plan.id][featureIndex]}</strong>
+            <DevTip label={`About ${featureLabels[plan.id][featureIndex]}`}>
+              {feature}
+            </DevTip>
           </li>
         ))}
       </ul>
@@ -335,6 +381,7 @@ export default function PricingCatalog() {
   useEffect(() => {
     let unsubscribe = () => {};
     let cancelled = false;
+
     async function readSubscription() {
       try {
         const [{ auth }, { onAuthStateChanged }] = await Promise.all([
@@ -351,10 +398,11 @@ export default function PricingCatalog() {
             const { getEntitlements } = await import("../../src/lib/billing");
             const entitlements = await getEntitlements({ noCache: false });
             const paidPlans = new Set(["STARTER", "PRO", "PRO_PLUS", "TEAM"]);
-            if (!cancelled)
+            if (!cancelled) {
               setHasActiveSubscription(
                 paidPlans.has(String(entitlements?.plan || "")),
               );
+            }
           } catch (_) {
             if (!cancelled) setHasActiveSubscription(false);
           }
@@ -363,6 +411,7 @@ export default function PricingCatalog() {
         if (!cancelled) setHasActiveSubscription(false);
       }
     }
+
     void readSubscription();
     return () => {
       cancelled = true;
@@ -380,55 +429,24 @@ export default function PricingCatalog() {
   return (
     <main id="main-content" className={styles.main}>
       <section className={styles.intro} aria-labelledby="pricing-title">
-        <div>
+        <div className={styles.introLead}>
           <p className={styles.phase}>Plans and usage</p>
-          <div className={styles.headingWithTip}>
-            <h1 id="pricing-title">Choose how long the build can run.</h1>
-            <DevTip label="How NexusRBX plans differ">
-              Every plan uses the same project-first workflow. Capacity, history, model access, and creator tools change as the work grows.
-            </DevTip>
-          </div>
+          <h1 id="pricing-title">Choose how long the build can run.</h1>
+          <p>
+            Start with a real project for free. Upgrade when you need more build
+            capacity, longer history, or direct access to premium models.
+          </p>
         </div>
-        <div className={styles.introCopy}>
-          <div
-            className={styles.interval}
-            role="group"
-            aria-label="Billing period"
-          >
-            <span>Billing</span>
-            <button
-              type="button"
-              aria-pressed={interval === "month"}
-              onClick={() => setInterval("month")}
-            >
-              Monthly
-            </button>
-            <button
-              type="button"
-              aria-pressed={interval === "year"}
-              onClick={() => setInterval("year")}
-            >
-              Yearly
-            </button>
-          </div>
-          <DevTip label="Billing details">
-            Prices are in USD. Starter is available monthly only. Checkout confirms the amount and interval before purchase.
-          </DevTip>
-        </div>
-      </section>
 
-      <section className={styles.ledger} aria-label="NexusRBX access plans">
-        {publicPlanCatalog.map((plan) => (
-          <AccessRecord
-            key={plan.id}
-            plan={plan}
-            interval={interval}
-            seats={plan.id === "TEAM" ? seats : 1}
-            managePlan={hasActiveSubscription}
-            onSeatsChange={updateSeats}
-            recommended={plan.id === recommendedPlanId}
-          />
-        ))}
+        <div className={styles.introAssurance} aria-label="What every plan includes">
+          <p>Every plan starts with</p>
+          <ul>
+            <li><Check aria-hidden="true" size={15} /> Project-first planning</li>
+            <li><Check aria-hidden="true" size={15} /> Reviewed build steps</li>
+            <li><Check aria-hidden="true" size={15} /> Studio-ready output</li>
+          </ul>
+          <small>No setup fee · Prices in USD · Secure checkout</small>
+        </div>
       </section>
 
       <PlanFinder
@@ -441,6 +459,62 @@ export default function PricingCatalog() {
         recommendation={recommendation}
       />
 
+      <section className={styles.catalog} aria-labelledby="catalog-title">
+        <div className={styles.catalogBar}>
+          <div>
+            <p className={styles.phase}>All access tiers</p>
+            <h2 id="catalog-title">Compare the plans.</h2>
+          </div>
+          <div className={styles.introCopy}>
+            <div
+              className={styles.interval}
+              role="group"
+              aria-label="Billing period"
+            >
+              <span>Billing</span>
+              <button
+                type="button"
+                aria-pressed={interval === "month"}
+                onClick={() => setInterval("month")}
+              >
+                Monthly
+              </button>
+              <button
+                type="button"
+                aria-pressed={interval === "year"}
+                onClick={() => setInterval("year")}
+              >
+                Yearly <small>save ~17%</small>
+              </button>
+            </div>
+            <DevTip label="Billing details">
+              Prices are in USD. Starter is available monthly only. Checkout confirms the amount and interval before purchase.
+            </DevTip>
+          </div>
+        </div>
+
+        <div className={styles.ledger} aria-label="NexusRBX access plans">
+          <div className={styles.ledgerHead} aria-hidden="true">
+            <span>Plan</span>
+            <span>Price</span>
+            <span>Included</span>
+            <span>Continue</span>
+          </div>
+          {publicPlanCatalog.map((plan, index) => (
+            <AccessRecord
+              key={plan.id}
+              plan={plan}
+              interval={interval}
+              seats={plan.id === "TEAM" ? seats : 1}
+              managePlan={hasActiveSubscription}
+              onSeatsChange={updateSeats}
+              recommended={plan.id === recommendedPlanId}
+              index={index}
+            />
+          ))}
+        </div>
+      </section>
+
       <section className={styles.comparison} aria-labelledby="comparison-title">
         <details>
           <summary>
@@ -448,7 +522,10 @@ export default function PricingCatalog() {
               <small className={styles.phase}>Compare plans</small>
               <strong id="comparison-title">What changes between plans</strong>
             </span>
-            <b aria-hidden="true">+</b>
+            <span className={styles.summaryAction}>
+              Open full comparison
+              <ChevronDown aria-hidden="true" size={18} />
+            </span>
           </summary>
           <div
             className={styles.tableWrap}
@@ -479,6 +556,27 @@ export default function PricingCatalog() {
             </table>
           </div>
         </details>
+      </section>
+
+      <section className={styles.billingNotes} aria-labelledby="billing-notes-title">
+        <div>
+          <p className={styles.phase}>Good to know</p>
+          <h2 id="billing-notes-title">Clear before checkout.</h2>
+        </div>
+        <dl>
+          <div>
+            <dt>Yearly billing</dt>
+            <dd>Monthly equivalents are shown above. The yearly total is charged at checkout.</dd>
+          </div>
+          <div>
+            <dt>Team plans</dt>
+            <dd>Choose 2–50 paid seats and keep one billing home for the studio.</dd>
+          </div>
+          <div>
+            <dt>Already subscribed?</dt>
+            <dd><a href="/billing">Open billing settings</a> to manage your current plan.</dd>
+          </div>
+        </dl>
       </section>
     </main>
   );

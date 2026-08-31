@@ -34,20 +34,25 @@ export default function AgentPlanPanel({
   const showSteps = FEATURE_FLAGS.unifiedAgent && steps.length > 0;
   const canRestore = Boolean(agentRun?.runId && agentRun?.snapshotCount > 0);
   const studioBlock = getStudioRunBlock(agentRun);
+  const completedRun = ["applied", "succeeded", "push_skipped"].includes(agentRun?.status);
+  const runIssues = steps.filter((step) => ["failed", "blocked", "awaiting_approval"].includes(step.status)).length;
 
   if (!active && !plan && !showSteps && !["conflict", "failed", "cancelled", "blocked", "iteration_limit", "timed_out", "push_skipped", "assets_pending"].includes(agentRun?.status)) return null;
 
   return (
-    <div className="rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-4 space-y-3">
+    <section className="rounded-[14px] border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-4 space-y-3" aria-label="Run activity">
       <div className="flex items-center gap-2">
         <ListChecks className="w-3.5 h-3.5 text-[var(--ds-accent)]" />
-        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-secondary)]">Agent Plan</span>
+        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-secondary)]">Run activity</span>
+        <span className={`ml-auto inline-flex min-h-5 items-center rounded-full border px-2 text-[9px] font-bold ${runIssues ? "border-[var(--ds-warning-border)] bg-[var(--ds-warning-soft)] text-[var(--ds-warning)]" : completedRun ? "border-[var(--ds-success-border)] bg-[var(--ds-success-soft)] text-[var(--ds-success)]" : "border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)]"}`}>
+          {runIssues ? `${runIssues} to review` : completedRun ? "Complete" : `${steps.length} step${steps.length === 1 ? "" : "s"}`}
+        </span>
         {canRestore && onRestoreRun && (
           <button
             type="button"
             onClick={() => onRestoreRun(agentRun.runId)}
             disabled={restoring}
-            className="ml-auto inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)]  text-[var(--ds-danger)] text-[10px] font-black uppercase tracking-widest disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)]  text-[var(--ds-danger)] text-[10px] font-black uppercase tracking-widest disabled:opacity-40"
             title="Restore snapshots captured during this run"
           >
             {restoring ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
@@ -113,6 +118,7 @@ export default function AgentPlanPanel({
         <AgentStepList
           steps={steps}
           maxHeight="max-h-52"
+          collapsible={completedRun}
           onApproveStep={onApproveStep}
           approvingStepId={approvingStepId}
           emptyLabel="Waiting for agent steps…"
@@ -124,6 +130,6 @@ export default function AgentPlanPanel({
           {plan}
         </div>
       )}
-    </div>
+    </section>
   );
 }

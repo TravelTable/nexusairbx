@@ -174,7 +174,8 @@ function EvidenceLensBar({
               className="workspace-evidence-lenses__label"
               aria-hidden={compact ? "true" : undefined}
             >
-              {compact ? <ToolIcon aria-hidden="true" /> : tool.label}
+              <ToolIcon aria-hidden="true" />
+              {!compact ? <span>{tool.label}</span> : null}
             </span>
             {badge ? (
               <span

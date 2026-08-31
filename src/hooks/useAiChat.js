@@ -118,6 +118,9 @@ const PENDING_RUN_RECOVERY_WALL_TIMEOUT_MS = optionalWallTimeout(
 const AUTHORITATIVE_RUN_RECOVERY_REQUEST_TIMEOUT_MS = Number(
   process.env.REACT_APP_AUTHORITATIVE_RUN_RECOVERY_REQUEST_TIMEOUT_MS || 10_000
 );
+const AUTHORITATIVE_TASK_COMPLETION_WALL_TIMEOUT_MS = Number(
+  process.env.REACT_APP_AUTHORITATIVE_TASK_COMPLETION_WALL_TIMEOUT_MS || 12 * 60 * 1000
+);
 
 const delay = (milliseconds) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 
@@ -189,20 +192,60 @@ export async function waitForAuthoritativeTaskCompletion({
   onProgress = null,
   signal = null,
   pollMs = 1500,
+  timeoutMs = AUTHORITATIVE_TASK_COMPLETION_WALL_TIMEOUT_MS,
+  requestTimeoutMs = AUTHORITATIVE_RUN_RECOVERY_REQUEST_TIMEOUT_MS,
+  now = () => Date.now(),
 }) {
   const normalizedRunId = String(runId || "").trim();
   if (!normalizedRunId) return null;
 
+  const boundedTimeoutMs = Number.isFinite(Number(timeoutMs)) && Number(timeoutMs) > 0
+    ? Number(timeoutMs)
+    : AUTHORITATIVE_TASK_COMPLETION_WALL_TIMEOUT_MS;
+  const boundedRequestTimeoutMs = Number.isFinite(Number(requestTimeoutMs)) && Number(requestTimeoutMs) > 0
+    ? Number(requestTimeoutMs)
+    : AUTHORITATIVE_RUN_RECOVERY_REQUEST_TIMEOUT_MS;
+  const deadline = now() + boundedTimeoutMs;
+  let lastRun = null;
+
   while (true) {
     throwIfAborted(signal);
-    const snapshot = await readRun(normalizedRunId);
+    const remainingMs = deadline - now();
+    if (remainingMs <= 0) {
+      return { run: lastRun, terminalStatus: "background", timedOut: true };
+    }
+
+    let snapshot;
+    try {
+      snapshot = await raceAuthoritativeOperation(
+        () => readRun(normalizedRunId),
+        {
+          signal,
+          timeoutMs: Math.min(boundedRequestTimeoutMs, remainingMs),
+        }
+      );
+    } catch (error) {
+      if (error?.code !== "ADMISSION_TIMEOUT") throw error;
+      if (now() >= deadline) {
+        return { run: lastRun, terminalStatus: "background", timedOut: true };
+      }
+      await waitForNext(Math.min(
+        Math.max(1, Number(pollMs) || 1500),
+        Math.max(1, deadline - now())
+      ));
+      continue;
+    }
     throwIfAborted(signal);
     const run = snapshot?.run || snapshot || null;
     if (!run) return null;
+    lastRun = run;
     onProgress?.(run);
     const terminalStatus = normalizeTerminalRunStatus(run.status, run);
     if (terminalStatus) return { run, terminalStatus };
-    await waitForNext(Math.max(1, Number(pollMs) || 1500));
+    await waitForNext(Math.min(
+      Math.max(1, Number(pollMs) || 1500),
+      Math.max(1, deadline - now())
+    ));
   }
 }
 
@@ -1268,22 +1311,6 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           : {};
         if (cancelled || stopped) return;
 
-        if (res.status === 202) {
-          if (currentPending.runId) {
-            const runResult = await readPendingAgentRun(currentPending.runId);
-            if (cancelled || stopped) return;
-            const steps = Array.isArray(runResult?.run?.steps)
-              ? runResult.run.steps.map(normalizeToolStep)
-              : [];
-            const lastStep = steps[steps.length - 1];
-            const stage = lastStep?.label || lastStep?.type || runResult?.run?.status || currentPending.stage || "Working...";
-            setMessages((current) => current.map((message) => (
-              message.id === currentPending.id ? { ...message, steps, stage } : message
-            )));
-          }
-          return;
-        }
-
         const billingFailure = parseApiErrorPayload(body);
         if (billingFailure || res.status === 402) {
           const persisted = await updateDoc(pendingRef, sanitizeTranscriptMessagePayload({
@@ -1304,6 +1331,101 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           }
           return;
         }
+
+        if (currentPending.runId) {
+          const runResult = await raceAuthoritativeOperation(
+            () => readPendingAgentRun(currentPending.runId),
+            {
+              signal: recoveryController.signal,
+              timeoutMs: AUTHORITATIVE_RUN_RECOVERY_REQUEST_TIMEOUT_MS,
+            }
+          );
+          if (cancelled || stopped) return;
+          const authoritativeRun = runResult?.run || runResult || null;
+          if (authoritativeRun) {
+            const steps = Array.isArray(authoritativeRun.steps)
+              ? authoritativeRun.steps.map(normalizeToolStep)
+              : [];
+            const lastStep = steps[steps.length - 1];
+            const terminalStatus = normalizeTerminalRunStatus(
+              authoritativeRun.status,
+              authoritativeRun
+            );
+            const stage = authoritativeRun.summary
+              || lastStep?.label
+              || lastStep?.type
+              || statusCopyForAuthoritativeRun(authoritativeRun.status)
+              || authoritativeRun.status
+              || currentPending.stage
+              || "Working...";
+
+            setMessages((current) => current.map((message) => (
+              message.id === currentPending.id
+                ? {
+                    ...message,
+                    steps: steps.length ? steps : message.steps,
+                    stage,
+                    runStatus: authoritativeRun.status || message.runStatus,
+                    metadata: {
+                      ...(message.metadata || currentPending.metadata || {}),
+                      // Keep the message selected by recovery until both the
+                      // authoritative Studio run and the result payload finish.
+                      runState: "background",
+                    },
+                  }
+                : message
+            )));
+
+            // A completed generation response only means model output exists. The
+            // assistant message must remain recoverable until Studio reaches an
+            // authoritative terminal state too.
+            if (!terminalStatus) return;
+            if (terminalStatus !== "completed") {
+              const canceled = terminalStatus === "canceled";
+              const failureMessage = typeof authoritativeRun.error === "string"
+                ? authoritativeRun.error
+                : authoritativeRun.error?.message
+                  || authoritativeRun.summary
+                  || (canceled ? "Generation canceled." : "Studio could not finish the task.");
+              const terminalPayload = {
+                pending: false,
+                stage: canceled ? "canceled" : "failed",
+                ...(canceled ? { content: failureMessage } : {
+                  error: failureMessage,
+                  errorCode: authoritativeRun.failureCode
+                    || authoritativeRun.errorCode
+                    || authoritativeRun.error?.code
+                    || "STUDIO_TASK_FAILED",
+                }),
+                metadata: {
+                  ...(currentPending.metadata || {}),
+                  runState: canceled ? "canceled" : "failed",
+                },
+                updatedAt: serverTimestamp(),
+              };
+              const persisted = await updateDoc(
+                pendingRef,
+                sanitizeTranscriptMessagePayload(terminalPayload)
+              ).then(() => true).catch(() => false);
+              if (persisted) {
+                recordChatMessageWrite({
+                  jobId: currentPending.jobId,
+                  reason: "assistant_recovery_failure",
+                });
+                finishChatWriteMetrics(currentPending.jobId, canceled ? "canceled" : "error");
+                setMessages((current) => current.map((message) => (
+                  message.id === currentPending.id
+                    ? { ...message, ...terminalPayload }
+                    : message
+                )));
+                stopPolling();
+              }
+              return;
+            }
+          }
+        }
+
+        if (res.status === 202) return;
 
         let data = null;
         try {
@@ -2219,7 +2341,10 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           reject(publicError);
         };
 
-        const handoffRecoveryTimeout = () => {
+        const handoffRecoveryTimeout = ({
+          metricMessage = "Recovery wall timeout; background poll continues",
+          notificationMessage = "Connection lost — still working in the background. Results will appear when ready.",
+        } = {}) => {
           if (finalized) return;
           finalized = true;
           receivedDone = true;
@@ -2227,7 +2352,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           emitStreamMetric("error", {
             jobId,
             tag: "timeout",
-            message: "Recovery wall timeout; background poll continues",
+            message: metricMessage,
             retries: retryCount,
           });
           eventSource?.close?.();
@@ -2249,8 +2374,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             .catch(() => {});
           notify?.({
             type: "info",
-            message:
-              "Connection lost — still working in the background. Results will appear when ready.",
+            message: notificationMessage,
           });
           setBusy(false);
           if (streamFlushTimer) clearTimeout(streamFlushTimer);
@@ -2379,6 +2503,14 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
               });
               if (authoritativeCompletion) {
                 const { run, terminalStatus } = authoritativeCompletion;
+                if (terminalStatus === "background") {
+                  handoffRecoveryTimeout({
+                    metricMessage: "Studio apply/verification timeout; background poll continues",
+                    notificationMessage:
+                      "Studio is taking longer than expected — continuing in the background. Results will appear when ready.",
+                  });
+                  return;
+                }
                 if (terminalStatus !== "completed") {
                   const taskError = new Error(
                     run?.error?.message

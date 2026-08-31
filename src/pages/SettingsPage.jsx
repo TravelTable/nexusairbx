@@ -19,6 +19,7 @@ import {
   Search,
   Settings,
   Shield,
+  Sparkles,
   PlugZap,
   Trash2,
   Users,
@@ -61,6 +62,7 @@ import {
   AlertDialogTrigger,
 } from "../components/shadcn/alert-dialog";
 import { Button as BaseButton } from "../components/shadcn/button";
+import { Avatar, AvatarFallback, AvatarImage } from "../components/shadcn/avatar";
 import { CardContent, CardHeader, CardTitle } from "../components/shadcn/card";
 import { Input } from "../components/shadcn/input";
 import { Label } from "../components/shadcn/label";
@@ -236,10 +238,11 @@ function formatDate(value) {
   return date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
 }
 
-function statusTone(state) {
-  if (state === "good") return "border-[var(--ds-success-border)] bg-[var(--ds-success-soft)] text-[var(--ds-success)]";
-  if (state === "warn") return "border-[var(--ds-warning-border)] bg-[var(--ds-warning-soft)] text-[var(--ds-warning)]";
-  return "border-border bg-muted/40 text-muted-foreground";
+function getInitials(user) {
+  const value = String(user?.displayName || user?.email || "NX").trim();
+  const parts = value.split(/[\s@._-]+/).filter(Boolean);
+  if (!parts.length) return "NX";
+  return parts.slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 }
 
 function DevTip({ children, label = "More information", side = "top" }) {
@@ -302,7 +305,7 @@ function SaveStatus({ status, error, onRetry }) {
   return null;
 }
 
-function NavList({ groups, activeTab, onSelect }) {
+function NavList({ groups, activeTab, onSelect, itemMeta = {} }) {
   const [query, setQuery] = useState("");
   const normalizedQuery = query.trim().toLowerCase();
   const filteredGroups = groups
@@ -344,7 +347,10 @@ function NavList({ groups, activeTab, onSelect }) {
                       <Icon className="settings-tab-icon h-4 w-4 shrink-0" aria-hidden="true" />
                       <span className="truncate">{item.label}</span>
                     </span>
-                    {active && <ChevronRight className="settings-tab-chevron h-4 w-4" aria-hidden="true" />}
+                    <span className="settings-tab-end" aria-hidden="true">
+                      {itemMeta[item.id] ? <span className="settings-nav-meta">{itemMeta[item.id]}</span> : null}
+                      {active && <ChevronRight className="settings-tab-chevron h-4 w-4" />}
+                    </span>
                   </button>
                 );
               })}
@@ -354,6 +360,42 @@ function NavList({ groups, activeTab, onSelect }) {
         {filteredGroups.length === 0 ? <p className="settings-navigation-empty">No matching sections</p> : null}
       </nav>
     </div>
+  );
+}
+
+function SidebarIdentity({ user, plan }) {
+  const displayName = user?.displayName || user?.email?.split("@")[0] || "Nexus creator";
+
+  return (
+    <div className="settings-sidebar-identity">
+      <Avatar className="settings-sidebar-avatar">
+        {user?.photoURL ? <AvatarImage src={user.photoURL} alt="" /> : null}
+        <AvatarFallback>{getInitials(user)}</AvatarFallback>
+      </Avatar>
+      <div className="settings-sidebar-identity__copy">
+        <strong>{displayName}</strong>
+        <span>{String(plan || "FREE").toUpperCase()} workspace</span>
+      </div>
+    </div>
+  );
+}
+
+function SectionHeader({ section, icon: Icon = Settings, status, statusTone = "neutral" }) {
+  return (
+    <header className="settings-section-heading">
+      <div className="settings-section-heading__icon" aria-hidden="true"><Icon /></div>
+      <div className="settings-section-heading__copy">
+        <span className="settings-section-eyebrow">Workspace settings</span>
+        <h2 id="settings-section-title" tabIndex="-1">{section.label}</h2>
+        <p>{section.description}</p>
+      </div>
+      {status ? (
+        <span className="settings-section-status" data-tone={statusTone}>
+          <span aria-hidden="true" />
+          {status}
+        </span>
+      ) : null}
+    </header>
   );
 }
 
@@ -389,10 +431,10 @@ function EmptyState({ icon: Icon = HelpCircle, title, description, action }) {
 
 function HealthTile({ icon: Icon, label, value, detail, state = "neutral", action }) {
   return (
-    <div className={cn("settings-health-record", statusTone(state))}>
+    <div className="settings-health-record" data-state={state}>
       <span className="settings-health-record__icon"><Icon aria-hidden="true" /></span>
       <div className="settings-health-record__copy">
-        <span>{label}</span>
+        <span className="settings-health-record__label"><i aria-hidden="true" />{label}</span>
         <strong>{value}</strong>
         <small>{detail}</small>
       </div>
@@ -575,6 +617,7 @@ export default function SettingsPage() {
   const fallbackTab = user ? "overview" : "appearance";
   const permissionsReady = !user || billing.loading !== true;
   const activeSection = SECTION_META[activeTab] || SECTION_META.overview;
+  const activeNavItem = navItems.find((item) => item.id === activeTab);
   const robloxStatus = sharedRoblox.status;
   const robloxConnected = Boolean(robloxStatus?.connected);
   const robloxUpgradeRequired = needsRobloxUpgrade(robloxStatus);
@@ -599,6 +642,22 @@ export default function SettingsPage() {
   const publishingPreference = settings.assetPublishingPreference || "auto_explicit_request";
   const publishingPreferenceDetails = ASSET_PUBLISHING_OPTIONS.find((option) => option.value === publishingPreference)
     || ASSET_PUBLISHING_OPTIONS[0];
+  const navItemMeta = useMemo(() => ({
+    billing: billing.loading ? "…" : String(billing.plan || "FREE").toUpperCase(),
+    roblox: robloxUpgradeRequired ? "Upgrade" : robloxConnected ? "Ready" : "Setup",
+  }), [billing.loading, billing.plan, robloxConnected, robloxUpgradeRequired]);
+  const sectionStatus = useMemo(() => {
+    const robloxReady = robloxConnected && !robloxUpgradeRequired;
+    if (activeTab === "overview") return { label: robloxReady ? "Workspace ready" : "1 action recommended", tone: robloxReady ? "success" : "warning" };
+    if (activeTab === "ai") return { label: longFormDirty ? "Unsaved context" : "Defaults synced", tone: longFormDirty ? "warning" : "success" };
+    if (activeTab === "roblox") return { label: robloxUpgradeRequired ? "Upgrade required" : robloxConnected ? "Connected" : "Not connected", tone: robloxReady ? "success" : "warning" };
+    if (activeTab === "billing") return { label: String(billing.plan || "FREE").toUpperCase(), tone: "info" };
+    if (activeTab === "team") return { label: teamState.status === "ready" ? `${teamState.teams.length} workspace${teamState.teams.length === 1 ? "" : "s"}` : "Shared access", tone: "neutral" };
+    if (activeTab === "account") return { label: "Protected", tone: "success" };
+    if (activeTab === "help") return { label: "Diagnostics ready", tone: "neutral" };
+    if (activeTab === "admin") return { label: "Restricted", tone: "warning" };
+    return { label: "Nexus dark", tone: "neutral" };
+  }, [activeTab, billing.plan, longFormDirty, robloxConnected, robloxUpgradeRequired, teamState.status, teamState.teams.length]);
   const setRobloxActionError = useCallback((error, fallbackMessage) => {
     const retryable = isRetryableApiError(error);
     setRobloxState((state) => ({
@@ -852,10 +911,10 @@ export default function SettingsPage() {
       {
         icon: PlugZap,
         label: "Roblox OAuth",
-        value: robloxConnected ? "Connected" : "Not connected",
+        value: robloxUpgradeRequired ? "Upgrade required" : robloxConnected ? "Connected" : "Not connected",
         detail: selectedCreator ? `${selectedCreator.type} ${selectedCreator.id}` : "No creator target selected",
-        state: robloxConnected ? "good" : "warn",
-        action: <Button type="button" variant="outline" size="sm" onClick={() => setTab("roblox")}>{robloxConnected ? "Manage" : "Connect"}</Button>,
+        state: robloxConnected && !robloxUpgradeRequired ? "good" : "warn",
+        action: <Button type="button" variant="outline" size="sm" onClick={() => setTab("roblox")}>{robloxUpgradeRequired ? "Upgrade" : robloxConnected ? "Manage" : "Connect"}</Button>,
       },
       {
         icon: Save,
@@ -866,18 +925,39 @@ export default function SettingsPage() {
         action: <Button type="button" variant="outline" size="sm" onClick={() => setTab("roblox")}>Configure</Button>,
       },
     ];
+    const readyCount = health.filter((item) => item.state !== "warn").length;
+    const readinessPercent = Math.round((readyCount / health.length) * 100);
+    const displayName = user?.displayName?.split(" ")[0] || user?.email?.split("@")[0] || "Creator";
 
     return (
       <div className="space-y-6">
+        <section className="settings-overview-hero" aria-labelledby="settings-overview-title">
+          <div className="settings-overview-hero__copy">
+            <span className="settings-overview-kicker"><Sparkles aria-hidden="true" /> Control center</span>
+            <h3 id="settings-overview-title">{displayName}, your workspace is {readyCount === health.length ? "ready to build." : "almost ready."}</h3>
+            <p>{readyCount === health.length
+              ? "Your defaults, plan, Roblox connection, and Studio handoff are all in good shape."
+              : "Finish the recommended setup below, or jump straight back into your workspace."}</p>
+            <div className="settings-overview-actions">
+              <Button asChild><Link to="/ai">Open workspace <ArrowRight className="h-4 w-4" /></Link></Button>
+              <Button type="button" variant="outline" onClick={() => { loadUsage(); loadRoblox(); billing.refresh?.(); }}>
+                <RefreshCcw className="h-4 w-4" /> Refresh status
+              </Button>
+            </div>
+          </div>
+          <div className="settings-readiness-score" style={{ "--settings-progress": `${readinessPercent * 3.6}deg` }} aria-label={`${readyCount} of ${health.length} workspace checks ready`}>
+            <div><strong>{readyCount}/{health.length}</strong><span>ready</span></div>
+          </div>
+          <dl className="settings-overview-ledger">
+            <div><dt>Plan</dt><dd>{billing.loading ? "Loading…" : String(billing.plan || "FREE").toUpperCase()}</dd></div>
+            <div><dt>Available</dt><dd>{formatNumber(billing.totalRemaining)} tokens</dd></div>
+            <div><dt>Roblox</dt><dd>{robloxUpgradeRequired ? "Upgrade required" : robloxConnected ? "Connected" : "Setup needed"}</dd></div>
+          </dl>
+        </section>
+
         <Panel
           title="Workspace readiness"
-          description="Your important defaults, connections, plan, and Studio handoff state."
-          actions={
-            <Button type="button" variant="outline" size="sm" onClick={() => { loadUsage(); loadRoblox(); billing.refresh?.(); }}>
-              <RefreshCcw className="h-4 w-4" />
-              Refresh
-            </Button>
-          }
+          description="The four checks that determine whether NexusRBX can move cleanly from prompt to Studio."
         >
           <div className="settings-readiness-grid">
             {health.map((item) => (
@@ -1733,7 +1813,7 @@ export default function SettingsPage() {
                   <SheetDescription>Choose a settings section.</SheetDescription>
                 </SheetHeader>
                 <div className="mt-6">
-                  <NavList groups={navGroups} activeTab={activeTab} onSelect={setTab} />
+                  <NavList groups={navGroups} activeTab={activeTab} onSelect={setTab} itemMeta={navItemMeta} />
                 </div>
               </SheetContent>
             </Sheet>
@@ -1758,30 +1838,37 @@ export default function SettingsPage() {
             />
           </Panel>
         ) : (
-          <div className="settings-ledger-layout grid lg:grid-cols-[16rem_minmax(0,1fr)]">
+          <div className="settings-ledger-layout grid lg:grid-cols-[17.5rem_minmax(0,1fr)]">
             <aside className="settings-ledger-sidebar hidden lg:block">
               <div className="settings-sidebar-inner sticky top-8">
-                <NavList groups={navGroups} activeTab={activeTab} onSelect={setTab} />
+                <div className="settings-sidebar-brand">
+                  <span className="settings-sidebar-brand__mark"><Settings className="settings-sidebar-brand__icon" aria-hidden="true" /></span>
+                  <span className="settings-sidebar-brand__copy"><strong>Settings</strong><small>NexusRBX control center</small></span>
+                </div>
+                <SidebarIdentity user={user} plan={billing.plan} />
+                <NavList groups={navGroups} activeTab={activeTab} onSelect={setTab} itemMeta={navItemMeta} />
+                <div className="settings-sidebar-footer">
+                  <Link to="/ai"><ArrowRight aria-hidden="true" /><span><strong>Back to workspace</strong><small>Continue building</small></span></Link>
+                </div>
               </div>
             </aside>
             <section className="min-w-0" aria-labelledby="settings-section-title">
-              <div className="settings-section-heading mb-7">
-                <div>
-                  <span className="settings-section-eyebrow">Settings</span>
-                  <h2 id="settings-section-title" className="text-2xl font-semibold tracking-[-0.02em]">
-                    {activeSection.label}
-                  </h2>
-                  <p>{activeSection.description}</p>
-                </div>
+              <SectionHeader
+                section={activeSection}
+                icon={activeNavItem?.icon}
+                status={sectionStatus.label}
+                statusTone={sectionStatus.tone}
+              />
+              <div className="settings-section-content" key={activeTab}>
+                {settingsLoading ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-32 w-full" />
+                    <Skeleton className="h-80 w-full" />
+                  </div>
+                ) : (
+                  renderActiveTab()
+                )}
               </div>
-              {settingsLoading ? (
-                <div className="space-y-4">
-                  <Skeleton className="h-32 w-full" />
-                  <Skeleton className="h-80 w-full" />
-                </div>
-              ) : (
-                renderActiveTab()
-              )}
             </section>
           </div>
         )}

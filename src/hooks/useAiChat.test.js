@@ -315,6 +315,33 @@ describe("useAiChat", () => {
     });
   });
 
+  test("hands an authoritative Studio task to background recovery at the deadline", async () => {
+    let currentTime = 0;
+    const waitForNext = jest.fn(async (delayMs) => {
+      currentTime += delayMs;
+    });
+    const readRun = jest.fn().mockResolvedValue({
+      run: { id: "studio-run", status: "running", summary: "Running in Studio..." },
+    });
+
+    await expect(waitForAuthoritativeTaskCompletion({
+      runId: "studio-run",
+      readRun,
+      waitForNext,
+      timeoutMs: 3_000,
+      requestTimeoutMs: 1_000,
+      pollMs: 1_000,
+      now: () => currentTime,
+    })).resolves.toEqual({
+      run: { id: "studio-run", status: "running", summary: "Running in Studio..." },
+      terminalStatus: "background",
+      timedOut: true,
+    });
+
+    expect(readRun).toHaveBeenCalledTimes(3);
+    expect(waitForNext).toHaveBeenCalledTimes(3);
+  });
+
   test("finalizes a completed assistant message without rewriting createdAt", async () => {
     const user = {
       uid: "user_1",
@@ -1198,6 +1225,66 @@ describe("useAiChat", () => {
       unmount?.();
       jest.useRealTimers();
     }
+  });
+
+  test("does not finalize a generated result while its Studio run is still active", async () => {
+    const user = {
+      uid: "user_1",
+      getIdToken: jest.fn().mockResolvedValue("token_1"),
+    };
+    auth.currentUser = user;
+    const completed = {
+      title: "Arena system",
+      explanation: "The model output is ready.",
+      files: [{ path: "ServerScriptService/Arena", content: "return {}" }],
+    };
+    parseCompletedGenerateResult.mockReturnValue(completed);
+    getAgentRunV2.mockResolvedValue({
+      run: {
+        runId: "agent_run_v2_studio_active",
+        status: "running",
+        summary: "Running in Studio...",
+      },
+    });
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: { get: () => "application/json" },
+      json: async () => ({ status: "done", result: completed }),
+    });
+    const hook = renderHook(() => useAiChat(
+      user,
+      { chatMode: "agent" },
+      jest.fn(),
+      jest.fn(),
+    ));
+
+    await openChatWithMessages(hook.result, [{
+      id: "studio-active-message",
+      role: "assistant",
+      content: "",
+      pending: false,
+      stage: "background",
+      requestId: "request-studio-active",
+      jobId: "job-studio-active",
+      runId: "agent_run_v2_studio_active",
+      metadata: { mode: "agent", runState: "background" },
+    }]);
+
+    await waitFor(() => {
+      expect(getAgentRunV2).toHaveBeenCalledWith("agent_run_v2_studio_active");
+    });
+    expect(updateDoc.mock.calls.some(([, payload]) => (
+      payload?.title === "Arena system" && payload?.pending === false
+    ))).toBe(false);
+    expect(hook.result.current.messages).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: "studio-active-message",
+        stage: "Running in Studio...",
+        metadata: expect.objectContaining({ runState: "background" }),
+      }),
+    ]));
+    hook.unmount();
   });
 
   test("persists canonical terminal output when a jobless run completes", async () => {

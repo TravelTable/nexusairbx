@@ -4,7 +4,13 @@ import { db } from "../firebase";
 import { BACKEND_URL } from "../config";
 import { v4 as uuidv4 } from "uuid";
 import { useAiChat } from "./useAiChat";
-import { orchestrate, approveWorkflowPlan, getChatOperationStatus, startPlanExecution } from "../lib/workflowApi";
+import {
+  orchestrate,
+  approveWorkflowPlan,
+  checkWorkflowPlanReadiness,
+  getChatOperationStatus,
+  startPlanExecution,
+} from "../lib/workflowApi";
 import { isExplicitPlanApproval } from "../lib/planApproval";
 import {
   classifyExecutionIntent,
@@ -44,6 +50,36 @@ import {
 } from "../lib/firestorePayloads";
 
 const DRAFT_CHAT_KEY = "__draft__";
+
+function readinessBlockers(value) {
+  const payload = value?.payload || value || {};
+  const readiness = payload?.readiness || payload?.details || payload;
+  if (Array.isArray(readiness?.blockers)) return readiness.blockers;
+  if (Array.isArray(readiness?.issues)) {
+    return readiness.issues.filter((issue) =>
+      ["blocker", "critical", "error"].includes(String(issue?.severity || "").toLowerCase())
+    );
+  }
+  return [];
+}
+
+function blockedPlanNotification(planId, value) {
+  const blockers = readinessBlockers(value);
+  const primary = blockers[0] || {};
+  const title = String(primary.title || "Plan needs attention").trim();
+  const explanation = String(primary.message || title || "The plan is not ready to execute.").trim();
+  const suggestedFix = String(primary.suggestedFix?.label || primary.fix?.label || "").trim();
+  const remaining = blockers.length > 1
+    ? ` ${blockers.length - 1} more blocking issue${blockers.length === 2 ? "" : "s"} remain.`
+    : "";
+  return {
+    id: `plan-readiness-${String(planId || "current")}`,
+    type: "error",
+    title,
+    message: `${explanation}${suggestedFix ? ` Next: ${suggestedFix}.` : ""}${remaining}`,
+    duration: 8000,
+  };
+}
 
 export function reconcileUnifiedPendingMessages(generationPending = [], orchestrationPending = []) {
   return reconcileAssistantTurns([
@@ -877,7 +913,32 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       const planHash = message.planHash || message.hash || message.structuredPlan?.hash || undefined;
 
       if (FEATURE_FLAGS.newPlanningMode) {
-        const execution = await startPlanExecution(message.planId, version, planHash);
+        const readiness = await checkWorkflowPlanReadiness(message.planId, {
+          version,
+          hash: planHash,
+          projectId: effectiveSubmissionOptions.projectId,
+          studioConnected: Boolean(message.targeting?.studioConnected),
+          targeting: {
+            projectId: effectiveSubmissionOptions.projectId,
+            studioConnected: Boolean(message.targeting?.studioConnected),
+          },
+        });
+        const blockers = readinessBlockers(readiness);
+        if (readiness?.canExecute === false || readiness?.ready === false || blockers.length > 0) {
+          notify?.(blockedPlanNotification(message.planId, readiness));
+          return { blocked: true, readiness };
+        }
+
+        let execution;
+        try {
+          execution = await startPlanExecution(message.planId, version, planHash);
+        } catch (error) {
+          if (error?.code === "PLAN_NOT_READY") {
+            notify?.(blockedPlanNotification(message.planId, error));
+            return { blocked: true, readiness: error?.payload?.details || null };
+          }
+          throw error;
+        }
         const task = execution?.task || execution?.execution?.task || execution?.run || null;
         const taskId =
           task?.taskId || task?.id || execution?.taskId || execution?.execution?.taskId || execution?.runId || "";

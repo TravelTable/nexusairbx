@@ -58,7 +58,8 @@ function ToastList() {
   return <>{manager.toasts.map((toast) => {
     const type = toast.type || "info";
     const Icon = type === "error" ? AlertCircle : type === "success" ? CheckCircle2 : Info;
-    const runAction = (action?: ToastAction) => {
+    const runAction = (action: ToastAction | undefined, control: HTMLButtonElement) => {
+      control.blur();
       action?.onClick?.();
       manager.close(toast.id);
     };
@@ -82,19 +83,23 @@ function ToastList() {
           {toast.data?.cta || toast.data?.secondary ? (
             <div className="nexus-site-toast__actions">
               {toast.data.secondary ? (
-                <button type="button" onClick={() => runAction(toast.data?.secondary)}>
+                <button type="button" onClick={(event) => runAction(toast.data?.secondary, event.currentTarget)}>
                   {toast.data.secondary.label}
                 </button>
               ) : null}
               {toast.data.cta ? (
-                <button type="button" data-primary="true" onClick={() => runAction(toast.data?.cta)}>
+                <button type="button" data-primary="true" onClick={(event) => runAction(toast.data?.cta, event.currentTarget)}>
                   {toast.data.cta.label}
                 </button>
               ) : null}
             </div>
           ) : null}
         </div>
-        <Toast.Close className="nexus-site-toast__close" aria-label="Close notification">
+        <Toast.Close
+          className="nexus-site-toast__close"
+          aria-label="Close notification"
+          onClickCapture={(event) => event.currentTarget.blur()}
+        >
           <X aria-hidden="true" />
         </Toast.Close>
       </Toast.Root>

@@ -1,5 +1,6 @@
 import React from "react";
 import { ClipboardList } from "lib/icons";
+import BuildReportSummary from "./BuildReportSummary";
 import AgentPlanPanel from "./AgentPlanPanel";
 import SetupStepsPanel from "./SetupStepsPanel";
 import TestingStepsPanel from "./TestingStepsPanel";
@@ -69,7 +70,8 @@ export default function BuildDetailsPanel({
   }
 
   return (
-    <div className="h-full overflow-y-auto p-4 space-y-4 scrollbar-subtle">
+    <div className="h-full overflow-y-auto p-3.5 space-y-3.5 scrollbar-subtle">
+      <BuildReportSummary artifact={artifact} agentRun={agentRun} />
       <AgentPlanPanel
         agentRun={agentRun}
         planText={artifact?.plan}

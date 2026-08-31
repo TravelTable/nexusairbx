@@ -69,7 +69,7 @@
     "Settings uses a premium control-center hierarchy with grouped searchable navigation, visible section titles and inline guidance, restrained elevated panels, actionable readiness rows, and deep analytics only in Plan and usage.",
     "Pricing stays an open access ledger with underlined choices, short feature labels, and keyboard- and touch-accessible question-mark disclosures for audience, billing, finder, and feature detail.",
     "Downloads uses compact icon-led platform tabs and question-mark dev tips so only essential release and setup text remains visible.",
-    "The Evidence Stage uses five narrow-panel lenses: Files, Editor, Run, Assets, and Report. Empty states remain compact and actionable; Run uses searchable expandable real-event rows; Report separates summary, structure, and validation evidence.",
+    "The Evidence Stage uses five narrow-panel lenses: Files, Editor, Run, Assets, and Report. Empty states remain compact and actionable; Run uses searchable expandable real-event rows; Report separates summary, structure, and validation evidence, with Summary opening on a dense outcome ledger for delivery status, files, Studio services, run completion, QA, file types, and recorded issues.",
     "Required Roblox setup reuses the compact Nexus auth ledger with an Account–Email–Roblox progress strip, an explicit standard-permission summary, one primary connection action, and inline retry/sign-out recovery instead of introducing a parallel wizard shell."
   ],
   "evidence": [

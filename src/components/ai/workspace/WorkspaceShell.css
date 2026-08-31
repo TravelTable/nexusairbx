@@ -132,9 +132,28 @@
 }
 
 .workspace-evidence-lenses__item[data-active="true"] {
-  background:
-    linear-gradient(90deg, var(--nx-purple-wash), transparent), var(--nx-field);
+  background: var(--nx-field);
   color: var(--nx-purple);
+}
+
+.workspace-evidence-lenses__label {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.workspace-evidence-lenses__label svg {
+  width: 13px;
+  height: 13px;
+  color: currentColor;
+}
+
+.workspace-evidence-lenses__label span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .workspace-evidence-lenses__item[data-active="true"]::after {
@@ -188,7 +207,7 @@
   inset: 0;
   z-index: 30;
   border: 0;
-  background: rgb(12 9 11 / 78%);
+  background: color-mix(in srgb, var(--nx-canvas) 78%, transparent);
   opacity: 0;
   transition: opacity var(--nx-motion-spatial) var(--nx-ease-state);
 }
@@ -339,6 +358,28 @@
   flex: 1;
   flex-direction: column;
   overflow: hidden;
+}
+
+.workspace-report-panel {
+  background: var(--nx-depth);
+}
+
+.workspace-report-tabs {
+  background: color-mix(in srgb, var(--nx-card) 72%, var(--nx-depth));
+}
+
+.workspace-report-segmented {
+  border-color: var(--nx-rule-strong) !important;
+  background: var(--nx-depth) !important;
+  box-shadow: var(--nx-inner-highlight) !important;
+}
+
+.workspace-report-segmented button {
+  min-height: 32px;
+}
+
+.workspace-report-body {
+  background: var(--nx-depth);
 }
 
 .workspace-stage-empty {

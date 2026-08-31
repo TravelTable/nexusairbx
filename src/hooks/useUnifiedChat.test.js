@@ -8,7 +8,12 @@ import { FEATURE_FLAGS } from "../lib/featureFlags";
 import { getStudioApplyMode, getStudioEnabledPreference } from "../lib/agentSteps";
 import { getStudioStatus } from "../lib/studioBridgeApi";
 import { resolveGameSpecForPrompt } from "../lib/gameProfile";
-import { approveWorkflowPlan, orchestrate, startPlanExecution } from "../lib/workflowApi";
+import {
+  approveWorkflowPlan,
+  checkWorkflowPlanReadiness,
+  orchestrate,
+  startPlanExecution,
+} from "../lib/workflowApi";
 import { getProjectBinding } from "../lib/projectBindingsApi";
 import {
   classifyExecutionIntent,
@@ -44,6 +49,7 @@ jest.mock("./useAiChat", () => ({
 
 jest.mock("../lib/workflowApi", () => ({
   approveWorkflowPlan: jest.fn(),
+  checkWorkflowPlanReadiness: jest.fn(),
   orchestrate: jest.fn(),
   startPlanExecution: jest.fn(),
 }));
@@ -131,6 +137,7 @@ describe("useUnifiedChat", () => {
     FEATURE_FLAGS.unifiedAgent = false;
     getStudioEnabledPreference.mockReturnValue(false);
     getStudioApplyMode.mockReturnValue("manual_review");
+    checkWorkflowPlanReadiness.mockResolvedValue({ ready: true, canExecute: true, blockers: [] });
     resolveGameSpecForPrompt.mockImplementation((value) => value || null);
     classifyExecutionIntent.mockReturnValue("artifact_only");
     classifyUserIntent.mockReturnValue("IMPLEMENTATION");
@@ -523,10 +530,66 @@ describe("useUnifiedChat", () => {
     });
 
     expect(assertCanWrite).toHaveBeenCalled();
+    expect(checkWorkflowPlanReadiness).toHaveBeenCalledWith("plan-1", expect.objectContaining({
+      version: 4,
+      hash: "hash-4",
+      projectId: "project-1",
+    }));
     expect(startPlanExecution).toHaveBeenCalledWith("plan-1", 4, "hash-4");
     expect(approveWorkflowPlan).not.toHaveBeenCalled();
     expect(chatHandleSubmit).not.toHaveBeenCalled();
     expect(onTaskAccepted).toHaveBeenCalledWith("task-plan-1");
+  });
+
+  test("surfaces plan readiness blockers without sending a doomed execution request", async () => {
+    FEATURE_FLAGS.newPlanningMode = true;
+    const notify = jest.fn();
+    useAiChat.mockReturnValue({
+      activeMode: "plan",
+      assertCanWrite: jest.fn().mockResolvedValue(),
+      currentChatId: "chat-1",
+      generatingChatIds: [],
+      generationStage: "",
+      handleSubmit: chatHandleSubmit,
+      isGenerating: false,
+      messages: [],
+      openChatById: jest.fn(),
+      pendingMessage: null,
+      setPendingForChat: jest.fn(),
+    });
+    checkWorkflowPlanReadiness.mockResolvedValue({
+      ready: false,
+      canExecute: false,
+      blockers: [{
+        code: "PROJECT_TARGET_MISSING",
+        severity: "blocker",
+        title: "Choose a project",
+        message: "Execution needs an exact NexusRBX project target.",
+        suggestedFix: { label: "Choose project" },
+      }],
+    });
+    const user = {
+      uid: "user-1",
+      getIdToken: jest.fn().mockResolvedValue("token"),
+    };
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), notify));
+
+    await act(async () => {
+      await result.current.approvePlan({
+        id: "plan-message-1",
+        planId: "plan-1",
+        planVersion: 4,
+        planHash: "hash-4",
+      });
+    });
+
+    expect(startPlanExecution).not.toHaveBeenCalled();
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({
+      id: "plan-readiness-plan-1",
+      type: "error",
+      title: "Choose a project",
+      message: expect.stringContaining("Next: Choose project."),
+    }));
   });
 
   test("clears a stale project id before clarify re-orchestration", async () => {

@@ -16,7 +16,7 @@ export default function UniversalBrand({ LinkComponent = "a", href = "/", compac
     <>
       {!compact ? <span className={styles.brandMark} aria-hidden="true">PROJECT /</span> : null}
       <img
-        src="/favicon-transparent.png"
+        src="/favicon.png"
         alt=""
         aria-hidden="true"
         className={styles.brandIcon}

@@ -48,8 +48,8 @@ export default function WorkspaceDetailsPanel({
   notify,
 }) {
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="shrink-0 border-b border-[var(--ds-border-subtle)] px-3 py-2">
+    <div className="workspace-report-panel flex h-full min-h-0 flex-col">
+      <div className="workspace-report-tabs shrink-0 border-b border-[var(--ds-border-subtle)] px-3 py-2">
         <Segmented
           fullWidth
           size="sm"
@@ -57,9 +57,10 @@ export default function WorkspaceDetailsPanel({
           value={view}
           onChange={onViewChange}
           ariaLabel="Report view"
+          className="workspace-report-segmented"
         />
       </div>
-      <div className="min-h-0 flex-1">
+      <div className="workspace-report-body min-h-0 flex-1">
         {view === "architecture" ? (
           <ProjectArchitecturePanel context={projectContext} embedded />
         ) : view === "validation" ? (

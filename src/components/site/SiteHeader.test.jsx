@@ -82,7 +82,7 @@ test("makes the homepage skip link the first keyboard target", async () => {
   expect(homeLink.getAttribute("href")).toBe("/");
   const homeIcon = homeLink.querySelector("img");
   expect(homeIcon).toBeTruthy();
-  expect(homeIcon.getAttribute("src")).toBe("/favicon-transparent.png");
+  expect(homeIcon.getAttribute("src")).toBe("/favicon.png");
   expect(
     screen.getByRole("navigation", { name: "Primary navigation" }),
   ).toBeTruthy();

@@ -1,0 +1,221 @@
+.summary {
+  overflow: hidden;
+  border: 1px solid var(--nx-purple-border);
+  border-radius: var(--nx-radius-card);
+  background: color-mix(in srgb, var(--nx-card) 94%, var(--nx-purple-soft));
+  box-shadow: var(--nx-shadow-card), var(--nx-inner-highlight);
+}
+
+.header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--nx-space-3);
+  padding: var(--nx-space-4) var(--nx-space-4) var(--nx-space-3);
+}
+
+.statusIcon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid var(--nx-rule-strong);
+  border-radius: var(--nx-radius-control);
+  background: var(--nx-muted-surface);
+  color: var(--nx-text-muted);
+}
+
+.statusIcon[data-tone="success"] { color: var(--nx-success); }
+.statusIcon[data-tone="info"] { color: var(--nx-info); }
+.statusIcon[data-tone="warning"] { color: var(--nx-warning); }
+.statusIcon[data-tone="danger"] { color: var(--nx-danger); }
+
+.statusIcon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.identity {
+  min-width: 0;
+}
+
+.eyebrow {
+  display: block;
+  color: var(--nx-purple-strong);
+  font-size: 0.625rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.identity h3 {
+  overflow: hidden;
+  margin: 3px 0 0;
+  color: var(--nx-text);
+  font-family: var(--nx-font-display);
+  font-size: 1rem;
+  font-weight: 680;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status {
+  display: inline-flex;
+  min-height: 26px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 9px;
+  border: 1px solid var(--nx-rule);
+  border-radius: var(--nx-radius-pill);
+  background: var(--nx-muted-surface);
+  color: var(--nx-text-secondary);
+  font-size: 0.625rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status[data-tone="success"] { color: var(--nx-success); }
+.status[data-tone="info"] { color: var(--nx-info); }
+.status[data-tone="warning"] { color: var(--nx-warning); }
+.status[data-tone="danger"] { color: var(--nx-danger); }
+
+.description {
+  margin: 0;
+  padding: 0 var(--nx-space-4) var(--nx-space-4);
+  color: var(--nx-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  border-top: 1px solid var(--nx-rule);
+  border-bottom: 1px solid var(--nx-rule);
+  background: color-mix(in srgb, var(--nx-depth) 58%, transparent);
+}
+
+.metrics div {
+  min-width: 0;
+  padding: var(--nx-space-3);
+  border-right: 1px solid var(--nx-rule);
+}
+
+.metrics div:last-child {
+  border-right: 0;
+}
+
+.metrics dt {
+  overflow: hidden;
+  color: var(--nx-text-muted);
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.metrics dd {
+  margin: 5px 0 0;
+  color: var(--nx-text);
+  font-family: var(--nx-font-code);
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--nx-space-3);
+  padding: var(--nx-space-3) var(--nx-space-4);
+}
+
+.kinds {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.kinds span,
+.issueCount {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  gap: 5px;
+  padding: 0 7px;
+  border: 1px solid var(--nx-rule);
+  border-radius: var(--nx-radius-pill);
+  color: var(--nx-text-muted);
+  font-size: 0.625rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.kinds svg,
+.issueCount svg {
+  width: 12px;
+  height: 12px;
+}
+
+.issueCount {
+  flex: 0 0 auto;
+  color: var(--nx-warning);
+}
+
+.issueCount[data-clear="true"] {
+  color: var(--nx-success);
+}
+
+.spinning {
+  animation: report-spin 900ms linear infinite;
+}
+
+@keyframes report-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 480px) {
+  .header {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .status {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .metrics div:nth-child(2) {
+    border-right: 0;
+  }
+
+  .metrics div:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--nx-rule);
+  }
+
+  .footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinning {
+    animation: none;
+  }
+}
