@@ -3,8 +3,9 @@
  */
 
 const isDev = process.env.NODE_ENV === 'development';
+const defaultBackendUrl = isDev ? "http://localhost:5001" : "https://api.nexusrbx.com";
 
-export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "https://api.nexusrbx.com";
+export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || defaultBackendUrl;
 export const STREAM_V2_ENABLED = process.env.REACT_APP_STREAM_V2 !== "false";
 export const SHOW_RAW_REASONING = process.env.REACT_APP_SHOW_RAW_REASONING === "true";
 export const SYSTEM_ONLY_PREMIUM_ENABLED = process.env.REACT_APP_SYSTEM_ONLY_PREMIUM === "true";
