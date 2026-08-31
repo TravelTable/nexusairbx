@@ -166,9 +166,22 @@ class FakeMcp implements McpClientLike {
       } else if (input.operation === "create_snapshot") {
         data = { snapshots, snapshotCount: snapshots.length };
       } else if (input.operation === "delete_instance") {
-        data = { snapshots, resultingHash, verified: true };
+        data = {
+          snapshots,
+          resultingHash,
+          verified: true,
+          semanticChecks: [{ kind: "instance_absence", path, ok: true }],
+        };
       } else {
-        data = { instance: { path }, snapshots, resultingHash };
+        const semanticChecks = input.operation === "create_instance"
+          ? [
+            { kind: "instance_identity", path, className: String(input.payload.className || "Folder"), ok: true },
+            ...Object.keys(input.payload.properties as JsonObject || {}).map((key) => ({ kind: "property", path, key, ok: true })),
+            ...Object.keys(input.payload.attributes as JsonObject || input.payload.values as JsonObject || {}).map((key) => ({ kind: "attribute", path, key, ok: true })),
+            ...((input.payload.tags as string[] | undefined) || []).map((key) => ({ kind: "tag", path, key, ok: true })),
+          ]
+          : [{ kind: input.operation === "update_attributes" ? "attribute" : input.operation === "update_properties" ? "property" : "path_transition", path, key: "Value", ok: true }];
+        data = { instance: { path }, snapshots, resultingHash, semanticChecks };
       }
       return { content: [{ type: "text", text: JSON.stringify({ version: 1, nonce: input.nonce, ok: true, data }) }] };
     }
@@ -443,6 +456,33 @@ test("snapshot creation is returned as a verified place mutation", async () => {
         snapshotId: String((result.snapshots as JsonObject[])[0]?.snapshotId || ""),
         ok: true,
       }],
+    },
+  });
+});
+
+test("fixed instance creation returns command-bound semantic Studio readback evidence", async () => {
+  const mcp = new FakeMcp();
+  const executor = new CommandExecutor(mcp, new ToolCatalog(tools));
+  const path = "Workspace/NexusLiveShowcase/NexusReleaseCanary";
+
+  const result = await executor.execute(command("create_instance", {
+    path,
+    className: "Folder",
+    attributes: { ReleaseCanary: "connector-0.2.17" },
+    createParents: false,
+  }));
+
+  assert.equal(result.success, true, JSON.stringify(result));
+  assert.equal(result.verified, true);
+  assert.deepEqual(result.verification, {
+    verified: true,
+    source: "studio_readback",
+    evidence: {
+      commandType: "create_instance",
+      checks: [
+        { kind: "instance_identity", path, className: "Folder", ok: true },
+        { kind: "attribute", path, key: "ReleaseCanary", ok: true },
+      ],
     },
   });
 });

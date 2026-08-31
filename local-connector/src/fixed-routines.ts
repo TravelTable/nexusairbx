@@ -499,6 +499,58 @@ local function describe(inst)
   local tags = CollectionService:GetTags(inst); table.sort(tags)
   return { path = pathOf(inst), name = inst.Name, className = inst.ClassName, attributes = attributes, tags = tags, childCount = #inst:GetChildren(), descendantCount = #inst:GetDescendants(), stateHash = hash(inst) }
 end
+local function desiredEncoding(value)
+  return encodeValue(decodeValue(value))
+end
+local function hasTag(tags, expected)
+  for _, tag in ipairs(tags or {}) do if tag == expected then return true end end
+  return false
+end
+local function sameStringList(left, right)
+  if #(left or {}) ~= #(right or {}) then return false end
+  for index, value in ipairs(left or {}) do if value ~= right[index] then return false end end
+  return true
+end
+local function semanticChecks(op, p, inst, sourcePath)
+  local checks = {}
+  local currentPath = inst and pathOf(inst) or tostring(sourcePath or p.path or "")
+  local function addValueChecks(values, kind, reader)
+    for key, expected in pairs(values or {}) do
+      local expectedValue = desiredEncoding(expected)
+      local readOk, actual = pcall(function() return reader(key) end)
+      local actualValue = readOk and encodeValue(actual) or "read_error"
+      table.insert(checks, { kind = kind, path = currentPath, key = key, expected = expectedValue, actual = actualValue, ok = readOk and actualValue == expectedValue })
+    end
+  end
+  if op == "create_instance" then
+    local expectedClass = tostring(p.className or "Folder")
+    table.insert(checks, { kind = "instance_identity", path = currentPath, className = inst and inst.ClassName or "", expectedClassName = expectedClass, ok = inst ~= nil and currentPath == canonicalRoutinePath(p.path) and inst.ClassName == expectedClass })
+    addValueChecks(p.properties, "property", function(key) return inst[key] end)
+    addValueChecks(p.attributes, "attribute", function(key) return inst:GetAttribute(key) end)
+    local actualTags = CollectionService:GetTags(inst); table.sort(actualTags)
+    for _, tag in ipairs(p.tags or {}) do table.insert(checks, { kind = "tag", path = currentPath, key = tag, expected = true, actual = hasTag(actualTags, tag), ok = hasTag(actualTags, tag) }) end
+  elseif op == "update_properties" then
+    addValueChecks(p.properties, "property", function(key) return inst[key] end)
+  elseif op == "update_attributes" then
+    addValueChecks(p.attributes or p.values, "attribute", function(key) return inst:GetAttribute(key) end)
+  elseif op == "update_tags" then
+    local actualTags = CollectionService:GetTags(inst); table.sort(actualTags)
+    if p.set then
+      local expectedTags = table.clone(p.set); table.sort(expectedTags)
+      table.insert(checks, { kind = "tag_set", path = currentPath, expected = expectedTags, actual = actualTags, ok = sameStringList(expectedTags, actualTags) })
+    else
+      for _, tag in ipairs(p.add or {}) do table.insert(checks, { kind = "tag", path = currentPath, key = tag, expected = true, actual = hasTag(actualTags, tag), ok = hasTag(actualTags, tag) }) end
+      for _, tag in ipairs(p.remove or {}) do table.insert(checks, { kind = "tag", path = currentPath, key = tag, expected = false, actual = hasTag(actualTags, tag), ok = not hasTag(actualTags, tag) }) end
+    end
+  elseif op == "rename_instance" or op == "move_instance" then
+    table.insert(checks, { kind = "path_transition", path = currentPath, previousPath = sourcePath, ok = inst ~= nil and currentPath ~= sourcePath and resolve(currentPath) == inst and resolve(sourcePath) == nil })
+  elseif op == "duplicate_instance" then
+    table.insert(checks, { kind = "instance_identity", path = currentPath, className = inst and inst.ClassName or "", ok = inst ~= nil and currentPath == canonicalRoutinePath(p.newPath) and resolve(currentPath) == inst })
+  elseif op == "delete_instance" then
+    table.insert(checks, { kind = "instance_absence", path = tostring(sourcePath or p.path or ""), ok = resolve(sourcePath or p.path) == nil })
+  end
+  return checks
+end
 local function applyValues(inst, values, attributes)
   local errors = {}
   for key, value in pairs(values or {}) do local ok, err = pcall(function() inst[key] = decodeValue(value) end); if not ok then table.insert(errors, { field = key, message = tostring(err) }) end end
@@ -748,7 +800,7 @@ local function mutate(op, p, nonce)
       local errors = applyValues(created, p.properties, p.attributes); if #errors > 0 then created:Destroy(); error(HttpService:JSONEncode(errors)) end
       if op == "create_script" then created.Source = tostring(p.source or "") end
       for _, tag in ipairs(p.tags or {}) do CollectionService:AddTag(created, tag) end
-      mutationStarted = true; created.Parent = context.parent; return { instance = describe(created), resultingHash = hash(created) }
+      mutationStarted = true; created.Parent = context.parent; return { instance = describe(created), resultingHash = hash(created), semanticChecks = op == "create_instance" and semanticChecks(op, p, created, nil) or nil }
     end
     local inst = context.inst
     if resolve(context.sourcePath) ~= inst then error("PRECONDITION_CHANGED: source changed after snapshot") end
@@ -769,9 +821,9 @@ local function mutate(op, p, nonce)
     elseif op == "delete_instance" then
       mutationStarted = true; inst:Destroy(); local verified = resolve(context.sourcePath) == nil
       if not verified then error("DELETE_UNVERIFIED: target still resolves after deletion") end
-      return { resultingHash = "missing", verified = true }
+      return { resultingHash = "missing", verified = true, semanticChecks = semanticChecks(op, p, nil, context.sourcePath) }
     else error("ROUTINE_UNAVAILABLE: unsupported mutation routine") end
-    return { instance = describe(inst), resultingHash = hash(inst) }
+    return { instance = describe(inst), resultingHash = hash(inst), semanticChecks = semanticChecks(op, p, inst, context.sourcePath) }
   end)
   if not ok and not mutationStarted then
     removeSnapshot(nonce)

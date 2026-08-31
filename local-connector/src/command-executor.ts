@@ -15,6 +15,10 @@ const SNAPSHOT_BATCH_COMMANDS = new Set([
   "create_script", "create_instance", "update_properties", "update_attributes", "update_tags",
   "rename_instance", "move_instance", "duplicate_instance", "delete_instance",
 ]);
+const SEMANTIC_ROUTINE_COMMANDS = new Set([
+  "create_instance", "update_properties", "update_attributes", "update_tags",
+  "rename_instance", "move_instance", "duplicate_instance", "delete_instance",
+]);
 
 export class CommandExecutor {
   #catalog: ToolCatalog;
@@ -107,10 +111,14 @@ export class CommandExecutor {
           ok: true,
         }] : [])
       : [];
+    const semanticVerification = SEMANTIC_ROUTINE_COMMANDS.has(command.type)
+      ? routineSemanticVerification(command, data)
+      : null;
     return successBase(command, mutation, {
       operation: command.type,
       ...data,
       ...(mutation ? { verificationChecks: [{ type: "routine_envelope_and_state", passed: true }] } : {}),
+      ...(semanticVerification ? { verification: semanticVerification } : {}),
       ...(command.type === "create_snapshot" ? {
         verification: {
           verified: true,
@@ -833,6 +841,29 @@ export function nexusStableHash(source: string): string {
 function matchesSourceHash(source: string, expected: string): boolean {
   const normalized = expected.trim().toLowerCase();
   return normalized === sha256(source) || normalized === nexusStableHash(source);
+}
+
+function routineSemanticVerification(command: StudioCommand, data: JsonObject): JsonObject {
+  const checks = data.semanticChecks;
+  if (!Array.isArray(checks) || checks.length === 0 || checks.some((check) => (
+    !isRecord(check)
+    || typeof check.kind !== "string"
+    || typeof check.path !== "string"
+    || check.ok !== true
+  ))) {
+    throw new ConnectorError(
+      "ROUTINE_RESULT_INVALID",
+      "The Studio routine did not return complete semantic read-back evidence.",
+    );
+  }
+  return {
+    verified: true,
+    source: "studio_readback",
+    evidence: {
+      commandType: command.type,
+      checks: checks as JsonValue[],
+    },
+  };
 }
 
 function batchMutationFootprint(command: StudioCommand): string[] {
