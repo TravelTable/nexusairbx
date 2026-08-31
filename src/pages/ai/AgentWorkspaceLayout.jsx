@@ -100,6 +100,10 @@ function isTerminalAgentRun(run) {
   return TERMINAL_AGENT_STATES.has(status) || status === "canceled";
 }
 
+function isExpectedStopAbort(error) {
+  return error?.name === "AbortError" || error?.code === "ABORT_ERR";
+}
+
 function readProjectSidebarModalViewport() {
   if (typeof window === "undefined") return false;
   if (typeof window.matchMedia === "function") {
@@ -1231,7 +1235,22 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
   );
 
   const handleStopActiveWork = useCallback(async () => {
-    const stoppedCoordinatedOperation = await stopChatOperation?.();
+    let stoppedCoordinatedOperation = false;
+    try {
+      const stopped = await stopChatOperation?.();
+      stoppedCoordinatedOperation = stopped !== false;
+    } catch (error) {
+      // The local abort is the expected first half of Stop. The coordinator's
+      // server cancellation can observe that same signal and reject even though
+      // its finally block has already fenced the operation successfully.
+      stoppedCoordinatedOperation = true;
+      if (!isExpectedStopAbort(error)) {
+        notify?.({
+          message: error?.message || "The active browser operation could not be stopped cleanly.",
+          type: "error",
+        });
+      }
+    }
 
     // Aborting the browser flow is only a local ownership fence. Canonical
     // runs continue on the server until their authoritative run id is

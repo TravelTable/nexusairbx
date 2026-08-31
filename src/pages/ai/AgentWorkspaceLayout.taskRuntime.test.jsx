@@ -451,6 +451,50 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
     expect(cancelCurrentFlow).toHaveBeenCalledTimes(1);
   });
 
+  test("treats an AbortError from the coordinated Stop path as expected cancellation", async () => {
+    const abortError = new DOMException("The operation was stopped.", "AbortError");
+    const stopChatOperation = jest.fn().mockRejectedValue(abortError);
+    const cancelCurrentFlow = jest.fn().mockReturnValue(true);
+    const cancelRun = jest.fn().mockResolvedValue(undefined);
+    const reconcileCancelledRun = jest.fn().mockResolvedValue(true);
+    const notify = jest.fn();
+    mockUseActiveAgents.mockReturnValue({
+      agents: [{
+        agentId: "agent_1",
+        chatId: "chat_1",
+        status: "running",
+        currentRun: { runId: "run_live_abort", status: "running" },
+        runs: [],
+      }],
+      cancelRun,
+    });
+    mockUseTaskRuntime.mockReturnValue({
+      taskId: "",
+      task: null,
+      events: [],
+      connectionState: "idle",
+      error: null,
+      busyAction: "",
+      selectTask: jest.fn(),
+    });
+
+    render(<AgentWorkspaceLayout controller={makeController({
+      handlers: { stopChatOperation, notify },
+      unified: { isGenerating: true, cancelCurrentFlow },
+      chatOverrides: { reconcileCancelledRun },
+    })} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "stop generation" }));
+
+    await waitFor(() => expect(cancelRun).toHaveBeenCalledWith("run_live_abort"));
+    await waitFor(() => expect(reconcileCancelledRun).toHaveBeenCalledWith(
+      "run_live_abort",
+      { chatId: "chat_1" },
+    ));
+    expect(cancelCurrentFlow).toHaveBeenCalledTimes(1);
+    expect(notify).not.toHaveBeenCalled();
+  });
+
   test("shows the authoritative active run instead of an empty activity state", async () => {
     mockUseActiveAgents.mockReturnValue({
       agents: [{
