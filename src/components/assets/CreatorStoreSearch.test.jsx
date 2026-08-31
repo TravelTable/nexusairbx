@@ -216,7 +216,7 @@ describe("CreatorStoreSearch", () => {
     fireEvent.click(attachButton);
 
     await waitFor(() => expect(onAttachAsset).toHaveBeenCalledWith([asset]));
-    expect(screen.getByRole("button", { name: "Attached to chat" }).disabled).toBe(true);
+    expect((await screen.findByRole("button", { name: "Attached to chat" })).disabled).toBe(true);
   });
 
   test("shows import action for Model and queues after confirmation", async () => {
