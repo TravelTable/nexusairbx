@@ -57,7 +57,9 @@ export function normalizeAuthoritativeRunStatus(status, evidence = null) {
   ) {
     return "canceled";
   }
-  if (["succeeded", "completed", "done"].includes(normalized)) return "completed";
-  if (["failed", "blocked", "iteration_limit", "timed_out"].includes(normalized)) return "failed";
+  if (["succeeded", "completed", "done", "applied", "ready_to_apply", "push_skipped"].includes(normalized)) {
+    return "completed";
+  }
+  if (["failed", "blocked", "conflict", "iteration_limit", "timed_out"].includes(normalized)) return "failed";
   return null;
 }

@@ -1709,6 +1709,23 @@ local function applyArtifact(payload)
 	local managedFiles = {}
 	local finalFiles = {}
 	local uiRootResults = {}
+	local totalChanges = #operations + #(payload.uiRoots or {})
+	local completedChanges = 0
+	local function reportProgress(phase, operation, path, message)
+		if type(payload._reportProgress) ~= "function" then return end
+		pcall(payload._reportProgress, {
+			phase = phase,
+			operation = operation,
+			path = tostring(path or ""),
+			message = tostring(message or ""),
+			completed = completedChanges,
+			total = totalChanges,
+		})
+	end
+	local function reportApplied(operation, path)
+		completedChanges = completedChanges + 1
+		reportProgress("applying", operation, path, "")
+	end
 
 	for _, spec in pairs(indexes.fileById) do
 		table.insert(finalFiles, spec)
@@ -1757,11 +1774,17 @@ local function applyArtifact(payload)
 			row.error = tostring(err or "Unknown Studio apply failure")
 		end
 		table.insert(fileResults, row)
+		if ok then
+			reportApplied(tostring(row.type or "operation"), tostring(row.toPath or row.path or ""))
+		end
 	end
 
+	reportProgress("applying", "start", "", "Applying validated Studio changes")
 	local executionOk, executionErr = pcall(function()
 		for _, rootSpec in ipairs(payload.uiRoots or {}) do
-			table.insert(uiRootResults, UiArtifact.applyRoot(rootSpec, payload.artifactId, snapshots, seenPaths))
+			local uiResult = UiArtifact.applyRoot(rootSpec, payload.artifactId, snapshots, seenPaths)
+			table.insert(uiRootResults, uiResult)
+			reportApplied("ui_root", uiResult.path)
 		end
 
 		for _, phase in ipairs({ "rename", "delete", "upsert" }) do
@@ -1878,6 +1901,7 @@ local function applyArtifact(payload)
 			end
 		end
 
+		reportProgress("verifying", "readback", "", "Verifying Studio changes")
 		for _, uiResult in ipairs(uiRootResults) do
 			local root = resolvePath(uiResult.path)
 			if not root or root.ClassName ~= "ScreenGui" then
@@ -1927,6 +1951,7 @@ local function applyArtifact(payload)
 			uiResult.treeHash = UiArtifact.treeHash(root)
 			root:SetAttribute("NexusTreeHash", uiResult.treeHash)
 		end
+		reportProgress("verifying", "complete", "", "Studio changes verified")
 	end)
 
 	if not executionOk then

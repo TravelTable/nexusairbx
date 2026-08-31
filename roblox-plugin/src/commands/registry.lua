@@ -306,6 +306,34 @@ local function ack(commandOrId, status, result, errorMessage)
 	return ok == true
 end
 
+function reportCommandProgress(command, progress)
+	local token = getToken()
+	local commandId = command and (command.id or command.commandId)
+	if not token or not commandId or tostring(commandId) == "" then
+		return false
+	end
+	local payload = type(progress) == "table" and progress or {}
+	local requestOptions = {
+		idempotent = true,
+		maxAttempts = 1,
+		idempotencyKey = tostring(commandId)
+			.. ":studio-progress:"
+			.. tostring(payload.phase or "applying")
+			.. ":"
+			.. tostring(payload.operation or "operation")
+			.. ":"
+			.. tostring(payload.completed or 0),
+	}
+	local ok = request(
+		"POST",
+		"/api/studio/commands/" .. HttpService:UrlEncode(tostring(commandId)) .. "/progress",
+		payload,
+		token,
+		requestOptions
+	)
+	return ok == true
+end
+
 function reconcileStoredCommandReceipt(command)
 	local stored = getStoredCommandReceipt(command and command.operationId)
 	if not stored then return false, false end
@@ -1014,6 +1042,11 @@ local function executeCommand(command)
 		setAgentPhase("thinking")
 	end
 	local payload = command.payload or {}
+	payload._reportProgress = function(progress)
+		pcall(function()
+			reportCommandProgress(command, progress)
+		end)
+	end
 	local started = commandStartedMs()
 	-- This is the final mutation boundary. Re-read live game identity immediately
 	-- before invoking a write handler; approval-time checks are not sufficient

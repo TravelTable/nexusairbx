@@ -110,7 +110,7 @@ test("public pricing reads the serializable catalog and preserves exact prices a
   const pricing = read("public-frontend/components/PricingCatalog.jsx");
   assert.match(pricing, /publicPlanCatalog\.json/);
   assert.match(pricing, /plan\.yearly \/ 12/);
-  assert.match(pricing, /billed yearly/i);
+  assert.match(pricing, /billed annually/i);
   assert.match(pricing, /Monthly billing only/);
   assert.match(pricing, /annualUnavailable/);
   assert.match(pricing, /plan\.yearly == null/);
@@ -121,48 +121,46 @@ test("public pricing reads the serializable catalog and preserves exact prices a
   assert.match(pricing, /getEntitlements/);
   assert.match(pricing, /Manage plan/);
   assert.match(pricing, /href="\/billing"/);
-  assert.match(pricing, /Plans and usage/);
-  assert.match(pricing, /Choose how long the build can run/);
-  assert.match(pricing, /PlanFinder/);
-  assert.match(pricing, /Find a sensible starting point/);
-  assert.match(pricing, /This guide only highlights an existing plan/);
-  assert.match(pricing, /role="status" aria-live="polite"/);
-  assert.match(pricing, /data-recommended/);
+  assert.match(pricing, /NexusRBX plans/);
+  assert.match(pricing, /Choose the plan that fits your build/);
+  assert.match(pricing, /PricingCard/);
+  assert.match(pricing, /Most popular/);
+  assert.match(pricing, /data-featured/);
   assert.match(pricing, /aria-label="NexusRBX access plans"/);
   assert.match(pricing, /data-plan=\{plan\.id\}/);
-  assert.match(pricing, /Compare plans/);
-  assert.match(pricing, /aria-label="Plan comparison table"/);
+  assert.match(pricing, /Detailed feature comparison/);
+  assert.match(pricing, /aria-label="Detailed feature comparison"/);
   assert.doesNotMatch(
     pricing,
     /gradient|testimonial|priority processing|collaboration/i,
   );
 });
 
-test("pricing billing-period control follows the access-ledger design authority", () => {
+test("pricing follows the selected reference-card design authority", () => {
   const routeMatrix = read("docs/design/revamp-route-matrix.md");
   const pricing = read("public-frontend/components/PricingCatalog.jsx");
-  const styles = read("public-frontend/components/PricingLedger.module.css");
+  const styles = read("public-frontend/components/PricingWorkspace.module.css");
 
-  assert.match(routeMatrix, /`\/pricing`[\s\S]*No plan cards, recommended badge, or pill toggle/);
+  assert.match(routeMatrix, /`\/pricing`[\s\S]*Reference-inspired pricing cards/);
   assert.match(
     pricing,
-    /className=\{styles\.interval\}[\s\S]*role="group"[\s\S]*aria-label="Billing period"/,
+    /className=\{styles\.cycleToggle\}[\s\S]*role="group"[\s\S]*aria-label="Billing period"/,
   );
   assert.match(
     styles,
-    /\.interval\s*\{[^}]*border-bottom:\s*1px solid var\(--nx-rule\)[^}]*border-radius:\s*var\(--nx-radius-field\)/,
+    /\.cycleToggle\s*\{[^}]*border:\s*1px solid var\(--nx-rule-strong\)[^}]*border-radius:\s*var\(--nx-radius-panel\)/,
   );
   assert.match(
     styles,
-    /\.interval button\s*\{[^}]*min-height:\s*var\(--nx-touch-target\)[^}]*border-bottom:\s*2px solid transparent[^}]*border-radius:\s*var\(--nx-radius-field\)/,
+    /\.cycleToggle button\s*\{[^}]*min-height:\s*var\(--nx-touch-target\)[^}]*border-radius:\s*var\(--nx-radius-control\)/,
   );
   assert.match(
     styles,
-    /\.interval button\[aria-pressed="true"\]\s*\{[^}]*border-bottom-color:\s*var\(--nx-purple-strong\)/,
+    /\.cycleToggle button\[aria-pressed="true"\]\s*\{[^}]*background:\s*var\(--nx-raised-surface\)/,
   );
-  assert.doesNotMatch(
+  assert.match(
     styles,
-    /\.interval(?: button)?\s*\{[^}]*var\(--nx-radius-pill\)/,
+    /\.planCard\[data-featured="true"\]\s*\{[^}]*border:\s*2px solid var\(--nx-purple\)/,
   );
 });
 

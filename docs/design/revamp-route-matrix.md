@@ -5,7 +5,7 @@ This matrix records the shell, primary composition, preserved behaviour, and acc
 | Route family | Shell | Target composition | Behaviour that must remain | Acceptance focus |
 |---|---|---|---|---|
 | `/` | Public | Active request, world cutaway, continuous build record, genre atlas, reviewed ending | Prompt handoff, analytics, metadata | No conventional SaaS hero, browser mockup, feature grid, or CTA panel |
-| `/pricing` | Public | Access ledger | Plan data, billing interval, checkout URLs, subscription detection, analytics | No plan cards, recommended badge, or pill toggle |
+| `/pricing` | Public | Reference-inspired pricing cards and feature comparison | Plan data, billing interval, checkout URLs, subscription detection, analytics | Five real plan cards, elevated Pro treatment, segmented billing control, responsive comparison table |
 | `/docs`, `/docs/:slug` | Public/document | Text index and document field | Content, links, metadata, code | No decorative sidebar card or terminal atmosphere |
 | SEO landing routes | Public/document | Example request/output record, limits, failure/recovery, FAQ ledger | Canonicals, structured data, prompt handoff, analytics | No hero/card/FAQ-card template |
 | `/downloads` | Public/document | Release ledger | Download URLs, platform and version truth | No download cards |

@@ -2,7 +2,7 @@
 
 Active protocol version: `2026-08-27-r15-animation`
 
-Current plugin build: `nexusrbx-studio-0.14.0-r15-animation.2-ui`. The build
+Current plugin build: `nexusrbx-studio-0.14.0-r15-animation.3-live-apply`. The build
 identity changed for UI artifact v3 even though the transport protocol version
 did not; an older build must not receive a v3 `uiRoots` payload.
 

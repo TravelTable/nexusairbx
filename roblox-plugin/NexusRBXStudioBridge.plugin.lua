@@ -14,7 +14,7 @@ local STUDIO_PROTOCOL_VERSION = "2026-08-27-r15-animation"
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.14.0-r15-animation.2-ui"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.14.0-r15-animation.3-live-apply"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the
@@ -7635,6 +7635,23 @@ applyArtifact = function(payload)
 	local managedFiles = {}
 	local finalFiles = {}
 	local uiRootResults = {}
+	local totalChanges = #operations + #(payload.uiRoots or {})
+	local completedChanges = 0
+	local function reportProgress(phase, operation, path, message)
+		if type(payload._reportProgress) ~= "function" then return end
+		pcall(payload._reportProgress, {
+			phase = phase,
+			operation = operation,
+			path = tostring(path or ""),
+			message = tostring(message or ""),
+			completed = completedChanges,
+			total = totalChanges,
+		})
+	end
+	local function reportApplied(operation, path)
+		completedChanges = completedChanges + 1
+		reportProgress("applying", operation, path, "")
+	end
 
 	for _, spec in pairs(indexes.fileById) do
 		table.insert(finalFiles, spec)
@@ -7683,11 +7700,17 @@ applyArtifact = function(payload)
 			row.error = tostring(err or "Unknown Studio apply failure")
 		end
 		table.insert(fileResults, row)
+		if ok then
+			reportApplied(tostring(row.type or "operation"), tostring(row.toPath or row.path or ""))
+		end
 	end
 
+	reportProgress("applying", "start", "", "Applying validated Studio changes")
 	local executionOk, executionErr = pcall(function()
 		for _, rootSpec in ipairs(payload.uiRoots or {}) do
-			table.insert(uiRootResults, UiArtifact.applyRoot(rootSpec, payload.artifactId, snapshots, seenPaths))
+			local uiResult = UiArtifact.applyRoot(rootSpec, payload.artifactId, snapshots, seenPaths)
+			table.insert(uiRootResults, uiResult)
+			reportApplied("ui_root", uiResult.path)
 		end
 
 		for _, phase in ipairs({ "rename", "delete", "upsert" }) do
@@ -7804,6 +7827,7 @@ applyArtifact = function(payload)
 			end
 		end
 
+		reportProgress("verifying", "readback", "", "Verifying Studio changes")
 		for _, uiResult in ipairs(uiRootResults) do
 			local root = resolvePath(uiResult.path)
 			if not root or root.ClassName ~= "ScreenGui" then
@@ -7853,6 +7877,7 @@ applyArtifact = function(payload)
 			uiResult.treeHash = UiArtifact.treeHash(root)
 			root:SetAttribute("NexusTreeHash", uiResult.treeHash)
 		end
+		reportProgress("verifying", "complete", "", "Studio changes verified")
 	end)
 
 	if not executionOk then
@@ -9898,6 +9923,34 @@ ack = function(commandOrId, status, result, errorMessage)
 	return ok == true
 end
 
+function reportCommandProgress(command, progress)
+	local token = getToken()
+	local commandId = command and (command.id or command.commandId)
+	if not token or not commandId or tostring(commandId) == "" then
+		return false
+	end
+	local payload = type(progress) == "table" and progress or {}
+	local requestOptions = {
+		idempotent = true,
+		maxAttempts = 1,
+		idempotencyKey = tostring(commandId)
+			.. ":studio-progress:"
+			.. tostring(payload.phase or "applying")
+			.. ":"
+			.. tostring(payload.operation or "operation")
+			.. ":"
+			.. tostring(payload.completed or 0),
+	}
+	local ok = request(
+		"POST",
+		"/api/studio/commands/" .. Services.HttpService:UrlEncode(tostring(commandId)) .. "/progress",
+		payload,
+		token,
+		requestOptions
+	)
+	return ok == true
+end
+
 reconcileStoredCommandReceipt = function(command)
 	local stored = getStoredCommandReceipt(command and command.operationId)
 	if not stored then return false, false end
@@ -10606,6 +10659,11 @@ executeCommand = function(command)
 		setAgentPhase("thinking")
 	end
 	local payload = command.payload or {}
+	payload._reportProgress = function(progress)
+		pcall(function()
+			reportCommandProgress(command, progress)
+		end)
+	end
 	local started = commandStartedMs()
 	-- This is the final mutation boundary. Re-read live game identity immediately
 	-- before invoking a write handler; approval-time checks are not sufficient

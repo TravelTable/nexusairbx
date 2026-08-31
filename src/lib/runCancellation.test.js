@@ -36,4 +36,13 @@ describe("authoritative user cancellation", () => {
       expect(normalizeAuthoritativeRunStatus(status)).toBe("canceled");
     },
   );
+
+  test.each(["applied", "ready_to_apply", "push_skipped"])(
+    "treats a finished Studio handoff state as completed: %s",
+    (status) => expect(normalizeAuthoritativeRunStatus(status)).toBe("completed"),
+  );
+
+  test("treats a Studio workspace conflict as failed", () => {
+    expect(normalizeAuthoritativeRunStatus("conflict")).toBe("failed");
+  });
 });
