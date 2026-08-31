@@ -33,7 +33,7 @@ const BTN_VARIANTS = {
     "text-[var(--ds-text-muted)] font-semibold hover:text-[var(--ds-text)] hover:bg-[var(--ds-fill-hover)]",
 };
 
-export function Button({
+export const Button = React.forwardRef(function Button({
   variant = "primary",
   size = "md",
   icon: Icon,
@@ -42,9 +42,10 @@ export function Button({
   children,
   type = "button",
   ...rest
-}) {
+}, ref) {
   return (
     <button
+      ref={ref}
       type={type}
       className={cx(
         "inline-flex items-center justify-center transition-[background-color,border-color,color,box-shadow,transform] duration-150 focus-ring disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100",
@@ -59,7 +60,7 @@ export function Button({
       {IconRight ? <IconRight className="w-4 h-4 shrink-0" /> : null}
     </button>
   );
-}
+});
 
 // --- Card / Panel -----------------------------------------------------------
 

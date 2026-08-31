@@ -1076,7 +1076,7 @@ export default function UiCreatorWorkspace({
           )}
           {!compactViewport ? <div className="ui-creator__panel-resizer ui-creator__panel-resizer--left" role="separator" aria-label="Resize Chat and Layers panel" aria-orientation="vertical" aria-valuemin={UI_CREATOR_PANEL_MIN} aria-valuemax={UI_CREATOR_PANEL_MAX} aria-valuenow={leftWidth} tabIndex={0} onPointerDown={(event) => beginPanelResize("left", event)} onKeyDown={(event) => resizePanelWithKeyboard("left", event)} onDoubleClick={() => setPanelWidth("left", UI_CREATOR_LEFT_DEFAULT, true)} /> : null}
         </aside>
-        {!leftOpen ? <Button type="button" variant="secondary" size="sm" className="ui-creator__reopen ui-creator__reopen--left" onClick={(event) => openPanel("left", event.currentTarget)} aria-label="Open Chat and Layers" icon={ChevronRight}><span>Chat & Layers</span></Button> : null}
+        {!leftOpen ? <Button ref={leftReopenRef} type="button" variant="secondary" size="sm" className="ui-creator__reopen ui-creator__reopen--left" onClick={(event) => openPanel("left", event.currentTarget)} aria-label="Open Chat and Layers" icon={ChevronRight}><span>Chat & Layers</span></Button> : null}
 
         <main className="ui-creator__stage" role="tabpanel" aria-label={`${mode} workspace`}>
           {mode === "code" ? (
@@ -1132,7 +1132,7 @@ export default function UiCreatorWorkspace({
           </div>
         </main>
 
-        {!rightOpen ? <Button type="button" variant="secondary" size="sm" className="ui-creator__reopen ui-creator__reopen--right" onClick={(event) => openPanel("right", event.currentTarget)} aria-label="Open inspector" icon={ChevronLeft}><span>Inspector</span></Button> : null}
+        {!rightOpen ? <Button ref={rightReopenRef} type="button" variant="secondary" size="sm" className="ui-creator__reopen ui-creator__reopen--right" onClick={(event) => openPanel("right", event.currentTarget)} aria-label="Open inspector" icon={ChevronLeft}><span>Inspector</span></Button> : null}
         <aside ref={rightPanelRef} className="ui-creator__right" aria-label="Inspector" role={compactViewport ? "dialog" : undefined} aria-modal={compactViewport ? "true" : undefined} aria-hidden={compactViewport && !rightOpen ? "true" : undefined} tabIndex={compactViewport ? -1 : undefined}>
           <div className="ui-creator__panel-header">
             <div><span>Inspector</span><strong>{visibleSelected?.name || "Nothing selected"}</strong></div>
