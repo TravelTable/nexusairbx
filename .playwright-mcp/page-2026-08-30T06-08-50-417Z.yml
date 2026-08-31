@@ -1,0 +1,152 @@
+- generic:
+  - generic [ref=f14e2]:
+    - link "Skip to main content" [ref=f14e3] [cursor=pointer]:
+      - /url: "#ai-workspace-main"
+    - banner [ref=f14e4]:
+      - link "NexusRBX home" [ref=f14e6] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f14e9]:
+        - 'button "Change game. Current game: Local AI Test" [ref=f14e10] [cursor=pointer]':
+          - generic [ref=f14e11]: Local AI Test
+        - generic [ref=f14e14]: /
+        - strong [ref=f14e15]: New chat
+      - generic [ref=f14e16]:
+        - group "Workspace mode" [ref=f14e17]:
+          - button "Agent" [ref=f14e18] [cursor=pointer]
+          - button "UI" [pressed] [ref=f14e19] [cursor=pointer]
+          - button "Asset" [ref=f14e20] [cursor=pointer]
+        - button "GPT-5 mini" [ref=f14e23] [cursor=pointer]
+        - button "Connect Roblox Studio" [ref=f14e31] [cursor=pointer]
+    - main [ref=f14e42]:
+      - region "Roblox UI Creator" [ref=f14e43]:
+        - generic [ref=f14e44]:
+          - generic [ref=f14e45]:
+            - combobox "UI design" [ref=f14e46]:
+              - option "Untitled UI" [selected]
+              - option "Local AI Test UI"
+            - button "Create a new UI design" [ref=f14e47] [cursor=pointer]:
+              - generic [ref=f14e49]: New
+          - group "Creator mode" [ref=f14e50]:
+            - button "Design" [ref=f14e51] [cursor=pointer]
+            - button "Preview" [pressed] [ref=f14e54] [cursor=pointer]
+            - button "Code" [ref=f14e57] [cursor=pointer]
+          - generic [ref=f14e62]:
+            - button "Undo UI edit" [ref=f14e63] [cursor=pointer]
+            - button "Redo UI edit" [disabled] [ref=f14e67]
+            - combobox "Preview device" [ref=f14e70]:
+              - option "Desktop · 1280×720"
+              - option "Tablet · 1024×768"
+              - option "Phone landscape · 812×375"
+              - option "Phone portrait · 375×812" [selected]
+            - group [ref=f14e71]:
+              - generic "Fidelity" [ref=f14e72] [cursor=pointer]
+            - button "Apply to Studio" [ref=f14e75] [cursor=pointer]
+        - generic [ref=f14e79]:
+          - complementary "Chat and layers" [ref=f14e80]:
+            - generic [ref=f14e81]:
+              - button "Chat" [pressed] [ref=f14e82] [cursor=pointer]
+              - button "Layers" [ref=f14e86] [cursor=pointer]
+              - button "Collapse left panel" [ref=f14e91] [cursor=pointer]
+            - generic [ref=f14e94]:
+              - article [ref=f14e95]:
+                - text: You
+                - paragraph [ref=f14e96]: Create a polished responsive Roblox shop UI with a strong header, gold coin balance, category tab buttons, three item cards, Buy buttons, and a confirmation purchase modal. Add working declarative tab and modal interactions plus subtle safe tweens. Keep it readable on desktop, tablet, phone landscape, and phone portrait.
+              - article [ref=f14e97]:
+                - text: Nexus
+                - paragraph [ref=f14e98]: A new UI revision is ready for review.
+              - article [ref=f14e99]:
+                - text: You
+                - paragraph [ref=f14e100]: Create a polished responsive Roblox shop UI with a strong header, gold coin balance, category tab buttons, three item cards, Buy buttons, and a confirmation purchase modal. Add working declarative tab and modal interactions plus subtle safe tweens. Keep it readable on desktop, tablet, phone landscape, and phone portrait.
+              - article [ref=f14e101]:
+                - text: Nexus
+                - paragraph [ref=f14e102]: A new UI revision is ready for review.
+          - main [ref=f14e103]:
+            - generic "Root_Frame" [ref=f14e106]:
+              - generic "Header" [ref=f14e107]:
+                - generic "Shop_Title" [ref=f14e108]: Item Shop
+                - generic "Gold_Balance_Row" [ref=f14e109]:
+                  - generic "Coin_Icon" [ref=f14e110]
+                  - generic "Gold_Amount" [ref=f14e111]: 1,250
+              - generic "Category_Tabs" [ref=f14e112]:
+                - button "Show all shop items" [ref=f14e113] [cursor=pointer]:
+                  - generic: All
+                - button "Show weapon items" [ref=f14e114] [cursor=pointer]:
+                  - generic: Weapons
+                - button "Show skin items" [ref=f14e115] [cursor=pointer]:
+                  - generic: Skins
+              - generic "Items_List" [ref=f14e116]:
+                - generic "Card_-_Thunder_Rifle" [ref=f14e117]:
+                  - generic "Item1_Image" [ref=f14e118]
+                  - generic "Item1_Title" [ref=f14e119]: Thunder Rifle
+                  - generic "Item1_Price" [ref=f14e120]: 800 Gold
+                  - button "Buy Thunder Rifle" [ref=f14e121] [cursor=pointer]:
+                    - generic: Buy
+                - generic "Card_-_Aurora_Skin" [ref=f14e122]:
+                  - generic "Item2_Image" [ref=f14e123]
+                  - generic "Item2_Title" [ref=f14e124]: Aurora Skin
+                  - generic "Item2_Price" [ref=f14e125]: 450 Gold
+                  - button "Buy Aurora Skin" [active] [ref=f14e126] [cursor=pointer]:
+                    - generic: Buy
+                - generic "Card_-_Nova_Pistol" [ref=f14e128]:
+                  - generic "Item3_Image" [ref=f14e129]
+                  - generic "Item3_Title" [ref=f14e130]: Nova Pistol
+                  - generic "Item3_Price" [ref=f14e131]: 300 Gold
+                  - button "Buy Nova Pistol" [ref=f14e132] [cursor=pointer]:
+                    - generic: Buy
+              - generic "Modal_Backdrop" [ref=f14e206]:
+                - button "Dismiss purchase dialog" [ref=f14e207] [cursor=pointer]
+              - generic "Confirm purchase dialog" [ref=f14e208]:
+                - generic "Modal_Title" [ref=f14e209]: Confirm Purchase
+                - generic "Modal_Description" [ref=f14e210]: Are you sure you want to buy this item for the listed price?
+                - button "Confirm purchase" [ref=f14e211] [cursor=pointer]:
+                  - generic: Confirm
+                - button "Cancel purchase" [ref=f14e212] [cursor=pointer]:
+                  - generic: Cancel
+            - generic [ref=f14e133]:
+              - textbox "Describe the UI revision" [ref=f14e134]:
+                - /placeholder: Create a responsive shop UI with category tabs, item cards, currency balance, and a purchase modal…
+              - button "Generate UI revision" [disabled] [ref=f14e135]
+          - complementary "Inspector" [ref=f14e139]:
+            - generic [ref=f14e140]:
+              - button "Properties" [pressed] [ref=f14e141] [cursor=pointer]
+              - button "Actions" [ref=f14e145] [cursor=pointer]
+              - button "Assets" [ref=f14e148] [cursor=pointer]
+              - button "Collapse inspector" [ref=f14e153] [cursor=pointer]
+            - generic [ref=f14e156]:
+              - generic [ref=f14e213]:
+                - generic [ref=f14e214]: TextButton
+                - strong [ref=f14e215]: Buy_Button_-_Skin
+              - generic [ref=f14e216]:
+                - generic [ref=f14e217]: Name
+                - textbox "Name" [ref=f14e218]: Buy_Button_-_Skin
+              - generic [ref=f14e219]:
+                - generic [ref=f14e220]: Text
+                - textbox "Text" [ref=f14e221]: Buy
+              - generic [ref=f14e222]:
+                - generic [ref=f14e223]:
+                  - generic [ref=f14e224]: X offset
+                  - spinbutton "X offset" [ref=f14e225]: "140"
+                - generic [ref=f14e226]:
+                  - generic [ref=f14e227]: Y offset
+                  - spinbutton "Y offset" [ref=f14e228]: "88"
+                - generic [ref=f14e229]:
+                  - generic [ref=f14e230]: Width
+                  - spinbutton "Width" [ref=f14e231]: "125"
+                - generic [ref=f14e232]:
+                  - generic [ref=f14e233]: Height
+                  - spinbutton "Height" [ref=f14e234]: "40"
+              - generic [ref=f14e235]:
+                - generic [ref=f14e236]: Background
+                - textbox "Background" [ref=f14e237]: "#d5a65a"
+              - generic [ref=f14e238]:
+                - generic [ref=f14e239]: Text color
+                - textbox "Text color" [ref=f14e240]: "#171318"
+              - generic [ref=f14e241]:
+                - generic [ref=f14e242]: Corner radius
+                - spinbutton "Corner radius" [ref=f14e243]: "0"
+              - button "Delete node" [ref=f14e244] [cursor=pointer]
+            - generic [ref=f14e189]:
+              - button "Checkpoint" [ref=f14e190] [cursor=pointer]
+              - button "History" [ref=f14e194] [cursor=pointer]
+  - generic:
+    - region "Notifications"

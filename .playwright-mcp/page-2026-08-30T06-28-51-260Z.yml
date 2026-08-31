@@ -1,0 +1,136 @@
+- generic:
+  - generic [ref=f20e2]:
+    - link "Skip to main content" [ref=f20e3] [cursor=pointer]:
+      - /url: "#ai-workspace-main"
+    - banner [ref=f20e4]:
+      - link "NexusRBX home" [ref=f20e6] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f20e9]:
+        - 'button "Change game. Current game: Local AI Test" [ref=f20e10] [cursor=pointer]':
+          - generic [ref=f20e11]: Local AI Test
+        - generic [ref=f20e14]: /
+        - strong [ref=f20e15]: New chat
+      - generic [ref=f20e16]:
+        - group "Workspace mode" [ref=f20e17]:
+          - button "Agent" [ref=f20e18] [cursor=pointer]
+          - button "UI" [pressed] [ref=f20e19] [cursor=pointer]
+          - button "Asset" [ref=f20e20] [cursor=pointer]
+        - button "Nexus Free Auto" [ref=f20e23] [cursor=pointer]
+        - button "Connect Roblox Studio" [ref=f20e31] [cursor=pointer]
+    - main [ref=f20e42]:
+      - region "Roblox UI Creator" [ref=f20e43]:
+        - generic [ref=f20e44]:
+          - generic [ref=f20e45]:
+            - combobox "UI design" [ref=f20e46]:
+              - option "Untitled UI" [selected]
+              - option "Local AI Test UI"
+            - button "Create a new UI design" [ref=f20e47] [cursor=pointer]:
+              - generic [ref=f20e49]: New
+          - group "Creator mode" [ref=f20e50]:
+            - button "Design" [pressed] [ref=f20e51] [cursor=pointer]
+            - button "Preview" [ref=f20e54] [cursor=pointer]
+            - button "Code" [ref=f20e57] [cursor=pointer]
+          - generic [ref=f20e62]:
+            - button "Undo UI edit" [disabled] [ref=f20e63]
+            - button "Redo UI edit" [disabled] [ref=f20e67]
+            - combobox "Preview device" [ref=f20e70]:
+              - option "Desktop · 1280×720" [selected]
+              - option "Tablet · 1024×768"
+              - option "Phone landscape · 812×375"
+              - option "Phone portrait · 375×812"
+            - group [ref=f20e71]:
+              - generic "Fidelity" [ref=f20e72] [cursor=pointer]
+            - button "Apply to Studio" [ref=f20e75] [cursor=pointer]
+        - generic [ref=f20e79]:
+          - complementary "Chat and layers" [ref=f20e80]:
+            - generic [ref=f20e81]:
+              - button "Chat" [pressed] [ref=f20e82] [cursor=pointer]
+              - button "Layers" [ref=f20e86] [cursor=pointer]
+              - button "Collapse left panel" [ref=f20e91] [cursor=pointer]
+            - generic [ref=f20e94]:
+              - article [ref=f20e95]:
+                - text: You
+                - paragraph [ref=f20e96]: Create a polished responsive Roblox shop UI with a strong header, gold coin balance, category tab buttons, three item cards, Buy buttons, and a confirmation purchase modal. Add working declarative tab and modal interactions plus subtle safe tweens. Keep it readable on desktop, tablet, phone landscape, and phone portrait.
+              - article [ref=f20e97]:
+                - text: Nexus
+                - paragraph [ref=f20e98]: A new UI revision is ready for review.
+              - article [ref=f20e99]:
+                - text: You
+                - paragraph [ref=f20e100]: Create a polished responsive Roblox shop UI with a strong header, gold coin balance, category tab buttons, three item cards, Buy buttons, and a confirmation purchase modal. Add working declarative tab and modal interactions plus subtle safe tweens. Keep it readable on desktop, tablet, phone landscape, and phone portrait.
+              - article [ref=f20e101]:
+                - text: Nexus
+                - paragraph [ref=f20e102]: A new UI revision is ready for review.
+          - main [ref=f20e103]:
+            - generic "Root_Frame" [ref=f20e106]:
+              - generic "Header" [ref=f20e107]:
+                - generic "Shop_Title" [ref=f20e108]: Item Shop
+                - generic "Gold_Balance_Row" [ref=f20e109]:
+                  - generic "Coin_Icon" [ref=f20e110]
+                  - generic "Gold_Amount" [ref=f20e111]: 1,250
+              - generic "Category_Tabs" [ref=f20e112]:
+                - button "Show all shop items" [ref=f20e113]:
+                  - generic: All
+                - button "Show weapon items" [ref=f20e114]:
+                  - generic: Weapons
+                - button "Show skin items" [ref=f20e115]:
+                  - generic: Skins
+              - generic "Items_List" [ref=f20e116]:
+                - generic "Card_-_Thunder_Rifle" [ref=f20e117]:
+                  - generic "Item1_Image" [ref=f20e118]
+                  - generic "Item1_Title" [ref=f20e119]: Thunder Rifle
+                  - generic "Item1_Price" [ref=f20e120]: 800 Gold
+                  - button "Buy Thunder Rifle" [ref=f20e121]:
+                    - generic: Buy
+                - generic "Card_-_Aurora_Skin" [ref=f20e122]:
+                  - generic "Item2_Image" [ref=f20e123]
+                  - generic "Item2_Title" [ref=f20e124]: Aurora Skin
+                  - generic "Item2_Price" [ref=f20e125]: 450 Gold
+                  - button "Buy Aurora Skin" [ref=f20e126]:
+                    - generic: Buy
+                - generic "Card_-_Nova_Pistol" [ref=f20e127]:
+                  - generic "Item3_Image" [ref=f20e128]
+                  - generic "Item3_Title" [ref=f20e129]: Nova Pistol
+                  - generic "Item3_Price" [ref=f20e130]: 300 Gold
+                  - button "Buy Nova Pistol" [ref=f20e131]:
+                    - generic: Buy
+            - generic [ref=f20e132]:
+              - textbox "Describe the UI revision" [ref=f20e133]:
+                - /placeholder: Create a responsive shop UI with category tabs, item cards, currency balance, and a purchase modal…
+              - button "Generate UI revision" [disabled] [ref=f20e134]
+          - complementary "Inspector" [ref=f20e138]:
+            - generic [ref=f20e139]:
+              - button "Properties" [ref=f20e140] [cursor=pointer]
+              - button "Actions" [ref=f20e144] [cursor=pointer]
+              - button "Assets" [active] [pressed] [ref=f20e147] [cursor=pointer]
+              - button "Collapse inspector" [ref=f20e152] [cursor=pointer]
+            - generic [ref=f20e187]:
+              - generic [ref=f20e188]:
+                - generic [ref=f20e189]: CANONICAL ASSETS
+                - strong [ref=f20e190]: Icons
+              - generic [ref=f20e191]:
+                - generic [ref=f20e192]: Icon brief
+                - textbox "Icon brief" [ref=f20e193]:
+                  - /placeholder: A crisp gold coin shop icon…
+              - button "Generate one icon" [disabled] [ref=f20e194]
+              - generic [ref=f20e199]:
+                - article [ref=f20e200]:
+                  - generic [ref=f20e206]:
+                    - strong [ref=f20e207]: Asset 1
+                    - generic [ref=f20e208]: Roblox 131324700
+                  - generic [ref=f20e209]: draft
+                - article [ref=f20e210]:
+                  - generic [ref=f20e216]:
+                    - strong [ref=f20e217]: Asset 2
+                    - generic [ref=f20e218]: Roblox 131324701
+                  - generic [ref=f20e219]: draft
+                - article [ref=f20e220]:
+                  - generic [ref=f20e221]:
+                    - strong [ref=f20e222]: A crisp polished gold coin with a small five-point star embossed in the center, transparent background, Roblox game shop
+                    - generic [ref=f20e223]: Nexus preview only
+                  - generic [ref=f20e224]: generated
+              - button "Review publishing" [ref=f20e225] [cursor=pointer]
+            - generic [ref=f20e161]:
+              - button "Checkpoint" [ref=f20e162] [cursor=pointer]
+              - button "History" [ref=f20e166] [cursor=pointer]
+  - generic:
+    - region "Notifications"

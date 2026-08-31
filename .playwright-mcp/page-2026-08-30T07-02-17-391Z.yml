@@ -1,0 +1,47 @@
+- generic [active]:
+  - generic [ref=e2]:
+    - link "Skip to main content" [ref=e3] [cursor=pointer]:
+      - /url: "#ai-workspace-main"
+    - banner [ref=e4]:
+      - link "NexusRBX home" [ref=e6] [cursor=pointer]:
+        - /url: /
+      - 'button "Change game. Current game: Local AI Test" [ref=e10] [cursor=pointer]':
+        - generic [ref=e11]: Local AI Test
+      - group "Workspace mode" [ref=e17]:
+        - button "Agent" [ref=e18] [cursor=pointer]
+        - button "UI" [pressed] [ref=e19] [cursor=pointer]
+        - button "Asset" [ref=e20] [cursor=pointer]
+    - main [ref=e34]:
+      - region "Roblox UI Creator" [ref=e35]:
+        - generic [ref=e36]:
+          - button "Create a new UI design" [ref=e39] [cursor=pointer]
+          - group "Creator mode" [ref=e42]:
+            - button "Design" [pressed] [ref=e43] [cursor=pointer]
+            - button "Preview" [ref=e46] [cursor=pointer]
+            - button "Code" [ref=e49] [cursor=pointer]
+          - button "Undo UI edit" [disabled] [ref=e55]
+        - generic [ref=e71]:
+          - button "Open Chat and Layers" [ref=e2236] [cursor=pointer]
+          - main [ref=e91]:
+            - generic [ref=e93]:
+              - generic "Fly_Panel" [ref=e94]
+              - generic "Title" [ref=e95]: Fly Controls
+              - button "Toggle_Fly_Button" [ref=e96]:
+                - generic: Toggle Fly
+              - button "Speed_Up_Button" [ref=e97]:
+                - generic: Speed +
+              - button "Speed_Down_Button" [ref=e98]:
+                - generic: Speed -
+              - button "Fly_Up_Button" [ref=e99]:
+                - generic: Ascend
+              - button "Fly_Down_Button" [ref=e100]:
+                - generic: Descend
+            - form "Roblox UI prompt composer" [ref=e102]:
+              - generic "UI generation model" [ref=e103]:
+                - button "Nexus Free Auto" [ref=e2235] [cursor=pointer]
+              - textbox "Describe the UI revision" [ref=e112]:
+                - /placeholder: Create or revise this Roblox UI…
+              - button "Generate UI revision" [disabled] [ref=e113]
+          - button "Open inspector" [ref=e2239] [cursor=pointer]
+  - generic:
+    - region "Notifications"

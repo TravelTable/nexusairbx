@@ -1,0 +1,26 @@
+- generic [active]:
+  - generic [ref=f1e5]:
+    - link "Skip to main content" [ref=f1e6] [cursor=pointer]:
+      - /url: "#ai-workspace-main"
+    - banner [ref=f1e7]:
+      - link "NexusRBX home" [ref=f1e9] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f1e12]:
+        - 'button "Change game. Current game: Workspace" [ref=f1e13] [cursor=pointer]':
+          - generic [ref=f1e14]: Workspace
+        - generic [ref=f1e17]: /
+        - strong [ref=f1e18]: New chat
+      - generic [ref=f1e19]:
+        - group "Workspace mode" [ref=f1e20]:
+          - button "Agent" [ref=f1e21] [cursor=pointer]
+          - button "UI" [pressed] [ref=f1e22] [cursor=pointer]
+          - button "Asset" [ref=f1e23] [cursor=pointer]
+        - button "Nexus Free Auto" [ref=f1e26] [cursor=pointer]
+        - button "Connect Roblox Studio" [ref=f1e34] [cursor=pointer]
+    - main [ref=f1e45]:
+      - generic [ref=f1e46]:
+        - heading "Roblox UI Creator" [level=1] [ref=f1e50]
+        - paragraph [ref=f1e51]: Browser preview, AI revisions, and Studio apply are available on Starter and Pro.
+        - button "View Starter" [ref=f1e52] [cursor=pointer]
+  - generic:
+    - region "Notifications"

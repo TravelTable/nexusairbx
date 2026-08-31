@@ -1,0 +1,112 @@
+- generic:
+  - generic [ref=f21e2]:
+    - link "Skip to main content" [ref=f21e3] [cursor=pointer]:
+      - /url: "#ai-workspace-main"
+    - banner [ref=f21e4]:
+      - link "NexusRBX home" [ref=f21e6] [cursor=pointer]:
+        - /url: /
+      - 'button "Change game. Current game: Workspace" [ref=f21e10] [cursor=pointer]':
+        - generic [ref=f21e11]: Workspace
+      - group "Workspace mode" [ref=f21e15]:
+        - button "Agent" [ref=f21e16] [cursor=pointer]
+        - button "UI" [ref=f21e17] [cursor=pointer]
+        - button "Asset" [active] [pressed] [ref=f21e18] [cursor=pointer]
+        - button "Animate" [ref=f21e19] [cursor=pointer]
+    - main [ref=f21e21]:
+      - region "Asset creation workspace" [ref=f21e234]:
+        - generic [ref=f21e235]:
+          - generic [ref=f21e236]:
+            - generic [ref=f21e237]:
+              - paragraph [ref=f21e238]: Asset studio
+              - heading "Create and refine assets" [level=1] [ref=f21e243]
+            - generic [ref=f21e244]:
+              - button "Asset library" [ref=f21e245] [cursor=pointer]
+              - button "Roblox settings" [ref=f21e252] [cursor=pointer]
+          - region "Generation context" [ref=f21e256]:
+            - generic [ref=f21e257]:
+              - generic [ref=f21e258]:
+                - generic [ref=f21e259]: Project
+                - combobox "Project" [disabled] [ref=f21e260]:
+                  - option "No project selected" [selected]
+              - generic [ref=f21e261]:
+                - generic [ref=f21e262]: Universe
+                - combobox "Universe" [disabled] [ref=f21e263]:
+                  - option "Project default" [selected]
+            - generic [ref=f21e268]:
+              - strong [ref=f21e269]: Roblox not connected
+              - text: Connect Roblox before automatic upload
+            - generic [ref=f21e278]:
+              - strong [ref=f21e279]: 99,990 credits
+              - text: Confirmed before generation
+            - generic [ref=f21e280]:
+              - generic [ref=f21e285]:
+                - strong [ref=f21e286]: Upload after generation
+                - generic [ref=f21e287]: No Roblox writes; Nexus assets are still saved
+              - switch "Automatically upload generated assets to Roblox" [disabled] [ref=f21e288]
+          - generic [ref=f21e290]:
+            - status [ref=f21e291]: Your existing assets remain available. Generation controls will appear when this server grants an exact asset-generation capability.
+            - alert [ref=f21e292]: The Nexus asset platform is not enabled for this environment.
+          - generic [ref=f21e293]:
+            - region [ref=f21e294]:
+              - generic [ref=f21e296]:
+                - heading "Visual brief" [level=2] [ref=f21e297]
+                - paragraph [ref=f21e298]: Name the job, supply the reference material, and make the output constraints explicit.
+              - generic [ref=f21e299]:
+                - group "Generation mode" [ref=f21e300]:
+                  - group [ref=f21e302]:
+                    - generic "Output Pack Create a coordinated set. Eight is the suggested starting point, not a cap." [ref=f21e303] [cursor=pointer]:
+                      - generic [ref=f21e308]:
+                        - generic [ref=f21e309]: Output
+                        - strong [ref=f21e310]: Pack
+                      - generic [ref=f21e311]: Create a coordinated set. Eight is the suggested starting point, not a cap.
+                - generic [ref=f21e314]:
+                  - generic [ref=f21e315]:
+                    - generic [ref=f21e316]: Creative brief
+                    - generic [ref=f21e320]:
+                      - textbox "Creative brief" [disabled] [ref=f21e322]:
+                        - /placeholder: Describe the visual metaphor, mood, palette, materials, and small-size details…
+                      - generic [ref=f21e323]:
+                        - generic [ref=f21e324]:
+                          - button "Choose a saved style reference" [disabled] [ref=f21e325]
+                          - generic "Pack composer" [ref=f21e330]: Pack
+                        - button "Generation unavailable" [disabled] [ref=f21e336]
+                    - generic [ref=f21e340]: Press Enter to generate · Shift+Enter for a new line
+                  - generic [ref=f21e341]:
+                    - generic [ref=f21e342]: Style reference asset optional
+                    - combobox "Style reference asset optional Uses a saved NexusRBX asset as visual context." [disabled] [ref=f21e343]:
+                      - option "Use project style context" [selected]
+                    - generic [ref=f21e344]: Uses a saved NexusRBX asset as visual context.
+                - generic [ref=f21e346]:
+                  - generic [ref=f21e347]: Asset count
+                  - spinbutton "Asset count Eight is the soft default. Choose the size your interface actually needs." [disabled] [ref=f21e348]: "8"
+                  - generic [ref=f21e349]: Eight is the soft default. Choose the size your interface actually needs.
+                - generic [ref=f21e350]:
+                  - generic [ref=f21e351]: Named icon list optional
+                  - textbox "Named icon list optional Automatically extract missing icon concepts from the brief Automatically extract missing concepts from the brief" [disabled] [ref=f21e352]:
+                    - /placeholder: "Inventory\nQuest log\nFast travel\nSettings"
+                  - generic [ref=f21e353]:
+                    - switch "Automatically extract missing icon concepts from the brief" [checked] [disabled] [ref=f21e354]
+                    - generic [ref=f21e356]: Automatically extract missing concepts from the brief
+                - group [ref=f21e357]:
+                  - generic "Style and output controls" [ref=f21e358] [cursor=pointer]
+                  - option "Project default" [selected]
+                  - option "Transparent game UI icon" [selected]
+                  - option "Badge artwork"
+                  - option "Game pass artwork"
+                  - option "Template-based artwork"
+                  - option "Not artwork"
+                  - option "Transparent" [selected]
+                  - option "Background enabled"
+                  - option "Not applicable"
+                - alert [ref=f21e359]: Pack generation is not supported for the current project or Roblox creator. Nexus will not simulate this operation.
+                - generic [ref=f21e361]:
+                  - generic [ref=f21e362]: Estimated cost
+                  - strong [ref=f21e363]: Confirmed before generation
+            - region "Generation output" [ref=f21e364]:
+              - alert [ref=f21e365]:
+                - generic [ref=f21e369]:
+                  - heading "Assets could not be loaded" [level=3] [ref=f21e370]
+                  - paragraph [ref=f21e371]: The Nexus asset platform is not enabled for this environment.
+                - button "Try again" [ref=f21e372] [cursor=pointer]
+  - generic:
+    - region "Notifications"

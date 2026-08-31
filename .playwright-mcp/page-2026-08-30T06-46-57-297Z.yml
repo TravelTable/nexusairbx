@@ -1,0 +1,113 @@
+- generic [active]:
+  - generic [ref=f27e2]:
+    - link "Skip to main content" [ref=f27e3] [cursor=pointer]:
+      - /url: "#ai-workspace-main"
+    - banner [ref=f27e4]:
+      - link "NexusRBX home" [ref=f27e6] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f27e9]:
+        - 'button "Change game. Current game: Local AI Test" [ref=f27e10] [cursor=pointer]':
+          - generic [ref=f27e11]: Local AI Test
+        - generic [ref=f27e14]: /
+        - strong [ref=f27e15]: New chat
+      - generic [ref=f27e16]:
+        - group "Workspace mode" [ref=f27e17]:
+          - button "Agent" [ref=f27e18] [cursor=pointer]
+          - button "UI" [pressed] [ref=f27e19] [cursor=pointer]
+          - button "Asset" [ref=f27e20] [cursor=pointer]
+        - button "Nexus Free Auto" [ref=f27e23] [cursor=pointer]
+        - button "Connect Roblox Studio" [ref=f27e31] [cursor=pointer]
+    - main [ref=f27e42]:
+      - region "Roblox UI Creator" [ref=f27e43]:
+        - generic [ref=f27e44]:
+          - generic [ref=f27e45]:
+            - combobox "UI design" [ref=f27e46]:
+              - option "Untitled UI" [selected]
+              - option "Local AI Test UI"
+            - button "Create a new UI design" [ref=f27e47] [cursor=pointer]:
+              - generic [ref=f27e49]: New
+          - group "Creator mode" [ref=f27e50]:
+            - button "Design" [pressed] [ref=f27e51] [cursor=pointer]
+            - button "Preview" [ref=f27e54] [cursor=pointer]
+            - button "Code" [ref=f27e57] [cursor=pointer]
+          - generic [ref=f27e62]:
+            - button "Undo UI edit" [disabled] [ref=f27e63]
+            - button "Redo UI edit" [disabled] [ref=f27e67]
+            - combobox "Preview device" [ref=f27e70]:
+              - option "Desktop · 1280×720" [selected]
+              - option "Tablet · 1024×768"
+              - option "Phone landscape · 812×375"
+              - option "Phone portrait · 375×812"
+            - group [ref=f27e71]:
+              - generic "Fidelity" [ref=f27e72] [cursor=pointer]
+            - button "Apply to Studio" [ref=f27e75] [cursor=pointer]
+        - generic [ref=f27e79]:
+          - complementary "Chat and layers" [ref=f27e80]:
+            - generic [ref=f27e81]:
+              - button "Chat" [pressed] [ref=f27e82] [cursor=pointer]
+              - button "Layers" [ref=f27e86] [cursor=pointer]
+              - button "Collapse left panel" [ref=f27e91] [cursor=pointer]
+            - generic [ref=f27e94]:
+              - article [ref=f27e95]:
+                - text: You
+                - paragraph [ref=f27e96]: Create a polished responsive Roblox shop UI with a strong header, gold coin balance, category tab buttons, three item cards, Buy buttons, and a confirmation purchase modal. Add working declarative tab and modal interactions plus subtle safe tweens. Keep it readable on desktop, tablet, phone landscape, and phone portrait.
+              - article [ref=f27e97]:
+                - text: Nexus
+                - paragraph [ref=f27e98]: A new UI revision is ready for review.
+              - article [ref=f27e99]:
+                - text: You
+                - paragraph [ref=f27e100]: Create a polished responsive Roblox shop UI with a strong header, gold coin balance, category tab buttons, three item cards, Buy buttons, and a confirmation purchase modal. Add working declarative tab and modal interactions plus subtle safe tweens. Keep it readable on desktop, tablet, phone landscape, and phone portrait.
+              - article [ref=f27e101]:
+                - text: Nexus
+                - paragraph [ref=f27e102]: A new UI revision is ready for review.
+          - main [ref=f27e103]:
+            - generic "Root_Frame" [ref=f27e106]:
+              - generic "Header" [ref=f27e107]:
+                - generic "Shop_Title" [ref=f27e108]: Item Shop
+                - generic "Gold_Balance_Row" [ref=f27e109]:
+                  - generic "Coin_Icon" [ref=f27e110]
+                  - generic "Gold_Amount" [ref=f27e111]: 1,250
+              - generic "Category_Tabs" [ref=f27e112]:
+                - button "Show all shop items" [ref=f27e113]:
+                  - generic: All
+                - button "Show weapon items" [ref=f27e114]:
+                  - generic: Weapons
+                - button "Show skin items" [ref=f27e115]:
+                  - generic: Skins
+              - generic "Items_List" [ref=f27e116]:
+                - generic "Card_-_Thunder_Rifle" [ref=f27e117]:
+                  - generic "Item1_Image" [ref=f27e118]
+                  - generic "Item1_Title" [ref=f27e119]: Thunder Rifle
+                  - generic "Item1_Price" [ref=f27e120]: 800 Gold
+                  - button "Buy Thunder Rifle" [ref=f27e121]:
+                    - generic: Buy
+                - generic "Card_-_Aurora_Skin" [ref=f27e122]:
+                  - generic "Item2_Image" [ref=f27e123]
+                  - generic "Item2_Title" [ref=f27e124]: Aurora Skin
+                  - generic "Item2_Price" [ref=f27e125]: 450 Gold
+                  - button "Buy Aurora Skin" [ref=f27e126]:
+                    - generic: Buy
+                - generic "Card_-_Nova_Pistol" [ref=f27e127]:
+                  - generic "Item3_Image" [ref=f27e128]
+                  - generic "Item3_Title" [ref=f27e129]: Nova Pistol
+                  - generic "Item3_Price" [ref=f27e130]: 300 Gold
+                  - button "Buy Nova Pistol" [ref=f27e131]:
+                    - generic: Buy
+            - generic [ref=f27e132]:
+              - textbox "Describe the UI revision" [ref=f27e133]:
+                - /placeholder: Create a responsive shop UI with category tabs, item cards, currency balance, and a purchase modal…
+              - button "Generate UI revision" [disabled] [ref=f27e134]
+          - complementary "Inspector" [ref=f27e138]:
+            - generic [ref=f27e139]:
+              - button "Properties" [pressed] [ref=f27e140] [cursor=pointer]
+              - button "Actions" [ref=f27e144] [cursor=pointer]
+              - button "Assets" [ref=f27e147] [cursor=pointer]
+              - button "Collapse inspector" [ref=f27e152] [cursor=pointer]
+            - generic [ref=f27e155]:
+              - strong [ref=f27e159]: No selection
+              - paragraph [ref=f27e160]: Select an element in the preview or Layers panel.
+            - generic [ref=f27e161]:
+              - button "Checkpoint" [ref=f27e162] [cursor=pointer]
+              - button "History" [ref=f27e166] [cursor=pointer]
+  - generic:
+    - region "Notifications"

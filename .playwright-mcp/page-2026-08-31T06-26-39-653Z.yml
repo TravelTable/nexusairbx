@@ -1,0 +1,124 @@
+- generic:
+  - generic [ref=f20e2]:
+    - link "Skip to main content" [ref=f20e3] [cursor=pointer]:
+      - /url: "#ai-workspace-main"
+    - banner [ref=f20e4]:
+      - link "NexusRBX home" [ref=f20e6] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f20e9]:
+        - 'button "Change game. Current game: Workspace" [ref=f20e10] [cursor=pointer]':
+          - generic [ref=f20e11]: Workspace
+        - generic [ref=f20e14]: /
+        - strong [ref=f20e15]: New chat
+      - generic [ref=f20e16]:
+        - group "Workspace mode" [ref=f20e17]:
+          - button "Agent" [ref=f20e18] [cursor=pointer]
+          - button "UI" [pressed] [ref=f20e19] [cursor=pointer]
+          - button "Asset" [ref=f20e20] [cursor=pointer]
+          - button "Animate" [ref=f20e21] [cursor=pointer]
+        - button "openai/gpt-5.4" [ref=f20e24] [cursor=pointer]
+        - button "Connect Roblox Studio" [ref=f20e32] [cursor=pointer]
+    - main [ref=f20e43]:
+      - region "Roblox UI Creator" [ref=f20e44]:
+        - generic [ref=f20e45]:
+          - generic [ref=f20e46]:
+            - generic [ref=f20e47]:
+              - generic [ref=f20e48]: UI design
+              - combobox "UI design" [ref=f20e49]:
+                - option "Inventory HUD" [selected]
+            - button "Create a new UI design" [ref=f20e50] [cursor=pointer]:
+              - generic [ref=f20e52]: New
+          - tablist "Creator mode" [ref=f20e53]:
+            - tab "Design" [selected] [ref=f20e54] [cursor=pointer]
+            - tab "Preview" [ref=f20e58] [cursor=pointer]
+            - tab "Code" [ref=f20e62] [cursor=pointer]
+          - generic [ref=f20e67]:
+            - button "Undo UI edit" [disabled] [ref=f20e68]
+            - button "Redo UI edit" [disabled] [ref=f20e73]
+            - combobox "Preview device" [ref=f20e82]:
+              - option "Desktop · 1280×720" [selected]
+              - option "Tablet · 1024×768"
+              - option "Phone landscape · 812×375"
+              - option "Phone portrait · 375×812"
+            - group [ref=f20e83]:
+              - generic "Fidelity" [ref=f20e84] [cursor=pointer]
+            - button "Apply to Studio" [ref=f20e87] [cursor=pointer]
+        - generic [ref=f20e92]:
+          - complementary "Chat and layers" [ref=f20e93]:
+            - generic [ref=f20e94]:
+              - generic [ref=f20e95]:
+                - generic [ref=f20e96]: Workspace
+                - strong [ref=f20e97]: UI hierarchy
+              - button "Collapse left panel" [ref=f20e98] [cursor=pointer]
+            - tablist "Creator navigation" [ref=f20e101]:
+              - tab "Chat" [ref=f20e102] [cursor=pointer]
+              - tab "Layers" [selected] [ref=f20e106] [cursor=pointer]
+            - tabpanel "Layers" [ref=f20e111]:
+              - generic [ref=f20e112]:
+                - combobox "Component type" [ref=f20e113]:
+                  - option "Frame" [selected]
+                  - option "TextLabel"
+                  - option "TextButton"
+                  - option "ImageLabel"
+                  - option "ImageButton"
+                  - option "TextBox"
+                  - option "ScrollingFrame"
+                - button "Add" [ref=f20e114] [cursor=pointer]
+              - tree [ref=f20e116]:
+                - treeitem "InventoryPanel" [expanded] [level=1] [ref=f20e117]:
+                  - button "InventoryPanel Frame" [ref=f20e118] [cursor=pointer]:
+                    - generic [ref=f20e120]: InventoryPanel
+                    - generic [ref=f20e121]: Frame
+                  - generic "Reorder InventoryPanel" [ref=f20e122]:
+                    - button "Move InventoryPanel up" [disabled] [ref=f20e123]
+                    - button "Move InventoryPanel down" [disabled] [ref=f20e126]
+                - treeitem "Inventory" [level=2] [ref=f20e129]:
+                  - button "Inventory TextLabel" [ref=f20e130] [cursor=pointer]:
+                    - generic [ref=f20e132]: Inventory
+                    - generic [ref=f20e133]: TextLabel
+                  - generic "Reorder Inventory" [ref=f20e134]:
+                    - button "Move Inventory up" [disabled] [ref=f20e135]
+                    - button "Move Inventory down" [disabled] [ref=f20e138]
+            - separator "Resize Chat and Layers panel" [ref=f20e141]
+          - tabpanel "design workspace" [ref=f20e142]:
+            - generic "InventoryPanel" [ref=f20e145]:
+              - generic "Inventory" [ref=f20e146]
+            - generic [ref=f20e151]:
+              - textbox "Prompt input" [ref=f20e153]:
+                - /placeholder: Tell Nexus what UI to build or change…
+                - text: Create a dense inventory panel with four responsive columns. Keep the action bar visible on narrow screens and preserve readable labels. Add hover feedback, selected states, and a compact empty state for unused slots.
+              - generic [ref=f20e154]:
+                - generic [ref=f20e155]:
+                  - button "Open UI asset references" [active] [ref=f20e156] [cursor=pointer]
+                  - generic "UI generation composer" [ref=f20e161]: UI generation
+                - button "Send prompt" [ref=f20e167] [cursor=pointer]
+          - complementary "Inspector" [ref=f20e171]:
+            - generic [ref=f20e172]:
+              - generic [ref=f20e173]:
+                - generic [ref=f20e174]: Inspector
+                - strong [ref=f20e175]: Nothing selected
+              - button "Collapse inspector" [ref=f20e176] [cursor=pointer]
+            - tablist "Inspector sections" [ref=f20e179]:
+              - tab "Properties" [ref=f20e180] [cursor=pointer]
+              - tab "Actions" [ref=f20e184] [cursor=pointer]
+              - tab "Assets" [selected] [ref=f20e187] [cursor=pointer]
+            - tabpanel "Assets" [ref=f20e208]:
+              - generic [ref=f20e209]:
+                - generic [ref=f20e210]: CANONICAL ASSETS
+                - strong [ref=f20e211]: Icons
+              - generic [ref=f20e212]:
+                - heading "Generate" [level=3] [ref=f20e213]
+                - generic [ref=f20e214]:
+                  - generic [ref=f20e215]: Icon brief
+                  - textbox "Icon brief" [ref=f20e216]:
+                    - /placeholder: A crisp gold coin shop icon…
+                - button "Generate one icon" [disabled] [ref=f20e217]
+              - paragraph [ref=f20e222]: Asset generation is disabled in this environment. You can still attach existing Nexus assets from the Asset workspace.
+              - heading "Attached assets" [level=3] [ref=f20e224]
+              - button "Review publishing" [disabled] [ref=f20e225]
+            - generic [ref=f20e198]:
+              - button "Checkpoint" [ref=f20e199] [cursor=pointer]
+              - button "History" [ref=f20e203] [cursor=pointer]
+            - separator "Resize inspector panel" [ref=f20e207]
+  - generic:
+    - region "Notifications"

@@ -1,0 +1,69 @@
+- generic [active]:
+  - generic [ref=f3e5]:
+    - link "Skip to main content" [ref=f3e6] [cursor=pointer]:
+      - /url: "#ai-workspace-main"
+    - banner [ref=f3e7]:
+      - link "NexusRBX home" [ref=f3e9] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f3e12]:
+        - 'button "Change game. Current game: Workspace" [ref=f3e13] [cursor=pointer]':
+          - generic [ref=f3e14]: Workspace
+        - generic [ref=f3e17]: /
+        - button [ref=f3e18] [cursor=pointer]:
+          - strong [ref=f3e19]: New chat
+      - generic [ref=f3e22]:
+        - group "Workspace mode" [ref=f3e23]:
+          - button "Agent" [pressed] [ref=f3e24] [cursor=pointer]
+          - button "UI" [ref=f3e25] [cursor=pointer]
+          - button "Asset" [ref=f3e26] [cursor=pointer]
+        - button "Nexus Free Auto" [ref=f3e29] [cursor=pointer]
+        - button "Connect Roblox Studio" [ref=f3e37] [cursor=pointer]
+        - button "Open Evidence" [ref=f3e47] [cursor=pointer]:
+          - generic [ref=f3e52]: Evidence
+          - generic [ref=f3e53]: "0"
+    - main [ref=f3e55]:
+      - region "AI workspace" [ref=f3e56]:
+        - group "Workspace content" [ref=f3e57]:
+          - generic [ref=f3e59]:
+            - log [ref=f3e64]:
+              - region [ref=f3e68]:
+                - generic [ref=f3e70]:
+                  - paragraph [ref=f3e71]: Start building
+                  - heading "What should Nexus build?" [level=1] [ref=f3e72]
+                  - paragraph [ref=f3e74]: Describe the result you want. Nexus will inspect the connected Studio session, make safe assumptions, build the change, and return verification evidence for review.
+                - group "Current build context" [ref=f3e75]:
+                  - generic [ref=f3e76]:
+                    - term [ref=f3e77]: Studio
+                    - definition [ref=f3e78]: Disconnected
+            - group [ref=f3e83]:
+              - generic "Studio run · Idle" [ref=f3e84] [cursor=pointer]
+            - generic [ref=f3e91]:
+              - toolbar "Application dock" [ref=f3e95]:
+                - button "New chat" [ref=f3e96] [cursor=pointer]
+                - button "Projects" [ref=f3e99] [cursor=pointer]
+                - button "Assets" [ref=f3e105] [cursor=pointer]
+                - button "Activity" [ref=f3e112] [cursor=pointer]
+                - button "Chats" [ref=f3e116] [cursor=pointer]
+                - button "Usage" [ref=f3e121] [cursor=pointer]
+                - button "Settings" [ref=f3e126] [cursor=pointer]
+                - button "Build options" [ref=f3e131] [cursor=pointer]
+              - generic [ref=f3e135]:
+                - generic "Prompt context items" [ref=f3e137]:
+                  - generic "Connect Studio to apply changes" [ref=f3e138]: Studio disconnected
+                - alert [ref=f3e142]:
+                  - generic [ref=f3e147]:
+                    - generic [ref=f3e148]: Build paused. Connect Studio to apply changes.
+                    - button "Connect Studio" [ref=f3e149] [cursor=pointer]
+                  - button "Dismiss alert" [ref=f3e150] [cursor=pointer]
+                - generic [ref=f3e154]:
+                  - textbox "Prompt input" [ref=f3e156]:
+                    - /placeholder: Tell Nexus what to build or fix…
+                  - generic [ref=f3e157]:
+                    - generic [ref=f3e158]:
+                      - button "Upload image to Roblox or attach a code/text file" [ref=f3e159] [cursor=pointer]
+                      - button "Agent" [ref=f3e162] [cursor=pointer]
+                    - generic [ref=f3e168]:
+                      - button "Open workspace options" [ref=f3e170] [cursor=pointer]
+                      - button "Connect Studio to apply changes." [disabled] [ref=f3e176]
+  - generic:
+    - region "Notifications"

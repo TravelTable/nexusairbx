@@ -1,0 +1,132 @@
+- generic:
+  - generic [ref=f20e2]:
+    - link "Skip to main content" [ref=f20e3] [cursor=pointer]:
+      - /url: "#ai-workspace-main"
+    - banner [ref=f20e4]:
+      - link "NexusRBX home" [ref=f20e6] [cursor=pointer]:
+        - /url: /
+      - 'button "Change game. Current game: Workspace" [ref=f20e10] [cursor=pointer]':
+        - generic [ref=f20e11]: Workspace
+      - group "Workspace mode" [ref=f20e17]:
+        - button "Agent" [ref=f20e18] [cursor=pointer]
+        - button "UI" [ref=f20e19] [cursor=pointer]
+        - button "Asset" [ref=f20e20] [cursor=pointer]
+        - button "Animate" [active] [pressed] [ref=f20e21] [cursor=pointer]
+    - main [ref=f20e43]:
+      - region [ref=f20e457]:
+        - generic [ref=f20e458]:
+          - generic [ref=f20e459]:
+            - generic [ref=f20e460]:
+              - generic [ref=f20e464]: AI ANIMATION
+              - generic [ref=f20e465]: R15
+            - generic [ref=f20e466]: Animation name
+            - textbox "Animation name" [ref=f20e467]: New R15 animation
+          - generic "Animation settings" [ref=f20e468]:
+            - group [ref=f20e469]:
+              - generic "Preview options" [ref=f20e470] [cursor=pointer]
+              - option "Blocky R15" [selected]
+            - button "Import R15 GLB" [ref=f20e476]
+            - button "New animation" [ref=f20e477] [cursor=pointer]
+            - button "Save" [disabled] [ref=f20e479]
+        - generic [ref=f20e483]:
+          - complementary "Animation conversation" [ref=f20e484]:
+            - generic [ref=f20e485]:
+              - generic [ref=f20e486]:
+                - text: MOTION DIRECTOR
+                - heading "Describe, preview, refine" [level=1] [ref=f20e487]
+              - button "Direct the performance in natural language, then compare three generated takes." [ref=f20e488]
+            - article [ref=f20e494]:
+              - generic [ref=f20e499]:
+                - generic [ref=f20e500]: Nexus Animate
+                - paragraph [ref=f20e501]: Describe a motion. I’ll build three R15 takes.
+            - generic [ref=f20e502]:
+              - generic [ref=f20e503]:
+                - generic [ref=f20e504]: Starting points
+                - button "Choose an example to generate immediately, or write your own brief below." [ref=f20e505]
+              - generic "Starter prompts" [ref=f20e510]:
+                - button "A confident hero landing with heavy anticipation and a sharp recovery" [ref=f20e511] [cursor=pointer]:
+                  - generic [ref=f20e512]: Hero landing
+                - button "A friendly right-handed wave that feels cheerful but not cartoony" [ref=f20e514] [cursor=pointer]:
+                  - generic [ref=f20e515]: Friendly wave
+                - button "A fast stylized run cycle with strong arm drive, kept in place" [ref=f20e517] [cursor=pointer]:
+                  - generic [ref=f20e518]: Stylized run
+            - generic [ref=f20e524]:
+              - textbox "Animation brief" [ref=f20e526]:
+                - /placeholder: Describe the action, timing, weight, and mood…
+              - generic [ref=f20e527]:
+                - generic [ref=f20e528]:
+                  - button "Import an R15 GLB preview model" [ref=f20e529] [cursor=pointer]
+                  - generic "Motion composer" [ref=f20e534]: Motion
+                - button "Generate" [disabled] [ref=f20e540]
+          - main "Interactive R15 animation preview" [ref=f20e544]:
+            - generic [ref=f20e545]: Drag to orbit · Scroll to zoom
+            - generic [ref=f20e549]: Blocky R15
+            - generic [ref=f20e551]:
+              - generic [ref=f20e552]: Waiting for a motion brief
+              - strong [ref=f20e553]: Stage ready
+            - generic "Preview settings" [ref=f20e554]:
+              - generic [ref=f20e555]: 30 FPS
+              - generic [ref=f20e559]: R15 rig
+          - complementary "Animation variants and checks" [ref=f20e564]:
+            - generic [ref=f20e565]:
+              - generic [ref=f20e566]:
+                - text: RESULTS
+                - heading "Variants" [level=2] [ref=f20e567]
+              - generic [ref=f20e568]: 0/3
+            - generic [ref=f20e570]:
+              - generic [ref=f20e571]:
+                - generic [ref=f20e572]: "01"
+                - paragraph [ref=f20e573]:
+                  - strong [ref=f20e574]: Balanced
+                  - generic [ref=f20e575]: Awaiting motion plan
+              - generic [ref=f20e577]:
+                - generic [ref=f20e578]: "02"
+                - paragraph [ref=f20e579]:
+                  - strong [ref=f20e580]: Subtle
+                  - generic [ref=f20e581]: Awaiting motion plan
+              - generic [ref=f20e583]:
+                - generic [ref=f20e584]: "03"
+                - paragraph [ref=f20e585]:
+                  - strong [ref=f20e586]: Expressive
+                  - generic [ref=f20e587]: Awaiting motion plan
+            - generic [ref=f20e589]:
+              - generic [ref=f20e590]:
+                - heading "Motion checks" [level=3] [ref=f20e591]
+                - generic [ref=f20e595]: 0/3
+              - list [ref=f20e596]:
+                - listitem [ref=f20e597]: Joint limits
+                - listitem [ref=f20e599]: Loop closure
+                - listitem [ref=f20e601]: In-place root
+            - generic [ref=f20e603]:
+              - generic [ref=f20e604]:
+                - heading "AI motion plan" [level=3] [ref=f20e605]
+                - generic [ref=f20e609]:
+                  - generic [ref=f20e610]: Pending
+                  - button "Shows the interpreted action, mood, handedness, and planning route." [ref=f20e611]
+              - paragraph [ref=f20e617]: No plan yet
+              - status [ref=f20e618]: The selected AI Studio model will author the motion plan.
+            - generic [ref=f20e619]:
+              - button "Send to Studio" [disabled] [ref=f20e620]
+              - button "Uses the selected Studio R15 rig. You review the command before it applies." [ref=f20e624]
+        - region "Generated animation timeline" [ref=f20e629]:
+          - generic [ref=f20e630]:
+            - button "Return to start" [ref=f20e631] [cursor=pointer]
+            - button "Play animation" [disabled] [ref=f20e635]
+            - status "Current animation time" [ref=f20e638]:
+              - text: 0.00s
+              - generic [ref=f20e639]: / 2.00s
+            - generic [ref=f20e640]: One shot · 30 FPS · R15
+          - generic [ref=f20e641]:
+            - generic [ref=f20e642]:
+              - generic [ref=f20e643]: Motion phases
+              - generic [ref=f20e647]: Anticipation
+              - generic [ref=f20e648]: Action
+              - generic [ref=f20e649]: Recovery
+            - generic [ref=f20e650]:
+              - generic [ref=f20e651]:
+                - generic [ref=f20e652]: "0"
+                - generic [ref=f20e653]: 1.00s
+                - generic [ref=f20e654]: 2.00s
+              - slider "Animation playhead" [disabled]: "0"
+  - generic:
+    - region "Notifications"

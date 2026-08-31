@@ -1,0 +1,29 @@
+[     354ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3000/static/js/bundle.js:84932
+[    1093ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:3000/static/js/bundle.js:89364
+[    1094ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:3000/static/js/bundle.js:89364
+[  199437ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:3000/static/js/bundle.js:84932
+[  200064ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:3000/static/js/bundle.js:89364
+[  200064ms] [WARNING] ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath. @ http://localhost:3000/static/js/bundle.js:89364
+[  321831ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_RESET @ http://localhost:5001/api/v2/agents?t=1788072260576:0
+[  324161ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5001/api/v2/agents?t=1788072280590:0
+[  324167ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5001/api/v2/agents?t=1788072270583:0
+[  324167ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5001/api/v2/events?afterSequence=13&t=1788072268079:0
+[  325302ms] [ERROR] WebSocket connection to 'ws://localhost:3000/ws' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/static/js/bundle.js:95534
+[  326827ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5001/api/studio/status?t=1788072284210:0
+[  326828ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5001/api/studio/mcp/status?t=1788072284211:0
+[  329659ms] [ERROR] WebSocket connection to 'ws://localhost:3000/ws' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/static/js/bundle.js:95534
+[  336045ms] [ERROR] WebSocket connection to 'ws://localhost:3000/ws' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/static/js/bundle.js:95534
+[  346434ms] [ERROR] WebSocket connection to 'ws://localhost:3000/ws' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/static/js/bundle.js:95534
+[  358185ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5001/api/v2/events?afterSequence=13&t=1788072315582:0
+[  358547ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5001/api/studio/status?t=1788072316583:0
+[  359191ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5001/api/studio/mcp/status?t=1788072316583:0
+[  363192ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5001/api/v2/agents?t=1788072320579:0
+[  364875ms] [ERROR] WebSocket connection to 'ws://localhost:3000/ws' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/static/js/bundle.js:95534
+[  390686ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5001/api/v2/events?afterSequence=13&t=1788072348080:0
+[  390951ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5001/api/studio/status?t=1788072348939:0
+[  391543ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5001/api/studio/mcp/status?t=1788072348939:0
+[  399334ms] [ERROR] WebSocket connection to 'ws://localhost:3000/ws' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/static/js/bundle.js:95534
+[  403204ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5001/api/v2/agents?t=1788072360581:0
+[  423200ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5001/api/v2/events?afterSequence=13&t=1788072380579:0
+[  423449ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5001/api/studio/status?t=1788072381297:0
+[  423915ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5001/api/studio/mcp/status?t=1788072381298:0

@@ -1,0 +1,143 @@
+- generic [active] [ref=f21e1]:
+  - generic [ref=f21e3]:
+    - banner [ref=f21e4]:
+      - link "Skip to main content" [ref=f21e5] [cursor=pointer]:
+        - /url: "#site-shell-content"
+      - generic [ref=f21e6]:
+        - generic [ref=f21e7]:
+          - link "NexusRBX home" [ref=f21e8] [cursor=pointer]:
+            - /url: /
+            - generic [ref=f21e9]: PROJECT /
+          - navigation "Primary navigation" [ref=f21e11]:
+            - link "Build" [ref=f21e12] [cursor=pointer]:
+              - /url: /ai
+            - link "Assets" [ref=f21e13] [cursor=pointer]:
+              - /url: /assets
+            - link "Icons" [ref=f21e14] [cursor=pointer]:
+              - /url: /icons-market
+            - link "Studio" [ref=f21e15] [cursor=pointer]:
+              - /url: /downloads
+            - link "Docs" [ref=f21e16] [cursor=pointer]:
+              - /url: http://localhost:4173/docs
+            - link "Pricing" [ref=f21e17] [cursor=pointer]:
+              - /url: http://localhost:4173/pricing
+        - generic [ref=f21e18]:
+          - button "Search NexusRBX" [ref=f21e19] [cursor=pointer]:
+            - generic [ref=f21e23]: Search
+            - generic [ref=f21e24]: ⌘K
+          - generic [ref=f21e26]:
+            - link "Open workspace" [ref=f21e27] [cursor=pointer]:
+              - /url: /ai
+            - button "Open account menu for Local Developer" [ref=f21e29] [cursor=pointer]:
+              - generic [ref=f21e30]: LD
+          - button "Tools" [ref=f21e32] [cursor=pointer]
+    - main [ref=f21e37]:
+      - generic [ref=f21e38]:
+        - generic [ref=f21e39]:
+          - generic [ref=f21e40]:
+            - paragraph [ref=f21e41]: Asset desk / generation
+            - heading "Build the visual set." [level=1] [ref=f21e46]
+            - paragraph [ref=f21e47]: Write one visual brief, establish a Roblox project context, then review the generated set and its publishing record on the same desk.
+          - generic [ref=f21e48]:
+            - button "Asset library" [ref=f21e49] [cursor=pointer]
+            - button "Roblox settings" [ref=f21e56] [cursor=pointer]
+        - region [ref=f21e60]:
+          - generic [ref=f21e62]:
+            - heading "Generation context" [level=2] [ref=f21e63]
+            - paragraph [ref=f21e64]: Project scope, credit estimate, and Roblox publishing preferences apply to the next request.
+          - generic [ref=f21e65]:
+            - generic [ref=f21e66]:
+              - generic [ref=f21e67]: Project
+              - combobox "Project" [ref=f21e68]:
+                - option "Local AI Test" [selected]
+            - generic [ref=f21e69]:
+              - generic [ref=f21e70]: Universe
+              - combobox "Universe" [ref=f21e71]:
+                - option "Project default" [selected]
+          - generic [ref=f21e76]:
+            - strong [ref=f21e77]: Roblox not connected
+            - text: Connect Roblox before automatic upload
+          - generic [ref=f21e86]:
+            - strong [ref=f21e87]: 1,000,000,000 credits
+            - text: Confirmed before generation
+          - generic [ref=f21e88]:
+            - generic [ref=f21e93]:
+              - strong [ref=f21e94]: Upload after generation
+              - generic [ref=f21e95]: No Roblox writes; Nexus assets are still saved
+            - switch "Automatically upload generated assets to Roblox" [disabled] [ref=f21e96]
+        - generic [ref=f21e98]:
+          - region [ref=f21e99]:
+            - generic [ref=f21e101]:
+              - heading "Visual brief" [level=2] [ref=f21e102]
+              - paragraph [ref=f21e103]: Name the job, supply the reference material, and make the output constraints explicit.
+            - generic [ref=f21e104]:
+              - group "Generation mode" [ref=f21e105]:
+                - generic [ref=f21e107]:
+                  - generic [ref=f21e108] [cursor=pointer]:
+                    - radio "Single" [ref=f21e109]
+                    - strong [ref=f21e115]: Single
+                  - generic [ref=f21e116] [cursor=pointer]:
+                    - radio "Pack" [checked] [ref=f21e117]
+                    - strong [ref=f21e124]: Pack
+                  - generic [ref=f21e125] [cursor=pointer]:
+                    - radio "Extend" [ref=f21e126]
+                    - strong [ref=f21e132]: Extend
+                  - generic [ref=f21e133] [cursor=pointer]:
+                    - radio "Similar" [ref=f21e134]
+                    - strong [ref=f21e140]: Similar
+                  - generic [ref=f21e141] [cursor=pointer]:
+                    - radio "Replace" [ref=f21e142]
+                    - strong [ref=f21e146]: Replace
+                - paragraph [ref=f21e147]: Create a coordinated set. Eight is the suggested starting point, not a cap.
+              - generic [ref=f21e148]:
+                - generic [ref=f21e149]:
+                  - generic [ref=f21e150]: Creative brief
+                  - generic [ref=f21e153]:
+                    - textbox "Creative brief" [ref=f21e160]:
+                      - /placeholder: Describe the player action, visual metaphor, mood, palette, and small-size details…
+                    - button "Generate pack" [disabled] [ref=f21e162]
+                  - generic [ref=f21e165]: Press Enter to generate · Shift+Enter for a new line
+                - generic [ref=f21e166]:
+                  - generic [ref=f21e167]: Style reference asset optional
+                  - combobox "Style reference asset optional Uses a saved NexusRBX asset as visual context." [ref=f21e168]:
+                    - option "Use project style context" [selected]
+                    - option "A crisp polished gold coin with a small five-point star embossed in the center, transparent background, Roblox game shop"
+                    - option "A crisp polished gold coin with a small five-point star embossed in the center, transparent background, Roblox game shop"
+                  - generic [ref=f21e169]: Uses a saved NexusRBX asset as visual context.
+              - generic [ref=f21e171]:
+                - generic [ref=f21e172]: Asset count
+                - spinbutton "Asset count Eight is the soft default. Choose the size your interface actually needs." [ref=f21e173]: "8"
+                - generic [ref=f21e174]: Eight is the soft default. Choose the size your interface actually needs.
+              - generic [ref=f21e175]:
+                - generic [ref=f21e176]: Named icon list optional
+                - textbox "Named icon list optional Automatically extract missing icon concepts from the brief Automatically extract missing concepts from the brief" [ref=f21e177]:
+                  - /placeholder: "Inventory\nQuest log\nFast travel\nSettings"
+                - generic [ref=f21e178]:
+                  - switch "Automatically extract missing icon concepts from the brief" [checked] [ref=f21e179] [cursor=pointer]
+                  - generic [ref=f21e181]: Automatically extract missing concepts from the brief
+              - group [ref=f21e182]:
+                - generic "Style and output controls" [ref=f21e183] [cursor=pointer]
+                - option "Project default" [selected]
+                - option "Transparent game UI icon" [selected]
+                - option "Badge artwork"
+                - option "Game pass artwork"
+                - option "Template-based artwork"
+                - option "Not artwork"
+                - option "Transparent" [selected]
+                - option "Background enabled"
+                - option "Not applicable"
+              - generic [ref=f21e185]:
+                - generic [ref=f21e186]: Estimated cost
+                - strong [ref=f21e187]: Confirmed before generation
+            - generic [ref=f21e188]: No style profile is attached. The generation brief remains the source of truth.
+          - region "Generation output" [ref=f21e196]:
+            - region [ref=f21e197]:
+              - generic [ref=f21e199]:
+                - paragraph [ref=f21e200]: Generation output
+                - heading "Latest result" [level=2] [ref=f21e207]
+                - paragraph [ref=f21e208]: 0 assets in this result. Each asset updates independently as it moves through generation and publishing.
+              - generic [ref=f21e209]:
+                - heading "Your generated assets will appear here" [level=3] [ref=f21e215]
+                - paragraph [ref=f21e216]: Describe one icon or a coordinated pack, then start generation.
+  - generic:
+    - region "Notifications"

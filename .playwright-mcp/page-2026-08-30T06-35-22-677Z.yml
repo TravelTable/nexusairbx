@@ -1,0 +1,173 @@
+- generic [active] [ref=f23e212]:
+  - generic [ref=f23e214]:
+    - banner [ref=f23e215]:
+      - link "Skip to main content" [ref=f23e216] [cursor=pointer]:
+        - /url: "#site-shell-content"
+      - generic [ref=f23e217]:
+        - generic [ref=f23e218]:
+          - link "NexusRBX home" [ref=f23e219] [cursor=pointer]:
+            - /url: /
+            - generic [ref=f23e220]: PROJECT /
+          - navigation "Primary navigation" [ref=f23e222]:
+            - link "Build" [ref=f23e223] [cursor=pointer]:
+              - /url: /ai
+            - link "Assets" [ref=f23e224] [cursor=pointer]:
+              - /url: /assets
+            - link "Icons" [ref=f23e225] [cursor=pointer]:
+              - /url: /icons-market
+            - link "Studio" [ref=f23e226] [cursor=pointer]:
+              - /url: /downloads
+            - link "Docs" [ref=f23e227] [cursor=pointer]:
+              - /url: http://localhost:4173/docs
+            - link "Pricing" [ref=f23e228] [cursor=pointer]:
+              - /url: http://localhost:4173/pricing
+        - generic [ref=f23e229]:
+          - button "Search NexusRBX" [ref=f23e230] [cursor=pointer]:
+            - generic [ref=f23e234]: Search
+            - generic [ref=f23e235]: ⌘K
+          - generic [ref=f23e237]:
+            - link "Open workspace" [ref=f23e238] [cursor=pointer]:
+              - /url: /ai
+            - button "Open account menu for Local Developer" [ref=f23e240] [cursor=pointer]:
+              - generic [ref=f23e241]: LD
+          - button "Tools" [ref=f23e243] [cursor=pointer]
+    - main [ref=f23e248]:
+      - generic [ref=f23e249]:
+        - generic [ref=f23e250]:
+          - generic [ref=f23e251]:
+            - paragraph [ref=f23e252]: Canonical asset record
+            - heading "A crisp polished gold coin with a small five-point star embossed in the center, transparent background, Roblox game shop" [level=1] [ref=f23e277]
+            - paragraph [ref=f23e258]: Nexus owns this stable record. Its Roblox relationship is tracked separately and may remain pending during upload or moderation.
+          - generic [ref=f23e278]:
+            - button "Asset library" [ref=f23e279] [cursor=pointer]
+            - button "Generate assets" [ref=f23e286] [cursor=pointer]
+        - generic [ref=f23e291]:
+          - complementary [ref=f23e292]:
+            - img "A crisp polished gold coin with a small five-point star embossed in the center, transparent background, Roblox game shop preview" [ref=f23e295]
+            - generic [ref=f23e296]:
+              - generic [ref=f23e297]:
+                - paragraph [ref=f23e298]: icon
+                - heading "A crisp polished gold coin with a small five-point star embossed in the center, transparent background, Roblox game shop" [level=1] [ref=f23e299]
+              - generic [ref=f23e300]:
+                - status "Ready to publish" [ref=f23e301]
+                - status "Not submitted" [ref=f23e306]
+                - status "Unused" [ref=f23e311]
+              - generic [ref=f23e316]:
+                - button "Create similar" [ref=f23e317] [cursor=pointer]
+                - button "Create replacement" [ref=f23e322] [cursor=pointer]
+          - generic [ref=f23e326]:
+            - article [ref=f23e327]:
+              - heading "Identity and lifecycle" [level=2] [ref=f23e328]
+              - 'list "Asset lifecycle: Ready to publish" [ref=f23e329]':
+                - listitem [ref=f23e330]:
+                  - generic [ref=f23e334]: Generate
+                  - generic [ref=f23e335]: Complete
+                - listitem [ref=f23e336]:
+                  - generic [ref=f23e340]: Review
+                  - generic [ref=f23e341]: Complete
+                - listitem [ref=f23e342]:
+                  - generic [ref=f23e346]: Publish
+                  - generic [ref=f23e347]: Ready to publish — current step
+                - listitem [ref=f23e348]:
+                  - generic [ref=f23e352]: Process
+                  - generic [ref=f23e353]: Not started
+                - listitem [ref=f23e354]:
+                  - generic [ref=f23e358]: Ready
+                  - generic [ref=f23e359]: Not started
+                - listitem [ref=f23e360]:
+                  - generic [ref=f23e364]: Implement
+                  - generic [ref=f23e365]: Not started
+                - listitem [ref=f23e366]:
+                  - generic [ref=f23e370]: Verify
+                  - generic [ref=f23e371]: Not started
+              - generic [ref=f23e372]:
+                - generic [ref=f23e373]:
+                  - term [ref=f23e374]: Nexus asset ID
+                  - definition [ref=f23e375]:
+                    - text: asset_2c50f38258c543728257ed1171b96327
+                    - button "Copy Nexus asset ID" [ref=f23e376] [cursor=pointer]
+                - generic [ref=f23e380]:
+                  - term [ref=f23e381]: Roblox asset ID
+                  - definition [ref=f23e382]: Pending assignment
+                - generic [ref=f23e383]:
+                  - term [ref=f23e384]: Roblox operation
+                  - definition [ref=f23e385]: Not started
+                - generic [ref=f23e386]:
+                  - term [ref=f23e387]: Generation
+                  - definition [ref=f23e388]: not_started
+                - generic [ref=f23e389]:
+                  - term [ref=f23e390]: Roblox upload
+                  - definition [ref=f23e391]: not_started
+                - generic [ref=f23e392]:
+                  - term [ref=f23e393]: Moderation
+                  - definition [ref=f23e394]: not_submitted
+                - generic [ref=f23e395]:
+                  - term [ref=f23e396]: Usage
+                  - definition [ref=f23e397]: unused
+                - generic [ref=f23e398]:
+                  - term [ref=f23e399]: Created
+                  - definition [ref=f23e400]: "1788070843086"
+                - generic [ref=f23e401]:
+                  - term [ref=f23e402]: Last updated
+                  - definition [ref=f23e403]: "1788070888852"
+                - generic [ref=f23e404]:
+                  - term [ref=f23e405]: Last used
+                  - definition [ref=f23e406]: Not used yet
+            - article [ref=f23e407]:
+              - heading "Generation brief" [level=2] [ref=f23e408]
+              - paragraph [ref=f23e409]: "A crisp polished gold coin with a small five-point star embossed in the center, transparent background, Roblox game shop icon, no text, high contrast, square composition. Transparent background, Roblox UI icon, readable at small size. Palette: #171318, #241f25, #302931, #9f7aea, #f4eef4, #b8aeb8."
+            - generic [ref=f23e410]: No style profile is attached. The generation brief remains the source of truth.
+            - article [ref=f23e417]:
+              - heading "Asset actions" [level=2] [ref=f23e418]
+              - paragraph [ref=f23e419]: Each action is authorized server-side against this exact asset and the active Roblox connection.
+              - generic [ref=f23e420]:
+                - button "Validate asset" [ref=f23e421] [cursor=pointer]
+                - button "Check Roblox status" [ref=f23e422] [cursor=pointer]
+                - button "Archive asset" [ref=f23e425] [cursor=pointer]
+            - article [ref=f23e426]:
+              - heading "Project attachment" [level=2] [ref=f23e427]
+              - paragraph [ref=f23e428]: Make this canonical asset available to another authorized NexusRBX project without duplicating the Roblox upload.
+              - generic [ref=f23e429]:
+                - generic [ref=f23e430]:
+                  - generic [ref=f23e431]: Project
+                  - combobox "Project" [ref=f23e432]:
+                    - option "Local AI Test" [selected]
+                - button "Attach asset" [ref=f23e433] [cursor=pointer]
+            - article [ref=f23e434]:
+              - heading "Ownership and visibility" [level=2] [ref=f23e435]
+              - generic [ref=f23e436]:
+                - generic [ref=f23e437]:
+                  - term [ref=f23e438]: Source project
+                  - definition [ref=f23e439]: proj_55082b60b0a14eddb80c3e246e0c5306
+                - generic [ref=f23e440]:
+                  - term [ref=f23e441]: Universe
+                  - definition [ref=f23e442]: Not assigned
+                - generic [ref=f23e443]:
+                  - term [ref=f23e444]: Roblox creator
+                  - definition [ref=f23e445]: Not selected
+                - generic [ref=f23e446]:
+                  - term [ref=f23e447]: Pack
+                  - definition [ref=f23e448]: Not assigned
+                - generic [ref=f23e449]:
+                  - term [ref=f23e450]: Style profile
+                  - definition [ref=f23e451]: Not assigned
+                - generic [ref=f23e452]:
+                  - term [ref=f23e453]: Visibility
+                  - definition [ref=f23e454]: project
+            - group [ref=f23e455]:
+              - generic "File, generation, and recovery details" [ref=f23e456] [cursor=pointer]
+            - article [ref=f23e457]:
+              - heading "Project relationships" [level=2] [ref=f23e458]
+              - generic [ref=f23e459]:
+                - generic [ref=f23e460]:
+                  - term [ref=f23e461]: Supersedes
+                  - definition [ref=f23e462]: No earlier asset
+                - generic [ref=f23e463]:
+                  - term [ref=f23e464]: Replaced by
+                  - definition [ref=f23e465]: No replacement
+              - heading "Related files" [level=2] [ref=f23e466]
+              - paragraph [ref=f23e467]: No project files are linked to this asset.
+              - heading "Related UI elements" [level=2] [ref=f23e468]
+              - paragraph [ref=f23e469]: No UI elements are linked to this asset.
+  - generic:
+    - region "Notifications"

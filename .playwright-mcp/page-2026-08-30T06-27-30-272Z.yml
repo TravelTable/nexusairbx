@@ -1,0 +1,393 @@
+- generic:
+  - generic [ref=f19e2]:
+    - link "Skip to main content" [ref=f19e3] [cursor=pointer]:
+      - /url: "#ai-workspace-main"
+    - banner [ref=f19e4]:
+      - link "NexusRBX home" [ref=f19e6] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f19e9]:
+        - 'button "Change game. Current game: Local AI Test" [ref=f19e10] [cursor=pointer]':
+          - generic [ref=f19e11]: Local AI Test
+        - generic [ref=f19e14]: /
+        - strong [ref=f19e15]: New chat
+      - generic [ref=f19e16]:
+        - group "Workspace mode" [ref=f19e17]:
+          - button "Agent" [ref=f19e18] [cursor=pointer]
+          - button "UI" [pressed] [ref=f19e19] [cursor=pointer]
+          - button "Asset" [ref=f19e20] [cursor=pointer]
+        - button "Nexus Free Auto" [ref=f19e23] [cursor=pointer]
+        - button "Connect Roblox Studio" [ref=f19e31] [cursor=pointer]
+    - main [ref=f19e42]:
+      - region "Roblox UI Creator" [ref=f19e221]:
+        - generic [ref=f19e222]:
+          - generic [ref=f19e223]:
+            - combobox "UI design" [ref=f19e224]:
+              - option "Untitled UI" [selected]
+              - option "Local AI Test UI"
+            - button "Create a new UI design" [ref=f19e225] [cursor=pointer]:
+              - generic [ref=f19e227]: New
+          - group "Creator mode" [ref=f19e228]:
+            - button "Design" [pressed] [ref=f19e229] [cursor=pointer]
+            - button "Preview" [ref=f19e232] [cursor=pointer]
+            - button "Code" [ref=f19e235] [cursor=pointer]
+          - generic [ref=f19e240]:
+            - button "Undo UI edit" [ref=f19e241] [cursor=pointer]
+            - button "Redo UI edit" [disabled] [ref=f19e245]
+            - combobox "Preview device" [ref=f19e248]:
+              - option "Desktop · 1280×720" [selected]
+              - option "Tablet · 1024×768"
+              - option "Phone landscape · 812×375"
+              - option "Phone portrait · 375×812"
+            - group [ref=f19e249]:
+              - generic "Fidelity" [ref=f19e250] [cursor=pointer]
+            - button "Apply to Studio" [ref=f19e253] [cursor=pointer]
+        - generic [ref=f19e257]:
+          - complementary "Chat and layers" [ref=f19e258]:
+            - generic [ref=f19e259]:
+              - button "Chat" [ref=f19e260] [cursor=pointer]
+              - button "Layers" [pressed] [ref=f19e264] [cursor=pointer]
+              - button "Collapse left panel" [ref=f19e269] [cursor=pointer]
+            - generic [ref=f19e272]:
+              - generic [ref=f19e390]:
+                - combobox "Component type" [ref=f19e391]:
+                  - option "Frame" [selected]
+                  - option "TextLabel"
+                  - option "TextButton"
+                  - option "ImageLabel"
+                  - option "ImageButton"
+                  - option "TextBox"
+                  - option "ScrollingFrame"
+                - button "Add" [ref=f19e392] [cursor=pointer]
+              - generic [ref=f19e394]:
+                - generic [ref=f19e395]:
+                  - button "Root_Frame Frame" [ref=f19e396] [cursor=pointer]:
+                    - generic [ref=f19e399]: Root_Frame
+                    - generic [ref=f19e400]: Frame
+                  - generic "Reorder Root_Frame" [ref=f19e401]:
+                    - button "Move Root_Frame up" [disabled] [ref=f19e402]
+                    - button "Move Root_Frame down" [disabled] [ref=f19e405]
+                - generic [ref=f19e408]:
+                  - generic [ref=f19e409]:
+                    - generic [ref=f19e410]:
+                      - button "Header Frame" [ref=f19e411] [cursor=pointer]:
+                        - generic [ref=f19e414]: Header
+                        - generic [ref=f19e415]: Frame
+                      - generic "Reorder Header" [ref=f19e416]:
+                        - button "Move Header up" [disabled] [ref=f19e417]
+                        - button "Move Header down" [ref=f19e420] [cursor=pointer]
+                    - generic [ref=f19e423]:
+                      - generic [ref=f19e425]:
+                        - button "Shop_Title TextLabel" [ref=f19e426] [cursor=pointer]:
+                          - generic [ref=f19e429]: Shop_Title
+                          - generic [ref=f19e430]: TextLabel
+                        - generic "Reorder Shop_Title" [ref=f19e431]:
+                          - button "Move Shop_Title up" [disabled] [ref=f19e432]
+                          - button "Move Shop_Title down" [ref=f19e435] [cursor=pointer]
+                      - generic [ref=f19e438]:
+                        - generic [ref=f19e439]:
+                          - button "Gold_Balance_Row Frame" [ref=f19e440] [cursor=pointer]:
+                            - generic [ref=f19e443]: Gold_Balance_Row
+                            - generic [ref=f19e444]: Frame
+                          - generic "Reorder Gold_Balance_Row" [ref=f19e445]:
+                            - button "Move Gold_Balance_Row up" [ref=f19e446] [cursor=pointer]
+                            - button "Move Gold_Balance_Row down" [disabled] [ref=f19e449]
+                        - generic [ref=f19e452]:
+                          - generic [ref=f19e454]:
+                            - button "Coin_Icon ImageLabel" [pressed] [ref=f19e455] [cursor=pointer]:
+                              - generic [ref=f19e458]: Coin_Icon
+                              - generic [ref=f19e459]: ImageLabel
+                            - generic "Reorder Coin_Icon" [ref=f19e460]:
+                              - button "Move Coin_Icon up" [disabled] [ref=f19e461]
+                              - button "Move Coin_Icon down" [ref=f19e464] [cursor=pointer]
+                          - generic [ref=f19e468]:
+                            - button "Gold_Amount TextLabel" [ref=f19e469] [cursor=pointer]:
+                              - generic [ref=f19e472]: Gold_Amount
+                              - generic [ref=f19e473]: TextLabel
+                            - generic "Reorder Gold_Amount" [ref=f19e474]:
+                              - button "Move Gold_Amount up" [ref=f19e475] [cursor=pointer]
+                              - button "Move Gold_Amount down" [disabled] [ref=f19e478]
+                  - generic [ref=f19e481]:
+                    - generic [ref=f19e482]:
+                      - button "Category_Tabs Frame" [ref=f19e483] [cursor=pointer]:
+                        - generic [ref=f19e486]: Category_Tabs
+                        - generic [ref=f19e487]: Frame
+                      - generic "Reorder Category_Tabs" [ref=f19e488]:
+                        - button "Move Category_Tabs up" [ref=f19e489] [cursor=pointer]
+                        - button "Move Category_Tabs down" [ref=f19e492] [cursor=pointer]
+                    - generic [ref=f19e495]:
+                      - generic [ref=f19e497]:
+                        - button "Tab_All TextButton" [ref=f19e498] [cursor=pointer]:
+                          - generic [ref=f19e501]: Tab_All
+                          - generic [ref=f19e502]: TextButton
+                        - generic "Reorder Tab_All" [ref=f19e503]:
+                          - button "Move Tab_All up" [disabled] [ref=f19e504]
+                          - button "Move Tab_All down" [ref=f19e507] [cursor=pointer]
+                      - generic [ref=f19e511]:
+                        - button "Tab_Weapons TextButton" [ref=f19e512] [cursor=pointer]:
+                          - generic [ref=f19e515]: Tab_Weapons
+                          - generic [ref=f19e516]: TextButton
+                        - generic "Reorder Tab_Weapons" [ref=f19e517]:
+                          - button "Move Tab_Weapons up" [ref=f19e518] [cursor=pointer]
+                          - button "Move Tab_Weapons down" [ref=f19e521] [cursor=pointer]
+                      - generic [ref=f19e525]:
+                        - button "Tab_Skins TextButton" [ref=f19e526] [cursor=pointer]:
+                          - generic [ref=f19e529]: Tab_Skins
+                          - generic [ref=f19e530]: TextButton
+                        - generic "Reorder Tab_Skins" [ref=f19e531]:
+                          - button "Move Tab_Skins up" [ref=f19e532] [cursor=pointer]
+                          - button "Move Tab_Skins down" [disabled] [ref=f19e535]
+                  - generic [ref=f19e538]:
+                    - generic [ref=f19e539]:
+                      - button "Items_List ScrollingFrame" [ref=f19e540] [cursor=pointer]:
+                        - generic [ref=f19e543]: Items_List
+                        - generic [ref=f19e544]: ScrollingFrame
+                      - generic "Reorder Items_List" [ref=f19e545]:
+                        - button "Move Items_List up" [ref=f19e546] [cursor=pointer]
+                        - button "Move Items_List down" [ref=f19e549] [cursor=pointer]
+                    - generic [ref=f19e552]:
+                      - generic [ref=f19e553]:
+                        - generic [ref=f19e554]:
+                          - button "Card_-_Thunder_Rifle Frame" [ref=f19e555] [cursor=pointer]:
+                            - generic [ref=f19e558]: Card_-_Thunder_Rifle
+                            - generic [ref=f19e559]: Frame
+                          - generic "Reorder Card_-_Thunder_Rifle" [ref=f19e560]:
+                            - button "Move Card_-_Thunder_Rifle up" [disabled] [ref=f19e561]
+                            - button "Move Card_-_Thunder_Rifle down" [ref=f19e564] [cursor=pointer]
+                        - generic [ref=f19e567]:
+                          - generic [ref=f19e569]:
+                            - button "Item1_Image ImageLabel" [ref=f19e570] [cursor=pointer]:
+                              - generic [ref=f19e573]: Item1_Image
+                              - generic [ref=f19e574]: ImageLabel
+                            - generic "Reorder Item1_Image" [ref=f19e575]:
+                              - button "Move Item1_Image up" [disabled] [ref=f19e576]
+                              - button "Move Item1_Image down" [ref=f19e579] [cursor=pointer]
+                          - generic [ref=f19e583]:
+                            - button "Item1_Title TextLabel" [ref=f19e584] [cursor=pointer]:
+                              - generic [ref=f19e587]: Item1_Title
+                              - generic [ref=f19e588]: TextLabel
+                            - generic "Reorder Item1_Title" [ref=f19e589]:
+                              - button "Move Item1_Title up" [ref=f19e590] [cursor=pointer]
+                              - button "Move Item1_Title down" [ref=f19e593] [cursor=pointer]
+                          - generic [ref=f19e597]:
+                            - button "Item1_Price TextLabel" [ref=f19e598] [cursor=pointer]:
+                              - generic [ref=f19e601]: Item1_Price
+                              - generic [ref=f19e602]: TextLabel
+                            - generic "Reorder Item1_Price" [ref=f19e603]:
+                              - button "Move Item1_Price up" [ref=f19e604] [cursor=pointer]
+                              - button "Move Item1_Price down" [ref=f19e607] [cursor=pointer]
+                          - generic [ref=f19e611]:
+                            - button "Buy_Button_-_Rifle TextButton" [ref=f19e612] [cursor=pointer]:
+                              - generic [ref=f19e615]: Buy_Button_-_Rifle
+                              - generic [ref=f19e616]: TextButton
+                            - generic "Reorder Buy_Button_-_Rifle" [ref=f19e617]:
+                              - button "Move Buy_Button_-_Rifle up" [ref=f19e618] [cursor=pointer]
+                              - button "Move Buy_Button_-_Rifle down" [disabled] [ref=f19e621]
+                      - generic [ref=f19e624]:
+                        - generic [ref=f19e625]:
+                          - button "Card_-_Aurora_Skin Frame" [ref=f19e626] [cursor=pointer]:
+                            - generic [ref=f19e629]: Card_-_Aurora_Skin
+                            - generic [ref=f19e630]: Frame
+                          - generic "Reorder Card_-_Aurora_Skin" [ref=f19e631]:
+                            - button "Move Card_-_Aurora_Skin up" [ref=f19e632] [cursor=pointer]
+                            - button "Move Card_-_Aurora_Skin down" [ref=f19e635] [cursor=pointer]
+                        - generic [ref=f19e638]:
+                          - generic [ref=f19e640]:
+                            - button "Item2_Image ImageLabel" [ref=f19e641] [cursor=pointer]:
+                              - generic [ref=f19e644]: Item2_Image
+                              - generic [ref=f19e645]: ImageLabel
+                            - generic "Reorder Item2_Image" [ref=f19e646]:
+                              - button "Move Item2_Image up" [disabled] [ref=f19e647]
+                              - button "Move Item2_Image down" [ref=f19e650] [cursor=pointer]
+                          - generic [ref=f19e654]:
+                            - button "Item2_Title TextLabel" [ref=f19e655] [cursor=pointer]:
+                              - generic [ref=f19e658]: Item2_Title
+                              - generic [ref=f19e659]: TextLabel
+                            - generic "Reorder Item2_Title" [ref=f19e660]:
+                              - button "Move Item2_Title up" [ref=f19e661] [cursor=pointer]
+                              - button "Move Item2_Title down" [ref=f19e664] [cursor=pointer]
+                          - generic [ref=f19e668]:
+                            - button "Item2_Price TextLabel" [ref=f19e669] [cursor=pointer]:
+                              - generic [ref=f19e672]: Item2_Price
+                              - generic [ref=f19e673]: TextLabel
+                            - generic "Reorder Item2_Price" [ref=f19e674]:
+                              - button "Move Item2_Price up" [ref=f19e675] [cursor=pointer]
+                              - button "Move Item2_Price down" [ref=f19e678] [cursor=pointer]
+                          - generic [ref=f19e682]:
+                            - button "Buy_Button_-_Skin TextButton" [ref=f19e683] [cursor=pointer]:
+                              - generic [ref=f19e686]: Buy_Button_-_Skin
+                              - generic [ref=f19e687]: TextButton
+                            - generic "Reorder Buy_Button_-_Skin" [ref=f19e688]:
+                              - button "Move Buy_Button_-_Skin up" [ref=f19e689] [cursor=pointer]
+                              - button "Move Buy_Button_-_Skin down" [disabled] [ref=f19e692]
+                      - generic [ref=f19e695]:
+                        - generic [ref=f19e696]:
+                          - button "Card_-_Nova_Pistol Frame" [ref=f19e697] [cursor=pointer]:
+                            - generic [ref=f19e700]: Card_-_Nova_Pistol
+                            - generic [ref=f19e701]: Frame
+                          - generic "Reorder Card_-_Nova_Pistol" [ref=f19e702]:
+                            - button "Move Card_-_Nova_Pistol up" [ref=f19e703] [cursor=pointer]
+                            - button "Move Card_-_Nova_Pistol down" [disabled] [ref=f19e706]
+                        - generic [ref=f19e709]:
+                          - generic [ref=f19e711]:
+                            - button "Item3_Image ImageLabel" [ref=f19e712] [cursor=pointer]:
+                              - generic [ref=f19e715]: Item3_Image
+                              - generic [ref=f19e716]: ImageLabel
+                            - generic "Reorder Item3_Image" [ref=f19e717]:
+                              - button "Move Item3_Image up" [disabled] [ref=f19e718]
+                              - button "Move Item3_Image down" [ref=f19e721] [cursor=pointer]
+                          - generic [ref=f19e725]:
+                            - button "Item3_Title TextLabel" [ref=f19e726] [cursor=pointer]:
+                              - generic [ref=f19e729]: Item3_Title
+                              - generic [ref=f19e730]: TextLabel
+                            - generic "Reorder Item3_Title" [ref=f19e731]:
+                              - button "Move Item3_Title up" [ref=f19e732] [cursor=pointer]
+                              - button "Move Item3_Title down" [ref=f19e735] [cursor=pointer]
+                          - generic [ref=f19e739]:
+                            - button "Item3_Price TextLabel" [ref=f19e740] [cursor=pointer]:
+                              - generic [ref=f19e743]: Item3_Price
+                              - generic [ref=f19e744]: TextLabel
+                            - generic "Reorder Item3_Price" [ref=f19e745]:
+                              - button "Move Item3_Price up" [ref=f19e746] [cursor=pointer]
+                              - button "Move Item3_Price down" [ref=f19e749] [cursor=pointer]
+                          - generic [ref=f19e753]:
+                            - button "Buy_Button_-_Pistol TextButton" [ref=f19e754] [cursor=pointer]:
+                              - generic [ref=f19e757]: Buy_Button_-_Pistol
+                              - generic [ref=f19e758]: TextButton
+                            - generic "Reorder Buy_Button_-_Pistol" [ref=f19e759]:
+                              - button "Move Buy_Button_-_Pistol up" [ref=f19e760] [cursor=pointer]
+                              - button "Move Buy_Button_-_Pistol down" [disabled] [ref=f19e763]
+                  - generic [ref=f19e766]:
+                    - generic [ref=f19e767]:
+                      - button "Modal_Backdrop Frame" [ref=f19e768] [cursor=pointer]:
+                        - generic [ref=f19e771]: Modal_Backdrop
+                        - generic [ref=f19e772]: Frame
+                      - generic "Reorder Modal_Backdrop" [ref=f19e773]:
+                        - button "Move Modal_Backdrop up" [ref=f19e774] [cursor=pointer]
+                        - button "Move Modal_Backdrop down" [ref=f19e777] [cursor=pointer]
+                    - generic [ref=f19e782]:
+                      - button "Backdrop_Click_Catcher ImageButton" [ref=f19e783] [cursor=pointer]:
+                        - generic [ref=f19e786]: Backdrop_Click_Catcher
+                        - generic [ref=f19e787]: ImageButton
+                      - generic "Reorder Backdrop_Click_Catcher" [ref=f19e788]:
+                        - button "Move Backdrop_Click_Catcher up" [disabled] [ref=f19e789]
+                        - button "Move Backdrop_Click_Catcher down" [disabled] [ref=f19e792]
+                  - generic [ref=f19e795]:
+                    - generic [ref=f19e796]:
+                      - button "Purchase_Modal Frame" [ref=f19e797] [cursor=pointer]:
+                        - generic [ref=f19e800]: Purchase_Modal
+                        - generic [ref=f19e801]: Frame
+                      - generic "Reorder Purchase_Modal" [ref=f19e802]:
+                        - button "Move Purchase_Modal up" [ref=f19e803] [cursor=pointer]
+                        - button "Move Purchase_Modal down" [disabled] [ref=f19e806]
+                    - generic [ref=f19e809]:
+                      - generic [ref=f19e811]:
+                        - button "Modal_Title TextLabel" [ref=f19e812] [cursor=pointer]:
+                          - generic [ref=f19e815]: Modal_Title
+                          - generic [ref=f19e816]: TextLabel
+                        - generic "Reorder Modal_Title" [ref=f19e817]:
+                          - button "Move Modal_Title up" [disabled] [ref=f19e818]
+                          - button "Move Modal_Title down" [ref=f19e821] [cursor=pointer]
+                      - generic [ref=f19e825]:
+                        - button "Modal_Description TextLabel" [ref=f19e826] [cursor=pointer]:
+                          - generic [ref=f19e829]: Modal_Description
+                          - generic [ref=f19e830]: TextLabel
+                        - generic "Reorder Modal_Description" [ref=f19e831]:
+                          - button "Move Modal_Description up" [ref=f19e832] [cursor=pointer]
+                          - button "Move Modal_Description down" [ref=f19e835] [cursor=pointer]
+                      - generic [ref=f19e839]:
+                        - button "Confirm_Button TextButton" [ref=f19e840] [cursor=pointer]:
+                          - generic [ref=f19e843]: Confirm_Button
+                          - generic [ref=f19e844]: TextButton
+                        - generic "Reorder Confirm_Button" [ref=f19e845]:
+                          - button "Move Confirm_Button up" [ref=f19e846] [cursor=pointer]
+                          - button "Move Confirm_Button down" [ref=f19e849] [cursor=pointer]
+                      - generic [ref=f19e853]:
+                        - button "Cancel_Button TextButton" [ref=f19e854] [cursor=pointer]:
+                          - generic [ref=f19e857]: Cancel_Button
+                          - generic [ref=f19e858]: TextButton
+                        - generic "Reorder Cancel_Button" [ref=f19e859]:
+                          - button "Move Cancel_Button up" [ref=f19e860] [cursor=pointer]
+                          - button "Move Cancel_Button down" [disabled] [ref=f19e863]
+          - main [ref=f19e281]:
+            - generic "Root_Frame" [ref=f19e284]:
+              - generic "Header" [ref=f19e285]:
+                - generic "Shop_Title" [ref=f19e286]: Item Shop
+                - generic "Gold_Balance_Row" [ref=f19e287]:
+                  - generic "Coin_Icon" [ref=f19e288]:
+                    - button "Resize Coin_Icon" [ref=f19e866]
+                  - generic "Gold_Amount" [ref=f19e289]: 1,250
+              - generic "Category_Tabs" [ref=f19e290]:
+                - button "Show all shop items" [ref=f19e291]:
+                  - generic: All
+                - button "Show weapon items" [ref=f19e292]:
+                  - generic: Weapons
+                - button "Show skin items" [ref=f19e293]:
+                  - generic: Skins
+              - generic "Items_List" [ref=f19e294]:
+                - generic "Card_-_Thunder_Rifle" [ref=f19e295]:
+                  - generic "Item1_Image" [ref=f19e296]
+                  - generic "Item1_Title" [ref=f19e297]: Thunder Rifle
+                  - generic "Item1_Price" [ref=f19e298]: 800 Gold
+                  - button "Buy Thunder Rifle" [ref=f19e299]:
+                    - generic: Buy
+                - generic "Card_-_Aurora_Skin" [ref=f19e300]:
+                  - generic "Item2_Image" [ref=f19e301]
+                  - generic "Item2_Title" [ref=f19e302]: Aurora Skin
+                  - generic "Item2_Price" [ref=f19e303]: 450 Gold
+                  - button "Buy Aurora Skin" [ref=f19e304]:
+                    - generic: Buy
+                - generic "Card_-_Nova_Pistol" [ref=f19e305]:
+                  - generic "Item3_Image" [ref=f19e306]
+                  - generic "Item3_Title" [ref=f19e307]: Nova Pistol
+                  - generic "Item3_Price" [ref=f19e308]: 300 Gold
+                  - button "Buy Nova Pistol" [ref=f19e309]:
+                    - generic: Buy
+            - generic [ref=f19e310]:
+              - textbox "Describe the UI revision" [ref=f19e311]:
+                - /placeholder: Create a responsive shop UI with category tabs, item cards, currency balance, and a purchase modal…
+              - button "Generate UI revision" [disabled] [ref=f19e312]
+          - complementary "Inspector" [ref=f19e316]:
+            - generic [ref=f19e317]:
+              - button "Properties" [active] [pressed] [ref=f19e318] [cursor=pointer]
+              - button "Actions" [ref=f19e322] [cursor=pointer]
+              - button "Assets" [ref=f19e325] [cursor=pointer]
+              - button "Collapse inspector" [ref=f19e330] [cursor=pointer]
+            - generic [ref=f19e867]:
+              - generic [ref=f19e868]:
+                - generic [ref=f19e869]: ImageLabel
+                - strong [ref=f19e870]: Coin_Icon
+              - generic [ref=f19e871]:
+                - generic [ref=f19e872]: Name
+                - textbox "Name" [ref=f19e873]: Coin_Icon
+              - generic [ref=f19e874]:
+                - generic [ref=f19e875]:
+                  - generic [ref=f19e876]: X offset
+                  - spinbutton "X offset" [ref=f19e877]: "12"
+                - generic [ref=f19e878]:
+                  - generic [ref=f19e879]: Y offset
+                  - spinbutton "Y offset" [ref=f19e880]: "-14"
+                - generic [ref=f19e881]:
+                  - generic [ref=f19e882]: Width
+                  - spinbutton "Width" [ref=f19e883]: "28"
+                - generic [ref=f19e884]:
+                  - generic [ref=f19e885]: Height
+                  - spinbutton "Height" [ref=f19e886]: "28"
+              - generic [ref=f19e887]:
+                - generic [ref=f19e888]: Background
+                - textbox "Background" [ref=f19e889]: "#241f25"
+              - generic [ref=f19e890]:
+                - generic [ref=f19e891]: Corner radius
+                - spinbutton "Corner radius" [ref=f19e892]: "0"
+              - generic [ref=f19e893]:
+                - generic [ref=f19e894]: Image asset
+                - combobox "Image asset" [ref=f19e895]:
+                  - option "None"
+                  - option "Asset 1"
+                  - option "Asset 2"
+                  - option "A crisp polished gold coin with a small five-point star embossed in the center, transparent background, Roblox game shop" [selected]
+              - button "Delete node" [ref=f19e896] [cursor=pointer]
+            - generic [ref=f19e339]:
+              - button "Checkpoint" [ref=f19e340] [cursor=pointer]
+              - button "History" [ref=f19e344] [cursor=pointer]
+  - generic:
+    - region "Notifications"

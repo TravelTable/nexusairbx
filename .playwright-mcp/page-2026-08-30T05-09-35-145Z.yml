@@ -1,0 +1,80 @@
+- generic [active]:
+  - generic [ref=f5e2]:
+    - link "Skip to main content" [ref=f5e3] [cursor=pointer]:
+      - /url: "#ai-workspace-main"
+    - banner [ref=f5e4]:
+      - link "NexusRBX home" [ref=f5e6] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f5e9]:
+        - 'button "Change game. Current game: Local AI Test" [ref=f5e10] [cursor=pointer]':
+          - generic [ref=f5e11]: Local AI Test
+        - generic [ref=f5e14]: /
+        - strong [ref=f5e15]: New chat
+      - generic [ref=f5e16]:
+        - group "Workspace mode" [ref=f5e17]:
+          - button "Agent" [ref=f5e18] [cursor=pointer]
+          - button "UI" [pressed] [ref=f5e19] [cursor=pointer]
+          - button "Asset" [ref=f5e20] [cursor=pointer]
+        - button "Nexus Free Auto" [ref=f5e23] [cursor=pointer]
+        - button "Connect Roblox Studio" [ref=f5e31] [cursor=pointer]
+    - main [ref=f5e42]:
+      - region "Roblox UI Creator" [ref=f5e43]:
+        - generic [ref=f5e44]:
+          - generic [ref=f5e45]:
+            - combobox "UI design" [ref=f5e46]:
+              - option "Untitled UI" [selected]
+              - option "Local AI Test UI"
+            - button "Create a new UI design" [disabled] [ref=f5e47]:
+              - generic [ref=f5e49]: New
+          - group "Creator mode" [ref=f5e50]:
+            - button "Design" [pressed] [ref=f5e51] [cursor=pointer]
+            - button "Preview" [ref=f5e54] [cursor=pointer]
+            - button "Code" [ref=f5e57] [cursor=pointer]
+          - generic [ref=f5e62]:
+            - button "Undo UI edit" [disabled] [ref=f5e63]
+            - button "Redo UI edit" [disabled] [ref=f5e67]
+            - combobox "Preview device" [ref=f5e70]:
+              - option "Desktop · 1280×720" [selected]
+              - option "Tablet · 1024×768"
+              - option "Phone landscape · 812×375"
+              - option "Phone portrait · 375×812"
+            - group [ref=f5e71]:
+              - generic "Fidelity" [ref=f5e72] [cursor=pointer]
+            - button "Apply to Studio" [disabled] [ref=f5e75]
+        - generic [ref=f5e79]:
+          - complementary "Chat and layers" [ref=f5e80]:
+            - generic [ref=f5e81]:
+              - button "Chat" [pressed] [ref=f5e82] [cursor=pointer]
+              - button "Layers" [ref=f5e86] [cursor=pointer]
+              - button "Collapse left panel" [ref=f5e91] [cursor=pointer]
+            - generic [ref=f5e94]:
+              - article [ref=f5e95]:
+                - text: You
+                - paragraph [ref=f5e96]: Create a polished responsive Roblox shop UI with a strong header, gold coin balance, category tab buttons, three item cards, Buy buttons, and a confirmation purchase modal. Add working declarative tab and modal interactions plus subtle safe tweens. Keep it readable on desktop, tablet, phone landscape, and phone portrait.
+              - article [ref=f5e97]:
+                - text: Nexus
+                - paragraph [ref=f5e98]: A new UI revision is ready for review.
+          - main [ref=f5e99]:
+            - generic [ref=f5e102]:
+              - generic [ref=f5e103]: SCREEN GUI
+              - strong [ref=f5e104]: Prompt Nexus or add a component
+              - paragraph [ref=f5e105]: The browser renderer will preview supported Roblox layout, interaction, and motion here.
+            - generic [ref=f5e106]:
+              - textbox "Describe the UI revision" [ref=f5e107]:
+                - /placeholder: Create a responsive shop UI with category tabs, item cards, currency balance, and a purchase modal…
+              - button "Generate UI revision" [disabled] [ref=f5e108]
+          - complementary "Inspector" [ref=f5e112]:
+            - generic [ref=f5e113]:
+              - button "Properties" [pressed] [ref=f5e114] [cursor=pointer]
+              - button "Actions" [ref=f5e118] [cursor=pointer]
+              - button "Assets" [ref=f5e121] [cursor=pointer]
+              - button "Collapse inspector" [ref=f5e126] [cursor=pointer]
+            - generic [ref=f5e129]:
+              - strong [ref=f5e133]: No selection
+              - paragraph [ref=f5e134]: Select an element in the preview or Layers panel.
+            - generic [ref=f5e135]:
+              - button "Checkpoint" [disabled] [ref=f5e136]
+              - button "History" [disabled] [ref=f5e140]
+        - status [ref=f5e144]: loading
+  - generic:
+    - region "Notifications"

@@ -1,0 +1,44 @@
+- generic [active]:
+  - generic [ref=f2e5]:
+    - link "Skip to main content" [ref=f2e6] [cursor=pointer]:
+      - /url: "#ai-workspace-main"
+    - banner [ref=f2e7]:
+      - link "NexusRBX home" [ref=f2e9] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f2e12]:
+        - 'button "Change game. Current game: Workspace" [ref=f2e13] [cursor=pointer]':
+          - generic [ref=f2e14]: Workspace
+        - generic [ref=f2e17]: /
+        - strong [ref=f2e18]: New chat
+      - generic [ref=f2e19]:
+        - group "Workspace mode" [ref=f2e20]:
+          - button "Agent" [ref=f2e21] [cursor=pointer]
+          - button "UI" [ref=f2e22] [cursor=pointer]
+          - button "Asset" [pressed] [ref=f2e23] [cursor=pointer]
+        - button "Nexus Free Auto" [ref=f2e26] [cursor=pointer]
+        - button "Connect Roblox Studio" [ref=f2e34] [cursor=pointer]
+    - main [ref=f2e45]:
+      - generic [ref=f2e46]:
+        - generic [ref=f2e47]:
+          - generic [ref=f2e48]: ASSET CREATION
+          - heading "Describe the visual your game needs." [level=1] [ref=f2e49]
+          - paragraph [ref=f2e50]: Your request moves to the asset generator, where you review the project, output mode, style, settings, and credit estimate before anything runs.
+        - generic [ref=f2e51]:
+          - generic [ref=f2e52]: Asset prompt
+          - textbox "Asset prompt" [ref=f2e53]:
+            - /placeholder: A polished inventory icon for a crystal lantern, readable at small sizes…
+          - generic [ref=f2e54]:
+            - paragraph [ref=f2e55]: No auto-generation. You will confirm cost and settings next.
+            - button "Review in asset generator" [ref=f2e56] [cursor=pointer]
+        - generic "Asset handoff steps" [ref=f2e57]:
+          - generic [ref=f2e58]:
+            - generic [ref=f2e59]: "1"
+            - text: Describe
+          - generic [ref=f2e60]:
+            - generic [ref=f2e61]: "2"
+            - text: Review
+          - generic [ref=f2e62]:
+            - generic [ref=f2e63]: "3"
+            - text: Generate
+  - generic:
+    - region "Notifications"

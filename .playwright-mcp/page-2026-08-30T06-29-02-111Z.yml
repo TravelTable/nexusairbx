@@ -1,0 +1,144 @@
+- generic [active] [ref=f20e229]:
+  - generic [ref=f20e231]:
+    - banner [ref=f20e232]:
+      - link "Skip to main content" [ref=f20e233] [cursor=pointer]:
+        - /url: "#site-shell-content"
+      - generic [ref=f20e234]:
+        - generic [ref=f20e235]:
+          - link "NexusRBX home" [ref=f20e236] [cursor=pointer]:
+            - /url: /
+            - generic [ref=f20e237]: PROJECT /
+          - navigation "Primary navigation" [ref=f20e239]:
+            - link "Build" [ref=f20e240] [cursor=pointer]:
+              - /url: /ai
+            - link "Assets" [ref=f20e241] [cursor=pointer]:
+              - /url: /assets
+            - link "Icons" [ref=f20e242] [cursor=pointer]:
+              - /url: /icons-market
+            - link "Studio" [ref=f20e243] [cursor=pointer]:
+              - /url: /downloads
+            - link "Docs" [ref=f20e244] [cursor=pointer]:
+              - /url: http://localhost:4173/docs
+            - link "Pricing" [ref=f20e245] [cursor=pointer]:
+              - /url: http://localhost:4173/pricing
+        - generic [ref=f20e246]:
+          - button "Search NexusRBX" [ref=f20e247] [cursor=pointer]:
+            - generic [ref=f20e251]: Search
+            - generic [ref=f20e252]: ⌘K
+          - generic [ref=f20e254]:
+            - link "Open workspace" [ref=f20e255] [cursor=pointer]:
+              - /url: /ai
+            - button "Open account menu for Local Developer" [ref=f20e257] [cursor=pointer]:
+              - generic [ref=f20e258]: LD
+          - button "Tools" [ref=f20e260] [cursor=pointer]
+    - main [ref=f20e265]:
+      - generic [ref=f20e266]:
+        - generic [ref=f20e267]:
+          - generic [ref=f20e268]:
+            - paragraph [ref=f20e269]: Asset desk / generation
+            - heading "Build the visual set." [level=1] [ref=f20e274]
+            - paragraph [ref=f20e275]: Write one visual brief, establish a Roblox project context, then review the generated set and its publishing record on the same desk.
+          - generic [ref=f20e276]:
+            - button "Asset library" [ref=f20e277] [cursor=pointer]
+            - button "Roblox settings" [ref=f20e284] [cursor=pointer]
+        - region [ref=f20e288]:
+          - generic [ref=f20e290]:
+            - heading "Generation context" [level=2] [ref=f20e291]
+            - paragraph [ref=f20e292]: Project scope, credit estimate, and Roblox publishing preferences apply to the next request.
+          - generic [ref=f20e293]:
+            - generic [ref=f20e294]:
+              - generic [ref=f20e295]: Project
+              - combobox "Project" [ref=f20e296]:
+                - option "No project selected" [selected]
+            - generic [ref=f20e297]:
+              - generic [ref=f20e298]: Universe
+              - combobox "Universe" [ref=f20e299]:
+                - option "Project default" [selected]
+          - generic [ref=f20e304]:
+            - strong [ref=f20e305]: Roblox not connected
+            - text: Connect Roblox before automatic upload
+          - generic [ref=f20e314]:
+            - strong [ref=f20e315]: 1,000,000,000 credits
+            - text: Confirmed before generation
+          - generic [ref=f20e316]:
+            - generic [ref=f20e321]:
+              - strong [ref=f20e322]: Upload after generation
+              - generic [ref=f20e323]: No Roblox writes; Nexus assets are still saved
+            - switch "Automatically upload generated assets to Roblox" [disabled] [ref=f20e324]
+        - generic [ref=f20e326]:
+          - status [ref=f20e327]: Your existing assets remain available. Generation controls will appear when this server grants an exact asset-generation capability.
+          - alert [ref=f20e328]: "Internal server error Support ID: 8cb002e8-b7c2-4bbd-b85c-cd1c569f1f69"
+        - generic [ref=f20e329]:
+          - region [ref=f20e330]:
+            - generic [ref=f20e332]:
+              - heading "Visual brief" [level=2] [ref=f20e333]
+              - paragraph [ref=f20e334]: Name the job, supply the reference material, and make the output constraints explicit.
+            - generic [ref=f20e335]:
+              - group "Generation mode" [ref=f20e336]:
+                - generic [ref=f20e338]:
+                  - generic [ref=f20e339]:
+                    - radio "Single" [disabled] [ref=f20e340]
+                    - strong [ref=f20e346]: Single
+                  - generic [ref=f20e347]:
+                    - radio "Pack" [checked] [disabled] [ref=f20e348]
+                    - strong [ref=f20e355]: Pack
+                  - generic [ref=f20e356]:
+                    - radio "Extend" [disabled] [ref=f20e357]
+                    - strong [ref=f20e363]: Extend
+                  - generic [ref=f20e364]:
+                    - radio "Similar" [disabled] [ref=f20e365]
+                    - strong [ref=f20e371]: Similar
+                  - generic [ref=f20e372]:
+                    - radio "Replace" [disabled] [ref=f20e373]
+                    - strong [ref=f20e377]: Replace
+                - paragraph [ref=f20e378]: Pack is unavailable for this project.
+              - generic [ref=f20e379]:
+                - generic [ref=f20e380]:
+                  - generic [ref=f20e381]: Creative brief
+                  - generic [ref=f20e384]:
+                    - textbox "Creative brief" [disabled] [ref=f20e391]:
+                      - /placeholder: Describe the player action, visual metaphor, mood, palette, and small-size details…
+                    - button "Generation unavailable" [disabled] [ref=f20e393]
+                  - generic [ref=f20e396]: Press Enter to generate · Shift+Enter for a new line
+                - generic [ref=f20e397]:
+                  - generic [ref=f20e398]: Style reference asset optional
+                  - combobox "Style reference asset optional Uses a saved NexusRBX asset as visual context." [disabled] [ref=f20e399]:
+                    - option "Use project style context" [selected]
+                    - option "A crisp polished gold coin with a small five-point star embossed in the center, transparent background, Roblox game shop"
+                    - option "A crisp polished gold coin with a small five-point star embossed in the center, transparent background, Roblox game shop"
+                  - generic [ref=f20e400]: Uses a saved NexusRBX asset as visual context.
+              - generic [ref=f20e402]:
+                - generic [ref=f20e403]: Asset count
+                - spinbutton "Asset count Eight is the soft default. Choose the size your interface actually needs." [disabled] [ref=f20e404]: "8"
+                - generic [ref=f20e405]: Eight is the soft default. Choose the size your interface actually needs.
+              - generic [ref=f20e406]:
+                - generic [ref=f20e407]: Named icon list optional
+                - textbox "Named icon list optional Automatically extract missing icon concepts from the brief Automatically extract missing concepts from the brief" [disabled] [ref=f20e408]:
+                  - /placeholder: "Inventory\nQuest log\nFast travel\nSettings"
+                - generic [ref=f20e409]:
+                  - switch "Automatically extract missing icon concepts from the brief" [checked] [disabled] [ref=f20e410]
+                  - generic [ref=f20e412]: Automatically extract missing concepts from the brief
+              - group [ref=f20e413]:
+                - generic "Style and output controls" [ref=f20e414] [cursor=pointer]
+                - option "Project default" [selected]
+                - option "Transparent game UI icon" [selected]
+                - option "Badge artwork"
+                - option "Game pass artwork"
+                - option "Template-based artwork"
+                - option "Not artwork"
+                - option "Transparent" [selected]
+                - option "Background enabled"
+                - option "Not applicable"
+              - alert [ref=f20e415]: Pack generation is not supported for the current project or Roblox creator. Nexus will not simulate this operation.
+              - generic [ref=f20e417]:
+                - generic [ref=f20e418]: Estimated cost
+                - strong [ref=f20e419]: Confirmed before generation
+            - generic [ref=f20e420]: No style profile is attached. The generation brief remains the source of truth.
+          - region "Generation output" [ref=f20e428]:
+            - alert [ref=f20e429]:
+              - generic [ref=f20e433]:
+                - heading "Assets could not be loaded" [level=3] [ref=f20e434]
+                - paragraph [ref=f20e435]: "Internal server error Support ID: 8cb002e8-b7c2-4bbd-b85c-cd1c569f1f69"
+              - button "Try again" [ref=f20e436] [cursor=pointer]
+  - generic:
+    - region "Notifications"

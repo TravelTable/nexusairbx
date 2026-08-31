@@ -1,0 +1,112 @@
+- generic:
+  - generic [ref=f19e5]:
+    - link "Skip to main content" [ref=f19e6] [cursor=pointer]:
+      - /url: "#ai-workspace-main"
+    - banner [ref=f19e7]:
+      - link "NexusRBX home" [ref=f19e9] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f19e12]:
+        - 'button "Change game. Current game: Workspace" [ref=f19e13] [cursor=pointer]':
+          - generic [ref=f19e14]: Workspace
+        - generic [ref=f19e17]: /
+        - strong [ref=f19e18]: New chat
+      - generic [ref=f19e19]:
+        - group "Workspace mode" [ref=f19e20]:
+          - button "Agent" [ref=f19e21] [cursor=pointer]
+          - button "UI" [active] [pressed] [ref=f19e22] [cursor=pointer]
+          - button "Asset" [ref=f19e23] [cursor=pointer]
+          - button "Animate" [ref=f19e24] [cursor=pointer]
+        - button "Nexus Free Auto" [ref=f19e27] [cursor=pointer]
+        - button "Connect Roblox Studio" [ref=f19e35] [cursor=pointer]
+    - main [ref=f19e46]:
+      - region "Roblox UI Creator" [ref=f19e248]:
+        - generic [ref=f19e249]:
+          - generic [ref=f19e250]:
+            - generic [ref=f19e251]:
+              - generic [ref=f19e252]: UI design
+              - combobox "UI design" [ref=f19e253]:
+                - option "Inventory HUD" [selected]
+            - button "Create a new UI design" [ref=f19e254] [cursor=pointer]:
+              - generic [ref=f19e256]: New
+          - tablist "Creator mode" [ref=f19e257]:
+            - tab "Design" [selected] [ref=f19e258] [cursor=pointer]
+            - tab "Preview" [ref=f19e262] [cursor=pointer]
+            - tab "Code" [ref=f19e266] [cursor=pointer]
+          - generic [ref=f19e271]:
+            - button "Undo UI edit" [disabled] [ref=f19e272]
+            - button "Redo UI edit" [disabled] [ref=f19e277]
+            - combobox "Preview device" [ref=f19e286]:
+              - option "Desktop · 1280×720" [selected]
+              - option "Tablet · 1024×768"
+              - option "Phone landscape · 812×375"
+              - option "Phone portrait · 375×812"
+            - group [ref=f19e287]:
+              - generic "Fidelity" [ref=f19e288] [cursor=pointer]
+            - button "Apply to Studio" [ref=f19e291] [cursor=pointer]
+        - generic [ref=f19e296]:
+          - complementary "Chat and layers" [ref=f19e297]:
+            - generic [ref=f19e298]:
+              - generic [ref=f19e299]:
+                - generic [ref=f19e300]: Workspace
+                - strong [ref=f19e301]: UI hierarchy
+              - button "Collapse left panel" [ref=f19e302] [cursor=pointer]
+            - tablist "Creator navigation" [ref=f19e305]:
+              - tab "Chat" [ref=f19e306] [cursor=pointer]
+              - tab "Layers" [selected] [ref=f19e310] [cursor=pointer]
+            - tabpanel "Layers" [ref=f19e315]:
+              - generic [ref=f19e316]:
+                - combobox "Component type" [ref=f19e317]:
+                  - option "Frame" [selected]
+                  - option "TextLabel"
+                  - option "TextButton"
+                  - option "ImageLabel"
+                  - option "ImageButton"
+                  - option "TextBox"
+                  - option "ScrollingFrame"
+                - button "Add" [ref=f19e318] [cursor=pointer]
+              - tree [ref=f19e320]:
+                - treeitem "InventoryPanel" [expanded] [level=1] [ref=f19e321]:
+                  - button "InventoryPanel Frame" [ref=f19e322] [cursor=pointer]:
+                    - generic [ref=f19e324]: InventoryPanel
+                    - generic [ref=f19e325]: Frame
+                  - generic "Reorder InventoryPanel" [ref=f19e326]:
+                    - button "Move InventoryPanel up" [disabled] [ref=f19e327]
+                    - button "Move InventoryPanel down" [disabled] [ref=f19e330]
+                - treeitem "Inventory" [level=2] [ref=f19e333]:
+                  - button "Inventory TextLabel" [ref=f19e334] [cursor=pointer]:
+                    - generic [ref=f19e336]: Inventory
+                    - generic [ref=f19e337]: TextLabel
+                  - generic "Reorder Inventory" [ref=f19e338]:
+                    - button "Move Inventory up" [disabled] [ref=f19e339]
+                    - button "Move Inventory down" [disabled] [ref=f19e342]
+            - separator "Resize Chat and Layers panel" [ref=f19e345]
+          - tabpanel "design workspace" [ref=f19e346]:
+            - generic "InventoryPanel" [ref=f19e349]:
+              - generic "Inventory" [ref=f19e350]
+            - generic [ref=f19e355]:
+              - textbox "UI generation prompt" [ref=f19e357]:
+                - /placeholder: Tell Nexus what UI to build or change…
+              - generic [ref=f19e358]:
+                - generic [ref=f19e359]:
+                  - button "Open UI asset references" [ref=f19e360] [cursor=pointer]
+                  - generic "UI generation composer" [ref=f19e365]: UI generation
+                - button "Generate UI" [disabled] [ref=f19e371]
+          - complementary "Inspector" [ref=f19e375]:
+            - generic [ref=f19e376]:
+              - generic [ref=f19e377]:
+                - generic [ref=f19e378]: Inspector
+                - strong [ref=f19e379]: Nothing selected
+              - button "Collapse inspector" [ref=f19e380] [cursor=pointer]
+            - tablist "Inspector sections" [ref=f19e383]:
+              - tab "Properties" [selected] [ref=f19e384] [cursor=pointer]
+              - tab "Actions" [ref=f19e388] [cursor=pointer]
+              - tab "Assets" [ref=f19e391] [cursor=pointer]
+            - tabpanel "Properties" [ref=f19e396]:
+              - strong [ref=f19e400]: No selection
+              - paragraph [ref=f19e401]: Select an element in the preview or Layers panel.
+            - generic [ref=f19e402]:
+              - button "Checkpoint" [ref=f19e403] [cursor=pointer]
+              - button "History" [ref=f19e407] [cursor=pointer]
+            - separator "Resize inspector panel" [ref=f19e411]
+  - generic:
+    - region "Notifications"

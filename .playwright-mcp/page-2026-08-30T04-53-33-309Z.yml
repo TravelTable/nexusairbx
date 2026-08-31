@@ -1,0 +1,75 @@
+- generic [active]:
+  - generic [ref=f2e2]:
+    - link "Skip to main content" [ref=f2e3] [cursor=pointer]:
+      - /url: "#ai-workspace-main"
+    - banner [ref=f2e4]:
+      - link "NexusRBX home" [ref=f2e6] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f2e9]:
+        - 'button "Change game. Current game: Local AI Test" [ref=f2e10] [cursor=pointer]':
+          - generic [ref=f2e11]: Local AI Test
+        - generic [ref=f2e14]: /
+        - strong [ref=f2e15]: New chat
+      - generic [ref=f2e16]:
+        - group "Workspace mode" [ref=f2e17]:
+          - button "Agent" [ref=f2e18] [cursor=pointer]
+          - button "UI" [pressed] [ref=f2e19] [cursor=pointer]
+          - button "Asset" [ref=f2e20] [cursor=pointer]
+        - button "Nexus Free Auto" [ref=f2e23] [cursor=pointer]
+        - button "Connect Roblox Studio" [ref=f2e31] [cursor=pointer]
+    - main [ref=f2e42]:
+      - region "Roblox UI Creator" [ref=f2e43]:
+        - generic [ref=f2e44]:
+          - generic [ref=f2e45]:
+            - combobox "UI design" [ref=f2e46]:
+              - option "Untitled UI" [selected]
+              - option "Local AI Test UI"
+            - button "Create a new UI design" [ref=f2e47] [cursor=pointer]:
+              - generic [ref=f2e49]: New
+          - group "Creator mode" [ref=f2e50]:
+            - button "Design" [pressed] [ref=f2e51] [cursor=pointer]
+            - button "Preview" [ref=f2e54] [cursor=pointer]
+            - button "Code" [ref=f2e57] [cursor=pointer]
+          - generic [ref=f2e62]:
+            - button "Undo UI edit" [disabled] [ref=f2e63]
+            - button "Redo UI edit" [disabled] [ref=f2e67]
+            - combobox "Preview device" [ref=f2e70]:
+              - option "Desktop · 1280×720" [selected]
+              - option "Tablet · 1024×768"
+              - option "Phone landscape · 812×375"
+              - option "Phone portrait · 375×812"
+            - group [ref=f2e71]:
+              - generic "Fidelity" [ref=f2e72] [cursor=pointer]
+            - button "Apply to Studio" [ref=f2e75] [cursor=pointer]
+        - generic [ref=f2e79]:
+          - complementary "Chat and layers" [ref=f2e80]:
+            - generic [ref=f2e81]:
+              - button "Chat" [pressed] [ref=f2e82] [cursor=pointer]
+              - button "Layers" [ref=f2e86] [cursor=pointer]
+              - button "Collapse left panel" [ref=f2e91] [cursor=pointer]
+            - generic [ref=f2e95]:
+              - strong [ref=f2e99]: Start with intent
+              - paragraph [ref=f2e100]: Describe the screen, player goal, hierarchy, and visual style.
+          - main [ref=f2e101]:
+            - generic [ref=f2e104]:
+              - generic [ref=f2e105]: SCREEN GUI
+              - strong [ref=f2e106]: Prompt Nexus or add a component
+              - paragraph [ref=f2e107]: The browser renderer will preview supported Roblox layout, interaction, and motion here.
+            - generic [ref=f2e108]:
+              - textbox "Describe the UI revision" [ref=f2e109]:
+                - /placeholder: Create a responsive shop UI with category tabs, item cards, currency balance, and a purchase modal…
+              - button "Generate UI revision" [disabled] [ref=f2e110]
+          - complementary "Inspector" [ref=f2e114]:
+            - generic [ref=f2e115]:
+              - button "Properties" [pressed] [ref=f2e116] [cursor=pointer]
+              - button "Actions" [ref=f2e120] [cursor=pointer]
+              - button "Assets" [ref=f2e123] [cursor=pointer]
+              - button "Collapse inspector" [ref=f2e128] [cursor=pointer]
+            - generic [ref=f2e131]:
+              - strong [ref=f2e135]: No selection
+              - paragraph [ref=f2e136]: Select an element in the preview or Layers panel.
+            - generic [ref=f2e137]:
+              - button "Checkpoint" [ref=f2e138] [cursor=pointer]
+              - button "History" [ref=f2e142] [cursor=pointer]
+  - generic:
+    - region "Notifications"

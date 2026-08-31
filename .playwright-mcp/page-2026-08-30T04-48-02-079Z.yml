@@ -1,0 +1,86 @@
+- generic:
+  - generic [ref=e2]:
+    - link "Skip to main content" [ref=e3] [cursor=pointer]:
+      - /url: "#ai-workspace-main"
+    - banner [ref=e4]:
+      - link "NexusRBX home" [ref=e6] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e9]:
+        - 'button "Change game. Current game: Local AI Test" [ref=e10] [cursor=pointer]':
+          - generic [ref=e11]: Local AI Test
+        - generic [ref=e14]: /
+        - strong [ref=e15]: New chat
+      - generic [ref=e16]:
+        - group "Workspace mode" [ref=e17]:
+          - button "Agent" [ref=e18] [cursor=pointer]
+          - button "UI" [pressed] [ref=e19] [cursor=pointer]
+          - button "Asset" [ref=e20] [cursor=pointer]
+        - button "Nexus Free Auto" [ref=e23] [cursor=pointer]
+        - button "Connect Roblox Studio" [ref=e31] [cursor=pointer]
+    - main [ref=e42]:
+      - region "Roblox UI Creator" [ref=e43]:
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - combobox "UI design" [ref=e46]:
+              - option "Local AI Test UI" [selected]
+            - button "Create a new UI design" [ref=e47] [cursor=pointer]:
+              - generic [ref=e49]: New
+          - group "Creator mode" [ref=e50]:
+            - button "Design" [pressed] [ref=e51] [cursor=pointer]
+            - button "Preview" [ref=e54] [cursor=pointer]
+            - button "Code" [ref=e57] [cursor=pointer]
+          - generic [ref=e62]:
+            - button "Undo UI edit" [disabled] [ref=e63]
+            - button "Redo UI edit" [disabled] [ref=e67]
+            - combobox "Preview device" [ref=e70]:
+              - option "Desktop · 1280×720" [selected]
+              - option "Tablet · 1024×768"
+              - option "Phone landscape · 812×375"
+              - option "Phone portrait · 375×812"
+            - group [ref=e71]:
+              - generic "Fidelity" [ref=e72] [cursor=pointer]
+            - button "Apply to Studio" [ref=e75] [cursor=pointer]
+        - generic [ref=e79]:
+          - complementary "Chat and layers" [ref=e80]:
+            - generic [ref=e81]:
+              - button "Chat" [ref=e82] [cursor=pointer]
+              - button "Layers" [active] [pressed] [ref=e86] [cursor=pointer]
+              - button "Collapse left panel" [ref=e91] [cursor=pointer]
+            - generic [ref=e94]:
+              - generic [ref=e95]:
+                - combobox "Component type" [ref=e143]:
+                  - option "Frame" [selected]
+                  - option "TextLabel"
+                  - option "TextButton"
+                  - option "ImageLabel"
+                  - option "ImageButton"
+                  - option "TextBox"
+                  - option "ScrollingFrame"
+                - button "Add" [ref=e144] [cursor=pointer]
+              - generic [ref=e147]:
+                - button "LocalTestPanel Frame" [ref=e148] [cursor=pointer]:
+                  - generic [ref=e151]: LocalTestPanel
+                  - generic [ref=e152]: Frame
+                - generic "Reorder LocalTestPanel" [ref=e153]:
+                  - button "Move LocalTestPanel up" [disabled] [ref=e154]
+                  - button "Move LocalTestPanel down" [disabled] [ref=e157]
+          - main [ref=e101]:
+            - generic "Frame" [ref=e104]
+            - generic [ref=e105]:
+              - textbox "Describe the UI revision" [ref=e106]:
+                - /placeholder: Create a responsive shop UI with category tabs, item cards, currency balance, and a purchase modal…
+              - button "Generate UI revision" [disabled] [ref=e107]
+          - complementary "Inspector" [ref=e111]:
+            - generic [ref=e112]:
+              - button "Properties" [pressed] [ref=e113] [cursor=pointer]
+              - button "Actions" [ref=e117] [cursor=pointer]
+              - button "Assets" [ref=e120] [cursor=pointer]
+              - button "Collapse inspector" [ref=e125] [cursor=pointer]
+            - generic [ref=e128]:
+              - strong [ref=e132]: No selection
+              - paragraph [ref=e133]: Select an element in the preview or Layers panel.
+            - generic [ref=e134]:
+              - button "Checkpoint" [ref=e135] [cursor=pointer]
+              - button "History" [ref=e139] [cursor=pointer]
+  - generic:
+    - region "Notifications"
