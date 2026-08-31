@@ -2,13 +2,20 @@ import { authedFetch } from "./billing";
 
 const ASSET_PLATFORM_BASE = "/api/asset-platform";
 
-function featureEnabled(value) {
-  return ["1", "true", "yes", "on"].includes(String(value || "").trim().toLowerCase());
+function featureEnabled(value, fallback = false) {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (!normalized) return fallback;
+  if (["1", "true", "yes", "on"].includes(normalized)) return true;
+  if (["0", "false", "no", "off"].includes(normalized)) return false;
+  return fallback;
 }
 
-export const ASSET_PLATFORM_READS_ENABLED = featureEnabled(process.env.REACT_APP_ASSET_PLATFORM_READS_ENABLED);
+export const ASSET_PLATFORM_READS_ENABLED = featureEnabled(
+  process.env.REACT_APP_ASSET_PLATFORM_READS_ENABLED,
+  true
+);
 export const ASSET_PLATFORM_WRITES_ENABLED = ASSET_PLATFORM_READS_ENABLED
-  && featureEnabled(process.env.REACT_APP_ASSET_PLATFORM_WRITES_ENABLED);
+  && featureEnabled(process.env.REACT_APP_ASSET_PLATFORM_WRITES_ENABLED, true);
 
 export const ASSET_PLATFORM_TOOL_NAMES = Object.freeze([
   "inspect_asset_capabilities",

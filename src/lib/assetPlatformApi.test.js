@@ -27,16 +27,23 @@ describe("assetPlatformApi rollout gates", () => {
     jest.clearAllMocks();
   });
 
-  test("fails closed without issuing a request when reads are disabled", async () => {
-    const { api, authedFetch } = loadApi();
+  test("fails closed without issuing a request when reads are explicitly disabled", async () => {
+    const { api, authedFetch } = loadApi({ reads: "false" });
 
     expect(api.ASSET_PLATFORM_READS_ENABLED).toBe(false);
     await expect(api.listAssets()).rejects.toMatchObject({ code: "ASSET_PLATFORM_DISABLED" });
     expect(authedFetch).not.toHaveBeenCalled();
   });
 
+  test("uses live server capabilities when build-time asset flags are omitted", () => {
+    const { api } = loadApi();
+
+    expect(api.ASSET_PLATFORM_READS_ENABLED).toBe(true);
+    expect(api.ASSET_PLATFORM_WRITES_ENABLED).toBe(true);
+  });
+
   test("permits catalog reads but rejects mutations when only the read flag is enabled", async () => {
-    const { api, authedFetch } = loadApi({ reads: "true" });
+    const { api, authedFetch } = loadApi({ reads: "true", writes: "false" });
     authedFetch.mockResolvedValueOnce(jsonResponse({ assets: [{ assetId: "asset_one" }] }));
 
     await expect(api.listAssets({ scope: "global" })).resolves.toMatchObject({
@@ -52,7 +59,7 @@ describe("assetPlatformApi rollout gates", () => {
   });
 
   test("permits read-only tools that use the canonical POST transport when writes are disabled", async () => {
-    const { api, authedFetch } = loadApi({ reads: "true" });
+    const { api, authedFetch } = loadApi({ reads: "true", writes: "false" });
     authedFetch.mockResolvedValueOnce(jsonResponse({
       result: { operationState: "succeeded", data: { creators: [{ type: "Group", id: "42" }] } },
     }));
