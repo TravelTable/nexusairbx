@@ -425,6 +425,16 @@ describe("ChatComposer compact interactions", () => {
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 
+  test("consumes a submission failure after the chat flow has rendered it", async () => {
+    const onSubmit = jest.fn().mockRejectedValue(new Error("Studio agent reached its runtime limit"));
+    renderComposer({ prompt: "Build a running game", onSubmit });
+
+    fireEvent.click(screen.getByRole("button", { name: "Send prompt" }));
+    await act(async () => Promise.resolve());
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+
   test("morphs Send into Stop while ordinary Enter queues, Cmd/Ctrl+Enter interrupts, and Escape stops", () => {
     const onSubmit = jest.fn();
     const onStop = jest.fn();

@@ -39,6 +39,7 @@ import {
 
 const COMPOSER_MIN_HEIGHT = 40;
 const COMPOSER_MAX_HEIGHT = 176;
+const ignoreHandledError = (promise) => Promise.resolve(promise).catch(() => undefined);
 
 function ModeSelector({ mode, onModeChange, disabled }) {
   const [open, setOpen] = useState(false);
@@ -694,9 +695,9 @@ export default function ChatComposer({
     (text) => {
       const next = String(text || "").trim();
       if (!next || disabled || studioBuildBlocked) return;
-      onSubmit?.(null, next, {
+      ignoreHandledError(onSubmit?.(null, next, {
         draftRevision: `quick-refine:${draftRevision}:${next}`,
-      });
+      }));
     },
     [disabled, draftRevision, onSubmit, studioBuildBlocked]
   );
@@ -704,7 +705,7 @@ export default function ChatComposer({
   const submitDraft = useCallback(
     (event = null, { interrupt = false } = {}) => {
       if (disabled || studioBuildBlocked || !canSendWithContext) return undefined;
-      return onSubmit?.(event, null, { draftRevision, interrupt });
+      return ignoreHandledError(onSubmit?.(event, null, { draftRevision, interrupt }));
     },
     [canSendWithContext, disabled, draftRevision, onSubmit, studioBuildBlocked]
   );
