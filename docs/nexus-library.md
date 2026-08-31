@@ -133,6 +133,31 @@ Therefore Creator Store integration must:
 
 The first slice does not download or rehost Creator Store binaries.
 
+### Current 3D object and Creator Store corpus
+
+The backend now carries four separate model catalogs with deliberately different trust semantics:
+
+- `backend/data/model-library/kenney-3d.catalog.json` contains 4,390 distinct GLB objects discovered across 50 official Kenney 3D packs. Every pack archive is pinned in `kenney-3d.sources.lock.json`; the importer verifies an in-archive CC0 notice, records archive/file/evidence SHA-256 values, and parses each GLB before publication. Of these objects, 3,491 currently fit the automatically measurable Roblox gates: no parsed mesh primitive above 20,000 triangles, less than 20 MB, static/unskinned, and no obvious multi-material-per-mesh split. They are `verified_permissive` references, but still require Studio import checks for normals, watertightness, UVs, texture behavior, scale, pivot, collision, moderation, and scene-level performance. The remaining 899 stay `candidate`.
+- `backend/data/model-library/quaternius-weapons.catalog.json` adds 64 CC0 weapons from two author-controlled Quaternius packs: 24 medieval weapons and shields plus 40 modern firearms. Each record pairs a Roblox-uploadable FBX with a same-named OBJ used for deterministic geometry inspection, pins both SHA-256 hashes and the in-pack license evidence, and keeps the local source artifacts in the ignored model cache. All 64 currently fit the parsed 20,000-triangle-per-object and 20 MB upload gates, but still require a Studio import-equivalence, scale, pivot, grip, collision, material, and moderation check.
+- `backend/data/model-library/roblox-verified-weapons.catalog.json` adds 1,895 deduplicated weapon listings returned by 14 bounded Creator Store searches across verified non-Roblox creators. It covers blades, heavy melee, polearms, archery, sidearms, rifles, shotguns, sniper rifles, submachine guns, blasters, and launchers. These records retain asset IDs, creator identity, votes, geometry summaries, executable-descendant counts, sandbox signals, and discovery terms. They are always `platform_reference` and metadata-only: verified-creator status is not treated as a code-safety, originality, or quality guarantee.
+- `backend/data/model-library/roblox-official.catalog.json` contains all 941 Model results returned for the verified Roblox user account at the time of the pinned run. This includes 405 records classified as systems, modules, tools, templates, or otherwise executable-capable. The records retain IDs, creator verification, categories, geometry summaries, vote signals, script/instance counts, and sandbox signals. Their Nexus projections are always `platform_reference`, metadata-only, and non-materializable. No Creator Store binary is downloaded or committed.
+
+The cache under `backend/data/model-library/cache/` is intentionally untracked. It supports local hash verification and later upload/import work without turning the source repository into a multi-gigabyte asset host. Normal syncs reuse the locked bytes. A `node scripts/syncKenney3dLibrary.js --refresh --write` run re-fetches upstream and fails on a changed archive; accepting reviewed upstream changes requires the explicit `--accept-source-updates` flag and a lockfile diff review.
+
+The sync commands are:
+
+```powershell
+cd backend
+npm run models:sync-cc0
+npm run models:sync-weapons
+npm run models:sync-roblox-weapons
+npm run models:sync-roblox-official
+npm run models:query -- "medieval castle door" 8
+npm run models:query -- platform "sword system" 8
+```
+
+Both importers are bounded by host allowlists, request timeouts, page/entry limits, archive and decompression budgets, atomic JSON writes, exact source hashes, and dry-run defaults when invoked directly without `--write`.
+
 ## Retrieval and anti-generic behavior
 
 Search is deterministic, bounded, and explainable. It tokenizes the request, expands a small Roblox-oriented alias vocabulary, and scores matches across names, tags, intents, kind/domain/style classification, summaries, and blueprint data. Curated quality contributes to ranking, but cannot make an unrelated entry match a non-empty query.
@@ -178,6 +203,10 @@ Library selection does not authorize a Studio write. In particular, a building g
 Changes to the service or seed data should verify all of the following:
 
 - every seed file parses as JSON and reports its expected entry count;
+- all 4,390 CC0 model references retain archive, file, and license-evidence hashes; the 3,491 automatically budget-compatible static GLBs normalize as `verified_permissive`, while 899 remain `candidate`;
+- all 64 dedicated CC0 weapon references retain paired FBX/OBJ and license-evidence hashes, pass the parsed Roblox geometry/upload gates, and normalize as `verified_permissive`;
+- all 1,895 verified-creator Creator Store weapon listings normalize as metadata-only `platform_reference` records and retain their script/sandbox signals without downloading binaries;
+- all 941 official Roblox Creator Store records normalize as metadata-only `platform_reference`, including executable-descendant signals for system-style models, and no record contains a downloaded binary;
 - all 70 project-authored records normalize as `nexus_gold` and are agent-eligible;
 - all 46 licensed animation references retain exact evidence hashes, normalize as `candidate`, and are excluded from normal agent retrieval;
 - legacy animation search also excludes generated candidates and preserves reviewed clips on ID collision;
@@ -199,6 +228,7 @@ node --check backend/src/services/library/NexusLibraryService.js
 node backend/scripts/exportAnimationClipsToNexusLibrary.js --check --allow-below-target
 node backend/scripts/exportAnimationClipsToNexusLibrary.js --check --allow-below-target --verify-cache
 node --test backend/src/services/library/AnimationLibraryIngestion.test.js backend/src/services/library/NexusLibraryService.test.js backend/src/lib/nexusLibraryTools.test.js
+node --test backend/scripts/syncKenney3dLibrary.test.js backend/scripts/syncQuaterniusWeaponLibrary.test.js backend/scripts/syncRobloxCreatorStoreLibrary.test.js backend/scripts/syncRobloxWeaponReferenceLibrary.test.js backend/src/services/library/ModelLibraryIngestion.test.js
 node --test backend/src/services/animation/AnimationLibraryService.test.js backend/src/services/StudioAgentService.test.js backend/src/services/artifactRunLauncher.test.js backend/src/services/taskRuntime/ArtifactTaskRuntimeFacade.test.js
 ```
 
@@ -209,9 +239,10 @@ If a change touches the Studio protocol or its execution path, also run the prot
 The current implementation is deliberately smaller than the final product vision:
 
 - retrieval is weighted lexical matching, not embedding or learned semantic search;
-- JSON files are loaded into process memory and cached, which is suitable for the seed but not the final 10,000-plus-revision target;
+- JSON files are loaded into process memory and cached; the current 5,447-record catalog loads successfully, but a database-backed immutable index is still required before the 10,000-plus-revision target;
 - there is no universal, resumable remote-ingestion worker or review console;
-- there is no automatic marketplace binary import;
+- Creator Store records are intentionally metadata-only; insertion still requires a fresh server-side lookup plus the existing sanitized Studio import command;
+- CC0 GLBs are locally cached and retrievable as design references, but the agent does not yet have a single transactional tool that resolves a catalog revision, uploads that exact binary to Roblox, waits for moderation, inserts it, and records the final Studio receipt;
 - no library entry directly applies a change to Studio;
 - building grammars do not yet compile into `NativeModelSpec`;
 - image generation exists in the separate asset platform, but library recipes are not yet orchestrated into that tool automatically for a mixed game-building prompt;
