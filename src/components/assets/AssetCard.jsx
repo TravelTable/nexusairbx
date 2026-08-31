@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { ArrowRight, Copy, Layers, RefreshCw, RotateCcw } from "../../lib/icons";
 import { Button } from "../ui";
+import { AnimatedAssetIcon, AnimatedCopyIcon, AnimatedExpandIcon, AnimatedRefreshIcon } from "../ui/AnimatedActionIcon";
 import AssetLifecycleBadge from "./AssetLifecycleBadge";
 import CanonicalAssetPreview from "./CanonicalAssetPreview";
 
@@ -70,23 +70,23 @@ export default function AssetCard({
 
         <div className="asset-card__actions">
           {asset?.robloxAssetId ? (
-            <Button size="sm" variant="ghost" icon={Copy} onClick={copyRobloxId} aria-label={`Copy Roblox asset ID ${asset.robloxAssetId}`}>
+            <Button size="sm" variant="ghost" icon={AnimatedCopyIcon} onClick={copyRobloxId} aria-label={`Copy Roblox asset ID ${asset.robloxAssetId}`}>
               Copy Roblox ID
             </Button>
           ) : null}
           {RETRY_UPLOAD_STATES.has(lifecycle) && onRetryUpload ? (
-            <Button size="sm" variant="secondary" icon={RotateCcw} disabled={Boolean(busyAction)} onClick={() => onRetryUpload(asset)}>
+            <Button size="sm" variant="secondary" icon={AnimatedRefreshIcon} disabled={Boolean(busyAction)} onClick={() => onRetryUpload(asset)}>
               {busyAction === "retry" ? "Retrying…" : "Retry upload"}
             </Button>
           ) : null}
           {(POLL_STATES.has(lifecycle) || POLL_MODERATION_STATES.has(moderation)) && onPoll ? (
-            <Button size="sm" variant="ghost" icon={RefreshCw} disabled={Boolean(busyAction)} onClick={() => onPoll(asset)}>
+            <Button size="sm" variant="ghost" icon={AnimatedRefreshIcon} disabled={Boolean(busyAction)} onClick={() => onPoll(asset)}>
               {busyAction === "poll" ? "Checking…" : "Refresh status"}
             </Button>
           ) : null}
-          {onSimilar ? <Button size="sm" variant="subtle" icon={Layers} disabled={Boolean(busyAction)} onClick={() => onSimilar(asset)}>Similar</Button> : null}
-          {onReplace ? <Button size="sm" variant="subtle" icon={RotateCcw} disabled={Boolean(busyAction)} onClick={() => onReplace(asset)}>Replace</Button> : null}
-          {onOpen ? <Button size="sm" variant="ghost" iconRight={ArrowRight} onClick={() => onOpen(asset)}>Details</Button> : null}
+          {onSimilar ? <Button size="sm" variant="subtle" icon={AnimatedAssetIcon} disabled={Boolean(busyAction)} onClick={() => onSimilar(asset)}>Similar</Button> : null}
+          {onReplace ? <Button size="sm" variant="subtle" icon={AnimatedRefreshIcon} disabled={Boolean(busyAction)} onClick={() => onReplace(asset)}>Replace</Button> : null}
+          {onOpen ? <Button size="sm" variant="ghost" iconRight={AnimatedExpandIcon} onClick={() => onOpen(asset)}>Details</Button> : null}
         </div>
         <span className="sr-only" role="status" aria-live="polite">{copyStatus}</span>
       </div>

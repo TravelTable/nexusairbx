@@ -1,6 +1,7 @@
 import React from "react";
-import { Package, Plus } from "../../lib/icons";
+import { Plus } from "../../lib/icons";
 import { Button } from "../ui";
+import { AnimatedAssetIcon } from "../ui/AnimatedActionIcon";
 import AssetCard from "./AssetCard";
 import AssetLifecycleBadge from "./AssetLifecycleBadge";
 import { AssetEmptyState, AssetGridSkeleton } from "./AssetCollectionState";
@@ -24,7 +25,7 @@ export default function AssetPackGrid({
     <section className="asset-pack" aria-labelledby="asset-pack-title">
       <header className="asset-pack__header">
         <div>
-          <p className="asset-eyebrow"><Package aria-hidden="true" /> Generation output</p>
+          <p className="asset-eyebrow"><AnimatedAssetIcon aria-hidden="true" /> Generation output</p>
           <div className="asset-pack__title-row">
             <h2 id="asset-pack-title">{pack?.name || "Latest result"}</h2>
             {pack?.lifecycle ? <AssetLifecycleBadge status={pack.lifecycle} /> : null}

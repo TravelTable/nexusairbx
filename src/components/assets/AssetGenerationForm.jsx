@@ -1,18 +1,21 @@
-import React, { useId, useLayoutEffect, useRef } from "react";
-import { ArrowUp, ImagePlus, Layers, Package, RefreshCw } from "../../lib/icons";
+import React, { useId, useRef } from "react";
+import { ChevronDown } from "../../lib/icons";
 import { Toggle } from "../ui";
-import { BorderBeam } from "../ui/border-beam";
+import CreationPromptComposer from "../ai/chat/CreationPromptComposer";
+import {
+  AnimatedAssetIcon,
+  AnimatedImageIcon,
+  AnimatedRefreshIcon,
+  AnimatedUiIcon,
+} from "../ui/AnimatedActionIcon";
 import "../ai/chat/ChatExperience.css";
 
-const PROMPT_MIN_HEIGHT = 40;
-const PROMPT_MAX_HEIGHT = 176;
-
 export const ASSET_GENERATION_MODES = [
-  { id: "single", label: "Single", description: "Create one new asset.", icon: ImagePlus },
-  { id: "pack", label: "Pack", description: "Create a coordinated set. Eight is the suggested starting point, not a cap.", icon: Package },
-  { id: "extend", label: "Extend", description: "Add matching assets to an existing pack.", icon: Layers },
-  { id: "similar", label: "Similar", description: "Use an existing asset as the style anchor.", icon: Layers },
-  { id: "replacement", label: "Replace", description: "Generate a revision while preserving replacement history.", icon: RefreshCw },
+  { id: "single", label: "Single", description: "Create one new asset.", icon: AnimatedImageIcon },
+  { id: "pack", label: "Pack", description: "Create a coordinated set. Eight is the suggested starting point, not a cap.", icon: AnimatedAssetIcon },
+  { id: "extend", label: "Extend", description: "Add matching assets to an existing pack.", icon: AnimatedUiIcon },
+  { id: "similar", label: "Similar", description: "Use an existing asset as the style anchor.", icon: AnimatedAssetIcon },
+  { id: "replacement", label: "Replace", description: "Generate a revision while preserving replacement history.", icon: AnimatedRefreshIcon },
 ];
 
 function assetId(asset) {
@@ -31,20 +34,9 @@ function AssetPromptComposer({
   submitting,
   unsupported,
   modeLabel,
+  modeIcon,
+  onOpenReference,
 }) {
-  const textareaRef = useRef(null);
-
-  useLayoutEffect(() => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    textarea.style.height = "0px";
-    const measuredHeight = value ? textarea.scrollHeight : PROMPT_MIN_HEIGHT;
-    const nextHeight = Math.min(Math.max(measuredHeight, PROMPT_MIN_HEIGHT), PROMPT_MAX_HEIGHT);
-    textarea.style.height = `${nextHeight}px`;
-    textarea.style.overflowY = measuredHeight > PROMPT_MAX_HEIGHT ? "auto" : "hidden";
-  }, [value]);
-
-  const submitDisabled = disabled || submitting || unsupported || !value.trim();
   const buttonLabel = disabled
     ? "Generation unavailable"
     : submitting
@@ -54,57 +46,25 @@ function AssetPromptComposer({
   return (
     <div className="asset-prompt-composer-field">
       <span className="nexus-field-label" id={`${id}-label`}>Creative brief</span>
-      <BorderBeam
-        className="nexus-composer-beam asset-prompt-composer-beam relative w-full"
-        size="md"
-        colorVariant="colorful"
-        theme="dark"
-        strength={disabled ? 0.28 : submitting ? 1 : 0.72}
-        duration={submitting ? 1.65 : 3.2}
-        active={!disabled}
-      >
-        <div
-          className={`nexus-composer nx-composer-shine asset-prompt-composer relative w-full overflow-visible ${submitting ? "nx-composer-shine--active" : ""}`}
-          data-state={disabled ? "disabled" : submitting ? "submitting" : value.trim() ? "typing" : "idle"}
-          aria-busy={submitting ? "true" : "false"}
-        >
-          <div className="nexus-composer__body relative">
-            <div className="nexus-composer__toolbar-start asset-prompt-composer__kind" aria-hidden="true">
-              <ImagePlus />
-            </div>
-            <div className="nexus-composer__input-shell relative min-w-0">
-              <textarea
-                ref={textareaRef}
-                id={id}
-                className="nexus-composer__input min-h-10 w-full resize-none border-none bg-transparent px-0 py-2 text-[16px] leading-6 text-[var(--ds-text)] outline-none transition-[height,color,opacity] duration-150 placeholder:text-[var(--ds-text-muted)] focus:ring-0 disabled:opacity-50 xl:text-[15px]"
-                rows={1}
-                value={value}
-                disabled={disabled}
-                onChange={(event) => onChange(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key !== "Enter" || event.shiftKey || event.nativeEvent?.isComposing) return;
-                  event.preventDefault();
-                  if (!submitDisabled) event.currentTarget.form?.requestSubmit();
-                }}
-                placeholder="Describe the player action, visual metaphor, mood, palette, and small-size details…"
-                aria-labelledby={`${id}-label`}
-                required
-              />
-            </div>
-            <div className="nexus-composer__toolbar-end">
-              <button
-                className="asset-prompt-composer__submit"
-                type="submit"
-                disabled={submitDisabled}
-                aria-label={buttonLabel}
-                title={buttonLabel}
-              >
-                <ArrowUp aria-hidden="true" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </BorderBeam>
+      <CreationPromptComposer
+        prompt={value}
+        setPrompt={onChange}
+        attachments={[]}
+        setAttachments={() => {}}
+        onSubmit={(event) => event?.currentTarget?.closest?.("form")?.requestSubmit()}
+        onAttachmentRequest={onOpenReference}
+        attachmentLabel="Choose a saved style reference"
+        isGenerating={submitting}
+        disabled={disabled || unsupported}
+        placeholder="Describe the visual metaphor, mood, palette, materials, and small-size details…"
+        promptAriaLabel="Creative brief"
+        submitLabel={buttonLabel}
+        contextIcon={modeIcon}
+        contextLabel={modeLabel}
+        showWorkspaceOptions={false}
+        regionClassName="asset-prompt-composer-region"
+        composerClassName="asset-prompt-composer"
+      />
       <small className="asset-field-help">Press Enter to generate · Shift+Enter for a new line</small>
     </div>
   );
@@ -140,9 +100,11 @@ export default function AssetGenerationForm({
 }) {
   const form = { ...DEFAULT_ASSET_GENERATION_FORM, ...value };
   const fieldId = useId();
+  const referenceSelectRef = useRef(null);
 
   const patch = (next) => onChange?.({ ...form, ...next });
   const selectedMode = ASSET_GENERATION_MODES.find((mode) => mode.id === form.mode) || ASSET_GENERATION_MODES[0];
+  const SelectedModeIcon = selectedMode.icon;
   const unsupported = unsupportedModes.includes(form.mode);
 
   const handleModeChange = (mode) => {
@@ -153,20 +115,26 @@ export default function AssetGenerationForm({
   return (
     <form className="asset-generation-form" aria-busy={submitting} onSubmit={(event) => { event.preventDefault(); if (!disabled) onSubmit?.(form); }}>
       <fieldset className="asset-mode-picker" disabled={disabled}>
-        <legend>Generation mode</legend>
-        <div className="asset-mode-picker__grid">
+        <legend className="sr-only">Generation mode</legend>
+        <details>
+          <summary>
+            <span><SelectedModeIcon aria-hidden="true" /><span><small>Output</small><strong>{selectedMode.label}</strong></span></span>
+            <span>{selectedMode.description}<ChevronDown aria-hidden="true" /></span>
+          </summary>
+          <div className="asset-mode-picker__grid">
           {ASSET_GENERATION_MODES.map((mode) => {
             const Icon = mode.icon;
             const modeDisabled = unsupportedModes.includes(mode.id);
             return (
               <label key={mode.id} className={`asset-mode-option ${form.mode === mode.id ? "asset-mode-option--active" : ""} ${modeDisabled || disabled ? "asset-mode-option--disabled" : ""}`}>
-                <input type="radio" name={`${fieldId}-mode`} value={mode.id} checked={form.mode === mode.id} disabled={disabled || modeDisabled} aria-describedby={`${fieldId}-mode-description`} onChange={() => handleModeChange(mode.id)} />
+                <input type="radio" name={`${fieldId}-mode`} value={mode.id} checked={form.mode === mode.id} disabled={disabled || modeDisabled} aria-describedby={`${fieldId}-mode-description`} onChange={(event) => { handleModeChange(mode.id); event.currentTarget.closest("details")?.removeAttribute("open"); }} />
                 <Icon aria-hidden="true" />
                 <span><strong>{mode.label}</strong><small>{modeDisabled ? "Unavailable for this context" : mode.description}</small></span>
               </label>
             );
           })}
-        </div>
+          </div>
+        </details>
         <p className="asset-mode-picker__description" id={`${fieldId}-mode-description`}>
           {unsupported ? `${selectedMode.label} is unavailable for this project.` : selectedMode.description}
         </p>
@@ -180,12 +148,14 @@ export default function AssetGenerationForm({
           submitting={submitting}
           unsupported={unsupported}
           modeLabel={selectedMode.label}
+          modeIcon={selectedMode.icon}
+          onOpenReference={() => referenceSelectRef.current?.focus()}
           onChange={(prompt) => patch({ prompt })}
         />
 
         <label className="asset-reference-input">
           <span className="nexus-field-label">Style reference asset <small>optional</small></span>
-          <select className="nexus-input" value={form.referenceAssetId} disabled={disabled} onChange={(event) => patch({ referenceAssetId: event.target.value })}>
+          <select ref={referenceSelectRef} className="nexus-input" value={form.referenceAssetId} disabled={disabled} onChange={(event) => patch({ referenceAssetId: event.target.value })}>
             <option value="">Use project style context</option>
             {assets.filter((asset) => assetId(asset)).map((asset) => (
               <option key={assetId(asset)} value={assetId(asset)}>{asset.name || assetId(asset)}</option>

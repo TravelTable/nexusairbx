@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Clock, ImagePlus, Library, Settings } from "../lib/icons";
+import { Clock, Library, Settings } from "../lib/icons";
 import { Button } from "../components/ui";
+import { AnimatedImageIcon } from "../components/ui/AnimatedActionIcon";
 import AssetContextBar from "../components/assets/AssetContextBar";
 import AssetGenerationForm, { DEFAULT_ASSET_GENERATION_FORM } from "../components/assets/AssetGenerationForm";
 import AssetPackGrid from "../components/assets/AssetPackGrid";
@@ -136,7 +137,7 @@ function unsupportedModesFromContext(context) {
   ]));
 }
 
-export default function IconGeneratorPage() {
+export default function IconGeneratorPage({ embedded = false }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, authReady, totalRemaining, refresh: refreshBilling } = useBilling();
@@ -164,8 +165,8 @@ export default function IconGeneratorPage() {
   const intentHandoffAppliedRef = useRef(false);
 
   useEffect(() => {
-    if (authReady && !user) navigate("/signin", { replace: true, state: { from: "/tools/icon-generator" } });
-  }, [authReady, user, navigate]);
+    if (authReady && !user) navigate("/signin", { replace: true, state: { from: embedded ? "/ai?mode=asset" : "/tools/icon-generator" } });
+  }, [authReady, embedded, user, navigate]);
 
   const loadWorkspace = useCallback(async (requestedProjectId = "") => {
     if (!user) return;
@@ -261,6 +262,7 @@ export default function IconGeneratorPage() {
     || styleProfiles.find((profile) => profile.styleProfileId === currentPack?.styleProfileId)
     || null;
   const costEstimate = formatCostEstimate(context, form);
+  const PageTag = embedded ? "section" : "main";
 
   const changeProject = async (nextProjectId) => {
     setSelectedProjectId(nextProjectId);
@@ -431,29 +433,29 @@ export default function IconGeneratorPage() {
 
   if (!authReady || !user || (loading && !projects.length && !assets.length)) {
     return (
-      <main className="asset-platform-page asset-icon-generator-page">
+      <PageTag className={`asset-platform-page asset-icon-generator-page ${embedded ? "asset-icon-generator-page--embedded" : ""}`}>
         <div className="asset-platform-shell">
           <header className="asset-platform-header">
             <div>
-              <p className="asset-eyebrow"><ImagePlus aria-hidden="true" /> Asset desk / generation</p>
+              <p className="asset-eyebrow"><AnimatedImageIcon aria-hidden="true" /> Asset desk / generation</p>
               <h1>Build the visual set.</h1>
               <p>Loading your project context and asset workspace.</p>
             </div>
           </header>
           <AssetGridSkeleton count={6} label="Loading asset workspace" />
         </div>
-      </main>
+      </PageTag>
     );
   }
 
   return (
-    <main className="asset-platform-page asset-icon-generator-page">
+    <PageTag className={`asset-platform-page asset-icon-generator-page ${embedded ? "asset-icon-generator-page--embedded" : ""}`} aria-label={embedded ? "Asset creation workspace" : undefined}>
       <div className="asset-platform-shell">
         <header className="asset-platform-header">
           <div>
-            <p className="asset-eyebrow"><ImagePlus aria-hidden="true" /> Asset desk / generation</p>
-            <h1>Build the visual set.</h1>
-            <p>Write one visual brief, establish a Roblox project context, then review the generated set and its publishing record on the same desk.</p>
+              <p className="asset-eyebrow"><AnimatedImageIcon aria-hidden="true" /> Asset studio</p>
+              <h1>{embedded ? "Create and refine assets" : "Build the visual set."}</h1>
+              <p>{embedded ? "Direct the visual, choose only the controls you need, and review every result in place." : "Write one visual brief, establish a Roblox project context, then review the generated set and its publishing record on the same desk."}</p>
           </div>
           <div className="asset-platform-header__actions">
             <Button className="asset-header-action" variant="ghost" icon={Library} onClick={() => navigate("/assets")}>Asset library</Button>
@@ -557,6 +559,6 @@ export default function IconGeneratorPage() {
           </section>
         </div>
       </div>
-    </main>
+    </PageTag>
   );
 }

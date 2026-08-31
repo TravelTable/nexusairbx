@@ -15,17 +15,23 @@ import {
   Monitor,
   Play,
   Plus,
-  RefreshCw,
   RotateCcw,
   Save,
   Settings2,
   Sparkles,
-  Square,
   UploadCloud,
   X,
 } from "lib/icons";
 import { Button } from "../../../components/ui";
-import ChatComposer from "../../../components/ai/chat/ChatComposer";
+import CreationPromptComposer from "../../../components/ai/chat/CreationPromptComposer";
+import {
+  AnimatedHistoryIcon,
+  AnimatedImageIcon,
+  AnimatedMotionIcon,
+  AnimatedRefreshIcon,
+  AnimatedUiIcon,
+  AnimatedUploadIcon,
+} from "../../../components/ui/AnimatedActionIcon";
 import { Tree, TreeItem, TreeItemLabel } from "../../../components/ui/tree";
 import RobloxUiPreview from "./RobloxUiPreview";
 import { indexUiNodes, UI_DEVICE_PRESETS } from "../../../lib/robloxUiPreview";
@@ -949,10 +955,10 @@ export default function UiCreatorWorkspace({
   }, [busy, document, notify, showError]);
 
   if (!user) {
-    return <div className="ui-creator-gate"><Sparkles /><h1>Roblox UI Creator</h1><p>Sign in to create persistent UI sessions and publish assets.</p><Button type="button" onClick={onRequireAuth}>Sign in</Button></div>;
+    return <div className="ui-creator-gate"><AnimatedUiIcon /><h1>Roblox UI Creator</h1><p>Sign in to create persistent UI sessions and publish assets.</p><Button type="button" onClick={onRequireAuth}>Sign in</Button><div className="ui-creator-gate__composer"><CreationPromptComposer prompt="" setPrompt={() => {}} attachments={[]} setAttachments={() => {}} onSubmit={() => {}} disabled contextIcon={AnimatedUiIcon} contextLabel="UI generation" promptAriaLabel="UI prompt unavailable until sign in" submitLabel="Sign in to generate" showWorkspaceOptions={false} /></div></div>;
   }
   if (!isStarterOrAbove) {
-    return <div className="ui-creator-gate"><Sparkles /><h1>Roblox UI Creator</h1><p>Browser preview, AI revisions, and Studio apply are available on Starter and Pro.</p><Button type="button" onClick={onRequireStarter}>View Starter</Button></div>;
+    return <div className="ui-creator-gate"><AnimatedUiIcon /><h1>Roblox UI Creator</h1><p>Browser preview, AI revisions, and Studio apply are available on Starter and Pro.</p><Button type="button" onClick={onRequireStarter}>Compare plans</Button><div className="ui-creator-gate__composer"><CreationPromptComposer prompt="" setPrompt={() => {}} attachments={[]} setAttachments={() => {}} onSubmit={() => {}} disabled contextIcon={AnimatedUiIcon} contextLabel="UI generation" promptAriaLabel="UI prompt unavailable on this plan" submitLabel="Starter required" showWorkspaceOptions={false} /></div></div>;
   }
   if (!document) {
     return <div className="ui-creator-loading" role="status"><span className="nx-build-signal" data-active="true" />Opening UI Creator…</div>;
@@ -1001,20 +1007,20 @@ export default function UiCreatorWorkspace({
           }} icon={Plus}><span>New</span></Button>
         </div>
         <div className="ui-creator__mode-switch" role="tablist" aria-label="Creator mode" onKeyDown={moveTabFocus}>
-          <Button type="button" icon={Square} variant={mode === "design" ? "primary" : "secondary"} size="sm" role="tab" aria-selected={mode === "design"} tabIndex={mode === "design" ? 0 : -1} data-active={mode === "design"} onClick={() => setMode("design")}>Design</Button>
-          <Button type="button" icon={Play} variant={mode === "preview" ? "primary" : "secondary"} size="sm" role="tab" aria-selected={mode === "preview"} tabIndex={mode === "preview" ? 0 : -1} data-active={mode === "preview"} onClick={() => setMode("preview")}>Preview</Button>
+          <Button type="button" icon={AnimatedUiIcon} variant={mode === "design" ? "primary" : "secondary"} size="sm" role="tab" aria-selected={mode === "design"} tabIndex={mode === "design" ? 0 : -1} data-active={mode === "design"} onClick={() => setMode("design")}>Design</Button>
+          <Button type="button" icon={AnimatedMotionIcon} variant={mode === "preview" ? "primary" : "secondary"} size="sm" role="tab" aria-selected={mode === "preview"} tabIndex={mode === "preview" ? 0 : -1} data-active={mode === "preview"} onClick={() => setMode("preview")}>Preview</Button>
           <Button type="button" icon={Code} variant={mode === "code" ? "primary" : "secondary"} size="sm" role="tab" aria-selected={mode === "code"} tabIndex={mode === "code" ? 0 : -1} data-active={mode === "code"} onClick={() => setMode("code")}>Code</Button>
         </div>
         <div className="ui-creator__toolbar-actions">
-          <Button type="button" variant="secondary" size="sm" icon={RotateCcw} title="Undo" aria-label="Undo UI edit" disabled={!undoStack.length || Boolean(busy)} onClick={undo} />
-          <Button type="button" variant="secondary" size="sm" icon={RefreshCw} title="Redo" aria-label="Redo UI edit" disabled={!redoStack.length || Boolean(busy)} onClick={redo} />
+          <Button type="button" variant="secondary" size="sm" icon={AnimatedHistoryIcon} title="Undo" aria-label="Undo UI edit" disabled={!undoStack.length || Boolean(busy)} onClick={undo} />
+          <Button type="button" variant="secondary" size="sm" icon={AnimatedRefreshIcon} title="Redo" aria-label="Redo UI edit" disabled={!redoStack.length || Boolean(busy)} onClick={redo} />
           {compactViewport ? (
             <details className="ui-creator__overflow">
               <summary role="button" tabIndex={0} aria-label="More UI Creator actions"><Menu /></summary>
               <div className="ui-creator__overflow-menu">
                 <label><span>Preview device</span><select value={deviceId} onChange={(event) => setDeviceId(event.target.value)} aria-label="Preview device">{Object.values(UI_DEVICE_PRESETS).map((preset) => <option key={preset.id} value={preset.id}>{preset.label} · {preset.width}×{preset.height}</option>)}</select></label>
                 <div className="ui-creator__overflow-fidelity"><strong><Check />Preview fidelity</strong><span>Supported: {(fidelity.supported || []).join(", ") || "None"}</span><span>Approximate: {(fidelity.approximate || []).join(", ") || "None"}</span><span>Studio-only: {(fidelity.studioOnly || []).join(", ") || "None"}</span></div>
-                <Button type="button" variant="secondary" size="sm" className="ui-creator__apply" disabled={Boolean(busy)} onClick={() => applyToStudio(false)} icon={UploadCloud}>Apply to Studio</Button>
+                <Button type="button" variant="secondary" size="sm" className="ui-creator__apply" disabled={Boolean(busy)} onClick={() => applyToStudio(false)} icon={AnimatedUploadIcon}>Apply to Studio</Button>
               </div>
             </details>
           ) : (
@@ -1028,7 +1034,7 @@ export default function UiCreatorWorkspace({
                   <p><strong>Studio-only</strong><span>{(fidelity.studioOnly || []).join(", ") || "None"}</span></p>
                 </div>
               </details>
-              <Button type="button" variant="secondary" size="sm" className="ui-creator__apply" disabled={Boolean(busy)} onClick={() => applyToStudio(false)} icon={UploadCloud}>Apply to Studio</Button>
+              <Button type="button" variant="secondary" size="sm" className="ui-creator__apply" disabled={Boolean(busy)} onClick={() => applyToStudio(false)} icon={AnimatedUploadIcon}>Apply to Studio</Button>
             </>
           )}
         </div>
@@ -1111,7 +1117,7 @@ export default function UiCreatorWorkspace({
             </div>
           ) : null}
           <div className="ui-creator__composer-host">
-            <ChatComposer
+            <CreationPromptComposer
               prompt={prompt}
               setPrompt={setPrompt}
               attachments={[]}
@@ -1122,9 +1128,16 @@ export default function UiCreatorWorkspace({
               }}
               isGenerating={Boolean(busy)}
               placeholder="Tell Nexus what UI to build or change…"
+              promptAriaLabel="Prompt input"
+              submitLabel="Send prompt"
+              contextIcon={draft ? AnimatedRefreshIcon : AnimatedUiIcon}
+              contextLabel={draft ? "Iterate draft" : mode === "preview" ? "Preview feedback" : "UI generation"}
+              onAttachmentRequest={() => { setRightView("assets"); setRightOpen(true); }}
+              attachmentLabel="Open UI asset references"
               mode={composerMode}
               onModeChange={setComposerMode}
               showDock={false}
+              showWorkspaceOptions={false}
               studioConnectionRequired={false}
               studioConnected={Boolean(studio?.connected)}
               studioConnectionType={studio?.connectionType}
@@ -1141,7 +1154,7 @@ export default function UiCreatorWorkspace({
           <div className="ui-creator__panel-tabs" role="tablist" aria-label="Inspector sections" onKeyDown={moveTabFocus}>
             <Button id="ui-right-tab-properties" type="button" variant={rightView === "properties" ? "primary" : "secondary"} size="sm" role="tab" aria-controls="ui-right-panel-properties" aria-selected={rightView === "properties"} tabIndex={rightView === "properties" ? 0 : -1} data-active={rightView === "properties"} onClick={() => setRightView("properties")} icon={Settings2}>Properties</Button>
             <Button id="ui-right-tab-interactions" type="button" variant={rightView === "interactions" ? "primary" : "secondary"} size="sm" role="tab" aria-controls="ui-right-panel-interactions" aria-selected={rightView === "interactions"} tabIndex={rightView === "interactions" ? 0 : -1} data-active={rightView === "interactions"} onClick={() => setRightView("interactions")} icon={Play}>Actions</Button>
-            <Button id="ui-right-tab-assets" type="button" variant={rightView === "assets" ? "primary" : "secondary"} size="sm" role="tab" aria-controls="ui-right-panel-assets" aria-selected={rightView === "assets"} tabIndex={rightView === "assets" ? 0 : -1} data-active={rightView === "assets"} onClick={() => setRightView("assets")} icon={ImagePlus}>Assets</Button>
+            <Button id="ui-right-tab-assets" type="button" variant={rightView === "assets" ? "primary" : "secondary"} size="sm" role="tab" aria-controls="ui-right-panel-assets" aria-selected={rightView === "assets"} tabIndex={rightView === "assets" ? 0 : -1} data-active={rightView === "assets"} onClick={() => setRightView("assets")} icon={AnimatedImageIcon}>Assets</Button>
           </div>
           {rightView === "properties" ? (
             visibleSelected ? <div id="ui-right-panel-properties" className="ui-inspector-scroll" role="tabpanel" aria-labelledby="ui-right-tab-properties">

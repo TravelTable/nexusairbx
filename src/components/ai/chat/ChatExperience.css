@@ -185,6 +185,10 @@
   box-shadow: var(--nx-shadow-floating) !important;
 }
 
+.nexus-composer-frame {
+  width: min(100%, 760px);
+}
+
 .nexus-composer-beam {
   border-radius: var(--nx-radius-feature);
 }
@@ -223,6 +227,26 @@
 .nexus-composer__toolbar-end {
   grid-column: 3;
   grid-row: 1;
+}
+
+.nexus-composer-context {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 9px;
+  border: 1px solid var(--nx-rule-quiet);
+  border-radius: var(--nx-radius-control);
+  background: var(--nx-muted-surface);
+  color: var(--nx-text-secondary);
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.nexus-composer-context svg {
+  color: var(--nx-purple-strong);
 }
 
 .nexus-composer[data-expanded="true"] .nexus-composer__body {
@@ -384,6 +408,10 @@
 .chat-empty-state__context dd.chat-empty-state__connected,
 .chat-empty-state__connected-icon {
   color: var(--ds-success);
+}
+
+.nexus-composer__input:focus-visible {
+  box-shadow: inset 0 -1px 0 var(--nx-purple) !important;
 }
 
 .chat-empty-state__context dd.chat-empty-state__disconnected,

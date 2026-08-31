@@ -10,9 +10,14 @@ import {
   Send,
   Sparkles,
   Square,
-  Upload,
   WandSparkles,
 } from "lib/icons";
+import {
+  AnimatedGenerateIcon,
+  AnimatedMotionIcon,
+  AnimatedSettingsIcon,
+  AnimatedUploadIcon,
+} from "components/ui/AnimatedActionIcon";
 import {
   generateAnimation,
   refineAnimation,
@@ -322,16 +327,22 @@ export default function AnimateWorkspace({ modelVersion = "", onBillingRefresh =
           />
         </div>
         <div className="animate-toolbar__meta" aria-label="Animation settings">
-          <label className="animate-toolbar__model">
-            <span>Model</span>
-            <select aria-label="Preview model" value={previewModel.id} onChange={selectPreviewModel} disabled={busy}>
-              <option value="blocky-r15">Blocky R15</option>
-              {customPreviewModel ? <option value="custom-r15">{customPreviewModel.label}</option> : null}
-            </select>
-          </label>
-          <button type="button" className="animate-toolbar__import" onClick={() => modelInputRef.current?.click()} disabled={busy}>
-            <Upload aria-hidden="true" /> Import GLB
-          </button>
+          <details className="animate-toolbar__options">
+            <summary><AnimatedSettingsIcon aria-hidden="true" /> Preview options</summary>
+            <div>
+              <label className="animate-toolbar__model">
+                <span>Preview model</span>
+                <select aria-label="Preview model" value={previewModel.id} onChange={selectPreviewModel} disabled={busy}>
+                  <option value="blocky-r15">Blocky R15</option>
+                  {customPreviewModel ? <option value="custom-r15">{customPreviewModel.label}</option> : null}
+                </select>
+              </label>
+              <button type="button" className="animate-toolbar__import" onClick={() => modelInputRef.current?.click()} disabled={busy}>
+                <AnimatedUploadIcon aria-hidden="true" /> Import R15 GLB
+              </button>
+              <dl><div><dt>Root</dt><dd>In place</dd></div><div><dt>Access</dt><dd>Private</dd></div></dl>
+            </div>
+          </details>
           <input
             ref={modelInputRef}
             className="sr-only"
@@ -340,8 +351,6 @@ export default function AnimateWorkspace({ modelVersion = "", onBillingRefresh =
             aria-label="Import R15 GLB"
             onChange={importPreviewModel}
           />
-          <span className="animate-toolbar__fact"><b>Root</b> In place</span>
-          <span className="animate-toolbar__fact"><b>Access</b> Private</span>
           <button type="button" className="animate-toolbar__new-chat" onClick={startNewAnimationChat} disabled={busy}>
             <Plus aria-hidden="true" /> New animation
           </button>
@@ -364,7 +373,7 @@ export default function AnimateWorkspace({ modelVersion = "", onBillingRefresh =
           <div className="animate-messages" aria-live="polite">
             {messages.map((message) => (
               <article key={message.id} data-role={message.role}>
-                {message.role === "assistant" ? <span className="animate-message-avatar"><Sparkles aria-hidden="true" /></span> : null}
+                {message.role === "assistant" ? <span className="animate-message-avatar"><AnimatedMotionIcon aria-hidden="true" /></span> : null}
                 <div>
                   <b>{message.role === "assistant" ? "Nexus Animate" : "You"}</b>
                   <p>{message.content}</p>
@@ -373,7 +382,7 @@ export default function AnimateWorkspace({ modelVersion = "", onBillingRefresh =
             ))}
             {busy ? (
               <article className="animate-progress" data-role="assistant" role="status">
-                <b><Sparkles aria-hidden="true" /> Generating</b>
+                <b><AnimatedGenerateIcon active aria-hidden="true" /> Generating</b>
                 <p>{GENERATION_STAGES[stageIndex]}…</p>
                 <div><i style={{ width: `${((stageIndex + 1) / GENERATION_STAGES.length) * 100}%` }} /></div>
               </article>
@@ -389,11 +398,13 @@ export default function AnimateWorkspace({ modelVersion = "", onBillingRefresh =
             onStarter={handleGenerate}
             starterPrompts={STARTER_PROMPTS}
             inputRef={promptInputRef}
+            onAttachmentRequest={() => modelInputRef.current?.click()}
           />
         </aside>
 
         <main className="animate-viewport" aria-label="Interactive R15 animation preview">
           <R15Preview animation={selectedVariant} currentTime={currentTime} modelUrl={previewModel.url} modelLabel={previewModel.label} />
+          {busy ? <div className="animate-viewport__generating" role="status"><AnimatedMotionIcon active /><span>{GENERATION_STAGES[stageIndex]}</span></div> : null}
           <div className="animate-viewport__badge"><i aria-hidden="true" /> {previewModel.label}</div>
           <div className="animate-viewport__brief">
             <span>{selectedVariant ? selectedVariant.variant.label : "Waiting for a motion brief"}</span>

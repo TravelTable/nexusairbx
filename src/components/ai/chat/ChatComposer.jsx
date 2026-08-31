@@ -1,14 +1,11 @@
 import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  ArrowUp,
   AlertTriangle,
   Check,
   ChevronDown,
   Edit,
   Loader,
-  Plus,
-  SlidersHorizontal,
   X,
 } from "lib/icons";
 import { TokenBar } from "../AiComponents";
@@ -31,6 +28,11 @@ import { messageHasRefineableFiles } from "../../../lib/chatRefine";
 import { BorderBeam } from "../../ui/border-beam";
 import { Alert, AlertContent, AlertDescription, AlertIcon, AlertTitle } from "../../ui/alert-1";
 import { AppleStyleDock } from "./AppleStyleDock";
+import {
+  AnimatedGenerateIcon,
+  AnimatedSettingsIcon,
+  AnimatedUploadIcon,
+} from "../../ui/AnimatedActionIcon";
 
 const COMPOSER_MIN_HEIGHT = 40;
 const COMPOSER_MAX_HEIGHT = 176;
@@ -354,6 +356,9 @@ export default function ChatComposer({
   rewindTarget = null,
   onCancelRewind,
   onFileUpload,
+  onAttachmentRequest,
+  attachmentAccept = `${ROBLOX_DECAL_ACCEPT},.lua,.txt,.json`,
+  attachmentLabel = "Upload image to Roblox or attach a code/text file",
   onImprovePrompt,
   disabled,
   mode = "agent",
@@ -402,6 +407,17 @@ export default function ChatComposer({
   renderDockNavigation,
   showDock = true,
   studioConnectionRequired = true,
+  modeControl,
+  showModeSelector = true,
+  showWorkspaceOptions = true,
+  customWorkspaceOptionsContent = null,
+  workspaceOptionsTitle = "Workspace options",
+  workspaceOptionsDescription = "Usage, Studio, and Roblox context",
+  promptAriaLabel = "Prompt input",
+  submitLabel = "Send prompt",
+  inputRef = null,
+  regionClassName = "",
+  composerClassName = "",
 }) {
   const [controlsOpen, setControlsOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
@@ -490,7 +506,7 @@ export default function ChatComposer({
   const visibleContextItems = contextItems.slice(0, 3);
   const hiddenContextCount = Math.max(0, contextItems.length - visibleContextItems.length);
 
-  useLayoutEffect(() => {
+  const resizeTextarea = useCallback(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
     textarea.style.height = "0px";
@@ -503,6 +519,15 @@ export default function ChatComposer({
       return current === next ? current : next;
     });
   }, [prompt]);
+
+  useLayoutEffect(() => {
+    resizeTextarea();
+  }, [resizeTextarea]);
+
+  useEffect(() => {
+    window.addEventListener("resize", resizeTextarea);
+    return () => window.removeEventListener("resize", resizeTextarea);
+  }, [resizeTextarea]);
 
   useEffect(() => {
     const wasGenerating = wasGeneratingRef.current;
@@ -649,6 +674,14 @@ export default function ChatComposer({
     setAttachments((current) => current.filter((_, itemIndex) => itemIndex !== index));
   };
 
+  const openAttachmentControl = () => {
+    if (onAttachmentRequest) {
+      onAttachmentRequest();
+      return;
+    }
+    fileInputRef.current?.click();
+  };
+
   const handlePromptChange = (event) => {
     const value = event.target.value;
     setPrompt(value);
@@ -730,7 +763,7 @@ export default function ChatComposer({
     />
   );
 
-  const workspaceOptionsContent = (
+  const defaultWorkspaceOptionsContent = (
     <div className="flex flex-col gap-3">
       <section
         className="rounded-lg border border-[var(--ds-border-subtle)] p-2.5"
@@ -791,11 +824,12 @@ export default function ChatComposer({
       />
     </div>
   );
+  const workspaceOptionsContent = customWorkspaceOptionsContent || defaultWorkspaceOptionsContent;
 
   return (
-    <div className="nexus-composer-region pc-page-gutter bg-[var(--ds-bg-workspace)] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
+    <div className={`nexus-composer-region pc-page-gutter bg-[var(--ds-bg-workspace)] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 ${regionClassName}`}>
       {showDock ? (
-        <div className="relative mx-auto h-36 w-full max-w-[760px]">
+        <div className="nexus-composer-frame relative mx-auto h-36">
           <AppleStyleDock
             onNewChat={onDockNewChat}
             onOpenAssets={onDockOpenAssets}
@@ -808,7 +842,7 @@ export default function ChatComposer({
         </div>
       ) : null}
       <BorderBeam
-        className="nexus-composer-beam relative z-20 mx-auto w-full max-w-[760px]"
+        className="nexus-composer-frame nexus-composer-beam relative z-20 mx-auto"
         size="md"
         colorVariant="colorful"
         theme="dark"
@@ -821,7 +855,7 @@ export default function ChatComposer({
           data-expanded={isExpanded ? "true" : "false"}
           data-state={disabled ? "disabled" : isGenerating ? "submitting" : operationFailed ? "error" : showSuccess ? "success" : prompt?.trim() ? "typing" : "idle"}
           aria-busy={isGenerating ? "true" : "false"}
-          className={`nexus-composer nx-composer-shine relative w-full overflow-visible rounded-[14px] border border-[var(--ds-border)] bg-[var(--ds-surface-1)] transition-colors duration-150 focus-within:border-[var(--ds-border-strong)] ${isGenerating ? "nx-composer-shine--active" : ""}`}
+          className={`nexus-composer nx-composer-shine relative w-full overflow-visible rounded-[14px] border border-[var(--ds-border)] bg-[var(--ds-surface-1)] transition-colors duration-150 focus-within:border-[var(--ds-border-strong)] ${isGenerating ? "nx-composer-shine--active" : ""} ${composerClassName}`}
         >
         {(activeOperationStatus || queuedOperations.length > 0) && (
           <div className="border-b border-[var(--ds-border-subtle)] px-2 py-1.5" aria-label="Chat operation status">
@@ -883,7 +917,7 @@ export default function ChatComposer({
           <div className="flex min-h-9 items-center gap-1.5 overflow-visible border-b border-[var(--ds-border-subtle)] px-2 py-1">
             {refineTarget && (
               <div className="inline-flex h-7 max-w-[280px] shrink-0 items-center gap-1.5 rounded-md border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-2 text-[10px] font-bold text-[var(--ds-accent)] transition-[border-color,background-color,color,opacity] duration-150 motion-safe:animate-fade-in-up">
-                <SlidersHorizontal className="h-3 w-3 shrink-0" />
+                <AnimatedSettingsIcon className="h-3 w-3 shrink-0" />
                 <span className="truncate">
                   {studioConnected ? "Refining in Studio: " : "Refining workspace: "}
                   {refineTarget.title || "current project"}
@@ -1030,16 +1064,20 @@ export default function ChatComposer({
           </div>
           <div className="nexus-composer__input-shell relative min-w-0">
             <textarea
-              ref={textareaRef}
+              ref={(node) => {
+                textareaRef.current = node;
+                if (typeof inputRef === "function") inputRef(node);
+                else if (inputRef) inputRef.current = node;
+              }}
               id="tour-prompt-box"
               data-tour="prompt-input"
-              className="nexus-composer__input min-h-10 w-full resize-none border-none bg-transparent px-0 py-2 text-[16px] leading-6 text-[var(--ds-text)] outline-none transition-[height,color,opacity] duration-150 placeholder:text-[var(--ds-text-muted)] focus:ring-0 disabled:opacity-50 xl:text-[15px]"
+              className="nexus-composer__input min-h-10 w-full resize-none border-none bg-transparent px-0 py-2 text-[16px] leading-6 text-[var(--ds-text)] transition-[height,color,opacity] duration-150 placeholder:text-[var(--ds-text-muted)] focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] disabled:opacity-50 xl:text-[15px]"
               rows={1}
               placeholder={placeholder}
               value={prompt}
               onChange={handlePromptChange}
               disabled={disabled}
-              aria-label="Prompt input"
+              aria-label={promptAriaLabel}
               onCompositionStart={() => setIsComposing(true)}
               onCompositionEnd={() => setIsComposing(false)}
               onKeyDown={handlePromptKeyDown}
@@ -1058,24 +1096,28 @@ export default function ChatComposer({
                 className="hidden"
                 multiple
                 onChange={onFileUpload}
-                accept={`${ROBLOX_DECAL_ACCEPT},.lua,.txt,.json`}
+                accept={attachmentAccept}
                 disabled={disabled || robloxImageUploading}
               />
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={disabled || robloxImageUploading}
+                onClick={openAttachmentControl}
+                disabled={disabled || robloxImageUploading || (!onAttachmentRequest && !onFileUpload)}
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[var(--ds-text-muted)] transition-[background-color,color,opacity,transform] duration-150 hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] active:scale-95 focus-ring disabled:cursor-not-allowed disabled:opacity-40 xl:h-9 xl:w-9"
-                title="Attach context"
-                aria-label="Upload image to Roblox or attach a code/text file"
+                title={attachmentLabel}
+                aria-label={attachmentLabel}
               >
-                {robloxImageUploading ? <Loader className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                {robloxImageUploading ? <Loader className="h-4 w-4 animate-spin" /> : <AnimatedUploadIcon className="h-4 w-4" />}
               </button>
-              <ModeSelector mode={mode} onModeChange={onModeChange} disabled={disabled || isGenerating} />
+              {modeControl !== undefined
+                ? modeControl
+                : showModeSelector
+                  ? <ModeSelector mode={mode} onModeChange={onModeChange} disabled={disabled || isGenerating} />
+                  : null}
             </div>
 
             <div className="nexus-composer__toolbar-end flex shrink-0 items-center gap-1">
-              <div className="relative">
+              {showWorkspaceOptions ? <div className="relative">
                 {controlsPresence.present && (
                   <div
                     ref={controlsPanelRef}
@@ -1090,8 +1132,8 @@ export default function ChatComposer({
                     }`}
                   >
                     <div className="mb-3">
-                      <h2 className="text-sm font-bold text-[var(--ds-text)]">Workspace options</h2>
-                      <p className="text-[10px] text-[var(--ds-text-muted)]">Usage, Studio, and Roblox context</p>
+                      <h2 className="text-sm font-bold text-[var(--ds-text)]">{workspaceOptionsTitle}</h2>
+                      <p className="text-[10px] text-[var(--ds-text-muted)]">{workspaceOptionsDescription}</p>
                     </div>
                     <div className="max-h-[min(24rem,50vh)] overflow-y-auto scrollbar-subtle">
                       {workspaceOptionsContent}
@@ -1113,9 +1155,9 @@ export default function ChatComposer({
                   aria-controls={controlsId}
                   title="Workspace options"
                 >
-                  <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+                  <AnimatedSettingsIcon className="h-4 w-4" active={controlsOpen} />
                 </button>
-              </div>
+              </div> : null}
               {isGenerating && canSendWithContext ? (
                 <button
                   type="button"
@@ -1139,16 +1181,16 @@ export default function ChatComposer({
                     : "bg-primary text-primary-foreground hover:opacity-90"
                 }`}
                 aria-label={
-                  isGenerating ? "Stop generation" : studioBuildBlocked ? studioBlockerMessage : "Send prompt"
+                  isGenerating ? "Stop generation" : studioBuildBlocked ? studioBlockerMessage : submitLabel
                 }
-                title={isGenerating ? "Stop generation" : studioBuildBlocked ? studioBlockerMessage : "Send prompt"}
+                title={isGenerating ? "Stop generation" : studioBuildBlocked ? studioBlockerMessage : submitLabel}
               >
                 {isGenerating ? (
                   <Loader className="h-4 w-4 animate-spin" aria-hidden="true" />
                 ) : showSuccess ? (
                   <Check className="h-4 w-4" aria-hidden="true" />
                 ) : (
-                  <ArrowUp className="h-4 w-4" aria-hidden="true" />
+                  <AnimatedGenerateIcon className="h-4 w-4" active={isGenerating} success={showSuccess} />
                 )}
               </button>
             </div>

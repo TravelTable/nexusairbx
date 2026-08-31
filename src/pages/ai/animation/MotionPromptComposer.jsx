@@ -1,6 +1,8 @@
 import React from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { Plus, Send, SlidersHorizontal, Sparkles } from "lib/icons";
+import CreationPromptComposer from "components/ai/chat/CreationPromptComposer";
+import { AnimatedMotionIcon } from "components/ui/AnimatedActionIcon";
+import { Plus } from "lib/icons";
 import InfoHint from "./InfoHint";
 
 const STARTER_LABELS = ["Hero landing", "Friendly wave", "Stylized run"];
@@ -14,6 +16,7 @@ export default function MotionPromptComposer({
   onStarter,
   starterPrompts,
   inputRef,
+  onAttachmentRequest,
 }) {
   const reduceMotion = useReducedMotion();
   const label = hasAnimation ? "Refine this animation" : "Animation brief";
@@ -23,7 +26,7 @@ export default function MotionPromptComposer({
       {!hasAnimation ? (
         <div className="animate-starters">
           <div className="animate-field-heading">
-            <span>Try a direction</span>
+            <span>Starting points</span>
             <InfoHint label="Choose an example to generate immediately, or write your own brief below." side="right" />
           </div>
           <div aria-label="Starter prompts">
@@ -34,11 +37,10 @@ export default function MotionPromptComposer({
                 aria-label={starter}
                 onClick={(event) => onStarter(event, starter)}
                 disabled={busy}
-                initial={reduceMotion ? false : { opacity: 0, y: 5 }}
+                initial={reduceMotion ? false : { opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, delay: reduceMotion ? 0 : index * 0.035 }}
+                transition={{ duration: 0.16, delay: reduceMotion ? 0 : index * 0.025 }}
               >
-                <i>0{index + 1}</i>
                 <span>{STARTER_LABELS[index] || starter}</span>
                 <Plus aria-hidden="true" />
               </motion.button>
@@ -48,29 +50,26 @@ export default function MotionPromptComposer({
       ) : null}
 
       <form className="animate-composer" onSubmit={onSubmit}>
-        <div className="animate-field-heading">
-          <label htmlFor="animation-prompt">{label}</label>
-          <InfoHint label="Include the action, mood, timing, and any important body language." side="right" />
-        </div>
-        <div className="animate-composer__surface">
-          <textarea
-            ref={inputRef}
-            id="animation-prompt"
-            value={value}
-            onChange={(event) => onChange(event.target.value)}
-            placeholder={hasAnimation ? "Make the landing heavier and hold the final pose…" : "Describe the action, style, timing, and mood…"}
-            maxLength={1000}
-            rows={3}
-            disabled={busy}
-          />
-          <div>
-            <span><SlidersHorizontal aria-hidden="true" /> {hasAnimation ? "Rebuilds 3 variants" : "AI plans · compiler validates"}</span>
-            <button type="submit" disabled={busy || value.trim().length < 3}>
-              {hasAnimation ? <Sparkles aria-hidden="true" /> : <Send aria-hidden="true" />}
-              {hasAnimation ? "Refine" : "Generate"}
-            </button>
-          </div>
-        </div>
+        <CreationPromptComposer
+          prompt={value}
+          setPrompt={onChange}
+          attachments={[]}
+          setAttachments={() => {}}
+          onSubmit={(event) => event?.currentTarget?.closest?.("form")?.requestSubmit()}
+          onAttachmentRequest={onAttachmentRequest}
+          attachmentLabel="Import an R15 GLB preview model"
+          isGenerating={busy}
+          disabled={busy}
+          placeholder={hasAnimation ? "Make the landing heavier and hold the final pose…" : "Describe the action, timing, weight, and mood…"}
+          promptAriaLabel={label}
+          submitLabel={hasAnimation ? "Refine" : "Generate"}
+          contextIcon={AnimatedMotionIcon}
+          contextLabel={hasAnimation ? "Refine" : "Motion"}
+          showWorkspaceOptions={false}
+          inputRef={inputRef}
+          regionClassName="animate-composer-region"
+          composerClassName="animate-prompt-composer"
+        />
       </form>
     </>
   );

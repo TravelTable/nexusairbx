@@ -121,6 +121,8 @@ beforeEach(() => {
       media: "(max-width: 900px)",
       addEventListener: jest.fn(),
       removeEventListener: jest.fn(),
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
     })),
   });
   Object.defineProperty(URL, "createObjectURL", { configurable: true, writable: true, value: jest.fn(() => "blob:private-preview") });

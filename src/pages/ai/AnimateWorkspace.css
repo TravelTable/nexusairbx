@@ -249,6 +249,15 @@
 }
 
 @media (max-width: 680px) {
+  .animate-workspace { display: block; height: 100%; min-height: 0; overflow-y: auto; }
+  .animate-main { display: flex; height: auto; min-height: 0; flex-direction: column; overflow: visible; }
+  .animate-conversation { min-height: 560px; flex: 0 0 560px; }
+  .animate-viewport { min-height: 430px; flex: 0 0 430px; }
+  .animate-results { flex: 0 0 auto; }
+  .animate-timeline { height: 142px; min-height: 142px; }
+}
+
+@media (max-width: 680px) {
   .animate-main { display: flex; flex-direction: column; }
   .animate-conversation { min-height: 560px; border-right: 0; }
   .animate-viewport { min-height: 430px; }
@@ -262,4 +271,131 @@
   .animate-workspace *,
   .animate-workspace *::before,
   .animate-workspace *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+}
+
+/* Production polish: controls recede until they are useful; the preview stays primary. */
+.animate-workspace { grid-template-rows: 52px minmax(350px, 1fr) 142px; }
+.animate-toolbar { padding: 6px 12px 6px 16px; background: #0f0f11; }
+.animate-toolbar__identity { min-width: 210px; }
+.animate-toolbar__identity input { height: 22px; font-size: 0.82rem; }
+.animate-toolbar__options { position: relative; }
+.animate-toolbar__options > summary,
+.animate-toolbar__save,
+.animate-toolbar__new-chat,
+.animate-toolbar__import {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--nx-text-muted);
+  cursor: pointer;
+  font-size: 0.62rem;
+  font-weight: 680;
+  list-style: none;
+  transition: background 140ms ease, color 140ms ease, opacity 140ms ease;
+}
+.animate-toolbar__options > summary::-webkit-details-marker { display: none; }
+.animate-toolbar__options > summary:hover,
+.animate-toolbar__save:hover:not(:disabled),
+.animate-toolbar__new-chat:hover:not(:disabled),
+.animate-toolbar__import:hover:not(:disabled) { border: 0; background: rgb(255 255 255 / 5%); color: var(--nx-text); }
+.animate-toolbar__new-chat { background: rgb(var(--nx-purple-rgb) / 8%); color: var(--nx-text-secondary); }
+.animate-toolbar__options svg,
+.animate-toolbar__save svg,
+.animate-toolbar__new-chat svg,
+.animate-toolbar__import svg { width: 13px; height: 13px; }
+.animate-toolbar__options > div {
+  position: absolute;
+  z-index: 30;
+  top: 36px;
+  right: 0;
+  display: grid;
+  width: 230px;
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid var(--animate-line-strong);
+  border-radius: 9px;
+  background: #1a191d;
+  box-shadow: 0 18px 48px rgb(0 0 0 / 44%);
+}
+.animate-toolbar__model { min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; }
+.animate-toolbar__model select { min-height: 34px; margin-top: 4px; padding: 0 8px; border: 1px solid var(--animate-line); border-radius: 6px; background: #121216; }
+.animate-toolbar__options dl { display: grid; margin: 0; gap: 4px; }
+.animate-toolbar__options dl div { display: flex; justify-content: space-between; color: var(--nx-text-muted); font-size: 0.58rem; }
+.animate-toolbar__options dt { color: var(--nx-text-disabled); }
+.animate-toolbar__options dd { margin: 0; }
+.animate-toolbar__meta small { width: auto; margin-left: 2px; }
+.animate-main { grid-template-columns: 310px minmax(360px, 1fr) 270px; }
+.animate-panel-title { min-height: 54px; padding: 8px 12px; }
+.animate-messages { gap: 8px; padding-top: 9px; }
+.animate-messages article[data-role="user"] { padding: 7px 8px; border-radius: 9px 9px 3px 9px; }
+.animate-message-avatar { width: 24px; height: 24px; border: 0; border-radius: 6px; background: rgb(var(--nx-purple-rgb) / 8%); }
+.animate-starters { padding-bottom: 6px; }
+.animate-starters > div[aria-label="Starter prompts"] { display: flex; flex-direction: column; gap: 1px; }
+.animate-starters > div[aria-label="Starter prompts"] > button {
+  display: flex;
+  min-height: 29px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 5px 0 8px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  text-align: left;
+}
+.animate-starters > div[aria-label="Starter prompts"] > button:hover:not(:disabled) { border: 0; background: rgb(255 255 255 / 4%); }
+.animate-starters > div[aria-label="Starter prompts"] > button svg { display: block; width: 12px; height: 12px; opacity: 0; transition: opacity 140ms ease, transform 140ms ease; }
+.animate-starters > div[aria-label="Starter prompts"] > button:hover svg { opacity: 1; transform: translateX(1px); }
+.animate-composer { display: block; padding: 8px 10px 10px; background: #0f0f11; }
+.animate-composer-region,
+.animate-composer-region.nexus-composer-region { padding: 0 !important; background: transparent !important; }
+.animate-prompt-composer { width: 100%; max-width: none; }
+.animate-viewport__badge,
+.animate-viewport__brief,
+.animate-viewport__stats { border-radius: 7px; box-shadow: none; }
+.animate-viewport__generating {
+  position: absolute;
+  z-index: 8;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  gap: 8px;
+  color: var(--nx-text-secondary);
+  font-size: 0.62rem;
+  letter-spacing: .02em;
+}
+.animate-viewport__generating::before {
+  position: absolute;
+  z-index: -1;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: rgb(var(--nx-purple-rgb) / 14%);
+  filter: blur(38px);
+  content: "";
+  animation: animate-generate-breathe 1.7s ease-in-out infinite;
+}
+.animate-viewport__generating svg { width: 25px; height: 25px; color: var(--nx-purple-strong); }
+.animate-variants button { min-height: 45px; border-radius: 7px; }
+.animate-plan-summary__empty { border: 0; background: transparent; }
+.animate-studio-button { min-height: 34px; border-radius: 7px; background: rgb(var(--nx-purple-rgb) / 14%); color: var(--nx-purple-strong); }
+.animate-timeline { background: #0e0e10; }
+.animate-transport { min-height: 40px; }
+.animate-transport button { width: 30px; height: 30px; border: 0; border-radius: 6px; background: transparent; }
+.animate-transport button.animate-transport__primary { border-radius: 6px; background: rgb(var(--nx-purple-rgb) / 16%); color: var(--nx-purple-strong); }
+.animate-timeline__content { height: calc(100% - 41px); }
+@keyframes animate-generate-breathe { 50% { opacity: .55; transform: scale(.82); } }
+
+@media (max-width: 1180px) {
+  .animate-main { grid-template-columns: 280px minmax(320px, 1fr) 250px; }
+}
+@media (max-width: 900px) {
+  .animate-workspace { grid-template-rows: auto auto 142px; }
+  .animate-toolbar__options > div { right: auto; left: 0; }
 }

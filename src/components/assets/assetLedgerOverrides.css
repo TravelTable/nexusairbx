@@ -480,3 +480,201 @@
     align-items: center;
   }
 }
+
+/* Embedded AI asset desk: quiet chrome, canonical composer, progressive controls. */
+.asset-icon-generator-page--embedded {
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  background: #0b0b0d !important;
+}
+.asset-icon-generator-page--embedded .asset-platform-shell {
+  width: 100%;
+  min-height: 100%;
+  padding: 0;
+  gap: 0;
+}
+.asset-icon-generator-page--embedded .asset-platform-header {
+  min-height: 58px;
+  align-items: center;
+  padding: 8px 18px;
+  border-bottom: 1px solid var(--nx-border-subtle);
+  background: rgb(15 15 17 / 92%);
+}
+.asset-icon-generator-page--embedded .asset-platform-header h1 {
+  margin: 0;
+  font-size: 0.95rem !important;
+  line-height: 1.25 !important;
+  letter-spacing: -0.01em;
+}
+.asset-icon-generator-page--embedded .asset-platform-header p:not(.asset-eyebrow) {
+  max-width: 620px;
+  margin-top: 2px;
+  font-size: 0.65rem;
+}
+.asset-icon-generator-page--embedded .asset-eyebrow {
+  margin-bottom: 2px;
+  font-size: 0.54rem;
+}
+.asset-icon-generator-page--embedded .asset-header-action,
+.asset-icon-generator-page--embedded .asset-secondary-action {
+  min-height: 30px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  box-shadow: none;
+  font-size: 0.64rem;
+}
+.asset-icon-generator-page--embedded .asset-context-bar {
+  grid-template-columns: minmax(300px, 1.25fr) minmax(170px, .7fr) minmax(170px, .7fr) minmax(250px, 1fr);
+  margin: 0;
+  padding: 9px 18px;
+  border: 0;
+  border-bottom: 1px solid var(--nx-border-subtle);
+  border-radius: 0;
+  background: #0d0d0f;
+  box-shadow: none;
+}
+.asset-icon-generator-page--embedded .asset-context-bar__header { display: none; }
+.asset-icon-generator-page--embedded .asset-context-bar__selectors { align-self: center; padding-right: 10px; }
+.asset-icon-generator-page--embedded .asset-context-bar__selectors label { gap: 3px; }
+.asset-icon-generator-page--embedded .asset-context-chip,
+.asset-icon-generator-page--embedded .asset-context-toggle { align-self: stretch; padding: 4px 10px; border: 0; border-left: 1px solid var(--nx-border-subtle); border-radius: 0; background: transparent; }
+.asset-icon-generator-page--embedded .asset-context-chip--scope { display: none; }
+.asset-icon-generator-page--embedded .asset-context-bar__header h2 { font-size: 0.7rem; }
+.asset-icon-generator-page--embedded .asset-context-bar__header p { display: none; }
+.asset-icon-generator-page--embedded .asset-context-chip,
+.asset-icon-generator-page--embedded .asset-context-toggle {
+  min-height: 34px;
+  border-radius: 7px;
+  background: rgb(255 255 255 / 2%);
+  box-shadow: none;
+}
+.asset-icon-generator-page--embedded .asset-notice-stack { margin: 0; padding: 0 18px; }
+.asset-icon-generator-page--embedded .asset-inline-notice { margin-top: 8px; border-radius: 7px; }
+.asset-icon-generator-page--embedded .asset-generator-layout {
+  min-height: 560px;
+  flex: 1 1 auto;
+  grid-template-columns: minmax(340px, 410px) minmax(0, 1fr);
+  gap: 0;
+}
+.asset-icon-generator-page--embedded .asset-generator-panel,
+.asset-icon-generator-page--embedded .asset-results-panel {
+  position: static;
+  min-height: 0;
+  padding: 16px 18px;
+  border: 0;
+  border-radius: 0;
+  background: #0d0d0f;
+  box-shadow: none;
+}
+.asset-icon-generator-page--embedded .asset-generator-panel {
+  border-right: 1px solid var(--nx-border-subtle);
+}
+.asset-icon-generator-page--embedded .asset-results-panel { background: #0a0a0c; }
+.asset-icon-generator-page--embedded .asset-panel-heading { margin-bottom: 12px; }
+.asset-icon-generator-page--embedded .asset-panel-heading h2 { font-size: 0.76rem; }
+.asset-icon-generator-page--embedded .asset-panel-heading p { margin-top: 2px; font-size: 0.61rem; }
+.asset-icon-generator-page--embedded .asset-generation-form { gap: 12px; }
+.asset-icon-generator-page--embedded .asset-mode-picker { position: relative; z-index: 8; }
+.asset-icon-generator-page--embedded .asset-mode-picker > details > summary {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 9px;
+  border: 1px solid var(--nx-border-subtle);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 2%);
+  cursor: pointer;
+  list-style: none;
+}
+.asset-icon-generator-page--embedded .asset-mode-picker > details > summary::-webkit-details-marker { display: none; }
+.asset-icon-generator-page--embedded .asset-mode-picker > details > summary > span { display: flex; min-width: 0; align-items: center; gap: 8px; color: var(--nx-text-muted); font-size: 0.58rem; }
+.asset-icon-generator-page--embedded .asset-mode-picker > details > summary > span:first-child > svg { width: 16px; height: 16px; color: var(--nx-purple-strong); }
+.asset-icon-generator-page--embedded .asset-mode-picker > details > summary > span:first-child > span { display: grid; }
+.asset-icon-generator-page--embedded .asset-mode-picker > details > summary small { color: var(--nx-text-disabled); font-size: 0.5rem; letter-spacing: .06em; text-transform: uppercase; }
+.asset-icon-generator-page--embedded .asset-mode-picker > details > summary strong { color: var(--nx-text); font-size: 0.68rem; }
+.asset-icon-generator-page--embedded .asset-mode-picker > details > summary > span:last-child > svg { width: 13px; height: 13px; }
+.asset-icon-generator-page--embedded .asset-mode-picker details[open] > summary > span:last-child > svg { transform: rotate(180deg); }
+.asset-icon-generator-page--embedded .asset-mode-picker__grid {
+  position: absolute;
+  top: 46px;
+  right: 0;
+  left: 0;
+  display: grid;
+  padding: 5px;
+  border: 1px solid var(--nx-border-strong);
+  border-radius: 10px;
+  background: #19191c;
+  box-shadow: 0 18px 50px rgb(0 0 0 / 42%);
+}
+.asset-icon-generator-page--embedded .asset-mode-option {
+  min-height: 44px;
+  grid-template-columns: 18px 1fr;
+  gap: 8px;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+}
+.asset-icon-generator-page--embedded .asset-mode-option:hover { background: rgb(255 255 255 / 5%); }
+.asset-icon-generator-page--embedded .asset-mode-option--active { background: rgb(var(--nx-purple-rgb) / 10%); }
+.asset-icon-generator-page--embedded .asset-mode-option input { position: absolute; opacity: 0; pointer-events: none; }
+.asset-icon-generator-page--embedded .asset-mode-option > svg { width: 15px; height: 15px; }
+.asset-icon-generator-page--embedded .asset-mode-option small { display: block; margin-top: 1px; color: var(--nx-text-muted); font-size: 0.55rem; }
+.asset-icon-generator-page--embedded .asset-mode-picker__description { display: none; }
+.asset-icon-generator-page--embedded .asset-generation-form__brief { grid-template-columns: 1fr; gap: 10px; }
+.asset-icon-generator-page--embedded .asset-prompt-composer-region,
+.asset-icon-generator-page--embedded .asset-prompt-composer-region .nexus-composer-region { padding: 0 !important; background: transparent !important; }
+.asset-icon-generator-page--embedded .asset-prompt-composer { width: 100%; max-width: none; }
+.asset-icon-generator-page--embedded .asset-generation-form :where(.nexus-input,.nexus-textarea) { min-height: 36px; border-radius: 7px; background: rgb(255 255 255 / 2%); }
+.asset-icon-generator-page--embedded .asset-generation-form__advanced { border-radius: 8px; background: transparent; }
+.asset-icon-generator-page--embedded .asset-generation-form__advanced summary { padding: 8px 9px; font-size: 0.62rem; }
+.asset-icon-generator-page--embedded .asset-generation-form__footer { padding: 0; border: 0; background: transparent; }
+.asset-icon-generator-page--embedded .asset-style-summary-wrap { display: none; }
+.asset-icon-generator-page--embedded .asset-empty-state { min-height: 360px; border: 0; background: transparent; }
+.asset-icon-generator-page--embedded .asset-empty-state__icon { width: 38px; height: 38px; border-radius: 10px; }
+.asset-icon-generator-page--embedded .asset-empty-state h3 { font-size: 0.82rem; }
+.asset-icon-generator-page--embedded .asset-empty-state p { max-width: 330px; font-size: 0.64rem; }
+.asset-icon-generator-page--embedded .asset-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.asset-icon-generator-page--embedded .asset-card,
+.asset-icon-generator-page--embedded .asset-skeleton { border-radius: 9px; box-shadow: none; }
+.asset-icon-generator-page--embedded .asset-card:hover { transform: translateY(-1px); }
+
+@media (max-width: 920px) {
+  .asset-icon-generator-page--embedded .asset-generator-layout { grid-template-columns: 1fr; }
+  .asset-icon-generator-page--embedded .asset-generator-panel { border-right: 0; border-bottom: 1px solid var(--nx-border-subtle); }
+}
+@media (max-width: 640px) {
+  .asset-icon-generator-page--embedded .asset-platform-header { align-items: flex-start; padding: 10px 12px; }
+  .asset-icon-generator-page--embedded .asset-platform-header p:not(.asset-eyebrow) { display: none; }
+  .asset-icon-generator-page--embedded .asset-context-bar,
+  .asset-icon-generator-page--embedded .asset-generator-panel,
+  .asset-icon-generator-page--embedded .asset-results-panel { padding-right: 12px; padding-left: 12px; }
+  .asset-icon-generator-page--embedded .asset-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .asset-icon-generator-page--embedded .asset-mode-picker__grid { overflow: visible; }
+  .asset-icon-generator-page--embedded .asset-mode-option { min-width: 0; }
+  .asset-icon-generator-page--embedded .asset-context-bar {
+    display: flex;
+    max-width: 100%;
+    gap: 6px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+  .asset-icon-generator-page--embedded .asset-context-bar__selectors {
+    display: grid;
+    min-width: 280px;
+    flex: 0 0 280px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0;
+  }
+  .asset-icon-generator-page--embedded .asset-context-chip { min-width: 190px; flex: 0 0 190px; }
+  .asset-icon-generator-page--embedded .asset-context-toggle { min-width: 250px; flex: 0 0 250px; }
+  .asset-icon-generator-page--embedded .asset-generator-layout,
+  .asset-icon-generator-page--embedded .asset-generator-panel,
+  .asset-icon-generator-page--embedded .asset-results-panel { min-width: 0; max-width: 100%; }
+}

@@ -32,6 +32,7 @@ import useActiveAgents from "../../hooks/useActiveAgents";
 import WorkspaceRibbon from "./WorkspaceRibbon";
 import AnimateWorkspace from "./AnimateWorkspace";
 import UiCreatorWorkspace from "./ui/UiCreatorWorkspace";
+import IconGeneratorPage from "../IconGeneratorPage";
 import {
   getStudioCommand,
   getStudioManifest,
@@ -43,7 +44,6 @@ import { PENDING_AUTH_ACTIONS } from "../../lib/pendingAuthAction";
 import { getStudioSessionId } from "../../lib/studioConnection";
 import { buildRefineTargetFromWorkspace, messageHasRefineableFiles } from "../../lib/chatRefine";
 import { AI_EVENTS, onAiEvent } from "../../lib/aiEvents";
-import { createGenerationIntent } from "../../lib/generationIntent";
 import TutorialOverlay from "../../components/onboarding/TutorialOverlay";
 import { useTutorial } from "../../components/onboarding/useTutorial";
 import useAiPageZoom from "../../hooks/useAiPageZoom";
@@ -150,66 +150,6 @@ async function pollStudioCommand(commandId, { timeoutMs = 30000 } = {}) {
     await new Promise((resolve) => setTimeout(resolve, 1200));
   }
   throw new Error("Studio command timed out");
-}
-
-function AssetModeWorkspace({ prompt, setPrompt, onContinue }) {
-  const [error, setError] = useState("");
-
-  return (
-    <div className="asset-mode-workspace">
-      <div className="asset-mode-workspace__intro">
-        <span>ASSET CREATION</span>
-        <h1>Describe the visual your game needs.</h1>
-        <p>
-          Your request moves to the asset generator, where you review the project, output mode, style, settings, and
-          credit estimate before anything runs.
-        </p>
-      </div>
-      <form
-        className="asset-mode-workspace__composer nx-composer-shine"
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (!prompt.trim()) {
-            setError("Describe the asset you want to create.");
-            return;
-          }
-          setError("");
-          onContinue(prompt.trim());
-        }}
-      >
-        <label htmlFor="ai-asset-prompt">Asset prompt</label>
-        <textarea
-          id="ai-asset-prompt"
-          value={prompt}
-          onChange={(event) => setPrompt(event.target.value)}
-          rows={5}
-          placeholder="A polished inventory icon for a crystal lantern, readable at small sizes…"
-          aria-describedby="ai-asset-handoff-note"
-          aria-invalid={Boolean(error)}
-        />
-        <div className="asset-mode-workspace__footer">
-          <p id="ai-asset-handoff-note">No auto-generation. You will confirm cost and settings next.</p>
-          <button type="submit">Review in asset generator</button>
-        </div>
-        {error ? (
-          <p className="asset-mode-workspace__error" role="alert">
-            {error}
-          </p>
-        ) : null}
-      </form>
-      <div className="asset-mode-workspace__facts" aria-label="Asset handoff steps">
-        <span>
-          <b>1</b> Describe
-        </span>
-        <span>
-          <b>2</b> Review
-        </span>
-        <span>
-          <b>3</b> Generate
-        </span>
-      </div>
-    </div>
-  );
 }
 
 export default function AgentWorkspaceLayout({ controller, locationSearch = "", navigateTo = null }) {
@@ -337,29 +277,6 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
       if (navigateTo) navigateTo(`/ai?mode=${mode}`, { replace: true });
     },
     [navigateTo, setGeneratorMode]
-  );
-
-  const handleAssetHandoff = useCallback(
-    (assetPrompt) => {
-      try {
-        const intent = createGenerationIntent({
-          prompt: assetPrompt,
-          mode: "asset",
-          source: "ai_asset_composer",
-        });
-        if (navigateTo)
-          navigateTo("/tools/icon-generator", {
-            state: { generationIntentId: intent.id },
-          });
-        else if (typeof window !== "undefined") window.location.assign("/tools/icon-generator");
-      } catch (error) {
-        notify({
-          message: error?.message || "Could not save the asset request.",
-          type: "error",
-        });
-      }
-    },
-    [navigateTo, notify]
   );
 
   const [activeDockPanel, setActiveDockPanel] = useState(null);
@@ -1947,7 +1864,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
                 navigateTo={navigateTo}
               />
             ) : creationMode === "asset" ? (
-              <AssetModeWorkspace prompt={prompt} setPrompt={setPrompt} onContinue={handleAssetHandoff} />
+              <IconGeneratorPage embedded />
             ) : creationMode === "animate" ? (
               <AnimateWorkspace modelVersion={settings.modelVersion} onBillingRefresh={refreshBilling} />
             ) : (
