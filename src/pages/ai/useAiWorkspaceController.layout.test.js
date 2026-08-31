@@ -61,7 +61,7 @@ describe("AI workspace Studio transport gate", () => {
       .toBe(true);
   });
 
-  test("allows Ask and Plan and accepts either supported Studio transport", () => {
+  test("allows Ask and Plan but requires the authoritative plugin for implementation", () => {
     expect(studioPlaceSelectionMessage()).toBe("Connect Studio to apply changes.");
     expect(evaluateIntentAwareStudioSubmissionPreflight({
       prompt: "Build a round system", mode: "ask", connected: false,
@@ -74,7 +74,7 @@ describe("AI workspace Studio transport gate", () => {
     })).toEqual({ status: "ready" });
     expect(evaluateIntentAwareStudioSubmissionPreflight({
       prompt: "Build a round system", mode: "agent", connected: true, connectionType: "mcp_local",
-    })).toEqual({ status: "ready" });
+    })).toEqual({ status: "blocked", message: "Connect Studio to apply changes." });
     expect(evaluateIntentAwareStudioSubmissionPreflight({
       prompt: "Build a round system", mode: "agent", connected: true, connectionType: "unknown",
     })).toEqual({ status: "blocked", message: "Connect Studio to apply changes." });

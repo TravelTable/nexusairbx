@@ -217,6 +217,26 @@ export function resolveGameIdentityFromStudioStatus(statusOrSnapshot = {}, {
     };
   }
 
+  const authoritativePluginTarget = options.length === 1 && (
+    options[0].connectionType === STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE
+    || options[0].source === "plugin"
+    || Boolean(options[0].pluginSessionId)
+  ) ? options[0] : null;
+  if (authoritativePluginTarget) {
+    const title = resolveGameTitleFromTarget(authoritativePluginTarget, oauthFallback);
+    return {
+      status: "ready",
+      title,
+      placeId: normalizeRobloxPlaceId(authoritativePluginTarget.placeId),
+      universeId: authoritativePluginTarget.universeId || oauthFallback?.universeId || null,
+      studioTargetId: authoritativePluginTarget.studioTargetId || authoritativePluginTarget.id,
+      studioTargetLabel: authoritativePluginTarget.label || title,
+      source: "studio",
+      target: authoritativePluginTarget,
+      options,
+    };
+  }
+
   if (options.length > 0) {
     return {
       status: "needs_selection",
@@ -417,6 +437,15 @@ export function evaluateStudioPlaceGate({
   }
   if (requirePlugin && pluginConnected === false) {
     return { status: "needs_plugin", options: liveOptions };
+  }
+
+  const authoritativePluginTargets = liveOptions.filter((option) => (
+    option?.connectionType === STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE
+    || option?.source === "plugin"
+    || Boolean(option?.pluginSessionId)
+  ));
+  if (authoritativePluginTargets.length === 1) {
+    return { status: "ready", target: authoritativePluginTargets[0], options: liveOptions };
   }
 
   const pref = preference && typeof preference === "object" ? preference : null;

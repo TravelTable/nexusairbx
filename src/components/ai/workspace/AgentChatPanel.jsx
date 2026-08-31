@@ -39,6 +39,7 @@ export default function AgentChatPanel({
   agentRun,
   // studio
   studioConnected,
+  studioPlaceName,
   studioConnectionType,
   studioConnectionState,
   studioCapabilities,
@@ -252,6 +253,7 @@ export default function AgentChatPanel({
           mode={activeMode}
           onModeChange={onModeChange}
           studioConnected={studioConnected}
+          studioPlaceName={studioPlaceName}
           studioConnectionType={studioConnectionType}
           studioConnectionState={studioConnectionState}
           studioCapabilities={studioCapabilities}

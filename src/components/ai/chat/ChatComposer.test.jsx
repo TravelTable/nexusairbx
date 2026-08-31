@@ -346,7 +346,7 @@ describe("ChatComposer compact interactions", () => {
     );
   });
 
-  test("allows Agent submission through either supported Studio transport", () => {
+  test("allows Agent submission only through the authoritative Studio plugin", () => {
     const onSubmit = jest.fn();
     const { rerender } = renderComposer({
       prompt: "Build a fly GUI",
@@ -369,14 +369,15 @@ describe("ChatComposer compact interactions", () => {
         studioEnabled
         studioConnected
         studioConnectionType="mcp_local"
+        studioConnectionState="mcp"
       />,
     );
-    expect(screen.queryByRole("alert")).toBeNull();
-    expect(screen.getByText("Studio connected")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("Connect Studio to apply changes.");
+    expect(screen.getByText("Studio plugin required")).toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole("textbox", { name: "Prompt input" }), {
       key: "Enter",
     });
-    expect(onSubmit).toHaveBeenCalledTimes(2);
+    expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 
   test("opens Studio connection from the disconnected recovery action", () => {

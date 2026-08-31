@@ -141,6 +141,24 @@ describe("studioPlaceBinding", () => {
     expect(gate.target).toBeUndefined();
   });
 
+  test("evaluateStudioPlaceGate automatically uses the sole authoritative plugin target", () => {
+    const target = {
+      id: "plugin-target",
+      placeId: "1",
+      label: "Only",
+      connectionType: "plugin_bridge",
+      pluginSessionId: "plugin-session",
+    };
+    const gate = evaluateStudioPlaceGate({
+      studioEnabled: true,
+      connected: true,
+      preference: { targetId: "stale-target" },
+      options: [target],
+    });
+    expect(gate.status).toBe("ready");
+    expect(gate.target).toBe(target);
+  });
+
   test("evaluateStudioPlaceGate requires selection for multiple places", () => {
     const gate = evaluateStudioPlaceGate({
       studioEnabled: true,
@@ -343,6 +361,29 @@ describe("studioPlaceBinding", () => {
     expect(identity.placeId).toBeNull();
     expect(identity.studioTargetId).toBeNull();
     expect(identity.options).toHaveLength(1);
+  });
+
+  test("resolveGameIdentityFromStudioStatus automatically adopts the sole plugin game", () => {
+    const identity = resolveGameIdentityFromStudioStatus({
+      targeting: {
+        targets: [{
+          id: "plugin-target",
+          placeId: "4242",
+          universeId: "99",
+          label: "My Obby",
+          connectionType: "plugin_bridge",
+          pluginSessionId: "plugin-session",
+        }],
+      },
+    });
+    expect(identity).toMatchObject({
+      status: "ready",
+      source: "studio",
+      title: "My Obby",
+      placeId: "4242",
+      universeId: "99",
+      studioTargetId: "plugin-target",
+    });
   });
 
   test("resolveGameIdentityFromStudioStatus rejects same-place replacement target", () => {

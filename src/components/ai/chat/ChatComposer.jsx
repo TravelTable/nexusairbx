@@ -364,6 +364,7 @@ export default function ChatComposer({
   mode = "agent",
   onModeChange,
   studioConnected,
+  studioPlaceName,
   studioConnectionType,
   studioConnectionState,
   studioCapabilities,
@@ -456,9 +457,19 @@ export default function ChatComposer({
   }, [openBuildOptions, controlsOpen]);
   const canSendWithContext = Boolean(prompt?.trim()) || attachments.length > 0 || robloxProjectAssets.length > 0;
   const studioRuntimeConnected = Boolean(
-    studioConnected && ["plugin_bridge", "mcp_local"].includes(studioConnectionType)
+    studioConnected && studioConnectionType === "plugin_bridge"
   );
-  const studioTransportLabel = studioConnectionType === "mcp_local" ? "Studio MCP" : "Studio plugin";
+  const normalizedStudioPlaceName = String(studioPlaceName || "").trim();
+  const studioStatusLabel = studioRuntimeConnected
+    ? `Studio ready${normalizedStudioPlaceName ? ` — ${normalizedStudioPlaceName}` : ""}`
+    : studioConnectionState === "mcp"
+      ? "Studio plugin required"
+      : "Studio disconnected";
+  const studioStatusTitle = studioRuntimeConnected
+    ? `${normalizedStudioPlaceName || "The active Studio place"} is the verified execution project`
+    : studioConnectionState === "mcp"
+      ? "MCP is available for auxiliary tools, but the NexusRBX Studio plugin is required for execution"
+      : "Connect the NexusRBX Studio plugin to apply changes";
   const studioBuildBlocked =
     studioConnectionRequired &&
     ["agent", "debug"].includes(normalizedMode) &&
@@ -729,9 +740,9 @@ export default function ChatComposer({
   const renderContextItem = (item) => {
     if (item.kind === "studio") {
       return (
-        <span key={item.key} className={`inline-flex h-7 items-center gap-1.5 rounded-md border px-2 text-[10px] font-bold ${studioRuntimeConnected ? "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]" : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)]"}`} title={studioRuntimeConnected ? `The connected ${studioTransportLabel} is the execution target` : "Connect Studio to apply changes"}>
+        <span key={item.key} className={`inline-flex h-7 max-w-64 items-center gap-1.5 rounded-md border px-2 text-[10px] font-bold ${studioRuntimeConnected ? "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]" : "border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)]"}`} title={studioStatusTitle}>
           {studioRuntimeConnected ? <Check className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
-          {studioRuntimeConnected ? "Studio connected" : "Studio disconnected"}
+          <span className="truncate">{studioStatusLabel}</span>
         </span>
       );
     }
@@ -829,7 +840,7 @@ export default function ChatComposer({
   return (
     <div className={`nexus-composer-region pc-page-gutter bg-[var(--ds-bg-workspace)] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 ${regionClassName}`}>
       {showDock ? (
-        <div className="nexus-composer-frame relative mx-auto h-36">
+        <div className="nexus-composer-frame relative mx-auto h-[54px]">
           <AppleStyleDock
             onNewChat={onDockNewChat}
             onOpenAssets={onDockOpenAssets}

@@ -1429,6 +1429,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         onDockBuildOptionsClose={handleCloseDockBuildOptions}
         renderDockNavigation={renderDockNavigation}
         studioConnected={studio?.connected}
+        studioPlaceName={studio?.activePlaceName}
         studioConnectionType={studio?.connectionType}
         studioConnectionState={studio?.connectionState}
         studioCapabilities={studioCapabilities}

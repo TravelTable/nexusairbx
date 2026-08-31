@@ -136,10 +136,7 @@ export function evaluateIntentAwareStudioSubmissionPreflight({ prompt, ...studio
     return { status: "ready" };
   }
   const supportedTransportConnected = studioOptions.connected === true
-    && [
-      STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE,
-      STUDIO_CONNECTION_TYPES.MCP_LOCAL,
-    ].includes(studioOptions.connectionType);
+    && studioOptions.connectionType === STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE;
   return supportedTransportConnected
     ? { status: "ready" }
     : { status: "blocked", message: "Connect Studio to apply changes." };
@@ -1296,10 +1293,8 @@ export function useAiWorkspaceController() {
         activeConversationMode === "agent"
       ) {
         const connectionType = getStudioConnectionType(studioConnection);
-        const supportedTransportConnected = studioConnection.connected && [
-          STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE,
-          STUDIO_CONNECTION_TYPES.MCP_LOCAL,
-        ].includes(connectionType);
+        const supportedTransportConnected = studioConnection.connected
+          && connectionType === STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE;
         if (!supportedTransportConnected) {
           const connectionMessage = "Connect Studio to apply changes.";
           notify({ message: connectionMessage, type: "error" });

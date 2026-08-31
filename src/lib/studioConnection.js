@@ -394,12 +394,20 @@ export function normalizeStudioConnectionSnapshot({ pluginStatus = null, mcpStat
           : "disconnected";
   const workflowMode = pluginConnected
     ? "plugin_live"
-    : mcpConnected
-      ? "mcp_live"
-      : "export_only";
+    : "export_only";
+  const activePlaceName = String(
+    pluginSession?.studio?.placeName || pluginSession?.placeName || ""
+  ).trim();
 
   return {
-    connected: pluginConnected || mcpConnected,
+    // The plugin is the authoritative execution connection. MCP can remain
+    // online as an auxiliary tool transport, but it cannot make Studio ready
+    // or choose the project target by itself.
+    connected: pluginConnected,
+    transportConnected: pluginConnected || mcpConnected,
+    executionReady: pluginConnected,
+    readinessState: pluginConnected ? "ready" : (mcpConnected ? "plugin_required" : "disconnected"),
+    activePlaceName: activePlaceName || null,
     sessionId: getStudioSessionId(activeSession),
     connectionType: activeSession ? getStudioConnectionType(activeSession) : null,
     targeting: pluginStatus?.targeting || mcpStatus?.targeting || null,
