@@ -152,6 +152,19 @@ test("generated install artifact contains target diagnostics and the current bui
   assert.match(artifact, /Heartbeat %s · Commands %s · Place %s/);
 });
 
+test("diagnostic collection defaults to the connected Studio project", () => {
+  const validation = read("src/commands/validation.lua");
+  const diagnostics = section(
+    validation,
+    "local function collectDiagnostics(payload)",
+    "-- Output/log observer.",
+  );
+
+  assert.match(diagnostics, /type\(normalizedPayload\.target\) ~= "table"/);
+  assert.match(diagnostics, /normalizedPayload\.target = \{ type = "entire_project" \}/);
+  assert.match(diagnostics, /return runProjectValidation\(normalizedPayload\)/);
+});
+
 test("safe GUI properties accept planner shapes and participate in readback verification", () => {
   const pathTools = read("src/studio/path.lua");
   const serialization = read("src/studio/serialization.lua");

@@ -415,7 +415,14 @@ local function runProjectValidation(payload)
 end
 
 local function collectDiagnostics(payload)
-	return runProjectValidation(payload or {})
+	local normalizedPayload = {}
+	for key, value in pairs(payload or {}) do
+		normalizedPayload[key] = value
+	end
+	if type(normalizedPayload.target) ~= "table" and normalizedPayload.modelPath == nil then
+		normalizedPayload.target = { type = "entire_project" }
+	end
+	return runProjectValidation(normalizedPayload)
 end
 
 -- Output/log observer. LogService.MessageOut fires in the edit-context plugin for

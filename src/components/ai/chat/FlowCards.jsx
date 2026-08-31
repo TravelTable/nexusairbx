@@ -30,6 +30,10 @@ const CLASSIFICATION_LABELS = {
   project: "Full Project",
 };
 
+const ignoreHandledError = (promise) => {
+  Promise.resolve(promise).catch(() => {});
+};
+
 const normalizeClarificationOption = (option, index) => {
   if (typeof option === "string") {
     return {
@@ -520,7 +524,7 @@ export function PlanCard({ message, onApprove, onEdit, onOpenFile, disabled }) {
                 <Button
                   type="button"
                   disabled={disabled}
-                  onClick={() => onApprove?.(message)}
+                  onClick={() => ignoreHandledError(onApprove?.(message))}
                   className="flex-1 bg-[var(--ds-plan)] text-[var(--ds-plan-foreground)] font-semibold hover:opacity-90"
                 >
                   {disabled ? <Loader className="w-4 h-4" /> : <SendPrompt className="w-4 h-4" />}

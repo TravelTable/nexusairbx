@@ -122,4 +122,23 @@ describe("interactive planning cards", () => {
     fireEvent.click(screen.getByRole("button", { name: "Discuss changes" }));
     expect(onEdit).toHaveBeenCalledWith(message);
   });
+
+  test("handles an expected async approval cancellation at the button boundary", async () => {
+    const cancellation = Object.assign(new Error("approval replaced by a newer request"), {
+      name: "AbortError",
+    });
+    const onApprove = jest.fn().mockRejectedValue(cancellation);
+    const message = {
+      id: "plan-approval",
+      stage: "plan",
+      aiSummary: "Build the approved Studio plan.",
+      aiSteps: ["Apply the changes"],
+    };
+
+    render(<PlanCard message={message} onApprove={onApprove} />);
+    fireEvent.click(screen.getByRole("button", { name: "Approve & Build" }));
+    await Promise.resolve();
+
+    expect(onApprove).toHaveBeenCalledWith(message);
+  });
 });
