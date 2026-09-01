@@ -179,6 +179,36 @@ function findAuthoritativeRun(projection, runId) {
   )) || null;
 }
 
+const TERMINAL_STUDIO_TASK_SUCCESS_STATUSES = new Set([
+  "completed",
+  "done",
+  "manual_verification_required",
+  "succeeded",
+  "success",
+]);
+
+export function hasTerminalStudioTaskSuccess(payload = {}) {
+  const candidates = [
+    payload?.taskResult,
+    payload?.result?.taskResult,
+    payload?.run?.taskResult,
+    payload?.result?.run?.taskResult,
+    payload?.terminalDetails?.taskResult,
+    payload?.result?.terminalDetails?.taskResult,
+  ];
+  return candidates.some((candidate) => {
+    if (!candidate || typeof candidate !== "object") return false;
+    const status = String(
+      candidate.status
+      || candidate.structuredStatus
+      || candidate.state
+      || candidate.terminalStatus
+      || ""
+    ).trim().toLowerCase();
+    return TERMINAL_STUDIO_TASK_SUCCESS_STATUSES.has(status);
+  });
+}
+
 export function readPendingAgentRun(runId) {
   return String(runId || "").startsWith("agent_run_v2_")
     ? getAgentRunV2(runId)
@@ -1376,11 +1406,11 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
                 : message
             )));
 
-            // A completed generation response only means model output exists. The
-            // assistant message must remain recoverable until Studio reaches an
-            // authoritative terminal state too.
-            if (!terminalStatus) return;
-            if (terminalStatus !== "completed") {
+            // Ordinarily a completed generation response only means model output
+            // exists. A terminal taskResult is stronger evidence: it is written
+            // after Studio has finished and must win over a stale outer run record.
+            if (!terminalStatus && !hasTerminalStudioTaskSuccess(body)) return;
+            if (terminalStatus && terminalStatus !== "completed") {
               const canceled = terminalStatus === "canceled";
               const failureMessage = typeof authoritativeRun.error === "string"
                 ? authoritativeRun.error

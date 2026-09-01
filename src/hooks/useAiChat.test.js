@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import {
+  hasTerminalStudioTaskSuccess,
   readPendingAgentRun,
   resolveResultUrl,
   useAiChat,
@@ -1284,6 +1285,63 @@ describe("useAiChat", () => {
         metadata: expect.objectContaining({ runState: "background" }),
       }),
     ]));
+    hook.unmount();
+  });
+
+  test("finalizes a completed Studio task when the outer run record is stale", async () => {
+    const user = {
+      uid: "user_1",
+      getIdToken: jest.fn().mockResolvedValue("token_1"),
+    };
+    auth.currentUser = user;
+    const completed = {
+      title: "Lava survival arena",
+      explanation: "Studio applied and validated the game.",
+      taskResult: { status: "manual_verification_required" },
+    };
+    parseCompletedGenerateResult.mockReturnValue(completed);
+    getAgentRunV2.mockResolvedValue({
+      run: {
+        runId: "agent_run_v2_stale_outer",
+        status: "running",
+        summary: "Running in Studio...",
+      },
+    });
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: { get: () => "application/json" },
+      json: async () => ({ status: "done", done: true, result: completed }),
+    });
+    const hook = renderHook(() => useAiChat(
+      user,
+      { chatMode: "agent" },
+      jest.fn(),
+      jest.fn(),
+    ));
+
+    await openChatWithMessages(hook.result, [{
+      id: "stale-outer-message",
+      role: "assistant",
+      content: "",
+      pending: false,
+      stage: "background",
+      requestId: "request-stale-outer",
+      jobId: "job-stale-outer",
+      runId: "agent_run_v2_stale_outer",
+      metadata: { mode: "agent", runState: "background" },
+    }]);
+
+    await waitFor(() => {
+      expect(updateDoc).toHaveBeenCalledWith(
+        expect.objectContaining({ segments: expect.arrayContaining(["stale-outer-message"]) }),
+        expect.objectContaining({
+          title: "Lava survival arena",
+          pending: false,
+        }),
+      );
+    });
+    expect(hasTerminalStudioTaskSuccess({ result: completed })).toBe(true);
     hook.unmount();
   });
 
