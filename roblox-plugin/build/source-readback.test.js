@@ -115,6 +115,17 @@ test("script deletion reports the verified pre-delete source baseline", () => {
   }
 });
 
+test("native model verification shares the canonical revision binding", () => {
+  const source = read("src/commands/nativeModel.lua");
+  const registry = read("src/commands/registry.lua");
+  const artifact = read("NexusRBXStudioBridge.plugin.lua");
+  assert.match(source, /local function nativeRevision\(root\)/);
+  assert.match(registry, /local revision = root and nativeRevision\(root\) or nil/);
+  assert.match(artifact, /local buildNativeModel, inspectNativeModel, applyNativeModelPatch, nativeRevision/);
+  assert.match(artifact, /nativeRevision = function\(root\)/);
+  assert.match(artifact, /local revision = root and nativeRevision\(root\) or nil/);
+});
+
 test("managed artifact projection is unique in source and bundled artifact", () => {
   for (const contents of [read("src/commands/writeTools.lua"), read("NexusRBXStudioBridge.plugin.lua")]) {
     assert.equal(

@@ -260,6 +260,9 @@ const MODULE_EXPORTS = {
     "buildNativeModel",
     "inspectNativeModel",
     "applyNativeModelPatch",
+    // Registry post-state verification uses the same canonical revision
+    // calculation as native model inspection and patching.
+    "nativeRevision",
   ],
   "src/commands/importedAsset.lua": ["ImportedAsset"],
   "src/commands/animation.lua": ["createAnimationSequence", "animationSequenceHash"],
