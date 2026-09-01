@@ -209,6 +209,13 @@ export function hasTerminalStudioTaskSuccess(payload = {}) {
   });
 }
 
+export function shouldStartPendingRecovery(message, isGenerating) {
+  if (!message) return false;
+  const runState = String(message?.metadata?.runState || message?.stage || "").trim().toLowerCase();
+  const isDurableBackgroundHandoff = message.pending === false && runState === "background";
+  return !isGenerating || isDurableBackgroundHandoff;
+}
+
 export function readPendingAgentRun(runId) {
   return String(runId || "").startsWith("agent_run_v2_")
     ? getAgentRunV2(runId)
@@ -1103,9 +1110,14 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
 
   useEffect(() => {
     const uid = user?.uid;
-    if (!authReady || !uid || auth.currentUser?.uid !== uid || !currentChatId || isGenerating) return;
     const pending = pendingRecoveryRef.current;
-    if (!pending) return;
+    if (
+      !authReady
+      || !uid
+      || auth.currentUser?.uid !== uid
+      || !currentChatId
+      || !shouldStartPendingRecovery(pending, isGenerating)
+    ) return;
 
     let cancelled = false;
     let stopped = false;

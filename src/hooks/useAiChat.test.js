@@ -3,6 +3,7 @@ import {
   hasTerminalStudioTaskSuccess,
   readPendingAgentRun,
   resolveResultUrl,
+  shouldStartPendingRecovery,
   useAiChat,
   waitForAuthoritativeTaskCompletion,
   waitForAuthoritativeRunJob,
@@ -210,6 +211,19 @@ describe("resolveResultUrl", () => {
 });
 
 describe("useAiChat", () => {
+  test("recovers a durable background handoff even when stale UI state says generating", () => {
+    expect(shouldStartPendingRecovery({
+      pending: false,
+      stage: "background",
+      metadata: { runState: "background" },
+    }, true)).toBe(true);
+    expect(shouldStartPendingRecovery({
+      pending: true,
+      stage: "Working...",
+      metadata: { runState: "running" },
+    }, true)).toBe(false);
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     cancelAgentRunV2.mockResolvedValue({ run: { status: "cancelled" } });
