@@ -277,6 +277,12 @@ const MODULE_EXPORTS = {
 };
 
 const SHARED_TOP_LEVEL_LOCALS = ["localSnapshots", "updateSnapshotLabel"];
+// serialization.lua defines scriptHash before path.lua is emitted, while
+// path.lua supplies readScriptSource. Declare path exports in the shared outer
+// scope so serialization captures the live function instead of a nil global.
+const EARLY_EXPORT_MODULES = new Set(["src/studio/path.lua"]);
+const EARLY_TOP_LEVEL_LOCALS = [...EARLY_EXPORT_MODULES]
+  .flatMap((relativePath) => MODULE_EXPORTS[relativePath] || []);
 
 // BridgePanel exposes a large set of bindings to Main.server.lua. Keeping all
 // of them as locals makes every later module inherit their live registers and
@@ -312,6 +318,9 @@ function wrapModule(relativePath, content) {
   }
   const promoted = promoteExports(content, exports);
   if (SCRIPT_GLOBAL_EXPORT_MODULES.has(relativePath)) {
+    return ["do", promoted, "end"].join("\n");
+  }
+  if (EARLY_EXPORT_MODULES.has(relativePath)) {
     return ["do", promoted, "end"].join("\n");
   }
   return [`local ${exports.join(", ")}`, "do", promoted, "end"].join("\n");
@@ -479,6 +488,8 @@ const sharedPreamble = [
   "",
   "-- Shared cross-module state (declared before snapshot.lua uses it)",
   `local ${SHARED_TOP_LEVEL_LOCALS.join(", ")}`,
+  "-- Path helpers are forward-declared so serialization captures their live bindings.",
+  `local ${EARLY_TOP_LEVEL_LOCALS.join(", ")}`,
   "localSnapshots = {}",
   "",
 ].join("\n");

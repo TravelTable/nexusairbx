@@ -79,6 +79,8 @@ NATIVE_ALLOWED_ROOTS = {
 -- END src/config.lua
 -- Shared cross-module state (declared before snapshot.lua uses it)
 local localSnapshots, updateSnapshotLabel
+-- Path helpers are forward-declared so serialization captures their live bindings.
+local fullPath, resolvePath, readScriptSource, writeScriptSource, getStarterPlayerScripts, splitPath, rootFromParts, ensureParent, safeSetProperty, ASSET_REFERENCE_TARGETS, safeSetAssetReference, safeRestoreAssetReference
 localSnapshots = {}
 
 
@@ -940,7 +942,6 @@ end
 -- END src/studio/serialization.lua
 
 -- BEGIN src/studio/path.lua
-local fullPath, resolvePath, readScriptSource, writeScriptSource, getStarterPlayerScripts, splitPath, rootFromParts, ensureParent, safeSetProperty, ASSET_REFERENCE_TARGETS, safeSetAssetReference, safeRestoreAssetReference
 do
 -- Studio manifests and tool payloads use slash-delimited paths. Older agent
 -- runs occasionally produced a dotted Starter Player path, e.g.

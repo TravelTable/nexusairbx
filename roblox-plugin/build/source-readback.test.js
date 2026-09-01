@@ -84,6 +84,22 @@ test("source read failures preserve bounded editor and property diagnostics", ()
   }
 });
 
+test("bundled script hashing captures the live source reader", () => {
+  const artifact = read("NexusRBXStudioBridge.plugin.lua");
+  const forwardDeclaration = artifact.indexOf("local fullPath, resolvePath, readScriptSource, writeScriptSource");
+  const scriptHashDefinition = artifact.indexOf("scriptHash = function(inst)");
+  const pathAssignment = artifact.indexOf("readScriptSource = function(inst)");
+
+  assert.ok(forwardDeclaration >= 0, "path helpers must be forward-declared");
+  assert.ok(forwardDeclaration < scriptHashDefinition, "source reader must be in scriptHash's lexical scope");
+  assert.ok(scriptHashDefinition < pathAssignment, "path.lua should populate the captured binding later");
+  assert.equal(
+    artifact.indexOf("local fullPath, resolvePath, readScriptSource, writeScriptSource", forwardDeclaration + 1),
+    -1,
+    "path.lua must not shadow the shared source-reader binding",
+  );
+});
+
 test("managed artifact projection is unique in source and bundled artifact", () => {
   for (const contents of [read("src/commands/writeTools.lua"), read("NexusRBXStudioBridge.plugin.lua")]) {
     assert.equal(
