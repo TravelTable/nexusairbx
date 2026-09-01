@@ -200,7 +200,7 @@ export function getActiveAgentsV2() {
   return withApiRetryCooldown(
     ACTIVE_AGENTS_COOLDOWN_KEY,
     "Agent status is temporarily unavailable.",
-    () => request("/api/v2/agents", { method: "GET", noCache: true }),
+    () => request("/api/v2/agents/active", { method: "GET", noCache: true }),
     { fallbackMs: AGENT_POLL_RETRY_MS }
   );
 }

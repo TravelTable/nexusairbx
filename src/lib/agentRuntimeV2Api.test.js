@@ -140,6 +140,10 @@ describe("agentRuntimeV2Api projections", () => {
     authedFetch.mockRejectedValue(new TypeError("The network connection was lost."));
 
     await expect(getActiveAgentsV2()).rejects.toThrow("network connection was lost");
+    expect(authedFetch).toHaveBeenCalledWith(
+      "/api/v2/agents/active",
+      expect.objectContaining({ method: "GET" })
+    );
     await expect(getActiveAgentsV2()).rejects.toMatchObject({
       code: "API_RETRY_COOLDOWN",
       retryable: true,
