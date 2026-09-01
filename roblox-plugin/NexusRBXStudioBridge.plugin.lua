@@ -14,7 +14,7 @@ local STUDIO_PROTOCOL_VERSION = "2026-08-27-r15-animation"
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.14.0-r15-animation.3-live-apply"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.14.0-r15-animation.4-class-parity"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the
@@ -609,11 +609,21 @@ NETWORKING_CLASSES = {
 
 CREATABLE_CLASSES = {
 	Folder = true,
+	Model = true,
+	Part = true,
+	WedgePart = true,
+	TrussPart = true,
+	SpawnLocation = true,
+	Attachment = true,
+	Motor6D = true,
+	WeldConstraint = true,
 	RemoteEvent = true,
 	RemoteFunction = true,
 	BindableEvent = true,
 	BindableFunction = true,
 	ScreenGui = true,
+	SurfaceGui = true,
+	BillboardGui = true,
 	Frame = true,
 	TextLabel = true,
 	TextButton = true,
@@ -1623,9 +1633,38 @@ restoreSnapshots = function(payload)
 		end
 	end
 	local complete = #errors == 0 and kept == 0
+	local verificationChecks = {}
+	local snapshotIds = {}
+	for _, snap in ipairs(snapshots) do
+		local current = snap.path and resolvePath(snap.path) or nil
+		local actualHash = current and snapshotStateHash(current) or nil
+		local expectedHash = snap.existed == false and nil or snap.preHash
+		local restoredToBaseline = snap.existed == false
+			and current == nil
+			or current ~= nil and (not expectedHash or actualHash == expectedHash)
+		table.insert(verificationChecks, {
+			kind = "snapshot_restore",
+			path = snap.path or "",
+			snapshotId = snap.id,
+			existed = snap.existed ~= false,
+			expectedHash = expectedHash,
+			actualHash = actualHash,
+			ok = restoredToBaseline,
+		})
+		if snap.id then
+			table.insert(snapshotIds, snap.id)
+		end
+	end
+	for _, check in ipairs(verificationChecks) do
+		if not check.ok then
+			complete = false
+			break
+		end
+	end
 	return {
 		ok = complete,
 		success = complete,
+		succeeded = complete,
 		complete = complete,
 		code = complete and nil or "snapshot_restore_incomplete",
 		error = complete and nil or "One or more Studio snapshots could not be fully restored",
@@ -1634,6 +1673,14 @@ restoreSnapshots = function(payload)
 		kept = kept,
 		requested = #snapshots,
 		errors = errors,
+		verification = {
+			verified = complete,
+			source = "studio_readback",
+			evidence = {
+				checks = verificationChecks,
+				snapshotIds = snapshotIds,
+			},
+		},
 	}
 end
 
@@ -1648,6 +1695,13 @@ rollbackMutation = function(snapshots, code, message, details)
 	response.snapshots = snapshots or {}
 	response.rolledBack = rollback.ok == true
 	response.rollback = rollback
+	for _, snap in ipairs(snapshots or {}) do
+		if snap.source ~= nil then
+			response.previousSourceHash = snap.preHash or scriptHash(resolvePath(snap.path))
+			response.rollback.restoredSourceHash = scriptHash(resolvePath(snap.path))
+			break
+		end
+	end
 	return response
 end
 end
