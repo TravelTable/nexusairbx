@@ -5,6 +5,7 @@ import {
   evaluateStudioPlaceGate,
   evaluateStudioSubmissionPreflight,
   findProjectByPlaceId,
+  findProjectByStudioTargetId,
   normalizeStudioTargetOption,
   readChatStudioPreference,
   resolveGameIdentityFromStudioStatus,
@@ -436,6 +437,16 @@ describe("studioPlaceBinding", () => {
     expect(findProjectByPlaceId(projects, "222")?.projectId).toBe("p2");
     expect(findProjectByPlaceId(projects, "0")).toBeNull();
     expect(findProjectByPlaceId(projects, "")).toBeNull();
+  });
+
+  test("findProjectByStudioTargetId disambiguates duplicate project names", () => {
+    const projects = [
+      { projectId: "wrong", studioTargetId: "studio_target_old", title: "Place1" },
+      { projectId: "live", studioTargetId: "studio_target_live", title: "Place1" },
+    ];
+    expect(findProjectByStudioTargetId(projects, "studio_target_live")?.projectId).toBe("live");
+    expect(findProjectByStudioTargetId(projects, "studio_target_missing")).toBeNull();
+    expect(findProjectByStudioTargetId(projects, "")).toBeNull();
   });
 
   test("buildProjectBindingPayloadFromIdentity omits untitled placeId 0", () => {

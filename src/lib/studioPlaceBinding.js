@@ -131,6 +131,15 @@ export function findProjectByPlaceId(projects = [], placeId) {
   }) || null;
 }
 
+export function findProjectByStudioTargetId(projects = [], studioTargetId) {
+  const wanted = String(studioTargetId || "").trim();
+  if (!wanted) return null;
+  const list = Array.isArray(projects) ? projects : [];
+  return list.find((project) => (
+    String(project?.studioTargetId || "").trim() === wanted
+  )) || null;
+}
+
 /**
  * Resolve which game the user should work on from live Studio status.
  *

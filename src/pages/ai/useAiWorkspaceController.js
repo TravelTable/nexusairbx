@@ -108,6 +108,7 @@ import {
 import { normalizeChatAttachments } from "../../lib/chatAttachments";
 import { sanitizeChatWritePayload, sanitizeTranscriptMessagePayload } from "../../lib/firestorePayloads";
 import { normalizeAuthoritativeRunStatus } from "../../lib/runCancellation";
+import { findProjectByStudioTargetId } from "../../lib/studioPlaceBinding";
 
 export const PROJECT_SIDEBAR_DESKTOP_MIN_WIDTH = 1200;
 
@@ -390,6 +391,8 @@ export function useAiWorkspaceController() {
   const pageViewTrackedRef = useRef(false);
   const restoredIntentIdRef = useRef(null);
   const autoIntentInFlightRef = useRef(null);
+  const refreshedStudioTargetRef = useRef("");
+  const alignedDraftStudioProjectRef = useRef("");
   const pendingAuthResumeRef = useRef(null);
   const pendingRobloxResumeRef = useRef(false);
   const studioDeepLinkRef = useRef("");
@@ -490,6 +493,7 @@ export function useAiWorkspaceController() {
     loading: projectBindingsLoading,
     setSelectedProjectId,
     openGameProject,
+    refresh: refreshProjectBindings,
   } = projectBindings;
   const chatProjectId = String(chat.currentChatMeta?.projectId || "").trim();
   const persistedProjectId = String(settings?.activeProjectId || "").trim();
@@ -500,6 +504,64 @@ export function useAiWorkspaceController() {
   const activeProjectId = chatProjectId || persistedProject?.projectId || "";
   const activeProject =
     projectBindingProjects.find((project) => project.projectId === activeProjectId) || persistedProject || null;
+  const liveStudioTargetId = String(
+    studioConnection.targeting?.studioTargetId
+    || studioConnection.targeting?.targetId
+    || studioConnection.pluginSession?.studioTargetId
+    || studioConnection.pluginSession?.targetingTargetId
+    || studioConnection.pluginSession?.studio?.targetId
+    || ""
+  ).trim();
+  const liveStudioProject = findProjectByStudioTargetId(
+    projectBindingProjects,
+    liveStudioTargetId
+  );
+
+  useEffect(() => {
+    if (!studioConnection.pluginConnected || !liveStudioTargetId) {
+      refreshedStudioTargetRef.current = "";
+      return;
+    }
+    if (refreshedStudioTargetRef.current === liveStudioTargetId) return;
+    refreshedStudioTargetRef.current = liveStudioTargetId;
+    refreshProjectBindings().catch(() => {
+      if (refreshedStudioTargetRef.current === liveStudioTargetId) {
+        refreshedStudioTargetRef.current = "";
+      }
+    });
+  }, [
+    liveStudioTargetId,
+    refreshProjectBindings,
+    studioConnection.pluginConnected,
+  ]);
+
+  useEffect(() => {
+    if (chat.currentChatId || !studioConnection.pluginConnected || !liveStudioProject?.projectId) {
+      if (chat.currentChatId) alignedDraftStudioProjectRef.current = "";
+      return;
+    }
+    const alignmentKey = `${liveStudioTargetId}:${liveStudioProject.projectId}`;
+    if (activeProjectId === liveStudioProject.projectId) {
+      alignedDraftStudioProjectRef.current = alignmentKey;
+      return;
+    }
+    if (alignedDraftStudioProjectRef.current === alignmentKey) return;
+    alignedDraftStudioProjectRef.current = alignmentKey;
+    setSelectedProjectId(liveStudioProject.projectId);
+    updateSettings({ activeProjectId: liveStudioProject.projectId }).catch(() => {
+      if (alignedDraftStudioProjectRef.current === alignmentKey) {
+        alignedDraftStudioProjectRef.current = "";
+      }
+    });
+  }, [
+    activeProjectId,
+    chat.currentChatId,
+    liveStudioProject,
+    liveStudioTargetId,
+    setSelectedProjectId,
+    studioConnection.pluginConnected,
+    updateSettings,
+  ]);
   const activeConversationMode = normalizeChatMode(chat.activeMode || settings?.chatMode);
   const chatOperationKey = chat.currentChatId || "draft";
   const chatOperationState = chatOperationCoordinatorRef.current.snapshot(chatOperationKey);
