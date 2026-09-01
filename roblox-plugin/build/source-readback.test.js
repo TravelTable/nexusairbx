@@ -100,6 +100,21 @@ test("bundled script hashing captures the live source reader", () => {
   );
 });
 
+test("script deletion reports the verified pre-delete source baseline", () => {
+  for (const contents of [read("src/commands/writeTools.lua"), read("NexusRBXStudioBridge.plugin.lua")]) {
+    assert.match(contents, /(?:local function deleteScript|deleteScript = function)\(payload\)/);
+    assert.match(contents, /verifyExpectedScriptHash\(inst, payload\.expectedSourceHash, fullPath\(inst\)\)/);
+    assert.match(contents, /previousHash = scriptHash\(inst\)/);
+    assert.match(contents, /result\.previousHash = previousHash/);
+  }
+
+  for (const contents of [read("src/commands/registry.lua"), read("NexusRBXStudioBridge.plugin.lua")]) {
+    assert.match(contents, /if commandType == "delete_script" then/);
+    assert.match(contents, /evidence\.baselineSourceHash = result\.previousHash or payload\.expectedSourceHash/);
+    assert.match(contents, /evidence\.previousSourceHash = result\.previousHash or payload\.expectedSourceHash/);
+  }
+});
+
 test("managed artifact projection is unique in source and bundled artifact", () => {
   for (const contents of [read("src/commands/writeTools.lua"), read("NexusRBXStudioBridge.plugin.lua")]) {
     assert.equal(

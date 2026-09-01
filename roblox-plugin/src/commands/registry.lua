@@ -547,6 +547,10 @@ local function verifyCommandOutcome(command, payload, result)
 		addCheck("instance_absence", target, type(target) == "string" and target ~= "" and resolvePath(target) == nil, {
 			reason = resolvePath(target) and "still_present" or nil,
 		})
+		if commandType == "delete_script" then
+			evidence.baselineSourceHash = result.previousHash or payload.expectedSourceHash
+			evidence.previousSourceHash = result.previousHash or payload.expectedSourceHash
+		end
 	elseif SCRIPT_WRITE_COMMANDS[commandType] then
 		local target = result.path or payload.path
 		local inst, currentHash = currentScriptHashAt(target)

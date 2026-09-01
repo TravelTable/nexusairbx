@@ -14,7 +14,7 @@ local STUDIO_PROTOCOL_VERSION = "2026-08-27-r15-animation"
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.14.0-r15-animation.5-runtime-source-guard"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.14.0-r15-animation.6-delete-baseline-evidence"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the
@@ -6291,7 +6291,17 @@ deleteScript = function(payload)
 	if inst and not SCRIPT_CLASSES[inst.ClassName] then
 		return { ok = false, error = "Target is not a script", path = payload.path }
 	end
-	return deleteInstanceTool(payload)
+	local previousHash = nil
+	if inst then
+		local hashOk, hashResult = verifyExpectedScriptHash(inst, payload.expectedSourceHash, fullPath(inst))
+		if not hashOk then
+			return hashResult
+		end
+		previousHash = scriptHash(inst)
+	end
+	local result = deleteInstanceTool(payload)
+	result.previousHash = previousHash
+	return result
 end
 
 updateProperties = function(payload)
@@ -10233,6 +10243,10 @@ local function verifyCommandOutcome(command, payload, result)
 		addCheck("instance_absence", target, type(target) == "string" and target ~= "" and resolvePath(target) == nil, {
 			reason = resolvePath(target) and "still_present" or nil,
 		})
+		if commandType == "delete_script" then
+			evidence.baselineSourceHash = result.previousHash or payload.expectedSourceHash
+			evidence.previousSourceHash = result.previousHash or payload.expectedSourceHash
+		end
 	elseif SCRIPT_WRITE_COMMANDS[commandType] then
 		local target = result.path or payload.path
 		local inst, currentHash = currentScriptHashAt(target)

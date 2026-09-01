@@ -296,7 +296,17 @@ local function deleteScript(payload)
 	if inst and not SCRIPT_CLASSES[inst.ClassName] then
 		return { ok = false, error = "Target is not a script", path = payload.path }
 	end
-	return deleteInstanceTool(payload)
+	local previousHash = nil
+	if inst then
+		local hashOk, hashResult = verifyExpectedScriptHash(inst, payload.expectedSourceHash, fullPath(inst))
+		if not hashOk then
+			return hashResult
+		end
+		previousHash = scriptHash(inst)
+	end
+	local result = deleteInstanceTool(payload)
+	result.previousHash = previousHash
+	return result
 end
 
 local function updateProperties(payload)
