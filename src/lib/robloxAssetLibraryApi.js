@@ -1,4 +1,23 @@
 import { authedFetch } from "./billing";
+import { BACKEND_URL } from "../config";
+
+function backendAssetUrl(value) {
+  const url = String(value || "").trim();
+  return url.startsWith("/api/") ? `${BACKEND_URL.replace(/\/+$/, "")}${url}` : url;
+}
+
+export function normalizeRobloxAssetUrls(asset) {
+  if (!asset || typeof asset !== "object") return asset;
+  const thumbnailUrl = backendAssetUrl(asset.thumbnailUrl);
+  const previewCapabilities = asset.previewCapabilities && typeof asset.previewCapabilities === "object"
+    ? {
+      ...asset.previewCapabilities,
+      thumbnailUrl: backendAssetUrl(asset.previewCapabilities.thumbnailUrl),
+      imageUrl: backendAssetUrl(asset.previewCapabilities.imageUrl),
+    }
+    : asset.previewCapabilities;
+  return { ...asset, thumbnailUrl, previewCapabilities };
+}
 
 async function readJson(res, fallbackMessage) {
   const text = await res.text().catch(() => "");
@@ -61,7 +80,11 @@ export async function listRobloxAssets({
     error.retryable = typeof data?.retryable === "boolean" ? data.retryable : null;
     throw error;
   }
-  return data || {};
+  const payload = data || {};
+  return {
+    ...payload,
+    assets: Array.isArray(payload.assets) ? payload.assets.map(normalizeRobloxAssetUrls) : [],
+  };
 }
 
 export async function getRobloxAsset(assetId) {

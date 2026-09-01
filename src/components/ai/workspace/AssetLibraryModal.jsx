@@ -265,7 +265,9 @@ export default function AssetLibraryModal({
     const q = debouncedSearch.toLowerCase();
     const typeSet = new Set(assetTypes);
     const filtered = localAssets.filter((asset) => {
-      if (assetTypes.length && !typeSet.has(asset.assetType)) return false;
+      const imageTypeMatch = (asset.assetType === "Decal" && typeSet.has("Image"))
+        || (asset.assetType === "Image" && typeSet.has("Decal"));
+      if (assetTypes.length && !typeSet.has(asset.assetType) && !imageTypeMatch) return false;
       if (!q) return true;
       return String(asset.name || "").toLowerCase().includes(q) || String(asset.assetId || "").includes(q);
     });
