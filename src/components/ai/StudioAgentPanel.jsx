@@ -103,7 +103,7 @@ export default function StudioAgentPanel({ user, chatId, notify }) {
           <div className="min-w-0">
             <div className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text)]">Studio Agent</div>
             <div className="text-[11px] text-[var(--ds-text-muted)] truncate">
-              {run ? `${run.status} · ${run.iteration}/${run.maxIterations} step cycles · ${snapshots} snapshot(s)` : "Unrestricted dev mode"}
+              {run ? `${run.status} · ${run.iteration} step cycles · ${snapshots} snapshot(s)` : "Unrestricted dev mode"}
             </div>
           </div>
         </div>
