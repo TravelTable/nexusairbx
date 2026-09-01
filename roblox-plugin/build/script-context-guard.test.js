@@ -46,9 +46,11 @@ test("the plugin guard detects real GetService calls while blanking ordinary str
     "SERVER_API_ON_CLIENT",
     "SCRIPT_LOCATION_MISMATCH",
     "MIXED_RUNTIME_CONTEXT",
+    "RUNTIME_SCRIPT_SOURCE_WRITE",
   ]) {
     assert.match(readTools, new RegExp(`"${code}"`));
   }
+  assert.ok(readTools.includes('source:find("%.%s*Source%s*=")'));
 });
 
 test("managed instance IDs are exported across bundled plugin sections", () => {

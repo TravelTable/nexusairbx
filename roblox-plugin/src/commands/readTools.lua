@@ -455,6 +455,13 @@ function ScriptContextGuard.validate(descriptor)
 	if placement == "unknown" then
 		addFinding("SCRIPT_LOCATION_MISMATCH", "Every Studio script must declare a supported, explicit Studio location.")
 	end
+	if source:find("%.%s*Source%s*=") then
+		addFinding(
+			"RUNTIME_SCRIPT_SOURCE_WRITE",
+			"Roblox game scripts cannot assign Script.Source at runtime. Create or update the target Script or LocalScript in Studio before play begins.",
+			"Source"
+		)
+	end
 	if requiredContext == "mixed" then
 		addFinding(
 			"MIXED_RUNTIME_CONTEXT",
