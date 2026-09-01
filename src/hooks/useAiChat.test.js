@@ -3,6 +3,7 @@ import {
   hasTerminalStudioTaskSuccess,
   readPendingAgentRun,
   resolveResultUrl,
+  shouldReadAuthoritativeRunDuringRecovery,
   shouldStartPendingRecovery,
   useAiChat,
   waitForAuthoritativeTaskCompletion,
@@ -222,6 +223,19 @@ describe("useAiChat", () => {
       stage: "Working...",
       metadata: { runState: "running" },
     }, true)).toBe(false);
+  });
+
+  test("terminal Studio evidence bypasses a stale outer-run read", () => {
+    expect(shouldReadAuthoritativeRunDuringRecovery("agent_run_1", {
+      result: {
+        structuredStatus: "manual_verification_required",
+        taskResult: { status: "manual_verification_required" },
+      },
+    })).toBe(false);
+    expect(shouldReadAuthoritativeRunDuringRecovery("agent_run_1", {
+      status: "pending",
+      done: false,
+    })).toBe(true);
   });
 
   beforeEach(() => {

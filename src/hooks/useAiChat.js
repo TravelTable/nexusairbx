@@ -216,6 +216,10 @@ export function shouldStartPendingRecovery(message, isGenerating) {
   return !isGenerating || isDurableBackgroundHandoff;
 }
 
+export function shouldReadAuthoritativeRunDuringRecovery(runId, resultPayload) {
+  return Boolean(runId) && !hasTerminalStudioTaskSuccess(resultPayload);
+}
+
 export function readPendingAgentRun(runId) {
   return String(runId || "").startsWith("agent_run_v2_")
     ? getAgentRunV2(runId)
@@ -1374,7 +1378,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           return;
         }
 
-        if (currentPending.runId) {
+        if (shouldReadAuthoritativeRunDuringRecovery(currentPending.runId, body)) {
           const runResult = await raceAuthoritativeOperation(
             () => readPendingAgentRun(currentPending.runId),
             {
