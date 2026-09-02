@@ -14,7 +14,7 @@ local STUDIO_PROTOCOL_VERSION = "2026-08-27-r15-animation"
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.14.0-r15-animation.8-safe-part-create"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.14.0-r15-animation.9-color3-normalization"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the
@@ -1099,9 +1099,19 @@ safeSetProperty = function(inst, key, value)
 				value = UDim.new(value.scale or 0, value.offset or 0)
 			elseif valueType == "Color3" or (
 				(key == "TextColor3" or key == "BackgroundColor3" or key == "ImageColor3" or key == "Color")
-				and value.r ~= nil and value.g ~= nil and value.b ~= nil
+				and (value.r ~= nil or value.R ~= nil)
+				and (value.g ~= nil or value.G ~= nil)
+				and (value.b ~= nil or value.B ~= nil)
 			) then
-				value = Color3.new(value.r or 0, value.g or 0, value.b or 0)
+				local r = tonumber(value.r or value.R) or 0
+				local g = tonumber(value.g or value.G) or 0
+				local b = tonumber(value.b or value.B) or 0
+				local divisor = (r > 2 or g > 2 or b > 2) and 255 or 1
+				value = Color3.new(
+					math.clamp(r / divisor, 0, 1),
+					math.clamp(g / divisor, 0, 1),
+					math.clamp(b / divisor, 0, 1)
+				)
 			elseif valueType == "Vector2" then
 				value = Vector2.new(value.x or 0, value.y or 0)
 			elseif valueType == "Vector3" then
