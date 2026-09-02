@@ -14,7 +14,7 @@ local STUDIO_PROTOCOL_VERSION = "2026-08-27-r15-animation"
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.14.0-r15-animation.7-native-readback-binding"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.14.0-r15-animation.8-safe-part-create"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the
@@ -1136,7 +1136,15 @@ safeSetProperty = function(inst, key, value)
 				value = Enum[enumType][enumItem] or value
 			end
 		end
-		if key == "Value" and inst:IsA("ValueBase") then
+		local nativeAllow = NATIVE_PROPERTY_ALLOWLIST[inst.ClassName]
+		if key == "Position" and inst:IsA("BasePart") and typeof(value) == "Vector3" then
+			inst.Position = value
+		elseif nativeAllow and nativeAllow[key] == true then
+			-- create_instance and snapshot restore share the same conservative
+			-- native-property boundary as build_native_model. Values have already
+			-- been converted above and pcall keeps invalid assignments fail-closed.
+			inst[key] = value
+		elseif key == "Value" and inst:IsA("ValueBase") then
 			inst.Value = value
 		elseif key == "ResetOnSpawn" and inst:IsA("ScreenGui") then
 			inst.ResetOnSpawn = value ~= false

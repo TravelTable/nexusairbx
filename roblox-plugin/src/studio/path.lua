@@ -191,7 +191,15 @@ local function safeSetProperty(inst, key, value)
 				value = Enum[enumType][enumItem] or value
 			end
 		end
-		if key == "Value" and inst:IsA("ValueBase") then
+		local nativeAllow = NATIVE_PROPERTY_ALLOWLIST[inst.ClassName]
+		if key == "Position" and inst:IsA("BasePart") and typeof(value) == "Vector3" then
+			inst.Position = value
+		elseif nativeAllow and nativeAllow[key] == true then
+			-- create_instance and snapshot restore share the same conservative
+			-- native-property boundary as build_native_model. Values have already
+			-- been converted above and pcall keeps invalid assignments fail-closed.
+			inst[key] = value
+		elseif key == "Value" and inst:IsA("ValueBase") then
 			inst.Value = value
 		elseif key == "ResetOnSpawn" and inst:IsA("ScreenGui") then
 			inst.ResetOnSpawn = value ~= false
