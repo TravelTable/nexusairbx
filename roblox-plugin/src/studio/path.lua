@@ -137,8 +137,14 @@ SAFE_UI_RESTORE_PROPERTIES = {
 local function safeSetProperty(inst, key, value)
 	local ok, err = pcall(function()
 		if typeof(value) == "table" then
-			local valueType = tostring(value.type or value["$type"] or "")
-			if valueType == "UDim2" then
+			local valueType = tostring(value.type or value["$type"] or value.__type or "")
+			if valueType == "EnumItem" then
+				local enumName = tostring(value.enumName or value.enumType or ""):gsub("[^%w_]", "")
+				local itemName = tostring(value.name or value.itemName or ""):gsub("[^%w_]", "")
+				if enumName ~= "" and itemName ~= "" then
+					value = "Enum." .. enumName .. "." .. itemName
+				end
+			elseif valueType == "UDim2" then
 				value = UDim2.new(value.xScale or 0, value.xOffset or 0, value.yScale or 0, value.yOffset or 0)
 			elseif (key == "Size" or key == "Position") and typeof(value.X) == "table" and typeof(value.Y) == "table" then
 				-- The planner's structured-output schema uses Roblox's X/Y shape.
