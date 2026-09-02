@@ -12,6 +12,7 @@ export const CHAT_OPERATION_STATUS = Object.freeze({
   STOPPING: "Stopping",
   STOPPED: "Stopped",
   RESTORING: "Restoring",
+  RECOVERING: "Recovering",
   FAILED: "Failed",
 });
 
@@ -36,6 +37,18 @@ function isAbortError(error) {
     || message === "generation cancelled.";
 }
 
+function isOutcomeUnknown(error) {
+  const code = String(error?.code || "").toUpperCase();
+  const category = String(error?.category || "").toLowerCase();
+  return error?.outcomeUnknown === true
+    || (error?.retryable === true && category === "outcome_unknown")
+    || [
+      "OPERATION_RECOVERY_PENDING",
+      "OPERATION_RECONCILIATION_TIMEOUT",
+      "TRANSPORT_OUTCOME_UNKNOWN",
+    ].includes(code);
+}
+
 function publicOperation(operation) {
   if (!operation) return null;
   return {
@@ -49,6 +62,8 @@ function publicOperation(operation) {
     checkpointMetadata: operation.checkpointMetadata || null,
     createdAt: operation.createdAt,
     error: operation.error || null,
+    retryOf: operation.retryOf || null,
+    resumeOf: operation.resumeOf || null,
   };
 }
 
@@ -74,7 +89,27 @@ function attachOperationPromise(operation) {
   return operation;
 }
 
-function createFailedRetry(operation, error) {
+function createResumeOperation(operation, error) {
+  return attachOperationPromise({
+    ...operation,
+    id: operation.id,
+    status: CHAT_OPERATION_STATUS.RECOVERING,
+    abortController: new AbortController(),
+    createdAt: operation.createdAt,
+    error: String(error?.message || "Reconnecting to the accepted run."),
+    retryOf: operation.retryOf || null,
+    resumeOf: operation.id,
+    cancelStarted: false,
+    cancelRequested: false,
+    cancelDispatches: new Map(),
+    settled: false,
+    promise: null,
+    resolve: null,
+    reject: null,
+  });
+}
+
+function createNewAttempt(operation, error) {
   return attachOperationPromise({
     ...operation,
     id: createOperationId(),
@@ -83,6 +118,7 @@ function createFailedRetry(operation, error) {
     createdAt: Date.now(),
     error: String(error?.message || error || "Unable to start the request"),
     retryOf: operation.id,
+    resumeOf: null,
     cancelStarted: false,
     cancelRequested: false,
     cancelDispatches: new Map(),
@@ -231,7 +267,16 @@ export class ChatOperationCoordinator {
     const wasStopping = operation.status === CHAT_OPERATION_STATUS.STOPPING;
 
     if (error) {
-      if (!wasStopping) {
+      const outcomeUnknown = !wasStopping && isOutcomeUnknown(error);
+      if (outcomeUnknown) {
+        operation.error = String(error?.message || "Reconnecting to the accepted run.");
+        operation.status = CHAT_OPERATION_STATUS.RECOVERING;
+        if (ownsSlot) {
+          slot.paused = true;
+          slot.queue.unshift(createResumeOperation(operation, error));
+          slot.lastStatus = CHAT_OPERATION_STATUS.RECOVERING;
+        }
+      } else if (!wasStopping) {
         operation.error = isAbortError(error) ? null : String(error?.message || error);
         operation.status = isAbortError(error)
           ? CHAT_OPERATION_STATUS.STOPPED
@@ -240,7 +285,7 @@ export class ChatOperationCoordinator {
       if (ownsSlot && !wasStopping && operation.status === CHAT_OPERATION_STATUS.FAILED) {
         slot.paused = true;
         if (operation.retainOnFailure) {
-          slot.queue.unshift(createFailedRetry(operation, error));
+          slot.queue.unshift(createNewAttempt(operation, error));
         }
       }
       operation.reject(error);

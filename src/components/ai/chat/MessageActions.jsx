@@ -195,7 +195,7 @@ export default function MessageActions({
             {onRetry && retryPrompt ? (
               <MenuItem
                 icon={RefreshCw}
-                label={role === "user" ? "Retry from here" : "Retry"}
+                label="Retry as new attempt"
                 onSelect={() => runAndClose(handleRetry)}
               />
             ) : null}
@@ -229,7 +229,7 @@ export default function MessageActions({
       {onRetry && retryPrompt ? (
         <ActionButton
           icon={RefreshCw}
-          label={role === "user" ? "Retry from here" : "Retry"}
+          label="Retry as new attempt"
           onClick={handleRetry}
         />
       ) : null}

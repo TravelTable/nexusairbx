@@ -103,6 +103,37 @@ describe("ChatComposer compact interactions", () => {
     ).toBe("false");
   });
 
+  test("separates same-operation recovery from a new retry attempt", () => {
+    const onSendNext = jest.fn();
+    const { rerender } = renderComposer({
+      operationState: {
+        paused: true,
+        lastStatus: "Recovering",
+        queue: [{ id: "operation-1", status: "Recovering", prompt: "Build a lobby" }],
+      },
+      onSendNext,
+      onResumeQueue: jest.fn(),
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Reconnect / Resume" }));
+    expect(onSendNext).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("button", { name: "Resume queue" })).not.toBeInTheDocument();
+
+    rerender(
+      <ChatComposer
+        {...baseProps}
+        operationState={{
+          paused: true,
+          lastStatus: "Failed",
+          queue: [{ id: "operation-2", status: "Failed", prompt: "Build a lobby" }],
+        }}
+        onSendNext={onSendNext}
+        onResumeQueue={jest.fn()}
+      />
+    );
+    expect(screen.getByRole("button", { name: "Retry as new attempt" })).toBeInTheDocument();
+  });
+
   test("keeps primary composer actions touch-sized below desktop", () => {
     renderComposer();
 

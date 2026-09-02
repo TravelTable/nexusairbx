@@ -53,7 +53,10 @@ import {
   isStudioSessionLive,
   STUDIO_CONNECTION_TYPES,
 } from "../../lib/studioConnection";
-import { restoreFailedPromptDraft } from "../../lib/promptDraftRecovery";
+import {
+  isOutcomeUnknownSubmissionError,
+  restoreFailedPromptDraft,
+} from "../../lib/promptDraftRecovery";
 import {
   getProjectBinding,
   projectBindingRecoveryMessage,
@@ -1457,7 +1460,7 @@ export function useAiWorkspaceController() {
         });
       }
 
-      await unified.handleSubmit(
+      return unified.handleSubmit(
         promptToSend,
         currentAttachments,
         workspace.projectArtifactSnapshot,
@@ -1535,7 +1538,6 @@ export function useAiWorkspaceController() {
           draftRevision,
           checkpointMetadata,
           interrupt: submissionOptions?.interrupt === true,
-          retainOnFailure: operationType === "retry",
           onCancel: async (operation) => {
             unified.cancelCurrentFlow?.();
             if (!operation?.runId) {
@@ -1603,13 +1605,22 @@ export function useAiWorkspaceController() {
         setRewindTarget(null);
       }
       return admission.promise.catch((error) => {
-        if (clearedComposerDraft) {
+        const outcomeUnknown = isOutcomeUnknownSubmissionError(error);
+
+        if (clearedComposerDraft && !outcomeUnknown) {
           restoreFailedPromptDraft({
             prompt: currentPrompt,
             attachments: currentAttachments,
             setPrompt,
             setAttachments,
           });
+        }
+        if (outcomeUnknown) {
+          notify({
+            message: "Nexus may already have accepted this run. Reconnecting without starting another copy.",
+            type: "info",
+          });
+          return undefined;
         }
         if (isHandledPromptSubmissionError(error)) {
           if (error?.userNotificationEmitted !== true) {

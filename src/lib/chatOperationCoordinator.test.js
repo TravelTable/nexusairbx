@@ -304,4 +304,35 @@ describe("ChatOperationCoordinator", () => {
     expect(executor).toHaveBeenCalledTimes(2);
     expect(coordinator.snapshot("chat-1").active).toBeNull();
   });
+
+  test("outcome-unknown recovery keeps the exact original operation identity", async () => {
+    const coordinator = new ChatOperationCoordinator();
+    const recovery = Object.assign(new Error("Reconnecting"), {
+      code: "OPERATION_RECOVERY_PENDING",
+      category: "outcome_unknown",
+      retryable: true,
+      outcomeUnknown: true,
+    });
+    const executor = jest.fn()
+      .mockRejectedValueOnce(recovery)
+      .mockResolvedValueOnce("recovered");
+    const first = coordinator.admit(
+      { id: "operation-fixed", chatId: "chat-1", draftRevision: "1" },
+      executor
+    );
+    await expect(first.promise).rejects.toBe(recovery);
+
+    const snapshot = coordinator.snapshot("chat-1");
+    expect(snapshot.lastStatus).toBe(CHAT_OPERATION_STATUS.RECOVERING);
+    expect(snapshot.queue[0]).toMatchObject({
+      id: "operation-fixed",
+      status: CHAT_OPERATION_STATUS.RECOVERING,
+      resumeOf: "operation-fixed",
+    });
+
+    expect(coordinator.resume("chat-1")).toBe(true);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(executor).toHaveBeenCalledTimes(2);
+    expect(coordinator.snapshot("chat-1").active).toBeNull();
+  });
 });

@@ -1,4 +1,16 @@
-import { restoreFailedPromptDraft } from "./promptDraftRecovery";
+import {
+  isOutcomeUnknownSubmissionError,
+  restoreFailedPromptDraft,
+} from "./promptDraftRecovery";
+
+describe("isOutcomeUnknownSubmissionError", () => {
+  test("distinguishes recovery from deterministic pre-launch failure", () => {
+    expect(isOutcomeUnknownSubmissionError({ code: "OPERATION_RECOVERY_PENDING" })).toBe(true);
+    expect(isOutcomeUnknownSubmissionError({ category: "outcome_unknown" })).toBe(true);
+    expect(isOutcomeUnknownSubmissionError({ outcomeUnknown: true })).toBe(true);
+    expect(isOutcomeUnknownSubmissionError({ code: "VALIDATION_FAILED" })).toBe(false);
+  });
+});
 
 describe("restoreFailedPromptDraft", () => {
   test("restores a cleared prompt and attachments after a failed submission", () => {

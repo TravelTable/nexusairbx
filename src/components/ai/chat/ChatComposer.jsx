@@ -525,6 +525,14 @@ export default function ChatComposer({
   const activeOperationStatus = operationState?.active?.status || operationState?.lastStatus || null;
   const operationFailed = ["failed", "error"].includes(String(activeOperationStatus || "").toLowerCase());
   const queuedOperations = Array.isArray(operationState?.queue) ? operationState.queue : [];
+  const nextQueuedStatus = String(queuedOperations[0]?.status || "").toLowerCase();
+  const nextQueuedIsRecovery = nextQueuedStatus === "recovering";
+  const nextQueuedIsFailure = nextQueuedStatus === "failed";
+  const nextQueuedActionLabel = nextQueuedIsRecovery
+    ? "Reconnect / Resume"
+    : nextQueuedIsFailure
+      ? "Retry as new attempt"
+      : "Send next";
   const referenceCommands = useMemo(() => {
     const seen = new Set();
     return (Array.isArray(referenceFiles) ? referenceFiles : [])
@@ -953,15 +961,17 @@ export default function ChatComposer({
                     onClick={onSendNext}
                     className="rounded-md border border-[var(--ds-border-subtle)] px-2 py-1 font-bold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] focus-ring"
                   >
-                    {queuedOperations[0]?.status === "Failed" ? "Retry failed" : "Send next"}
+                    {nextQueuedActionLabel}
                   </button>
-                  <button
-                    type="button"
-                    onClick={onResumeQueue}
-                    className="rounded-md bg-[var(--ds-accent-soft)] px-2 py-1 font-bold text-[var(--ds-accent)] hover:bg-[var(--ds-accent-soft)] focus-ring"
-                  >
-                    Resume
-                  </button>
+                  {!nextQueuedIsRecovery && !nextQueuedIsFailure ? (
+                    <button
+                      type="button"
+                      onClick={onResumeQueue}
+                      className="rounded-md bg-[var(--ds-accent-soft)] px-2 py-1 font-bold text-[var(--ds-accent)] hover:bg-[var(--ds-accent-soft)] focus-ring"
+                    >
+                      Resume queue
+                    </button>
+                  ) : null}
                 </span>
               ) : null}
             </div>

@@ -74,4 +74,15 @@ describe("MessageActions accessibility", () => {
       expect(item).toHaveClass("min-h-11", "sm:min-h-0");
     });
   });
+
+  test("labels deterministic retries as a new attempt", () => {
+    renderActions();
+
+    expect(screen.getByRole("button", { name: "Retry as new attempt" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "More message actions" }));
+    expect(
+      within(screen.getByRole("menu", { name: "More message actions" }))
+        .getByRole("menuitem", { name: "Retry as new attempt" })
+    ).toBeInTheDocument();
+  });
 });

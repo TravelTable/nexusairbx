@@ -716,7 +716,7 @@ describe("MessageList conversation layout", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Edit" }));
-    fireEvent.click(screen.getByRole("button", { name: "Retry from here" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Retry as new attempt" })[0]);
 
     expect(onEditMessage).toHaveBeenCalledWith(message);
     expect(onRetryMessage).toHaveBeenCalledWith({
@@ -743,7 +743,7 @@ describe("MessageList conversation layout", () => {
       />
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Retry from here" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Retry as new attempt" })[0]);
 
     expect(onRetryMessage).toHaveBeenCalledWith({
       prompt: "Build a round timer.",

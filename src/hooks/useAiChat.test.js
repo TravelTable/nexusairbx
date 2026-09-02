@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import {
   hasTerminalStudioTaskSuccess,
+  normalizeGenerationErrorPayload,
   readPendingAgentRun,
   resolveResultUrl,
   shouldReadAuthoritativeRunDuringRecovery,
@@ -29,6 +30,7 @@ import {
   getAgentEventsV2,
   getAgentRunV2,
   getAgentV2,
+  getChatOperationV2,
   getRuntimeCapabilitiesV2,
   resolveChatAgentProjectionV2,
   selectAgentRuntimeRoute,
@@ -112,6 +114,7 @@ jest.mock("../lib/agentRuntimeV2Api", () => ({
   getAgentEventsV2: jest.fn(),
   getAgentRunV2: jest.fn(),
   getAgentV2: jest.fn(),
+  getChatOperationV2: jest.fn(),
   getRuntimeCapabilitiesV2: jest.fn(() => Promise.resolve(null)),
   normalizeAgentProjection: jest.fn((value) => value?.agent || value),
   resolveChatAgentProjectionV2: jest.fn(),
@@ -211,6 +214,26 @@ describe("resolveResultUrl", () => {
   });
 });
 
+describe("normalizeGenerationErrorPayload", () => {
+  test("preserves nested typed-error recovery fields", () => {
+    expect(normalizeGenerationErrorPayload({
+      error: {
+        message: "The launch outcome is still being reconciled.",
+        code: "LAUNCH_OUTCOME_UNKNOWN",
+        category: "outcome_unknown",
+        retryable: true,
+        details: { jobId: "job-fixed", runId: "run-fixed" },
+      },
+    })).toEqual({
+      message: "The launch outcome is still being reconciled.",
+      code: "LAUNCH_OUTCOME_UNKNOWN",
+      category: "outcome_unknown",
+      retryable: true,
+      details: { jobId: "job-fixed", runId: "run-fixed" },
+    });
+  });
+});
+
 describe("useAiChat", () => {
   test("recovers a durable background handoff even when stale UI state says generating", () => {
     expect(shouldStartPendingRecovery({
@@ -280,6 +303,7 @@ describe("useAiChat", () => {
     }));
     extractAgentEvents.mockImplementation((value) => value?.events || value?.data?.events || []);
     getAgentV2.mockReset();
+    getChatOperationV2.mockReset();
     auth.currentUser = null;
   });
 
@@ -1313,6 +1337,77 @@ describe("useAiChat", () => {
         metadata: expect.objectContaining({ runState: "background" }),
       }),
     ]));
+    hook.unmount();
+  });
+
+  test("reload recovers a launch-only checkpoint and attaches the same run and job", async () => {
+    const user = {
+      uid: "user_1",
+      getIdToken: jest.fn().mockResolvedValue("token_1"),
+    };
+    auth.currentUser = user;
+    getChatOperationV2.mockResolvedValue({
+      operation: {
+        operationId: "operation-fixed:agent",
+        status: "completed",
+        runId: "run-fixed",
+        result: {
+          body: {
+            agentId: "agent-fixed",
+            run: {
+              runId: "run-fixed",
+              agentId: "agent-fixed",
+              status: "planning",
+            },
+          },
+        },
+      },
+    });
+    getAgentV2.mockResolvedValue({
+      runs: [{
+        runId: "run-fixed",
+        agentId: "agent-fixed",
+        status: "running",
+        jobId: "job-fixed",
+      }],
+    });
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 202,
+      headers: { get: () => "application/json" },
+      json: async () => ({ status: "pending", done: false }),
+    });
+    const hook = renderHook(() => useAiChat(
+      user,
+      { chatMode: "agent" },
+      jest.fn(),
+      jest.fn(),
+    ));
+
+    openChatWithMessages(hook.result, [{
+      id: "operation-fixed-assistant",
+      role: "assistant",
+      content: "",
+      pending: true,
+      stage: "Starting durable run...",
+      requestId: "operation-fixed",
+      operationId: "operation-fixed",
+      launchOperationId: "operation-fixed:agent",
+      agentId: "agent-fixed",
+      metadata: { mode: "agent", runState: "launching" },
+    }]);
+
+    await waitFor(() => expect(getChatOperationV2).toHaveBeenCalledWith(
+      "operation-fixed:agent",
+      expect.objectContaining({ signal: expect.any(Object) })
+    ));
+    await waitFor(() => expect(updateDoc.mock.calls.some(([, payload]) => (
+      payload?.runId === "run-fixed" && payload?.agentId === "agent-fixed"
+    ))).toBe(true));
+    await waitFor(() => expect(updateDoc.mock.calls.some(([, payload]) => (
+      payload?.jobId === "job-fixed" && payload?.runId === "run-fixed"
+    ))).toBe(true));
+
     hook.unmount();
   });
 

@@ -5,6 +5,25 @@ const ACTIVE_AGENTS_COOLDOWN_KEY = "agent-runtime-v2:active-agents";
 const AGENT_EVENTS_COOLDOWN_KEY = "agent-runtime-v2:events";
 const AGENT_POLL_RETRY_MS = 30_000;
 
+function emitLaunchHandoffClientTelemetry(event, fields = {}) {
+  if (process.env.NODE_ENV === "test") return;
+  console.info(JSON.stringify({
+    type: event.endsWith("_total") ? "launch_handoff_metric" : "launch_handoff_event",
+    ...(event.endsWith("_total") ? { counter: event, count: 1 } : { event }),
+    ts: new Date().toISOString(),
+    clientOperationId: fields.clientOperationId || null,
+    chatOperationId: fields.chatOperationId || null,
+    agentId: fields.agentId || null,
+    agentRunId: fields.agentRunId || null,
+    phase: fields.phase || null,
+    created: fields.created === true,
+    replayed: fields.replayed === true,
+    recovered: fields.recovered === true,
+    recoveryReason: fields.recoveryReason || null,
+    errorCode: fields.errorCode || null,
+  }));
+}
+
 export const ACTIVE_AGENT_STATES = new Set([
   "active",
   "in_progress",
@@ -45,13 +64,25 @@ async function readJson(res) {
 }
 
 async function request(path, init = {}) {
-  const res = await authedFetch(path, {
-    ...init,
-    headers: {
-      ...(init.body ? { "Content-Type": "application/json" } : {}),
-      ...(init.headers || {}),
-    },
-  });
+  let res;
+  try {
+    res = await authedFetch(path, {
+      ...init,
+      headers: {
+        ...(init.body ? { "Content-Type": "application/json" } : {}),
+        ...(init.headers || {}),
+      },
+    });
+  } catch (cause) {
+    if (cause?.name === "AbortError") throw cause;
+    const error = new Error(cause?.message || "The request outcome could not be confirmed.");
+    error.name = "LaunchTransportError";
+    error.code = cause?.code || "TRANSPORT_OUTCOME_UNKNOWN";
+    error.category = "outcome_unknown";
+    error.retryable = true;
+    error.cause = cause;
+    throw error;
+  }
   const payload = await readJson(res);
   // A 404 can describe a missing/foreign agent, run, or project. Those are
   // valid v2 responses and must not make the client disable the whole runtime.
@@ -61,8 +92,15 @@ async function request(path, init = {}) {
     throw new AgentRuntimeUnavailableError(payload?.message);
   }
   if (!res.ok) {
-    const error = new Error(payload?.message || payload?.error || `Agent runtime request failed (${res.status})`);
+    const normalized = normalizeErrorPayload(payload);
+    const error = new Error(normalized.message || `Agent runtime request failed (${res.status})`);
     error.status = res.status;
+    error.code = normalized.code;
+    error.category = normalized.category;
+    error.retryable = normalized.retryable;
+    error.retryAfter = normalized.retryAfter;
+    error.details = normalized.details;
+    error.operation = normalized.operation;
     error.payload = payload;
     error.requestId = res.headers?.get?.("x-request-id") || null;
     error.deploymentId = res.headers?.get?.("x-nexus-deployment")
@@ -101,25 +139,62 @@ async function reconcileChatOperation(payload, { signal = null, attempts = 40 } 
 
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     await waitForPoll(Math.min(250 + (attempt * 100), 1_000), signal);
-    const statusPayload = await request(
-      `/api/ai/operations/${encodeURIComponent(initial.operationId)}`,
-      { method: "GET", noCache: true, ...(signal ? { signal } : {}) }
+    const interpreted = resultFromOperationPayload(
+      await getChatOperationV2(initial.operationId, { signal })
     );
-    const operation = statusPayload?.operation;
-    if (operation?.status === "completed") {
-      return operation.result?.body ?? operation.result ?? statusPayload;
-    }
-    if (operation?.status === "failed" || operation?.status === "cancelled") {
-      const error = new Error(operation.error?.message || "The operation did not complete.");
-      error.code = operation.error?.code || "OPERATION_FAILED";
-      error.status = operation.httpStatus || null;
-      throw error;
-    }
+    if (interpreted.state === "replay") return interpreted.result;
+    if (interpreted.state === "terminal_error") throw interpreted.error;
   }
 
   const error = new Error("The operation is still running. Its status can be recovered safely.");
   error.code = "OPERATION_RECONCILIATION_TIMEOUT";
+  error.category = "outcome_unknown";
+  error.retryable = true;
+  error.outcomeUnknown = true;
   throw error;
+}
+
+const CREATE_RUN_RECOVERY_ATTEMPTS = 60;
+const CREATE_RUN_RECOVERY_MAX_DELAY_MS = 2_000;
+
+async function recoverCreateAgentRun({
+  operationId,
+  submitSameRequest,
+  signal = null,
+  originalError = null,
+  attempts = CREATE_RUN_RECOVERY_ATTEMPTS,
+}) {
+  let lastError = originalError;
+  let lastOperation = null;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    if (signal?.aborted) throw abortError();
+    try {
+      const interpreted = resultFromOperationPayload(
+        await getChatOperationV2(operationId, { signal })
+      );
+      lastOperation = interpreted.operation || lastOperation;
+      if (interpreted.state === "replay") return interpreted.result;
+      if (interpreted.state === "terminal_error") throw interpreted.error;
+    } catch (error) {
+      if (isAbortError(error)) throw error;
+      if (error?.operation?.status === "failed" || error?.operation?.status === "cancelled") throw error;
+      if (error?.status !== 404 && !isAmbiguousOperationError(error)) throw error;
+      lastError = error;
+    }
+    if (attempt === 0 || attempt % 5 === 0) {
+      try {
+        return await reconcileChatOperation(await submitSameRequest(), { signal });
+      } catch (error) {
+        if (isAbortError(error)) throw error;
+        if (!isAmbiguousOperationError(error)) throw error;
+        lastError = error;
+      }
+    }
+    await waitForPoll(Math.min(250 + attempt * 100, CREATE_RUN_RECOVERY_MAX_DELAY_MS), signal);
+  }
+  const pending = new OperationRecoveryPendingError({ operationId, cause: lastError });
+  pending.operation = lastOperation;
+  throw pending;
 }
 
 let runtimeCapabilitiesCache = null;
@@ -180,20 +255,76 @@ export async function createAgentRunV2({
   signal = null,
   ...body
 }) {
+  const operationId = String(idempotencyKey || "").trim();
+  if (!operationId) {
+    const error = new Error("Agent run creation requires an idempotency key.");
+    error.code = "INVALID_IDEMPOTENCY_KEY";
+    throw error;
+  }
   const serializedBody = { ...body, ...(chatId ? { chatId } : {}) };
   delete serializedBody.studioSessionId;
   delete serializedBody.studioConnectionType;
 
-  const payload = await request(
-    `/api/v2/agents/${encodeURIComponent(agentId)}/runs`,
-    {
+  const submitSameRequest = () => request(
+    `/api/v2/agents/${encodeURIComponent(agentId)}/runs`, {
       method: "POST",
-      headers: { "Idempotency-Key": idempotencyKey },
+      headers: { "Idempotency-Key": operationId },
       ...(signal ? { signal } : {}),
       body: JSON.stringify(serializedBody),
     }
   );
-  return reconcileChatOperation(payload, { signal });
+  emitLaunchHandoffClientTelemetry("agent_run_submit_started", {
+    clientOperationId: operationId,
+    chatOperationId: operationId,
+    agentId,
+    phase: "submit",
+  });
+  try {
+    return await reconcileChatOperation(await submitSameRequest(), { signal });
+  } catch (error) {
+    if (!isAmbiguousOperationError(error) || isAbortError(error)) throw error;
+    emitLaunchHandoffClientTelemetry("agent_run_submit_response_lost", {
+      clientOperationId: operationId,
+      chatOperationId: operationId,
+      agentId,
+      phase: "response_unknown",
+      recoveryReason: error.category || "transport",
+      errorCode: error.code || null,
+    });
+    emitLaunchHandoffClientTelemetry("launch_handoff_outcome_unknown_total", {
+      clientOperationId: operationId,
+      chatOperationId: operationId,
+      agentId,
+      phase: "response_unknown",
+      errorCode: error.code || null,
+    });
+    const recovered = await recoverCreateAgentRun({
+      operationId,
+      submitSameRequest,
+      signal,
+      originalError: error,
+    });
+    emitLaunchHandoffClientTelemetry("chat_operation_recovered", {
+      clientOperationId: operationId,
+      chatOperationId: operationId,
+      agentId,
+      agentRunId: recovered?.run?.runId || null,
+      phase: "response_recovered",
+      replayed: true,
+      recovered: true,
+      recoveryReason: error.code || "transport",
+    });
+    emitLaunchHandoffClientTelemetry("launch_handoff_recovered_total", {
+      clientOperationId: operationId,
+      chatOperationId: operationId,
+      agentId,
+      agentRunId: recovered?.run?.runId || null,
+      phase: "response_recovered",
+      replayed: true,
+      recovered: true,
+    });
+    return recovered;
+  }
 }
 
 export function getActiveAgentsV2() {
@@ -203,6 +334,89 @@ export function getActiveAgentsV2() {
     () => request("/api/v2/agents/active", { method: "GET", noCache: true }),
     { fallbackMs: AGENT_POLL_RETRY_MS }
   );
+}
+
+function isAbortError(error) {
+  return error?.name === "AbortError" || error?.code === "ABORT_ERR";
+}
+
+export function isAmbiguousOperationError(error) {
+  if (!error || isAbortError(error)) return false;
+  const status = Number(error.status || 0);
+  const code = String(error.code || "").toUpperCase();
+  const category = String(error.category || "").toLowerCase();
+  if (error.outcomeUnknown === true || category === "outcome_unknown") return true;
+  if (!status) return true;
+  if ([408, 425, 429, 500, 502, 503, 504].includes(status)) return true;
+  return [
+    "TRANSPORT_OUTCOME_UNKNOWN", "OPERATION_RECONCILIATION_TIMEOUT",
+    "OPERATION_RECOVERY_PENDING", "ETIMEDOUT", "ECONNRESET", "EPIPE", "FETCH_FAILED",
+  ].includes(code);
+}
+
+export function getChatOperationV2(operationId, { signal = null } = {}) {
+  return request(`/api/ai/operations/${encodeURIComponent(operationId)}`, {
+    method: "GET",
+    noCache: true,
+    ...(signal ? { signal } : {}),
+  });
+}
+
+function resultFromOperationPayload(statusPayload) {
+  const operation = statusPayload?.operation || statusPayload;
+  if (!operation?.operationId) return { state: "unknown", operation: null };
+  if (operation.status === "completed" || (
+    operation.status === "in_progress"
+    && operation.phase === "accepted"
+    && operation.result
+  )) {
+    return {
+      state: "replay",
+      operation,
+      result: operation.result?.body ?? operation.result ?? statusPayload,
+    };
+  }
+  if (operation.status === "failed" || operation.status === "cancelled") {
+    const error = new Error(operation.error?.message || "The operation did not complete.");
+    error.code = operation.error?.code || "OPERATION_FAILED";
+    error.status = operation.httpStatus || null;
+    error.operation = operation;
+    return { state: "terminal_error", operation, error };
+  }
+  return { state: "pending", operation };
+}
+
+export class OperationRecoveryPendingError extends Error {
+  constructor({
+    operationId,
+    cause = null,
+    message = "The run was accepted or may still be starting. Recovery will continue.",
+  }) {
+    super(message);
+    this.name = "OperationRecoveryPendingError";
+    this.code = "OPERATION_RECOVERY_PENDING";
+    this.category = "outcome_unknown";
+    this.retryable = true;
+    this.outcomeUnknown = true;
+    this.operationId = operationId;
+    this.cause = cause;
+  }
+}
+
+function normalizeErrorPayload(payload = {}) {
+  const nested = payload?.error && typeof payload.error === "object" ? payload.error : null;
+  return {
+    message: nested?.message
+      || (typeof payload?.error === "string" ? payload.error : null)
+      || payload?.message
+      || null,
+    code: nested?.code || payload?.code || null,
+    category: nested?.category || payload?.category || payload?.details?.category || null,
+    retryable: nested?.retryable ?? payload?.retryable ?? payload?.details?.retryable ?? null,
+    retryAfter: nested?.retryAfter ?? payload?.retryAfter ?? payload?.details?.retryAfter ?? null,
+    details: nested?.details || payload?.details || null,
+    operation: payload?.operation || nested?.operation || null,
+  };
 }
 
 export function getAgentEventsV2(afterSequence = 0) {

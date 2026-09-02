@@ -1,3 +1,9 @@
+export function isOutcomeUnknownSubmissionError(error) {
+  return error?.outcomeUnknown === true
+    || error?.code === "OPERATION_RECOVERY_PENDING"
+    || error?.category === "outcome_unknown";
+}
+
 export function restoreFailedPromptDraft({
   prompt,
   attachments = [],

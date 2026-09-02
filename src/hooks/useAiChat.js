@@ -23,6 +23,7 @@ import {
   getAgentEventsV2,
   getAgentRunV2,
   getAgentV2,
+  getChatOperationV2,
 } from "../lib/agentRuntimeV2Api";
 import { auth, db, firebaseConfig } from "../firebase";
 import { BACKEND_URL } from "../config";
@@ -143,6 +144,24 @@ function createProjectRequiredError() {
 
 function isAbortError(error) {
   return error?.name === "AbortError" || error?.code === "ABORT_ERR";
+}
+
+export function normalizeGenerationErrorPayload(payload = {}) {
+  const nested = payload?.error && typeof payload.error === "object"
+    ? payload.error
+    : null;
+  return {
+    message: nested?.message
+      || payload?.message
+      || (typeof payload?.error === "string" ? payload.error : null),
+    code: nested?.code || payload?.code || null,
+    category: nested?.category || payload?.category || payload?.details?.category || null,
+    retryable: nested?.retryable
+      ?? payload?.retryable
+      ?? payload?.details?.retryable
+      ?? null,
+    details: nested?.details || payload?.details || null,
+  };
 }
 
 function throwIfAborted(signal) {
@@ -1101,9 +1120,19 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             && m.runId
             && (m.pending || runState === "queued" || runState === "background")
           );
+          const hasRecoverableLaunch = Boolean(
+            m.launchOperationId
+            && m.agentId
+            && (
+              m.pending
+              || runState === "launching"
+              || runState === "recovering"
+              || runState === "background"
+            )
+          );
           return m.role === "assistant"
             && m.id
-            && (hasRecoverableJob || hasRecoverableCanonicalRun);
+            && (hasRecoverableJob || hasRecoverableCanonicalRun || hasRecoverableLaunch);
         }) || null,
     [messages]
   );
@@ -1204,6 +1233,83 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         if (!currentPending) return;
         const activeUser = auth.currentUser;
         if (!activeUser || activeUser.uid !== user?.uid) return;
+
+        if (!currentPending.runId && currentPending.launchOperationId) {
+          throwIfAborted(recoveryController.signal);
+          const statusPayload = await raceAuthoritativeOperation(
+            () => getChatOperationV2(currentPending.launchOperationId, {
+              signal: recoveryController.signal,
+            }),
+            {
+              signal: recoveryController.signal,
+              timeoutMs: AUTHORITATIVE_RUN_RECOVERY_REQUEST_TIMEOUT_MS,
+            }
+          );
+
+          if (cancelled || stopped) return;
+
+          const operation = statusPayload?.operation || null;
+          if (operation?.status === "failed" || operation?.status === "cancelled") {
+            const cancelledRun = operation.status === "cancelled";
+            const failureMessage = operation.error?.message || (
+              cancelledRun ? "Generation canceled." : "The durable run could not start."
+            );
+            const terminalPayload = {
+              pending: false,
+              stage: cancelledRun ? "canceled" : "failed",
+              ...(cancelledRun ? { content: failureMessage } : {
+                error: failureMessage,
+                errorCode: operation.error?.code || "OPERATION_FAILED",
+              }),
+              metadata: {
+                ...(currentPending.metadata || {}),
+                runState: cancelledRun ? "canceled" : "failed",
+              },
+              updatedAt: serverTimestamp(),
+            };
+
+            await updateDoc(
+              pendingRef,
+              sanitizeTranscriptMessagePayload(terminalPayload)
+            );
+            stopPolling();
+            return;
+          }
+
+          const result = operation?.result?.body ?? operation?.result ?? null;
+          const recoveredRun = result?.run || result?.data?.run || null;
+          const recoveredRunId = operation?.runId
+            || recoveredRun?.runId
+            || recoveredRun?.id
+            || null;
+          if (!recoveredRunId) return;
+
+          const attachedPending = {
+            ...currentPending,
+            runId: recoveredRunId,
+            agentId: result?.agentId || recoveredRun?.agentId || currentPending.agentId,
+            pending: true,
+            stage: statusCopyForAuthoritativeRun(recoveredRun?.status) || "Planning...",
+            metadata: {
+              ...(currentPending.metadata || {}),
+              runState: String(recoveredRun?.status || "planning").toLowerCase(),
+            },
+          };
+
+          await updateDoc(pendingRef, sanitizeTranscriptMessagePayload({
+            runId: attachedPending.runId,
+            agentId: attachedPending.agentId,
+            pending: true,
+            stage: attachedPending.stage,
+            metadata: attachedPending.metadata,
+            updatedAt: serverTimestamp(),
+          }));
+          currentPending = attachedPending;
+          pendingRecoveryRef.current = attachedPending;
+          setMessages((current) => current.map((message) => (
+            message.id === attachedPending.id ? attachedPending : message
+          )));
+        }
 
         if (!currentPending.jobId) {
           throwIfAborted(recoveryController.signal);
@@ -1573,6 +1679,8 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     pendingRecoveryMessage?.jobId,
     pendingRecoveryMessage?.runId,
     pendingRecoveryMessage?.agentId,
+    pendingRecoveryMessage?.launchOperationId,
+    pendingRecoveryMessage?.operationId,
     isGenerating,
     chatMode,
     refreshBilling,
@@ -1805,6 +1913,9 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         if (!jobRes.ok) {
           let errorMsg = "Failed to create generation job";
           let errorCode = null;
+          let errorCategory = null;
+          let errorRetryable = null;
+          let errorDetails = null;
           try {
             const contentType = jobRes.headers.get("content-type");
             if (contentType && contentType.includes("application/json")) {
@@ -1818,8 +1929,12 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
                 if (activeChatId) delete streamStatesRef.current[runStreamKey(activeChatId)];
                 return;
               }
-              errorMsg = formatUserFacingError(errData.message || errData.error || errorMsg);
-              errorCode = errData.code || null;
+              const normalizedError = normalizeGenerationErrorPayload(errData);
+              errorMsg = formatUserFacingError(normalizedError.message || errorMsg);
+              errorCode = normalizedError.code;
+              errorCategory = normalizedError.category;
+              errorRetryable = normalizedError.retryable;
+              errorDetails = normalizedError.details;
             } else {
               const text = await jobRes.text();
               console.error("Server returned non-JSON error:", text);
@@ -1830,6 +1945,10 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           }
           const err = new Error(errorMsg);
           if (errorCode) err.code = errorCode;
+          if (errorCategory) err.category = errorCategory;
+          if (errorRetryable !== null) err.retryable = errorRetryable;
+          if (errorDetails) err.details = errorDetails;
+          if (errorCategory === "outcome_unknown") err.outcomeUnknown = true;
           throw err;
         }
         jobData = await jobRes.json();
@@ -3009,6 +3128,9 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       });
 
     } catch (e) {
+      const outcomeUnknown = e?.outcomeUnknown === true
+        || e?.category === "outcome_unknown"
+        || e?.code === "OPERATION_RECOVERY_PENDING";
       if (isAbortError(e)) {
         void requestCanonicalCancellation();
         if (activeAssistantRef) {
@@ -3036,12 +3158,58 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             finishChatWriteMetrics(activeGenerationJobId, "canceled");
           }
         }
+      } else if (outcomeUnknown) {
+        const recoveryJobId = String(e?.details?.jobId || activeGenerationJobId || "").trim();
+        const recoveryRunId = String(e?.details?.runId || activeGenerationRunId || "").trim();
+        const recoveryAgentId = String(e?.details?.agentId || "").trim();
+        const recoveryResultUrl = String(e?.details?.resultUrl || "").trim();
+        if (activeChatId) {
+          activeAssistantRef = activeAssistantRef || doc(
+            db,
+            "users",
+            user.uid,
+            "chats",
+            activeChatId,
+            "messages",
+            `${requestId}-assistant`
+          );
+          const recoveryPersisted = await setDoc(activeAssistantRef, sanitizeTranscriptMessagePayload({
+            role: "assistant",
+            content: "",
+            pending: false,
+            stage: "background",
+            requestId,
+            ...(recoveryJobId ? { jobId: recoveryJobId } : {}),
+            ...(recoveryRunId ? { runId: recoveryRunId } : {}),
+            ...(recoveryAgentId ? { agentId: recoveryAgentId } : {}),
+            ...(recoveryResultUrl ? { resultUrl: recoveryResultUrl } : {}),
+            ...(e?.details?.taskId ? { taskId: e.details.taskId } : {}),
+            metadata: {
+              mode: currentMode,
+              type: null,
+              runState: "background",
+              recoveryCategory: "outcome_unknown",
+            },
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          }), { merge: true }).then(() => true).catch(() => false);
+          if (recoveryPersisted) {
+            recordChatMessageWrite({
+              jobId: recoveryJobId || null,
+              reason: "assistant_background_handoff",
+            });
+          }
+        }
+        notify?.({
+          message: "Nexus may already have accepted this run. Reconnecting without starting another copy.",
+          type: "info",
+        });
       } else {
         console.error(e);
       }
       if (isInsufficientTokensError(e)) {
         notify(insufficientTokensToast(planKey));
-      } else if (!isAbortError(e)) {
+      } else if (!isAbortError(e) && !outcomeUnknown) {
         notify({ message: formatUserFacingError(e), type: "error" });
       }
       setBusy(false);

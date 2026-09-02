@@ -1,5 +1,6 @@
 import {
   AgentRuntimeUnavailableError,
+  OperationRecoveryPendingError,
   cancelAgentRunV2,
   createAgentRunV2,
   createAgentV2,
@@ -235,6 +236,131 @@ describe("agentRuntimeV2Api projections", () => {
       "/api/ai/operations/run-operation-1",
       expect.objectContaining({ method: "GET", noCache: true })
     );
+  });
+
+  test("recovers a lost create response from the known operation ID", async () => {
+    authedFetch
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: jest.fn().mockResolvedValue(JSON.stringify({
+          operation: {
+            operationId: "op-fixed:agent",
+            status: "completed",
+            result: { body: { run: { runId: "agent_run_v2_fixed", status: "planning" } } },
+          },
+        })),
+      });
+
+    await expect(createAgentRunV2({
+      chatId: "chat-1",
+      agentId: "agent-1",
+      idempotencyKey: "op-fixed:agent",
+      prompt: "Build it",
+      mode: "agent",
+    })).resolves.toEqual({ run: { runId: "agent_run_v2_fixed", status: "planning" } });
+    expect(authedFetch).toHaveBeenNthCalledWith(
+      2,
+      "/api/ai/operations/op-fixed%3Aagent",
+      expect.objectContaining({ method: "GET" })
+    );
+  });
+
+  test("retries an absent operation with the exact same POST identity", async () => {
+    authedFetch
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        headers: { get: jest.fn(() => null) },
+        text: jest.fn().mockResolvedValue(JSON.stringify({ code: "OPERATION_NOT_FOUND", message: "Missing" })),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 202,
+        text: jest.fn().mockResolvedValue(JSON.stringify({ run: { runId: "agent_run_v2_fixed" } })),
+      });
+
+    await expect(createAgentRunV2({
+      chatId: "chat-1",
+      agentId: "agent-1",
+      idempotencyKey: "op-fixed:agent",
+      prompt: "Build it",
+      mode: "agent",
+    })).resolves.toEqual({ run: { runId: "agent_run_v2_fixed" } });
+    const postCalls = authedFetch.mock.calls.filter(([, init]) => init.method === "POST");
+    expect(postCalls).toHaveLength(2);
+    expect(postCalls[0][1].headers["Idempotency-Key"]).toBe("op-fixed:agent");
+    expect(postCalls[1][1].headers["Idempotency-Key"]).toBe("op-fixed:agent");
+  });
+
+  test("treats an accepted in-progress operation result as successful recovery", async () => {
+    authedFetch
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: jest.fn().mockResolvedValue(JSON.stringify({
+          operation: {
+            operationId: "op-fixed:agent",
+            status: "in_progress",
+            phase: "accepted",
+            result: { body: { run: { runId: "agent_run_v2_fixed" } } },
+          },
+        })),
+      });
+    await expect(createAgentRunV2({
+      agentId: "agent-1",
+      idempotencyKey: "op-fixed:agent",
+      prompt: "Build it",
+    })).resolves.toEqual({ run: { runId: "agent_run_v2_fixed" } });
+  });
+
+  test("authoritative operation failure escapes without resubmission", async () => {
+    authedFetch
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: jest.fn().mockResolvedValue(JSON.stringify({
+          operation: {
+            operationId: "op-fixed:agent",
+            status: "failed",
+            httpStatus: 400,
+            error: { code: "VALIDATION_FAILED", message: "Invalid prompt" },
+          },
+        })),
+      });
+    await expect(createAgentRunV2({
+      agentId: "agent-1",
+      idempotencyKey: "op-fixed:agent",
+      prompt: "Build it",
+    })).rejects.toMatchObject({ code: "VALIDATION_FAILED", message: "Invalid prompt" });
+    expect(authedFetch).toHaveBeenCalledTimes(2);
+  });
+
+  test("abort during create recovery stops further reconciliation", async () => {
+    const controller = new AbortController();
+    authedFetch.mockImplementationOnce(async () => {
+      controller.abort();
+      throw new TypeError("Failed to fetch");
+    });
+    await expect(createAgentRunV2({
+      agentId: "agent-1",
+      idempotencyKey: "op-fixed:agent",
+      signal: controller.signal,
+      prompt: "Build it",
+    })).rejects.toMatchObject({ name: "AbortError" });
+    expect(authedFetch).toHaveBeenCalledTimes(1);
+  });
+
+  test("pending recovery error exposes stable outcome-unknown identity", () => {
+    expect(new OperationRecoveryPendingError({ operationId: "op-fixed:agent" })).toMatchObject({
+      code: "OPERATION_RECOVERY_PENDING",
+      outcomeUnknown: true,
+      operationId: "op-fixed:agent",
+    });
   });
 
   test("preserves a typed 404 instead of treating it as a missing v2 runtime", async () => {

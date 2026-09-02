@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import { doc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import { BACKEND_URL } from "../config";
 import { v4 as uuidv4 } from "uuid";
@@ -35,6 +35,7 @@ import { describeChatAttachments, messageToConversationEntry, normalizeChatAttac
 import { normalizeRewindMode, shouldWriteUserMessageAfterRewind } from "../lib/chatTranscriptRewind";
 import {
   AgentRuntimeUnavailableError,
+  OperationRecoveryPendingError,
   createAgentRunV2,
   getRuntimeCapabilitiesV2,
   normalizeAgentProjection,
@@ -271,6 +272,12 @@ function isLegacyRuntimeOwnershipError(error) {
 
 function isAbortError(error) {
   return error?.name === "AbortError" || error?.code === "ABORT_ERR";
+}
+
+function isOutcomeUnknownError(error) {
+  return error?.outcomeUnknown === true
+    || String(error?.category || "").toLowerCase() === "outcome_unknown"
+    || String(error?.code || "").toUpperCase() === "OPERATION_RECOVERY_PENDING";
 }
 
 const EXPECTED_USER_ACTION_ERROR_CODES = new Set([
@@ -581,6 +588,56 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     [chat.currentChatId, chat.currentChatMeta?.agentId]
   );
 
+  const persistLaunchCheckpoint = useCallback(
+    async ({
+      activeChatId,
+      requestId,
+      operationId,
+      launchOperationId,
+      agentId,
+      mode,
+      stage,
+      runId = null,
+    }) => {
+      if (!user?.uid || !activeChatId || !requestId) return;
+      const ref = doc(
+        db,
+        "users",
+        user.uid,
+        "chats",
+        activeChatId,
+        "messages",
+        `${requestId}-assistant`
+      );
+      const existing = await getDoc(ref);
+      const metadata = {
+        mode,
+        type: null,
+        runState: runId ? "planning" : "launching",
+        launchRecoveryVersion: 1,
+      };
+      await setDoc(
+        ref,
+        sanitizeTranscriptMessagePayload({
+          role: "assistant",
+          content: "",
+          pending: true,
+          stage: stage || (runId ? "Planning..." : "Starting durable run..."),
+          requestId,
+          operationId,
+          launchOperationId,
+          agentId,
+          ...(runId ? { runId } : {}),
+          ...(existing.exists() ? {} : { createdAt: serverTimestamp() }),
+          updatedAt: serverTimestamp(),
+          metadata,
+        }),
+        { merge: true }
+      );
+    },
+    [user?.uid]
+  );
+
   const launchAuthoritativeRun = useCallback(
     async ({
       activeChatId,
@@ -645,15 +702,28 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       const agent = await ensureRuntimeAgentProjection(activeChatId, submissionOptions, { required: true });
       throwIfAborted(signal);
       if (!agent) return launchLegacyGeneration();
+      const operationId = String(
+        submissionOptions.operationId || submissionOptions.idempotencyKey || requestId
+      ).trim();
+      const launchOperationId = `${operationId}:agent`;
       const autoPushToStudio = studioEnabled && settings?.studioAutoPushEnabled === true;
       const approvedPlan = normalizeApprovedPlanReference(submissionOptions.approvedPlan);
       let runtimeEnvelope;
       try {
         throwIfAborted(signal);
+        await persistLaunchCheckpoint({
+          activeChatId,
+          requestId,
+          operationId,
+          launchOperationId,
+          agentId: agent.agentId,
+          mode,
+          stage: "Starting durable run...",
+        });
         runtimeEnvelope = await createAgentRunV2({
           chatId: activeChatId,
           agentId: agent.agentId,
-          idempotencyKey: `${submissionOptions.idempotencyKey || requestId}:agent`,
+          idempotencyKey: launchOperationId,
           signal,
           prompt,
           mode,
@@ -687,14 +757,56 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         // clicking Stop. Publish its authoritative id before honoring the local
         // abort so the coordinator can deliver the retained cancellation intent
         // instead of orphaning a live run behind a stopped composer.
-        if (runtimeEnvelope?.run?.runId) onRunId?.(runtimeEnvelope.run.runId);
+        const authoritativeRunId = runtimeEnvelope?.run?.runId || null;
+        if (authoritativeRunId) {
+          onRunId?.(authoritativeRunId);
+          await persistLaunchCheckpoint({
+            activeChatId,
+            requestId,
+            operationId,
+            launchOperationId,
+            agentId: agent.agentId,
+            mode,
+            runId: authoritativeRunId,
+            stage: runtimeEnvelope?.run?.status === "planning" ? "Planning..." : "Starting run...",
+          });
+        }
         throwIfAborted(signal);
       } catch (error) {
+        if (
+          (typeof OperationRecoveryPendingError === "function"
+            && error instanceof OperationRecoveryPendingError)
+          || error?.code === "OPERATION_RECOVERY_PENDING"
+        ) {
+          await persistLaunchCheckpoint({
+            activeChatId,
+            requestId,
+            operationId,
+            launchOperationId,
+            agentId: agent.agentId,
+            mode,
+            stage: "Reconnecting to the accepted run...",
+          });
+          notify?.({
+            type: "info",
+            message: "The run may already be starting. Nexus is reconnecting instead of launching it again.",
+          });
+          return {
+            ok: true,
+            pending: true,
+            operationPending: true,
+            operationId: launchOperationId,
+            agentId: agent.agentId,
+          };
+        }
         if (!FEATURE_FLAGS.legacyAgentFallback || !isLegacyRuntimeOwnershipError(error)) {
           throw error;
         }
 
         return launchLegacyGeneration();
+      }
+      if (runtimeEnvelope?.operationPending === true) {
+        return runtimeEnvelope;
       }
       if (!runtimeEnvelope?.run?.runId) {
         const decision = runtimeEnvelope?.decision || null;
@@ -741,7 +853,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       );
       return runtimeEnvelope;
     },
-    [chat, effectiveGameSpec, ensureRuntimeAgentProjection, settings, touchChat, user]
+    [chat, effectiveGameSpec, ensureRuntimeAgentProjection, notify, persistLaunchCheckpoint, settings, touchChat, user]
   );
 
   const writeOrchestrationResult = useCallback(
@@ -1376,7 +1488,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
               throw projectError;
             }
             publishOrchestrationStage(activeChatId, requestId, "Preparing the agent runtime...");
-            await launchAuthoritativeRun({
+            const runtimeEnvelope = await launchAuthoritativeRun({
               activeChatId,
               requestId,
               prompt: implementationPrompt,
@@ -1388,8 +1500,19 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
               signal: flowController.signal,
               onRunId,
             });
+            if (runtimeEnvelope?.operationPending === true) {
+              const recoveryError = new OperationRecoveryPendingError({
+                operationId: runtimeEnvelope.operationId || effectiveOptions.idempotencyKey,
+              });
+              recoveryError.details = {
+                operationId: runtimeEnvelope.operationId || effectiveOptions.idempotencyKey,
+                agentId: runtimeEnvelope.agentId || null,
+              };
+              throw recoveryError;
+            }
+            return runtimeEnvelope;
           } catch (err) {
-            if (!isAbortError(err)) {
+            if (!isAbortError(err) && !isOutcomeUnknownError(err)) {
               const expectedUserActionError = isExpectedUserActionError(err);
               if (!expectedUserActionError) {
                 console.error("Generation error:", err);

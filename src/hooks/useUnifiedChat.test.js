@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { TextDecoder as NodeTextDecoder } from "util";
-import { setDoc } from "firebase/firestore";
+import { getDoc, setDoc } from "firebase/firestore";
 import { reconcileUnifiedPendingMessages, useUnifiedChat } from "./useUnifiedChat";
 import { useAiChat } from "./useAiChat";
 import { trackProductEvent } from "../lib/productAnalytics";
@@ -38,6 +38,7 @@ jest.mock("firebase/firestore", () => ({
   addDoc: jest.fn(),
   collection: jest.fn(),
   doc: jest.fn(() => ({})),
+  getDoc: jest.fn(() => Promise.resolve({ exists: () => false })),
   serverTimestamp: jest.fn(() => "timestamp"),
   setDoc: jest.fn(),
   updateDoc: jest.fn(),
@@ -114,6 +115,17 @@ jest.mock("../lib/studioBridgeApi", () => ({
 
 jest.mock("../lib/agentRuntimeV2Api", () => ({
   AgentRuntimeUnavailableError: class AgentRuntimeUnavailableError extends Error {},
+  OperationRecoveryPendingError: class OperationRecoveryPendingError extends Error {
+    constructor({ operationId, cause = null, message = "The run may still be starting." } = {}) {
+      super(message);
+      this.code = "OPERATION_RECOVERY_PENDING";
+      this.category = "outcome_unknown";
+      this.retryable = true;
+      this.outcomeUnknown = true;
+      this.operationId = operationId;
+      this.cause = cause;
+    }
+  },
   createAgentRunV2: jest.fn(),
   getRuntimeCapabilitiesV2: jest.fn(() => Promise.resolve(null)),
   normalizeAgentProjection: jest.fn((value) => value?.agent || value),
@@ -132,6 +144,7 @@ describe("useUnifiedChat", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    getDoc.mockResolvedValue({ exists: () => false });
     FEATURE_FLAGS.legacyAgentFallback = true;
     FEATURE_FLAGS.newPlanningMode = false;
     FEATURE_FLAGS.unifiedAgent = false;
@@ -954,6 +967,104 @@ describe("useUnifiedChat", () => {
     await act(async () => {
       await submission;
     });
+  });
+
+  test("persists the stable launch checkpoint before POST and attaches the run to the same message", async () => {
+    FEATURE_FLAGS.unifiedAgent = true;
+    useAiChat.mockReturnValue({
+      activeMode: "agent",
+      assertCanWrite: jest.fn(() => Promise.resolve()),
+      currentChatId: "chat-checkpoint",
+      currentChatMeta: { agentId: "agent-1" },
+      generatingChatIds: [],
+      generationStage: "",
+      handleSubmit: chatHandleSubmit,
+      isGenerating: false,
+      messages: [],
+      openChatById: jest.fn(),
+      pendingMessage: null,
+      setPendingForChat: jest.fn(),
+    });
+    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
+
+    await act(async () => {
+      await result.current.handleSubmit("Build a lobby system", [], null, {
+        projectId: "project-1",
+        operationId: "operation-fixed",
+        clientMessageId: "request-fixed",
+      });
+    });
+
+    const checkpointIndex = setDoc.mock.calls.findIndex(([, payload]) => (
+      payload?.launchOperationId === "operation-fixed:agent" && !payload?.runId
+    ));
+    const attachedIndex = setDoc.mock.calls.findIndex(([, payload]) => (
+      payload?.launchOperationId === "operation-fixed:agent" && payload?.runId === "run-1"
+    ));
+    expect(checkpointIndex).toBeGreaterThanOrEqual(0);
+    expect(attachedIndex).toBeGreaterThan(checkpointIndex);
+    expect(setDoc.mock.calls[checkpointIndex][1]).toEqual(expect.objectContaining({
+      operationId: "operation-fixed",
+      launchOperationId: "operation-fixed:agent",
+      agentId: "agent-1",
+      requestId: "request-fixed",
+      pending: true,
+    }));
+    expect(setDoc.mock.invocationCallOrder[checkpointIndex])
+      .toBeLessThan(createAgentRunV2.mock.invocationCallOrder[0]);
+    expect(setDoc.mock.calls[attachedIndex][0]).toEqual(setDoc.mock.calls[checkpointIndex][0]);
+  });
+
+  test("keeps an ambiguous canonical launch recovering and never falls back to legacy", async () => {
+    FEATURE_FLAGS.unifiedAgent = true;
+    const recoveryError = new Error("The launch is still being reconciled.");
+    recoveryError.code = "OPERATION_RECOVERY_PENDING";
+    recoveryError.category = "outcome_unknown";
+    recoveryError.outcomeUnknown = true;
+    createAgentRunV2.mockRejectedValueOnce(recoveryError);
+    useAiChat.mockReturnValue({
+      activeMode: "agent",
+      assertCanWrite: jest.fn(() => Promise.resolve()),
+      currentChatId: "chat-recovery",
+      currentChatMeta: { agentId: "agent-1" },
+      generatingChatIds: [],
+      generationStage: "",
+      handleSubmit: chatHandleSubmit,
+      isGenerating: false,
+      messages: [],
+      openChatById: jest.fn(),
+      pendingMessage: null,
+      setPendingForChat: jest.fn(),
+    });
+    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const notify = jest.fn();
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), notify));
+
+    let submission;
+    await act(async () => {
+      submission = result.current.handleSubmit("Build a lobby system", [], null, {
+        projectId: "project-1",
+        operationId: "operation-recovery",
+        clientMessageId: "request-recovery",
+      });
+      await expect(submission).rejects.toMatchObject({
+        code: "OPERATION_RECOVERY_PENDING",
+        category: "outcome_unknown",
+        outcomeUnknown: true,
+        operationId: "operation-recovery:agent",
+      });
+    });
+
+    expect(chatHandleSubmit).not.toHaveBeenCalled();
+    expect(setDoc.mock.calls.some(([, payload]) => (
+      payload?.launchOperationId === "operation-recovery:agent"
+      && payload?.stage === "Reconnecting to the accepted run..."
+      && payload?.pending === true
+    ))).toBe(true);
+    expect(setDoc.mock.calls.some(([, payload]) => payload?.stage === "failed")).toBe(false);
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ type: "info" }));
+    expect(notify).not.toHaveBeenCalledWith(expect.objectContaining({ type: "error" }));
   });
 
   test("binds a terse start approval to the latest concrete build request", async () => {
