@@ -1051,11 +1051,73 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           }
           throw error;
         }
-        const task = execution?.task || execution?.execution?.task || execution?.run || null;
+        const executionStatus =
+          String(
+            execution?.status ||
+            execution?.plan?.status ||
+            execution?.lifecycle?.run?.status ||
+            ""
+          )
+            .trim()
+            .toLowerCase();
+
+        if (
+          executionStatus === "failed" ||
+          executionStatus === "cancelled"
+        ) {
+          const error = new Error(
+            executionStatus === "failed"
+              ? "The plan execution failed before Nexus could attach a canonical task."
+              : "The plan execution was cancelled."
+          );
+
+          error.code =
+            executionStatus === "failed"
+              ? "PLAN_EXECUTION_FAILED"
+              : "PLAN_EXECUTION_CANCELLED";
+
+          error.execution =
+            execution;
+
+          throw error;
+        }
+
+        // Only accept an actual Task identity.
+        // Never reinterpret a plan lifecycle runId as taskId.
+        const task =
+          execution?.task ||
+          execution?.execution?.task ||
+          null;
+
         const taskId =
-          task?.taskId || task?.id || execution?.taskId || execution?.execution?.taskId || execution?.runId || "";
+          task?.taskId ||
+          task?.id ||
+          execution?.taskId ||
+          execution?.execution?.taskId ||
+          "";
+
         if (!taskId) {
-          throw new Error("NexusRBX accepted the plan but did not return an execution task.");
+          const error = new Error(
+            "NexusRBX did not return a canonical execution task."
+          );
+
+          error.code =
+            "PLAN_EXECUTION_TASK_MISSING";
+
+          error.details = {
+            executionRunId:
+              execution?.execution?.runId ||
+              execution?.lifecycle?.run?.runId ||
+              null,
+
+            status:
+              executionStatus || null,
+          };
+
+          error.execution =
+            execution;
+
+          throw error;
         }
         effectiveSubmissionOptions.onTaskAccepted?.(task || taskId);
         void trackProductEvent(

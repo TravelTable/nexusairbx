@@ -5,6 +5,8 @@ import { homepageFocusedTools } from "../../content/homepageV2";
 import HomepageFooter from "./HomepageFooter";
 import HomepagePrompt from "./HomepagePrompt";
 import ConnectorReleaseCard from "./ConnectorReleaseCard";
+import ProofVisualMockup from "./visuals/ProofVisualMockup";
+import ToolVisualMockup from "./visuals/ToolVisualMockup";
 import styles from "./HomepageCinematic.module.css";
 
 const HERO_WORDS = ["playable", "testable", "reviewable", "real"];
@@ -136,6 +138,13 @@ function AnimatedHeroPromise() {
 }
 
 function ImagePlaceholder({ label, size, compact = false }) {
+  const normLabel = (label || "").toUpperCase();
+  const isToolOrStack =
+    normLabel.includes("AGENT WORKSPACE") ||
+    normLabel.includes("STUDIO BRIDGE") ||
+    normLabel.includes("ASSET LIBRARY") ||
+    normLabel.includes("WORKSPACE OVERVIEW");
+
   return (
     <div
       className={`${styles.imagePlaceholder} ${compact ? styles.imagePlaceholderCompact : ""}`}
@@ -143,9 +152,11 @@ function ImagePlaceholder({ label, size, compact = false }) {
       aria-label={`${label} image placeholder`}
       data-image-placeholder
     >
-      <span>IMAGE PLACEHOLDER</span>
-      <strong>{label}</strong>
-      {size ? <small>{size}</small> : null}
+      {isToolOrStack ? (
+        <ToolVisualMockup label={label} />
+      ) : (
+        <ProofVisualMockup label={label} compact={compact} />
+      )}
     </div>
   );
 }

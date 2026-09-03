@@ -1698,8 +1698,27 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         emitAiEvent("JOB_COMPLETE", { jobId: currentPending.jobId });
         stopPolling();
       } catch (err) {
-        if (!cancelled && !isAbortError(err) && err?.code !== "ADMISSION_TIMEOUT") {
-          console.warn("Failed to recover pending agent run:", err?.message || err);
+        const recoveryPending =
+          pendingRecoveryRef.current ||
+          pending;
+
+        const expectedOperationRace =
+          err?.code === "OPERATION_NOT_FOUND" &&
+          Boolean(
+            recoveryPending?.launchOperationId
+          ) &&
+          !recoveryPending?.runId;
+
+        if (
+          !cancelled &&
+          !isAbortError(err) &&
+          err?.code !== "ADMISSION_TIMEOUT" &&
+          !expectedOperationRace
+        ) {
+          console.warn(
+            "Failed to recover pending agent run:",
+            err?.message || err
+          );
         }
       } finally {
         pollInFlight = false;

@@ -7,35 +7,85 @@ import {
 
 export { SUGGESTED_MODEL_IDS, isSuggestedModelId, pickSuggestedModels, suggestedModelRank };
 
-export const DEFAULT_FREE_MODEL = "nexus-free-auto";
-export const DEFAULT_PRO_MODEL = "openai/gpt-5-mini";
-export const NEXUS_AGENT_LOGO = "/logo192.png";
+export const LEGACY_NEXUS_FREE_MODEL =
+  "nexus-free-auto";
 
-export const MODEL_ID_ALIASES = Object.freeze({
-  "deepseek-free": DEFAULT_FREE_MODEL,
-  "deepseek/deepseek-v4-flash": DEFAULT_FREE_MODEL,
-  "deepseek/deepseek-v3.2": DEFAULT_FREE_MODEL,
-  "gpt-4o": DEFAULT_FREE_MODEL,
-  "gpt-4o-mini": DEFAULT_FREE_MODEL,
-  "gpt-4.1": DEFAULT_FREE_MODEL,
-  "gpt-4.1-mini": DEFAULT_FREE_MODEL,
-  "nexus-4": "openai/gpt-5.4",
-  "nexus-3": "openai/gpt-5.4",
-});
+export const DEFAULT_FREE_MODEL =
+  "google/gemini-3.6-flash";
 
-// Fallback display labels for legacy IDs not yet present in the live catalog.
-export const MODEL_ALIAS_LABELS = Object.freeze({
-  "deepseek-free": "DeepSeek V4 Flash",
-  "nexus-free-auto": "Nexus Free Auto",
-  "deepseek/deepseek-v4-flash": "Nexus Free Auto",
-  "deepseek/deepseek-v3.2": "Nexus Free Auto",
-  "gpt-4o": "Nexus Free Auto",
-  "gpt-4o-mini": "Nexus Free Auto",
-  "gpt-4.1": "Nexus Free Auto",
-  "gpt-4.1-mini": "Nexus Free Auto",
-  "nexus-4": "Nexus (GPT-5.4)",
-  "nexus-3": "Nexus (Legacy)",
-});
+export const DEFAULT_PRO_MODEL =
+  "openai/gpt-5-mini";
+
+export const NEXUS_AGENT_LOGO =
+  "/logo192.png";
+
+export const MODEL_ID_ALIASES =
+  Object.freeze({
+    // Existing users/settings migrate
+    // automatically to the real free model.
+    "nexus-free-auto":
+      DEFAULT_FREE_MODEL,
+
+    "deepseek-free":
+      DEFAULT_FREE_MODEL,
+
+    "deepseek/deepseek-v4-flash":
+      DEFAULT_FREE_MODEL,
+
+    "deepseek/deepseek-v3.2":
+      DEFAULT_FREE_MODEL,
+
+    "gpt-4o":
+      DEFAULT_FREE_MODEL,
+
+    "gpt-4o-mini":
+      DEFAULT_FREE_MODEL,
+
+    "gpt-4.1":
+      DEFAULT_FREE_MODEL,
+
+    "gpt-4.1-mini":
+      DEFAULT_FREE_MODEL,
+
+    "nexus-4":
+      "openai/gpt-5.4",
+
+    "nexus-3":
+      "openai/gpt-5.4",
+  });
+
+export const MODEL_ALIAS_LABELS =
+  Object.freeze({
+    "nexus-free-auto":
+      "Gemini 3.6 Flash",
+
+    "google/gemini-3.6-flash":
+      "Gemini 3.6 Flash",
+
+    "deepseek-free":
+      "Gemini 3.6 Flash",
+
+    "deepseek/deepseek-v3.2":
+      "Gemini 3.6 Flash",
+
+    "gpt-4o":
+      "Gemini 3.6 Flash",
+
+    "gpt-4o-mini":
+      "Gemini 3.6 Flash",
+
+    "gpt-4.1":
+      "Gemini 3.6 Flash",
+
+    "gpt-4.1-mini":
+      "Gemini 3.6 Flash",
+
+    "nexus-4":
+      "Nexus (GPT-5.4)",
+
+    "nexus-3":
+      "Nexus (Legacy)",
+  });
 
 export const PROVIDER_ORDER = [
   "nexus",
@@ -82,10 +132,23 @@ export function resolveLobeProviderKey(provider) {
   return LOBE_PROVIDER_KEYS[key] || key || "openai";
 }
 
-export function isNexusAgentModel({ provider, modelId } = {}) {
-  const id = String(modelId || "").trim();
-  const key = String(provider || "").toLowerCase();
-  return key === "nexus" || id === DEFAULT_FREE_MODEL;
+export function isNexusAgentModel({
+  provider,
+  modelId,
+} = {}) {
+  const id =
+    String(modelId || "").trim();
+
+  const key =
+    String(provider || "")
+      .toLowerCase();
+
+  // Real provider models should display their
+  // real provider branding.
+  return (
+    key === "nexus" ||
+    id === LEGACY_NEXUS_FREE_MODEL
+  );
 }
 
 const FREE_MODEL_IDS = new Set([

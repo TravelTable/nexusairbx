@@ -84,29 +84,98 @@ async function request(path, init = {}) {
     throw error;
   }
   const payload = await readJson(res);
-  // A 404 can describe a missing/foreign agent, run, or project. Those are
-  // valid v2 responses and must not make the client disable the whole runtime.
-  // Only an unstructured 404 is treated as evidence that the v2 endpoint itself
-  // is unavailable (for compatibility with older backend deployments).
-  if (res.status === 501 || (res.status === 404 && !payload?.code)) {
-    throw new AgentRuntimeUnavailableError(payload?.message);
+  const isOperationStatusLookup =
+    String(path || "").startsWith(
+      "/api/ai/operations/"
+    );
+
+  const isMissingOperation =
+    isOperationStatusLookup &&
+    res.status === 404;
+
+  // An unstructured 404 on a normal V2 endpoint can mean an
+  // old deployment without that endpoint.
+  //
+  // A 404 from /api/ai/operations/:id is different: the
+  // operation may simply not have been persisted yet.
+  if (
+    res.status === 501 ||
+    (
+      res.status === 404 &&
+      !payload?.code &&
+      !isOperationStatusLookup
+    )
+  ) {
+    throw new AgentRuntimeUnavailableError(
+      payload?.message
+    );
   }
   if (!res.ok) {
-    const normalized = normalizeErrorPayload(payload);
-    const error = new Error(normalized.message || `Agent runtime request failed (${res.status})`);
+    const normalized =
+      normalizeErrorPayload(payload);
+
+    const error = new Error(
+      normalized.message ||
+      (
+        isMissingOperation
+          ? "Chat operation not found"
+          : `Agent runtime request failed (${res.status})`
+      )
+    );
+
     error.status = res.status;
-    error.code = normalized.code;
-    error.category = normalized.category;
-    error.retryable = normalized.retryable;
-    error.retryAfter = normalized.retryAfter;
-    error.details = normalized.details;
-    error.operation = normalized.operation;
+
+    error.code =
+      normalized.code ||
+      (
+        isMissingOperation
+          ? "OPERATION_NOT_FOUND"
+          : "AGENT_RUNTIME_REQUEST_FAILED"
+      );
+
+    error.category =
+      normalized.category ||
+      (
+        isMissingOperation
+          ? "outcome_unknown"
+          : null
+      );
+
+    error.retryable =
+      normalized.retryable ??
+      (
+        isMissingOperation
+          ? true
+          : null
+      );
+
+    error.retryAfter =
+      normalized.retryAfter;
+
+    error.details =
+      normalized.details;
+
+    error.operation =
+      normalized.operation;
+
     error.payload = payload;
-    error.requestId = res.headers?.get?.("x-request-id") || null;
-    error.deploymentId = res.headers?.get?.("x-nexus-deployment")
-      || res.headers?.get?.("x-deployment-id")
-      || res.headers?.get?.("x-vercel-id")
-      || null;
+
+    error.requestId =
+      res.headers?.get?.("x-request-id") ||
+      null;
+
+    error.deploymentId =
+      res.headers?.get?.(
+        "x-nexus-deployment"
+      ) ||
+      res.headers?.get?.(
+        "x-deployment-id"
+      ) ||
+      res.headers?.get?.(
+        "x-vercel-id"
+      ) ||
+      null;
+
     throw error;
   }
   return payload;

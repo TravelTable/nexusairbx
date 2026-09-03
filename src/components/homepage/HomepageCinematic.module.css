@@ -253,35 +253,19 @@
   object-fit: cover;
 }
 .imagePlaceholder {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   min-height: 100%;
-  place-content: center;
-  gap: 8px;
-  padding: 32px;
-  border: 1px dashed var(--nx-rule-strong);
+  padding: 0;
+  border: 0;
   border-radius: var(--nx-radius-card);
-  background: var(--nx-muted-surface);
-  color: var(--nx-text-disabled);
-  text-align: center;
-}
-.imagePlaceholder span {
-  color: var(--nx-purple-strong);
-  font-size: 0.67rem;
-  font-weight: 750;
-  letter-spacing: 0.12em;
-}
-.imagePlaceholder strong {
-  color: var(--nx-text-secondary);
-  font-size: clamp(0.9rem, 2vw, 1.2rem);
-  font-weight: 600;
-}
-.imagePlaceholder small {
-  color: var(--nx-text-disabled);
+  background: transparent;
+  color: var(--nx-text);
+  overflow: hidden;
 }
 .imagePlaceholderCompact {
-  min-height: 300px;
-  padding: 16px;
+  min-height: 280px;
   border-radius: var(--nx-radius-panel);
 }
 .proofSection,

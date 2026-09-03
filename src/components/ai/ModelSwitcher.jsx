@@ -23,8 +23,8 @@ const MENU_MAX_HEIGHT = 420;
 
 const SYNTHETIC_FREE_MODEL = {
   id: DEFAULT_FREE_MODEL,
-  name: "Nexus Free Auto",
-  provider: "nexus",
+  name: "Gemini 3.6 Flash",
+  provider: "google",
   billingCategory: "INCLUDED",
   billingLabel: "Included",
   recommended: true,
