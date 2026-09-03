@@ -100,6 +100,45 @@ const CHAT_LIVE_TAIL_LIMIT = 20;
 const CLEAR_CHAT_MESSAGE_LIMIT = 200;
 const PENDING_RUN_POLL_MS = 30_000;
 const QUEUED_RUN_POLL_MS = 1500;
+const ACTIVE_CHAT_STORAGE_PREFIX = "nexusrbx.activeChat.v1";
+
+function activeChatStorageKey(uid) {
+  return `${ACTIVE_CHAT_STORAGE_PREFIX}:${String(uid || "").trim()}`;
+}
+
+function readRememberedActiveChat(uid) {
+  const normalizedUid = String(uid || "").trim();
+  if (!normalizedUid || typeof window === "undefined") return null;
+  try {
+    return String(window.sessionStorage.getItem(activeChatStorageKey(normalizedUid)) || "").trim() || null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function rememberActiveChat(uid, chatId) {
+  const normalizedUid = String(uid || "").trim();
+  const normalizedChatId = String(chatId || "").trim();
+  if (!normalizedUid || !normalizedChatId || typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(activeChatStorageKey(normalizedUid), normalizedChatId);
+  } catch (_) {
+    // Storage is only a convenience for restoring the selected chat after a
+    // refresh. Firestore remains the authoritative source of the run.
+  }
+}
+
+function forgetRememberedActiveChat(uid, chatId = null) {
+  const normalizedUid = String(uid || "").trim();
+  if (!normalizedUid || typeof window === "undefined") return;
+  try {
+    const key = activeChatStorageKey(normalizedUid);
+    if (chatId && window.sessionStorage.getItem(key) !== String(chatId)) return;
+    window.sessionStorage.removeItem(key);
+  } catch (_) {
+    // Ignore unavailable browser storage; this must never affect chat access.
+  }
+}
 
 function optionalWallTimeout(rawValue, fallbackMs) {
   if (rawValue === undefined || rawValue === null || String(rawValue).trim() === "") {
@@ -989,6 +1028,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
   const messagesUnsubRef = useRef(null);
   const chatUnsubRef = useRef(null);
   const activeChatRequestRef = useRef(0);
+  const restoredActiveChatForUserRef = useRef(null);
   const closeChatSubscriptions = useCallback(() => {
     activeChatRequestRef.current += 1;
     messagesUnsubRef.current?.();
@@ -1031,6 +1071,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
 
   useEffect(() => {
     closeChatSubscriptions();
+    restoredActiveChatForUserRef.current = null;
     setCurrentChatId(null);
     setCurrentChatMeta(null);
     setMessages([]);
@@ -1046,6 +1087,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     const isActive = () => activeChatRequestRef.current === requestId;
 
     setCurrentChatId(chatId);
+    rememberActiveChat(uid, chatId);
     setCurrentChatMeta(null);
     setMessages([]);
 
@@ -1104,6 +1146,19 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       liveUnsub();
     };
   }, [authReady, closeChatSubscriptions, reportFirestoreFailure, user?.uid]);
+
+  // Keep the selected chat across a page reload. This is particularly important
+  // for a pending Agent run: reopening the same chat lets its durable launch
+  // checkpoint recover without creating a new logical submission.
+  useEffect(() => {
+    const uid = user?.uid;
+    if (!authReady || !uid || auth.currentUser?.uid !== uid) return;
+    if (restoredActiveChatForUserRef.current === uid) return;
+    restoredActiveChatForUserRef.current = uid;
+
+    const rememberedChatId = readRememberedActiveChat(uid);
+    if (rememberedChatId) openChatById(rememberedChatId);
+  }, [authReady, openChatById, user?.uid]);
 
   const pendingRecoveryMessage = useMemo(
     () =>
@@ -3244,6 +3299,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       setPendingMessages(dropKey);
       setGenerationStages(dropKey);
       if (currentChatId === chatId) {
+        forgetRememberedActiveChat(user?.uid, chatId);
         setCurrentChatId(null);
         setCurrentChatMeta(null);
         setMessages([]);
@@ -3414,6 +3470,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     };
     const persistedPayload = sanitizeChatWritePayload(payload);
     await setDoc(doc(db, "users", user.uid, "chats", chatId), persistedPayload);
+    rememberActiveChat(user.uid, chatId);
     closeChatSubscriptions();
     setCurrentChatId(chatId);
     setCurrentChatMeta({ id: chatId, ...persistedPayload });

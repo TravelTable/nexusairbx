@@ -263,6 +263,7 @@ describe("useAiChat", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    window.sessionStorage.clear();
     cancelAgentRunV2.mockResolvedValue({ run: { status: "cancelled" } });
     useBilling.mockReturnValue({
       plan: "FREE",
@@ -1338,6 +1339,19 @@ describe("useAiChat", () => {
       }),
     ]));
     hook.unmount();
+  });
+
+  test("restores the selected chat after refresh so a pending run stays attached", async () => {
+    const user = { uid: "user_restore", getIdToken: jest.fn().mockResolvedValue("token_1") };
+    auth.currentUser = user;
+    window.sessionStorage.setItem("nexusrbx.activeChat.v1:user_restore", "chat_active_run");
+
+    const { result } = renderHook(() => useAiChat(user, {}, jest.fn(), jest.fn()));
+
+    await waitFor(() => {
+      expect(result.current.currentChatId).toBe("chat_active_run");
+    });
+    expect(doc).toHaveBeenCalledWith({}, "users", "user_restore", "chats", "chat_active_run");
   });
 
   test("reload recovers a launch-only checkpoint and attaches the same run and job", async () => {
