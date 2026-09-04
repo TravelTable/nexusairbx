@@ -12,18 +12,18 @@ if (typeof window !== "undefined" && !window.ResizeObserver) {
 }
 
 const AI_OFFERINGS = [
-  { provider: "anthropic", providerLabel: "Anthropic", model: "Claude 3.7 Sonnet", tier: "PRO" },
-  { provider: "openai", providerLabel: "OpenAI", model: "GPT-5.4", tier: "PRO" },
-  { provider: "google", providerLabel: "Google", model: "Gemini 3.6 Flash", tier: "FREE" },
-  { provider: "deepseek", providerLabel: "DeepSeek", model: "DeepSeek V4 Flash", tier: "FREE" },
-  { provider: "anthropic", providerLabel: "Anthropic", model: "Claude Sonnet 5", tier: "PRO" },
-  { provider: "openai", providerLabel: "OpenAI", model: "GPT-5.6 Terra", tier: "PRO" },
-  { provider: "google", providerLabel: "Google", model: "Gemini 3.1 Pro", tier: "PRO" },
-  { provider: "xai", providerLabel: "xAI", model: "Grok 3", tier: "PRO" },
-  { provider: "meta", providerLabel: "Meta", model: "Llama 3.3 70B", tier: "PRO" },
-  { provider: "mistral", providerLabel: "Mistral AI", model: "Codestral", tier: "PRO" },
-  { provider: "alibaba", providerLabel: "Alibaba", model: "Qwen 2.5 Coder", tier: "PRO" },
-  { provider: "openai", providerLabel: "OpenAI", model: "GPT-5 Mini", tier: "PRO" },
+  { provider: "anthropic", providerLabel: "Anthropic", model: "Claude 3.7 Sonnet" },
+  { provider: "openai", providerLabel: "OpenAI", model: "GPT-5.4" },
+  { provider: "google", providerLabel: "Google", model: "Gemini 3.6 Flash" },
+  { provider: "deepseek", providerLabel: "DeepSeek", model: "DeepSeek V4 Flash" },
+  { provider: "anthropic", providerLabel: "Anthropic", model: "Claude Sonnet 5" },
+  { provider: "openai", providerLabel: "OpenAI", model: "GPT-5.6 Terra" },
+  { provider: "google", providerLabel: "Google", model: "Gemini 3.1 Pro" },
+  { provider: "xai", providerLabel: "xAI", model: "Grok 3" },
+  { provider: "meta", providerLabel: "Meta", model: "Llama 3.3 70B" },
+  { provider: "mistral", providerLabel: "Mistral AI", model: "Codestral" },
+  { provider: "alibaba", providerLabel: "Alibaba", model: "Qwen 2.5 Coder" },
+  { provider: "openai", providerLabel: "OpenAI", model: "GPT-5 Mini" },
 ];
 
 export default function AiProvidersBand() {
@@ -41,7 +41,6 @@ export default function AiProvidersBand() {
             <span className={styles.providerName}>{item.providerLabel}</span>
             <span className={styles.dividerDot} aria-hidden="true" />
             <span className={styles.modelName}>{item.model}</span>
-            <span className={styles.tierBadge}>{item.tier}</span>
           </div>
         ))}
       </Marquee>

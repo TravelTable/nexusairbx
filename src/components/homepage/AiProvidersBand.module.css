@@ -72,13 +72,3 @@
   color: var(--nx-text);
   font-weight: 600;
 }
-
-.tierBadge {
-  padding: 2px 7px;
-  border-radius: 4px;
-  background: rgba(168, 85, 247, 0.15);
-  color: var(--nx-purple-strong);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-}
