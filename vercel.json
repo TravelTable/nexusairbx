@@ -294,6 +294,10 @@
       "destination": "/api/render?path=/connect-roblox"
     },
     {
+      "source": "/cli/authorize",
+      "destination": "/api/render?path=/cli/authorize"
+    },
+    {
       "source": "/__/auth/:path*",
       "destination": "https://nexusrbx.firebaseapp.com/__/auth/:path*"
     },

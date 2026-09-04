@@ -138,6 +138,7 @@ test("route classifier assigns explicit Next public and SPA owners", async () =>
   assert.equal(isSpaRoute("/support/example-ticket"), true);
   assert.equal(isSpaRoute("/auth/callback"), true);
   assert.equal(isSpaRoute("/__/auth/handler"), true);
+  assert.equal(isSpaRoute("/cli/authorize"), true);
   assert.equal(isNextPublicRoute("/ai"), false);
 
   const unknown = await classifyRoute("/definitely-missing-route-codex", { iconExists, iconStatus });
@@ -311,6 +312,7 @@ test("vercel rewrites enumerate route owners without a broad fallback", () => {
     "/signin",
     "/signup",
     "/forgot-password",
+    "/cli/authorize",
     "/connect-roblox",
     "/subscribe",
     "/contact",

@@ -53,6 +53,7 @@ const SPA_ROUTES = new Set([
   "/ai",
   "/assets",
   "/billing",
+  "/cli/authorize",
   "/connect-roblox",
   "/contact",
   "/debug/entitlements",
