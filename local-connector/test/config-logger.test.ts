@@ -6,17 +6,18 @@ import { ConsoleLogger, redact } from "../src/logger.js";
 
 test("configuration uses the documented macOS launch and applies CLI precedence", () => {
   const config = loadConfig(
-    ["--api-url", "http://localhost:3001/", "--pair-code", "ABCD-1234", "--mcp-arg", "one", "--verbose"],
+    ["--api-url", "http://localhost:3001/", "--web-url", "https://nexusrbx.com/", "--mcp-tool-timeout", "90000", "--mcp-arg", "one", "--verbose"],
     {
       NEXUSRBX_API_URL: "https://ignored.example",
-      NEXUSRBX_PAIR_CODE: "IGNORED",
+      NEXUSRBX_WEB_URL: "https://ignored.example",
       NEXUSRBX_MCP_ARGS_JSON: '["ignored"]',
     },
     "darwin",
   );
 
   assert.equal(config.apiUrl, "http://localhost:3001");
-  assert.equal(config.pairCode, "ABCD-1234");
+  assert.equal(config.webUrl, "https://nexusrbx.com");
+  assert.equal(config.mcpToolTimeoutMs, 90_000);
   assert.equal(config.mcpCommand, "/Applications/RobloxStudio.app/Contents/MacOS/StudioMCP");
   assert.deepEqual(config.mcpArgs, ["one"]);
   assert.equal(config.verbose, true);

@@ -161,7 +161,7 @@ test("backend client claims, authenticates, pings, registers, polls, and acknowl
   );
 });
 
-test("claim is not retried while temporary authenticated requests use bounded retries", async () => {
+test("claim and heartbeat delivery are not retried", async () => {
   const claimCalls: CapturedRequest[] = [];
   const claimClient = new NexusBackendClient({
     apiUrl: "https://api.example.test",
@@ -184,20 +184,21 @@ test("claim is not retried while temporary authenticated requests use bounded re
     connectorVersion: "0.1.0",
     requestTimeoutMs: 1_000,
     logger,
-    retryDelaysMs: [0],
     fetch: makeFetch(
       [
         response({ token: "nsmcp_s_xxxx", sessionId: "s", userId: "u", pollIntervalMs: 1, expiresInMs: 1 }),
         response({ message: "temporary" }, 503),
-        response({ ok: true }),
       ],
       calls,
     ),
   });
   await client.claimPairing("ABCD");
-  await client.ping({ mcpServerAvailable: true });
-  assert.equal(calls.length, 3);
-  assert.equal(logger.warnings.length, 1);
+  await assert.rejects(
+    client.ping({ mcpServerAvailable: true }),
+    (error: unknown) => error instanceof ConnectorError && error.code === "BACKEND_TEMPORARY_ERROR",
+  );
+  assert.equal(calls.length, 2);
+  assert.equal(logger.warnings.length, 0);
 });
 
 test("backend client revokes only the authenticated current session", async () => {

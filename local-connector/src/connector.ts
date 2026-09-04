@@ -213,11 +213,11 @@ export class NexusLocalConnector {
           this.#config.pollWaitMs,
           Math.max(250, Math.min(5_000, Math.floor(this.#config.heartbeatMs / 2))),
         );
-        const command = await this.withIdentityRequest(() => this.#backend.pollNext(
+        const command = await this.#backend.pollNext(
           identitySafePollWaitMs,
           this.#targetObservationToken,
           signal,
-        ));
+        );
         if (command === null) {
           // Target selection rotates the server observation token, but an empty
           // long-poll has no response body in which to return that successor.
@@ -833,7 +833,6 @@ export class NexusLocalConnector {
             identityObserved = await this.#targeting.refreshIfIdle(signal);
           } else {
             await this.#targeting.refresh(signal);
-			identityObserved = false;
             // StudioMCP can finish its initialize handshake before the window
             // registry is populated. Keep every retry inside this same token
             // observation lock.
@@ -847,7 +846,9 @@ export class NexusLocalConnector {
           }
         } catch (error) {
           targetRefreshError = asConnectorError(error, "STUDIO_TARGET_UNAVAILABLE");
-          identityObserved = true;
+          // A failed observation is not evidence that Studio disappeared.
+          // Preserve the last confirmed target and send liveness only.
+          identityObserved = false;
         }
       }
       const response = await this.#backend.ping(
