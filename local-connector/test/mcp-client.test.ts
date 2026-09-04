@@ -22,6 +22,7 @@ function client(mode = "normal", requestTimeoutMs = 5_000): RobloxStudioMcpClien
     args: [fixture, mode],
     connectorVersion: "0.1.0-test",
     requestTimeoutMs,
+    toolTimeoutMs: 5_000,
     logger,
   });
 }
@@ -98,5 +99,25 @@ test("startup failure is structured and retryable", async () => {
   await assert.rejects(
     mcp.connect(),
     (error: unknown) => error instanceof ConnectorError && error.code === "MCP_CONNECT_FAILED" && error.retryable,
+  );
+});
+
+test("startup failure reports a Windows launcher diagnostic", async () => {
+  const mcp = client("launcher-error", 500);
+  await assert.rejects(
+    mcp.connect(),
+    (error: unknown) => error instanceof ConnectorError
+      && error.code === "MCP_CONNECT_FAILED"
+      && /Windows launcher failed/.test(error.message),
+  );
+});
+
+test("startup failure distinguishes a missing Studio attachment", async () => {
+  const mcp = client("studio-unattached", 500);
+  await assert.rejects(
+    mcp.connect(),
+    (error: unknown) => error instanceof ConnectorError
+      && error.code === "MCP_CONNECT_FAILED"
+      && /no Roblox Studio window is attached/.test(error.message),
   );
 });

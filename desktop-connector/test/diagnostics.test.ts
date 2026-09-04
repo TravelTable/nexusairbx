@@ -11,7 +11,7 @@ test("reports a missing Studio MCP executable without launching it", async () =>
   assert.equal(result.connectorVersion, "test");
 });
 
-test("Windows detection probes Roblox mcp.bat instead of treating cmd.exe as Studio MCP", async () => {
+test("Windows detection requires a real StudioMCP executable instead of treating mcp.bat as Studio MCP", async () => {
   const localAppData = join(tmpdir(), `nexusrbx-diagnostics-${process.pid}`);
   const args = ["/d", "/s", "/c", "%LOCALAPPDATA%\\Roblox\\mcp.bat"];
   await rm(localAppData, { recursive: true, force: true });
@@ -21,7 +21,7 @@ test("Windows detection probes Roblox mcp.bat instead of treating cmd.exe as Stu
     mcpArgs: args,
     platform: "win32",
     environment: { LOCALAPPDATA: localAppData },
-  }), join(localAppData, "Roblox", "mcp.bat"));
+  }), null);
 
   const missing = await collectDiagnostics({
     mcpCommand: "cmd.exe",
@@ -31,10 +31,22 @@ test("Windows detection probes Roblox mcp.bat instead of treating cmd.exe as Stu
     environment: { LOCALAPPDATA: localAppData },
   });
   assert.equal(missing.studioInstalled, false);
-  assert.equal(missing.mcpCommand, "mcp.bat");
+  assert.equal(missing.mcpCommand, "StudioMCP.exe");
 
   await mkdir(join(localAppData, "Roblox"), { recursive: true });
   await writeFile(join(localAppData, "Roblox", "mcp.bat"), "@echo off\n");
+  const launcherOnly = await collectDiagnostics({
+    mcpCommand: "cmd.exe",
+    mcpArgs: args,
+    connectorVersion: "test",
+    platform: "win32",
+    environment: { LOCALAPPDATA: localAppData },
+  });
+  assert.equal(launcherOnly.studioInstalled, false);
+
+  const studioMcp = join(localAppData, "Roblox", "Versions", "version-test", "StudioMCP.exe");
+  await mkdir(join(localAppData, "Roblox", "Versions", "version-test"), { recursive: true });
+  await writeFile(studioMcp, "mcp");
   const installed = await collectDiagnostics({
     mcpCommand: "cmd.exe",
     mcpArgs: args,
@@ -43,7 +55,7 @@ test("Windows detection probes Roblox mcp.bat instead of treating cmd.exe as Stu
     environment: { LOCALAPPDATA: localAppData },
   });
   assert.equal(installed.studioInstalled, true);
-  assert.equal(installed.mcpCommand, "mcp.bat");
+  assert.equal(installed.mcpCommand, "StudioMCP.exe");
   await rm(localAppData, { recursive: true, force: true });
 });
 

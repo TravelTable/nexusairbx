@@ -1,5 +1,6 @@
 import { access } from "node:fs/promises";
-import { basename, join } from "node:path";
+import { basename } from "node:path";
+import { findWindowsStudioMcpExecutable } from "nexusrbx-local-connector";
 import type { CompanionDiagnostics } from "./contracts.js";
 
 export function resolveMcpProbePath({
@@ -18,7 +19,7 @@ export function resolveMcpProbePath({
     if (executable === "cmd" || executable === "cmd.exe") {
       const expected = mcpArgs.find((argument) => /(?:%LOCALAPPDATA%|\$LOCALAPPDATA|\$env:LOCALAPPDATA)[\\/]Roblox[\\/]mcp\.bat/i.test(argument));
       if (!expected || !environment.LOCALAPPDATA) return null;
-      return join(environment.LOCALAPPDATA, "Roblox", "mcp.bat");
+      return findWindowsStudioMcpExecutable(environment.LOCALAPPDATA);
     }
   }
   return mcpCommand.includes("/") || mcpCommand.includes("\\") ? mcpCommand : null;
@@ -45,7 +46,7 @@ export async function collectDiagnostics({
 }): Promise<CompanionDiagnostics> {
   const probePath = resolveMcpProbePath({ mcpCommand, mcpArgs, platform, environment });
   const isWindowsShellWrapper = platform === "win32" && ["cmd", "cmd.exe"].includes(basename(mcpCommand).toLowerCase());
-  const displayedMcpCommand = probePath && isWindowsShellWrapper ? basename(probePath) : mcpCommand;
+  const displayedMcpCommand = isWindowsShellWrapper ? basename(probePath || "StudioMCP.exe") : mcpCommand;
   let mcpCommandAvailable = !probePath && !isWindowsShellWrapper;
   if (probePath) {
     try { await access(probePath); mcpCommandAvailable = true; } catch { mcpCommandAvailable = false; }

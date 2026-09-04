@@ -1,3 +1,5 @@
+import { existsSync, readFileSync, readdirSync, statSync, type Dirent } from "node:fs";
+import { join } from "node:path";
 import { ConnectorError } from "./errors.js";
 
 export interface ConnectorConfig {
@@ -83,7 +85,7 @@ export function loadConfig(
     }
   }
 
-  const defaultLaunch = defaultMcpLaunch(platform);
+  const defaultLaunch = defaultMcpLaunch(platform, env);
   const mcpCommand = values.get("--mcp-command") ?? env.NEXUSRBX_MCP_COMMAND ?? defaultLaunch.command;
   const resolvedArgs = mcpArgs.length > 0 ? mcpArgs : envMcpArgs.length > 0 ? envMcpArgs : defaultLaunch.args;
 	return {
@@ -101,17 +103,70 @@ export function loadConfig(
   };
 }
 
-function defaultMcpLaunch(platform: NodeJS.Platform): { command: string; args: string[] } {
+function defaultMcpLaunch(
+  platform: NodeJS.Platform,
+  env: NodeJS.ProcessEnv,
+): { command: string; args: string[] } {
   if (platform === "darwin") {
     return { command: "/Applications/RobloxStudio.app/Contents/MacOS/StudioMCP", args: [] };
   }
   if (platform === "win32") {
+    const executable = findWindowsStudioMcpExecutable(env.LOCALAPPDATA);
+    if (executable) return { command: executable, args: [] };
     return { command: "cmd.exe", args: ["/d", "/s", "/c", "%LOCALAPPDATA%\\Roblox\\mcp.bat"] };
   }
   throw new ConnectorError(
     "MCP_COMMAND_REQUIRED",
     "Roblox Studio MCP has no known default for this operating system. Set --mcp-command explicitly.",
   );
+}
+
+export function findWindowsStudioMcpExecutable(localAppData: string | undefined): string | null {
+  const root = localAppData?.trim();
+  if (!root) return null;
+
+  const robloxRoot = join(root, "Roblox");
+  const batchPath = join(robloxRoot, "mcp.bat");
+  try {
+    const batchSource = readFileSync(batchPath, "utf8");
+    for (const match of batchSource.matchAll(/"([^"\r\n]*StudioMCP\.exe)"/gi)) {
+      const candidate = match[1]?.trim();
+      if (candidate && isFile(candidate)) return candidate;
+    }
+  } catch {
+    // A missing or malformed launcher falls through to installed-version discovery.
+  }
+
+  const versionsRoot = join(robloxRoot, "Versions");
+  let entries: Dirent[];
+  try {
+    entries = readdirSync(versionsRoot, { withFileTypes: true });
+  } catch {
+    return null;
+  }
+
+  const candidates = entries
+    .filter((entry) => entry.isDirectory())
+    .flatMap((entry) => {
+      const path = join(versionsRoot, entry.name, "StudioMCP.exe");
+      try {
+        const info = statSync(path);
+        return info.isFile() ? [{ path, modifiedAt: info.mtimeMs }] : [];
+      } catch {
+        return [];
+      }
+    })
+    .sort((left, right) => right.modifiedAt - left.modifiedAt);
+
+  return candidates[0]?.path ?? null;
+}
+
+function isFile(path: string): boolean {
+  try {
+    return existsSync(path) && statSync(path).isFile();
+  } catch {
+    return false;
+  }
 }
 
 function validateApiUrl(value: string): void {

@@ -298,7 +298,17 @@ class DesktopController {
     if (state === "ready" || state === "degraded") {
       this.#discoveryComplete = true;
       this.reconcileCompletedConnection();
-    } else if (state === "studio_mcp_unavailable") this.patchSnapshot({ state: this.#studioInstalled ? "studio_mcp_unavailable" : "studio_not_installed", message: "Connector is online, but Studio MCP cannot be reached.", runtimeHealth: "connected", mcpHealth: "warning", connectionStage: null });
+    } else if (state === "studio_mcp_unavailable") {
+      this.patchSnapshot({
+        state: this.#studioInstalled ? "studio_mcp_unavailable" : "studio_not_installed",
+        message: this.#studioInstalled
+          ? "Studio MCP was found, but no Roblox Studio session accepted the connection. Open Studio, then go to Assistant > Manage MCP Servers and enable Studio as an MCP server."
+          : "Roblox Studio MCP was not found. Update Roblox Studio, reopen it, then enable Studio as an MCP server.",
+        runtimeHealth: "connected",
+        mcpHealth: "warning",
+        connectionStage: null,
+      });
+    }
     else if (state === "connecting") this.patchSnapshot({ state: "connecting", message: "Starting the local connector…", runtimeHealth: "connecting", connectionStage: "runtime" });
   }
 

@@ -49,13 +49,19 @@ export class RobloxStudioMcpClient implements McpClientLike {
         },
       },
     );
+    let stderrTail = "";
     const transport = new StdioClientTransport({
       command: this.options.command,
       args: this.options.args,
       stderr: "pipe",
     });
-    transport.stderr?.on("data", () => {
-      this.options.logger.debug("Roblox Studio MCP emitted a diagnostic message.");
+    transport.stderr?.on("data", (chunk: unknown) => {
+      const text = String(chunk);
+      stderrTail = `${stderrTail}${text}`.slice(-8_192);
+      const diagnostic = compactStudioMcpDiagnostic(text);
+      if (diagnostic) {
+        this.options.logger.debug("Roblox Studio MCP diagnostic.", { message: diagnostic });
+      }
     });
     client.onclose = () => {
       if (this.#client === client) this.#client = null;
@@ -71,12 +77,15 @@ export class RobloxStudioMcpClient implements McpClientLike {
     try {
       await client.connect(transport, this.requestOptions(signal));
     } catch (error) {
-      this.options.logger.debug("Roblox Studio MCP handshake failed.", {
+      const diagnostic = compactStudioMcpDiagnostic(stderrTail);
+      const startupMessage = studioMcpStartupMessage(stderrTail);
+      this.options.logger.warn("Roblox Studio MCP handshake failed.", {
         name: error instanceof Error ? error.name : "UnknownError",
         message: error instanceof Error ? error.message : String(error),
+        ...(diagnostic ? { studioDiagnostic: diagnostic } : {}),
       });
       await this.disconnect();
-      throw new ConnectorError("MCP_CONNECT_FAILED", "Could not connect to Roblox Studio MCP.", {
+      throw new ConnectorError("MCP_CONNECT_FAILED", startupMessage, {
         retryable: true,
         cause: error,
       });
@@ -208,4 +217,30 @@ function requiresStudioId(tool: DiscoveredTool): boolean {
   return Array.isArray(schema?.required)
     && schema.required.includes("studio_id")
     && studioId?.type === "string";
+}
+
+function compactStudioMcpDiagnostic(value: string): string {
+  return value.replace(/\s+/g, " ").trim().slice(0, 1_000);
+}
+
+function studioMcpStartupMessage(stderr: string): string {
+  const diagnostic = stderr.toLowerCase();
+  if (
+    diagnostic.includes("not recognized as an internal or external command")
+    || diagnostic.includes("syntax of the command is incorrect")
+    || diagnostic.includes("was unexpected at this time")
+  ) {
+    return "Roblox Studio MCP's Windows launcher failed. NexusRBX could not start StudioMCP.";
+  }
+  if (
+    diagnostic.includes("no studio")
+    || diagnostic.includes("not attached")
+    || diagnostic.includes("unable to reach roblox studio")
+  ) {
+    return "StudioMCP started, but no Roblox Studio window is attached. Open Roblox Studio and enable Studio as an MCP server in Assistant settings.";
+  }
+  if (diagnostic.includes("disabled") || diagnostic.includes("not enabled")) {
+    return "Roblox Studio MCP is installed but disabled. Open Assistant > Manage MCP Servers and enable Studio as an MCP server.";
+  }
+  return "Could not connect to Roblox Studio MCP. Make sure Roblox Studio is open and Studio MCP is enabled.";
 }

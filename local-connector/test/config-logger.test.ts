@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { mkdir, mkdtemp, rm, utimes, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import test from "node:test";
 import { loadConfig } from "../src/config.js";
 import { ConnectorError } from "../src/errors.js";
@@ -23,10 +26,40 @@ test("configuration uses the documented macOS launch and applies CLI precedence"
   assert.equal(config.verbose, true);
 });
 
-test("configuration uses the documented Windows MCP launcher", () => {
+test("configuration retains the Windows batch launcher as a last-resort fallback", () => {
   const config = loadConfig([], {}, "win32");
   assert.equal(config.mcpCommand, "cmd.exe");
   assert.deepEqual(config.mcpArgs, ["/d", "/s", "/c", "%LOCALAPPDATA%\\Roblox\\mcp.bat"]);
+});
+
+test("configuration launches the newest installed Windows StudioMCP executable directly", async (t) => {
+  const localAppData = await mkdtemp(join(tmpdir(), "nexusrbx-config-"));
+  t.after(() => rm(localAppData, { recursive: true, force: true }));
+  const older = join(localAppData, "Roblox", "Versions", "version-older", "StudioMCP.exe");
+  const newer = join(localAppData, "Roblox", "Versions", "version-newer", "StudioMCP.exe");
+  await mkdir(dirname(older), { recursive: true });
+  await mkdir(dirname(newer), { recursive: true });
+  await writeFile(older, "older");
+  await writeFile(newer, "newer");
+  await utimes(older, new Date(1_000), new Date(1_000));
+  await utimes(newer, new Date(2_000), new Date(2_000));
+
+  const config = loadConfig([], { LOCALAPPDATA: localAppData }, "win32");
+  assert.equal(config.mcpCommand, newer);
+  assert.deepEqual(config.mcpArgs, []);
+});
+
+test("configuration prefers the valid StudioMCP executable named by Roblox's batch launcher", async (t) => {
+  const localAppData = await mkdtemp(join(tmpdir(), "nexusrbx-config-"));
+  t.after(() => rm(localAppData, { recursive: true, force: true }));
+  const executable = join(localAppData, "Roblox", "Versions", "version-batch", "StudioMCP.exe");
+  await mkdir(dirname(executable), { recursive: true });
+  await writeFile(executable, "mcp");
+  await writeFile(join(localAppData, "Roblox", "mcp.bat"), `@echo off\r\n"${executable}"\r\n`);
+
+  const config = loadConfig([], { LOCALAPPDATA: localAppData }, "win32");
+  assert.equal(config.mcpCommand, executable);
+  assert.deepEqual(config.mcpArgs, []);
 });
 
 test("configuration accepts MCP executable flags as repeatable argument values", () => {

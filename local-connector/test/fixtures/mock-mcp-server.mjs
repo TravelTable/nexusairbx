@@ -5,6 +5,14 @@ import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprot
 const mode = process.argv[2] ?? "normal";
 
 if (mode === "exit") process.exit(0);
+if (mode === "launcher-error") {
+  console.error("The syntax of the command is incorrect");
+  process.exit(1);
+}
+if (mode === "studio-unattached") {
+  console.error("No Studio instances available; client is not attached");
+  process.exit(1);
+}
 
 const server = new Server(
   { name: "nexusrbx-test-mcp", version: "1.2.3-test" },
