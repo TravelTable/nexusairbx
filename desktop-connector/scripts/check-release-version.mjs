@@ -24,6 +24,7 @@ const releaseProtocols = new Map([
   ["0.2.15", "2026-07-17-mcp-parity"],
   ["0.2.16", "2026-07-17-mcp-parity"],
   ["0.2.17", "2026-07-17-mcp-parity"],
+  ["0.3.0", "2026-07-17-mcp-parity"],
 ]);
 const expectedProtocol = releaseProtocols.get(expectedVersion);
 if (!sourceVersion || localPackage.version !== expectedVersion || sourceVersion !== expectedVersion) {

@@ -185,6 +185,7 @@ function McpUnavailableView({ snapshot, busy, retry }: { snapshot: CompanionSnap
 
 const degradedCopy: Record<Exclude<DegradedReason, null>, { title: string; message: string }> = {
   studio_closed: { title: "Roblox Studio closed", message: "Reopen Studio and the connector will try to restore the MCP session." },
+  mcp_transport_lost: { title: "Studio MCP connection lost", message: "The MCP transport was interrupted and the connector will try to reconnect." },
   mcp_initialization_failed: { title: "Studio MCP could not start", message: "The MCP process returned an initialization error." },
   zero_supported_tools: { title: "No supported MCP tools found", message: "Studio MCP responded, but it did not advertise any supported NexusRBX tools." },
   heartbeat_stale: { title: "Connector heartbeat is stale", message: "The cloud has not heard from this connector recently." },

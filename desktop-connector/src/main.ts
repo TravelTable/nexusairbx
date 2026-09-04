@@ -217,7 +217,14 @@ class DesktopController {
     const diagnostics = await this.diagnostics();
     this.#studioInstalled = diagnostics.studioInstalled;
     this.patchSnapshot({ state: this.#studioInstalled ? "connecting" : "studio_not_installed", message: this.#studioInstalled ? "Starting the local connector…" : "Roblox Studio MCP was not found.", cloudHealth: "connected", runtimeHealth: "connecting", mcpHealth: "disconnected", connectionStage: "runtime", degradedReason: null, pairingError: null, experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, mcpServerVersion: null, lastCommand: null });
-    const mcp = new RobloxStudioMcpClient({ command: config.mcpCommand, args: config.mcpArgs, connectorVersion: CONNECTOR_VERSION, requestTimeoutMs: config.requestTimeoutMs, logger });
+    const mcp = new RobloxStudioMcpClient({
+      command: config.mcpCommand,
+      args: config.mcpArgs,
+      connectorVersion: CONNECTOR_VERSION,
+      requestTimeoutMs: config.requestTimeoutMs,
+      toolTimeoutMs: config.mcpToolTimeoutMs,
+      logger,
+    });
     const attempt = this.#attempts.start(async ({ id, signal }) => {
       const connector = new NexusLocalConnector({
         config,
