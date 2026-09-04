@@ -118,6 +118,15 @@ export class StudioTargetManager {
     signal?: AbortSignal,
     { allowSignatureAdvance = false }: { allowSignatureAdvance?: boolean } = {},
   ): Promise<void> {
+	const previous = {
+	  targets: this.targets,
+	  activeStudioId: this.activeStudioId,
+	  placeId: this.placeId,
+	  placeName: this.placeName,
+	  universeId: this.universeId,
+	  placeSignature: this.placeSignature,
+	  confirmedAt: this.confirmedAt,
+	};
     try {
       const listed = await this.mcp.callTool("list_roblox_studios", {}, signal);
       assertTargetToolSucceeded(listed, "Studio target discovery failed.");
@@ -181,8 +190,13 @@ export class StudioTargetManager {
       } : item);
       this.confirmedAt = Date.now();
     } catch (error) {
-      this.targets = [];
-      this.clearActiveIdentity();
+	  this.targets = previous.targets;
+	  this.activeStudioId = previous.activeStudioId;
+	  this.placeId = previous.placeId;
+	  this.placeName = previous.placeName;
+	  this.universeId = previous.universeId;
+	  this.placeSignature = previous.placeSignature;
+	  this.confirmedAt = previous.confirmedAt;
       throw error;
     }
   }

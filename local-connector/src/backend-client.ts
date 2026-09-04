@@ -6,10 +6,12 @@ import type {
   CommandReceiptStatus,
   JsonObject,
   PairClaimResponse,
+  ConnectorSession,
   StudioCapabilities,
   StudioCommand,
   StudioIdentityMetadata,
 } from "./types.js";
+import { deleteCliSession, saveCliSession } from "./cli-auth.js";
 import { CONNECTOR_PROTOCOL_VERSION } from "./version.js";
 
 const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
@@ -30,10 +32,33 @@ export class NexusBackendClient implements BackendClientLike {
   readonly #fetch: typeof globalThis.fetch;
   readonly #retryDelaysMs: number[];
   #token: string | null = null;
+  #refreshToken: string | null = null;
+  #session: ConnectorSession | null = null;
+  #refreshPromise: Promise<void> | null = null;
 
   constructor(private readonly options: BackendClientOptions) {
     this.#fetch = options.fetch ?? globalThis.fetch;
     this.#retryDelaysMs = options.retryDelaysMs ?? [250, 1_000];
+  }
+
+  async exchangeCliAuthorization(payload: { code: string; codeVerifier: string; redirectUri: string }, signal?: AbortSignal): Promise<ConnectorSession> {
+    const body = await this.request("POST", "/api/studio/mcp/cli/token", { ...payload, connector: { connectorVersion: this.options.connectorVersion, platform: process.platform, nodeVersion: process.version } }, { authenticated: false, retry: false, ...(signal ? { signal } : {}) });
+    const session = this.parseConnectorSession(body);
+    this.restoreSession(session);
+    return session;
+  }
+
+  restoreSession(session: ConnectorSession): void {
+    this.restoreToken(session.token);
+    this.#refreshToken = session.refreshToken;
+    this.#session = session;
+    this.options.logger.addSecret(session.refreshToken);
+  }
+
+  async logoutStoredSession(): Promise<void> {
+    if (this.#refreshToken) await this.request("POST", "/api/studio/mcp/cli/revoke", { refreshToken: this.#refreshToken }, { authenticated: false, retry: false });
+    this.clearToken();
+    await deleteCliSession();
   }
 
   async claimPairing(code: string, signal?: AbortSignal): Promise<PairClaimResponse> {
@@ -180,6 +205,8 @@ export class NexusBackendClient implements BackendClientLike {
 
   clearToken(): void {
     this.#token = null;
+    this.#refreshToken = null;
+    this.#session = null;
   }
 
   private async request(
@@ -195,13 +222,19 @@ export class NexusBackendClient implements BackendClientLike {
       targetObservationToken?: string | null;
     },
   ): Promise<JsonObject> {
-    const attempts = policy.retry ? this.#retryDelaysMs.length + 1 : 1;
+    const attempts = (policy.retry ? this.#retryDelaysMs.length + 1 : 1) + (policy.authenticated && this.#refreshToken ? 1 : 0);
+    let refreshed = false;
     let lastError: unknown;
     for (let attempt = 0; attempt < attempts; attempt += 1) {
       try {
         return await this.requestOnce(method, path, body, policy);
       } catch (error) {
         if (isAbortError(error) || policy.signal?.aborted) throw error;
+        if (policy.authenticated && !refreshed && this.#refreshToken && error instanceof ConnectorError && error.code === "CONNECTOR_AUTH_FAILED") {
+          await this.refreshAccessToken();
+          refreshed = true;
+          continue;
+        }
         lastError = error;
         if (error instanceof ConnectorError && !error.retryable) throw error;
         if (attempt >= attempts - 1) break;
@@ -219,6 +252,23 @@ export class NexusBackendClient implements BackendClientLike {
       retryable: true,
       cause: lastError,
     });
+  }
+
+  private async refreshAccessToken(): Promise<void> {
+    if (this.#refreshPromise) return this.#refreshPromise;
+    this.#refreshPromise = (async () => {
+      if (!this.#refreshToken || !this.#session) throw new ConnectorError("CONNECTOR_AUTH_FAILED", "Sign in to NexusRBX again.");
+      const body = await this.requestOnce("POST", "/api/studio/mcp/cli/refresh", { refreshToken: this.#refreshToken }, { authenticated: false, retry: false });
+      const session = this.parseConnectorSession(body);
+      this.restoreSession(session);
+      await saveCliSession(session);
+    })().finally(() => { this.#refreshPromise = null; });
+    return this.#refreshPromise;
+  }
+
+  private parseConnectorSession(body: JsonObject): ConnectorSession {
+    const targetObservationToken = optionalTargetObservationToken(body.targetObservationToken);
+    return { token: requireString(body, "token"), refreshToken: requireString(body, "refreshToken"), sessionId: requireString(body, "sessionId"), userId: requireString(body, "userId"), pollIntervalMs: requirePositiveInteger(body, "pollIntervalMs"), expiresInMs: requirePositiveInteger(body, "expiresInMs"), ...(targetObservationToken ? { targetObservationToken } : {}) };
   }
 
   private async requestOnce(

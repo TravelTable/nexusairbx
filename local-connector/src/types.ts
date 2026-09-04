@@ -11,6 +11,10 @@ export interface PairClaimResponse {
   targetObservationToken?: string;
 }
 
+export interface ConnectorSession extends PairClaimResponse {
+  refreshToken: string;
+}
+
 export interface StudioCommand {
   id: string;
   type: string;

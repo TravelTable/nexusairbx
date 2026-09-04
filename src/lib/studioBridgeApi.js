@@ -24,6 +24,15 @@ export async function startStudioMcpPairing() {
   return readJsonOrThrow(res, "Failed to start Studio MCP pairing");
 }
 
+export async function authorizeStudioMcpCli(payload) {
+  const res = await authedFetch("/api/studio/mcp/cli/authorize", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return readJsonOrThrow(res, "Failed to authorize NexusRBX CLI");
+}
+
 export async function getStudioMcpStatus({ signal } = {}) {
   return withApiRetryCooldown("studio:mcp:status", "Failed to load Studio MCP status", async () => {
     const res = await authedFetch("/api/studio/mcp/status", {

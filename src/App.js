@@ -28,6 +28,7 @@ const NexusRBXForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage
 const NexusRBXSignUpPageContainer = lazy(() => import("./pages/SignUpPage"));
 const NexusRBXVerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
 const NexusRBXConnectRobloxPage = lazy(() => import("./pages/ConnectRobloxPage"));
+const NexusRBXCliAuthorizePage = lazy(() => import("./pages/CliAuthorizePage"));
 const NexusRBXTermsPage = lazy(() => import("./pages/TermsPage"));
 const NexusRBXPrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const NexusRBXSettingsPageContainer = lazy(() => import("./pages/SettingsPage"));
@@ -114,6 +115,7 @@ function App() {
           <Route path="/forgot-password" element={withSiteShell(<NexusRBXForgotPasswordPage />, "auth")} />
           <Route path="/verify-email" element={withSiteShell(<NexusRBXVerifyEmailPage />, "auth")} />
           <Route path="/connect-roblox" element={withSiteShell(<NexusRBXConnectRobloxPage />, "auth")} />
+          <Route path="/cli/authorize" element={withSiteShell(<NexusRBXCliAuthorizePage />, "auth")} />
           <Route path="/legal" element={<Navigate to="/legal/terms" replace />} />
           <Route path="/legal/terms" element={withSiteShell(<NexusRBXTermsPage />, "legal")} />
           <Route path="/legal/privacy" element={withSiteShell(<NexusRBXPrivacyPage />, "legal")} />

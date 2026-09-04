@@ -1,6 +1,6 @@
 {
   "name": "nexusrbx-local-connector",
-  "version": "0.2.17",
+  "version": "0.3.0",
   "description": "Local NexusRBX connector for the official Roblox Studio MCP server",
   "type": "module",
   "private": true,
@@ -8,6 +8,7 @@
     ".": "./dist/index.js"
   },
   "bin": {
+    "nexusrbx": "dist/cli.js",
     "nexusrbx-local-connector": "dist/cli.js"
   },
   "files": [

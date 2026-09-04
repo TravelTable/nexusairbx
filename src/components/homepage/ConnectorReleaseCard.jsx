@@ -65,7 +65,7 @@ export default function ConnectorReleaseCard() {
       <div className={styles.copy}>
         <div className={styles.titleRow}>
           <h2>Nexus Connector</h2>
-          <span>{release ? `v${release.version} out now` : "v0.2.17 out now"}</span>
+          <span>{release ? `v${release.version} out now` : "v0.3.0 out now"}</span>
         </div>
         <p>Connect Nexus to Roblox Studio through the local MCP bridge.</p>
       </div>

@@ -38,7 +38,7 @@ import {
 
 const MENU_WIDTH = 400;
 const MENU_MAX_HEIGHT = 520;
-const CURRENT_CONNECTOR_VERSION = "0.2.17";
+const CURRENT_CONNECTOR_VERSION = "0.3.0";
 
 function InfoTooltip({ children }) {
   return (
