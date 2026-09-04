@@ -41,25 +41,23 @@ describe("HomepageV2Content", () => {
     expect(input.getAttribute("aria-invalid")).toBe("true");
   });
 
-  test("keeps a static search-intent heading, animated promise, lead image, and labeled image slots", () => {
+  test("keeps a static search-intent heading, animated promise, lead image, and real video showcases", () => {
     const { container } = render(<HomepageV2Content navigate={jest.fn()} />);
     expect(screen.getByRole("heading", { name: "AI Roblox Script Generator and Studio Agent", level: 1 })).toBeTruthy();
     expect(screen.getByLabelText("Build your Roblox game. Make it playable.")).toBeTruthy();
-    expect(container.querySelectorAll("[data-image-placeholder]")).toHaveLength(11);
     expect(container.querySelectorAll("img")).toHaveLength(1);
     expect(screen.getByRole("img", { name: /Roblox character running beside a simple block/i }).getAttribute("src")).toBe(
       "/assets/nexusrbx-roblox-gameplay-hero.png",
     );
+    expect(container.querySelectorAll("video")).toHaveLength(2);
   });
 
-  test("switches the tabbed tool showcase", () => {
+  test("presents real video demos and core features grid", () => {
     render(<HomepageV2Content navigate={jest.fn()} />);
-    const studioTab = screen.getByRole("tab", { name: "Studio sync" });
-    expect(screen.getByRole("tab", { name: "Agent build" }).getAttribute("aria-selected")).toBe("true");
-    fireEvent.click(studioTab);
-    expect(studioTab.getAttribute("aria-selected")).toBe("true");
-    expect(screen.getByRole("heading", { name: "Work with the place you have" })).toBeTruthy();
-    expect(screen.getByRole("img", { name: "STUDIO BRIDGE SCREENSHOT image placeholder" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "See what creators build with NexusRBX" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Built for serious Roblox developers" })).toBeTruthy();
+    expect(screen.getByText("3D Traversal & Platforming Systems")).toBeTruthy();
+    expect(screen.getByText("Multiplayer Arena & Match Logic")).toBeTruthy();
   });
 
   test("presents the build stack and accessible FAQ", () => {

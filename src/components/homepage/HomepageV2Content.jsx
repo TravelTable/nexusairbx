@@ -1,52 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { homepageFocusedTools } from "../../content/homepageV2";
 import HomepageFooter from "./HomepageFooter";
 import HomepagePrompt from "./HomepagePrompt";
 import ConnectorReleaseCard from "./ConnectorReleaseCard";
-import ProofVisualMockup from "./visuals/ProofVisualMockup";
-import ToolVisualMockup from "./visuals/ToolVisualMockup";
+import VideoShowcase from "./VideoShowcase";
+import NexusFeaturesGrid from "./NexusFeaturesGrid";
 import styles from "./HomepageCinematic.module.css";
 
 const HERO_WORDS = ["playable", "testable", "reviewable", "real"];
 const HERO_LETTER_COLORS = ["#eca8d6", "#b591f3", "#81c3f9", "#a2d8a4", "#f8ba48"];
-
-const TOOL_TABS = [
-  {
-    id: "agent",
-    label: "Agent build",
-    title: "Build through conversation",
-    description:
-      "Describe the game, system, or fix. Nexus reads the project, plans the work, and keeps the result attached to one request.",
-    placeholder: "AGENT WORKSPACE SCREENSHOT",
-  },
-  {
-    id: "studio",
-    label: "Studio sync",
-    title: "Work with the place you have",
-    description:
-      "Pair Roblox Studio, inspect the current object graph, review proposed changes, and restore snapshots when needed.",
-    placeholder: "STUDIO BRIDGE SCREENSHOT",
-  },
-  {
-    id: "assets",
-    label: "Assets",
-    title: "Keep project media together",
-    description:
-      "Create, organize, and reuse icons, decals, interface art, and other project assets without losing the build context.",
-    placeholder: "ASSET LIBRARY SCREENSHOT",
-  },
-];
-
-const PROOF_PLACEHOLDERS = [
-  "GAMEPLAY BEFORE / AFTER",
-  "STUDIO CHANGE REVIEW",
-  "MOBILE UI RESULT",
-  "ROUND SYSTEM RESULT",
-  "CREATOR DASHBOARD",
-  "PROJECT TEST RECORD",
-];
 
 const STACK_ITEMS = [
   ["01", "Project-aware agent", "Reads the current place and keeps work grounded in the real object tree."],
@@ -137,30 +101,6 @@ function AnimatedHeroPromise() {
   );
 }
 
-function ImagePlaceholder({ label, size, compact = false }) {
-  const normLabel = (label || "").toUpperCase();
-  const isToolOrStack =
-    normLabel.includes("AGENT WORKSPACE") ||
-    normLabel.includes("STUDIO BRIDGE") ||
-    normLabel.includes("ASSET LIBRARY") ||
-    normLabel.includes("WORKSPACE OVERVIEW");
-
-  return (
-    <div
-      className={`${styles.imagePlaceholder} ${compact ? styles.imagePlaceholderCompact : ""}`}
-      role="img"
-      aria-label={`${label} image placeholder`}
-      data-image-placeholder
-    >
-      {isToolOrStack ? (
-        <ToolVisualMockup label={label} />
-      ) : (
-        <ProofVisualMockup label={label} compact={compact} />
-      )}
-    </div>
-  );
-}
-
 function Hero({ surface, navigate, inputRef }) {
   return (
     <section className={styles.hero} aria-labelledby="homepage-hero-heading" data-home-hero>
@@ -227,71 +167,6 @@ function FocusedTools() {
   );
 }
 
-function ProofRail() {
-  return (
-    <section id="proof" className={styles.proofSection} aria-labelledby="proof-heading">
-      <div className={styles.sectionHeading}>
-        <h2 id="proof-heading">Show what creators are building with Nexus</h2>
-        <p>
-          Replace these slots with project screenshots, Studio results, community builds, or before-and-after proof.
-        </p>
-      </div>
-      <div className={styles.proofRail} aria-label="Project image placeholders">
-        {PROOF_PLACEHOLDERS.map((label) => (
-          <article key={label}>
-            <ImagePlaceholder label={label} size="900 × 1200" compact />
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function ToolShowcase() {
-  const [activeId, setActiveId] = useState(TOOL_TABS[0].id);
-  const activeTool = TOOL_TABS.find((tool) => tool.id === activeId) || TOOL_TABS[0];
-  return (
-    <section id="workflow" className={styles.toolsSection} aria-labelledby="tools-heading">
-      <div className={styles.sectionHeading}>
-        <h2 id="tools-heading">Get every build tool in one place</h2>
-        <p>Move from a rough idea to reviewed project work without stitching together separate creation flows.</p>
-      </div>
-      <div className={styles.toolTabs} role="tablist" aria-label="NexusRBX tools">
-        {TOOL_TABS.map((tool) => (
-          <button
-            key={tool.id}
-            type="button"
-            role="tab"
-            aria-selected={activeId === tool.id}
-            aria-controls="homepage-tool-panel"
-            onClick={() => setActiveId(tool.id)}
-          >
-            {tool.label}
-          </button>
-        ))}
-      </div>
-      <div id="homepage-tool-panel" className={styles.toolPanel} role="tabpanel">
-        <div className={styles.toolPanelCopy}>
-          <span className={styles.eyebrow}>CURRENT VIEW</span>
-          <h3>{activeTool.title}</h3>
-          <p>{activeTool.description}</p>
-          <a href="/ai">Open {activeTool.label} /</a>
-        </div>
-        <ImagePlaceholder label={activeTool.placeholder} size="1600 × 900 recommended" />
-      </div>
-      <div className={styles.miniFeatureGrid}>
-        {TOOL_TABS.map((tool) => (
-          <article key={tool.id}>
-            <ImagePlaceholder label={`${tool.label.toUpperCase()} DETAIL`} size="800 × 600" compact />
-            <h3>{tool.label}</h3>
-            <p>{tool.description}</p>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function StackSection() {
   return (
     <section id="context" className={styles.stackSection} aria-labelledby="stack-heading">
@@ -301,9 +176,6 @@ function StackSection() {
           Project context, creation, Studio actions, assets, review, and recovery stay connected to the same body of
           work.
         </p>
-      </div>
-      <div className={styles.stackLead}>
-        <ImagePlaceholder label="FULL WORKSPACE OVERVIEW" size="1600 × 900 recommended" />
       </div>
       <div className={styles.stackGrid}>
         {STACK_ITEMS.map(([number, title, description]) => (
@@ -360,6 +232,8 @@ function FinalCta({ surface, navigate }) {
   );
 }
 
+import { useState } from "react";
+
 export default function HomepageV2Content({ surface = "homepage", navigate }) {
   const heroPromptRef = useRef(null);
   useEffect(() => {
@@ -378,8 +252,8 @@ export default function HomepageV2Content({ surface = "homepage", navigate }) {
     <div className={styles.page}>
       <main id="main-content" tabIndex={-1}>
         <Hero surface={surface} navigate={navigate} inputRef={heroPromptRef} />
-        <ProofRail />
-        <ToolShowcase />
+        <VideoShowcase />
+        <NexusFeaturesGrid />
         <FocusedTools />
         <StackSection />
         <FaqSection />
