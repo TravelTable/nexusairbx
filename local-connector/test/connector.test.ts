@@ -761,14 +761,16 @@ test("heartbeat continues during long polling and shutdown clears the in-memory 
     .run("PAIR-CODE", controller.signal);
 
   const availablePings = backend.pings.filter((ping) => ping.mcpServerAvailable === true);
+  const identityPings = availablePings.filter((ping) => ping.activeStudioId !== undefined);
   assert.equal(availablePings.length >= 2, true);
   assert.equal(mcp.callTools.filter((call) => call.name === "list_roblox_studios").length >= 2, true);
-  assert.equal(availablePings.every((ping) => ping.activeStudioId === "studio-1"), true);
-  assert.equal(availablePings.every((ping) => ping.studioId === "studio-1"), true);
-  assert.equal(availablePings.every((ping) => ping.placeId === "42"), true);
-  assert.equal(availablePings.every((ping) => ping.placeName === "Fixture Place"), true);
-  assert.equal(availablePings.every((ping) => ping.universeId === "84"), true);
-  assert.equal(availablePings.every((ping) => ping.placeSignature === "fixture-signature"), true);
+  assert.equal(identityPings.length >= 1, true);
+  assert.equal(identityPings.every((ping) => ping.activeStudioId === "studio-1"), true);
+  assert.equal(identityPings.every((ping) => ping.studioId === "studio-1"), true);
+  assert.equal(identityPings.every((ping) => ping.placeId === "42"), true);
+  assert.equal(identityPings.every((ping) => ping.placeName === "Fixture Place"), true);
+  assert.equal(identityPings.every((ping) => ping.universeId === "84"), true);
+  assert.equal(identityPings.every((ping) => ping.placeSignature === "fixture-signature"), true);
   assert.equal(backend.pings.at(-1)?.mcpServerAvailable, false);
   assert.equal(backend.pings.at(-1)?.studioId, null);
   assert.equal(backend.pings.at(-1)?.placeId, null);

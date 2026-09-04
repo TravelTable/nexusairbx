@@ -1,6 +1,6 @@
 {
   "name": "nexusrbx-local-connector",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Local NexusRBX connector for the official Roblox Studio MCP server",
   "type": "module",
   "private": true,
