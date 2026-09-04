@@ -2,17 +2,14 @@ export type JsonPrimitive = string | number | boolean | null;
 export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
 export type JsonObject = { [key: string]: JsonValue };
 
-export interface PairClaimResponse {
+export interface ConnectorSession {
   token: string;
+  refreshToken: string;
   sessionId: string;
   userId: string;
   pollIntervalMs: number;
   expiresInMs: number;
   targetObservationToken?: string;
-}
-
-export interface ConnectorSession extends PairClaimResponse {
-  refreshToken: string;
 }
 
 export interface StudioCommand {
@@ -174,7 +171,6 @@ export interface McpClientLike {
 }
 
 export interface BackendClientLike {
-  claimPairing(code: string, signal?: AbortSignal): Promise<PairClaimResponse>;
   ping(
     body: JsonObject,
     signal?: AbortSignal,

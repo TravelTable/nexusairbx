@@ -4,7 +4,7 @@ const degradedMessages: Partial<Record<Exclude<DegradedReason, null>, string>> =
   mcp_transport_lost: "The Studio MCP connection was interrupted. NexusRBX will try to reconnect.",
   multiple_studio_windows: "Select the intended open Studio target in the NexusRBX connection panel.",
   target_place_unavailable: "Open the Studio experience you want NexusRBX to use.",
-  zero_supported_tools: "Studio MCP connected, but no supported tools were found.",
+  zero_supported_tools: "Studio MCP responded, but it is not attached with usable tools.",
   cloud_loss: "The local connector is running, but NexusRBX Cloud is unavailable.",
 };
 

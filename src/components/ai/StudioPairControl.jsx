@@ -18,7 +18,6 @@ import {
 import {
   disconnectStudio,
   disconnectStudioMcp,
-  startStudioMcpPairing,
   startStudioPairing,
   testStudioMcp,
 } from "../../lib/studioBridgeApi";
@@ -38,7 +37,7 @@ import {
 
 const MENU_WIDTH = 400;
 const MENU_MAX_HEIGHT = 520;
-const CURRENT_CONNECTOR_VERSION = "0.3.0";
+const CURRENT_CONNECTOR_VERSION = "0.3.3";
 
 function InfoTooltip({ children }) {
   return (
@@ -107,12 +106,6 @@ export function resolvePairingExpiry(result, now = Date.now()) {
     return now + expiresInSeconds * 1000;
   }
   return 0;
-}
-
-export function getDesktopConnectorPairingLink(code, search = "") {
-  const params = new URLSearchParams(search);
-  if (!code || params.get("connector") !== "desktop") return null;
-  return `nexusrbx://connector/pair?code=${encodeURIComponent(code)}`;
 }
 
 const ALREADY_DISCONNECTED_MCP_CODES = new Set([
@@ -359,7 +352,7 @@ export default function StudioPairControl({
   const open = controlledOpen == null ? internalOpen : Boolean(controlledOpen);
   const [activeMethod, setActiveMethod] = useState("plugin");
   const [menuPosition, setMenuPosition] = useState(null);
-  const [pairing, setPairing] = useState({ plugin: null, mcp: null });
+  const [pairing, setPairing] = useState({ plugin: null });
   const [now, setNow] = useState(() => Date.now());
   const [busyMethod, setBusyMethod] = useState("");
   const [disconnectingMethod, setDisconnectingMethod] = useState("");
@@ -489,21 +482,11 @@ export default function StudioPairControl({
     Promise.resolve(refresh?.({ force: true })).catch(() => {});
   }, [pluginConnected, pairing.plugin, notify, refresh]);
 
-  useEffect(() => {
-    if (!mcpConnected || !pairing.mcp) return;
-    setPairing((current) => ({ ...current, mcp: null }));
-    notify?.({ message: "Connected via Roblox Studio MCP", type: "success" });
-    Promise.resolve(refresh?.({ force: true })).catch(() => {});
-  }, [mcpConnected, pairing.mcp, notify, refresh]);
-
   const generateCode = async (method) => {
     if (requireUser && !requireUser()) return;
     setBusyMethod(method);
     try {
-      const result =
-        method === "mcp"
-          ? await startStudioMcpPairing()
-          : await startStudioPairing();
+      const result = await startStudioPairing();
       setPairing((current) => ({
         ...current,
         [method]: {
@@ -511,11 +494,6 @@ export default function StudioPairControl({
           expiresAt: resolvePairingExpiry(result),
         },
       }));
-      const desktopPairingLink = getDesktopConnectorPairingLink(
-        result.code,
-        typeof window === "undefined" ? "" : window.location.search,
-      );
-      if (desktopPairingLink) window.location.assign(desktopPairingLink);
       setNow(Date.now());
     } catch (error) {
       notify?.({
@@ -1018,44 +996,27 @@ export default function StudioPairControl({
                   </div>
                 )}
 
-                {!mcpConnected && !pairing.mcp?.code && (
+                {!mcpConnected && (
                   <ol className="list-inside list-decimal space-y-1 text-[11px] leading-relaxed text-[var(--ds-text-secondary)]">
                     <li>
                       Open the experience you want to edit in Roblox Studio.
                     </li>
-                    <li>Enable Roblox Studio MCP.</li>
-                    <li>Run the NexusRBX Local Connector on this computer.</li>
-                    <li>Enter the pairing code generated here.</li>
+                    <li>Enable Studio as an MCP server.</li>
+                    <li>Run the NexusRBX Connector or the nexusrbx CLI.</li>
+                    <li>Complete the secure browser sign-in.</li>
                     <li>Return here and test the connection.</li>
                   </ol>
                 )}
 
-                {!mcpConnected &&
-                  (pairing.mcp?.code ? (
-                    <PairingCode
-                      code={pairing.mcp.code}
-                      expiresAt={pairing.mcp.expiresAt}
-                      now={now}
-                      copied={copiedMethod === "mcp"}
-                      onCopy={() => copyCode("mcp")}
-                      onRegenerate={() => generateCode("mcp")}
-                      busy={busyMethod === "mcp"}
-                    />
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => generateCode("mcp")}
-                      disabled={busyMethod === "mcp"}
-                      className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-3 py-2.5 text-xs font-semibold text-[var(--ds-accent)] transition-colors hover:bg-[var(--ds-fill-hover)] disabled:opacity-50"
-                    >
-                      {busyMethod === "mcp" ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Link2 className="h-4 w-4" />
-                      )}
-                      Connect with MCP
-                    </button>
-                  ))}
+                {!mcpConnected && (
+                  <a
+                    href="/downloads"
+                    className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-3 py-2.5 text-xs font-semibold text-[var(--ds-accent)] transition-colors hover:bg-[var(--ds-fill-hover)]"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Get or open the Connector
+                  </a>
+                )}
 
                 {(latestMcpSession || mcpConnected) && (
                   <div className="grid grid-cols-2 gap-2">

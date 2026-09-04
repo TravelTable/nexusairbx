@@ -13,11 +13,11 @@ import type {
   BackendClientLike,
   CapabilityDetails,
   CommandReceiptStatus,
+  ConnectorSession,
   DiscoveredTool,
   JsonObject,
   McpClientLike,
   McpConnectionInfo,
-  PairClaimResponse,
   StudioCapabilities,
   StudioCommand,
   StudioIdentityMetadata,
@@ -102,6 +102,16 @@ const config: ConnectorConfig = {
   verbose: false,
 };
 
+const TEST_SESSION: ConnectorSession = {
+  token: "nsmcp_session_secret",
+  refreshToken: "nsmcpr_session_secret",
+  sessionId: "session",
+  userId: "user",
+  pollIntervalMs: 0,
+  expiresInMs: 60_000,
+  targetObservationToken: "initial-observation-token",
+};
+
 class FakeMcp implements McpClientLike {
   connectAttempts = 0;
   disconnects = 0;
@@ -181,7 +191,6 @@ interface Registration {
 }
 
 class FakeBackend implements BackendClientLike {
-  claims: string[] = [];
   pings: JsonObject[] = [];
   registrations: Registration[] = [];
   polls = 0;
@@ -205,17 +214,6 @@ class FakeBackend implements BackendClientLike {
     private readonly events: string[] | null = null,
   ) {}
 
-  async claimPairing(code: string): Promise<PairClaimResponse> {
-    this.claims.push(code);
-    return {
-      token: "nsmcp_session_secret",
-      sessionId: "session",
-      userId: "user",
-      pollIntervalMs: 0,
-      expiresInMs: 60_000,
-      targetObservationToken: "initial-observation-token",
-    };
-  }
   async ping(body: JsonObject): Promise<JsonObject> {
     this.pings.push(body);
     this.wireEvents.push(`ping:${String(body.studioId ?? "clear")}`);
@@ -434,7 +432,7 @@ function wait(milliseconds: number, signal?: AbortSignal): Promise<void> {
   });
 }
 
-test("connector claims, discovers, registers, polls, executes, acknowledges, and shuts down", async () => {
+test("connector restores a browser session, discovers, registers, polls, executes, acknowledges, and shuts down", async () => {
   const controller = new AbortController();
   const backend = new FakeBackend(controller);
   const mcp = new FakeMcp();
@@ -451,9 +449,8 @@ test("connector claims, discovers, registers, polls, executes, acknowledges, and
     logger,
     commandJournal: new MemoryCommandJournal(),
   })
-    .run("PAIR-CODE", controller.signal);
+    .runClaimed(TEST_SESSION, controller.signal);
 
-  assert.deepEqual(backend.claims, ["PAIR-CODE"]);
   assert.equal(mcp.connectAttempts, 1);
   assert.equal(mcp.listCalls, 1);
   assert.deepEqual(backend.registrations[0]?.commands, ["get_studio_context", "read_script", "read_scripts"]);
@@ -478,7 +475,7 @@ test("connector publishes an empty catalog while MCP is unavailable, then reconn
   backend.pollHandler = async () => reliableCommand({ id: "command-2", payload: { path: "game.Script" } });
 
   await new NexusLocalConnector({ config, connectorVersion: "0.1.0-test", backend, mcp, logger })
-    .run("PAIR-CODE", controller.signal);
+    .runClaimed(TEST_SESSION, controller.signal);
 
   assert.equal(mcp.connectAttempts, 2);
   assert.deepEqual(backend.registrations[0]?.commands, []);
@@ -503,7 +500,7 @@ test("an unavailable capability publication retries after a transient backend fa
     logger,
     commandJournal: new MemoryCommandJournal(),
   })
-    .run("PAIR-CODE", controller.signal);
+    .runClaimed(TEST_SESSION, controller.signal);
 
   assert.equal(backend.registrations.filter((registration) => registration.commands.length === 0).length, 2);
   assert.deepEqual(backend.registrations.at(-1)?.commands, ["get_studio_context", "read_script", "read_scripts"]);
@@ -523,7 +520,7 @@ test("a hot-upgraded backend can request capability re-registration without reco
   };
 
   await new NexusLocalConnector({ config, connectorVersion: "0.2.11-test", backend, mcp, logger })
-    .run("PAIR-CODE", AbortSignal.any([controller.signal, AbortSignal.timeout(1_000)]));
+    .runClaimed(TEST_SESSION, AbortSignal.any([controller.signal, AbortSignal.timeout(1_000)]));
 
   assert.equal(mcp.connectAttempts, 1);
   assert.equal(backend.registrations.length >= 2, true);
@@ -554,7 +551,7 @@ test("connector reports multiple Studio windows as a recoverable degraded state"
     logger,
     onLifecycleState: (state) => lifecycle.push(state),
     onTelemetry: (event) => telemetry.push(event),
-  }).run("PAIR-CODE", controller.signal);
+  }).runClaimed(TEST_SESSION, controller.signal);
 
   assert.equal(lifecycle.includes("degraded"), true);
   assert.equal(lifecycle.includes("ready"), false);
@@ -567,17 +564,23 @@ test("connector refreshes capabilities when a Studio window opens after discover
   const controller = new AbortController();
   const backend = new FakeBackend(controller);
   const mcp = new FakeMcp();
-  const telemetry: Array<{ supportedToolCount?: number; degradedReason?: string }> = [];
+  const telemetry: Array<{ mcpConnected?: boolean; supportedToolCount?: number; degradedReason?: string }> = [];
   mcp.studios = [];
-  backend.pollHandler = async (poll) => {
-    await new Promise((resolve) => setTimeout(resolve, 1));
-    if (poll === 1) mcp.studios = [{
+  mcp.callToolHandler = (name) => {
+    if (name !== "list_roblox_studios") return undefined;
+    if (!backend.registrations.some((registration) => registration.commands.length === 0)) {
+      return { structuredContent: { studios: [] } };
+    }
+    mcp.studios = [{
       studio_id: "studio-1",
       place_id: "42",
       place_name: "Fixture Place",
       universe_id: "84",
       place_signature: "fixture-signature",
     }];
+    return undefined;
+  };
+  backend.pollHandler = async () => {
     if (backend.registrations.some((registration) => registration.commands.length > 0)) {
       controller.abort(new DOMException("capabilities recovered", "AbortError"));
     }
@@ -591,11 +594,11 @@ test("connector refreshes capabilities when a Studio window opens after discover
     mcp,
     logger,
     onTelemetry: (event) => telemetry.push(event),
-  }).run("PAIR-CODE", controller.signal);
+  }).runClaimed(TEST_SESSION, controller.signal);
 
   assert.deepEqual(backend.registrations[0]?.commands, []);
   assert.equal(backend.registrations.some((registration) => registration.commands.includes("read_script")), true);
-  assert.equal(telemetry.some((event) => event.supportedToolCount === 0 && event.degradedReason === "target_place_unavailable"), true);
+  assert.equal(telemetry.some((event) => event.mcpConnected === false && event.degradedReason === "mcp_initialization_failed"), true);
   assert.equal(telemetry.some((event) => (event.supportedToolCount ?? 0) > 0), true);
 });
 
@@ -622,7 +625,7 @@ test("initial discovery waits for StudioMCP to populate its Studio window regist
     backend,
     mcp,
     logger,
-  }).run("PAIR-CODE", controller.signal);
+  }).runClaimed(TEST_SESSION, controller.signal);
 
   assert.equal(targetDiscoveryCalls, 4);
   assert.deepEqual(backend.registrations[0]?.commands, ["get_studio_context", "read_script", "read_scripts"]);
@@ -641,7 +644,7 @@ test("connector leaves MCP reconnect paused when automatic reconnect is disabled
     mcp,
     logger,
     shouldAutoReconnect: () => false,
-  }).run("PAIR-CODE", controller.signal);
+  }).runClaimed(TEST_SESSION, controller.signal);
 
   await new Promise((resolve) => setTimeout(resolve, 12));
   controller.abort(new DOMException("test complete", "AbortError"));
@@ -672,7 +675,7 @@ test("tools/list_changed causes full rediscovery and capability re-registration"
     logger,
     commandJournal: new MemoryCommandJournal(),
   })
-    .run("PAIR-CODE", controller.signal);
+    .runClaimed(TEST_SESSION, controller.signal);
 
   assert.equal(mcp.listCalls, 2);
   assert.deepEqual(backend.registrations[0]?.commands, ["get_studio_context", "read_script", "read_scripts"]);
@@ -716,7 +719,7 @@ test("a failed StudioMCP play-control self-check suppresses automated start and 
     logger,
     commandJournal: new MemoryCommandJournal(),
   })
-    .run("PAIR-CODE", controller.signal);
+    .runClaimed(TEST_SESSION, controller.signal);
 
   assert.equal(backend.registrations[0]?.commands.includes("run_play_test"), true);
   assert.equal(backend.registrations[0]?.commands.includes("stop_play_test"), true);
@@ -758,7 +761,7 @@ test("heartbeat continues during long polling and shutdown clears the in-memory 
     logger,
     commandJournal: new MemoryCommandJournal(),
   })
-    .run("PAIR-CODE", controller.signal);
+    .runClaimed(TEST_SESSION, controller.signal);
 
   const availablePings = backend.pings.filter((ping) => ping.mcpServerAvailable === true);
   const identityPings = availablePings.filter((ping) => ping.activeStudioId !== undefined);
@@ -793,14 +796,6 @@ test("an empty bounded poll observes a website target switch before the next lon
     { studio_id: "studio-a", place_id: "42", universe_id: "84", place_name: "Alpha", place_signature: "signature-a" },
     { studio_id: "studio-b", place_id: "43", universe_id: "85", place_name: "Beta", place_signature: "signature-b" },
   ];
-  backend.claimPairing = async () => ({
-    token: "nsmcp_session_secret",
-    sessionId: "session",
-    userId: "user",
-    pollIntervalMs: 0,
-    expiresInMs: 60_000,
-    targetObservationToken: tokenA,
-  });
   backend.pingHandler = (body) => {
     const requestToken = String(body.targetObservationToken || "");
     if (selectionTriggered && requestToken === tokenA) {
@@ -835,7 +830,7 @@ test("an empty bounded poll observes a website target switch before the next lon
     mcp,
     logger,
     commandJournal: new MemoryCommandJournal(),
-  }).run("PAIR-CODE", controller.signal);
+  }).runClaimed({ ...TEST_SESSION, targetObservationToken: tokenA }, controller.signal);
 
   assert.equal(backend.polls, 1);
   assert.equal(backend.pollWaits[0] <= 5_000, true);
@@ -866,7 +861,7 @@ test("attested Studio IDs reach both session pings and capability registration",
   };
 
   await new NexusLocalConnector({ config, connectorVersion: "0.2.8-test", backend, mcp, logger })
-    .run("PAIR-CODE", controller.signal);
+    .runClaimed(TEST_SESSION, controller.signal);
 
   const ping = backend.pings.find((entry) => entry.mcpServerAvailable === true && entry.studioId === "studio-live");
   assert.deepEqual(pickIdentity(ping), {
@@ -904,7 +899,7 @@ test("a backend-selected Studio is re-attested and pinged before registration", 
   };
 
   await new NexusLocalConnector({ config, connectorVersion: "0.2.8-test", backend, mcp, logger })
-    .run("PAIR-CODE", controller.signal);
+    .runClaimed(TEST_SESSION, controller.signal);
 
   const registrationIndex = backend.wireEvents.indexOf("register:studio-2");
   assert.equal(registrationIndex > 0, true);
@@ -929,17 +924,19 @@ test("closing the active Studio clears stale identity in ping and registration",
   const mcp = new FakeMcp();
   backend.pollHandler = async (poll) => {
     if (poll === 1) mcp.studios = [];
-    await new Promise((resolve) => setTimeout(resolve, 1));
-    if (backend.registrations.some((entry, index) => index > 0 && entry.identity.targetIdentityComplete === false)) {
+    return null;
+  };
+  backend.pingHandler = (body) => {
+    if (body.mcpServerAvailable === false && backend.registrations.length > 1) {
       controller.abort(new DOMException("stale identity cleared", "AbortError"));
     }
-    return null;
+    return { ok: true };
   };
 
   await new NexusLocalConnector({ config, connectorVersion: "0.2.8-test", backend, mcp, logger })
-    .run("PAIR-CODE", controller.signal);
+    .runClaimed(TEST_SESSION, controller.signal);
 
-  const clearedPing = backend.pings.find((entry) => entry.mcpServerAvailable === true && entry.targetIdentityComplete === false);
+  const clearedPing = backend.pings.find((entry, index) => index > 0 && entry.mcpServerAvailable === false && entry.targetIdentityComplete === false);
   assert.deepEqual(pickIdentity(clearedPing), {
     studioId: null,
     placeId: null,
@@ -952,6 +949,29 @@ test("closing the active Studio clears stale identity in ping and registration",
   const clearedRegistration = backend.registrations.find((entry, index) => index > 0 && entry.identity.targetIdentityComplete === false);
   assert.deepEqual(pickIdentity(clearedRegistration?.identity), pickIdentity(clearedPing));
   assert.deepEqual(clearedRegistration?.commands, []);
+});
+
+test("an observation rejection re-attests the active Studio before polling again", async () => {
+  const controller = new AbortController();
+  const backend = new FakeBackend(controller);
+  const mcp = new FakeMcp();
+  backend.pollHandler = async (poll) => {
+    if (poll === 1) {
+      throw new ConnectorError(
+        "MCP_TARGET_OBSERVATION_REQUIRED",
+        "Local Connector must re-attest its active Studio window.",
+      );
+    }
+    controller.abort(new DOMException("target re-attested", "AbortError"));
+    return null;
+  };
+
+  await new NexusLocalConnector({ config, connectorVersion: "0.3.3-test", backend, mcp, logger })
+    .runClaimed(TEST_SESSION, controller.signal);
+
+  assert.equal(mcp.connectAttempts, 1);
+  assert.equal(backend.registrations.length >= 2, true);
+  assert.equal(backend.registrations.every((registration) => registration.identity.targetIdentityComplete === true), true);
 });
 
 test("same-window identity changes trigger a fresh target-bound registration", async () => {
@@ -976,7 +996,7 @@ test("same-window identity changes trigger a fresh target-bound registration", a
   };
 
   await new NexusLocalConnector({ config, connectorVersion: "0.2.8-test", backend, mcp, logger })
-    .run("PAIR-CODE", controller.signal);
+    .runClaimed(TEST_SESSION, controller.signal);
 
   const refreshed = backend.registrations.find((entry) => entry.identity.placeSignature === "changed-signature");
   assert.deepEqual(pickIdentity(refreshed?.identity), {
@@ -1007,7 +1027,7 @@ test("lifecycle-v2 commands fence receipts before MCP work and persist the termi
     mcp,
     logger,
     commandJournal: journal,
-  }).run("PAIR-CODE", controller.signal);
+  }).runClaimed(TEST_SESSION, controller.signal);
 
   assert.deepEqual(backend.acknowledgements.map(({ status }) => status), [
     "received",
@@ -1055,7 +1075,7 @@ test("a lifecycle read rejects a delayed wrong-window envelope before MCP execut
     mcp,
     logger,
     commandJournal: journal,
-  }).run("PAIR-CODE", controller.signal);
+  }).runClaimed(TEST_SESSION, controller.signal);
 
   assert.deepEqual(backend.acknowledgements.map(({ status }) => status), [
     "received",
@@ -1094,7 +1114,7 @@ test("an unpublished lifecycle read without an exact window fails closed", async
     mcp,
     logger,
     commandJournal: journal,
-  }).run("PAIR-CODE", controller.signal);
+  }).runClaimed(TEST_SESSION, controller.signal);
 
   assert.deepEqual(backend.acknowledgements.map(({ status }) => status), [
     "received",
@@ -1221,7 +1241,7 @@ test("lifecycle envelope stripping, routing gaps, and identity ambiguity never r
         mcp,
         logger,
         commandJournal: journal,
-      }).run("PAIR-CODE", controller.signal);
+      }).runClaimed(TEST_SESSION, controller.signal);
 
       assert.equal(mcp.callTools.some(({ name }) => name === "script_read" || name === "multi_edit"), false);
       assert.equal(backend.acknowledgements.some(({ status }) => status === "succeeded"), false);
@@ -1298,7 +1318,7 @@ test("verified local writes attest the advanced signature and the next write use
     mcp,
     logger,
     commandJournal: journal,
-  }).run("PAIR-CODE", controller.signal);
+  }).runClaimed(TEST_SESSION, controller.signal);
 
   const terminal = backend.acknowledgements.filter(({ status }) => status === "succeeded");
   assert.equal(mutationCalls, 2);
@@ -1363,7 +1383,7 @@ test("snapshot creation attests the advanced place signature", async () => {
     mcp,
     logger,
     commandJournal: journal,
-  }).run("PAIR-CODE", controller.signal);
+  }).runClaimed(TEST_SESSION, controller.signal);
 
   const terminal = backend.acknowledgements.find(({ status }) => status === "succeeded");
   assert.equal(terminal?.result.verified, true, JSON.stringify(backend.acknowledgements));
@@ -1411,7 +1431,7 @@ test("a verified mutation with failed post-write target attestation is durably d
     mcp,
     logger,
     commandJournal: journal,
-  }).run("PAIR-CODE", controller.signal);
+  }).runClaimed(TEST_SESSION, controller.signal);
 
   const terminal = backend.acknowledgements.at(-1);
   assert.equal(terminal?.status, "outcome_unknown");
@@ -1440,7 +1460,7 @@ test("lifecycle-v2 execution renews the same started fence while MCP work is in 
     mcp,
     logger,
     commandJournal: journal,
-  }).run("PAIR-CODE", controller.signal);
+  }).runClaimed(TEST_SESSION, controller.signal);
 
   const startedReceipts = backend.acknowledgements.filter(({ status }) => status === "started");
   assert.equal(startedReceipts.length >= 2, true);
@@ -1663,7 +1683,7 @@ test("a terminal acknowledgement outage replays the exact durable receipt withou
     mcp,
     logger,
     commandJournal: journal,
-  }).run("PAIR-CODE", controller.signal);
+  }).runClaimed(TEST_SESSION, controller.signal);
 
   const terminalReceipts = backend.acknowledgements.filter(({ status }) => status === "succeeded");
   assert.equal(terminalAttempts, 2);
@@ -1719,7 +1739,7 @@ test("an unreplayable saved receipt does not block a fresh command from polling 
     mcp,
     logger,
     commandJournal: journal,
-  }).run("PAIR-CODE", controller.signal);
+  }).runClaimed(TEST_SESSION, controller.signal);
 
   assert.equal(backend.polls, 1);
   assert.equal(mcp.callTools.filter(({ name }) => name === "script_read").length, 1);
@@ -1763,7 +1783,7 @@ test("a mutation journaled as started before restart becomes outcome_unknown wit
     mcp,
     logger,
     commandJournal: journal,
-  }).run("PAIR-CODE", controller.signal);
+  }).runClaimed(TEST_SESSION, controller.signal);
 
   assert.deepEqual(backend.acknowledgements.map(({ status }) => status), ["outcome_unknown"]);
   assert.equal(backend.acknowledgements[0]?.result.operationOutcome, "outcome_unknown");
@@ -1808,7 +1828,7 @@ test("an uncertain mutation failure is terminal outcome_unknown and is never bli
     mcp,
     logger,
     commandJournal: journal,
-  }).run("PAIR-CODE", controller.signal);
+  }).runClaimed(TEST_SESSION, controller.signal);
 
   assert.deepEqual(backend.acknowledgements.map(({ status }) => status), [
     "received",
@@ -1831,9 +1851,14 @@ test("MUTATION_NOT_APPLIED is a safe failed receipt, not outcome_unknown", async
   mcp.toolPages = [[executeLuauTool, ...targetTools]];
   mcp.callToolHandler = async (name, args) => {
     if (name !== "execute_luau") return undefined;
-    const match = /__nexus_run\(("(?:\\.|[^"\\])*")\)\s*$/.exec(String(args.code || ""));
+    const code = String(args.code || "");
+    if (!code.includes("create_instance")) {
+      throw new ConnectorError("TEST_IDENTITY_PROBE_UNAVAILABLE", "Use the listed Studio identity in this fixture.");
+    }
+    const match = /__nexus_run\(("(?:\\.|[^"\\])*")\)\s*$/.exec(code);
     assert.ok(match?.[1]);
-    const input = JSON.parse(JSON.parse(match[1])) as { nonce: string };
+    const input = JSON.parse(JSON.parse(match[1])) as { nonce: string; operation: string };
+    assert.equal(input.operation, "create_instance");
     return { content: [{ type: "text", text: JSON.stringify({
       version: 1,
       nonce: input.nonce,
@@ -1858,7 +1883,7 @@ test("MUTATION_NOT_APPLIED is a safe failed receipt, not outcome_unknown", async
     mcp,
     logger,
     commandJournal: journal,
-  }).run("PAIR-CODE", controller.signal);
+  }).runClaimed(TEST_SESSION, controller.signal);
 
   assert.deepEqual(backend.acknowledgements.map(({ status }) => status), ["received", "started", "failed"]);
   assert.equal(
@@ -1912,7 +1937,7 @@ test("losing the lease heartbeat during a mutation aborts work and forces reconc
     mcp,
     logger,
     commandJournal: journal,
-  }).run("PAIR-CODE", controller.signal);
+  }).runClaimed(TEST_SESSION, controller.signal);
 
   assert.equal(mutationCalls, 1);
   assert.equal(backend.acknowledgements.at(-1)?.status, "outcome_unknown");

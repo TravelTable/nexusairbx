@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { stdout } from "node:process";
 import { NexusBackendClient } from "./backend-client.js";
-import { loginWithBrowser, loadCliSession } from "./cli-auth.js";
+import { deleteCliSession, loginWithBrowser, loadCliSession, saveCliSession } from "./cli-auth.js";
 import { HELP_TEXT, loadConfig } from "./config.js";
 import { NexusLocalConnector } from "./connector.js";
 import { asConnectorError } from "./errors.js";
@@ -17,7 +17,14 @@ else await main(argv);
 async function main(arguments_: string[]): Promise<void> {
   const config = loadConfig(arguments_.filter((value) => !["login", "logout", "mcp"].includes(value)));
   const logger = new ConsoleLogger(config.verbose);
-  const backend = new NexusBackendClient({ apiUrl: config.apiUrl, connectorVersion: CONNECTOR_VERSION, requestTimeoutMs: config.requestTimeoutMs, logger });
+  const backend = new NexusBackendClient({
+    apiUrl: config.apiUrl,
+    connectorVersion: CONNECTOR_VERSION,
+    requestTimeoutMs: config.requestTimeoutMs,
+    logger,
+    onSessionUpdated: saveCliSession,
+    onSessionCleared: deleteCliSession,
+  });
   let session = await loadCliSession();
   if (session) backend.restoreSession(session);
   if (arguments_.includes("logout")) { await backend.logoutStoredSession(); stdout.write("Signed out of NexusRBX.\n"); return; }

@@ -126,7 +126,7 @@ Website-authenticated routes:
 
 | Method | Route | Purpose |
 | --- | --- | --- |
-| `POST` | `/api/studio/mcp/pair/start` | Create a short-lived connector pairing code |
+| `POST` | `/api/studio/mcp/cli/authorize` | Approve a PKCE-bound browser/CLI login grant |
 | `GET` | `/api/studio/mcp/status` | Read the user's MCP connection state |
 | `POST` | `/api/studio/mcp/disconnect` | Revoke an MCP session |
 | `POST` | `/api/studio/mcp/test` | Test connector and Studio MCP availability |
@@ -137,11 +137,18 @@ Connector-authenticated routes:
 
 | Method | Route | Purpose |
 | --- | --- | --- |
-| `POST` | `/api/studio/mcp/pair/claim` | Exchange a one-time code for a connector session |
 | `POST` | `/api/studio/mcp/session/ping` | Refresh connector/MCP health and liveness |
 | `POST` | `/api/studio/mcp/capabilities` | Register discovered, validated capabilities |
 | `GET` | `/api/studio/mcp/commands/next` | Long-poll the selected session's queue |
 | `POST` | `/api/studio/mcp/commands/:id/ack` | Acknowledge execution through the shared pipeline |
+
+Browser-login bootstrap routes:
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/studio/mcp/cli/token` | Exchange a one-time PKCE grant for a connector session |
+| `POST` | `/api/studio/mcp/cli/refresh` | Rotate an authenticated connector session |
+| `POST` | `/api/studio/mcp/cli/revoke` | Revoke a stored connector refresh credential |
 
 Legacy plugin routes and response shapes remain available.
 
@@ -156,8 +163,7 @@ connectors and protocol versions fail closed.
 
 MCP operations emit the following bounded, secret-free event names:
 
-- `mcp_pair_created`
-- `mcp_pair_claimed`
+- `mcp_cli_authorized`
 - `mcp_connector_connected`
 - `mcp_connector_disconnected`
 - `mcp_server_detected`

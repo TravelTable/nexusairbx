@@ -73,7 +73,6 @@ test("diagnostics contain health summaries without session secrets or command pa
       mcpHealth: "connected",
       connectionStage: null,
       degradedReason: null,
-      pairingError: null,
       experienceName: "Example Place",
       supportedToolCount: 9,
       supportedTools: ["read_script", "write_script"],

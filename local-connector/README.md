@@ -9,7 +9,7 @@ For most creators, the NexusRBX Studio plugin remains the recommended connection
 - Node.js 22 or later
 - A current Roblox Studio installation
 - Roblox Studio MCP enabled in Studio
-- A short-lived pairing code from **NexusRBX → Connect Roblox Studio → Advanced → Roblox MCP**
+- A NexusRBX account that can complete the secure browser sign-in
 
 In Roblox Studio, open **Assistant → ⋯ → Manage MCP Servers**, then enable Studio MCP. Keep the intended experience open while connecting. See the [official Roblox Studio MCP documentation](https://create.roblox.com/docs/studio/mcp) for the current Studio setup.
 
@@ -23,7 +23,7 @@ npm run build
 npm start
 ```
 
-Enter the pairing code when prompted. The code is claimed once, and the resulting connector token is retained only in process memory. Stopping or restarting the connector requires a new pairing code.
+The CLI opens NexusRBX in your browser, completes a PKCE-protected loopback sign-in, and stores the refreshable connector session in your operating system credential store.
 
 For local development, `npm run dev` runs the TypeScript entry point directly. A packaged release can expose the same CLI as `nexusrbx-local-connector`.
 
@@ -40,7 +40,7 @@ npm start -- --mcp-command /custom/path/StudioMCP
 
 Use `npm start -- --help` for all flags. Environment equivalents are shown in [.env.example](./.env.example). Configuration flags take precedence over environment variables. The API must use HTTPS; plain HTTP is accepted only for localhost development.
 
-Never place a connector token in an environment file, command line, issue, screenshot, or log. Pairing codes are short-lived but should still be treated as secrets. Verbose mode emits bounded, sanitized diagnostics and redacts tokens, bearer credentials, and configured secret values.
+Never place a connector token in an environment file, command line, issue, screenshot, or log. Verbose mode emits bounded, sanitized diagnostics and redacts tokens, bearer credentials, and configured secret values.
 
 ## Runtime capability discovery
 
@@ -96,7 +96,7 @@ Use the NexusRBX Studio plugin for an unavailable command. The connector never s
 - Atomic batches accept only snapshot-producing fixed mutations, reject overlapping paths before execution, and persist pinned last-batch receipts for `undo_last_batch`.
 - A nested operation whose own compensation fails makes the batch `BATCH_ROLLBACK_FAILED` even when earlier operations restore successfully; it is never mislabeled `BATCH_ROLLED_BACK`.
 - Read and backend requests use bounded timeouts, retries, response sizes, batch sizes, source sizes, and log output.
-- Pairing-code claim is never retried automatically. Transient backend reads can retry within a small bounded policy; authorization failures are terminal.
+- Browser authorization exchanges are never retried automatically. Transient backend reads can retry within a small bounded policy; authorization failures are terminal.
 - MCP disconnects immediately mark Studio unavailable and trigger bounded exponential reconnection; failed reconnect attempts publish an empty capability set. Commands cannot execute against a stale MCP client.
 - Heartbeats re-attest the full target identity. A closed window or a same-window place, universe, or signature change publishes an explicit cleared or replacement identity and triggers target-bound capability re-registration.
 - Command results and outbound JSON bodies are byte-bounded below the backend's 2 MiB request limit; oversized multi-script reads fail with a structured error.
@@ -117,7 +117,7 @@ The final Studio check requires a running graphical Roblox Studio session and ca
 
 1. Create or open a disposable unpublished experience in Studio.
 2. Enable Studio MCP and leave the experience open in edit mode.
-3. Start the connector and claim a fresh pairing code.
+3. Start the connector and complete browser sign-in again.
 4. Confirm NexusRBX reports MCP connected and shows only the discovered capabilities.
 5. Confirm each capability supported by the discovered Studio MCP version is green and every unavailable capability shows a reason, then run only the advertised context, search, script read, selection, instance inspection, and output commands.
 6. Read a disposable script, capture its source hash, then run a guarded write and confirm the acknowledgment has `verified: true`.
@@ -137,6 +137,6 @@ Do not publish the disposable experience as part of this test.
 - **MCP executable not found:** update Roblox Studio or provide `--mcp-command` for a custom installation.
 - **A command is unavailable:** this is expected when the active Studio MCP version does not expose the exact required tool/schema. Use the plugin bridge for that operation.
 - **Source conflict:** reread the script and resubmit the change with its new source hash. Do not bypass the guard.
-- **Connection repeatedly drops:** close duplicate connector processes, verify the pairing session is current, and run with `--verbose` for sanitized status codes.
+- **Connection repeatedly drops:** close duplicate connector processes, sign in again if the browser session was revoked, and run with `--verbose` for sanitized status codes.
 
 Protocol behavior follows the [Model Context Protocol lifecycle](https://modelcontextprotocol.io/specification/latest/basic/lifecycle) and [tool discovery specification](https://modelcontextprotocol.io/specification/latest/server/tools). The SDK is pinned to an exact version in `package.json` so connector behavior changes only through an intentional dependency update.

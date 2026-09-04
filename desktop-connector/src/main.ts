@@ -4,12 +4,11 @@ import { appendFile, chmod, mkdir, readFile, rm, writeFile } from "node:fs/promi
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join } from "node:path";
 import {
-  CONNECTOR_VERSION, ConsoleLogger, loadConfig, NexusBackendClient, NexusLocalConnector, RobloxStudioMcpClient,
-  type ConnectorLifecycleState, type ConnectorTelemetry, type PairClaimResponse,
+  CONNECTOR_VERSION, ConsoleLogger, loadConfig, loginWithBrowser, NexusBackendClient, NexusLocalConnector, RobloxStudioMcpClient,
+  type ConnectorLifecycleState, type ConnectorSession, type ConnectorTelemetry,
 } from "nexusrbx-local-connector";
-import type { CompanionPreferences, CompanionSnapshot, CompanionState, CompanionUpdateState, PairingError, RendererDestination, WindowMode } from "./contracts.js";
+import type { CompanionPreferences, CompanionSnapshot, CompanionState, CompanionUpdateState, RendererDestination, WindowMode } from "./contracts.js";
 import { collectDiagnostics } from "./diagnostics.js";
-import { normalizePairingCode, parsePairingDeepLink } from "./pairing.js";
 import { DEFAULT_PREFERENCES, getAutoStart, PreferenceStore, setAutoStart, validatePreferenceUpdate } from "./preferences.js";
 import { EncryptedTokenStore, type EncryptedStorage, type StoredConnectorSession } from "./token-store.js";
 import { ConnectorUpdater } from "./updater.js";
@@ -21,7 +20,6 @@ import { isTerminalSessionError, resetLocalSession } from "./session-lifecycle.j
 // namespace keeps the packaged ESM main process compatible with Node's CJS bridge.
 const { autoUpdater } = electronUpdater;
 
-const PAIRING_PAGE = "https://nexusrbx.com/ai?studio=mcp&connector=desktop";
 const HELP_PAGE = "https://www.nexusrbx.com/docs/studio-plugin";
 const DOWNLOADS_PAGE = "https://www.nexusrbx.com/downloads";
 const API_URL = process.env.NEXUSRBX_API_URL || "https://api.nexusrbx.com";
@@ -74,7 +72,7 @@ class DesktopController {
     const userData = app.getPath("userData");
     this.#store = new EncryptedTokenStore(fileEncryptedStorage(join(userData, "connector-session.bin")));
     this.#preferenceStore = new PreferenceStore(join(userData, "preferences.json"));
-    this.#snapshot = this.makeSnapshot("awaiting_pairing", "Enter the six-character code shown on NexusRBX.");
+    this.#snapshot = this.makeSnapshot("awaiting_sign_in", "Sign in with your browser to connect NexusRBX.");
   }
 
   async initialize(): Promise<void> {
@@ -100,24 +98,28 @@ class DesktopController {
     this.clearReconnectTimer();
     if (this.#attempts.active) return this.state;
     const saved = await this.#store.load();
-    if (!saved) { this.setPairingState(); return this.state; }
+    if (!saved) { this.setSignInState(); return this.state; }
     await this.startSession(saved);
     return this.state;
   }
 
-  async pair(input: unknown): Promise<CompanionSnapshot> {
-    const code = normalizePairingCode(input);
+  async signIn(): Promise<CompanionSnapshot> {
     if (this.#attempts.active) await this.stop(false);
     const config = this.config();
     const logger = new ConsoleLogger(config.verbose);
-    const backend = new NexusBackendClient({ apiUrl: config.apiUrl, connectorVersion: CONNECTOR_VERSION, requestTimeoutMs: config.requestTimeoutMs, logger });
-    this.patchSnapshot({ state: "connecting", message: "Claiming your secure NexusRBX pairing…", pairingError: null, connectionStage: "cloud", cloudHealth: "connecting", runtimeHealth: "disconnected", mcpHealth: "disconnected" });
+    const backend = this.createBackend(config, logger);
+    this.patchSnapshot({ state: "connecting", message: "Waiting for browser sign-in…", connectionStage: "cloud", cloudHealth: "connecting", runtimeHealth: "disconnected", mcpHealth: "disconnected" });
     try {
-      const claim = await backend.claimPairing(code);
-      await this.#store.save(claim);
-      await this.startSession(claim, backend, logger);
+      const session = await loginWithBrowser({
+        webUrl: config.webUrl,
+        backend,
+        connectorVersion: CONNECTOR_VERSION,
+      });
+      await this.startSession(session, backend, logger);
     } catch (error) {
-      this.setPairingState(pairingErrorFrom(error));
+      await backend.revokeCurrentSession().catch(() => undefined);
+      logger.warn("Browser sign-in did not complete.", { error: error instanceof Error ? error.message : "unknown" });
+      this.setSignInState("Browser sign-in did not complete. Try again when you are ready.");
     }
     return this.state;
   }
@@ -129,7 +131,7 @@ class DesktopController {
     this.clearReconnectTimer();
     await this.#attempts.stop();
     this.#backend = null;
-    if (publish) this.patchSnapshot({ state: "stopped", message: "Connector paused. Your encrypted pairing is retained.", cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected", connectionStage: null });
+    if (publish) this.patchSnapshot({ state: "stopped", message: "Connector paused. Your encrypted sign-in is retained.", cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected", connectionStage: null });
     return this.state;
   }
 
@@ -140,8 +142,8 @@ class DesktopController {
       if (saved) {
         const config = this.config();
         const logger = new ConsoleLogger(config.verbose);
-        backend = new NexusBackendClient({ apiUrl: config.apiUrl, connectorVersion: CONNECTOR_VERSION, requestTimeoutMs: config.requestTimeoutMs, logger });
-        backend.restoreToken(saved.token);
+        backend = this.createBackend(config, logger);
+        backend.restoreSession(saved);
       }
     }
     const remoteError = await resetLocalSession({
@@ -152,15 +154,14 @@ class DesktopController {
     backend?.clearToken();
     if (remoteError) {
       const config = this.config();
-      new ConsoleLogger(config.verbose).warn("Remote session revocation failed; local pairing was still cleared.", {
+      new ConsoleLogger(config.verbose).warn("Remote session revocation failed; local sign-in was still cleared.", {
         error: remoteError instanceof Error ? remoteError.message : "unknown",
       });
     }
-    this.setPairingState();
+    this.setSignInState();
     return this.state;
   }
 
-  async openPairing(): Promise<void> { await shell.openExternal(PAIRING_PAGE); }
   async openHelp(): Promise<void> { await shell.openExternal(HELP_PAGE); }
   async openDownloads(): Promise<void> { await shell.openExternal(DOWNLOADS_PAGE); }
 
@@ -206,17 +207,28 @@ class DesktopController {
     return { ...base, reconnectMinMs: this.#preferences.reconnectDelayMs, reconnectMaxMs: Math.max(this.#preferences.reconnectDelayMs, base.reconnectMaxMs) };
   }
 
-  private async startSession(session: StoredConnectorSession | PairClaimResponse, existingBackend?: NexusBackendClient, existingLogger?: ConsoleLogger): Promise<void> {
+  private createBackend(config: ReturnType<typeof loadConfig>, logger: ConsoleLogger): NexusBackendClient {
+    return new NexusBackendClient({
+      apiUrl: config.apiUrl,
+      connectorVersion: CONNECTOR_VERSION,
+      requestTimeoutMs: config.requestTimeoutMs,
+      logger,
+      onSessionUpdated: (session) => this.#store.save(session),
+      onSessionCleared: () => this.#store.clear(),
+    });
+  }
+
+  private async startSession(session: StoredConnectorSession | ConnectorSession, existingBackend?: NexusBackendClient, existingLogger?: ConsoleLogger): Promise<void> {
     if (this.#attempts.active) return;
     const config = this.config();
     const logger = existingLogger ?? new ConsoleLogger(config.verbose);
-    const backend = existingBackend ?? new NexusBackendClient({ apiUrl: config.apiUrl, connectorVersion: CONNECTOR_VERSION, requestTimeoutMs: config.requestTimeoutMs, logger });
-    if (!existingBackend) backend.restoreToken(session.token);
+    const backend = existingBackend ?? this.createBackend(config, logger);
+    if (!existingBackend) backend.restoreSession(session);
     this.#backend = backend;
     this.#discoveryComplete = false;
     const diagnostics = await this.diagnostics();
     this.#studioInstalled = diagnostics.studioInstalled;
-    this.patchSnapshot({ state: this.#studioInstalled ? "connecting" : "studio_not_installed", message: this.#studioInstalled ? "Starting the local connector…" : "Roblox Studio MCP was not found.", cloudHealth: "connected", runtimeHealth: "connecting", mcpHealth: "disconnected", connectionStage: "runtime", degradedReason: null, pairingError: null, experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, mcpServerVersion: null, lastCommand: null });
+    this.patchSnapshot({ state: this.#studioInstalled ? "connecting" : "studio_not_installed", message: this.#studioInstalled ? "Starting the local connector…" : "Roblox Studio MCP was not found.", cloudHealth: "connected", runtimeHealth: "connecting", mcpHealth: "disconnected", connectionStage: "runtime", degradedReason: null, experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, mcpServerVersion: null, lastCommand: null });
     const mcp = new RobloxStudioMcpClient({
       command: config.mcpCommand,
       args: config.mcpArgs,
@@ -255,8 +267,8 @@ class DesktopController {
 
     if (isTerminalSessionError(error)) {
       await this.#store.clear();
-      this.setPairingState(null, "This pairing was disconnected. Generate a new code on NexusRBX to reconnect.");
-      logger.warn("Stored connector pairing was rejected and has been cleared.", { error: error instanceof Error ? error.message : "unknown" });
+      this.setSignInState("Your NexusRBX session expired or was revoked. Sign in again.");
+      logger.warn("Stored connector sign-in was rejected and has been cleared.", { error: error instanceof Error ? error.message : "unknown" });
       return;
     }
 
@@ -354,9 +366,9 @@ class DesktopController {
   }
 
   private makeSnapshot(state: CompanionState, message: string): CompanionSnapshot {
-    return { state, message, updatedAt: Date.now(), autoStart: getAutoStart(app), updateState: "idle", preferences: { ...this.#preferences }, cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected", connectionStage: null, degradedReason: null, pairingError: null, experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, connectorVersion: CONNECTOR_VERSION, mcpServerVersion: null, lastCommand: null };
+    return { state, message, updatedAt: Date.now(), autoStart: getAutoStart(app), updateState: "idle", preferences: { ...this.#preferences }, cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected", connectionStage: null, degradedReason: null, experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, connectorVersion: CONNECTOR_VERSION, mcpServerVersion: null, lastCommand: null };
   }
-  private setPairingState(pairingError: PairingError = null, message?: string): void { this.patchSnapshot({ state: "awaiting_pairing", message: message ?? (pairingError ? "The pairing code could not be used." : "Enter the six-character code shown on NexusRBX."), cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected", connectionStage: null, degradedReason: null, pairingError, experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, mcpServerVersion: null, lastCommand: null }); }
+  private setSignInState(message = "Sign in with your browser to connect NexusRBX."): void { this.patchSnapshot({ state: "awaiting_sign_in", message, cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected", connectionStage: null, degradedReason: null, experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, mcpServerVersion: null, lastCommand: null }); }
   private patchSnapshot(patch: Partial<CompanionSnapshot>): void {
     const previous = this.#snapshot.state;
     // The renderer uses updatedAt to order pushed events and state reads. Keep
@@ -380,17 +392,10 @@ class DesktopController {
   private notifyTransition(previous: CompanionState, next: CompanionState): void {
     if (this.#lastNotifiedState === next) return;
     this.#lastNotifiedState = next;
-    if (next === "ready" && previous !== "awaiting_pairing") this.notify("Connection restored", "NexusRBX Cloud and Roblox Studio MCP are ready.");
+    if (next === "ready" && previous !== "awaiting_sign_in") this.notify("Connection restored", "NexusRBX Cloud and Roblox Studio MCP are ready.");
     else if (previous === "ready" && next !== "connecting") this.notify("Connection needs attention", this.#snapshot.message);
   }
   private notify(title: string, body: string): void { if (Notification.isSupported()) new Notification({ title, body, silent: true }).show(); }
-}
-
-function pairingErrorFrom(error: unknown): PairingError {
-  const text = error instanceof Error ? `${error.name} ${error.message} ${JSON.stringify((error as Error & { details?: unknown }).details ?? "")}`.toUpperCase() : "";
-  if (text.includes("EXPIRED")) return "expired";
-  if (text.includes("USED") || text.includes("CLAIMED")) return "already_used";
-  return "invalid";
 }
 
 function fileEncryptedStorage(filePath: string): EncryptedStorage {
@@ -402,7 +407,6 @@ let connectorUpdater: ConnectorUpdater | null = null;
 let isQuitting = false;
 let mainWindow: BrowserWindow | null = null;
 let smokeTimeout: ReturnType<typeof setTimeout> | null = null;
-let pendingPairingCode: string | null = null;
 
 type InstalledSmokeReport = {
   ok: boolean;
@@ -477,12 +481,11 @@ function registerIpc(): void {
   };
   handle("connector:get-state", () => controller.state);
   handle("connector:diagnostics", () => controller.diagnostics());
-  handle("connector:pair", (code) => controller.pair(code));
+  handle("connector:sign-in", () => controller.signIn());
   handle("connector:retry", () => controller.retry());
   handle("connector:start", () => controller.start());
   handle("connector:stop", () => controller.stop());
   handle("connector:revoke-session", () => controller.revokeSession());
-  handle("connector:open-pairing", () => controller.openPairing());
   handle("connector:open-help", () => controller.openHelp());
   handle("connector:open-downloads", () => controller.openDownloads());
   handle("connector:set-preference", (key, value) => controller.setPreference(key, value));
@@ -504,32 +507,15 @@ function registerIpc(): void {
   });
 }
 
-function receiveDeepLink(url: string): void {
-  const code = parsePairingDeepLink(url);
-  if (!code) return;
-  if (!controller) {
-    pendingPairingCode = code;
-    return;
-  }
-  // Deep links arrive outside the renderer action boundary. Consume any
-  // unexpected failure here so malformed OS protocol events never become an
-  // unhandled rejection in the Electron main process.
-  void controller.pair(code).catch(() => undefined);
-}
 const singleInstance = app.requestSingleInstanceLock();
 if (!singleInstance) app.quit();
 else {
-  app.on("second-instance", (_event, argv) => { const url = argv.find((value) => value.startsWith("nexusrbx://")); if (url) receiveDeepLink(url); if (controller) controller.show(); });
-  app.on("open-url", (event, url) => { event.preventDefault(); receiveDeepLink(url); });
+  app.on("second-instance", () => { if (controller) controller.show(); });
   app.on("before-quit", () => { isQuitting = true; connectorUpdater?.stop(); });
   app.on("activate", () => controller?.show());
   app.whenReady().then(async () => {
-    if (!INSTALLED_SMOKE_MODE) app.setAsDefaultProtocolClient("nexusrbx");
     const initializedController = new DesktopController();
     await initializedController.initialize();
-    // Deep links received while preferences/session state load stay queued.
-    // Publish the controller only after initialization is complete so pair()
-    // cannot race the preference load and snapshot initialization.
     controller = initializedController;
     registerIpc(); createWindow(); controller.configureTray();
     if (INSTALLED_SMOKE_MODE) {
@@ -543,12 +529,7 @@ else {
       }).catch(() => app.exit(1)), 20_000);
       return;
     }
-    const launchLink = process.argv.find((value) => value.startsWith("nexusrbx://"));
-    const launchCode = launchLink ? parsePairingDeepLink(launchLink) : null;
-    const startupPairingCode = pendingPairingCode || launchCode;
-    pendingPairingCode = null;
-    if (startupPairingCode) void controller.pair(startupPairingCode).catch(() => undefined);
-    else void controller.start();
+    void controller.start();
     connectorUpdater = new ConnectorUpdater({
       client: autoUpdater,
       isPackaged: app.isPackaged,

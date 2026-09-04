@@ -23,9 +23,7 @@ export async function loginWithBrowser(options: { webUrl: string; backend: Nexus
     url.searchParams.set("connector_version", options.connectorVersion);
     openBrowser(url.toString());
     const code = await callback.waitForCode(options.signal);
-    const session = await options.backend.exchangeCliAuthorization({ code, codeVerifier: verifier, redirectUri: callback.redirectUri }, options.signal);
-    await saveCliSession(session);
-    return session;
+    return await options.backend.exchangeCliAuthorization({ code, codeVerifier: verifier, redirectUri: callback.redirectUri }, options.signal);
   } finally { callback.close(); }
 }
 
@@ -73,8 +71,8 @@ async function createLoopbackCallback(expectedState: string) {
 }
 
 function openBrowser(url: string) {
-  const command = process.platform === "darwin" ? "open" : process.platform === "win32" ? "cmd.exe" : "xdg-open";
-  const args = process.platform === "win32" ? ["/d", "/s", "/c", "start", "", url] : [url];
+  const command = process.platform === "darwin" ? "open" : process.platform === "win32" ? "rundll32.exe" : "xdg-open";
+  const args = process.platform === "win32" ? ["url.dll,FileProtocolHandler", url] : [url];
   spawn(command, args, { detached: true, stdio: "ignore", windowsHide: true }).unref();
 }
 

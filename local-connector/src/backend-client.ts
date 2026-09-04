@@ -5,13 +5,11 @@ import type {
   CapabilityDetails,
   CommandReceiptStatus,
   JsonObject,
-  PairClaimResponse,
   ConnectorSession,
   StudioCapabilities,
   StudioCommand,
   StudioIdentityMetadata,
 } from "./types.js";
-import { deleteCliSession, saveCliSession } from "./cli-auth.js";
 import { CONNECTOR_PROTOCOL_VERSION } from "./version.js";
 
 const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
@@ -26,6 +24,8 @@ export interface BackendClientOptions {
   fetch?: typeof globalThis.fetch;
   logger: Logger;
   retryDelaysMs?: number[];
+  onSessionUpdated?: (session: ConnectorSession) => Promise<void> | void;
+  onSessionCleared?: () => Promise<void> | void;
 }
 
 export class NexusBackendClient implements BackendClientLike {
@@ -45,6 +45,7 @@ export class NexusBackendClient implements BackendClientLike {
     const body = await this.request("POST", "/api/studio/mcp/cli/token", { ...payload, connector: { connectorVersion: this.options.connectorVersion, platform: process.platform, nodeVersion: process.version } }, { authenticated: false, retry: false, ...(signal ? { signal } : {}) });
     const session = this.parseConnectorSession(body);
     this.restoreSession(session);
+    await this.options.onSessionUpdated?.(session);
     return session;
   }
 
@@ -53,49 +54,15 @@ export class NexusBackendClient implements BackendClientLike {
     this.#refreshToken = session.refreshToken;
     this.#session = session;
     this.options.logger.addSecret(session.refreshToken);
+    if (session.targetObservationToken) {
+      this.options.logger.addTransientSecret(session.targetObservationToken);
+    }
   }
 
   async logoutStoredSession(): Promise<void> {
     if (this.#refreshToken) await this.request("POST", "/api/studio/mcp/cli/revoke", { refreshToken: this.#refreshToken }, { authenticated: false, retry: false });
     this.clearToken();
-    await deleteCliSession();
-  }
-
-  async claimPairing(code: string, signal?: AbortSignal): Promise<PairClaimResponse> {
-    const normalized = code.trim().toUpperCase();
-    if (!/^[A-Z0-9-]{4,32}$/.test(normalized)) {
-      throw new ConnectorError("PAIR_CODE_INVALID", "The pairing code format is invalid.");
-    }
-    const body = await this.request(
-      "POST",
-      "/api/studio/mcp/pair/claim",
-      {
-        code: normalized,
-        connector: {
-          connectorVersion: this.options.connectorVersion,
-          platform: process.platform,
-          nodeVersion: process.version,
-        },
-      },
-      { authenticated: false, retry: false, ...(signal === undefined ? {} : { signal }) },
-    );
-    const token = requireString(body, "token");
-    if (!/^nsmcp_[A-Za-z0-9_-]+_[A-Za-z0-9._~-]+$/.test(token)) {
-      throw new ConnectorError("PAIR_RESPONSE_INVALID", "The pairing response contained an invalid connector token.");
-    }
-    const targetObservationToken = optionalTargetObservationToken(body.targetObservationToken);
-    const response: PairClaimResponse = {
-      token,
-      sessionId: requireString(body, "sessionId"),
-      userId: requireString(body, "userId"),
-      pollIntervalMs: requirePositiveInteger(body, "pollIntervalMs"),
-      expiresInMs: requirePositiveInteger(body, "expiresInMs"),
-      ...(targetObservationToken ? { targetObservationToken } : {}),
-    };
-    this.#token = token;
-    this.options.logger.addSecret(token);
-    if (targetObservationToken) this.options.logger.addTransientSecret(targetObservationToken);
-    return response;
+    await this.options.onSessionCleared?.();
   }
 
   /** Restores a token only after the desktop shell has decrypted it with the OS credential store. */
@@ -110,7 +77,7 @@ export class NexusBackendClient implements BackendClientLike {
   ping(body: JsonObject, signal?: AbortSignal): Promise<JsonObject> {
     return this.request("POST", "/api/studio/mcp/session/ping", body, {
       authenticated: true,
-		retry: false,
+      retry: false,
       ...(signal === undefined ? {} : { signal }),
     });
   }
@@ -141,8 +108,8 @@ export class NexusBackendClient implements BackendClientLike {
       },
       {
         authenticated: true,
-		retry: true,
-		targetObservationToken: studioIdentity.targetObservationToken ?? null,
+        retry: true,
+        targetObservationToken: studioIdentity.targetObservationToken ?? null,
         ...(signal === undefined ? {} : { signal }),
       },
     );
@@ -159,7 +126,7 @@ export class NexusBackendClient implements BackendClientLike {
       undefined,
       {
         authenticated: true,
-		retry: false,
+        retry: false,
         ...(signal === undefined ? {} : { signal }),
         timeoutMs: waitMs + 5_000,
         allowNoContent: true,
@@ -222,10 +189,11 @@ export class NexusBackendClient implements BackendClientLike {
       targetObservationToken?: string | null;
     },
   ): Promise<JsonObject> {
-    const attempts = (policy.retry ? this.#retryDelaysMs.length + 1 : 1) + (policy.authenticated && this.#refreshToken ? 1 : 0);
+    const maximumRetries = policy.retry ? this.#retryDelaysMs.length : 0;
+    let retryIndex = 0;
     let refreshed = false;
     let lastError: unknown;
-    for (let attempt = 0; attempt < attempts; attempt += 1) {
+    while (true) {
       try {
         return await this.requestOnce(method, path, body, policy);
       } catch (error) {
@@ -237,13 +205,14 @@ export class NexusBackendClient implements BackendClientLike {
         }
         lastError = error;
         if (error instanceof ConnectorError && !error.retryable) throw error;
-        if (attempt >= attempts - 1) break;
-        const delay = this.#retryDelaysMs[attempt];
+        if (retryIndex >= maximumRetries) break;
+        const delay = this.#retryDelaysMs[retryIndex];
         if (delay === undefined) break;
         this.options.logger.warn("Temporary NexusRBX request failure; retrying.", {
           operation: `${method} ${path.split("?")[0]}`,
-          attempt: attempt + 1,
+          attempt: retryIndex + 1,
         });
+        retryIndex += 1;
         await abortableDelay(delay, policy.signal);
       }
     }
@@ -261,7 +230,7 @@ export class NexusBackendClient implements BackendClientLike {
       const body = await this.requestOnce("POST", "/api/studio/mcp/cli/refresh", { refreshToken: this.#refreshToken }, { authenticated: false, retry: false });
       const session = this.parseConnectorSession(body);
       this.restoreSession(session);
-      await saveCliSession(session);
+      await this.options.onSessionUpdated?.(session);
     })().finally(() => { this.#refreshPromise = null; });
     return this.#refreshPromise;
   }
@@ -285,7 +254,7 @@ export class NexusBackendClient implements BackendClientLike {
     },
   ): Promise<JsonObject> {
     if (policy.authenticated && this.#token === null) {
-      throw new ConnectorError("CONNECTOR_NOT_PAIRED", "The connector has not claimed a pairing code.");
+      throw new ConnectorError("CONNECTOR_NOT_AUTHENTICATED", "Sign in to NexusRBX before starting the connector.");
     }
     const timeout = AbortSignal.timeout(policy.timeoutMs ?? this.options.requestTimeoutMs);
     const signal = policy.signal ? AbortSignal.any([policy.signal, timeout]) : timeout;
@@ -334,7 +303,7 @@ export class NexusBackendClient implements BackendClientLike {
     const serverCode = typeof parsed.code === "string" && /^[A-Z0-9_]{2,64}$/.test(parsed.code) ? parsed.code : undefined;
     const retryable = response.status === 408 || response.status === 429 || response.status >= 500;
     throw new ConnectorError(
-      retryable ? "BACKEND_TEMPORARY_ERROR" : "BACKEND_REQUEST_REJECTED",
+      serverCode ?? (retryable ? "BACKEND_TEMPORARY_ERROR" : "BACKEND_REQUEST_REJECTED"),
       serverMessage?.slice(0, 512) ?? `NexusRBX rejected the request (${response.status}).`,
       { retryable, details: { status: response.status, ...(serverCode ? { serverCode } : {}) } },
     );

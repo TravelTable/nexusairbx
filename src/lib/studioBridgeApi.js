@@ -19,11 +19,6 @@ export async function getStudioStatus({ signal } = {}) {
   });
 }
 
-export async function startStudioMcpPairing() {
-  const res = await authedFetch("/api/studio/mcp/pair/start", { method: "POST" });
-  return readJsonOrThrow(res, "Failed to start Studio MCP pairing");
-}
-
 export async function authorizeStudioMcpCli(payload) {
   const res = await authedFetch("/api/studio/mcp/cli/authorize", {
     method: "POST",

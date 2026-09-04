@@ -41,7 +41,13 @@ function makeFetch(queue: Array<Response | Error>, calls: CapturedRequest[]): ty
   }) as typeof fetch;
 }
 
-test("backend client claims, authenticates, pings, registers, polls, and acknowledges", async () => {
+const AUTHORIZATION = {
+  code: "browser-authorization-code",
+  codeVerifier: "v".repeat(43),
+  redirectUri: "http://127.0.0.1:43123/callback",
+};
+
+test("backend client exchanges browser authorization, authenticates, pings, registers, polls, and acknowledges", async () => {
   const token = "nsmcp_session123_secret.value";
   const observationToken = "observation_token_fixture_123456";
   const calls: CapturedRequest[] = [];
@@ -53,7 +59,7 @@ test("backend client claims, authenticates, pings, registers, polls, and acknowl
     logger,
     fetch: makeFetch(
       [
-        response({ token, targetObservationToken: observationToken, sessionId: "session123", userId: "user1", pollIntervalMs: 25, expiresInMs: 60_000 }),
+        response({ token, refreshToken: "nsmcpr_session123_secret", targetObservationToken: observationToken, sessionId: "session123", userId: "user1", pollIntervalMs: 25, expiresInMs: 60_000 }),
         response({ ok: true }),
         response({ ok: true }),
         response({}, 204),
@@ -63,13 +69,13 @@ test("backend client claims, authenticates, pings, registers, polls, and acknowl
     ),
   });
 
-  const claim = await client.claimPairing("ab-cd");
-  assert.equal(claim.token, token);
-  assert.deepEqual(logger.secrets, [token]);
+  const session = await client.exchangeCliAuthorization(AUTHORIZATION);
+  assert.equal(session.token, token);
+  assert.deepEqual(logger.secrets, [token, "nsmcpr_session123_secret"]);
   assert.deepEqual(logger.transientSecrets, [observationToken]);
   assert.equal((calls[0]?.init.headers as Record<string, string>).Authorization, undefined);
   assert.deepEqual(JSON.parse(String(calls[0]?.init.body)), {
-    code: "AB-CD",
+    ...AUTHORIZATION,
     connector: { connectorVersion: "0.2.11", platform: process.platform, nodeVersion: process.version },
   });
 
@@ -157,25 +163,25 @@ test("backend client claims, authenticates, pings, registers, polls, and acknowl
   client.clearToken();
   await assert.rejects(
     client.ping({ mcpServerAvailable: false }),
-    (error: unknown) => error instanceof ConnectorError && error.code === "CONNECTOR_NOT_PAIRED",
+    (error: unknown) => error instanceof ConnectorError && error.code === "CONNECTOR_NOT_AUTHENTICATED",
   );
 });
 
-test("claim and heartbeat delivery are not retried", async () => {
-  const claimCalls: CapturedRequest[] = [];
-  const claimClient = new NexusBackendClient({
+test("authorization exchange and heartbeat delivery are not retried", async () => {
+  const authorizationCalls: CapturedRequest[] = [];
+  const authorizationClient = new NexusBackendClient({
     apiUrl: "https://api.example.test",
     connectorVersion: "0.1.0",
     requestTimeoutMs: 1_000,
     logger: new TestLogger(),
     retryDelaysMs: [0, 0],
-    fetch: makeFetch([response({ message: "temporary" }, 503), response({})], claimCalls),
+    fetch: makeFetch([response({ message: "temporary" }, 503), response({})], authorizationCalls),
   });
   await assert.rejects(
-    claimClient.claimPairing("ABCD"),
+    authorizationClient.exchangeCliAuthorization(AUTHORIZATION),
     (error: unknown) => error instanceof ConnectorError && error.code === "BACKEND_TEMPORARY_ERROR",
   );
-  assert.equal(claimCalls.length, 1);
+  assert.equal(authorizationCalls.length, 1);
 
   const calls: CapturedRequest[] = [];
   const logger = new TestLogger();
@@ -186,13 +192,13 @@ test("claim and heartbeat delivery are not retried", async () => {
     logger,
     fetch: makeFetch(
       [
-        response({ token: "nsmcp_s_xxxx", sessionId: "s", userId: "u", pollIntervalMs: 1, expiresInMs: 1 }),
+        response({ token: "nsmcp_s_xxxx", refreshToken: "nsmcpr_session_secret", sessionId: "s", userId: "u", pollIntervalMs: 1, expiresInMs: 1 }),
         response({ message: "temporary" }, 503),
       ],
       calls,
     ),
   });
-  await client.claimPairing("ABCD");
+  await client.exchangeCliAuthorization(AUTHORIZATION);
   await assert.rejects(
     client.ping({ mcpServerAvailable: true }),
     (error: unknown) => error instanceof ConnectorError && error.code === "BACKEND_TEMPORARY_ERROR",
@@ -210,12 +216,12 @@ test("backend client revokes only the authenticated current session", async () =
     requestTimeoutMs: 1_000,
     logger: new TestLogger(),
     fetch: makeFetch([
-      response({ token, sessionId: "session123", userId: "user1", pollIntervalMs: 25, expiresInMs: 60_000 }),
+      response({ token, refreshToken: "nsmcpr_session123_secret", sessionId: "session123", userId: "user1", pollIntervalMs: 25, expiresInMs: 60_000 }),
       response({ ok: true }),
     ], calls),
   });
 
-  await client.claimPairing("ABCD12");
+  await client.exchangeCliAuthorization(AUTHORIZATION);
   await client.revokeCurrentSession();
 
   assert.equal(calls[1]?.url, "https://api.example.test/api/studio/mcp/session/revoke");
@@ -233,14 +239,15 @@ test("backend client rejects malformed JSON, malformed commands, and authenticat
     fetch: (async () => new Response("not json", { status: 200 })) as typeof fetch,
   });
   await assert.rejects(
-    malformed.claimPairing("ABCD"),
+    malformed.exchangeCliAuthorization(AUTHORIZATION),
     (error: unknown) => error instanceof ConnectorError && error.code === "BACKEND_RESPONSE_INVALID",
   );
 
   const queue = [
-    response({ token: "nsmcp_s_xxxx", sessionId: "s", userId: "u", pollIntervalMs: 1, expiresInMs: 1 }),
+    response({ token: "nsmcp_s_xxxx", refreshToken: "nsmcpr_session_secret", sessionId: "s", userId: "u", pollIntervalMs: 1, expiresInMs: 1 }),
     response({ command: { id: "1", type: "read_script", payload: "wrong" } }),
     response({ message: "expired" }, 401),
+    response({ message: "refresh expired" }, 401),
   ];
   const client = new NexusBackendClient({
     apiUrl: "https://api.example.test",
@@ -250,14 +257,35 @@ test("backend client rejects malformed JSON, malformed commands, and authenticat
     retryDelaysMs: [0, 0],
     fetch: makeFetch(queue, []),
   });
-  await client.claimPairing("ABCD");
+  await client.exchangeCliAuthorization(AUTHORIZATION);
   await assert.rejects(
-    client.pollNext(1_000),
+    client.pollNext(1_000, null),
     (error: unknown) => error instanceof ConnectorError && error.code === "BACKEND_RESPONSE_INVALID",
   );
   await assert.rejects(
     client.ping({ mcpServerAvailable: true }),
     (error: unknown) => error instanceof ConnectorError && error.code === "CONNECTOR_AUTH_FAILED",
+  );
+});
+
+test("backend client preserves typed Studio re-attestation errors", async () => {
+  const client = new NexusBackendClient({
+    apiUrl: "https://api.example.test",
+    connectorVersion: "0.3.3",
+    requestTimeoutMs: 1_000,
+    logger: new TestLogger(),
+    fetch: makeFetch([
+      response({ token: "nsmcp_s_xxxx", refreshToken: "nsmcpr_session_secret", sessionId: "s", userId: "u", pollIntervalMs: 1, expiresInMs: 60_000 }),
+      response({ code: "MCP_TARGET_OBSERVATION_REQUIRED", message: "Re-attest Studio." }, 409),
+    ], []),
+  });
+
+  await client.exchangeCliAuthorization(AUTHORIZATION);
+  await assert.rejects(
+    client.pollNext(1_000, null),
+    (error: unknown) => error instanceof ConnectorError
+      && error.code === "MCP_TARGET_OBSERVATION_REQUIRED"
+      && error.message === "Re-attest Studio.",
   );
 });
 
@@ -298,7 +326,7 @@ test("backend client preserves a complete lifecycle-v2 command and sends outcome
     logger: new TestLogger(),
     fetch: makeFetch([
       response({
-        token: "nsmcp_session_secret",
+        token: "nsmcp_session_secret", refreshToken: "nsmcpr_session_secret",
         sessionId: "session",
         userId: "user",
         pollIntervalMs: 25,
@@ -309,8 +337,8 @@ test("backend client preserves a complete lifecycle-v2 command and sends outcome
     ], calls),
   });
 
-  await client.claimPairing("ABCD");
-  const command = await client.pollNext(1_000);
+  await client.exchangeCliAuthorization(AUTHORIZATION);
+  const command = await client.pollNext(1_000, null);
   assert.deepEqual(command, {
     id: "command-v2",
     commandId: "command-v2",
@@ -358,7 +386,7 @@ test("backend client rejects unversioned, partial, and unsupported lifecycle env
     logger: new TestLogger(),
     fetch: makeFetch([
       response({
-        token: "nsmcp_session_secret",
+        token: "nsmcp_session_secret", refreshToken: "nsmcpr_session_secret",
         sessionId: "session",
         userId: "user",
         pollIntervalMs: 25,
@@ -390,19 +418,19 @@ test("backend client rejects unversioned, partial, and unsupported lifecycle env
     ], []),
   });
 
-  await client.claimPairing("ABCD");
+  await client.exchangeCliAuthorization(AUTHORIZATION);
   await assert.rejects(
-    client.pollNext(1_000),
+    client.pollNext(1_000, null),
     (error: unknown) => error instanceof ConnectorError &&
       error.code === "CONNECTOR_LIFECYCLE_UNSUPPORTED",
   );
   await assert.rejects(
-    client.pollNext(1_000),
+    client.pollNext(1_000, null),
     (error: unknown) => error instanceof ConnectorError &&
       error.code === "CONNECTOR_LIFECYCLE_ENVELOPE_INVALID",
   );
   await assert.rejects(
-    client.pollNext(1_000),
+    client.pollNext(1_000, null),
     (error: unknown) => error instanceof ConnectorError &&
       error.code === "CONNECTOR_LIFECYCLE_UNSUPPORTED",
   );
@@ -417,10 +445,10 @@ test("oversized request bodies fail locally without a network retry", async () =
     logger: new TestLogger(),
     retryDelaysMs: [0, 0],
     fetch: makeFetch([
-      response({ token: "nsmcp_s_xxxx", sessionId: "s", userId: "u", pollIntervalMs: 1, expiresInMs: 1 }),
+      response({ token: "nsmcp_s_xxxx", refreshToken: "nsmcpr_session_secret", sessionId: "s", userId: "u", pollIntervalMs: 1, expiresInMs: 1 }),
     ], calls),
   });
-  await client.claimPairing("ABCD");
+  await client.exchangeCliAuthorization(AUTHORIZATION);
 
   await assert.rejects(
     client.acknowledge("command-1", "succeeded", { success: true, output: "x".repeat(1_800_000) }, null),

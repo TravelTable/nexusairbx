@@ -14,10 +14,11 @@ import type { Logger } from "./logger.js";
 import type {
   BackendClientLike,
   CommandReceiptStatus,
+  ConnectorSession,
+  DiscoveredTool,
   JsonObject,
   McpClientLike,
   McpConnectionInfo,
-  PairClaimResponse,
   StudioCommand,
   StudioCommandAttempts,
   StudioIdentityMetadata,
@@ -59,10 +60,10 @@ export interface ConnectorTelemetry {
   lastHeartbeatAt?: number;
   lastActivityAt?: number;
   lastCommand?: { name: string; status: TerminalCommandReceiptStatus; at: number };
-	degradedReason?: "studio_closed" | "mcp_transport_lost" | "mcp_initialization_failed" | "zero_supported_tools" | "multiple_studio_windows" | "target_place_unavailable" | "cloud_loss";
+  degradedReason?: "studio_closed" | "mcp_transport_lost" | "mcp_initialization_failed" | "zero_supported_tools" | "multiple_studio_windows" | "target_place_unavailable" | "cloud_loss";
 }
 
-/** Coordinates one in-memory pairing session. A process restart requires a new code. */
+/** Coordinates one refreshable browser-authenticated connector session. */
 export class NexusLocalConnector {
   readonly #config: ConnectorConfig;
   readonly #backend: BackendClientLike;
@@ -110,20 +111,12 @@ export class NexusLocalConnector {
       this.#announcedUnavailable = false;
       this.#logger.warn(error?.message ?? "Roblox Studio MCP disconnected; reconnecting.");
       this.emitLifecycleState("studio_mcp_unavailable");
-		this.emitTelemetry({ mcpConnected: false, degradedReason: "mcp_transport_lost" });
+      this.emitTelemetry({ mcpConnected: false, degradedReason: "mcp_transport_lost" });
     });
   }
 
-  async run(pairCode: string, externalSignal?: AbortSignal): Promise<void> {
-    if (externalSignal?.aborted) throw abortReason(externalSignal);
-    this.#logger.info("Connecting to NexusRBX…");
-    const claim = await this.#backend.claimPairing(pairCode, externalSignal);
-    this.#logger.info("NexusRBX connected.");
-    return this.runClaimed(claim, externalSignal);
-  }
-
-  /** Runs a previously claimed session. Used by the desktop companion after securely restoring its token. */
-  async runClaimed(claim: PairClaimResponse, externalSignal?: AbortSignal): Promise<void> {
+  /** Runs a browser-authenticated session restored from encrypted OS storage. */
+  async runClaimed(claim: ConnectorSession, externalSignal?: AbortSignal): Promise<void> {
     if (externalSignal?.aborted) throw abortReason(externalSignal);
     if (validTargetObservationToken(claim.targetObservationToken)) {
       this.#targetObservationToken = claim.targetObservationToken;
@@ -153,7 +146,7 @@ export class NexusLocalConnector {
     }
   }
 
-  private async commandLoop(claim: PairClaimResponse, signal: AbortSignal): Promise<void> {
+  private async commandLoop(claim: ConnectorSession, signal: AbortSignal): Promise<void> {
     let reconnectDelay = this.#config.reconnectMinMs;
     while (!signal.aborted) {
       try {
@@ -195,15 +188,15 @@ export class NexusLocalConnector {
           await this.refreshCatalog(signal);
         } catch (error) {
           if (signal.aborted) break;
-			const connectorError = asConnectorError(error);
-			this.#logger.warn("Roblox Studio MCP capability refresh failed.", { code: connectorError.code });
-			if (new Set(["MCP_DISCONNECTED", "MCP_CONNECT_FAILED", "MCP_PROTOCOL_ERROR"]).has(connectorError.code)) {
-				await this.dropMcpConnection();
-			} else {
-				this.#toolsDirty = true;
-				this.emitLifecycleState("degraded");
-				await delay(this.#config.reconnectMinMs, signal);
-			}
+          const connectorError = asConnectorError(error);
+          this.#logger.warn("Roblox Studio MCP capability refresh failed.", { code: connectorError.code });
+          if (new Set(["MCP_DISCONNECTED", "MCP_CONNECT_FAILED", "MCP_PROTOCOL_ERROR", "MCP_STUDIO_NOT_ATTACHED"]).has(connectorError.code)) {
+            await this.dropMcpConnection();
+          } else {
+            this.#toolsDirty = true;
+            this.emitLifecycleState("degraded");
+            await delay(this.#config.reconnectMinMs, signal);
+          }
           continue;
         }
       }
@@ -233,6 +226,20 @@ export class NexusLocalConnector {
         if (signal.aborted) break;
         const connectorError = asConnectorError(error);
         if (connectorError.code === "CONNECTOR_AUTH_FAILED") throw connectorError;
+        if (isTargetReattestationError(connectorError)) {
+          this.#toolsDirty = true;
+          try {
+            await this.refreshCatalog(signal, true);
+            continue;
+          } catch (refreshError) {
+            if (signal.aborted) break;
+            this.#logger.warn("Studio target re-attestation failed; restarting MCP.", {
+              code: asConnectorError(refreshError).code,
+            });
+            await this.dropMcpConnection();
+            continue;
+          }
+        }
         this.#logger.warn("Temporary command-loop failure; continuing.", { code: connectorError.code });
         await delay(Math.min(claim.pollIntervalMs, 5_000), signal);
       }
@@ -249,10 +256,11 @@ export class NexusLocalConnector {
       delete this.#runtimeCapabilityReasonCodes.playtest;
       this.emitTelemetry({ stage: "mcp" });
       this.#mcpInfo = await this.#mcp.connect(signal);
-      this.#mcpConnected = true;
       this.#announcedUnavailable = false;
-      this.emitTelemetry({ stage: "tool_discovery", mcpConnected: true, ...(this.#mcpInfo.serverVersion ? { mcpServerVersion: this.#mcpInfo.serverVersion } : {}) });
+      this.emitTelemetry({ stage: "tool_discovery", mcpConnected: false, ...(this.#mcpInfo.serverVersion ? { mcpServerVersion: this.#mcpInfo.serverVersion } : {}) });
       const runtime = await this.refreshCatalog(signal, true);
+      this.#mcpConnected = true;
+      this.emitTelemetry({ mcpConnected: true });
       this.#logger.info("Roblox Studio MCP connected.");
       this.#logCapabilities();
       this.#logger.info("NexusRBX is connected to Roblox Studio. Press Ctrl+C to disconnect.");
@@ -271,7 +279,7 @@ export class NexusLocalConnector {
 
   private async refreshCatalog(signal: AbortSignal, waitForInitialStudio = false): Promise<RuntimeCapabilities> {
     this.#toolsDirty = false;
-    const tools = await this.#mcp.listTools(signal);
+    const tools = await this.discoverAttachedStudioTools(signal, waitForInitialStudio);
     const catalog = new ToolCatalog(tools, {
       disabledCommands: this.#runtimeDisabledCommands,
       capabilityReasonCodes: this.#runtimeCapabilityReasonCodes,
@@ -287,6 +295,13 @@ export class NexusLocalConnector {
       );
       this.#targeting.setIdentityProbeAvailable(catalog.executeLuau !== null);
     } else this.#targeting = null;
+    if (!this.#targeting) {
+      throw new ConnectorError(
+        "MCP_STUDIO_NOT_ATTACHED",
+        "Roblox Studio MCP did not expose the Studio target tools.",
+        { retryable: true },
+      );
+    }
     let targetObservation = await this.probeAndPingBackend(true, signal, {
       refresh: "full",
       waitForInitialStudio,
@@ -304,13 +319,20 @@ export class NexusLocalConnector {
       // capabilities can be registered against it.
       targetObservation = await this.probeAndPingBackend(true, signal, { refresh: "full" });
     }
+    if (this.#targeting.targets.length === 0) {
+      throw new ConnectorError(
+        "MCP_STUDIO_NOT_ATTACHED",
+        "Roblox Studio MCP is running, but no Studio window is attached.",
+        { retryable: true },
+      );
+    }
     const runtime = runtimeCapabilities(catalog, this.#targeting);
     this.emitTelemetry({
       // The desktop uses this list together with supportedToolCount. Publish
       // executable NexusRBX commands so the list and count describe one thing.
       supportedTools: [...runtime.supportedCommands],
       supportedToolCount: runtime.supportedCommands.length,
-      mcpConnected: true,
+      mcpConnected: this.#mcpConnected,
       ...(runtime.supportedCommands.length === 0
         ? { degradedReason: runtime.degradedReason ?? "zero_supported_tools" }
         : {}),
@@ -333,7 +355,7 @@ export class NexusLocalConnector {
           ...(tool.description === undefined ? {} : { description: tool.description }),
         })),
         runtime.capabilityDetails,
-        this.studioIdentityMetadata(this.#mcpConnected, requestToken),
+        this.studioIdentityMetadata(true, requestToken),
         signal,
       );
       if (this.acceptTargetObservationResponse(response, requestToken) === false) {
@@ -342,6 +364,24 @@ export class NexusLocalConnector {
     });
     await this.refreshExperienceSummary(tools, signal);
     return runtime;
+  }
+
+  private async discoverAttachedStudioTools(
+    signal: AbortSignal,
+    allowGracePeriod: boolean,
+  ): Promise<DiscoveredTool[]> {
+    const attempts = allowGracePeriod ? INITIAL_STUDIO_DISCOVERY_ATTEMPTS : 1;
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      const tools = await this.#mcp.listTools(signal);
+      const catalog = new ToolCatalog(tools);
+      if (catalog.listStudios && catalog.setActiveStudio && catalog.studioState) return tools;
+      if (attempt + 1 < attempts) await delay(INITIAL_STUDIO_DISCOVERY_RETRY_MS, signal);
+    }
+    throw new ConnectorError(
+      "MCP_STUDIO_NOT_ATTACHED",
+      "Roblox Studio MCP started, but Studio did not attach and advertise tools.",
+      { retryable: true },
+    );
   }
 
   private async refreshExperienceSummary(tools: Array<{ name: string }>, signal: AbortSignal): Promise<void> {
@@ -1002,7 +1042,10 @@ export class NexusLocalConnector {
         );
         this.acceptTargetObservationResponse(response, requestToken);
       });
-      await this.pingBackend(false);
+      await this.#backend.ping({
+        ...this.pingPayload(false),
+        unavailableReason: "studio_not_attached",
+      });
       this.#announcedUnavailable = true;
     } catch (error) {
       this.#logger.debug("Could not publish degraded connector state.", { code: asConnectorError(error).code });
@@ -1480,6 +1523,11 @@ function abortReason(signal: AbortSignal): unknown {
 
 function isAbortLike(error: unknown): boolean {
   return isAbortError(error) || (error instanceof Error && /aborted|stopped/i.test(error.message));
+}
+
+function isTargetReattestationError(error: ConnectorError): boolean {
+  return error.code === "MCP_TARGET_OBSERVATION_REQUIRED"
+    || error.code === "MCP_CAPABILITY_REATTESTATION_REQUIRED";
 }
 
 export function delay(milliseconds: number, signal?: AbortSignal): Promise<void> {

@@ -9,8 +9,8 @@ Roblox plugin and it is not required for the recommended plugin workflow.
 
 - A current Roblox Studio build with Studio MCP available.
 - Node.js 22 or newer.
-- A NexusRBX account with a pairing code created from **Connect Roblox Studio →
-  Advanced → Roblox Studio MCP**.
+- A NexusRBX account that can sign in through the browser opened by the
+  connector.
 - The experience you intend to inspect or edit open in Studio.
 
 In Roblox Studio, open **Assistant → … → Manage MCP Servers** and enable Studio
@@ -41,17 +41,17 @@ Start the built CLI with the backend URL for the environment you are using:
 npm --prefix local-connector start -- --backend-url https://YOUR-NEXUSRBX-HOST
 ```
 
-The CLI prompts for the short-lived pairing code. The pairing code and connector
-session token must not be passed in shell history unless the user deliberately
-uses a documented non-interactive mode.
+The CLI opens a browser for NexusRBX sign-in and approval. The browser returns a
+single-use PKCE-bound authorization grant to the connector's loopback callback;
+no MCP pairing code is created or entered.
 
 The intended terminal flow is:
 
 ```text
 NexusRBX Local Connector
 Open Roblox Studio and enable Studio MCP.
-Enter the connector pairing code shown on the website:
-> ABC123
+Opening your browser to sign in to NexusRBX...
+Browser sign-in complete.
 Connecting to NexusRBX...
 NexusRBX connected.
 Detecting Roblox Studio MCP...
@@ -70,9 +70,10 @@ Tokens and raw MCP configuration are never printed.
 
 ## What the connector does
 
-1. Claims a one-time NexusRBX MCP pairing code.
-2. Retains the returned connector token only for the running process unless an
-   explicitly documented secure persistence mechanism is enabled.
+1. Opens NexusRBX browser login and exchanges a single-use PKCE authorization
+   grant for a connector session.
+2. Stores the access and refresh credentials only in the supported operating-
+   system credential store and rotates them during refresh.
 3. Launches the local Studio MCP subprocess and completes the MCP initialize
    handshake.
 4. Discovers every tools page with `tools/list` and follows `nextCursor`.

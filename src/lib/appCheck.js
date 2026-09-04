@@ -1,5 +1,5 @@
 import { getToken } from "firebase/app-check";
-import { appCheck, appCheckReady } from "../firebase";
+import { appCheck, appCheckReady, firebaseAppCheckEnabled } from "../firebase";
 import { BACKEND_URL } from "../config";
 import { NexusApiError } from "./apiErrors";
 
@@ -27,7 +27,7 @@ function appCheckUnavailableError(state, cause) {
 
 // Never surface or log the token: it is added only to outgoing backend requests.
 export async function getFirebaseAppCheckHeaders({
-  required = false,
+  required = firebaseAppCheckEnabled,
 } = {}) {
   if (typeof window === "undefined" || !appCheck) {
     if (required) throw appCheckUnavailableError({ status: "unavailable" });

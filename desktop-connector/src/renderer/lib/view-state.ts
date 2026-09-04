@@ -1,13 +1,13 @@
 import type { CompanionSnapshot } from "../../contracts";
 
-export type MainView = "pairing" | "offline" | "connecting" | "connected" | "mcp_unavailable" | "degraded";
+export type MainView = "sign_in" | "offline" | "connecting" | "connected" | "mcp_unavailable" | "degraded";
 
 export function newestSnapshot(current: CompanionSnapshot, incoming: CompanionSnapshot): CompanionSnapshot {
   return incoming.updatedAt > current.updatedAt ? incoming : current;
 }
 
 export function getMainView(snapshot: CompanionSnapshot): MainView {
-  if (snapshot.state === "awaiting_pairing") return "pairing";
+  if (snapshot.state === "awaiting_sign_in") return "sign_in";
   if (snapshot.state === "connector_offline" || snapshot.state === "stopped" || snapshot.state === "error") return "offline";
   if (snapshot.state === "ready" && snapshot.cloudHealth === "connected" && snapshot.mcpHealth === "connected" && snapshot.supportedToolCount > 0) return "connected";
   if (snapshot.state === "studio_mcp_unavailable" || snapshot.state === "studio_not_installed" || (snapshot.state === "ready" && snapshot.mcpHealth !== "connected")) return "mcp_unavailable";

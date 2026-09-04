@@ -14,7 +14,6 @@ const base: CompanionSnapshot = {
   mcpHealth: "connected",
   connectionStage: "tool_discovery",
   degradedReason: null,
-  pairingError: null,
   experienceName: null,
   supportedToolCount: 1,
   supportedTools: ["get_studio_state"],
@@ -33,12 +32,12 @@ describe("connector view mapping", () => {
     expect(getMainView({ ...base, state: "ready" })).toBe("connected");
   });
 
-  it("keeps pairing and connecting distinct", () => {
-    expect(getMainView({ ...base, state: "awaiting_pairing" })).toBe("pairing");
+  it("keeps sign-in and connecting distinct", () => {
+    expect(getMainView({ ...base, state: "awaiting_sign_in" })).toBe("sign_in");
     expect(getMainView(base)).toBe("connecting");
   });
 
-  it("keeps a retained offline session out of the pairing flow", () => {
+  it("keeps a retained offline session out of the sign-in flow", () => {
     expect(getMainView({ ...base, state: "connector_offline" })).toBe("offline");
     expect(getMainView({ ...base, state: "stopped" })).toBe("offline");
     expect(getMainView({ ...base, state: "error" })).toBe("offline");

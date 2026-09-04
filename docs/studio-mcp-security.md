@@ -19,16 +19,17 @@ or OAuth flow for the local `stdio` server. The Nexus connector token is backend
 authentication only and is never forwarded to Studio MCP. MCP's HTTP OAuth
 model does not apply to this local `stdio` hop.
 
-## Pairing and connector tokens
+## Browser authorization and connector tokens
 
-- Pairing codes are random, short-lived, single-use, and bound to the website
-  user that created them.
-- Claiming creates a distinct `mcp_local` session and invalidates the code.
+- MCP connector login uses the user's normal browser session. The authenticated
+  browser approves a short-lived, single-use authorization grant bound to the
+  connector's loopback redirect and PKCE S256 challenge.
+- Exchanging that grant atomically creates a distinct `mcp_local` session. The
+  MCP connector has no manual pairing-code path.
 - Tokens use the form `nsmcp_<sessionId>_<secret>` so they cannot be confused
   with existing plugin credentials.
-- Only a cryptographic hash of the secret is stored. Raw tokens and pairing
-  secrets are never persisted in Firestore, logs, telemetry, errors, or API
-  responses after the one claim response that delivers the token to its owner.
+- Only cryptographic hashes of access and refresh secrets are stored. Raw
+  credentials are never persisted in Firestore, logs, telemetry, or errors.
 - Verification parses and validates the exact prefix/session format, compares
   hashes with a timing-safe operation, and checks session type, status, expiry,
   and revocation.
@@ -43,12 +44,12 @@ connector route.
 
 ## Secret handling
 
-The connector keeps the session token in process memory by default. Optional
-local persistence must use an operating-system credential store or an equivalent
-documented protected mechanism; a plain-text dotfile is not acceptable.
+The connector keeps active credentials in process memory and persists the
+browser-authenticated session only in the operating-system credential store; a
+plain-text dotfile is not acceptable.
 
 Logs use allowlisted structured fields. Redaction covers connector and plugin
-token prefixes, bearer headers, pairing codes, environment values, MCP request
+token prefixes, bearer headers, authorization grants, environment values, MCP request
 arguments that may contain source, and arbitrary subprocess diagnostic text.
 CLI output never prints a raw token or raw MCP configuration.
 
@@ -174,14 +175,14 @@ to another user's or another connector's queue.
 
 ## Abuse and availability controls
 
-- Pairing, status, test, disconnect, heartbeat, capability, poll, and ack routes
+- Browser authorization, status, test, disconnect, heartbeat, capability, poll, and ack routes
   use appropriate existing rate limits or dedicated bounded limits.
 - Long-poll duration and response size are bounded.
 - Capability lists, versions, error messages, MCP content, diagnostics, and
   command results are normalized and size-limited before storage.
 - Connector routes bypass browser App Check only where required for the local
   non-browser client; every such route requires the dedicated connector token
-  except the one-time pairing claim.
+  except the PKCE-protected one-time token exchange and refresh/revoke routes.
 - Command ownership, type, terminal state, and acknowledgment identity are
   checked server-side. Duplicate terminal acknowledgments cannot replay
   downstream side effects.
@@ -192,7 +193,7 @@ to another user's or another connector's queue.
 
 Automated coverage must include:
 
-- pairing expiry and one-time claim;
+- browser authorization expiry, PKCE validation, and single-use exchange;
 - distinct plugin/MCP token prefixes and cross-route rejection;
 - hash-only storage and timing-safe validation;
 - expiry, revocation, and stale liveness behavior;

@@ -1,4 +1,5 @@
 export { NexusBackendClient } from "./backend-client.js";
+export { loginWithBrowser } from "./cli-auth.js";
 export { CommandExecutor, nexusStableHash, sha256, unsupportedResult } from "./command-executor.js";
 export { loadConfig, HELP_TEXT, type ConnectorConfig } from "./config.js";
 export { NexusLocalConnector, delay, type ConnectorLifecycleState, type ConnectorTelemetry, type LocalConnectorOptions } from "./connector.js";

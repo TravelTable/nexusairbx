@@ -1,8 +1,7 @@
-export type CompanionState = "awaiting_pairing" | "connecting" | "studio_not_installed" | "studio_mcp_unavailable" | "connector_offline" | "ready" | "degraded" | "stopped" | "error";
+export type CompanionState = "awaiting_sign_in" | "connecting" | "studio_not_installed" | "studio_mcp_unavailable" | "connector_offline" | "ready" | "degraded" | "stopped" | "error";
 export type ServiceHealth = "disconnected" | "connecting" | "connected" | "warning";
 export type ConnectionStage = "cloud" | "runtime" | "studio_detection" | "mcp" | "tool_discovery" | null;
 export type DegradedReason = "studio_closed" | "mcp_transport_lost" | "mcp_initialization_failed" | "zero_supported_tools" | "heartbeat_stale" | "multiple_studio_windows" | "target_place_unavailable" | "runtime_failure" | "cloud_loss" | null;
-export type PairingError = "invalid" | "already_used" | "expired" | null;
 export type CompanionUpdateState = "idle" | "checking" | "available" | "downloading" | "downloaded" | "error";
 export type ThemePreference = "dark" | "light" | "system";
 
@@ -34,7 +33,6 @@ export interface CompanionSnapshot {
   mcpHealth: ServiceHealth;
   connectionStage: ConnectionStage;
   degradedReason: DegradedReason;
-  pairingError: PairingError;
   experienceName: string | null;
   supportedToolCount: number;
   supportedTools: string[];
@@ -70,12 +68,11 @@ export interface ConnectorDesktopApi {
   reportReady(): void;
   getState(): Promise<CompanionSnapshot>;
   getDiagnostics(): Promise<CompanionDiagnostics>;
-  pair(code: string): Promise<CompanionSnapshot>;
+  signIn(): Promise<CompanionSnapshot>;
   retry(): Promise<CompanionSnapshot>;
   start(): Promise<CompanionSnapshot>;
   stop(): Promise<CompanionSnapshot>;
   revokeSession(): Promise<CompanionSnapshot>;
-  openPairing(): Promise<void>;
   openHelp(): Promise<void>;
   openDownloads(): Promise<void>;
   setPreference(key: PreferenceKey, value: unknown): Promise<CompanionSnapshot>;

@@ -58,16 +58,16 @@ continues to use `https://api.nexusrbx.com`.
 
 ## Test Roblox Studio MCP
 
-Enable Roblox Studio MCP and keep the intended place open. From the local AI
-page choose **Connect Roblox Studio → Advanced → Roblox MCP** and create a
-pairing code. In a second terminal run:
+Enable Roblox Studio MCP and keep the intended place open. In a second terminal
+run:
 
 ```powershell
 npm run mcp:local
 ```
 
-Enter the pairing code when prompted. The connector talks to the local API and
-starts the official Studio MCP process on this computer.
+The connector opens the local NexusRBX website for browser sign-in, stores the
+resulting session in the operating-system credential store, talks to the local
+API, and starts the official Studio MCP process on this computer.
 
 ## Production boundary
 
