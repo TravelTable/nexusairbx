@@ -75,10 +75,12 @@ local function getInspectionRoots()
 	local seen = {}
 	local preferred = {
 		ReplicatedStorage,
+		ReplicatedFirst,
 		ServerScriptService,
 		ServerStorage,
 		StarterGui,
 		StarterPlayer,
+		StarterPack,
 		Workspace,
 		Lighting,
 	}
@@ -89,7 +91,7 @@ local function getInspectionRoots()
 		end
 	end
 	for _, child in ipairs(game:GetChildren()) do
-		if not seen[child] then
+		if SERVICE_ROOTS[child.Name] and not seen[child] then
 			seen[child] = true
 			table.insert(roots, child)
 		end

@@ -40,10 +40,12 @@ local Services = {
 	CollectionService = game:GetService("CollectionService"),
 	ScriptEditorService = game:GetService("ScriptEditorService"),
 	ReplicatedStorage = game:GetService("ReplicatedStorage"),
+	ReplicatedFirst = game:GetService("ReplicatedFirst"),
 	ServerScriptService = game:GetService("ServerScriptService"),
 	ServerStorage = game:GetService("ServerStorage"),
 	StarterGui = game:GetService("StarterGui"),
 	StarterPlayer = game:GetService("StarterPlayer"),
+	StarterPack = game:GetService("StarterPack"),
 	Workspace = game:GetService("Workspace"),
 	Lighting = game:GetService("Lighting"),
 	Selection = game:GetService("Selection"),
@@ -53,17 +55,21 @@ local Services = {
 -- Lives in config (not rewritten by bundle-plugin.js) so every module sees the same string keys.
 SERVICE_ROOTS = {
 	ReplicatedStorage = Services.ReplicatedStorage,
+	ReplicatedFirst = Services.ReplicatedFirst,
 	ServerScriptService = Services.ServerScriptService,
 	ServerStorage = Services.ServerStorage,
 	StarterGui = Services.StarterGui,
 	StarterPlayer = Services.StarterPlayer,
+	StarterPack = Services.StarterPack,
 	Workspace = Services.Workspace,
 	Lighting = Services.Lighting,
 	["Services.ReplicatedStorage"] = Services.ReplicatedStorage,
+	["Services.ReplicatedFirst"] = Services.ReplicatedFirst,
 	["Services.ServerScriptService"] = Services.ServerScriptService,
 	["Services.ServerStorage"] = Services.ServerStorage,
 	["Services.StarterGui"] = Services.StarterGui,
 	["Services.StarterPlayer"] = Services.StarterPlayer,
+	["Services.StarterPack"] = Services.StarterPack,
 	["Services.Workspace"] = Services.Workspace,
 	["Services.Lighting"] = Services.Lighting,
 }
@@ -315,7 +321,14 @@ local function requestWithRetry(method, path, body, token, opts)
 	if opts.idempotent and (type(opts.idempotencyKey) ~= "string" or opts.idempotencyKey == "") then
 		opts.idempotencyKey = Services.HttpService:GenerateGUID(false)
 	end
-	local maxAttempts = math.clamp(tonumber(opts.maxAttempts) or 3, 1, 5)
+	local normalizedMethod = string.upper(tostring(method or "GET"))
+	local retrySafe = normalizedMethod == "GET"
+		or normalizedMethod == "HEAD"
+		or normalizedMethod == "OPTIONS"
+		or opts.idempotent == true
+		or (type(opts.idempotencyKey) == "string" and opts.idempotencyKey ~= "")
+	local defaultAttempts = retrySafe and 3 or 1
+	local maxAttempts = math.clamp(tonumber(opts.maxAttempts) or defaultAttempts, 1, 5)
 	local baseDelay = tonumber(opts.baseDelay) or 0.5
 	local attempt = 0
 	local lastResult
@@ -850,7 +863,55 @@ propertiesOf = function(inst)
 end
 
 propertyHash = function(inst)
-	return stableHash(jsonEncode(propertiesOf(inst)) .. jsonEncode(attributesOf(inst)) .. table.concat(Services.CollectionService:GetTags(inst), ","))
+	-- Nested helpers avoid spending scarce top-level local registers in the
+	-- generated single-chunk plugin bundle.
+	local function isArrayTable(value)
+		local count = 0
+		local highest = 0
+		for key in pairs(value) do
+			if type(key) ~= "number" or key < 1 or key ~= math.floor(key) then
+				return false, 0
+			end
+			count += 1
+			highest = math.max(highest, key)
+		end
+		return count == highest, highest
+	end
+	local canonicalEncode
+	canonicalEncode = function(value)
+		if type(value) ~= "table" then
+			return jsonEncode(value)
+		end
+		local isArray, length = isArrayTable(value)
+		if isArray then
+			local entries = {}
+			for index = 1, length do
+				table.insert(entries, canonicalEncode(value[index]))
+			end
+			return "[" .. table.concat(entries, ",") .. "]"
+		end
+		local entries = {}
+		for key, childValue in pairs(value) do
+			table.insert(entries, { key = tostring(key), value = childValue })
+		end
+		table.sort(entries, function(a, b)
+			return a.key < b.key
+		end)
+		local encoded = {}
+		for _, entry in ipairs(entries) do
+			table.insert(encoded, jsonEncode(entry.key) .. ":" .. canonicalEncode(entry.value))
+		end
+		return "{" .. table.concat(encoded, ",") .. "}"
+	end
+	local tags = Services.CollectionService:GetTags(inst)
+	table.sort(tags)
+	return stableHash(
+		canonicalEncode(propertiesOf(inst))
+			.. "\0"
+			.. canonicalEncode(attributesOf(inst))
+			.. "\0"
+			.. table.concat(tags, "\0")
+	)
 end
 
 scriptHash = function(inst)
@@ -984,26 +1045,19 @@ splitPath = function(path)
 	return parts
 end
 
-getStarterPlayerScripts = function()
-	local folder = Services.StarterPlayer:FindFirstChild("StarterPlayerScripts")
-	if not folder then
-		folder = Instance.new("StarterPlayerScripts")
-		folder.Parent = Services.StarterPlayer
+local function createPathContainer(parent, name)
+	if parent == Services.StarterPlayer then
+		if name == "StarterPlayerScripts" then
+			return Instance.new("StarterPlayerScripts")
+		elseif name == "StarterCharacterScripts" then
+			return Instance.new("StarterCharacterScripts")
+		end
 	end
-	return folder
+	return Instance.new("Folder")
 end
 
 rootFromParts = function(parts)
 	local first = parts[1]
-	if first == "StarterPlayerScripts" then
-		return getStarterPlayerScripts(), 2
-	end
-	if (first == starterPlayerService or first == starterPlayerServicePath) and parts[2] == "StarterPlayerScripts" then
-		return getStarterPlayerScripts(), 3
-	end
-	if first == "Services" and parts[2] == starterPlayerService and parts[3] == "StarterPlayerScripts" then
-		return getStarterPlayerScripts(), 4
-	end
 	local rootInst = SERVICE_ROOTS and SERVICE_ROOTS[first]
 	if rootInst then
 		return rootInst, 2
@@ -1059,7 +1113,7 @@ ensureParent = function(path, createParents)
 			if not createParents then
 				return nil, nil
 			end
-			child = Instance.new("Folder")
+			child = createPathContainer(current, parts[i])
 			child.Name = parts[i]
 			child.Parent = current
 		end
@@ -1540,7 +1594,71 @@ createOrReplaceInstance = function(path, className, properties, createParents)
 	return inst
 end
 
+-- Snapshot restoration must not replace a same-class container. Replacing a
+-- Folder, Model, or GUI root destroys descendants that may have been added by
+-- a creator after Nexus ran, bypassing the keep-my-edits protection.
 restoreSnapshots = function(payload)
+	local function restoreSnapshotInstance(snap)
+	local inst = resolvePath(snap.path)
+	if inst and inst.ClassName ~= snap.className then
+		inst:Destroy()
+		inst = nil
+	end
+	if not inst then
+		local parent, name = ensureParent(snap.path, true)
+		if not parent or not name then
+			error("Could not resolve restore parent for " .. tostring(snap.path))
+		end
+		if not CREATABLE_CLASSES[snap.className] then
+			error("Unsupported restore class: " .. tostring(snap.className))
+		end
+		inst = Instance.new(snap.className)
+		inst.Name = name
+		inst.Parent = parent
+	end
+	for key, value in pairs(snap.properties or {}) do
+		if key ~= "ClassName" then
+			local handled, propertyOk, propertyErr = safeRestoreAssetReference(inst, key, value)
+			if not handled then
+				propertyOk, propertyErr = safeSetProperty(inst, key, value)
+			end
+			if not propertyOk then
+				error(propertyErr)
+			end
+		end
+	end
+	local expectedAttributes = snap.attributes or {}
+	for key in pairs(inst:GetAttributes()) do
+		if expectedAttributes[key] == nil then
+			inst:SetAttribute(key, nil)
+		end
+	end
+	for key, value in pairs(expectedAttributes) do
+		inst:SetAttribute(key, value)
+	end
+	local expectedTags = {}
+	for _, tag in ipairs(snap.tags or {}) do
+		expectedTags[tostring(tag)] = true
+	end
+	for _, tag in ipairs(Services.CollectionService:GetTags(inst)) do
+		if not expectedTags[tag] then
+			Services.CollectionService:RemoveTag(inst, tag)
+		end
+	end
+	for tag in pairs(expectedTags) do
+		if not Services.CollectionService:HasTag(inst, tag) then
+			Services.CollectionService:AddTag(inst, tag)
+		end
+	end
+	if SCRIPT_CLASSES[inst.ClassName] and snap.source ~= nil then
+		local wrote, writeErr = writeScriptSource(inst, snap.source)
+		if not wrote then
+			error(writeErr or "Could not restore script source")
+		end
+	end
+		return inst
+	end
+
 	local restored = 0
 	local removed = 0
 	-- `kept` counts instances left untouched because the user edited them after
@@ -1592,29 +1710,7 @@ restoreSnapshots = function(payload)
 						return
 					end
 				end
-				local inst = createOrReplaceInstance(snap.path, snap.className, snap.properties or {}, true)
-				if SCRIPT_CLASSES[inst.ClassName] and snap.source ~= nil then
-					local wrote, writeErr = writeScriptSource(inst, snap.source)
-					if not wrote then
-						error(writeErr or "Could not restore script source")
-					end
-				end
-				for key, value in pairs(snap.attributes or {}) do
-					local setOk, setErr = pcall(function()
-						inst:SetAttribute(key, value)
-					end)
-					if not setOk then
-						error(setErr or ("Could not restore attribute " .. tostring(key)))
-					end
-				end
-				for _, tag in ipairs(snap.tags or {}) do
-					local tagOk, tagErr = pcall(function()
-						Services.CollectionService:AddTag(inst, tag)
-					end)
-					if not tagOk then
-						error(tagErr or ("Could not restore tag " .. tostring(tag)))
-					end
-				end
+				local inst = restoreSnapshotInstance(snap)
 				local restoredHash = snapshotStateHash(inst)
 				if snap.preHash and restoredHash ~= snap.preHash then
 					if inst:IsA("ScreenGui") and type(UiArtifact) == "table" and type(UiArtifact.treeHash) == "function" then
@@ -4369,10 +4465,12 @@ getInspectionRoots = function()
 	local seen = {}
 	local preferred = {
 		Services.ReplicatedStorage,
+		Services.ReplicatedFirst,
 		Services.ServerScriptService,
 		Services.ServerStorage,
 		Services.StarterGui,
 		Services.StarterPlayer,
+		Services.StarterPack,
 		Services.Workspace,
 		Services.Lighting,
 	}
@@ -4383,7 +4481,7 @@ getInspectionRoots = function()
 		end
 	end
 	for _, child in ipairs(game:GetChildren()) do
-		if not seen[child] then
+		if SERVICE_ROOTS[child.Name] and not seen[child] then
 			seen[child] = true
 			table.insert(roots, child)
 		end
@@ -6666,8 +6764,9 @@ parseLuau = function(payload)
 	if source:find("<file", 1, true) or source:find("</file>", 1, true) then
 		table.insert(diagnostics, { severity = "error", message = "Source contains leaked file markup" })
 	end
+	local scanSource = ScriptContextGuard.stripCommentsAndStrings(source)
 	local balance = 0
-	for token in source:gmatch("[%(%)]") do
+	for token in scanSource:gmatch("[%(%)]") do
 		if token == "(" then
 			balance = balance + 1
 		else
@@ -6681,9 +6780,16 @@ parseLuau = function(payload)
 	if balance > 0 then
 		table.insert(diagnostics, { severity = "warning", message = "Possible unmatched opening parenthesis" })
 	end
+	local hasError = false
+	for _, diagnostic in ipairs(diagnostics) do
+		if diagnostic.severity == "error" then
+			hasError = true
+			break
+		end
+	end
 	return {
 		path = path ~= "" and path or nil,
-		ok = #diagnostics == 0,
+		ok = not hasError,
 		diagnostics = diagnostics,
 		sourceHash = stableHash(source),
 		sourceLength = #source,
@@ -6968,6 +7074,8 @@ local function validateManagedOperations(operations)
 	local targetPaths = {}
 	local renameSources = {}
 	local deleteTargets = {}
+	-- Collect the complete graph before checking conflicts: execution is phased,
+	-- so input ordering must not affect whether a batch is valid.
 	for index, op in ipairs(operations or {}) do
 		local opType = tostring(op.type or "")
 		if opType == "upsert" then
@@ -6978,15 +7086,6 @@ local function validateManagedOperations(operations)
 				table.insert(errors, "Duplicate target path: " .. targetPath)
 			else
 				targetPaths[targetPath] = true
-			end
-		elseif opType == "delete" then
-			local targetPath = tostring(op.path or "")
-			if targetPath == "" then
-				table.insert(errors, ("Delete %d is missing path"):format(index))
-			elseif deleteTargets[targetPath] then
-				table.insert(errors, "Duplicate delete path: " .. targetPath)
-			else
-				deleteTargets[targetPath] = true
 			end
 		elseif opType == "rename" then
 			local fromPath = tostring(op.fromPath or "")
@@ -6999,17 +7098,33 @@ local function validateManagedOperations(operations)
 				if renameSources[fromPath] then
 					table.insert(errors, "Duplicate rename source: " .. fromPath)
 				end
-				if deleteTargets[fromPath] then
-					table.insert(errors, "Conflicting rename/delete for " .. fromPath)
-				end
 				if targetPaths[toPath] then
 					table.insert(errors, "Duplicate target path: " .. toPath)
 				end
 				renameSources[fromPath] = true
 				targetPaths[toPath] = true
 			end
+		elseif opType == "delete" then
+			local targetPath = tostring(op.path or "")
+			if targetPath == "" then
+				table.insert(errors, ("Delete %d is missing path"):format(index))
+			elseif deleteTargets[targetPath] then
+				table.insert(errors, "Duplicate delete path: " .. targetPath)
+			else
+				deleteTargets[targetPath] = true
+			end
 		else
 			table.insert(errors, ("Unsupported operation type: %s"):format(opType))
+		end
+	end
+	for sourcePath in pairs(renameSources) do
+		if deleteTargets[sourcePath] then
+			table.insert(errors, "Conflicting rename/delete for " .. sourcePath)
+		end
+	end
+	for deletePath in pairs(deleteTargets) do
+		if targetPaths[deletePath] then
+			table.insert(errors, "Conflicting delete/write target: " .. deletePath)
 		end
 	end
 	return errors
@@ -11236,6 +11351,43 @@ function processNextCommand()
 		end
 		return finalizeCommandOutcome(command, applyOk, resultOrError)
 	end)
+	if not finished then
+		local fatalMessage = "Studio command executor crashed: " .. tostring(outcome)
+		local crashResult = {
+			ok = false,
+			success = false,
+			verified = false,
+			retryable = true,
+			code = "STUDIO_EXECUTOR_CRASH",
+			commandId = command.id,
+			runId = command.runId,
+			stepId = command.stepId,
+			operation = command.type,
+			operationId = command.operationId,
+			idempotencyKey = command.idempotencyKey,
+			error = {
+				code = "STUDIO_EXECUTOR_CRASH",
+				message = fatalMessage,
+				retryable = true,
+			},
+		}
+		local ackCallOk, ackConfirmed = pcall(function()
+			return ack(command, "failed", crashResult, fatalMessage)
+		end)
+		local receiptConfirmed = ackCallOk and ackConfirmed == true
+		if receiptConfirmed then
+			setBridgeState("degraded", "command executor recovered from a crash")
+		else
+			setBridgeState("reconciling", "executor crash receipt pending")
+		end
+		setLast(fatalMessage)
+		pushActivity({
+			commandType = command.type or "command",
+			status = receiptConfirmed and "failed" or "uncertain",
+			detail = fatalMessage,
+		})
+		outcome = receiptConfirmed and "failed" or "uncertain"
+	end
 
 	executorBusy = false
 	executorStartedAt = 0
@@ -11263,7 +11415,7 @@ end
 -- BEGIN src/Main.server.lua
 do
 	local override = plugin:GetSetting("nexusrbxBackendUrl")
-	if type(override) == "string" and string.find(string.lower(override), "railway%.app", 1, true) then
+	if type(override) == "string" and string.find(string.lower(override), "railway.app", 1, true) then
 		plugin:SetSetting("nexusrbxBackendUrl", nil)
 	end
 end
@@ -11488,22 +11640,33 @@ confirmRestoreButton.MouseButton1Click:Connect(function()
 		return
 	end
 	local recording = beginRecording("NexusRBX restore local snapshots")
-	local ok, resultOrError = pcall(function()
+	local callOk, resultOrError = pcall(function()
 		return restoreSnapshots({ snapshots = localSnapshots, force = force })
 	end)
-	if ok then
-		finishRecording(recording, true)
-		local keptText = (resultOrError.kept or 0) > 0 and (", %d kept (you edited them)"):format(resultOrError.kept) or ""
-		setLast(("local restore complete: %d restored, %d removed%s"):format(resultOrError.restored or 0, resultOrError.removed or 0, keptText))
+	local result = callOk and type(resultOrError) == "table" and resultOrError or nil
+	local hardFailure = not callOk or not result or #(result.errors or {}) > 0
+	finishRecording(recording, not hardFailure)
+	if not hardFailure then
+		local kept = tonumber(result.kept) or 0
+		local keptText = kept > 0 and (", %d kept (you edited them)"):format(kept) or ""
+		setLast(("local restore complete: %d restored, %d removed%s"):format(result.restored or 0, result.removed or 0, keptText))
 		pushActivity({
 			commandType = "restore_all",
-			status = "succeeded",
+			status = kept > 0 and "partial" or "succeeded",
 			detail = tostring(#localSnapshots) .. " snapshots" .. keptText,
 		})
-		showToast((resultOrError.kept or 0) > 0 and ("Restored; kept %d of your edits"):format(resultOrError.kept) or "Snapshots restored", "success")
+		showToast(kept > 0 and ("Restored; kept %d of your edits"):format(kept) or "Snapshots restored", "success")
 	else
-		finishRecording(recording, false)
-		setLast("local restore failed: " .. tostring(resultOrError))
+		local message
+		if not callOk then
+			message = tostring(resultOrError)
+		elseif result and result.errors and result.errors[1] then
+			message = tostring(result.errors[1].message or "Snapshot restore incomplete")
+		else
+			message = tostring(result and result.error or "Snapshot restore incomplete")
+		end
+		setLast("local restore failed: " .. message)
+		pushActivity({ commandType = "restore_all", status = "failed", detail = message })
 		showToast("Restore failed", "error")
 	end
 	updateSnapshotLabel()

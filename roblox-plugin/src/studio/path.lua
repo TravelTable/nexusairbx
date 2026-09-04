@@ -39,26 +39,19 @@ local function splitPath(path)
 	return parts
 end
 
-local function getStarterPlayerScripts()
-	local folder = StarterPlayer:FindFirstChild("StarterPlayerScripts")
-	if not folder then
-		folder = Instance.new("StarterPlayerScripts")
-		folder.Parent = StarterPlayer
+local function createPathContainer(parent, name)
+	if parent == StarterPlayer then
+		if name == "StarterPlayerScripts" then
+			return Instance.new("StarterPlayerScripts")
+		elseif name == "StarterCharacterScripts" then
+			return Instance.new("StarterCharacterScripts")
+		end
 	end
-	return folder
+	return Instance.new("Folder")
 end
 
 local function rootFromParts(parts)
 	local first = parts[1]
-	if first == "StarterPlayerScripts" then
-		return getStarterPlayerScripts(), 2
-	end
-	if (first == starterPlayerService or first == starterPlayerServicePath) and parts[2] == "StarterPlayerScripts" then
-		return getStarterPlayerScripts(), 3
-	end
-	if first == "Services" and parts[2] == starterPlayerService and parts[3] == "StarterPlayerScripts" then
-		return getStarterPlayerScripts(), 4
-	end
 	local rootInst = SERVICE_ROOTS and SERVICE_ROOTS[first]
 	if rootInst then
 		return rootInst, 2
@@ -114,7 +107,7 @@ local function ensureParent(path, createParents)
 			if not createParents then
 				return nil, nil
 			end
-			child = Instance.new("Folder")
+			child = createPathContainer(current, parts[i])
 			child.Name = parts[i]
 			child.Parent = current
 		end

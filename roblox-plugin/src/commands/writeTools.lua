@@ -647,8 +647,9 @@ local function parseLuau(payload)
 	if source:find("<file", 1, true) or source:find("</file>", 1, true) then
 		table.insert(diagnostics, { severity = "error", message = "Source contains leaked file markup" })
 	end
+	local scanSource = ScriptContextGuard.stripCommentsAndStrings(source)
 	local balance = 0
-	for token in source:gmatch("[%(%)]") do
+	for token in scanSource:gmatch("[%(%)]") do
 		if token == "(" then
 			balance = balance + 1
 		else
@@ -662,9 +663,16 @@ local function parseLuau(payload)
 	if balance > 0 then
 		table.insert(diagnostics, { severity = "warning", message = "Possible unmatched opening parenthesis" })
 	end
+	local hasError = false
+	for _, diagnostic in ipairs(diagnostics) do
+		if diagnostic.severity == "error" then
+			hasError = true
+			break
+		end
+	end
 	return {
 		path = path ~= "" and path or nil,
-		ok = #diagnostics == 0,
+		ok = not hasError,
 		diagnostics = diagnostics,
 		sourceHash = stableHash(source),
 		sourceLength = #source,
@@ -949,6 +957,8 @@ local function validateManagedOperations(operations)
 	local targetPaths = {}
 	local renameSources = {}
 	local deleteTargets = {}
+	-- Collect the complete graph before checking conflicts: execution is phased,
+	-- so input ordering must not affect whether a batch is valid.
 	for index, op in ipairs(operations or {}) do
 		local opType = tostring(op.type or "")
 		if opType == "upsert" then
@@ -959,15 +969,6 @@ local function validateManagedOperations(operations)
 				table.insert(errors, "Duplicate target path: " .. targetPath)
 			else
 				targetPaths[targetPath] = true
-			end
-		elseif opType == "delete" then
-			local targetPath = tostring(op.path or "")
-			if targetPath == "" then
-				table.insert(errors, ("Delete %d is missing path"):format(index))
-			elseif deleteTargets[targetPath] then
-				table.insert(errors, "Duplicate delete path: " .. targetPath)
-			else
-				deleteTargets[targetPath] = true
 			end
 		elseif opType == "rename" then
 			local fromPath = tostring(op.fromPath or "")
@@ -980,17 +981,33 @@ local function validateManagedOperations(operations)
 				if renameSources[fromPath] then
 					table.insert(errors, "Duplicate rename source: " .. fromPath)
 				end
-				if deleteTargets[fromPath] then
-					table.insert(errors, "Conflicting rename/delete for " .. fromPath)
-				end
 				if targetPaths[toPath] then
 					table.insert(errors, "Duplicate target path: " .. toPath)
 				end
 				renameSources[fromPath] = true
 				targetPaths[toPath] = true
 			end
+		elseif opType == "delete" then
+			local targetPath = tostring(op.path or "")
+			if targetPath == "" then
+				table.insert(errors, ("Delete %d is missing path"):format(index))
+			elseif deleteTargets[targetPath] then
+				table.insert(errors, "Duplicate delete path: " .. targetPath)
+			else
+				deleteTargets[targetPath] = true
+			end
 		else
 			table.insert(errors, ("Unsupported operation type: %s"):format(opType))
+		end
+	end
+	for sourcePath in pairs(renameSources) do
+		if deleteTargets[sourcePath] then
+			table.insert(errors, "Conflicting rename/delete for " .. sourcePath)
+		end
+	end
+	for deletePath in pairs(deleteTargets) do
+		if targetPaths[deletePath] then
+			table.insert(errors, "Conflicting delete/write target: " .. deletePath)
 		end
 	end
 	return errors

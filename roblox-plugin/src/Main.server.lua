@@ -1,6 +1,6 @@
 do
 	local override = plugin:GetSetting("nexusrbxBackendUrl")
-	if type(override) == "string" and string.find(string.lower(override), "railway%.app", 1, true) then
+	if type(override) == "string" and string.find(string.lower(override), "railway.app", 1, true) then
 		plugin:SetSetting("nexusrbxBackendUrl", nil)
 	end
 end
@@ -225,22 +225,33 @@ confirmRestoreButton.MouseButton1Click:Connect(function()
 		return
 	end
 	local recording = beginRecording("NexusRBX restore local snapshots")
-	local ok, resultOrError = pcall(function()
+	local callOk, resultOrError = pcall(function()
 		return restoreSnapshots({ snapshots = localSnapshots, force = force })
 	end)
-	if ok then
-		finishRecording(recording, true)
-		local keptText = (resultOrError.kept or 0) > 0 and (", %d kept (you edited them)"):format(resultOrError.kept) or ""
-		setLast(("local restore complete: %d restored, %d removed%s"):format(resultOrError.restored or 0, resultOrError.removed or 0, keptText))
+	local result = callOk and type(resultOrError) == "table" and resultOrError or nil
+	local hardFailure = not callOk or not result or #(result.errors or {}) > 0
+	finishRecording(recording, not hardFailure)
+	if not hardFailure then
+		local kept = tonumber(result.kept) or 0
+		local keptText = kept > 0 and (", %d kept (you edited them)"):format(kept) or ""
+		setLast(("local restore complete: %d restored, %d removed%s"):format(result.restored or 0, result.removed or 0, keptText))
 		pushActivity({
 			commandType = "restore_all",
-			status = "succeeded",
+			status = kept > 0 and "partial" or "succeeded",
 			detail = tostring(#localSnapshots) .. " snapshots" .. keptText,
 		})
-		showToast((resultOrError.kept or 0) > 0 and ("Restored; kept %d of your edits"):format(resultOrError.kept) or "Snapshots restored", "success")
+		showToast(kept > 0 and ("Restored; kept %d of your edits"):format(kept) or "Snapshots restored", "success")
 	else
-		finishRecording(recording, false)
-		setLast("local restore failed: " .. tostring(resultOrError))
+		local message
+		if not callOk then
+			message = tostring(resultOrError)
+		elseif result and result.errors and result.errors[1] then
+			message = tostring(result.errors[1].message or "Snapshot restore incomplete")
+		else
+			message = tostring(result and result.error or "Snapshot restore incomplete")
+		end
+		setLast("local restore failed: " .. message)
+		pushActivity({ commandType = "restore_all", status = "failed", detail = message })
 		showToast("Restore failed", "error")
 	end
 	updateSnapshotLabel()

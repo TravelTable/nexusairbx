@@ -221,7 +221,14 @@ local function requestWithRetry(method, path, body, token, opts)
 	if opts.idempotent and (type(opts.idempotencyKey) ~= "string" or opts.idempotencyKey == "") then
 		opts.idempotencyKey = HttpService:GenerateGUID(false)
 	end
-	local maxAttempts = math.clamp(tonumber(opts.maxAttempts) or 3, 1, 5)
+	local normalizedMethod = string.upper(tostring(method or "GET"))
+	local retrySafe = normalizedMethod == "GET"
+		or normalizedMethod == "HEAD"
+		or normalizedMethod == "OPTIONS"
+		or opts.idempotent == true
+		or (type(opts.idempotencyKey) == "string" and opts.idempotencyKey ~= "")
+	local defaultAttempts = retrySafe and 3 or 1
+	local maxAttempts = math.clamp(tonumber(opts.maxAttempts) or defaultAttempts, 1, 5)
 	local baseDelay = tonumber(opts.baseDelay) or 0.5
 	local attempt = 0
 	local lastResult

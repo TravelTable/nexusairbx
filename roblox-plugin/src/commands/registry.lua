@@ -1516,6 +1516,43 @@ function processNextCommand()
 		end
 		return finalizeCommandOutcome(command, applyOk, resultOrError)
 	end)
+	if not finished then
+		local fatalMessage = "Studio command executor crashed: " .. tostring(outcome)
+		local crashResult = {
+			ok = false,
+			success = false,
+			verified = false,
+			retryable = true,
+			code = "STUDIO_EXECUTOR_CRASH",
+			commandId = command.id,
+			runId = command.runId,
+			stepId = command.stepId,
+			operation = command.type,
+			operationId = command.operationId,
+			idempotencyKey = command.idempotencyKey,
+			error = {
+				code = "STUDIO_EXECUTOR_CRASH",
+				message = fatalMessage,
+				retryable = true,
+			},
+		}
+		local ackCallOk, ackConfirmed = pcall(function()
+			return ack(command, "failed", crashResult, fatalMessage)
+		end)
+		local receiptConfirmed = ackCallOk and ackConfirmed == true
+		if receiptConfirmed then
+			setBridgeState("degraded", "command executor recovered from a crash")
+		else
+			setBridgeState("reconciling", "executor crash receipt pending")
+		end
+		setLast(fatalMessage)
+		pushActivity({
+			commandType = command.type or "command",
+			status = receiptConfirmed and "failed" or "uncertain",
+			detail = fatalMessage,
+		})
+		outcome = receiptConfirmed and "failed" or "uncertain"
+	end
 
 	executorBusy = false
 	executorStartedAt = 0

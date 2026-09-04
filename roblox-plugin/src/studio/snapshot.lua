@@ -185,7 +185,71 @@ local function createOrReplaceInstance(path, className, properties, createParent
 	return inst
 end
 
+-- Snapshot restoration must not replace a same-class container. Replacing a
+-- Folder, Model, or GUI root destroys descendants that may have been added by
+-- a creator after Nexus ran, bypassing the keep-my-edits protection.
 local function restoreSnapshots(payload)
+	local function restoreSnapshotInstance(snap)
+	local inst = resolvePath(snap.path)
+	if inst and inst.ClassName ~= snap.className then
+		inst:Destroy()
+		inst = nil
+	end
+	if not inst then
+		local parent, name = ensureParent(snap.path, true)
+		if not parent or not name then
+			error("Could not resolve restore parent for " .. tostring(snap.path))
+		end
+		if not CREATABLE_CLASSES[snap.className] then
+			error("Unsupported restore class: " .. tostring(snap.className))
+		end
+		inst = Instance.new(snap.className)
+		inst.Name = name
+		inst.Parent = parent
+	end
+	for key, value in pairs(snap.properties or {}) do
+		if key ~= "ClassName" then
+			local handled, propertyOk, propertyErr = safeRestoreAssetReference(inst, key, value)
+			if not handled then
+				propertyOk, propertyErr = safeSetProperty(inst, key, value)
+			end
+			if not propertyOk then
+				error(propertyErr)
+			end
+		end
+	end
+	local expectedAttributes = snap.attributes or {}
+	for key in pairs(inst:GetAttributes()) do
+		if expectedAttributes[key] == nil then
+			inst:SetAttribute(key, nil)
+		end
+	end
+	for key, value in pairs(expectedAttributes) do
+		inst:SetAttribute(key, value)
+	end
+	local expectedTags = {}
+	for _, tag in ipairs(snap.tags or {}) do
+		expectedTags[tostring(tag)] = true
+	end
+	for _, tag in ipairs(CollectionService:GetTags(inst)) do
+		if not expectedTags[tag] then
+			CollectionService:RemoveTag(inst, tag)
+		end
+	end
+	for tag in pairs(expectedTags) do
+		if not CollectionService:HasTag(inst, tag) then
+			CollectionService:AddTag(inst, tag)
+		end
+	end
+	if SCRIPT_CLASSES[inst.ClassName] and snap.source ~= nil then
+		local wrote, writeErr = writeScriptSource(inst, snap.source)
+		if not wrote then
+			error(writeErr or "Could not restore script source")
+		end
+	end
+		return inst
+	end
+
 	local restored = 0
 	local removed = 0
 	-- `kept` counts instances left untouched because the user edited them after
@@ -237,29 +301,7 @@ local function restoreSnapshots(payload)
 						return
 					end
 				end
-				local inst = createOrReplaceInstance(snap.path, snap.className, snap.properties or {}, true)
-				if SCRIPT_CLASSES[inst.ClassName] and snap.source ~= nil then
-					local wrote, writeErr = writeScriptSource(inst, snap.source)
-					if not wrote then
-						error(writeErr or "Could not restore script source")
-					end
-				end
-				for key, value in pairs(snap.attributes or {}) do
-					local setOk, setErr = pcall(function()
-						inst:SetAttribute(key, value)
-					end)
-					if not setOk then
-						error(setErr or ("Could not restore attribute " .. tostring(key)))
-					end
-				end
-				for _, tag in ipairs(snap.tags or {}) do
-					local tagOk, tagErr = pcall(function()
-						CollectionService:AddTag(inst, tag)
-					end)
-					if not tagOk then
-						error(tagErr or ("Could not restore tag " .. tostring(tag)))
-					end
-				end
+				local inst = restoreSnapshotInstance(snap)
 				local restoredHash = snapshotStateHash(inst)
 				if snap.preHash and restoredHash ~= snap.preHash then
 					if inst:IsA("ScreenGui") and type(UiArtifact) == "table" and type(UiArtifact.treeHash) == "function" then

@@ -380,7 +380,55 @@ local function propertiesOf(inst)
 end
 
 local function propertyHash(inst)
-	return stableHash(jsonEncode(propertiesOf(inst)) .. jsonEncode(attributesOf(inst)) .. table.concat(CollectionService:GetTags(inst), ","))
+	-- Nested helpers avoid spending scarce top-level local registers in the
+	-- generated single-chunk plugin bundle.
+	local function isArrayTable(value)
+		local count = 0
+		local highest = 0
+		for key in pairs(value) do
+			if type(key) ~= "number" or key < 1 or key ~= math.floor(key) then
+				return false, 0
+			end
+			count += 1
+			highest = math.max(highest, key)
+		end
+		return count == highest, highest
+	end
+	local canonicalEncode
+	canonicalEncode = function(value)
+		if type(value) ~= "table" then
+			return jsonEncode(value)
+		end
+		local isArray, length = isArrayTable(value)
+		if isArray then
+			local entries = {}
+			for index = 1, length do
+				table.insert(entries, canonicalEncode(value[index]))
+			end
+			return "[" .. table.concat(entries, ",") .. "]"
+		end
+		local entries = {}
+		for key, childValue in pairs(value) do
+			table.insert(entries, { key = tostring(key), value = childValue })
+		end
+		table.sort(entries, function(a, b)
+			return a.key < b.key
+		end)
+		local encoded = {}
+		for _, entry in ipairs(entries) do
+			table.insert(encoded, jsonEncode(entry.key) .. ":" .. canonicalEncode(entry.value))
+		end
+		return "{" .. table.concat(encoded, ",") .. "}"
+	end
+	local tags = CollectionService:GetTags(inst)
+	table.sort(tags)
+	return stableHash(
+		canonicalEncode(propertiesOf(inst))
+			.. "\0"
+			.. canonicalEncode(attributesOf(inst))
+			.. "\0"
+			.. table.concat(tags, "\0")
+	)
 end
 
 local function scriptHash(inst)
