@@ -5,7 +5,6 @@ export default function VideoShowcase() {
   return (
     <section id="proof" className={styles.videoSection} aria-labelledby="video-showcase-heading">
       <div className={styles.sectionHeading}>
-        <span className={styles.eyebrow}>REAL ROBLOX BUILD DEMOS</span>
         <h2 id="video-showcase-heading">See what creators build with NexusRBX</h2>
         <p>
           Real gameplay, custom systems, and Roblox Studio project results captured directly from live test environments.
@@ -25,7 +24,6 @@ export default function VideoShowcase() {
               controls
               aria-label="Video demo of 3D platforming traversal and gameplay mechanics"
             />
-            <span className={styles.videoBadge}>GAMEPLAY DEMO</span>
           </div>
           <div className={styles.videoMeta}>
             <h3>3D Traversal & Platforming Systems</h3>
@@ -45,7 +43,6 @@ export default function VideoShowcase() {
               controls
               aria-label="Video demo of competitive arena match logic and multiplayer rounds"
             />
-            <span className={styles.videoBadge}>ARENA MATCH DEMO</span>
           </div>
           <div className={styles.videoMeta}>
             <h3>Multiplayer Arena & Match Logic</h3>

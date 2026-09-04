@@ -44,7 +44,6 @@ export default function NexusFeaturesGrid() {
   return (
     <section id="workflow" className={styles.featuresSection} aria-labelledby="features-heading">
       <div className={styles.sectionHeading}>
-        <span className={styles.eyebrow}>CORE CAPABILITIES</span>
         <h2 id="features-heading">Built for serious Roblox developers</h2>
         <p>
           From single script fixes to multi-file game systems, Nexus connects AI generation with live Roblox Studio workflows.

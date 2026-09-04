@@ -149,7 +149,6 @@ function FocusedTools() {
   return (
     <section id="product" className={styles.focusedTools} aria-labelledby="focused-tools-heading">
       <div className={styles.sectionHeading}>
-        <span className={styles.eyebrow}>FOCUSED ROBLOX TOOLS</span>
         <h2 id="focused-tools-heading">Start with the scripting task you need.</h2>
         <p>
           Choose a focused generator for one job, or use the Studio agent when the change spans a larger Roblox project.
@@ -215,7 +214,6 @@ function FinalCta({ surface, navigate }) {
   return (
     <section className={styles.finalCta} aria-labelledby="final-cta-heading">
       <div>
-        <span className={styles.eyebrow}>START WITH ONE REQUEST</span>
         <h2 id="final-cta-heading">Build more of the game you actually want to ship.</h2>
         <p>Bring a new idea or connect an existing project. Nexus keeps the work visible from request to review.</p>
       </div>

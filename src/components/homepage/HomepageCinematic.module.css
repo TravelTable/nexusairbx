@@ -87,19 +87,6 @@
   transform: scale(0.78);
   transform-origin: top right;
 }
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  min-height: 28px;
-  padding: 4px 10px;
-  border: 1px solid var(--nx-purple-border);
-  border-radius: var(--nx-radius-pill);
-  background: var(--nx-purple-soft);
-  color: var(--nx-purple-strong);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
 .heroHeading {
   max-width: none;
   margin: 20px 0 0 !important;
@@ -773,21 +760,6 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.videoBadge {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  padding: 4px 10px;
-  border: 1px solid rgba(168, 85, 247, 0.4);
-  border-radius: var(--nx-radius-pill);
-  background: rgba(13, 15, 23, 0.85);
-  color: #c084fc;
-  font-size: 0.65rem;
-  font-weight: 750;
-  letter-spacing: 0.08em;
-  backdrop-filter: blur(8px);
 }
 
 .videoMeta {
