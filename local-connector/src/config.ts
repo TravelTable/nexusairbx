@@ -2,10 +2,11 @@ import { ConnectorError } from "./errors.js";
 
 export interface ConnectorConfig {
   apiUrl: string;
-  pairCode?: string;
+	webUrl: string;
   mcpCommand: string;
   mcpArgs: string[];
-  requestTimeoutMs: number;
+	requestTimeoutMs: number;
+	mcpToolTimeoutMs: number;
   heartbeatMs: number;
   pollWaitMs: number;
   reconnectMinMs: number;
@@ -18,18 +19,19 @@ export const HELP_TEXT = `NexusRBX Local Connector
 Usage: nexusrbx-local-connector [options]
 
 Options:
-  --pair-code <code>       Pairing code shown by NexusRBX
-  --api-url <url>          NexusRBX API base URL
+	--api-url <url>          NexusRBX API base URL
+	--web-url <url>          NexusRBX website URL for browser sign-in
   --mcp-command <path>     Roblox Studio MCP executable
   --mcp-arg <value>        MCP executable argument (repeatable)
-  --request-timeout <ms>   Per-request timeout (default: 15000)
+	--request-timeout <ms>   Per-request timeout (default: 15000)
+	--mcp-tool-timeout <ms>  Studio MCP tool timeout (default: 90000)
   --heartbeat <ms>         Heartbeat interval (default: 15000)
   --poll-wait <ms>         Long-poll duration (default: 20000)
   --verbose                Show sanitized diagnostic logs
   --help                   Show this help
   --version                Show connector version
 
-Environment equivalents: NEXUSRBX_PAIR_CODE, NEXUSRBX_API_URL,
+Environment equivalents: NEXUSRBX_API_URL, NEXUSRBX_WEB_URL,
 NEXUSRBX_MCP_COMMAND, NEXUSRBX_MCP_ARGS_JSON, NEXUSRBX_VERBOSE.
 `;
 
@@ -65,8 +67,10 @@ export function loadConfig(
     values.set(argument, value);
   }
 
-  const apiUrl = stripTrailingSlash(values.get("--api-url") ?? env.NEXUSRBX_API_URL ?? "https://api.nexusrbx.com");
-  validateApiUrl(apiUrl);
+	const apiUrl = stripTrailingSlash(values.get("--api-url") ?? env.NEXUSRBX_API_URL ?? "https://api.nexusrbx.com");
+	validateApiUrl(apiUrl);
+	const webUrl = stripTrailingSlash(values.get("--web-url") ?? env.NEXUSRBX_WEB_URL ?? "https://nexusrbx.com");
+	validateApiUrl(webUrl);
 
   let envMcpArgs: string[] = [];
   if (mcpArgs.length === 0 && env.NEXUSRBX_MCP_ARGS_JSON) {
@@ -82,14 +86,13 @@ export function loadConfig(
   const defaultLaunch = defaultMcpLaunch(platform);
   const mcpCommand = values.get("--mcp-command") ?? env.NEXUSRBX_MCP_COMMAND ?? defaultLaunch.command;
   const resolvedArgs = mcpArgs.length > 0 ? mcpArgs : envMcpArgs.length > 0 ? envMcpArgs : defaultLaunch.args;
-  const pairCode = values.get("--pair-code") ?? env.NEXUSRBX_PAIR_CODE;
-
-  return {
-    apiUrl,
-    ...(pairCode === undefined ? {} : { pairCode }),
+	return {
+		apiUrl,
+		webUrl,
     mcpCommand,
     mcpArgs: resolvedArgs,
-    requestTimeoutMs: parseDuration(values.get("--request-timeout") ?? env.NEXUSRBX_REQUEST_TIMEOUT_MS, 15_000, 1_000, 120_000),
+		requestTimeoutMs: parseDuration(values.get("--request-timeout") ?? env.NEXUSRBX_REQUEST_TIMEOUT_MS, 15_000, 1_000, 120_000),
+		mcpToolTimeoutMs: parseDuration(values.get("--mcp-tool-timeout") ?? env.NEXUSRBX_MCP_TOOL_TIMEOUT_MS, 90_000, 5_000, 300_000),
     heartbeatMs: parseDuration(values.get("--heartbeat") ?? env.NEXUSRBX_HEARTBEAT_MS, 15_000, 5_000, 300_000),
     pollWaitMs: parseDuration(values.get("--poll-wait") ?? env.NEXUSRBX_POLL_WAIT_MS, 20_000, 1_000, 30_000),
     reconnectMinMs: 1_000,

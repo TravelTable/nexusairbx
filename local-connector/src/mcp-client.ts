@@ -11,7 +11,8 @@ export interface RobloxStudioMcpOptions {
   command: string;
   args: string[];
   connectorVersion: string;
-  requestTimeoutMs: number;
+	requestTimeoutMs: number;
+	toolTimeoutMs: number;
   logger: Logger;
 }
 
@@ -161,13 +162,14 @@ export class RobloxStudioMcpClient implements McpClientLike {
       return (await client.callTool(
         { name, arguments: callArgs },
         undefined,
-        this.requestOptions(signal),
+		this.requestOptions(signal, this.options.toolTimeoutMs),
       )) as ToolCallResult;
     } catch (error) {
-      throw new ConnectorError("MCP_TOOL_CALL_FAILED", `Roblox Studio MCP tool ${name} failed.`, {
-        retryable: false,
-        cause: error,
-      });
+		if (signal?.aborted) throw signal.reason ?? new DOMException("MCP request aborted", "AbortError");
+		if (this.#client === null) throw new ConnectorError("MCP_DISCONNECTED", "Roblox Studio MCP disconnected during the request.", { retryable: true, cause: error });
+		const message = error instanceof Error ? error.message : String(error);
+		if (/timeout|timed out/i.test(message)) throw new ConnectorError("MCP_REQUEST_TIMEOUT", `Roblox Studio MCP tool ${name} timed out.`, { retryable: true, cause: error });
+		throw new ConnectorError("MCP_TOOL_CALL_FAILED", `Roblox Studio MCP tool ${name} failed.`, { retryable: false, cause: error });
     }
   }
 
@@ -184,10 +186,10 @@ export class RobloxStudioMcpClient implements McpClientLike {
     return this.#client;
   }
 
-  private requestOptions(signal?: AbortSignal): { timeout: number; maxTotalTimeout: number; signal?: AbortSignal } {
+	private requestOptions(signal?: AbortSignal, timeoutMs = this.options.requestTimeoutMs): { timeout: number; maxTotalTimeout: number; signal?: AbortSignal } {
     return {
-      timeout: this.options.requestTimeoutMs,
-      maxTotalTimeout: this.options.requestTimeoutMs,
+		timeout: timeoutMs,
+		maxTotalTimeout: timeoutMs,
       ...(signal === undefined ? {} : { signal }),
     };
   }

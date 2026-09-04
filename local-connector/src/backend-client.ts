@@ -85,7 +85,7 @@ export class NexusBackendClient implements BackendClientLike {
   ping(body: JsonObject, signal?: AbortSignal): Promise<JsonObject> {
     return this.request("POST", "/api/studio/mcp/session/ping", body, {
       authenticated: true,
-      retry: true,
+		retry: false,
       ...(signal === undefined ? {} : { signal }),
     });
   }
@@ -116,8 +116,8 @@ export class NexusBackendClient implements BackendClientLike {
       },
       {
         authenticated: true,
-        retry: true,
-        targetObservationToken: studioIdentity.targetObservationToken ?? null,
+		retry: true,
+		targetObservationToken: studioIdentity.targetObservationToken ?? null,
         ...(signal === undefined ? {} : { signal }),
       },
     );
@@ -134,7 +134,7 @@ export class NexusBackendClient implements BackendClientLike {
       undefined,
       {
         authenticated: true,
-        retry: true,
+		retry: false,
         ...(signal === undefined ? {} : { signal }),
         timeoutMs: waitMs + 5_000,
         allowNoContent: true,

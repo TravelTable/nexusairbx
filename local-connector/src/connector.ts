@@ -59,7 +59,7 @@ export interface ConnectorTelemetry {
   lastHeartbeatAt?: number;
   lastActivityAt?: number;
   lastCommand?: { name: string; status: TerminalCommandReceiptStatus; at: number };
-  degradedReason?: "studio_closed" | "mcp_initialization_failed" | "zero_supported_tools" | "multiple_studio_windows" | "target_place_unavailable" | "cloud_loss";
+	degradedReason?: "studio_closed" | "mcp_transport_lost" | "mcp_initialization_failed" | "zero_supported_tools" | "multiple_studio_windows" | "target_place_unavailable" | "cloud_loss";
 }
 
 /** Coordinates one in-memory pairing session. A process restart requires a new code. */
@@ -110,7 +110,7 @@ export class NexusLocalConnector {
       this.#announcedUnavailable = false;
       this.#logger.warn(error?.message ?? "Roblox Studio MCP disconnected; reconnecting.");
       this.emitLifecycleState("studio_mcp_unavailable");
-      this.emitTelemetry({ mcpConnected: false, degradedReason: "studio_closed" });
+		this.emitTelemetry({ mcpConnected: false, degradedReason: "mcp_transport_lost" });
     });
   }
 
@@ -195,10 +195,15 @@ export class NexusLocalConnector {
           await this.refreshCatalog(signal);
         } catch (error) {
           if (signal.aborted) break;
-          this.#logger.warn("Roblox Studio MCP capability refresh failed; reconnecting.", {
-            code: asConnectorError(error).code,
-          });
-          await this.dropMcpConnection();
+			const connectorError = asConnectorError(error);
+			this.#logger.warn("Roblox Studio MCP capability refresh failed.", { code: connectorError.code });
+			if (new Set(["MCP_DISCONNECTED", "MCP_CONNECT_FAILED", "MCP_PROTOCOL_ERROR"]).has(connectorError.code)) {
+				await this.dropMcpConnection();
+			} else {
+				this.#toolsDirty = true;
+				this.emitLifecycleState("degraded");
+				await delay(this.#config.reconnectMinMs, signal);
+			}
           continue;
         }
       }
@@ -828,7 +833,7 @@ export class NexusLocalConnector {
             identityObserved = await this.#targeting.refreshIfIdle(signal);
           } else {
             await this.#targeting.refresh(signal);
-            identityObserved = true;
+			identityObserved = false;
             // StudioMCP can finish its initialize handshake before the window
             // registry is populated. Keep every retry inside this same token
             // observation lock.

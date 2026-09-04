@@ -30,18 +30,21 @@ async function main(arguments_: string[]): Promise<void> {
       "",
     ].join("\n"),
   );
-  const pairCode = config.pairCode ?? (await promptForPairingCode());
+	// Legacy pairing remains available until the browser-login migration has a
+	// platform credential-store implementation for refresh-token persistence.
+	const pairCode = process.env.NEXUSRBX_PAIR_CODE ?? (await promptForPairingCode());
   const backend = new NexusBackendClient({
     apiUrl: config.apiUrl,
     connectorVersion: CONNECTOR_VERSION,
-    requestTimeoutMs: config.requestTimeoutMs,
+	requestTimeoutMs: config.requestTimeoutMs,
     logger,
   });
   const mcp = new RobloxStudioMcpClient({
     command: config.mcpCommand,
     args: config.mcpArgs,
     connectorVersion: CONNECTOR_VERSION,
-    requestTimeoutMs: config.requestTimeoutMs,
+	requestTimeoutMs: config.requestTimeoutMs,
+	toolTimeoutMs: config.mcpToolTimeoutMs,
     logger,
   });
   const connector = new NexusLocalConnector({
