@@ -289,6 +289,7 @@ export async function reauthorizeRoblox({
 } = {}) {
   const requestedCapabilities = capabilities ? normalizeCapabilities(capabilities) : undefined;
   const requestedBundles = bundles || (requestedCapabilities ? undefined : ["core"]);
+  const safePendingAction = sanitizeRobloxPendingAction(pendingAction);
   return withApiRetryCooldown("roblox-oauth:reauthorize", "Failed to start Roblox reauthorization", async () => {
     const res = await authedFetch("/api/roblox/oauth/reauthorize", {
       method: "POST",
@@ -297,12 +298,12 @@ export async function reauthorizeRoblox({
         ...(requestedBundles ? { bundles: requestedBundles } : {}),
         returnPath,
         ...(requestedCapabilities ? { capabilities: requestedCapabilities } : {}),
-        ...(pendingAction ? { pendingAction } : {}),
+		...(safePendingAction ? { pendingAction: safePendingAction } : {}),
       }),
     });
     const data = await readJsonOrThrow(res, "Failed to start Roblox reauthorization");
     if (data.authorizationUrl) {
-      persistPendingAction(pendingAction, returnPath);
+		persistPendingAction(safePendingAction, returnPath);
       window.location.assign(data.authorizationUrl);
     }
     return data;
@@ -310,6 +311,16 @@ export async function reauthorizeRoblox({
 }
 
 const ROBLOX_PENDING_ACTION_STORAGE_KEY = "nexusrbx.roblox.pendingAction";
+
+export function sanitizeRobloxPendingAction(pendingAction) {
+  if (!pendingAction || typeof pendingAction !== "object") return null;
+  const type = String(pendingAction.type || "").trim().slice(0, 80);
+  if (!type) return null;
+  const safe = { type };
+  if (pendingAction.id) safe.id = String(pendingAction.id).trim().slice(0, 128);
+  if (pendingAction.requiresFileReselect === true) safe.requiresFileReselect = true;
+  return safe;
+}
 
 export const ROBLOX_PRODUCT_DEFAULT_CAPABILITIES = [
   "roblox_get_connection",
@@ -342,14 +353,12 @@ function capabilitiesForBundles(bundles = ["product_default"]) {
 }
 
 function persistPendingAction(pendingAction, returnPath) {
-  if (!pendingAction || typeof window === "undefined" || !window.sessionStorage) return;
-  const type = String(pendingAction.type || "").trim();
-  if (!type) return;
+  if (typeof window === "undefined" || !window.sessionStorage) return;
+  const action = sanitizeRobloxPendingAction(pendingAction);
+  if (!action) return;
   const safeAction = {
-    type,
-    ...(pendingAction.id ? { id: String(pendingAction.id) } : {}),
-    ...(pendingAction.requiresFileReselect === true ? { requiresFileReselect: true } : {}),
-    returnPath: String(returnPath || "/ai"),
+	...action,
+	returnPath: String(returnPath || "/ai").slice(0, 256),
     expiresAt: Date.now() + 10 * 60 * 1000,
   };
   window.sessionStorage.setItem(ROBLOX_PENDING_ACTION_STORAGE_KEY, JSON.stringify(safeAction));
@@ -384,6 +393,7 @@ export async function ensureRobloxCapabilities({
   pendingAction = null,
 } = {}) {
   const requestedCapabilities = normalizeCapabilities(capabilities);
+  const safePendingAction = sanitizeRobloxPendingAction(pendingAction);
   const data = await withApiRetryCooldown("roblox-oauth:ensure", "Failed to verify Roblox authorization", async () => {
     const res = await authedFetch("/api/roblox/oauth/ensure", {
       method: "POST",
@@ -391,13 +401,13 @@ export async function ensureRobloxCapabilities({
       body: JSON.stringify({
         capabilities: requestedCapabilities,
         returnPath,
-        ...(pendingAction ? { pendingAction } : {}),
+		...(safePendingAction ? { pendingAction: safePendingAction } : {}),
       }),
     });
     return readJsonOrThrow(res, "Failed to verify Roblox authorization");
   });
   if (data.authorizationUrl) {
-    persistPendingAction(pendingAction, returnPath);
+	persistPendingAction(safePendingAction, returnPath);
     window.location.assign(data.authorizationUrl);
   }
   return data;

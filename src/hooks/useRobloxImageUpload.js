@@ -3,7 +3,11 @@ import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "../firebase";
 import { sanitizeChatWritePayload } from "../lib/firestorePayloads";
 import { uploadRobloxDecalBatch } from "../lib/robloxDecalUploadApi";
-import { ensureRobloxCapabilities, ROBLOX_UPLOAD_ASSET_CAPABILITIES } from "../lib/robloxOAuthApi";
+import {
+  ensureRobloxCapabilities,
+  isCapabilityAuthorized,
+  ROBLOX_UPLOAD_ASSET_CAPABILITIES,
+} from "../lib/robloxOAuthApi";
 import { requireVerifiedFirestoreUser } from "../lib/verifiedFirestoreUser";
 
 const ACCEPTED_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".bmp", ".tga"]);
@@ -32,30 +36,22 @@ export function displayNameFor(file) {
 }
 
 export function readinessCheck(robloxStatus) {
-  const connected = robloxStatus?.connected === true;
-  const selectedCreator = robloxStatus?.connection?.selectedCreator || null;
-  const capability =
-    robloxStatus?.capabilities?.roblox_upload_asset
-    || robloxStatus?.capabilities?.asset_upload
-    || null;
-  const needsReauthorization =
-    capability?.authorized === false || (capability?.missingScopes?.length > 0);
-
-  if (!connected) {
+  if (robloxStatus?.connected !== true) {
     return {
       ready: false,
       message: "Connect Roblox before uploading images to your account.",
       action: "connect",
     };
   }
-  if (needsReauthorization) {
+  if (!isCapabilityAuthorized(robloxStatus, "roblox_upload_asset")) {
     return {
       ready: false,
       message: "Reauthorize Roblox to grant asset upload access.",
       action: "reauthorize",
     };
   }
-  if (!selectedCreator?.id) {
+  const selectedCreator = robloxStatus?.connection?.selectedCreator || null;
+  if (!selectedCreator?.id || !selectedCreator?.type) {
     return {
       ready: false,
       message: "Select a Roblox creator target in Settings before uploading.",
