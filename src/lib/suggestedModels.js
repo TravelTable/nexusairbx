@@ -1,31 +1,52 @@
-/**
- * Curated Pro model picker order. Keep in sync with shared/suggestedModels.js
- * and backend/shared/suggestedModels.js.
- */
-export const SUGGESTED_MODEL_IDS = Object.freeze([
-  "anthropic/claude-sonnet-5",
-  "anthropic/claude-opus-5",
-  "openai/gpt-5.6-terra",
-  "google/gemini-3.1-pro-preview",
-  "google/gemini-3.6-flash",
-  "openai/gpt-5-mini",
-  "deepseek/deepseek-v4-flash",
-]);
+// Legacy compatibility export. Suggestions are calculated from the live catalog.
+export const SUGGESTED_MODEL_IDS = Object.freeze([]);
 
-const SUGGESTED_MODEL_RANK = Object.freeze(
-  Object.fromEntries(SUGGESTED_MODEL_IDS.map((id, index) => [id, index]))
-);
+let latestSuggestedRank = new Map();
+
+function scoreModel(model) {
+  if (!model?.id) return Number.NEGATIVE_INFINITY;
+  if (
+    model.status === "deprecated" ||
+    model.availableToPaid === false ||
+    model.pricingConfigured === false
+  ) {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  let score = Number(model.recommendationScore) || 0;
+  if (model.recommended) score += 10;
+  if (model.isNew) score += 1;
+
+  const uses = new Set(model.recommendedFor || []);
+  if (uses.has("coding")) score += 2;
+  if (uses.has("reasoning")) score += 1;
+  if (uses.has("fast")) score += 0.5;
+
+  const multiplier = Number(model.usageMultiplier ?? model.creditMultiplier);
+  if (Number.isFinite(multiplier)) {
+    if (multiplier <= 1) score += 1;
+    else if (multiplier >= 4) score -= 1;
+  }
+  return score;
+}
+
+export function pickSuggestedModels(models = [], limit = 6) {
+  const list = (Array.isArray(models) ? models : [])
+    .filter((model) => Number.isFinite(scoreModel(model)))
+    .sort((a, b) => {
+      const scoreDiff = scoreModel(b) - scoreModel(a);
+      return scoreDiff !== 0 ? scoreDiff : String(a.name).localeCompare(String(b.name));
+    })
+    .slice(0, Math.max(1, Number(limit) || 6));
+
+  latestSuggestedRank = new Map(list.map((model, index) => [model.id, index]));
+  return list;
+}
 
 export function suggestedModelRank(id) {
-  const rank = SUGGESTED_MODEL_RANK[String(id || "")];
-  return Number.isInteger(rank) ? rank : Number.POSITIVE_INFINITY;
+  return latestSuggestedRank.get(String(id || "")) ?? Number.POSITIVE_INFINITY;
 }
 
 export function isSuggestedModelId(id) {
-  return Object.prototype.hasOwnProperty.call(SUGGESTED_MODEL_RANK, String(id || ""));
-}
-
-export function pickSuggestedModels(models = []) {
-  const byId = new Map((Array.isArray(models) ? models : []).map((model) => [model.id, model]));
-  return SUGGESTED_MODEL_IDS.map((id) => byId.get(id)).filter(Boolean);
+  return latestSuggestedRank.has(String(id || ""));
 }

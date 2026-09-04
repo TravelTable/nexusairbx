@@ -1,9 +1,14 @@
 import React from "react";
-import { isNexusAgentModel, NEXUS_AGENT_LOGO, resolveLobeProviderKey } from "../../lib/modelProviders";
+
+import {
+  isNexusAgentModel,
+  NEXUS_AGENT_LOGO,
+  providerLabel,
+  resolveLobeProviderKey,
+} from "../../lib/modelProviders";
 
 const LOBE_STATIC_BASE = "https://unpkg.com/@lobehub/icons-static-svg@1.91.0/icons";
 
-/** Mono + optional color slug per catalog provider key. */
 const PROVIDER_ICON_SLUGS = Object.freeze({
   openai: { mono: "openai", color: "openai" },
   anthropic: { mono: "anthropic", color: "anthropic" },
@@ -16,17 +21,12 @@ const PROVIDER_ICON_SLUGS = Object.freeze({
 });
 
 function iconUrl(providerKey, type) {
-  const slugs = PROVIDER_ICON_SLUGS[providerKey] || PROVIDER_ICON_SLUGS.openai;
+  const slugs = PROVIDER_ICON_SLUGS[providerKey];
+  if (!slugs) return null;
   const slug = type === "color" ? slugs.color : slugs.mono;
   return `${LOBE_STATIC_BASE}/${slug}.svg`;
 }
 
-/**
- * Provider brand glyph via LobeHub Icons static SVG CDN
- * (same asset set as @lobehub/icons — CRA/React 18 can't load that package's ESM React barrel).
- * Nexus agent models use the site logo instead of a third-party LLM mark.
- * @see https://lobehub.com/icons
- */
 export default function ModelProviderGlyph({
   provider,
   modelId,
@@ -51,7 +51,24 @@ export default function ModelProviderGlyph({
 
   const key = resolveLobeProviderKey(provider);
   const src = iconUrl(key, type);
-  const label = String(provider || key || "AI");
+  const label = providerLabel(provider);
+
+  if (!src) {
+    return (
+      <span
+        aria-hidden="true"
+        title={label}
+        className={`inline-flex shrink-0 items-center justify-center rounded-full border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] font-semibold text-[var(--ds-text-secondary)] ${className}`.trim()}
+        style={{
+          width: size,
+          height: size,
+          fontSize: Math.max(8, Math.round(size * 0.55)),
+        }}
+      >
+        {label.charAt(0).toUpperCase()}
+      </span>
+    );
+  }
 
   return (
     <img

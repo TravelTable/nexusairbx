@@ -5,117 +5,74 @@ import {
   suggestedModelRank,
 } from "./suggestedModels";
 
-export { SUGGESTED_MODEL_IDS, isSuggestedModelId, pickSuggestedModels, suggestedModelRank };
+export {
+  SUGGESTED_MODEL_IDS,
+  isSuggestedModelId,
+  pickSuggestedModels,
+  suggestedModelRank,
+};
 
-export const LEGACY_NEXUS_FREE_MODEL =
-  "nexus-free-auto";
+export const LEGACY_NEXUS_FREE_MODEL = "nexus-free-auto";
+export const DEFAULT_FREE_MODEL = "google/gemini-3.6-flash";
+export const DEFAULT_PRO_MODEL = "openai/gpt-5-mini";
+export const NEXUS_AGENT_LOGO = "/logo192.png";
 
-export const DEFAULT_FREE_MODEL =
-  "google/gemini-3.6-flash";
+export const MODEL_ID_ALIASES = Object.freeze({
+  "nexus-free-auto": DEFAULT_FREE_MODEL,
+  "deepseek-free": DEFAULT_FREE_MODEL,
+  "nexus-4": "openai/gpt-5.4",
+  "nexus-3": "openai/gpt-5.4",
+  "gpt-4o": "openai/gpt-4o",
+  "gpt-4o-mini": "openai/gpt-4o-mini",
+  "gpt-4.1": "openai/gpt-4.1",
+  "gpt-4.1-mini": "openai/gpt-4.1-mini",
+});
 
-export const DEFAULT_PRO_MODEL =
-  "openai/gpt-5-mini";
-
-export const NEXUS_AGENT_LOGO =
-  "/logo192.png";
-
-export const MODEL_ID_ALIASES =
-  Object.freeze({
-    // Existing users/settings migrate
-    // automatically to the real free model.
-    "nexus-free-auto":
-      DEFAULT_FREE_MODEL,
-
-    "deepseek-free":
-      DEFAULT_FREE_MODEL,
-
-    "deepseek/deepseek-v4-flash":
-      DEFAULT_FREE_MODEL,
-
-    "deepseek/deepseek-v3.2":
-      DEFAULT_FREE_MODEL,
-
-    "gpt-4o":
-      DEFAULT_FREE_MODEL,
-
-    "gpt-4o-mini":
-      DEFAULT_FREE_MODEL,
-
-    "gpt-4.1":
-      DEFAULT_FREE_MODEL,
-
-    "gpt-4.1-mini":
-      DEFAULT_FREE_MODEL,
-
-    "nexus-4":
-      "openai/gpt-5.4",
-
-    "nexus-3":
-      "openai/gpt-5.4",
-  });
-
-export const MODEL_ALIAS_LABELS =
-  Object.freeze({
-    "nexus-free-auto":
-      "Gemini 3.6 Flash",
-
-    "google/gemini-3.6-flash":
-      "Gemini 3.6 Flash",
-
-    "deepseek-free":
-      "Gemini 3.6 Flash",
-
-    "deepseek/deepseek-v3.2":
-      "Gemini 3.6 Flash",
-
-    "gpt-4o":
-      "Gemini 3.6 Flash",
-
-    "gpt-4o-mini":
-      "Gemini 3.6 Flash",
-
-    "gpt-4.1":
-      "Gemini 3.6 Flash",
-
-    "gpt-4.1-mini":
-      "Gemini 3.6 Flash",
-
-    "nexus-4":
-      "Nexus (GPT-5.4)",
-
-    "nexus-3":
-      "Nexus (Legacy)",
-  });
+export const MODEL_ALIAS_LABELS = Object.freeze({
+  "nexus-free-auto": "Gemini 3.6 Flash",
+  "deepseek-free": "Gemini 3.6 Flash",
+  "nexus-4": "Nexus",
+  "nexus-3": "Nexus",
+  "gpt-4o": "GPT-4o",
+  "gpt-4o-mini": "GPT-4o mini",
+  "gpt-4.1": "GPT-4.1",
+  "gpt-4.1-mini": "GPT-4.1 mini",
+});
 
 export const PROVIDER_ORDER = [
   "nexus",
   "openai",
   "anthropic",
   "google",
-  "deepseek",
   "xai",
+  "deepseek",
   "meta",
   "mistral",
   "alibaba",
+  "cohere",
+  "moonshotai",
+  "zai",
   "other",
 ];
 
 export const PROVIDER_LABELS = Object.freeze({
-  nexus: "Free",
+  nexus: "Nexus",
   openai: "OpenAI",
-  deepseek: "DeepSeek",
   anthropic: "Anthropic",
   google: "Google",
   xai: "xAI",
+  deepseek: "DeepSeek",
   meta: "Meta",
-  alibaba: "Alibaba",
   mistral: "Mistral",
+  alibaba: "Alibaba",
+  cohere: "Cohere",
+  moonshotai: "Moonshot",
+  zai: "Z.AI",
   other: "Other",
 });
 
-/** Map catalog provider keys to @lobehub/icons ProviderIcon keys. */
 export const LOBE_PROVIDER_KEYS = Object.freeze({
-  nexus: "deepseek",
+  nexus: "nexus",
   openai: "openai",
   anthropic: "anthropic",
   google: "google",
@@ -124,36 +81,34 @@ export const LOBE_PROVIDER_KEYS = Object.freeze({
   meta: "meta",
   mistral: "mistral",
   alibaba: "alibaba",
-  other: "openai",
 });
+
+export function providerLabel(provider) {
+  const key = String(provider || "other").trim().toLowerCase();
+  if (PROVIDER_LABELS[key]) return PROVIDER_LABELS[key];
+  return key
+    .split(/[-_]/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
 
 export function resolveLobeProviderKey(provider) {
   const key = String(provider || "other").toLowerCase();
-  return LOBE_PROVIDER_KEYS[key] || key || "openai";
+  return LOBE_PROVIDER_KEYS[key] || null;
 }
 
-export function isNexusAgentModel({
-  provider,
-  modelId,
-} = {}) {
-  const id =
-    String(modelId || "").trim();
-
-  const key =
-    String(provider || "")
-      .toLowerCase();
-
-  // Real provider models should display their
-  // real provider branding.
-  return (
-    key === "nexus" ||
-    id === LEGACY_NEXUS_FREE_MODEL
-  );
+export function isNexusAgentModel({ provider, modelId } = {}) {
+  const id = String(modelId || "").trim();
+  const key = String(provider || "").toLowerCase();
+  return key === "nexus" || id === LEGACY_NEXUS_FREE_MODEL;
 }
 
 const FREE_MODEL_IDS = new Set([
   DEFAULT_FREE_MODEL,
-  ...Object.keys(MODEL_ID_ALIASES).filter((k) => MODEL_ID_ALIASES[k] === DEFAULT_FREE_MODEL),
+  ...Object.keys(MODEL_ID_ALIASES).filter(
+    (key) => MODEL_ID_ALIASES[key] === DEFAULT_FREE_MODEL
+  ),
 ]);
 
 export function normalizeModelId(id) {
@@ -164,45 +119,45 @@ export function normalizeModelId(id) {
 
 export function isFreeDefaultModel(id) {
   const normalized = normalizeModelId(id);
-  return FREE_MODEL_IDS.has(id) || FREE_MODEL_IDS.has(normalized) || normalized === DEFAULT_FREE_MODEL;
+  return (
+    FREE_MODEL_IDS.has(id) ||
+    FREE_MODEL_IDS.has(normalized) ||
+    normalized === DEFAULT_FREE_MODEL
+  );
 }
 
-export function isModelSelectable(model, { isPremium, isStarterOrAbove = false } = {}) {
+export function isModelSelectable(
+  model,
+  { isPremium, isStarterOrAbove = false } = {}
+) {
   if (!model?.id) return false;
-  const billing = model.billingCategory || (model.tier === "pro" ? "PREMIUM_DIRECT" : "INCLUDED");
-  if (!isStarterOrAbove && !isPremium) {
-    return model.id === DEFAULT_FREE_MODEL;
-  }
-  if (billing === "PREMIUM_DIRECT" || billing === "premium_direct") {
-    return Boolean(isPremium);
-  }
-  return billing === "INCLUDED" || billing === "included";
+  if (model.status === "deprecated" || model.pricingConfigured === false) return false;
+
+  const paid = Boolean(isPremium || isStarterOrAbove);
+  if (paid) return model.availableToPaid !== false;
+  return model.availableToFree === true || model.id === DEFAULT_FREE_MODEL;
 }
 
 export function sortModelsInGroup(list) {
   return [...list].sort((a, b) => {
-    const aSuggested = isSuggestedModelId(a.id);
-    const bSuggested = isSuggestedModelId(b.id);
-    if (aSuggested && bSuggested) {
-      return suggestedModelRank(a.id) - suggestedModelRank(b.id);
-    }
-    if (aSuggested !== bSuggested) return aSuggested ? -1 : 1;
-    if (!!b.recommended !== !!a.recommended) return b.recommended ? 1 : -1;
-    if (a.billingCategory !== b.billingCategory) return a.billingCategory === "INCLUDED" ? -1 : 1;
-    if (a.tier !== b.tier) return a.tier === "free" ? -1 : 1;
+    const scoreDiff =
+      Number(b.recommendationScore || 0) - Number(a.recommendationScore || 0);
+    if (scoreDiff !== 0) return scoreDiff;
+    if (Boolean(a.isNew) !== Boolean(b.isNew)) return b.isNew ? 1 : -1;
+    const usageDiff =
+      Number(a.usageMultiplier || 1) - Number(b.usageMultiplier || 1);
+    if (usageDiff !== 0) return usageDiff;
     return String(a.name).localeCompare(String(b.name));
   });
 }
 
 export function groupModelsByProvider(models) {
   const groups = {};
-  for (const m of models) {
-    const key = m.provider || "other";
-    (groups[key] = groups[key] || []).push(m);
+  for (const model of models || []) {
+    const key = model.provider || "other";
+    (groups[key] = groups[key] || []).push(model);
   }
-  for (const key of Object.keys(groups)) {
-    groups[key] = sortModelsInGroup(groups[key]);
-  }
+  for (const key of Object.keys(groups)) groups[key] = sortModelsInGroup(groups[key]);
   return groups;
 }
 
@@ -214,14 +169,12 @@ export function providerRank(provider) {
 export function sortProviderEntries(grouped) {
   return Object.entries(grouped).sort(([a], [b]) => {
     const rankDiff = providerRank(a) - providerRank(b);
-    if (rankDiff !== 0) return rankDiff;
-    return a.localeCompare(b);
+    return rankDiff !== 0 ? rankDiff : a.localeCompare(b);
   });
 }
 
 export function resolveFreeDefaultFromCatalog(modelCatalog = []) {
   return (
-  modelCatalog.find((m) => m.id === DEFAULT_FREE_MODEL)?.id
-    || DEFAULT_FREE_MODEL
+    modelCatalog.find((model) => model.id === DEFAULT_FREE_MODEL)?.id || DEFAULT_FREE_MODEL
   );
 }
