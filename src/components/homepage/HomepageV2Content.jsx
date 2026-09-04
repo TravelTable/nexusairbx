@@ -7,6 +7,7 @@ import HomepagePrompt from "./HomepagePrompt";
 import ConnectorReleaseCard from "./ConnectorReleaseCard";
 import VideoShowcase from "./VideoShowcase";
 import NexusFeaturesGrid from "./NexusFeaturesGrid";
+import AiProvidersBand from "./AiProvidersBand";
 import { trackProductEvent } from "../../lib/productAnalytics";
 import styles from "./HomepageCinematic.module.css";
 
@@ -248,6 +249,7 @@ export default function HomepageV2Content({ surface = "homepage", navigate }) {
   return (
     <div className={styles.page}>
       <main id="main-content" tabIndex={-1}>
+        <AiProvidersBand />
         <Hero surface={surface} navigate={navigate} inputRef={heroPromptRef} />
         <VideoShowcase />
         <NexusFeaturesGrid />

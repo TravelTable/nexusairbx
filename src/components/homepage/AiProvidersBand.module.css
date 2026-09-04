@@ -1,0 +1,84 @@
+.bandContainer {
+  position: relative;
+  width: 100%;
+  padding: 12px 0;
+  background: color-mix(in srgb, var(--nx-canvas) 85%, rgba(13, 15, 23, 0.95));
+  border-top: 1px solid var(--nx-rule-quiet);
+  border-bottom: 1px solid var(--nx-rule-quiet);
+  overflow: hidden;
+  user-select: none;
+}
+
+.bandContainer::before,
+.bandContainer::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 60px;
+  z-index: 2;
+  pointer-events: none;
+  content: "";
+}
+
+.bandContainer::before {
+  left: 0;
+  background: linear-gradient(to right, var(--nx-canvas), transparent);
+}
+
+.bandContainer::after {
+  right: 0;
+  background: linear-gradient(to left, var(--nx-canvas), transparent);
+}
+
+.itemCard {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 12px;
+  padding: 6px 14px;
+  border: 1px solid var(--nx-rule);
+  border-radius: var(--nx-radius-pill);
+  background: var(--nx-card);
+  color: var(--nx-text);
+  font-size: 0.82rem;
+  font-weight: 550;
+  white-space: nowrap;
+  transition: border-color var(--nx-motion-color) ease, background var(--nx-motion-color) ease, transform var(--nx-motion-elevation) ease;
+}
+
+.itemCard:hover {
+  border-color: var(--nx-purple-border);
+  background: var(--nx-purple-soft);
+  transform: translateY(-1px);
+}
+
+.providerName {
+  color: var(--nx-text-muted);
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dividerDot {
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--nx-rule-strong);
+}
+
+.modelName {
+  color: var(--nx-text);
+  font-weight: 600;
+}
+
+.tierBadge {
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(168, 85, 247, 0.15);
+  color: var(--nx-purple-strong);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
