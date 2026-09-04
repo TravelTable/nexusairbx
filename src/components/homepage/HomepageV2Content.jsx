@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { homepageFocusedTools } from "../../content/homepageV2";
 import HomepageFooter from "./HomepageFooter";
 import HomepagePrompt from "./HomepagePrompt";
 import ConnectorReleaseCard from "./ConnectorReleaseCard";
 import VideoShowcase from "./VideoShowcase";
 import NexusFeaturesGrid from "./NexusFeaturesGrid";
+import { trackProductEvent } from "../../lib/productAnalytics";
 import styles from "./HomepageCinematic.module.css";
 
 const HERO_WORDS = ["playable", "testable", "reviewable", "real"];
@@ -42,7 +43,6 @@ const FAQ_ITEMS = [
 
 async function trackHomepageProductEvent(name, properties, options) {
   try {
-    const { trackProductEvent } = await import("../../lib/productAnalytics");
     await trackProductEvent(name, properties, options);
   } catch (_) {
     // Public navigation remains usable without analytics.
@@ -232,7 +232,6 @@ function FinalCta({ surface, navigate }) {
   );
 }
 
-import { useState } from "react";
 
 export default function HomepageV2Content({ surface = "homepage", navigate }) {
   const heroPromptRef = useRef(null);
