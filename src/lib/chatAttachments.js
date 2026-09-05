@@ -1,4 +1,4 @@
-const DEFAULT_ATTACHMENT_LIMIT = 5;
+const DEFAULT_ATTACHMENT_LIMIT = 16;
 const DEFAULT_DATA_LIMIT = 120000;
 const DEFAULT_PROMPT_LIMIT = 12000;
 
@@ -14,6 +14,12 @@ function normalizeOneAttachment(attachment, options = {}) {
   const type = cleanText(attachment.type || attachment.mimeType || "application/octet-stream", 120);
   const isImage = Boolean(attachment.isImage || /^image\//i.test(type));
   const normalized = { name, type, isImage };
+  if (attachment.versionId && (attachment.id || attachment.attachmentId)) {
+    for (const key of ['id', 'attachmentId', 'versionId', 'kind', 'mimeType', 'sizeBytes', 'contentHash', 'summary', 'status']) {
+      if (attachment[key] != null) normalized[key] = attachment[key];
+    }
+    return normalized;
+  }
   if (includeData && attachment.data != null) {
     normalized.data = String(attachment.data).slice(0, dataLimit);
   }
@@ -23,8 +29,8 @@ function normalizeOneAttachment(attachment, options = {}) {
 export function normalizeChatAttachments(attachments = [], options = {}) {
   if (!Array.isArray(attachments)) return [];
   const limit = Number(options.limit || DEFAULT_ATTACHMENT_LIMIT);
+  if (attachments.length > limit) throw new Error(`Attach no more than ${limit} files.`);
   return attachments
-    .slice(0, limit)
     .map((attachment) => normalizeOneAttachment(attachment, options))
     .filter(Boolean);
 }
@@ -55,6 +61,7 @@ export function formatChatAttachmentsForPrompt(attachments = [], options = {}) {
       remaining -= 23;
       continue;
     }
+    if (attachment.versionId) { lines.push(`  [file reference ${attachment.id}@${attachment.versionId}; retrieve content when needed]`); continue; }
     const data = String(attachment.data || "");
     if (!data) continue;
     if (/^data:/i.test(data)) {

@@ -1,3 +1,5 @@
+import AttachmentCard from "./AttachmentCard";
+import { CHAT_ATTACHMENT_ACCEPT } from "../../../lib/chatAttachmentApi";
 import React, { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -13,11 +15,9 @@ import { TokenBar } from "../AiComponents";
 import { CHAT_MODES } from "../chatConstants";
 import { normalizeChatMode } from "../../../lib/chatModes";
 import StudioControls from "../workspace/StudioControls";
-import RobloxCloudControls from "../workspace/RobloxCloudControls";
 import AssetLibraryModal from "../workspace/AssetLibraryModal";
 import RefineChips from "../RefineChips";
 import ComposerCommandMenu from "./ComposerCommandMenu";
-import { ROBLOX_DECAL_ACCEPT } from "../../../hooks/useRobloxImageUpload";
 import { useMotionPresence } from "../../../hooks/useMotionPresence";
 import {
   COMPOSER_COMMANDS,
@@ -381,13 +381,16 @@ export default function ChatComposer({
   rewindTarget = null,
   onCancelRewind,
   onFileUpload,
+  onRetryAttachment,
+  onPublishAttachment,
   onAttachmentRequest,
-  attachmentAccept = `${ROBLOX_DECAL_ACCEPT},.lua,.txt,.json`,
-  attachmentLabel = "Upload image to Roblox or attach a code/text file",
+  attachmentAccept = CHAT_ATTACHMENT_ACCEPT,
+  attachmentLabel = "Attach images, code, or Roblox models",
   onImprovePrompt,
   disabled,
   mode = "agent",
   onModeChange,
+  studioSessionId,
   studioConnected,
   studioPlaceName,
   studioConnectionType,
@@ -473,7 +476,8 @@ export default function ChatComposer({
       setControlsOpen(true);
     }
   }, [openBuildOptions, controlsOpen]);
-  const canSendWithContext = Boolean(prompt?.trim()) || attachments.length > 0 || robloxProjectAssets.length > 0;
+  const attachmentsReady = attachments.every(file => !file.status || file.status === "ready");
+  const canSendWithContext = attachmentsReady && (Boolean(prompt?.trim()) || attachments.length > 0 || robloxProjectAssets.length > 0);
   const studioRuntimeConnected = Boolean(studioConnected);
   const normalizedStudioPlaceName = String(studioPlaceName || "").trim();
   const studioStatusLabel = studioRuntimeConnected
@@ -492,6 +496,7 @@ export default function ChatComposer({
         : "Connect a Studio provider to apply changes";
   const studioBuildBlocked =
     studioConnectionRequired &&
+    !attachments.some(file => file.versionId) &&
     ["agent", "debug"].includes(normalizedMode) &&
     !studioRuntimeConnected;
   const studioBlockerMessage = studioConnectionState === "plugin_update_required"
@@ -503,7 +508,7 @@ export default function ChatComposer({
   }, [studioBuildBlocked]);
   const draftSignature = JSON.stringify({
     prompt: String(prompt || ""),
-    attachments: attachments.map((file) => [file?.name || "", file?.size || 0, file?.type || ""]),
+    attachments: attachments.map((file) => [file?.id || file?.name || "", file?.versionId || "", file?.status || "", file?.size || 0]),
     assets: robloxProjectAssets.map((asset) => asset?.assetId || asset?.id || ""),
   });
   if (draftIdentityRef.current.signature !== draftSignature) {
@@ -559,7 +564,7 @@ export default function ChatComposer({
       key: `file-${file?.name || "attachment"}-${index}`,
       file,
       index,
-    })),
+    })).filter(item => !item.file.status && !item.file.versionId),
     ...fileReferences.map((reference) => ({
       kind: "file-reference",
       key: `file-reference-${reference.path}`,
@@ -812,7 +817,7 @@ export default function ChatComposer({
       return <ImageUploadChip key={item.key} upload={item.upload} />;
     }
     if (item.kind === "file") {
-      return <FileContextChip key={item.key} file={item.file} index={item.index} onRemove={removeAttachment} />;
+      return item.file.status || item.file.versionId ? null : <FileContextChip key={item.key} file={item.file} index={item.index} onRemove={removeAttachment} />;
     }
     if (item.kind === "file-reference") {
       return <FileReferenceContextChip key={item.key} reference={item.reference} onRemove={removeFileReference} />;
@@ -841,15 +846,6 @@ export default function ChatComposer({
 
   const defaultWorkspaceOptionsContent = (
     <div className="flex flex-col gap-3">
-      <section
-        className="rounded-lg border border-[var(--ds-border-subtle)] p-2.5"
-        aria-label="Usage details"
-      >
-        <h3 className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[var(--ds-text-muted)]">
-          Usage
-        </h3>
-        {usage}
-      </section>
       <StudioControls
         connected={studioConnected}
         placeName={studioPlaceName}
@@ -859,6 +855,7 @@ export default function ChatComposer({
         loading={studioLoading}
         preferences={studioPreferences}
         onPreferencesChange={onStudioPreferencesChange}
+        onConnectionOpen={onStudioConnectionOpen ? event => onStudioConnectionOpen(event.currentTarget) : undefined}
       />
       {studioConnected && Array.isArray(studioCollaborators) && studioCollaborators.length > 0 && (
         <span
@@ -878,20 +875,7 @@ export default function ChatComposer({
           {studioCollaborators.length === 1 ? "" : "s"} on this place
         </span>
       )}
-      <RobloxCloudControls
-        connected={robloxConnected}
-        loading={robloxLoading}
-        selectedCreator={robloxSelectedCreator}
-        uploadAvailable={robloxUploadAvailable}
-        uploadState={robloxUploadState}
-        uploadDisabledReason={robloxUploadDisabledReason}
-        assetUploadsEnabled={robloxAssetUploadsEnabled}
-        onAssetUploadsEnabledChange={onRobloxAssetUploadsEnabledChange}
-        selectedAssetCount={robloxProjectAssets.length}
-        onOpenAssetLibrary={onOpenAssetLibrary}
-        assetLibraryAvailable={robloxAssetLibraryAvailable}
-        assetLibraryDisabledReason={robloxAssetLibraryDisabledReason}
-      />
+
     </div>
   );
   const workspaceOptionsContent = customWorkspaceOptionsContent || defaultWorkspaceOptionsContent;
@@ -1074,6 +1058,9 @@ export default function ChatComposer({
           </div>
         )}
 
+        {attachments.some(file => file.status || file.versionId) && <div className="grid max-h-72 grid-cols-1 gap-2 overflow-y-auto border-b border-[var(--ds-border-subtle)] p-2 sm:grid-cols-2" aria-label="Attached files">
+          {attachments.map((file, index) => (file.status || file.versionId) && <AttachmentCard key={file.localId || `${file.id}:${file.versionId}`} file={file} onRemove={() => removeAttachment(index)} onRetry={() => onRetryAttachment?.(file)} onPublish={onPublishAttachment ? () => onPublishAttachment(file) : undefined} studioSessionId={studioSessionId} studioConnected={studioConnected} />)}
+        </div>}
         {studioBuildBlocked && !studioAlertDismissed ? (
           <Alert
             variant="warning"
@@ -1112,7 +1099,11 @@ export default function ChatComposer({
           </div>
         ) : null}
 
-        <div className="nexus-composer__body relative">
+        <div className="nexus-composer__body relative"
+          onDragOver={event => { if (event.dataTransfer.types.includes('Files')) event.preventDefault(); }}
+          onDrop={event => { if (event.dataTransfer.files.length) { event.preventDefault(); onFileUpload?.({ target: { files: event.dataTransfer.files } }); } }}
+          onPaste={event => { const files = Array.from(event.clipboardData?.files || []); if (files.length) { event.preventDefault(); onFileUpload?.({ target: { files } }); } }}
+        >
           {mentionOpen && (
             <ComposerCommandMenu
               query={mentionQuery}

@@ -217,6 +217,36 @@ function detailsFrom(raw) {
   return details && typeof details === "object" && !Array.isArray(details) ? details : null;
 }
 
+export function batchOperationFailure(result) {
+  if (!result || typeof result !== "object") return null;
+  if (result.failedOperation && typeof result.failedOperation === "object") {
+    return result.failedOperation;
+  }
+  if (!Array.isArray(result.results)) return null;
+  return result.results.find((entry) => entry && entry.ok === false) || null;
+}
+
+export function summarizeBatchOperationFailure(result) {
+  const failure = batchOperationFailure(result);
+  if (!failure) return "";
+  const index = Number.isFinite(Number(failure.index)) ? Number(failure.index) : null;
+  const type = String(failure.type || "operation").trim() || "operation";
+  const path = String(failure.path || failure.targetPath || "").trim();
+  const nestedError = failure.error && typeof failure.error === "object"
+    ? failure.error.message || failure.error.error || failure.error.code
+    : failure.error;
+  const resultError = failure.result?.error && typeof failure.result.error === "object"
+    ? failure.result.error.message || failure.result.error.error || failure.result.error.code
+    : failure.result?.error;
+  const message = String(nestedError || resultError || failure.result?.message || "Batch operation failed").trim();
+  return [
+    index == null ? "Operation" : `Operation ${index}`,
+    type,
+    path,
+    message,
+  ].filter(Boolean).join(" · ");
+}
+
 /**
  * @typedef {Object} AgentToolStep
  * @property {string} id
@@ -250,7 +280,7 @@ export function normalizeToolStep(raw) {
     requiresApproval: Boolean(raw.requiresApproval || raw.status === "awaiting_approval"),
   };
   if (raw.label) step.label = String(raw.label);
-  const errorCode = errorCodeFrom(raw);
+  const errorCode = errorCodeFrom(raw) || errorCodeFrom(raw.result);
   const details = detailsFrom(raw);
   if (raw.error) {
     step.error = normalizeToolStepError(raw.error, {
@@ -306,6 +336,10 @@ export function upsertAgentStep(steps, update) {
  */
 export function summarizeStepResult(step) {
   if (!step) return "pending";
+  if (step.type === "batch_operations") {
+    const batchFailure = summarizeBatchOperationFailure(step.result);
+    if (batchFailure) return batchFailure;
+  }
   if (step.error) {
     return normalizeToolStepError(step.error, {
       code: step.errorCode,

@@ -1,4 +1,5 @@
 import {
+  batchOperationFailure,
   countStepSnapshots,
   normalizeToolStep,
   normalizeToolStepError,
@@ -186,6 +187,38 @@ describe("agentSteps", () => {
         },
       })
     ).toBe("page 1 · 0–499 of 1732 (more queued)");
+    const batchResult = {
+      failureCode: "invalid_property_value",
+      failedOperation: {
+        index: 4,
+        type: "update_properties",
+        path: "Workspace/RunMap/FinishLine",
+        code: "invalid_property_value",
+        error: "Material is not valid for Part",
+        result: { ok: false, property: "Material" },
+      },
+    };
+    expect(batchOperationFailure(batchResult)).toBe(batchResult.failedOperation);
+    expect(summarizeStepResult({
+      type: "batch_operations",
+      status: "failed",
+      error: "Studio command failed",
+      result: batchResult,
+    })).toBe(
+      "Operation 4 · update_properties · Workspace/RunMap/FinishLine · Material is not valid for Part"
+    );
+  });
+
+  test("normalizes the primary batch failure code from the Studio result", () => {
+    const step = normalizeToolStep({
+      id: "batch",
+      type: "batch_operations",
+      status: "failed",
+      error: "Material is not valid for Part",
+      result: { failureCode: "invalid_property_value" },
+    });
+
+    expect(step.errorCode).toBe("invalid_property_value");
   });
 
   test("countStepSnapshots sums snapshotCount", () => {

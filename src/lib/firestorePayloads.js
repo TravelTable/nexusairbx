@@ -97,7 +97,7 @@ export function sanitizeTranscriptMessagePayload(payload = {}) {
   }
   if (Object.prototype.hasOwnProperty.call(payload, "attachments")) {
     sanitized.attachments = normalizeChatAttachments(payload.attachments, {
-      limit: 5,
+      limit: 16,
       dataLimit: 120_000,
     });
   }

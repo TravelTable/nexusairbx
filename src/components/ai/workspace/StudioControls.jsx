@@ -5,10 +5,10 @@ import { normalizeStudioPreferences } from "../../../lib/studioPreferences";
 import { getSupportedStudioCapabilities, resolveStudioControlAccess } from "./studioControlAccess";
 
 const APPLY_OPTIONS = [
-  { value: "ask_before_applying", label: "Ask before applying" },
-  { value: "after_validation", label: "After validation", requiresMutation: true },
-  { value: "after_playtest", label: "After playtest", requiresMutation: true, requiresPlaytest: true },
-  { value: "never_automatically", label: "Never automatically" },
+  { value: "ask_before_applying", label: "Review first" },
+  { value: "after_validation", label: "Automatic", requiresMutation: true },
+  { value: "after_playtest", label: "After playtest (legacy)", requiresMutation: true, requiresPlaytest: true },
+  { value: "never_automatically", label: "Manual" },
 ];
 
 const VALIDATION_OPTIONS = [
@@ -17,11 +17,6 @@ const VALIDATION_OPTIONS = [
   { value: "playtest", label: "Playtest", requiresPlaytest: true },
 ];
 
-const SAFETY_OPTIONS = [
-  { value: "review_destructive", label: "Review destructive changes" },
-  { value: "auto_apply_verified", label: "Auto-apply verified changes", requiresMutation: true },
-  { value: "developer_mode", label: "Developer mode", requiresMutation: true },
-];
 
 function commandAvailable(commands, command) {
   if (Array.isArray(commands)) return commands.includes(command);
@@ -39,7 +34,7 @@ function providerDescription(connectionType) {
 
 function ControlRow({ label, value, options, onChange, disabled = false, help = "" }) {
   return (
-    <label className="grid grid-cols-[minmax(0,1fr)_minmax(9.5rem,auto)] items-center gap-3 border-t border-[var(--ds-border-subtle)] py-3 first:border-t-0">
+    <label className="grid grid-cols-1 items-start gap-2 border-t border-[var(--ds-border-subtle)] py-3 first:border-t-0">
       <span>
         <span className="block text-xs font-semibold text-[var(--ds-text)]">{label}</span>
         {help ? <span className="mt-0.5 block text-[10px] leading-4 text-[var(--ds-text-muted)]">{help}</span> : null}
@@ -49,7 +44,7 @@ function ControlRow({ label, value, options, onChange, disabled = false, help = 
         value={value}
         onChange={(event) => onChange(event.target.value)}
         disabled={disabled}
-        className="h-9 min-w-0 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2.5 text-xs font-medium text-[var(--ds-text)] transition-colors hover:border-[var(--ds-border-strong)] focus-visible:border-[var(--ds-accent-border)] focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] disabled:cursor-not-allowed disabled:opacity-50"
+        className="h-10 w-full min-w-0 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2.5 text-xs font-medium text-[var(--ds-text)] transition-colors hover:border-[var(--ds-border-strong)] focus-visible:border-[var(--ds-accent-border)] focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] disabled:cursor-not-allowed disabled:opacity-50"
       >
         {options.map((option) => (
           <option
@@ -76,6 +71,7 @@ export default function StudioControls({
   loading = false,
   preferences = null,
   onPreferencesChange,
+  onConnectionOpen,
 }) {
   const [saveError, setSaveError] = useState("");
   const normalized = normalizeStudioPreferences(preferences || {});
@@ -94,14 +90,14 @@ export default function StudioControls({
       ? "Local MCP"
       : "Nexus Plugin";
 
-  const applyOptions = useMemo(() => APPLY_OPTIONS.map((option) => {
+  const applyOptions = useMemo(() => APPLY_OPTIONS.filter(option => option.value !== "after_playtest" || normalized.applyPolicy === "after_playtest").map((option) => {
     const disabledReason = option.requiresPlaytest && !hasPlaytest
       ? "No provider connected to this Studio target advertises Play Test."
-      : option.requiresMutation && !access.canMutate
+      : option.requiresMutation && connected && !access.canMutate
         ? "No provider connected to this Studio target advertises verified writes."
         : "";
     return { ...option, disabled: Boolean(disabledReason), disabledReason };
-  }), [access.canMutate, hasPlaytest]);
+  }), [access.canMutate, connected, hasPlaytest, normalized.applyPolicy]);
   const validationOptions = useMemo(() => VALIDATION_OPTIONS.map((option) => ({
     ...option,
     disabled: Boolean(option.requiresPlaytest && !hasPlaytest),
@@ -109,13 +105,6 @@ export default function StudioControls({
       ? "Connect a provider that advertises Play Test for this Studio target."
       : "",
   })), [hasPlaytest]);
-  const safetyOptions = useMemo(() => SAFETY_OPTIONS.map((option) => ({
-    ...option,
-    disabled: Boolean(option.requiresMutation && !access.canMutate),
-    disabledReason: option.requiresMutation && !access.canMutate
-      ? "No provider connected to this Studio target advertises verified writes."
-      : "",
-  })), [access.canMutate]);
 
   if (!FEATURE_FLAGS.unifiedAgent) return null;
 
@@ -150,10 +139,10 @@ export default function StudioControls({
             </h3>
           </div>
           <p className="mt-1 pl-4 text-[10px] text-[var(--ds-text-muted)]">
-            {connected && access.canUseAgent ? `Automatic routing · ${providerLabel}` : access.statusTitle}
+            {connected && access.canUseAgent ? `Automatic routing · ${providerLabel}` : 'Inspect and download files here. Connect Studio to apply changes.'}
           </p>
         </div>
-        <Radio className="mt-0.5 h-4 w-4 shrink-0 text-[var(--ds-text-muted)]" aria-hidden="true" />
+        {onConnectionOpen ? <button type="button" onClick={onConnectionOpen} className="rounded-md px-2 py-1 text-xs text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] focus-ring">{connected ? 'Manage' : 'Connect Studio'}</button> : <Radio className="mt-0.5 h-4 w-4 shrink-0 text-[var(--ds-text-muted)]" aria-hidden="true" />}
       </div>
 
       <div className="border-t border-[var(--ds-border-subtle)] px-3">
@@ -162,25 +151,18 @@ export default function StudioControls({
           value={normalized.applyPolicy}
           options={applyOptions}
           onChange={(value) => updatePreference("applyPolicy", value)}
-          disabled={!connected || !access.canUseAgent}
-          help={!access.canMutate && connected ? "Read-only until a provider advertises verified writes." : "Choose when verified changes may be applied."}
+          disabled={false}
+          help={!access.canMutate && connected ? "Connect Studio with write access to apply changes." : "Automatic carries out requested changes. Review first prepares changes for your approval."}
         />
         <ControlRow
-          label="Validation"
+          label="Checks"
           value={normalized.validationMode}
           options={validationOptions}
           onChange={(value) => updatePreference("validationMode", value)}
-          disabled={!connected || !access.canUseAgent}
-          help={!hasPlaytest ? "Playtest unlocks when a connected provider advertises it." : "Controls the verification depth before handoff."}
+          disabled={false}
+          help={!hasPlaytest ? "Playtest needs a compatible Studio connection." : "Standard verifies changes. Playtest also tests them in Studio."}
         />
-        <ControlRow
-          label="Safety"
-          value={normalized.safetyMode}
-          options={safetyOptions}
-          onChange={(value) => updatePreference("safetyMode", value)}
-          disabled={!connected || !access.canUseAgent}
-          help="Destructive actions remain snapshot-aware and target scoped."
-        />
+
       </div>
 
       {saveError ? (
@@ -195,6 +177,12 @@ export default function StudioControls({
           <ChevronRight className="h-3.5 w-3.5 transition-transform group-open:rotate-90" aria-hidden="true" />
         </summary>
         <div className="space-y-2 border-t border-[var(--ds-border-subtle)] px-3 py-3">
+          <label className="flex items-center justify-between gap-3 text-xs text-[var(--ds-text)]">
+            Review destructive changes
+            <input type="checkbox" checked={normalized.safetyMode !== 'developer_mode'} onChange={event => updatePreference('safetyMode', event.target.checked ? 'auto_apply_verified' : 'developer_mode')} className="h-4 w-4 accent-[var(--ds-accent)] focus-ring" />
+          </label>
+          <p className="text-[10px] leading-4 text-[var(--ds-text-muted)]">Snapshots are required before destructive changes, even when review is off.</p>
+          {normalized.safetyMode === 'review_destructive' && <p className="text-xs text-[var(--ds-text-muted)]">Your previous review policy is preserved. Change this control to use the new behavior.</p>}
           <p className="text-[10px] leading-4 text-[var(--ds-text-muted)]">
             Provider diagnostics for this Studio target. Nexus routes each command to an advertised capability.
           </p>

@@ -1347,6 +1347,36 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     [user, chat, effectiveGameSpec, settings?.modelVersion, touchChat, refreshBilling]
   );
 
+  const handleAttachmentSubmit = useCallback(async ({ prompt, attachments, activeChatId, requestId, mode, signal, conversation, idempotencyKey }) => {
+    const token = await user.getIdToken();
+    chat.setPendingForChat(activeChatId, { role: 'assistant', content: '', stage: 'Reading files' }, requestId);
+    let result;
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/ai/attachments/chat`, {
+        method: 'POST', signal, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, 'Idempotency-Key': idempotencyKey || requestId },
+        body: JSON.stringify({ requestId, prompt, attachments: normalizeChatAttachments(attachments), chatId: activeChatId, mode, modelVersion: settings?.modelVersion || '', conversation: conversation.slice(-10).map(messageToConversationEntry).filter(Boolean) }),
+      });
+      if (!response.ok) { const body = await response.json(); throw new Error(body.error || 'File operation failed.'); }
+      const reader = response.body.getReader(), decoder = new TextDecoder();
+      let buffer = '';
+      while (true) {
+        const { value, done } = await reader.read(); buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+        const lines = buffer.split('\n'); buffer = lines.pop();
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          const event = JSON.parse(line);
+          if (event.error) throw new Error(event.error);
+          if (event.stage) chat.setPendingForChat(activeChatId, previous => ({ ...previous, stage: event.stage }), requestId);
+          if (event.result) result = event.result;
+        }
+        if (done) break;
+      }
+      if (!result) throw new Error('The connection ended before the file operation completed. Check the chat before retrying.');
+      await setDoc(doc(db, 'users', user.uid, 'chats', activeChatId, 'messages', `${requestId}-assistant`), sanitizeTranscriptMessagePayload({ role: 'assistant', content: result.content, explanation: result.content, attachments: normalizeChatAttachments(result.attachments || []), createdAt: serverTimestamp(), requestId }));
+      await touchChat(activeChatId, result.content);
+    } finally { chat.setPendingForChat(activeChatId, null, requestId); refreshBilling?.(); }
+  }, [user, chat, settings?.modelVersion, touchChat, refreshBilling]);
+
   // Stage 1: route by operating mode.
   //  - ask   -> conversational stream (read-only)
   //  - plan  -> orchestrate (may clarify) -> plan card -> user approves
@@ -1514,6 +1544,19 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           }
         }
         const implementationPrompt = resolveImplementationPrompt(prompt, conversationMessages);
+        const historicalFiles = conversationMessages.flatMap(m => m.attachments || []).filter(a => a.versionId);
+        const fileRequest = !prompt || /\b(file|attachment|model|rbxm|rbxmx|inspect|summarize|download|image|picture|screenshot)\b/i.test(prompt)
+          || historicalFiles.some(a => prompt.toLowerCase().includes(String(a.name).toLowerCase()));
+        const ownedFileContext = currentAttachments.some(a => a.versionId)
+          ? (fileRequest || !['agent', 'debug'].includes(mode) || currentAttachments.some(a => a.kind === 'model'))
+          : historicalFiles.length > 0 && fileRequest;
+        if (ownedFileContext) {
+          activeChatId = await ensureChat(titleSeed, effectiveOptions);
+          bindFlowToChat(activeChatId); onChatReady?.(activeChatId);
+          if (writeUserTurn) await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
+          return await handleAttachmentSubmit({ prompt, attachments: currentAttachments, activeChatId, requestId, mode, signal: flowController.signal, conversation: conversationMessages, idempotencyKey: effectiveOptions.idempotencyKey });
+        }
+
 
         // Agent & Debug always go to the authoritative decision service. It may
         // execute, recover, clarify, or block without the frontend changing mode.
@@ -1684,6 +1727,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       launchAuthoritativeRun,
       writeOrchestrationResult,
       handleAskSubmit,
+      handleAttachmentSubmit,
       effectiveGameSpec,
       notify,
     ]

@@ -1,3 +1,6 @@
+import useChatDraftPersistence from "../../hooks/useChatDraftPersistence";
+import { downloadChatAttachment } from "../../lib/chatAttachmentApi";
+import useChatAttachmentUpload from "../../hooks/useChatAttachmentUpload";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
@@ -79,7 +82,7 @@ import {
 } from "../../lib/robloxOAuthApi";
 import { useProjectAssets } from "../../hooks/useProjectAssets";
 import { useProjectBindings } from "../../hooks/useProjectBindings";
-import { useRobloxImageUpload, isRobloxDecalImage } from "../../hooks/useRobloxImageUpload";
+import { useRobloxImageUpload } from "../../hooks/useRobloxImageUpload";
 import { useWorkspaceArtifactPersistence } from "../../hooks/useWorkspaceArtifactPersistence";
 import { createImprovePromptError, formatImprovePromptErrorMessage } from "../../lib/aiPromptErrors";
 import { consumeGenerationIntent, restoreGenerationIntent } from "../../lib/generationIntent";
@@ -571,6 +574,7 @@ export function useAiWorkspaceController() {
     updateSettings,
   ]);
   const activeConversationMode = normalizeChatMode(chat.activeMode || settings?.chatMode);
+  useChatDraftPersistence({ uid: user?.uid, chatId: chat.currentChatId, prompt, attachments, setPrompt, setAttachments });
   const chatOperationKey = chat.currentChatId || "draft";
   const chatOperationState = chatOperationCoordinatorRef.current.snapshot(chatOperationKey);
   const scriptManager = useAiScripts(user, notify, { authReady });
@@ -1309,6 +1313,10 @@ export function useAiWorkspaceController() {
       const currentAttachments = Array.isArray(submissionOptions?.attachmentsOverride)
         ? [...submissionOptions.attachmentsOverride]
         : [...attachments];
+      if (currentAttachments.some(file => file.status && file.status !== 'ready')) {
+        notify({ message: 'Wait for uploads to finish, or retry or remove failed files.', type: 'info' });
+        return;
+      }
       const hasProjectAssets = projectAssets.assets.length > 0;
 
       if (!currentPrompt && currentAttachments.length === 0 && !hasProjectAssets) return;
@@ -1500,6 +1508,10 @@ export function useAiWorkspaceController() {
       const currentAttachments = Array.isArray(submissionOptions?.attachmentsOverride)
         ? [...submissionOptions.attachmentsOverride]
         : [...attachments];
+      if (currentAttachments.some(file => file.status && file.status !== 'ready')) {
+        notify({ message: 'Wait for uploads to finish, or retry or remove failed files.', type: 'info' });
+        return;
+      }
       const hasProjectAssets = projectAssets.assets.length > 0;
       if (!currentPrompt && currentAttachments.length === 0 && !hasProjectAssets) return undefined;
 
@@ -2019,38 +2031,22 @@ export function useAiWorkspaceController() {
     setPrompt(message?.originPrompt || "");
   }, []);
 
-  const handleFileUpload = useCallback(
-    async (e) => {
-      const files = Array.from(e.target.files || []);
-      if (e.target) e.target.value = "";
-      if (!files.length) return;
-
-      const imageFiles = files.filter((file) => file.type?.startsWith("image/") || isRobloxDecalImage(file));
-      const textFiles = files.filter((file) => !file.type?.startsWith("image/") && !isRobloxDecalImage(file));
-
-      if (imageFiles.length) {
-        await robloxImageUpload.uploadImages(imageFiles);
-      }
-
-      textFiles.forEach((file) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setAttachments((prev) => [
-            ...prev,
-            {
-              name: file.name,
-              type: file.type,
-              size: file.size,
-              data: reader.result,
-              isImage: false,
-            },
-          ]);
-        };
-        reader.readAsText(file);
-      });
-    },
-    [robloxImageUpload]
-  );
+  const attachmentUpload = useChatAttachmentUpload({ attachments, setAttachments, user, notify, enabled: FEATURE_FLAGS.chatAttachments, modelsEnabled: FEATURE_FLAGS.chatModelFiles });
+  const handleFileUpload = attachmentUpload.upload;
+  const publishChatImage = useCallback(async file => {
+    let blob = await downloadChatAttachment(file);
+    let name = file.name;
+    if (file.mimeType === 'image/webp' || /\.webp$/i.test(name)) {
+      const bitmap = await createImageBitmap(blob);
+      const canvas = document.createElement('canvas'); canvas.width = bitmap.width; canvas.height = bitmap.height;
+      canvas.getContext('2d').drawImage(bitmap, 0, 0); bitmap.close();
+      blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) throw new Error('The image could not be prepared for Roblox.');
+      name = name.replace(/\.webp$/i, '.png');
+    }
+    const result = await robloxImageUpload.uploadImages([new File([blob], name, { type: blob.type || file.mimeType || file.type })]);
+    if (!result?.ok) throw new Error('Publishing did not finish. Check the Roblox connection in Assets and retry.');
+  }, [robloxImageUpload]);
 
   const handleStudioPreferencesChange = useCallback(
     async (patch) => {
@@ -2996,6 +2992,8 @@ export function useAiWorkspaceController() {
       handleImprovePrompt,
       handleEditPlan,
       handleFileUpload,
+      retryAttachmentUpload: attachmentUpload.retry,
+      publishChatImage,
       handleQuickStart,
       track,
       notify,

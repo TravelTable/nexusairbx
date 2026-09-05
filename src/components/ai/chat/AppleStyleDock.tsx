@@ -13,6 +13,7 @@ import {
   motion,
   MotionValue,
   useMotionValue,
+  useReducedMotion,
   useSpring,
   useTransform,
   type SpringOptions,
@@ -337,9 +338,36 @@ export function AppleStyleDock({
   renderNavigation,
 }: AppleStyleDockProps) {
   const [popupView, setPopupView] = useState<DockPopupView | null>(null);
+  const reduceMotion = useReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
 
-  const closePopup = () => setPopupView(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const closePopup = () => { setPopupView(null); triggerRef.current?.focus(); };
+  useEffect(() => {
+    if (popupView === 'build-options') popupRef.current?.querySelector<HTMLElement>('button, select')?.focus();
+    const fitPopup = () => {
+      const root = rootRef.current;
+      const popup = popupRef.current;
+      if (!root || !popup) return;
+      const rect = root.getBoundingClientRect();
+      const scale = root.offsetWidth ? rect.width / root.offsetWidth : 1;
+      const width = window.visualViewport?.width || window.innerWidth;
+      const height = window.visualViewport?.height || window.innerHeight;
+      popup.style.maxWidth = `${Math.max(120, (width - 24) / scale)}px`;
+      popup.style.maxHeight = `${Math.max(80, (Math.min(height, rect.bottom) - 12) / scale - 58)}px`;
+    };
+    fitPopup();
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fitPopup) : null;
+    if (rootRef.current) observer?.observe(rootRef.current);
+    window.addEventListener('resize', fitPopup);
+    window.visualViewport?.addEventListener('resize', fitPopup);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', fitPopup);
+      window.visualViewport?.removeEventListener('resize', fitPopup);
+    };
+  }, [popupView]);
 
   useEffect(() => {
     if (!popupView) return undefined;
@@ -367,6 +395,7 @@ export function AppleStyleDock({
       (item.action === 'build-options' && buildOptionsContent)
     ) {
       const nextView: DockPopupView = item.action;
+      triggerRef.current = document.activeElement as HTMLElement;
       setPopupView((current) => current === nextView ? null : nextView);
       return;
     }
@@ -390,13 +419,14 @@ export function AppleStyleDock({
               : renderNavigation
         ) ? (
           <motion.div
+            ref={popupRef}
             key={popupView}
-            initial={{ opacity: 0, y: 12, scale: 0.97, filter: 'blur(8px)' }}
+            initial={reduceMotion ? false : { opacity: 0, y: 12, scale: 0.97, filter: 'blur(8px)' }}
             animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
-            exit={{ opacity: 0, y: 12, scale: 0.97, filter: 'blur(8px)' }}
-            transition={{ type: 'spring', bounce: 0, duration: 0.32 }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.97, filter: 'blur(8px)' }}
+            transition={reduceMotion ? { duration: 0 } : { type: 'spring', bounce: 0, duration: 0.32 }}
             className={cn(
-              'absolute bottom-[58px] left-1/2 w-[min(390px,calc(100vw-24px))] overflow-hidden rounded-2xl border border-white/10 bg-neutral-950/95 shadow-2xl backdrop-blur-2xl',
+              'absolute bottom-[58px] left-1/2 w-[min(390px,calc(100vw-24px))] overflow-hidden rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-surface-overlay)] shadow-2xl backdrop-blur-2xl',
               popupView === 'usage' ? 'min-h-[168px]' : 'h-[min(420px,60vh)]'
             )}
             style={{
@@ -441,14 +471,14 @@ export function AppleStyleDock({
               </section>
             ) : popupView === 'build-options' ? (
               <section className='flex h-full min-h-0 flex-col p-4' aria-labelledby='dock-build-options-title'>
-                <div className='flex items-center justify-between gap-3 border-b border-white/10 pb-3'>
+                <div className='flex items-center justify-between gap-3 border-b border-[var(--ds-border-subtle)] pb-3'>
                   <div>
-                    <p className='text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500'>Workspace</p>
-                    <h2 id='dock-build-options-title' className='mt-0.5 text-sm font-semibold text-white'>Build options</h2>
+                    <p className='text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--ds-text-muted)]'>Workspace</p>
+                    <h2 id='dock-build-options-title' className='mt-0.5 text-sm font-semibold text-[var(--ds-text)]'>Build options</h2>
                   </div>
                   <button
                     type='button'
-                    className='flex h-9 w-9 items-center justify-center rounded-full text-neutral-400 transition-colors duration-200 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50'
+                    className='flex h-9 w-9 items-center justify-center rounded-full text-[var(--ds-text-muted)] transition-colors duration-200 hover:bg-white/10 hover:text-[var(--ds-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50'
                     aria-label='Close build options'
                     onClick={closePopup}
                   >

@@ -237,6 +237,8 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     cancelRefine,
     handleImprovePrompt,
     handleFileUpload,
+    retryAttachmentUpload,
+    publishChatImage,
     handleQuickStart,
     handleOpenArtifact,
     track,
@@ -1367,6 +1369,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
   );
 
   const chatReferenceFiles = [
+    ...[...(chat.messages || [])].reverse().flatMap(message => (message.attachments || []).filter(file => file.versionId)),
     ...(openedCodeArtifact?.files || []),
     ...studioFiles,
     ...(workspace.activeArtifact?.files || []),
@@ -1456,6 +1459,8 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         rewindTarget={rewindTarget}
         onCancelRewind={cancelRewind}
         onFileUpload={handleFileUpload}
+        onRetryAttachment={retryAttachmentUpload}
+        onPublishAttachment={publishChatImage}
         onImprovePrompt={handleImprovePrompt}
         isImproving={isImproving}
         tokensLeft={totalRemaining}
@@ -1487,6 +1492,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         isDockBuildOptionsOpen={dockBuildOptionsOpen}
         onDockBuildOptionsClose={handleCloseDockBuildOptions}
         renderDockNavigation={renderDockNavigation}
+        studioSessionId={studioCommandSessionId}
         studioConnected={studioExecutionReady}
         studioPlaceName={studio?.activePlaceName}
         studioConnectionType={studio?.connectionType}
@@ -1835,6 +1841,8 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
           planKey={planKey}
           devOverride={devOverride}
           roblox={roblox}
+          onAssetUploadsEnabledChange={handleRobloxAssetUploadsEnabledChange}
+          onOpenAssetLibrary={handleOpenAssetLibrary}
           attachmentProjectId={roblox?.selectedAssetProjectId || ""}
           canonicalProjectId={roblox?.assetProjectId || currentProjectId || ""}
           attachedAssets={roblox?.selectedAssets || []}

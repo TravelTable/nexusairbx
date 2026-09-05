@@ -40,6 +40,8 @@ export default function ChatView({
   isBusy,
   onApproveStep,
   approvingStepId,
+  onPublishAttachment,
+  studioSessionId,
   studioConnected,
   studioConnectionState,
   studioLoading,
@@ -69,7 +71,7 @@ export default function ChatView({
           <ChatHeader
             chatTitle={chatTitle}
             projectTitle={projectTitle}
-            studioConnected={studioConnected}
+            onPublishAttachment={onPublishAttachment} studioSessionId={studioSessionId} studioConnected={studioConnected}
             studioConnectionState={studioConnectionState}
             isBusy={isBusy}
             onRenameChat={onRenameChat}
@@ -94,11 +96,12 @@ export default function ChatView({
                 startGuideLabel={startGuideLabel}
                 projectTitle={projectTitle}
                 projectId={projectId}
-                studioConnected={studioConnected}
+                onPublishAttachment={onPublishAttachment} studioSessionId={studioSessionId} studioConnected={studioConnected}
                 studioLoading={studioLoading}
               />
             ) : (
               <MessageList
+                onPublishAttachment={onPublishAttachment} studioSessionId={studioSessionId} studioConnected={studioConnected}
                 messages={messages}
                 pendingMessage={pendingMessage}
                 pendingMessages={pendingMessages}

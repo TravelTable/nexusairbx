@@ -135,7 +135,7 @@ describe("ChatComposer compact interactions", () => {
     renderComposer();
 
     const upload = screen.getByRole("button", {
-      name: "Upload image to Roblox or attach a code/text file",
+      name: "Attach images, code, or Roblox models",
     });
     const mode = screen.getByTitle("Choose conversation mode");
     const send = screen.getByRole("button", { name: "Send prompt" });
@@ -319,12 +319,14 @@ describe("ChatComposer compact interactions", () => {
     expect(screen.getAllByText("Script5.lua").length).toBeGreaterThan(0);
   });
 
-  test("reveals usage inside the dock build options", () => {
+  test("keeps usage in its dedicated dock panel", () => {
     renderComposer();
 
     expect(screen.queryByRole("region", { name: "Usage details" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Build options" }));
-    expect(screen.getByRole("region", { name: "Usage details" })).toBeTruthy();
+    expect(screen.queryByRole("region", { name: "Usage details" })).toBeNull();
+    fireEvent.keyDown(document, { key: "Escape" });
+    fireEvent.click(screen.getByRole("button", { name: "Usage" }));
     expect(screen.getByText("Unlimited")).toBeTruthy();
   });
 
@@ -337,7 +339,7 @@ describe("ChatComposer compact interactions", () => {
 
     fireEvent.click(
       screen.getByRole("button", {
-        name: "Upload image to Roblox or attach a code/text file",
+        name: "Attach images, code, or Roblox models",
       }),
     );
     expect(inputClick).toHaveBeenCalledTimes(1);

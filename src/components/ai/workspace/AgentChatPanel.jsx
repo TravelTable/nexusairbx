@@ -39,6 +39,7 @@ export default function AgentChatPanel({
   approvingStepId,
   agentRun,
   // studio
+  studioSessionId,
   studioConnected,
   studioPlaceName,
   studioConnectionType,
@@ -89,6 +90,8 @@ export default function AgentChatPanel({
   rewindTarget = null,
   onCancelRewind,
   onFileUpload,
+  onRetryAttachment,
+  onPublishAttachment,
   onImprovePrompt,
   isImproving,
   tokensLeft,
@@ -173,7 +176,8 @@ export default function AgentChatPanel({
             notify={notify}
             onApproveStep={onApproveStep}
             approvingStepId={approvingStepId}
-            studioConnected={studioConnected}
+            onPublishAttachment={onPublishAttachment}
+            studioSessionId={studioSessionId} studioConnected={studioConnected}
             studioConnectionState={studioConnectionState}
             studioLoading={studioLoading}
             onRenameChat={onRenameChat}
@@ -244,12 +248,14 @@ export default function AgentChatPanel({
           themePrimary={themePrimary}
           themeSecondary={themeSecondary}
           onFileUpload={onFileUpload}
+          onRetryAttachment={onRetryAttachment}
+          onPublishAttachment={onPublishAttachment}
           onImprovePrompt={onImprovePrompt}
           isImproving={isImproving}
           disabled={composerLocked}
           mode={activeMode}
           onModeChange={onModeChange}
-          studioConnected={studioConnected}
+          studioSessionId={studioSessionId} studioConnected={studioConnected}
           studioPlaceName={studioPlaceName}
           studioConnectionType={studioConnectionType}
           studioConnectionState={studioConnectionState}

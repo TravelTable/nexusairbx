@@ -58,6 +58,39 @@ describe("AgentStepList", () => {
     expect(screen.getByText(/Refreshing Studio project index/i)).toBeTruthy();
   });
 
+  test("shows the exact failed child operation and expandable raw result", () => {
+    render(
+      <AgentStepList
+        steps={[
+          {
+            id: "batch",
+            type: "batch_operations",
+            label: "Create RunMap",
+            status: "failed",
+            error: "Studio command failed",
+            result: {
+              failureCode: "invalid_property_value",
+              rollbackCode: "rollback_failed",
+              failedOperation: {
+                index: 4,
+                type: "update_properties",
+                path: "Workspace/RunMap/FinishLine",
+                code: "invalid_property_value",
+                error: "Material is not valid for Part",
+                result: { ok: false, property: "Material" },
+              },
+            },
+          },
+        ]}
+      />
+    );
+
+    expect(screen.getByText(/Operation 4 · update_properties · Workspace\/RunMap\/FinishLine/)).toBeTruthy();
+    expect(screen.getByText("Failed operation details")).toBeTruthy();
+    expect(screen.getByText("rollback_failed")).toBeTruthy();
+    expect(screen.getByText(/\"property\": \"Material\"/)).toBeTruthy();
+  });
+
   test("explains how to recover Local MCP after a compatible plugin fallback", () => {
     render(
       <AgentStepList

@@ -1,3 +1,4 @@
+import RobloxCloudControls from "./RobloxCloudControls";
 import React, { useCallback, useState } from "react";
 import { Boxes, FileArchive, Search } from "lib/icons";
 
@@ -16,6 +17,8 @@ const ASSET_VIEWS = [
 ];
 
 export default function WorkspaceAssetsPanel({
+  onAssetUploadsEnabledChange,
+  onOpenAssetLibrary,
   user,
   planKey,
   devOverride,
@@ -48,6 +51,10 @@ export default function WorkspaceAssetsPanel({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
+      <section aria-label="Roblox publishing" className="shrink-0 border-b border-[var(--ds-border-subtle)] p-3">
+        <h3 className="mb-2 text-xs font-semibold text-[var(--ds-text)]">Publishing destination</h3>
+        <RobloxCloudControls {...roblox} selectedAssetCount={attachedAssets.length} onAssetUploadsEnabledChange={onAssetUploadsEnabledChange} onOpenAssetLibrary={onOpenAssetLibrary} />
+      </section>
       <div className="shrink-0 border-b border-[var(--ds-border-subtle)] px-3 py-2">
         <Segmented
           fullWidth

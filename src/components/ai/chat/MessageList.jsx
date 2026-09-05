@@ -138,6 +138,9 @@ function CheckpointMarker({ checkpoint, onRestoreRun }) {
 }
 
 function SingleMessageList({
+  onPublishAttachment,
+  studioSessionId,
+  studioConnected,
   messages,
   pendingMessage: pendingMessageProp,
   user,
@@ -254,6 +257,7 @@ function SingleMessageList({
                   <RunContextBar decision={m.decision} />
                 ) : null}
                 <MessageBubble
+                  onPublishAttachment={onPublishAttachment} studioSessionId={studioSessionId} studioConnected={studioConnected}
                   message={m}
                   user={user}
                   profile={profile}
@@ -292,6 +296,7 @@ function SingleMessageList({
           {showOptimisticUserPrompt ? (
             <div className="nexus-message-arrival mx-auto w-full max-w-[840px]">
               <MessageBubble
+                onPublishAttachment={onPublishAttachment} studioSessionId={studioSessionId} studioConnected={studioConnected}
                 message={{
                   id: `optimistic-${pendingMessage.requestId || "message"}`,
                   role: "user",

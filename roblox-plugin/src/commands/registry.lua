@@ -22,6 +22,7 @@ local MUTATING_COMMANDS = {
 	build_native_model = true,
 	insert_creator_store_asset = true,
 	insert_uploaded_roblox_model = true,
+	import_model_file = true,
 	create_animation_sequence = true,
 	apply_native_model_patch = true,
 	restore_snapshot = true,
@@ -42,6 +43,7 @@ local UNAVAILABLE_COMMANDS = {
 }
 
 local TOOL_HANDLERS = {
+	import_model_file = ImportedAsset.importChatModelFile,
 	apply_artifact = applyArtifact,
 	insert_creator_store_asset = function(payload)
 		return ImportedAsset.insertTrustedRobloxAsset(payload, "insert_creator_store_asset")
@@ -144,25 +146,59 @@ local function batchOperations(payload)
 	local snapshots = {}
 	local results = {}
 	local failureCode = nil
+	local failedOperation = nil
+	local currentOperation = nil
+	local BATCH_ABORT = "__NEXUS_BATCH_ABORT__"
 	local previousBatch = lastBatchSnapshots
 	lastBatchSnapshots = snapshots
+	local function operationTarget(op)
+		local operationPayload = type(op) == "table" and op.payload or nil
+		if type(operationPayload) ~= "table" then return nil end
+		local target = operationPayload.path
+			or operationPayload.targetPath
+			or operationPayload.destinationPath
+			or operationPayload.parentPath
+		if target == nil or tostring(target) == "" then return nil end
+		return tostring(target)
+	end
+	local function failBatchOperation(index, opType, op, result, fallbackMessage)
+		local resultError = type(result) == "table" and (result.error or result.message) or nil
+		local nestedErrorCode = nil
+		if type(resultError) == "table" then
+			nestedErrorCode = resultError.code or resultError.errorCode
+			resultError = resultError.message or resultError.error or nestedErrorCode
+		end
+		local message = tostring(resultError or fallbackMessage or "Batch operation failed")
+		failureCode = tostring(
+			(type(result) == "table" and (result.mutationCode or result.failureCode or result.code))
+			or nestedErrorCode
+			or "batch_operation_failed"
+		)
+		failedOperation = {
+			index = index,
+			type = opType,
+			path = operationTarget(op),
+			ok = false,
+			code = failureCode,
+			error = message,
+			result = result,
+		}
+		table.insert(results, failedOperation)
+		-- A private sentinel exits the pcall without turning the child failure into
+		-- a second Luau stack-style error. The structured row above remains the
+		-- authoritative failure returned to the backend.
+		error(BATCH_ABORT, 0)
+	end
 	local function rejectUnsupportedBatchOperation(index, opType, message)
 		local result = structuredUnsupported(opType, message)
 		result.code = "STUDIO_TOOL_UNSUPPORTED"
 		result.retryable = false
 		result.error.code = "STUDIO_TOOL_UNSUPPORTED"
-		failureCode = result.code
-		table.insert(results, {
-			index = index,
-			type = opType,
-			ok = false,
-			error = result.error.message,
-			result = result,
-		})
-		error(result.error.message)
+		failBatchOperation(index, opType, currentOperation, result, result.error.message)
 	end
 	local ok, err = pcall(function()
 		for index, op in ipairs(payload.operations or {}) do
+			currentOperation = op
 			local opType = tostring(op.type or "")
 			if opType == "apply_artifact" or opType == "apply_asset_reference" or opType == "batch_operations" then
 				rejectUnsupportedBatchOperation(index, opType, "Nested or artifact batch operation is not supported")
@@ -178,17 +214,28 @@ local function batchOperations(payload)
 				end
 			end
 			if type(result) == "table" and result.ok == false then
-				local resultError = result.error or result.message or "Batch operation failed"
-				if type(resultError) == "table" then
-					resultError = resultError.message or resultError.code or "Batch operation failed"
-				end
-				table.insert(results, { index = index, type = opType, ok = false, error = tostring(resultError), result = result })
-				error(tostring(resultError))
+				failBatchOperation(index, opType, op, result, "Batch operation failed")
 			end
 			table.insert(results, { index = index, type = opType, ok = true, result = result })
 		end
 	end)
 	if not ok then
+		if failedOperation == nil then
+			local index = #results + 1
+			local opType = type(currentOperation) == "table" and tostring(currentOperation.type or "") or ""
+			local message = tostring(err or "Batch operation failed")
+			failureCode = "batch_operation_exception"
+			failedOperation = {
+				index = index,
+				type = opType,
+				path = operationTarget(currentOperation),
+				ok = false,
+				code = failureCode,
+				error = message,
+				result = { ok = false, code = failureCode, error = message },
+			}
+			table.insert(results, failedOperation)
+		end
 		local atomic = payload.atomic ~= false
 		local rollback = nil
 		if atomic then
@@ -197,13 +244,20 @@ local function batchOperations(payload)
 		if #snapshots == 0 then
 			lastBatchSnapshots = previousBatch
 		end
-			local rolledBack = atomic and type(rollback) == "table" and rollback.ok == true
-			return {
-				ok = false,
-				code = atomic and not rolledBack and "rollback_failed" or failureCode or "batch_operation_failed",
-				error = tostring(err),
-				atomic = atomic,
+		local rolledBack = atomic and type(rollback) == "table" and rollback.ok == true
+		local rollbackCode = nil
+		if atomic and not rolledBack then
+			rollbackCode = tostring((type(rollback) == "table" and rollback.code) or "rollback_failed")
+		end
+		return {
+			ok = false,
+			code = failureCode or "batch_operation_failed",
+			failureCode = failureCode or "batch_operation_failed",
+			error = failedOperation.error,
+			failedOperation = failedOperation,
+			atomic = atomic,
 			rolledBack = rolledBack,
+			rollbackCode = rollbackCode,
 			rollback = rollback,
 			results = results,
 			snapshots = snapshots,
@@ -627,6 +681,11 @@ local function verifyCommandOutcome(command, payload, result)
 			if count == 0 then
 				addCheck("tag", target, false, { reason = "no_requested_tags" })
 			end
+		end
+	elseif commandType == "import_model_file" then
+		for _, item in ipairs(result.inserted or {}) do
+			local inst = resolvePath(item.path)
+			addCheck("instance_identity", item.path, inst ~= nil and readManagedId(inst) == item.managedId, { managedId = item.managedId })
 		end
 	elseif commandType == "create_instance" then
 		local target = result.path or payload.path

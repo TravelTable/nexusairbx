@@ -14,9 +14,9 @@ export const STUDIO_SAFETY_MODES = Object.freeze([
 ]);
 
 export const DEFAULT_STUDIO_PREFERENCES = Object.freeze({
-  applyPolicy: "ask_before_applying",
+  applyPolicy: "after_validation",
   validationMode: "standard",
-  safetyMode: "review_destructive",
+  safetyMode: "developer_mode",
 });
 
 const APPLY_POLICY_SET = new Set(STUDIO_APPLY_POLICIES);
@@ -36,7 +36,7 @@ export function normalizeStudioPreferences(settings = {}) {
     } else if (settings?.studioAutoPushEnabled === true) {
       applyPolicy = "after_validation";
     } else {
-      applyPolicy = DEFAULT_STUDIO_PREFERENCES.applyPolicy;
+      applyPolicy = Object.keys(settings).length && !settings.studioPreferencesVersion && !settings.applyPolicy ? "ask_before_applying" : DEFAULT_STUDIO_PREFERENCES.applyPolicy;
     }
   }
 
@@ -51,18 +51,19 @@ export function normalizeStudioPreferences(settings = {}) {
       ? "developer_mode"
       : settings?.studioApplyMode === "auto_after_approval"
         ? "auto_apply_verified"
-        : DEFAULT_STUDIO_PREFERENCES.safetyMode;
+        : Object.keys(settings).length && !settings.studioPreferencesVersion && !settings.safetyMode ? "review_destructive" : DEFAULT_STUDIO_PREFERENCES.safetyMode;
 
   return { applyPolicy, validationMode, safetyMode };
 }
 
 export function studioPreferencesToRuntime(settings = {}) {
   const preferences = normalizeStudioPreferences(settings);
+  const reviewAll = ["ask_before_applying", "never_automatically"].includes(preferences.applyPolicy);
   const autoPushToStudio = ["after_validation", "after_playtest"].includes(preferences.applyPolicy);
   return {
     ...preferences,
     studioEnabled: true,
-    applyMode: preferences.safetyMode === "developer_mode"
+    applyMode: reviewAll ? "manual_review" : preferences.safetyMode === "developer_mode"
       ? "unrestricted_dev"
       : preferences.safetyMode === "auto_apply_verified"
         ? "auto_after_approval"
@@ -80,6 +81,7 @@ export function studioPreferencePatch(preferences = {}) {
   const normalized = normalizeStudioPreferences(preferences);
   const runtime = studioPreferencesToRuntime(normalized);
   return {
+    studioPreferencesVersion: 2,
     studioApplyPolicy: normalized.applyPolicy,
     studioValidationMode: normalized.validationMode,
     studioSafetyMode: normalized.safetyMode,

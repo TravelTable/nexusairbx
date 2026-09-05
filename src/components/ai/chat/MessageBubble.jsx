@@ -1,3 +1,4 @@
+import AttachmentCard from "./AttachmentCard";
 import React from "react";
 import AssistantBubble from "./AssistantBubble";
 import FileReferenceTag from "./FileReferenceTag";
@@ -24,12 +25,13 @@ function UserMessageContent({ content, onOpenFile }) {
   return parts.length ? parts : text;
 }
 
-function MessageAttachments({ attachments }) {
+function MessageAttachments({ attachments, studioConnected, studioSessionId, onPublishAttachment }) {
   if (!Array.isArray(attachments) || attachments.length === 0) return null;
 
   return (
     <div className="mb-2 flex flex-wrap justify-end gap-1.5">
       {attachments.map((attachment, index) => {
+        if (attachment.versionId) return <AttachmentCard key={`${attachment.id}:${attachment.versionId}`} file={attachment} onPublish={onPublishAttachment ? () => onPublishAttachment(attachment) : undefined} studioSessionId={studioSessionId} studioConnected={studioConnected} />;
         const name = attachment?.name || `Attachment ${index + 1}`;
         const source = attachment?.data || attachment?.url || "";
         if (attachment?.isImage && source) {
@@ -57,6 +59,9 @@ function MessageAttachments({ attachments }) {
 }
 
 export default function MessageBubble({
+  onPublishAttachment,
+  studioSessionId,
+  studioConnected,
   message: m,
   activeMode,
   grouped = false,
@@ -81,7 +86,7 @@ export default function MessageBubble({
     return (
       <div className="group/message flex w-full justify-end">
         <div className="max-w-[88%] sm:max-w-[68%]">
-          <MessageAttachments attachments={m.attachments} />
+          <MessageAttachments attachments={m.attachments} onPublishAttachment={onPublishAttachment} studioSessionId={studioSessionId} studioConnected={studioConnected} />
           <div className="rounded-[12px_12px_4px_12px] border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-hover)] px-3.5 py-[11px]">
             <div className="whitespace-pre-wrap text-[15px] font-normal leading-relaxed text-[var(--ds-text)]">
               <UserMessageContent content={m.content} onOpenFile={onOpenFile} />
@@ -103,6 +108,8 @@ export default function MessageBubble({
   }
 
   return (
+    <>
+    <MessageAttachments attachments={m.attachments} onPublishAttachment={onPublishAttachment} studioSessionId={studioSessionId} studioConnected={studioConnected} />
     <AssistantBubble
       message={m}
       activeMode={activeMode}
@@ -123,5 +130,6 @@ export default function MessageBubble({
       approvingStepId={approvingStepId}
       onRetryMessage={onRetryMessage}
     />
+    </>
   );
 }

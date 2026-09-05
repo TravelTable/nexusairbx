@@ -1,6 +1,10 @@
 import React from "react";
 import { CheckCircle2, Circle, Loader2, ShieldAlert, XCircle } from "lib/icons";
-import { summarizeStepResult, TERMINAL_STEP_STATUSES } from "../../../lib/agentSteps";
+import {
+  batchOperationFailure,
+  summarizeStepResult,
+  TERMINAL_STEP_STATUSES,
+} from "../../../lib/agentSteps";
 import StudioRunBlockNotice from "./StudioRunBlockNotice";
 
 export function StepStatusIcon({ status }) {
@@ -78,6 +82,9 @@ export default function AgentStepList({
         const awaiting = step.status === "awaiting_approval";
         const terminal = TERMINAL_STEP_STATUSES.has(step.status);
         const waitLabel = describeStepWait(step);
+        const failedOperation = step.type === "batch_operations"
+          ? batchOperationFailure(step.result)
+          : null;
         return (
           <div key={step.id || `${step.type}-${step.label}`} className="flex items-start gap-2 py-1">
             <div className="mt-0.5">
@@ -105,6 +112,23 @@ export default function AgentStepList({
               <div className={`text-[11px] truncate ${step.error ? " text-[var(--ds-danger)] " : "text-[var(--ds-text-muted)]"}`}>
                 {summarizeStepResult(step)}
               </div>
+              {failedOperation && (
+                <details className="mt-1 text-[10px] text-[var(--ds-text-muted)]">
+                  <summary className="cursor-pointer select-none hover:text-[var(--ds-text-secondary)]">
+                    Failed operation details
+                  </summary>
+                  <dl className="mt-1 grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-2 gap-y-0.5 break-words">
+                    <dt>Index</dt><dd>{failedOperation.index ?? "Unknown"}</dd>
+                    <dt>Type</dt><dd>{failedOperation.type || "Unknown"}</dd>
+                    {failedOperation.path && <><dt>Target</dt><dd>{failedOperation.path}</dd></>}
+                    {failedOperation.code && <><dt>Code</dt><dd>{failedOperation.code}</dd></>}
+                    {step.result?.rollbackCode && <><dt>Rollback</dt><dd>{step.result.rollbackCode}</dd></>}
+                  </dl>
+                  <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-words rounded-md bg-[var(--ds-fill-subtle)] p-2 text-[9px]">
+                    {JSON.stringify(failedOperation.result || failedOperation, null, 2)}
+                  </pre>
+                </details>
+              )}
               {!terminal && waitLabel && (
                 <div className={`mt-1 text-[10px] ${awaiting ? " text-[var(--ds-warning)] " : "text-[var(--ds-text-muted)]"}`}>
                   {waitLabel}

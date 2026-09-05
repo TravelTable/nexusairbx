@@ -4,13 +4,13 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import StudioControls from "./StudioControls";
 
 describe("StudioControls", () => {
-  test("shows one disabled Studio control system while disconnected", () => {
+  test("lets users choose build preferences while disconnected", () => {
     render(<StudioControls connected={false} />);
 
     expect(screen.getByText("Studio disconnected")).toBeTruthy();
-    expect(screen.getByLabelText("Apply changes")).toBeDisabled();
-    expect(screen.getByLabelText("Validation")).toBeDisabled();
-    expect(screen.getByLabelText("Safety")).toBeDisabled();
+    expect(screen.getByLabelText("Apply changes")).toBeEnabled();
+    expect(screen.getByLabelText("Checks")).toBeEnabled();
+    expect(screen.getByLabelText("Review destructive changes")).not.toBeChecked();
     expect(screen.queryByLabelText("Live Studio")).toBeNull();
     expect(screen.queryByLabelText("Auto Push")).toBeNull();
   });
@@ -36,9 +36,9 @@ describe("StudioControls", () => {
 
     expect(screen.getByText("Connected — Baseplate")).toBeTruthy();
     expect(screen.getByText("Automatic routing · Local MCP")).toBeTruthy();
-    expect(screen.getByRole("option", { name: "After validation — unavailable" })).toBeDisabled();
-    expect(screen.getByRole("option", { name: "After playtest — unavailable" })).toBeDisabled();
-    expect(screen.getByText(/Playtest unlocks/)).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Automatic — unavailable" })).toBeDisabled();
+    expect(screen.getByRole("option", { name: "Playtest — unavailable" })).toBeDisabled();
+    expect(screen.getByText(/Playtest needs/)).toBeTruthy();
   });
 
   test("enables playtest policies when the target registry advertises MCP playtest and writes", () => {
@@ -62,7 +62,7 @@ describe("StudioControls", () => {
     );
 
     expect(screen.getByText("Automatic routing · Plugin + MCP")).toBeTruthy();
-    expect(screen.getByRole("option", { name: "After playtest" })).toBeEnabled();
+    expect(screen.queryByRole("option", { name: "After playtest (legacy)" })).toBeNull();
     expect(screen.getByRole("option", { name: "Playtest" })).toBeEnabled();
   });
 
@@ -77,7 +77,7 @@ describe("StudioControls", () => {
       />
     );
 
-    fireEvent.change(screen.getByLabelText("Safety"), { target: { value: "developer_mode" } });
+    fireEvent.click(screen.getByLabelText("Review destructive changes"));
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Settings rejected"));
   });
 });

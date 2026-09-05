@@ -20,6 +20,11 @@ const PROVIDER_ICON_SLUGS = Object.freeze({
   alibaba: { mono: "alibaba", color: "alibaba-color" },
 });
 
+// These brand assets are intrinsically near-black SVGs. External SVG images
+// cannot inherit the app's current text color, so give them a stable light
+// chip instead of letting them disappear into dark surfaces.
+const DARK_PROVIDER_ICONS = new Set(["openai", "anthropic", "xai"]);
+
 function iconUrl(providerKey, type) {
   const slugs = PROVIDER_ICON_SLUGS[providerKey];
   if (!slugs) return null;
@@ -70,6 +75,27 @@ export default function ModelProviderGlyph({
     );
   }
 
+  if (DARK_PROVIDER_ICONS.has(key)) {
+    const padding = Math.max(1, Math.round(size * 0.14));
+    return (
+      <span
+        aria-hidden="true"
+        title={label}
+        className={`inline-flex shrink-0 items-center justify-center rounded-[30%] bg-white ring-1 ring-black/10 ${className}`.trim()}
+        style={{ width: size, height: size, padding }}
+      >
+        <img
+          src={src}
+          alt=""
+          width={size - padding * 2}
+          height={size - padding * 2}
+          className="h-full w-full object-contain"
+          draggable={false}
+        />
+      </span>
+    );
+  }
+
   return (
     <img
       src={src}
@@ -84,4 +110,4 @@ export default function ModelProviderGlyph({
   );
 }
 
-export { iconUrl, LOBE_STATIC_BASE, NEXUS_AGENT_LOGO };
+export { DARK_PROVIDER_ICONS, iconUrl, LOBE_STATIC_BASE, NEXUS_AGENT_LOGO };

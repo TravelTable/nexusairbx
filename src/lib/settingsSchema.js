@@ -23,11 +23,12 @@ export const DEFAULT_SETTINGS = Object.freeze({
   chatMode: "agent",
   showThinking: true,
   animateWorkspaceEnabled: false,
+  studioPreferencesVersion: 2,
   studioApplyPolicy: DEFAULT_STUDIO_PREFERENCES.applyPolicy,
   studioValidationMode: DEFAULT_STUDIO_PREFERENCES.validationMode,
   studioSafetyMode: DEFAULT_STUDIO_PREFERENCES.safetyMode,
-  studioAutoPushEnabled: false,
-  studioAutoPushPolicy: "manual_only",
+  studioAutoPushEnabled: true,
+  studioAutoPushPolicy: "after_validation",
   lastAuthorizedStudioSessionId: null,
   activeProjectId: null,
   robloxAssetUploadsEnabled: false,
@@ -46,6 +47,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
 
 const ALLOWED_KEYS = new Set(Object.keys(DEFAULT_SETTINGS));
 const ENUMS = {
+  studioPreferencesVersion: new Set([1, 2]),
   codeStyle: new Set(["optimized", "safe", "verbose"]),
   verbosity: new Set(["concise", "balanced", "detailed"]),
   theme: new Set(["system", "dark", "light"]),

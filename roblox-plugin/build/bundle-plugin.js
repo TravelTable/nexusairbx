@@ -26,6 +26,7 @@ const sources = [
   "src/commands/nativeModel.lua",
   "src/commands/importedAsset.lua",
   "src/commands/animation.lua",
+  "src/commands/chatModel.lua",
   "src/commands/registry.lua",
   "src/Main.server.lua",
 ];

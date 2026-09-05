@@ -84,7 +84,7 @@ describe("Firestore payload sanitizers", () => {
         label: "Arena",
       },
     });
-    expect(sanitized.attachments).toHaveLength(5);
+    expect(sanitized.attachments).toHaveLength(7);
     expect(sanitized.attachments[0]).toEqual({
       name: "file-0.txt",
       type: "text/plain",
