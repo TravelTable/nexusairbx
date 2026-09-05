@@ -39,12 +39,13 @@ import {
 import { CHAT_OPERATION_STATUS, ChatOperationCoordinator } from "../../lib/chatOperationCoordinator";
 import { AgentRuntimeUnavailableError, cancelAgentRunV2, getAgentRunV2 } from "../../lib/agentRuntimeV2Api";
 import {
-  getStudioApplyMode,
-  getStudioEnabledPreference,
-  setStudioApplyMode,
-  setStudioEnabledPreference,
   upsertAgentStep,
 } from "../../lib/agentSteps";
+import {
+  normalizeStudioPreferences,
+  studioPreferencePatch,
+  studioPreferencesToRuntime,
+} from "../../lib/studioPreferences";
 import { useStudioConnection } from "../../hooks/useStudioConnection";
 import { applyArtifactToStudio, getStudioStatus } from "../../lib/studioBridgeApi";
 import {
@@ -139,8 +140,9 @@ export function evaluateIntentAwareStudioSubmissionPreflight({ prompt, ...studio
   if (mode === "ask" || mode === "plan" || !shouldRequireStudioPlaceSelection(prompt)) {
     return { status: "ready" };
   }
-  const supportedTransportConnected = studioOptions.connected === true
-    && studioOptions.connectionType === STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE;
+  const supportedTransportConnected = Boolean(
+    studioOptions.executionReady ?? studioOptions.connected
+  );
   return supportedTransportConnected
     ? { status: "ready" }
     : { status: "blocked", message: "Connect Studio to apply changes." };
@@ -360,8 +362,11 @@ export function useAiWorkspaceController() {
   const [teams, setTeams] = useState([]);
   const [attachments, setAttachments] = useState([]);
   const [pendingGenerationIntent, setPendingGenerationIntent] = useState(null);
-  const [studioEnabled, setStudioEnabled] = useState(() => getStudioEnabledPreference());
-  const [studioApplyMode, setStudioApplyModeState] = useState(() => getStudioApplyMode());
+  const studioPreferences = useMemo(() => normalizeStudioPreferences(settings), [settings]);
+  const studioRuntimePreferences = useMemo(
+    () => studioPreferencesToRuntime(studioPreferences),
+    [studioPreferences]
+  );
   const robloxStatus = sharedRoblox.status;
   const robloxLoading = sharedRoblox.loading;
   const [robloxExperiences, setRobloxExperiences] = useState([]);
@@ -1244,8 +1249,6 @@ export function useAiWorkspaceController() {
     if (!user || !studioConnection.pluginConnected || !pluginSessionId) return;
     if (settings?.lastAuthorizedStudioSessionId === pluginSessionId) return;
     updateSettings({
-      studioAutoPushEnabled: true,
-      studioAutoPushPolicy: settings?.studioAutoPushPolicy || "after_validation",
       lastAuthorizedStudioSessionId: pluginSessionId,
     }).catch(() => {});
   }, [
@@ -1253,7 +1256,6 @@ export function useAiWorkspaceController() {
     studioConnection.pluginConnected,
     studioConnection.pluginSession,
     settings?.lastAuthorizedStudioSessionId,
-    settings?.studioAutoPushPolicy,
     updateSettings,
   ]);
 
@@ -1357,9 +1359,9 @@ export function useAiWorkspaceController() {
       if (
         activeConversationMode === "agent"
       ) {
-        const connectionType = getStudioConnectionType(studioConnection);
-        const supportedTransportConnected = (studioConnection.executionReady ?? studioConnection.connected)
-          && connectionType === STUDIO_CONNECTION_TYPES.PLUGIN_BRIDGE;
+        const supportedTransportConnected = Boolean(
+          studioConnection.executionReady ?? studioConnection.connected
+        );
         if (!supportedTransportConnected) {
           const connectionMessage = "Connect Studio to apply changes.";
           notify({ message: connectionMessage, type: "error" });
@@ -1510,8 +1512,9 @@ export function useAiWorkspaceController() {
 
       const studioPreflight = evaluateIntentAwareStudioSubmissionPreflight({
         prompt: currentPrompt,
-        studioEnabled,
+        studioEnabled: studioRuntimePreferences.studioEnabled,
         connected: studioConnection.executionReady ?? studioConnection.connected,
+        executionReady: studioConnection.executionReady,
         connectionType: getStudioConnectionType(studioConnection),
         mode: activeConversationMode,
       });
@@ -1645,7 +1648,7 @@ export function useAiWorkspaceController() {
       prompt,
       refineTarget,
       studioConnection,
-      studioEnabled,
+      studioRuntimePreferences.studioEnabled,
       unified,
       user,
     ]
@@ -2049,35 +2052,18 @@ export function useAiWorkspaceController() {
     [robloxImageUpload]
   );
 
-  const handleStudioEnabledChange = useCallback((enabled) => {
-    setStudioEnabled(enabled);
-    setStudioEnabledPreference(enabled);
-  }, []);
-
-  const handleStudioApplyModeChange = useCallback((mode) => {
-    setStudioApplyModeState(mode);
-    setStudioApplyMode(mode);
-  }, []);
-
-  const handleStudioAutoPushEnabledChange = useCallback(
-    (enabled) => {
-      updateSettings({
-        studioAutoPushEnabled: Boolean(enabled),
-      }).catch(() => {});
+  const handleStudioPreferencesChange = useCallback(
+    async (patch) => {
+      const result = await updateSettings(studioPreferencePatch({
+        ...studioPreferences,
+        ...(patch && typeof patch === "object" ? patch : {}),
+      }));
+      if (!result?.ok) {
+        notify({ message: result?.error || "Studio preferences could not be saved.", type: "error" });
+      }
+      return result;
     },
-    [updateSettings]
-  );
-
-  const handleStudioAutoPushPolicyChange = useCallback(
-    (policy) => {
-      const nextPolicy = ["after_validation", "after_playtest", "manual_only"].includes(policy)
-        ? policy
-        : "after_validation";
-      updateSettings({
-        studioAutoPushPolicy: nextPolicy,
-      }).catch(() => {});
-    },
-    [updateSettings]
+    [notify, studioPreferences, updateSettings]
   );
 
   const handleRobloxAssetUploadsEnabledChange = useCallback(
@@ -3017,10 +3003,7 @@ export function useAiWorkspaceController() {
 
       handleApproveStep,
       handleRestoreRun,
-      handleStudioEnabledChange,
-      handleStudioApplyModeChange,
-      handleStudioAutoPushEnabledChange,
-      handleStudioAutoPushPolicyChange,
+      handleStudioPreferencesChange,
       handleRobloxAssetUploadsEnabledChange,
       handleOpenAssetLibrary,
       handleCloseAssetLibrary: () => setAssetLibraryOpen(false),
@@ -3029,10 +3012,11 @@ export function useAiWorkspaceController() {
     },
     studio: {
       ...studioConnection,
-      enabled: studioEnabled,
-      applyMode: studioApplyMode,
-      autoPushEnabled: Boolean(settings?.studioAutoPushEnabled),
-      autoPushPolicy: settings?.studioAutoPushPolicy || "after_validation",
+      enabled: studioRuntimePreferences.studioEnabled,
+      applyMode: studioRuntimePreferences.applyMode,
+      autoPushEnabled: studioRuntimePreferences.autoPushToStudio,
+      autoPushPolicy: studioRuntimePreferences.autoPushPolicy,
+      preferences: studioPreferences,
       lastAuthorizedSessionId: settings?.lastAuthorizedStudioSessionId || null,
       approvingStepId,
       restoringRun,

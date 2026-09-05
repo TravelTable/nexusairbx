@@ -103,10 +103,11 @@ describe("robloxOAuthApi capability helpers", () => {
           type: "roblox_image_upload",
           id: "asset-1",
           requiresFileReselect: true,
-          token: "must-not-persist",
         },
       }),
     }));
+    const requestOptions = authedFetch.mock.calls[0][1];
+    expect(requestOptions.body).not.toContain("must-not-persist");
     expect(window.location.assign).toHaveBeenCalledWith("https://roblox.example/oauth");
     expect(readPendingRobloxAction()).toEqual(expect.objectContaining({
       type: "roblox_image_upload",

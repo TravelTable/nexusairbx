@@ -42,6 +42,10 @@ import {
 } from "../lib/robloxOAuthApi";
 import RobloxAuthorizationRequired from "../components/roblox/RobloxAuthorizationRequired";
 import { DEFAULT_SETTINGS } from "../lib/settingsSchema";
+import {
+  normalizeStudioPreferences,
+  studioPreferencePatch,
+} from "../lib/studioPreferences";
 import { CHAT_MODES } from "../components/ai/chatConstants";
 import { formatChatModeLabel, normalizeChatMode } from "../lib/chatModes";
 import ModelSwitcher from "../components/ai/ModelSwitcher";
@@ -204,10 +208,21 @@ const ASSET_PUBLISHING_OPTIONS = [
     description: "Create and save assets in NexusRBX without publishing them to Roblox.",
   },
 ];
-const STUDIO_POLICY_OPTIONS = [
-  { value: "after_validation", label: "Push after validation" },
-  { value: "manual_review", label: "Manual review first" },
-  { value: "off", label: "Never push automatically" },
+const STUDIO_APPLY_OPTIONS = [
+  { value: "ask_before_applying", label: "Ask before applying" },
+  { value: "after_validation", label: "After validation" },
+  { value: "after_playtest", label: "After playtest" },
+  { value: "never_automatically", label: "Never automatically" },
+];
+const STUDIO_VALIDATION_OPTIONS = [
+  { value: "quick", label: "Quick" },
+  { value: "standard", label: "Standard" },
+  { value: "playtest", label: "Playtest" },
+];
+const STUDIO_SAFETY_OPTIONS = [
+  { value: "review_destructive", label: "Review destructive changes" },
+  { value: "auto_apply_verified", label: "Auto-apply verified changes" },
+  { value: "developer_mode", label: "Developer mode" },
 ];
 const Button = React.forwardRef(({ className, variant = "default", ...props }, ref) => (
   <BaseButton
@@ -1429,24 +1444,34 @@ export default function SettingsPage() {
         )}
       </Panel>
 
-      <Panel title="Studio handoff" description="Control when validated work can move toward Studio.">
-        <div className="grid gap-3 lg:grid-cols-2">
-          <ToggleRow
-            label="Studio auto push"
-            description="Allow approved generated changes to move toward the active Studio session."
-            checked={settings.studioAutoPushEnabled}
-            onCheckedChange={(studioAutoPushEnabled) => updateSetting({ studioAutoPushEnabled })}
-          />
-          <div className="space-y-2 rounded-lg border border-border bg-muted/20 p-4">
-            <FieldLabel htmlFor="studio-push-policy" tip="Determines when validated work may move into the active Studio session.">Push policy</FieldLabel>
-            <Select value={settings.studioAutoPushPolicy} onValueChange={(studioAutoPushPolicy) => updateSetting({ studioAutoPushPolicy })}>
-              <SelectTrigger id="studio-push-policy"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {STUDIO_POLICY_OPTIONS.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+      <Panel title="Studio handoff" description="Use one capability-routed policy for Studio validation, application, and safety.">
+        {(() => {
+          const studioPreferences = normalizeStudioPreferences(settings);
+          const updateStudioPreference = (patch) => updateSetting(studioPreferencePatch({
+            ...studioPreferences,
+            ...patch,
+          }));
+          const rows = [
+            { id: "studio-apply-policy", label: "Apply changes", value: studioPreferences.applyPolicy, key: "applyPolicy", options: STUDIO_APPLY_OPTIONS },
+            { id: "studio-validation-mode", label: "Validation", value: studioPreferences.validationMode, key: "validationMode", options: STUDIO_VALIDATION_OPTIONS },
+            { id: "studio-safety-mode", label: "Safety", value: studioPreferences.safetyMode, key: "safetyMode", options: STUDIO_SAFETY_OPTIONS },
+          ];
+          return (
+            <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-muted/20">
+              {rows.map((row) => (
+                <div key={row.id} className="grid gap-2 p-4 sm:grid-cols-[minmax(0,1fr)_minmax(14rem,0.8fr)] sm:items-center">
+                  <Label htmlFor={row.id}>{row.label}</Label>
+                  <Select value={row.value} onValueChange={(value) => updateStudioPreference({ [row.key]: value })}>
+                    <SelectTrigger id={row.id}><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {row.options.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </Panel>
 
       <Panel title="Roblox operations" description="Recent Roblox upload and polling activity.">

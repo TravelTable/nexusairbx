@@ -114,4 +114,41 @@ describe("settingsSchema", () => {
   it("migrates an obsolete Debug preference to Agent", () => {
     expect(normalizeSettings({ chatMode: "debug" }).chatMode).toBe("agent");
   });
+
+  it("accepts the complete Studio policy model and keeps legacy runtime fields compatible", () => {
+    expect(sanitizeSettingsPatch({
+      studioApplyPolicy: "after_playtest",
+      studioValidationMode: "playtest",
+      studioSafetyMode: "developer_mode",
+      studioAutoPushPolicy: "manual_only",
+    })).toEqual({
+      patch: {
+        studioApplyPolicy: "after_playtest",
+        studioValidationMode: "playtest",
+        studioSafetyMode: "developer_mode",
+        studioAutoPushPolicy: "manual_only",
+      },
+      invalidKeys: [],
+    });
+
+    expect(normalizeSettings({
+      studioApplyPolicy: "after_playtest",
+      studioValidationMode: "playtest",
+      studioSafetyMode: "developer_mode",
+    })).toEqual(expect.objectContaining({
+      studioAutoPushEnabled: true,
+      studioAutoPushPolicy: "after_playtest",
+    }));
+
+    const legacyPlaytest = mergeSettingsPatch(DEFAULT_SETTINGS, {
+      studioAutoPushEnabled: true,
+      studioAutoPushPolicy: "after_playtest",
+    });
+    expect(legacyPlaytest.studioApplyPolicy).toBe("after_playtest");
+    const legacyManual = mergeSettingsPatch(legacyPlaytest, {
+      studioAutoPushPolicy: "manual_only",
+    });
+    expect(legacyManual.studioApplyPolicy).toBe("never_automatically");
+    expect(legacyManual.studioAutoPushEnabled).toBe(false);
+  });
 });

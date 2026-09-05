@@ -360,6 +360,12 @@ export function normalizeStudioConnectionSnapshot({ pluginStatus = null, mcpStat
     && compatibility.currentRelease !== false
   );
   const mcpConnected = Boolean(mcpSession);
+  const mcpExecutionReady = Boolean(
+    mcpSession && (
+      (Array.isArray(mcpSession.supportedCommands) && mcpSession.supportedCommands.length > 0) ||
+      Object.values(normalizeAdvertisedCapabilities(mcpSession)).some(Boolean)
+    )
+  );
   const connectorDetected = firstReportedBoolean(
     latestMcpSession?.connectorLive,
     latestMcpSession?.connector?.connected,
@@ -399,25 +405,47 @@ export function normalizeStudioConnectionSnapshot({ pluginStatus = null, mcpStat
         : degraded
           ? "degraded"
           : "disconnected";
-  const workflowMode = pluginConnected
-    ? "plugin_live"
-    : "export_only";
+  const workflowMode = pluginConnected && mcpExecutionReady
+    ? "hybrid_live"
+    : pluginConnected
+      ? "plugin_live"
+      : mcpExecutionReady
+        ? "mcp_live"
+        : "export_only";
   const activePlaceName = String(
-    pluginSession?.studio?.placeName || pluginSession?.placeName || ""
+    activeSession?.studio?.placeName || activeSession?.placeName || ""
   ).trim();
+  const activeSessionId = getStudioSessionId(activeSession);
+  const reportedTargets = [
+    ...(Array.isArray(pluginStatus?.targeting?.targets) ? pluginStatus.targeting.targets : []),
+    ...(Array.isArray(mcpStatus?.targeting?.targets) ? mcpStatus.targeting.targets : []),
+  ];
+  const activeTarget = reportedTargets.find((target) => (
+    [target?.sessionId, target?.pluginSessionId, target?.mcpSessionId].filter(Boolean).includes(activeSessionId)
+  )) || null;
+  const capabilityRegistry = activeTarget?.capabilityRegistry || (activeSession
+    ? buildStudioCapabilityRegistry({
+        sessions,
+        target: {
+          ...(getStudioConnectionType(activeSession) === STUDIO_CONNECTION_TYPES.MCP_LOCAL
+            ? { mcpSessionId: activeSessionId }
+            : { pluginSessionId: activeSessionId }),
+        },
+      })
+    : null);
+  const executionReady = pluginMutationReady || mcpExecutionReady;
 
   return {
-    // The plugin is the authoritative execution connection. MCP can remain
-    // online as an auxiliary tool transport, but it cannot make Studio ready
-    // or choose the project target by itself.
-    connected: pluginConnected,
+    // Studio is one logical runtime. Each target-scoped provider contributes
+    // only the commands it currently advertises.
+    connected: pluginConnected || mcpConnected,
     transportConnected: pluginConnected || mcpConnected,
-    executionReady: pluginMutationReady,
-    readinessState: pluginMutationReady
+    executionReady,
+    readinessState: executionReady
       ? "ready"
       : pluginConnected && compatibility.currentRelease === false
         ? "plugin_update_required"
-        : (mcpConnected ? "plugin_required" : "disconnected"),
+        : (mcpConnected ? "capabilities_unavailable" : "disconnected"),
     activePlaceName: activePlaceName || null,
     sessionId: getStudioSessionId(activeSession),
     connectionType: activeSession ? getStudioConnectionType(activeSession) : null,
@@ -445,6 +473,7 @@ export function normalizeStudioConnectionSnapshot({ pluginStatus = null, mcpStat
     workflowMode,
     collaborators: Array.isArray(activeSession?.collaborators) ? activeSession.collaborators : [],
     capabilities,
+    capabilityRegistry,
     compatibility,
     chatSession,
     manifestSession,

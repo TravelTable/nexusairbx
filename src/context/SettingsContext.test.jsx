@@ -194,7 +194,7 @@ test("a follow-up update merges from a rollback before effects flush", async () 
   });
 });
 
-test("reloadSettings normalizes stale backend settings before updating state", async () => {
+test("reloadSettings preserves a normalized dynamic model id while sanitizing other stale settings", async () => {
   global.fetch.mockResolvedValueOnce(jsonResponse({
     modelVersion: "gpt-4.1-mini",
     creativity: 4,
@@ -207,7 +207,7 @@ test("reloadSettings normalizes stale backend settings before updating state", a
     await result.current.reloadSettings(auth.currentUser);
   });
 
-  expect(result.current.settings.modelVersion).toBe(DEFAULT_SETTINGS.modelVersion);
+  expect(result.current.settings.modelVersion).toBe("openai/gpt-4.1-mini");
   expect(result.current.settings.creativity).toBe(1);
   expect(result.current.settings.chatMode).toBe(DEFAULT_SETTINGS.chatMode);
   expect(result.current.settings.robloxAssetUploadsEnabled).toBe(true);

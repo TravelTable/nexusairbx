@@ -10,7 +10,6 @@ import ModelSwitcher from "../../components/ai/ModelSwitcher";
 import StudioPairControl from "../../components/ai/StudioPairControl";
 import {
   getActiveStudioCapabilities,
-  isCurrentPluginAutoPushAuthorized,
   selectedStudioSupportsCommand,
 } from "../../components/ai/workspace/studioControlAccess";
 
@@ -212,7 +211,6 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     getStudioSessionId(studio?.manifestSession) || getStudioSessionId(studio?.compatiblePluginSession) || null;
   const studioCapabilities = getActiveStudioCapabilities(studio);
   const studioManifestSupported = selectedStudioSupportsCommand(studio, "get_project_manifest");
-  const studioAutoPushAuthorized = isCurrentPluginAutoPushAuthorized(studio);
   const currentProjectId = chat.currentChatMeta?.projectId || project?.activeProjectId || "";
 
   const {
@@ -245,10 +243,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     notify,
     handleApproveStep,
     handleRestoreRun,
-    handleStudioEnabledChange,
-    handleStudioApplyModeChange,
-    handleStudioAutoPushEnabledChange,
-    handleStudioAutoPushPolicyChange,
+    handleStudioPreferencesChange,
     handleRobloxAssetUploadsEnabledChange,
     handleOpenAssetLibrary,
     handleCloseAssetLibrary,
@@ -1501,15 +1496,8 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         studioCapabilities={studioCapabilities}
         studioCollaborators={studio?.collaborators}
         studioLoading={studio?.loading}
-        studioEnabled={studio?.enabled}
-        onStudioEnabledChange={handleStudioEnabledChange}
-        studioApplyMode={studio?.applyMode}
-        onStudioApplyModeChange={handleStudioApplyModeChange}
-        studioAutoPushEnabled={studio?.autoPushEnabled}
-        onStudioAutoPushEnabledChange={handleStudioAutoPushEnabledChange}
-        studioAutoPushPolicy={studio?.autoPushPolicy}
-        onStudioAutoPushPolicyChange={handleStudioAutoPushPolicyChange}
-        studioAutoPushAuthorized={studioAutoPushAuthorized}
+        studioPreferences={studio?.preferences}
+        onStudioPreferencesChange={handleStudioPreferencesChange}
         onStudioConnectionOpen={handleStudioConnectionOpen}
         robloxConnected={roblox?.connected}
         robloxLoading={roblox?.loading}

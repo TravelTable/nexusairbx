@@ -6,6 +6,8 @@ import { buildRojoZip, buildStudioLoader } from "../../lib/rojoExport";
 import { buildStudioPayload } from "../../lib/studioPayload";
 import { getStudioCommand, getStudioStatus, pushToStudio, startStudioPairing } from "../../lib/studioBridgeApi";
 import { getStudioSessionId, selectPluginStudioSession } from "../../lib/studioConnection";
+import { useSettings } from "../../context/SettingsContext";
+import { studioPreferencesToRuntime } from "../../lib/studioPreferences";
 
 /**
  * Unified export surface for a finalized artifact (the Review stage).
@@ -25,6 +27,8 @@ export default function ExportBar({
   onRefine,
   notify,
 }) {
+  const { settings } = useSettings();
+  const { applyMode } = studioPreferencesToRuntime(settings);
   const [copied, setCopied] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [bundling, setBundling] = useState(false);
@@ -34,10 +38,6 @@ export default function ExportBar({
   const [pairCode, setPairCode] = useState("");
   const [studioSession, setStudioSession] = useState(null);
   const [lastCommandId, setLastCommandId] = useState("");
-  const [applyMode, setApplyMode] = useState(() => {
-    if (typeof window === "undefined") return "manual_review";
-    return window.localStorage.getItem("nexusStudioApplyMode") || "manual_review";
-  });
 
   const code = lua || "";
   const disabled = !code.trim();
@@ -46,12 +46,6 @@ export default function ExportBar({
   const hasBundle = kind === "project" || !!systemsLua || (funcScripts && funcScripts.length > 0);
   const studioSessionId = getStudioSessionId(studioSession);
   const studioConnected = Boolean(studioSessionId);
-
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("nexusStudioApplyMode", applyMode);
-    }
-  }, [applyMode]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -217,7 +211,7 @@ export default function ExportBar({
     }
   };
 
-  const btn = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed";
+  const btn = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-[background-color,color,border-color,opacity,transform] disabled:opacity-40 disabled:cursor-not-allowed";
 
   return (
     <div className="flex items-center gap-2 flex-wrap px-4 py-2.5 rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)]">
@@ -271,17 +265,6 @@ export default function ExportBar({
         {loaderCopied ? <Check className="w-3.5 h-3.5" /> : <Terminal className="w-3.5 h-3.5" />}
         Studio Loader
       </button>
-
-      <select
-        value={applyMode}
-        onChange={(e) => setApplyMode(e.target.value)}
-        className="h-[30px] rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2 text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-secondary)] outline-none"
-        title="Studio apply mode"
-      >
-        <option value="manual_review">Manual</option>
-        <option value="auto_after_approval">Auto</option>
-        <option value="unrestricted_dev">Dev</option>
-      </select>
 
       <button
         type="button"

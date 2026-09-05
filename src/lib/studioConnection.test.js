@@ -189,7 +189,7 @@ describe("studio connection selection", () => {
     expect(snapshot.compatibility.currentRelease).toBe(false);
   });
 
-  test("keeps a live MCP-only session auxiliary", () => {
+  test("lets a live MCP-only session make Studio execution-ready from advertised capabilities", () => {
     const snapshot = normalizeStudioConnectionSnapshot({
       mcpStatus: {
         sessions: [{
@@ -204,12 +204,12 @@ describe("studio connection selection", () => {
       },
     });
 
-    expect(snapshot.connected).toBe(false);
+    expect(snapshot.connected).toBe(true);
     expect(snapshot.transportConnected).toBe(true);
-    expect(snapshot.executionReady).toBe(false);
-    expect(snapshot.readinessState).toBe("plugin_required");
+    expect(snapshot.executionReady).toBe(true);
+    expect(snapshot.readinessState).toBe("ready");
     expect(snapshot.connectionType).toBe("mcp_local");
-    expect(snapshot.workflowMode).toBe("export_only");
+    expect(snapshot.workflowMode).toBe("mcp_live");
     expect(snapshot.capabilities.supported).toEqual(["readProject"]);
     expect(snapshot.capabilities.unavailable).toEqual(["writeScript"]);
   });

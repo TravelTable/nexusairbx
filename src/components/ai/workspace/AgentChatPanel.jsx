@@ -45,15 +45,8 @@ export default function AgentChatPanel({
   studioConnectionState,
   studioCapabilities,
   studioLoading,
-  studioEnabled,
-  onStudioEnabledChange,
-  studioApplyMode,
-  onStudioApplyModeChange,
-  studioAutoPushEnabled,
-  onStudioAutoPushEnabledChange,
-  studioAutoPushPolicy,
-  onStudioAutoPushPolicyChange,
-  studioAutoPushAuthorized,
+  studioPreferences,
+  onStudioPreferencesChange,
   onStudioConnectionOpen = null,
   studioCollaborators,
   // roblox cloud
@@ -262,15 +255,8 @@ export default function AgentChatPanel({
           studioConnectionState={studioConnectionState}
           studioCapabilities={studioCapabilities}
           studioLoading={studioLoading}
-          studioEnabled={studioEnabled}
-          onStudioEnabledChange={onStudioEnabledChange}
-          studioApplyMode={studioApplyMode}
-          onStudioApplyModeChange={onStudioApplyModeChange}
-          studioAutoPushEnabled={studioAutoPushEnabled}
-          onStudioAutoPushEnabledChange={onStudioAutoPushEnabledChange}
-          studioAutoPushPolicy={studioAutoPushPolicy}
-          onStudioAutoPushPolicyChange={onStudioAutoPushPolicyChange}
-          studioAutoPushAuthorized={studioAutoPushAuthorized}
+          studioPreferences={studioPreferences}
+          onStudioPreferencesChange={onStudioPreferencesChange}
           studioCollaborators={studioCollaborators}
           onStudioConnectionOpen={onStudioConnectionOpen}
           robloxConnected={robloxConnected}

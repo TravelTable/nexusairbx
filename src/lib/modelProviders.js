@@ -114,6 +114,10 @@ const FREE_MODEL_IDS = new Set([
 export function normalizeModelId(id) {
   const raw = String(id || "").trim();
   if (!raw) return raw;
+  // Nexus Auto is a routing preference, not an upstream provider model.
+  // Preserve it so the picker/settings can distinguish Auto from selecting
+  // the current free model explicitly; the backend resolver owns routing.
+  if (raw === LEGACY_NEXUS_FREE_MODEL) return raw;
   return MODEL_ID_ALIASES[raw] || raw;
 }
 

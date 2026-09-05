@@ -1,4 +1,13 @@
-import { DEFAULT_FREE_MODEL, normalizeModelId } from "./modelProviders";
+import {
+  DEFAULT_FREE_MODEL,
+  LEGACY_NEXUS_FREE_MODEL,
+  normalizeModelId,
+} from "./modelProviders";
+import {
+  DEFAULT_STUDIO_PREFERENCES,
+  normalizeStudioPreferences,
+  studioPreferencesToRuntime,
+} from "./studioPreferences";
 
 export const SETTINGS_STORAGE_KEY = "nexusrbx:settings";
 
@@ -14,8 +23,11 @@ export const DEFAULT_SETTINGS = Object.freeze({
   chatMode: "agent",
   showThinking: true,
   animateWorkspaceEnabled: false,
+  studioApplyPolicy: DEFAULT_STUDIO_PREFERENCES.applyPolicy,
+  studioValidationMode: DEFAULT_STUDIO_PREFERENCES.validationMode,
+  studioSafetyMode: DEFAULT_STUDIO_PREFERENCES.safetyMode,
   studioAutoPushEnabled: false,
-  studioAutoPushPolicy: "after_validation",
+  studioAutoPushPolicy: "manual_only",
   lastAuthorizedStudioSessionId: null,
   activeProjectId: null,
   robloxAssetUploadsEnabled: false,
@@ -38,7 +50,10 @@ const ENUMS = {
   verbosity: new Set(["concise", "balanced", "detailed"]),
   theme: new Set(["system", "dark", "light"]),
   chatMode: new Set(["agent", "plan", "ask"]),
-  studioAutoPushPolicy: new Set(["after_validation", "manual_review", "off"]),
+  studioApplyPolicy: new Set(["ask_before_applying", "after_validation", "after_playtest", "never_automatically"]),
+  studioValidationMode: new Set(["quick", "standard", "playtest"]),
+  studioSafetyMode: new Set(["review_destructive", "auto_apply_verified", "developer_mode"]),
+  studioAutoPushPolicy: new Set(["after_validation", "after_playtest", "manual_only", "manual_review", "off"]),
   assetPublishingPreference: new Set([
     "review_every_asset",
     "auto_explicit_request",
@@ -63,6 +78,7 @@ function sanitizeValue(key, value, { strict = false } = {}) {
       if (strict) throw new Error("modelVersion must be a string");
       return DEFAULT_SETTINGS.modelVersion;
     }
+    if (value.trim() === LEGACY_NEXUS_FREE_MODEL) return LEGACY_NEXUS_FREE_MODEL;
     return normalizeModelId(value) || DEFAULT_SETTINGS.modelVersion;
   }
 
@@ -170,6 +186,14 @@ export function normalizeSettings(raw = {}) {
     }
   });
 
+  const studioPreferences = normalizeStudioPreferences(source);
+  normalized.studioApplyPolicy = studioPreferences.applyPolicy;
+  normalized.studioValidationMode = studioPreferences.validationMode;
+  normalized.studioSafetyMode = studioPreferences.safetyMode;
+  const studioRuntime = studioPreferencesToRuntime(studioPreferences);
+  normalized.studioAutoPushEnabled = studioRuntime.autoPushToStudio;
+  normalized.studioAutoPushPolicy = studioRuntime.autoPushPolicy;
+
   return normalized;
 }
 
@@ -197,5 +221,11 @@ export function sanitizeSettingsPatch(raw = {}) {
 }
 
 export function mergeSettingsPatch(current, patch) {
-  return normalizeSettings({ ...normalizeSettings(current), ...patch });
+  const merged = { ...normalizeSettings(current), ...patch };
+  const hasLegacyStudioPatch = Object.prototype.hasOwnProperty.call(patch || {}, "studioAutoPushEnabled")
+    || Object.prototype.hasOwnProperty.call(patch || {}, "studioAutoPushPolicy");
+  if (hasLegacyStudioPatch && !Object.prototype.hasOwnProperty.call(patch || {}, "studioApplyPolicy")) {
+    delete merged.studioApplyPolicy;
+  }
+  return normalizeSettings(merged);
 }

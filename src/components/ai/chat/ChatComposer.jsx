@@ -395,15 +395,8 @@ export default function ChatComposer({
   studioCapabilities,
   studioCollaborators,
   studioLoading,
-  studioEnabled,
-  onStudioEnabledChange,
-  studioApplyMode,
-  onStudioApplyModeChange,
-  studioAutoPushEnabled,
-  onStudioAutoPushEnabledChange,
-  studioAutoPushPolicy,
-  onStudioAutoPushPolicyChange,
-  studioAutoPushAuthorized,
+  studioPreferences,
+  onStudioPreferencesChange,
   onStudioConnectionOpen = null,
   robloxConnected,
   robloxLoading,
@@ -481,24 +474,22 @@ export default function ChatComposer({
     }
   }, [openBuildOptions, controlsOpen]);
   const canSendWithContext = Boolean(prompt?.trim()) || attachments.length > 0 || robloxProjectAssets.length > 0;
-  const studioRuntimeConnected = Boolean(
-    studioConnected && studioConnectionType === "plugin_bridge"
-  );
+  const studioRuntimeConnected = Boolean(studioConnected);
   const normalizedStudioPlaceName = String(studioPlaceName || "").trim();
   const studioStatusLabel = studioRuntimeConnected
     ? `Studio ready${normalizedStudioPlaceName ? ` — ${normalizedStudioPlaceName}` : ""}`
     : studioConnectionState === "plugin_update_required"
       ? "Studio plugin update required"
-      : studioConnectionState === "mcp"
-      ? "Studio plugin required"
-      : "Studio disconnected";
+      : studioConnectionState === "capabilities_unavailable"
+        ? "Studio tools unavailable"
+        : "Studio disconnected";
   const studioStatusTitle = studioRuntimeConnected
     ? `${normalizedStudioPlaceName || "The active Studio place"} is the verified execution project`
     : studioConnectionState === "plugin_update_required"
       ? "Install the current NexusRBX Studio plugin before starting place work"
-      : studioConnectionState === "mcp"
-      ? "MCP is available for auxiliary tools, but the NexusRBX Studio plugin is required for execution"
-      : "Connect the NexusRBX Studio plugin to apply changes";
+      : studioConnectionState === "capabilities_unavailable"
+        ? "Studio is connected, but the selected target has not advertised executable commands"
+        : "Connect a Studio provider to apply changes";
   const studioBuildBlocked =
     studioConnectionRequired &&
     ["agent", "debug"].includes(normalizedMode) &&
@@ -555,7 +546,9 @@ export default function ChatComposer({
   const mentionCommands = filterComposerCommands(mentionQuery, [...COMPOSER_COMMANDS, ...referenceCommands]);
   const fileReferences = extractComposerFileReferences(prompt);
   const contextItems = [
-    ...(studioEnabled ? [{ kind: "studio", key: "studio-target" }] : []),
+    ...(studioConnected || studioConnectionState === "plugin_update_required"
+      ? [{ kind: "studio", key: "studio-target" }]
+      : []),
     ...robloxImageUploads.map((upload) => ({
       kind: "upload",
       key: `upload-${upload.id}`,
@@ -859,19 +852,13 @@ export default function ChatComposer({
       </section>
       <StudioControls
         connected={studioConnected}
+        placeName={studioPlaceName}
         connectionType={studioConnectionType}
         connectionState={studioConnectionState}
         capabilities={studioCapabilities}
         loading={studioLoading}
-        studioEnabled={studioEnabled}
-        onStudioEnabledChange={onStudioEnabledChange}
-        applyMode={studioApplyMode}
-        onApplyModeChange={onStudioApplyModeChange}
-        autoPushEnabled={studioAutoPushEnabled}
-        onAutoPushEnabledChange={onStudioAutoPushEnabledChange}
-        autoPushPolicy={studioAutoPushPolicy}
-        onAutoPushPolicyChange={onStudioAutoPushPolicyChange}
-        autoPushAuthorized={studioAutoPushAuthorized}
+        preferences={studioPreferences}
+        onPreferencesChange={onStudioPreferencesChange}
       />
       {studioConnected && Array.isArray(studioCollaborators) && studioCollaborators.length > 0 && (
         <span
@@ -1225,23 +1212,6 @@ export default function ChatComposer({
                     </div>
                   </div>
                 )}
-                <button
-                  ref={controlsButtonRef}
-                  type="button"
-                  onClick={() => {
-                    if (controlsOpen) closeControls();
-                    else setControlsOpen(true);
-                  }}
-                  disabled={disabled}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-[var(--ds-text-muted)] transition-[background-color,color,opacity,transform] duration-150 hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] active:scale-95 focus-ring disabled:cursor-not-allowed disabled:opacity-40 xl:h-9 xl:w-9"
-                  aria-label="Open workspace options"
-                  aria-haspopup="dialog"
-                  aria-expanded={controlsOpen}
-                  aria-controls={controlsId}
-                  title="Workspace options"
-                >
-                  <AnimatedSettingsIcon className="h-4 w-4" active={controlsOpen} />
-                </button>
               </div> : null}
               {isGenerating && canSendWithContext ? (
                 <button

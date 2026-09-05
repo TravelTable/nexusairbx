@@ -59,6 +59,7 @@
     "avoid": []
   },
   "decisions": [
+    "The AI model picker follows a compact IDE selector pattern: search first, a minimal Nexus Auto row, 3-5 dynamic recommendations, then one continuous provider-grouped catalogue. Rows stay 36-42px tall with a single optional capability descriptor, subtle free-tier locks, checkmark selection, and no per-row billing, context-window, or usage-multiplier copy.",
     "Planning remains conversational in chat without an active-step checklist. Reviewable plans use a compact overview, named execution stages, deterministic semantic flowcharts, and structured file or Studio-target tags; @ file references appear as removable composer context while the full source is fetched only when needed.",
     "Roblox UI Creator inherits the Agent workspace design contract: Nexus dark surfaces, --nx-* and --ds-* tokens, typography, spacing, radii, controls, status feedback, focus treatment, motion, composer behavior, and responsive drawers. It remains a dense preview-first authoring workspace with Chat/Layers on the left, an unobstructed device canvas in the center, Properties/Actions/Assets plus checkpoint history on the right, and rendered Roblox UI that may use each design's own tokens.",
     "Current Studio activity may also appear in a compact status bar above the composer, but it never replaces or filters the inline live stream; status stages, display-safe reasoning, tool actions, file writes and code excerpts, reconnect states, and streamed response text remain visible together in the conversation while work is running.",

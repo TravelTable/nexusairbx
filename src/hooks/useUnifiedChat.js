@@ -23,7 +23,7 @@ import { stageSlug } from "../lib/streamEngagement";
 import { resolveGameSpecForPrompt } from "../lib/gameProfile";
 import { categorizePrompt, trackProductEvent } from "../lib/productAnalytics";
 import { FEATURE_FLAGS } from "../lib/featureFlags";
-import { getStudioApplyMode, getStudioEnabledPreference } from "../lib/agentSteps";
+import { studioPreferencesToRuntime } from "../lib/studioPreferences";
 import { getStudioStatus } from "../lib/studioBridgeApi";
 import {
   getStudioConnectionType,
@@ -214,6 +214,7 @@ function buildOrchestrationPending(state, stage, metadata = {}) {
 }
 
 function buildRuntimeSettings(settings = {}, gameSpec = null) {
+  const studioRuntime = studioPreferencesToRuntime(settings);
   const normalized = {
     modelVersion: String(settings?.modelVersion || ""),
     creativity: Number.isFinite(Number(settings?.creativity)) ? Number(settings.creativity) : 0.7,
@@ -223,8 +224,11 @@ function buildRuntimeSettings(settings = {}, gameSpec = null) {
     gameSpec: String(gameSpec || ""),
     enableGameWizard: settings?.enableGameWizard !== false,
     showThinking: settings?.showThinking !== false,
-    studioAutoPushEnabled: settings?.studioAutoPushEnabled === true,
-    studioAutoPushPolicy: String(settings?.studioAutoPushPolicy || "after_validation"),
+    studioAutoPushEnabled: studioRuntime.autoPushToStudio,
+    studioAutoPushPolicy: studioRuntime.autoPushPolicy,
+    studioApplyPolicy: studioRuntime.applyPolicy,
+    studioValidationMode: studioRuntime.validationMode,
+    studioSafetyMode: studioRuntime.safetyMode,
     robloxAssetUploadsEnabled: settings?.robloxAssetUploadsEnabled === true,
     allowPlaceholderAssets: settings?.allowPlaceholderAssets === true,
     useExamples: settings?.useExamples === true,
@@ -258,8 +262,7 @@ function buildWorkflowTargeting(submissionOptions = {}, fallbackTargeting = {}) 
 }
 
 function runtimeAutoPushPolicy(settings = {}) {
-  const policy = String(settings?.studioAutoPushPolicy || "").trim();
-  return policy === "after_validation" || policy === "after_playtest" ? policy : "manual_only";
+  return studioPreferencesToRuntime(settings).autoPushPolicy;
 }
 
 function isLegacyRuntimeOwnershipError(error) {
@@ -662,8 +665,9 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       const runtimeRoute = selectAgentRuntimeRoute(capabilities, {
         projectId: submissionOptions.projectId,
       });
-      const studioEnabled = getStudioEnabledPreference() === true;
+      const studioRuntime = studioPreferencesToRuntime(settings);
       const targeting = buildWorkflowTargeting(submissionOptions);
+      const studioEnabled = studioRuntime.studioEnabled && targeting.studioConnected;
       const executionIntent = classifyExecutionIntent(prompt, {
         studioEnabled,
         generatorMode: submissionOptions.generatorMode || "agent_build",
@@ -706,7 +710,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         submissionOptions.operationId || submissionOptions.idempotencyKey || requestId
       ).trim();
       const launchOperationId = `${operationId}:agent`;
-      const autoPushToStudio = studioEnabled && settings?.studioAutoPushEnabled === true;
+      const autoPushToStudio = studioEnabled && studioRuntime.autoPushToStudio;
       const approvedPlan = normalizeApprovedPlanReference(submissionOptions.approvedPlan);
       let runtimeEnvelope;
       try {
@@ -741,7 +745,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           generatorMode: "agent_build",
           executionIntent,
           studioEnabled,
-          applyMode: getStudioApplyMode(),
+          applyMode: studioRuntime.applyMode,
           routingMode: studioEnabled ? "hybrid" : "cloud",
           autoPushToStudio,
           autoPushPolicy: runtimeAutoPushPolicy(settings),
@@ -1224,7 +1228,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       );
 
       const studioEnabled =
-        FEATURE_FLAGS.unifiedAgent && getStudioEnabledPreference() && !explicitlyDisablesStudioContext(requestPrompt);
+        FEATURE_FLAGS.unifiedAgent && !explicitlyDisablesStudioContext(requestPrompt);
       let studioSessionId = null;
       let studioConnectionType = null;
       if (studioEnabled) {

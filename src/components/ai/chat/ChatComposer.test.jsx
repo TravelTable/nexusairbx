@@ -87,7 +87,7 @@ describe("ChatComposer compact interactions", () => {
     };
   });
 
-  test("preserves integration hooks and starts with settings collapsed", () => {
+  test("preserves integration hooks and removes the legacy workspace-options button", () => {
     renderComposer();
 
     expect(screen.getByRole("textbox", { name: "Prompt input" }).getAttribute("data-tour")).toBe("prompt-input");
@@ -96,11 +96,8 @@ describe("ChatComposer compact interactions", () => {
     expect(
       screen.queryByRole("dialog", { name: "Workspace options" }),
     ).toBeNull();
-    expect(
-      screen
-        .getByRole("button", { name: "Open workspace options" })
-        .getAttribute("aria-expanded"),
-    ).toBe("false");
+    expect(screen.queryByRole("button", { name: "Open workspace options" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Build options" })).toHaveAttribute("aria-pressed", "false");
   });
 
   test("separates same-operation recovery from a new retry attempt", () => {
@@ -141,17 +138,14 @@ describe("ChatComposer compact interactions", () => {
       name: "Upload image to Roblox or attach a code/text file",
     });
     const mode = screen.getByTitle("Choose conversation mode");
-    const settings = screen.getByRole("button", {
-      name: "Open workspace options",
-    });
     const send = screen.getByRole("button", { name: "Send prompt" });
 
-    for (const control of [upload, mode, settings, send]) {
+    for (const control of [upload, mode, send]) {
       expect(control.className).toContain("h-11");
     }
     expect(upload.className).toContain("w-11");
-    expect(settings.className).toContain("w-11");
     expect(send.className).toContain("w-11");
+    expect(screen.queryByRole("button", { name: "Open workspace options" })).toBeNull();
     expect(screen.queryByTitle("Plan before making changes")).toBeNull();
     expect(screen.getByRole("button", { name: "Usage" })).toBeInTheDocument();
   });
@@ -278,39 +272,28 @@ describe("ChatComposer compact interactions", () => {
     expect(onCancelRefine).toHaveBeenCalledTimes(1);
   });
 
-  test("opens advanced settings in a popover and closes on Escape or outside click", async () => {
+  test("opens build options from the dock and closes on Escape or outside click", async () => {
     renderComposer();
-    const settingsButton = screen.getByRole("button", {
-      name: "Open workspace options",
-    });
+    const settingsButton = screen.getByRole("button", { name: "Build options" });
 
     fireEvent.click(settingsButton);
-    const panel = await screen.findByRole("dialog", {
-      name: "Workspace options",
-    });
-    expect(settingsButton.getAttribute("aria-expanded")).toBe("true");
-    expect(
-      screen.getByRole("heading", { name: "Workspace options" }),
-    ).toBeTruthy();
+    const panel = await screen.findByRole("dialog", { name: "Build options" });
+    expect(settingsButton).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("heading", { name: "Build options" })).toBeTruthy();
     expect(panel.className).toContain("absolute");
-    expect(panel.className).toContain("bottom-full");
+    expect(panel.className).toContain("bottom-[58px]");
     expect(panel.className).not.toContain("inset-y-0");
 
     fireEvent.keyDown(document, { key: "Escape" });
     await waitFor(() =>
-      expect(
-        screen.queryByRole("dialog", { name: "Workspace options" }),
-      ).toBeNull(),
+      expect(screen.queryByRole("dialog", { name: "Build options" })).toBeNull(),
     );
-    expect(settingsButton).toHaveFocus();
 
     fireEvent.click(settingsButton);
-    await screen.findByRole("dialog", { name: "Workspace options" });
-    fireEvent.mouseDown(document.body);
+    await screen.findByRole("dialog", { name: "Build options" });
+    fireEvent.pointerDown(document.body);
     await waitFor(() =>
-      expect(
-        screen.queryByRole("dialog", { name: "Workspace options" }),
-      ).toBeNull(),
+      expect(screen.queryByRole("dialog", { name: "Build options" })).toBeNull(),
     );
   });
 
@@ -318,7 +301,7 @@ describe("ChatComposer compact interactions", () => {
     const attachments = Array.from({ length: 5 }, (_, index) => ({
       name: `Script${index + 1}.lua`,
     }));
-    renderComposer({ studioEnabled: false, attachments });
+    renderComposer({ studioEnabled: false, studioConnected: false, attachments });
 
     expect(
       screen.getByRole("button", { name: "Show 2 more context items" }),
@@ -336,13 +319,11 @@ describe("ChatComposer compact interactions", () => {
     expect(screen.getAllByText("Script5.lua").length).toBeGreaterThan(0);
   });
 
-  test("reveals usage only inside progressively disclosed workspace options", () => {
+  test("reveals usage inside the dock build options", () => {
     renderComposer();
 
     expect(screen.queryByRole("region", { name: "Usage details" })).toBeNull();
-    fireEvent.click(
-      screen.getByRole("button", { name: "Open workspace options" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Build options" }));
     expect(screen.getByRole("region", { name: "Usage details" })).toBeTruthy();
     expect(screen.getByText("Unlimited")).toBeTruthy();
   });
@@ -377,7 +358,7 @@ describe("ChatComposer compact interactions", () => {
     );
   });
 
-  test("allows Agent submission only through the authoritative Studio plugin", () => {
+  test("allows Agent submission through either execution-ready Studio provider", () => {
     const onSubmit = jest.fn();
     const { rerender } = renderComposer({
       prompt: "Build a fly GUI",
@@ -403,12 +384,12 @@ describe("ChatComposer compact interactions", () => {
         studioConnectionState="mcp"
       />,
     );
-    expect(screen.getByRole("alert")).toHaveTextContent("Connect Studio to apply changes.");
-    expect(screen.getByText("Studio plugin required")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.getByText("Studio ready")).toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole("textbox", { name: "Prompt input" }), {
       key: "Enter",
     });
-    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit).toHaveBeenCalledTimes(2);
   });
 
   test("explains when a connected legacy plugin must be updated before building", () => {

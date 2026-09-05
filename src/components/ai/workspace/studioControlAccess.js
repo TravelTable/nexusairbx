@@ -167,7 +167,7 @@ export function resolveStudioControlAccess({
 
 export function getActiveStudioCapabilities(studio) {
   if (!studio?.connected) return null;
-  const registry = studio?.placePreference?.capabilityRegistry;
+  const registry = studio?.placePreference?.capabilityRegistry || studio?.capabilityRegistry;
   if (registry && typeof registry === "object") {
     const supported = new Set();
     (Array.isArray(registry.transports) ? registry.transports : []).forEach((transport) => {
@@ -178,6 +178,7 @@ export function getActiveStudioCapabilities(studio) {
     return {
       supported: [...supported],
       commands: registry.commands || {},
+      transports: Array.isArray(registry.transports) ? registry.transports : [],
       capabilitySnapshotId: registry.capabilitySnapshotId || null,
     };
   }
@@ -188,6 +189,14 @@ export function getActiveStudioCapabilities(studio) {
     commands: Array.isArray(selectedSession.supportedCommands)
       ? selectedSession.supportedCommands
       : [],
+    transports: [{
+      sessionId: getStudioSessionId(selectedSession),
+      connectionType: getStudioConnectionType(selectedSession),
+      supportedCommands: Array.isArray(selectedSession.supportedCommands)
+        ? selectedSession.supportedCommands
+        : [],
+      capabilities: selectedSession.capabilities || {},
+    }],
   };
 }
 

@@ -117,6 +117,12 @@ describe("Studio agent control access", () => {
     expect(getActiveStudioCapabilities(studio)).toEqual({
       supported: ["readProject"],
       commands: ["read_script"],
+      transports: [{
+        sessionId: "mcp_selected",
+        connectionType: "mcp_local",
+        supportedCommands: ["read_script"],
+        capabilities: { readProject: true },
+      }],
     });
     expect(selectedStudioSupportsCommand(studio, "read_script")).toBe(true);
     expect(selectedStudioSupportsCommand(studio, "get_project_manifest")).toBe(false);

@@ -39,11 +39,10 @@ import {
 } from "../lib/streamRecovery";
 import { FEATURE_FLAGS } from "../lib/featureFlags";
 import {
-  getStudioApplyMode,
-  getStudioEnabledPreference,
   normalizeToolStep,
   upsertAgentStep,
 } from "../lib/agentSteps";
+import { studioPreferencesToRuntime } from "../lib/studioPreferences";
 import { resolveGameSpecForPrompt } from "../lib/gameProfile";
 import { getAgentRun } from "../lib/workflowApi";
 import {
@@ -1929,9 +1928,12 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         : null;
       
       // 1. Create Artifact Job
-      const studioEnabled = FEATURE_FLAGS.unifiedAgent && getStudioEnabledPreference();
-      const autoPushToStudio = Boolean(settings?.studioAutoPushEnabled);
-      const autoPushPolicy = settings?.studioAutoPushPolicy || "after_validation";
+      const studioRuntime = studioPreferencesToRuntime(settings);
+      const studioEnabled = FEATURE_FLAGS.unifiedAgent
+        && studioRuntime.studioEnabled
+        && submissionOptions?.studioConnected === true;
+      const autoPushToStudio = studioRuntime.autoPushToStudio;
+      const autoPushPolicy = studioRuntime.autoPushPolicy;
       let jobData;
       if (authoritativeEnvelope?.run?.runId) {
         jobData = authoritativeEnvelope.run;
@@ -1956,7 +1958,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           conversation: messages.slice(-10).map(messageToConversationEntry).filter(Boolean),
           attachments: normalizedAttachments,
           studioEnabled,
-          applyMode: getStudioApplyMode(),
+          applyMode: studioRuntime.applyMode,
           routingMode: "hybrid",
           autoPushToStudio:
             autoPushToStudio,

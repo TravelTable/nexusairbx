@@ -645,7 +645,10 @@ describe("useAiChat", () => {
           "chat_1",
           "req_studio_context",
           "agent",
-          true
+          true,
+          [],
+          null,
+          { studioConnected: true },
         );
       });
       await submission;

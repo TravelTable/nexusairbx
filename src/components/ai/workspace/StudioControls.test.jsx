@@ -1,70 +1,83 @@
 import React from "react";
 import "@testing-library/jest-dom";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import StudioControls from "./StudioControls";
 
 describe("StudioControls", () => {
-  test("shows export-only status without a plugin-required Live Studio control", () => {
-    render(<StudioControls connected={false} studioEnabled />);
+  test("shows one disabled Studio control system while disconnected", () => {
+    render(<StudioControls connected={false} />);
 
-    expect(screen.getByText("Export only")).toBeTruthy();
-    expect(screen.getByText("Project ZIP ready")).toBeTruthy();
+    expect(screen.getByText("Studio disconnected")).toBeTruthy();
+    expect(screen.getByLabelText("Apply changes")).toBeDisabled();
+    expect(screen.getByLabelText("Validation")).toBeDisabled();
+    expect(screen.getByLabelText("Safety")).toBeDisabled();
     expect(screen.queryByLabelText("Live Studio")).toBeNull();
-  });
-
-  test("shows a read-only MCP session without plugin mutation controls", () => {
-    render(
-      <StudioControls
-        connected
-        connectionType="mcp_local"
-        connectionState="mcp"
-        capabilities={{ readProject: true, writeScript: false }}
-        studioEnabled
-        autoPushEnabled
-        autoPushAuthorized
-      />
-    );
-
-    expect(screen.getByText("Studio · MCP")).toBeTruthy();
-    expect(screen.getByText("MCP · Read only")).toBeTruthy();
-    expect(screen.getByLabelText("Live Studio")).toBeChecked();
-    expect(screen.queryByRole("option", { name: "Manual Review" })).toBeNull();
-    expect(screen.getByText("Auto Push · Plugin only")).toBeTruthy();
     expect(screen.queryByLabelText("Auto Push")).toBeNull();
   });
 
-  test("disables Live Studio when an MCP session advertises no tools", () => {
+  test("explains unavailable write and playtest options for a read-only MCP target", () => {
     render(
       <StudioControls
         connected
+        placeName="Baseplate"
         connectionType="mcp_local"
         connectionState="mcp"
-        capabilities={{ supported: [] }}
-        studioEnabled
+        capabilities={{
+          supported: ["readProject"],
+          commands: { read_script: { available: true } },
+          transports: [{
+            sessionId: "mcp-1",
+            connectionType: "mcp_local",
+            supportedCommands: ["read_script"],
+          }],
+        }}
       />
     );
 
-    expect(screen.getByText("MCP · No tools")).toBeTruthy();
-    expect(screen.getByLabelText("Live Studio")).toBeDisabled();
-    expect(screen.getByLabelText("Live Studio")).not.toBeChecked();
+    expect(screen.getByText("Connected — Baseplate")).toBeTruthy();
+    expect(screen.getByText("Automatic routing · Local MCP")).toBeTruthy();
+    expect(screen.getByRole("option", { name: "After validation — unavailable" })).toBeDisabled();
+    expect(screen.getByRole("option", { name: "After playtest — unavailable" })).toBeDisabled();
+    expect(screen.getByText(/Playtest unlocks/)).toBeTruthy();
   });
 
-  test("fails closed when a plugin advertises no verified tools", () => {
+  test("enables playtest policies when the target registry advertises MCP playtest and writes", () => {
     render(
       <StudioControls
         connected
         connectionType="plugin_bridge"
-        connectionState="plugin"
-        studioEnabled
-        autoPushEnabled
-        autoPushAuthorized={false}
+        connectionState="both"
+        capabilities={{
+          supported: ["playtest", "writeScript"],
+          commands: {
+            run_play_test: { available: true },
+            patch_script: { available: true },
+          },
+          transports: [
+            { sessionId: "plugin-1", connectionType: "plugin_bridge", supportedCommands: ["apply_artifact"] },
+            { sessionId: "mcp-1", connectionType: "mcp_local", supportedCommands: ["run_play_test", "patch_script"] },
+          ],
+        }}
       />
     );
 
-    expect(screen.getByText("Studio · Plugin")).toBeTruthy();
-    expect(screen.getByText("Plugin has no verified tools")).toBeTruthy();
-    expect(screen.getByLabelText("Live Studio")).toBeDisabled();
-    expect(screen.getByLabelText("Live Studio")).not.toBeChecked();
-    expect(screen.queryByLabelText("Auto Push")).toBeNull();
+    expect(screen.getByText("Automatic routing · Plugin + MCP")).toBeTruthy();
+    expect(screen.getByRole("option", { name: "After playtest" })).toBeEnabled();
+    expect(screen.getByRole("option", { name: "Playtest" })).toBeEnabled();
+  });
+
+  test("surfaces a settings save failure instead of silently swallowing it", async () => {
+    render(
+      <StudioControls
+        connected
+        connectionType="mcp_local"
+        connectionState="mcp"
+        capabilities={{ supported: ["writeScript"], commands: { patch_script: { available: true } } }}
+        onPreferencesChange={() => Promise.resolve({ ok: false, error: "Settings rejected" })}
+      />
+    );
+
+    fireEvent.change(screen.getByLabelText("Safety"), { target: { value: "developer_mode" } });
+    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Settings rejected"));
   });
 });
