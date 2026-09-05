@@ -37,7 +37,8 @@ const models = [
     pricingConfigured: true,
     recommended: true,
     recommendationScore: 30,
-    recommendedFor: ["reasoning"],
+    recommendedFor: ["coding", "reasoning"],
+    capabilities: ["coding", "reasoning", "tools"],
   },
   {
     id: "acme/frontier",
@@ -46,7 +47,9 @@ const models = [
     availableToPaid: true,
     availableToFree: false,
     pricingConfigured: true,
-    recommendationScore: 2,
+    recommended: true,
+    recommendationScore: 200,
+    recommendedFor: ["general"],
   },
 ];
 
@@ -68,6 +71,8 @@ test("renders the compact search-first Auto, Recommended, and provider-grouped c
   expect(screen.getByText("Recommended")).toBeInTheDocument();
   expect(screen.getByText("All models")).toBeInTheDocument();
   expect(screen.getByText("Acme Cloud")).toBeInTheDocument();
+  expect(screen.getAllByRole("option", { name: /Claude Opus 5/i })).toHaveLength(2);
+  expect(screen.getAllByRole("option", { name: /^Frontier$/i })).toHaveLength(1);
   expect(screen.queryByText(/× usage/i)).not.toBeInTheDocument();
   expect(screen.getByRole("listbox")).toHaveStyle({ maxHeight: "500px", width: "336px" });
 });

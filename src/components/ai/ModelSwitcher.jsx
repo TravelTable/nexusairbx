@@ -159,19 +159,15 @@ export default function ModelSwitcher({
     [isPremium, isStarterOrAbove]
   );
   const recommendedModels = useMemo(() => {
-    const picked = pickSuggestedModels(catalogModels, 5);
+    const picked = pickSuggestedModels(catalogModels, 4);
     const preferred = recommendedModelId
-      ? catalogModels.find((model) => model.id === recommendedModelId)
+      ? picked.find((model) => model.id === recommendedModelId)
       : null;
     const ordered = preferred
       ? [preferred, ...picked.filter((model) => model.id !== preferred.id)]
       : picked;
-    if (paid) return ordered.slice(0, 5);
-    const free = catalogModels.find((model) => model.id === DEFAULT_FREE_MODEL);
-    return free
-      ? [free, ...ordered.filter((model) => model.id !== free.id)].slice(0, 5)
-      : ordered.slice(0, 5);
-  }, [catalogModels, paid, recommendedModelId]);
+    return ordered.slice(0, 4);
+  }, [catalogModels, recommendedModelId]);
   const searchedModels = useMemo(
     () => catalogModels.filter((model) => modelMatchesSearch(model, query)),
     [catalogModels, query]
@@ -303,7 +299,7 @@ export default function ModelSwitcher({
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search models..."
               aria-label="Search models"
-              className="h-8 w-full rounded-[7px] border border-[var(--ds-border-subtle)] bg-transparent pl-8 pr-2.5 text-[11px] text-[var(--ds-text)] outline-none placeholder:text-[var(--ds-text-muted)] focus:border-[var(--ds-border-strong)]"
+              className="h-8 w-full rounded-[7px] border border-[var(--ds-border-subtle)] bg-transparent pl-8 pr-2.5 text-[11px] text-[var(--ds-text)] outline-none placeholder:text-[var(--ds-text-muted)] focus:border-[var(--ds-border-strong)] focus-visible:ring-1 focus-visible:ring-[var(--ds-accent-border)]"
             />
           </div>
 

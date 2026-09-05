@@ -13,20 +13,26 @@ function scoreModel(model) {
     return Number.NEGATIVE_INFINITY;
   }
 
-  let score = Number(model.recommendationScore) || 0;
-  if (model.recommended) score += 10;
-  if (model.isNew) score += 1;
+  const id = `${model.id || ""} ${model.name || ""}`.toLowerCase();
+  const uses = new Set((model.recommendedFor || []).map((value) => String(value).toLowerCase()));
+  const capabilities = new Set((model.capabilities || []).map((value) => String(value).toLowerCase()));
+  const codingSpecialist = /\b(code|coding|coder|codex|devstral|software)\b/i.test(
+    id.replace(/[-_/]/g, " ")
+  );
+  const codingEvidence = uses.has("coding") || capabilities.has("coding") || codingSpecialist;
+  if (!codingEvidence) return Number.NEGATIVE_INFINITY;
 
-  const uses = new Set(model.recommendedFor || []);
-  if (uses.has("coding")) score += 2;
-  if (uses.has("reasoning")) score += 1;
-  if (uses.has("fast")) score += 0.5;
-
-  const multiplier = Number(model.usageMultiplier ?? model.creditMultiplier);
-  if (Number.isFinite(multiplier)) {
-    if (multiplier <= 1) score += 1;
-    else if (multiplier >= 4) score -= 1;
-  }
+  // "Recommended" means strongest coding model, not newest or cheapest. The
+  // server owns the main quality score; these signals keep older cached
+  // catalogues aligned with the same coding-first contract.
+  let score = Number(model.codingRecommendationScore ?? model.recommendationScore) || 0;
+  if (uses.has("coding")) score += 20;
+  if (capabilities.has("coding")) score += 10;
+  if (codingSpecialist) score += 12;
+  if (capabilities.has("reasoning") || uses.has("reasoning")) score += 8;
+  if (capabilities.has("tools")) score += 8;
+  if (model.recommended) score += 2;
+  if (/\b(flash|mini|nano|haiku|lite)\b/i.test(id.replace(/[-_/]/g, " "))) score -= 18;
   return score;
 }
 
