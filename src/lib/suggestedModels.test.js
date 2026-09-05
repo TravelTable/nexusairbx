@@ -1,4 +1,4 @@
-import { pickSuggestedModels } from "./suggestedModels";
+import { isFlagshipCodingModel, pickSuggestedModels } from "./suggestedModels";
 
 const model = (overrides) => ({
   availableToPaid: true,
@@ -8,7 +8,7 @@ const model = (overrides) => ({
   ...overrides,
 });
 
-test("coding recommendations favor flagship models over economy variants", () => {
+test("coding recommendations contain flagship models only", () => {
   const picked = pickSuggestedModels([
     model({
       id: "google/gemini-3.6-flash",
@@ -27,14 +27,28 @@ test("coding recommendations favor flagship models over economy variants", () =>
     }),
   ], 3);
 
-  expect(picked.map(({ id }) => id)).toEqual([
-    "anthropic/claude-opus-5",
-    "openai/gpt-5-mini",
-    "google/gemini-3.6-flash",
-  ]);
+  expect(picked.map(({ id }) => id)).toEqual(["anthropic/claude-opus-5"]);
 });
 
-test("general-purpose models are excluded even when an old catalogue flags them recommended", () => {
+test("recognizes current frontier coding families without admitting balanced or economy variants", () => {
+  [
+    "openai/gpt-6-astra",
+    "openai/gpt-5.6-sol",
+    "openai/gpt-5.3-codex",
+    "anthropic/claude-fable-5.1",
+    "anthropic/claude-opus-5",
+    "anthropic/claude-sonnet-5",
+    "google/gemini-3.1-pro-preview",
+  ].forEach((id) => expect(isFlagshipCodingModel({ id })).toBe(true));
+
+  [
+    "openai/gpt-5.6-terra",
+    "openai/gpt-5-mini",
+    "google/gemini-3.6-flash",
+  ].forEach((id) => expect(isFlagshipCodingModel({ id })).toBe(false));
+});
+
+test("general-purpose and balanced models are excluded even when an old catalogue flags them recommended", () => {
   const picked = pickSuggestedModels([
     model({ id: "openai/gpt-5.6-terra", name: "GPT-5.6 Terra", recommendationScore: 99 }),
     {
@@ -49,5 +63,5 @@ test("general-purpose models are excluded even when an old catalogue flags them 
     },
   ], 5);
 
-  expect(picked.map(({ id }) => id)).toEqual(["openai/gpt-5.6-terra"]);
+  expect(picked).toEqual([]);
 });
