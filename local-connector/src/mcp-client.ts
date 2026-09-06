@@ -3,6 +3,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 import { ConnectorError } from "./errors.js";
 import type { Logger } from "./logger.js";
 import { redact } from "./logger.js";
+import { McpPortGuard } from "./mcp-port-guard.js";
 import type { DiscoveredTool, JsonObject, McpClientLike, McpConnectionInfo, ToolCallResult } from "./types.js";
 
 const MAX_TOOL_PAGES = 100;
@@ -17,6 +18,8 @@ export interface RobloxStudioMcpOptions {
   logger: Logger;
   /** Re-resolve Studio's installation after updates, preserving explicit overrides. */
   resolveLaunch?: () => { command: string; args: string[] };
+  /** Injectable for hosts with a different process inspection implementation. */
+  portGuard?: Pick<McpPortGuard, "prepare">;
 }
 
 export class RobloxStudioMcpClient implements McpClientLike {
@@ -27,11 +30,24 @@ export class RobloxStudioMcpClient implements McpClientLike {
   readonly #toolChangeHandlers = new Set<() => void>();
   readonly #disconnectHandlers = new Set<(error?: Error) => void>();
   #closing = false;
+  readonly #portGuard: Pick<McpPortGuard, "prepare">;
+  #connecting: Promise<McpConnectionInfo> | null = null;
+  #launchGeneration = 0;
 
-  constructor(private readonly options: RobloxStudioMcpOptions) {}
+  constructor(private readonly options: RobloxStudioMcpOptions) {
+    this.#portGuard = options.portGuard ?? new McpPortGuard(options.logger);
+  }
 
-  async connect(signal?: AbortSignal): Promise<McpConnectionInfo> {
+  connect(signal?: AbortSignal): Promise<McpConnectionInfo> {
+    if (this.#connecting) return this.#connecting;
+    const pending = this.connectOnce(signal).finally(() => { if (this.#connecting === pending) this.#connecting = null; });
+    this.#connecting = pending;
+    return pending;
+  }
+
+  private async connectOnce(signal?: AbortSignal): Promise<McpConnectionInfo> {
     await this.disconnect();
+    const generation = this.#launchGeneration;
     this.#closing = false;
     this.#activeStudioId = null;
     this.#perCallStudioTools.clear();
@@ -54,6 +70,9 @@ export class RobloxStudioMcpClient implements McpClientLike {
     );
     let stderrTail = "";
     const launch = this.options.resolveLaunch?.() ?? this.options;
+    await this.#portGuard.prepare(launch, signal);
+    signal?.throwIfAborted();
+    if (generation !== this.#launchGeneration) throw new DOMException("MCP connection was cancelled", "AbortError");
     const transport = new StdioClientTransport({
       command: launch.command,
       args: launch.args,
@@ -104,6 +123,7 @@ export class RobloxStudioMcpClient implements McpClientLike {
   }
 
   async disconnect(): Promise<void> {
+    this.#launchGeneration += 1;
     this.#closing = true;
     const client = this.#client;
     const transport = this.#transport;

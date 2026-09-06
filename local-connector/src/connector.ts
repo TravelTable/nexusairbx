@@ -181,7 +181,7 @@ export class NexusLocalConnector {
             retryInMs: reconnectDelay,
           });
           await this.announceUnavailable(connectionFailure(connectorError, this.#failureStage));
-          if (!this.#shouldAutoReconnect() || outdatedFailures >= 2) {
+          if (!this.#shouldAutoReconnect() || outdatedFailures >= 2 || connectorError.code === "MCP_PORT_CONFLICT") {
             await waitForAbort(signal);
             break;
           }

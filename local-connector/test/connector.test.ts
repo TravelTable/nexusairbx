@@ -1948,6 +1948,30 @@ test("losing the lease heartbeat during a mutation aborts work and forces reconc
   assert.equal(journal.entries.get(command.id)?.terminalStatus, "outcome_unknown");
 });
 
+test("port conflicts pause automatic retries, retain sign-in and never dispatch mutations", async () => {
+  const controller = new AbortController();
+  const backend = new FakeBackend(controller);
+  const mcp = new FakeMcp();
+  const telemetry: ConnectorTelemetry[] = [];
+  mcp.connect = async () => {
+    mcp.connectAttempts++;
+    throw new ConnectorError("MCP_PORT_CONFLICT", "Ropilot is using Studio's MCP port 13469.");
+  };
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  await new NexusLocalConnector({ config, connectorVersion: "test", backend, mcp, logger,
+    clearTokenOnShutdown: false, commandJournal: new MemoryCommandJournal(),
+    onTelemetry: event => {
+      telemetry.push(event);
+      if (event.connectionFailure && !timer) timer = setTimeout(() => controller.abort(new DOMException("done", "AbortError")), 40);
+    },
+  }).runClaimed(TEST_SESSION, AbortSignal.any([controller.signal, AbortSignal.timeout(2000)]));
+  if (timer) clearTimeout(timer);
+  assert.equal(mcp.connectAttempts, 1);
+  assert.equal(backend.clearCalls, 0);
+  assert.equal(mcp.callTools.length, 0);
+  assert.ok(telemetry.some(event => event.connectionFailure?.code === "MCP_PORT_CONFLICT" && event.connectionFailure.stage === "mcp"));
+});
+
 for (const recover of [false, true]) {
   test('outdated proxy gets one fresh helper attempt; recovery=' + recover, async () => {
     const controller = new AbortController();

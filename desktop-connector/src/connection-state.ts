@@ -44,6 +44,11 @@ export function completedConnectionPatch(snapshot: CompanionSnapshot): Partial<C
 
 export function connectionFailureCopy(snapshot: CompanionSnapshot): { title: string; message: string; steps: string[] } {
   const failure = snapshot.connectionFailure;
+  if (failure?.code === "MCP_PORT_CONFLICT") return {
+    title: "Another app is blocking Studio MCP",
+    message: failure.diagnostic,
+    steps: ["Close the conflicting app's Studio integration", "Leave Roblox Studio open", "Click Try Again to reconnect"],
+  };
   if (failure?.code === "MCP_CLIENT_OUTDATED") return {
     title: "Restart or update Roblox Studio",
     message: "Roblox reports that its MCP client proxy is out of date. Your sign-in is retained.",

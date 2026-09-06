@@ -7,6 +7,36 @@ import { RobloxStudioMcpClient } from "../src/mcp-client.js";
 
 const fixture = fileURLToPath(new URL("./fixtures/mock-mcp-server.mjs", import.meta.url));
 
+test("concurrent connect calls share one port recovery and handshake", async (t) => {
+  let prepares = 0;
+  const mcp = new RobloxStudioMcpClient({ command: process.execPath, args: [fixture, "normal"], connectorVersion: "test",
+    requestTimeoutMs: 5000, toolTimeoutMs: 5000, logger,
+    portGuard: { async prepare() { prepares++; await new Promise(resolve => setTimeout(resolve, 20)); } },
+  });
+  t.after(() => mcp.disconnect());
+  const [first, second] = await Promise.all([mcp.connect(), mcp.connect()]);
+  assert.deepEqual(first, second);
+  assert.equal(prepares, 1);
+});
+
+test("disconnect during port inspection cannot launch a late helper", async () => {
+  let release!: () => void;
+  let entered!: () => void;
+  const started = new Promise<void>(resolve => { entered = resolve; });
+  const blocked = new Promise<void>(resolve => { release = resolve; });
+  const mcp = new RobloxStudioMcpClient({ command: process.execPath, args: [fixture, "normal"], connectorVersion: "test",
+    requestTimeoutMs: 5000, toolTimeoutMs: 5000, logger,
+    portGuard: { async prepare() { entered(); await blocked; } },
+  });
+  const attempt = mcp.connect();
+  const rejected = assert.rejects(attempt, { name: "AbortError" });
+  await started;
+  await mcp.disconnect();
+  release();
+  await rejected;
+  await assert.rejects(mcp.listTools(), error => error instanceof ConnectorError && error.code === "MCP_NOT_CONNECTED");
+});
+
 for (const mode of ["outdated-rpc", "outdated-result", "outdated-list"]) {
   test(`outdated Studio proxy is preserved and never retried in ${mode}`, async (t) => {
     const mcp = client(mode);
@@ -137,7 +167,7 @@ test("startup failure is structured and retryable", async () => {
 });
 
 test("startup failure reports a Windows launcher diagnostic", async () => {
-  const mcp = client("launcher-error", 500);
+  const mcp = client("launcher-error");
   await assert.rejects(
     mcp.connect(),
     (error: unknown) => error instanceof ConnectorError
@@ -147,7 +177,7 @@ test("startup failure reports a Windows launcher diagnostic", async () => {
 });
 
 test("startup failure distinguishes a missing Studio attachment", async () => {
-  const mcp = client("studio-unattached", 500);
+  const mcp = client("studio-unattached");
   await assert.rejects(
     mcp.connect(),
     (error: unknown) => error instanceof ConnectorError
