@@ -1,7 +1,7 @@
 import React from "react";
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
-import CompactAgentRunBar, { getCompactRunMeta } from "./CompactAgentRunBar";
+import CompactAgentRunBar, { getCompactRunMeta, getVisibleRunAgents } from "./CompactAgentRunBar";
 
 describe("CompactAgentRunBar", () => {
   test("condenses a timed-out Studio run into a one-line status", () => {
@@ -33,5 +33,28 @@ describe("CompactAgentRunBar", () => {
       tone: "active",
       active: true,
     });
+  });
+
+  test("shows live agent projections with deterministic avatars", () => {
+    render(
+      <CompactAgentRunBar
+        agentRun={{ status: "running", stage: "Building…", steps: [] }}
+        agents={[{ agentId: "agent-1", title: "Gameplay agent", status: "running" }]}
+      />,
+    );
+
+    expect(screen.getByText("1 agent")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Show activity"));
+    expect(screen.getByText("Gameplay agent")).toBeInTheDocument();
+    expect(screen.getByText("Working")).toBeInTheDocument();
+    expect(screen.getAllByLabelText("Avatar for agent-1")).toHaveLength(2);
+  });
+
+  test("maps team assignments to the agents actually created for the run", () => {
+    expect(getVisibleRunAgents({ teamActivity: { executionMode: "team", assignments: [
+      { stepId: "ui-1", role: "ui", title: "Build the HUD", status: "queued" },
+    ] } })).toEqual([{
+      id: "ui-1", name: "Ui", detail: "Build the HUD", status: "queued",
+    }]);
   });
 });

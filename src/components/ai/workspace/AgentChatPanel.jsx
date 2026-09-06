@@ -42,6 +42,7 @@ export default function AgentChatPanel({
   onApproveStep,
   approvingStepId,
   agentRun,
+  activeAgents = [],
   // studio
   studioSessionId,
   studioConnected,
@@ -128,7 +129,7 @@ export default function AgentChatPanel({
 }) {
   const planTaskVisible = executionTask && (messages || []).some((message) => message.stage === "plan_approved" && message.taskId === executionTask.taskId);
   const visibleRun = planTaskVisible ? { ...executionTask, steps: executionTask.steps || [] } : agentRun;
-  const compactRunVisible = Boolean(getCompactRunMeta(visibleRun));
+  const compactRunVisible = Boolean(getCompactRunMeta(visibleRun) || activeAgents.length);
   const handleComposerSubmit = useCallback(
     (event, overridePrompt = null, composerOptions = {}) => {
       return onSubmit?.(event, overridePrompt, composerOptions);
@@ -210,6 +211,7 @@ export default function AgentChatPanel({
       {compactRunVisible ? (
         <CompactAgentRunBar
           agentRun={visibleRun}
+          agents={activeAgents}
           onApproveStep={onApproveStep}
           approvingStepId={approvingStepId}
         />

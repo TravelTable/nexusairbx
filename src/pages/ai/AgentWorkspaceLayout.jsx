@@ -1516,6 +1516,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         onModeChange={(m) => chat.updateChatMode(chat.currentChatId, m)}
         artifact={workspace.activeArtifact}
         agentRun={workspace.agentRun}
+        activeAgents={activeAgentRuntime.agents.filter((agent) => agent.chatId === chat.currentChatId)}
         onApproveStep={handleApproveStep}
         onRestoreRun={handleRestoreRun}
         approvingStepId={studio?.approvingStepId}
