@@ -1,0 +1,35 @@
+npm warn "src/components/ai/StudioPairControl.test.jsx" is being parsed as a normal command line argument.
+npm warn Unknown cli config "--watchAll". This will stop working in the next major version of npm.
+npm warn Unknown cli config "--runInBand". This will stop working in the next major version of npm.
+npm warn Unknown cli config "--runTestsByPath". This will stop working in the next major version of npm.
+
+> nexusrbx-react@0.1.0 test
+> react-scripts test src/components/ai/StudioPairControl.test.jsx
+
+PASS src/components/ai/StudioPairControl.test.jsx
+  StudioPairControl
+    √ a healthy transport with an unverified target does not report test success (196 ms)
+    √ reselects a restarted Studio window only after a click and refreshes attestation (90 ms)
+    √ failed window selection retains a visible retry control (126 ms)
+    √ an unattached Studio session does not offer a stale window selection (43 ms)
+    √ treats a missing MCP session as already disconnected (1 ms)
+    √ anchors the menu under the trigger and caps its size (2 ms)
+    √ normalizes absolute and relative pairing expiries
+    √ generates and displays a one-time plugin pairing code (110 ms)
+    √ moves focus into the popup and restores it when Escape closes (77 ms)
+    √ supports a controlled composer entry point and restores that trigger (153 ms)
+    √ integrates all maintained plugin screenshot slots with an honest fallback (56 ms)
+    √ restores the last selected plugin setup reference (37 ms)
+    √ does not replace the saved setup step with transient live guidance (42 ms)
+    √ uses live connection state while labelling screenshots as references (31 ms)
+    √ keeps connector and MCP health distinct and uses the exact MCP session (86 ms)
+    √ clears stale MCP UI state when the server session is already gone (77 ms)
+    √ shows reinstall instructions only when the backend rejects the release (44 ms)
+    √ shows the update gate for an accepted read-only legacy release (19 ms)
+    √ makes a missing Create Instance command recoverable without disconnecting (83 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       19 passed, 19 total
+Snapshots:   0 total
+Time:        6.233 s
+Ran all test suites matching /src\\components\\ai\\StudioPairControl.test.jsx/i.

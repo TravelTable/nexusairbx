@@ -1,0 +1,120 @@
+TAP version 13
+# Subtest: browser authorization grants are single-use and persist only token hashes
+ok 1 - browser authorization grants are single-use and persist only token hashes
+  ---
+  duration_ms: 5.4282
+  ...
+# Subtest: expired browser authorization grants cannot be exchanged
+ok 2 - expired browser authorization grants cannot be exchanged
+  ---
+  duration_ms: 0.9006
+  ...
+# Subtest: connector token authentication rejects malformed, invalid, revoked, and expired tokens
+ok 3 - connector token authentication rejects malformed, invalid, revoked, and expired tokens
+  ---
+  duration_ms: 3.4816
+  ...
+# Subtest: ping and capability registration normalize liveness and advertised commands
+ok 4 - ping and capability registration normalize liveness and advertised commands
+  ---
+  duration_ms: 6.1844
+  ...
+# Subtest: MCP target selection stays pending until the connector confirms the exact window
+ok 5 - MCP target selection stays pending until the connector confirms the exact window
+  ---
+  duration_ms: 19.0378
+  ...
+# Subtest: MCP ping never silently rebinds a selected ephemeral Studio window
+ok 6 - MCP ping never silently rebinds a selected ephemeral Studio window
+  ---
+  duration_ms: 5.4918
+  ...
+# Subtest: a delayed same-identity old-window ping cannot replace a newly confirmed window
+ok 7 - a delayed same-identity old-window ping cannot replace a newly confirmed window
+  ---
+  duration_ms: 6.1967
+  ...
+# Subtest: MCP ping keeps a stale desired Studio ID pending when exact identity mismatches
+ok 8 - MCP ping keeps a stale desired Studio ID pending when exact identity mismatches
+  ---
+  duration_ms: 3.9145
+  ...
+# Subtest: MCP ping never rebinds an ephemeral Studio ID when multiple windows are live
+ok 9 - MCP ping never rebinds an ephemeral Studio ID when multiple windows are live
+  ---
+  duration_ms: 3.3384
+  ...
+# Subtest: MCP ping never rebinds an ephemeral Studio ID from incomplete target identity
+ok 10 - MCP ping never rebinds an ephemeral Studio ID from incomplete target identity
+  ---
+  duration_ms: 4.158
+  ...
+# Subtest: MCP ping with the already selected Studio ID performs no extra rebind write
+ok 11 - MCP ping with the already selected Studio ID performs no extra rebind write
+  ---
+  duration_ms: 3.8016
+  ...
+# Subtest: a hot-upgraded backend requests capability re-registration and fails closed until rebound
+ok 12 - a hot-upgraded backend requests capability re-registration and fails closed until rebound
+  ---
+  duration_ms: 3.7738
+  ...
+# Subtest: MCP capabilities can refresh exact attested Studio identity and clear stale identity
+ok 13 - MCP capabilities can refresh exact attested Studio identity and clear stale identity
+  ---
+  duration_ms: 2.4226
+  ...
+# Subtest: an old connector ping atomically clears stale executable capability advertising
+ok 14 - an old connector ping atomically clears stale executable capability advertising
+  ---
+  duration_ms: 2.8274
+  ...
+# Subtest: a complete confirmed 0.2.11 target ping clears stale signature state, but incomplete pings do not
+ok 15 - a complete confirmed 0.2.11 target ping clears stale signature state, but incomplete pings do not
+  ---
+  duration_ms: 7.9276
+  ...
+# Subtest: MCP target generation is server-owned and advances only on confirmed structural target changes
+ok 16 - MCP target generation is server-owned and advances only on confirmed structural target changes
+  ---
+  duration_ms: 4.0336
+  ...
+# Subtest: MCP target identity rejects conflicting top-level and enumerated attestations
+ok 17 - MCP target identity rejects conflicting top-level and enumerated attestations
+  ---
+  duration_ms: 0.9054
+  ...
+# Subtest: a sole enumerated MCP window is not treated as active without connector confirmation
+ok 18 - a sole enumerated MCP window is not treated as active without connector confirmation
+  ---
+  duration_ms: 2.7501
+  ...
+# Subtest: disconnect enforces session ownership and revokes future connector auth
+ok 19 - disconnect enforces session ownership and revokes future connector auth
+  ---
+  duration_ms: 1.8068
+  ...
+# Subtest: typed connected-first listing keeps live MCP sessions beyond mixed plugin history
+ok 20 - typed connected-first listing keeps live MCP sessions beyond mixed plugin history
+  ---
+  duration_ms: 2.9333
+  ...
+# Subtest: plugin health summary is user-scoped and redacts connector session details
+ok 21 - plugin health summary is user-scoped and redacts connector session details
+  ---
+  duration_ms: 2.142
+  ...
+# Subtest: exact MCP disconnect uses the session document instead of a bounded history query
+ok 22 - exact MCP disconnect uses the session document instead of a bounded history query
+  ---
+  duration_ms: 1.4741
+  ...
+1..22
+# tests 22
+# suites 0
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 231.1359
