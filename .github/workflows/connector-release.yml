@@ -3,6 +3,7 @@ name: Release NexusRBX Connector
 on:
   push:
     tags: ["connector-v*"]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -34,7 +35,9 @@ jobs:
 
   macos:
     needs: connector-checks
-    runs-on: macos-latest
+    # electron-builder's temporary signing keychain currently fails to unlock on
+    # the macOS 26 runner image. Keep universal packaging on the stable Intel image.
+    runs-on: macos-15-intel
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
