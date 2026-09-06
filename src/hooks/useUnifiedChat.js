@@ -1795,7 +1795,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       chat,
       approvePlanInternal,
       writeUserMessage,
-      ensureRuntimeAgentProjection,
       launchAuthoritativeRun,
       writeOrchestrationResult,
       handleAskSubmit,
