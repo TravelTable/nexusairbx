@@ -1,5 +1,7 @@
 import { authedFetch } from "./billing";
 import { readJsonResponse } from "./apiErrors";
+import { normalizeChatAttachments } from "./chatAttachments";
+import { waitForOperationResult } from "./chatTransport";
 
 export class WorkflowApiError extends Error {
   constructor(message, { status = 0, code = "workflow_request_failed", payload = null } = {}) {
@@ -21,9 +23,16 @@ async function workflowRequest(path, options = {}) {
   try {
     return await performWorkflowRequest(path, { ...options, signal: controller.signal });
   } catch (error) {
-    if (timedOut) throw new WorkflowApiError("The request took too long to confirm. Your saved progress is retained. Reconnect and retry the same plan.", {
-      status: 504, code: "WORKFLOW_TIMEOUT",
-    });
+    if (timedOut) {
+      const timeoutError = new WorkflowApiError("The request took too long to confirm. Your saved progress is retained. Reconnect and retry the same plan.", {
+        status: 504, code: "WORKFLOW_TIMEOUT",
+      });
+      if (options.idempotencyKey) {
+        timeoutError.outcomeUnknown = true;
+        timeoutError.operationId = String(options.idempotencyKey);
+      }
+      throw timeoutError;
+    }
     throw error;
   } finally {
     clearTimeout(timer);
@@ -70,50 +79,14 @@ async function performWorkflowRequest(path, { method = "GET", body, signal, idem
   return payload;
 }
 
-function abortableDelay(ms, signal) {
-  return new Promise((resolve, reject) => {
-    if (signal?.aborted) {
-      reject(new DOMException("The operation was stopped.", "AbortError"));
-      return;
-    }
-    const onAbort = () => {
-      window.clearTimeout(timer);
-      reject(new DOMException("The operation was stopped.", "AbortError"));
-    };
-    const timer = window.setTimeout(() => {
-      signal?.removeEventListener("abort", onAbort);
-      resolve();
-    }, ms);
-    signal?.addEventListener("abort", onAbort, { once: true });
-  });
-}
-
 async function waitForChatOperation(operationId, { signal } = {}) {
-  const deadline = Date.now() + 180000;
-  while (Date.now() < deadline) {
-    const payload = await workflowRequest(
-      `/api/ai/operations/${encodeURIComponent(operationId)}`,
-      { signal }
-    );
-    const operation = payload?.operation;
-    if (operation?.status === "completed") {
-      return operation.result?.body ?? operation.result ?? {};
-    }
-    if (operation?.status === "failed" || operation?.status === "cancelled") {
-      throw new WorkflowApiError(
-        operation.error?.message || "The operation did not complete.",
-        {
-          status: operation.httpStatus || 500,
-          code: operation.error?.code || "operation_failed",
-          payload,
-        }
-      );
-    }
-    await abortableDelay(250, signal);
-  }
-  throw new WorkflowApiError("The operation is still running. Please try again.", {
-    status: 504,
-    code: "operation_reconcile_timeout",
+  return waitForOperationResult({
+    operationId,
+    readOperation: (id, options) => workflowRequest(
+      `/api/ai/operations/${encodeURIComponent(id)}`, options
+    ),
+    signal,
+    timeoutMs: 180000,
   });
 }
 
@@ -199,7 +172,7 @@ export async function orchestrate({
           projectId: targeting?.projectId ?? projectId,
           studioConnected: Boolean(targeting?.studioConnected ?? studioConnected),
         },
-        attachments: (attachments || []).map((a) => ({ name: a.name, type: a.type })),
+        attachments: normalizeChatAttachments(attachments),
       },
     });
   } catch (error) {

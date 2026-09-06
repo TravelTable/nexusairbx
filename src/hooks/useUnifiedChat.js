@@ -1,4 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
+import { mayResumeBuild, mayApprovePlan, mayUseAttachmentExecutor } from "../lib/chatModePolicy";
+import { assertResponseOk, checkAborted, pendingOperationError, readAskResponse, readNdjsonStream, withRequestDeadline } from "../lib/chatTransport";
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import { BACKEND_URL } from "../config";
@@ -1252,7 +1254,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     return operation;
   }, [chat.currentChatId, executeApprovedPlan, setFlowBusyForChat, beginOrchestrationPending, clearOrchestrationPending, createFlowAbortController, releaseFlowAbortController]);
 
-  // ASK mode: read-only conversational streaming. No orchestrate, no plan, no job.
+  // ASK is read-only. Recovery observes the original operation; it never launches another build.
   const handleAskSubmit = useCallback(
     async (
       prompt,
@@ -1264,172 +1266,151 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       idempotencyKey = requestId,
       submissionOptions = {}
     ) => {
-      throwIfAborted(signal);
-      const token = await user.getIdToken();
-      throwIfAborted(signal);
       const normalizedAttachments = normalizeChatAttachments(attachments);
-      const requestPrompt =
-        prompt || describeChatAttachments(normalizedAttachments) || "Please review the attached file(s).";
-      chat.setPendingForChat(
-        activeChatId,
-        {
-          role: "assistant",
-          content: "",
-          type: "chat",
-          prompt: requestPrompt,
-          stage: "Thinking...",
-        },
-        requestId
-      );
-
-      const studioEnabled =
-        FEATURE_FLAGS.unifiedAgent && !explicitlyDisablesStudioContext(requestPrompt);
-      let studioSessionId = null;
-      let studioConnectionType = null;
-      if (studioEnabled) {
-        try {
-          const studioTarget = await resolveStudioContextSession(studioEnabled);
-          studioSessionId = studioTarget.studioSessionId;
-          studioConnectionType = studioTarget.studioConnectionType;
-          if (studioSessionId) {
-            chat.setPendingForChat(
-              activeChatId,
-              (prev) => (prev ? { ...prev, stage: "Reading Studio project..." } : prev),
-              requestId
-            );
-          }
-        } catch (_) {
-          /* non-fatal: Ask still works without Studio */
-        }
-      }
-
-      const conversationSource = Array.isArray(conversationMessages) ? conversationMessages : chat.messages || [];
-      let full = "";
+      const requestPrompt = prompt || describeChatAttachments(normalizedAttachments)
+        || "Please review the attached file(s).";
+      chat.setPendingForChat(activeChatId, {
+        role: "assistant", content: "", type: "chat", prompt: requestPrompt, stage: "Thinking...",
+      }, requestId);
       try {
-        const res = await fetch(`${BACKEND_URL}/api/ai/chat`, {
-          method: "POST",
-          signal,
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-            "Idempotency-Key": String(idempotencyKey),
-          },
-          body: JSON.stringify({
-            chatId: activeChatId,
-            projectId: String(submissionOptions?.projectId || "").trim() || null,
-            prompt: requestPrompt,
-            attachments: normalizedAttachments,
-            modelVersion: settings?.modelVersion || "",
-            gameSpec: effectiveGameSpec,
-            conversation: conversationSource.slice(-10).map(messageToConversationEntry).filter(Boolean),
-            studioEnabled: studioEnabled && Boolean(studioSessionId),
-            studioSessionId,
-            studioConnectionType,
-          }),
-        });
-        if (!res.ok || !res.body) {
-          const text = await res.text().catch(() => "");
-          throw new Error(text || "Ask request failed");
-        }
-        if (res.status === 202) {
-          await res.json().catch(() => ({}));
-          let operation = null;
-          while (!operation || operation.status === "in_progress") {
-            throwIfAborted(signal);
-            await new Promise((resolve, reject) => {
-              const timer = window.setTimeout(resolve, 250);
-              signal?.addEventListener(
-                "abort",
-                () => {
-                  window.clearTimeout(timer);
-                  reject(new DOMException("The operation was stopped.", "AbortError"));
-                },
-                { once: true }
-              );
-            });
-            operation = (await getChatOperationStatus(idempotencyKey, { signal }))?.operation || null;
-          }
-          if (operation.status !== "completed") {
-            throw new Error(operation.error?.message || "Ask request failed");
-          }
-          full = String(operation.result?.body || "");
-          chat.setPendingForChat(
-            activeChatId,
-            (prev) => (prev ? { ...prev, content: full, stage: "" } : prev),
-            requestId
-          );
-        } else {
-          const reader = res.body.getReader();
-          const decoder = new TextDecoder();
-          let streaming = true;
-          while (streaming) {
-            const { done, value } = await reader.read();
-            if (done) {
-              streaming = false;
-              break;
+        const full = await withRequestDeadline(async requestSignal => {
+          checkAborted(requestSignal);
+          const token = await user.getIdToken();
+          checkAborted(requestSignal);
+          const studioEnabled = FEATURE_FLAGS.unifiedAgent
+            && !explicitlyDisablesStudioContext(requestPrompt);
+          let studioSessionId = null;
+          let studioConnectionType = null;
+          if (studioEnabled) {
+            try {
+              const target = await resolveStudioContextSession(true);
+              checkAborted(requestSignal);
+              studioSessionId = target.studioSessionId;
+              studioConnectionType = target.studioConnectionType;
+              if (studioSessionId) {
+                chat.setPendingForChat(activeChatId, previous => previous ? {
+                  ...previous, stage: "Reading Studio project...",
+                } : previous, requestId);
+              }
+            } catch (error) {
+              checkAborted(requestSignal);
+              // Studio being unavailable must not prevent a conversational answer.
             }
-            full += decoder.decode(value, { stream: true });
-            const snapshot = full;
-            chat.setPendingForChat(
-              activeChatId,
-              (prev) => (prev ? { ...prev, content: snapshot, stage: "" } : prev),
-              requestId
-            );
           }
-        }
-      } catch (err) {
-        throw err instanceof Error ? err : new Error(String(err || "Ask request failed"));
+          checkAborted(requestSignal);
+          const conversationSource = Array.isArray(conversationMessages)
+            ? conversationMessages : chat.messages || [];
+          const response = await fetch(`${BACKEND_URL}/api/ai/chat`, {
+            method: "POST", signal: requestSignal,
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+              "Idempotency-Key": String(idempotencyKey),
+            },
+            body: JSON.stringify({
+              chatId: activeChatId,
+              projectId: String(submissionOptions?.projectId || "").trim() || null,
+              prompt: requestPrompt,
+              attachments: normalizedAttachments,
+              modelVersion: settings?.modelVersion || "",
+              gameSpec: effectiveGameSpec,
+              conversation: conversationSource.slice(-10).map(messageToConversationEntry).filter(Boolean),
+              studioEnabled: studioEnabled && Boolean(studioSessionId),
+              studioSessionId,
+              studioConnectionType,
+            }),
+          });
+          return readAskResponse(response, {
+            operationId: String(idempotencyKey),
+            readOperation: getChatOperationStatus,
+            signal: requestSignal,
+            onText: content => chat.setPendingForChat(activeChatId,
+              previous => previous ? { ...previous, content, stage: "" } : previous, requestId),
+          });
+        }, {
+          signal,
+          timeoutMs: 180000,
+          timeoutError: pendingOperationError(String(idempotencyKey)),
+        });
+        checkAborted(signal);
+        if (!full.trim()) throw new Error("The assistant returned an empty response. Please try again.");
+        const text = full.trim();
+        await setDoc(
+          doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`),
+          sanitizeTranscriptMessagePayload({
+            role: "assistant", content: text, explanation: text,
+            createdAt: serverTimestamp(), requestId,
+          })
+        );
+        await touchChat(activeChatId, text);
       } finally {
         chat.setPendingForChat(activeChatId, null, requestId);
+        refreshBilling?.();
       }
-      if (!full.trim()) {
-        throw new Error("The assistant returned an empty response. Please try again.");
-      }
-      const text = full.trim();
-      await setDoc(
-        doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`),
-        sanitizeTranscriptMessagePayload({
-          role: "assistant",
-          content: text,
-          explanation: text,
-          createdAt: serverTimestamp(),
-          requestId,
-        })
-      );
-      await touchChat(activeChatId, text);
-      refreshBilling?.();
     },
     [user, chat, effectiveGameSpec, settings?.modelVersion, touchChat, refreshBilling]
   );
 
-  const handleAttachmentSubmit = useCallback(async ({ prompt, attachments, activeChatId, requestId, mode, signal, conversation, idempotencyKey }) => {
-    const token = await user.getIdToken();
-    chat.setPendingForChat(activeChatId, { role: 'assistant', content: '', stage: 'Reading files' }, requestId);
-    let result;
+  const handleAttachmentSubmit = useCallback(async ({
+    prompt, attachments, activeChatId, requestId, mode, signal, conversation, idempotencyKey,
+  }) => {
+    chat.setPendingForChat(activeChatId, {
+      role: "assistant", content: "", stage: "Reading files",
+    }, requestId);
+    const operationId = String(idempotencyKey || requestId);
     try {
-      const response = await fetch(`${BACKEND_URL}/api/ai/attachments/chat`, {
-        method: 'POST', signal, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, 'Idempotency-Key': idempotencyKey || requestId },
-        body: JSON.stringify({ requestId, prompt, attachments: normalizeChatAttachments(attachments), chatId: activeChatId, mode, modelVersion: settings?.modelVersion || '', conversation: conversation.slice(-10).map(messageToConversationEntry).filter(Boolean) }),
-      });
-      if (!response.ok) { const body = await response.json(); throw new Error(body.error || 'File operation failed.'); }
-      const reader = response.body.getReader(), decoder = new TextDecoder();
-      let buffer = '';
-      while (true) {
-        const { value, done } = await reader.read(); buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
-        const lines = buffer.split('\n'); buffer = lines.pop();
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          const event = JSON.parse(line);
-          if (event.error) throw new Error(event.error);
-          if (event.stage) chat.setPendingForChat(activeChatId, previous => ({ ...previous, stage: event.stage }), requestId);
-          if (event.result) result = event.result;
+      const result = await withRequestDeadline(async requestSignal => {
+        const token = await user.getIdToken();
+        checkAborted(requestSignal);
+        const response = await fetch(`${BACKEND_URL}/api/ai/attachments/chat`, {
+          method: "POST", signal: requestSignal,
+          headers: {
+            "Content-Type": "application/json", Authorization: `Bearer ${token}`,
+            "Idempotency-Key": operationId,
+          },
+          body: JSON.stringify({
+            requestId, prompt, attachments: normalizeChatAttachments(attachments),
+            chatId: activeChatId, mode, modelVersion: settings?.modelVersion || "",
+            conversation: (conversation || []).slice(-10).map(messageToConversationEntry).filter(Boolean),
+          }),
+        });
+        await assertResponseOk(response, "File operation failed.");
+        if (response.status === 202) {
+          const accepted = await response.json();
+          throw pendingOperationError(accepted?.operation?.operationId || operationId);
         }
-        if (done) break;
-      }
-      if (!result) throw new Error('The connection ended before the file operation completed. Check the chat before retrying.');
-      await setDoc(doc(db, 'users', user.uid, 'chats', activeChatId, 'messages', `${requestId}-assistant`), sanitizeTranscriptMessagePayload({ role: 'assistant', content: result.content, explanation: result.content, attachments: normalizeChatAttachments(result.attachments || []), createdAt: serverTimestamp(), requestId }));
+        let completed;
+        await readNdjsonStream(response.body, {
+          signal: requestSignal,
+          onEvent: event => {
+            if (event?.error) {
+              throw new Error(typeof event.error === "string"
+                ? event.error : event.error.message || "The file operation failed.");
+            }
+            if (event?.stage) chat.setPendingForChat(activeChatId,
+              previous => previous ? { ...previous, stage: event.stage } : previous, requestId);
+            if (event?.result) completed = event.result;
+          },
+        });
+        if (!completed || typeof completed.content !== "string") {
+          throw new Error("The connection ended without a valid file result. Check the chat before retrying.");
+        }
+        return completed;
+      }, { signal, timeoutMs: 180000, timeoutError: pendingOperationError(operationId) });
+      checkAborted(signal);
+      await setDoc(
+        doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`),
+        sanitizeTranscriptMessagePayload({
+          role: "assistant", content: result.content, explanation: result.content,
+          attachments: normalizeChatAttachments(result.attachments || []),
+          createdAt: serverTimestamp(), requestId,
+        })
+      );
       await touchChat(activeChatId, result.content);
-    } finally { chat.setPendingForChat(activeChatId, null, requestId); refreshBilling?.(); }
+    } finally {
+      chat.setPendingForChat(activeChatId, null, requestId);
+      refreshBilling?.();
+    }
   }, [user, chat, settings?.modelVersion, touchChat, refreshBilling]);
 
   // Stage 1: route by operating mode.
@@ -1440,7 +1421,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   const handleSubmit = useCallback(
     async (currentPrompt, currentAttachments = [], baseArtifact = null, options = {}) => {
       const prompt = (currentPrompt || "").trim();
-      const mode = options?.mode || chat.activeMode || "agent";
+      const mode = String(options?.mode || chat.activeMode || "agent").trim().toLowerCase();
       if (!prompt && currentAttachments.length === 0) {
         if (!user && onSignInNudge) {
           void trackProductEvent(
@@ -1512,7 +1493,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           return;
         }
         const approvedTaskMessage = [...(chat.messages || [])].reverse().find((message) => message.stage === "plan_approved" && message.taskId);
-        if (approvedTaskMessage && /^(continue|resume|keep going|finish it|proceed)[.!\s]*$/i.test(prompt.trim())) {
+        if (mayResumeBuild(mode) && approvedTaskMessage && /^(continue|resume|keep going|finish it|proceed)[.!\s]*$/i.test(prompt.trim())) {
           const taskId = approvedTaskMessage.taskId;
           const snapshot = await getTask(taskId);
           throwIfAborted(flowController.signal);
@@ -1569,7 +1550,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         };
         const titleSeed = prompt || describeChatAttachments(currentAttachments) || "New chat";
         const pendingPlan = [...(chat.messages || [])].reverse().find((m) => m?.stage === "plan" && m.planId);
-        if (pendingPlan && isExplicitPlanApproval(prompt)) {
+        if (mayApprovePlan(mode) && pendingPlan && isExplicitPlanApproval(prompt)) {
           try {
             await approvePlanInternal(pendingPlan, baseArtifact, effectiveOptions);
           } catch (err) {
@@ -1631,7 +1612,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         const ownedFileContext = currentAttachments.some(a => a.versionId)
           ? (fileRequest || !['agent', 'debug'].includes(mode) || currentAttachments.some(a => a.kind === 'model'))
           : historicalFiles.length > 0 && fileRequest;
-        if (ownedFileContext) {
+        if (ownedFileContext && mayUseAttachmentExecutor(mode)) {
           activeChatId = await ensureChat(titleSeed, effectiveOptions);
           bindFlowToChat(activeChatId); await onChatReady?.(activeChatId);
           if (writeUserTurn) await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
@@ -1732,8 +1713,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
             throwIfAborted(flowController.signal);
           }
-          await ensureRuntimeAgentProjection(activeChatId, effectiveOptions);
-          throwIfAborted(flowController.signal);
           onOperationStatus?.("Running");
 
           if (mode === "ask") {
@@ -1776,7 +1755,9 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         } catch (err) {
           if (!isAbortError(err)) {
             console.error("Orchestration error:", err);
-            const failure = `I couldn't finish this request. ${err?.message || "The connection was interrupted."}\n\nYour prompt is saved. Use **Retry as new attempt** on your prompt to try again.`;
+            const failure = isOutcomeUnknownError(err)
+              ? `The result is not confirmed yet. ${err?.message || "The connection was interrupted."}\n\nRequest: ${err?.operationId || effectiveOptions.idempotencyKey}. Reconnect to this same request before starting another attempt.`
+              : `I couldn't finish this request. ${err?.message || "The connection was interrupted."}\n\nYour prompt is saved. Use **Retry as new attempt** on your prompt to try again.`;
             if (activeChatId) {
               await setDoc(
                 doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`),

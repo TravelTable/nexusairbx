@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { executionTaskFromResult, executionTaskIdFromResult, executionStatusFromResult } from "../lib/planTaskIdentity";
 import {
   askWorkflowPlan,
   cancelWorkflowPlanRun,
@@ -85,19 +86,6 @@ const planExecutionStatusFromTask = (status) => {
     default:
       return "queued";
   }
-};
-
-const executionTaskFromResult = (result) =>
-  result?.task || result?.execution?.task || result?.run || null;
-
-const executionTaskIdFromResult = (result) => {
-  const task = executionTaskFromResult(result);
-  return task?.taskId
-    || task?.id
-    || result?.taskId
-    || result?.execution?.taskId
-    || result?.runId
-    || "";
 };
 
 const planFromResponse = (response, fallback) => {
@@ -210,7 +198,7 @@ export default function usePlanWorkspace({
 
     const run = normalized?.run;
     if (!run) return;
-    const runtimeTaskId = String(run.runtime?.taskId || run.runtime?.externalRunId || run.runId || "");
+    const runtimeTaskId = String(run.runtime?.taskId || "");
     storeExecutionState({
       status: executionStatusFromLifecycle(run.status),
       taskId: runtimeTaskId,
@@ -833,7 +821,7 @@ export default function usePlanWorkspace({
         throw new Error("NexusRBX accepted the plan but did not return an execution task.");
       }
       storeExecutionState({
-        status: String(result?.status || "").toLowerCase() === "running" ? "running" : "queued",
+        status: executionStatusFromResult(result),
         taskId,
         planId: current.planId,
         version: current.version,
