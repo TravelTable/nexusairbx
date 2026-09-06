@@ -1,3 +1,4 @@
+import { resetDraftProject } from "../lib/draftProject";
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { 
   doc, 
@@ -690,6 +691,8 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
   const planKey = String(plan || "FREE").toLowerCase();
   const [messages, setMessages] = useState([]);
   const [currentChatId, setCurrentChatId] = useState(null);
+  const visibleChatIdRef = useRef(currentChatId);
+  visibleChatIdRef.current = currentChatId;
   const [currentChatMeta, setCurrentChatMeta] = useState(null);
   const [activeMode, setActiveMode] = useState(() => normalizeChatMode(settings?.chatMode));
   const [customModes, setCustomModes] = useState([]);
@@ -3472,16 +3475,28 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     };
   }, [assertCanWrite, authReady, currentChatId, messages, user?.uid]);
 
-  const startNewChat = useCallback(async ({ projectId = null } = {}) => {
+  const startNewChat = useCallback(async ({ projectId = null, mode = "agent" } = {}) => {
     if (!authReady || !user?.uid || auth.currentUser?.uid !== user.uid) return null;
     await assertCanWrite();
+    const initialMode = normalizeChatMode(mode);
     const selectedProjectId = String(projectId || "").trim();
-    if (!selectedProjectId) throw createProjectRequiredError();
+    if (!selectedProjectId) {
+      forgetRememberedActiveChat(user.uid);
+      resetDraftProject(user.uid);
+      closeChatSubscriptions();
+      setCurrentChatId(null);
+      setCurrentChatMeta(null);
+      setMessages([]);
+      setActiveMode(initialMode);
+      setTasks([]);
+      setCurrentTaskId(null);
+      return null;
+    }
     const chatId = uuidv4();
     const draftId = uuidv4();
     const payload = {
       title: "New chat",
-      activeMode: "agent",
+      activeMode: initialMode,
       lifecycle: "draft",
       draftId,
       chatId,
@@ -3496,7 +3511,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     setCurrentChatId(chatId);
     setCurrentChatMeta({ id: chatId, ...persistedPayload });
     setMessages([]);
-    setActiveMode("agent");
+    setActiveMode(initialMode);
     setTasks([]);
     setCurrentTaskId(null);
     openChatById(chatId);
@@ -3507,13 +3522,14 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     const uid = user?.uid;
     const normalizedMode = normalizeChatMode(mode);
 
+    const isVisibleConversation = !chatId || visibleChatIdRef.current === chatId;
     if (!authReady || !uid || auth.currentUser?.uid !== uid) {
-      setActiveMode(normalizedMode);
+      if (isVisibleConversation) setActiveMode(normalizedMode);
       return;
     }
 
     // Update local state immediately for snappy UI
-    setActiveMode(normalizedMode);
+    if (isVisibleConversation) setActiveMode(normalizedMode);
 
     if (chatId) {
       try {

@@ -47,6 +47,14 @@ describe("classifyUserIntent", () => {
     expect(classifyUserIntent("remove the debug logs")).toBe("MODIFICATION_REQUEST");
   });
 
+  test("recognizes explicit planning without granting implementation intent", () => {
+    const prompt = "Plan a simple flight combat prototype with keyboard flight and PvP shooting. Give me the plan without more questions.";
+    expect(classifyUserIntent(prompt)).toBe("PLANNING_REQUEST");
+    expect(isImplementationIntent(classifyUserIntent(prompt))).toBe(false);
+    expect(classifyUserIntent("Please create an implementation plan for a shop")).toBe("PLANNING_REQUEST");
+    expect(classifyUserIntent("How do I plan a flying game?")).toBe("EXPLANATION_REQUEST");
+  });
+
   test("classifies questions/explanations", () => {
     expect(classifyUserIntent("how does DataStore work?")).toBe("EXPLANATION_REQUEST");
     expect(classifyUserIntent("explain remote events")).toBe("EXPLANATION_REQUEST");

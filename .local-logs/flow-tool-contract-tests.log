@@ -1,0 +1,1008 @@
+TAP version 13
+# Subtest: ready-plan generation rejects the live status-only regression
+ok 1 - ready-plan generation rejects the live status-only regression
+  ---
+  duration_ms: 53.9054
+  ...
+# Subtest: initial planning can request complete contextual questions without a fake plan
+ok 2 - initial planning can request complete contextual questions without a fake plan
+  ---
+  duration_ms: 16.3728
+  ...
+# Subtest: Studio schema preserves arbitrary validated tool arguments and executable Luau
+ok 3 - Studio schema preserves arbitrary validated tool arguments and executable Luau
+  ---
+  duration_ms: 6.012
+  ...
+# Subtest: expanded Studio protocol exposes discovery, mutation, validation, and recovery tools
+ok 4 - expanded Studio protocol exposes discovery, mutation, validation, and recovery tools
+  ---
+  duration_ms: 1.2388
+  ...
+# Subtest: unknown Studio tools are rejected instead of falling back to place inspection
+ok 5 - unknown Studio tools are rejected instead of falling back to place inspection
+  ---
+  duration_ms: 2.0233
+  ...
+# Subtest: insert_creator_store_asset is mutating but not destructive
+ok 6 - insert_creator_store_asset is mutating but not destructive
+  ---
+  duration_ms: 0.2497
+  ...
+# Subtest: Agent auto-apply only interrupts for destructive Studio changes
+ok 7 - Agent auto-apply only interrupts for destructive Studio changes
+  ---
+  duration_ms: 0.2245
+  ...
+# Subtest: snapshot creation is mutating but not destructive
+ok 8 - snapshot creation is mutating but not destructive
+  ---
+  duration_ms: 0.1826
+  ...
+# Subtest: insert_uploaded_roblox_model is mutating but not destructive
+ok 9 - insert_uploaded_roblox_model is mutating but not destructive
+  ---
+  duration_ms: 0.1533
+  ...
+# Subtest: insert_creator_store_asset preserves only server-produced safe fields
+ok 10 - insert_creator_store_asset preserves only server-produced safe fields
+  ---
+  duration_ms: 1.7453
+  ...
+# Subtest: insert_creator_store_asset rejects executable and arbitrary payload fields
+ok 11 - insert_creator_store_asset rejects executable and arbitrary payload fields
+  ---
+  duration_ms: 0.3876
+  ...
+# Subtest: insert_uploaded_roblox_model preserves only server-produced safe fields
+ok 12 - insert_uploaded_roblox_model preserves only server-produced safe fields
+  ---
+  duration_ms: 1.1968
+  ...
+# Subtest: insert_uploaded_roblox_model rejects source, URL, script, file, asset, and unknown injection
+ok 13 - insert_uploaded_roblox_model rejects source, URL, script, file, asset, and unknown injection
+  ---
+  duration_ms: 1.375
+  ...
+# Subtest: build_native_model sanitizes through NativeModelSpec validation
+ok 14 - build_native_model sanitizes through NativeModelSpec validation
+  ---
+  duration_ms: 2.8105
+  ...
+# Subtest: canonical paths normalize backslashes and game prefix
+ok 15 - canonical paths normalize backslashes and game prefix
+  ---
+  duration_ms: 0.1578
+  ...
+# Subtest: Studio command paths reject blank and unrooted parent paths before dispatch
+ok 16 - Studio command paths reject blank and unrooted parent paths before dispatch
+  ---
+  duration_ms: 1.6768
+  ...
+# Subtest: create_instance normalizes common BasePart planner properties
+ok 17 - create_instance normalizes common BasePart planner properties
+  ---
+  duration_ms: 0.5283
+  ...
+# Subtest: create_instance normalizes uppercase 8-bit BasePart colors
+ok 18 - create_instance normalizes uppercase 8-bit BasePart colors
+  ---
+  duration_ms: 0.28
+  ...
+# Subtest: create_instance normalizes Studio readback property values
+ok 19 - create_instance normalizes Studio readback property values
+  ---
+  duration_ms: 0.3367
+  ...
+# Subtest: create_animation_sequence validates and normalizes bounded R15 keyframes
+ok 20 - create_animation_sequence validates and normalizes bounded R15 keyframes
+  ---
+  duration_ms: 1.1174
+  ...
+# Subtest: create_animation_sequence rejects unbounded, non-R15, and executable transforms
+ok 21 - create_animation_sequence rejects unbounded, non-R15, and executable transforms
+  ---
+  duration_ms: 0.5003
+  ...
+# Subtest: create_script only enables parent creation when explicitly requested
+ok 22 - create_script only enables parent creation when explicitly requested
+  ---
+  duration_ms: 1.0235
+  ...
+# Subtest: write_script preserves optimistic concurrency fields
+ok 23 - write_script preserves optimistic concurrency fields
+  ---
+  duration_ms: 0.5603
+  ...
+# Subtest: create_script requires an explicit script class
+ok 24 - create_script requires an explicit script class
+  ---
+  duration_ms: 0.6161
+  ...
+# Subtest: create_script transparently corrects the fly GUI Script to a LocalScript
+ok 25 - create_script transparently corrects the fly GUI Script to a LocalScript
+  ---
+  duration_ms: 0.5017
+  ...
+# Subtest: existing script class conversion requires an inspected target and explicit consent
+ok 26 - existing script class conversion requires an inspected target and explicit consent
+  ---
+  duration_ms: 0.5191
+  ...
+# Subtest: existing write_script candidates are blocked instead of auto-corrected
+ok 27 - existing write_script candidates are blocked instead of auto-corrected
+  ---
+  duration_ms: 0.7013
+  ...
+# Subtest: artifact application blocks mixed client and server runtime code
+ok 28 - artifact application blocks mixed client and server runtime code
+  ---
+  duration_ms: 4.3602
+  ...
+# Subtest: managed artifact class conversion inherits inspected authorization from its file
+ok 29 - managed artifact class conversion inherits inspected authorization from its file
+  ---
+  duration_ms: 2.4031
+  ...
+# Subtest: get_project_manifest carries pagination revision across pages
+ok 30 - get_project_manifest carries pagination revision across pages
+  ---
+  duration_ms: 0.1469
+  ...
+# Subtest: restore_snapshot keeps attributes and tags for rollback
+ok 31 - restore_snapshot keeps attributes and tags for rollback
+  ---
+  duration_ms: 0.3535
+  ...
+# Subtest: snapshot restore preserves connector conflict hashes and force policy
+ok 32 - snapshot restore preserves connector conflict hashes and force policy
+  ---
+  duration_ms: 0.1605
+  ...
+# Subtest: playtests require bounded named inputs and reject executable code
+ok 33 - playtests require bounded named inputs and reject executable code
+  ---
+  duration_ms: 0.7374
+  ...
+# Subtest: destructive confirmation is preserved only from explicit top-level consent
+ok 34 - destructive confirmation is preserved only from explicit top-level consent
+  ---
+  duration_ms: 0.7102
+  ...
+# Subtest: batch_operations sanitizes nested operations without allowing recursive batch payloads
+ok 35 - batch_operations sanitizes nested operations without allowing recursive batch payloads
+  ---
+  duration_ms: 0.2275
+  ...
+# Subtest: known-script mutations preserve source preconditions and force destructive snapshots
+ok 36 - known-script mutations preserve source preconditions and force destructive snapshots
+  ---
+  duration_ms: 0.99
+  ...
+# Subtest: apply_asset_reference accepts only a canonical server-owned asset target
+ok 37 - apply_asset_reference accepts only a canonical server-owned asset target
+  ---
+  duration_ms: 0.2154
+  ...
+# Subtest: apply_asset_reference rejects invalid targets, IDs, nested use, and generic-property bypasses
+ok 38 - apply_asset_reference rejects invalid targets, IDs, nested use, and generic-property bypasses
+  ---
+  duration_ms: 0.5606
+  ...
+# Subtest: idempotency keys are stable for identical payloads
+ok 39 - idempotency keys are stable for identical payloads
+  ---
+  duration_ms: 0.1563
+  ...
+# Subtest: validation commands preserve bounded target and plan fields
+ok 40 - validation commands preserve bounded target and plan fields
+  ---
+  duration_ms: 0.2427
+  ...
+# Subtest: apply_artifact v3 preserves only allowlisted Roblox UI roots
+ok 41 - apply_artifact v3 preserves only allowlisted Roblox UI roots
+  ---
+  duration_ms: 11.8221
+  ...
+# Subtest: apply_artifact v3 rejects foreign UI paths and unsupported node classes
+ok 42 - apply_artifact v3 rejects foreign UI paths and unsupported node classes
+  ---
+  duration_ms: 0.4937
+  ...
+# Subtest: apply_artifact v3 binds a single UI root to the artifact identity and revision
+ok 43 - apply_artifact v3 binds a single UI root to the artifact identity and revision
+  ---
+  duration_ms: 1.648
+  ...
+# Subtest: apply_artifact v3 rejects ambiguous, cyclic, reserved, and unbounded UI trees
+ok 44 - apply_artifact v3 rejects ambiguous, cyclic, reserved, and unbounded UI trees
+  ---
+  duration_ms: 0.9325
+  ...
+# Subtest: Studio mutation scope observes by default and blocks before queue in enforce mode
+ok 45 - Studio mutation scope observes by default and blocks before queue in enforce mode
+  ---
+  duration_ms: 3.3882
+  ...
+# Subtest: Studio mutation scope guard is evaluated before the model-selected command is queued
+ok 46 - Studio mutation scope guard is evaluated before the model-selected command is queued
+  ---
+  duration_ms: 2.6069
+  ...
+# Subtest: Studio mutation scope allows approved patch and skips modify guard for create mode
+ok 47 - Studio mutation scope allows approved patch and skips modify guard for create mode
+  ---
+  duration_ms: 0.3106
+  ...
+# Subtest: completion preservation check reports successful out-of-scope mutations
+ok 48 - completion preservation check reports successful out-of-scope mutations
+  ---
+  duration_ms: 1.0362
+  ...
+# [studio-agent-manifest-page] {"runId":"run_1","revision":"manifest_rev_1","cursor":"cursor_final","nextCursor":null,"commandId":"command_manifest_final","stepId":"step_manifest","itemCount":1,"totalInstances":null,"terminalPage":true,"tryCompleteResult":true,"tryCompleteReason":null}
+# [studio-agent-manifest-page] {"runId":"run_1","revision":"manifest_rev_1","cursor":"cursor_final","nextCursor":null,"commandId":"command_manifest_final","stepId":"step_manifest","itemCount":1,"totalInstances":null,"terminalPage":true,"tryCompleteResult":true,"tryCompleteReason":null}
+# [studio-agent-manifest-page] {"runId":"run_1","revision":"manifest_rev_missing_step","cursor":"","nextCursor":"cursor_2","commandId":"command_manifest_first","stepId":"missing_manifest_step","itemCount":1,"totalInstances":null,"terminalPage":false,"tryCompleteResult":false,"tryCompleteReason":"manifest_incomplete"}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":34,"outputTokens":4,"finishReason":null,"responseFormat":null}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":176,"outputTokens":4,"finishReason":null,"responseFormat":null}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":8,"outputTokens":2,"finishReason":null,"responseFormat":null}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":8,"outputTokens":2,"finishReason":null,"responseFormat":null}
+# [studio-agent-decision-rejected] {"runId":"run_1","iteration":0,"initialCode":"invalid_decision","repairCode":"invalid_decision","initialPathError":null,"repairPathError":null,"initialParseDiagnostics":{"outputChars":8,"codeFenced":false,"completeFence":false,"position":null},"repairParseDiagnostics":{"outputChars":8,"codeFenced":false,"completeFence":false,"position":null},"recoveryTool":"read_scripts","hasSuccessfulMutation":false}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":8,"outputTokens":2,"finishReason":null,"responseFormat":null}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":8,"outputTokens":2,"finishReason":null,"responseFormat":null}
+# [studio-agent-decision-rejected] {"runId":"run_1","iteration":0,"initialCode":"invalid_decision","repairCode":"invalid_decision","initialPathError":null,"repairPathError":null,"initialParseDiagnostics":{"outputChars":8,"codeFenced":false,"completeFence":false,"position":null},"repairParseDiagnostics":{"outputChars":8,"codeFenced":false,"completeFence":false,"position":null},"recoveryTool":"search_project","hasSuccessfulMutation":false}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":8,"outputTokens":2,"finishReason":null,"responseFormat":null}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":8,"outputTokens":2,"finishReason":null,"responseFormat":null}
+# [studio-agent-decision-rejected] {"runId":"run_1","iteration":0,"initialCode":"invalid_decision","repairCode":"invalid_decision","initialPathError":null,"repairPathError":null,"initialParseDiagnostics":{"outputChars":8,"codeFenced":false,"completeFence":false,"position":null},"repairParseDiagnostics":{"outputChars":8,"codeFenced":false,"completeFence":false,"position":null},"recoveryTool":null,"hasSuccessfulMutation":false}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":8,"outputTokens":2,"finishReason":null,"responseFormat":null}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":8,"outputTokens":2,"finishReason":null,"responseFormat":null}
+# [studio-agent-decision-rejected] {"runId":"run_1","iteration":0,"initialCode":"invalid_decision","repairCode":"invalid_decision","initialPathError":null,"repairPathError":null,"initialParseDiagnostics":{"outputChars":8,"codeFenced":false,"completeFence":false,"position":null},"repairParseDiagnostics":{"outputChars":8,"codeFenced":false,"completeFence":false,"position":null},"recoveryTool":"build_native_model","hasSuccessfulMutation":false}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":182,"outputTokens":4,"finishReason":null,"responseFormat":null}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":182,"outputTokens":4,"finishReason":null,"responseFormat":null}
+# [studio-agent-decision-rejected] {"runId":"run_1","iteration":0,"initialCode":"COMPLEX_BUILD_IMPLEMENTATION_REQUIRED","repairCode":"COMPLEX_BUILD_IMPLEMENTATION_REQUIRED","initialPathError":null,"repairPathError":null,"initialParseDiagnostics":null,"repairParseDiagnostics":null,"recoveryTool":"create_script","hasSuccessfulMutation":false}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":429,"outputTokens":4,"finishReason":null,"responseFormat":null}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":429,"outputTokens":4,"finishReason":null,"responseFormat":null}
+# [studio-agent-decision-rejected] {"runId":"run_1","iteration":0,"initialCode":"COMPLEX_BUILD_SCRIPT_REQUIRED","repairCode":"COMPLEX_BUILD_SCRIPT_REQUIRED","initialPathError":null,"repairPathError":null,"initialParseDiagnostics":null,"repairParseDiagnostics":null,"recoveryTool":"create_script","hasSuccessfulMutation":false}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":181,"outputTokens":4,"finishReason":null,"responseFormat":null}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":181,"outputTokens":4,"finishReason":null,"responseFormat":null}
+# [studio-agent-decision-rejected] {"runId":"run_1","iteration":0,"initialCode":"COMPLEX_BUILD_IMPLEMENTATION_REQUIRED","repairCode":"COMPLEX_BUILD_IMPLEMENTATION_REQUIRED","initialPathError":null,"repairPathError":null,"initialParseDiagnostics":null,"repairParseDiagnostics":null,"recoveryTool":"create_script","hasSuccessfulMutation":false}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":8,"outputTokens":2,"finishReason":null,"responseFormat":null}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":8,"outputTokens":2,"finishReason":null,"responseFormat":null}
+# [studio-agent-decision-rejected] {"runId":"run_1","iteration":0,"initialCode":"invalid_decision","repairCode":"invalid_decision","initialPathError":null,"repairPathError":null,"initialParseDiagnostics":{"outputChars":8,"codeFenced":false,"completeFence":false,"position":null},"repairParseDiagnostics":{"outputChars":8,"codeFenced":false,"completeFence":false,"position":null},"recoveryTool":null,"hasSuccessfulMutation":true}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":190,"outputTokens":8,"finishReason":null,"responseFormat":null}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":190,"outputTokens":8,"finishReason":null,"responseFormat":null}
+# [studio-agent-decision-rejected] {"runId":"run_1","iteration":0,"initialCode":"invalid_decision","repairCode":"invalid_decision","initialPathError":null,"repairPathError":null,"initialParseDiagnostics":null,"repairParseDiagnostics":null,"recoveryTool":null,"hasSuccessfulMutation":false}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":48,"outputTokens":1,"finishReason":null,"responseFormat":null}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":14,"outputTokens":2,"finishReason":null,"responseFormat":null}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":14,"outputTokens":2,"finishReason":null,"responseFormat":null}
+# [studio-agent-decision-rejected] {"runId":"run_1","iteration":0,"initialCode":"invalid_decision","repairCode":"invalid_decision","initialPathError":null,"repairPathError":null,"initialParseDiagnostics":{"outputChars":14,"codeFenced":false,"completeFence":false,"position":null},"repairParseDiagnostics":{"outputChars":14,"codeFenced":false,"completeFence":false,"position":null},"recoveryTool":null,"hasSuccessfulMutation":false}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":45,"outputTokens":4,"finishReason":null,"responseFormat":null}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":45,"outputTokens":4,"finishReason":null,"responseFormat":null}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":45,"outputTokens":4,"finishReason":null,"responseFormat":null}
+# [studio-agent-manifest-page] {"runId":"run_1","revision":"rev_large","cursor":"","nextCursor":"500","commandId":"command_manifest_0","stepId":"step_manifest","itemCount":500,"totalInstances":2036,"terminalPage":false,"tryCompleteResult":false,"tryCompleteReason":"manifest_incomplete"}
+# [studio-agent-manifest-page] {"runId":"run_1","revision":"rev_partial","cursor":"cursor_1","nextCursor":"cursor_2","commandId":"command_manifest_page","stepId":"step_manifest","itemCount":10,"totalInstances":null,"terminalPage":false,"tryCompleteResult":false,"tryCompleteReason":"manifest_incomplete"}
+# [studio-agent-manifest-page] {"runId":"run_1","revision":"rev_loop","cursor":"cursor_1","nextCursor":"cursor_1","commandId":"command_manifest_loop","stepId":"step_manifest","itemCount":1,"totalInstances":null,"terminalPage":false,"tryCompleteResult":false,"tryCompleteReason":"manifest_incomplete"}
+# [studio-agent-manifest-page] {"runId":"run_1","revision":"rev_conflict","cursor":"","nextCursor":null,"commandId":"command_manifest_conflict","stepId":"step_manifest","itemCount":0,"totalInstances":null,"terminalPage":true,"tryCompleteResult":false,"tryCompleteReason":"overlapping_canonical_paths"}
+# [studio-agent-manifest-page] {"runId":"run_1","revision":"rev_conflict_2","cursor":"","nextCursor":null,"commandId":"command_manifest_conflict_exhausted","stepId":"step_manifest","itemCount":0,"totalInstances":null,"terminalPage":true,"tryCompleteResult":false,"tryCompleteReason":"overlapping_canonical_paths"}
+# [studio-agent-manifest-page] {"runId":"run_1","revision":"rev_queue","cursor":"cursor_1","nextCursor":"cursor_2","commandId":"command_manifest_page","stepId":"step_manifest","itemCount":1,"totalInstances":null,"terminalPage":false,"tryCompleteResult":false,"tryCompleteReason":"manifest_incomplete"}
+# [studio-agent-manifest-page] {"runId":"run_1","revision":"rev_terminal","cursor":"cursor_final","nextCursor":null,"commandId":"command_manifest_terminal","stepId":"step_manifest","itemCount":1,"totalInstances":null,"terminalPage":true,"tryCompleteResult":false,"tryCompleteReason":"missing_page"}
+# {"event":"studio.model_response","runId":"run_1","iteration":0,"model":"test-model","outputChars":440,"outputTokens":2,"finishReason":null,"responseFormat":null}
+# Subtest: Studio decision timeout aborts a stalled planner request
+ok 49 - Studio decision timeout aborts a stalled planner request
+  ---
+  duration_ms: 29.9522
+  ...
+# Subtest: Studio decision timeout preserves ordinary planner failures
+ok 50 - Studio decision timeout preserves ordinary planner failures
+  ---
+  duration_ms: 1.1113
+  ...
+# Subtest: complex obby recovery builds persistent geometry before gameplay scripts
+ok 51 - complex obby recovery builds persistent geometry before gameplay scripts
+  ---
+  duration_ms: 21.6533
+  ...
+# Subtest: MCP tool adaptation removes unsupported inspection promises and implicit parent creation
+ok 52 - MCP tool adaptation removes unsupported inspection promises and implicit parent creation
+  ---
+  duration_ms: 0.3281
+  ...
+# Subtest: plugin tool adaptation preserves the plugin payload contract
+ok 53 - plugin tool adaptation preserves the plugin payload contract
+  ---
+  duration_ms: 0.1731
+  ...
+# Subtest: Studio run task links and Nexus catalog pins are exact
+ok 54 - Studio run task links and Nexus catalog pins are exact
+  ---
+  duration_ms: 0.6708
+  ...
+# Subtest: canonical Studio launch rejects a catalog newer than its sealed Task context
+ok 55 - canonical Studio launch rejects a catalog newer than its sealed Task context
+  ---
+  duration_ms: 3.8343
+  ...
+# Subtest: canonical Studio launch requires sealed library context and catalog revision as a pair
+ok 56 - canonical Studio launch requires sealed library context and catalog revision as a pair
+  ---
+  duration_ms: 0.5236
+  ...
+# Subtest: inspection routing uses an exact plugin manifest and bounded MCP search
+ok 57 - inspection routing uses an exact plugin manifest and bounded MCP search
+  ---
+  duration_ms: 0.8702
+  ...
+# Subtest: scoped named inspection pins the exact MCP session and never enters mutation planning
+ok 58 - scoped named inspection pins the exact MCP session and never enters mutation planning
+  ---
+  duration_ms: 12.3041
+  ...
+# Subtest: scoped named inspection fails typed when its exact MCP session or search command is unavailable
+ok 59 - scoped named inspection fails typed when its exact MCP session or search command is unavailable
+  ---
+  duration_ms: 1669.6197
+  ...
+# Subtest: inspection evidence is durable, target-bound, and honest about MCP scope
+ok 60 - inspection evidence is durable, target-bound, and honest about MCP scope
+  ---
+  duration_ms: 0.6499
+  ...
+# Subtest: Studio library steps refuse a catalog revision change before search
+ok 61 - Studio library steps refuse a catalog revision change before search
+  ---
+  duration_ms: 1.2856
+  ...
+# Subtest: Studio run creation rejects an authenticated chat deletion fence
+ok 62 - Studio run creation rejects an authenticated chat deletion fence
+  ---
+  duration_ms: 10.4252
+  ...
+# Subtest: pure Local MCP run creation pins a confirmed opaque target before persistence
+    # Subtest: confirmed exact target queues with the same guards
+    ok 1 - confirmed exact target queues with the same guards
+      ---
+      duration_ms: 6.2225
+      ...
+    # Subtest: activation failure leaves no run or step debris
+    ok 2 - activation failure leaves no run or step debris
+      ---
+      duration_ms: 5.9463
+      ...
+    # Subtest: missing target
+    ok 3 - missing target
+      ---
+      duration_ms: 4.2282
+      ...
+    # Subtest: missing confirmation
+    ok 4 - missing confirmation
+      ---
+      duration_ms: 4.2813
+      ...
+    # Subtest: wrong opaque target
+    ok 5 - wrong opaque target
+      ---
+      duration_ms: 4.341
+      ...
+    1..5
+ok 63 - pure Local MCP run creation pins a confirmed opaque target before persistence
+  ---
+  duration_ms: 25.6893
+  ...
+# Subtest: StudioAgentService preserves safe same-place provider choices through persistence, snapshots, and SSE
+ok 64 - StudioAgentService preserves safe same-place provider choices through persistence, snapshots, and SSE
+  ---
+  duration_ms: 8.4229
+  ...
+# Subtest: StudioAgentService cancels an approval-waiting run immediately
+ok 65 - StudioAgentService cancels an approval-waiting run immediately
+  ---
+  duration_ms: 0.8542
+  ...
+# Subtest: StudioAgentService waits for an in-flight Studio command before final cancellation
+ok 66 - StudioAgentService waits for an in-flight Studio command before final cancellation
+  ---
+  duration_ms: 0.6067
+  ...
+# Subtest: StudioAgentService queues final validation before declaring success
+ok 67 - StudioAgentService queues final validation before declaring success
+  ---
+  duration_ms: 3.3951
+  ...
+# Subtest: StudioAgentService trusts an exact deterministic validation already satisfied by the decision
+ok 68 - StudioAgentService trusts an exact deterministic validation already satisfied by the decision
+  ---
+  duration_ms: 0.3131
+  ...
+# Subtest: StudioAgentService does not treat a successful write acknowledgement as verified completion
+ok 69 - StudioAgentService does not treat a successful write acknowledgement as verified completion
+  ---
+  duration_ms: 0.675
+  ...
+# Subtest: StudioAgentService does not repeat a failed deterministic validation
+ok 70 - StudioAgentService does not repeat a failed deterministic validation
+  ---
+  duration_ms: 0.1775
+  ...
+# Subtest: StudioAgentService accepts one clean deterministic validation without requiring every diagnostic tool
+ok 71 - StudioAgentService accepts one clean deterministic validation without requiring every diagnostic tool
+  ---
+  duration_ms: 0.3672
+  ...
+# Subtest: StudioAgentService adds targeted readback after clean validation when Studio supports it
+ok 72 - StudioAgentService adds targeted readback after clean validation when Studio supports it
+  ---
+  duration_ms: 0.376
+  ...
+# Subtest: StudioAgentService reads back an instance after clean validation
+ok 73 - StudioAgentService reads back an instance after clean validation
+  ---
+  duration_ms: 0.3147
+  ...
+# Subtest: StudioAgentService gives diagnostics an explicit whole-project target
+ok 74 - StudioAgentService gives diagnostics an explicit whole-project target
+  ---
+  duration_ms: 0.3437
+  ...
+# Subtest: StudioAgentService accepts targeted readback after the latest mutation
+ok 75 - StudioAgentService accepts targeted readback after the latest mutation
+  ---
+  duration_ms: 0.2842
+  ...
+# Subtest: final validation reads every changed script after its last write
+ok 76 - final validation reads every changed script after its last write
+  ---
+  duration_ms: 0.5441
+  ...
+# Subtest: an instance mutation after script writes does not hide missing script verification
+ok 77 - an instance mutation after script writes does not hide missing script verification
+  ---
+  duration_ms: 0.2554
+  ...
+# Subtest: post-mutation inspection budget hands repeated reads to deterministic validation
+ok 78 - post-mutation inspection budget hands repeated reads to deterministic validation
+  ---
+  duration_ms: 0.3165
+  ...
+# Subtest: continueRun sends a simple create directly to deterministic verification
+ok 79 - continueRun sends a simple create directly to deterministic verification
+  ---
+  duration_ms: 0.3349
+  ...
+# Subtest: continueRun replaces another read with deterministic verification after the post-mutation budget
+ok 80 - continueRun replaces another read with deterministic verification after the post-mutation budget
+  ---
+  duration_ms: 0.3284
+  ...
+# Subtest: continueRun allows a follow-up mutation after the post-mutation read budget
+ok 81 - continueRun allows a follow-up mutation after the post-mutation read budget
+  ---
+  duration_ms: 0.5676
+  ...
+# Subtest: StudioAgentService detects repeated identical decisions and blocks the run
+ok 82 - StudioAgentService detects repeated identical decisions and blocks the run
+  ---
+  duration_ms: 0.5266
+  ...
+# Subtest: StudioAgentService ignores duplicate terminal command acknowledgements
+ok 83 - StudioAgentService ignores duplicate terminal command acknowledgements
+  ---
+  duration_ms: 1.1755
+  ...
+# Subtest: StudioAgentService continues once after final manifest page persistence
+ok 84 - StudioAgentService continues once after final manifest page persistence
+  ---
+  duration_ms: 1.7169
+  ...
+# Subtest: StudioAgentService decision lease prevents concurrent iteration claims
+ok 85 - StudioAgentService decision lease prevents concurrent iteration claims
+  ---
+  duration_ms: 0.3246
+  ...
+# Subtest: StudioAgentService renews only the active decision lease owner
+ok 86 - StudioAgentService renews only the active decision lease owner
+  ---
+  duration_ms: 0.3337
+  ...
+# Subtest: StudioAgentService persists queueing step before creating command
+ok 87 - StudioAgentService persists queueing step before creating command
+  ---
+  duration_ms: 0.6782
+  ...
+# Subtest: StudioAgentService does not queue a second model action while one awaits approval
+ok 88 - StudioAgentService does not queue a second model action while one awaits approval
+  ---
+  duration_ms: 0.5887
+  ...
+# Subtest: StudioAgentService queues no command for a blocked script-context decision
+ok 89 - StudioAgentService queues no command for a blocked script-context decision
+  ---
+  duration_ms: 0.7953
+  ...
+# Subtest: StudioAgentService records hybrid MCP mutation execution without pinning affinity
+ok 90 - StudioAgentService records hybrid MCP mutation execution without pinning affinity
+  ---
+  duration_ms: 0.7954
+  ...
+# Subtest: StudioAgentService records plugin execution without globally pinning later hybrid tools
+ok 91 - StudioAgentService records plugin execution without globally pinning later hybrid tools
+  ---
+  duration_ms: 1.2015
+  ...
+# Subtest: StudioAgentService sends stop_play_test to the provider that started Play Test
+ok 92 - StudioAgentService sends stop_play_test to the provider that started Play Test
+  ---
+  duration_ms: 1.8122
+  ...
+# Subtest: StudioAgentService reconciles hybrid commands through the step execution provider
+ok 93 - StudioAgentService reconciles hybrid commands through the step execution provider
+  ---
+  duration_ms: 0.8615
+  ...
+# Subtest: StudioAgentService blocks an uncertain Studio outcome without retrying the mutation
+ok 94 - StudioAgentService blocks an uncertain Studio outcome without retrying the mutation
+  ---
+  duration_ms: 1.8961
+  ...
+# Subtest: StudioAgentService continues after a deterministic duplicate-create rejection
+ok 95 - StudioAgentService continues after a deterministic duplicate-create rejection
+  ---
+  duration_ms: 0.5693
+  ...
+# Subtest: explicit Folder completion accepts typed Studio attribute readback evidence
+ok 96 - explicit Folder completion accepts typed Studio attribute readback evidence
+  ---
+  duration_ms: 0.7244
+  ...
+# Subtest: StudioAgentService preserves execution metadata while recovering a missing step
+ok 97 - StudioAgentService preserves execution metadata while recovering a missing step
+  ---
+  duration_ms: 0.5213
+  ...
+# Subtest: StudioAgentService switches initial MCP inspection fallback to manifest workflow
+ok 98 - StudioAgentService switches initial MCP inspection fallback to manifest workflow
+  ---
+  duration_ms: 0.3905
+  ...
+# Subtest: StudioAgentService recovers missing step from ack and continues manifest pagination
+ok 99 - StudioAgentService recovers missing step from ack and continues manifest pagination
+  ---
+  duration_ms: 0.7201
+  ...
+# Subtest: StudioAgentService recovers missed terminal command ack during getRun reconciliation
+ok 100 - StudioAgentService recovers missed terminal command ack during getRun reconciliation
+  ---
+  duration_ms: 2.9685
+  ...
+# Subtest: StudioAgentService routes reconcile-required commands through deterministic recovery
+ok 101 - StudioAgentService routes reconcile-required commands through deterministic recovery
+  ---
+  duration_ms: 0.3578
+  ...
+# Subtest: StudioAgentService exposes the manifest conflict retry count in run snapshots
+ok 102 - StudioAgentService exposes the manifest conflict retry count in run snapshots
+  ---
+  duration_ms: 0.3425
+  ...
+# Subtest: StudioAgentService waits indefinitely for delivered Studio commands without ACK
+ok 103 - StudioAgentService waits indefinitely for delivered Studio commands without ACK
+  ---
+  duration_ms: 0.6361
+  ...
+# Subtest: StudioAgentService parks active tool waits when the Studio session is disconnected
+ok 104 - StudioAgentService parks active tool waits when the Studio session is disconnected
+  ---
+  duration_ms: 0.8707
+  ...
+# Subtest: StudioAgentService repairs a malformed model decision once
+ok 105 - StudioAgentService repairs a malformed model decision once
+  ---
+  duration_ms: 16.1329
+  ...
+# Subtest: StudioAgentService falls back to relevant source reads after repeated malformed model decisions
+ok 106 - StudioAgentService falls back to relevant source reads after repeated malformed model decisions
+  ---
+  duration_ms: 3.0026
+  ...
+# Subtest: StudioAgentService falls back to project search when malformed decisions have no relevant files
+ok 107 - StudioAgentService falls back to project search when malformed decisions have no relevant files
+  ---
+  duration_ms: 2.6014
+  ...
+# Subtest: StudioAgentService blocks repeated malformed model decisions after recovery inspection is exhausted
+ok 108 - StudioAgentService blocks repeated malformed model decisions after recovery inspection is exhausted
+  ---
+  duration_ms: 4.1866
+  ...
+# Subtest: StudioAgentService bootstraps bounded persistent geometry when a complex build decision is malformed
+ok 109 - StudioAgentService bootstraps bounded persistent geometry when a complex build decision is malformed
+  ---
+  duration_ms: 4.006
+  ...
+# Subtest: planner failure never replaces a flight game or scoped build with unrelated canned content
+ok 110 - planner failure never replaces a flight game or scoped build with unrelated canned content
+  ---
+  duration_ms: 0.2286
+  ...
+# Subtest: StudioAgentService cannot finish a complex lava game before gameplay code exists
+ok 111 - StudioAgentService cannot finish a complex lava game before gameplay code exists
+  ---
+  duration_ms: 3.7877
+  ...
+# Subtest: StudioAgentService rejects additional containers once a persistent complex build needs gameplay code
+ok 112 - StudioAgentService rejects additional containers once a persistent complex build needs gameplay code
+  ---
+  duration_ms: 4.0336
+  ...
+# Subtest: StudioAgentService repairs a complex game that is missing its requested visible HUD
+ok 113 - StudioAgentService repairs a complex game that is missing its requested visible HUD
+  ---
+  duration_ms: 3.2698
+  ...
+# Subtest: StudioAgentService hands malformed post-mutation decisions to deterministic validation
+ok 114 - StudioAgentService hands malformed post-mutation decisions to deterministic validation
+  ---
+  duration_ms: 3.1584
+  ...
+# Subtest: StudioAgentService blocks MCP inspection-only sessions with an export-capability fallback
+ok 115 - StudioAgentService blocks MCP inspection-only sessions with an export-capability fallback
+  ---
+  duration_ms: 2.2273
+  ...
+# Subtest: explicit create_instance-only GUI goals produce the exact requested instance deterministically
+ok 116 - explicit create_instance-only GUI goals produce the exact requested instance deterministically
+  ---
+  duration_ms: 1.8003
+  ...
+# Subtest: legacy Studio prompt includes canonical sealed library context only as untrusted user data
+ok 117 - legacy Studio prompt includes canonical sealed library context only as untrusted user data
+  ---
+  duration_ms: 1.2822
+  ...
+# Subtest: explicit create_instance goals do not repeat an already successful exact target
+ok 118 - explicit create_instance goals do not repeat an already successful exact target
+  ---
+  duration_ms: 0.3349
+  ...
+# Subtest: explicit create_instance goals complete after exact mutation readback and targeted validation
+ok 119 - explicit create_instance goals complete after exact mutation readback and targeted validation
+  ---
+  duration_ms: 0.2172
+  ...
+# Subtest: exact Folder requests create through MCP, read back attributes, and complete deterministically
+ok 120 - exact Folder requests create through MCP, read back attributes, and complete deterministically
+  ---
+  duration_ms: 1.0868
+  ...
+# Subtest: Studio readback records retain bounded exact evidence after command summaries
+ok 121 - Studio readback records retain bounded exact evidence after command summaries
+  ---
+  duration_ms: 0.3897
+  ...
+# Subtest: StudioAgentService does not substitute an empty GUI when planner JSON is invalid
+ok 122 - StudioAgentService does not substitute an empty GUI when planner JSON is invalid
+  ---
+  duration_ms: 2.0975
+  ...
+# Subtest: main-menu recovery continues past the first mutation and validates the completed GUI
+ok 123 - main-menu recovery continues past the first mutation and validates the completed GUI
+  ---
+  duration_ms: 1.3568
+  ...
+# Subtest: main-menu recovery does not start before Studio inspection succeeds
+ok 124 - main-menu recovery does not start before Studio inspection succeeds
+  ---
+  duration_ms: 0.1335
+  ...
+# Subtest: StudioAgentService does not bootstrap create_instance for hybrid MCP without a write capability
+ok 125 - StudioAgentService does not bootstrap create_instance for hybrid MCP without a write capability
+  ---
+  duration_ms: 0.4101
+  ...
+# Subtest: StudioAgentService returns an export-capability error for hybrid MCP tools it cannot run
+ok 126 - StudioAgentService returns an export-capability error for hybrid MCP tools it cannot run
+  ---
+  duration_ms: 0.5956
+  ...
+# Subtest: StudioAgentService guides hybrid MCP inspection-only runs to export or reconnect a capability
+ok 127 - StudioAgentService guides hybrid MCP inspection-only runs to export or reconnect a capability
+  ---
+  duration_ms: 0.3934
+  ...
+# Subtest: StudioAgentService ignores legacy run limits while a Studio command awaits ACK
+ok 128 - StudioAgentService ignores legacy run limits while a Studio command awaits ACK
+  ---
+  duration_ms: 0.6006
+  ...
+# Subtest: StudioAgentService reconciles a terminal Studio command regardless of legacy run limits
+ok 129 - StudioAgentService reconciles a terminal Studio command regardless of legacy run limits
+  ---
+  duration_ms: 0.3927
+  ...
+# Subtest: StudioAgentService exposes usage-driven runs as unlimited
+ok 130 - StudioAgentService exposes usage-driven runs as unlimited
+  ---
+  duration_ms: 0.813
+  ...
+# Subtest: StudioAgentService excludes human approval wait before exposing the command to Studio
+ok 131 - StudioAgentService excludes human approval wait before exposing the command to Studio
+  ---
+  duration_ms: 1.2748
+  ...
+# Subtest: StudioAgentService rejects approvals after a run has ended
+ok 132 - StudioAgentService rejects approvals after a run has ended
+  ---
+  duration_ms: 0.3171
+  ...
+# Subtest: StudioAgentService continues to planning with partial manifest after preflight page budget
+ok 133 - StudioAgentService continues to planning with partial manifest after preflight page budget
+  ---
+  duration_ms: 0.6536
+  ...
+# Subtest: StudioAgentService keeps a completed manifest baseline after its own attested mutation
+ok 134 - StudioAgentService keeps a completed manifest baseline after its own attested mutation
+  ---
+  duration_ms: 1.8933
+  ...
+# Subtest: same-run mutation baseline requires matching target attestation
+ok 135 - same-run mutation baseline requires matching target attestation
+  ---
+  duration_ms: 0.2204
+  ...
+# Subtest: same-run mutation baseline accepts an attested unpublished Studio place
+ok 136 - same-run mutation baseline accepts an attested unpublished Studio place
+  ---
+  duration_ms: 0.2252
+  ...
+# Subtest: StudioAgentService reuses an expired manifest after a same-run unchanged attestation
+ok 137 - StudioAgentService reuses an expired manifest after a same-run unchanged attestation
+  ---
+  duration_ms: 1.711
+  ...
+# Subtest: same-run manifest baseline rejects a changed place signature
+ok 138 - same-run manifest baseline rejects a changed place signature
+  ---
+  duration_ms: 0.2444
+  ...
+# Subtest: same-run manifest baseline accepts unchanged unpublished Studio place attestations
+ok 139 - same-run manifest baseline accepts unchanged unpublished Studio place attestations
+  ---
+  duration_ms: 0.1964
+  ...
+# Subtest: StudioAgentService explicitly enables conflicted partial context after fallback completion
+ok 140 - StudioAgentService explicitly enables conflicted partial context after fallback completion
+  ---
+  duration_ms: 1.4294
+  ...
+# Subtest: StudioAgentService keeps manifest pagination alive after the partial-context budget
+ok 141 - StudioAgentService keeps manifest pagination alive after the partial-context budget
+  ---
+  duration_ms: 0.7525
+  ...
+# Subtest: StudioAgentService stops manifest pagination after manifest page cap
+ok 142 - StudioAgentService stops manifest pagination after manifest page cap
+  ---
+  duration_ms: 1.065
+  ...
+# Subtest: StudioAgentService blocks repeated manifest cursor with MANIFEST_REPEATED_CURSOR
+ok 143 - StudioAgentService blocks repeated manifest cursor with MANIFEST_REPEATED_CURSOR
+  ---
+  duration_ms: 0.8022
+  ...
+# Subtest: manifest readiness failures defer to an in-flight conflict recovery
+ok 144 - manifest readiness failures defer to an in-flight conflict recovery
+  ---
+  duration_ms: 0.3736
+  ...
+# Subtest: continueRun queues a fresh manifest when completed context is incomplete or stale for writes
+ok 145 - continueRun queues a fresh manifest when completed context is incomplete or stale for writes
+  ---
+  duration_ms: 1.1419
+  ...
+# Subtest: continueRun yields to a concurrently queued manifest conflict recovery
+ok 146 - continueRun yields to a concurrently queued manifest conflict recovery
+  ---
+  duration_ms: 0.4918
+  ...
+# Subtest: StudioAgentService auto-retries a fresh manifest after an acknowledged conflict
+ok 147 - StudioAgentService auto-retries a fresh manifest after an acknowledged conflict
+  ---
+  duration_ms: 1.1055
+  ...
+# Subtest: StudioAgentService continues with a partial manifest after conflict retries are exhausted
+ok 148 - StudioAgentService continues with a partial manifest after conflict retries are exhausted
+  ---
+  duration_ms: 0.7806
+  ...
+# Subtest: StudioAgentService waits for an already queued manifest cursor instead of blocking
+ok 149 - StudioAgentService waits for an already queued manifest cursor instead of blocking
+  ---
+  duration_ms: 0.8203
+  ...
+# Subtest: StudioAgentService surfaces terminal manifest completion reason on incomplete revision
+ok 150 - StudioAgentService surfaces terminal manifest completion reason on incomplete revision
+  ---
+  duration_ms: 1.1948
+  ...
+# Subtest: StudioAgentService reaches model tool decision after manifest preflight instead of stalling
+ok 151 - StudioAgentService reaches model tool decision after manifest preflight instead of stalling
+  ---
+  duration_ms: 0.5938
+  ...
+# Subtest: StudioAgentService resumes a retained Studio step exactly once after target selection
+ok 152 - StudioAgentService resumes a retained Studio step exactly once after target selection
+  ---
+  duration_ms: 3.4029
+  ...
+# Subtest: StudioAgentService refreshes safe provider choices without losing the pending step when a selected target closed
+ok 153 - StudioAgentService refreshes safe provider choices without losing the pending step when a selected target closed
+  ---
+  duration_ms: 1.1233
+  ...
+# Subtest: buildDecisionHash ignores source changes for mutating write_script tools
+ok 154 - buildDecisionHash ignores source changes for mutating write_script tools
+  ---
+  duration_ms: 0.161
+  ...
+# Subtest: isRetryableToolFailure treats plugin-required and MCP unavailable errors as terminal
+ok 155 - isRetryableToolFailure treats plugin-required and MCP unavailable errors as terminal
+  ---
+  duration_ms: 0.3016
+  ...
+# Subtest: StudioAgentService retries the first hybrid MCP mutation failure without requiring a plugin
+ok 156 - StudioAgentService retries the first hybrid MCP mutation failure without requiring a plugin
+  ---
+  duration_ms: 0.5754
+  ...
+# Subtest: StudioAgentService blocks after two consecutive mutation failures even with a plugin
+ok 157 - StudioAgentService blocks after two consecutive mutation failures even with a plugin
+  ---
+  duration_ms: 1.4335
+  ...
+# Subtest: StudioAgentService resets consecutive mutation failures after a successful write
+ok 158 - StudioAgentService resets consecutive mutation failures after a successful write
+  ---
+  duration_ms: 0.4391
+  ...
+# Subtest: StudioAgentService parks hybrid MCP-only runs after search with an export-capability fallback
+ok 159 - StudioAgentService parks hybrid MCP-only runs after search with an export-capability fallback
+  ---
+  duration_ms: 0.5433
+  ...
+# Subtest: StudioAgentService returns an export-capability fallback when queueStep needs an unavailable MCP command
+ok 160 - StudioAgentService returns an export-capability fallback when queueStep needs an unavailable MCP command
+  ---
+  duration_ms: 1.8392
+  ...
+# Subtest: StudioAgentService resumes parked create_script when plugin becomes LIVE mid-run
+ok 161 - StudioAgentService resumes parked create_script when plugin becomes LIVE mid-run
+  ---
+  duration_ms: 1.9878
+  ...
+# Subtest: StudioAgentService refreshPluginAvailability clears stale pluginAvailable before planning
+ok 162 - StudioAgentService refreshPluginAvailability clears stale pluginAvailable before planning
+  ---
+  duration_ms: 0.2527
+  ...
+# Subtest: StudioAgentService still plans read/write when hybrid pluginAvailable is live
+ok 163 - StudioAgentService still plans read/write when hybrid pluginAvailable is live
+  ---
+  duration_ms: 1.2143
+  ...
+# Subtest: StudioAgentService blocks failed read_script when plugin is required
+ok 164 - StudioAgentService blocks failed read_script when plugin is required
+  ---
+  duration_ms: 0.9811
+  ...
+# Subtest: hybridTargetLockPatch persists studioTargetId with confirmation
+ok 165 - hybridTargetLockPatch persists studioTargetId with confirmation
+  ---
+  duration_ms: 0.1585
+  ...
+# Subtest: summarizeToolResult shows manifest page progress instead of full total alone
+ok 166 - summarizeToolResult shows manifest page progress instead of full total alone
+  ---
+  duration_ms: 0.2392
+  ...
+# Subtest: StudioAgentService adopts a fresh Studio manifest revision after a scan restart
+ok 167 - StudioAgentService adopts a fresh Studio manifest revision after a scan restart
+  ---
+  duration_ms: 0.1902
+  ...
+# Subtest: StudioAgentService queues manifest continuation against Studio's fresh revision
+ok 168 - StudioAgentService queues manifest continuation against Studio's fresh revision
+  ---
+  duration_ms: 0.4544
+  ...
+# Subtest: StudioAgentService deduplicates a restarted manifest page by its fresh result revision
+ok 169 - StudioAgentService deduplicates a restarted manifest page by its fresh result revision
+  ---
+  duration_ms: 0.1297
+  ...
+# Subtest: StudioAgentService locks hybrid studioTargetId after successful queueStep
+ok 170 - StudioAgentService locks hybrid studioTargetId after successful queueStep
+  ---
+  duration_ms: 0.4888
+  ...
+# Subtest: StudioAgentService does not time out while awaiting studio target selection
+ok 171 - StudioAgentService does not time out while awaiting studio target selection
+  ---
+  duration_ms: 0.585
+  ...
+# Subtest: StudioAgentService cancels orphan manifest continues when parking on target selection
+ok 172 - StudioAgentService cancels orphan manifest continues when parking on target selection
+  ---
+  duration_ms: 0.8433
+  ...
+# Subtest: StudioAgentService emitStep includes targetSelection without throwing
+ok 173 - StudioAgentService emitStep includes targetSelection without throwing
+  ---
+  duration_ms: 0.4726
+  ...
+# Subtest: canAutoBindSoleTarget allows sole bind before first mutation
+ok 174 - canAutoBindSoleTarget allows sole bind before first mutation
+  ---
+  duration_ms: 0.0965
+  ...
+# Subtest: canAutoBindSoleTarget blocks silent switch after mutation
+ok 175 - canAutoBindSoleTarget blocks silent switch after mutation
+  ---
+  duration_ms: 0.1003
+  ...
+# Subtest: canAutoBindSoleTarget blocks switching away from an explicitly confirmed target
+ok 176 - canAutoBindSoleTarget blocks switching away from an explicitly confirmed target
+  ---
+  duration_ms: 0.0874
+  ...
+# Subtest: continueRun auto-confirms sole parked target while holding the decision lease
+ok 177 - continueRun auto-confirms sole parked target while holding the decision lease
+  ---
+  duration_ms: 1.9536
+  ...
+# Subtest: reconcileAndMaybeContinue retries sole auto-confirm for awaiting_studio_target
+ok 178 - reconcileAndMaybeContinue retries sole auto-confirm for awaiting_studio_target
+  ---
+  duration_ms: 1.497
+  ...
+# Subtest: buildDecisionHash ignores transport idempotency for repeated Studio reads
+ok 179 - buildDecisionHash ignores transport idempotency for repeated Studio reads
+  ---
+  duration_ms: 2.067
+  ...
+# Subtest: backfillExpectedSourceHash binds a known-script mutation to the latest read
+ok 180 - backfillExpectedSourceHash binds a known-script mutation to the latest read
+  ---
+  duration_ms: 0.1639
+  ...
+# Subtest: reconcileAndMaybeContinue repairs a terminal run's Job projection
+ok 181 - reconcileAndMaybeContinue repairs a terminal run's Job projection
+  ---
+  duration_ms: 1.1412
+  ...
+# Subtest: terminal repair preserves structured failure context
+ok 182 - terminal repair preserves structured failure context
+  ---
+  duration_ms: 1.1391
+  ...
+# Subtest: createRun soft-confirms a sole hybrid target and prefers its live plugin
+ok 183 - createRun soft-confirms a sole hybrid target and prefers its live plugin
+  ---
+  duration_ms: 8.1507
+  ...
+# Subtest: unavailable automatic playtesting is advisory and survives successful completion
+ok 184 - unavailable automatic playtesting is advisory and survives successful completion
+  ---
+  duration_ms: 0.5833
+  ...
+# Subtest: advertised MCP playtesting is queued and real test failures remain failures
+ok 185 - advertised MCP playtesting is queued and real test failures remain failures
+  ---
+  duration_ms: 0.3035
+  ...
+1..185
+# tests 190
+# suites 0
+# pass 190
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2206.2741

@@ -1,0 +1,198 @@
+TAP version 13
+# Subtest: optional admission context does not poll while required write context keeps its freshness gate
+ok 1 - optional admission context does not poll while required write context keeps its freshness gate
+  ---
+  duration_ms: 38.2309
+  ...
+# Subtest: library intent detection covers image-only Roblox asset requests
+ok 2 - library intent detection covers image-only Roblox asset requests
+  ---
+  duration_ms: 0.3449
+  ...
+# Subtest: safe Studio context preserves attested command metadata without leaking unknown fields
+ok 3 - safe Studio context preserves attested command metadata without leaking unknown fields
+  ---
+  duration_ms: 0.7144
+  ...
+# Subtest: assembles bounded manifest metadata and owner-scoped assets without source or credentials
+ok 4 - assembles bounded manifest metadata and owner-scoped assets without source or credentials
+  ---
+  duration_ms: 9.1143
+  ...
+# Subtest: rejects task and Studio ownership mismatches
+ok 5 - rejects task and Studio ownership mismatches
+  ---
+  duration_ms: 0.9754
+  ...
+# Subtest: does not query the asset registry for unrelated work
+ok 6 - does not query the asset registry for unrelated work
+  ---
+  duration_ms: 4.4677
+  ...
+# Subtest: freezes the exact selected example text and provenance into the immutable snapshot
+ok 7 - freezes the exact selected example text and provenance into the immutable snapshot
+  ---
+  duration_ms: 3.3002
+  ...
+# Subtest: blank project is classified as create and game intelligence affects the context hash
+ok 8 - blank project is classified as create and game intelligence affects the context hash
+  ---
+  duration_ms: 7.9602
+  ...
+# Subtest: safe project context bounds and redacts its system map
+ok 9 - safe project context bounds and redacts its system map
+  ---
+  duration_ms: 0.9114
+  ...
+# Subtest: freezes bounded Nexus library retrieval into the immutable task snapshot
+ok 10 - freezes bounded Nexus library retrieval into the immutable task snapshot
+  ---
+  duration_ms: 4.1284
+  ...
+# Subtest: Studio catalog is derived from the protocol and marks writes for verification
+ok 11 - Studio catalog is derived from the protocol and marks writes for verification
+  ---
+  duration_ms: 0.3054
+  ...
+# Subtest: runtime orchestration capabilities are trusted and snapshot-resolvable
+ok 12 - runtime orchestration capabilities are trusted and snapshot-resolvable
+  ---
+  duration_ms: 1.5592
+  ...
+# Subtest: ten concurrent ensures use one durable manifest refresh
+ok 13 - ten concurrent ensures use one durable manifest refresh
+  ---
+  duration_ms: 5.6514
+  ...
+# {"scenario":"10_concurrent_ensure","elapsedMs":3.464,"stateReads":10,"refreshClaims":10,"refreshWritesQueued":1,"refreshJoiners":9}
+# Subtest: fresh complete manifest is a one-read cache hit
+ok 14 - fresh complete manifest is a one-read cache hit
+  ---
+  duration_ms: 0.564
+  ...
+# {"scenario":"fresh_fast_path","elapsedMs":0.255,"manifestStateReads":1,"contextBuilds":1,"refreshWritesQueued":0}
+# Subtest: zero-wait optional admission keeps cached context and queues missing context without polling
+ok 15 - zero-wait optional admission keeps cached context and queues missing context without polling
+  ---
+  duration_ms: 0.4288
+  ...
+# Subtest: logical resolver target accepts the plugin attestation target for the same place
+ok 16 - logical resolver target accepts the plugin attestation target for the same place
+  ---
+  duration_ms: 0.2995
+  ...
+# Subtest: stale complete manifest is served while one refresh is queued
+ok 17 - stale complete manifest is served while one refresh is queued
+  ---
+  duration_ms: 0.411
+  ...
+# {"scenario":"stale_while_revalidate","elapsedMs":0.164,"manifestStateReads":1,"refreshClaims":1,"refreshWritesQueued":1}
+# Subtest: place switch blocks before reading or refreshing manifest state
+ok 18 - place switch blocks before reading or refreshing manifest state
+  ---
+  duration_ms: 0.2631
+  ...
+# Subtest: non-plugin sessions use targeted context instead of a full manifest
+ok 19 - non-plugin sessions use targeted context instead of a full manifest
+  ---
+  duration_ms: 0.5181
+  ...
+# Subtest: terminal manifest conflicts stay blocked unless partial fallback was explicitly accepted
+ok 20 - terminal manifest conflicts stay blocked unless partial fallback was explicitly accepted
+  ---
+  duration_ms: 0.5616
+  ...
+# Subtest: constructor fails closed without a project authorizer
+ok 21 - constructor fails closed without a project authorizer
+  ---
+  duration_ms: 1.9557
+  ...
+# Subtest: create-body normalization excludes caller-supplied ownership fields
+ok 22 - create-body normalization excludes caller-supplied ownership fields
+  ---
+  duration_ms: 1.7077
+  ...
+# Subtest: trusted approved game intelligence enters the hashed plan execution context
+ok 23 - trusted approved game intelligence enters the hashed plan execution context
+  ---
+  duration_ms: 4.254
+  ...
+# Subtest: approved plan with invalid game intelligence project mode is rejected
+ok 24 - approved plan with invalid game intelligence project mode is rejected
+  ---
+  duration_ms: 1.8747
+  ...
+# Subtest: UI Creator task fields are revision-fenced and scoped to their workspace
+ok 25 - UI Creator task fields are revision-fenced and scoped to their workspace
+  ---
+  duration_ms: 0.7591
+  ...
+# Subtest: trusted approved structured steps compile exactly into stable canonical runtime steps
+ok 26 - trusted approved structured steps compile exactly into stable canonical runtime steps
+  ---
+  duration_ms: 1.7828
+  ...
+# Subtest: approved v3 loader output compiles without shape translation or capability aliases
+ok 27 - approved v3 loader output compiles without shape translation or capability aliases
+  ---
+  duration_ms: 15.7157
+  ...
+# Subtest: legacy approved plans retain generic planning while preserving source linkage
+ok 28 - legacy approved plans retain generic planning while preserving source linkage
+  ---
+  duration_ms: 0.6447
+  ...
+# Subtest: trusted structured plans fail closed on missing dependency IDs
+ok 29 - trusted structured plans fail closed on missing dependency IDs
+  ---
+  duration_ms: 0.5583
+  ...
+# Subtest: trusted structured plans repair unique title dependencies before compilation
+ok 30 - trusted structured plans repair unique title dependencies before compilation
+  ---
+  duration_ms: 0.5877
+  ...
+# Subtest: trusted structured plans fail closed on dependency cycles
+ok 31 - trusted structured plans fail closed on dependency cycles
+  ---
+  duration_ms: 0.7276
+  ...
+# Subtest: normal conversation is classified without creating or mutating runtime state
+ok 32 - normal conversation is classified without creating or mutating runtime state
+  ---
+  duration_ms: 5.0079
+  ...
+# Subtest: trusted approved plans force noun-like goals through exact task compilation
+ok 33 - trusted approved plans force noun-like goals through exact task compilation
+  ---
+  duration_ms: 5.8895
+  ...
+# Subtest: dual-write compatibility intake is internal-only and still authorizes the project
+ok 34 - dual-write compatibility intake is internal-only and still authorizes the project
+  ---
+  duration_ms: 0.8705
+  ...
+# Subtest: read re-authorizes the persisted project before returning task details
+ok 35 - read re-authorizes the persisted project before returning task details
+  ---
+  duration_ms: 0.4971
+  ...
+# Subtest: canonical reads remain independently disabled even while the canonical runtime owns writes
+ok 36 - canonical reads remain independently disabled even while the canonical runtime owns writes
+  ---
+  duration_ms: 0.2927
+  ...
+# Subtest: action rejects a no-longer-owned persisted project before any mutation
+ok 37 - action rejects a no-longer-owned persisted project before any mutation
+  ---
+  duration_ms: 0.5919
+  ...
+1..37
+# tests 37
+# suites 0
+# pass 37
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 207.4905

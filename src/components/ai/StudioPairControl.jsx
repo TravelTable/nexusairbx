@@ -23,6 +23,7 @@ import {
 } from "../../lib/studioBridgeApi";
 import {
   getStudioSessionId,
+  isStudioPluginUpdateRequired,
   MCP_CAPABILITY_LABELS,
 } from "../../lib/studioConnection";
 import StudioSetupVisual, {
@@ -332,11 +333,7 @@ export default function StudioPairControl({
   };
   const compatibility =
     connection?.compatibility || pluginSession?.compatibility || {};
-  const pluginUpdateRequired =
-    pluginConnected && (
-      compatibility.status === "update_required" ||
-      compatibility.currentRelease === false
-    );
+  const pluginUpdateRequired = pluginConnected && isStudioPluginUpdateRequired(compatibility);
   const pluginRepairing =
     pluginConnected && compatibility.status === "repairing";
   const pluginDegraded = pluginConnected && compatibility.status === "degraded";
@@ -590,8 +587,18 @@ export default function StudioPairControl({
     }
   };
 
+  const updateNoticeRef = useRef(null);
+  useEffect(() => {
+    if (!pluginUpdateRequired) { updateNoticeRef.current = null; return; }
+    const key = `${getStudioSessionId(pluginSession)}:${compatibility.installedBuildId || "unknown"}`;
+    if (updateNoticeRef.current === key) return;
+    updateNoticeRef.current = key;
+    notify?.({ id: "studio-plugin-update", type: "info", message: "Update Nexus RBX for Studio to apply changes.",
+      cta: { label: "Get update", onClick: () => window.location.assign("/downloads#studio-plugin") } });
+  }, [pluginUpdateRequired, pluginSession, compatibility.installedBuildId, notify]);
+
   const statusCopy = pluginUpdateRequired
-    ? "Studio plugin update required"
+    ? "Update Nexus RBX for Studio"
     : pluginRepairing
       ? "Restoring Studio connection"
       : pluginDegraded
@@ -777,12 +784,13 @@ export default function StudioPairControl({
                     {pluginUpdateRequired ? (
                       <div className="rounded-xl border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] p-3 text-xs leading-relaxed text-[var(--ds-warning)] ">
                         <div className="mb-1 flex items-center gap-2 font-bold text-[var(--ds-warning)] ">
-                          <AlertTriangle className="h-4 w-4" /> Studio plugin
-                          update required
+                          <AlertTriangle className="h-4 w-4" /> Update Nexus RBX for Studio
                         </div>
-                        This plugin release is no longer supported. Reinstall
-                        the current generated NexusRBXStudioBridge.plugin.lua
-                        artifact, then reconnect.
+                        Install the latest plugin, then reopen it in Studio to reconnect.
+                        <a href="/downloads#studio-plugin" className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-lg border border-current px-3 font-semibold">
+                          Get the latest plugin <ExternalLink className="h-3 w-3" />
+                        </a>
+                        <details className="mt-3"><summary className="cursor-pointer">Connection details</summary><dl className="mt-2 break-all"><dt>Installed build</dt><dd>{compatibility.installedBuildIdentity || compatibility.installedBuildId || "Not reported"}</dd><dt>Current build</dt><dd>{compatibility.expectedBuildIdentity || compatibility.expectedBuildId || "Not reported"}</dd></dl></details>
                       </div>
                     ) : pluginRepairing ? (
                       <div className="rounded-xl border border-[color-mix(in_srgb,var(--ds-info)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-info)_12%,transparent)] p-3 text-xs leading-relaxed text-[var(--ds-info)] ">
@@ -801,8 +809,7 @@ export default function StudioPairControl({
                           plugin to use Create Instance
                         </div>
                         This connected Studio plugin is missing Create Instance.
-                        Install the current NexusRBXStudioBridge.plugin.lua
-                        artifact, then restart Studio or reopen the plugin and
+                        Install the latest Nexus RBX plugin, then reopen it in Studio and
                         refresh this connection. Your other supported Studio
                         features remain available.
                         <div className="mt-3 flex flex-wrap gap-2">

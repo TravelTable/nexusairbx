@@ -5,7 +5,9 @@ Local Roblox Studio plugin for the NexusRBX website-to-Studio bridge.
 ## Studio toolbox
 
 The plugin opens to **Tools**, with **Activity**, **Recovery**, and **Settings**
-navigation. There is no chat composer or conversation transcript in the dock.
+navigation. The dock uses a fixed dark plum palette with purple actions and
+lavender text, independent of Studio’s light/dark setting. There is no chat
+composer or conversation transcript in the dock.
 
 - Select objects in Explorer to inspect their properties, fix a problem, or
   describe an improvement. AI tasks accept up to five selected objects.

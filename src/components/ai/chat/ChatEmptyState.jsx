@@ -1,5 +1,5 @@
 import React from "react";
-import { Shimmer } from "../../ai-elements/shimmer";
+import { FolderOpen, ArrowRight } from "../../../lib/icons";
 import LinkIcon from "../../ui/LinkIcon";
 import LinkSlashIcon from "../../ui/LinkSlashIcon";
 
@@ -35,6 +35,9 @@ function resolveBuildContext({
 }
 
 export default function ChatEmptyState({
+  onQuickStart,
+  recentProjects = [],
+  onOpenProject,
   onOpenTemplates,
   onStartGuide,
   startGuideLabel = "Show the 5-step creator guide",
@@ -65,22 +68,40 @@ export default function ChatEmptyState({
           <div className="chat-empty-state__copy">
             <p className="chat-empty-state__eyebrow">{guidedLaunchIdea ? 'Your first creation' : 'Start building'}</p>
             <h1 id="workspace-start-title">
-              <Shimmer
-                as="span"
-                duration={2.4}
-                spread={1.5}
-                baseColor="var(--nx-text)"
-                highlightColor="var(--nx-purple-strong)"
-              >
-                {guidedLaunchIdea ? 'Start with one playable part' : 'What should Nexus build?'}
-              </Shimmer>
+              {guidedLaunchIdea ? 'Start with one playable part' : 'Your next Roblox game starts here.'}
             </h1>
             <p>
-              {guidedLaunchIdea ? 'Your idea is here. Choose Plan my first milestone above, or use the conversation to shape it together.' : 'Describe the result you want. Nexus will inspect the connected Studio session, make safe assumptions, build the change, and return verification evidence for review.'}
+              {guidedLaunchIdea ? 'Your idea is here. Choose Plan my first milestone above, or use the conversation to shape it together.' : 'Start with an idea, shape the gameplay, and bring it to life in Studio.'}
             </p>
             {guidedLaunchIdea && <blockquote className="guided-launch-idea">{guidedLaunchIdea}</blockquote>}
           </div>
         </div>
+
+        {!guidedLaunchIdea && onQuickStart ? (
+          <div className="creator-starters" aria-label="Game starting points">
+            {[
+              { id: "obby", title: "Obby", detail: "Make every jump count", prompt: "Help me plan a colorful sky-island obby with checkpoints, moving platforms, and a finish reward." },
+              { id: "simulator", title: "Simulator", detail: "Build a world that grows", prompt: "Help me plan a collecting simulator with satisfying upgrades, unlockable areas, and a simple first gameplay loop." },
+              { id: "adventure", title: "Adventure", detail: "Give players a place to explore", prompt: "Help me plan an island adventure with exploration, a first quest, collectibles, and a memorable starting area." },
+            ].map((idea) => (
+              <button type="button" key={idea.id} className="creator-starter focus-ring" onClick={() => onQuickStart(idea.prompt)}>
+                <img src={`/assets/nexus-template-worlds/${idea.id}.webp`} alt="" width="352" height="220" />
+                <span><strong>{idea.title}</strong><small>{idea.detail}</small></span>
+                <ArrowRight size={16} aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+        ) : null}
+        {recentProjects.length > 0 && onOpenProject ? (
+          <div className="creator-recent" aria-label="Recent projects">
+            <p>Continue building</p>
+            {recentProjects.slice(0, 3).map((project) => (
+              <button type="button" className="focus-ring" key={project.projectId} onClick={() => onOpenProject(project.projectId)}>
+                <FolderOpen size={16} aria-hidden="true" /><span>{project.title || project.name || "Untitled project"}</span><ArrowRight size={14} aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+        ) : null}
 
         {hasBuildContext ? (
           <dl

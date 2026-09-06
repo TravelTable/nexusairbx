@@ -1,0 +1,260 @@
+TAP version 13
+# Subtest: normalizes a compatible current plugin
+ok 1 - normalizes a compatible current plugin
+  ---
+  duration_ms: 3.3302
+  ...
+# Subtest: compatibility-only protocol handlers do not make the current plugin look limited
+ok 2 - compatibility-only protocol handlers do not make the current plugin look limited
+  ---
+  duration_ms: 1.0454
+  ...
+# Subtest: requires a recognized build identity even when version strings match
+ok 3 - requires a recognized build identity even when version strings match
+  ---
+  duration_ms: 0.8082
+  ...
+# Subtest: repairs an unverified legacy session before declaring its release unsupported
+ok 4 - repairs an unverified legacy session before declaring its release unsupported
+  ---
+  duration_ms: 0.3953
+  ...
+# Subtest: returns structured release metadata for a verified stale session
+ok 5 - returns structured release metadata for a verified stale session
+  ---
+  duration_ms: 0.3476
+  ...
+# Subtest: degraded plugins keep advertised reads and writes while unavailable tools fail exactly
+ok 6 - degraded plugins keep advertised reads and writes while unavailable tools fail exactly
+  ---
+  duration_ms: 0.7354
+  ...
+# Subtest: a missing create_instance command remains limited while supported commands continue
+ok 7 - a missing create_instance command remains limited while supported commands continue
+  ---
+  duration_ms: 0.465
+  ...
+# Subtest: accepted previous releases remain compatible during the rollout window
+ok 8 - accepted previous releases remain compatible during the rollout window
+  ---
+  duration_ms: 0.6196
+  ...
+# Subtest: server attestation fingerprints ignore ordering and client fingerprint claims
+ok 9 - server attestation fingerprints ignore ordering and client fingerprint claims
+  ---
+  duration_ms: 0.9959
+  ...
+# Subtest: expanded Studio protocol exposes discovery, mutation, validation, and recovery tools
+ok 10 - expanded Studio protocol exposes discovery, mutation, validation, and recovery tools
+  ---
+  duration_ms: 1.1381
+  ...
+# Subtest: unknown Studio tools are rejected instead of falling back to place inspection
+ok 11 - unknown Studio tools are rejected instead of falling back to place inspection
+  ---
+  duration_ms: 1.6533
+  ...
+# Subtest: insert_creator_store_asset is mutating but not destructive
+ok 12 - insert_creator_store_asset is mutating but not destructive
+  ---
+  duration_ms: 0.2026
+  ...
+# Subtest: Agent auto-apply only interrupts for destructive Studio changes
+ok 13 - Agent auto-apply only interrupts for destructive Studio changes
+  ---
+  duration_ms: 0.1721
+  ...
+# Subtest: snapshot creation is mutating but not destructive
+ok 14 - snapshot creation is mutating but not destructive
+  ---
+  duration_ms: 0.1291
+  ...
+# Subtest: insert_uploaded_roblox_model is mutating but not destructive
+ok 15 - insert_uploaded_roblox_model is mutating but not destructive
+  ---
+  duration_ms: 0.1162
+  ...
+# Subtest: insert_creator_store_asset preserves only server-produced safe fields
+ok 16 - insert_creator_store_asset preserves only server-produced safe fields
+  ---
+  duration_ms: 1.5212
+  ...
+# Subtest: insert_creator_store_asset rejects executable and arbitrary payload fields
+ok 17 - insert_creator_store_asset rejects executable and arbitrary payload fields
+  ---
+  duration_ms: 0.3036
+  ...
+# Subtest: insert_uploaded_roblox_model preserves only server-produced safe fields
+ok 18 - insert_uploaded_roblox_model preserves only server-produced safe fields
+  ---
+  duration_ms: 1.1431
+  ...
+# Subtest: insert_uploaded_roblox_model rejects source, URL, script, file, asset, and unknown injection
+ok 19 - insert_uploaded_roblox_model rejects source, URL, script, file, asset, and unknown injection
+  ---
+  duration_ms: 1.1508
+  ...
+# Subtest: build_native_model sanitizes through NativeModelSpec validation
+ok 20 - build_native_model sanitizes through NativeModelSpec validation
+  ---
+  duration_ms: 2.4408
+  ...
+# Subtest: canonical paths normalize backslashes and game prefix
+ok 21 - canonical paths normalize backslashes and game prefix
+  ---
+  duration_ms: 0.1475
+  ...
+# Subtest: Studio command paths reject blank and unrooted parent paths before dispatch
+ok 22 - Studio command paths reject blank and unrooted parent paths before dispatch
+  ---
+  duration_ms: 2.5427
+  ...
+# Subtest: create_instance normalizes common BasePart planner properties
+ok 23 - create_instance normalizes common BasePart planner properties
+  ---
+  duration_ms: 0.547
+  ...
+# Subtest: create_instance normalizes uppercase 8-bit BasePart colors
+ok 24 - create_instance normalizes uppercase 8-bit BasePart colors
+  ---
+  duration_ms: 0.2922
+  ...
+# Subtest: create_instance normalizes Studio readback property values
+ok 25 - create_instance normalizes Studio readback property values
+  ---
+  duration_ms: 0.2593
+  ...
+# Subtest: create_animation_sequence validates and normalizes bounded R15 keyframes
+ok 26 - create_animation_sequence validates and normalizes bounded R15 keyframes
+  ---
+  duration_ms: 0.7572
+  ...
+# Subtest: create_animation_sequence rejects unbounded, non-R15, and executable transforms
+ok 27 - create_animation_sequence rejects unbounded, non-R15, and executable transforms
+  ---
+  duration_ms: 0.3978
+  ...
+# Subtest: create_script only enables parent creation when explicitly requested
+ok 28 - create_script only enables parent creation when explicitly requested
+  ---
+  duration_ms: 0.5153
+  ...
+# Subtest: write_script preserves optimistic concurrency fields
+ok 29 - write_script preserves optimistic concurrency fields
+  ---
+  duration_ms: 0.2542
+  ...
+# Subtest: create_script requires an explicit script class
+ok 30 - create_script requires an explicit script class
+  ---
+  duration_ms: 0.4222
+  ...
+# Subtest: create_script transparently corrects the fly GUI Script to a LocalScript
+ok 31 - create_script transparently corrects the fly GUI Script to a LocalScript
+  ---
+  duration_ms: 0.2747
+  ...
+# Subtest: existing script class conversion requires an inspected target and explicit consent
+ok 32 - existing script class conversion requires an inspected target and explicit consent
+  ---
+  duration_ms: 0.3009
+  ...
+# Subtest: existing write_script candidates are blocked instead of auto-corrected
+ok 33 - existing write_script candidates are blocked instead of auto-corrected
+  ---
+  duration_ms: 0.3971
+  ...
+# Subtest: artifact application blocks mixed client and server runtime code
+ok 34 - artifact application blocks mixed client and server runtime code
+  ---
+  duration_ms: 3.9583
+  ...
+# Subtest: managed artifact class conversion inherits inspected authorization from its file
+ok 35 - managed artifact class conversion inherits inspected authorization from its file
+  ---
+  duration_ms: 1.7937
+  ...
+# Subtest: get_project_manifest carries pagination revision across pages
+ok 36 - get_project_manifest carries pagination revision across pages
+  ---
+  duration_ms: 0.1261
+  ...
+# Subtest: restore_snapshot keeps attributes and tags for rollback
+ok 37 - restore_snapshot keeps attributes and tags for rollback
+  ---
+  duration_ms: 0.3126
+  ...
+# Subtest: snapshot restore preserves connector conflict hashes and force policy
+ok 38 - snapshot restore preserves connector conflict hashes and force policy
+  ---
+  duration_ms: 0.14
+  ...
+# Subtest: playtests require bounded named inputs and reject executable code
+ok 39 - playtests require bounded named inputs and reject executable code
+  ---
+  duration_ms: 0.702
+  ...
+# Subtest: destructive confirmation is preserved only from explicit top-level consent
+ok 40 - destructive confirmation is preserved only from explicit top-level consent
+  ---
+  duration_ms: 0.6485
+  ...
+# Subtest: batch_operations sanitizes nested operations without allowing recursive batch payloads
+ok 41 - batch_operations sanitizes nested operations without allowing recursive batch payloads
+  ---
+  duration_ms: 0.2061
+  ...
+# Subtest: known-script mutations preserve source preconditions and force destructive snapshots
+ok 42 - known-script mutations preserve source preconditions and force destructive snapshots
+  ---
+  duration_ms: 0.9277
+  ...
+# Subtest: apply_asset_reference accepts only a canonical server-owned asset target
+ok 43 - apply_asset_reference accepts only a canonical server-owned asset target
+  ---
+  duration_ms: 0.2157
+  ...
+# Subtest: apply_asset_reference rejects invalid targets, IDs, nested use, and generic-property bypasses
+ok 44 - apply_asset_reference rejects invalid targets, IDs, nested use, and generic-property bypasses
+  ---
+  duration_ms: 0.5679
+  ...
+# Subtest: idempotency keys are stable for identical payloads
+ok 45 - idempotency keys are stable for identical payloads
+  ---
+  duration_ms: 0.1637
+  ...
+# Subtest: validation commands preserve bounded target and plan fields
+ok 46 - validation commands preserve bounded target and plan fields
+  ---
+  duration_ms: 0.2277
+  ...
+# Subtest: apply_artifact v3 preserves only allowlisted Roblox UI roots
+ok 47 - apply_artifact v3 preserves only allowlisted Roblox UI roots
+  ---
+  duration_ms: 11.1474
+  ...
+# Subtest: apply_artifact v3 rejects foreign UI paths and unsupported node classes
+ok 48 - apply_artifact v3 rejects foreign UI paths and unsupported node classes
+  ---
+  duration_ms: 0.928
+  ...
+# Subtest: apply_artifact v3 binds a single UI root to the artifact identity and revision
+ok 49 - apply_artifact v3 binds a single UI root to the artifact identity and revision
+  ---
+  duration_ms: 0.9598
+  ...
+# Subtest: apply_artifact v3 rejects ambiguous, cyclic, reserved, and unbounded UI trees
+ok 50 - apply_artifact v3 rejects ambiguous, cyclic, reserved, and unbounded UI trees
+  ---
+  duration_ms: 0.9053
+  ...
+1..50
+# tests 50
+# suites 0
+# pass 50
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 161.9472

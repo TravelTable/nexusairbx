@@ -1,0 +1,855 @@
+{
+  "approvedPlan": {
+    "trusted": true,
+    "planId": "X5dQ8P6LWWLcDUHZDXb3",
+    "version": 3,
+    "hash": "sha256:90bdce49d65c08ad815c5f9241729169006eb300fb8c2064ca1dcf41933a19d5",
+    "markdown": "## Plan overview\n\n| | |\n| --- | --- |\n| Target | Selected project |\n| Studio | Required |\n| Stages | 2 |\n| Work / checks | 6 / 2 |\n\n## Change scope\n\nBounded feature addition to the existing game. Blast-radius risk: unknown. Preserve unrelated systems.\n\n## Goal\n\nImplement a simple flight combat prototype with WASD/Space/Shift keyboard controls, gamepad support, projectile shooting, and PvP damage. All new assets and scripts will be organized under 'FlightFlowTest' folders within their respective services.\n\n## Risks and assumptions\n\n### Risks\n\n- Network latency may affect the smoothness of flight controls and projectile accuracy, requiring client-side prediction or server-side reconciliation for a polished experience (beyond prototype scope).\n- Client-authoritative flight movement, while simpler for a prototype, could be exploitable without server-side validation (not included in this basic prototype).\n- Collision detection for fast-moving projectiles might be inconsistent without advanced techniques (e.g., raycasting, swept AABB) (not included in this basic prototype).\n\n### Assumptions\n\n- The game uses standard Roblox R15/R6 character models.\n- Players will control their own character directly for flight, not a separate vehicle model.\n- Default Roblox character movement will be disabled and replaced by custom flight mechanics.\n- PvP damage will utilize the standard Humanoid.Health property.\n\n## User experience\n\n- Players will control their character's flight using WASD for movement, Space for ascent, and Shift for descent.\n- Gamepad users will have equivalent flight and shooting controls.\n- Players can shoot projectiles at other players.\n- Players will take damage from enemy projectiles.\n\n## Systems affected\n\n- Player Character Movement\n- Input Handling\n- Projectile System\n- Damage System\n- Replication\n\n## Objects and scripts to create\n\n- Folder: ReplicatedStorage/FlightFlowTest\n- Folder: StarterPlayer/StarterPlayerScripts/FlightFlowTest\n- Folder: ServerScriptService/FlightFlowTest\n- Part: ReplicatedStorage/FlightFlowTest/ProjectileModel\n- RemoteEvent: ReplicatedStorage/FlightFlowTest/ShootEvent\n- LocalScript: StarterPlayer/StarterPlayerScripts/FlightFlowTest/FlightController\n- Script: ServerScriptService/FlightFlowTest/PlayerSetup\n- Script: ServerScriptService/FlightFlowTest/ProjectileManager\n\n## Existing objects to modify\n\n- Player Character (for flight mechanics and damage)\n\n## Assets required\n\n- Projectile Model\n\n## Workflow\n\n```mermaid\nflowchart LR\n  REQUEST([\"Request\"])\n  subgraph STAGE_1[\"Setup Core Assets\"]\n    direction TB\n  STEP_1[\"Create Project Folders · studio · create\"]\n  STEP_2[\"Create Projectile Model · studio · create\"]\n  STEP_3[\"Create Shoot RemoteEvent · studio · create\"]\n  end\n  subgraph STAGE_2[\"Implement Core Logic\"]\n    direction TB\n  STEP_4[\"Create Player Setup Script · server · create\"]\n  STEP_5[\"Create Flight Controller Script · client · create\"]\n  STEP_6[\"Create Projectile Manager Script · server · create\"]\n  end\n  subgraph VERIFICATION[\"Verification\"]\n    direction TB\n  VERIFY_1([\"Verify Flight Controls · studio · verify\"])\n  VERIFY_2([\"Verify Projectile Shooting and PvP Damage · studio · verify\"])\n  end\n  REQUEST --> STEP_1\n  TARGET_1_1[\"ReplicatedStorage/FlightFlowTest\"]\n  STEP_1 -. create .-> TARGET_1_1\n  class TARGET_1_1 target\n  TARGET_1_2[\"StarterPlayer/StarterPlayerScripts/FlightFlowTest\"]\n  STEP_1 -. create .-> TARGET_1_2\n  class TARGET_1_2 target\n  STEP_1 --> STEP_2\n  TARGET_2_1[\"ReplicatedStorage/FlightFlowTest/ProjectileModel\"]\n  STEP_2 -. create .-> TARGET_2_1\n  class TARGET_2_1 target\n  STEP_1 --> STEP_3\n  TARGET_3_1[\"ReplicatedStorage/FlightFlowTest/ShootEvent\"]\n  STEP_3 -. create .-> TARGET_3_1\n  class TARGET_3_1 target\n  STEP_1 --> STEP_4\n  TARGET_4_1[\"ServerScriptService/FlightFlowTest/PlayerSetup\"]\n  STEP_4 -. create .-> TARGET_4_1\n  class TARGET_4_1 target\n  STEP_1 --> STEP_5\n  STEP_3 --> STEP_5\n  TARGET_5_1[\"StarterPlayer/StarterPlayerScripts/FlightFlowTest/FlightController\"]\n  STEP_5 -. create .-> TARGET_5_1\n  class TARGET_5_1 target\n  STEP_1 --> STEP_6\n  STEP_2 --> STEP_6\n  STEP_3 --> STEP_6\n  TARGET_6_1[\"ServerScriptService/FlightFlowTest/ProjectileManager\"]\n  STEP_6 -. create .-> TARGET_6_1\n  class TARGET_6_1 target\n  STEP_4 --> VERIFY_1\n  STEP_5 --> VERIFY_1\n  STEP_5 --> VERIFY_2\n  STEP_6 --> VERIFY_2\n  COMPLETE([\"Ready to execute\"])\n  VERIFY_1 --> COMPLETE\n  VERIFY_2 --> COMPLETE\n  ROLLBACK[\"Restore snapshot\"]\n  STEP_1 -. failure .-> ROLLBACK\n  STEP_2 -. failure .-> ROLLBACK\n  STEP_3 -. failure .-> ROLLBACK\n  STEP_4 -. failure .-> ROLLBACK\n  STEP_5 -. failure .-> ROLLBACK\n  STEP_6 -. failure .-> ROLLBACK\n  class ROLLBACK rollback\n  class STEP_1 work\n  class STEP_2 work\n  class STEP_3 work\n  class STEP_4 work\n  class STEP_5 work\n  class STEP_6 work\n  class VERIFY_1 verify\n  class VERIFY_2 verify\n  classDef work fill:#17151f,stroke:#776b99,color:#f4f1ff\n  classDef decision fill:#201b2e,stroke:#a78bfa,color:#f4f1ff\n  classDef verify fill:#13231d,stroke:#4fb286,color:#ecfff7\n  classDef target fill:#111827,stroke:#64748b,color:#e5e7eb,stroke-dasharray:4 3\n  classDef rollback fill:#2a1719,stroke:#d66a73,color:#fff1f2\n```\n\n## Implementation steps\n\n### Setup Core Assets\n\n1. **Create Project Folders** — Create the necessary 'FlightFlowTest' folders in ReplicatedStorage, StarterPlayerScripts, and ServerScriptService to organize all new assets and scripts.\n   <nexus-file path=\"ReplicatedStorage/FlightFlowTest\" action=\"create\" kind=\"instance\">FlightFlowTest Folder (ReplicatedStorage)</nexus-file> <nexus-file path=\"StarterPlayer/StarterPlayerScripts/FlightFlowTest\" action=\"create\" kind=\"instance\">FlightFlowTest Folder (StarterPlayerScripts)</nexus-file> <nexus-file path=\"ServerScriptService/FlightFlowTest\" action=\"create\" kind=\"instance\">FlightFlowTest Folder (ServerScriptService)</nexus-file>\n   _studio · create · snapshot protected_\n2. **Create Projectile Model** — Create a simple Part named 'ProjectileModel' inside 'ReplicatedStorage/FlightFlowTest'. Configure its properties (e.g., CanCollide=false, Anchored=false, Size, Color) to represent a basic projectile.\n   <nexus-file path=\"ReplicatedStorage/FlightFlowTest/ProjectileModel\" action=\"create\" kind=\"instance\">Projectile Model</nexus-file>\n   _studio · create · snapshot protected_\n3. **Create Shoot RemoteEvent** — Create a RemoteEvent named 'ShootEvent' inside 'ReplicatedStorage/FlightFlowTest'. This will be used for client-to-server communication for shooting projectiles.\n   <nexus-file path=\"ReplicatedStorage/FlightFlowTest/ShootEvent\" action=\"create\" kind=\"instance\">ShootEvent RemoteEvent</nexus-file>\n   _studio · create · snapshot protected_\n\n### Implement Core Logic\n\n1. **Create Player Setup Script** — Create a Server Script named 'PlayerSetup' in 'ServerScriptService/FlightFlowTest'. This script will handle initial player character setup, such as disabling default movement and enabling custom flight mechanics upon player spawn.\n   <nexus-file path=\"ServerScriptService/FlightFlowTest/PlayerSetup\" action=\"create\" kind=\"studio_script\">PlayerSetup Script</nexus-file>\n   _server · create · snapshot protected_\n2. **Create Flight Controller Script** — Create a LocalScript named 'FlightController' in 'StarterPlayer/StarterPlayerScripts/FlightFlowTest'. This script will manage player input (WASD, Space, Shift, Gamepad) for flight movement and send shooting requests to the server.\n   <nexus-file path=\"StarterPlayer/StarterPlayerScripts/FlightFlowTest/FlightController\" action=\"create\" kind=\"studio_script\">FlightController Script</nexus-file>\n   _client · create · snapshot protected_\n3. **Create Projectile Manager Script** — Create a Server Script named 'ProjectileManager' in 'ServerScriptService/FlightFlowTest'. This script will listen for 'ShootEvent', create and manage projectiles, handle their movement, detect collisions, and apply PvP damage.\n   <nexus-file path=\"ServerScriptService/FlightFlowTest/ProjectileManager\" action=\"create\" kind=\"studio_script\">ProjectileManager Script</nexus-file>\n   _server · create · snapshot protected_\n\n## Verification steps\n\n1. **Verify Flight Controls** — Player character responds correctly to flight input and cannot walk/jump normally.\n2. **Verify Projectile Shooting and PvP Damage** — Projectiles are fired, hit other players, and reduce their health. No self-damage.",
+    "steps": [
+      "Create Project Folders",
+      "Create Projectile Model",
+      "Create Shoot RemoteEvent",
+      "Create Player Setup Script",
+      "Create Flight Controller Script",
+      "Create Projectile Manager Script"
+    ],
+    "assumptions": [
+      "The game uses standard Roblox R15/R6 character models.",
+      "Players will control their own character directly for flight, not a separate vehicle model.",
+      "Default Roblox character movement will be disabled and replaced by custom flight mechanics.",
+      "PvP damage will utilize the standard Humanoid.Health property."
+    ],
+    "constraints": [
+      {
+        "constraintId": "constraint_f40a9fd4257a93c222c6bc6e0c070",
+        "id": "constraint_f40a9fd4257a93c222c6bc6e0c070",
+        "text": "All new objects and scripts must be placed under 'FlightFlowTest' folders within their appropriate services.",
+        "required": true
+      },
+      {
+        "constraintId": "constraint_b45291703dd48817e1b47f1ff7b67",
+        "id": "constraint_b45291703dd48817e1b47f1ff7b67",
+        "text": "Existing content must be preserved.",
+        "required": true
+      },
+      {
+        "constraintId": "constraint_b1dca0cfba6d2b4704c63ede4cb4a",
+        "id": "constraint_b1dca0cfba6d2b4704c63ede4cb4a",
+        "text": "Only NexusRBX Studio plugin capabilities are to be used.",
+        "required": true
+      }
+    ],
+    "classification": "project",
+    "scope": "Implement a simple flight combat prototype with WASD/Space/Shift keyboard controls, gamepad support, projectile shooting, and PvP damage. All new assets and scripts will be organized under 'FlightFlowTest' folders within their respective services.",
+    "implementationSteps": [],
+    "verificationSteps": [],
+    "gameIntelligence": {
+      "schemaVersion": "nexusrbx-game-intelligence-v2",
+      "projectMode": "modify",
+      "changeClass": "feature_addition",
+      "genre": "combat",
+      "design": null,
+      "change": {
+        "changeClass": "feature_addition",
+        "preservationPolicy": {
+          "preserveUnrelatedSystems": true,
+          "preserveProjectConventions": true,
+          "preserveExistingArchitectureUnlessRequired": true,
+          "preferPatchOverRewrite": true,
+          "doNotRenameUnrelatedInstances": true,
+          "doNotDeleteApparentlyUnusedContentWithoutEvidence": true,
+          "doNotChangeEconomyUnlessRequired": true,
+          "doNotChangeGlobalVisualStyleUnlessRequested": true
+        },
+        "inspectionPolicy": {
+          "inspectBeforeWrite": true,
+          "requireExactSourceBeforeExistingScriptMutation": true,
+          "requireDependencyEvidenceForSystemChange": true,
+          "relevantFiles": []
+        },
+        "mutationPolicy": {
+          "readSet": [
+            "ReplicatedStorage",
+            "StarterPlayer/StarterPlayerScripts",
+            "ServerScriptService",
+            "Workspace",
+            "Players"
+          ],
+          "writeSet": [],
+          "allowedCreateRoots": [
+            "ReplicatedStorage",
+            "StarterPlayer/StarterPlayerScripts",
+            "ServerScriptService",
+            "ReplicatedStorage/FlightFlowTest",
+            "ServerScriptService/FlightFlowTest",
+            "StarterPlayer/StarterPlayerScripts/FlightFlowTest"
+          ],
+          "protectedPaths": [
+            "ReplicatedStorage/*",
+            "StarterPlayer/StarterPlayerScripts/*",
+            "ServerScriptService/*"
+          ],
+          "scopeState": "resolved"
+        },
+        "blastRadius": {
+          "directDependencies": [],
+          "indirectDependencies": [],
+          "persistenceImpact": false,
+          "economyImpact": false,
+          "networkingImpact": false,
+          "uiImpact": false,
+          "playerDataMigrationImpact": false,
+          "risk": "unknown"
+        },
+        "regressionPolicy": {
+          "verifyRequestedBehavior": true,
+          "verifyTouchedDependencies": true,
+          "verifyNoNewDiagnostics": true,
+          "verifyChangedScriptReadback": true,
+          "playtestWhenBehavioral": true
+        },
+        "requestedChange": "Plan a simple flight combat prototype: WASD plus Space/Shift keyboard flight, gamepad support, projectile shooting and PvP damage. Preserve existing content. All new objects and scripts must be under FlightFlowTest folders within their appropriate services. Keep it focused on those mechanics. Choose reasonable defaults and give me the plan without more questions. Use only the NexusRBX Studio plugin, not MCP."
+      },
+      "projectBrief": {
+        "baseRevision": 0,
+        "title": "Plan a simple flight combat prototype: WASD plus Space/Shift keyboard flight, gamepad support, projectile shooting and PvP damage. Preserve existing content. Al",
+        "concept": "",
+        "genre": "combat",
+        "requestedScope": {
+          "kind": "focused_change",
+          "request": "Plan a simple flight combat prototype: WASD plus Space/Shift keyboard flight, gamepad support, projectile shooting and PvP damage. Preserve existing content. All new objects and scripts must be under FlightFlowTest folders within their appropriate services. Keep it focused on those mechanics. Choose reasonable defaults and give me the plan without more questions. Use only the NexusRBX Studio plugin, not MCP.",
+          "changeClass": "feature_addition"
+        },
+        "artDirection": {
+          "palette": [],
+          "shapes": "consistent with the requested theme",
+          "typography": "readable at mobile sizes",
+          "materials": "consistent with the world",
+          "referenceAssetIds": []
+        },
+        "decisions": [
+          {
+            "id": "request",
+            "value": "Plan a simple flight combat prototype: WASD plus Space/Shift keyboard flight, gamepad support, projectile shooting and PvP damage. Preserve existing content. All new objects and scripts must be under FlightFlowTest folders within their appropriate services. Keep it focused on those mechanics. Choose reasonable defaults and give me the plan without more questions. Use only the NexusRBX Studio plugin, not MCP.",
+            "origin": "requested"
+          }
+        ],
+        "monetization": {
+          "policy": "creator_directed",
+          "requested": false,
+          "request": "",
+          "preserveExisting": true
+        },
+        "deliverables": [
+          {
+            "id": "requested_change",
+            "category": "gameplay",
+            "title": "Requested change",
+            "description": "Plan a simple flight combat prototype: WASD plus Space/Shift keyboard flight, gamepad support, projectile shooting and PvP damage. Preserve existing content. All new objects and scripts must be under FlightFlowTest folders within their appropriate services. Keep it focused on those mechanics. Choose reasonable defaults and give me the plan without more questions. Use only the NexusRBX Studio plugin, not MCP.",
+            "dependsOn": [],
+            "required": true,
+            "origin": "requested",
+            "stepIds": [],
+            "assetIds": []
+          }
+        ],
+        "preservation": {
+          "savedProgress": true,
+          "existingProductIds": true,
+          "approvedAssets": true
+        },
+        "schemaVersion": "nexusrbx-game-brief-v1",
+        "contentHash": "sha256:aa4df5b475d57a698c622cfaa37a4e3bbf4ef69a377a99625c8ee4e85534a05e"
+      },
+      "contentHash": "sha256:b2b5075ddb54171162b6df245c00df160189476ef831d2139b0c2cdf6c09e1f0"
+    },
+    "approvedAt": {
+      "_seconds": 1788687106,
+      "_nanoseconds": 932000000
+    },
+    "approvingUserId": "0VSQotqOXxPXBLeQu1gUNkXELWH3"
+  },
+  "steps": [
+    {
+      "status": "succeeded",
+      "operations": [
+        {
+          "type": "create_instance",
+          "payload": {
+            "schemaVersion": "2026-08-27-r15-animation",
+            "idempotencyKey": "7a0b91887623382562cf79e254cf096f",
+            "path": "ReplicatedStorage/FlightFlowTest",
+            "className": "Folder",
+            "properties": {},
+            "attributes": {},
+            "tags": [],
+            "createParents": true,
+            "snapshot": true,
+            "expectedSourceHash": ""
+          },
+          "idempotencyKey": ""
+        },
+        {
+          "type": "create_instance",
+          "payload": {
+            "schemaVersion": "2026-08-27-r15-animation",
+            "idempotencyKey": "d1e35eeacc8bde709908e85fed6c7e33",
+            "path": "ReplicatedStorage/FlightFlowTest/FireEvent",
+            "className": "RemoteEvent",
+            "properties": {},
+            "attributes": {},
+            "tags": [],
+            "createParents": true,
+            "snapshot": true,
+            "expectedSourceHash": ""
+          },
+          "idempotencyKey": ""
+        },
+        {
+          "type": "create_instance",
+          "payload": {
+            "schemaVersion": "2026-08-27-r15-animation",
+            "idempotencyKey": "9641763f7d7a3a291b14ec119434cdbe",
+            "path": "Workspace/FlightFlowTest",
+            "className": "Folder",
+            "properties": {},
+            "attributes": {},
+            "tags": [],
+            "createParents": true,
+            "snapshot": true,
+            "expectedSourceHash": ""
+          },
+          "idempotencyKey": ""
+        },
+        {
+          "type": "create_instance",
+          "payload": {
+            "schemaVersion": "2026-08-27-r15-animation",
+            "idempotencyKey": "c00a39f0c925654cf34474d16074e947",
+            "path": "Workspace/FlightFlowTest/Projectiles",
+            "className": "Folder",
+            "properties": {},
+            "attributes": {},
+            "tags": [],
+            "createParents": true,
+            "snapshot": true,
+            "expectedSourceHash": ""
+          },
+          "idempotencyKey": ""
+        },
+        {
+          "type": "create_instance",
+          "payload": {
+            "schemaVersion": "2026-08-27-r15-animation",
+            "idempotencyKey": "8e4b46bae04f8eada4f5330d63c29c38",
+            "path": "Workspace/FlightFlowTest/SpawnPad",
+            "className": "Part",
+            "properties": {
+              "Anchored": true,
+              "Size": {
+                "type": "Vector3",
+                "x": 50,
+                "y": 1,
+                "z": 50
+              },
+              "Position": {
+                "type": "Vector3",
+                "x": 0,
+                "y": 0.5,
+                "z": 0
+              }
+            },
+            "attributes": {},
+            "tags": [],
+            "createParents": true,
+            "snapshot": true,
+            "expectedSourceHash": ""
+          },
+          "idempotencyKey": ""
+        }
+      ],
+      "result": {
+        "retryable": false,
+        "targetAttestation": {
+          "targetGeneration": 510,
+          "attestedAt": 1788687259,
+          "placeChanged": false,
+          "targetId": "st_8c5d17e8ee75c6d9aeebd894c2cadbf341aa72d1041774ef",
+          "connectorId": "db68202a-04ff-41fe-8a5e-2253a6b60898",
+          "placeId": "0",
+          "placeSignature": "6b7b6c98",
+          "universeId": "0",
+          "sessionId": "MLq8J3mhz56J6BRsAeQe",
+          "placeName": "Place1"
+        },
+        "stepId": "t4CmxN1rqBbAs3nqGMVB",
+        "affectedPaths": [],
+        "duration": 86,
+        "output": [],
+        "operationId": "studio-agent:studio_run_f27bf221dd847c4e5b63bbe880d7b7be4cb1878e1b29f549:t4CmxN1rqBbAs3nqGMVB",
+        "ok": true,
+        "results": [
+          {
+            "ok": true,
+            "type": "create_instance",
+            "index": 1,
+            "result": {
+              "path": "ReplicatedStorage/FlightFlowTest",
+              "attributes": {
+                "NexusManagedId": "0a5fbbe1-d142-4798-925c-8ecc530dfdd8"
+              },
+              "className": "Folder",
+              "properties": {
+                "Name": "FlightFlowTest",
+                "ClassName": "Folder"
+              },
+              "snapshots": [
+                {
+                  "name": "FlightFlowTest",
+                  "path": "ReplicatedStorage/FlightFlowTest",
+                  "parentPath": "ReplicatedStorage",
+                  "className": "",
+                  "id": "867a36fc-199d-41c0-8af6-af2937e2f666",
+                  "properties": [],
+                  "existed": false,
+                  "postHash": "21ca1680"
+                }
+              ],
+              "tags": []
+            }
+          },
+          {
+            "ok": true,
+            "type": "create_instance",
+            "index": 2,
+            "result": {
+              "path": "ReplicatedStorage/FlightFlowTest/FireEvent",
+              "attributes": {
+                "NexusManagedId": "abde0e6b-8f0f-4bab-bd92-6a0548f2bb74"
+              },
+              "className": "RemoteEvent",
+              "properties": {
+                "Name": "FireEvent",
+                "ClassName": "RemoteEvent"
+              },
+              "snapshots": [
+                {
+                  "name": "FireEvent",
+                  "path": "ReplicatedStorage/FlightFlowTest/FireEvent",
+                  "parentPath": "ReplicatedStorage/FlightFlowTest",
+                  "className": "",
+                  "id": "b9045c2d-ded9-4910-bde1-3ae35f48906e",
+                  "properties": [],
+                  "existed": false,
+                  "postHash": "ce866348"
+                }
+              ],
+              "tags": []
+            }
+          },
+          {
+            "ok": true,
+            "type": "create_instance",
+            "index": 3,
+            "result": {
+              "path": "Workspace/FlightFlowTest",
+              "attributes": {
+                "NexusManagedId": "c86dba4b-ebca-4bfb-b7c5-363a0ee94c03"
+              },
+              "className": "Folder",
+              "properties": {
+                "Name": "FlightFlowTest",
+                "ClassName": "Folder"
+              },
+              "snapshots": [
+                {
+                  "path": "Workspace/FlightFlowTest/FlowProbeFinal",
+                  "parentPath": "Workspace/FlightFlowTest",
+                  "tags": [],
+                  "id": "199c5882-976a-4df8-9325-9309875fca12",
+                  "properties": {
+                    "Reflectance": 0,
+                    "Color": {
+                      "b": 1,
+                      "type": "Color3",
+                      "g": 0,
+                      "r": 0
+                    },
+                    "Anchored": true,
+                    "Locked": false,
+                    "Material": "Enum.Material.Plastic",
+                    "Size": {
+                      "y": 1,
+                      "type": "Vector3",
+                      "x": 8,
+                      "z": 8
+                    },
+                    "CanCollide": true,
+                    "CollisionGroup": "Default",
+                    "CanTouch": true,
+                    "CFrame": {
+                      "components": [
+                        24,
+                        8,
+                        0,
+                        1,
+                        0,
+                        0,
+                        0,
+                        1,
+                        0,
+                        0,
+                        0,
+                        1
+                      ],
+                      "type": "CFrame"
+                    },
+                    "Rotation": {
+                      "y": 0,
+                      "type": "Vector3",
+                      "x": 0,
+                      "z": 0
+                    },
+                    "Transparency": 0,
+                    "Name": "FlowProbeFinal",
+                    "Massless": false,
+                    "CanQuery": true,
+                    "CastShadow": true,
+                    "Position": {
+                      "y": 8,
+                      "type": "Vector3",
+                      "x": 24,
+                      "z": 0
+                    }
+                  },
+                  "preHash": "1ff17cd0",
+                  "name": "FlowProbeFinal",
+                  "className": "Part",
+                  "existed": true,
+                  "attributes": {
+                    "NexusManagedId": "cea9eee6-6d39-4cd8-af10-723f3949fd9b"
+                  }
+                },
+                {
+                  "path": "Workspace/FlightFlowTest",
+                  "parentPath": "Workspace",
+                  "tags": [],
+                  "id": "b9505d62-5dd2-47f4-b01d-21e6671af475",
+                  "properties": {
+                    "Name": "FlightFlowTest"
+                  },
+                  "preHash": "3c7fbf78",
+                  "name": "FlightFlowTest",
+                  "className": "Folder",
+                  "existed": true,
+                  "attributes": [],
+                  "postHash": "1187e240"
+                }
+              ],
+              "tags": []
+            }
+          },
+          {
+            "ok": true,
+            "type": "create_instance",
+            "index": 4,
+            "result": {
+              "path": "Workspace/FlightFlowTest/Projectiles",
+              "attributes": {
+                "NexusManagedId": "e7f7d17a-c8da-40e8-a7af-f4d2f1d1c9bc"
+              },
+              "className": "Folder",
+              "properties": {
+                "Name": "Projectiles",
+                "ClassName": "Folder"
+              },
+              "snapshots": [
+                {
+                  "name": "Projectiles",
+                  "path": "Workspace/FlightFlowTest/Projectiles",
+                  "parentPath": "Workspace/FlightFlowTest",
+                  "className": "",
+                  "id": "fdbbcd7f-b348-450b-a420-332e0744e642",
+                  "properties": [],
+                  "existed": false,
+                  "postHash": "2fb39b48"
+                }
+              ],
+              "tags": []
+            }
+          },
+          {
+            "ok": true,
+            "type": "create_instance",
+            "index": 5,
+            "result": {
+              "path": "Workspace/FlightFlowTest/SpawnPad",
+              "attributes": {
+                "NexusManagedId": "202a10e8-f8f4-4ed8-89b4-993dcf4f9fae"
+              },
+              "className": "Part",
+              "properties": {
+                "Reflectance": 0,
+                "Color": {
+                  "b": 0.6470588445663452,
+                  "type": "Color3",
+                  "g": 0.6352941393852234,
+                  "r": 0.6392157077789307
+                },
+                "Anchored": true,
+                "Locked": false,
+                "Material": "Enum.Material.Plastic",
+                "Size": {
+                  "y": 1,
+                  "type": "Vector3",
+                  "x": 50,
+                  "z": 50
+                },
+                "CanCollide": true,
+                "CollisionGroup": "Default",
+                "CanTouch": true,
+                "CFrame": {
+                  "components": [
+                    0,
+                    0.5,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    1
+                  ],
+                  "type": "CFrame"
+                },
+                "Rotation": {
+                  "y": 0,
+                  "type": "Vector3",
+                  "x": 0,
+                  "z": 0
+                },
+                "Transparency": 0,
+                "Name": "SpawnPad",
+                "ClassName": "Part",
+                "Massless": false,
+                "CanQuery": true,
+                "CastShadow": true,
+                "Position": {
+                  "y": 0.5,
+                  "type": "Vector3",
+                  "x": 0,
+                  "z": 0
+                }
+              },
+              "snapshots": [
+                {
+                  "name": "SpawnPad",
+                  "path": "Workspace/FlightFlowTest/SpawnPad",
+                  "parentPath": "Workspace/FlightFlowTest",
+                  "className": "",
+                  "id": "914b5d51-cb0a-4e3a-a495-9b58b32ae2a6",
+                  "properties": [],
+                  "existed": false,
+                  "postHash": "8488a9cc"
+                }
+              ],
+              "tags": []
+            }
+          }
+        ],
+        "verification": {
+          "evidence": {
+            "commandType": "batch_operations",
+            "checks": [
+              {
+                "ok": true,
+                "path": "",
+                "operationType": "create_instance",
+                "checks": [
+                  {
+                    "ok": true,
+                    "actualClassName": "Folder",
+                    "kind": "instance_identity",
+                    "path": "ReplicatedStorage/FlightFlowTest",
+                    "expectedClassName": "Folder"
+                  }
+                ],
+                "kind": "batch_operation",
+                "operationIndex": 1
+              },
+              {
+                "ok": true,
+                "path": "",
+                "operationType": "create_instance",
+                "checks": [
+                  {
+                    "ok": true,
+                    "actualClassName": "RemoteEvent",
+                    "kind": "instance_identity",
+                    "path": "ReplicatedStorage/FlightFlowTest/FireEvent",
+                    "expectedClassName": "RemoteEvent"
+                  }
+                ],
+                "kind": "batch_operation",
+                "operationIndex": 2
+              },
+              {
+                "ok": true,
+                "path": "",
+                "operationType": "create_instance",
+                "checks": [
+                  {
+                    "ok": true,
+                    "actualClassName": "Folder",
+                    "kind": "instance_identity",
+                    "path": "Workspace/FlightFlowTest",
+                    "expectedClassName": "Folder"
+                  }
+                ],
+                "kind": "batch_operation",
+                "operationIndex": 3
+              },
+              {
+                "ok": true,
+                "path": "",
+                "operationType": "create_instance",
+                "checks": [
+                  {
+                    "ok": true,
+                    "actualClassName": "Folder",
+                    "kind": "instance_identity",
+                    "path": "Workspace/FlightFlowTest/Projectiles",
+                    "expectedClassName": "Folder"
+                  }
+                ],
+                "kind": "batch_operation",
+                "operationIndex": 4
+              },
+              {
+                "ok": true,
+                "path": "",
+                "operationType": "create_instance",
+                "checks": [
+                  {
+                    "ok": true,
+                    "actualClassName": "Part",
+                    "kind": "instance_identity",
+                    "path": "Workspace/FlightFlowTest/SpawnPad",
+                    "expectedClassName": "Part"
+                  },
+                  {
+                    "ok": true,
+                    "path": "Workspace/FlightFlowTest/SpawnPad",
+                    "key": "Anchored",
+                    "kind": "property",
+                    "expected": true,
+                    "actual": true
+                  },
+                  {
+                    "ok": true,
+                    "path": "Workspace/FlightFlowTest/SpawnPad",
+                    "key": "Position",
+                    "kind": "property",
+                    "expected": {
+                      "y": 0.5,
+                      "type": "Vector3",
+                      "x": 0,
+                      "z": 0
+                    },
+                    "actual": {
+                      "y": 0.5,
+                      "type": "Vector3",
+                      "x": 0,
+                      "z": 0
+                    }
+                  },
+                  {
+                    "ok": true,
+                    "path": "Workspace/FlightFlowTest/SpawnPad",
+                    "key": "Size",
+                    "kind": "property",
+                    "expected": {
+                      "y": 1,
+                      "type": "Vector3",
+                      "x": 50,
+                      "z": 50
+                    },
+                    "actual": {
+                      "y": 1,
+                      "type": "Vector3",
+                      "x": 50,
+                      "z": 50
+                    }
+                  }
+                ],
+                "kind": "batch_operation",
+                "operationIndex": 5
+              }
+            ],
+            "snapshotIds": [
+              "867a36fc-199d-41c0-8af6-af2937e2f666",
+              "b9045c2d-ded9-4910-bde1-3ae35f48906e",
+              "199c5882-976a-4df8-9325-9309875fca12",
+              "b9505d62-5dd2-47f4-b01d-21e6671af475",
+              "fdbbcd7f-b348-450b-a420-332e0744e642",
+              "914b5d51-cb0a-4e3a-a495-9b58b32ae2a6"
+            ],
+            "affectedPaths": []
+          },
+          "verified": true,
+          "source": "studio_readback"
+        },
+        "resultingHashes": [],
+        "lifecycleVersion": 2,
+        "idempotencyKey": "Tu10Cy2CRiME04RLWaxb",
+        "snapshotIds": [
+          "867a36fc-199d-41c0-8af6-af2937e2f666",
+          "b9045c2d-ded9-4910-bde1-3ae35f48906e",
+          "199c5882-976a-4df8-9325-9309875fca12",
+          "b9505d62-5dd2-47f4-b01d-21e6671af475",
+          "fdbbcd7f-b348-450b-a420-332e0744e642",
+          "914b5d51-cb0a-4e3a-a495-9b58b32ae2a6"
+        ],
+        "warnings": [],
+        "verified": true,
+        "leaseFence": 1,
+        "commandId": "Tu10Cy2CRiME04RLWaxb",
+        "diagnostics": [],
+        "verificationChecks": [
+          {
+            "ok": true,
+            "path": "",
+            "operationType": "create_instance",
+            "checks": [
+              {
+                "ok": true,
+                "actualClassName": "Folder",
+                "kind": "instance_identity",
+                "path": "ReplicatedStorage/FlightFlowTest",
+                "expectedClassName": "Folder"
+              }
+            ],
+            "kind": "batch_operation",
+            "operationIndex": 1
+          },
+          {
+            "ok": true,
+            "path": "",
+            "operationType": "create_instance",
+            "checks": [
+              {
+                "ok": true,
+                "actualClassName": "RemoteEvent",
+                "kind": "instance_identity",
+                "path": "ReplicatedStorage/FlightFlowTest/FireEvent",
+                "expectedClassName": "RemoteEvent"
+              }
+            ],
+            "kind": "batch_operation",
+            "operationIndex": 2
+          },
+          {
+            "ok": true,
+            "path": "",
+            "operationType": "create_instance",
+            "checks": [
+              {
+                "ok": true,
+                "actualClassName": "Folder",
+                "kind": "instance_identity",
+                "path": "Workspace/FlightFlowTest",
+                "expectedClassName": "Folder"
+              }
+            ],
+            "kind": "batch_operation",
+            "operationIndex": 3
+          },
+          {
+            "ok": true,
+            "path": "",
+            "operationType": "create_instance",
+            "checks": [
+              {
+                "ok": true,
+                "actualClassName": "Folder",
+                "kind": "instance_identity",
+                "path": "Workspace/FlightFlowTest/Projectiles",
+                "expectedClassName": "Folder"
+              }
+            ],
+            "kind": "batch_operation",
+            "operationIndex": 4
+          },
+          {
+            "ok": true,
+            "path": "",
+            "operationType": "create_instance",
+            "checks": [
+              {
+                "ok": true,
+                "actualClassName": "Part",
+                "kind": "instance_identity",
+                "path": "Workspace/FlightFlowTest/SpawnPad",
+                "expectedClassName": "Part"
+              },
+              {
+                "ok": true,
+                "path": "Workspace/FlightFlowTest/SpawnPad",
+                "key": "Anchored",
+                "kind": "property",
+                "expected": true,
+                "actual": true
+              },
+              {
+                "ok": true,
+                "path": "Workspace/FlightFlowTest/SpawnPad",
+                "key": "Position",
+                "kind": "property",
+                "expected": {
+                  "y": 0.5,
+                  "type": "Vector3",
+                  "x": 0,
+                  "z": 0
+                },
+                "actual": {
+                  "y": 0.5,
+                  "type": "Vector3",
+                  "x": 0,
+                  "z": 0
+                }
+              },
+              {
+                "ok": true,
+                "path": "Workspace/FlightFlowTest/SpawnPad",
+                "key": "Size",
+                "kind": "property",
+                "expected": {
+                  "y": 1,
+                  "type": "Vector3",
+                  "x": 50,
+                  "z": 50
+                },
+                "actual": {
+                  "y": 1,
+                  "type": "Vector3",
+                  "x": 50,
+                  "z": 50
+                }
+              }
+            ],
+            "kind": "batch_operation",
+            "operationIndex": 5
+          }
+        ],
+        "success": true,
+        "snapshotCount": 6,
+        "runId": "studio_run_f27bf221dd847c4e5b63bbe880d7b7be4cb1878e1b29f549",
+        "operation": "batch_operations",
+        "previousHashes": []
+      }
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: execution ignores browser project, target, Studio, and asset tampering
+ok 1 - execution ignores browser project, target, Studio, and asset tampering
+  ---
+  duration_ms: 2.8465
+  ...
+# Subtest: plan fence rejects stale versions and hashes
+ok 2 - plan fence rejects stale versions and hashes
+  ---
+  duration_ms: 1.2854
+  ...
+# Subtest: plan execution follows the original chat and ignores a browser chat override
+ok 3 - plan execution follows the original chat and ignores a browser chat override
+  ---
+  duration_ms: 0.6822
+  ...
+# Subtest: readiness blockers reject execution while advisory warnings remain executable
+ok 4 - readiness blockers reject execution while advisory warnings remain executable
+  ---
+  duration_ms: 0.24
+  ...
+# Subtest: repeat execution requests produce deterministic idempotency identities
+ok 5 - repeat execution requests produce deterministic idempotency identities
+  ---
+  duration_ms: 0.3343
+  ...
+# Subtest: approved plan compilation preserves trusted context for canonical task launch
+ok 6 - approved plan compilation preserves trusted context for canonical task launch
+  ---
+  duration_ms: 0.2203
+  ...
+# Subtest: approved plan compilation rejects a mismatched immutable reference
+ok 7 - approved plan compilation rejects a mismatched immutable reference
+  ---
+  duration_ms: 0.298
+  ...
+# Subtest: approval is immutable and tied to an exact revision hash
+ok 8 - approval is immutable and tied to an exact revision hash
+  ---
+  duration_ms: 6.3807
+  ...
+# Subtest: new revision admission atomically releases a stale lifecycle lock only for its exact terminal task
+ok 9 - new revision admission atomically releases a stale lifecycle lock only for its exact terminal task
+  ---
+  duration_ms: 5.8886
+  ...
+# Subtest: active, foreign and mismatched canonical tasks retain the lock even if their job is terminal
+ok 10 - active, foreign and mismatched canonical tasks retain the lock even if their job is terminal
+  ---
+  duration_ms: 8.2358
+  ...
+# Subtest: normal plan reads project terminal tasks without changing a newer revision's approval
+ok 11 - normal plan reads project terminal tasks without changing a newer revision's approval
+  ---
+  duration_ms: 3.3301
+  ...
+# Subtest: an owned terminal job can settle a legacy run with no canonical task identity
+ok 12 - an owned terminal job can settle a legacy run with no canonical task identity
+  ---
+  duration_ms: 1.5389
+  ...
+# Subtest: late lifecycle transitions cannot replace the active run of a newer revision
+ok 13 - late lifecycle transitions cannot replace the active run of a newer revision
+  ---
+  duration_ms: 0.7242
+  ...
+# Subtest: run creation is deterministic and emits its first event once
+ok 14 - run creation is deterministic and emits its first event once
+  ---
+  duration_ms: 0.926
+  ...
+# Subtest: run transitions use compare-and-set and append ordered events
+ok 15 - run transitions use compare-and-set and append ordered events
+  ---
+  duration_ms: 1.2757
+  ...
+# Subtest: a task-backed runtime result starts the durable run
+ok 16 - a task-backed runtime result starts the durable run
+  ---
+  duration_ms: 0.861
+  ...
+# Subtest: a second execution cannot replace a non-terminal active run
+ok 17 - a second execution cannot replace a non-terminal active run
+  ---
+  duration_ms: 0.8182
+  ...
+# Subtest: legacy approvals remain readable during rollout
+ok 18 - legacy approvals remain readable during rollout
+  ---
+  duration_ms: 0.2624
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 138.9186

@@ -16,12 +16,7 @@ const POLL_STATES = new Set([
 ]);
 const POLL_MODERATION_STATES = new Set(["pending", "moderation_pending"]);
 
-function shortId(value) {
-  const text = String(value || "");
-  if (!text) return "Pending assignment";
-  if (text.length <= 18) return text;
-  return `${text.slice(0, 8)}…${text.slice(-6)}`;
-}
+
 
 export default function AssetCard({
   asset,
@@ -63,12 +58,9 @@ export default function AssetCard({
           {moderation && moderation !== lifecycle ? <AssetLifecycleBadge status={moderation} /> : null}
         </div>
 
-        <dl className="asset-card__ids">
-          <div><dt>Nexus ID</dt><dd title={asset?.assetId || ""}>{shortId(asset?.assetId)}</dd></div>
-          <div><dt>Roblox ID</dt><dd title={asset?.robloxAssetId || ""}>{shortId(asset?.robloxAssetId)}</dd></div>
-        </dl>
 
         <div className="asset-card__actions">
+          <details className="asset-card__more"><summary aria-label={`Actions for ${asset?.name || "asset"}`}>More</summary><div>
           {asset?.robloxAssetId ? (
             <Button size="sm" variant="ghost" icon={AnimatedCopyIcon} onClick={copyRobloxId} aria-label={`Copy Roblox asset ID ${asset.robloxAssetId}`}>
               Copy Roblox ID
@@ -86,7 +78,8 @@ export default function AssetCard({
           ) : null}
           {onSimilar ? <Button size="sm" variant="subtle" icon={AnimatedAssetIcon} disabled={Boolean(busyAction)} onClick={() => onSimilar(asset)}>Similar</Button> : null}
           {onReplace ? <Button size="sm" variant="subtle" icon={AnimatedRefreshIcon} disabled={Boolean(busyAction)} onClick={() => onReplace(asset)}>Replace</Button> : null}
-          {onOpen ? <Button size="sm" variant="ghost" iconRight={AnimatedExpandIcon} onClick={() => onOpen(asset)}>Details</Button> : null}
+          </div></details>
+          {onOpen ? <Button size="sm" variant="ghost" iconRight={AnimatedExpandIcon} onClick={() => onOpen(asset)}>Open asset</Button> : null}
         </div>
         <span className="sr-only" role="status" aria-live="polite">{copyStatus}</span>
       </div>

@@ -13,6 +13,7 @@ import {
   XCircle,
 } from "lib/icons";
 import { formatTaskRuntimeError } from "../../../lib/taskRuntimeApi";
+import StudioTaskApprovalCard from "./StudioTaskApprovalCard";
 import {
   getAuthorizedTaskActions,
   isTaskTerminal,
@@ -600,6 +601,7 @@ export default function TaskProgressPanel({
   onCancel,
   onAmend,
   onApprove,
+  onStudioApproved,
   className = "",
 }) {
   const [showAmendment, setShowAmendment] = useState(false);
@@ -623,7 +625,10 @@ export default function TaskProgressPanel({
     () => technicalProjection(task, steps, events),
     [task, steps, events],
   );
-  const actions = useMemo(() => getAuthorizedTaskActions(task), [task]);
+  const actions = useMemo(() => ({
+    ...getAuthorizedTaskActions(task),
+    ...(task?.studioExecution || task?.studioApproval ? { approve: false } : {}),
+  }), [task]);
   const failedSummary = useMemo(
     () => failedStepSummary(task, steps, actions),
     [task, steps, actions],
@@ -1029,6 +1034,15 @@ export default function TaskProgressPanel({
             {details.verificationCount === 1 ? "" : "s"}
           </p>
         </div>
+      )}
+
+      {!terminal && task.studioApproval && (
+        <StudioTaskApprovalCard
+          key={`${task.taskId}:${task.studioApproval.runId}:${task.studioApproval.stepId}`}
+          approval={task.studioApproval}
+          disabled={actionBusy}
+          onApproved={onStudioApproved}
+        />
       )}
 
       {(actions.approve && onApprove) ||

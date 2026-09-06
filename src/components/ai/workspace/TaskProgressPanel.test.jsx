@@ -2,6 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import TaskProgressPanel from "./TaskProgressPanel";
+jest.mock("../../../lib/workflowApi", () => ({ approveAgentStep: jest.fn() }));
 
 function task(overrides = {}) {
   return {
@@ -33,6 +34,20 @@ function task(overrides = {}) {
 }
 
 describe("TaskProgressPanel", () => {
+  test("Studio approval remains visible in canonical progress and hides generic Continue", () => {
+    const studioApproval = { runId: "studio_run", stepId: "studio_step", allowedActions: ["approve_step"],
+      step: { id: "studio_step", type: "write_script", label: "Build flight input", status: "awaiting_approval" } };
+    const { rerender } = render(<TaskProgressPanel
+      task={task({ status: "waiting_user", allowedActions: ["approve", "cancel"], studioApproval })}
+      onApprove={jest.fn()} onCancel={jest.fn()}
+    />);
+    expect(screen.getByRole("button", { name: /approve step/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /cancel task/i })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /^continue$/i })).toBeNull();
+    rerender(<TaskProgressPanel task={task({ status: "cancelled", studioApproval })} />);
+    expect(screen.queryByRole("button", { name: /approve step/i })).toBeNull();
+  });
+
   test("keeps a queued task visibly non-terminal while restoring progress", () => {
     render(
       <TaskProgressPanel

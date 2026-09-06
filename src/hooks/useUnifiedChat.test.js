@@ -12,9 +12,11 @@ import {
   approveWorkflowPlan,
   checkWorkflowPlanReadiness,
   orchestrate,
+  restoreWorkflowPlanVersion,
   startPlanExecution,
 } from "../lib/workflowApi";
 import { getProjectBinding } from "../lib/projectBindingsApi";
+import { getTask, retryTask, approveTask, cancelTask } from "../lib/taskRuntimeApi";
 import {
   classifyExecutionIntent,
   classifyUserIntent,
@@ -52,6 +54,7 @@ jest.mock("../lib/workflowApi", () => ({
   approveWorkflowPlan: jest.fn(),
   checkWorkflowPlanReadiness: jest.fn(),
   orchestrate: jest.fn(),
+  restoreWorkflowPlanVersion: jest.fn(),
   startPlanExecution: jest.fn(),
 }));
 
@@ -64,6 +67,10 @@ jest.mock("../lib/projectBindingsApi", () => ({
   }),
   getProjectBinding: jest.fn(),
   projectBindingRecoveryMessage: jest.fn(() => null),
+}));
+
+jest.mock("../lib/taskRuntimeApi", () => ({
+  getTask: jest.fn(), retryTask: jest.fn(), approveTask: jest.fn(), cancelTask: jest.fn(),
 }));
 
 jest.mock("../lib/planApproval", () => ({
@@ -144,6 +151,7 @@ describe("useUnifiedChat", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    setDoc.mockResolvedValue();
     getDoc.mockResolvedValue({ exists: () => false });
     FEATURE_FLAGS.legacyAgentFallback = true;
     FEATURE_FLAGS.newPlanningMode = false;
@@ -435,6 +443,19 @@ describe("useUnifiedChat", () => {
     expect(
       setDoc.mock.calls.some(([, payload]) => payload?.role === "assistant" && payload?.content === "Studio answer")
     ).toBe(true);
+    expect(createAgentRunV2).not.toHaveBeenCalled();
+  });
+
+  test("pins Plan mode when the first prompt creates a fresh conversation", async () => {
+    const startNewChat = jest.fn().mockResolvedValue("chat-new");
+    useAiChat.mockReturnValue({ ...useAiChat(), activeMode: "plan", startNewChat });
+    orchestrate.mockResolvedValue({ status: "needs_clarification", questions: [] });
+    const { result } = renderHook(() => useUnifiedChat({ uid: "user-1" }, {}, jest.fn(), jest.fn()));
+    await act(async () => {
+      await result.current.handleSubmit("Plan a simple flight game", [], null, { projectId: "project-1" });
+    });
+    expect(startNewChat).toHaveBeenCalledWith({ projectId: "project-1", mode: "plan" });
+    expect(orchestrate).toHaveBeenCalledWith(expect.objectContaining({ chatId: "chat-new", mode: "plan" }));
     expect(createAgentRunV2).not.toHaveBeenCalled();
   });
 
@@ -967,6 +988,230 @@ describe("useUnifiedChat", () => {
     await act(async () => {
       await submission;
     });
+  });
+
+  test("locks plan startup immediately and checks the current Studio connection", async () => {
+    FEATURE_FLAGS.newPlanningMode = true;
+    let releaseReadiness;
+    checkWorkflowPlanReadiness.mockReturnValue(new Promise((resolve) => { releaseReadiness = resolve; }));
+    useAiChat.mockReturnValue({
+      ...useAiChat(), currentChatId: "chat-1", activeMode: "plan",
+    });
+    startPlanExecution.mockResolvedValue({ status: "queued", execution: { taskId: "task-plan-1" } });
+    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
+    const plan = { id: "plan-message-1", planId: "plan-1", planVersion: 4, planHash: "hash-4", targeting: { studioConnected: false } };
+    let first, second;
+    await act(async () => {
+      first = result.current.approvePlan(plan, null, { studioConnected: true });
+      second = result.current.approvePlan(plan, null, { studioConnected: true });
+    });
+    expect(result.current.isGenerating).toBe(true);
+    expect(checkWorkflowPlanReadiness).toHaveBeenCalledTimes(1);
+    expect(checkWorkflowPlanReadiness).toHaveBeenCalledWith("plan-1", expect.objectContaining({ studioConnected: true }));
+    await act(async () => {
+      releaseReadiness({ ready: true, canExecute: true, blockers: [] });
+      await Promise.all([first, second]);
+    });
+    expect(startPlanExecution).toHaveBeenCalledTimes(1);
+    expect(result.current.isGenerating).toBe(false);
+  });
+
+  test("Stop during readiness prevents a late readiness response from starting the build", async () => {
+    FEATURE_FLAGS.newPlanningMode = true;
+    let releaseReadiness;
+    checkWorkflowPlanReadiness.mockReturnValue(new Promise((resolve) => { releaseReadiness = resolve; }));
+    useAiChat.mockReturnValue({ ...useAiChat(), currentChatId: "chat-1", activeMode: "plan" });
+    const notify = jest.fn();
+    const { result } = renderHook(() => useUnifiedChat({ uid: "user-1" }, {}, notify, jest.fn()));
+    let pending;
+    await act(async () => {
+      pending = result.current.approvePlan({ id: "message-1", planId: "plan-1", planVersion: 1, planHash: "hash-1" }).catch(error => error);
+    });
+    const { signal } = checkWorkflowPlanReadiness.mock.calls[0][1];
+    act(() => { expect(result.current.cancelCurrentFlow()).toBe(true); });
+    expect(signal.aborted).toBe(true);
+    let outcome;
+    await act(async () => {
+      releaseReadiness({ ready: true });
+      outcome = await pending;
+    });
+    expect(outcome.name).toBe("AbortError");
+    expect(startPlanExecution).not.toHaveBeenCalled();
+    expect(notify).not.toHaveBeenCalled();
+    expect(result.current.isGenerating).toBe(false);
+  });
+
+  test("Stop after dispatch waits for the accepted identity and cancels that same task", async () => {
+    FEATURE_FLAGS.newPlanningMode = true;
+    checkWorkflowPlanReadiness.mockResolvedValue({ ready: true });
+    let acknowledgeExecution;
+    startPlanExecution.mockReturnValue(new Promise(resolve => { acknowledgeExecution = resolve; }));
+    cancelTask.mockResolvedValue({ task: { taskId: "task-plan-1", status: "cancelled" } });
+    useAiChat.mockReturnValue({ ...useAiChat(), currentChatId: "chat-1", activeMode: "plan" });
+    const onTaskAccepted = jest.fn();
+    const { result } = renderHook(() => useUnifiedChat({ uid: "user-1" }, {}, jest.fn(), jest.fn()));
+    let pending;
+    await act(async () => {
+      pending = result.current.approvePlan({ id: "message-1", planId: "plan-1", planVersion: 1, planHash: "hash-1" }, null, { onTaskAccepted });
+    });
+    act(() => { result.current.cancelCurrentFlow(); });
+    expect(result.current.isGenerating).toBe(true);
+    expect(result.current.generationStage).toBe("Stopping build…");
+    await act(async () => {
+      acknowledgeExecution({ status: "queued", execution: { taskId: "task-plan-1" } });
+      await pending;
+    });
+    expect(startPlanExecution).toHaveBeenCalledTimes(1);
+    expect(cancelTask).toHaveBeenCalledWith("task-plan-1");
+    expect(onTaskAccepted).toHaveBeenLastCalledWith({ taskId: "task-plan-1", status: "cancelled" });
+    expect(result.current.isGenerating).toBe(false);
+  });
+
+  test("a late plan acknowledgment does not select its task in a different conversation", async () => {
+    FEATURE_FLAGS.newPlanningMode = true;
+    checkWorkflowPlanReadiness.mockResolvedValue({ ready: true });
+    let acknowledgeExecution;
+    startPlanExecution.mockReturnValue(new Promise(resolve => { acknowledgeExecution = resolve; }));
+    const originalChat = { ...useAiChat(), currentChatId: "chat-1", activeMode: "plan", updateChatMode: jest.fn() };
+    useAiChat.mockReturnValue(originalChat);
+    const onTaskAccepted = jest.fn();
+    const { result, rerender } = renderHook(() => useUnifiedChat({ uid: "user-1" }, {}, jest.fn(), jest.fn()));
+    let pending;
+    await act(async () => {
+      pending = result.current.approvePlan({ id: "message-1", planId: "plan-1", planVersion: 1, planHash: "hash-1" }, null, { onTaskAccepted });
+    });
+    useAiChat.mockReturnValue({ ...originalChat, currentChatId: "chat-2", activeMode: "ask" });
+    rerender();
+    await act(async () => {
+      acknowledgeExecution({ status: "queued", execution: { taskId: "task-plan-1" } });
+      await pending;
+    });
+    expect(onTaskAccepted).not.toHaveBeenCalled();
+    expect(originalChat.updateChatMode).toHaveBeenCalledWith("chat-1", "agent");
+    expect(result.current.isGenerating).toBe(false);
+  });
+
+  test("an uncertain launch explains how to reconnect without automatically creating another run", async () => {
+    FEATURE_FLAGS.newPlanningMode = true;
+    checkWorkflowPlanReadiness.mockResolvedValue({ ready: true });
+    startPlanExecution.mockRejectedValue(new TypeError("Failed to fetch"));
+    useAiChat.mockReturnValue({ ...useAiChat(), currentChatId: "chat-1", activeMode: "plan" });
+    const { result } = renderHook(() => useUnifiedChat({ uid: "user-1" }, {}, jest.fn(), jest.fn()));
+    await act(async () => {
+      await expect(result.current.approvePlan({ id: "message-1", planId: "plan-1", planVersion: 1, planHash: "hash-1" }))
+        .rejects.toMatchObject({ code: "PLAN_EXECUTION_UNCONFIRMED", message: expect.stringContaining("Retry this same saved plan") });
+    });
+    expect(startPlanExecution).toHaveBeenCalledTimes(1);
+  });
+
+  test("a failed planning request leaves a persistent explanation and retry instruction", async () => {
+    useAiChat.mockReturnValue({ ...useAiChat(), activeMode: "plan", currentChatId: "chat-1" });
+    orchestrate.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    const user = { uid: "user-1", getIdToken: jest.fn().mockResolvedValue("token") };
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
+    await act(async () => {
+      await result.current.handleSubmit("Make a flying game", [], null, { mode: "plan", projectId: "project-1" });
+    });
+    expect(setDoc.mock.calls.map(([, payload]) => payload)).toEqual(expect.arrayContaining([expect.objectContaining({
+      role: "assistant", status: "failed", content: expect.stringContaining("Retry as new attempt"),
+    })]));
+    expect(result.current.isGenerating).toBe(false);
+  });
+
+  test("continue follows the approved task instead of launching an unrelated inspection", async () => {
+    useAiChat.mockReturnValue({ ...useAiChat(), currentChatId: "chat-1", messages: [
+      { role: "assistant", stage: "plan_approved", taskId: "task-plan-1" },
+    ] });
+    const task = { taskId: "task-plan-1", status: "running" };
+    getTask.mockResolvedValue({ task, allowedActions: ["cancel", "amend"] });
+    const onTaskAccepted = jest.fn();
+    const { result } = renderHook(() => useUnifiedChat({ uid: "user-1" }, {}, jest.fn(), jest.fn()));
+    await act(async () => { await result.current.handleSubmit("continue", [], null, { onTaskAccepted }); });
+    expect(getTask).toHaveBeenCalledWith("task-plan-1");
+    expect(onTaskAccepted).toHaveBeenCalledWith(task);
+    expect(createAgentRunV2).not.toHaveBeenCalled();
+    expect(chatHandleSubmit).not.toHaveBeenCalled();
+    expect(retryTask).not.toHaveBeenCalled();
+    expect(approveTask).not.toHaveBeenCalled();
+  });
+
+  test("revising a stopped plan creates an unapproved exact-scope revision without retrying or executing its task", async () => {
+    const message = { id: "plan-message", stage: "plan_approved", planId: "plan-1", planVersion: 1, planHash: "hash-1", taskId: "task-1", originPrompt: "Build flight controls", projectId: "project-1" };
+    useAiChat.mockReturnValue({ ...useAiChat(), currentChatId: "chat-1", messages: [message], updateChatMode: jest.fn().mockResolvedValue() });
+    getTask.mockResolvedValue({ task: { taskId: "task-1", conversationId: "chat-1", status: "failed" }, allowedActions: [] });
+    restoreWorkflowPlanVersion.mockResolvedValue({ plan: { planId: "plan-1", version: 2, hash: "hash-2", status: "awaiting_approval",
+      aiSummary: "Flight controls", aiSteps: ["Build flight controls"], planMarkdown: "# Flight controls", structuredPlan: { targeting: { projectId: "project-1" } } } });
+    const { result } = renderHook(() => useUnifiedChat({ uid: "user-1" }, {}, jest.fn(), jest.fn()));
+    let revision;
+    await act(async () => { revision = await result.current.reviseStoppedPlan(message); });
+    expect(revision.activeChat).toBe(true);
+    expect(restoreWorkflowPlanVersion).toHaveBeenCalledWith("plan-1", { version: 1, hash: "hash-1", sourceVersion: 1, sourceHash: "hash-1" });
+    expect(setDoc.mock.calls.map(([, payload]) => payload)).toEqual(expect.arrayContaining([expect.objectContaining({
+      stage: "plan", planId: "plan-1", planVersion: 2, planHash: "hash-2", originPrompt: "Build flight controls",
+    })]));
+    expect(setDoc.mock.calls.find(([, payload]) => payload.stage === "plan")[1].taskId).toBeUndefined();
+    expect(retryTask).not.toHaveBeenCalled();
+    expect(approveTask).not.toHaveBeenCalled();
+    expect(startPlanExecution).not.toHaveBeenCalled();
+    expect(createAgentRunV2).not.toHaveBeenCalled();
+  });
+
+  test("plan revision checks canonical terminal state and original-chat membership before changing the saved plan", async () => {
+    const message = { id: "plan-message", stage: "plan_approved", planId: "plan-1", planVersion: 1, planHash: "hash-1", taskId: "task-1", executionStatus: "failed" };
+    useAiChat.mockReturnValue({ ...useAiChat(), currentChatId: "chat-1", messages: [message] });
+    getTask.mockResolvedValue({ task: { taskId: "task-1", status: "running" } });
+    const { result, rerender } = renderHook(() => useUnifiedChat({ uid: "user-1" }, {}, jest.fn(), jest.fn()));
+    await act(async () => { await expect(result.current.reviseStoppedPlan(message)).rejects.toThrow("still active"); });
+    expect(restoreWorkflowPlanVersion).not.toHaveBeenCalled();
+    useAiChat.mockReturnValue({ ...useAiChat(), currentChatId: "chat-2", messages: [] });
+    rerender();
+    await act(async () => { await expect(result.current.reviseStoppedPlan(message)).rejects.toThrow("original conversation"); });
+    expect(restoreWorkflowPlanVersion).not.toHaveBeenCalled();
+  });
+
+  test("plan revision is single-flight and a late result cannot focus another conversation", async () => {
+    const message = { id: "plan-message", stage: "plan_approved", planId: "plan-1", planVersion: 1, planHash: "hash-1", taskId: "task-1" };
+    const originalChat = { ...useAiChat(), currentChatId: "chat-1", messages: [message], updateChatMode: jest.fn().mockResolvedValue() };
+    useAiChat.mockReturnValue(originalChat);
+    getTask.mockResolvedValue({ task: { taskId: "task-1", status: "cancelled" } });
+    let finish;
+    restoreWorkflowPlanVersion.mockReturnValue(new Promise(resolve => { finish = resolve; }));
+    const { result, rerender } = renderHook(() => useUnifiedChat({ uid: "user-1" }, {}, jest.fn(), jest.fn()));
+    let first, second;
+    await act(async () => { first = result.current.reviseStoppedPlan(message); second = result.current.reviseStoppedPlan(message); });
+    expect(first).toBe(second);
+    expect(restoreWorkflowPlanVersion).toHaveBeenCalledTimes(1);
+    useAiChat.mockReturnValue({ ...originalChat, currentChatId: "chat-2", messages: [] });
+    rerender();
+    let revision;
+    await act(async () => {
+      finish({ planId: "plan-1", version: 2, hash: "hash-2", status: "awaiting_approval", aiSummary: "Flight" });
+      revision = await first;
+    });
+    expect(revision.activeChat).toBe(false);
+    expect(originalChat.updateChatMode).toHaveBeenCalledWith("chat-1", "plan");
+    expect(startPlanExecution).not.toHaveBeenCalled();
+  });
+
+  test("Stop while loading an approved task prevents Continue from retrying it afterward", async () => {
+    useAiChat.mockReturnValue({ ...useAiChat(), currentChatId: "chat-1", messages: [
+      { role: "assistant", stage: "plan_approved", taskId: "task-plan-1" },
+    ] });
+    let finishRead;
+    getTask.mockReturnValue(new Promise(resolve => { finishRead = resolve; }));
+    const user = { uid: "user-1" };
+    const onTaskAccepted = jest.fn();
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), jest.fn()));
+    let pending;
+    await act(async () => { pending = result.current.handleSubmit("continue", [], null, { onTaskAccepted }).catch(error => error); });
+    act(() => { result.current.cancelCurrentFlow(); });
+    await act(async () => {
+      finishRead({ task: { taskId: "task-plan-1", status: "failed" }, allowedActions: ["retry"] });
+      await pending;
+    });
+    expect(retryTask).not.toHaveBeenCalled();
+    expect(onTaskAccepted).not.toHaveBeenCalled();
   });
 
   test("persists the stable launch checkpoint before POST and attaches the run to the same message", async () => {

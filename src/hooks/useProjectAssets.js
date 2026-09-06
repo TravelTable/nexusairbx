@@ -19,7 +19,15 @@ function messageWithRequestId(err, fallback) {
   return err?.requestId ? `${message} (Request ID: ${err.requestId})` : message;
 }
 
-export function useProjectAssets(projectId, { enabled = true, notify } = {}) {
+function readDraftAssets(uid) {
+  if (!uid) return [];
+  try {
+    const value = JSON.parse(sessionStorage.getItem(`nexusrbx:draft-assets:${uid}`) || "[]");
+    return Array.isArray(value) ? value : [];
+  } catch { return []; }
+}
+
+export function useProjectAssets(projectId, { enabled = true, notify, ownerUid } = {}) {
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -30,7 +38,7 @@ export function useProjectAssets(projectId, { enabled = true, notify } = {}) {
 
   const refresh = useCallback(async () => {
     if (!enabled || !projectId) {
-      setAssets([]);
+      setAssets(enabled ? readDraftAssets(ownerUid) : []);
       setUploadSettings(null);
       setUploadStatus(EMPTY_UPLOAD_STATUS);
       setAccessBlockedError(null);
@@ -52,7 +60,7 @@ export function useProjectAssets(projectId, { enabled = true, notify } = {}) {
     } finally {
       setLoading(false);
     }
-  }, [enabled, projectId, notify]);
+  }, [enabled, projectId, notify, ownerUid]);
 
   useEffect(() => {
     refresh();
@@ -80,7 +88,11 @@ export function useProjectAssets(projectId, { enabled = true, notify } = {}) {
   }, [accessBlockedError, enabled, projectId, uploadStatus?.status]);
 
   const attachAssets = useCallback(async (nextAssets) => {
-    if (!projectId) throw new Error("Open a project before selecting assets.");
+    if (!projectId) {
+      setAssets(nextAssets);
+      try { sessionStorage.setItem(`nexusrbx:draft-assets:${ownerUid}`, JSON.stringify(nextAssets)); } catch { /* Optional recovery. */ }
+      return { assets: nextAssets };
+    }
     setSaving(true);
     try {
       const data = await attachProjectAssets(projectId, nextAssets);
@@ -93,10 +105,22 @@ export function useProjectAssets(projectId, { enabled = true, notify } = {}) {
     } finally {
       setSaving(false);
     }
-  }, [projectId, notify]);
+  }, [projectId, notify, ownerUid]);
+
+  const attachDraftAssets = useCallback(async (chatId) => {
+    const draft = readDraftAssets(ownerUid);
+    const pending = draft.length ? draft : !projectId ? assets : [];
+    if (!pending.length) return;
+    // The assets endpoint uses the chat namespace, not the organizational project ID.
+    const data = await attachProjectAssets(chatId, pending);
+    try { sessionStorage.removeItem(`nexusrbx:draft-assets:${ownerUid}`); } catch { /* Optional recovery. */ }
+    setAssets(Array.isArray(data.assets) ? data.assets : pending);
+  }, [assets, ownerUid, projectId]);
 
   const removeAsset = useCallback(async (assetId) => {
-    if (!projectId) return;
+    if (!projectId) {
+      return attachAssets(assets.filter((asset) => String(asset.assetId) !== String(assetId)));
+    }
     const previous = assets;
     setAssets((current) => current.filter((asset) => String(asset.assetId) !== String(assetId)));
     try {
@@ -108,7 +132,7 @@ export function useProjectAssets(projectId, { enabled = true, notify } = {}) {
       notify?.({ type: "error", message: err?.message || "Failed to remove asset" });
       throw err;
     }
-  }, [assets, projectId, notify]);
+  }, [assets, projectId, notify, attachAssets]);
 
   const setAutoUploadEnabled = useCallback(async (enabledValue) => {
     if (!projectId) throw new Error("Open a project before enabling generated asset uploads.");
@@ -139,6 +163,7 @@ export function useProjectAssets(projectId, { enabled = true, notify } = {}) {
     accessBlockedError,
     refresh,
     attachAssets,
+    attachDraftAssets,
     removeAsset,
     setAutoUploadEnabled,
   };

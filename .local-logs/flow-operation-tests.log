@@ -1,0 +1,113 @@
+TAP version 13
+# (node:33224) Warning: Accessing non-existent property 'publicOperation' of module exports inside circular dependency
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: operation persistence failure sends an error instead of hanging (200)
+ok 1 - operation persistence failure sends an error instead of hanging (200)
+  ---
+  duration_ms: 10.2522
+  ...
+# (node:33224) Warning: Accessing non-existent property 'publicOperation' of module exports inside circular dependency
+# Subtest: operation persistence failure sends an error instead of hanging (502)
+ok 2 - operation persistence failure sends an error instead of hanging (502)
+  ---
+  duration_ms: 1.32
+  ...
+# Subtest: execution ignores browser project, target, Studio, and asset tampering
+ok 3 - execution ignores browser project, target, Studio, and asset tampering
+  ---
+  duration_ms: 2.4177
+  ...
+# Subtest: plan fence rejects stale versions and hashes
+ok 4 - plan fence rejects stale versions and hashes
+  ---
+  duration_ms: 0.8914
+  ...
+# Subtest: plan execution follows the original chat and ignores a browser chat override
+ok 5 - plan execution follows the original chat and ignores a browser chat override
+  ---
+  duration_ms: 0.9022
+  ...
+# Subtest: readiness blockers reject execution while advisory warnings remain executable
+ok 6 - readiness blockers reject execution while advisory warnings remain executable
+  ---
+  duration_ms: 0.3359
+  ...
+# Subtest: repeat execution requests produce deterministic idempotency identities
+ok 7 - repeat execution requests produce deterministic idempotency identities
+  ---
+  duration_ms: 0.5265
+  ...
+# Subtest: approved plan compilation preserves trusted context for canonical task launch
+ok 8 - approved plan compilation preserves trusted context for canonical task launch
+  ---
+  duration_ms: 0.3523
+  ...
+# Subtest: approved plan compilation rejects a mismatched immutable reference
+ok 9 - approved plan compilation rejects a mismatched immutable reference
+  ---
+  duration_ms: 0.4487
+  ...
+# Subtest: plan hashes bind exact id, version, scope, markdown, steps, and assumptions
+ok 10 - plan hashes bind exact id, version, scope, markdown, steps, and assumptions
+  ---
+  duration_ms: 2.8971
+  ...
+# Subtest: approved versions are immutable value documents
+ok 11 - approved versions are immutable value documents
+  ---
+  duration_ms: 0.2989
+  ...
+# Subtest: approved plan execution requires the caller to present the exact hash
+ok 12 - approved plan execution requires the caller to present the exact hash
+  ---
+  duration_ms: 1.3546
+  ...
+# Subtest: approved plan execution rejects a version that is no longer current
+ok 13 - approved plan execution rejects a version that is no longer current
+  ---
+  duration_ms: 0.7298
+  ...
+# Subtest: approved plan execution requires the root plan to remain approved
+ok 14 - approved plan execution requires the root plan to remain approved
+  ---
+  duration_ms: 0.5596
+  ...
+# Subtest: approved plan execution rejects root approval version and hash mismatches
+ok 15 - approved plan execution rejects root approval version and hash mismatches
+  ---
+  duration_ms: 0.8147
+  ...
+# Subtest: approved plan execution rejects a mismatched current root hash
+ok 16 - approved plan execution rejects a mismatched current root hash
+  ---
+  duration_ms: 0.4722
+  ...
+# Subtest: approved plan execution validates stored approval status and content integrity
+ok 17 - approved plan execution validates stored approval status and content integrity
+  ---
+  duration_ms: 0.5791
+  ...
+# Subtest: approved plan execution returns a trusted immutable v2 plan
+ok 18 - approved plan execution returns a trusted immutable v2 plan
+  ---
+  duration_ms: 0.8632
+  ...
+# Subtest: legacy approved version-one roots remain executable when all approval hashes match
+ok 19 - legacy approved version-one roots remain executable when all approval hashes match
+  ---
+  duration_ms: 0.8793
+  ...
+# Subtest: structured plan hash and approved loader preserve game intelligence
+ok 20 - structured plan hash and approved loader preserve game intelligence
+  ---
+  duration_ms: 17.3066
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 172.0875

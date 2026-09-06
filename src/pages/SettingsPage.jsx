@@ -172,7 +172,7 @@ const SECTION_META = {
   },
 };
 
-const ADMIN_GROUP = { label: "Developer", items: [{ id: "admin", label: "Admin", icon: Shield, searchTerms: "users tokens audit developer" }] };
+const ADMIN_GROUP = { label: "Administration", items: [{ id: "admin", label: "Admin tools", icon: Shield, searchTerms: "users tokens audit developer" }] };
 const RETRYABLE_ROBLOX_MESSAGE =
   "Roblox connection is temporarily unavailable while the database is busy. Existing connection data is preserved.";
 const CODE_STYLE_OPTIONS = [
@@ -1197,8 +1197,8 @@ export default function SettingsPage() {
       </Panel>
 
       <Panel
-        title="Roblox OAuth"
-        description="Your Roblox identity, authorized creator targets, scopes, and token health. OAuth credentials never appear here."
+        title="Roblox account"
+        description="Manage your connected account and where your creations are published."
         actions={
           <Button type="button" variant="outline" size="sm" onClick={loadRoblox}>
             <RefreshCcw className="h-4 w-4" />
@@ -1227,10 +1227,10 @@ export default function SettingsPage() {
         )}
         {robloxState.status !== "loading" && (
           <div className="space-y-5">
-            <div className="flex flex-col gap-3 rounded-lg border border-border p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="settings-roblox-identity">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="settings-ledger-state" data-tone={robloxConnected ? "success" : "neutral"}>
+                  <span className="settings-connection-status" data-tone={robloxConnected ? "success" : "neutral"}>
                     {robloxConnected ? "Connected" : "Disconnected"}
                   </span>
                   {selectedCreator && <span className="settings-ledger-term">{selectedCreator.type} {selectedCreator.id}</span>}

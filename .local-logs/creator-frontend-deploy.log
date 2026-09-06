@@ -1,0 +1,39 @@
+Vercel CLI 59.11.7 (Node.js 22.14.0)
+Deploying nexusairbx
+Uploading [--------------------] (0.0B/3.9MB)
+Uploading [=====---------------] (1023.1KB/3.9MB)
+{
+  "status": "error",
+  "reason": "deploy_failed",
+  "message": "Unexpected token '<', \"<html>\r\n<h\"... is not valid JSON",
+  "next": [
+    {
+      "command": "vercel deploy",
+      "when": "retry deploy"
+    }
+  ]
+}
+Error: Unexpected token '<', "<html>
+<h"... is not valid JSON
+Error: An unexpected error occurred!
+AbortError: This operation was aborted
+    at node:internal/deps/undici/undici:13502:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async fetchApi (file:///C:/Users/jackt/AppData/Local/npm-cache/_npx/69f9afb961c37556/node_modules/vercel/dist/chunks/chunk-G3PXSXIB.js:10980:21)
+    at async uploadList.<computed>.retries (file:///C:/Users/jackt/AppData/Local/npm-cache/_npx/69f9afb961c37556/node_modules/vercel/dist/chunks/chunk-G3PXSXIB.js:12062:27)
+Error: An unexpected error occurred!
+AbortError: This operation was aborted
+    at node:internal/deps/undici/undici:13502:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async fetchApi (file:///C:/Users/jackt/AppData/Local/npm-cache/_npx/69f9afb961c37556/node_modules/vercel/dist/chunks/chunk-G3PXSXIB.js:10980:21)
+    at async uploadList.<computed>.retries (file:///C:/Users/jackt/AppData/Local/npm-cache/_npx/69f9afb961c37556/node_modules/vercel/dist/chunks/chunk-G3PXSXIB.js:12062:27)
+Error: An unexpected error occurred!
+Error: Upload aborted
+    at uploadList.<computed>.retries (file:///C:/Users/jackt/AppData/Local/npm-cache/_npx/69f9afb961c37556/node_modules/vercel/dist/chunks/chunk-G3PXSXIB.js:12023:27)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+Error: An unexpected error occurred!
+Error: Upload aborted
+    at uploadList.<computed>.retries (file:///C:/Users/jackt/AppData/Local/npm-cache/_npx/69f9afb961c37556/node_modules/vercel/dist/chunks/chunk-G3PXSXIB.js:12023:27)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+Uploading [==========----------] (2.0MB/3.9MB)
+Uploading [===============-----] (3.0MB/3.9MB)

@@ -3,11 +3,14 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 
 import UiCreatorWorkspace from "./UiCreatorWorkspace";
 import {
+  compileUiDesign,
+  createUiCheckpoint,
   generateUiDraft,
   getUiDesign,
   listUiDesigns,
   patchUiDesign,
 } from "../../../lib/uiDesignApi";
+import { getStudioCommand, queueStudioTool } from "../../../lib/studioBridgeApi";
 import { getAssetFileBlob } from "../../../lib/assetPlatformApi";
 
 jest.mock("@headless-tree/core", () => ({
@@ -390,4 +393,30 @@ test("uses focus-managed drawers and an overflow menu on compact viewports", asy
   fireEvent.keyDown(document, { key: "Escape" });
   await waitFor(() => expect(screen.queryByRole("dialog", { name: "Inspector" })).not.toBeInTheDocument());
   await waitFor(() => expect(screen.getByRole("button", { name: "Open inspector" })).toHaveFocus());
+});
+
+
+test("a failed code preview stops retrying until the creator retries", async () => {
+  compileUiDesign.mockRejectedValue(new Error("Compiler unavailable"));
+  render(<UiCreatorWorkspace user={{ uid: "user-1" }} projectId="project-1" isStarterOrAbove notify={jest.fn()} />);
+  await screen.findByRole("tab", { name: "Code" });
+  fireEvent.click(screen.getByRole("tab", { name: "Code" }));
+  await screen.findByRole("button", { name: "Retry code preview" });
+  expect(compileUiDesign).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole("button", { name: "Retry code preview" }));
+  await waitFor(() => expect(compileUiDesign).toHaveBeenCalledTimes(2));
+});
+
+test("Studio apply snapshots first and only reports verified receipt success", async () => {
+  const notify = jest.fn();
+  const document = makeDocument("revision-1");
+  compileUiDesign.mockResolvedValue({ document, studioReady: true, compiled: { files: [] } });
+  createUiCheckpoint.mockResolvedValue({});
+  queueStudioTool.mockResolvedValue({ commandId: "apply-test" });
+  getStudioCommand.mockResolvedValue({ status: "succeeded", result: { uiRoots: [{ nodeCount: 3, treeHash: "verified-tree" }], snapshots: ["snapshot-1"] } });
+  render(<UiCreatorWorkspace user={{ uid: "user-1" }} projectId="project-1" studio={{ connected: true }} studioSessionId="studio-1" isStarterOrAbove notify={notify} />);
+  fireEvent.click(await screen.findByRole("button", { name: "Apply to Studio" }));
+  await screen.findByText("Studio apply verified");
+  expect(createUiCheckpoint.mock.invocationCallOrder[0]).toBeLessThan(queueStudioTool.mock.invocationCallOrder[0]);
+  expect(notify).toHaveBeenCalledWith(expect.objectContaining({ type: "success", message: "Editable UI applied and verified in Studio." }));
 });

@@ -1,0 +1,170 @@
+TAP version 13
+# Subtest: planner transport sends required JSON Schema and reports actual completion metadata
+ok 1 - planner transport sends required JSON Schema and reports actual completion metadata
+  ---
+  duration_ms: 6.7156
+  ...
+# Subtest: required structured output is never downgraded when direct fallback rejects its format
+ok 2 - required structured output is never downgraded when direct fallback rejects its format
+  ---
+  duration_ms: 4.3031
+  ...
+# Subtest: rejects a model whose active endpoints cannot enforce an output ceiling
+ok 3 - rejects a model whose active endpoints cannot enforce an output ceiling
+  ---
+  duration_ms: 3.4214
+  ...
+# Subtest: sanitizes optional parameters to the common active endpoint capabilities
+ok 4 - sanitizes optional parameters to the common active endpoint capabilities
+  ---
+  duration_ms: 2.1847
+  ...
+# Subtest: a model removed from the live catalog is immediately inactive
+ok 5 - a model removed from the live catalog is immediately inactive
+  ---
+  duration_ms: 0.6734
+  ...
+# Subtest: required gateway JSON Schema survives native endpoint metadata without response_format
+ok 6 - required gateway JSON Schema survives native endpoint metadata without response_format
+  ---
+  duration_ms: 1.4281
+  ...
+# Subtest: deliverable references bind to real steps and normalize idempotently
+ok 7 - deliverable references bind to real steps and normalize idempotently
+  ---
+  duration_ms: 15.2238
+  ...
+# Subtest: legacy game intelligence stays byte-compatible during plan hydration
+ok 8 - legacy game intelligence stays byte-compatible during plan hydration
+  ---
+  duration_ms: 1.7365
+  ...
+# Subtest: structured plans keep stable section and step identities
+ok 9 - structured plans keep stable section and step identities
+  ---
+  duration_ms: 4.028
+  ...
+# Subtest: derived steps remain dependency-free when the planner does not claim ordering
+ok 10 - derived steps remain dependency-free when the planner does not claim ordering
+  ---
+  duration_ms: 5.4816
+  ...
+# Subtest: derived plans repair unique title dependencies to stable step IDs
+ok 11 - derived plans repair unique title dependencies to stable step IDs
+  ---
+  duration_ms: 2.1886
+  ...
+# Subtest: conversation plans include a rendered Mermaid workflow before implementation steps
+ok 12 - conversation plans include a rendered Mermaid workflow before implementation steps
+  ---
+  duration_ms: 3.721
+  ...
+# Subtest: rich plans render stages, decisions, file targets, every verification, and rollback
+ok 13 - rich plans render stages, decisions, file targets, every verification, and rollback
+  ---
+  duration_ms: 1.592
+  ...
+# Subtest: preserves the selected Studio target identity but not browser capability claims
+ok 14 - preserves the selected Studio target identity but not browser capability claims
+  ---
+  duration_ms: 1.4068
+  ...
+# Subtest: non-Studio plans default to runtime verification without requiring Studio
+ok 15 - non-Studio plans default to runtime verification without requiring Studio
+  ---
+  duration_ms: 2.5184
+  ...
+# Subtest: Studio capabilities infer Studio targeting and Studio validation
+ok 16 - Studio capabilities infer Studio targeting and Studio validation
+  ---
+  duration_ms: 1.6532
+  ...
+# Subtest: unsupported capability promises are removed from generated plans and templates
+ok 17 - unsupported capability promises are removed from generated plans and templates
+  ---
+  duration_ms: 1.0872
+  ...
+# Subtest: plan operations edit and reorder individual sections without replacing the plan
+ok 18 - plan operations edit and reorder individual sections without replacing the plan
+  ---
+  duration_ms: 4.7227
+  ...
+# Subtest: locked sections reject edits until explicitly unlocked
+ok 19 - locked sections reject edits until explicitly unlocked
+  ---
+  duration_ms: 4.2876
+  ...
+# Subtest: clarifications are contextual typed choices and capped to material questions
+ok 20 - clarifications are contextual typed choices and capped to material questions
+  ---
+  duration_ms: 0.4439
+  ...
+# Subtest: all required NexusRBX planning templates are available
+ok 21 - all required NexusRBX planning templates are available
+  ---
+  duration_ms: 0.1126
+  ...
+# Subtest: strict planner output validation accepts a complete ready plan
+ok 22 - strict planner output validation accepts a complete ready plan
+  ---
+  duration_ms: 0.9795
+  ...
+# Subtest: planner accepts one complete JSON fence while retaining strict validation
+ok 23 - planner accepts one complete JSON fence while retaining strict validation
+  ---
+  duration_ms: 1.2684
+  ...
+# Subtest: invalid JSON diagnostics describe syntax without leaking model content
+ok 24 - invalid JSON diagnostics describe syntax without leaking model content
+  ---
+  duration_ms: 0.292
+  ...
+# Subtest: plan overview does not display an internal project identifier
+ok 25 - plan overview does not display an internal project identifier
+  ---
+  duration_ms: 1.4635
+  ...
+# Subtest: ready output rejects missing game intelligence and mode-specific contracts
+ok 26 - ready output rejects missing game intelligence and mode-specific contracts
+  ---
+  duration_ms: 0.6181
+  ...
+# Subtest: game intelligence and expected source hashes survive plan normalization and serialization
+ok 27 - game intelligence and expected source hashes survive plan normalization and serialization
+  ---
+  duration_ms: 2.7498
+  ...
+# Subtest: invalid or truncated planner JSON fails closed
+ok 28 - invalid or truncated planner JSON fails closed
+  ---
+  duration_ms: 0.2308
+  ...
+# Subtest: planner output without implementation work cannot create a plan
+ok 29 - planner output without implementation work cannot create a plan
+  ---
+  duration_ms: 0.2529
+  ...
+# Subtest: a clarification response is rejected after answers were supplied
+ok 30 - a clarification response is rejected after answers were supplied
+  ---
+  duration_ms: 0.3189
+  ...
+# Subtest: deterministic planner fallback uses only advertised capabilities and remains schema-valid
+ok 31 - deterministic planner fallback uses only advertised capabilities and remains schema-valid
+  ---
+  duration_ms: 0.9162
+  ...
+# Subtest: deterministic planner fallback remains valid when no capabilities are advertised
+ok 32 - deterministic planner fallback remains valid when no capabilities are advertised
+  ---
+  duration_ms: 0.4912
+  ...
+1..32
+# tests 32
+# suites 0
+# pass 32
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 237.5742

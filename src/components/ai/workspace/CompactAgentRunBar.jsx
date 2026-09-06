@@ -3,6 +3,7 @@ import { CheckCircle2, Loader2, ShieldAlert, XCircle } from "lib/icons";
 import AgentStepList from "./AgentStepList";
 
 const ACTIVE_STATUSES = new Set([
+  "accepted", "planning", "queued", "running", "verifying", "retry_scheduled",
   "inspecting",
   "waiting_for_tool",
   "waiting_for_approval",
@@ -16,6 +17,9 @@ const ACTIVE_STATUSES = new Set([
 ]);
 
 const STATUS_META = {
+  waiting_user: { label: "Build needs your answer or approval", tone: "warning" },
+  blocked_studio: { label: "Build paused — reconnect Studio", tone: "warning" },
+  waiting_external: { label: "Build is waiting for an external operation", tone: "warning" },
   applied: { label: "Applied to Studio", tone: "success" },
   succeeded: { label: "Studio run completed", tone: "success" },
   completed: { label: "Studio run completed", tone: "success" },

@@ -29,7 +29,6 @@ import {
 } from "../../../lib/composerCommands";
 import { messageHasRefineableFiles } from "../../../lib/chatRefine";
 import { BorderBeam } from "../../ui/border-beam";
-import { Alert, AlertContent, AlertDescription, AlertIcon, AlertTitle } from "../../ui/alert-1";
 import { AppleStyleDock } from "./AppleStyleDock";
 import {
   AnimatedGenerateIcon,
@@ -429,6 +428,7 @@ export default function ChatComposer({
   renderDockNavigation,
   showDock = true,
   studioConnectionRequired = true,
+  notify,
   modeControl,
   showModeSelector = true,
   showWorkspaceOptions = true,
@@ -450,7 +450,6 @@ export default function ChatComposer({
   const [mentionIndex, setMentionIndex] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [studioAlertDismissed, setStudioAlertDismissed] = useState(false);
   const textareaRef = useRef(null);
   const wasGeneratingRef = useRef(Boolean(isGenerating));
   const fileInputRef = useRef(null);
@@ -483,7 +482,7 @@ export default function ChatComposer({
   const studioStatusLabel = studioRuntimeConnected
     ? `Studio ready${normalizedStudioPlaceName ? ` — ${normalizedStudioPlaceName}` : ""}`
     : studioConnectionState === "plugin_update_required"
-      ? "Studio plugin update required"
+      ? "Studio update available"
       : studioConnectionState === "capabilities_unavailable"
         ? "Studio tools unavailable"
         : "Studio disconnected";
@@ -494,18 +493,6 @@ export default function ChatComposer({
       : studioConnectionState === "capabilities_unavailable"
         ? "Studio is connected, but the selected target has not advertised executable commands"
         : "Connect a Studio provider to apply changes";
-  const studioBuildBlocked =
-    studioConnectionRequired &&
-    !attachments.some(file => file.versionId) &&
-    ["agent", "debug"].includes(normalizedMode) &&
-    !studioRuntimeConnected;
-  const studioBlockerMessage = studioConnectionState === "plugin_update_required"
-    ? "Update the Studio plugin to apply changes."
-    : "Connect Studio to apply changes.";
-
-  useEffect(() => {
-    if (!studioBuildBlocked) setStudioAlertDismissed(false);
-  }, [studioBuildBlocked]);
   const draftSignature = JSON.stringify({
     prompt: String(prompt || ""),
     attachments: attachments.map((file) => [file?.id || file?.name || "", file?.versionId || "", file?.status || "", file?.size || 0]),
@@ -706,20 +693,20 @@ export default function ChatComposer({
   const submitQuickRefine = useCallback(
     (text) => {
       const next = String(text || "").trim();
-      if (!next || disabled || studioBuildBlocked) return;
+      if (!next || disabled) return;
       ignoreHandledError(onSubmit?.(null, next, {
         draftRevision: `quick-refine:${draftRevision}:${next}`,
       }));
     },
-    [disabled, draftRevision, onSubmit, studioBuildBlocked]
+    [disabled, draftRevision, onSubmit]
   );
 
   const submitDraft = useCallback(
     (event = null, { interrupt = false } = {}) => {
-      if (disabled || studioBuildBlocked || !canSendWithContext) return undefined;
+      if (disabled || !canSendWithContext) return undefined;
       return ignoreHandledError(onSubmit?.(event, null, { draftRevision, interrupt }));
     },
-    [canSendWithContext, disabled, draftRevision, onSubmit, studioBuildBlocked]
+    [canSendWithContext, disabled, draftRevision, onSubmit]
   );
 
   const applyMentionCommand = useCallback(
@@ -1061,38 +1048,6 @@ export default function ChatComposer({
         {attachments.some(file => file.status || file.versionId) && <div className="grid max-h-72 grid-cols-1 gap-2 overflow-y-auto border-b border-[var(--ds-border-subtle)] p-2 sm:grid-cols-2" aria-label="Attached files">
           {attachments.map((file, index) => (file.status || file.versionId) && <AttachmentCard key={file.localId || `${file.id}:${file.versionId}`} file={file} onRemove={() => removeAttachment(index)} onRetry={() => onRetryAttachment?.(file)} onPublish={onPublishAttachment ? () => onPublishAttachment(file) : undefined} studioSessionId={studioSessionId} studioConnected={studioConnected} />)}
         </div>}
-        {studioBuildBlocked && !studioAlertDismissed ? (
-          <Alert
-            variant="warning"
-            close
-            onClose={() => setStudioAlertDismissed(true)}
-            aria-live="polite"
-            className="border-x-0 border-t-0 text-[11px]"
-          >
-            <AlertIcon>
-              <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
-            </AlertIcon>
-            <AlertContent className="flex min-w-0 items-center gap-2">
-              <AlertDescription className="min-w-0 flex-1">
-                <AlertTitle className="inline">Build paused.</AlertTitle>{" "}
-                {studioBlockerMessage}
-              </AlertDescription>
-            <button
-              type="button"
-              onClick={(event) => {
-                closeControls();
-                onStudioConnectionOpen?.(event.currentTarget);
-              }}
-              aria-haspopup="dialog"
-              aria-controls="studio-connection-dialog"
-              className="inline-flex min-h-11 shrink-0 items-center rounded-md border border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)] px-2 font-bold transition-colors hover:bg-[color-mix(in_srgb,var(--ds-warning)_16%,transparent)] focus-ring xl:min-h-8"
-            >
-              Connect Studio
-            </button>
-            </AlertContent>
-          </Alert>
-        ) : null}
-
         {refineTarget ? (
           <div className="border-b border-[var(--ds-border-subtle)] px-2 py-1.5">
             <RefineChips onRefine={submitQuickRefine} isRefining={isGenerating} />
@@ -1220,16 +1175,16 @@ export default function ChatComposer({
                 id="tour-generate-button"
                 data-tour="generate-btn"
                 onClick={(event) => (isGenerating ? onStop?.() : submitDraft(event))}
-                disabled={isGenerating ? disabled || !onStop : disabled || studioBuildBlocked || !canSendWithContext}
+                disabled={isGenerating ? disabled || !onStop : disabled || !canSendWithContext}
                 className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition-[background-color,color,opacity,transform] duration-150 active:scale-95 focus-ring disabled:opacity-40 disabled:active:scale-100 xl:h-9 xl:w-9 ${
                   isGenerating
                     ? "border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] text-[var(--ds-danger)] hover:bg-[color-mix(in_srgb,var(--ds-danger)_20%,transparent)]"
                     : "bg-primary text-primary-foreground hover:opacity-90"
                 }`}
                 aria-label={
-                  isGenerating ? "Stop generation" : studioBuildBlocked ? studioBlockerMessage : submitLabel
+                  isGenerating ? "Stop generation" : submitLabel
                 }
-                title={isGenerating ? "Stop generation" : studioBuildBlocked ? studioBlockerMessage : submitLabel}
+                title={isGenerating ? "Stop generation" : submitLabel}
               >
                 {isGenerating ? (
                   <Loader className="h-4 w-4 animate-spin" aria-hidden="true" />

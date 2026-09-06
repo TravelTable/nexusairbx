@@ -130,9 +130,9 @@ export default function UniversalSiteIndex({
       </div>
       <div className={styles.indexBody}>
         <div className={styles.indexIntro}>
-          <span className={styles.indexEyebrow}>NEXUS DIRECTORY</span>
-          <h1 className="nx-route-heading">Where do you want to go?</h1>
-          <p>Create, find assets, connect Studio, or manage your NexusRBX account.</p>
+          <span className={styles.indexEyebrow}>CREATOR TOOLS</span>
+          <h1 className="nx-route-heading">Make something playable.</h1>
+          <p>Your creation tools, assets, and Studio resources in one place.</p>
           <label className={styles.indexSearch}>
             <Search aria-hidden="true" size={17} strokeWidth={1.8} />
             <span className={styles.srOnly}>Search tools and routes</span>

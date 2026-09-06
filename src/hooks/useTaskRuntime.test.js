@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import {
   TaskRuntimeError,
+  cancelTask,
   getTask,
   getTaskEvents,
   listTasks,
@@ -214,6 +215,27 @@ describe("useTaskRuntime", () => {
       { stepId: "step_1" },
       { requestId: "req_retry" }
     );
+  });
+
+  test("a late cancellation result cannot replace the task in a different chat", async () => {
+    let finishCancellation;
+    cancelTask.mockReturnValue(new Promise(resolve => { finishCancellation = resolve; }));
+    getTask.mockResolvedValue({ task: runningTask({ allowedActions: ["cancel"] }) });
+    const { result, rerender } = renderHook(({ chatId, taskId }) => useTaskRuntime({
+      userId: "user_1", projectId: "project_1", chatId, taskId,
+    }), { initialProps: { chatId: "chat_1", taskId: "task_1" } });
+    await waitFor(() => expect(result.current.authorizedActions.cancel).toBe(true));
+    let cancellation;
+    act(() => { cancellation = result.current.cancel(); });
+    rerender({ chatId: "chat_2", taskId: "" });
+    await waitFor(() => expect(result.current.task).toBeNull());
+    await act(async () => {
+      finishCancellation({ task: runningTask({ status: "cancelled" }) });
+      await cancellation;
+    });
+    expect(result.current.task).toBeNull();
+    expect(result.current.taskId).toBe("");
+    expect(result.current.busyAction).toBe("");
   });
 
   test("rejects a client action that was not server-authorized", async () => {

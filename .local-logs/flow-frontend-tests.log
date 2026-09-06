@@ -1,0 +1,790 @@
+npm warn "src/components/ai/chat/FlowCards.test.jsx" is being parsed as a normal command line argument.
+npm warn Unknown cli config "--watchAll". This will stop working in the next major version of npm.
+npm warn Unknown cli config "--runTestsByPath". This will stop working in the next major version of npm.
+
+> nexusrbx-react@0.1.0 test
+> react-scripts test src/components/ai/chat/FlowCards.test.jsx src/lib/clarificationAnswers.test.js src/hooks/useUnifiedChat.test.js src/hooks/useAiChat.test.js src/lib/workflowApi.test.js src/lib/chatDecisionDisplay.test.js
+
+PASS src/lib/clarificationAnswers.test.js
+PASS src/lib/workflowApi.test.js
+PASS src/lib/chatDecisionDisplay.test.js
+PASS src/hooks/useUnifiedChat.test.js
+  ● Console
+
+    console.error
+      Approve/generate error: Error: The build could not be confirmed and may already be running. Retry this same saved plan to reconnect to its existing build.
+          at C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\src\hooks\useUnifiedChat.js:1060:31
+          at Object.approvePlan (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\src\hooks\useUnifiedChat.js:1944:16)
+          at C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\src\hooks\useUnifiedChat.test.js:1063:7 {
+        code: 'PLAN_EXECUTION_UNCONFIRMED',
+        cause: TypeError: Failed to fetch
+            at Object.<anonymous> (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\src\hooks\useUnifiedChat.test.js:1059:42)
+            at Promise.then.completed (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\utils.js:391:28)
+            at new Promise (<anonymous>)
+            at callAsyncCircusFn (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\utils.js:316:10)
+            at _callCircusTest (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\run.js:218:40)
+            at _runTest (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\run.js:155:3)
+            at _runTestsForDescribeBlock (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\run.js:66:9)
+            at _runTestsForDescribeBlock (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\run.js:60:9)
+            at run (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\run.js:25:3)
+            at runAndTransformResultsToJestFormat (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:170:21)
+            at jestAdapter (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:82:19)
+            at runTestInternal (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-runner\build\runTest.js:389:16)
+            at runTest (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-runner\build\runTest.js:475:34)
+            at Object.worker (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-runner\build\testWorker.js:133:12)
+      }
+
+      1945 |       } catch (err) {
+      1946 |         if (err?.name === "AbortError") throw err;
+    > 1947 |         console.error("Approve/generate error:", err);
+           |                 ^
+      1948 |         notify?.({
+      1949 |           message: err?.message || "Build failed. You can try again.",
+      1950 |           type: "error",
+
+      at Object.approvePlan (src/hooks/useUnifiedChat.js:1947:17)
+      at src/hooks/useUnifiedChat.test.js:1063:7
+
+    console.error
+      Orchestration error: TypeError: Failed to fetch
+          at Object.<anonymous> (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\src\hooks\useUnifiedChat.test.js:1071:39)
+          at Promise.then.completed (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\utils.js:391:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\utils.js:316:10)
+          at _callCircusTest (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\run.js:218:40)
+          at _runTest (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\run.js:155:3)
+          at _runTestsForDescribeBlock (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\run.js:66:9)
+          at _runTestsForDescribeBlock (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\run.js:60:9)
+          at run (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\run.js:25:3)
+          at runAndTransformResultsToJestFormat (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:170:21)
+          at jestAdapter (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:82:19)
+          at runTestInternal (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-runner\build\runTest.js:389:16)
+          at runTest (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-runner\build\runTest.js:475:34)
+          at Object.worker (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-runner\build\testWorker.js:133:12)
+
+      1765 |         } catch (err) {
+      1766 |           if (!isAbortError(err)) {
+    > 1767 |             console.error("Orchestration error:", err);
+           |                     ^
+      1768 |             const failure = `I couldn't finish this request. ${err?.message || "The connection was interrupted."}\n\nYour prompt is saved. Use **Retry as new attempt** on your prompt to try again.`;
+      1769 |             if (activeChatId) {
+      1770 |               await setDoc(
+
+      at Object.handleSubmit (src/hooks/useUnifiedChat.js:1767:21)
+      at src/hooks/useUnifiedChat.test.js:1075:7
+
+PASS src/hooks/useAiChat.test.js
+  ● Console
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1136 |       if (cancelled || !isActive()) return;
+      1137 |       const history = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    > 1138 |       setMessages((current) => mergeChatMessages(history, current));
+           |       ^
+      1139 |     }).catch((err) => {
+      1140 |       if (cancelled || !isActive()) return;
+      1141 |       reportFirestoreFailure(err, { uid, chatId, operation: "messages-history-list" });
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setMessages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1138:7
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1056 |     )).then((snap) => {
+      1057 |       if (cancelled) return;
+    > 1058 |       setCustomModes(snap.docs.map((d) => ({ id: d.id, ...d.data(), isCustom: true })));
+           |       ^
+      1059 |     }).catch((err) => {
+      1060 |       if (cancelled) return;
+      1061 |       setCustomModes([]);
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setCustomModes (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1058:7
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1136 |       if (cancelled || !isActive()) return;
+      1137 |       const history = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    > 1138 |       setMessages((current) => mergeChatMessages(history, current));
+           |       ^
+      1139 |     }).catch((err) => {
+      1140 |       if (cancelled || !isActive()) return;
+      1141 |       reportFirestoreFailure(err, { uid, chatId, operation: "messages-history-list" });
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setMessages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1138:7
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1056 |     )).then((snap) => {
+      1057 |       if (cancelled) return;
+    > 1058 |       setCustomModes(snap.docs.map((d) => ({ id: d.id, ...d.data(), isCustom: true })));
+           |       ^
+      1059 |     }).catch((err) => {
+      1060 |       if (cancelled) return;
+      1061 |       setCustomModes([]);
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setCustomModes (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1058:7
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1262 |       await updateDoc(pendingRef, sanitizeTranscriptMessagePayload(backgroundPayload)).catch(() => {});
+      1263 |       if (!cancelled) {
+    > 1264 |         setMessages((current) => current.map((message) => (
+           |         ^
+      1265 |           message.id === currentPending.id
+      1266 |             ? {
+      1267 |                 ...message,
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setMessages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at handoffRecoveryToBackground (src/hooks/useAiChat.js:1264:9)
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1136 |       if (cancelled || !isActive()) return;
+      1137 |       const history = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    > 1138 |       setMessages((current) => mergeChatMessages(history, current));
+           |       ^
+      1139 |     }).catch((err) => {
+      1140 |       if (cancelled || !isActive()) return;
+      1141 |       reportFirestoreFailure(err, { uid, chatId, operation: "messages-history-list" });
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setMessages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1138:7
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1056 |     )).then((snap) => {
+      1057 |       if (cancelled) return;
+    > 1058 |       setCustomModes(snap.docs.map((d) => ({ id: d.id, ...d.data(), isCustom: true })));
+           |       ^
+      1059 |     }).catch((err) => {
+      1060 |       if (cancelled) return;
+      1061 |       setCustomModes([]);
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setCustomModes (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1058:7
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1136 |       if (cancelled || !isActive()) return;
+      1137 |       const history = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    > 1138 |       setMessages((current) => mergeChatMessages(history, current));
+           |       ^
+      1139 |     }).catch((err) => {
+      1140 |       if (cancelled || !isActive()) return;
+      1141 |       reportFirestoreFailure(err, { uid, chatId, operation: "messages-history-list" });
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setMessages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1138:7
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1056 |     )).then((snap) => {
+      1057 |       if (cancelled) return;
+    > 1058 |       setCustomModes(snap.docs.map((d) => ({ id: d.id, ...d.data(), isCustom: true })));
+           |       ^
+      1059 |     }).catch((err) => {
+      1060 |       if (cancelled) return;
+      1061 |       setCustomModes([]);
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setCustomModes (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1058:7
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1136 |       if (cancelled || !isActive()) return;
+      1137 |       const history = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    > 1138 |       setMessages((current) => mergeChatMessages(history, current));
+           |       ^
+      1139 |     }).catch((err) => {
+      1140 |       if (cancelled || !isActive()) return;
+      1141 |       reportFirestoreFailure(err, { uid, chatId, operation: "messages-history-list" });
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setMessages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1138:7
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1056 |     )).then((snap) => {
+      1057 |       if (cancelled) return;
+    > 1058 |       setCustomModes(snap.docs.map((d) => ({ id: d.id, ...d.data(), isCustom: true })));
+           |       ^
+      1059 |     }).catch((err) => {
+      1060 |       if (cancelled) return;
+      1061 |       setCustomModes([]);
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setCustomModes (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1058:7
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1056 |     )).then((snap) => {
+      1057 |       if (cancelled) return;
+    > 1058 |       setCustomModes(snap.docs.map((d) => ({ id: d.id, ...d.data(), isCustom: true })));
+           |       ^
+      1059 |     }).catch((err) => {
+      1060 |       if (cancelled) return;
+      1061 |       setCustomModes([]);
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setCustomModes (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1058:7
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      773 |     if (value) generatingRef.current[runKey] = true;
+      774 |     else delete generatingRef.current[runKey];
+    > 775 |     setGeneratingChats((prev) => {
+          |     ^
+      776 |       const chatRuns = prev[chatId] || {};
+      777 |       if (Boolean(chatRuns[requestId]) === Boolean(value)) return prev;
+      778 |       const nextChatRuns = { ...chatRuns };
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setGeneratingChats (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at setGeneratingForChat (src/hooks/useAiChat.js:775:5)
+      at beginGenerationState (src/hooks/useAiChat.js:1858:7)
+      at Object.handleSubmit (src/hooks/useAiChat.js:1879:23)
+      at Object.<anonymous> (src/hooks/useAiChat.test.js:1611:5)
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      738 |   const setPendingForChat = useCallback((chatId, updater, requestId = "__legacy__") => {
+      739 |     if (!chatId) return;
+    > 740 |     setPendingMessages((prev) => {
+          |     ^
+      741 |       const chatPending = prev[chatId] || {};
+      742 |       const cur = chatPending[requestId] ?? null;
+      743 |       const next = typeof updater === "function" ? updater(cur) : updater;
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setPendingMessages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at setPendingForChat (src/hooks/useAiChat.js:740:5)
+      at beginGenerationState (src/hooks/useAiChat.js:1865:7)
+      at Object.handleSubmit (src/hooks/useAiChat.js:1879:23)
+      at Object.<anonymous> (src/hooks/useAiChat.test.js:1611:5)
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      755 |   const setStageForChat = useCallback((chatId, value, requestId = "__legacy__") => {
+      756 |     if (!chatId) return;
+    > 757 |     setGenerationStages((prev) => {
+          |     ^
+      758 |       const chatStages = prev[chatId] || {};
+      759 |       if (chatStages[requestId] === value) return prev;
+      760 |       const nextChatStages = { ...chatStages };
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setGenerationStages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at setStageForChat (src/hooks/useAiChat.js:757:5)
+      at beginGenerationState (src/hooks/useAiChat.js:1876:7)
+      at Object.handleSubmit (src/hooks/useAiChat.js:1879:23)
+      at Object.<anonymous> (src/hooks/useAiChat.test.js:1611:5)
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      755 |   const setStageForChat = useCallback((chatId, value, requestId = "__legacy__") => {
+      756 |     if (!chatId) return;
+    > 757 |     setGenerationStages((prev) => {
+          |     ^
+      758 |       const chatStages = prev[chatId] || {};
+      759 |       if (chatStages[requestId] === value) return prev;
+      760 |       const nextChatStages = { ...chatStages };
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setGenerationStages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at setStageForChat (src/hooks/useAiChat.js:757:5)
+      at publishGenerationStage (src/hooks/useAiChat.js:1844:7)
+      at Object.handleSubmit (src/hooks/useAiChat.js:1913:7)
+      at Object.<anonymous> (src/hooks/useAiChat.test.js:1611:5)
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      738 |   const setPendingForChat = useCallback((chatId, updater, requestId = "__legacy__") => {
+      739 |     if (!chatId) return;
+    > 740 |     setPendingMessages((prev) => {
+          |     ^
+      741 |       const chatPending = prev[chatId] || {};
+      742 |       const cur = chatPending[requestId] ?? null;
+      743 |       const next = typeof updater === "function" ? updater(cur) : updater;
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setPendingMessages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at setPendingForChat (src/hooks/useAiChat.js:740:5)
+      at publishGenerationStage (src/hooks/useAiChat.js:1845:7)
+      at Object.handleSubmit (src/hooks/useAiChat.js:1913:7)
+      at Object.<anonymous> (src/hooks/useAiChat.test.js:1611:5)
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      755 |   const setStageForChat = useCallback((chatId, value, requestId = "__legacy__") => {
+      756 |     if (!chatId) return;
+    > 757 |     setGenerationStages((prev) => {
+          |     ^
+      758 |       const chatStages = prev[chatId] || {};
+      759 |       if (chatStages[requestId] === value) return prev;
+      760 |       const nextChatStages = { ...chatStages };
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setGenerationStages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at setStageForChat (src/hooks/useAiChat.js:757:5)
+      at publishGenerationStage (src/hooks/useAiChat.js:1844:7)
+      at Object.handleSubmit (src/hooks/useAiChat.js:2142:9)
+      at Object.<anonymous> (src/hooks/useAiChat.test.js:1611:5)
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      738 |   const setPendingForChat = useCallback((chatId, updater, requestId = "__legacy__") => {
+      739 |     if (!chatId) return;
+    > 740 |     setPendingMessages((prev) => {
+          |     ^
+      741 |       const chatPending = prev[chatId] || {};
+      742 |       const cur = chatPending[requestId] ?? null;
+      743 |       const next = typeof updater === "function" ? updater(cur) : updater;
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setPendingMessages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at setPendingForChat (src/hooks/useAiChat.js:740:5)
+      at publishGenerationStage (src/hooks/useAiChat.js:1845:7)
+      at Object.handleSubmit (src/hooks/useAiChat.js:2142:9)
+      at Object.<anonymous> (src/hooks/useAiChat.test.js:1611:5)
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      773 |     if (value) generatingRef.current[runKey] = true;
+      774 |     else delete generatingRef.current[runKey];
+    > 775 |     setGeneratingChats((prev) => {
+          |     ^
+      776 |       const chatRuns = prev[chatId] || {};
+      777 |       if (Boolean(chatRuns[requestId]) === Boolean(value)) return prev;
+      778 |       const nextChatRuns = { ...chatRuns };
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setGeneratingChats (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at setGeneratingForChat (src/hooks/useAiChat.js:775:5)
+      at setBusy (src/hooks/useAiChat.js:1829:32)
+      at persistJoblessTerminalState (src/hooks/useAiChat.js:2239:11)
+      at Object.handleSubmit (src/hooks/useAiChat.js:2270:11)
+      at Object.<anonymous> (src/hooks/useAiChat.test.js:1611:5)
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      738 |   const setPendingForChat = useCallback((chatId, updater, requestId = "__legacy__") => {
+      739 |     if (!chatId) return;
+    > 740 |     setPendingMessages((prev) => {
+          |     ^
+      741 |       const chatPending = prev[chatId] || {};
+      742 |       const cur = chatPending[requestId] ?? null;
+      743 |       const next = typeof updater === "function" ? updater(cur) : updater;
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setPendingMessages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at setPendingForChat (src/hooks/useAiChat.js:740:5)
+      at setPending (src/hooks/useAiChat.js:1827:37)
+      at persistJoblessTerminalState (src/hooks/useAiChat.js:2240:11)
+      at Object.handleSubmit (src/hooks/useAiChat.js:2270:11)
+      at Object.<anonymous> (src/hooks/useAiChat.test.js:1611:5)
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      755 |   const setStageForChat = useCallback((chatId, value, requestId = "__legacy__") => {
+      756 |     if (!chatId) return;
+    > 757 |     setGenerationStages((prev) => {
+          |     ^
+      758 |       const chatStages = prev[chatId] || {};
+      759 |       if (chatStages[requestId] === value) return prev;
+      760 |       const nextChatStages = { ...chatStages };
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setGenerationStages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at setStageForChat (src/hooks/useAiChat.js:757:5)
+      at setStage (src/hooks/useAiChat.js:1828:33)
+      at persistJoblessTerminalState (src/hooks/useAiChat.js:2241:11)
+      at Object.handleSubmit (src/hooks/useAiChat.js:2270:11)
+      at Object.<anonymous> (src/hooks/useAiChat.test.js:1611:5)
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1056 |     )).then((snap) => {
+      1057 |       if (cancelled) return;
+    > 1058 |       setCustomModes(snap.docs.map((d) => ({ id: d.id, ...d.data(), isCustom: true })));
+           |       ^
+      1059 |     }).catch((err) => {
+      1060 |       if (cancelled) return;
+      1061 |       setCustomModes([]);
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setCustomModes (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1058:7
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1056 |     )).then((snap) => {
+      1057 |       if (cancelled) return;
+    > 1058 |       setCustomModes(snap.docs.map((d) => ({ id: d.id, ...d.data(), isCustom: true })));
+           |       ^
+      1059 |     }).catch((err) => {
+      1060 |       if (cancelled) return;
+      1061 |       setCustomModes([]);
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setCustomModes (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1058:7
+
+PASS src/components/ai/chat/FlowCards.test.jsx
+
+Test Suites: 6 passed, 6 total
+Tests:       104 passed, 104 total
+Snapshots:   0 total
+Time:        5.831 s
+Ran all test suites matching /src\\components\\ai\\chat\\FlowCards.test.jsx|src\\lib\\clarificationAnswers.test.js|src\\hooks\\useUnifiedChat.test.js|src\\hooks\\useAiChat.test.js|src\\lib\\workflowApi.test.js|src\\lib\\chatDecisionDisplay.test.js/i.

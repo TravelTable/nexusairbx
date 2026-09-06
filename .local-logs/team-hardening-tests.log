@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: playtest reservation spans start, checks, ambiguous delivery and verified stop
+ok 1 - playtest reservation spans start, checks, ambiguous delivery and verified stop
+  ---
+  duration_ms: 1.0992
+  ...
+# Subtest: another command's acknowledgment cannot take over the playtest reservation
+ok 2 - another command's acknowledgment cannot take over the playtest reservation
+  ---
+  duration_ms: 0.2046
+  ...
+# Subtest: team routing requires a new approved canonical game and the rollout flag
+ok 3 - team routing requires a new approved canonical game and the rollout flag
+  ---
+  duration_ms: 5.0157
+  ...
+# Subtest: lead rejects overlapping paths, dependency cycles, and missing dependencies
+ok 4 - lead rejects overlapping paths, dependency cycles, and missing dependencies
+  ---
+  duration_ms: 1.4136
+  ...
+# Subtest: specialists cannot stage writes outside owned paths or destructive commands
+ok 5 - specialists cannot stage writes outside owned paths or destructive commands
+  ---
+  duration_ms: 1.5249
+  ...
+# Subtest: shared model slots enforce both user capacity and the four-call build cap
+ok 6 - shared model slots enforce both user capacity and the four-call build cap
+  ---
+  duration_ms: 3.3323
+  ...
+# Subtest: durable lead dispatches independent specialists in parallel; completion waits for playtest
+ok 7 - durable lead dispatches independent specialists in parallel; completion waits for playtest
+  ---
+  duration_ms: 40.5865
+  ...
+# Subtest: a changed plan fences old workers and preserves staged outputs
+ok 8 - a changed plan fences old workers and preserves staged outputs
+  ---
+  duration_ms: 13.4756
+  ...
+# Subtest: team projections expose saved output references without source or prompts
+ok 9 - team projections expose saved output references without source or prompts
+  ---
+  duration_ms: 0.265
+  ...
+# Subtest: dependent specialists wait for accepted dependency artifacts
+ok 10 - dependent specialists wait for accepted dependency artifacts
+  ---
+  duration_ms: 17.9104
+  ...
+# Subtest: shared interface revisions reuse completed unrelated assignments
+ok 11 - shared interface revisions reuse completed unrelated assignments
+  ---
+  duration_ms: 29.8924
+  ...
+# Subtest: two targeted repair cycles preserve successful siblings and reject a third
+ok 12 - two targeted repair cycles preserve successful siblings and reject a third
+  ---
+  duration_ms: 62.8201
+  ...
+# Subtest: usage includes invalid paid output and retries do not restart successful assignments
+ok 13 - usage includes invalid paid output and retries do not restart successful assignments
+  ---
+  duration_ms: 1029.7314
+  ...
+# Subtest: cancellation fences a worker response already in flight
+ok 14 - cancellation fences a worker response already in flight
+  ---
+  duration_ms: 15.4786
+  ...
+# Subtest: stale artifact payloads cannot smuggle a second target
+ok 15 - stale artifact payloads cannot smuggle a second target
+  ---
+  duration_ms: 0.7164
+  ...
+# Subtest: a newer test failure or scene edit invalidates an earlier passing suite
+ok 16 - a newer test failure or scene edit invalidates an earlier passing suite
+  ---
+  duration_ms: 1.0716
+  ...
+# Subtest: integration requires current source and a later matching readback
+ok 17 - integration requires current source and a later matching readback
+  ---
+  duration_ms: 0.8599
+  ...
+# Subtest: integration ownership applies to every operation in an atomic batch
+ok 18 - integration ownership applies to every operation in an atomic batch
+  ---
+  duration_ms: 0.5712
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1336.4732

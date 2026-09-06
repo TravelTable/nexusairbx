@@ -319,3 +319,12 @@ describe("studio connection selection", () => {
     expect(snapshot.compatibility.missingCommands).toEqual(["run_play_test"]);
   });
 });
+
+
+test("a reconnect is not an unsupported release even when currentRelease is false", () => {
+  const { isStudioPluginUpdateRequired } = require("./studioConnection");
+  expect(isStudioPluginUpdateRequired({ status: "repairing", currentRelease: false })).toBe(false);
+  expect(isStudioPluginUpdateRequired({ status: "unknown", currentRelease: false })).toBe(false);
+  expect(isStudioPluginUpdateRequired({ status: "compatible", currentRelease: false })).toBe(true);
+  expect(isStudioPluginUpdateRequired({ status: "update_required" })).toBe(true);
+});

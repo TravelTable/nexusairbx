@@ -1,0 +1,120 @@
+npm warn "src/hooks/useUnifiedChat.test.js" is being parsed as a normal command line argument.
+npm warn Unknown cli config "--watchAll". This will stop working in the next major version of npm.
+npm warn Unknown cli config "--runInBand". This will stop working in the next major version of npm.
+
+> nexusrbx-react@0.1.0 test
+> react-scripts test src/hooks/useUnifiedChat.test.js
+
+  console.error
+    Approve/generate error: Error: The build could not be confirmed and may already be running. Retry this same saved plan to reconnect to its existing build.
+        at C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\src\hooks\useUnifiedChat.js:1060:31
+        at Object.approvePlan (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\src\hooks\useUnifiedChat.js:1944:16)
+        at C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\src\hooks\useUnifiedChat.test.js:1063:7 {
+      code: 'PLAN_EXECUTION_UNCONFIRMED',
+      cause: TypeError: Failed to fetch
+          at Object.<anonymous> (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\src\hooks\useUnifiedChat.test.js:1059:42)
+          at Promise.then.completed (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\utils.js:391:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\utils.js:316:10)
+          at _callCircusTest (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\run.js:218:40)
+          at _runTest (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\run.js:155:3)
+          at _runTestsForDescribeBlock (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\run.js:66:9)
+          at _runTestsForDescribeBlock (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\run.js:60:9)
+          at run (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\run.js:25:3)
+          at runAndTransformResultsToJestFormat (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:170:21)
+          at jestAdapter (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:82:19)
+          at runTestInternal (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-runner\build\runTest.js:389:16)
+          at runTest (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-runner\build\runTest.js:475:34)
+          at TestRunner.runTests (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-runner\build\index.js:101:12)
+          at TestScheduler.scheduleTests (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@jest\core\build\TestScheduler.js:333:13)
+          at runJest (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@jest\core\build\runJest.js:404:19)
+          at _run10000 (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@jest\core\build\cli\index.js:320:7)
+          at runCLI (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@jest\core\build\cli\index.js:173:3)
+          at Object.run (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-cli\build\cli\index.js:155:37)
+    }
+
+      1945 |       } catch (err) {
+      1946 |         if (err?.name === "AbortError") throw err;
+    > 1947 |         console.error("Approve/generate error:", err);
+           |                 ^
+      1948 |         notify?.({
+      1949 |           message: err?.message || "Build failed. You can try again.",
+      1950 |           type: "error",
+
+      at Object.approvePlan (src/hooks/useUnifiedChat.js:1947:17)
+      at src/hooks/useUnifiedChat.test.js:1063:7
+
+  console.error
+    Orchestration error: TypeError: Failed to fetch
+        at Object.<anonymous> (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\src\hooks\useUnifiedChat.test.js:1071:39)
+        at Promise.then.completed (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\utils.js:391:28)
+        at new Promise (<anonymous>)
+        at callAsyncCircusFn (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\utils.js:316:10)
+        at _callCircusTest (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\run.js:218:40)
+        at _runTest (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\run.js:155:3)
+        at _runTestsForDescribeBlock (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\run.js:66:9)
+        at _runTestsForDescribeBlock (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\run.js:60:9)
+        at run (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\run.js:25:3)
+        at runAndTransformResultsToJestFormat (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:170:21)
+        at jestAdapter (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:82:19)
+        at runTestInternal (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-runner\build\runTest.js:389:16)
+        at runTest (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-runner\build\runTest.js:475:34)
+        at TestRunner.runTests (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-runner\build\index.js:101:12)
+        at TestScheduler.scheduleTests (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@jest\core\build\TestScheduler.js:333:13)
+        at runJest (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@jest\core\build\runJest.js:404:19)
+        at _run10000 (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@jest\core\build\cli\index.js:320:7)
+        at runCLI (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@jest\core\build\cli\index.js:173:3)
+        at Object.run (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\jest-cli\build\cli\index.js:155:37)
+
+      1765 |         } catch (err) {
+      1766 |           if (!isAbortError(err)) {
+    > 1767 |             console.error("Orchestration error:", err);
+           |                     ^
+      1768 |             const failure = `I couldn't finish this request. ${err?.message || "The connection was interrupted."}\n\nYour prompt is saved. Use **Retry as new attempt** on your prompt to try again.`;
+      1769 |             if (activeChatId) {
+      1770 |               await setDoc(
+
+      at Object.handleSubmit (src/hooks/useUnifiedChat.js:1767:21)
+      at src/hooks/useUnifiedChat.test.js:1075:7
+
+PASS src/hooks/useUnifiedChat.test.js
+  useUnifiedChat
+    √ reconciles orchestration and generation pending state for the same request (4 ms)
+    √ nudges sign-in instead of submitting when a signed-out user enters a prompt (18 ms)
+    √ opens the visible stream synchronously before submit preflight resolves (11 ms)
+    √ sends the exact selected MCP session and transport type for Ask mode (6 ms)
+    √ preserves the selected template through Plan Mode orchestration and clarification storage (3 ms)
+    √ routes approval language through the exact structured plan execution command (4 ms)
+    √ surfaces plan readiness blockers without sending a doomed execution request (2 ms)
+    √ clears a stale project id before clarify re-orchestration (5 ms)
+    √ keeps Ask available when the optional runtime projection is disconnected (2 ms)
+    √ routes projectless conversational Agent prompts through read-only chat (6 ms)
+    √ keeps conversational Agent prompts read-only even with a selected project (3 ms)
+    √ passes task intake candidates only to direct implementation generation (5 ms)
+    √ shows Agent setup progress before the durable run request resolves (8 ms)
+    √ locks plan startup immediately and checks the current Studio connection (2 ms)
+    √ Stop during readiness prevents a late readiness response from starting the build (4 ms)
+    √ Stop after dispatch waits for the accepted identity and cancels that same task (3 ms)
+    √ an uncertain launch explains how to reconnect without automatically creating another run (93 ms)
+    √ a failed planning request leaves a persistent explanation and retry instruction (7 ms)
+    √ continue follows the approved task instead of launching an unrelated inspection (2 ms)
+    √ persists the stable launch checkpoint before POST and attaches the run to the same message (2 ms)
+    √ keeps an ambiguous canonical launch recovering and never falls back to legacy (3 ms)
+    √ binds a terse start approval to the latest concrete build request (2 ms)
+    √ uses legacy execution when canonical intake reports the legacy runtime owner (3 ms)
+    √ does not hide unrelated canonical runtime failures behind legacy execution (3 ms)
+    √ uses the natural-identity resolver once when a chat changes project binding (8 ms)
+    √ routes directly to legacy generation when capabilities name the legacy owner (2 ms)
+    √ never replaces an explicit live Studio request with legacy artifact generation (2 ms)
+    √ routes projectless conversational Agent prompts through read-only chat (3 ms)
+    √ sends the complete server-owned execution input for an authoritative Studio run (3 ms)
+    √ passes a queued authoritative run through without launching a second run (1 ms)
+    √ retry rewind truncates after the user turn and does not write a duplicate user message (2 ms)
+    √ edit rewind replaces the user turn then writes the edited prompt (2 ms)
+    √ publishes a run id accepted during an early Stop before throwing the local abort (10 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       33 passed, 33 total
+Snapshots:   0 total
+Time:        3.609 s
+Ran all test suites matching /src\\hooks\\useUnifiedChat.test.js/i.

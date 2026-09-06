@@ -1,0 +1,88 @@
+{
+  "attemptStatus": "completed",
+  "jobId": "artifact_job_e88caca9523a64ff8c07e166d66f5685bcd039ce05023e01",
+  "jobStatus": "succeeded",
+  "runId": "studio_run_7c3c414d61bf6876536d9fd953e5fd06fbdcde24b1809ba5",
+  "runStatus": "succeeded",
+  "summary": "ReplicatedStorage/FlightFlowTest contains one direct child: FireEvent (RemoteEvent). ReplicatedStorage/FlightFlowTest/ProjectileTemplate does not exist in the inspected manifest, so Color/Size/Anchored/CanCollide could not be read.",
+  "steps": [
+    {
+      "type": "get_project_manifest",
+      "status": "succeeded",
+      "payload": {
+        "cursor": "",
+        "manifestRevision": "",
+        "maxDepth": 24,
+        "schemaVersion": "2026-08-27-r15-animation",
+        "includeSource": false,
+        "idempotencyKey": "22ef4b945012d21e5567600673371953",
+        "includeTags": true,
+        "pageSize": 500,
+        "sourceMaxChars": 0,
+        "includeAttributes": true,
+        "maxInstances": 10000,
+        "includeProperties": true
+      },
+      "result": {},
+      "error": null
+    },
+    {
+      "type": "list_children",
+      "status": "succeeded",
+      "payload": {
+        "cursor": "",
+        "path": "ReplicatedStorage/FlightFlowTest",
+        "schemaVersion": "2026-08-27-r15-animation",
+        "idempotencyKey": "ebc7c3d6fa7e5a8e57ecc9a426fc3dae",
+        "pageSize": 250,
+        "includeProperties": true
+      },
+      "result": {
+        "retryable": false,
+        "resultingHashes": [],
+        "targetAttestation": {
+          "targetGeneration": 510,
+          "attestedAt": 1788688598,
+          "placeChanged": false,
+          "targetId": "st_8c5d17e8ee75c6d9aeebd894c2cadbf341aa72d1041774ef",
+          "connectorId": "db68202a-04ff-41fe-8a5e-2253a6b60898",
+          "placeId": "0",
+          "placeSignature": "6b7b6c98",
+          "universeId": "0",
+          "sessionId": "MLq8J3mhz56J6BRsAeQe",
+          "placeName": "Place1"
+        },
+        "lifecycleVersion": 2,
+        "idempotencyKey": "7nI1esaRqEjTXiojkdlG",
+        "snapshotIds": [],
+        "warnings": [],
+        "stepId": "sN6m94ZESrs7lsjI1s1A",
+        "verified": true,
+        "leaseFence": 1,
+        "commandId": "7nI1esaRqEjTXiojkdlG",
+        "affectedPaths": [
+          "ReplicatedStorage/FlightFlowTest"
+        ],
+        "duration": 3,
+        "output": [],
+        "path": "ReplicatedStorage/FlightFlowTest",
+        "diagnostics": [],
+        "total": 1,
+        "children": [
+          {
+            "path": "ReplicatedStorage/FlightFlowTest/FireEvent",
+            "name": "FireEvent",
+            "className": "RemoteEvent"
+          }
+        ],
+        "success": true,
+        "operationId": "studio-agent:studio_run_7c3c414d61bf6876536d9fd953e5fd06fbdcde24b1809ba5:sN6m94ZESrs7lsjI1s1A",
+        "runId": "studio_run_7c3c414d61bf6876536d9fd953e5fd06fbdcde24b1809ba5",
+        "ok": true,
+        "operation": "list_children",
+        "previousHashes": []
+      },
+      "error": null
+    }
+  ]
+}

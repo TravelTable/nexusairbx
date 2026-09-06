@@ -1,0 +1,236 @@
+TAP version 13
+# Subtest: agent projection resolver reuses chat identity while legacy create remains strict
+ok 1 - agent projection resolver reuses chat identity while legacy create remains strict
+  ---
+  duration_ms: 8.733
+  ...
+# Subtest: projectless projection resolution is sticky and never invents a project
+ok 2 - projectless projection resolution is sticky and never invents a project
+  ---
+  duration_ms: 0.8348
+  ...
+# Subtest: agent projection resolution does not scan unrelated account history
+ok 3 - agent projection resolution does not scan unrelated account history
+  ---
+  duration_ms: 6.437
+  ...
+# Subtest: reading one run does not reconcile unrelated account history
+ok 4 - reading one run does not reconcile unrelated account history
+  ---
+  duration_ms: 10.748
+  ...
+# Subtest: independent chats share entitlement slots, queue FIFO, replay once, and terminal completion promotes once
+ok 5 - independent chats share entitlement slots, queue FIFO, replay once, and terminal completion promotes once
+  ---
+  duration_ms: 19.4419
+  ...
+# Subtest: reconciliation clears stale occupancy from a terminal linked artifact job
+ok 6 - reconciliation clears stale occupancy from a terminal linked artifact job
+  ---
+  duration_ms: 4.1533
+  ...
+# Subtest: server rejects browser-owned linkage and Ask/Plan never launch or consume active slots
+ok 7 - server rejects browser-owned linkage and Ask/Plan never launch or consume active slots
+  ---
+  duration_ms: 2.621
+  ...
+# Subtest: deletion fences reject v2 agent creation, run creation, and launch claims
+ok 8 - deletion fences reject v2 agent creation, run creation, and launch claims
+  ---
+  duration_ms: 3.5045
+  ...
+# Subtest: canonical run ignores stale client Studio target envelopes
+ok 9 - canonical run ignores stale client Studio target envelopes
+  ---
+  duration_ms: 2.6694
+  ...
+# Subtest: empty agent binds its authorized project on first run and cannot change projects
+ok 10 - empty agent binds its authorized project on first run and cannot change projects
+  ---
+  duration_ms: 2.9392
+  ...
+# Subtest: executable run seals legacy generation inputs and redispatches the immutable envelope
+ok 11 - executable run seals legacy generation inputs and redispatches the immutable envelope
+  ---
+  duration_ms: 2.1981
+  ...
+# Subtest: execution inputs are bounded and participate in idempotency
+ok 12 - execution inputs are bounded and participate in idempotency
+  ---
+  duration_ms: 1.4154
+  ...
+# Subtest: executable access, Studio plan, and token gates run before canonical task intake
+    # Subtest: free users cannot request Studio execution
+    ok 1 - free users cannot request Studio execution
+      ---
+      duration_ms: 0.7249
+      ...
+    # Subtest: paid token preflight failure prevents task creation
+    ok 2 - paid token preflight failure prevents task creation
+      ---
+      duration_ms: 0.5937
+      ...
+    # Subtest: paid deterministic Studio inspection does not require generation tokens
+    ok 3 - paid deterministic Studio inspection does not require generation tokens
+      ---
+      duration_ms: 1.5102
+      ...
+    # Subtest: generation kill switch prevents task creation
+    ok 4 - generation kill switch prevents task creation
+      ---
+      duration_ms: 0.542
+      ...
+    1..4
+ok 13 - executable access, Studio plan, and token gates run before canonical task intake
+  ---
+  duration_ms: 4.643
+  ...
+# Subtest: canonical agent and run projections are ownership-safe and do not require a chat path
+ok 14 - canonical agent and run projections are ownership-safe and do not require a chat path
+  ---
+  duration_ms: 2.5419
+  ...
+# Subtest: agent deletion rejects nonterminal work but removes an idle agent without deleting run history
+ok 15 - agent deletion rejects nonterminal work but removes an idle agent without deleting run history
+  ---
+  duration_ms: 6.3623
+  ...
+# Subtest: event cursor pagination returns canonical identifiers without skipping a limited backlog
+ok 16 - event cursor pagination returns canonical identifiers without skipping a limited backlog
+  ---
+  duration_ms: 3.1898
+  ...
+# Subtest: task cancellation failure never blocks FIFO promotion and reconcilePending retries it
+ok 17 - task cancellation failure never blocks FIFO promotion and reconcilePending retries it
+  ---
+  duration_ms: 4.9994
+  ...
+# Subtest: FIFO promotion skips missing and terminal queue heads before launching later work
+ok 18 - FIFO promotion skips missing and terminal queue heads before launching later work
+  ---
+  duration_ms: 4.6959
+  ...
+# Subtest: reconcilePending recovers a durably deferred launch after transient dispatch failure
+ok 19 - reconcilePending recovers a durably deferred launch after transient dispatch failure
+  ---
+  duration_ms: 2.4525
+  ...
+# Subtest: a launch fenced by concurrent cancellation compensates the created artifact job
+ok 20 - a launch fenced by concurrent cancellation compensates the created artifact job
+  ---
+  duration_ms: 2.2147
+  ...
+# Subtest: launchArtifactRun seals server-owned refine base and rejects missing projects
+ok 21 - launchArtifactRun seals server-owned refine base and rejects missing projects
+  ---
+  duration_ms: 50.9242
+  ...
+# Subtest: launchArtifactRun uses the trusted task-linked job path only for facade authority
+ok 22 - launchArtifactRun uses the trusted task-linked job path only for facade authority
+  ---
+  duration_ms: 5.2533
+  ...
+# Subtest: launchArtifactRun ignores caller-like task fields without trusted authority
+ok 23 - launchArtifactRun ignores caller-like task fields without trusted authority
+  ---
+  duration_ms: 3.0408
+  ...
+# Subtest: launchArtifactRun fails closed when trusted task ownership mismatches
+ok 24 - launchArtifactRun fails closed when trusted task ownership mismatches
+  ---
+  duration_ms: 3.1607
+  ...
+# Subtest: Studio iterative agent is enabled by default for Agent builds
+ok 25 - Studio iterative agent is enabled by default for Agent builds
+  ---
+  duration_ms: 4.5759
+  ...
+# Subtest: canonical replay returns one deterministic job and downstream run
+ok 26 - canonical replay returns one deterministic job and downstream run
+  ---
+  duration_ms: 3.7389
+  ...
+# Subtest: retry after run creation but before job attachment reuses the downstream run
+ok 27 - retry after run creation but before job attachment reuses the downstream run
+  ---
+  duration_ms: 4.3347
+  ...
+# Subtest: a concurrent run-start lease never calls the downstream launcher
+ok 28 - a concurrent run-start lease never calls the downstream launcher
+  ---
+  duration_ms: 3.4207
+  ...
+# Subtest: Agent-mode Studio visibility bypasses artifact generation even when iterative builds are disabled
+ok 29 - Agent-mode Studio visibility bypasses artifact generation even when iterative builds are disabled
+  ---
+  duration_ms: 3.3811
+  ...
+# Subtest: Agent-mode scoped Studio search stays inspection-only and preserves the exact MCP target
+ok 30 - Agent-mode scoped Studio search stays inspection-only and preserves the exact MCP target
+  ---
+  duration_ms: 3.3511
+  ...
+# Subtest: Agent-mode Studio visibility fails closed without a server-resolved session
+ok 31 - Agent-mode Studio visibility fails closed without a server-resolved session
+  ---
+  duration_ms: 2.8062
+  ...
+# Subtest: launchArtifactRun emits normalized scenario metadata without changing routing
+ok 32 - launchArtifactRun emits normalized scenario metadata without changing routing
+  ---
+  duration_ms: 4.9085
+  ...
+# Subtest: launchArtifactRun terminalizes a created job when agent run bootstrap fails
+ok 33 - launchArtifactRun terminalizes a created job when agent run bootstrap fails
+  ---
+  duration_ms: 4.0269
+  ...
+# Subtest: launchArtifactRun propagates only sanitized canonical asset receipts
+ok 34 - launchArtifactRun propagates only sanitized canonical asset receipts
+  ---
+  duration_ms: 3.3979
+  ...
+# Subtest: team routing requires a new approved canonical game and the rollout flag
+ok 35 - team routing requires a new approved canonical game and the rollout flag
+  ---
+  duration_ms: 4.5285
+  ...
+# Subtest: lead rejects overlapping paths, dependency cycles, and missing dependencies
+ok 36 - lead rejects overlapping paths, dependency cycles, and missing dependencies
+  ---
+  duration_ms: 1.2055
+  ...
+# Subtest: specialists cannot stage writes outside owned paths or destructive commands
+ok 37 - specialists cannot stage writes outside owned paths or destructive commands
+  ---
+  duration_ms: 1.3547
+  ...
+# Subtest: shared model slots enforce both user capacity and the four-call build cap
+ok 38 - shared model slots enforce both user capacity and the four-call build cap
+  ---
+  duration_ms: 2.5461
+  ...
+# Subtest: durable lead dispatches independent specialists in parallel; completion waits for playtest
+ok 39 - durable lead dispatches independent specialists in parallel; completion waits for playtest
+  ---
+  duration_ms: 1027.0406
+  ...
+# Subtest: a changed plan fences old workers and preserves staged outputs
+ok 40 - a changed plan fences old workers and preserves staged outputs
+  ---
+  duration_ms: 1.4315
+  ...
+# Subtest: team projections expose saved output references without source or prompts
+ok 41 - team projections expose saved output references without source or prompts
+  ---
+  duration_ms: 0.2326
+  ...
+1..41
+# tests 45
+# suites 0
+# pass 45
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1148.51

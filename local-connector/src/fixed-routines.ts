@@ -750,7 +750,13 @@ local function mutate(op, p, nonce)
     local profile = p.profile or p.profileId
     if profile == "smoke" then return { passed = true, profileId = profile, checks = { "studio_access" } } end
     if profile == "project_smoke" then return { passed = workspace ~= nil and game:GetService("ReplicatedStorage") ~= nil, profileId = profile, checks = { "workspace", "replicated_storage" } } end
-    if profile == "testservice_run" then local ok, err = pcall(function() TestService:Run() end); if not ok then error("TEST_PROFILE_FAILED: " .. tostring(err)) end; return { passed = true, profileId = profile, checks = { "testservice_run" } } end
+    if profile == "testservice_run" then
+      local ok, err = pcall(function() TestService:RunAsync() end)
+      if not ok then error("TEST_PROFILE_FAILED: " .. tostring(err)) end
+      local testCount, errorCount = TestService.TestCount, TestService.ErrorCount
+      if errorCount > 0 then error("TEST_PROFILE_FAILED: " .. tostring(errorCount) .. " test errors") end
+      return { passed = testCount > 0, profileId = profile, testCount = testCount, errorCount = errorCount, checks = { "testservice_run" } }
+    end
     error("Unknown test profile")
   end
   local snapshotPaths, context = {}, {}

@@ -81,6 +81,9 @@ export const LOBE_PROVIDER_KEYS = Object.freeze({
   meta: "meta",
   mistral: "mistral",
   alibaba: "alibaba",
+  cohere: "cohere",
+  moonshotai: "moonshotai",
+  zai: "zai",
 });
 
 export function providerLabel(provider) {

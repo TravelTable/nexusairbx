@@ -121,6 +121,29 @@ describe("workflowApi planning contracts", () => {
     });
   });
 
+  it("keeps plain-text gateway errors readable after the JSON parser fails", async () => {
+    authedFetch.mockResolvedValue({
+      ok: false, status: 502,
+      json: jest.fn().mockRejectedValue(new SyntaxError("Unexpected token")),
+      text: jest.fn().mockRejectedValue(new TypeError("body already read")),
+      clone: () => ({ text: async () => "The gateway could not reach the planning service." }),
+    });
+    await expect(checkWorkflowPlanReadiness("plan-1")).rejects.toMatchObject({
+      status: 502, message: "The gateway could not reach the planning service.",
+    });
+  });
+
+  it("forwards Stop to the pending readiness transport", async () => {
+    const controller = new AbortController();
+    authedFetch.mockImplementation((path, { signal }) => new Promise((resolve, reject) => {
+      signal.addEventListener("abort", () => reject(new DOMException("Stopped", "AbortError")));
+    }));
+    const request = checkWorkflowPlanReadiness("plan-1", { signal: controller.signal });
+    controller.abort();
+    await expect(request).rejects.toMatchObject({ name: "AbortError" });
+    expect(authedFetch.mock.calls[0][1].signal.aborted).toBe(true);
+  });
+
   it("falls back to singular plan approval endpoint when plural is unavailable", async () => {
     authedFetch
       .mockResolvedValueOnce({ ok: false, status: 404, json: jest.fn().mockResolvedValue({}) })

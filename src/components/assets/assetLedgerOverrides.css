@@ -678,3 +678,27 @@
   .asset-icon-generator-page--embedded .asset-generator-panel,
   .asset-icon-generator-page--embedded .asset-results-panel { min-width: 0; max-width: 100%; }
 }
+
+/* A compact, preview-led library. */
+.asset-platform-header h1, .creator-store-page h1 { font-size: clamp(1.5rem, 2.5vw, 2rem) !important; letter-spacing: -.03em !important; margin: 4px 0 8px !important; }
+.asset-library-toolbar { display: flex; flex-wrap: wrap; align-items: start; gap: 10px; }
+.asset-library-search { flex: 1 1 240px; }
+.asset-library-toolbar > select { width: auto; min-width: 140px; }
+.asset-library-advanced { flex: 0 1 auto; min-width: 130px; }
+.asset-library-advanced summary { cursor: pointer; min-height: 40px; padding: 10px 14px; border: 1px solid var(--nx-rule); border-radius: 8px; font-size: .8rem; }
+.asset-library-advanced[open] { flex-basis: 100%; }
+.asset-library-advanced__fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; padding: 12px 0; }
+.asset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.asset-card { overflow: visible; border: 1px solid var(--nx-rule); border-radius: 12px; background: var(--nx-card); }
+.asset-card__preview { border-radius: 12px 12px 0 0; overflow: hidden; aspect-ratio: 4 / 3; }
+.asset-platform-page .asset-card { overflow: visible; }
+.asset-card__body { padding: 12px; grid-template-columns: minmax(0, 1fr); }
+.asset-card__heading, .asset-card__heading > div { min-width: 0; }
+.asset-card__heading h3 { overflow-wrap: anywhere; }
+.asset-card__heading h3 { font-size: .9rem; }
+.asset-card__actions { min-width: 0; display: flex; justify-content: space-between; align-items: center; }
+.asset-card__more { position: relative; }
+.asset-card__more > summary { cursor: pointer; padding: 10px 6px; color: var(--nx-text-muted); font-size: .75rem; }
+.asset-card__more[open] > div { position: absolute; z-index: 5; bottom: 100%; left: 0; display: grid; gap: 4px; min-width: 170px; padding: 8px; background: var(--nx-card); border: 1px solid var(--nx-rule); border-radius: 10px; box-shadow: var(--nx-shadow-card); }
+@media (max-width: 600px) { .asset-platform-shell { width: calc(100% - 28px); } .asset-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
+@media (max-width: 380px) { .asset-grid { grid-template-columns: 1fr; } }

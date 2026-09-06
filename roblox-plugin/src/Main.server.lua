@@ -119,7 +119,7 @@ local function applyCompatibility(heartbeat)
 	compatibilityHandshakeReady = false
 	if compatibilityStatus == "update_required" then
 		setBridgeState("error")
-		setLast("This Studio plugin release is no longer supported. Reinstall NexusRBXStudioBridge.plugin.lua.")
+		setLast("Update Nexus RBX for Studio at nexusrbx.com/downloads, then reopen the plugin to reconnect.")
 	else
 		setBridgeState("connecting")
 		local reason = compatibilityDetail and tostring(compatibilityDetail) or compatibilityStatus
@@ -129,6 +129,10 @@ local function applyCompatibility(heartbeat)
 end
 
 local function pairStudio()
+	if not game:GetService("RunService"):IsEdit() then
+		setLast("Stop Play or Run mode before connecting Studio")
+		return
+	end
 	if pairButton:GetAttribute("NexusEnabled") ~= true then
 		return
 	end
@@ -343,6 +347,10 @@ task.spawn(function()
 	local failureBackoff = 0
 
 	while true do
+		if not game:GetService("RunService"):IsEdit() then
+			task.wait(0.5)
+			continue
+		end
 		if not getToken() then
 			task.wait(2)
 			continue
@@ -394,7 +402,7 @@ end)
 -- the connection.
 task.spawn(function()
 	while true do
-		if getToken() and compatibilityHandshakeReady and pendingCommandCount() > 0 then
+		if game:GetService("RunService"):IsEdit() and getToken() and compatibilityHandshakeReady and pendingCommandCount() > 0 then
 			local ok = pcall(processNextCommand)
 			if ok then
 				task.wait(0.1)
@@ -414,6 +422,10 @@ task.spawn(function()
 	local activeWorkspaceProjectId = ""
 	local activeWorkspaceRevision = ""
 	while true do
+		if not game:GetService("RunService"):IsEdit() then
+			task.wait(0.5)
+			continue
+		end
 		if getToken() then
 			local studio = studioAttestationPayload()
 			local ok, latency, authExpired, heartbeat = pingSession(
@@ -421,6 +433,12 @@ task.spawn(function()
 				studio.placeSignature,
 				studio
 			)
+			-- A request may outlive a switch into Play. Its response must not
+			-- update the edit connector using a runtime data model.
+			if not game:GetService("RunService"):IsEdit() then
+				task.wait(0.5)
+				continue
+			end
 			if type(heartbeat) == "table" then
 				updateStudioServerTarget(heartbeat)
 			end

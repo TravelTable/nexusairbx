@@ -17,8 +17,9 @@ Manually verify in Studio before publishing:
 
 1. Upgrade with an existing paired session and a saved Chat tab. Confirm Tools
    opens, the project/place is correct, and the pairing token remains valid.
-2. Check light and dark themes, including changing theme while the panel is open,
-   floating/resizing, and docking at the 320-pixel minimum width.
+2. Confirm the dock stays dark with purple accents under both Studio themes,
+   including changing theme while the panel is open. Check floating/resizing
+   and docking at the 320-pixel minimum width.
 3. Inspect empty, single, and multiple selections. Confirm no writes occur and
    properties and canonical paths match Explorer. AI tasks reject more than five
    selected objects; changing selection during a run does not change its target.

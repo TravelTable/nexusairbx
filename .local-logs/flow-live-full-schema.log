@@ -1,0 +1,1976 @@
+{"timestamp":"2026-09-06T07:07:24.466111739Z","level":"info","message":"Starting Container"}
+{"level":"info","message":"[boot] NexusRBX Backend listening on 0.0.0.0:8080","timestamp":"2026-09-06T07:07:25.285211572Z"}
+{"timestamp":"2026-09-06T07:07:25.285214322Z","message":"[boot] env: {","level":"info"}
+{"timestamp":"2026-09-06T07:07:25.285216862Z","message":"  nodeEnv: 'production',","level":"info"}
+{"level":"info","message":"  hasFirebaseServiceAccount: true,","timestamp":"2026-09-06T07:07:25.285219612Z"}
+{"message":"  hasAiGatewayApiKey: true,","timestamp":"2026-09-06T07:07:25.285222482Z","level":"info"}
+{"level":"info","message":"  hasStripeSecretKey: true,","timestamp":"2026-09-06T07:07:25.285225062Z"}
+{"message":"  railwayEnv: 'production',","timestamp":"2026-09-06T07:07:25.285227741Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:07:25.285229951Z","message":"  runJobWorker: true,"}
+{"message":"  runChatAgentReconciliationWorker: true,","timestamp":"2026-09-06T07:07:25.285232291Z","level":"info"}
+{"message":"  runAssetPublishingReconciliationWorker: false","level":"info","timestamp":"2026-09-06T07:07:25.285234611Z"}
+{"timestamp":"2026-09-06T07:07:25.285237301Z","message":"}","level":"info"}
+{"timestamp":"2026-09-06T07:07:25.285239841Z","level":"info","message":"[JobWorker] started"}
+{"message":"[StudioAgentReconciliationWorker] started (poll=10000ms, batch=10).","level":"info","timestamp":"2026-09-06T07:07:25.285242311Z"}
+{"timestamp":"2026-09-06T07:07:25.285244601Z","level":"info","message":"[TaskJobProjectionWorker] started (poll=5000ms, batch=25)."}
+{"level":"info","timestamp":"2026-09-06T07:07:25.285247051Z","message":"[TaskOutboxDispatchWorker] started (poll=5000ms, batch=25)."}
+{"message":"[ChatAgentReconciliationWorker] started (poll=5000ms, batch=25).","timestamp":"2026-09-06T07:07:25.285249621Z","level":"info"}
+{"message":"[AssetPublishingReconciliationWorker] disabled pending explicit cutover (set RUN_ASSET_PUBLISHING_RECONCILIATION_WORKER=true after its Firestore index is ready)","timestamp":"2026-09-06T07:07:25.285252071Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:26.558992226Z","message":"[ops] {","level":"info"}
+{"message":"  event: 'http_request',","level":"info","timestamp":"2026-09-06T07:07:26.558998516Z"}
+{"message":"  ts: '2026-09-06T07:07:26.543Z',","timestamp":"2026-09-06T07:07:26.559001566Z","level":"info"}
+{"message":"  requestId: 'e7b30321-8ed0-45b4-846e-63b0262ee9ee',","timestamp":"2026-09-06T07:07:26.559004626Z","level":"info"}
+{"level":"info","message":"  method: 'OPTIONS',","timestamp":"2026-09-06T07:07:26.559007606Z"}
+{"timestamp":"2026-09-06T07:07:26.559010456Z","level":"info","message":"  route: '/api/v2/events',"}
+{"timestamp":"2026-09-06T07:07:26.559014045Z","level":"info","message":"  status: 204,"}
+{"level":"info","message":"  durationMs: 1","timestamp":"2026-09-06T07:07:26.559016995Z"}
+{"message":"}","timestamp":"2026-09-06T07:07:26.559020045Z","level":"info"}
+{"level":"error","timestamp":"2026-09-06T07:07:26.813772902Z","message":"[ops] {"}
+{"message":"  event: 'security.app_check_rejected',","level":"error","timestamp":"2026-09-06T07:07:26.813776982Z"}
+{"message":"  ts: '2026-09-06T07:07:26.809Z',","timestamp":"2026-09-06T07:07:26.813781012Z","level":"error"}
+{"level":"error","message":"  reason: 'missing_token',","timestamp":"2026-09-06T07:07:26.813784492Z"}
+{"timestamp":"2026-09-06T07:07:26.813788512Z","level":"error","message":"  mode: 'monitor',"}
+{"level":"error","message":"  route: '/api/v2/events'","timestamp":"2026-09-06T07:07:26.813792672Z"}
+{"timestamp":"2026-09-06T07:07:26.813797072Z","message":"}","level":"error"}
+{"level":"info","message":"  status: 200,","timestamp":"2026-09-06T07:07:27.674827089Z"}
+{"message":"  durationMs: 964","timestamp":"2026-09-06T07:07:27.674835029Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:27.674837039Z","message":"[ops] {","level":"info"}
+{"timestamp":"2026-09-06T07:07:27.674839169Z","level":"info","message":"}"}
+{"level":"info","timestamp":"2026-09-06T07:07:27.674847199Z","message":"  event: 'http_request',"}
+{"timestamp":"2026-09-06T07:07:27.674851579Z","level":"info","message":"  ts: '2026-09-06T07:07:27.673Z',"}
+{"timestamp":"2026-09-06T07:07:27.674855399Z","level":"info","message":"  requestId: 'f5b0e422-4c1f-43c6-94bc-f1e48c69379e',"}
+{"message":"  method: 'POST',","level":"info","timestamp":"2026-09-06T07:07:27.674858949Z"}
+{"level":"info","message":"  route: '/api/studio/mcp/session/ping',","timestamp":"2026-09-06T07:07:27.674864349Z"}
+{"timestamp":"2026-09-06T07:07:28.376149270Z","level":"info","message":"[ops] {"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:28.376153950Z"}
+{"message":"  ts: '2026-09-06T07:07:28.370Z',","level":"info","timestamp":"2026-09-06T07:07:28.376157660Z"}
+{"message":"  requestId: '5431545d-ebf4-44f7-aa3c-043c36bc23e0',","timestamp":"2026-09-06T07:07:28.376160830Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:28.376163470Z","level":"info","message":"  method: 'GET',"}
+{"message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:07:28.376165990Z","level":"info"}
+{"level":"info","message":"  status: 200,","timestamp":"2026-09-06T07:07:28.376168900Z"}
+{"level":"info","message":"  durationMs: 1561","timestamp":"2026-09-06T07:07:28.376171850Z"}
+{"message":"}","level":"info","timestamp":"2026-09-06T07:07:28.376174450Z"}
+{"timestamp":"2026-09-06T07:07:28.963845319Z","level":"info","message":"  durationMs: 661"}
+{"timestamp":"2026-09-06T07:07:28.963857899Z","message":"}","level":"info"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:07:28.963868888Z"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:28.963874828Z"}
+{"message":"  ts: '2026-09-06T07:07:28.877Z',","level":"info","timestamp":"2026-09-06T07:07:28.963879288Z"}
+{"level":"info","message":"  requestId: 'f8664ab4-ed8c-40e4-ad24-2fbd79ce7a7d',","timestamp":"2026-09-06T07:07:28.963883658Z"}
+{"message":"  method: 'POST',","timestamp":"2026-09-06T07:07:28.963888498Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:28.963892348Z","message":"  route: '/api/studio/mcp/session/ping',","level":"info"}
+{"timestamp":"2026-09-06T07:07:28.963896148Z","level":"info","message":"  status: 200,"}
+{"message":"  event: 'http_request',","level":"info","timestamp":"2026-09-06T07:07:29.041430322Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:29.041449532Z","message":"  ts: '2026-09-06T07:07:29.035Z',"}
+{"timestamp":"2026-09-06T07:07:29.041455492Z","message":"  requestId: '491649d8-b149-42ec-ab5e-0e1dfd98ed11',","level":"info"}
+{"message":"  method: 'OPTIONS',","level":"info","timestamp":"2026-09-06T07:07:29.041462742Z"}
+{"message":"  route: '/api/v2/events',","level":"info","timestamp":"2026-09-06T07:07:29.041467362Z"}
+{"timestamp":"2026-09-06T07:07:29.041471312Z","message":"[ops] {","level":"info"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:07:29.041474322Z","level":"info"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:29.041479952Z"}
+{"timestamp":"2026-09-06T07:07:29.041480832Z","message":"  durationMs: 0","level":"info"}
+{"message":"  ts: '2026-09-06T07:07:29.033Z',","level":"info","timestamp":"2026-09-06T07:07:29.041488392Z"}
+{"message":"}","timestamp":"2026-09-06T07:07:29.041488642Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:07:29.041495932Z","message":"  requestId: 'c12b8c81-5a3f-42cd-ba27-7d414f9f917b',"}
+{"timestamp":"2026-09-06T07:07:29.041500562Z","level":"info","message":"  method: 'OPTIONS',"}
+{"level":"info","message":"  route: '/api/v2/agents/active',","timestamp":"2026-09-06T07:07:29.041505361Z"}
+{"level":"info","message":"  status: 204,","timestamp":"2026-09-06T07:07:29.041510041Z"}
+{"message":"  durationMs: 0","timestamp":"2026-09-06T07:07:29.041515191Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:29.041519961Z","level":"info","message":"}"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:07:29.041524901Z","level":"info"}
+{"level":"error","message":"  reason: 'missing_token',","timestamp":"2026-09-06T07:07:29.367197023Z"}
+{"timestamp":"2026-09-06T07:07:29.367204433Z","level":"info","message":"  durationMs: 80"}
+{"message":"  mode: 'monitor',","level":"error","timestamp":"2026-09-06T07:07:29.367213283Z"}
+{"level":"error","message":"[ops] {","timestamp":"2026-09-06T07:07:29.367217143Z"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:07:29.367219033Z"}
+{"message":"  route: '/api/v2/agents/active'","timestamp":"2026-09-06T07:07:29.367220283Z","level":"error"}
+{"message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:07:29.367222513Z","level":"error"}
+{"timestamp":"2026-09-06T07:07:29.367225723Z","message":"}","level":"error"}
+{"level":"error","timestamp":"2026-09-06T07:07:29.367227153Z","message":"  ts: '2026-09-06T07:07:29.274Z',"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:07:29.367230153Z","level":"error"}
+{"timestamp":"2026-09-06T07:07:29.367234773Z","message":"  event: 'security.app_check_rejected',","level":"error"}
+{"level":"error","message":"  ts: '2026-09-06T07:07:29.287Z',","timestamp":"2026-09-06T07:07:29.367239713Z"}
+{"level":"error","timestamp":"2026-09-06T07:07:29.367243513Z","message":"  reason: 'missing_token',"}
+{"timestamp":"2026-09-06T07:07:29.367247593Z","level":"error","message":"  mode: 'monitor',"}
+{"message":"  route: '/api/v2/events'","timestamp":"2026-09-06T07:07:29.367252473Z","level":"error"}
+{"message":"}","timestamp":"2026-09-06T07:07:29.367256513Z","level":"error"}
+{"timestamp":"2026-09-06T07:07:29.367260743Z","message":"[ops] {","level":"info"}
+{"timestamp":"2026-09-06T07:07:29.367299442Z","level":"info","message":"  event: 'http_request',"}
+{"message":"  ts: '2026-09-06T07:07:29.354Z',","level":"info","timestamp":"2026-09-06T07:07:29.367313292Z"}
+{"message":"  requestId: '02d5bf43-85d2-4939-9496-5fd80f184963',","level":"info","timestamp":"2026-09-06T07:07:29.367319332Z"}
+{"timestamp":"2026-09-06T07:07:29.367323802Z","level":"info","message":"  method: 'GET',"}
+{"timestamp":"2026-09-06T07:07:29.367327852Z","level":"info","message":"  route: '/api/v2/agents/active',"}
+{"message":"  status: 200,","level":"info","timestamp":"2026-09-06T07:07:29.367331952Z"}
+{"timestamp":"2026-09-06T07:07:31.170439839Z","level":"info","message":"[ops] {"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:31.170447038Z","level":"info"}
+{"message":"  ts: '2026-09-06T07:07:31.152Z',","level":"info","timestamp":"2026-09-06T07:07:31.170451178Z"}
+{"message":"  requestId: 'ebaf052c-0ec4-44e0-832a-53e289e1ea7e',","timestamp":"2026-09-06T07:07:31.170455858Z","level":"info"}
+{"message":"  method: 'GET',","timestamp":"2026-09-06T07:07:31.170462148Z","level":"info"}
+{"level":"info","message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:07:31.170466888Z"}
+{"timestamp":"2026-09-06T07:07:31.170470638Z","message":"  status: 200,","level":"info"}
+{"message":"  durationMs: 1865","timestamp":"2026-09-06T07:07:31.170474808Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:31.170478378Z","message":"}","level":"info"}
+{"timestamp":"2026-09-06T07:07:31.532794152Z","message":"[ops] {","level":"info"}
+{"message":"  event: 'http_request',","level":"info","timestamp":"2026-09-06T07:07:31.532799441Z"}
+{"level":"info","message":"  ts: '2026-09-06T07:07:31.527Z',","timestamp":"2026-09-06T07:07:31.532803331Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:31.532806721Z","message":"  requestId: '1d404847-aed6-4ded-9382-c135f7b376dc',"}
+{"level":"info","timestamp":"2026-09-06T07:07:31.532813021Z","message":"  method: 'OPTIONS',"}
+{"timestamp":"2026-09-06T07:07:31.532816531Z","level":"info","message":"  route: '/api/v2/events',"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:07:31.532820491Z","level":"info"}
+{"message":"  durationMs: 0","level":"info","timestamp":"2026-09-06T07:07:31.532824221Z"}
+{"message":"}","level":"info","timestamp":"2026-09-06T07:07:31.532827861Z"}
+{"message":"  status: 200,","timestamp":"2026-09-06T07:07:31.666952040Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:31.666959440Z","level":"info","message":"  durationMs: 1420"}
+{"message":"}","timestamp":"2026-09-06T07:07:31.666963290Z","level":"info"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:07:31.666967960Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:31.666976890Z","level":"info","message":"  event: 'studio.plugin_compatibility_handshake',"}
+{"message":"  ts: '2026-09-06T07:07:31.659Z',","timestamp":"2026-09-06T07:07:31.666990270Z","level":"info"}
+{"level":"info","message":"  requestId: '34bec461-9448-4a68-b58d-7608132ac4cb',","timestamp":"2026-09-06T07:07:31.666993980Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:31.667006630Z","message":"  sessionId: 'MLq8J3mhz56J6BRsAeQe',"}
+{"level":"info","message":"  userId: '0VSQotqOXxPXBLeQu1gUNkXELWH3',","timestamp":"2026-09-06T07:07:31.667010339Z"}
+{"message":"  status: 'compatible',","timestamp":"2026-09-06T07:07:31.667014109Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:31.667017599Z","level":"info","message":"  reasonCodes: [],"}
+{"level":"info","message":"  buildId: 'nexusrbx-studio-0.14.0-r15-animation.12-toolbox',","timestamp":"2026-09-06T07:07:31.667021229Z"}
+{"timestamp":"2026-09-06T07:07:31.667024559Z","level":"info","message":"  attestationWritten: false,"}
+{"message":"  repairDurationMs: 1274","level":"info","timestamp":"2026-09-06T07:07:31.667027419Z"}
+{"timestamp":"2026-09-06T07:07:31.667044219Z","message":"}","level":"info"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:07:31.667046929Z","level":"info"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:31.667067639Z"}
+{"message":"  ts: '2026-09-06T07:07:31.660Z',","timestamp":"2026-09-06T07:07:31.667070789Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:31.667073639Z","message":"  requestId: '34bec461-9448-4a68-b58d-7608132ac4cb',","level":"info"}
+{"timestamp":"2026-09-06T07:07:31.667076489Z","message":"  method: 'POST',","level":"info"}
+{"message":"  route: '/api/studio/session/ping',","level":"info","timestamp":"2026-09-06T07:07:31.667082728Z"}
+{"timestamp":"2026-09-06T07:07:31.716663471Z","level":"error","message":"[ops] {"}
+{"timestamp":"2026-09-06T07:07:31.716671101Z","level":"error","message":"  event: 'security.app_check_rejected',"}
+{"level":"error","timestamp":"2026-09-06T07:07:31.716675721Z","message":"  ts: '2026-09-06T07:07:31.705Z',"}
+{"level":"error","message":"  reason: 'missing_token',","timestamp":"2026-09-06T07:07:31.716680381Z"}
+{"timestamp":"2026-09-06T07:07:31.716686060Z","level":"error","message":"  mode: 'monitor',"}
+{"level":"error","message":"  route: '/api/v2/events'","timestamp":"2026-09-06T07:07:31.716691010Z"}
+{"message":"}","timestamp":"2026-09-06T07:07:31.716695080Z","level":"error"}
+{"timestamp":"2026-09-06T07:07:32.426541501Z","level":"info","message":"[ops] {"}
+{"timestamp":"2026-09-06T07:07:32.426555071Z","message":"  event: 'http_request',","level":"info"}
+{"message":"  ts: '2026-09-06T07:07:32.424Z',","timestamp":"2026-09-06T07:07:32.426559041Z","level":"info"}
+{"message":"  requestId: '3ad56dc2-b543-4369-9128-bcafff779a60',","timestamp":"2026-09-06T07:07:32.426570531Z","level":"info"}
+{"message":"  method: 'GET',","timestamp":"2026-09-06T07:07:32.426573751Z","level":"info"}
+{"message":"  route: '/api/v2/events',","level":"info","timestamp":"2026-09-06T07:07:32.426577161Z"}
+{"level":"info","message":"  status: 200,","timestamp":"2026-09-06T07:07:32.426588870Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:32.426592140Z","message":"  durationMs: 719"}
+{"timestamp":"2026-09-06T07:07:32.426603560Z","message":"}","level":"info"}
+{"message":"[ops] {","level":"info","timestamp":"2026-09-06T07:07:33.966266738Z"}
+{"timestamp":"2026-09-06T07:07:33.966271218Z","level":"info","message":"  event: 'http_request',"}
+{"message":"  ts: '2026-09-06T07:07:33.963Z',","timestamp":"2026-09-06T07:07:33.966274238Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:33.966276748Z","message":"  requestId: 'c11c8876-3682-4bce-b50f-ea2a50ffd550',","level":"info"}
+{"timestamp":"2026-09-06T07:07:33.966279378Z","level":"info","message":"  method: 'OPTIONS',"}
+{"timestamp":"2026-09-06T07:07:33.966281758Z","message":"  route: '/api/studio/status',","level":"info"}
+{"level":"info","message":"  status: 204,","timestamp":"2026-09-06T07:07:33.966284038Z"}
+{"timestamp":"2026-09-06T07:07:33.966286658Z","level":"info","message":"  durationMs: 0"}
+{"timestamp":"2026-09-06T07:07:33.966288958Z","level":"info","message":"}"}
+{"message":"[ops] {","level":"info","timestamp":"2026-09-06T07:07:33.966291588Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:33.966294248Z","message":"  event: 'http_request',"}
+{"message":"  ts: '2026-09-06T07:07:33.963Z',","level":"info","timestamp":"2026-09-06T07:07:33.966297888Z"}
+{"timestamp":"2026-09-06T07:07:33.966300508Z","message":"  requestId: '075c594a-ce60-4b0a-98a1-5cd1d29ebeee',","level":"info"}
+{"message":"  method: 'OPTIONS',","timestamp":"2026-09-06T07:07:33.966302948Z","level":"info"}
+{"message":"  route: '/api/studio/mcp/status',","timestamp":"2026-09-06T07:07:33.966305268Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:33.966308248Z","message":"  status: 204,","level":"info"}
+{"message":"  durationMs: 0","timestamp":"2026-09-06T07:07:33.966310698Z","level":"info"}
+{"message":"}","timestamp":"2026-09-06T07:07:33.966313228Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:34.029468582Z","message":"[ops] {","level":"info"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:34.029478452Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:34.029484401Z","message":"  ts: '2026-09-06T07:07:34.025Z',"}
+{"level":"info","message":"  requestId: '461d8273-071f-458e-8496-a5a7993dcf7c',","timestamp":"2026-09-06T07:07:34.029489431Z"}
+{"timestamp":"2026-09-06T07:07:34.029494491Z","message":"  method: 'OPTIONS',","level":"info"}
+{"timestamp":"2026-09-06T07:07:34.029500311Z","level":"info","message":"  route: '/api/v2/events',"}
+{"message":"  status: 204,","level":"info","timestamp":"2026-09-06T07:07:34.029505091Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:34.029509711Z","message":"  durationMs: 0"}
+{"timestamp":"2026-09-06T07:07:34.029514181Z","level":"info","message":"}"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:07:34.173915547Z","level":"error"}
+{"timestamp":"2026-09-06T07:07:34.173919247Z","level":"error","message":"  event: 'security.app_check_rejected',"}
+{"level":"error","timestamp":"2026-09-06T07:07:34.173922127Z","message":"  ts: '2026-09-06T07:07:34.128Z',"}
+{"message":"  reason: 'missing_token',","timestamp":"2026-09-06T07:07:34.173925457Z","level":"error"}
+{"message":"  mode: 'monitor',","level":"error","timestamp":"2026-09-06T07:07:34.173928327Z"}
+{"timestamp":"2026-09-06T07:07:34.173931117Z","message":"  route: '/api/studio/status'","level":"error"}
+{"level":"error","message":"}","timestamp":"2026-09-06T07:07:34.173934167Z"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:07:34.173936807Z","level":"error"}
+{"level":"error","timestamp":"2026-09-06T07:07:34.173939507Z","message":"  event: 'security.app_check_rejected',"}
+{"timestamp":"2026-09-06T07:07:34.173942117Z","message":"  ts: '2026-09-06T07:07:34.130Z',","level":"error"}
+{"timestamp":"2026-09-06T07:07:34.173944747Z","level":"error","message":"  reason: 'missing_token',"}
+{"message":"  mode: 'monitor',","timestamp":"2026-09-06T07:07:34.173948007Z","level":"error"}
+{"level":"error","message":"  route: '/api/studio/mcp/status'","timestamp":"2026-09-06T07:07:34.173950767Z"}
+{"message":"}","timestamp":"2026-09-06T07:07:34.173953377Z","level":"error"}
+{"level":"error","message":"[ops] {","timestamp":"2026-09-06T07:07:34.216708584Z"}
+{"level":"error","message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:07:34.216719343Z"}
+{"message":"  ts: '2026-09-06T07:07:34.213Z',","timestamp":"2026-09-06T07:07:34.216725413Z","level":"error"}
+{"timestamp":"2026-09-06T07:07:34.216729783Z","level":"error","message":"  reason: 'missing_token',"}
+{"level":"error","message":"  mode: 'monitor',","timestamp":"2026-09-06T07:07:34.216733673Z"}
+{"message":"  route: '/api/v2/events'","timestamp":"2026-09-06T07:07:34.216738103Z","level":"error"}
+{"level":"error","message":"}","timestamp":"2026-09-06T07:07:34.216742663Z"}
+{"timestamp":"2026-09-06T07:07:34.834309834Z","level":"info","message":"[ops] {"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:34.834313604Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:34.834316974Z","message":"  ts: '2026-09-06T07:07:34.654Z',"}
+{"message":"  requestId: '646c21d9-b3d7-4076-8273-532544bb8295',","timestamp":"2026-09-06T07:07:34.834320664Z","level":"info"}
+{"message":"  method: 'GET',","timestamp":"2026-09-06T07:07:34.834323904Z","level":"info"}
+{"message":"  route: '/api/studio/mcp/status',","timestamp":"2026-09-06T07:07:34.834327384Z","level":"info"}
+{"message":"  status: 200,","timestamp":"2026-09-06T07:07:34.834331224Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:07:34.834334784Z","message":"  durationMs: 524"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:07:34.834338114Z"}
+{"message":"[ops] {","level":"info","timestamp":"2026-09-06T07:07:34.976361633Z"}
+{"timestamp":"2026-09-06T07:07:34.976365683Z","level":"info","message":"  event: 'http_request',"}
+{"timestamp":"2026-09-06T07:07:34.976369163Z","message":"  ts: '2026-09-06T07:07:34.917Z',","level":"info"}
+{"timestamp":"2026-09-06T07:07:34.976372163Z","level":"info","message":"  requestId: '299754fc-fe58-415e-91fe-879e5dfab5c5',"}
+{"message":"  method: 'GET',","timestamp":"2026-09-06T07:07:34.976375333Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:34.976378543Z","level":"info","message":"  route: '/api/studio/status',"}
+{"level":"info","message":"  status: 200,","timestamp":"2026-09-06T07:07:34.976381263Z"}
+{"timestamp":"2026-09-06T07:07:34.976383653Z","level":"info","message":"  durationMs: 789"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:07:34.976385983Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:35.127131101Z","message":"  ts: '2026-09-06T07:07:35.088Z',"}
+{"timestamp":"2026-09-06T07:07:35.127139101Z","level":"info","message":"  requestId: '4991d4bd-cb66-4276-bf5c-420ebc0e49d6',"}
+{"message":"  method: 'GET',","timestamp":"2026-09-06T07:07:35.127144571Z","level":"info"}
+{"level":"info","message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:07:35.127149101Z"}
+{"message":"  status: 200,","timestamp":"2026-09-06T07:07:35.127153851Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:35.127158681Z","level":"info","message":"  durationMs: 875"}
+{"timestamp":"2026-09-06T07:07:35.127163491Z","level":"info","message":"}"}
+{"timestamp":"2026-09-06T07:07:35.127178410Z","message":"[ops] {","level":"info"}
+{"timestamp":"2026-09-06T07:07:35.127182360Z","level":"info","message":"  event: 'http_request',"}
+{"timestamp":"2026-09-06T07:07:36.590944218Z","message":"[ops] {","level":"info"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:36.590948568Z"}
+{"timestamp":"2026-09-06T07:07:36.590952768Z","level":"info","message":"  ts: '2026-09-06T07:07:36.525Z',"}
+{"message":"  requestId: '7ce84daf-46e8-482f-82ed-27ad37713788',","timestamp":"2026-09-06T07:07:36.590956527Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:36.590960017Z","message":"  method: 'OPTIONS',","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:07:36.590963437Z","message":"  route: '/api/v2/events',"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:07:36.590967077Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:36.590970657Z","message":"  durationMs: 1","level":"info"}
+{"timestamp":"2026-09-06T07:07:36.590975007Z","message":"}","level":"info"}
+{"timestamp":"2026-09-06T07:07:36.732571202Z","level":"info","message":"}"}
+{"timestamp":"2026-09-06T07:07:36.732577152Z","message":"[ops] {","level":"error"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:07:36.732586112Z","level":"info"}
+{"message":"  durationMs: 5490","timestamp":"2026-09-06T07:07:36.732589812Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:36.732597142Z","message":"}","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:07:36.732601802Z","message":"[ops] {"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:36.732607002Z","level":"info"}
+{"message":"  ts: '2026-09-06T07:07:36.670Z',","level":"info","timestamp":"2026-09-06T07:07:36.732612162Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:36.732619362Z","message":"[ops] {"}
+{"level":"info","message":"  requestId: 'd7b10cb1-7937-469c-8908-64edce774802',","timestamp":"2026-09-06T07:07:36.732620012Z"}
+{"message":"  event: 'studio.command_polled',","level":"info","timestamp":"2026-09-06T07:07:36.732626252Z"}
+{"timestamp":"2026-09-06T07:07:36.732632452Z","message":"  ts: '2026-09-06T07:07:36.670Z',","level":"info"}
+{"timestamp":"2026-09-06T07:07:36.732635261Z","level":"info","message":"  method: 'GET',"}
+{"message":"  requestId: 'd7b10cb1-7937-469c-8908-64edce774802',","level":"info","timestamp":"2026-09-06T07:07:36.732640431Z"}
+{"message":"  route: '/api/studio/mcp/commands/next',","timestamp":"2026-09-06T07:07:36.732643151Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:36.732647921Z","message":"  sessionId: 'DlvFpLpN0vX1CB5Fvwv9',","level":"info"}
+{"timestamp":"2026-09-06T07:07:36.732653781Z","message":"  status: 'empty'","level":"info"}
+{"timestamp":"2026-09-06T07:07:36.732805739Z","level":"error","message":"  event: 'security.app_check_rejected',"}
+{"level":"error","message":"  ts: '2026-09-06T07:07:36.694Z',","timestamp":"2026-09-06T07:07:36.732850308Z"}
+{"timestamp":"2026-09-06T07:07:36.732857128Z","level":"error","message":"  reason: 'missing_token',"}
+{"message":"  mode: 'monitor',","level":"error","timestamp":"2026-09-06T07:07:36.733022496Z"}
+{"message":"  route: '/api/v2/events'","timestamp":"2026-09-06T07:07:36.733027886Z","level":"error"}
+{"message":"}","level":"error","timestamp":"2026-09-06T07:07:36.733033486Z"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:07:37.528438048Z"}
+{"timestamp":"2026-09-06T07:07:37.528442218Z","message":"  event: 'http_request',","level":"info"}
+{"timestamp":"2026-09-06T07:07:37.528445278Z","message":"  ts: '2026-09-06T07:07:37.372Z',","level":"info"}
+{"message":"  requestId: 'd22f2124-4c28-4d21-a9e6-68cb119befe2',","level":"info","timestamp":"2026-09-06T07:07:37.528449298Z"}
+{"level":"info","message":"  method: 'GET',","timestamp":"2026-09-06T07:07:37.528452728Z"}
+{"message":"  route: '/api/v2/events',","level":"info","timestamp":"2026-09-06T07:07:37.528456178Z"}
+{"timestamp":"2026-09-06T07:07:37.528459428Z","level":"info","message":"  status: 200,"}
+{"timestamp":"2026-09-06T07:07:37.528462378Z","level":"info","message":"  durationMs: 678"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:07:37.528465338Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:37.528468118Z","message":"[ops] {"}
+{"message":"  event: 'http_request',","level":"info","timestamp":"2026-09-06T07:07:37.528471558Z"}
+{"timestamp":"2026-09-06T07:07:37.528474408Z","level":"info","message":"  ts: '2026-09-06T07:07:37.434Z',"}
+{"message":"  requestId: '735c8e25-32db-4374-b8b0-e90e9066512c',","timestamp":"2026-09-06T07:07:37.528477158Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:37.528480277Z","level":"info","message":"  method: 'POST',"}
+{"level":"info","message":"  route: '/api/studio/mcp/session/ping',","timestamp":"2026-09-06T07:07:37.528483327Z"}
+{"timestamp":"2026-09-06T07:07:37.528486267Z","level":"info","message":"  status: 200,"}
+{"message":"  durationMs: 461","timestamp":"2026-09-06T07:07:37.528489137Z","level":"info"}
+{"message":"}","timestamp":"2026-09-06T07:07:37.528493027Z","level":"info"}
+{"count":1,"counter":"studio_session","jobId":null,"ts":1788678458675,"message":"","type":"firestore_write_metric","timestamp":"2026-09-06T07:07:38.688964412Z","level":"info","total":1,"sessionId":"Iog4rWn0F2wcGR9xp3Jq","writesPerStudioSessionHour":1}
+{"level":"info","message":"  method: 'POST',","timestamp":"2026-09-06T07:07:39.005679327Z"}
+{"timestamp":"2026-09-06T07:07:39.005686097Z","message":"  route: '/api/studio/session/ping',","level":"info"}
+{"timestamp":"2026-09-06T07:07:39.005690937Z","message":"  status: 200,","level":"info"}
+{"message":"  durationMs: 514","level":"info","timestamp":"2026-09-06T07:07:39.005696436Z"}
+{"timestamp":"2026-09-06T07:07:39.005702306Z","level":"info","message":"  reasonCodes: [ 'command_unavailable' ],"}
+{"timestamp":"2026-09-06T07:07:39.005703316Z","level":"info","message":"}"}
+{"sessionId":"Iog4rWn0F2wcGR9xp3Jq","writesPerStudioSessionHour":2,"jobId":null,"ts":1788678458970,"total":2,"message":"","level":"info","timestamp":"2026-09-06T07:07:39.005712396Z","type":"firestore_write_metric","counter":"studio_session","count":1}
+{"timestamp":"2026-09-06T07:07:39.005715476Z","message":"  buildId: 'nexusrbx-studio-0.14.0-r15-animation.10-native-value-normalization',","level":"info"}
+{"level":"info","message":"  attestationWritten: true,","timestamp":"2026-09-06T07:07:39.005721496Z"}
+{"level":"info","message":"  repairDurationMs: 459","timestamp":"2026-09-06T07:07:39.005725756Z"}
+{"message":"}","timestamp":"2026-09-06T07:07:39.005730406Z","level":"info"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:07:39.005737666Z","level":"info"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:07:39.005742106Z"}
+{"timestamp":"2026-09-06T07:07:39.005747156Z","message":"  event: 'studio.plugin_compatibility_handshake',","level":"info"}
+{"timestamp":"2026-09-06T07:07:39.005750026Z","message":"  event: 'http_request',","level":"info"}
+{"message":"  ts: '2026-09-06T07:07:38.970Z',","timestamp":"2026-09-06T07:07:39.005756146Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:07:39.005757446Z","message":"  ts: '2026-09-06T07:07:38.971Z',"}
+{"timestamp":"2026-09-06T07:07:39.005764796Z","level":"info","message":"  requestId: '98e5845d-6be1-4738-b742-3dbcf667ed41',"}
+{"message":"  requestId: '98e5845d-6be1-4738-b742-3dbcf667ed41',","timestamp":"2026-09-06T07:07:39.005765006Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:39.005770825Z","level":"info","message":"  sessionId: 'Iog4rWn0F2wcGR9xp3Jq',"}
+{"level":"info","message":"  userId: 'klu6Sv5QeEgYWlHjsgQwMkZCvsb2',","timestamp":"2026-09-06T07:07:39.005774855Z"}
+{"level":"info","message":"  status: 'degraded',","timestamp":"2026-09-06T07:07:39.005779325Z"}
+{"message":"[ops] {","level":"info","timestamp":"2026-09-06T07:07:39.082499441Z"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:39.082503831Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:39.082508170Z","message":"  ts: '2026-09-06T07:07:39.065Z',"}
+{"level":"info","message":"  requestId: '2fe6a909-5db9-40eb-852c-b435fcba6048',","timestamp":"2026-09-06T07:07:39.082511580Z"}
+{"message":"  method: 'OPTIONS',","timestamp":"2026-09-06T07:07:39.082516010Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:07:39.082520180Z","message":"  route: '/api/v2/agents/active',"}
+{"message":"  status: 204,","level":"info","timestamp":"2026-09-06T07:07:39.082523900Z"}
+{"message":"  durationMs: 1","level":"info","timestamp":"2026-09-06T07:07:39.082527330Z"}
+{"timestamp":"2026-09-06T07:07:39.082531010Z","level":"info","message":"}"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:07:39.082534570Z","level":"info"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:39.082538640Z","level":"info"}
+{"level":"info","message":"  ts: '2026-09-06T07:07:39.069Z',","timestamp":"2026-09-06T07:07:39.082542850Z"}
+{"level":"info","message":"  requestId: 'a9eb722b-6dcd-4c36-a47f-684318194929',","timestamp":"2026-09-06T07:07:39.082550460Z"}
+{"message":"  method: 'OPTIONS',","timestamp":"2026-09-06T07:07:39.082555540Z","level":"info"}
+{"level":"info","message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:07:39.082560940Z"}
+{"timestamp":"2026-09-06T07:07:39.082565660Z","level":"info","message":"  status: 204,"}
+{"message":"  durationMs: 0","timestamp":"2026-09-06T07:07:39.082570970Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:07:39.082575680Z","message":"}"}
+{"level":"error","message":"[ops] {","timestamp":"2026-09-06T07:07:39.235304279Z"}
+{"message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:07:39.235308939Z","level":"error"}
+{"timestamp":"2026-09-06T07:07:39.235311719Z","level":"error","message":"  ts: '2026-09-06T07:07:39.231Z',"}
+{"message":"  reason: 'missing_token',","timestamp":"2026-09-06T07:07:39.235314399Z","level":"error"}
+{"message":"  mode: 'monitor',","timestamp":"2026-09-06T07:07:39.235317489Z","level":"error"}
+{"timestamp":"2026-09-06T07:07:39.235320319Z","message":"  route: '/api/v2/agents/active'","level":"error"}
+{"timestamp":"2026-09-06T07:07:39.235323209Z","message":"}","level":"error"}
+{"timestamp":"2026-09-06T07:07:39.240007403Z","message":"[ops] {","level":"error"}
+{"message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:07:39.240027903Z","level":"error"}
+{"timestamp":"2026-09-06T07:07:39.240031383Z","level":"error","message":"  ts: '2026-09-06T07:07:39.239Z',"}
+{"timestamp":"2026-09-06T07:07:39.240036593Z","level":"error","message":"  reason: 'missing_token',"}
+{"level":"error","message":"  mode: 'monitor',","timestamp":"2026-09-06T07:07:39.240039493Z"}
+{"level":"error","message":"  route: '/api/v2/events'","timestamp":"2026-09-06T07:07:39.240042133Z"}
+{"timestamp":"2026-09-06T07:07:39.240044823Z","level":"error","message":"}"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:07:39.301535799Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:39.301538889Z","level":"info","message":"  event: 'http_request',"}
+{"level":"info","timestamp":"2026-09-06T07:07:39.301542049Z","message":"  ts: '2026-09-06T07:07:39.294Z',"}
+{"message":"  requestId: 'f18acda5-5755-4be6-b22b-55b028938d67',","timestamp":"2026-09-06T07:07:39.301545799Z","level":"info"}
+{"message":"  method: 'GET',","level":"info","timestamp":"2026-09-06T07:07:39.301548369Z"}
+{"level":"info","message":"  route: '/api/v2/agents/active',","timestamp":"2026-09-06T07:07:39.301551329Z"}
+{"timestamp":"2026-09-06T07:07:39.301553859Z","message":"  status: 200,","level":"info"}
+{"timestamp":"2026-09-06T07:07:39.301556789Z","message":"  durationMs: 63","level":"info"}
+{"timestamp":"2026-09-06T07:07:39.301559069Z","level":"info","message":"}"}
+{"timestamp":"2026-09-06T07:07:40.001485295Z","message":"[ops] {","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:07:40.001490665Z","message":"  event: 'http_request',"}
+{"timestamp":"2026-09-06T07:07:40.001494165Z","message":"  ts: '2026-09-06T07:07:39.995Z',","level":"info"}
+{"level":"info","message":"  requestId: 'b7772b7a-d903-4177-bd1b-97596ab629d3',","timestamp":"2026-09-06T07:07:40.001497185Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:40.001500505Z","message":"  method: 'GET',"}
+{"message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:07:40.001503545Z","level":"info"}
+{"message":"  status: 200,","level":"info","timestamp":"2026-09-06T07:07:40.001506565Z"}
+{"message":"  durationMs: 757","level":"info","timestamp":"2026-09-06T07:07:40.001509295Z"}
+{"timestamp":"2026-09-06T07:07:40.001512835Z","level":"info","message":"}"}
+{"timestamp":"2026-09-06T07:07:42.618255433Z","message":"[ops] {","level":"info"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:42.618259023Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:42.618262333Z","message":"  ts: '2026-09-06T07:07:42.329Z',","level":"info"}
+{"message":"  requestId: '174fb33d-362e-4de2-8d99-afba3277ac20',","timestamp":"2026-09-06T07:07:42.618266293Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:07:42.618271733Z","message":"  method: 'OPTIONS',"}
+{"level":"info","message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:07:42.618275793Z"}
+{"timestamp":"2026-09-06T07:07:42.618279243Z","level":"info","message":"  status: 204,"}
+{"level":"info","message":"  durationMs: 0","timestamp":"2026-09-06T07:07:42.618282643Z"}
+{"timestamp":"2026-09-06T07:07:42.618285943Z","level":"info","message":"}"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:07:42.618290513Z","level":"error"}
+{"level":"error","message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:07:42.618294313Z"}
+{"level":"error","message":"  ts: '2026-09-06T07:07:42.589Z',","timestamp":"2026-09-06T07:07:42.618303493Z"}
+{"timestamp":"2026-09-06T07:07:42.618307153Z","level":"error","message":"  reason: 'missing_token',"}
+{"level":"error","message":"  mode: 'monitor',","timestamp":"2026-09-06T07:07:42.618310913Z"}
+{"level":"error","timestamp":"2026-09-06T07:07:42.618314533Z","message":"  route: '/api/v2/events'"}
+{"level":"error","message":"}","timestamp":"2026-09-06T07:07:42.618318412Z"}
+{"level":"error","timestamp":"2026-09-06T07:07:44.221856861Z","message":"[ops] {"}
+{"timestamp":"2026-09-06T07:07:44.221861051Z","level":"error","message":"  event: 'security.app_check_rejected',"}
+{"level":"error","timestamp":"2026-09-06T07:07:44.221864611Z","message":"  ts: '2026-09-06T07:07:44.064Z',"}
+{"message":"  reason: 'missing_token',","timestamp":"2026-09-06T07:07:44.221868921Z","level":"error"}
+{"timestamp":"2026-09-06T07:07:44.221878571Z","level":"error","message":"  mode: 'monitor',"}
+{"level":"error","timestamp":"2026-09-06T07:07:44.221882251Z","message":"  route: '/api/models'"}
+{"timestamp":"2026-09-06T07:07:44.221885721Z","level":"error","message":"}"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:07:44.221889411Z","level":"info"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:44.221894221Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:07:44.221897971Z","message":"  ts: '2026-09-06T07:07:44.073Z',"}
+{"level":"info","timestamp":"2026-09-06T07:07:44.221901511Z","message":"  requestId: 'd3f574ae-6007-4523-adff-1d4d63bd636c',"}
+{"level":"info","message":"  method: 'GET',","timestamp":"2026-09-06T07:07:44.221905111Z"}
+{"timestamp":"2026-09-06T07:07:44.221909651Z","message":"  route: '/api/models/',","level":"info"}
+{"level":"info","message":"  status: 200,","timestamp":"2026-09-06T07:07:44.221914241Z"}
+{"message":"  durationMs: 9","timestamp":"2026-09-06T07:07:44.221917751Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:44.221922170Z","level":"info","message":"}"}
+{"timestamp":"2026-09-06T07:07:44.221925620Z","message":"[ops] {","level":"info"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:44.221929270Z"}
+{"level":"info","message":"  ts: '2026-09-06T07:07:44.087Z',","timestamp":"2026-09-06T07:07:44.221933000Z"}
+{"timestamp":"2026-09-06T07:07:44.221936290Z","message":"  requestId: '9a5b53d6-b4cc-4fdf-8ad5-ce2117031fb8',","level":"info"}
+{"level":"info","message":"  method: 'GET',","timestamp":"2026-09-06T07:07:44.221939740Z"}
+{"level":"info","message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:07:44.221943160Z"}
+{"message":"  status: 200,","level":"info","timestamp":"2026-09-06T07:07:44.221946520Z"}
+{"message":"  durationMs: 1499","timestamp":"2026-09-06T07:07:44.221949580Z","level":"info"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:07:44.221952560Z"}
+{"timestamp":"2026-09-06T07:07:45.790334386Z","message":"  status: 204,","level":"info"}
+{"message":"  durationMs: 5753","timestamp":"2026-09-06T07:07:45.790341926Z","level":"info"}
+{"message":"}","timestamp":"2026-09-06T07:07:45.790346566Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:45.790356336Z","level":"info","message":"[ops] {"}
+{"level":"info","message":"  ts: '2026-09-06T07:07:45.489Z',","timestamp":"2026-09-06T07:07:45.790362136Z"}
+{"message":"  event: 'http_request',","level":"info","timestamp":"2026-09-06T07:07:45.790369366Z"}
+{"timestamp":"2026-09-06T07:07:45.790374566Z","level":"info","message":"  requestId: 'e9ec9a56-a281-491e-8384-ac38d1414908',"}
+{"message":"  method: 'GET',","timestamp":"2026-09-06T07:07:45.790380745Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:45.790387305Z","message":"  route: '/api/studio/mcp/commands/next',","level":"info"}
+{"timestamp":"2026-09-06T07:07:45.790399725Z","message":"[ops] {","level":"info"}
+{"message":"  event: 'studio.command_polled',","timestamp":"2026-09-06T07:07:45.790405715Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:45.790409815Z","level":"info","message":"  ts: '2026-09-06T07:07:45.489Z',"}
+{"level":"info","message":"  requestId: 'e9ec9a56-a281-491e-8384-ac38d1414908',","timestamp":"2026-09-06T07:07:45.790413765Z"}
+{"level":"info","message":"  sessionId: 'DlvFpLpN0vX1CB5Fvwv9',","timestamp":"2026-09-06T07:07:45.790418325Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:45.790422425Z","message":"  status: 'empty'"}
+{"level":"info","timestamp":"2026-09-06T07:07:45.790426425Z","message":"}"}
+{"level":"info","timestamp":"2026-09-06T07:07:46.060217729Z","message":"[ops] {"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:46.060222879Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:46.060226549Z","level":"info","message":"  ts: '2026-09-06T07:07:45.981Z',"}
+{"message":"  requestId: '52c5ce53-1564-472e-8c5e-8821480edf4c',","timestamp":"2026-09-06T07:07:46.060230109Z","level":"info"}
+{"message":"  method: 'POST',","timestamp":"2026-09-06T07:07:46.060233579Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:46.060237219Z","message":"  route: '/api/studio/mcp/session/ping',","level":"info"}
+{"timestamp":"2026-09-06T07:07:46.060240309Z","message":"  status: 200,","level":"info"}
+{"level":"info","message":"  durationMs: 1030","timestamp":"2026-09-06T07:07:46.060243129Z"}
+{"timestamp":"2026-09-06T07:07:46.060246269Z","level":"info","message":"}"}
+{"timestamp":"2026-09-06T07:07:46.537453732Z","message":"[ops] {","level":"info"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:46.537460162Z"}
+{"timestamp":"2026-09-06T07:07:46.537465002Z","level":"info","message":"  ts: '2026-09-06T07:07:46.529Z',"}
+{"level":"info","message":"  requestId: '5a9725d4-3774-41d9-bc87-0376f7018f8e',","timestamp":"2026-09-06T07:07:46.537469642Z"}
+{"message":"  method: 'OPTIONS',","level":"info","timestamp":"2026-09-06T07:07:46.537474002Z"}
+{"message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:07:46.537478732Z","level":"info"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:07:46.537483022Z","level":"info"}
+{"message":"  durationMs: 0","timestamp":"2026-09-06T07:07:46.537487462Z","level":"info"}
+{"message":"}","level":"info","timestamp":"2026-09-06T07:07:46.537491552Z"}
+{"timestamp":"2026-09-06T07:07:46.788600685Z","level":"error","message":"[ops] {"}
+{"level":"error","message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:07:46.788605705Z"}
+{"level":"error","message":"  ts: '2026-09-06T07:07:46.761Z',","timestamp":"2026-09-06T07:07:46.788609025Z"}
+{"message":"  reason: 'missing_token',","level":"error","timestamp":"2026-09-06T07:07:46.788611635Z"}
+{"message":"  mode: 'monitor',","timestamp":"2026-09-06T07:07:46.788614405Z","level":"error"}
+{"timestamp":"2026-09-06T07:07:46.788617095Z","level":"error","message":"  route: '/api/v2/events'"}
+{"level":"error","message":"}","timestamp":"2026-09-06T07:07:46.788620245Z"}
+{"timestamp":"2026-09-06T07:07:47.455453127Z","message":"[ops] {","level":"info"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:47.455457867Z"}
+{"message":"  ts: '2026-09-06T07:07:47.447Z',","timestamp":"2026-09-06T07:07:47.455461176Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:07:47.455464116Z","message":"  requestId: 'a7fc067b-a60e-43e4-a7cb-adbad93c98ea',"}
+{"timestamp":"2026-09-06T07:07:47.455466966Z","message":"  method: 'POST',","level":"info"}
+{"level":"info","message":"  route: '/api/studio/mcp/session/ping',","timestamp":"2026-09-06T07:07:47.455469856Z"}
+{"level":"info","message":"  status: 200,","timestamp":"2026-09-06T07:07:47.455472366Z"}
+{"timestamp":"2026-09-06T07:07:47.455474996Z","message":"  durationMs: 1011","level":"info"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:07:47.455477306Z"}
+{"level":"info","message":"  durationMs: 1625","timestamp":"2026-09-06T07:07:48.389667095Z"}
+{"timestamp":"2026-09-06T07:07:48.389674355Z","level":"info","message":"}"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:07:48.389709204Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:48.389720124Z","message":"  event: 'http_request',","level":"info"}
+{"message":"  ts: '2026-09-06T07:07:48.386Z',","timestamp":"2026-09-06T07:07:48.389726524Z","level":"info"}
+{"message":"  requestId: '8cf991f0-96cc-49bd-95ec-70bba524eb59',","level":"info","timestamp":"2026-09-06T07:07:48.389736504Z"}
+{"message":"  method: 'GET',","timestamp":"2026-09-06T07:07:48.389741864Z","level":"info"}
+{"message":"  route: '/api/v2/events',","level":"info","timestamp":"2026-09-06T07:07:48.389747154Z"}
+{"timestamp":"2026-09-06T07:07:48.389751424Z","message":"  status: 200,","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:07:48.788603025Z","message":"  requestId: '63934ddb-74a9-4aec-a36f-ea7e45f77707',"}
+{"level":"info","message":"  sessionId: 'MLq8J3mhz56J6BRsAeQe',","timestamp":"2026-09-06T07:07:48.788611895Z"}
+{"timestamp":"2026-09-06T07:07:48.788616835Z","level":"info","message":"  userId: '0VSQotqOXxPXBLeQu1gUNkXELWH3',"}
+{"level":"info","timestamp":"2026-09-06T07:07:48.788620185Z","message":"  status: 'compatible',"}
+{"message":"  reasonCodes: [],","level":"info","timestamp":"2026-09-06T07:07:48.788623695Z"}
+{"timestamp":"2026-09-06T07:07:48.788627355Z","level":"info","message":"  buildId: 'nexusrbx-studio-0.14.0-r15-animation.12-toolbox',"}
+{"timestamp":"2026-09-06T07:07:48.788628185Z","level":"info","message":"[ops] {"}
+{"timestamp":"2026-09-06T07:07:48.788630965Z","message":"  attestationWritten: false,","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:07:48.788631285Z","message":"  event: 'studio.plugin_compatibility_handshake',"}
+{"timestamp":"2026-09-06T07:07:48.788634215Z","message":"  repairDurationMs: 1420","level":"info"}
+{"timestamp":"2026-09-06T07:07:48.788634885Z","message":"  ts: '2026-09-06T07:07:48.697Z',","level":"info"}
+{"timestamp":"2026-09-06T07:07:48.788638005Z","message":"}","level":"info"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:07:48.788641635Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:48.788645455Z","message":"  event: 'http_request',","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:07:48.788649235Z","message":"  ts: '2026-09-06T07:07:48.698Z',"}
+{"timestamp":"2026-09-06T07:07:48.788652665Z","level":"info","message":"  requestId: '63934ddb-74a9-4aec-a36f-ea7e45f77707',"}
+{"timestamp":"2026-09-06T07:07:48.788655275Z","message":"  method: 'POST',","level":"info"}
+{"timestamp":"2026-09-06T07:07:48.788658815Z","message":"  route: '/api/studio/session/ping',","level":"info"}
+{"level":"info","message":"  status: 200,","timestamp":"2026-09-06T07:07:48.788661935Z"}
+{"message":"  durationMs: 1657","level":"info","timestamp":"2026-09-06T07:07:48.788664914Z"}
+{"message":"}","level":"info","timestamp":"2026-09-06T07:07:48.788668644Z"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:07:49.085447044Z","level":"info"}
+{"level":"info","message":"  durationMs: 0","timestamp":"2026-09-06T07:07:49.085458403Z"}
+{"message":"}","timestamp":"2026-09-06T07:07:49.085462573Z","level":"info"}
+{"message":"[ops] {","level":"info","timestamp":"2026-09-06T07:07:49.085490643Z"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:49.085495173Z","level":"info"}
+{"message":"  ts: '2026-09-06T07:07:49.029Z',","timestamp":"2026-09-06T07:07:49.085498693Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:49.085503143Z","level":"info","message":"  requestId: '8c6bae8e-3c8e-4e0b-b07f-d2445879f1b1',"}
+{"timestamp":"2026-09-06T07:07:49.085507103Z","message":"  method: 'OPTIONS',","level":"info"}
+{"message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:07:49.085510743Z","level":"info"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:07:49.085519363Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:49.085523663Z","level":"info","message":"  durationMs: 0"}
+{"timestamp":"2026-09-06T07:07:49.085527352Z","level":"info","message":"}"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:07:49.085530992Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:49.085535352Z","message":"  event: 'http_request',"}
+{"timestamp":"2026-09-06T07:07:49.085538902Z","level":"info","message":"  ts: '2026-09-06T07:07:49.033Z',"}
+{"message":"  requestId: '289814f4-f45f-4fbf-be7f-aa52afc1bf77',","level":"info","timestamp":"2026-09-06T07:07:49.085543092Z"}
+{"message":"  method: 'OPTIONS',","level":"info","timestamp":"2026-09-06T07:07:49.085546452Z"}
+{"message":"  route: '/api/v2/agents/active',","level":"info","timestamp":"2026-09-06T07:07:49.085549722Z"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:07:49.363447723Z","level":"error"}
+{"timestamp":"2026-09-06T07:07:49.363455023Z","level":"error","message":"  event: 'security.app_check_rejected',"}
+{"message":"  ts: '2026-09-06T07:07:49.290Z',","timestamp":"2026-09-06T07:07:49.363459343Z","level":"error"}
+{"timestamp":"2026-09-06T07:07:49.363463293Z","level":"error","message":"  reason: 'missing_token',"}
+{"message":"  mode: 'monitor',","timestamp":"2026-09-06T07:07:49.363467173Z","level":"error"}
+{"timestamp":"2026-09-06T07:07:49.363471253Z","level":"error","message":"  route: '/api/v2/events'"}
+{"message":"}","level":"error","timestamp":"2026-09-06T07:07:49.363474853Z"}
+{"timestamp":"2026-09-06T07:07:49.363478123Z","level":"error","message":"[ops] {"}
+{"timestamp":"2026-09-06T07:07:49.363482333Z","message":"  event: 'security.app_check_rejected',","level":"error"}
+{"timestamp":"2026-09-06T07:07:49.363486983Z","message":"  ts: '2026-09-06T07:07:49.302Z',","level":"error"}
+{"message":"  reason: 'missing_token',","level":"error","timestamp":"2026-09-06T07:07:49.363490563Z"}
+{"message":"  mode: 'monitor',","timestamp":"2026-09-06T07:07:49.363493763Z","level":"error"}
+{"message":"  route: '/api/v2/agents/active'","timestamp":"2026-09-06T07:07:49.363496893Z","level":"error"}
+{"timestamp":"2026-09-06T07:07:49.363500662Z","level":"error","message":"}"}
+{"message":"[ops] {","level":"info","timestamp":"2026-09-06T07:07:49.589125179Z"}
+{"timestamp":"2026-09-06T07:07:49.589128519Z","message":"  event: 'http_request',","level":"info"}
+{"timestamp":"2026-09-06T07:07:49.589131649Z","level":"info","message":"  ts: '2026-09-06T07:07:49.476Z',"}
+{"message":"  requestId: 'c050f918-b821-4b32-b1fb-3ca46cb75e92',","level":"info","timestamp":"2026-09-06T07:07:49.589134309Z"}
+{"message":"  method: 'GET',","level":"info","timestamp":"2026-09-06T07:07:49.589136819Z"}
+{"timestamp":"2026-09-06T07:07:49.589139819Z","level":"info","message":"  route: '/api/v2/agents/active',"}
+{"timestamp":"2026-09-06T07:07:49.589143449Z","level":"info","message":"  status: 200,"}
+{"timestamp":"2026-09-06T07:07:49.589146329Z","level":"info","message":"  durationMs: 174"}
+{"level":"info","timestamp":"2026-09-06T07:07:49.589149529Z","message":"}"}
+{"message":"  durationMs: 837","timestamp":"2026-09-06T07:07:50.150871378Z","level":"info"}
+{"message":"[ops] {","level":"info","timestamp":"2026-09-06T07:07:50.150877018Z"}
+{"message":"}","timestamp":"2026-09-06T07:07:50.150879848Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:07:50.150886298Z","message":"  event: 'http_request',"}
+{"timestamp":"2026-09-06T07:07:50.150889677Z","message":"  ts: '2026-09-06T07:07:50.127Z',","level":"info"}
+{"level":"info","message":"  requestId: 'af558cee-4f36-4e9e-96e2-01a3d8fa97b8',","timestamp":"2026-09-06T07:07:50.150893387Z"}
+{"message":"  method: 'GET',","timestamp":"2026-09-06T07:07:50.150897487Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:07:50.150901287Z","message":"  route: '/api/v2/events',"}
+{"level":"info","message":"  status: 200,","timestamp":"2026-09-06T07:07:50.150904957Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:50.232091170Z","message":"[ops] {"}
+{"message":"  event: 'http_request',","level":"info","timestamp":"2026-09-06T07:07:50.232102300Z"}
+{"message":"  ts: '2026-09-06T07:07:50.230Z',","level":"info","timestamp":"2026-09-06T07:07:50.232107049Z"}
+{"message":"  requestId: 'ebe4b657-9355-4f1a-8849-4cccb0f4ae63',","level":"info","timestamp":"2026-09-06T07:07:50.232111159Z"}
+{"level":"info","message":"  method: 'OPTIONS',","timestamp":"2026-09-06T07:07:50.232115479Z"}
+{"level":"info","message":"  route: '/api/studio/mcp/status',","timestamp":"2026-09-06T07:07:50.232119489Z"}
+{"timestamp":"2026-09-06T07:07:50.232123399Z","message":"  status: 204,","level":"info"}
+{"message":"  durationMs: 0","timestamp":"2026-09-06T07:07:50.232127129Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:50.232131679Z","level":"info","message":"}"}
+{"level":"info","timestamp":"2026-09-06T07:07:50.232135629Z","message":"[ops] {"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:50.232139429Z"}
+{"level":"info","message":"  ts: '2026-09-06T07:07:50.231Z',","timestamp":"2026-09-06T07:07:50.232143879Z"}
+{"timestamp":"2026-09-06T07:07:50.232148379Z","level":"info","message":"  requestId: '3fbe8d36-4f3d-43e7-8233-2c643c25b085',"}
+{"timestamp":"2026-09-06T07:07:50.232152299Z","level":"info","message":"  method: 'OPTIONS',"}
+{"message":"  route: '/api/studio/status',","level":"info","timestamp":"2026-09-06T07:07:50.232155989Z"}
+{"timestamp":"2026-09-06T07:07:50.232159809Z","level":"info","message":"  status: 204,"}
+{"level":"info","timestamp":"2026-09-06T07:07:50.232163239Z","message":"  durationMs: 0"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:07:50.232166879Z"}
+{"timestamp":"2026-09-06T07:07:50.436665789Z","message":"[ops] {","level":"error"}
+{"message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:07:50.436669309Z","level":"error"}
+{"message":"  ts: '2026-09-06T07:07:50.428Z',","level":"error","timestamp":"2026-09-06T07:07:50.436672659Z"}
+{"level":"error","message":"  reason: 'missing_token',","timestamp":"2026-09-06T07:07:50.436676759Z"}
+{"level":"error","message":"  mode: 'monitor',","timestamp":"2026-09-06T07:07:50.436680879Z"}
+{"message":"  route: '/api/studio/mcp/status'","level":"error","timestamp":"2026-09-06T07:07:50.436684709Z"}
+{"timestamp":"2026-09-06T07:07:50.436689348Z","message":"}","level":"error"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:07:50.436692698Z","level":"error"}
+{"level":"error","timestamp":"2026-09-06T07:07:50.436696388Z","message":"  event: 'security.app_check_rejected',"}
+{"message":"  ts: '2026-09-06T07:07:50.429Z',","timestamp":"2026-09-06T07:07:50.436699168Z","level":"error"}
+{"timestamp":"2026-09-06T07:07:50.436701928Z","level":"error","message":"  reason: 'missing_token',"}
+{"timestamp":"2026-09-06T07:07:50.436704428Z","message":"  mode: 'monitor',","level":"error"}
+{"level":"error","message":"  route: '/api/studio/status'","timestamp":"2026-09-06T07:07:50.436707398Z"}
+{"message":"}","level":"error","timestamp":"2026-09-06T07:07:50.436710028Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:50.810802843Z","message":"[ops] {"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:50.810806073Z"}
+{"level":"info","message":"  ts: '2026-09-06T07:07:50.795Z',","timestamp":"2026-09-06T07:07:50.810808723Z"}
+{"level":"info","message":"  requestId: '6cdc4f03-cee5-40fd-bcbe-67bac81a312d',","timestamp":"2026-09-06T07:07:50.810811893Z"}
+{"timestamp":"2026-09-06T07:07:50.810814393Z","level":"info","message":"  method: 'GET',"}
+{"timestamp":"2026-09-06T07:07:50.810817743Z","level":"info","message":"  route: '/api/studio/mcp/status',"}
+{"level":"info","message":"  status: 200,","timestamp":"2026-09-06T07:07:50.810821953Z"}
+{"timestamp":"2026-09-06T07:07:50.810824713Z","level":"info","message":"  durationMs: 367"}
+{"timestamp":"2026-09-06T07:07:50.810827533Z","message":"}","level":"info"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:07:51.299147142Z"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:51.299150122Z","level":"info"}
+{"message":"  ts: '2026-09-06T07:07:51.253Z',","level":"info","timestamp":"2026-09-06T07:07:51.299153091Z"}
+{"timestamp":"2026-09-06T07:07:51.299155491Z","level":"info","message":"  requestId: 'd0d38f1f-53dd-43ad-8a2c-a4a995604dbb',"}
+{"level":"info","timestamp":"2026-09-06T07:07:51.299157801Z","message":"  method: 'GET',"}
+{"message":"  route: '/api/studio/status',","timestamp":"2026-09-06T07:07:51.299160091Z","level":"info"}
+{"level":"info","message":"  status: 200,","timestamp":"2026-09-06T07:07:51.299162781Z"}
+{"timestamp":"2026-09-06T07:07:51.299165371Z","level":"info","message":"  durationMs: 824"}
+{"level":"info","timestamp":"2026-09-06T07:07:51.299168031Z","message":"}"}
+{"level":"info","timestamp":"2026-09-06T07:07:51.552780339Z","message":"  route: '/api/v2/events',"}
+{"level":"info","timestamp":"2026-09-06T07:07:51.552786449Z","message":"  status: 204,"}
+{"level":"info","message":"  durationMs: 0","timestamp":"2026-09-06T07:07:51.552791149Z"}
+{"message":"}","timestamp":"2026-09-06T07:07:51.552795679Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:51.552799309Z","message":"[ops] {","level":"info"}
+{"timestamp":"2026-09-06T07:07:51.552809499Z","level":"info","message":"  event: 'http_request',"}
+{"message":"  ts: '2026-09-06T07:07:51.533Z',","timestamp":"2026-09-06T07:07:51.552813829Z","level":"info"}
+{"message":"  requestId: 'dadaf4f4-a01c-4c46-be87-544ca82b8cc3',","timestamp":"2026-09-06T07:07:51.552817629Z","level":"info"}
+{"level":"info","message":"  method: 'OPTIONS',","timestamp":"2026-09-06T07:07:51.552821179Z"}
+{"timestamp":"2026-09-06T07:07:51.851967804Z","message":"[ops] {","level":"error"}
+{"message":"  event: 'security.app_check_rejected',","level":"error","timestamp":"2026-09-06T07:07:51.851971224Z"}
+{"message":"  ts: '2026-09-06T07:07:51.728Z',","level":"error","timestamp":"2026-09-06T07:07:51.851974804Z"}
+{"timestamp":"2026-09-06T07:07:51.851978124Z","level":"error","message":"  reason: 'missing_token',"}
+{"message":"  mode: 'monitor',","timestamp":"2026-09-06T07:07:51.851981594Z","level":"error"}
+{"message":"  route: '/api/v2/events'","timestamp":"2026-09-06T07:07:51.851984794Z","level":"error"}
+{"level":"error","message":"}","timestamp":"2026-09-06T07:07:51.851987914Z"}
+{"timestamp":"2026-09-06T07:07:52.389528339Z","message":"[ops] {","level":"info"}
+{"timestamp":"2026-09-06T07:07:52.389535818Z","level":"info","message":"  event: 'http_request',"}
+{"message":"  ts: '2026-09-06T07:07:52.373Z',","level":"info","timestamp":"2026-09-06T07:07:52.389539388Z"}
+{"message":"  requestId: '735f0ebc-dfe1-4fc0-a65f-26ec740cedd3',","timestamp":"2026-09-06T07:07:52.389542068Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:07:52.389544998Z","message":"  method: 'GET',"}
+{"level":"info","message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:07:52.389557688Z"}
+{"message":"  status: 200,","timestamp":"2026-09-06T07:07:52.389560148Z","level":"info"}
+{"message":"  durationMs: 646","level":"info","timestamp":"2026-09-06T07:07:52.389563608Z"}
+{"timestamp":"2026-09-06T07:07:52.389565988Z","level":"info","message":"}"}
+{"writesPerStudioSessionHour":3,"timestamp":"2026-09-06T07:07:54.434202429Z","level":"info","message":"","counter":"studio_session","ts":1788678474429,"jobId":null,"type":"firestore_write_metric","sessionId":"Iog4rWn0F2wcGR9xp3Jq","count":1,"total":3}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:55.079701793Z"}
+{"message":"  ts: '2026-09-06T07:07:54.883Z',","timestamp":"2026-09-06T07:07:55.079711793Z","level":"info"}
+{"message":"","jobId":null,"writesPerStudioSessionHour":4,"counter":"studio_session","level":"info","type":"firestore_write_metric","ts":1788678474724,"count":1,"total":4,"sessionId":"Iog4rWn0F2wcGR9xp3Jq","timestamp":"2026-09-06T07:07:55.079713813Z"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:07:55.079717463Z"}
+{"message":"  requestId: '81f8fd8c-a425-44a0-917d-a9ca44cca9b4',","timestamp":"2026-09-06T07:07:55.079718483Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:07:55.079721823Z","message":"  event: 'studio.plugin_compatibility_handshake',"}
+{"timestamp":"2026-09-06T07:07:55.079725203Z","message":"  ts: '2026-09-06T07:07:54.724Z',","level":"info"}
+{"level":"info","message":"  requestId: '8fd4cd73-d870-4b3d-8efa-d4a8197094c8',","timestamp":"2026-09-06T07:07:55.079728453Z"}
+{"timestamp":"2026-09-06T07:07:55.079731243Z","level":"info","message":"  sessionId: 'Iog4rWn0F2wcGR9xp3Jq',"}
+{"message":"  userId: 'klu6Sv5QeEgYWlHjsgQwMkZCvsb2',","timestamp":"2026-09-06T07:07:55.079733953Z","level":"info"}
+{"message":"  status: 'degraded',","timestamp":"2026-09-06T07:07:55.079741013Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:55.079744543Z","message":"  reasonCodes: [ 'command_unavailable' ],","level":"info"}
+{"level":"info","message":"  buildId: 'nexusrbx-studio-0.14.0-r15-animation.10-native-value-normalization',","timestamp":"2026-09-06T07:07:55.079748843Z"}
+{"timestamp":"2026-09-06T07:07:55.079752093Z","message":"  attestationWritten: true,","level":"info"}
+{"timestamp":"2026-09-06T07:07:55.079755443Z","message":"  repairDurationMs: 468","level":"info"}
+{"message":"}","timestamp":"2026-09-06T07:07:55.079758592Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:55.079761622Z","level":"info","message":"[ops] {"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:55.079764842Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:55.079767612Z","message":"  ts: '2026-09-06T07:07:54.724Z',","level":"info"}
+{"level":"info","message":"  requestId: '8fd4cd73-d870-4b3d-8efa-d4a8197094c8',","timestamp":"2026-09-06T07:07:55.079771582Z"}
+{"timestamp":"2026-09-06T07:07:55.079774562Z","message":"  method: 'POST',","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:07:55.079777632Z","message":"  route: '/api/studio/session/ping',"}
+{"message":"  status: 200,","level":"info","timestamp":"2026-09-06T07:07:55.079780512Z"}
+{"message":"  durationMs: 536","timestamp":"2026-09-06T07:07:55.079783532Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:55.079786532Z","level":"info","message":"}"}
+{"timestamp":"2026-09-06T07:07:55.079789332Z","message":"[ops] {","level":"info"}
+{"message":"  method: 'OPTIONS',","timestamp":"2026-09-06T07:07:55.080481462Z","level":"info"}
+{"message":"  route: '/api/v2/events',","level":"info","timestamp":"2026-09-06T07:07:55.080491002Z"}
+{"message":"  status: 204,","level":"info","timestamp":"2026-09-06T07:07:55.080496062Z"}
+{"message":"  durationMs: 0","level":"info","timestamp":"2026-09-06T07:07:55.080499962Z"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:07:55.080503852Z"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:07:55.080507982Z","level":"info"}
+{"level":"info","message":"  event: 'studio.command_polled',","timestamp":"2026-09-06T07:07:55.080511382Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:55.080514362Z","message":"  ts: '2026-09-06T07:07:54.949Z',"}
+{"timestamp":"2026-09-06T07:07:55.080517922Z","level":"info","message":"  requestId: 'e2ec369d-c3d5-4b4a-beaa-c69c115d5d93',"}
+{"level":"info","timestamp":"2026-09-06T07:07:55.080521722Z","message":"  sessionId: 'DlvFpLpN0vX1CB5Fvwv9',"}
+{"level":"info","message":"  status: 'empty'","timestamp":"2026-09-06T07:07:55.080525742Z"}
+{"timestamp":"2026-09-06T07:07:55.080533312Z","level":"info","message":"}"}
+{"message":"[ops] {","level":"info","timestamp":"2026-09-06T07:07:55.080540152Z"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:55.080543732Z","level":"info"}
+{"message":"  ts: '2026-09-06T07:07:54.949Z',","timestamp":"2026-09-06T07:07:55.080547241Z","level":"info"}
+{"message":"  requestId: 'e2ec369d-c3d5-4b4a-beaa-c69c115d5d93',","level":"info","timestamp":"2026-09-06T07:07:55.080551221Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:55.080555961Z","message":"  method: 'GET',"}
+{"timestamp":"2026-09-06T07:07:55.080560031Z","level":"info","message":"  route: '/api/studio/mcp/commands/next',"}
+{"level":"info","message":"  status: 204,","timestamp":"2026-09-06T07:07:55.080563601Z"}
+{"timestamp":"2026-09-06T07:07:55.080566931Z","level":"info","message":"  durationMs: 5172"}
+{"message":"}","level":"info","timestamp":"2026-09-06T07:07:55.080572691Z"}
+{"message":"[ops] {","level":"error","timestamp":"2026-09-06T07:07:55.080576491Z"}
+{"message":"  event: 'security.app_check_rejected',","level":"error","timestamp":"2026-09-06T07:07:55.080579571Z"}
+{"level":"error","message":"  ts: '2026-09-06T07:07:55.055Z',","timestamp":"2026-09-06T07:07:55.080582811Z"}
+{"message":"  reason: 'missing_token',","timestamp":"2026-09-06T07:07:55.080586561Z","level":"error"}
+{"timestamp":"2026-09-06T07:07:55.080592001Z","level":"error","message":"  mode: 'monitor',"}
+{"message":"  route: '/api/v2/events'","timestamp":"2026-09-06T07:07:55.080595841Z","level":"error"}
+{"timestamp":"2026-09-06T07:07:55.080599141Z","message":"}","level":"error"}
+{"message":"[ops] {","level":"info","timestamp":"2026-09-06T07:07:55.634091793Z"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:55.634094832Z","level":"info"}
+{"message":"  ts: '2026-09-06T07:07:55.554Z',","level":"info","timestamp":"2026-09-06T07:07:55.634097992Z"}
+{"timestamp":"2026-09-06T07:07:55.634101042Z","level":"info","message":"  requestId: '3f8ab57b-3a27-4068-94f2-973012cb4fff',"}
+{"timestamp":"2026-09-06T07:07:55.634103562Z","message":"  method: 'POST',","level":"info"}
+{"message":"  route: '/api/studio/mcp/session/ping',","timestamp":"2026-09-06T07:07:55.634106252Z","level":"info"}
+{"level":"info","message":"  status: 200,","timestamp":"2026-09-06T07:07:55.634110072Z"}
+{"message":"  durationMs: 315","timestamp":"2026-09-06T07:07:55.634114182Z","level":"info"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:07:55.634117782Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:55.979959928Z","message":"[ops] {"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:55.979963018Z"}
+{"timestamp":"2026-09-06T07:07:55.979965638Z","message":"  ts: '2026-09-06T07:07:55.830Z',","level":"info"}
+{"message":"  requestId: 'c7263862-d6a6-440c-b339-6d302344f7cd',","level":"info","timestamp":"2026-09-06T07:07:55.979968338Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:55.979971118Z","message":"  method: 'GET',"}
+{"timestamp":"2026-09-06T07:07:55.979973588Z","level":"info","message":"  route: '/api/v2/events',"}
+{"message":"  status: 200,","timestamp":"2026-09-06T07:07:55.979976018Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:07:55.979979608Z","message":"  durationMs: 775"}
+{"timestamp":"2026-09-06T07:07:55.979983098Z","message":"}","level":"info"}
+{"message":"[ops] {","level":"info","timestamp":"2026-09-06T07:07:56.520532179Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:56.520539189Z","message":"  event: 'http_request',"}
+{"timestamp":"2026-09-06T07:07:56.520543349Z","message":"  ts: '2026-09-06T07:07:56.519Z',","level":"info"}
+{"level":"info","message":"  requestId: '5c7adce5-9117-4346-bafd-151a52d8cf98',","timestamp":"2026-09-06T07:07:56.520546179Z"}
+{"timestamp":"2026-09-06T07:07:56.520549389Z","message":"  method: 'OPTIONS',","level":"info"}
+{"timestamp":"2026-09-06T07:07:56.520552779Z","message":"  route: '/api/v2/events',","level":"info"}
+{"level":"info","message":"  status: 204,","timestamp":"2026-09-06T07:07:56.520556029Z"}
+{"level":"info","message":"  durationMs: 0","timestamp":"2026-09-06T07:07:56.520559679Z"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:07:56.520562329Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:56.660622963Z","message":"[ops] {"}
+{"message":"  event: 'http_request',","level":"info","timestamp":"2026-09-06T07:07:56.660627883Z"}
+{"message":"  ts: '2026-09-06T07:07:56.644Z',","timestamp":"2026-09-06T07:07:56.660630783Z","level":"info"}
+{"level":"info","message":"  requestId: '745c1975-4559-4ea2-b4f8-7bf5aa11447c',","timestamp":"2026-09-06T07:07:56.660633943Z"}
+{"message":"  method: 'OPTIONS',","timestamp":"2026-09-06T07:07:56.660637153Z","level":"info"}
+{"level":"info","message":"  route: '/api/:id/:id',","timestamp":"2026-09-06T07:07:56.660639963Z"}
+{"timestamp":"2026-09-06T07:07:56.660642753Z","level":"info","message":"  status: 204,"}
+{"timestamp":"2026-09-06T07:07:56.660645663Z","level":"info","message":"  durationMs: 0"}
+{"message":"}","level":"info","timestamp":"2026-09-06T07:07:56.660648253Z"}
+{"level":"error","message":"[ops] {","timestamp":"2026-09-06T07:07:56.997420574Z"}
+{"timestamp":"2026-09-06T07:07:56.997425534Z","message":"  event: 'security.app_check_rejected',","level":"error"}
+{"message":"  ts: '2026-09-06T07:07:56.785Z',","level":"error","timestamp":"2026-09-06T07:07:56.997430784Z"}
+{"timestamp":"2026-09-06T07:07:56.997436344Z","message":"  reason: 'missing_token',","level":"error"}
+{"message":"  mode: 'monitor',","timestamp":"2026-09-06T07:07:56.997441473Z","level":"error"}
+{"message":"  route: '/api/v2/events'","timestamp":"2026-09-06T07:07:56.997447243Z","level":"error"}
+{"level":"error","timestamp":"2026-09-06T07:07:56.997452493Z","message":"}"}
+{"timestamp":"2026-09-06T07:07:56.997458243Z","level":"error","message":"[ops] {"}
+{"message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:07:56.997463103Z","level":"error"}
+{"message":"  ts: '2026-09-06T07:07:56.904Z',","timestamp":"2026-09-06T07:07:56.997467683Z","level":"error"}
+{"timestamp":"2026-09-06T07:07:56.997472403Z","message":"  reason: 'missing_token',","level":"error"}
+{"timestamp":"2026-09-06T07:07:56.997477463Z","level":"error","message":"  mode: 'monitor',"}
+{"timestamp":"2026-09-06T07:07:56.997482113Z","message":"  route: '/api/project-bindings/proj_e237b4d5b7634cf2a503723f3f8beff7'","level":"error"}
+{"level":"error","message":"}","timestamp":"2026-09-06T07:07:56.997487723Z"}
+{"message":"project_resolution {","level":"info","timestamp":"2026-09-06T07:07:56.997492053Z"}
+{"level":"info","message":"  requestId: 'fd615a4f-394b-4e56-8835-e03335046e78',","timestamp":"2026-09-06T07:07:56.997496733Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:56.997501383Z","message":"  userHash: '61523b905e6d4bfa',"}
+{"message":"  projectHash: '345b955d3c8c9e83',","timestamp":"2026-09-06T07:07:56.997505893Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:56.997510342Z","level":"info","message":"  resolutionState: 'ready',"}
+{"message":"  failureCode: null","timestamp":"2026-09-06T07:07:56.997515002Z","level":"info"}
+{"message":"}","timestamp":"2026-09-06T07:07:56.997518872Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:56.997523102Z","message":"[ops] {","level":"info"}
+{"timestamp":"2026-09-06T07:07:56.997527662Z","message":"  event: 'http_request',","level":"info"}
+{"timestamp":"2026-09-06T07:07:56.997531822Z","level":"info","message":"  ts: '2026-09-06T07:07:56.988Z',"}
+{"message":"  requestId: 'fd615a4f-394b-4e56-8835-e03335046e78',","timestamp":"2026-09-06T07:07:56.997536252Z","level":"info"}
+{"message":"  method: 'GET',","timestamp":"2026-09-06T07:07:56.997540382Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:07:56.997544382Z","message":"  route: '/api/project-bindings/:projectId',"}
+{"timestamp":"2026-09-06T07:07:56.997549122Z","level":"info","message":"  status: 200,"}
+{"level":"info","message":"  durationMs: 84","timestamp":"2026-09-06T07:07:56.997553302Z"}
+{"timestamp":"2026-09-06T07:07:56.997557232Z","message":"}","level":"info"}
+{"timestamp":"2026-09-06T07:07:57.382648522Z","level":"info","message":"[ops] {"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:57.382654922Z","level":"info"}
+{"level":"info","message":"  ts: '2026-09-06T07:07:57.379Z',","timestamp":"2026-09-06T07:07:57.382658412Z"}
+{"message":"  requestId: '86563f79-6272-4131-88d2-aa1ce0b633dc',","timestamp":"2026-09-06T07:07:57.382661842Z","level":"info"}
+{"level":"info","message":"  method: 'GET',","timestamp":"2026-09-06T07:07:57.382664862Z"}
+{"message":"  route: '/api/v2/events',","level":"info","timestamp":"2026-09-06T07:07:57.382667632Z"}
+{"timestamp":"2026-09-06T07:07:57.382671172Z","level":"info","message":"  status: 200,"}
+{"timestamp":"2026-09-06T07:07:57.382674482Z","level":"info","message":"  durationMs: 594"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:07:57.382677452Z"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:07:59.072170541Z","level":"info"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:59.072175321Z","level":"info"}
+{"message":"  ts: '2026-09-06T07:07:58.984Z',","level":"info","timestamp":"2026-09-06T07:07:59.072180141Z"}
+{"message":"  requestId: '73ebb246-5c6d-46f7-a96f-ed69404de717',","timestamp":"2026-09-06T07:07:59.072185151Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:07:59.072189580Z","message":"  method: 'OPTIONS',"}
+{"timestamp":"2026-09-06T07:07:59.072194160Z","message":"  route: '/api/:id/:id',","level":"info"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:07:59.072198840Z","level":"info"}
+{"level":"info","message":"  durationMs: 0","timestamp":"2026-09-06T07:07:59.072203140Z"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:07:59.072207500Z"}
+{"timestamp":"2026-09-06T07:07:59.072211430Z","level":"info","message":"[ops] {"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:07:59.072215870Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:59.072220440Z","level":"info","message":"  ts: '2026-09-06T07:07:59.027Z',"}
+{"message":"  requestId: '5d031b11-43e2-4d2a-ad1e-5669d7a4981e',","level":"info","timestamp":"2026-09-06T07:07:59.072229330Z"}
+{"timestamp":"2026-09-06T07:07:59.072234460Z","level":"info","message":"  method: 'OPTIONS',"}
+{"message":"  route: '/api/v2/agents/active',","level":"info","timestamp":"2026-09-06T07:07:59.072239060Z"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:07:59.072243260Z","level":"info"}
+{"message":"  durationMs: 1","level":"info","timestamp":"2026-09-06T07:07:59.072248220Z"}
+{"timestamp":"2026-09-06T07:07:59.072253220Z","message":"}","level":"info"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:07:59.072257859Z"}
+{"timestamp":"2026-09-06T07:07:59.072262679Z","message":"  event: 'http_request',","level":"info"}
+{"level":"info","message":"  ts: '2026-09-06T07:07:59.028Z',","timestamp":"2026-09-06T07:07:59.072266779Z"}
+{"message":"  requestId: '40d180de-6b30-43e0-9a8d-64e718accc1c',","level":"info","timestamp":"2026-09-06T07:07:59.072276029Z"}
+{"timestamp":"2026-09-06T07:07:59.072279529Z","level":"info","message":"  method: 'OPTIONS',"}
+{"message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:07:59.072282999Z","level":"info"}
+{"message":"  status: 204,","level":"info","timestamp":"2026-09-06T07:07:59.072287609Z"}
+{"timestamp":"2026-09-06T07:07:59.072291009Z","level":"info","message":"  durationMs: 0"}
+{"timestamp":"2026-09-06T07:07:59.072294389Z","level":"info","message":"}"}
+{"level":"error","message":"[ops] {","timestamp":"2026-09-06T07:07:59.175119680Z"}
+{"timestamp":"2026-09-06T07:07:59.175123240Z","level":"error","message":"  event: 'security.app_check_rejected',"}
+{"timestamp":"2026-09-06T07:07:59.175125930Z","level":"error","message":"  ts: '2026-09-06T07:07:59.174Z',"}
+{"timestamp":"2026-09-06T07:07:59.175128380Z","level":"error","message":"  reason: 'missing_token',"}
+{"timestamp":"2026-09-06T07:07:59.175131300Z","message":"  mode: 'monitor',","level":"error"}
+{"timestamp":"2026-09-06T07:07:59.175133890Z","level":"error","message":"  route: '/api/project-bindings/proj_e237b4d5b7634cf2a503723f3f8beff7'"}
+{"level":"error","message":"}","timestamp":"2026-09-06T07:07:59.175136500Z"}
+{"message":"[ops] {","level":"error","timestamp":"2026-09-06T07:07:59.255185798Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:59.255185888Z","message":"}"}
+{"message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:07:59.255188658Z","level":"error"}
+{"message":"  ts: '2026-09-06T07:07:59.224Z',","timestamp":"2026-09-06T07:07:59.255191268Z","level":"error"}
+{"timestamp":"2026-09-06T07:07:59.255195018Z","message":"[ops] {","level":"info"}
+{"message":"  event: 'http_request',","level":"info","timestamp":"2026-09-06T07:07:59.255200058Z"}
+{"timestamp":"2026-09-06T07:07:59.255200438Z","level":"error","message":"  reason: 'missing_token',"}
+{"message":"  mode: 'monitor',","level":"error","timestamp":"2026-09-06T07:07:59.255204118Z"}
+{"message":"  ts: '2026-09-06T07:07:59.228Z',","timestamp":"2026-09-06T07:07:59.255204628Z","level":"info"}
+{"timestamp":"2026-09-06T07:07:59.255207158Z","message":"  route: '/api/v2/agents/active'","level":"error"}
+{"timestamp":"2026-09-06T07:07:59.255209278Z","message":"  requestId: '86885a97-7afa-4bd9-9257-63d0301f4447',","level":"info"}
+{"level":"error","timestamp":"2026-09-06T07:07:59.255209768Z","message":"}"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:07:59.255212398Z","level":"error"}
+{"level":"info","message":"  method: 'GET',","timestamp":"2026-09-06T07:07:59.255214358Z"}
+{"message":"  event: 'security.app_check_rejected',","level":"error","timestamp":"2026-09-06T07:07:59.255215468Z"}
+{"level":"error","message":"  ts: '2026-09-06T07:07:59.225Z',","timestamp":"2026-09-06T07:07:59.255218128Z"}
+{"level":"info","timestamp":"2026-09-06T07:07:59.255218588Z","message":"  route: '/api/project-bindings/:projectId',"}
+{"level":"error","message":"  reason: 'missing_token',","timestamp":"2026-09-06T07:07:59.255220758Z"}
+{"timestamp":"2026-09-06T07:07:59.255222798Z","message":"  status: 200,","level":"info"}
+{"timestamp":"2026-09-06T07:07:59.255223208Z","level":"error","message":"  mode: 'monitor',"}
+{"message":"  route: '/api/v2/events'","timestamp":"2026-09-06T07:07:59.255226908Z","level":"error"}
+{"timestamp":"2026-09-06T07:07:59.255227098Z","level":"info","message":"  durationMs: 55"}
+{"message":"}","timestamp":"2026-09-06T07:07:59.255229417Z","level":"error"}
+{"message":"}","level":"info","timestamp":"2026-09-06T07:07:59.255231647Z"}
+{"message":"project_resolution {","timestamp":"2026-09-06T07:07:59.255232157Z","level":"info"}
+{"message":"  requestId: '86885a97-7afa-4bd9-9257-63d0301f4447',","level":"info","timestamp":"2026-09-06T07:07:59.255234817Z"}
+{"level":"info","message":"  userHash: '61523b905e6d4bfa',","timestamp":"2026-09-06T07:07:59.255237597Z"}
+{"level":"info","message":"  projectHash: '345b955d3c8c9e83',","timestamp":"2026-09-06T07:07:59.255240367Z"}
+{"message":"  resolutionState: 'ready',","level":"info","timestamp":"2026-09-06T07:07:59.255242877Z"}
+{"timestamp":"2026-09-06T07:07:59.255245407Z","message":"  failureCode: null","level":"info"}
+{"timestamp":"2026-09-06T07:07:59.308176352Z","message":"[ops] {","level":"info"}
+{"message":"  event: 'http_request',","level":"info","timestamp":"2026-09-06T07:07:59.308183972Z"}
+{"message":"  ts: '2026-09-06T07:07:59.298Z',","timestamp":"2026-09-06T07:07:59.308189122Z","level":"info"}
+{"level":"info","message":"  requestId: 'e46c47b0-0896-49ce-92da-9b252b018df8',","timestamp":"2026-09-06T07:07:59.308193482Z"}
+{"timestamp":"2026-09-06T07:07:59.308198252Z","level":"info","message":"  method: 'GET',"}
+{"level":"info","timestamp":"2026-09-06T07:07:59.308202541Z","message":"  route: '/api/v2/agents/active',"}
+{"timestamp":"2026-09-06T07:07:59.308207321Z","level":"info","message":"  status: 200,"}
+{"message":"  durationMs: 74","timestamp":"2026-09-06T07:07:59.308215811Z","level":"info"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:07:59.308220041Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:00.071207141Z","message":"[ops] {"}
+{"timestamp":"2026-09-06T07:08:00.071212111Z","message":"  event: 'http_request',","level":"info"}
+{"timestamp":"2026-09-06T07:08:00.071215891Z","level":"info","message":"  ts: '2026-09-06T07:07:59.849Z',"}
+{"level":"info","timestamp":"2026-09-06T07:08:00.071220111Z","message":"  requestId: 'f6ae62f9-32a4-4890-8fd2-36ed2a225224',"}
+{"message":"  method: 'GET',","timestamp":"2026-09-06T07:08:00.071226281Z","level":"info"}
+{"message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:08:00.071229851Z","level":"info"}
+{"message":"  status: 200,","level":"info","timestamp":"2026-09-06T07:08:00.071233050Z"}
+{"timestamp":"2026-09-06T07:08:00.071236910Z","message":"  durationMs: 624","level":"info"}
+{"message":"}","timestamp":"2026-09-06T07:08:00.071240600Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:01.713253595Z","message":"[ops] {"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:01.713257995Z"}
+{"timestamp":"2026-09-06T07:08:01.713261505Z","message":"  ts: '2026-09-06T07:08:01.533Z',","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:01.713265705Z","message":"  requestId: 'ef457e14-fc54-41c2-ab05-4429425068a9',"}
+{"level":"info","message":"  method: 'OPTIONS',","timestamp":"2026-09-06T07:08:01.713269695Z"}
+{"message":"  route: '/api/v2/events',","level":"info","timestamp":"2026-09-06T07:08:01.713273855Z"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:08:01.713277954Z","level":"info"}
+{"level":"info","message":"  durationMs: 0","timestamp":"2026-09-06T07:08:01.713285984Z"}
+{"message":"}","level":"info","timestamp":"2026-09-06T07:08:01.713290874Z"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:01.713295094Z"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:01.713299324Z","level":"info"}
+{"message":"  ts: '2026-09-06T07:08:01.643Z',","level":"info","timestamp":"2026-09-06T07:08:01.713304304Z"}
+{"message":"  requestId: '3deb54bd-82a6-428e-af0c-9533b983d898',","timestamp":"2026-09-06T07:08:01.713308764Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:01.713313124Z","message":"  method: 'OPTIONS',","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:01.713317244Z","message":"  route: '/api/projects/:id/assets',"}
+{"message":"  status: 204,","level":"info","timestamp":"2026-09-06T07:08:01.713321294Z"}
+{"message":"  durationMs: 0","level":"info","timestamp":"2026-09-06T07:08:01.713325244Z"}
+{"message":"}","level":"info","timestamp":"2026-09-06T07:08:01.713329504Z"}
+{"message":"[ops] {","level":"info","timestamp":"2026-09-06T07:08:01.735501975Z"}
+{"message":"  event: 'studio.command_polled',","timestamp":"2026-09-06T07:08:01.735512915Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:01.735518005Z","level":"info","message":"  ts: '2026-09-06T07:08:01.725Z',"}
+{"level":"info","message":"  requestId: 'c5508e4f-be0e-4199-a0ba-f1d7bb30a7d3',","timestamp":"2026-09-06T07:08:01.735521745Z"}
+{"timestamp":"2026-09-06T07:08:01.735525625Z","message":"  sessionId: 'Iog4rWn0F2wcGR9xp3Jq',","level":"info"}
+{"timestamp":"2026-09-06T07:08:01.735529535Z","message":"  status: 'empty'","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:01.735533225Z","message":"}"}
+{"timestamp":"2026-09-06T07:08:01.735536975Z","level":"info","message":"[ops] {"}
+{"timestamp":"2026-09-06T07:08:01.735540215Z","message":"  event: 'http_request',","level":"info"}
+{"message":"  ts: '2026-09-06T07:08:01.725Z',","timestamp":"2026-09-06T07:08:01.735544585Z","level":"info"}
+{"level":"info","message":"  requestId: 'c5508e4f-be0e-4199-a0ba-f1d7bb30a7d3',","timestamp":"2026-09-06T07:08:01.735547955Z"}
+{"message":"  method: 'GET',","level":"info","timestamp":"2026-09-06T07:08:01.735551065Z"}
+{"message":"  route: '/api/studio/commands/next',","timestamp":"2026-09-06T07:08:01.735554225Z","level":"info"}
+{"message":"  status: 204,","level":"info","timestamp":"2026-09-06T07:08:01.735557235Z"}
+{"timestamp":"2026-09-06T07:08:01.735560285Z","message":"  durationMs: 24455","level":"info"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:08:01.735563185Z"}
+{"level":"error","timestamp":"2026-09-06T07:08:01.877490853Z","message":"[ops] {"}
+{"timestamp":"2026-09-06T07:08:01.877493963Z","message":"  event: 'security.app_check_rejected',","level":"error"}
+{"message":"  ts: '2026-09-06T07:08:01.826Z',","timestamp":"2026-09-06T07:08:01.877496913Z","level":"error"}
+{"timestamp":"2026-09-06T07:08:01.877499883Z","level":"error","message":"  reason: 'missing_token',"}
+{"message":"  mode: 'monitor',","level":"error","timestamp":"2026-09-06T07:08:01.877503483Z"}
+{"level":"error","message":"  route: '/api/v2/events'","timestamp":"2026-09-06T07:08:01.877507232Z"}
+{"level":"error","message":"}","timestamp":"2026-09-06T07:08:01.877512512Z"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:02.073370531Z","level":"error"}
+{"message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:08:02.073373261Z","level":"error"}
+{"message":"  ts: '2026-09-06T07:08:01.911Z',","timestamp":"2026-09-06T07:08:02.073376001Z","level":"error"}
+{"timestamp":"2026-09-06T07:08:02.073378781Z","level":"error","message":"  reason: 'missing_token',"}
+{"timestamp":"2026-09-06T07:08:02.073382031Z","level":"error","message":"  mode: 'monitor',"}
+{"message":"  route: '/api/projects/f5ddfb71-a497-40d2-b7a3-c3e1460ca4b0/assets'","level":"error","timestamp":"2026-09-06T07:08:02.073385131Z"}
+{"message":"}","timestamp":"2026-09-06T07:08:02.073387491Z","level":"error"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:02.213854929Z"}
+{"timestamp":"2026-09-06T07:08:02.213858119Z","level":"info","message":"  event: 'http_request',"}
+{"message":"  ts: '2026-09-06T07:08:02.193Z',","timestamp":"2026-09-06T07:08:02.213861049Z","level":"info"}
+{"message":"  requestId: 'e4251ec1-af5d-499f-a058-58d36eddfb37',","timestamp":"2026-09-06T07:08:02.213865329Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:02.213868249Z","message":"  method: 'GET',","level":"info"}
+{"message":"  route: '/api/projects/:projectId/assets',","level":"info","timestamp":"2026-09-06T07:08:02.213871179Z"}
+{"timestamp":"2026-09-06T07:08:02.213873829Z","message":"  status: 200,","level":"info"}
+{"timestamp":"2026-09-06T07:08:02.213876469Z","message":"  durationMs: 282","level":"info"}
+{"timestamp":"2026-09-06T07:08:02.213879149Z","message":"}","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:02.399427910Z","message":"[ops] {"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:02.399431060Z"}
+{"message":"  ts: '2026-09-06T07:08:02.395Z',","level":"info","timestamp":"2026-09-06T07:08:02.399434100Z"}
+{"timestamp":"2026-09-06T07:08:02.399436780Z","level":"info","message":"  requestId: '8e6beade-138e-4b46-8626-980beeb6aeef',"}
+{"message":"  method: 'POST',","level":"info","timestamp":"2026-09-06T07:08:02.399439320Z"}
+{"message":"  route: '/api/studio/mcp/session/ping',","timestamp":"2026-09-06T07:08:02.399441920Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:02.399444210Z","message":"  status: 200,"}
+{"message":"  durationMs: 466","timestamp":"2026-09-06T07:08:02.399447330Z","level":"info"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:08:02.399450260Z"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:02.733252062Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:02.733256712Z","message":"  event: 'http_request',"}
+{"message":"  ts: '2026-09-06T07:08:02.620Z',","timestamp":"2026-09-06T07:08:02.733261032Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:02.733266352Z","level":"info","message":"  requestId: '5f324ba3-787f-4ba8-b3cb-11add6cd97af',"}
+{"timestamp":"2026-09-06T07:08:02.733271302Z","level":"info","message":"  method: 'GET',"}
+{"level":"info","timestamp":"2026-09-06T07:08:02.733275691Z","message":"  route: '/api/v2/events',"}
+{"timestamp":"2026-09-06T07:08:02.733278851Z","level":"info","message":"  status: 200,"}
+{"message":"  durationMs: 795","level":"info","timestamp":"2026-09-06T07:08:02.733282351Z"}
+{"timestamp":"2026-09-06T07:08:02.733286221Z","message":"}","level":"info"}
+{"timestamp":"2026-09-06T07:08:03.259483480Z","level":"info","message":"[ops] {"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:03.259491529Z"}
+{"message":"  ts: '2026-09-06T07:08:03.058Z',","timestamp":"2026-09-06T07:08:03.259496469Z","level":"info"}
+{"message":"  requestId: '36e1f181-b7f0-4a86-a169-4338d02ff9e2',","level":"info","timestamp":"2026-09-06T07:08:03.259501079Z"}
+{"message":"  method: 'OPTIONS',","timestamp":"2026-09-06T07:08:03.259504949Z","level":"info"}
+{"message":"  route: '/api/v2/:id',","level":"info","timestamp":"2026-09-06T07:08:03.259509419Z"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:08:03.259515289Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:03.259516819Z","message":"  status: 204,","level":"info"}
+{"level":"info","message":"  durationMs: 1","timestamp":"2026-09-06T07:08:03.259519969Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:03.259522829Z","message":"  durationMs: 5407"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:08:03.259524669Z"}
+{"message":"}","timestamp":"2026-09-06T07:08:03.259527899Z","level":"info"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:03.259529019Z"}
+{"message":"  event: 'studio.command_polled',","timestamp":"2026-09-06T07:08:03.259533259Z","level":"info"}
+{"level":"info","message":"  ts: '2026-09-06T07:08:03.195Z',","timestamp":"2026-09-06T07:08:03.259538869Z"}
+{"level":"info","message":"  requestId: '61c9861c-e6a6-4a13-91eb-6c944a8ad318',","timestamp":"2026-09-06T07:08:03.259572978Z"}
+{"level":"info","message":"  sessionId: 'DlvFpLpN0vX1CB5Fvwv9',","timestamp":"2026-09-06T07:08:03.259586728Z"}
+{"message":"  status: 'empty'","timestamp":"2026-09-06T07:08:03.259591818Z","level":"info"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:08:03.259597058Z"}
+{"timestamp":"2026-09-06T07:08:03.259601858Z","level":"info","message":"[ops] {"}
+{"timestamp":"2026-09-06T07:08:03.259607148Z","level":"info","message":"  event: 'http_request',"}
+{"message":"  ts: '2026-09-06T07:08:03.196Z',","level":"info","timestamp":"2026-09-06T07:08:03.259611128Z"}
+{"level":"info","message":"  requestId: '61c9861c-e6a6-4a13-91eb-6c944a8ad318',","timestamp":"2026-09-06T07:08:03.259614858Z"}
+{"message":"  method: 'GET',","timestamp":"2026-09-06T07:08:03.259620648Z","level":"info"}
+{"message":"  route: '/api/studio/mcp/commands/next',","level":"info","timestamp":"2026-09-06T07:08:03.259624168Z"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:03.399799090Z","level":"error"}
+{"message":"  method: 'GET',","level":"info","timestamp":"2026-09-06T07:08:03.399799930Z"}
+{"level":"error","message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:08:03.399805770Z"}
+{"level":"info","message":"  route: '/api/v2/runtime-capabilities',","timestamp":"2026-09-06T07:08:03.399807030Z"}
+{"message":"  ts: '2026-09-06T07:08:03.338Z',","timestamp":"2026-09-06T07:08:03.399810709Z","level":"error"}
+{"message":"  status: 200,","timestamp":"2026-09-06T07:08:03.399811719Z","level":"info"}
+{"message":"  reason: 'missing_token',","timestamp":"2026-09-06T07:08:03.399814939Z","level":"error"}
+{"level":"info","timestamp":"2026-09-06T07:08:03.399814939Z","message":"  durationMs: 2"}
+{"timestamp":"2026-09-06T07:08:03.399818339Z","level":"info","message":"}"}
+{"timestamp":"2026-09-06T07:08:03.399819389Z","message":"  mode: 'monitor',","level":"error"}
+{"message":"  route: '/api/v2/runtime-capabilities'","timestamp":"2026-09-06T07:08:03.399823419Z","level":"error"}
+{"timestamp":"2026-09-06T07:08:03.399826809Z","message":"}","level":"error"}
+{"timestamp":"2026-09-06T07:08:03.399830089Z","message":"[ops] {","level":"info"}
+{"timestamp":"2026-09-06T07:08:03.399833359Z","level":"info","message":"  event: 'http_request',"}
+{"level":"info","timestamp":"2026-09-06T07:08:03.399836859Z","message":"  ts: '2026-09-06T07:08:03.340Z',"}
+{"timestamp":"2026-09-06T07:08:03.399840409Z","message":"  requestId: '7a1dff6c-91bd-4bc8-b2e6-d7aa689a74c8',","level":"info"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:08:03.679443264Z","level":"info"}
+{"message":"[ops] {","level":"info","timestamp":"2026-09-06T07:08:03.679445664Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:03.679457173Z","message":"  event: 'studio.command_polled',"}
+{"level":"info","message":"  durationMs: 24371","timestamp":"2026-09-06T07:08:03.679457193Z"}
+{"timestamp":"2026-09-06T07:08:03.679464843Z","message":"  ts: '2026-09-06T07:08:03.672Z',","level":"info"}
+{"timestamp":"2026-09-06T07:08:03.679469943Z","level":"info","message":"}"}
+{"message":"  requestId: '9f5707c7-23a0-46b1-9493-f8410f969ba2',","level":"info","timestamp":"2026-09-06T07:08:03.679471923Z"}
+{"timestamp":"2026-09-06T07:08:03.679476853Z","level":"info","message":"  sessionId: 'MLq8J3mhz56J6BRsAeQe',"}
+{"timestamp":"2026-09-06T07:08:03.679480773Z","level":"info","message":"  status: 'empty'"}
+{"message":"}","timestamp":"2026-09-06T07:08:03.679484883Z","level":"info"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:03.679488363Z"}
+{"message":"  event: 'http_request',","level":"info","timestamp":"2026-09-06T07:08:03.679492073Z"}
+{"message":"  ts: '2026-09-06T07:08:03.672Z',","level":"info","timestamp":"2026-09-06T07:08:03.679496023Z"}
+{"timestamp":"2026-09-06T07:08:03.679499623Z","message":"  requestId: '9f5707c7-23a0-46b1-9493-f8410f969ba2',","level":"info"}
+{"timestamp":"2026-09-06T07:08:03.679502943Z","level":"info","message":"  method: 'GET',"}
+{"timestamp":"2026-09-06T07:08:03.679506743Z","level":"info","message":"  route: '/api/studio/commands/next',"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:03.918870767Z","level":"info"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:03.918873386Z","level":"info"}
+{"message":"  ts: '2026-09-06T07:08:03.910Z',","timestamp":"2026-09-06T07:08:03.918876176Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:03.918879716Z","message":"  requestId: 'bdd84923-5556-4ba0-8644-da015c226f30',"}
+{"timestamp":"2026-09-06T07:08:03.918882286Z","message":"  method: 'POST',","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:03.918884656Z","message":"  route: '/api/studio/mcp/session/ping',"}
+{"message":"  status: 200,","timestamp":"2026-09-06T07:08:03.918887046Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:03.918889716Z","level":"info","message":"  durationMs: 306"}
+{"timestamp":"2026-09-06T07:08:03.918892336Z","message":"}","level":"info"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:04.046913407Z"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:04.046917187Z"}
+{"message":"  ts: '2026-09-06T07:08:04.030Z',","level":"info","timestamp":"2026-09-06T07:08:04.046921377Z"}
+{"timestamp":"2026-09-06T07:08:04.046926597Z","message":"  requestId: '4beb513b-8063-47c2-a73d-585eff4dfa3f',","level":"info"}
+{"timestamp":"2026-09-06T07:08:04.046931577Z","level":"info","message":"  method: 'OPTIONS',"}
+{"level":"info","message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:08:04.046936107Z"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:08:04.046941207Z","level":"info"}
+{"level":"info","message":"  durationMs: 0","timestamp":"2026-09-06T07:08:04.046945617Z"}
+{"timestamp":"2026-09-06T07:08:04.046949857Z","level":"info","message":"}"}
+{"level":"error","message":"  reason: 'missing_token',","timestamp":"2026-09-06T07:08:04.311417700Z"}
+{"timestamp":"2026-09-06T07:08:04.311425370Z","level":"error","message":"  mode: 'monitor',"}
+{"message":"[ops] {","level":"info","timestamp":"2026-09-06T07:08:04.311430050Z"}
+{"timestamp":"2026-09-06T07:08:04.311430420Z","message":"  route: '/api/v2/events'","level":"error"}
+{"timestamp":"2026-09-06T07:08:04.311432850Z","message":"  event: 'http_request',","level":"info"}
+{"message":"}","timestamp":"2026-09-06T07:08:04.311434480Z","level":"error"}
+{"timestamp":"2026-09-06T07:08:04.311435630Z","level":"info","message":"  ts: '2026-09-06T07:08:04.225Z',"}
+{"message":"  requestId: '57a354f0-ec0d-448e-ad57-6953415ac403',","level":"info","timestamp":"2026-09-06T07:08:04.311438100Z"}
+{"timestamp":"2026-09-06T07:08:04.311440750Z","message":"  method: 'OPTIONS',","level":"info"}
+{"message":"  route: '/api/v2/chats/:id/:id',","timestamp":"2026-09-06T07:08:04.311443410Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:04.311445790Z","message":"  status: 204,","level":"info"}
+{"level":"info","message":"  durationMs: 0","timestamp":"2026-09-06T07:08:04.311448810Z"}
+{"timestamp":"2026-09-06T07:08:04.311451490Z","level":"info","message":"}"}
+{"timestamp":"2026-09-06T07:08:04.311453830Z","message":"[ops] {","level":"error"}
+{"level":"error","message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:08:04.311456190Z"}
+{"level":"error","message":"  ts: '2026-09-06T07:08:04.298Z',","timestamp":"2026-09-06T07:08:04.311459270Z"}
+{"timestamp":"2026-09-06T07:08:04.465702976Z","message":"[ops] {","level":"error"}
+{"timestamp":"2026-09-06T07:08:04.465707256Z","level":"error","message":"  event: 'security.app_check_rejected',"}
+{"level":"error","timestamp":"2026-09-06T07:08:04.465711606Z","message":"  ts: '2026-09-06T07:08:04.438Z',"}
+{"timestamp":"2026-09-06T07:08:04.465714886Z","level":"error","message":"  reason: 'missing_token',"}
+{"message":"  mode: 'monitor',","timestamp":"2026-09-06T07:08:04.465718806Z","level":"error"}
+{"message":"  route: '/api/v2/chats/f5ddfb71-a497-40d2-b7a3-c3e1460ca4b0/agent-projection'","timestamp":"2026-09-06T07:08:04.465722396Z","level":"error"}
+{"timestamp":"2026-09-06T07:08:04.465726086Z","level":"error","message":"}"}
+{"message":"project_resolution {","timestamp":"2026-09-06T07:08:04.521303614Z","level":"info"}
+{"message":"  requestId: null,","level":"info","timestamp":"2026-09-06T07:08:04.521309034Z"}
+{"level":"info","message":"  userHash: '61523b905e6d4bfa',","timestamp":"2026-09-06T07:08:04.521312464Z"}
+{"timestamp":"2026-09-06T07:08:04.521315513Z","message":"  projectHash: '345b955d3c8c9e83',","level":"info"}
+{"level":"info","message":"  resolutionState: 'ready',","timestamp":"2026-09-06T07:08:04.521318343Z"}
+{"level":"info","message":"  failureCode: null","timestamp":"2026-09-06T07:08:04.521321193Z"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:08:04.521324103Z"}
+{"timestamp":"2026-09-06T07:08:04.812360509Z","message":"[ops] {","level":"info"}
+{"timestamp":"2026-09-06T07:08:04.812368449Z","level":"info","message":"  event: 'http_request',"}
+{"message":"  ts: '2026-09-06T07:08:04.805Z',","timestamp":"2026-09-06T07:08:04.812372599Z","level":"info"}
+{"level":"info","message":"  requestId: '63c7812c-f1b2-4f5c-a03f-8cee4d82a2fb',","timestamp":"2026-09-06T07:08:04.812376899Z"}
+{"timestamp":"2026-09-06T07:08:04.812380529Z","level":"info","message":"  method: 'PUT',"}
+{"timestamp":"2026-09-06T07:08:04.812384599Z","message":"  route: '/api/v2/chats/:chatId/agent-projection',","level":"info"}
+{"timestamp":"2026-09-06T07:08:04.812387969Z","message":"  status: 201,","level":"info"}
+{"timestamp":"2026-09-06T07:08:04.812391629Z","level":"info","message":"  durationMs: 368"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:08:04.812395129Z"}
+{"message":"}","level":"info","timestamp":"2026-09-06T07:08:05.026242667Z"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:05.026242687Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:05.026253127Z","message":"  event: 'http_request',"}
+{"level":"info","message":"  ts: '2026-09-06T07:08:04.985Z',","timestamp":"2026-09-06T07:08:05.026258107Z"}
+{"timestamp":"2026-09-06T07:08:05.026262746Z","level":"info","message":"  requestId: '83c3125b-ffec-4909-b4bd-0d627f6e167a',"}
+{"timestamp":"2026-09-06T07:08:05.026265916Z","level":"info","message":"  method: 'OPTIONS',"}
+{"level":"info","message":"  route: '/api/ai/orchestrate',","timestamp":"2026-09-06T07:08:05.026270936Z"}
+{"message":"  status: 204,","level":"info","timestamp":"2026-09-06T07:08:05.026274476Z"}
+{"message":"  durationMs: 0","timestamp":"2026-09-06T07:08:05.026278146Z","level":"info"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:05.804579240Z"}
+{"message":"  event: 'studio.plugin_compatibility_handshake',","level":"info","timestamp":"2026-09-06T07:08:05.804585590Z"}
+{"level":"info","message":"  ts: '2026-09-06T07:08:05.728Z',","timestamp":"2026-09-06T07:08:05.804590060Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:05.804594610Z","message":"  requestId: 'ecaed392-6ee7-480c-80ec-672fde0ce69a',"}
+{"timestamp":"2026-09-06T07:08:05.804599250Z","message":"  sessionId: 'MLq8J3mhz56J6BRsAeQe',","level":"info"}
+{"level":"info","message":"  userId: '0VSQotqOXxPXBLeQu1gUNkXELWH3',","timestamp":"2026-09-06T07:08:05.804603480Z"}
+{"message":"  status: 'compatible',","level":"info","timestamp":"2026-09-06T07:08:05.804607730Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:05.804612810Z","message":"  reasonCodes: [],"}
+{"timestamp":"2026-09-06T07:08:05.804618240Z","level":"info","message":"  buildId: 'nexusrbx-studio-0.14.0-r15-animation.12-toolbox',"}
+{"message":"  attestationWritten: false,","timestamp":"2026-09-06T07:08:05.804622259Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:05.804626889Z","level":"info","message":"  repairDurationMs: 589"}
+{"message":"}","timestamp":"2026-09-06T07:08:05.804631559Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:05.804636209Z","level":"info","message":"[ops] {"}
+{"timestamp":"2026-09-06T07:08:05.804640549Z","level":"info","message":"  event: 'http_request',"}
+{"message":"  ts: '2026-09-06T07:08:05.729Z',","timestamp":"2026-09-06T07:08:05.804644539Z","level":"info"}
+{"message":"  requestId: 'ecaed392-6ee7-480c-80ec-672fde0ce69a',","level":"info","timestamp":"2026-09-06T07:08:05.804649209Z"}
+{"message":"  method: 'POST',","timestamp":"2026-09-06T07:08:05.804653569Z","level":"info"}
+{"level":"info","message":"  route: '/api/studio/session/ping',","timestamp":"2026-09-06T07:08:05.804657989Z"}
+{"timestamp":"2026-09-06T07:08:05.804662319Z","message":"  status: 200,","level":"info"}
+{"message":"  durationMs: 657","level":"info","timestamp":"2026-09-06T07:08:05.804666529Z"}
+{"message":"}","timestamp":"2026-09-06T07:08:05.804671379Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:05.804680659Z","level":"error","message":"[ops] {"}
+{"level":"error","timestamp":"2026-09-06T07:08:05.804685449Z","message":"  event: 'security.app_check_rejected',"}
+{"level":"error","message":"  ts: '2026-09-06T07:08:05.779Z',","timestamp":"2026-09-06T07:08:05.804689569Z"}
+{"timestamp":"2026-09-06T07:08:05.804693518Z","message":"  reason: 'missing_token',","level":"error"}
+{"level":"error","message":"  mode: 'monitor',","timestamp":"2026-09-06T07:08:05.804698028Z"}
+{"timestamp":"2026-09-06T07:08:05.804702178Z","level":"error","message":"  route: '/api/ai/orchestrate'"}
+{"message":"}","level":"error","timestamp":"2026-09-06T07:08:05.804706548Z"}
+{"timestamp":"2026-09-06T07:08:06.229230168Z","message":"project_resolution {","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:06.229233758Z","message":"  requestId: null,"}
+{"message":"  userHash: '61523b905e6d4bfa',","level":"info","timestamp":"2026-09-06T07:08:06.229237488Z"}
+{"level":"info","message":"  projectHash: '345b955d3c8c9e83',","timestamp":"2026-09-06T07:08:06.229240898Z"}
+{"message":"  resolutionState: 'ready',","timestamp":"2026-09-06T07:08:06.229244558Z","level":"info"}
+{"level":"info","message":"  failureCode: null","timestamp":"2026-09-06T07:08:06.229249428Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:06.229254138Z","message":"}"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:06.541338270Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:06.541338370Z","message":"  method: 'GET',","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:06.541348050Z","message":"  event: 'http_request',"}
+{"message":"  ts: '2026-09-06T07:08:06.478Z',","level":"info","timestamp":"2026-09-06T07:08:06.541354740Z"}
+{"message":"  route: '/api/v2/events',","level":"info","timestamp":"2026-09-06T07:08:06.541355830Z"}
+{"message":"  requestId: '269a9e4f-4e0e-4daa-9d85-881bf6e642c4',","timestamp":"2026-09-06T07:08:06.541360260Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:06.541366110Z","message":"  method: 'OPTIONS',","level":"info"}
+{"message":"  status: 200,","timestamp":"2026-09-06T07:08:06.541370350Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:06.541373480Z","level":"info","message":"  route: '/api/studio/status',"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:08:06.541380900Z","level":"info"}
+{"message":"  durationMs: 2194","timestamp":"2026-09-06T07:08:06.541381410Z","level":"info"}
+{"level":"info","message":"  durationMs: 0","timestamp":"2026-09-06T07:08:06.541387080Z"}
+{"message":"}","timestamp":"2026-09-06T07:08:06.541389300Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:06.541392220Z","level":"info","message":"}"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:06.541395730Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:06.541399270Z","message":"  event: 'http_request',"}
+{"message":"  ts: '2026-09-06T07:08:06.478Z',","timestamp":"2026-09-06T07:08:06.541403020Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:06.541406959Z","message":"  requestId: '5654316a-bd6b-469d-8226-df2dc94ff149',"}
+{"message":"  method: 'OPTIONS',","timestamp":"2026-09-06T07:08:06.541410189Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:06.541413799Z","level":"info","message":"  route: '/api/studio/mcp/status',"}
+{"message":"  status: 204,","level":"info","timestamp":"2026-09-06T07:08:06.541417269Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:06.541421259Z","message":"  durationMs: 0"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:08:06.541424969Z"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:06.541428919Z"}
+{"message":"  event: 'http_request',","level":"info","timestamp":"2026-09-06T07:08:06.541434559Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:06.541438809Z","message":"  ts: '2026-09-06T07:08:06.492Z',"}
+{"message":"  requestId: '575dc47a-0dc3-47e5-960c-6307ca788e37',","level":"info","timestamp":"2026-09-06T07:08:06.541442439Z"}
+{"level":"error","timestamp":"2026-09-06T07:08:06.750788599Z","message":"[ops] {"}
+{"level":"error","message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:08:06.750792099Z"}
+{"timestamp":"2026-09-06T07:08:06.750798599Z","message":"  ts: '2026-09-06T07:08:06.749Z',","level":"error"}
+{"level":"error","timestamp":"2026-09-06T07:08:06.750801229Z","message":"  reason: 'missing_token',"}
+{"message":"  mode: 'monitor',","timestamp":"2026-09-06T07:08:06.750804069Z","level":"error"}
+{"timestamp":"2026-09-06T07:08:06.750806639Z","level":"error","message":"  route: '/api/studio/status'"}
+{"level":"error","timestamp":"2026-09-06T07:08:06.750809399Z","message":"}"}
+{"timestamp":"2026-09-06T07:08:06.761394822Z","level":"error","message":"[ops] {"}
+{"message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:08:06.761398652Z","level":"error"}
+{"timestamp":"2026-09-06T07:08:06.761401342Z","level":"error","message":"  ts: '2026-09-06T07:08:06.755Z',"}
+{"timestamp":"2026-09-06T07:08:06.761403962Z","level":"error","message":"  reason: 'missing_token',"}
+{"level":"error","timestamp":"2026-09-06T07:08:06.761406352Z","message":"  mode: 'monitor',"}
+{"timestamp":"2026-09-06T07:08:06.761408742Z","message":"  route: '/api/studio/mcp/status'","level":"error"}
+{"message":"}","timestamp":"2026-09-06T07:08:06.761411412Z","level":"error"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:06.766222515Z"}
+{"timestamp":"2026-09-06T07:08:06.766226675Z","level":"info","message":"  event: 'http_request',"}
+{"level":"info","timestamp":"2026-09-06T07:08:06.766229515Z","message":"  ts: '2026-09-06T07:08:06.764Z',"}
+{"level":"info","message":"  requestId: 'b1b937d6-352f-4d26-ae95-7b8c9e472cbd',","timestamp":"2026-09-06T07:08:06.766232015Z"}
+{"timestamp":"2026-09-06T07:08:06.766234465Z","level":"info","message":"  method: 'OPTIONS',"}
+{"level":"info","timestamp":"2026-09-06T07:08:06.766237325Z","message":"  route: '/api/v2/agents/active',"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:08:06.766239735Z","level":"info"}
+{"level":"info","message":"  durationMs: 0","timestamp":"2026-09-06T07:08:06.766242385Z"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:08:06.766244715Z"}
+{"timestamp":"2026-09-06T07:08:07.309712131Z","level":"info","message":"  ts: '2026-09-06T07:08:07.166Z',"}
+{"message":"  requestId: '65ff8d5f-16cb-4d90-99e3-6211ece73049',","timestamp":"2026-09-06T07:08:07.309724711Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:07.309729881Z","message":"  method: 'GET',","level":"info"}
+{"message":"  route: '/api/studio/mcp/status',","level":"info","timestamp":"2026-09-06T07:08:07.309734551Z"}
+{"timestamp":"2026-09-06T07:08:07.309739111Z","level":"info","message":"  status: 200,"}
+{"message":"  durationMs: 410","level":"info","timestamp":"2026-09-06T07:08:07.309745801Z"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:08:07.309750981Z"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:07.309755901Z"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:07.309760231Z"}
+{"message":"  ts: '2026-09-06T07:08:07.300Z',","timestamp":"2026-09-06T07:08:07.309764261Z","level":"info"}
+{"message":"  requestId: '2dcd5440-8f95-47a3-8db7-942a6e9511c4',","level":"info","timestamp":"2026-09-06T07:08:07.309768721Z"}
+{"level":"info","message":"  method: 'GET',","timestamp":"2026-09-06T07:08:07.309772671Z"}
+{"message":"  route: '/api/studio/status',","timestamp":"2026-09-06T07:08:07.309776690Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:07.309793870Z","level":"error","message":"[ops] {"}
+{"timestamp":"2026-09-06T07:08:07.309796730Z","level":"error","message":"  event: 'security.app_check_rejected',"}
+{"level":"error","timestamp":"2026-09-06T07:08:07.309799590Z","message":"  ts: '2026-09-06T07:08:06.974Z',"}
+{"level":"error","message":"  reason: 'missing_token',","timestamp":"2026-09-06T07:08:07.309802540Z"}
+{"message":"  mode: 'monitor',","level":"error","timestamp":"2026-09-06T07:08:07.309805800Z"}
+{"timestamp":"2026-09-06T07:08:07.309808480Z","level":"error","message":"  route: '/api/v2/agents/active'"}
+{"level":"error","timestamp":"2026-09-06T07:08:07.309811420Z","message":"}"}
+{"timestamp":"2026-09-06T07:08:07.309814070Z","level":"info","message":"[ops] {"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:07.309816870Z"}
+{"level":"info","message":"  ts: '2026-09-06T07:08:07.035Z',","timestamp":"2026-09-06T07:08:07.309820110Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:07.309822970Z","message":"  requestId: '8d6a2d1a-cb8f-45bf-bc7a-3325cd20e04f',"}
+{"timestamp":"2026-09-06T07:08:07.309825870Z","level":"info","message":"  method: 'GET',"}
+{"message":"  route: '/api/v2/agents/active',","timestamp":"2026-09-06T07:08:07.309828660Z","level":"info"}
+{"level":"info","message":"  status: 200,","timestamp":"2026-09-06T07:08:07.309831460Z"}
+{"message":"  durationMs: 62","timestamp":"2026-09-06T07:08:07.309834270Z","level":"info"}
+{"message":"}","timestamp":"2026-09-06T07:08:07.309837130Z","level":"info"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:07.309840060Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:07.309842720Z","message":"  event: 'http_request',","level":"info"}
+{"message":"  status: 200,","timestamp":"2026-09-06T07:08:07.310000877Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:07.310004247Z","level":"info","message":"  durationMs: 551"}
+{"timestamp":"2026-09-06T07:08:07.310007827Z","level":"info","message":"}"}
+{"timestamp":"2026-09-06T07:08:09.077183424Z","message":"[ops] {","level":"info"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:09.077189044Z","level":"info"}
+{"message":"  ts: '2026-09-06T07:08:09.076Z',","level":"info","timestamp":"2026-09-06T07:08:09.077197974Z"}
+{"message":"  requestId: '622cf1c8-09df-402c-90f9-68e36ef2b43c',","timestamp":"2026-09-06T07:08:09.077201863Z","level":"info"}
+{"message":"  method: 'OPTIONS',","level":"info","timestamp":"2026-09-06T07:08:09.077205143Z"}
+{"message":"  route: '/api/v2/agents/active',","timestamp":"2026-09-06T07:08:09.077208033Z","level":"info"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:08:09.077210973Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:09.077213563Z","level":"info","message":"  durationMs: 0"}
+{"message":"}","level":"info","timestamp":"2026-09-06T07:08:09.077216223Z"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:09.077820965Z"}
+{"message":"  event: 'http_request',","level":"info","timestamp":"2026-09-06T07:08:09.077831375Z"}
+{"level":"info","message":"  ts: '2026-09-06T07:08:09.076Z',","timestamp":"2026-09-06T07:08:09.077837035Z"}
+{"timestamp":"2026-09-06T07:08:09.077840885Z","level":"info","message":"  requestId: '1b91bd49-e7b8-436c-b3d3-2e866461151f',"}
+{"timestamp":"2026-09-06T07:08:09.077844555Z","message":"  method: 'OPTIONS',","level":"info"}
+{"timestamp":"2026-09-06T07:08:09.077849035Z","message":"  route: '/api/v2/events',","level":"info"}
+{"message":"  status: 204,","level":"info","timestamp":"2026-09-06T07:08:09.077852864Z"}
+{"timestamp":"2026-09-06T07:08:09.077856204Z","message":"  durationMs: 0","level":"info"}
+{"message":"}","timestamp":"2026-09-06T07:08:09.077859564Z","level":"info"}
+{"message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:08:09.464925874Z","level":"error"}
+{"timestamp":"2026-09-06T07:08:09.464945684Z","message":"  ts: '2026-09-06T07:08:09.261Z',","level":"error"}
+{"message":"  reason: 'missing_token',","timestamp":"2026-09-06T07:08:09.464948884Z","level":"error"}
+{"level":"error","timestamp":"2026-09-06T07:08:09.464951204Z","message":"[ops] {"}
+{"level":"error","message":"  mode: 'monitor',","timestamp":"2026-09-06T07:08:09.464951814Z"}
+{"timestamp":"2026-09-06T07:08:09.464954534Z","message":"  route: '/api/v2/events'","level":"error"}
+{"level":"error","message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:08:09.464955244Z"}
+{"level":"error","message":"}","timestamp":"2026-09-06T07:08:09.464957824Z"}
+{"message":"  ts: '2026-09-06T07:08:09.255Z',","timestamp":"2026-09-06T07:08:09.464959064Z","level":"error"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:09.464960904Z","level":"info"}
+{"level":"error","timestamp":"2026-09-06T07:08:09.464963314Z","message":"  reason: 'missing_token',"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:09.464963574Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:09.464966814Z","message":"  ts: '2026-09-06T07:08:09.402Z',"}
+{"level":"error","timestamp":"2026-09-06T07:08:09.464967714Z","message":"  mode: 'monitor',"}
+{"message":"  requestId: 'fac2ed33-9d80-4709-9d17-5f8c152c8a1f',","timestamp":"2026-09-06T07:08:09.464969573Z","level":"info"}
+{"message":"  route: '/api/v2/agents/active'","timestamp":"2026-09-06T07:08:09.464971343Z","level":"error"}
+{"level":"info","message":"  method: 'GET',","timestamp":"2026-09-06T07:08:09.464972733Z"}
+{"timestamp":"2026-09-06T07:08:09.464975363Z","message":"  route: '/api/v2/agents/active',","level":"info"}
+{"timestamp":"2026-09-06T07:08:09.464975623Z","level":"error","message":"}"}
+{"level":"info","message":"  status: 200,","timestamp":"2026-09-06T07:08:09.464977793Z"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:09.464979453Z","level":"error"}
+{"timestamp":"2026-09-06T07:08:09.464980713Z","message":"  durationMs: 147","level":"info"}
+{"message":"}","level":"info","timestamp":"2026-09-06T07:08:09.464983083Z"}
+{"timestamp":"2026-09-06T07:08:09.888038153Z","level":"info","message":"[ops] {"}
+{"level":"info","timestamp":"2026-09-06T07:08:09.888041583Z","message":"  event: 'http_request',"}
+{"message":"  ts: '2026-09-06T07:08:09.859Z',","timestamp":"2026-09-06T07:08:09.888044613Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:09.888047793Z","message":"  requestId: '1a112844-5e59-4739-980d-e807fb34e041',"}
+{"level":"info","message":"  method: 'GET',","timestamp":"2026-09-06T07:08:09.888050763Z"}
+{"message":"  route: '/api/v2/events',","level":"info","timestamp":"2026-09-06T07:08:09.888053402Z"}
+{"level":"info","message":"  status: 200,","timestamp":"2026-09-06T07:08:09.888055972Z"}
+{"level":"info","message":"  durationMs: 599","timestamp":"2026-09-06T07:08:09.888058502Z"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:08:09.888061592Z"}
+{"ts":1788678490393,"counter":"studio_session","sessionId":"Iog4rWn0F2wcGR9xp3Jq","timestamp":"2026-09-06T07:08:10.463434904Z","jobId":null,"message":"","level":"info","type":"firestore_write_metric","count":1,"total":5,"writesPerStudioSessionHour":5}
+{"level":"info","timestamp":"2026-09-06T07:08:10.463437764Z","message":"[ops] {"}
+{"timestamp":"2026-09-06T07:08:10.463440774Z","message":"  event: 'studio.plugin_compatibility_handshake',","level":"info"}
+{"level":"info","message":"  ts: '2026-09-06T07:08:10.449Z',","timestamp":"2026-09-06T07:08:10.463443504Z"}
+{"message":"  requestId: 'bf903809-57dd-4e93-ac8d-fa3f2fa93ed1',","timestamp":"2026-09-06T07:08:10.463445924Z","level":"info"}
+{"message":"  sessionId: 'Iog4rWn0F2wcGR9xp3Jq',","timestamp":"2026-09-06T07:08:10.463448584Z","level":"info"}
+{"level":"info","message":"  userId: 'klu6Sv5QeEgYWlHjsgQwMkZCvsb2',","timestamp":"2026-09-06T07:08:10.463451184Z"}
+{"level":"info","message":"  status: 'degraded',","timestamp":"2026-09-06T07:08:10.463454374Z"}
+{"timestamp":"2026-09-06T07:08:10.463456774Z","level":"info","message":"  reasonCodes: [ 'command_unavailable' ],"}
+{"timestamp":"2026-09-06T07:08:10.463459464Z","level":"info","message":"  buildId: 'nexusrbx-studio-0.14.0-r15-animation.10-native-value-normalization',"}
+{"message":"  attestationWritten: false,","timestamp":"2026-09-06T07:08:10.463462384Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:10.463464854Z","message":"  repairDurationMs: 455","level":"info"}
+{"timestamp":"2026-09-06T07:08:10.463468054Z","level":"info","message":"}"}
+{"timestamp":"2026-09-06T07:08:10.463470884Z","level":"info","message":"[ops] {"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:10.463473654Z","level":"info"}
+{"level":"info","message":"  ts: '2026-09-06T07:08:10.450Z',","timestamp":"2026-09-06T07:08:10.463476704Z"}
+{"level":"info","message":"  requestId: 'bf903809-57dd-4e93-ac8d-fa3f2fa93ed1',","timestamp":"2026-09-06T07:08:10.463479264Z"}
+{"level":"info","message":"  method: 'POST',","timestamp":"2026-09-06T07:08:10.463482124Z"}
+{"timestamp":"2026-09-06T07:08:10.463484984Z","level":"info","message":"  route: '/api/studio/session/ping',"}
+{"message":"  status: 200,","level":"info","timestamp":"2026-09-06T07:08:10.463487484Z"}
+{"timestamp":"2026-09-06T07:08:10.463489884Z","level":"info","message":"  durationMs: 512"}
+{"message":"}","timestamp":"2026-09-06T07:08:10.463492414Z","level":"info"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:08:11.541608415Z","level":"info"}
+{"message":"  durationMs: 0","level":"info","timestamp":"2026-09-06T07:08:11.541615225Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:11.541619145Z","message":"}"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:11.541670035Z","level":"info"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:11.541677784Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:11.541682084Z","level":"info","message":"  ts: '2026-09-06T07:08:11.529Z',"}
+{"timestamp":"2026-09-06T07:08:11.541686744Z","message":"  requestId: '1741f8e4-3a27-4246-b397-5627cbfe8450',","level":"info"}
+{"message":"  method: 'OPTIONS',","timestamp":"2026-09-06T07:08:11.541691494Z","level":"info"}
+{"level":"info","message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:08:11.541695634Z"}
+{"level":"error","timestamp":"2026-09-06T07:08:11.820469789Z","message":"[ops] {"}
+{"message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:08:11.820472629Z","level":"error"}
+{"level":"error","message":"  ts: '2026-09-06T07:08:11.712Z',","timestamp":"2026-09-06T07:08:11.820475269Z"}
+{"timestamp":"2026-09-06T07:08:11.820477989Z","level":"error","message":"  reason: 'missing_token',"}
+{"level":"error","message":"  mode: 'monitor',","timestamp":"2026-09-06T07:08:11.820480749Z"}
+{"level":"error","timestamp":"2026-09-06T07:08:11.820483289Z","message":"  route: '/api/v2/events'"}
+{"timestamp":"2026-09-06T07:08:11.820486329Z","level":"error","message":"}"}
+{"message":"[ops] {","level":"info","timestamp":"2026-09-06T07:08:12.040148085Z"}
+{"timestamp":"2026-09-06T07:08:12.040151435Z","message":"  event: 'studio.command_polled',","level":"info"}
+{"message":"  ts: '2026-09-06T07:08:12.000Z',","timestamp":"2026-09-06T07:08:12.040154715Z","level":"info"}
+{"message":"  requestId: 'caf8e1bf-03b3-4781-bff4-ff6cdb48ce08',","level":"info","timestamp":"2026-09-06T07:08:12.040157585Z"}
+{"level":"info","message":"  sessionId: 'DlvFpLpN0vX1CB5Fvwv9',","timestamp":"2026-09-06T07:08:12.040160785Z"}
+{"timestamp":"2026-09-06T07:08:12.040164175Z","message":"  status: 'empty'","level":"info"}
+{"timestamp":"2026-09-06T07:08:12.040167245Z","level":"info","message":"}"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:12.040170395Z"}
+{"timestamp":"2026-09-06T07:08:12.040173505Z","level":"info","message":"  event: 'http_request',"}
+{"message":"  ts: '2026-09-06T07:08:12.001Z',","level":"info","timestamp":"2026-09-06T07:08:12.040176864Z"}
+{"timestamp":"2026-09-06T07:08:12.040180074Z","message":"  requestId: 'caf8e1bf-03b3-4781-bff4-ff6cdb48ce08',","level":"info"}
+{"level":"info","message":"  method: 'GET',","timestamp":"2026-09-06T07:08:12.040183164Z"}
+{"timestamp":"2026-09-06T07:08:12.040185974Z","level":"info","message":"  route: '/api/studio/mcp/commands/next',"}
+{"timestamp":"2026-09-06T07:08:12.040188554Z","level":"info","message":"  status: 204,"}
+{"timestamp":"2026-09-06T07:08:12.040192234Z","message":"  durationMs: 5558","level":"info"}
+{"message":"}","level":"info","timestamp":"2026-09-06T07:08:12.040196914Z"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:12.595356556Z","level":"info"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:12.595365626Z","level":"info"}
+{"message":"  ts: '2026-09-06T07:08:12.320Z',","timestamp":"2026-09-06T07:08:12.595370326Z","level":"info"}
+{"message":"  requestId: '4f14eee6-ab1b-4b36-85b6-65599e7f9b2f',","timestamp":"2026-09-06T07:08:12.595374356Z","level":"info"}
+{"level":"info","message":"  method: 'GET',","timestamp":"2026-09-06T07:08:12.595377816Z"}
+{"message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:08:12.595381406Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:12.595385096Z","message":"  status: 200,","level":"info"}
+{"message":"  durationMs: 608","timestamp":"2026-09-06T07:08:12.595389116Z","level":"info"}
+{"message":"}","level":"info","timestamp":"2026-09-06T07:08:12.595392476Z"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:12.698635771Z","level":"info"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:12.698639010Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:12.698641680Z","message":"  ts: '2026-09-06T07:08:12.695Z',"}
+{"timestamp":"2026-09-06T07:08:12.698644560Z","level":"info","message":"  requestId: '14cc98cd-0f80-4833-9199-5e687d76f401',"}
+{"message":"  method: 'POST',","level":"info","timestamp":"2026-09-06T07:08:12.698647470Z"}
+{"timestamp":"2026-09-06T07:08:12.698650260Z","message":"  route: '/api/studio/mcp/session/ping',","level":"info"}
+{"message":"  status: 200,","timestamp":"2026-09-06T07:08:12.698652890Z","level":"info"}
+{"message":"  durationMs: 308","timestamp":"2026-09-06T07:08:12.698655450Z","level":"info"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:08:12.698658300Z"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:14.046959275Z"}
+{"message":"  event: 'http_request',","level":"info","timestamp":"2026-09-06T07:08:14.046964125Z"}
+{"timestamp":"2026-09-06T07:08:14.046967105Z","message":"  ts: '2026-09-06T07:08:14.027Z',","level":"info"}
+{"timestamp":"2026-09-06T07:08:14.046969685Z","level":"info","message":"  requestId: 'c5f53d2d-765d-4cc5-99e1-e1164a21ab97',"}
+{"timestamp":"2026-09-06T07:08:14.046972505Z","level":"info","message":"  method: 'OPTIONS',"}
+{"timestamp":"2026-09-06T07:08:14.046975685Z","level":"info","message":"  route: '/api/v2/events',"}
+{"level":"info","timestamp":"2026-09-06T07:08:14.046977975Z","message":"  status: 204,"}
+{"level":"info","timestamp":"2026-09-06T07:08:14.046980705Z","message":"  durationMs: 0"}
+{"message":"}","timestamp":"2026-09-06T07:08:14.046983345Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:14.201851582Z","level":"error","message":"[ops] {"}
+{"message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:08:14.201855442Z","level":"error"}
+{"level":"error","timestamp":"2026-09-06T07:08:14.201860232Z","message":"  ts: '2026-09-06T07:08:14.199Z',"}
+{"timestamp":"2026-09-06T07:08:14.201865081Z","level":"error","message":"  reason: 'missing_token',"}
+{"timestamp":"2026-09-06T07:08:14.201869111Z","level":"error","message":"  mode: 'monitor',"}
+{"level":"error","message":"  route: '/api/v2/events'","timestamp":"2026-09-06T07:08:14.201872891Z"}
+{"level":"error","timestamp":"2026-09-06T07:08:14.201877141Z","message":"}"}
+{"message":"[ops] {","level":"info","timestamp":"2026-09-06T07:08:14.850217637Z"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:14.850222167Z"}
+{"message":"  ts: '2026-09-06T07:08:14.835Z',","level":"info","timestamp":"2026-09-06T07:08:14.850225087Z"}
+{"level":"info","message":"  requestId: '80f0d1e5-13ff-4f4e-b884-15329ab70d33',","timestamp":"2026-09-06T07:08:14.850228077Z"}
+{"timestamp":"2026-09-06T07:08:14.850230847Z","message":"  method: 'GET',","level":"info"}
+{"level":"info","message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:08:14.850233957Z"}
+{"timestamp":"2026-09-06T07:08:14.850236637Z","level":"info","message":"  status: 200,"}
+{"message":"  durationMs: 636","timestamp":"2026-09-06T07:08:14.850239377Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:14.850242016Z","level":"info","message":"}"}
+{"timestamp":"2026-09-06T07:08:16.304815401Z","level":"info","message":"project_resolution {"}
+{"timestamp":"2026-09-06T07:08:16.304822130Z","level":"info","message":"  requestId: 'c86ba1a7-fed1-4d22-96fd-55b62d48f649',"}
+{"timestamp":"2026-09-06T07:08:16.304828580Z","level":"info","message":"  userHash: '61523b905e6d4bfa',"}
+{"timestamp":"2026-09-06T07:08:16.304833740Z","message":"  projectHash: '345b955d3c8c9e83',","level":"info"}
+{"level":"info","message":"  resolutionState: 'ready',","timestamp":"2026-09-06T07:08:16.304838870Z"}
+{"timestamp":"2026-09-06T07:08:16.304842920Z","level":"info","message":"  failureCode: null"}
+{"timestamp":"2026-09-06T07:08:16.304847280Z","message":"}","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:16.585687225Z","message":"[ops] {"}
+{"timestamp":"2026-09-06T07:08:16.585690265Z","level":"info","message":"  event: 'http_request',"}
+{"timestamp":"2026-09-06T07:08:16.585693895Z","level":"info","message":"  ts: '2026-09-06T07:08:16.531Z',"}
+{"message":"  requestId: '3a8f3af4-32c5-48c0-85f4-686eab4bd007',","level":"info","timestamp":"2026-09-06T07:08:16.585697705Z"}
+{"timestamp":"2026-09-06T07:08:16.585700965Z","level":"info","message":"  method: 'OPTIONS',"}
+{"level":"info","message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:08:16.585703845Z"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:08:16.585706775Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:16.585709755Z","level":"info","message":"  durationMs: 0"}
+{"level":"info","timestamp":"2026-09-06T07:08:16.585713065Z","message":"}"}
+{"timestamp":"2026-09-06T07:08:16.734238230Z","message":"[ops] {","level":"error"}
+{"level":"error","message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:08:16.734243000Z"}
+{"timestamp":"2026-09-06T07:08:16.734246020Z","message":"  ts: '2026-09-06T07:08:16.701Z',","level":"error"}
+{"message":"  reason: 'missing_token',","level":"error","timestamp":"2026-09-06T07:08:16.734248749Z"}
+{"level":"error","message":"  mode: 'monitor',","timestamp":"2026-09-06T07:08:16.734251589Z"}
+{"level":"error","message":"  route: '/api/v2/events'","timestamp":"2026-09-06T07:08:16.734254939Z"}
+{"message":"}","timestamp":"2026-09-06T07:08:16.734257599Z","level":"error"}
+{"message":"[ops] {","level":"info","timestamp":"2026-09-06T07:08:17.586521658Z"}
+{"timestamp":"2026-09-06T07:08:17.586524458Z","message":"  event: 'http_request',","level":"info"}
+{"timestamp":"2026-09-06T07:08:17.586527128Z","message":"  ts: '2026-09-06T07:08:17.283Z',","level":"info"}
+{"timestamp":"2026-09-06T07:08:17.586530438Z","message":"  requestId: '239dae5f-8449-47ff-89d6-fbf3fc9a7054',","level":"info"}
+{"level":"info","message":"  method: 'GET',","timestamp":"2026-09-06T07:08:17.586533698Z"}
+{"message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:08:17.586536788Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:17.586540078Z","message":"  status: 200,"}
+{"message":"  durationMs: 582","timestamp":"2026-09-06T07:08:17.586542918Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:17.586545698Z","level":"info","message":"}"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:18.667650743Z"}
+{"timestamp":"2026-09-06T07:08:18.667657423Z","message":"  event: 'http_request',","level":"info"}
+{"timestamp":"2026-09-06T07:08:18.667661673Z","level":"info","message":"  ts: '2026-09-06T07:08:18.665Z',"}
+{"level":"info","message":"  requestId: 'c9ff17a5-0f4a-43e7-8ce2-5871686768f9',","timestamp":"2026-09-06T07:08:18.667668843Z"}
+{"message":"  method: 'POST',","timestamp":"2026-09-06T07:08:18.667673593Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:18.667677273Z","level":"info","message":"  route: '/api/studio/mcp/session/ping',"}
+{"level":"info","message":"  status: 200,","timestamp":"2026-09-06T07:08:18.667680633Z"}
+{"message":"  durationMs: 295","timestamp":"2026-09-06T07:08:18.667754642Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:18.667765111Z","message":"}","level":"info"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:19.026278556Z","level":"info"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:19.026285456Z"}
+{"message":"  ts: '2026-09-06T07:08:19.024Z',","timestamp":"2026-09-06T07:08:19.026290056Z","level":"info"}
+{"message":"  requestId: '9b9292b9-6e57-4d70-98ca-c735d1d87de1',","level":"info","timestamp":"2026-09-06T07:08:19.026293686Z"}
+{"timestamp":"2026-09-06T07:08:19.026297306Z","message":"  method: 'OPTIONS',","level":"info"}
+{"timestamp":"2026-09-06T07:08:19.026302016Z","level":"info","message":"  route: '/api/v2/agents/active',"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:08:19.026305645Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:19.026309195Z","level":"info","message":"  durationMs: 0"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:08:19.026312795Z"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:19.026317345Z"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:19.026321775Z"}
+{"timestamp":"2026-09-06T07:08:19.026324615Z","message":"  ts: '2026-09-06T07:08:19.024Z',","level":"info"}
+{"timestamp":"2026-09-06T07:08:19.026327335Z","message":"  requestId: '619bc63f-6e2e-43b4-882c-b06f379dbd12',","level":"info"}
+{"timestamp":"2026-09-06T07:08:19.026329875Z","message":"  method: 'OPTIONS',","level":"info"}
+{"timestamp":"2026-09-06T07:08:19.026332855Z","level":"info","message":"  route: '/api/v2/events',"}
+{"timestamp":"2026-09-06T07:08:19.026335545Z","level":"info","message":"  status: 204,"}
+{"level":"info","message":"  durationMs: 0","timestamp":"2026-09-06T07:08:19.026338485Z"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:08:19.026340985Z"}
+{"timestamp":"2026-09-06T07:08:19.672713046Z","message":"[ops] {","level":"error"}
+{"message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:08:19.672725296Z","level":"error"}
+{"timestamp":"2026-09-06T07:08:19.672730796Z","level":"error","message":"  ts: '2026-09-06T07:08:19.669Z',"}
+{"timestamp":"2026-09-06T07:08:19.672734356Z","level":"error","message":"  reason: 'missing_token',"}
+{"level":"error","timestamp":"2026-09-06T07:08:19.672739956Z","message":"  mode: 'monitor',"}
+{"level":"error","message":"  route: '/api/v2/events'","timestamp":"2026-09-06T07:08:19.672743585Z"}
+{"timestamp":"2026-09-06T07:08:19.672747325Z","message":"}","level":"error"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:19.672751185Z","level":"error"}
+{"message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:08:19.672754965Z","level":"error"}
+{"timestamp":"2026-09-06T07:08:19.672758775Z","level":"error","message":"  ts: '2026-09-06T07:08:19.669Z',"}
+{"timestamp":"2026-09-06T07:08:19.672762715Z","level":"error","message":"  reason: 'missing_token',"}
+{"message":"  mode: 'monitor',","timestamp":"2026-09-06T07:08:19.672765815Z","level":"error"}
+{"level":"error","message":"  route: '/api/v2/agents/active'","timestamp":"2026-09-06T07:08:19.672769625Z"}
+{"level":"error","message":"}","timestamp":"2026-09-06T07:08:19.672773805Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:19.747431957Z","message":"[ops] {"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:19.747436927Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:19.747440357Z","message":"  ts: '2026-09-06T07:08:19.734Z',","level":"info"}
+{"message":"  requestId: '0399e3a2-9dc5-440e-9498-d969a419eaf8',","timestamp":"2026-09-06T07:08:19.747443407Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:19.747446277Z","message":"  method: 'GET',"}
+{"level":"info","timestamp":"2026-09-06T07:08:19.747449117Z","message":"  route: '/api/v2/agents/active',"}
+{"message":"  status: 200,","timestamp":"2026-09-06T07:08:19.747451927Z","level":"info"}
+{"level":"info","message":"  durationMs: 65","timestamp":"2026-09-06T07:08:19.747454687Z"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:08:19.747457627Z"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:20.225352210Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:20.225360880Z","message":"  event: 'http_request',","level":"info"}
+{"timestamp":"2026-09-06T07:08:20.225366510Z","message":"  ts: '2026-09-06T07:08:20.223Z',","level":"info"}
+{"timestamp":"2026-09-06T07:08:20.225371400Z","level":"info","message":"  requestId: 'b39990c2-b8ec-4d6b-a7c3-edcec287625b',"}
+{"timestamp":"2026-09-06T07:08:20.225376360Z","level":"info","message":"  method: 'GET',"}
+{"level":"info","timestamp":"2026-09-06T07:08:20.225381330Z","message":"  route: '/api/v2/events',"}
+{"message":"  status: 200,","timestamp":"2026-09-06T07:08:20.225385360Z","level":"info"}
+{"message":"  durationMs: 554","timestamp":"2026-09-06T07:08:20.225390200Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:20.225396470Z","level":"info","message":"}"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:20.376908333Z","level":"info"}
+{"message":"  event: 'studio.command_polled',","timestamp":"2026-09-06T07:08:20.376925742Z","level":"info"}
+{"message":"  ts: '2026-09-06T07:08:20.349Z',","level":"info","timestamp":"2026-09-06T07:08:20.376965272Z"}
+{"level":"info","message":"  requestId: 'd7415a38-0972-491d-8ad5-6b544206c22c',","timestamp":"2026-09-06T07:08:20.376969752Z"}
+{"level":"info","message":"  sessionId: 'DlvFpLpN0vX1CB5Fvwv9',","timestamp":"2026-09-06T07:08:20.376973892Z"}
+{"timestamp":"2026-09-06T07:08:20.376977802Z","level":"info","message":"  status: 'empty'"}
+{"timestamp":"2026-09-06T07:08:20.376981682Z","message":"}","level":"info"}
+{"message":"[ops] {","level":"info","timestamp":"2026-09-06T07:08:20.376984921Z"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:20.376988541Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:20.376994011Z","level":"info","message":"  ts: '2026-09-06T07:08:20.349Z',"}
+{"timestamp":"2026-09-06T07:08:20.376997641Z","message":"  requestId: 'd7415a38-0972-491d-8ad5-6b544206c22c',","level":"info"}
+{"message":"  method: 'GET',","level":"info","timestamp":"2026-09-06T07:08:20.377001531Z"}
+{"message":"  route: '/api/studio/mcp/commands/next',","timestamp":"2026-09-06T07:08:20.377004841Z","level":"info"}
+{"level":"info","message":"  status: 204,","timestamp":"2026-09-06T07:08:20.377008621Z"}
+{"message":"  durationMs: 5399","timestamp":"2026-09-06T07:08:20.377012441Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:20.377016151Z","message":"}"}
+{"message":"  requestId: '69338b37-ecc4-4aee-8aea-8b1f4d98d6d6',","timestamp":"2026-09-06T07:08:21.073991348Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:21.073997688Z","message":"  method: 'POST',","level":"info"}
+{"timestamp":"2026-09-06T07:08:21.074001598Z","level":"info","message":"  route: '/api/studio/mcp/session/ping',"}
+{"level":"info","timestamp":"2026-09-06T07:08:21.074005378Z","message":"  status: 200,"}
+{"level":"info","timestamp":"2026-09-06T07:08:21.074008537Z","message":"  durationMs: 353"}
+{"message":"}","timestamp":"2026-09-06T07:08:21.074012127Z","level":"info"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:21.074037287Z"}
+{"timestamp":"2026-09-06T07:08:21.074040527Z","level":"info","message":"  event: 'http_request',"}
+{"message":"  ts: '2026-09-06T07:08:21.006Z',","level":"info","timestamp":"2026-09-06T07:08:21.074044727Z"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:21.895265175Z","level":"info"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:21.895268745Z"}
+{"timestamp":"2026-09-06T07:08:21.895272225Z","message":"  ts: '2026-09-06T07:08:21.539Z',","level":"info"}
+{"message":"  requestId: '9425f318-f147-40a3-9be9-74cc901b946a',","level":"info","timestamp":"2026-09-06T07:08:21.895275525Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:21.895279025Z","message":"  method: 'OPTIONS',"}
+{"message":"  route: '/api/v2/events',","level":"info","timestamp":"2026-09-06T07:08:21.895282665Z"}
+{"timestamp":"2026-09-06T07:08:21.895660940Z","message":"  status: 204,","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:21.895669709Z","message":"  durationMs: 0"}
+{"message":"}","timestamp":"2026-09-06T07:08:21.895673779Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:21.895678279Z","level":"info","message":"[ops] {"}
+{"level":"info","message":"  event: 'studio.plugin_compatibility_handshake',","timestamp":"2026-09-06T07:08:21.895681659Z"}
+{"timestamp":"2026-09-06T07:08:21.895685779Z","level":"info","message":"  ts: '2026-09-06T07:08:21.639Z',"}
+{"level":"info","timestamp":"2026-09-06T07:08:21.895689519Z","message":"  requestId: '557cf38a-16ae-435e-b5f9-0a61edfe7a6a',"}
+{"level":"info","timestamp":"2026-09-06T07:08:21.895693049Z","message":"  sessionId: 'MLq8J3mhz56J6BRsAeQe',"}
+{"level":"info","message":"  userId: '0VSQotqOXxPXBLeQu1gUNkXELWH3',","timestamp":"2026-09-06T07:08:21.895697099Z"}
+{"timestamp":"2026-09-06T07:08:21.895700559Z","level":"info","message":"  status: 'compatible',"}
+{"level":"info","timestamp":"2026-09-06T07:08:21.895704979Z","message":"  reasonCodes: [],"}
+{"timestamp":"2026-09-06T07:08:21.895708729Z","message":"  buildId: 'nexusrbx-studio-0.14.0-r15-animation.12-toolbox',","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:21.895713019Z","message":"  attestationWritten: false,"}
+{"message":"  repairDurationMs: 571","level":"info","timestamp":"2026-09-06T07:08:21.895716859Z"}
+{"message":"}","timestamp":"2026-09-06T07:08:21.895720149Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:21.895725499Z","message":"[ops] {","level":"info"}
+{"timestamp":"2026-09-06T07:08:21.895728859Z","level":"info","message":"  event: 'http_request',"}
+{"message":"  ts: '2026-09-06T07:08:21.639Z',","level":"info","timestamp":"2026-09-06T07:08:21.895732419Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:21.895737158Z","message":"  requestId: '557cf38a-16ae-435e-b5f9-0a61edfe7a6a',"}
+{"level":"info","message":"  method: 'POST',","timestamp":"2026-09-06T07:08:21.895740438Z"}
+{"message":"  route: '/api/studio/session/ping',","level":"info","timestamp":"2026-09-06T07:08:21.895743998Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:21.895747148Z","message":"  status: 200,"}
+{"message":"  durationMs: 627","level":"info","timestamp":"2026-09-06T07:08:21.895751248Z"}
+{"timestamp":"2026-09-06T07:08:21.897340706Z","message":"  mode: 'monitor',","level":"error"}
+{"timestamp":"2026-09-06T07:08:21.897347626Z","level":"error","message":"  route: '/api/v2/events'"}
+{"message":"}","level":"error","timestamp":"2026-09-06T07:08:21.897354346Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:21.897365566Z","message":"}"}
+{"message":"[ops] {","level":"error","timestamp":"2026-09-06T07:08:21.897375696Z"}
+{"message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:08:21.897380536Z","level":"error"}
+{"message":"  ts: '2026-09-06T07:08:21.857Z',","level":"error","timestamp":"2026-09-06T07:08:21.897384086Z"}
+{"message":"  reason: 'missing_token',","level":"error","timestamp":"2026-09-06T07:08:21.897388596Z"}
+{"timestamp":"2026-09-06T07:08:21.991219111Z","level":"error","message":"[ops] {"}
+{"level":"error","message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:08:21.991225020Z"}
+{"message":"  ts: '2026-09-06T07:08:21.978Z',","timestamp":"2026-09-06T07:08:21.991228770Z","level":"error"}
+{"timestamp":"2026-09-06T07:08:21.991231720Z","level":"error","message":"  reason: 'missing_token',"}
+{"timestamp":"2026-09-06T07:08:21.991234980Z","level":"error","message":"  mode: 'monitor',"}
+{"level":"error","timestamp":"2026-09-06T07:08:21.991237890Z","message":"  route: '/api/studio/chat/bootstrap'"}
+{"level":"error","message":"}","timestamp":"2026-09-06T07:08:21.991241180Z"}
+{"timestamp":"2026-09-06T07:08:22.652208946Z","level":"info","message":"  durationMs: 518"}
+{"level":"info","message":"  ts: '2026-09-06T07:08:22.496Z',","timestamp":"2026-09-06T07:08:22.652209486Z"}
+{"timestamp":"2026-09-06T07:08:22.652215086Z","level":"info","message":"}"}
+{"timestamp":"2026-09-06T07:08:22.652217046Z","message":"  requestId: '4fd76ecf-979c-4db8-9593-673eb57ebf29',","level":"info"}
+{"level":"info","message":"  method: 'GET',","timestamp":"2026-09-06T07:08:22.652221816Z"}
+{"timestamp":"2026-09-06T07:08:22.652225626Z","message":"  route: '/api/studio/chat/bootstrap',","level":"info"}
+{"message":"  status: 200,","timestamp":"2026-09-06T07:08:22.652228856Z","level":"info"}
+{"message":"  requestId: 'd27b4268-7577-432a-8f35-8a93fc238a10',","timestamp":"2026-09-06T07:08:22.652244686Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:22.652253975Z","message":"  method: 'GET',"}
+{"level":"info","message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:08:22.652262235Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:22.652269475Z","message":"  status: 200,"}
+{"timestamp":"2026-09-06T07:08:22.652272955Z","message":"[ops] {","level":"info"}
+{"message":"  durationMs: 606","timestamp":"2026-09-06T07:08:22.652276105Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:22.652276135Z","message":"  event: 'http_request',","level":"info"}
+{"message":"  ts: '2026-09-06T07:08:22.463Z',","timestamp":"2026-09-06T07:08:22.652279835Z","level":"info"}
+{"message":"}","timestamp":"2026-09-06T07:08:22.652282845Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:22.652287715Z","level":"info","message":"[ops] {"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:22.652293265Z","level":"info"}
+{"message":"[ops] {","level":"info","timestamp":"2026-09-06T07:08:23.893017237Z"}
+{"timestamp":"2026-09-06T07:08:23.893020257Z","level":"info","message":"  event: 'http_request',"}
+{"level":"info","message":"  ts: '2026-09-06T07:08:23.822Z',","timestamp":"2026-09-06T07:08:23.893024337Z"}
+{"message":"  requestId: '1073c189-72f4-4cad-8350-eb686135468c',","level":"info","timestamp":"2026-09-06T07:08:23.893027137Z"}
+{"message":"  method: 'OPTIONS',","timestamp":"2026-09-06T07:08:23.893031357Z","level":"info"}
+{"message":"  route: '/api/studio/mcp/status',","level":"info","timestamp":"2026-09-06T07:08:23.893034337Z"}
+{"level":"info","message":"  status: 204,","timestamp":"2026-09-06T07:08:23.893037067Z"}
+{"level":"info","message":"  durationMs: 0","timestamp":"2026-09-06T07:08:23.893040137Z"}
+{"timestamp":"2026-09-06T07:08:23.893042477Z","level":"info","message":"}"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:23.893045037Z","level":"info"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:23.893048046Z"}
+{"message":"  ts: '2026-09-06T07:08:23.823Z',","timestamp":"2026-09-06T07:08:23.893052156Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:23.893054996Z","level":"info","message":"  requestId: '6eba50fc-619f-414f-8097-12f6187e1c9f',"}
+{"message":"  method: 'OPTIONS',","timestamp":"2026-09-06T07:08:23.893057586Z","level":"info"}
+{"message":"  route: '/api/studio/status',","timestamp":"2026-09-06T07:08:23.893060476Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:23.893062966Z","level":"info","message":"  status: 204,"}
+{"message":"  durationMs: 0","timestamp":"2026-09-06T07:08:23.893065816Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:23.893068906Z","level":"info","message":"}"}
+{"message":"  status: 204,","level":"info","timestamp":"2026-09-06T07:08:24.042147563Z"}
+{"level":"info","message":"  durationMs: 0","timestamp":"2026-09-06T07:08:24.042152692Z"}
+{"timestamp":"2026-09-06T07:08:24.042156462Z","message":"}","level":"info"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:24.042178132Z"}
+{"message":"  event: 'http_request',","level":"info","timestamp":"2026-09-06T07:08:24.042190262Z"}
+{"message":"  ts: '2026-09-06T07:08:24.018Z',","timestamp":"2026-09-06T07:08:24.042195942Z","level":"info"}
+{"level":"info","message":"  requestId: '1e3b02b1-3562-45ba-9f41-2110fed3df24',","timestamp":"2026-09-06T07:08:24.042201042Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:24.042205862Z","message":"  method: 'OPTIONS',"}
+{"timestamp":"2026-09-06T07:08:24.042211142Z","message":"  route: '/api/v2/events',","level":"info"}
+{"level":"error","message":"[ops] {","timestamp":"2026-09-06T07:08:24.080920303Z"}
+{"message":"  ts: '2026-09-06T07:08:24.067Z',","timestamp":"2026-09-06T07:08:24.080920743Z","level":"error"}
+{"timestamp":"2026-09-06T07:08:24.080926723Z","level":"error","message":"  event: 'security.app_check_rejected',"}
+{"timestamp":"2026-09-06T07:08:24.080927443Z","level":"error","message":"  reason: 'missing_token',"}
+{"timestamp":"2026-09-06T07:08:24.080930913Z","message":"  mode: 'monitor',","level":"error"}
+{"level":"error","message":"  ts: '2026-09-06T07:08:24.066Z',","timestamp":"2026-09-06T07:08:24.080931013Z"}
+{"level":"error","message":"  route: '/api/studio/mcp/status'","timestamp":"2026-09-06T07:08:24.080934113Z"}
+{"level":"error","timestamp":"2026-09-06T07:08:24.080935153Z","message":"  reason: 'missing_token',"}
+{"level":"error","message":"}","timestamp":"2026-09-06T07:08:24.080936783Z"}
+{"message":"  mode: 'monitor',","timestamp":"2026-09-06T07:08:24.080939003Z","level":"error"}
+{"message":"  route: '/api/studio/status'","level":"error","timestamp":"2026-09-06T07:08:24.080942853Z"}
+{"message":"}","timestamp":"2026-09-06T07:08:24.080960383Z","level":"error"}
+{"timestamp":"2026-09-06T07:08:24.080964313Z","level":"error","message":"[ops] {"}
+{"level":"error","message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:08:24.080968082Z"}
+{"level":"error","timestamp":"2026-09-06T07:08:24.269689717Z","message":"[ops] {"}
+{"message":"  event: 'security.app_check_rejected',","level":"error","timestamp":"2026-09-06T07:08:24.269693837Z"}
+{"message":"  ts: '2026-09-06T07:08:24.240Z',","level":"error","timestamp":"2026-09-06T07:08:24.269698127Z"}
+{"level":"error","message":"  reason: 'missing_token',","timestamp":"2026-09-06T07:08:24.269701697Z"}
+{"level":"error","timestamp":"2026-09-06T07:08:24.269710427Z","message":"  mode: 'monitor',"}
+{"level":"error","message":"  route: '/api/v2/events'","timestamp":"2026-09-06T07:08:24.269714017Z"}
+{"timestamp":"2026-09-06T07:08:24.269717187Z","message":"}","level":"error"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:24.408669734Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:24.408675864Z","message":"  event: 'http_request',"}
+{"level":"info","message":"  ts: '2026-09-06T07:08:24.368Z',","timestamp":"2026-09-06T07:08:24.408679864Z"}
+{"level":"info","message":"  requestId: '54294e6e-3c29-4936-a5e9-3309f12c752e',","timestamp":"2026-09-06T07:08:24.408683324Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:24.408688014Z","message":"  method: 'GET',"}
+{"timestamp":"2026-09-06T07:08:24.408691424Z","message":"  route: '/api/studio/mcp/status',","level":"info"}
+{"message":"  status: 200,","level":"info","timestamp":"2026-09-06T07:08:24.408694664Z"}
+{"timestamp":"2026-09-06T07:08:24.408698254Z","message":"  durationMs: 301","level":"info"}
+{"timestamp":"2026-09-06T07:08:24.408702514Z","message":"}","level":"info"}
+{"timestamp":"2026-09-06T07:08:24.900258406Z","level":"info","message":"[ops] {"}
+{"timestamp":"2026-09-06T07:08:24.900262816Z","message":"  event: 'http_request',","level":"info"}
+{"message":"  ts: '2026-09-06T07:08:24.801Z',","level":"info","timestamp":"2026-09-06T07:08:24.900266806Z"}
+{"timestamp":"2026-09-06T07:08:24.900270426Z","message":"  requestId: 'f541c178-3226-40e1-aece-93fd2014f2ef',","level":"info"}
+{"message":"  method: 'GET',","timestamp":"2026-09-06T07:08:24.900274406Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:24.900278126Z","message":"  route: '/api/studio/status',","level":"info"}
+{"timestamp":"2026-09-06T07:08:24.900282365Z","message":"  status: 200,","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:24.900286615Z","message":"  durationMs: 736"}
+{"message":"}","timestamp":"2026-09-06T07:08:24.900290575Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:24.974499113Z","message":"[ops] {","level":"info"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:24.974503413Z"}
+{"message":"  ts: '2026-09-06T07:08:24.958Z',","level":"info","timestamp":"2026-09-06T07:08:24.974506093Z"}
+{"message":"  requestId: 'a32e5d94-202b-4545-a958-b666b59f47f0',","timestamp":"2026-09-06T07:08:24.974509153Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:24.974512023Z","level":"info","message":"  method: 'GET',"}
+{"message":"  route: '/api/v2/events',","level":"info","timestamp":"2026-09-06T07:08:24.974514763Z"}
+{"level":"info","message":"  status: 200,","timestamp":"2026-09-06T07:08:24.974517303Z"}
+{"timestamp":"2026-09-06T07:08:24.974519883Z","level":"info","message":"  durationMs: 718"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:08:24.974522533Z"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:26.181806407Z"}
+{"level":"info","message":"  event: 'studio.plugin_compatibility_handshake',","timestamp":"2026-09-06T07:08:26.181818447Z"}
+{"timestamp":"2026-09-06T07:08:26.181823647Z","message":"  ts: '2026-09-06T07:08:26.150Z',","level":"info"}
+{"timestamp":"2026-09-06T07:08:26.181829737Z","message":"  requestId: 'a763bdd7-2870-4a7d-a2b7-f58d4e7ecfaa',","level":"info"}
+{"timestamp":"2026-09-06T07:08:26.181834197Z","level":"info","message":"  sessionId: 'Iog4rWn0F2wcGR9xp3Jq',"}
+{"message":"  userId: 'klu6Sv5QeEgYWlHjsgQwMkZCvsb2',","timestamp":"2026-09-06T07:08:26.181848777Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:26.181853487Z","message":"  status: 'degraded',","level":"info"}
+{"level":"info","message":"  reasonCodes: [ 'command_unavailable' ],","timestamp":"2026-09-06T07:08:26.181857857Z"}
+{"timestamp":"2026-09-06T07:08:26.181863057Z","level":"info","message":"  buildId: 'nexusrbx-studio-0.14.0-r15-animation.10-native-value-normalization',"}
+{"timestamp":"2026-09-06T07:08:26.181867787Z","message":"  attestationWritten: false,","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:26.181873536Z","message":"  repairDurationMs: 386"}
+{"timestamp":"2026-09-06T07:08:26.181878096Z","message":"}","level":"info"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:26.181883056Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:26.181887736Z","level":"info","message":"  event: 'http_request',"}
+{"message":"  ts: '2026-09-06T07:08:26.150Z',","level":"info","timestamp":"2026-09-06T07:08:26.181892416Z"}
+{"level":"info","message":"  requestId: 'a763bdd7-2870-4a7d-a2b7-f58d4e7ecfaa',","timestamp":"2026-09-06T07:08:26.181896786Z"}
+{"message":"  method: 'POST',","timestamp":"2026-09-06T07:08:26.181906346Z","level":"info"}
+{"message":"  route: '/api/studio/session/ping',","timestamp":"2026-09-06T07:08:26.181910836Z","level":"info"}
+{"message":"  status: 200,","level":"info","timestamp":"2026-09-06T07:08:26.181915486Z"}
+{"level":"info","message":"  durationMs: 447","timestamp":"2026-09-06T07:08:26.181919556Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:26.181923836Z","message":"}"}
+{"timestamp":"2026-09-06T07:08:26.474385467Z","level":"info","requestType":"workflow_orchestration","event":"workflow.model_request","model":"google/gemini-2.5-flash","message":"","requestId":"c86ba1a7-fed1-4d22-96fd-55b62d48f649"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:26.547230244Z"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:26.547236544Z","level":"info"}
+{"level":"info","message":"  ts: '2026-09-06T07:08:26.524Z',","timestamp":"2026-09-06T07:08:26.547240984Z"}
+{"message":"  requestId: 'ca6f5657-8dc0-40a0-a5f3-a0ce2049ef65',","timestamp":"2026-09-06T07:08:26.547244254Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:26.547247734Z","message":"  method: 'OPTIONS',"}
+{"message":"  route: '/api/v2/events',","level":"info","timestamp":"2026-09-06T07:08:26.547250654Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:26.547253444Z","message":"  status: 204,"}
+{"level":"info","timestamp":"2026-09-06T07:08:26.547255833Z","message":"  durationMs: 0"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:08:26.547258243Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:26.687610961Z","message":"[ops] {"}
+{"message":"  event: 'studio.command_polled',","timestamp":"2026-09-06T07:08:26.687614591Z","level":"info"}
+{"message":"  ts: '2026-09-06T07:08:26.630Z',","level":"info","timestamp":"2026-09-06T07:08:26.687617561Z"}
+{"timestamp":"2026-09-06T07:08:26.687620421Z","level":"info","message":"  requestId: '3e327e93-f6b3-4ab6-97b6-c55c2a847308',"}
+{"message":"  sessionId: 'Iog4rWn0F2wcGR9xp3Jq',","timestamp":"2026-09-06T07:08:26.687623051Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:26.687625551Z","message":"  status: 'empty'"}
+{"message":"}","timestamp":"2026-09-06T07:08:26.687628510Z","level":"info"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:26.687630950Z","level":"info"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:26.687633440Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:26.687636190Z","message":"  ts: '2026-09-06T07:08:26.631Z',","level":"info"}
+{"message":"  requestId: '3e327e93-f6b3-4ab6-97b6-c55c2a847308',","level":"info","timestamp":"2026-09-06T07:08:26.687638470Z"}
+{"timestamp":"2026-09-06T07:08:26.687640810Z","level":"info","message":"  method: 'GET',"}
+{"level":"info","timestamp":"2026-09-06T07:08:26.687642930Z","message":"  route: '/api/studio/commands/next',"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:08:26.687647150Z","level":"info"}
+{"message":"  durationMs: 24421","timestamp":"2026-09-06T07:08:26.687649610Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:26.687652120Z","level":"info","message":"}"}
+{"timestamp":"2026-09-06T07:08:26.699142810Z","level":"error","message":"[ops] {"}
+{"message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:08:26.699147780Z","level":"error"}
+{"level":"error","message":"  ts: '2026-09-06T07:08:26.694Z',","timestamp":"2026-09-06T07:08:26.699151020Z"}
+{"message":"  reason: 'missing_token',","timestamp":"2026-09-06T07:08:26.699154710Z","level":"error"}
+{"timestamp":"2026-09-06T07:08:26.699158200Z","message":"  mode: 'monitor',","level":"error"}
+{"message":"  route: '/api/v2/events'","level":"error","timestamp":"2026-09-06T07:08:26.699164210Z"}
+{"message":"}","level":"error","timestamp":"2026-09-06T07:08:26.699167600Z"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:27.304819244Z","level":"info"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:27.304825164Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:27.304829934Z","level":"info","message":"  ts: '2026-09-06T07:08:27.301Z',"}
+{"message":"  requestId: '61c1b665-f6e5-4659-8ac1-20d37b9e9343',","timestamp":"2026-09-06T07:08:27.304833834Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:27.304837104Z","message":"  method: 'GET',"}
+{"level":"info","timestamp":"2026-09-06T07:08:27.304840964Z","message":"  route: '/api/v2/events',"}
+{"message":"  status: 200,","timestamp":"2026-09-06T07:08:27.304844784Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:27.304848104Z","message":"  durationMs: 607"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:08:27.304851214Z"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:28.659400388Z"}
+{"message":"  event: 'http_request',","level":"info","timestamp":"2026-09-06T07:08:28.659412608Z"}
+{"message":"  ts: '2026-09-06T07:08:28.627Z',","timestamp":"2026-09-06T07:08:28.659419148Z","level":"info"}
+{"message":"  requestId: '8f142766-0f88-40e5-ace9-4e4bfe842829',","timestamp":"2026-09-06T07:08:28.659429168Z","level":"info"}
+{"message":"  requestId: '7c88ebde-3735-475d-ad0e-143ea0843de3',","level":"info","timestamp":"2026-09-06T07:08:28.659429808Z"}
+{"message":"  method: 'GET',","timestamp":"2026-09-06T07:08:28.659434648Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:28.659440208Z","message":"  route: '/api/studio/mcp/commands/next',","level":"info"}
+{"timestamp":"2026-09-06T07:08:28.659445518Z","level":"info","message":"  sessionId: 'MLq8J3mhz56J6BRsAeQe',"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:08:28.659447738Z","level":"info"}
+{"message":"  status: 'empty'","level":"info","timestamp":"2026-09-06T07:08:28.659455848Z"}
+{"message":"}","timestamp":"2026-09-06T07:08:28.659460428Z","level":"info"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:28.659464658Z","level":"info"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:28.659472427Z","level":"info"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:28.659472707Z"}
+{"timestamp":"2026-09-06T07:08:28.659480557Z","level":"info","message":"  event: 'studio.command_polled',"}
+{"timestamp":"2026-09-06T07:08:28.659482477Z","message":"  ts: '2026-09-06T07:08:28.340Z',","level":"info"}
+{"timestamp":"2026-09-06T07:08:28.659488327Z","level":"info","message":"  ts: '2026-09-06T07:08:28.340Z',"}
+{"timestamp":"2026-09-06T07:08:28.659490607Z","level":"info","message":"  requestId: '7c88ebde-3735-475d-ad0e-143ea0843de3',"}
+{"message":"  method: 'GET',","timestamp":"2026-09-06T07:08:28.659494597Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:28.659498917Z","message":"  route: '/api/studio/commands/next',"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:08:28.659503037Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:28.659506297Z","message":"  durationMs: 24060","level":"info"}
+{"message":"}","timestamp":"2026-09-06T07:08:28.659510627Z","level":"info"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:28.659514197Z","level":"info"}
+{"level":"info","message":"  event: 'studio.command_polled',","timestamp":"2026-09-06T07:08:28.659517957Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:28.659521677Z","message":"  ts: '2026-09-06T07:08:28.627Z',"}
+{"level":"info","message":"  requestId: '8f142766-0f88-40e5-ace9-4e4bfe842829',","timestamp":"2026-09-06T07:08:28.659525497Z"}
+{"message":"  sessionId: 'DlvFpLpN0vX1CB5Fvwv9',","level":"info","timestamp":"2026-09-06T07:08:28.659530147Z"}
+{"timestamp":"2026-09-06T07:08:28.659533557Z","message":"  status: 'empty'","level":"info"}
+{"message":"}","timestamp":"2026-09-06T07:08:28.659536987Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:28.662462356Z","message":"  durationMs: 5383","level":"info"}
+{"timestamp":"2026-09-06T07:08:28.662469926Z","level":"info","message":"}"}
+{"level":"info","timestamp":"2026-09-06T07:08:29.035044172Z","message":"[ops] {"}
+{"timestamp":"2026-09-06T07:08:29.035048372Z","message":"  event: 'http_request',","level":"info"}
+{"message":"  ts: '2026-09-06T07:08:29.034Z',","level":"info","timestamp":"2026-09-06T07:08:29.035051972Z"}
+{"timestamp":"2026-09-06T07:08:29.035055452Z","message":"  requestId: '3d6967e9-237e-473b-9277-839e2d6048f5',","level":"info"}
+{"level":"info","message":"  method: 'OPTIONS',","timestamp":"2026-09-06T07:08:29.035058572Z"}
+{"message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:08:29.035061502Z","level":"info"}
+{"message":"  status: 204,","level":"info","timestamp":"2026-09-06T07:08:29.035064732Z"}
+{"message":"  durationMs: 0","level":"info","timestamp":"2026-09-06T07:08:29.035067262Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:29.035070062Z","message":"}"}
+{"timestamp":"2026-09-06T07:08:29.035883970Z","level":"info","message":"[ops] {"}
+{"timestamp":"2026-09-06T07:08:29.035886950Z","message":"  event: 'http_request',","level":"info"}
+{"message":"  ts: '2026-09-06T07:08:29.034Z',","timestamp":"2026-09-06T07:08:29.035890220Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:29.035893670Z","message":"  requestId: 'e8abe7d2-620a-4203-b5a2-e8c88eb49ee9',"}
+{"level":"info","message":"  method: 'OPTIONS',","timestamp":"2026-09-06T07:08:29.035896690Z"}
+{"message":"  route: '/api/v2/agents/active',","level":"info","timestamp":"2026-09-06T07:08:29.035899600Z"}
+{"timestamp":"2026-09-06T07:08:29.035902040Z","message":"  status: 204,","level":"info"}
+{"timestamp":"2026-09-06T07:08:29.035904470Z","message":"  durationMs: 0","level":"info"}
+{"message":"}","timestamp":"2026-09-06T07:08:29.035907250Z","level":"info"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:29.218612297Z","level":"error"}
+{"timestamp":"2026-09-06T07:08:29.218615017Z","message":"  event: 'security.app_check_rejected',","level":"error"}
+{"level":"error","timestamp":"2026-09-06T07:08:29.218617937Z","message":"  ts: '2026-09-06T07:08:29.201Z',"}
+{"timestamp":"2026-09-06T07:08:29.218620327Z","level":"error","message":"  reason: 'missing_token',"}
+{"message":"  mode: 'monitor',","timestamp":"2026-09-06T07:08:29.218622787Z","level":"error"}
+{"level":"error","message":"  route: '/api/v2/events'","timestamp":"2026-09-06T07:08:29.218625387Z"}
+{"message":"}","timestamp":"2026-09-06T07:08:29.218627807Z","level":"error"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:29.218630057Z","level":"error"}
+{"level":"error","message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:08:29.218632657Z"}
+{"timestamp":"2026-09-06T07:08:29.218635477Z","level":"error","message":"  ts: '2026-09-06T07:08:29.202Z',"}
+{"message":"  reason: 'missing_token',","level":"error","timestamp":"2026-09-06T07:08:29.218638077Z"}
+{"level":"error","message":"  mode: 'monitor',","timestamp":"2026-09-06T07:08:29.218640387Z"}
+{"timestamp":"2026-09-06T07:08:29.218642967Z","level":"error","message":"  route: '/api/v2/agents/active'"}
+{"message":"}","level":"error","timestamp":"2026-09-06T07:08:29.218645577Z"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:29.236232942Z","level":"info"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:29.236239442Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:29.236243532Z","message":"  ts: '2026-09-06T07:08:29.233Z',"}
+{"level":"info","message":"  requestId: 'b13c86c5-757a-4b81-b77f-2c007123f85e',","timestamp":"2026-09-06T07:08:29.236252062Z"}
+{"message":"  method: 'POST',","timestamp":"2026-09-06T07:08:29.236256982Z","level":"info"}
+{"level":"info","message":"  route: '/api/studio/mcp/session/ping',","timestamp":"2026-09-06T07:08:29.236260992Z"}
+{"message":"  status: 200,","timestamp":"2026-09-06T07:08:29.236264062Z","level":"info"}
+{"message":"  durationMs: 311","level":"info","timestamp":"2026-09-06T07:08:29.236267392Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:29.236271191Z","message":"}"}
+{"message":"[ops] {","level":"info","timestamp":"2026-09-06T07:08:29.388716660Z"}
+{"timestamp":"2026-09-06T07:08:29.388722120Z","level":"info","message":"  event: 'http_request',"}
+{"message":"  ts: '2026-09-06T07:08:29.335Z',","timestamp":"2026-09-06T07:08:29.388725500Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:29.388728690Z","level":"info","message":"  requestId: 'f5facad6-1f9c-461a-8ad0-aa27b1054a1c',"}
+{"message":"  method: 'GET',","level":"info","timestamp":"2026-09-06T07:08:29.388732380Z"}
+{"timestamp":"2026-09-06T07:08:29.388735300Z","message":"  route: '/api/v2/agents/active',","level":"info"}
+{"message":"  status: 200,","level":"info","timestamp":"2026-09-06T07:08:29.388738100Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:29.388741520Z","message":"  durationMs: 133"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:08:29.388744550Z"}
+{"level":"info","message":"  durationMs: 611","timestamp":"2026-09-06T07:08:30.200805321Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:30.200820821Z","message":"}"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:30.200828731Z"}
+{"message":"  event: 'http_request',","level":"info","timestamp":"2026-09-06T07:08:30.200833331Z"}
+{"timestamp":"2026-09-06T07:08:30.200837831Z","message":"  ts: '2026-09-06T07:08:29.812Z',","level":"info"}
+{"level":"info","message":"  requestId: '5e907274-7879-49b9-87fd-a022096bdf6f',","timestamp":"2026-09-06T07:08:30.200843320Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:30.200848440Z","message":"  method: 'GET',"}
+{"level":"info","message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:08:30.200852940Z"}
+{"timestamp":"2026-09-06T07:08:30.200857220Z","level":"info","message":"  status: 200,"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:31.555985165Z","level":"info"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:31.555987985Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:31.555990514Z","level":"info","message":"  ts: '2026-09-06T07:08:31.526Z',"}
+{"message":"  requestId: 'ff965cd8-8156-473e-8c01-b6c95923f516',","timestamp":"2026-09-06T07:08:31.555993264Z","level":"info"}
+{"level":"info","message":"  method: 'OPTIONS',","timestamp":"2026-09-06T07:08:31.555996214Z"}
+{"message":"  route: '/api/v2/events',","level":"info","timestamp":"2026-09-06T07:08:31.555999294Z"}
+{"level":"info","message":"  status: 204,","timestamp":"2026-09-06T07:08:31.556002254Z"}
+{"timestamp":"2026-09-06T07:08:31.556004904Z","level":"info","message":"  durationMs: 0"}
+{"message":"}","timestamp":"2026-09-06T07:08:31.556007624Z","level":"info"}
+{"level":"error","timestamp":"2026-09-06T07:08:31.739103116Z","message":"[ops] {"}
+{"timestamp":"2026-09-06T07:08:31.739111186Z","level":"error","message":"  event: 'security.app_check_rejected',"}
+{"message":"  ts: '2026-09-06T07:08:31.698Z',","timestamp":"2026-09-06T07:08:31.739116386Z","level":"error"}
+{"level":"error","timestamp":"2026-09-06T07:08:31.739121156Z","message":"  reason: 'missing_token',"}
+{"level":"error","message":"  mode: 'monitor',","timestamp":"2026-09-06T07:08:31.739126056Z"}
+{"timestamp":"2026-09-06T07:08:31.739131736Z","message":"  route: '/api/v2/events'","level":"error"}
+{"timestamp":"2026-09-06T07:08:31.739136516Z","level":"error","message":"}"}
+{"timestamp":"2026-09-06T07:08:32.313335956Z","level":"info","message":"[ops] {"}
+{"timestamp":"2026-09-06T07:08:32.313342025Z","message":"  event: 'http_request',","level":"info"}
+{"message":"  ts: '2026-09-06T07:08:32.309Z',","level":"info","timestamp":"2026-09-06T07:08:32.313344955Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:32.313347745Z","message":"  requestId: 'd6a4bf0d-d8ec-46b1-9b22-b33a832d0ded',"}
+{"level":"info","timestamp":"2026-09-06T07:08:32.313349975Z","message":"  method: 'GET',"}
+{"message":"  route: '/api/v2/events',","level":"info","timestamp":"2026-09-06T07:08:32.313353955Z"}
+{"message":"  status: 200,","timestamp":"2026-09-06T07:08:32.313356445Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:32.313358945Z","message":"  durationMs: 611"}
+{"timestamp":"2026-09-06T07:08:32.313362475Z","message":"}","level":"info"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:34.042045398Z","level":"info"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:34.042054378Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:34.042060288Z","level":"info","message":"  ts: '2026-09-06T07:08:34.027Z',"}
+{"level":"info","message":"  requestId: '23900d02-63f8-479c-bb09-6dfada187630',","timestamp":"2026-09-06T07:08:34.042064988Z"}
+{"timestamp":"2026-09-06T07:08:34.042068918Z","level":"info","message":"  method: 'OPTIONS',"}
+{"level":"info","message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:08:34.042072728Z"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:08:34.042076717Z","level":"info"}
+{"level":"info","message":"  durationMs: 0","timestamp":"2026-09-06T07:08:34.042080157Z"}
+{"message":"}","timestamp":"2026-09-06T07:08:34.042083627Z","level":"info"}
+{"level":"error","message":"[ops] {","timestamp":"2026-09-06T07:08:34.363409076Z"}
+{"timestamp":"2026-09-06T07:08:34.363411806Z","level":"error","message":"  event: 'security.app_check_rejected',"}
+{"message":"  ts: '2026-09-06T07:08:34.191Z',","timestamp":"2026-09-06T07:08:34.363414786Z","level":"error"}
+{"level":"error","message":"  reason: 'missing_token',","timestamp":"2026-09-06T07:08:34.363417746Z"}
+{"timestamp":"2026-09-06T07:08:34.363420265Z","level":"error","message":"  mode: 'monitor',"}
+{"message":"  route: '/api/v2/events'","timestamp":"2026-09-06T07:08:34.363422895Z","level":"error"}
+{"message":"}","timestamp":"2026-09-06T07:08:34.363425655Z","level":"error"}
+{"timestamp":"2026-09-06T07:08:34.768393149Z","message":"[ops] {","level":"info"}
+{"message":"  event: 'http_request',","level":"info","timestamp":"2026-09-06T07:08:34.768401529Z"}
+{"message":"  ts: '2026-09-06T07:08:34.766Z',","timestamp":"2026-09-06T07:08:34.768405689Z","level":"info"}
+{"message":"  requestId: '9184e97e-c883-4d91-900a-38c38e23f785',","timestamp":"2026-09-06T07:08:34.768409199Z","level":"info"}
+{"level":"info","message":"  method: 'GET',","timestamp":"2026-09-06T07:08:34.768412419Z"}
+{"message":"  route: '/api/v2/events',","level":"info","timestamp":"2026-09-06T07:08:34.768416239Z"}
+{"message":"  status: 200,","timestamp":"2026-09-06T07:08:34.768419459Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:34.768422069Z","level":"info","message":"  durationMs: 575"}
+{"message":"}","timestamp":"2026-09-06T07:08:34.768424999Z","level":"info"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:34.915744039Z"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:34.915752418Z"}
+{"message":"  ts: '2026-09-06T07:08:34.912Z',","timestamp":"2026-09-06T07:08:34.915756778Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:34.915761018Z","message":"  requestId: 'fd078d2d-c928-4dbd-8a7c-36fc2ba10311',","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:34.915764428Z","message":"  method: 'POST',"}
+{"message":"  route: '/api/studio/mcp/session/ping',","timestamp":"2026-09-06T07:08:34.915769278Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:34.915772208Z","level":"info","message":"  status: 200,"}
+{"message":"  durationMs: 304","level":"info","timestamp":"2026-09-06T07:08:34.915776538Z"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:08:34.915779658Z"}
+{"message":"[ops] {","level":"info","timestamp":"2026-09-06T07:08:36.529895003Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:36.529902042Z","message":"  event: 'http_request',"}
+{"message":"  ts: '2026-09-06T07:08:36.529Z',","timestamp":"2026-09-06T07:08:36.529907852Z","level":"info"}
+{"message":"  requestId: 'a13961de-930a-4ed1-8972-bc7577cd85a4',","timestamp":"2026-09-06T07:08:36.529912032Z","level":"info"}
+{"level":"info","message":"  method: 'OPTIONS',","timestamp":"2026-09-06T07:08:36.529916132Z"}
+{"level":"info","message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:08:36.529926182Z"}
+{"timestamp":"2026-09-06T07:08:36.529930472Z","level":"info","message":"  status: 204,"}
+{"message":"  durationMs: 0","timestamp":"2026-09-06T07:08:36.529934762Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:36.529939052Z","message":"}"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:36.748629548Z","level":"error"}
+{"timestamp":"2026-09-06T07:08:36.748634748Z","message":"  event: 'security.app_check_rejected',","level":"error"}
+{"timestamp":"2026-09-06T07:08:36.748637948Z","message":"  ts: '2026-09-06T07:08:36.692Z',","level":"error"}
+{"message":"  reason: 'missing_token',","level":"error","timestamp":"2026-09-06T07:08:36.748640888Z"}
+{"timestamp":"2026-09-06T07:08:36.748644118Z","message":"  mode: 'monitor',","level":"error"}
+{"level":"error","timestamp":"2026-09-06T07:08:36.748646868Z","message":"  route: '/api/v2/events'"}
+{"level":"error","message":"}","timestamp":"2026-09-06T07:08:36.748649718Z"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:36.899037635Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:36.899052044Z","message":"  event: 'studio.command_polled',","level":"info"}
+{"timestamp":"2026-09-06T07:08:36.899060734Z","level":"info","message":"  ts: '2026-09-06T07:08:36.892Z',"}
+{"timestamp":"2026-09-06T07:08:36.899067654Z","message":"  requestId: '585ddca2-7f2d-4a40-90b3-83eefad1a883',","level":"info"}
+{"timestamp":"2026-09-06T07:08:36.899073074Z","message":"  sessionId: 'DlvFpLpN0vX1CB5Fvwv9',","level":"info"}
+{"timestamp":"2026-09-06T07:08:36.899080654Z","level":"info","message":"  status: 'empty'"}
+{"message":"}","level":"info","timestamp":"2026-09-06T07:08:36.899085514Z"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:36.899090144Z"}
+{"timestamp":"2026-09-06T07:08:36.899095634Z","level":"info","message":"  event: 'http_request',"}
+{"level":"info","message":"  ts: '2026-09-06T07:08:36.893Z',","timestamp":"2026-09-06T07:08:36.899100844Z"}
+{"message":"  requestId: '585ddca2-7f2d-4a40-90b3-83eefad1a883',","timestamp":"2026-09-06T07:08:36.899106224Z","level":"info"}
+{"level":"info","message":"  method: 'GET',","timestamp":"2026-09-06T07:08:36.899112854Z"}
+{"timestamp":"2026-09-06T07:08:36.899117214Z","level":"info","message":"  route: '/api/studio/mcp/commands/next',"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:08:36.899122114Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:36.899126423Z","level":"info","message":"  durationMs: 5435"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:08:36.899130903Z"}
+{"timestamp":"2026-09-06T07:08:37.353223563Z","level":"info","message":"[ops] {"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:37.353227683Z","level":"info"}
+{"message":"  ts: '2026-09-06T07:08:37.345Z',","timestamp":"2026-09-06T07:08:37.353230873Z","level":"info"}
+{"level":"info","message":"  requestId: 'c2c4bb5e-f78b-46bb-b220-447834db49a9',","timestamp":"2026-09-06T07:08:37.353234133Z"}
+{"message":"  method: 'GET',","timestamp":"2026-09-06T07:08:37.353237473Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:37.353240053Z","message":"  route: '/api/v2/events',"}
+{"timestamp":"2026-09-06T07:08:37.353242863Z","message":"  status: 200,","level":"info"}
+{"message":"  durationMs: 653","timestamp":"2026-09-06T07:08:37.353246083Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:37.353248882Z","level":"info","message":"}"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:37.530185590Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:37.530188600Z","message":"  event: 'http_request',"}
+{"level":"info","message":"  ts: '2026-09-06T07:08:37.470Z',","timestamp":"2026-09-06T07:08:37.530191300Z"}
+{"timestamp":"2026-09-06T07:08:37.530194310Z","message":"  requestId: '6b781b64-67cc-4842-a990-5dd5bc908b96',","level":"info"}
+{"message":"  method: 'POST',","timestamp":"2026-09-06T07:08:37.530197460Z","level":"info"}
+{"level":"info","message":"  route: '/api/studio/mcp/session/ping',","timestamp":"2026-09-06T07:08:37.530200550Z"}
+{"message":"  status: 200,","timestamp":"2026-09-06T07:08:37.530205230Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:37.530209970Z","message":"  durationMs: 284","level":"info"}
+{"timestamp":"2026-09-06T07:08:37.530216999Z","level":"info","message":"}"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:37.649209283Z","level":"info"}
+{"level":"info","message":"  event: 'studio.plugin_compatibility_handshake',","timestamp":"2026-09-06T07:08:37.649219683Z"}
+{"timestamp":"2026-09-06T07:08:37.649223903Z","level":"info","message":"  ts: '2026-09-06T07:08:37.643Z',"}
+{"level":"info","timestamp":"2026-09-06T07:08:37.649229033Z","message":"  requestId: '03869355-8540-4ac0-b435-e8f0cd514a43',"}
+{"message":"  sessionId: 'MLq8J3mhz56J6BRsAeQe',","timestamp":"2026-09-06T07:08:37.649233683Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:37.649238903Z","level":"info","message":"  userId: '0VSQotqOXxPXBLeQu1gUNkXELWH3',"}
+{"timestamp":"2026-09-06T07:08:37.649242723Z","message":"  status: 'compatible',","level":"info"}
+{"timestamp":"2026-09-06T07:08:37.649246783Z","level":"info","message":"  reasonCodes: [],"}
+{"message":"  buildId: 'nexusrbx-studio-0.14.0-r15-animation.12-toolbox',","timestamp":"2026-09-06T07:08:37.649251243Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:37.649255722Z","level":"info","message":"  attestationWritten: false,"}
+{"level":"info","timestamp":"2026-09-06T07:08:37.649259152Z","message":"  repairDurationMs: 576"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:08:37.649262692Z"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:37.649266312Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:37.649270282Z","message":"  event: 'http_request',"}
+{"level":"info","timestamp":"2026-09-06T07:08:37.649273532Z","message":"  ts: '2026-09-06T07:08:37.644Z',"}
+{"level":"info","timestamp":"2026-09-06T07:08:37.649276622Z","message":"  requestId: '03869355-8540-4ac0-b435-e8f0cd514a43',"}
+{"message":"  method: 'POST',","level":"info","timestamp":"2026-09-06T07:08:37.649279852Z"}
+{"message":"  route: '/api/studio/session/ping',","level":"info","timestamp":"2026-09-06T07:08:37.649283562Z"}
+{"message":"  status: 200,","timestamp":"2026-09-06T07:08:37.649287692Z","level":"info"}
+{"message":"  durationMs: 634","level":"info","timestamp":"2026-09-06T07:08:37.649291352Z"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:08:37.649294982Z"}
+{"message":"  ts: '2026-09-06T07:08:37.892Z',","level":"error","timestamp":"2026-09-06T07:08:37.973724566Z"}
+{"level":"error","message":"  reason: 'missing_token',","timestamp":"2026-09-06T07:08:37.973729966Z"}
+{"timestamp":"2026-09-06T07:08:37.973733446Z","message":"  mode: 'monitor',","level":"error"}
+{"message":"  route: '/api/studio/chat/bootstrap'","timestamp":"2026-09-06T07:08:37.973736736Z","level":"error"}
+{"level":"error","message":"}","timestamp":"2026-09-06T07:08:37.973740216Z"}
+{"timestamp":"2026-09-06T07:08:37.973763196Z","level":"error","message":"[ops] {"}
+{"level":"error","message":"  event: 'security.app_check_rejected',","timestamp":"2026-09-06T07:08:37.973766686Z"}
+{"message":"}","level":"info","timestamp":"2026-09-06T07:08:38.596660426Z"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:38.596679925Z"}
+{"timestamp":"2026-09-06T07:08:38.596688885Z","message":"  event: 'http_request',","level":"info"}
+{"message":"  route: '/api/studio/chat/bootstrap',","timestamp":"2026-09-06T07:08:38.596689265Z","level":"info"}
+{"message":"  ts: '2026-09-06T07:08:38.443Z',","timestamp":"2026-09-06T07:08:38.596693465Z","level":"info"}
+{"level":"info","message":"  requestId: '5c22588e-128a-4817-966c-47918352683b',","timestamp":"2026-09-06T07:08:38.596697355Z"}
+{"level":"info","message":"  method: 'GET',","timestamp":"2026-09-06T07:08:38.596702435Z"}
+{"timestamp":"2026-09-06T07:08:38.596708045Z","message":"  status: 200,","level":"info"}
+{"message":"  durationMs: 551","timestamp":"2026-09-06T07:08:38.596715615Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:39.045058964Z","level":"info","message":"[ops] {"}
+{"timestamp":"2026-09-06T07:08:39.045061934Z","level":"info","message":"  event: 'http_request',"}
+{"message":"  ts: '2026-09-06T07:08:39.026Z',","timestamp":"2026-09-06T07:08:39.045065264Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:39.045068294Z","message":"  requestId: 'e9f62ed1-418b-4211-8d6c-ef2324e6a758',"}
+{"message":"  method: 'OPTIONS',","timestamp":"2026-09-06T07:08:39.045071904Z","level":"info"}
+{"level":"info","message":"  route: '/api/v2/agents/active',","timestamp":"2026-09-06T07:08:39.045074154Z"}
+{"level":"info","message":"  status: 204,","timestamp":"2026-09-06T07:08:39.045076734Z"}
+{"level":"info","message":"  durationMs: 0","timestamp":"2026-09-06T07:08:39.045079394Z"}
+{"timestamp":"2026-09-06T07:08:39.045081764Z","message":"}","level":"info"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:39.045084633Z","level":"info"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:39.045086853Z"}
+{"message":"  ts: '2026-09-06T07:08:39.027Z',","timestamp":"2026-09-06T07:08:39.045089713Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:39.045092103Z","message":"  requestId: 'ad33ce6c-e9f0-475a-87ab-58bd6422a918',","level":"info"}
+{"timestamp":"2026-09-06T07:08:39.045094623Z","level":"info","message":"  method: 'OPTIONS',"}
+{"timestamp":"2026-09-06T07:08:39.045097553Z","level":"info","message":"  route: '/api/v2/events',"}
+{"message":"  status: 204,","level":"info","timestamp":"2026-09-06T07:08:39.045100823Z"}
+{"message":"  durationMs: 0","timestamp":"2026-09-06T07:08:39.045103953Z","level":"info"}
+{"message":"}","timestamp":"2026-09-06T07:08:39.045106483Z","level":"info"}
+{"level":"error","message":"[ops] {","timestamp":"2026-09-06T07:08:39.329728581Z"}
+{"timestamp":"2026-09-06T07:08:39.329735641Z","level":"error","message":"  event: 'security.app_check_rejected',"}
+{"message":"  ts: '2026-09-06T07:08:39.195Z',","timestamp":"2026-09-06T07:08:39.329741431Z","level":"error"}
+{"level":"error","timestamp":"2026-09-06T07:08:39.329748381Z","message":"  reason: 'missing_token',"}
+{"timestamp":"2026-09-06T07:08:39.329754601Z","level":"error","message":"  mode: 'monitor',"}
+{"timestamp":"2026-09-06T07:08:39.329759841Z","message":"  route: '/api/v2/events'","level":"error"}
+{"level":"error","message":"}","timestamp":"2026-09-06T07:08:39.329764811Z"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:39.329769771Z","level":"error"}
+{"message":"  event: 'security.app_check_rejected',","level":"error","timestamp":"2026-09-06T07:08:39.329774841Z"}
+{"timestamp":"2026-09-06T07:08:39.329779380Z","message":"  ts: '2026-09-06T07:08:39.196Z',","level":"error"}
+{"message":"  reason: 'missing_token',","timestamp":"2026-09-06T07:08:39.329784310Z","level":"error"}
+{"message":"  mode: 'monitor',","level":"error","timestamp":"2026-09-06T07:08:39.329789320Z"}
+{"timestamp":"2026-09-06T07:08:39.329793870Z","message":"  route: '/api/v2/agents/active'","level":"error"}
+{"message":"}","timestamp":"2026-09-06T07:08:39.329799460Z","level":"error"}
+{"timestamp":"2026-09-06T07:08:39.329804870Z","level":"info","message":"[ops] {"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:39.329809880Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:39.329814780Z","message":"  ts: '2026-09-06T07:08:39.259Z',","level":"info"}
+{"timestamp":"2026-09-06T07:08:39.329819660Z","message":"  requestId: 'a56e7134-d64f-43a5-833a-08eb24b629ae',","level":"info"}
+{"message":"  method: 'GET',","timestamp":"2026-09-06T07:08:39.329824320Z","level":"info"}
+{"level":"info","message":"  route: '/api/v2/agents/active',","timestamp":"2026-09-06T07:08:39.329829300Z"}
+{"timestamp":"2026-09-06T07:08:39.329834300Z","level":"info","message":"  status: 200,"}
+{"level":"info","message":"  durationMs: 64","timestamp":"2026-09-06T07:08:39.329838830Z"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:08:39.329843250Z"}
+{"timestamp":"2026-09-06T07:08:39.768256857Z","level":"info","message":"[ops] {"}
+{"timestamp":"2026-09-06T07:08:39.768261707Z","message":"  event: 'http_request',","level":"info"}
+{"message":"  ts: '2026-09-06T07:08:39.764Z',","timestamp":"2026-09-06T07:08:39.768264737Z","level":"info"}
+{"message":"  requestId: '182e8840-20bb-476d-b071-1aa6645351d2',","level":"info","timestamp":"2026-09-06T07:08:39.768268297Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:39.768271447Z","message":"  method: 'GET',"}
+{"level":"info","message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:08:39.768274207Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:39.768276897Z","message":"  status: 200,"}
+{"timestamp":"2026-09-06T07:08:39.768279347Z","level":"info","message":"  durationMs: 569"}
+{"timestamp":"2026-09-06T07:08:39.768282147Z","level":"info","message":"}"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:41.401470020Z","level":"info"}
+{"message":"  ts: '2026-09-06T07:08:41.302Z',","level":"info","timestamp":"2026-09-06T07:08:41.401477980Z"}
+{"level":"info","message":"  requestId: 'c530ff23-a5b8-4d5d-88c3-b87a07cc6015',","timestamp":"2026-09-06T07:08:41.401483370Z"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:41.401485950Z"}
+{"level":"info","message":"  method: 'OPTIONS',","timestamp":"2026-09-06T07:08:41.401486910Z"}
+{"message":"  route: '/api/studio/mcp/status',","timestamp":"2026-09-06T07:08:41.401491740Z","level":"info"}
+{"level":"info","message":"  status: 204,","timestamp":"2026-09-06T07:08:41.401498140Z"}
+{"message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:41.401499590Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:41.401503250Z","message":"  durationMs: 0","level":"info"}
+{"timestamp":"2026-09-06T07:08:41.401507900Z","message":"  ts: '2026-09-06T07:08:41.299Z',","level":"info"}
+{"message":"}","timestamp":"2026-09-06T07:08:41.401511450Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:41.401515390Z","level":"info","message":"  requestId: '459908ab-1a18-4589-af45-eed73f57b56d',"}
+{"timestamp":"2026-09-06T07:08:41.401520020Z","message":"  method: 'OPTIONS',","level":"info"}
+{"timestamp":"2026-09-06T07:08:41.401524289Z","level":"info","message":"  route: '/api/studio/status',"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:08:41.401529589Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:41.401533059Z","level":"info","message":"  durationMs: 0"}
+{"level":"info","message":"}","timestamp":"2026-09-06T07:08:41.401536449Z"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:41.401540779Z"}
+{"timestamp":"2026-09-06T07:08:41.476639684Z","message":"[ops] {","level":"error"}
+{"timestamp":"2026-09-06T07:08:41.476650484Z","level":"error","message":"  event: 'security.app_check_rejected',"}
+{"timestamp":"2026-09-06T07:08:41.476655963Z","level":"error","message":"  ts: '2026-09-06T07:08:41.461Z',"}
+{"timestamp":"2026-09-06T07:08:41.476659943Z","message":"  reason: 'missing_token',","level":"error"}
+{"message":"  mode: 'monitor',","timestamp":"2026-09-06T07:08:41.476664473Z","level":"error"}
+{"level":"error","timestamp":"2026-09-06T07:08:41.476671603Z","message":"  route: '/api/studio/status'"}
+{"level":"error","message":"}","timestamp":"2026-09-06T07:08:41.476675513Z"}
+{"level":"error","message":"[ops] {","timestamp":"2026-09-06T07:08:41.476679293Z"}
+{"level":"error","timestamp":"2026-09-06T07:08:41.476683243Z","message":"  event: 'security.app_check_rejected',"}
+{"message":"  ts: '2026-09-06T07:08:41.470Z',","timestamp":"2026-09-06T07:08:41.476692623Z","level":"error"}
+{"message":"  reason: 'missing_token',","timestamp":"2026-09-06T07:08:41.476696413Z","level":"error"}
+{"message":"  mode: 'monitor',","level":"error","timestamp":"2026-09-06T07:08:41.476701243Z"}
+{"level":"error","message":"  route: '/api/studio/mcp/status'","timestamp":"2026-09-06T07:08:41.476705303Z"}
+{"timestamp":"2026-09-06T07:08:41.476709203Z","level":"error","message":"}"}
+{"timestamp":"2026-09-06T07:08:41.638523040Z","message":"[ops] {","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:41.638525850Z","message":"  event: 'http_request',"}
+{"timestamp":"2026-09-06T07:08:41.638531930Z","level":"info","message":"  ts: '2026-09-06T07:08:41.525Z',"}
+{"timestamp":"2026-09-06T07:08:41.638534790Z","level":"info","message":"  requestId: '3ed424bd-ee98-40d1-b19d-8bb3391ff094',"}
+{"timestamp":"2026-09-06T07:08:41.638537590Z","level":"info","message":"  method: 'OPTIONS',"}
+{"message":"  route: '/api/v2/events',","timestamp":"2026-09-06T07:08:41.638540270Z","level":"info"}
+{"message":"  status: 204,","timestamp":"2026-09-06T07:08:41.638543020Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:41.638545390Z","message":"  durationMs: 0","level":"info"}
+{"timestamp":"2026-09-06T07:08:41.638548010Z","level":"info","message":"}"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:41.715432989Z","level":"error"}
+{"timestamp":"2026-09-06T07:08:41.715438609Z","message":"  event: 'security.app_check_rejected',","level":"error"}
+{"message":"  ts: '2026-09-06T07:08:41.711Z',","timestamp":"2026-09-06T07:08:41.715442489Z","level":"error"}
+{"timestamp":"2026-09-06T07:08:41.715445429Z","message":"  reason: 'missing_token',","level":"error"}
+{"level":"error","message":"  mode: 'monitor',","timestamp":"2026-09-06T07:08:41.715448439Z"}
+{"level":"error","timestamp":"2026-09-06T07:08:41.715451709Z","message":"  route: '/api/v2/events'"}
+{"message":"}","timestamp":"2026-09-06T07:08:41.715454719Z","level":"error"}
+{"level":"info","timestamp":"2026-09-06T07:08:41.788590251Z","message":"[ops] {"}
+{"message":"  event: 'studio.plugin_compatibility_handshake',","timestamp":"2026-09-06T07:08:41.788594611Z","level":"info"}
+{"level":"info","message":"  ts: '2026-09-06T07:08:41.760Z',","timestamp":"2026-09-06T07:08:41.788598781Z"}
+{"timestamp":"2026-09-06T07:08:41.788602961Z","message":"  requestId: '3b5ecbd6-01ed-4387-b4ea-fb70d5350c1a',","level":"info"}
+{"message":"  sessionId: 'Iog4rWn0F2wcGR9xp3Jq',","timestamp":"2026-09-06T07:08:41.788607121Z","level":"info"}
+{"timestamp":"2026-09-06T07:08:41.788610891Z","level":"info","message":"  userId: 'klu6Sv5QeEgYWlHjsgQwMkZCvsb2',"}
+{"timestamp":"2026-09-06T07:08:41.788614740Z","message":"  status: 'degraded',","level":"info"}
+{"timestamp":"2026-09-06T07:08:41.788618350Z","level":"info","message":"  reasonCodes: [ 'command_unavailable' ],"}
+{"timestamp":"2026-09-06T07:08:41.788622760Z","level":"info","message":"  buildId: 'nexusrbx-studio-0.14.0-r15-animation.10-native-value-normalization',"}
+{"message":"  attestationWritten: false,","timestamp":"2026-09-06T07:08:41.788628010Z","level":"info"}
+{"level":"info","message":"  repairDurationMs: 331","timestamp":"2026-09-06T07:08:41.788632530Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:41.788637060Z","message":"}"}
+{"level":"info","message":"[ops] {","timestamp":"2026-09-06T07:08:41.788641670Z"}
+{"timestamp":"2026-09-06T07:08:41.788646300Z","level":"info","message":"  event: 'http_request',"}
+{"message":"  ts: '2026-09-06T07:08:41.761Z',","timestamp":"2026-09-06T07:08:41.788651480Z","level":"info"}
+{"level":"info","message":"  requestId: '3b5ecbd6-01ed-4387-b4ea-fb70d5350c1a',","timestamp":"2026-09-06T07:08:41.788657140Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:41.788662320Z","message":"  method: 'POST',"}
+{"level":"info","message":"  route: '/api/studio/session/ping',","timestamp":"2026-09-06T07:08:41.788666990Z"}
+{"level":"info","timestamp":"2026-09-06T07:08:41.788671650Z","message":"  status: 200,"}
+{"level":"info","timestamp":"2026-09-06T07:08:41.788675870Z","message":"  durationMs: 386"}
+{"timestamp":"2026-09-06T07:08:41.788680390Z","level":"info","message":"}"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:41.788685150Z","level":"info"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:41.788689179Z"}
+{"level":"info","message":"  ts: '2026-09-06T07:08:41.784Z',","timestamp":"2026-09-06T07:08:41.788693399Z"}
+{"message":"  requestId: '84b2bbac-215b-4465-82c6-6725cc5deb36',","level":"info","timestamp":"2026-09-06T07:08:41.788698119Z"}
+{"message":"  method: 'GET',","level":"info","timestamp":"2026-09-06T07:08:41.788702119Z"}
+{"timestamp":"2026-09-06T07:08:41.788707009Z","level":"info","message":"  route: '/api/studio/mcp/status',"}
+{"message":"  status: 200,","timestamp":"2026-09-06T07:08:41.788711089Z","level":"info"}
+{"message":"  durationMs: 314","timestamp":"2026-09-06T07:08:41.788717689Z","level":"info"}
+{"message":"}","timestamp":"2026-09-06T07:08:41.788722549Z","level":"info"}
+{"message":"  durationMs: 790","level":"info","timestamp":"2026-09-06T07:08:42.262814549Z"}
+{"timestamp":"2026-09-06T07:08:42.262819709Z","level":"info","message":"}"}
+{"message":"[ops] {","timestamp":"2026-09-06T07:08:42.262841609Z","level":"info"}
+{"message":"  event: 'http_request',","level":"info","timestamp":"2026-09-06T07:08:42.262851298Z"}
+{"level":"info","message":"  ts: '2026-09-06T07:08:42.251Z',","timestamp":"2026-09-06T07:08:42.262856448Z"}
+{"timestamp":"2026-09-06T07:08:42.262860488Z","message":"  requestId: '4997d989-b87d-48e1-8e0d-48d2c4a97a75',","level":"info"}
+{"timestamp":"2026-09-06T07:08:42.262864758Z","message":"  method: 'GET',","level":"info"}
+{"timestamp":"2026-09-06T07:08:42.262868858Z","level":"info","message":"  route: '/api/studio/status',"}
+{"timestamp":"2026-09-06T07:08:42.262872158Z","level":"info","message":"  status: 200,"}
+{"timestamp":"2026-09-06T07:08:42.401968691Z","level":"info","message":"[ops] {"}
+{"level":"info","message":"  event: 'http_request',","timestamp":"2026-09-06T07:08:42.401971881Z"}
+{"message":"  ts: '2026-09-06T07:08:42.374Z',","timestamp":"2026-09-06T07:08:42.401975471Z","level":"info"}
+{"message":"  requestId: '5be68703-67c1-4f55-88df-3b1a67b60a0b',","timestamp":"2026-09-06T07:08:42.401978011Z","level":"info"}
+{"level":"info","timestamp":"2026-09-06T07:08:42.401981021Z","message":"  method: 'GET',"}
+{"timestamp":"2026-09-06T07:08:42.401983781Z","level":"info","message":"  route: '/api/v2/events',"}
+{"timestamp":"2026-09-06T07:08:42.401986481Z","level":"info","message":"  status: 200,"}
+{"message":"  durationMs: 663","timestamp":"2026-09-06T07:08:42.401989471Z","level":"info"}
+{"message":"}","timestamp":"2026-09-06T07:08:42.401992611Z","level":"info"}

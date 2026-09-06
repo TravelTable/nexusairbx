@@ -1,0 +1,471 @@
+
+> nexusrbx-react@0.1.0 build
+> npm run plugin:build && node scripts/generate-sitemap.js --best-effort && react-scripts build && npm run public:build && node scripts/merge-public-export.js
+
+
+> nexusrbx-react@0.1.0 plugin:build
+> node roblox-plugin/build/bundle-plugin.js && npm run plugin:test && node roblox-plugin/build/verify-plugin-artifact.js && node roblox-plugin/build/write-plugin-checksum.js && node roblox-plugin/build/install-local-plugin.js --build-only --from-bundle && node scripts/prepare-studio-download.cjs
+
+Bundled 24 source files into roblox-plugin\NexusRBXStudioBridge.plugin.lua (160 top-level locals)
+
+> nexusrbx-react@0.1.0 plugin:test
+> node --test roblox-plugin/build/*.test.js
+
+TAP version 13
+# Subtest: create_instance accepts only allowlisted native BasePart properties
+ok 1 - create_instance accepts only allowlisted native BasePart properties
+  ---
+  duration_ms: 6.753
+  ...
+# Subtest: src/ui/BridgePanel.lua presents MCP as an optional enhanced connection
+ok 2 - src/ui/BridgePanel.lua presents MCP as an optional enhanced connection
+  ---
+  duration_ms: 2.6212
+  ...
+# Subtest: NexusRBXStudioBridge.plugin.lua presents MCP as an optional enhanced connection
+ok 3 - NexusRBXStudioBridge.plugin.lua presents MCP as an optional enhanced connection
+  ---
+  duration_ms: 11.1368
+  ...
+# Subtest: Studio plugin accepts every create_instance class allowed by the backend
+ok 4 - Studio plugin accepts every create_instance class allowed by the backend
+  ---
+  duration_ms: 3.786
+  ...
+# Subtest: src/Main.server.lua never renders pairing credentials
+ok 5 - src/Main.server.lua never renders pairing credentials
+  ---
+  duration_ms: 3.2846
+  ...
+# Subtest: NexusRBXStudioBridge.plugin.lua never renders pairing credentials
+ok 6 - NexusRBXStudioBridge.plugin.lua never renders pairing credentials
+  ---
+  duration_ms: 11.999
+  ...
+# Subtest: BridgePanel success banners recognize generic pairing copy without credential fields
+ok 7 - BridgePanel success banners recognize generic pairing copy without credential fields
+  ---
+  duration_ms: 3.8595
+  ...
+# Subtest: HTTP failures are converted to user-facing strings before reaching plugin UI
+ok 8 - HTTP failures are converted to user-facing strings before reaching plugin UI
+  ---
+  duration_ms: 2.2813
+  ...
+# Subtest: accepts a loopback HTTP backend for local Studio testing
+ok 9 - accepts a loopback HTTP backend for local Studio testing
+  ---
+  duration_ms: 4.5441
+  ...
+# Subtest: rejects insecure non-local plugin backends
+ok 10 - rejects insecure non-local plugin backends
+  ---
+  duration_ms: 1.2155
+  ...
+# Subtest: rewrites only the bundled plugin endpoint declarations
+ok 11 - rewrites only the bundled plugin endpoint declarations
+  ---
+  duration_ms: 1.0083
+  ...
+# Subtest: duplicate NexusRBX plugin builds are quarantined while the canonical and unrelated plugins remain
+ok 12 - duplicate NexusRBX plugin builds are quarantined while the canonical and unrelated plugins remain
+  ---
+  duration_ms: 27.5587
+  ...
+# Subtest: Windows install uses Roblox Studio's LOCALAPPDATA plugins directory
+ok 13 - Windows install uses Roblox Studio's LOCALAPPDATA plugins directory
+  ---
+  duration_ms: 3.8199
+  ...
+# Subtest: Windows environment lookup is case-insensitive
+ok 14 - Windows environment lookup is case-insensitive
+  ---
+  duration_ms: 0.464
+  ...
+# Subtest: explicit plugin-directory override wins without querying Windows
+ok 15 - explicit plugin-directory override wins without querying Windows
+  ---
+  duration_ms: 0.3575
+  ...
+# Subtest: override rejects paths outside a Roblox Plugins directory
+ok 16 - override rejects paths outside a Roblox Plugins directory
+  ---
+  duration_ms: 0.9103
+  ...
+# Subtest: Windows retains an AppData Local fallback when LOCALAPPDATA is unavailable
+ok 17 - Windows retains an AppData Local fallback when LOCALAPPDATA is unavailable
+  ---
+  duration_ms: 0.7155
+  ...
+# Subtest: Windows rejects a non-absolute LOCALAPPDATA value before using fallback
+ok 18 - Windows rejects a non-absolute LOCALAPPDATA value before using fallback
+  ---
+  duration_ms: 1.421
+  ...
+# Subtest: non-Windows installs retain the home Documents behavior
+ok 19 - non-Windows installs retain the home Documents behavior
+  ---
+  duration_ms: 1.3264
+  ...
+# Subtest: rbxmx identifiers are deterministic for identical plugin source
+ok 20 - rbxmx identifiers are deterministic for identical plugin source
+  ---
+  duration_ms: 5.9534
+  ...
+# Subtest: rbxmx identifiers change when plugin source changes
+ok 21 - rbxmx identifiers change when plugin source changes
+  ---
+  duration_ms: 2.0814
+  ...
+# Subtest: rbxmx source preserves CDATA terminators safely
+ok 22 - rbxmx source preserves CDATA terminators safely
+  ---
+  duration_ms: 0.3127
+  ...
+# Subtest: the context guard is shared by every bundled plugin section
+ok 23 - the context guard is shared by every bundled plugin section
+  ---
+  duration_ms: 17.2252
+  ...
+# Subtest: the plugin guard detects real GetService calls while blanking ordinary strings
+ok 24 - the plugin guard detects real GetService calls while blanking ordinary strings
+  ---
+  duration_ms: 1.3073
+  ...
+# Subtest: managed instance IDs are exported across bundled plugin sections
+ok 25 - managed instance IDs are exported across bundled plugin sections
+  ---
+  duration_ms: 12.4296
+  ...
+# Subtest: native model safety tables are exported into the bundled command scope
+ok 26 - native model safety tables are exported into the bundled command scope
+  ---
+  duration_ms: 14.1378
+  ...
+# Subtest: the bundled placement guard keeps canonical service path names
+ok 27 - the bundled placement guard keeps canonical service path names
+  ---
+  duration_ms: 8.8965
+  ...
+# Subtest: create, write, patch, and replace validate before snapshots or source changes
+ok 28 - create, write, patch, and replace validate before snapshots or source changes
+  ---
+  duration_ms: 1.9649
+  ...
+# Subtest: existing class conversion requires consent, inspection evidence, and a pre-mutation snapshot
+ok 29 - existing class conversion requires consent, inspection evidence, and a pre-mutation snapshot
+  ---
+  duration_ms: 2.1636
+  ...
+# Subtest: legacy and managed artifact application validate all scripts before mutation
+ok 30 - legacy and managed artifact application validate all scripts before mutation
+  ---
+  duration_ms: 2.4313
+  ...
+# Subtest: plugin smoke checks report script-context findings
+ok 31 - plugin smoke checks report script-context findings
+  ---
+  duration_ms: 2.903
+  ...
+# Subtest: whole-project validation reports existing script-context findings
+ok 32 - whole-project validation reports existing script-context findings
+  ---
+  duration_ms: 1.316
+  ...
+# Subtest: service rewriting changes unqualified code identifiers only
+ok 33 - service rewriting changes unqualified code identifiers only
+  ---
+  duration_ms: 1.1154
+  ...
+# Subtest: service rewriting preserves short and long string literals byte-for-byte
+ok 34 - service rewriting preserves short and long string literals byte-for-byte
+  ---
+  duration_ms: 0.2384
+  ...
+# Subtest: service rewriting preserves line and long comments byte-for-byte
+ok 35 - service rewriting preserves line and long comments byte-for-byte
+  ---
+  duration_ms: 0.1663
+  ...
+# Subtest: bundle rewriting leaves config and CRLF literal data untouched
+ok 36 - bundle rewriting leaves config and CRLF literal data untouched
+  ---
+  duration_ms: 0.2187
+  ...
+# Subtest: the generated artifact preserves canonical path and diagnostic strings
+ok 37 - the generated artifact preserves canonical path and diagnostic strings
+  ---
+  duration_ms: 8.3299
+  ...
+# Subtest: managed artifact writes wait for Studio source to match the requested content
+ok 38 - managed artifact writes wait for Studio source to match the requested content
+  ---
+  duration_ms: 2.3221
+  ...
+# Subtest: apply_artifact verification re-resolves the Studio path on every retry
+ok 39 - apply_artifact verification re-resolves the Studio path on every retry
+  ---
+  duration_ms: 8.2599
+  ...
+# Subtest: source read failures preserve bounded editor and property diagnostics
+ok 40 - source read failures preserve bounded editor and property diagnostics
+  ---
+  duration_ms: 11.8893
+  ...
+# Subtest: bundled script hashing captures the live source reader
+ok 41 - bundled script hashing captures the live source reader
+  ---
+  duration_ms: 5.7798
+  ...
+# Subtest: script deletion reports the verified pre-delete source baseline
+ok 42 - script deletion reports the verified pre-delete source baseline
+  ---
+  duration_ms: 20.0622
+  ...
+# Subtest: native model verification shares the canonical revision binding
+ok 43 - native model verification shares the canonical revision binding
+  ---
+  duration_ms: 8.5257
+  ...
+# Subtest: managed artifact projection is unique in source and bundled artifact
+ok 44 - managed artifact projection is unique in source and bundled artifact
+  ---
+  duration_ms: 14.3852
+  ...
+# Subtest: v2 mutations require the complete immutable target envelope
+ok 45 - v2 mutations require the complete immutable target envelope
+  ---
+  duration_ms: 2.1722
+  ...
+# Subtest: target identity is checked before approval and at the final mutation boundary
+ok 46 - target identity is checked before approval and at the final mutation boundary
+  ---
+  duration_ms: 0.9681
+  ...
+# Subtest: an authenticated heartbeat resumes a restarted plugin at the server generation
+ok 47 - an authenticated heartbeat resumes a restarted plugin at the server generation
+  ---
+  duration_ms: 9.4452
+  ...
+# Subtest: move and duplicate refuse source-descendant destinations before snapshot mutation
+ok 48 - move and duplicate refuse source-descendant destinations before snapshot mutation
+  ---
+  duration_ms: 1.5521
+  ...
+# Subtest: operation receipts are bounded, durable, and reconciled before redelivery
+ok 49 - operation receipts are bounded, durable, and reconciled before redelivery
+  ---
+  duration_ms: 0.9285
+  ...
+# Subtest: generated install artifact contains target diagnostics and the current build
+ok 50 - generated install artifact contains target diagnostics and the current build
+  ---
+  duration_ms: 6.2708
+  ...
+# Subtest: diagnostic collection defaults to the connected Studio project
+ok 51 - diagnostic collection defaults to the connected Studio project
+  ---
+  duration_ms: 0.6674
+  ...
+# Subtest: safe GUI properties accept planner shapes and participate in readback verification
+ok 52 - safe GUI properties accept planner shapes and participate in readback verification
+  ---
+  duration_ms: 2.0494
+  ...
+# Subtest: the installable plugin exposes native tools and no conversation UI
+ok 53 - the installable plugin exposes native tools and no conversation UI
+  ---
+  duration_ms: 10.8528
+  ...
+# Subtest: Studio result capture is attached after execution and verification
+ok 54 - Studio result capture is attached after execution and verification
+  ---
+  duration_ms: 16.8785
+  ...
+# Subtest: toolbox task lifecycle executes safely through retries, resumption, cancellation, and receipts
+ok 55 - toolbox task lifecycle executes safely through retries, resumption, cancellation, and receipts # SKIP Set LUAU_BIN to the Luau CLI to run lifecycle scenarios
+  ---
+  duration_ms: 0.2968
+  ...
+# Subtest: v3 UI artifacts snapshot, conflict-check, apply, and read back managed ScreenGui trees
+ok 56 - v3 UI artifacts snapshot, conflict-check, apply, and read back managed ScreenGui trees
+  ---
+  duration_ms: 2.8382
+  ...
+# Subtest: UI artifact creation remains allowlisted and does not execute document-provided Luau
+ok 57 - UI artifact creation remains allowlisted and does not execute document-provided Luau
+  ---
+  duration_ms: 2.041
+  ...
+# Subtest: UI root fingerprints cover every applied property, identity, descendant, and script source
+ok 58 - UI root fingerprints cover every applied property, identity, descendant, and script source
+  ---
+  duration_ms: 0.9361
+  ...
+# Subtest: UI-only artifacts participate in command-bound verification and affected-path receipts
+ok 59 - UI-only artifacts participate in command-bound verification and affected-path receipts
+  ---
+  duration_ms: 0.7993
+  ...
+# Subtest: snapshot serialization restores UI decorators, sequences, layout padding, and ScreenGui state
+ok 60 - snapshot serialization restores UI decorators, sequences, layout padding, and ScreenGui state
+  ---
+  duration_ms: 5.6579
+  ...
+1..60
+# tests 60
+# suites 0
+# pass 59
+# fail 0
+# cancelled 0
+# skipped 1
+# todo 0
+# duration_ms 435.4804
+Plugin artifact verified (52 handlers, nexusrbx-studio-0.14.0-r15-animation.12-toolbox).
+sha256=81e137cb71e476bf6065a4cd7a9ed312dc88a20e874987617642cdce475fa539
+{
+  "artifact": "NexusRBXStudioBridge.plugin.lua",
+  "buildId": "nexusrbx-studio-0.14.0-r15-animation.12-toolbox",
+  "bytes": 453220,
+  "sha256": "81e137cb71e476bf6065a4cd7a9ed312dc88a20e874987617642cdce475fa539",
+  "checksumFile": "roblox-plugin\\NexusRBXStudioBridge.plugin.lua.sha256"
+}
+Build artifact: C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\roblox-plugin\build\NexusRBXStudioBridge.rbxmx
+Source bytes: 453156
+Plugin artifact verified (52 handlers, nexusrbx-studio-0.14.0-r15-animation.12-toolbox).
+sha256=81e137cb71e476bf6065a4cd7a9ed312dc88a20e874987617642cdce475fa539
+Studio download matches the backend release.
+[sitemap] fetching icon page 1: https://api.nexusrbx.com/api/icons/market?limit=500
+[sitemap] page 1: 80 icons
+[sitemap] fetching icon page 2: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJ2ZXRPSXpvTmZzWFlBVXlaUk5lTyJ9
+[sitemap] page 2: 100 icons
+[sitemap] fetching icon page 3: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJiRWNLNHFOQ3czVkFVblRjcVVIWSJ9
+[sitemap] page 3: 100 icons
+[sitemap] fetching icon page 4: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJ1djB2c0NsOG1HVmpqRlNnOHFSQyJ9
+[sitemap] page 4: 100 icons
+[sitemap] fetching icon page 5: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJnd2kwOVRLemQyT3Y4bDZ4ZlFHeCJ9
+[sitemap] page 5: 100 icons
+[sitemap] fetching icon page 6: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJydjdmZmpzNFpMSngwZ2F3Rm15UCJ9
+[sitemap] page 6: 100 icons
+[sitemap] fetching icon page 7: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJVNnUya05wRFgxQk5GUFVDS2lXYiJ9
+[sitemap] page 7: 100 icons
+[sitemap] fetching icon page 8: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJYS25zTHZwelNLU3J5MnJGbWJoMCJ9
+[sitemap] page 8: 100 icons
+[sitemap] fetching icon page 9: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJUeEx2TjVoSEgwaXpTY3V0Y1pBZCJ9
+[sitemap] page 9: 100 icons
+[sitemap] fetching icon page 10: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiI0ajZPNW9EQnNuTmgyNWJiS25sMSJ9
+[sitemap] page 10: 100 icons
+[sitemap] fetching icon page 11: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJVdHdIckN1Y0ZheUxncGhhRDVhNCJ9
+[sitemap] page 11: 100 icons
+[sitemap] fetching icon page 12: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJlbWlucHd1R3lTRnZCaUx1aUxMVSJ9
+[sitemap] page 12: 100 icons
+[sitemap] fetching icon page 13: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJNUVVJYjFnMWNuVVNMaTcwNUZHMCJ9
+[sitemap] page 13: 100 icons
+[sitemap] fetching icon page 14: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJMak5aR2hWOFp3Zzd0MGNOV1MwZyJ9
+[sitemap] page 14: 100 icons
+[sitemap] fetching icon page 15: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJaQ21HNEV4d1NlVW5tV2ZtUzlWMiJ9
+[sitemap] page 15: 100 icons
+[sitemap] fetching icon page 16: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJmd2VpQXFOZFF3VkMwS1o1UjJTQSJ9
+[sitemap] page 16: 100 icons
+[sitemap] fetching icon page 17: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJHNnBXMXNPeHRKYjZaeVNOM2x2TiJ9
+[sitemap] page 17: 100 icons
+[sitemap] fetching icon page 18: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJ0OTYwT3dQNDVzREhSQzcwS1pKRyJ9
+[sitemap] page 18: 100 icons
+[sitemap] fetching icon page 19: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJ3ZmFpbDhaS3RMbm44MVhRSjV4biJ9
+[sitemap] page 19: 100 icons
+[sitemap] fetching icon page 20: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJIeXlCM3dMQU0zSERVQVFQUko1NSJ9
+[sitemap] page 20: 100 icons
+[sitemap] fetching icon page 21: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJiOFZFRnVPZ0NNQXhiMWFxUG42cyJ9
+[sitemap] page 21: 100 icons
+[sitemap] fetching icon page 22: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJMTlhvYlNoUGFDVnZCcXp4TWV2OCJ9
+[sitemap] page 22: 100 icons
+[sitemap] fetching icon page 23: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJHcTl2cTU4SWFnNkZSQU96WTVTayJ9
+[sitemap] page 23: 100 icons
+[sitemap] fetching icon page 24: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJPUGlTMFp0VDR6ZDFpVnc2ekM5aiJ9
+[sitemap] page 24: 100 icons
+[sitemap] fetching icon page 25: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiI1WDVSWGRtaXBzUU1IWnRRSUFveCJ9
+[sitemap] page 25: 100 icons
+[sitemap] fetching icon page 26: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJmb3NrUWc4THJIZ1FYa2JPeG5HVSJ9
+[sitemap] page 26: 100 icons
+[sitemap] fetching icon page 27: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJyaUxTWUp4dGJ4VnZ1Q3RSQTBIRSJ9
+[sitemap] page 27: 100 icons
+[sitemap] fetching icon page 28: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJHRzY2Sk1kdEVRMFRuN1o0N2JIbSJ9
+[sitemap] page 28: 100 icons
+[sitemap] fetching icon page 29: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJaNUhobnhKOGJxelByRzF4bjdtciJ9
+[sitemap] page 29: 100 icons
+[sitemap] fetching icon page 30: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJBcjU0VTJaTUlxYWhiUUpDbW4yeCJ9
+[sitemap] page 30: 100 icons
+[sitemap] fetching icon page 31: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJwaGh2eFlOVHhmeXlGUlNueXZMNyJ9
+[sitemap] page 31: 100 icons
+[sitemap] fetching icon page 32: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJnZGhWTzl6cGN5SHFWTEpISUFYOSJ9
+[sitemap] page 32: 100 icons
+[sitemap] fetching icon page 33: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJGdWNpZ05WWXh1VW1jWXRyM2hlOSJ9
+[sitemap] page 33: 100 icons
+[sitemap] fetching icon page 34: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiIwVDlGN3M4dEhMQWRldnFyZUtDaiJ9
+[sitemap] page 34: 100 icons
+[sitemap] fetching icon page 35: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJNYzlkT1hDQTRNRzRpUFFXTzdLbiJ9
+[sitemap] page 35: 100 icons
+[sitemap] fetching icon page 36: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJSNUlTOWdrZlVleUFyOTU3cnludyJ9
+[sitemap] page 36: 100 icons
+[sitemap] fetching icon page 37: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJBaktMZU9RdGFxZG5vZlVvQXZBaCJ9
+[sitemap] page 37: 100 icons
+[sitemap] fetching icon page 38: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJyZ0xDSHpKWW9SWkE4cDM5TWFDeiJ9
+[sitemap] page 38: 100 icons
+[sitemap] fetching icon page 39: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJ4TGp2V1Z2cWNGd1g2UjN2Tk51bSJ9
+[sitemap] page 39: 100 icons
+[sitemap] fetching icon page 40: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJpWG13Z09WTGVxdWFWUm5kWGJtSiJ9
+[sitemap] page 40: 100 icons
+[sitemap] fetching icon page 41: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJFZmpOODBzcjVnb0dkcEllbUI1ZSJ9
+[sitemap] page 41: 100 icons
+[sitemap] fetching icon page 42: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJ0UTEzdUtpTlhyNDNmZlZYd2VHRCJ9
+[sitemap] page 42: 100 icons
+[sitemap] fetching icon page 43: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJpSnRSVEdsNkl3UUNLdHVDYTdVRSJ9
+[sitemap] page 43: 100 icons
+[sitemap] fetching icon page 44: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJ4MnhaUWQ1Z0Q1QmlncUp6NHV4bSJ9
+[sitemap] page 44: 100 icons
+[sitemap] fetching icon page 45: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJaSGRpWU9URDVzNW1QMXI4MTlWRCJ9
+[sitemap] page 45: 100 icons
+[sitemap] fetching icon page 46: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJObk9sNHhiUnNoT1UyQXNHUkJ0aCJ9
+[sitemap] page 46: 100 icons
+[sitemap] fetching icon page 47: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJRY252cWUzMHZqemc4WmNMeGJKOCJ9
+[sitemap] page 47: 100 icons
+[sitemap] fetching icon page 48: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJDSXNDcXRxUGtkVkc0dHoyeE1DMSJ9
+[sitemap] page 48: 100 icons
+[sitemap] fetching icon page 49: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJEeTZGQUtTc05Td3QzNktWdE9MWiJ9
+[sitemap] page 49: 100 icons
+[sitemap] fetching icon page 50: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJzdUhQY2hzWTlrR1ZKSGJoazVqNiJ9
+[sitemap] page 50: 100 icons
+[sitemap] fetching icon page 51: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJiZ2RYdjFldFpER2FiMENKb0I0eiJ9
+[sitemap] page 51: 100 icons
+[sitemap] fetching icon page 52: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJ5QjJzalBpQ0tDTnFrdDkwM0dLSiJ9
+[sitemap] page 52: 100 icons
+[sitemap] fetching icon page 53: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJ0alp2NnB3cGRyR3RxV0RPYlBMZiJ9
+[sitemap] page 53: 100 icons
+[sitemap] fetching icon page 54: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJDUnltaHBuTkhBU1NkMWNTYzRyViJ9
+[sitemap] page 54: 100 icons
+[sitemap] fetching icon page 55: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJ6ZFE4eE5ObjBqTDJJV203RnlxdiJ9
+[sitemap] page 55: 100 icons
+[sitemap] fetching icon page 56: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiIzUjdKdWRKN0dvUGhSUzNmNUZqOCJ9
+[sitemap] page 56: 100 icons
+[sitemap] fetching icon page 57: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJkdjQyZUFRY3dBMm5UVU5Wak9zVyJ9
+[sitemap] page 57: 100 icons
+[sitemap] fetching icon page 58: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJDblBpVzRkVHk5QU9NTURvWk96cCJ9
+[sitemap] page 58: 100 icons
+[sitemap] fetching icon page 59: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiI3aEs5QnNSV3FDMnNHdUcwWEEyNCJ9
+[sitemap] page 59: 100 icons
+[sitemap] fetching icon page 60: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiI1THZJbExlT2pIMmVVVDVqMVBiTCJ9
+[sitemap] page 60: 22 icons
+[sitemap] generated sitemap index and child sitemaps
+[sitemap] included core=3, docs=22, examples=5, icons=150
+[sitemap] qualified icons=3304, published icons=150, unpublished qualified icons=3154
+[sitemap] excluded icons=2598
+[sitemap] exclusion reasons={"thin_or_duplicate_name":2598}
+[sitemap] indexable categories=5, excluded categories=0
+[sitemap] unpublished qualified samples=["1KLi8C9AUU8uM4gIgQj1","1ljQKW4FRJlsaGzwLt1w","1lRpwmU3YAL7MsWciTVX","1M4eNB1fUlgcvwFfteAr","1MAedMEF6Cjrr6mdKaV9","1mJ2p0uqUJKzRvLJfUH8","1mSAAxYuw97zZVxWGbqY","1mv8XOemPBCvJfNcBGyY","1mWJQUAeSKfHU31Ylay8","1Nk7KHkkqJn8ysMs5vHt","1nsA9lefBSj1GlscvCpJ","1NvH1SKq3zNsyuVX9HMX","1NWNoyxdphvTtuVaXuis","1O08qfLEZj6PNMUVO1Tp","1o383jEKCbLU0scEA5lG","1oiLql2452HCsObxo1ja","1oQj9O88oe2U09tlvMAW","1p0sQ7uYGZjNdi2iFtP4","1PKaVzyTBaJ314h7I9s6","1PPgUmb24SM4SFmY8yLJ"]
+[sitemap] exclusion samples=[{"id":"0knZqgRQvMauQHWEa7ho","name":"Button - Button Round 3d 2.5 Brown Standard","reasons":["thin_or_duplicate_name"]},{"id":"1mB2kynzaBrfVEg1t0pT","name":"Button - Button Round Flat 1 White Focus","reasons":["thin_or_duplicate_name"]},{"id":"1UwhmHLEHtimCVr6atxF","name":"Cloud 2nd Outline 64px","reasons":["thin_or_duplicate_name"]},{"id":"1Zsc3ULwJME4Hp6zT4Jo","name":"Cross","reasons":["thin_or_duplicate_name"]},{"id":"27BBLe1aEv0tKrsvbroR","name":"Bar - Progress Container Thin Grey Lighter","reasons":["thin_or_duplicate_name"]},{"id":"2E6GfHEJXZpvj41dkq9h","name":"Widget - Checkbox Cross Black","reasons":["thin_or_duplicate_name"]},{"id":"2LxD15k1v5Tqa4b2fzG5","name":"Green Upgrade 2nd Outline 256px","reasons":["thin_or_duplicate_name"]},{"id":"2oD8bgGT5hvtBh3EkYZ6","name":"Silver 1st Outline 256px","reasons":["thin_or_duplicate_name"]},{"id":"2UQtEN6oaRzCeNdZgltT","name":"Chat 1st Outline 64px","reasons":["thin_or_duplicate_name"]},{"id":"3fX6rWralyj9E9XyNYZF","name":"Egg - Kraken Egg Golden Outline 64px","reasons":["thin_or_duplicate_name"]},{"id":"3mUhaXxmM9PbHDmqJ5Jp","name":"Music ON 2nd 256px","reasons":["thin_or_duplicate_name"]},{"id":"3nJEMWRrgjNEILbXnTZJ","name":"Torch 2nd 256px","reasons":["thin_or_duplicate_name"]},{"id":"3QgMOkgzb7Cw6zWgwCmU","name":"Button - Button Square 3d 1 Yellow Light Hover","reasons":["thin_or_duplicate_name"]},{"id":"3UKK6M5tM5nwHs4QlCP2","name":"Golden Shopping Bag 1st 64px","reasons":["thin_or_duplicate_name"]},{"id":"3w503HT7O3ifJz3eVHjH","name":"RightRed","reasons":["thin_or_duplicate_name"]},{"id":"4CGSnQvBTiR7hO1zZFnd","name":"Button - Button Round Flat 1 Forestgreen Regular Focus","reasons":["thin_or_duplicate_name"]},{"id":"4KrI9AoDZh2ou2W6tR6X","name":"Button - Button Square 3d 1 Green Regular Hover","reasons":["thin_or_duplicate_name"]},{"id":"4ti2YgdXMk2Yvn2ROhV8","name":"HeartPurple","reasons":["thin_or_duplicate_name"]},{"id":"4v62ANt2M41tWqZiQ5y3","name":"Blue Arm 1st Outline 256px","reasons":["thin_or_duplicate_name"]},{"id":"4v6lWvUFuYHfWfxhPsNv","name":"Green Lighting 1st Outline 64px","reasons":["thin_or_duplicate_name"]}]
+Creating an optimized production build...
+Failed to compile.
+
+Attempted import error: 'ArrowUpRight' is not exported from '../../../lib/icons' (imported as 'ArrowUpRight').
+
+

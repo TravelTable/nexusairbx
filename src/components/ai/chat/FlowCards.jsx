@@ -1,38 +1,17 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   Check,
   CheckCircle,
   ChevronLeft,
   ChevronRight,
   HelpCircle,
-  ListChecks,
   SendPrompt,
   Pencil,
   Loader,
 } from "lib/icons";
 import MarkdownMessage from "./MarkdownMessage";
-import {
-  Plan,
-  PlanAction,
-  PlanContent,
-  PlanDescription,
-  PlanFooter,
-  PlanHeader,
-  PlanTitle,
-  PlanTrigger,
-} from "../../ai-elements/plan";
-import { Badge } from "../../shadcn/badge";
+import { clarificationAnswerRows } from "../../../lib/clarificationAnswers";
 import { Button } from "../../shadcn/button";
-
-const CLASSIFICATION_LABELS = {
-  ui: "Roblox UI",
-  script: "Luau Script",
-  project: "Full Project",
-};
-
-const ignoreHandledError = (promise) => {
-  Promise.resolve(promise).catch(() => {});
-};
 
 const normalizeClarificationOption = (option, index) => {
   if (typeof option === "string") {
@@ -148,7 +127,7 @@ function InlineBlockingQuestion({ message }) {
  */
 export function ClarifyCard({ message, onSubmit, disabled }) {
   const questions = Array.isArray(message.questions) ? message.questions : [];
-  const [answers, setAnswers] = useState(() => initialClarificationAnswers(questions));
+  const [answers, setAnswers] = useState(() => ({ ...initialClarificationAnswers(questions), ...(message.answers || {}) }));
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [customOpen, setCustomOpen] = useState({});
   const answered = message.stage === "clarify_answered";
@@ -175,9 +154,9 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
           <Check className="w-3.5 h-3.5 text-[var(--ds-accent)]" /> Answers submitted
         </div>
         <div className="space-y-1">
-          {Object.entries(message.answers || {}).map(([k, v]) => (
-            <div key={k} className="text-[13px] text-[var(--ds-text-secondary)]">
-              <span className="text-[var(--ds-text-muted)]">{k}:</span> {Array.isArray(v) ? v.join(", ") : String(v)}
+          {clarificationAnswerRows(questions, message.answers).map((row) => (
+            <div key={row.id} className="text-[13px] text-[var(--ds-text-secondary)]">
+              <span className="text-[var(--ds-text-muted)]">{row.question}:</span> {row.answers.join(", ")}
             </div>
           ))}
         </div>
@@ -358,6 +337,11 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
       </div>
 
       <footer className="mt-6 space-y-3 border-t border-[var(--ds-border-subtle)] pt-4">
+        {message.clarificationError ? (
+          <p role="alert" className="text-sm text-[var(--ds-danger)]">
+            {message.clarificationError} Your selections are saved. Try Create plan again.
+          </p>
+        ) : null}
         <div className="flex items-center justify-between gap-3">
           <button
             type="button"
@@ -388,7 +372,7 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
           <button
             type="button"
             disabled={disabled}
-            onClick={() => onSubmit?.(message, recommendedAnswers)}
+            onClick={() => { setAnswers(recommendedAnswers); onSubmit?.(message, recommendedAnswers); }}
             className="mx-auto flex min-h-[44px] items-center justify-center gap-2 rounded-lg px-3 text-[12px] font-medium text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)]"
           >
             <CheckCircle className="h-4 w-4 text-[var(--ds-accent)]" /> Use recommended settings
@@ -404,148 +388,99 @@ export function ClarifyCard({ message, onSubmit, disabled }) {
  * Shows the build summary + steps with a single Approve & Build action.
  */
 export function PlanCard({ message, onApprove, onEdit, onOpenFile, disabled }) {
+  const [starting, setStarting] = useState(false);
+  const [revising, setRevising] = useState(false);
+  const [error, setError] = useState("");
+  const startLock = useRef(false);
+  const approved = message.stage === "plan_approved";
   const steps = Array.isArray(message.aiSteps) ? message.aiSteps : [];
   const assumptions = Array.isArray(message.aiAssumptions) ? message.aiAssumptions : [];
-  const planMarkdown = String(message.planMarkdown || "").trim();
-  const hasMarkdownPlan = planMarkdown.length > 0;
-  const approved = message.stage === "plan_approved";
-  const label = CLASSIFICATION_LABELS[message.classification] || "Artifact";
-  const lifecycle = Array.isArray(message.planSteps) ? message.planSteps : [];
+  const markdown = String(message.planMarkdown || "").trim() || [
+    message.aiSummary,
+    steps.map((step, index) => `${index + 1}. ${step}`).join("\n"),
+    assumptions.length ? `Assumptions\n${assumptions.map((item) => `- ${item}`).join("\n")}` : "",
+  ].filter(Boolean).join("\n\n");
+  const status = message.executionStatus;
+  const canReviseStoppedBuild = approved && ["failed", "cancelled", "canceled"].includes(status);
+  const statusText = {
+    accepted: "Build accepted", waiting_user: "Build needs your answer or approval",
+    blocked_studio: "Build paused — reconnect Studio", waiting_external: "Waiting for an external operation",
+    retry_scheduled: "Retrying the build…", compensating: "Restoring the previous state…",
+    queued: "Build queued", running: "Building…", executing: "Building…",
+    planning: "Preparing the build…", verifying: "Verifying the changes…",
+    completed: "Build completed", succeeded: "Build completed",
+    failed: "Build stopped — open task progress for details.",
+    blocked: "Build needs attention — open task progress to continue.",
+    paused: "Build paused", cancelled: "Build stopped", canceled: "Build stopped",
+    awaiting_approval: "Build needs your approval", awaiting_input: "Build needs your answer",
+  }[status] || "Plan approved — follow the build in task progress.";
+  const start = async () => {
+    if (startLock.current || disabled) return;
+    startLock.current = true;
+    setStarting(true);
+    setError("");
+    try {
+      const result = await onApprove(message);
+      if (result?.blocked) {
+        const blockers = result.readiness?.blockers || result.readiness?.readiness?.blockers || [];
+        setError(blockers.length
+          ? blockers.map(issue => [issue.title, issue.message].filter(Boolean).join(": ")).join(" ")
+          : "The build needs attention. Resolve the readiness issue, then retry.");
+      }
+    } catch (failure) {
+      if (failure?.name !== "AbortError") setError(failure?.message || "The build could not start. Try again.");
+    } finally {
+      startLock.current = false;
+      setStarting(false);
+    }
+  };
+  const edit = async () => {
+    if (startLock.current || disabled) return;
+    startLock.current = true;
+    setRevising(true);
+    setError("");
+    try {
+      await onEdit(message);
+    } catch (failure) {
+      if (failure?.name !== "AbortError") setError(failure?.message || "The plan could not be reopened. Try again.");
+    } finally {
+      startLock.current = false;
+      setRevising(false);
+    }
+  };
 
   return (
-    <Plan
-      defaultOpen
-      className="border-[color-mix(in_srgb,var(--ds-plan)_40%,transparent)] bg-transparent"
-    >
-      <PlanHeader className="pb-4">
-        <div className="space-y-1">
-          <PlanTitle className="flex items-center gap-2 text-sm font-semibold text-[var(--ds-plan)]">
-            <ListChecks className="w-4 h-4" /> Implementation plan
-          </PlanTitle>
-          {message.aiSummary && !hasMarkdownPlan ? (
-            <PlanDescription className="text-[var(--ds-text-secondary)]">{message.aiSummary}</PlanDescription>
-          ) : null}
-        </div>
-        <PlanAction className="flex items-center gap-1">
-          <Badge
-            variant="outline"
-            className="border-[color-mix(in_srgb,var(--ds-plan)_35%,transparent)] text-[10px] font-semibold text-[var(--ds-plan)]"
-          >
-            {label}
-          </Badge>
-          <PlanTrigger />
-        </PlanAction>
-      </PlanHeader>
-
-      <PlanContent className="space-y-4 pt-0">
-        {hasMarkdownPlan ? (
-          <MarkdownMessage text={planMarkdown} onOpenFile={onOpenFile} />
-        ) : (
+    <div data-slot="plan" className="w-full max-w-[840px] bg-transparent py-1">
+      <MarkdownMessage text={markdown} onOpenFile={onOpenFile} />
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        {approved ? <>
+          <p role="status" className="text-sm text-[var(--ds-text-secondary)]">{statusText}</p>
+          {canReviseStoppedBuild && typeof onEdit === "function" ? <Button type="button" variant="ghost"
+            disabled={disabled || revising} aria-busy={revising} onClick={edit}>
+            {revising ? <Loader className="h-4 w-4" aria-hidden="true" /> : <Pencil className="h-4 w-4" />}
+            {revising ? "Preparing revision…" : "Revise plan"}
+          </Button> : null}
+        </> : (
           <>
-            {message.aiSummary && (
-              <div className="space-y-1">
-                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-muted)]">Goal</div>
-                <div className="text-[14px] text-[var(--ds-text)] leading-relaxed">{message.aiSummary}</div>
-              </div>
-            )}
-
-            {steps.length > 0 && (
-              <div className="space-y-2">
-                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-muted)]">
-                  Implementation
-                </div>
-                <ol className="space-y-2">
-                  {steps.map((step, idx) => (
-                    <li key={idx} className="flex items-start gap-3 text-[13px] text-[var(--ds-text-secondary)]">
-                      <span className="mt-0.5 w-5 h-5 shrink-0 rounded-full bg-[color-mix(in_srgb,var(--ds-plan)_10%,transparent)] border border-[color-mix(in_srgb,var(--ds-plan)_30%,transparent)] flex items-center justify-center text-[10px] font-semibold text-[var(--ds-plan)]">
-                        {idx + 1}
-                      </span>
-                      <span>{step}</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            )}
-
-            {assumptions.length > 0 && (
-              <div className="space-y-2">
-                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-muted)]">
-                  Assumptions
-                </div>
-                <ul className="space-y-1.5">
-                  {assumptions.map((assumption, idx) => (
-                    <li key={idx} className="text-[13px] text-[var(--ds-text-secondary)] leading-relaxed">
-                      {assumption}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {typeof onApprove === "function" ? (
+              <Button type="button" disabled={disabled || starting || revising} aria-busy={starting}
+                onClick={start} className="font-semibold">
+                {starting ? <Loader className="h-4 w-4" aria-hidden="true" /> : <SendPrompt className="h-4 w-4" />}
+                {starting ? "Starting build…" : "Start build"}
+              </Button>
+            ) : <p className="text-sm text-[var(--ds-text-secondary)]">Reply with Start build to approve this plan.</p>}
+            {typeof onEdit === "function" ? (
+              <Button type="button" variant="ghost" disabled={disabled || starting || revising} onClick={edit}>
+                <Pencil className="h-4 w-4" /> Discuss changes
+              </Button>
+            ) : null}
           </>
         )}
-
-        {lifecycle.length > 0 && (
-          <div className="flex items-center gap-1.5 flex-wrap pt-1">
-            {lifecycle.map((s, idx) => {
-              const done = s.status === "done" || (approved && s.id === "scope");
-              return (
-                <React.Fragment key={s.id || idx}>
-                  <span
-                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider border ${
-                      done
-                        ? "bg-[var(--ds-success-soft)] border-[var(--ds-success-border)] text-[var(--ds-success)]"
-                        : "bg-[var(--ds-fill-subtle)] border-[var(--ds-border-subtle)] text-[var(--ds-text-muted)]"
-                    }`}
-                  >
-                    {done && <Check className="w-2.5 h-2.5" />}
-                    {s.label || s.id}
-                  </span>
-                  {idx < lifecycle.length - 1 && <span className="text-[var(--ds-text-muted)] text-[10px]">→</span>}
-                </React.Fragment>
-              );
-            })}
-          </div>
-        )}
-      </PlanContent>
-
-      <PlanFooter className="flex-col items-stretch gap-3 pt-0">
-        {approved ? (
-          <div className="w-full py-2.5 rounded-xl bg-[var(--ds-success-soft)] border border-[var(--ds-success-border)] text-[var(--ds-text-secondary)] font-medium text-sm flex items-center justify-center gap-2">
-            <Check className="w-4 h-4 text-[var(--ds-success)]" /> Approved — building…
-          </div>
-        ) : (
-          <>
-            <div className="text-[12px] text-[var(--ds-text-secondary)] leading-relaxed">
-              Reply with <span className="font-bold text-[var(--ds-text)]">Start build</span> to approve this plan, or
-              tell me what you want changed.
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2">
-              {typeof onApprove === "function" ? (
-                <Button
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => ignoreHandledError(onApprove?.(message))}
-                  className="flex-1 bg-[var(--ds-plan)] text-[var(--ds-plan-foreground)] font-semibold hover:opacity-90"
-                >
-                  {disabled ? <Loader className="w-4 h-4" /> : <SendPrompt className="w-4 h-4" />}
-                  {message.guidedLaunch ? 'Build this first' : 'Approve & Build'}
-                </Button>
-              ) : null}
-              {typeof onEdit === "function" ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={disabled}
-                  onClick={() => onEdit?.(message)}
-                  className="font-medium"
-                >
-                  <Pencil className="w-3.5 h-3.5" /> Discuss changes
-                </Button>
-              ) : null}
-            </div>
-          </>
-        )}
-      </PlanFooter>
-    </Plan>
+      </div>
+      {canReviseStoppedBuild && typeof onEdit === "function" ? <p className="mt-2 text-sm text-[var(--ds-text-secondary)]">
+        Creates a new draft to review before starting another build.
+      </p> : null}
+      {error ? <p role="alert" className="mt-2 text-sm text-[var(--ds-danger)]">{error}</p> : null}
+    </div>
   );
 }

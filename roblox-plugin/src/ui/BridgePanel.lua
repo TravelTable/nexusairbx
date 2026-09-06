@@ -34,8 +34,17 @@ local pollingActive, lastErrorText, diagnosticsOpen, pendingApproval, selectedSn
 local tabButtons, activeTab, setActiveTab, tabBar = {}, "Tools", nil, nil
 local nexusHeader, UI_HELPERS = nil, {}
 
+-- Keep the dock dark and purple regardless of Studio's editor theme.
 local function themeColor(color)
-	return settings().Studio.Theme:GetColor(color)
+	local palette = {
+		[Enum.StudioStyleGuideColor.MainBackground] = Color3.fromRGB(14, 11, 20),
+		[Enum.StudioStyleGuideColor.InputFieldBackground] = Color3.fromRGB(24, 18, 34),
+		[Enum.StudioStyleGuideColor.Button] = Color3.fromRGB(40, 29, 57),
+		[Enum.StudioStyleGuideColor.InputFieldBorder] = Color3.fromRGB(75, 52, 103),
+		[Enum.StudioStyleGuideColor.MainText] = Color3.fromRGB(245, 240, 255),
+		[Enum.StudioStyleGuideColor.DimmedText] = Color3.fromRGB(184, 167, 206),
+	}
+	return palette[color] or palette[Enum.StudioStyleGuideColor.InputFieldBackground]
 end
 
 local function blendColor(a, b, alpha)
@@ -53,13 +62,13 @@ local COLORS = {
 	border = themeColor(Enum.StudioStyleGuideColor.InputFieldBorder),
 	text = themeColor(Enum.StudioStyleGuideColor.MainText),
 	textMuted = themeColor(Enum.StudioStyleGuideColor.DimmedText),
-	primary = Color3.fromRGB(124, 58, 237),
-	accent = Color3.fromRGB(132, 92, 223),
+	primary = Color3.fromRGB(117, 49, 210),
+	accent = Color3.fromRGB(107, 54, 173),
 	error = Color3.fromRGB(214, 69, 80),
 	warning = Color3.fromRGB(211, 145, 39),
 	success = Color3.fromRGB(57, 166, 92),
 	muted = themeColor(Enum.StudioStyleGuideColor.DimmedText),
-	live = Color3.fromRGB(0, 200, 150),
+	live = Color3.fromRGB(192, 132, 252),
 }
 
 -- Single source of truth for the connection state machine. Every visible status
@@ -95,6 +104,7 @@ scroll.Size = UDim2.fromScale(1, 1)
 scroll.BackgroundTransparency = 1
 scroll.BorderSizePixel = 0
 scroll.ScrollBarThickness = 6
+scroll.ScrollBarImageColor3 = COLORS.accent
 scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 scroll.CanvasSize = UDim2.new()
 scroll.Parent = root
@@ -781,7 +791,7 @@ UI_HELPERS.toast.AnchorPoint = Vector2.new(0.5, 1)
 UI_HELPERS.toast.Position = UDim2.new(0.5, 0, 1, -8)
 UI_HELPERS.toast.Size = UDim2.new(1, -24, 0, 0)
 UI_HELPERS.toast.AutomaticSize = Enum.AutomaticSize.Y
-UI_HELPERS.toast.BackgroundColor3 = Color3.fromRGB(30, 32, 38)
+UI_HELPERS.toast.BackgroundColor3 = COLORS.surfaceRaised
 UI_HELPERS.toast.BackgroundTransparency = 0.08
 UI_HELPERS.toast.TextColor3 = Color3.fromRGB(255, 255, 255)
 UI_HELPERS.toast.Font = Enum.Font.Gotham
@@ -1428,7 +1438,7 @@ function showToast(message, kind)
 		return
 	end
 	UI_HELPERS.toast.Text = "  " .. text .. "  "
-	UI_HELPERS.toast.BackgroundColor3 = kind == "error" and COLORS.error or (kind == "success" and COLORS.success or Color3.fromRGB(30, 32, 38))
+	UI_HELPERS.toast.BackgroundColor3 = kind == "error" and COLORS.error or (kind == "success" and COLORS.success or COLORS.surfaceRaised)
 	UI_HELPERS.toast.Visible = true
 	UI_HELPERS.toast.BackgroundTransparency = 0.08
 	TweenService:Create(UI_HELPERS.toast, TweenInfo.new(0.15), { BackgroundTransparency = 0 }):Play()
@@ -1685,28 +1695,6 @@ codeBox:GetPropertyChangedSignal("Text"):Connect(function()
 	refreshControls()
 end)
 
-pcall(function()
-	settings().Studio.ThemeChanged:Connect(function()
-		local tokens = { canvas = "MainBackground", surface = "InputFieldBackground", surfaceRaised = "Button", border = "InputFieldBorder", text = "MainText", textMuted = "DimmedText", muted = "DimmedText" }
-		local replacements = {}
-		for key, token in pairs(tokens) do
-			table.insert(replacements, { old = COLORS[key], new = themeColor(Enum.StudioStyleGuideColor[token]) })
-			COLORS[key] = themeColor(Enum.StudioStyleGuideColor[token])
-		end
-		for _, instance in ipairs(root:GetDescendants()) do
-			for _, property in ipairs({ "BackgroundColor3", "TextColor3", "PlaceholderColor3", "BorderColor3", "Color" }) do
-				pcall(function()
-					for _, replacement in ipairs(replacements) do
-						if instance[property] == replacement.old then instance[property] = replacement.new; break end
-					end
-				end)
-			end
-			if instance:IsA("TextButton") then instance:SetAttribute("BaseColor", instance.BackgroundColor3) end
-		end
-		root.BackgroundColor3 = COLORS.canvas
-		setActiveTab(activeTab)
-	end)
-end)
 
 function runSetupCheck()
 	setupResult.Visible = true

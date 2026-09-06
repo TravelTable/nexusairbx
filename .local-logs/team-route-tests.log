@@ -1,0 +1,30 @@
+TAP version 13
+# Subtest: artifact redispatch preserves sealed execution inputs and derives exact Studio identity from the Task
+ok 1 - artifact redispatch preserves sealed execution inputs and derives exact Studio identity from the Task
+  ---
+  duration_ms: 6.3582
+  ...
+# Subtest: artifact redispatch forwards one launch key through the outbox transport
+ok 2 - artifact redispatch forwards one launch key through the outbox transport
+  ---
+  duration_ms: 0.8612
+  ...
+# Subtest: canonical artifact redispatch rejects a missing server launch key
+ok 3 - canonical artifact redispatch rejects a missing server launch key
+  ---
+  duration_ms: 3.3304
+  ...
+# Subtest: legacy artifact redispatch compensates a Job when cancellation wins after launch
+ok 4 - legacy artifact redispatch compensates a Job when cancellation wins after launch
+  ---
+  duration_ms: 1.512
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 345.2949

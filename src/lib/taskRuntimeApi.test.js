@@ -59,6 +59,7 @@ describe("taskRuntimeApi", () => {
 
   beforeEach(() => {
     FEATURE_FLAGS.newTaskRuntime = true;
+    FEATURE_FLAGS.newPlanningMode = false;
     authedFetch.mockReset();
   });
 
@@ -70,6 +71,23 @@ describe("taskRuntimeApi", () => {
       status: 404,
     });
     expect(authedFetch).not.toHaveBeenCalled();
+  });
+
+  test("planning-only rollout can observe and stop an accepted build without enabling standalone creation", async () => {
+    FEATURE_FLAGS.newTaskRuntime = false;
+    FEATURE_FLAGS.newPlanningMode = true;
+    authedFetch
+      .mockResolvedValueOnce(response({ task: { taskId: "plan_task", status: "RUNNING" } }))
+      .mockResolvedValueOnce(response({ events: [], eventSequence: 3 }))
+      .mockResolvedValueOnce(sseResponse(['id: 4\nevent: task.updated\ndata: {"taskId":"plan_task","status":"running"}\n\n']))
+      .mockResolvedValueOnce(response({ task: { taskId: "plan_task", status: "CANCELLED" } }));
+
+    await expect(getTask("plan_task")).resolves.toMatchObject({ task: { status: "running" } });
+    await expect(getTaskEvents("plan_task")).resolves.toMatchObject({ events: [] });
+    await expect(streamTaskEvents("plan_task", { onEvent: jest.fn() })).resolves.toEqual({ lastSequence: 4 });
+    await expect(cancelTask("plan_task")).resolves.toMatchObject({ task: { status: "cancelled" } });
+    await expect(createTask({ intent: "Unrelated standalone task" })).rejects.toMatchObject({ code: "TASK_RUNTIME_DISABLED" });
+    expect(authedFetch).toHaveBeenCalledTimes(4);
   });
 
   test("creates a task with mutation identity headers and normalizes projections", async () => {

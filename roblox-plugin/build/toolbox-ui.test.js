@@ -15,7 +15,8 @@ test("the installable plugin exposes native tools and no conversation UI", () =>
     assert.ok(source.includes(name), name);
   }
   assert.doesNotMatch(source, /createNexusComposer|createNexusChatMessage|NewChat|ChatMessages/);
-  assert.match(source, /settings\(\).Studio.Theme:GetColor/);
+  assert.doesNotMatch(source, /settings\(\).Studio.Theme:GetColor/);
+  assert.match(source, /MainBackground\] = Color3.fromRGB\(14, 11, 20\)/);
   assert.match(source, /ScriptContextGuard.validate\(\{ path = path, className = form.className/);
   assert.match(source, /No output captured yet/);
 });

@@ -1183,3 +1183,8 @@
     animation: none;
   }
 }
+
+.settings-roblox-identity { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding: 12px 0 18px; border-bottom: 1px solid var(--nx-rule); }
+.settings-connection-status { display: inline-flex; align-items: center; gap: 7px; font-size: .8rem; color: var(--nx-text-secondary); }
+.settings-connection-status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--nx-text-muted); }
+.settings-connection-status[data-tone="success"]::before { background: var(--ds-success); }

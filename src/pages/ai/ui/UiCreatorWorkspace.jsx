@@ -56,6 +56,7 @@ import {
   getAssetFileBlob,
 } from "../../../lib/assetPlatformApi";
 import { getStudioCommand, queueStudioTool } from "../../../lib/studioBridgeApi";
+import { readStudioUiReceipt } from "../../../lib/studioUiReceipt";
 import "./UiCreatorWorkspace.css";
 
 const NODE_TYPES = ["Frame", "TextLabel", "TextButton", "ImageLabel", "ImageButton", "TextBox", "ScrollingFrame"];
@@ -170,7 +171,14 @@ function CommitField({ label, value, type = "text", onCommit, min, max, step, di
 
 const UI_TREE_ROOT = "__nexus_ui_root__";
 
-function LayerTree({ index, selectedId, onSelect, onMove, disabled = false }) {
+export function LayerTree(props) {
+  // The tree retains item instances. Reset them when structure changes so removed
+  // layers cannot be read through the previous tree during the next render.
+  const structureKey = JSON.stringify(Array.from(props.index.byId.values(), (node) => [node.id, node.parentId, node.order]));
+  return <LayerTreeContents key={structureKey} {...props} />;
+}
+
+function LayerTreeContents({ index, selectedId, onSelect, onMove, disabled = false }) {
   const treeData = useMemo(() => {
     const items = {
       [UI_TREE_ROOT]: {
@@ -318,6 +326,7 @@ export default function UiCreatorWorkspace({
   const [lastPrompt, setLastPrompt] = useState("");
   const [draft, setDraft] = useState(null);
   const [compiled, setCompiled] = useState(null);
+  const compileAttemptRef = useRef(null);
   const [hooksSource, setHooksSource] = useState("");
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
@@ -330,6 +339,7 @@ export default function UiCreatorWorkspace({
   const [newNodeType, setNewNodeType] = useState("Frame");
   const [lastStudioTreeHash, setLastStudioTreeHash] = useState("");
   const [studioTreeConflict, setStudioTreeConflict] = useState(false);
+  const [pendingStudioCommand, setPendingStudioCommand] = useState(null);
   const [studioReceipt, setStudioReceipt] = useState(null);
   const initialLoadKeyRef = useRef("");
   const documentRef = useRef(null);
@@ -761,7 +771,12 @@ export default function UiCreatorWorkspace({
   }, [document, showError]);
 
   useEffect(() => {
-    if (mode === "code" && document && !compiled && !busy) compile();
+    if (mode !== "code") { compileAttemptRef.current = null; return; }
+    const key = document ? `${document.designId}:${document.revision}` : null;
+    if (key && !compiled && !busy && compileAttemptRef.current !== key) {
+      compileAttemptRef.current = key;
+      compile();
+    }
   }, [busy, compile, compiled, document, mode]);
 
   const saveHooks = useCallback(async () => {
@@ -809,6 +824,11 @@ export default function UiCreatorWorkspace({
         applyMode: studio.applyMode || "manual_review",
       });
       const command = await waitForStudioCommand(queued.commandId);
+      if (!["succeeded", "failed"].includes(command.status)) {
+        const pending = { commandId: queued.commandId, designId: document.designId };
+        setPendingStudioCommand(pending);
+        try { sessionStorage.setItem(`nexusrbx:ui-pending:${user.uid}:${document.designId}`, JSON.stringify(pending)); } catch { /* Optional recovery. */ }
+      }
       if (command.status === "failed") {
         const commandError = command.error || command.result?.error || "Studio rejected the UI apply.";
         const commandCode = typeof commandError === "object" ? commandError.code : "";
@@ -821,23 +841,10 @@ export default function UiCreatorWorkspace({
       if (["awaiting_approval", "pending_approval"].includes(command.status)) {
         notify?.({ message: "UI is ready for Studio approval.", type: "info" });
       } else if (command.status === "succeeded") {
-        const receiptResult = command.result?.result || command.result || {};
-        const rootReceipt = receiptResult.uiRoots?.[0] || null;
-        const snapshot = receiptResult.snapshots?.[0] || null;
-        const nextTreeHash = rootReceipt?.treeHash || "";
-        if (nextTreeHash) {
-          setLastStudioTreeHash(nextTreeHash);
-          try {
-            window.localStorage.setItem(`nexusrbx:ui-tree-hash:${document.designId}`, nextTreeHash);
-          } catch {
-            // Optimistic Studio concurrency remains available for this browser session.
-          }
-        }
-        setStudioReceipt({
-          nodeCount: Number(rootReceipt?.nodeCount || 0),
-          treeHash: nextTreeHash,
-          snapshotId: typeof snapshot === "string" ? snapshot : snapshot?.id || "",
-        });
+        const receipt = readStudioUiReceipt(command);
+        setLastStudioTreeHash(receipt.treeHash);
+        try { window.localStorage.setItem(`nexusrbx:ui-tree-hash:${document.designId}`, receipt.treeHash); } catch { /* Optional recovery. */ }
+        setStudioReceipt(receipt);
         setStudioTreeConflict(false);
         notify?.({ message: "Editable UI applied and verified in Studio.", type: "success" });
       } else {
@@ -848,7 +855,47 @@ export default function UiCreatorWorkspace({
     } finally {
       setBusy("");
     }
-  }, [document, lastStudioTreeHash, notify, showError, studio, studioSessionId]);
+  }, [document, lastStudioTreeHash, notify, showError, studio, studioSessionId, user?.uid]);
+
+  useEffect(() => {
+    if (!user?.uid || !document?.designId) return;
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(`nexusrbx:ui-pending:${user.uid}:${document.designId}`) || "null");
+      setPendingStudioCommand(saved);
+    } catch { setPendingStudioCommand(null); }
+  }, [user?.uid, document?.designId]);
+
+  useEffect(() => {
+    if (!pendingStudioCommand || pendingStudioCommand.designId !== document?.designId) return;
+    let stopped = false;
+    let timer;
+    const poll = async () => {
+      try {
+        const command = await getStudioCommand(pendingStudioCommand.commandId);
+        if (stopped) return;
+        if (["succeeded", "failed", "canceled", "cancelled", "expired"].includes(command.status)) {
+          setPendingStudioCommand(null);
+          try { sessionStorage.removeItem(`nexusrbx:ui-pending:${user.uid}:${document.designId}`); } catch { /* Optional recovery. */ }
+          if (command.status !== "succeeded") throw new Error(`Studio could not apply this UI. ${command.error?.message || "Review Studio activity before retrying."}`);
+          const receipt = readStudioUiReceipt(command);
+          setStudioReceipt(receipt);
+          setLastStudioTreeHash(receipt.treeHash);
+          setStudioTreeConflict(false);
+          try { localStorage.setItem(`nexusrbx:ui-tree-hash:${document.designId}`, receipt.treeHash); } catch { /* Optional recovery. */ }
+          notify?.({ message: "Editable UI applied and verified in Studio.", type: "success" });
+          return;
+        }
+      } catch (reason) {
+        if (stopped) return;
+        if (reason?.status === 401 || reason?.status === 403 || reason?.status === 404) { setPendingStudioCommand(null); showError(reason, "Studio status is unavailable."); return; }
+        // Terminal failures are displayed once. Transient network errors retry.
+        if (/Studio could not|without a verified/.test(reason?.message || "")) { showError(reason, "Studio apply failed."); return; }
+      }
+      if (!stopped) timer = setTimeout(poll, 3000);
+    };
+    poll();
+    return () => { stopped = true; clearTimeout(timer); };
+  }, [pendingStudioCommand, document?.designId, notify, showError, user?.uid]);
 
   const addNode = useCallback((className) => {
     if (!document) return;
@@ -985,6 +1032,8 @@ export default function UiCreatorWorkspace({
 
   return (
     <section className="ui-creator" aria-label="Roblox UI Creator" aria-busy={Boolean(busy)}>
+      {pendingStudioCommand ? <div className="ui-creator__mode-hint" role="status">Waiting for Studio · Approve the change in Studio if prompted. You can keep editing here.</div> : null}
+      <div className="ui-creator__mode-hint" role="status">{mode === "preview" ? "Preview · Try buttons, menus, and interactions. Custom game hooks run in Studio." : mode === "code" ? "Code · Review the generated Luau and add your game hooks." : "Design · Select an object to edit its appearance and behavior."}</div>
       <header className="ui-creator__toolbar">
         <div className="ui-creator__design-switcher">
           <div className="ui-creator__design-identity">
@@ -1020,7 +1069,7 @@ export default function UiCreatorWorkspace({
               <div className="ui-creator__overflow-menu">
                 <label><span>Preview device</span><select value={deviceId} onChange={(event) => setDeviceId(event.target.value)} aria-label="Preview device">{Object.values(UI_DEVICE_PRESETS).map((preset) => <option key={preset.id} value={preset.id}>{preset.label} · {preset.width}×{preset.height}</option>)}</select></label>
                 <div className="ui-creator__overflow-fidelity"><strong><Check />Preview fidelity</strong><span>Supported: {(fidelity.supported || []).join(", ") || "None"}</span><span>Approximate: {(fidelity.approximate || []).join(", ") || "None"}</span><span>Studio-only: {(fidelity.studioOnly || []).join(", ") || "None"}</span></div>
-                <Button type="button" variant="secondary" size="sm" className="ui-creator__apply" disabled={Boolean(busy)} onClick={() => applyToStudio(false)} icon={AnimatedUploadIcon}>Apply to Studio</Button>
+                <Button type="button" variant="secondary" size="sm" className="ui-creator__apply" disabled={Boolean(busy) || Boolean(pendingStudioCommand)} onClick={() => applyToStudio(false)} icon={AnimatedUploadIcon}>Apply to Studio</Button>
               </div>
             </details>
           ) : (
@@ -1034,7 +1083,7 @@ export default function UiCreatorWorkspace({
                   <p><strong>Studio-only</strong><span>{(fidelity.studioOnly || []).join(", ") || "None"}</span></p>
                 </div>
               </details>
-              <Button type="button" variant="secondary" size="sm" className="ui-creator__apply" disabled={Boolean(busy)} onClick={() => applyToStudio(false)} icon={AnimatedUploadIcon}>Apply to Studio</Button>
+              <Button type="button" variant="secondary" size="sm" className="ui-creator__apply" disabled={Boolean(busy) || Boolean(pendingStudioCommand)} onClick={() => applyToStudio(false)} icon={AnimatedUploadIcon}>Apply to Studio</Button>
             </>
           )}
         </div>
@@ -1089,7 +1138,8 @@ export default function UiCreatorWorkspace({
             <div className="ui-code-workspace">
               <section>
                 <header><div><span>GENERATED · READ ONLY</span><strong>GeneratedUI.lua</strong></div><Button type="button" size="sm" variant="secondary" onClick={compile} icon={RotateCcw}>Compile</Button></header>
-                <pre><code>{compiled?.compiled?.generatedLua || "Compiling deterministic Luau…"}</code></pre>
+                <pre><code>{compiled?.compiled?.generatedLua || (busy === "compiling" ? "Compiling Luau…" : "Code preview is not ready.")}</code></pre>
+                {!compiled && !busy ? <Button type="button" variant="secondary" size="sm" onClick={compile}>Retry code preview</Button> : null}
               </section>
               <section>
                 <header><div><span>STUDIO ONLY · EDITABLE</span><strong>Hooks.client.lua</strong></div><Button type="button" size="sm" variant="secondary" onClick={saveHooks} icon={Save}>Save hooks</Button></header>
@@ -1250,7 +1300,7 @@ export default function UiCreatorWorkspace({
         </aside>
       </div>
       {error ? <div className="ui-creator__error" role="alert">{error}<Button type="button" variant="ghost" size="sm" onClick={() => setError("")}>Dismiss</Button></div> : null}
-      {studioReceipt ? <div className="ui-creator__receipt" role="status"><Check /><div><strong>Studio apply verified</strong><span>{studioReceipt.nodeCount} nodes · tree {studioReceipt.treeHash.slice(0, 8) || "verified"}{studioReceipt.snapshotId ? ` · snapshot ${studioReceipt.snapshotId.slice(0, 8)}` : ""}</span></div><Button type="button" variant="ghost" size="sm" onClick={() => navigateTo?.("/ai?mode=agent")}>Studio activity</Button><Button type="button" variant="ghost" size="sm" aria-label="Dismiss Studio receipt" onClick={() => setStudioReceipt(null)}>×</Button></div> : null}
+      {studioReceipt ? <div className="ui-creator__receipt" role="status"><Check /><div><strong>Studio apply verified</strong><span>{studioReceipt.nodeCount} editable objects added to your game</span></div><Button type="button" variant="ghost" size="sm" onClick={() => navigateTo?.("/ai?mode=agent")}>Studio activity</Button><Button type="button" variant="ghost" size="sm" aria-label="Dismiss Studio receipt" onClick={() => setStudioReceipt(null)}>×</Button></div> : null}
       {studioTreeConflict ? <div className="ui-creator__studio-conflict" role="alert"><div><strong>Studio has a different managed UI tree.</strong><span>Keep the Studio copy, or explicitly replace it with this Nexus revision.</span></div><Button type="button" variant="secondary" size="sm" onClick={() => { setStudioTreeConflict(false); setError(""); }}>Keep Studio</Button><Button type="button" variant="primary" size="sm" onClick={() => applyToStudio(true)}>Replace Studio</Button></div> : null}
       {busy ? <div className="ui-creator__busy" role="status"><span className="nx-build-signal" data-active="true" />{busy.replace(/-/g, " ")}</div> : null}
     </section>

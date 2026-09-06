@@ -117,7 +117,7 @@ describe("StudioPairControl", () => {
     ).toBeTruthy();
     expect(
       screen.getByRole("link", {
-        name: `Download Connector ${desktopConnectorPackage.version}`,
+        name: /Download Connector/i,
       }).getAttribute("href")
     ).toBe("/downloads");
 
@@ -395,9 +395,9 @@ describe("StudioPairControl", () => {
     render(<StudioPairControl connection={connection} refresh={jest.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: /Studio · Update/i }));
 
-    expect(screen.getAllByText("Studio plugin update required").length).toBeGreaterThan(0);
-    expect(screen.getByText(/This plugin release is no longer supported/i)).toBeTruthy();
-    expect(screen.getByText(/NexusRBXStudioBridge\.plugin\.lua/i)).toBeTruthy();
+    expect(screen.getAllByText("Update Nexus RBX for Studio").length).toBeGreaterThan(0);
+    expect(screen.getByRole("link", { name: /Get the latest plugin/i })).toHaveAttribute("href", "/downloads#studio-plugin");
+    expect(screen.queryByText(/current generated/i)).toBeNull();
   });
 
   test("shows the update gate for an accepted read-only legacy release", () => {
@@ -420,7 +420,7 @@ describe("StudioPairControl", () => {
     render(<StudioPairControl connection={connection} refresh={jest.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: /Studio · Update/i }));
 
-    expect(screen.getAllByText("Studio plugin update required").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Update Nexus RBX for Studio").length).toBeGreaterThan(0);
   });
 
   test("makes a missing Create Instance command recoverable without disconnecting", () => {
@@ -445,7 +445,7 @@ describe("StudioPairControl", () => {
     fireEvent.click(screen.getByRole("button", { name: /Studio · Limited/i }));
 
     expect(screen.getByText("Update Studio plugin to use Create Instance")).toBeTruthy();
-    expect(screen.getByText(/current NexusRBXStudioBridge\.plugin\.lua artifact/i)).toBeTruthy();
+    expect(screen.getByText(/latest Nexus RBX plugin/i)).toBeTruthy();
     expect(screen.getByText(/other supported Studio features remain available/i)).toBeTruthy();
     expect(screen.getByRole("link", { name: /View install steps/i }).getAttribute("href")).toBe("/docs/installation");
 

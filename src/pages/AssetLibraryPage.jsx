@@ -109,7 +109,7 @@ export default function AssetLibraryPage() {
   const [assetTotal, setAssetTotal] = useState(null);
   const [packTotal, setPackTotal] = useState(null);
   const [tab, setTab] = useState("assets");
-  const [scope, setScope] = useState("project");
+  const [scope, setScope] = useState("global");
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [selectedUniverseId, setSelectedUniverseId] = useState("");
   const [search, setSearch] = useState("");
@@ -282,7 +282,7 @@ export default function AssetLibraryPage() {
     return (
       <main className="asset-platform-page">
         <div className="asset-platform-shell">
-          <header className="asset-platform-header"><div><p className="asset-eyebrow"><Library /> Asset index</p><h1>Contact sheet.</h1><p>Loading canonical asset records.</p></div></header>
+          <header className="asset-platform-header"><div><p className="asset-eyebrow"><Library /> Your creations</p><h1>Asset library</h1><p>Loading your assets.</p></div></header>
           <AssetGridSkeleton count={8} label="Loading asset library" />
         </div>
       </main>
@@ -294,16 +294,16 @@ export default function AssetLibraryPage() {
       <div className="asset-platform-shell">
         <header className="asset-platform-header">
           <div>
-            <p className="asset-eyebrow"><Library aria-hidden="true" /> Asset index</p>
-            <h1>Contact sheet.</h1>
-            <p>Read durable visual records across projects and universes. A Roblox ID appears only after publishing succeeds.</p>
+            <p className="asset-eyebrow"><Library aria-hidden="true" /> Your creations</p>
+            <h1>Asset library</h1>
+            <p>Find your game artwork, models, and asset packs.</p>
           </div>
           <div className="asset-platform-header__actions">
             {canGenerate ? <Button icon={ImagePlus} onClick={() => navigate("/tools/icon-generator")}>Generate assets</Button> : null}
           </div>
         </header>
 
-        {!canGenerate && !canPublishAsset ? <div className="asset-inline-notice" role="status">Your canonical asset library is available. Creation and publishing controls will appear when this server authorizes those asset actions.</div> : null}
+        {!canGenerate && !canPublishAsset ? <div className="asset-inline-notice" role="status">Browse your saved assets. Generation and publishing are currently unavailable.</div> : null}
         {error ? <div className="asset-inline-notice asset-inline-notice--error" role="alert">{error}</div> : null}
         {notice ? <div className="asset-inline-notice asset-inline-notice--success" role="status">{notice}</div> : null}
 
@@ -324,12 +324,12 @@ export default function AssetLibraryPage() {
               <option value="universe">Universe</option>
               <option value="global">All my assets</option>
             </select>
-            <select className="nexus-input" aria-label="Project" value={selectedProjectId} disabled={scope === "global"} onChange={(event) => { setSelectedProjectId(event.target.value); setSelectedUniverseId(""); }}>
+            {scope !== "global" && <select className="nexus-input" aria-label="Project" value={selectedProjectId} disabled={scope === "global"} onChange={(event) => { setSelectedProjectId(event.target.value); setSelectedUniverseId(""); }}>
               {projects.length ? projects.map((project) => <option key={itemId(project, "projectId")} value={itemId(project, "projectId")}>{project.name || project.displayName || "Untitled project"}</option>) : <option value="">No projects</option>}
-            </select>
-            <select className="nexus-input" aria-label="Universe" value={selectedUniverseId} disabled={scope !== "universe"} onChange={(event) => setSelectedUniverseId(event.target.value)}>
+            </select>}
+            {scope === "universe" && <select className="nexus-input" aria-label="Universe" value={selectedUniverseId} disabled={scope !== "universe"} onChange={(event) => setSelectedUniverseId(event.target.value)}>
               {universes.length ? universes.map((universe) => <option key={itemId(universe, "universeId")} value={itemId(universe, "universeId")}>{universe.name || universe.displayName || "Untitled universe"}</option>) : <option value="">No universes</option>}
-            </select>
+            </select>}
             {tab === "assets" ? (
               <select className="nexus-input" aria-label="Asset kind" value={kind} onChange={(event) => setKind(event.target.value)}>
                 <option value="all">All types</option>
@@ -347,6 +347,9 @@ export default function AssetLibraryPage() {
                 <option value="developer_product">Developer products</option>
               </select>
             ) : <span />}
+            <details className="asset-library-advanced">
+              <summary>More filters</summary>
+              <div className="asset-library-advanced__fields">
             {tab === "assets" && creatorOptions.length ? (
               <select className="nexus-input" aria-label="Roblox creator" value={creator} onChange={(event) => setCreator(event.target.value)}>
                 <option value="all">All creators</option>
@@ -396,12 +399,13 @@ export default function AssetLibraryPage() {
                 <option value="universe_shared">Universe shared</option>
                 <option value="user_global">My global library</option>
               </select>
-            ) : null}
+            ) : null}              </div>
+            </details>
           </div>
 
           <div className="asset-library-summary">
             <span>{scope === "global" ? "All assets you can access" : scope === "universe" ? "Selected universe" : "Selected project"}</span>
-            <span>Canonical Nexus IDs stay stable through upload, moderation, and replacement.</span>
+
           </div>
 
           {loading ? <AssetGridSkeleton count={8} label={`Loading ${tab}`} /> : error ? (
@@ -422,7 +426,7 @@ export default function AssetLibraryPage() {
                   />
                 ))}
               </div>
-            ) : <AssetEmptyState title="No matching assets" description="No canonical asset records match these filters." action={canGenerate ? <Button icon={ImagePlus} onClick={() => navigate("/tools/icon-generator")}>Generate assets</Button> : null} />
+            ) : <AssetEmptyState title="No matching assets" description="Try another search or clear your filters." action={canGenerate ? <Button icon={ImagePlus} onClick={() => navigate("/tools/icon-generator")}>Generate assets</Button> : null} />
           ) : packs.length ? (
             <div className="asset-pack-list">
               {packs.map((pack) => (

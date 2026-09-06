@@ -621,7 +621,7 @@ export default function AssetLibraryModal({
         <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-[var(--ds-border-subtle)] p-3">
           <div className="text-xs text-[var(--ds-text-secondary)]" aria-live="polite">
             <span className="font-black text-[var(--ds-text)]">{selection.size}</span> selected
-            {!projectId ? <span className="ml-2 text-[var(--ds-warning)] ">Open a project before adding assets.</span> : null}
+            {!projectId ? <span className="ml-2 text-[var(--ds-text-secondary)]">Saved with your first message.</span> : null}
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => setSelection(new Map())} disabled={saving || selection.size === 0} className="min-h-[44px]">
@@ -630,7 +630,7 @@ export default function AssetLibraryModal({
             <Button variant="ghost" size="sm" onClick={onClose} disabled={saving} className="min-h-[44px]">
               Cancel
             </Button>
-            <Button size="sm" onClick={confirm} disabled={saving || !projectId || selection.size === 0} className="min-h-[44px]">
+            <Button size="sm" onClick={confirm} disabled={saving || selection.size === 0} className="min-h-[44px]">
               {saving ? "Adding..." : "Add Selected Assets"}
             </Button>
           </div>

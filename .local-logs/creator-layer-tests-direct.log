@@ -1,0 +1,8 @@
+PASS src/pages/ai/ui/UiCreatorWorkspace.test.jsx
+PASS src/pages/ai/ui/LayerTree.test.jsx
+
+Test Suites: 2 passed, 2 total
+Tests:       9 passed, 9 total
+Snapshots:   0 total
+Time:        6.586 s, estimated 31 s
+Ran all test suites matching /src\\pages\\ai\\ui\\LayerTree.test.jsx|src\\pages\\ai\\ui\\UiCreatorWorkspace.test.jsx/i.

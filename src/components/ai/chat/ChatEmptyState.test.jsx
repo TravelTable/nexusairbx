@@ -7,8 +7,8 @@ import ChatEmptyState from "./ChatEmptyState";
 test("presents a calm, text-led Roblox construction start", () => {
   const { container } = render(<ChatEmptyState />);
 
-  expect(screen.getByRole("heading", { name: "What should Nexus build?" })).toBeVisible();
-  expect(screen.getByText(/make safe assumptions/i)).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Your next Roblox game starts here." })).toBeVisible();
+  expect(screen.getByText(/shape the gameplay/i)).toBeVisible();
   expect(container.querySelectorAll("[data-nexus-display-icon]")).toHaveLength(0);
   expect(screen.queryByRole("group", { name: "Current build context" })).not.toBeInTheDocument();
   expect(screen.queryByRole("button")).not.toBeInTheDocument();
@@ -107,4 +107,12 @@ test("labels a paused creator guide as resumable", () => {
   expect(
     screen.getByRole("button", { name: /Resume the 5-step creator guide/i }),
   ).toBeTruthy();
+});
+
+
+test("game starters fill a draft through the provided callback", () => {
+  const onQuickStart = jest.fn();
+  render(<ChatEmptyState onQuickStart={onQuickStart} />);
+  fireEvent.click(screen.getByRole("button", { name: /Obby/ }));
+  expect(onQuickStart).toHaveBeenCalledWith(expect.stringContaining("Help me plan"));
 });

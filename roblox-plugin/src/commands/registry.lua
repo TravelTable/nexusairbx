@@ -29,7 +29,7 @@ local MUTATING_COMMANDS = {
 	undo_last_batch = true,
 }
 
-local executedCommandCount = 0
+local executedCommandCount, studioEditModeRequiredResult = 0, nil
 local COMMAND_RECEIPTS_SETTING, COMMAND_RECEIPT_ORDER_SETTING, COMMAND_RECEIPT_LIMIT =
 	"nexusrbxCommandReceiptsV2", "nexusrbxCommandReceiptOrderV2", 50
 
@@ -511,6 +511,33 @@ local function verifyCommandOutcome(command, payload, result)
 		end
 		return true
 	end
+	local function propertyValuesMatch(inst, key, expected, actual)
+		if valuesMatch(expected, actual) then
+			return true
+		end
+		-- BasePart.Color stores 8-bit channels. Compare its actual stored color,
+		-- without relaxing numeric tolerances for positions or other properties.
+		if not inst or not inst:IsA("BasePart") or key ~= "Color"
+			or type(expected) ~= "table" or type(actual) ~= "table"
+			or (expected.type or expected["$type"]) ~= "Color3"
+			or (actual.type or actual["$type"]) ~= "Color3" then
+			return false
+		end
+		for _, channel in ipairs({ "r", "g", "b" }) do
+			local requested = expected[channel]
+			local observed = actual[channel]
+			if type(requested) ~= "number" or type(observed) ~= "number"
+				or requested ~= requested or observed ~= observed
+				or requested < 0 or requested > 1 or observed < 0 or observed > 1 then
+				return false
+			end
+			local storedChannel = math.floor(requested * 255 + 0.5) / 255
+			if math.abs(storedChannel - observed) > 0.00001 then
+				return false
+			end
+		end
+		return true
+	end
 	local function instanceProperty(inst, key, useNativeEncoding)
 		if not inst then
 			return nil
@@ -528,7 +555,7 @@ local function verifyCommandOutcome(command, payload, result)
 		for key, expected in pairs(properties or {}) do
 			count = count + 1
 			local actual = instanceProperty(inst, key, useNativeEncoding)
-			addCheck(kind, path, valuesMatch(expected, actual), {
+			addCheck(kind, path, propertyValuesMatch(inst, key, expected, actual), {
 				key = tostring(key),
 				expected = expected,
 				actual = actual,
@@ -1073,7 +1100,23 @@ local function verifyCommandOutcome(command, payload, result)
 	return verified, checks, evidence
 end
 
-local function executeCommand(command)
+studioEditModeRequiredResult = function(command, stage)
+	local message = "Stop Play or Run mode before applying Studio changes. The command did not run."
+	return {
+		ok = false, success = false, verified = false, retryable = true,
+		code = "STUDIO_EDIT_MODE_REQUIRED",
+		commandId = command.id or command.commandId, runId = command.runId,
+		stepId = command.stepId, operation = command.type,
+		operationId = command.operationId, idempotencyKey = command.idempotencyKey,
+		executionStarted = false, sideEffectStarted = false,
+		error = { code = "STUDIO_EDIT_MODE_REQUIRED", message = message, retryable = true, details = { stage = stage } },
+	}
+end
+
+executeCommand = function(command)
+	if not game:GetService("RunService"):IsEdit() then
+		return studioEditModeRequiredResult(command, "before_handler")
+	end
 	local commandType = command.type or "apply_artifact"
 	local handler = TOOL_HANDLERS[commandType]
 	if type(handler) ~= "function" then
@@ -1416,6 +1459,9 @@ end
 -- executes work itself, so it returns quickly and the session heartbeat implicit
 -- in every poll stays fresh even while the executor is busy.
 function pullOnce(waitMs)
+	if not game:GetService("RunService"):IsEdit() then
+		return { idle = true, hadCommand = false, error = false, editModeRequired = true }
+	end
 	local token = getToken()
 	if not token then
 		setBridgeState("unpaired")
@@ -1431,6 +1477,17 @@ function pullOnce(waitMs)
 		token
 	)
 	setPollingPulse(false)
+	if not game:GetService("RunService"):IsEdit() then
+		-- The long poll may already have claimed work. Acknowledge a known
+		-- no-effect rejection instead of losing the command or running it.
+		local command = type(data) == "table" and data.command or nil
+		if type(command) == "table" and (command.id or command.commandId) then
+			local failure = studioEditModeRequiredResult(command, "after_poll")
+			local confirmed = ack(command, "failed", failure, failure.error.message)
+			return { idle = false, hadCommand = true, error = confirmed ~= true, editModeRequired = true }
+		end
+		return { idle = true, hadCommand = false, error = false, editModeRequired = true }
+	end
 
 	if statusCode == 401 or statusCode == 403 then
 		recordStudioFreshness("poll", false, "authentication expired", getLastLatencyMs())
@@ -1506,6 +1563,7 @@ end
 -- Execute a single command from the queue (approval gate + run + ack). Called on
 -- its own loop so it can block for as long as needed without pausing polling.
 function processNextCommand()
+	if not game:GetService("RunService"):IsEdit() then return false end
 	if executorBusy then
 		if executorStartedAt > 0 and (commandStartedMs() - executorStartedAt) > EXECUTOR_WATCHDOG_MS then
 			-- Safety net: the executor is a synchronous pcall, so this should be
@@ -1551,6 +1609,9 @@ function processNextCommand()
 			end
 		end
 		if tonumber(command.lifecycleVersion) == 2 then
+			if not game:GetService("RunService"):IsEdit() then
+				return finalizeCommandOutcome(command, true, studioEditModeRequiredResult(command, "before_start"))
+			end
 			if not ack(command, "started", { stage = "started" }, nil) then
 				setLast("Command start receipt could not be saved; execution was deferred safely")
 				setBridgeState("degraded", "start receipt failed")

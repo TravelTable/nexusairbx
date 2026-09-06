@@ -443,7 +443,7 @@ export function normalizeStudioConnectionSnapshot({ pluginStatus = null, mcpStat
     executionReady,
     readinessState: executionReady
       ? "ready"
-      : pluginConnected && compatibility.currentRelease === false
+      : pluginConnected && isStudioPluginUpdateRequired(compatibility)
         ? "plugin_update_required"
         : (mcpConnected ? "capabilities_unavailable" : "disconnected"),
     activePlaceName: activePlaceName || null,
@@ -492,4 +492,11 @@ export function normalizeStudioConnectionSnapshot({ pluginStatus = null, mcpStat
         : null,
     },
   };
+}
+
+// An incomplete handshake has currentRelease=false too. Only verified release
+// decisions may instruct a creator to update.
+export function isStudioPluginUpdateRequired(compatibility = {}) {
+  return compatibility.status === "update_required"
+    || (["compatible", "degraded"].includes(compatibility.status) && compatibility.currentRelease === false);
 }

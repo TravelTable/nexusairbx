@@ -451,6 +451,21 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
     expect(cancelCurrentFlow).toHaveBeenCalledTimes(1);
   });
 
+  test("keeps Stop available for an accepted canonical build and cancels that task", async () => {
+    const cancel = jest.fn().mockResolvedValue({ task: { taskId: "task_plan", status: "cancelled" } });
+    const cancelRun = jest.fn();
+    mockUseActiveAgents.mockReturnValue({ agents: [], cancelRun });
+    mockUseTaskRuntime.mockReturnValue({
+      taskId: "task_plan", task: { taskId: "task_plan", chatId: "chat_1", status: "running" },
+      events: [], connectionState: "live", error: null, busyAction: "", selectTask: jest.fn(), cancel,
+    });
+    render(<AgentWorkspaceLayout controller={makeController({ unified: { isGenerating: false, cancelCurrentFlow: jest.fn() } })} />);
+    expect(mockAgentChatPanel.mock.calls.at(-1)[0].isBusy).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "stop generation" }));
+    await waitFor(() => expect(cancel).toHaveBeenCalledTimes(1));
+    expect(cancelRun).not.toHaveBeenCalled();
+  });
+
   test("treats an AbortError from the coordinated Stop path as expected cancellation", async () => {
     const abortError = new DOMException("The operation was stopped.", "AbortError");
     const stopChatOperation = jest.fn().mockRejectedValue(abortError);

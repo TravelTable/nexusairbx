@@ -142,6 +142,18 @@ test("the audited routine guards duplicate self-descendants and pins last-batch 
   assert.match(mcp.lastCode, /DateTime\.now\(\)\.UnixTimestampMillis/);
 });
 
+test("the behavioral profile uses RunAsync and cannot pass an empty TestService suite", async () => {
+  const mcp = new RoutineMcp();
+  const runner = new FixedRoutineRunner(mcp);
+  // Any fixed routine includes the sealed dispatcher; this checks the shipped
+  // Luau boundary without pretending a mocked MCP response ran Roblox tests.
+  await runner.run("duplicate_instance", { path: "Workspace/Source", newPath: "Workspace/Copy" });
+  assert.match(mcp.lastCode, /TestService:RunAsync\(\)/);
+  assert.match(mcp.lastCode, /TestService\.TestCount, TestService\.ErrorCount/);
+  assert.match(mcp.lastCode, /passed = testCount > 0/);
+  assert.match(mcp.lastCode, /if errorCount > 0 then error/);
+});
+
 test("snapshot conflict hashes cover every mutable property with deterministic serialization", () => {
   const source = readFileSync(new URL("../src/fixed-routines.ts", import.meta.url), "utf8");
   const safeBlock = /const SAFE_PROPERTIES = new Set\(\[([\s\S]*?)\]\);/.exec(source)?.[1];

@@ -835,3 +835,10 @@
     box-shadow: none;
   }
 }
+
+.indexIntro h1 { font-size: clamp(1.8rem, 3vw, 2.5rem); }
+.indexSections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.indexLinks { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.indexLink { min-height: 76px; border: 1px solid var(--nx-rule); border-radius: 10px; padding: 14px; }
+.indexLink:hover { background: var(--nx-muted-surface); border-color: var(--nx-purple-strong); }
+@media (max-width: 700px) { .indexSections { grid-template-columns: 1fr; } }

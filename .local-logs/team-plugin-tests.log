@@ -1,0 +1,340 @@
+TAP version 13
+# Subtest: create_instance accepts only allowlisted native BasePart properties
+ok 1 - create_instance accepts only allowlisted native BasePart properties
+  ---
+  duration_ms: 9.9574
+  ...
+# Subtest: src/commands/registry.lua: only BasePart.Color accepts its exact quantized channel readback
+ok 2 - src/commands/registry.lua: only BasePart.Color accepts its exact quantized channel readback
+  ---
+  duration_ms: 32.4698
+  ...
+# Subtest: NexusRBXStudioBridge.plugin.lua: only BasePart.Color accepts its exact quantized channel readback
+ok 3 - NexusRBXStudioBridge.plugin.lua: only BasePart.Color accepts its exact quantized channel readback
+  ---
+  duration_ms: 24.438
+  ...
+# Subtest: complete Color3 matcher rejects wrong classes, properties, types, and actual colors
+ok 4 - complete Color3 matcher rejects wrong classes, properties, types, and actual colors # SKIP Set LUAU_BIN to run the complete Luau matcher regression
+  ---
+  duration_ms: 0.1814
+  ...
+# Subtest: src/ui/BridgePanel.lua presents MCP as an optional enhanced connection
+ok 5 - src/ui/BridgePanel.lua presents MCP as an optional enhanced connection
+  ---
+  duration_ms: 3.1182
+  ...
+# Subtest: NexusRBXStudioBridge.plugin.lua presents MCP as an optional enhanced connection
+ok 6 - NexusRBXStudioBridge.plugin.lua presents MCP as an optional enhanced connection
+  ---
+  duration_ms: 12.0767
+  ...
+# Subtest: Studio plugin accepts every create_instance class allowed by the backend
+ok 7 - Studio plugin accepts every create_instance class allowed by the backend
+  ---
+  duration_ms: 3.8834
+  ...
+# Subtest: src/Main.server.lua never renders pairing credentials
+ok 8 - src/Main.server.lua never renders pairing credentials
+  ---
+  duration_ms: 2.6852
+  ...
+# Subtest: NexusRBXStudioBridge.plugin.lua never renders pairing credentials
+ok 9 - NexusRBXStudioBridge.plugin.lua never renders pairing credentials
+  ---
+  duration_ms: 10.1255
+  ...
+# Subtest: BridgePanel success banners recognize generic pairing copy without credential fields
+ok 10 - BridgePanel success banners recognize generic pairing copy without credential fields
+  ---
+  duration_ms: 4.304
+  ...
+# Subtest: runtime copies exit before shared connector, UI, and network initialization
+ok 11 - runtime copies exit before shared connector, UI, and network initialization
+  ---
+  duration_ms: 6.3753
+  ...
+# Subtest: a long poll crossing into Play rejects claimed work before queueing or execution
+ok 12 - a long poll crossing into Play rejects claimed work before queueing or execution
+  ---
+  duration_ms: 0.8362
+  ...
+# Subtest: explicit property readback is bounded, keeps false values and uses the canonical serializer
+ok 13 - explicit property readback is bounded, keeps false values and uses the canonical serializer
+  ---
+  duration_ms: 15.2759
+  ...
+# Subtest: HTTP failures are converted to user-facing strings before reaching plugin UI
+ok 14 - HTTP failures are converted to user-facing strings before reaching plugin UI
+  ---
+  duration_ms: 2.4687
+  ...
+# Subtest: accepts a loopback HTTP backend for local Studio testing
+ok 15 - accepts a loopback HTTP backend for local Studio testing
+  ---
+  duration_ms: 2.8897
+  ...
+# Subtest: rejects insecure non-local plugin backends
+ok 16 - rejects insecure non-local plugin backends
+  ---
+  duration_ms: 0.7754
+  ...
+# Subtest: rewrites only the bundled plugin endpoint declarations
+ok 17 - rewrites only the bundled plugin endpoint declarations
+  ---
+  duration_ms: 0.6377
+  ...
+# Subtest: duplicate NexusRBX plugin builds are quarantined while the canonical and unrelated plugins remain
+ok 18 - duplicate NexusRBX plugin builds are quarantined while the canonical and unrelated plugins remain
+  ---
+  duration_ms: 23.186
+  ...
+# Subtest: Windows install uses Roblox Studio's LOCALAPPDATA plugins directory
+ok 19 - Windows install uses Roblox Studio's LOCALAPPDATA plugins directory
+  ---
+  duration_ms: 1.6957
+  ...
+# Subtest: Windows environment lookup is case-insensitive
+ok 20 - Windows environment lookup is case-insensitive
+  ---
+  duration_ms: 0.2874
+  ...
+# Subtest: explicit plugin-directory override wins without querying Windows
+ok 21 - explicit plugin-directory override wins without querying Windows
+  ---
+  duration_ms: 0.2405
+  ...
+# Subtest: override rejects paths outside a Roblox Plugins directory
+ok 22 - override rejects paths outside a Roblox Plugins directory
+  ---
+  duration_ms: 0.7677
+  ...
+# Subtest: Windows retains an AppData Local fallback when LOCALAPPDATA is unavailable
+ok 23 - Windows retains an AppData Local fallback when LOCALAPPDATA is unavailable
+  ---
+  duration_ms: 0.5818
+  ...
+# Subtest: Windows rejects a non-absolute LOCALAPPDATA value before using fallback
+ok 24 - Windows rejects a non-absolute LOCALAPPDATA value before using fallback
+  ---
+  duration_ms: 1.344
+  ...
+# Subtest: non-Windows installs retain the home Documents behavior
+ok 25 - non-Windows installs retain the home Documents behavior
+  ---
+  duration_ms: 2.4315
+  ...
+# Subtest: rbxmx identifiers are deterministic for identical plugin source
+ok 26 - rbxmx identifiers are deterministic for identical plugin source
+  ---
+  duration_ms: 4.0772
+  ...
+# Subtest: rbxmx identifiers change when plugin source changes
+ok 27 - rbxmx identifiers change when plugin source changes
+  ---
+  duration_ms: 1.6172
+  ...
+# Subtest: rbxmx source preserves CDATA terminators safely
+ok 28 - rbxmx source preserves CDATA terminators safely
+  ---
+  duration_ms: 0.3013
+  ...
+# Subtest: the context guard is shared by every bundled plugin section
+ok 29 - the context guard is shared by every bundled plugin section
+  ---
+  duration_ms: 20.2553
+  ...
+# Subtest: the plugin guard detects real GetService calls while blanking ordinary strings
+ok 30 - the plugin guard detects real GetService calls while blanking ordinary strings
+  ---
+  duration_ms: 0.9734
+  ...
+# Subtest: managed instance IDs are exported across bundled plugin sections
+ok 31 - managed instance IDs are exported across bundled plugin sections
+  ---
+  duration_ms: 7.9061
+  ...
+# Subtest: native model safety tables are exported into the bundled command scope
+ok 32 - native model safety tables are exported into the bundled command scope
+  ---
+  duration_ms: 9.809
+  ...
+# Subtest: the bundled placement guard keeps canonical service path names
+ok 33 - the bundled placement guard keeps canonical service path names
+  ---
+  duration_ms: 6.9491
+  ...
+# Subtest: create, write, patch, and replace validate before snapshots or source changes
+ok 34 - create, write, patch, and replace validate before snapshots or source changes
+  ---
+  duration_ms: 1.519
+  ...
+# Subtest: existing class conversion requires consent, inspection evidence, and a pre-mutation snapshot
+ok 35 - existing class conversion requires consent, inspection evidence, and a pre-mutation snapshot
+  ---
+  duration_ms: 1.4547
+  ...
+# Subtest: legacy and managed artifact application validate all scripts before mutation
+ok 36 - legacy and managed artifact application validate all scripts before mutation
+  ---
+  duration_ms: 0.8661
+  ...
+# Subtest: plugin smoke checks report script-context findings
+ok 37 - plugin smoke checks report script-context findings
+  ---
+  duration_ms: 2.5301
+  ...
+# Subtest: whole-project validation reports existing script-context findings
+ok 38 - whole-project validation reports existing script-context findings
+  ---
+  duration_ms: 0.7614
+  ...
+# Subtest: service rewriting changes unqualified code identifiers only
+ok 39 - service rewriting changes unqualified code identifiers only
+  ---
+  duration_ms: 1.0252
+  ...
+# Subtest: service rewriting preserves short and long string literals byte-for-byte
+ok 40 - service rewriting preserves short and long string literals byte-for-byte
+  ---
+  duration_ms: 0.1943
+  ...
+# Subtest: service rewriting preserves line and long comments byte-for-byte
+ok 41 - service rewriting preserves line and long comments byte-for-byte
+  ---
+  duration_ms: 0.1451
+  ...
+# Subtest: bundle rewriting leaves config and CRLF literal data untouched
+ok 42 - bundle rewriting leaves config and CRLF literal data untouched
+  ---
+  duration_ms: 0.1682
+  ...
+# Subtest: the generated artifact preserves canonical path and diagnostic strings
+ok 43 - the generated artifact preserves canonical path and diagnostic strings
+  ---
+  duration_ms: 8.2978
+  ...
+# Subtest: managed artifact writes wait for Studio source to match the requested content
+ok 44 - managed artifact writes wait for Studio source to match the requested content
+  ---
+  duration_ms: 2.0021
+  ...
+# Subtest: apply_artifact verification re-resolves the Studio path on every retry
+ok 45 - apply_artifact verification re-resolves the Studio path on every retry
+  ---
+  duration_ms: 6.1371
+  ...
+# Subtest: source read failures preserve bounded editor and property diagnostics
+ok 46 - source read failures preserve bounded editor and property diagnostics
+  ---
+  duration_ms: 10.9237
+  ...
+# Subtest: bundled script hashing captures the live source reader
+ok 47 - bundled script hashing captures the live source reader
+  ---
+  duration_ms: 5.1589
+  ...
+# Subtest: script deletion reports the verified pre-delete source baseline
+ok 48 - script deletion reports the verified pre-delete source baseline
+  ---
+  duration_ms: 9.8909
+  ...
+# Subtest: native model verification shares the canonical revision binding
+ok 49 - native model verification shares the canonical revision binding
+  ---
+  duration_ms: 5.0349
+  ...
+# Subtest: managed artifact projection is unique in source and bundled artifact
+ok 50 - managed artifact projection is unique in source and bundled artifact
+  ---
+  duration_ms: 10.9053
+  ...
+# Subtest: v2 mutations require the complete immutable target envelope
+ok 51 - v2 mutations require the complete immutable target envelope
+  ---
+  duration_ms: 1.9765
+  ...
+# Subtest: target identity is checked before approval and at the final mutation boundary
+ok 52 - target identity is checked before approval and at the final mutation boundary
+  ---
+  duration_ms: 0.7563
+  ...
+# Subtest: an authenticated heartbeat resumes a restarted plugin at the server generation
+ok 53 - an authenticated heartbeat resumes a restarted plugin at the server generation
+  ---
+  duration_ms: 8.9162
+  ...
+# Subtest: move and duplicate refuse source-descendant destinations before snapshot mutation
+ok 54 - move and duplicate refuse source-descendant destinations before snapshot mutation
+  ---
+  duration_ms: 1.3817
+  ...
+# Subtest: operation receipts are bounded, durable, and reconciled before redelivery
+ok 55 - operation receipts are bounded, durable, and reconciled before redelivery
+  ---
+  duration_ms: 1.7024
+  ...
+# Subtest: generated install artifact contains target diagnostics and the current build
+ok 56 - generated install artifact contains target diagnostics and the current build
+  ---
+  duration_ms: 5.4108
+  ...
+# Subtest: diagnostic collection defaults to the connected Studio project
+ok 57 - diagnostic collection defaults to the connected Studio project
+  ---
+  duration_ms: 0.4734
+  ...
+# Subtest: safe GUI properties accept planner shapes and participate in readback verification
+ok 58 - safe GUI properties accept planner shapes and participate in readback verification
+  ---
+  duration_ms: 0.8361
+  ...
+# Subtest: the installable plugin exposes native tools and no conversation UI
+ok 59 - the installable plugin exposes native tools and no conversation UI
+  ---
+  duration_ms: 7.51
+  ...
+# Subtest: Studio result capture is attached after execution and verification
+ok 60 - Studio result capture is attached after execution and verification
+  ---
+  duration_ms: 5.8537
+  ...
+# Subtest: toolbox task lifecycle executes safely through retries, resumption, cancellation, and receipts
+ok 61 - toolbox task lifecycle executes safely through retries, resumption, cancellation, and receipts # SKIP Set LUAU_BIN to the Luau CLI to run lifecycle scenarios
+  ---
+  duration_ms: 0.2086
+  ...
+# Subtest: v3 UI artifacts snapshot, conflict-check, apply, and read back managed ScreenGui trees
+ok 62 - v3 UI artifacts snapshot, conflict-check, apply, and read back managed ScreenGui trees
+  ---
+  duration_ms: 2.3174
+  ...
+# Subtest: UI artifact creation remains allowlisted and does not execute document-provided Luau
+ok 63 - UI artifact creation remains allowlisted and does not execute document-provided Luau
+  ---
+  duration_ms: 1.7965
+  ...
+# Subtest: UI root fingerprints cover every applied property, identity, descendant, and script source
+ok 64 - UI root fingerprints cover every applied property, identity, descendant, and script source
+  ---
+  duration_ms: 0.8605
+  ...
+# Subtest: UI-only artifacts participate in command-bound verification and affected-path receipts
+ok 65 - UI-only artifacts participate in command-bound verification and affected-path receipts
+  ---
+  duration_ms: 1.1185
+  ...
+# Subtest: snapshot serialization restores UI decorators, sequences, layout padding, and ScreenGui state
+ok 66 - snapshot serialization restores UI decorators, sequences, layout padding, and ScreenGui state
+  ---
+  duration_ms: 1.5554
+  ...
+1..66
+# tests 66
+# suites 0
+# pass 64
+# fail 0
+# cancelled 0
+# skipped 2
+# todo 0
+# duration_ms 424.4036

@@ -1,4 +1,5 @@
 import React, { useRef } from "react";
+import TeamActivityPanel from "./workspace/TeamActivityPanel";
 import { CHAT_MODES } from "./chatConstants";
 import ChatEmptyState from "./chat/ChatEmptyState";
 import ChatHeader from "./chat/ChatHeader";
@@ -28,6 +29,8 @@ export default function ChatView({
   onViewUi,
   onOpenFile,
   onQuickStart,
+  recentProjects,
+  onOpenProject,
   onOpenTemplates,
   onStartGuide,
   startGuideLabel,
@@ -57,6 +60,7 @@ export default function ChatView({
   navigationControls,
   navigationButtonRef,
   showHeader = true,
+  teamActivity = null,
 }) {
   const showEmpty = messages.length === 0 && !pendingMessage;
   const rootRef = useRef(null);
@@ -84,6 +88,7 @@ export default function ChatView({
             navigationButtonRef={navigationButtonRef}
           />
         ) : null}
+        <TeamActivityPanel activity={teamActivity} />
         <Conversation className="nexus-conversation-surface h-full min-h-0 w-full flex-1">
           <ConversationContent
             className={`nexus-conversation-content mx-auto min-h-full gap-7 py-6 md:py-9 ${showEmpty ? "h-full" : ""}`}
@@ -92,6 +97,8 @@ export default function ChatView({
             {showEmpty ? (
               <ChatEmptyState
                 onQuickStart={onQuickStart}
+              recentProjects={recentProjects}
+              onOpenProject={onOpenProject}
                 onOpenTemplates={onOpenTemplates}
                 onStartGuide={onStartGuide}
                 startGuideLabel={startGuideLabel}

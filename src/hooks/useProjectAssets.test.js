@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { useProjectAssets } from "./useProjectAssets";
 import {
+  attachProjectAssets,
   getGeneratedAssetUploadStatus,
   listProjectAssets,
   removeProjectAsset,
@@ -135,4 +136,18 @@ describe("useProjectAssets", () => {
     await expect(act(async () => result.current.removeAsset("9001"))).rejects.toBe(removalError);
     expect(result.current.assets).toEqual([asset]);
   });
+});
+
+
+test("selects assets before a chat exists and attaches them after first send", async () => {
+  sessionStorage.clear();
+  const selected = [{ assetId: "123", name: "Tree" }];
+  attachProjectAssets.mockResolvedValue({ assets: selected });
+  const { result } = renderHook(() => useProjectAssets(null, { ownerUid: "creator" }));
+  await act(async () => { await result.current.attachAssets(selected); });
+  expect(result.current.assets).toEqual(selected);
+  expect(attachProjectAssets).not.toHaveBeenCalled();
+  await act(async () => { await result.current.attachDraftAssets("chat-new"); });
+  expect(attachProjectAssets).toHaveBeenCalledWith("chat-new", selected);
+  expect(sessionStorage.getItem("nexusrbx:draft-assets:creator")).toBeNull();
 });

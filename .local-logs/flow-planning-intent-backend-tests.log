@@ -1,0 +1,95 @@
+TAP version 13
+# Subtest: classifies greetings and acknowledgements as non-implementation conversation
+ok 1 - classifies greetings and acknowledgements as non-implementation conversation
+  ---
+  duration_ms: 1.7439
+  ...
+# Subtest: classifies direct build and modification requests as implementation intent
+ok 2 - classifies direct build and modification requests as implementation intent
+  ---
+  duration_ms: 1.381
+  ...
+# Subtest: keeps explanation and brainstorming prompts conversational
+ok 3 - keeps explanation and brainstorming prompts conversational
+  ---
+  duration_ms: 0.4337
+  ...
+# Subtest: ignores build verbs inside explicit negative constraints
+ok 4 - ignores build verbs inside explicit negative constraints
+  ---
+  duration_ms: 1.084
+  ...
+# Subtest: detects explicit plan approval phrases
+ok 5 - detects explicit plan approval phrases
+  ---
+  duration_ms: 0.2706
+  ...
+# Subtest: ambiguous responses ask for implementation intent
+ok 6 - ambiguous responses ask for implementation intent
+  ---
+  duration_ms: 0.3045
+  ...
+# Subtest: mode routing fails unknown modes closed and binds continuations
+ok 7 - mode routing fails unknown modes closed and binds continuations
+  ---
+  duration_ms: 0.5957
+  ...
+# Subtest: explicit planning is sufficient to prepare a plan without authorizing a build
+ok 8 - explicit planning is sufficient to prepare a plan without authorizing a build
+  ---
+  duration_ms: 0.5257
+  ...
+# Subtest: requests for an implementation plan remain separate from permission to implement it
+ok 9 - requests for an implementation plan remain separate from permission to implement it
+  ---
+  duration_ms: 0.3855
+  ...
+# Subtest: answered questions and explicit no-question instructions suppress another clarification round
+ok 10 - answered questions and explicit no-question instructions suppress another clarification round
+  ---
+  duration_ms: 0.6222
+  ...
+# Subtest: execution ignores browser project, target, Studio, and asset tampering
+ok 11 - execution ignores browser project, target, Studio, and asset tampering
+  ---
+  duration_ms: 2.3201
+  ...
+# Subtest: plan fence rejects stale versions and hashes
+ok 12 - plan fence rejects stale versions and hashes
+  ---
+  duration_ms: 0.6386
+  ...
+# Subtest: plan execution follows the original chat and ignores a browser chat override
+ok 13 - plan execution follows the original chat and ignores a browser chat override
+  ---
+  duration_ms: 0.6435
+  ...
+# Subtest: readiness blockers reject execution while advisory warnings remain executable
+ok 14 - readiness blockers reject execution while advisory warnings remain executable
+  ---
+  duration_ms: 0.2881
+  ...
+# Subtest: repeat execution requests produce deterministic idempotency identities
+ok 15 - repeat execution requests produce deterministic idempotency identities
+  ---
+  duration_ms: 0.3627
+  ...
+# Subtest: approved plan compilation preserves trusted context for canonical task launch
+ok 16 - approved plan compilation preserves trusted context for canonical task launch
+  ---
+  duration_ms: 0.2197
+  ...
+# Subtest: approved plan compilation rejects a mismatched immutable reference
+ok 17 - approved plan compilation rejects a mismatched immutable reference
+  ---
+  duration_ms: 0.314
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 144.9147

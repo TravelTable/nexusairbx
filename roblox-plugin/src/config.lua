@@ -1,6 +1,10 @@
 -- NexusRBX Studio Bridge
 -- Local Studio plugin: website-controlled apply + agent tool runner.
 
+-- Studio starts plugin copies in Play/Run data models. Those copies share
+-- plugin settings with the editor, so they must not claim its connector.
+if not game:GetService("RunService"):IsEdit() then return end
+
 local BACKEND_URL = "https://api.nexusrbx.com"
 local BACKEND_HOST = "api.nexusrbx.com"
 local PLUGIN_VERSION = "0.14.0-r15-animation"
@@ -10,7 +14,7 @@ local STUDIO_PROTOCOL_VERSION = "2026-08-27-r15-animation"
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.14.0-r15-animation.12-toolbox"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.14.0-r15-animation.14-color-readback"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the

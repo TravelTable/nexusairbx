@@ -364,6 +364,11 @@ export default function DownloadsContent() {
         ) : null}
 
         <SetupSteps steps={selectedCopy.steps} />
+        <section id="studio-plugin" className={styles.pluginDownload} aria-labelledby="studio-plugin-title">
+          <div><h2 id="studio-plugin-title">Nexus RBX for Studio</h2><p>Use the Studio plugin to connect your game directly to Nexus RBX.</p></div>
+          <a href="/studio-plugin/NexusRBXStudioBridge.rbxmx" download className={styles.primaryDownload}><Download aria-hidden="true" size={18} /> Download Studio plugin</a>
+          <details><summary>Install or update the plugin</summary><ol><li>In Roblox Studio, open the Plugins tab and choose Plugins Folder.</li><li>Close Studio. Replace your existing Nexus RBX plugin with the downloaded file in that folder.</li><li>Reopen Studio, open Nexus RBX, and reconnect your account.</li></ol><p>Your projects and chats stay saved.</p></details>
+        </section>
         <p className={styles.disclaimer}>NexusRBX is not affiliated with or endorsed by Roblox Corporation.</p>
       </main>
     </TooltipProvider>

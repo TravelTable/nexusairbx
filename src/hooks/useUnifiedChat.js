@@ -9,8 +9,12 @@ import {
   approveWorkflowPlan,
   checkWorkflowPlanReadiness,
   getChatOperationStatus,
+  restoreWorkflowPlanVersion,
   startPlanExecution,
 } from "../lib/workflowApi";
+import { clarificationAnswerRows, formatClarificationAnswers } from "../lib/clarificationAnswers";
+import { decisionActionLabel } from "../lib/chatDecisionDisplay";
+import { getTask, approveTask, retryTask, cancelTask } from "../lib/taskRuntimeApi";
 import { isExplicitPlanApproval } from "../lib/planApproval";
 import {
   classifyExecutionIntent,
@@ -103,22 +107,7 @@ function chatMessageText(message) {
 }
 
 function decisionStage(decision) {
-  switch (String(decision?.action || "").trim()) {
-    case "clarify":
-      return "Needs input";
-    case "recover":
-      return "Recovering";
-    case "block":
-    case "refuse":
-      return "Blocked";
-    case "answer":
-    case "inspect":
-      return "Read-only";
-    case "plan":
-      return "Planning";
-    default:
-      return "Starting";
-  }
+  return decisionActionLabel(decision, "Starting");
 }
 
 function decisionMessage(decision) {
@@ -337,6 +326,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   }, []);
 
   const currentFlowChatKey = chat.currentChatId || DRAFT_CHAT_KEY;
+  const visibleChatIdRef = useRef(chat.currentChatId);
+  visibleChatIdRef.current = chat.currentChatId;
   const flowBusy = Object.values(flowBusyChats[currentFlowChatKey] || {}).some(Boolean);
 
   const publishOrchestrationStage = useCallback((chatId, requestId, label) => {
@@ -461,15 +452,19 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   const cancelCurrentFlow = useCallback(() => {
     const currentChatId = chat.currentChatId || DRAFT_CHAT_KEY;
     const activeFlows = Object.values(flowAbortControllersRef.current).filter((flow) => flow.chatId === currentChatId);
-    activeFlows.forEach(({ chatId, requestId, controller }) => {
+    activeFlows.forEach(({ chatId, requestId, controller, executionPending }) => {
       controller.abort();
-      delete flowAbortControllersRef.current[`${chatId}:${requestId}`];
+      if (executionPending) {
+        publishOrchestrationStage(chatId, requestId, "Stopping build…");
+        return;
+      }
+      releaseFlowAbortController(chatId, requestId);
       setFlowBusyForChat(chatId, requestId, false);
       clearOrchestrationPending(chatId, requestId);
       if (chatId !== DRAFT_CHAT_KEY) chat.setPendingForChat(chatId, null, requestId);
     });
     return activeFlows.length > 0;
-  }, [chat, clearOrchestrationPending, setFlowBusyForChat]);
+  }, [chat, clearOrchestrationPending, setFlowBusyForChat, publishOrchestrationStage, releaseFlowAbortController]);
 
   const isGenerating = chat.isGenerating || flowBusy;
 
@@ -502,10 +497,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
   // Ensure a chat exists, returning its id (creating + opening if needed).
   const ensureChat = useCallback(
-    async (titleSeed, { projectId = null } = {}) => {
+    async (titleSeed, { projectId = null, mode = chat.activeMode } = {}) => {
       let activeChatId = chat.currentChatId;
       if (!activeChatId) {
-        activeChatId = await chat.startNewChat({ projectId });
+        activeChatId = await chat.startNewChat({ projectId, mode });
         const seed = String(titleSeed || "New chat");
         if (activeChatId && seed !== "New chat") {
           await updateDoc(
@@ -988,7 +983,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   const runGeneration = useCallback(
     async (activeChatId, classification, prompt, attachments, baseArtifact = null, submissionOptions = {}) => {
       const requestId = uuidv4();
-      const flowController = createFlowAbortController(activeChatId, requestId);
+      const flowController = createFlowAbortController(activeChatId, requestId, submissionOptions.buildSignal || submissionOptions.operationSignal);
       try {
         await launchAuthoritativeRun({
           activeChatId,
@@ -1007,16 +1002,20 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     [createFlowAbortController, launchAuthoritativeRun, releaseFlowAbortController]
   );
 
-  const approvePlanInternal = useCallback(
+  const executeApprovedPlan = useCallback(
     async (message, baseArtifact = null, submissionOptions = {}) => {
-      if (!user || !message?.planId) return;
+      if (!user || !message?.planId) throw new Error("Sign in and open a saved plan before building.");
       const activeChatId = chat.currentChatId;
-      if (!activeChatId) return;
+      if (!activeChatId) throw new Error("Open the plan’s conversation before building.");
+      const signal = submissionOptions.buildSignal;
+      throwIfAborted(signal);
       await chat.assertCanWrite();
+      throwIfAborted(signal);
 
       const ownedProject = await resolveOwnedProjectId(
         submissionOptions.projectId || message.projectId || message.targeting?.projectId
       );
+      throwIfAborted(signal);
       if (ownedProject.recoveryMessage) {
         notify?.({ message: ownedProject.recoveryMessage, type: "info" });
       }
@@ -1032,19 +1031,26 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         const readiness = await checkWorkflowPlanReadiness(message.planId, {
           version,
           hash: planHash,
+          signal,
           projectId: effectiveSubmissionOptions.projectId,
-          studioConnected: Boolean(message.targeting?.studioConnected),
+          studioConnected: Boolean(submissionOptions.studioConnected ?? submissionOptions.targeting?.studioConnected ?? message.targeting?.studioConnected),
           targeting: {
             projectId: effectiveSubmissionOptions.projectId,
-            studioConnected: Boolean(message.targeting?.studioConnected),
+            studioConnected: Boolean(submissionOptions.studioConnected ?? submissionOptions.targeting?.studioConnected ?? message.targeting?.studioConnected),
           },
         });
+        throwIfAborted(signal);
         const blockers = readinessBlockers(readiness);
         if (readiness?.canExecute === false || readiness?.ready === false || blockers.length > 0) {
           notify?.(blockedPlanNotification(message.planId, readiness));
           return { blocked: true, readiness };
         }
 
+        publishOrchestrationStage(activeChatId, submissionOptions.buildRequestId, "Starting build…");
+        // After dispatch the server may already be applying changes. Keep the
+        // acknowledgment alive so Stop can cancel the canonical task by ID.
+        const flow = flowAbortControllersRef.current[`${activeChatId}:${submissionOptions.buildRequestId}`];
+        if (flow) flow.executionPending = true;
         let execution;
         try {
           execution = await startPlanExecution(message.planId, version, planHash);
@@ -1052,6 +1058,12 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           if (error?.code === "PLAN_NOT_READY") {
             notify?.(blockedPlanNotification(message.planId, error));
             return { blocked: true, readiness: error?.payload?.details || null };
+          }
+          if (error?.name === "TypeError" || [502, 503, 504].includes(error?.status)) {
+            const uncertain = new Error("The build could not be confirmed and may already be running. Retry this same saved plan to reconnect to its existing build.");
+            uncertain.code = "PLAN_EXECUTION_UNCONFIRMED";
+            uncertain.cause = error;
+            throw uncertain;
           }
           throw error;
         }
@@ -1123,7 +1135,18 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
           throw error;
         }
-        effectiveSubmissionOptions.onTaskAccepted?.(task || taskId);
+        try {
+          if (visibleChatIdRef.current === activeChatId) {
+            await effectiveSubmissionOptions.onTaskAccepted?.(task || taskId);
+          }
+        } catch (error) {
+          notify?.({ type: "error", message: "The build started, but progress could not be opened. Reopen this conversation to reconnect." });
+        }
+        try {
+          await chat.updateChatMode?.(activeChatId, "agent");
+        } catch (error) {
+          console.warn("The build started, but the conversation mode could not be saved.", error);
+        }
         void trackProductEvent(
           "plan_approved",
           {
@@ -1147,13 +1170,22 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         } catch (error) {
           console.warn("Could not persist the structured-plan execution marker.", error);
         }
+        if (signal?.aborted) {
+          const cancelled = await cancelTask(taskId);
+          if (visibleChatIdRef.current === activeChatId) {
+            await effectiveSubmissionOptions.onTaskAccepted?.(cancelled?.task || task || taskId);
+          }
+          return { ...execution, status: cancelled?.task?.status || "cancelled", cancellation: cancelled };
+        }
         return execution;
       }
 
+      throwIfAborted(signal);
       const approval = await approveWorkflowPlan(message.planId, {
         version,
         hash: planHash,
       });
+      throwIfAborted(signal);
       void trackProductEvent(
         "plan_approved",
         {
@@ -1177,6 +1209,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       } catch (error) {
         console.warn("Could not persist approved-plan marker; continuing with generation.", error);
       }
+      throwIfAborted(signal);
       await runGeneration(
         activeChatId,
         message.classification || "script",
@@ -1194,8 +1227,30 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       );
       return approval;
     },
-    [user, chat, runGeneration, notify]
+    [user, chat, runGeneration, notify, publishOrchestrationStage]
   );
+
+  const planStartsRef = useRef(new Map());
+  const approvePlanInternal = useCallback((message, baseArtifact = null, submissionOptions = {}) => {
+    const chatId = chat.currentChatId;
+    const key = `${chatId}:${message?.planId}:${message?.planVersion ?? message?.version ?? message?.structuredPlan?.version}:${message?.planHash || message?.hash || message?.structuredPlan?.hash}`;
+    const existing = planStartsRef.current.get(key);
+    if (existing) return existing;
+    const requestId = `build-${uuidv4()}`;
+    const flowController = createFlowAbortController(chatId, requestId, submissionOptions.operationSignal);
+    setFlowBusyForChat(chatId, requestId, true);
+    beginOrchestrationPending(chatId, requestId, message?.originPrompt || "", "Checking Studio…");
+    const operation = Promise.resolve().then(() => executeApprovedPlan(message, baseArtifact, {
+      ...submissionOptions, buildRequestId: requestId, buildSignal: flowController.signal,
+    })).finally(() => {
+      releaseFlowAbortController(chatId, requestId);
+      planStartsRef.current.delete(key);
+      setFlowBusyForChat(chatId, requestId, false);
+      clearOrchestrationPending(chatId, requestId);
+    });
+    planStartsRef.current.set(key, operation);
+    return operation;
+  }, [chat.currentChatId, executeApprovedPlan, setFlowBusyForChat, beginOrchestrationPending, clearOrchestrationPending, createFlowAbortController, releaseFlowAbortController]);
 
   // ASK mode: read-only conversational streaming. No orchestrate, no plan, no job.
   const handleAskSubmit = useCallback(
@@ -1456,6 +1511,31 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           if (propagateOperationError) throw error;
           return;
         }
+        const approvedTaskMessage = [...(chat.messages || [])].reverse().find((message) => message.stage === "plan_approved" && message.taskId);
+        if (approvedTaskMessage && /^(continue|resume|keep going|finish it|proceed)[.!\s]*$/i.test(prompt.trim())) {
+          const taskId = approvedTaskMessage.taskId;
+          const snapshot = await getTask(taskId);
+          throwIfAborted(flowController.signal);
+          const allowed = snapshot.allowedActions || snapshot.task?.allowedActions || [];
+          let resumed = snapshot;
+          if (allowed.includes("retry")) resumed = await retryTask(taskId);
+          else if (allowed.includes("approve")) resumed = await approveTask(taskId);
+          if (visibleChatIdRef.current === flowChatId) {
+            options?.onTaskAccepted?.(resumed.task || snapshot.task || taskId);
+          }
+          const status = resumed.task?.status || snapshot.task?.status;
+          const content = status === "succeeded"
+            ? "This build has completed. Tell me what you want changed next."
+            : ["failed", "cancelled"].includes(status)
+              ? "This build stopped. Review the details in task progress, then choose Revise plan on the original plan to prepare a new draft. You can review it before starting another build."
+              : ["blocked_studio", "waiting_external", "waiting_user"].includes(status)
+                ? "This build needs attention. Open task progress to resolve the outstanding issue; your existing progress is saved."
+                : "Continuing the approved build. Its current progress is shown below.";
+          await writeUserMessage(flowChatId, requestId, prompt);
+          await setDoc(doc(db, "users", user.uid, "chats", flowChatId, "messages", `${requestId}-assistant`),
+            sanitizeTranscriptMessagePayload({ role: "assistant", content, requestId, taskId, createdAt: serverTimestamp() }));
+          return resumed;
+        }
         let ownedProject;
         try {
           ownedProject = await resolveOwnedProjectId(options?.projectId);
@@ -1483,6 +1563,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         } = options || {};
         const effectiveOptions = {
           ...transportOptions,
+          mode,
           projectId: ownedProject.projectId,
           idempotencyKey: options?.idempotencyKey || `run-${requestId}`,
         };
@@ -1552,7 +1633,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           : historicalFiles.length > 0 && fileRequest;
         if (ownedFileContext) {
           activeChatId = await ensureChat(titleSeed, effectiveOptions);
-          bindFlowToChat(activeChatId); onChatReady?.(activeChatId);
+          bindFlowToChat(activeChatId); await onChatReady?.(activeChatId);
           if (writeUserTurn) await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
           return await handleAttachmentSubmit({ prompt, attachments: currentAttachments, activeChatId, requestId, mode, signal: flowController.signal, conversation: conversationMessages, idempotencyKey: effectiveOptions.idempotencyKey });
         }
@@ -1564,7 +1645,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           try {
             activeChatId = await ensureChat(titleSeed, effectiveOptions);
             bindFlowToChat(activeChatId);
-            onChatReady?.(activeChatId);
+            await onChatReady?.(activeChatId);
             throwIfAborted(flowController.signal);
             if (writeUserTurn) {
               await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
@@ -1645,7 +1726,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         try {
           activeChatId = await ensureChat(titleSeed, effectiveOptions);
           bindFlowToChat(activeChatId);
-          onChatReady?.(activeChatId);
+          await onChatReady?.(activeChatId);
           throwIfAborted(flowController.signal);
           if (writeUserTurn) {
             await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
@@ -1695,6 +1776,16 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         } catch (err) {
           if (!isAbortError(err)) {
             console.error("Orchestration error:", err);
+            const failure = `I couldn't finish this request. ${err?.message || "The connection was interrupted."}\n\nYour prompt is saved. Use **Retry as new attempt** on your prompt to try again.`;
+            if (activeChatId) {
+              await setDoc(
+                doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`),
+                sanitizeTranscriptMessagePayload({
+                  role: "assistant", content: failure, requestId,
+                  status: "failed", createdAt: serverTimestamp(),
+                })
+              ).catch((writeError) => console.warn("Could not save the request failure", writeError));
+            }
             notify?.({
               message: err?.message || "Could not start the build",
               type: "error",
@@ -1779,22 +1870,16 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           projectId: ownedProject.projectId,
         };
 
-        const answerText = Object.entries(answers || {})
-          .filter(([, value]) =>
-            Array.isArray(value)
-              ? value.some((entry) => String(entry || "").trim() !== "")
-              : value != null && String(value).trim() !== ""
-          )
-          .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(", ") : value}`)
-          .join("\n");
+        const answerText = formatClarificationAnswers(message.questions, answers);
         beginOrchestrationPending(activeChatId, requestId, answerText);
         if (answerText) await writeUserMessage(activeChatId, requestId, answerText);
 
         await updateDoc(
           doc(db, "users", user.uid, "chats", activeChatId, "messages", message.id),
           sanitizeTranscriptMessagePayload({
-            stage: "clarify_answered",
+            stage: "clarify",
             answers: sanitizeFirestoreValue(answers || {}),
+            clarificationError: null,
             updatedAt: serverTimestamp(),
           })
         );
@@ -1804,6 +1889,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           chatId: activeChatId,
           prompt,
           answers,
+          answerContext: clarificationAnswerRows(message.questions, answers),
           history: chat.messages,
           attachments,
           mode: message.requestMode || "plan",
@@ -1824,9 +1910,16 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           targeting: effectiveTargeting,
           ...effectiveTargeting,
         });
+        await updateDoc(doc(db, "users", user.uid, "chats", activeChatId, "messages", message.id),
+          sanitizeTranscriptMessagePayload({ stage: "clarify_answered", updatedAt: serverTimestamp() }));
       } catch (err) {
         if (!isAbortError(err)) {
           console.error("Clarify error:", err);
+          await updateDoc(doc(db, "users", user.uid, "chats", activeChatId, "messages", message.id),
+            sanitizeTranscriptMessagePayload({
+              clarificationError: err?.message || "The plan could not be created. Your answers are saved; try Create plan again.",
+              updatedAt: serverTimestamp(),
+            })).catch((writeError) => console.warn("Could not save the planning error", writeError));
           notify?.({
             message: err?.message || "Could not continue",
             type: "error",
@@ -1859,17 +1952,68 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   const approvePlan = useCallback(
     async (message, baseArtifact = null, submissionOptions = {}) => {
       try {
-        await approvePlanInternal(message, baseArtifact, submissionOptions);
+        return await approvePlanInternal(message, baseArtifact, submissionOptions);
       } catch (err) {
+        if (err?.name === "AbortError") throw err;
         console.error("Approve/generate error:", err);
         notify?.({
           message: err?.message || "Build failed. You can try again.",
           type: "error",
         });
+        throw err;
       }
     },
     [approvePlanInternal, notify]
   );
+
+  const planRevisionsRef = useRef(new Map());
+  const reviseStoppedPlan = useCallback((message) => {
+    const chatId = chat.currentChatId;
+    const version = Number(message?.planVersion ?? message?.version ?? message?.structuredPlan?.version);
+    const hash = message?.planHash || message?.hash || message?.structuredPlan?.hash;
+    const key = `${chatId}:${message?.planId}:${version}:${hash}`;
+    if (planRevisionsRef.current.has(key)) return planRevisionsRef.current.get(key);
+    const requestId = `plan-revision-${uuidv4()}`;
+    const controller = createFlowAbortController(chatId, requestId);
+    setFlowBusyForChat(chatId, requestId, true);
+    beginOrchestrationPending(chatId, requestId, message?.originPrompt || "", "Preparing a new plan revision…");
+    const operation = Promise.resolve().then(async () => {
+      if (!user || !chatId || !message?.taskId || !message?.planId || !hash || !Number.isSafeInteger(version) || version < 1
+        || !(chat.messages || []).some(item => item.id === message.id && item.planId === message.planId && item.taskId === message.taskId)) {
+        throw new Error("Open the stopped plan in its original conversation before revising it.");
+      }
+      await chat.assertCanWrite();
+      throwIfAborted(controller.signal);
+      const snapshot = await getTask(message.taskId);
+      throwIfAborted(controller.signal);
+      const task = snapshot.task || snapshot;
+      if (!["failed", "cancelled"].includes(task.status)) throw new Error("This build is still active. Open task progress before changing its approved plan.");
+      const taskChatId = task.chatId || task.conversationId;
+      if (taskChatId && taskChatId !== chatId) throw new Error("Reopen this build in its original conversation before revising it.");
+      // This creates a new unapproved revision of the exact saved plan. Keep
+      // the canonical terminal task and its execution idempotency unchanged.
+      const response = await restoreWorkflowPlanVersion(message.planId, {
+        version, hash, sourceVersion: version, sourceHash: hash,
+      });
+      const plan = response.plan || response;
+      const nextVersion = Number(plan.planVersion ?? plan.version);
+      const nextHash = plan.planHash || plan.hash;
+      if (plan.planId !== message.planId || nextVersion !== version + 1 || !nextHash || plan.status !== "awaiting_approval") {
+        throw new Error("The new revision could not be confirmed. Reopen the saved plan before trying again.");
+      }
+      await writeOrchestrationResult(chatId, requestId, { ...plan, planVersion: nextVersion, planHash: nextHash },
+        message.originPrompt || "", message.attachments || [], { mode: "plan", projectId: message.projectId, targeting: message.targeting });
+      await chat.updateChatMode?.(chatId, "plan");
+      return { plan, activeChat: visibleChatIdRef.current === chatId && !controller.signal.aborted };
+    }).finally(() => {
+      planRevisionsRef.current.delete(key);
+      releaseFlowAbortController(chatId, requestId);
+      setFlowBusyForChat(chatId, requestId, false);
+      clearOrchestrationPending(chatId, requestId);
+    });
+    planRevisionsRef.current.set(key, operation);
+    return operation;
+  }, [user, chat, createFlowAbortController, setFlowBusyForChat, beginOrchestrationPending, writeOrchestrationResult, releaseFlowAbortController, clearOrchestrationPending]);
 
   // Stage 5 (refine): re-run generation with a refinement instruction against the
   // server-owned workspace revision (isRefinement + baseArtifactRef). Do not
@@ -1972,6 +2116,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     handleSubmit,
     submitClarifyAnswers,
     approvePlan,
+    reviseStoppedPlan,
     refineArtifact,
     cancelCurrentFlow,
   };

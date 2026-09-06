@@ -1,0 +1,264 @@
+TAP version 13
+# Subtest: new users build automatically with standard checks and snapshots
+ok 1 - new users build automatically with standard checks and snapshots
+  ---
+  duration_ms: 1.6239
+  ...
+# Subtest: saved legacy policy is retained and review/manual cannot be overridden by developer mode
+ok 2 - saved legacy policy is retained and review/manual cannot be overridden by developer mode
+  ---
+  duration_ms: 0.4171
+  ...
+# Subtest: execution ignores browser project, target, Studio, and asset tampering
+ok 3 - execution ignores browser project, target, Studio, and asset tampering
+  ---
+  duration_ms: 2.346
+  ...
+# Subtest: plan fence rejects stale versions and hashes
+ok 4 - plan fence rejects stale versions and hashes
+  ---
+  duration_ms: 0.6163
+  ...
+# Subtest: plan execution follows the original chat and ignores a browser chat override
+ok 5 - plan execution follows the original chat and ignores a browser chat override
+  ---
+  duration_ms: 1.2927
+  ...
+# Subtest: readiness blockers reject execution while advisory warnings remain executable
+ok 6 - readiness blockers reject execution while advisory warnings remain executable
+  ---
+  duration_ms: 0.2403
+  ...
+# Subtest: repeat execution requests produce deterministic idempotency identities
+ok 7 - repeat execution requests produce deterministic idempotency identities
+  ---
+  duration_ms: 0.3353
+  ...
+# Subtest: approved plan compilation preserves trusted context for canonical task launch
+ok 8 - approved plan compilation preserves trusted context for canonical task launch
+  ---
+  duration_ms: 0.2803
+  ...
+# Subtest: approved plan compilation rejects a mismatched immutable reference
+ok 9 - approved plan compilation rejects a mismatched immutable reference
+  ---
+  duration_ms: 0.2902
+  ...
+# Subtest: plan launch preserves authenticated saved apply preferences instead of a manual default
+ok 10 - plan launch preserves authenticated saved apply preferences instead of a manual default
+  ---
+  duration_ms: 1.0146
+  ...
+# Subtest: plan launch does not continue with guessed preferences after a settings read failure
+ok 11 - plan launch does not continue with guessed preferences after a settings read failure
+  ---
+  duration_ms: 0.6862
+  ...
+# Subtest: artifact intake preserves the canonical UI Creator launch envelope
+ok 12 - artifact intake preserves the canonical UI Creator launch envelope
+  ---
+  duration_ms: 3.1367
+  ...
+# Subtest: artifact intake does not discard malformed orphaned UI fields before validation
+ok 13 - artifact intake does not discard malformed orphaned UI fields before validation
+  ---
+  duration_ms: 0.2361
+  ...
+# Subtest: artifact execution uses the accepted Task UI envelope instead of stale caller fields
+ok 14 - artifact execution uses the accepted Task UI envelope instead of stale caller fields
+  ---
+  duration_ms: 0.2923
+  ...
+# Subtest: legacy mode invokes only the legacy launcher exactly once
+ok 15 - legacy mode invokes only the legacy launcher exactly once
+  ---
+  duration_ms: 2.3172
+  ...
+# Subtest: dual mode mirrors an authorized project, then invokes one legacy launcher
+ok 16 - dual mode mirrors an authorized project, then invokes one legacy launcher
+  ---
+  duration_ms: 0.7205
+  ...
+# Subtest: dual mode without project context stays legacy-only
+ok 17 - dual mode without project context stays legacy-only
+  ---
+  duration_ms: 0.4121
+  ...
+# Subtest: dual mirror authorization failure occurs before any launch
+ok 18 - dual mirror authorization failure occurs before any launch
+  ---
+  duration_ms: 0.688
+  ...
+# Subtest: canonical adapter performs intake before exactly one legacy launch
+ok 19 - canonical adapter performs intake before exactly one legacy launch
+  ---
+  duration_ms: 0.5343
+  ...
+# Subtest: canonical intake receives only the server-trusted approved plan
+ok 20 - canonical intake receives only the server-trusted approved plan
+  ---
+  duration_ms: 0.7463
+  ...
+# Subtest: canonical intake ignores the selected Studio target while launch routing stays Task-owned
+ok 21 - canonical intake ignores the selected Studio target while launch routing stays Task-owned
+  ---
+  duration_ms: 0.7354
+  ...
+# Subtest: durable execution identity is fenced to the trusted approved plan reference
+ok 22 - durable execution identity is fenced to the trusted approved plan reference
+  ---
+  duration_ms: 2.3942
+  ...
+# Subtest: durable scoped replay returns the prior launch without a second side effect
+ok 23 - durable scoped replay returns the prior launch without a second side effect
+  ---
+  duration_ms: 0.7888
+  ...
+# Subtest: durable replay rejects a changed request before a second launch
+ok 24 - durable replay rejects a changed request before a second launch
+  ---
+  duration_ms: 0.6554
+  ...
+# Subtest: concurrent canonical retries share one intake and one side effect
+ok 25 - concurrent canonical retries share one intake and one side effect
+  ---
+  duration_ms: 8.4278
+  ...
+# Subtest: canonical mode fails closed when transport selection is zero or both
+    # Subtest: no transport
+    ok 1 - no transport
+      ---
+      duration_ms: 0.4449
+      ...
+    # Subtest: both transports
+    ok 2 - both transports
+      ---
+      duration_ms: 0.1786
+      ...
+    1..2
+ok 26 - canonical mode fails closed when transport selection is zero or both
+  ---
+  duration_ms: 0.955
+  ...
+# Subtest: canonical outbox transport enqueues and launches exactly once through the dispatcher
+ok 27 - canonical outbox transport enqueues and launches exactly once through the dispatcher
+  ---
+  duration_ms: 0.4464
+  ...
+# Subtest: canonical outbox without a dispatcher remains fail-closed
+ok 28 - canonical outbox without a dispatcher remains fail-closed
+  ---
+  duration_ms: 0.2715
+  ...
+# Subtest: canonical waiting_user intake returns without launching
+ok 29 - canonical waiting_user intake returns without launching
+  ---
+  duration_ms: 0.3179
+  ...
+# Subtest: canonical mode rejects missing project and intake failures before launch
+    # Subtest: missing project
+    ok 1 - missing project
+      ---
+      duration_ms: 0.2764
+      ...
+    # Subtest: unauthorized project
+    ok 2 - unauthorized project
+      ---
+      duration_ms: 0.2558
+      ...
+    1..2
+ok 30 - canonical mode rejects missing project and intake failures before launch
+  ---
+  duration_ms: 0.813
+  ...
+# Subtest: canonical non-executable intake outcomes remain structured and never launch
+    # Subtest: conversation
+    ok 1 - conversation
+      ---
+      duration_ms: 0.2837
+      ...
+    # Subtest: continuation
+    ok 2 - continuation
+      ---
+      duration_ms: 0.124
+      ...
+    # Subtest: amendment
+    ok 3 - amendment
+      ---
+      duration_ms: 0.1156
+      ...
+    1..3
+ok 31 - canonical non-executable intake outcomes remain structured and never launch
+  ---
+  duration_ms: 0.7805
+  ...
+# Subtest: independent facade instances resume through the same deterministic downstream identity
+ok 32 - independent facade instances resume through the same deterministic downstream identity
+  ---
+  duration_ms: 1.026
+  ...
+# Subtest: an uncertain launch retains its durable claim and retries return recovery identities
+ok 33 - an uncertain launch retains its durable claim and retries return recovery identities
+  ---
+  duration_ms: 0.9255
+  ...
+# Subtest: a crash after deterministic job creation checkpoints and replays that job without relaunch
+ok 34 - a crash after deterministic job creation checkpoints and replays that job without relaunch
+  ---
+  duration_ms: 0.7423
+  ...
+# Subtest: deterministic launch rejection remains terminal instead of becoming outcome unknown
+ok 35 - deterministic launch rejection remains terminal instead of becoming outcome unknown
+  ---
+  duration_ms: 0.8922
+  ...
+# Subtest: canonical launch derives Studio routing only from a complete trusted Task target
+    # Subtest: complete Task target replaces every caller-supplied target alias
+    ok 1 - complete Task target replaces every caller-supplied target alias
+      ---
+      duration_ms: 0.3334
+      ...
+    # Subtest: caller opt-out disables an otherwise complete Task target
+    ok 2 - caller opt-out disables an otherwise complete Task target
+      ---
+      duration_ms: 0.3206
+      ...
+    # Subtest: a server-owned Studio session remains valid when place attestation is unavailable
+    ok 3 - a server-owned Studio session remains valid when place attestation is unavailable
+      ---
+      duration_ms: 0.2593
+      ...
+    1..3
+ok 36 - canonical launch derives Studio routing only from a complete trusted Task target
+  ---
+  duration_ms: 1.3811
+  ...
+# Subtest: canonical mode rejects an intake result without trusted ownership before launching
+ok 37 - canonical mode rejects an intake result without trusted ownership before launching
+  ---
+  duration_ms: 0.3264
+  ...
+# Subtest: canonical transport helper enforces exclusive selection
+ok 38 - canonical transport helper enforces exclusive selection
+  ---
+  duration_ms: 0.2969
+  ...
+# Subtest: requestFingerprint includes refine base identity
+ok 39 - requestFingerprint includes refine base identity
+  ---
+  duration_ms: 0.2209
+  ...
+# Subtest: requestFingerprint ignores deprecated client Studio targets
+ok 40 - requestFingerprint ignores deprecated client Studio targets
+  ---
+  duration_ms: 0.1774
+  ...
+1..40
+# tests 50
+# suites 0
+# pass 50
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 171.2566

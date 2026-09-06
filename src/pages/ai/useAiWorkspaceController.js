@@ -81,6 +81,7 @@ import {
   clearPendingRobloxAction,
 } from "../../lib/robloxOAuthApi";
 import { useProjectAssets } from "../../hooks/useProjectAssets";
+import { ensureDraftProject } from "../../lib/draftProject";
 import { useProjectBindings } from "../../hooks/useProjectBindings";
 import { useRobloxImageUpload } from "../../hooks/useRobloxImageUpload";
 import { useWorkspaceArtifactPersistence } from "../../hooks/useWorkspaceArtifactPersistence";
@@ -581,7 +582,8 @@ export function useAiWorkspaceController() {
   const scriptManager = useAiScripts(user, notify, { authReady });
   const selectedAssetProjectId = chat.currentChatId || null;
   const projectAssets = useProjectAssets(selectedAssetProjectId, {
-    enabled: Boolean(user && selectedAssetProjectId),
+    enabled: Boolean(user),
+    ownerUid: user?.uid,
     notify,
   });
 
@@ -804,7 +806,6 @@ export function useAiWorkspaceController() {
       setProjectSelectorOpen(false);
       return;
     }
-    setProjectSelectorOpen(true);
   }, [
     activeProjectId,
     authReady,
@@ -1365,19 +1366,6 @@ export function useAiWorkspaceController() {
             activeProjectId ||
             ""
         ).trim() || null;
-      if (
-        activeConversationMode === "agent"
-      ) {
-        const supportedTransportConnected = Boolean(
-          studioConnection.executionReady ?? studioConnection.connected
-        );
-        if (!supportedTransportConnected) {
-          const connectionMessage = "Connect Studio to apply changes.";
-          notify({ message: connectionMessage, type: "error" });
-          throw new Error(connectionMessage);
-        }
-      }
-
       if (runtimeProjectId) {
         try {
           const resolution = await getProjectBinding(runtimeProjectId);
@@ -1421,6 +1409,22 @@ export function useAiWorkspaceController() {
         }
       }
 
+      if (!runtimeProjectId) {
+        const project = await ensureDraftProject(user.uid, promptToSend);
+        assertOperationActive();
+        runtimeProjectId = project.projectId;
+        setRestoredActiveProject(project);
+        setSelectedProjectId(runtimeProjectId);
+        await updateSettings({ activeProjectId: runtimeProjectId });
+        emitAiEvent(AI_EVENTS.PROJECTS_CHANGED, { projectId: runtimeProjectId });
+        if (chat.currentChatId) {
+          await chat.assertCanWrite();
+          await updateDoc(doc(db, "users", user.uid, "chats", chat.currentChatId),
+            sanitizeChatWritePayload({ projectId: runtimeProjectId, updatedAt: serverTimestamp() }));
+          chat.setCurrentChatMeta?.((current) => ({ ...current, projectId: runtimeProjectId }));
+        }
+      }
+
       // Build this once after all project/Studio repair has completed. Refine and
       // first-generation must submit the same effective identity inputs so a
       // retry cannot bind one idempotency key to two different agent payloads.
@@ -1438,6 +1442,10 @@ export function useAiWorkspaceController() {
         : rewindTarget;
       const effectiveSubmissionOptions = {
         ...restSubmissionOptions,
+        onChatReady: async (chatId) => {
+          await restSubmissionOptions.onChatReady?.(chatId);
+          await projectAssets.attachDraftAssets(chatId);
+        },
         projectId: runtimeProjectId,
         studioConnected: Boolean(studioConnection.connected),
         targeting: {
@@ -1482,7 +1490,6 @@ export function useAiWorkspaceController() {
       user,
       prompt,
       attachments,
-      projectAssets.assets,
       activeTab,
       isMobile,
       refineTarget,
@@ -1493,6 +1500,9 @@ export function useAiWorkspaceController() {
       generatorMode,
       activeConversationMode,
       activeProjectId,
+      projectAssets,
+      setSelectedProjectId,
+      updateSettings,
       settings?.modelVersion,
       setGeneratorMode,
       studioConnection,
@@ -1532,7 +1542,10 @@ export function useAiWorkspaceController() {
         mode: activeConversationMode,
       });
       if (studioPreflight.status === "blocked") {
-        notify({ message: studioPreflight.message, type: "error" });
+        notify({
+          id: "studio-submit-blocked", message: studioPreflight.message, type: "info",
+          cta: { label: "Connect Studio", onClick: () => window.dispatchEvent(new Event("nexus:open-studio")) },
+        });
         return undefined;
       }
 
@@ -2028,9 +2041,24 @@ export function useAiWorkspaceController() {
     [handlePromptSubmit]
   );
 
-  const handleEditPlan = useCallback((message) => {
-    setPrompt(message?.originPrompt || "");
-  }, []);
+  const handleEditPlan = useCallback(async (message) => {
+    if (message?.stage === "plan_approved" && ["failed", "cancelled", "canceled"].includes(message.executionStatus)) {
+      const revision = await chat.reviseStoppedPlan(message);
+      if (!revision?.activeChat) return;
+    }
+    setPrompt((draft) => draft?.trim() && draft.trim() !== message?.originPrompt?.trim()
+      ? draft
+      : "I'd like to change this plan: ");
+    void chat.updateChatMode(chat.currentChatId, "plan").catch((error) => {
+      notify({ message: error?.message || "Could not open Plan mode. Please try again.", type: "error" });
+    });
+    window.requestAnimationFrame(() => {
+      const input = document.querySelector('textarea[aria-label="Prompt input"]');
+      input?.focus();
+      input?.setSelectionRange(input.value.length, input.value.length);
+      input?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+    });
+  }, [chat, notify]);
 
   const attachmentUpload = useChatAttachmentUpload({ attachments, setAttachments, user, notify, enabled: FEATURE_FLAGS.chatAttachments, modelsEnabled: FEATURE_FLAGS.chatModelFiles });
   const handleFileUpload = attachmentUpload.upload;
@@ -2108,22 +2136,8 @@ export function useAiWorkspaceController() {
       return;
     }
 
-    // Asset selection is also a valid first action. Create the draft chat now
-    // so selected assets have a durable project to attach to before the first
-    // prompt is submitted.
-    if (!selectedAssetProjectId) {
-      try {
-        await unified.ensureChat("New chat");
-      } catch (err) {
-        notify({
-          message: err?.message || "Could not create a chat for these assets",
-          type: "error",
-        });
-        return;
-      }
-    }
     setAssetLibraryOpen(true);
-  }, [notify, robloxStatus, selectedAssetProjectId, unified, user]);
+  }, [notify, robloxStatus, user]);
 
   const handleConfirmProjectAssets = useCallback(
     async (assets) => {
@@ -2351,8 +2365,11 @@ export function useAiWorkspaceController() {
   );
 
   const stopChatOperation = useCallback(
-    () => chatOperationCoordinatorRef.current.stop(chat.currentChatId || "draft"),
-    [chat.currentChatId]
+    () => {
+      unified.cancelCurrentFlow?.();
+      return chatOperationCoordinatorRef.current.stop(chat.currentChatId || "draft");
+    },
+    [chat.currentChatId, unified]
   );
 
   const resumeChatQueue = useCallback(

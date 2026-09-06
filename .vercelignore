@@ -21,3 +21,6 @@ public-frontend/out
 *.p12
 *.pfx
 *.zip
+
+.local-logs
+artifacts

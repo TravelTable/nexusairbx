@@ -227,6 +227,8 @@ export function useTaskRuntime({
   const lastSequenceRef = useRef(0);
   const selectedTaskIdRef = useRef(selectedTaskId);
   const selectionScopeRef = useRef(storageKey);
+  const visibleScopeRef = useRef(storageKey);
+  visibleScopeRef.current = storageKey;
 
   const applyTask = useCallback((nextTask) => {
     if (!nextTask) return null;
@@ -290,6 +292,7 @@ export function useTaskRuntime({
     setEvents([]);
     setLastSequence(0);
     setError(null);
+    setBusyAction("");
 
     if (!runtimeEnabled) {
       setSelectedTaskId("");
@@ -477,16 +480,16 @@ export function useTaskRuntime({
     setError(null);
     try {
       const result = await operation();
-      if (result?.task) applyTask(result.task);
+      if (result?.task && visibleScopeRef.current === storageKey) applyTask(result.task);
       return result;
     } catch (reason) {
       const normalized = normalizeTaskRuntimeError(reason);
-      setError(normalized);
+      if (visibleScopeRef.current === storageKey) setError(normalized);
       throw normalized;
     } finally {
-      setBusyAction("");
+      if (visibleScopeRef.current === storageKey) setBusyAction("");
     }
-  }, [applyTask, runtimeEnabled]);
+  }, [applyTask, runtimeEnabled, storageKey]);
 
   const startTask = useCallback((input, options) => runMutation("create", async () => {
     const result = await createTask(input, options);

@@ -11,7 +11,27 @@ export class WorkflowApiError extends Error {
   }
 }
 
-async function workflowRequest(path, { method = "GET", body, signal, idempotencyKey } = {}) {
+async function workflowRequest(path, options = {}) {
+  const controller = new AbortController();
+  const onAbort = () => controller.abort(options.signal.reason);
+  if (options.signal?.aborted) onAbort();
+  else options.signal?.addEventListener("abort", onAbort, { once: true });
+  let timedOut = false;
+  const timer = setTimeout(() => { timedOut = true; controller.abort(); }, 210000);
+  try {
+    return await performWorkflowRequest(path, { ...options, signal: controller.signal });
+  } catch (error) {
+    if (timedOut) throw new WorkflowApiError("The request took too long to confirm. Your saved progress is retained. Reconnect and retry the same plan.", {
+      status: 504, code: "WORKFLOW_TIMEOUT",
+    });
+    throw error;
+  } finally {
+    clearTimeout(timer);
+    options.signal?.removeEventListener("abort", onAbort);
+  }
+}
+
+async function performWorkflowRequest(path, { method = "GET", body, signal, idempotencyKey } = {}) {
   const headers = {};
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (idempotencyKey) headers["Idempotency-Key"] = String(idempotencyKey);
@@ -23,7 +43,10 @@ async function workflowRequest(path, { method = "GET", body, signal, idempotency
       body: JSON.stringify(body),
     }),
   });
-  const payload = await res.json().catch(async () => ({ message: await res.text().catch(() => "") }));
+  // A failed JSON read consumes the body. Keep a separate reader for proxy and
+  // gateway responses so their useful explanation does not disappear.
+  const fallbackResponse = res.clone?.();
+  const payload = await res.json().catch(async () => ({ message: await (fallbackResponse || res).text().catch(() => "") }));
   if (!res.ok) {
     const nestedError = payload?.error;
     const message = typeof payload?.message === "string" && payload.message.trim()
@@ -144,6 +167,7 @@ export async function orchestrate({
   chatId = null,
   prompt,
   answers = null,
+  answerContext = [],
   history = [],
   attachments = [],
   mode = "agent",
@@ -164,6 +188,7 @@ export async function orchestrate({
         chatId,
         prompt,
         answers,
+        answerContext,
         history,
         mode,
         gameSpec,
@@ -266,9 +291,11 @@ export function checkWorkflowPlanReadiness(planId, {
   projectId,
   studioConnected,
   targeting,
+  signal,
 } = {}) {
   return workflowRequestWithFallback(getPlanPathCandidates(planId, "/readiness"), {
     method: "POST",
+    signal,
     body: {
       version,
       hash,

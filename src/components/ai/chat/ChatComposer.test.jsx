@@ -394,47 +394,13 @@ describe("ChatComposer compact interactions", () => {
     expect(onSubmit).toHaveBeenCalledTimes(2);
   });
 
-  test("explains when a connected legacy plugin must be updated before building", () => {
-    renderComposer({
-      prompt: "Build a running game",
-      studioEnabled: true,
-      studioConnected: false,
-      studioConnectionType: "plugin_bridge",
-      studioConnectionState: "plugin_update_required",
-    });
-
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "Update the Studio plugin to apply changes."
-    );
-    expect(screen.getByText("Studio plugin update required")).toBeInTheDocument();
-  });
-
-  test("opens Studio connection from the disconnected recovery action", () => {
-    const onStudioConnectionOpen = jest.fn();
-    renderComposer({
-      prompt: "Build a fly GUI",
-      studioEnabled: true,
-      studioConnected: false,
-      onStudioConnectionOpen,
-    });
-
-    expect(screen.getByRole("alert").textContent).toContain(
-      "Connect Studio to apply changes.",
-    );
-
-    const recoveryAction = screen.getByRole("button", {
-      name: "Connect Studio",
-    });
-    expect(recoveryAction.getAttribute("aria-haspopup")).toBe("dialog");
-    expect(recoveryAction.getAttribute("aria-controls")).toBe(
-      "studio-connection-dialog",
-    );
-    fireEvent.click(recoveryAction);
-    expect(onStudioConnectionOpen).toHaveBeenLastCalledWith(recoveryAction);
-    expect(onStudioConnectionOpen).toHaveBeenCalledTimes(1);
-    expect(
-      screen.queryByRole("dialog", { name: "Workspace options" }),
-    ).toBeNull();
+  test("keeps the update status compact and delegates submission to intent-aware preflight", () => {
+    const onSubmit = jest.fn();
+    renderComposer({ prompt: "How do checkpoints work?", onSubmit, studioConnected: false, studioConnectionState: "plugin_update_required" });
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.getByText("Studio update available")).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole("textbox", { name: "Prompt input" }), { key: "Enter" });
+    expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 
   test("Enter submits while Shift+Enter and IME composition do not", () => {

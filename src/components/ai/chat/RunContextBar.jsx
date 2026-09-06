@@ -1,17 +1,6 @@
 import React from "react";
 import { formatChatModeLabel } from "../../../lib/chatModes";
-
-const ACTION_LABELS = Object.freeze({
-  execute: "Building",
-  stage_for_review: "Preparing review",
-  recover: "Recovering",
-  clarify: "Needs input",
-  block: "Blocked",
-  refuse: "Blocked",
-  answer: "Read-only",
-  inspect: "Read-only",
-  plan: "Planning",
-});
+import { decisionActionLabel } from "../../../lib/chatDecisionDisplay";
 
 const FACTOR_LABELS = Object.freeze({
   intentClarity: "Intent clarity",
@@ -98,7 +87,7 @@ export function describeRunContext(decision) {
     .filter(({ id }) => id);
 
   return {
-    status: ACTION_LABELS[decision?.action] || "Deciding",
+    status: decisionActionLabel(decision),
     mode,
     target,
     connection,

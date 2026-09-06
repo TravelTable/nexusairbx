@@ -1,0 +1,24 @@
+npm warn "src/components/ai/chat/FlowCards.test.jsx" is being parsed as a normal command line argument.
+npm warn Unknown cli config "--watchAll". This will stop working in the next major version of npm.
+npm warn Unknown cli config "--runTestsByPath". This will stop working in the next major version of npm.
+
+> nexusrbx-react@0.1.0 test
+> react-scripts test src/components/ai/chat/FlowCards.test.jsx
+
+PASS src/components/ai/chat/FlowCards.test.jsx
+  √ build button responds immediately and prevents duplicate requests while starting (39 ms)
+  √ approval alone never claims the task is still building (12 ms)
+  interactive planning cards
+    √ keeps the actual readiness blocker beside Start build (145 ms)
+    √ keeps saved clarification answers and a visible retry error after failure (89 ms)
+    √ requires every required clarification while allowing optional answers to remain blank (133 ms)
+    √ supports multi-select defaults and recommendations without offering disallowed custom answers (126 ms)
+    √ renders blocking questions outside Plan mode as a single inline chat prompt (4 ms)
+    √ keeps plan editing inside the conversation (19 ms)
+    √ handles an expected async approval cancellation at the button boundary (23 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       9 passed, 9 total
+Snapshots:   0 total
+Time:        15.183 s
+Ran all test suites matching /src\\components\\ai\\chat\\FlowCards.test.jsx/i.

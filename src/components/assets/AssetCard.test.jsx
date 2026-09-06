@@ -23,10 +23,9 @@ describe("AssetCard", () => {
       />
     );
 
-    expect(screen.getByText("Nexus ID")).not.toBeNull();
-    expect(screen.getByText("Roblox ID")).not.toBeNull();
-    expect(container.querySelector(`[title="${nexusAssetId}"]`)).not.toBeNull();
-    expect(container.querySelector(`[title="${robloxAssetId}"]`)).not.toBeNull();
+    expect(screen.queryByText("Nexus ID")).toBeNull();
+    expect(screen.queryByText("Roblox ID")).toBeNull();
+    fireEvent.click(screen.getByText("More"));
     expect(screen.getByRole("button", { name: "Retry upload" })).not.toBeNull();
     expect(screen.queryByRole("button", { name: "Refresh status" })).toBeNull();
   });
@@ -45,6 +44,7 @@ describe("AssetCard", () => {
       />
     );
 
+    fireEvent.click(screen.getByText("More"));
     expect(screen.getByRole("button", { name: "Refresh status" })).not.toBeNull();
     expect(screen.queryByRole("link")).toBeNull();
   });
@@ -57,6 +57,7 @@ describe("AssetCard", () => {
     });
 
     render(<AssetCard asset={{ assetId: nexusAssetId, robloxAssetId, lifecycle: "ready" }} />);
+    fireEvent.click(screen.getByText("More"));
     fireEvent.click(screen.getByRole("button", { name: `Copy Roblox asset ID ${robloxAssetId}` }));
 
     await waitFor(() => expect(writeText).toHaveBeenCalledWith(robloxAssetId));

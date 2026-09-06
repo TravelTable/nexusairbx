@@ -21,6 +21,7 @@ export default function AgentChatPanel({
   isBusy,
   operationState,
   onApprovePlan,
+  executionTask,
   onClarifySubmit,
   onEditPlan,
   onRefine,
@@ -28,6 +29,8 @@ export default function AgentChatPanel({
   onOpenArtifact,
   onOpenFileReference,
   onQuickStart,
+  recentProjects,
+  onOpenProject,
   onStartGuide,
   startGuideLabel,
   guidedLaunchIdea,
@@ -123,7 +126,9 @@ export default function AgentChatPanel({
   onDockBuildOptionsClose,
   renderDockNavigation,
 }) {
-  const compactRunVisible = Boolean(getCompactRunMeta(agentRun));
+  const planTaskVisible = executionTask && (messages || []).some((message) => message.stage === "plan_approved" && message.taskId === executionTask.taskId);
+  const visibleRun = planTaskVisible ? { ...executionTask, steps: executionTask.steps || [] } : agentRun;
+  const compactRunVisible = Boolean(getCompactRunMeta(visibleRun));
   const handleComposerSubmit = useCallback(
     (event, overridePrompt = null, composerOptions = {}) => {
       return onSubmit?.(event, overridePrompt, composerOptions);
@@ -153,11 +158,15 @@ export default function AgentChatPanel({
       <div className="agent-chat-panel__content flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col">
         <div className="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col">
           <ChatView
+            teamActivity={executionTask?.chatId === currentChatId ? executionTask.teamActivity
+              : agentRun?.chatId === currentChatId ? agentRun.teamActivity : null}
             chatId={currentChatId}
             chatTitle={chatTitle}
             projectTitle={projectTitle}
             projectId={projectId}
-            messages={messages}
+            messages={(messages || []).map((message) => message.taskId && message.taskId === executionTask?.taskId
+              ? { ...message, executionStatus: executionTask.status }
+              : message)}
             pendingMessage={pendingMessage}
             pendingMessages={pendingMessages}
             generationStage={generationStage}
@@ -172,6 +181,8 @@ export default function AgentChatPanel({
             onOpenFile={onOpenFileReference}
             onRefine={onRefine}
             onQuickStart={onQuickStart}
+              recentProjects={recentProjects}
+              onOpenProject={onOpenProject}
             onStartGuide={onStartGuide}
             startGuideLabel={startGuideLabel}
             guidedLaunchIdea={guidedLaunchIdea}
@@ -198,7 +209,7 @@ export default function AgentChatPanel({
 
       {compactRunVisible ? (
         <CompactAgentRunBar
-          agentRun={agentRun}
+          agentRun={visibleRun}
           onApproveStep={onApproveStep}
           approvingStepId={approvingStepId}
         />

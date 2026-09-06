@@ -5,6 +5,10 @@
 -- NexusRBX Studio Bridge
 -- Local Studio plugin: website-controlled apply + agent tool runner.
 
+-- Studio starts plugin copies in Play/Run data models. Those copies share
+-- plugin settings with the editor, so they must not claim its connector.
+if not game:GetService("RunService"):IsEdit() then return end
+
 local BACKEND_URL = "https://api.nexusrbx.com"
 local BACKEND_HOST = "api.nexusrbx.com"
 local PLUGIN_VERSION = "0.14.0-r15-animation"
@@ -14,7 +18,7 @@ local STUDIO_PROTOCOL_VERSION = "2026-08-27-r15-animation"
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.14.0-r15-animation.12-toolbox"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.14.0-r15-animation.14-color-readback"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the
@@ -730,7 +734,7 @@ safePropertyValue = function(inst, key)
 		return inst[key]
 	end)
 	if not ok then
-		return nil
+		return nil, { code = "PROPERTY_READ_FAILED", message = string.sub(tostring(value), 1, 240) }
 	end
 	local valueType = typeof(value)
 	if valueType == "string" or valueType == "number" or valueType == "boolean" then
@@ -775,7 +779,7 @@ safePropertyValue = function(inst, key)
 		end
 		return { type = "NumberSequence", keypoints = keypoints }
 	end
-	return nil
+	return nil, { code = "PROPERTY_VALUE_UNSUPPORTED", message = "Unsupported property value type: " .. tostring(valueType) }
 end
 
 propertiesOf = function(inst)
@@ -784,6 +788,16 @@ propertiesOf = function(inst)
 		ClassName = inst.ClassName,
 	}
 	local candidates = {
+		"Anchored",
+		"CanCollide",
+		"CanTouch",
+		"CanQuery",
+		"CastShadow",
+		"Massless",
+		"Locked",
+		"CollisionGroup",
+		"Material",
+		"Reflectance",
 		"Value",
 		"Enabled",
 		"ResetOnSpawn",
@@ -1867,7 +1881,7 @@ createNexusPluginHeader = function(parent, colors)
 	title.Font = Enum.Font.GothamBold
 	title.TextSize = 15
 	title.TextXAlignment = Enum.TextXAlignment.Left
-	title.TextColor3 = colors.text or Color3.fromRGB(239, 239, 236)
+	title.TextColor3 = colors.live or Color3.fromRGB(192, 132, 252)
 	title.Text = "Nexus"
 	title.Parent = header
 
@@ -1898,6 +1912,7 @@ createNexusPluginHeader = function(parent, colors)
 
 	local settings = nexusHeaderButton(header, "Settings", "•••", -6)
 	settings.TextSize = 11
+	settings.TextColor3 = colors.textMuted or Color3.fromRGB(184, 167, 206)
 
 	local border = Instance.new("Frame")
 	border.Name = "HeaderBorder"
@@ -3244,7 +3259,32 @@ readInstance = function(payload)
 	for _, path in ipairs(paths) do
 		local inst = resolvePath(path)
 		if inst then
-			table.insert(out, serializeFlat(inst, true, payload.includeAttributes ~= false, payload.includeTags ~= false))
+			local record = serializeFlat(inst, true, payload.includeAttributes ~= false, payload.includeTags ~= false)
+			local requested = type(payload.properties) == "table" and payload.properties or {}
+			local errors, seen = {}, {}
+			for index, property in ipairs(requested) do
+				if index > 100 then break end
+				local key = type(property) == "string" and property or ""
+				if key == "" or #key > 100 or not key:match("^[%a_][%w_]*$") then
+					table.insert(errors, { property = string.sub(tostring(property), 1, 100), code = "INVALID_PROPERTY_NAME", message = "Use a readable Studio property name." })
+				elseif not seen[key] then
+					seen[key] = true
+					if key == "Source" or key == "LinkedSource" then
+						table.insert(errors, { property = key, code = "PROPERTY_READ_REQUIRES_SCRIPT_TOOL", message = "Read script source with read_script or read_scripts." })
+					else
+						local value, propertyError = safePropertyValue(inst, key)
+						if value ~= nil then
+							record.properties[key] = value
+						else
+							propertyError = propertyError or { code = "PROPERTY_READ_FAILED", message = "The requested property could not be read." }
+							table.insert(errors, { property = key, code = propertyError.code, message = propertyError.message })
+						end
+					end
+				end
+			end
+			if #errors > 0 then record.propertyErrors = errors end
+			if #requested > 100 then record.propertiesTruncated = true end
+			table.insert(out, record)
 		else
 			table.insert(out, { path = path, error = "Instance not found" })
 		end
@@ -7937,8 +7977,17 @@ local pollingActive, lastErrorText, diagnosticsOpen, pendingApproval, selectedSn
 local tabButtons, activeTab, setActiveTab, tabBar = {}, "Tools", nil, nil
 local nexusHeader, UI_HELPERS = nil, {}
 
+-- Keep the dock dark and purple regardless of Studio's editor theme.
 local function themeColor(color)
-	return settings().Studio.Theme:GetColor(color)
+	local palette = {
+		[Enum.StudioStyleGuideColor.MainBackground] = Color3.fromRGB(14, 11, 20),
+		[Enum.StudioStyleGuideColor.InputFieldBackground] = Color3.fromRGB(24, 18, 34),
+		[Enum.StudioStyleGuideColor.Button] = Color3.fromRGB(40, 29, 57),
+		[Enum.StudioStyleGuideColor.InputFieldBorder] = Color3.fromRGB(75, 52, 103),
+		[Enum.StudioStyleGuideColor.MainText] = Color3.fromRGB(245, 240, 255),
+		[Enum.StudioStyleGuideColor.DimmedText] = Color3.fromRGB(184, 167, 206),
+	}
+	return palette[color] or palette[Enum.StudioStyleGuideColor.InputFieldBackground]
 end
 
 local function blendColor(a, b, alpha)
@@ -7956,13 +8005,13 @@ local COLORS = {
 	border = themeColor(Enum.StudioStyleGuideColor.InputFieldBorder),
 	text = themeColor(Enum.StudioStyleGuideColor.MainText),
 	textMuted = themeColor(Enum.StudioStyleGuideColor.DimmedText),
-	primary = Color3.fromRGB(124, 58, 237),
-	accent = Color3.fromRGB(132, 92, 223),
+	primary = Color3.fromRGB(117, 49, 210),
+	accent = Color3.fromRGB(107, 54, 173),
 	error = Color3.fromRGB(214, 69, 80),
 	warning = Color3.fromRGB(211, 145, 39),
 	success = Color3.fromRGB(57, 166, 92),
 	muted = themeColor(Enum.StudioStyleGuideColor.DimmedText),
-	live = Color3.fromRGB(0, 200, 150),
+	live = Color3.fromRGB(192, 132, 252),
 }
 
 -- Single source of truth for the connection state machine. Every visible status
@@ -7998,6 +8047,7 @@ scroll.Size = UDim2.fromScale(1, 1)
 scroll.BackgroundTransparency = 1
 scroll.BorderSizePixel = 0
 scroll.ScrollBarThickness = 6
+scroll.ScrollBarImageColor3 = COLORS.accent
 scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 scroll.CanvasSize = UDim2.new()
 scroll.Parent = root
@@ -8684,7 +8734,7 @@ UI_HELPERS.toast.AnchorPoint = Vector2.new(0.5, 1)
 UI_HELPERS.toast.Position = UDim2.new(0.5, 0, 1, -8)
 UI_HELPERS.toast.Size = UDim2.new(1, -24, 0, 0)
 UI_HELPERS.toast.AutomaticSize = Enum.AutomaticSize.Y
-UI_HELPERS.toast.BackgroundColor3 = Color3.fromRGB(30, 32, 38)
+UI_HELPERS.toast.BackgroundColor3 = COLORS.surfaceRaised
 UI_HELPERS.toast.BackgroundTransparency = 0.08
 UI_HELPERS.toast.TextColor3 = Color3.fromRGB(255, 255, 255)
 UI_HELPERS.toast.Font = Enum.Font.Gotham
@@ -9331,7 +9381,7 @@ showToast = function(message, kind)
 		return
 	end
 	UI_HELPERS.toast.Text = "  " .. text .. "  "
-	UI_HELPERS.toast.BackgroundColor3 = kind == "error" and COLORS.error or (kind == "success" and COLORS.success or Color3.fromRGB(30, 32, 38))
+	UI_HELPERS.toast.BackgroundColor3 = kind == "error" and COLORS.error or (kind == "success" and COLORS.success or COLORS.surfaceRaised)
 	UI_HELPERS.toast.Visible = true
 	UI_HELPERS.toast.BackgroundTransparency = 0.08
 	TweenService:Create(UI_HELPERS.toast, TweenInfo.new(0.15), { BackgroundTransparency = 0 }):Play()
@@ -9588,28 +9638,6 @@ codeBox:GetPropertyChangedSignal("Text"):Connect(function()
 	refreshControls()
 end)
 
-pcall(function()
-	settings().Studio.ThemeChanged:Connect(function()
-		local tokens = { canvas = "MainBackground", surface = "InputFieldBackground", surfaceRaised = "Button", border = "InputFieldBorder", text = "MainText", textMuted = "DimmedText", muted = "DimmedText" }
-		local replacements = {}
-		for key, token in pairs(tokens) do
-			table.insert(replacements, { old = COLORS[key], new = themeColor(Enum.StudioStyleGuideColor[token]) })
-			COLORS[key] = themeColor(Enum.StudioStyleGuideColor[token])
-		end
-		for _, instance in ipairs(root:GetDescendants()) do
-			for _, property in ipairs({ "BackgroundColor3", "TextColor3", "PlaceholderColor3", "BorderColor3", "Color" }) do
-				pcall(function()
-					for _, replacement in ipairs(replacements) do
-						if instance[property] == replacement.old then instance[property] = replacement.new; break end
-					end
-				end)
-			end
-			if instance:IsA("TextButton") then instance:SetAttribute("BaseColor", instance.BackgroundColor3) end
-		end
-		root.BackgroundColor3 = COLORS.canvas
-		setActiveTab(activeTab)
-	end)
-end)
 
 runSetupCheck = function()
 	setupResult.Visible = true
@@ -9697,7 +9725,7 @@ local MUTATING_COMMANDS = {
 	undo_last_batch = true,
 }
 
-local executedCommandCount = 0
+local executedCommandCount, studioEditModeRequiredResult = 0, nil
 local COMMAND_RECEIPTS_SETTING, COMMAND_RECEIPT_ORDER_SETTING, COMMAND_RECEIPT_LIMIT =
 	"nexusrbxCommandReceiptsV2", "nexusrbxCommandReceiptOrderV2", 50
 
@@ -10179,6 +10207,33 @@ local function verifyCommandOutcome(command, payload, result)
 		end
 		return true
 	end
+	local function propertyValuesMatch(inst, key, expected, actual)
+		if valuesMatch(expected, actual) then
+			return true
+		end
+		-- BasePart.Color stores 8-bit channels. Compare its actual stored color,
+		-- without relaxing numeric tolerances for positions or other properties.
+		if not inst or not inst:IsA("BasePart") or key ~= "Color"
+			or type(expected) ~= "table" or type(actual) ~= "table"
+			or (expected.type or expected["$type"]) ~= "Color3"
+			or (actual.type or actual["$type"]) ~= "Color3" then
+			return false
+		end
+		for _, channel in ipairs({ "r", "g", "b" }) do
+			local requested = expected[channel]
+			local observed = actual[channel]
+			if type(requested) ~= "number" or type(observed) ~= "number"
+				or requested ~= requested or observed ~= observed
+				or requested < 0 or requested > 1 or observed < 0 or observed > 1 then
+				return false
+			end
+			local storedChannel = math.floor(requested * 255 + 0.5) / 255
+			if math.abs(storedChannel - observed) > 0.00001 then
+				return false
+			end
+		end
+		return true
+	end
 	local function instanceProperty(inst, key, useNativeEncoding)
 		if not inst then
 			return nil
@@ -10196,7 +10251,7 @@ local function verifyCommandOutcome(command, payload, result)
 		for key, expected in pairs(properties or {}) do
 			count = count + 1
 			local actual = instanceProperty(inst, key, useNativeEncoding)
-			addCheck(kind, path, valuesMatch(expected, actual), {
+			addCheck(kind, path, propertyValuesMatch(inst, key, expected, actual), {
 				key = tostring(key),
 				expected = expected,
 				actual = actual,
@@ -10741,7 +10796,23 @@ local function verifyCommandOutcome(command, payload, result)
 	return verified, checks, evidence
 end
 
+studioEditModeRequiredResult = function(command, stage)
+	local message = "Stop Play or Run mode before applying Studio changes. The command did not run."
+	return {
+		ok = false, success = false, verified = false, retryable = true,
+		code = "STUDIO_EDIT_MODE_REQUIRED",
+		commandId = command.id or command.commandId, runId = command.runId,
+		stepId = command.stepId, operation = command.type,
+		operationId = command.operationId, idempotencyKey = command.idempotencyKey,
+		executionStarted = false, sideEffectStarted = false,
+		error = { code = "STUDIO_EDIT_MODE_REQUIRED", message = message, retryable = true, details = { stage = stage } },
+	}
+end
+
 executeCommand = function(command)
+	if not game:GetService("RunService"):IsEdit() then
+		return studioEditModeRequiredResult(command, "before_handler")
+	end
 	local commandType = command.type or "apply_artifact"
 	local handler = TOOL_HANDLERS[commandType]
 	if type(handler) ~= "function" then
@@ -11084,6 +11155,9 @@ end
 -- executes work itself, so it returns quickly and the session heartbeat implicit
 -- in every poll stays fresh even while the executor is busy.
 pullOnce = function(waitMs)
+	if not game:GetService("RunService"):IsEdit() then
+		return { idle = true, hadCommand = false, error = false, editModeRequired = true }
+	end
 	local token = getToken()
 	if not token then
 		setBridgeState("unpaired")
@@ -11099,6 +11173,17 @@ pullOnce = function(waitMs)
 		token
 	)
 	setPollingPulse(false)
+	if not game:GetService("RunService"):IsEdit() then
+		-- The long poll may already have claimed work. Acknowledge a known
+		-- no-effect rejection instead of losing the command or running it.
+		local command = type(data) == "table" and data.command or nil
+		if type(command) == "table" and (command.id or command.commandId) then
+			local failure = studioEditModeRequiredResult(command, "after_poll")
+			local confirmed = ack(command, "failed", failure, failure.error.message)
+			return { idle = false, hadCommand = true, error = confirmed ~= true, editModeRequired = true }
+		end
+		return { idle = true, hadCommand = false, error = false, editModeRequired = true }
+	end
 
 	if statusCode == 401 or statusCode == 403 then
 		recordStudioFreshness("poll", false, "authentication expired", getLastLatencyMs())
@@ -11174,6 +11259,7 @@ end
 -- Execute a single command from the queue (approval gate + run + ack). Called on
 -- its own loop so it can block for as long as needed without pausing polling.
 function processNextCommand()
+	if not game:GetService("RunService"):IsEdit() then return false end
 	if executorBusy then
 		if executorStartedAt > 0 and (commandStartedMs() - executorStartedAt) > EXECUTOR_WATCHDOG_MS then
 			-- Safety net: the executor is a synchronous pcall, so this should be
@@ -11219,6 +11305,9 @@ function processNextCommand()
 			end
 		end
 		if tonumber(command.lifecycleVersion) == 2 then
+			if not game:GetService("RunService"):IsEdit() then
+				return finalizeCommandOutcome(command, true, studioEditModeRequiredResult(command, "before_start"))
+			end
 			if not ack(command, "started", { stage = "started" }, nil) then
 				setLast("Command start receipt could not be saved; execution was deferred safely")
 				setBridgeState("degraded", "start receipt failed")
@@ -11429,7 +11518,7 @@ local function applyCompatibility(heartbeat)
 	compatibilityHandshakeReady = false
 	if compatibilityStatus == "update_required" then
 		setBridgeState("error")
-		setLast("This Studio plugin release is no longer supported. Reinstall NexusRBXStudioBridge.plugin.lua.")
+		setLast("Update Nexus RBX for Studio at nexusrbx.com/downloads, then reopen the plugin to reconnect.")
 	else
 		setBridgeState("connecting")
 		local reason = compatibilityDetail and tostring(compatibilityDetail) or compatibilityStatus
@@ -11439,6 +11528,10 @@ local function applyCompatibility(heartbeat)
 end
 
 local function pairStudio()
+	if not game:GetService("RunService"):IsEdit() then
+		setLast("Stop Play or Run mode before connecting Studio")
+		return
+	end
 	if pairButton:GetAttribute("NexusEnabled") ~= true then
 		return
 	end
@@ -11653,6 +11746,10 @@ task.spawn(function()
 	local failureBackoff = 0
 
 	while true do
+		if not game:GetService("RunService"):IsEdit() then
+			task.wait(0.5)
+			continue
+		end
 		if not getToken() then
 			task.wait(2)
 			continue
@@ -11704,7 +11801,7 @@ end)
 -- the connection.
 task.spawn(function()
 	while true do
-		if getToken() and compatibilityHandshakeReady and pendingCommandCount() > 0 then
+		if game:GetService("RunService"):IsEdit() and getToken() and compatibilityHandshakeReady and pendingCommandCount() > 0 then
 			local ok = pcall(processNextCommand)
 			if ok then
 				task.wait(0.1)
@@ -11724,6 +11821,10 @@ task.spawn(function()
 	local activeWorkspaceProjectId = ""
 	local activeWorkspaceRevision = ""
 	while true do
+		if not game:GetService("RunService"):IsEdit() then
+			task.wait(0.5)
+			continue
+		end
 		if getToken() then
 			local studio = studioAttestationPayload()
 			local ok, latency, authExpired, heartbeat = pingSession(
@@ -11731,6 +11832,12 @@ task.spawn(function()
 				studio.placeSignature,
 				studio
 			)
+			-- A request may outlive a switch into Play. Its response must not
+			-- update the edit connector using a runtime data model.
+			if not game:GetService("RunService"):IsEdit() then
+				task.wait(0.5)
+				continue
+			end
 			if type(heartbeat) == "table" then
 				updateStudioServerTarget(heartbeat)
 			end

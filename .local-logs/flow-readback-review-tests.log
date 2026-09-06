@@ -1,0 +1,98 @@
+TAP version 13
+# [ops] {
+#   event: 'game_quality_gate_result',
+#   ts: '2026-09-06T06:50:06.624Z',
+#   projectMode: 'create',
+#   changeClass: 'new_game',
+#   genre: 'simulator',
+#   risk: 'unknown',
+#   readSetCount: 0,
+#   writeSetCount: 0,
+#   protectedPathCount: 0,
+#   createRootCount: 0,
+#   scopeState: 'none',
+#   blocked: false
+# }
+# [ops] {
+#   event: 'regression_gate_result',
+#   ts: '2026-09-06T06:50:06.628Z',
+#   projectMode: 'modify',
+#   changeClass: 'direct_edit',
+#   genre: 'custom',
+#   risk: 'unknown',
+#   readSetCount: 0,
+#   writeSetCount: 0,
+#   protectedPathCount: 0,
+#   createRootCount: 0,
+#   scopeState: 'resolved',
+#   blocked: true
+# }
+# Subtest: script readback coverage rejects stale reads and per-script failures
+ok 1 - script readback coverage rejects stale reads and per-script failures
+  ---
+  duration_ms: 2.865
+  ...
+# Subtest: script verification compares the read to the latest successful mutation hash
+ok 2 - script verification compares the read to the latest successful mutation hash
+  ---
+  duration_ms: 0.4753
+  ...
+# Subtest: new failed or incomplete script reads cannot reuse an older successful read
+ok 3 - new failed or incomplete script reads cannot reuse an older successful read
+  ---
+  duration_ms: 0.3515
+  ...
+# Subtest: task contracts infer general intent and observable acceptance checks
+ok 4 - task contracts infer general intent and observable acceptance checks
+  ---
+  duration_ms: 1.2215
+  ...
+# Subtest: implementation intent wins over inspection wording
+ok 5 - implementation intent wins over inspection wording
+  ---
+  duration_ms: 1.6751
+  ...
+# Subtest: an explicit leading repair remains debug intent
+ok 6 - an explicit leading repair remains debug intent
+  ---
+  duration_ms: 0.1759
+  ...
+# Subtest: pure inspection remains review-only
+ok 7 - pure inspection remains review-only
+  ---
+  duration_ms: 0.8894
+  ...
+# Subtest: successful writes without a playtest are reported as manual verification required
+ok 8 - successful writes without a playtest are reported as manual verification required
+  ---
+  duration_ms: 1.5187
+  ...
+# Subtest: debug edits are only fixed_verified after behavioral verification
+ok 9 - debug edits are only fixed_verified after behavioral verification
+  ---
+  duration_ms: 0.5793
+  ...
+# Subtest: CREATE contracts add game quality gates without pretending static checks prove behavior
+ok 10 - CREATE contracts add game quality gates without pretending static checks prove behavior
+  ---
+  duration_ms: 4.0308
+  ...
+# Subtest: CREATE quality gates can be disabled independently during rollout
+ok 11 - CREATE quality gates can be disabled independently during rollout
+  ---
+  duration_ms: 0.5383
+  ...
+# Subtest: MODIFY contracts report mutation scope violations and regression evidence
+ok 12 - MODIFY contracts report mutation scope violations and regression evidence
+  ---
+  duration_ms: 1.2441
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 116.568

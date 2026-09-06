@@ -247,7 +247,7 @@ local function safePropertyValue(inst, key)
 		return inst[key]
 	end)
 	if not ok then
-		return nil
+		return nil, { code = "PROPERTY_READ_FAILED", message = string.sub(tostring(value), 1, 240) }
 	end
 	local valueType = typeof(value)
 	if valueType == "string" or valueType == "number" or valueType == "boolean" then
@@ -292,7 +292,7 @@ local function safePropertyValue(inst, key)
 		end
 		return { type = "NumberSequence", keypoints = keypoints }
 	end
-	return nil
+	return nil, { code = "PROPERTY_VALUE_UNSUPPORTED", message = "Unsupported property value type: " .. tostring(valueType) }
 end
 
 local function propertiesOf(inst)
@@ -301,6 +301,16 @@ local function propertiesOf(inst)
 		ClassName = inst.ClassName,
 	}
 	local candidates = {
+		"Anchored",
+		"CanCollide",
+		"CanTouch",
+		"CanQuery",
+		"CastShadow",
+		"Massless",
+		"Locked",
+		"CollisionGroup",
+		"Material",
+		"Reflectance",
 		"Value",
 		"Enabled",
 		"ResetOnSpawn",

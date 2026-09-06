@@ -1,0 +1,530 @@
+TAP version 13
+# Subtest: rejects a model whose active endpoints cannot enforce an output ceiling
+ok 1 - rejects a model whose active endpoints cannot enforce an output ceiling
+  ---
+  duration_ms: 4.732
+  ...
+# Subtest: sanitizes optional parameters to the common active endpoint capabilities
+ok 2 - sanitizes optional parameters to the common active endpoint capabilities
+  ---
+  duration_ms: 3.836
+  ...
+# Subtest: a model removed from the live catalog is immediately inactive
+ok 3 - a model removed from the live catalog is immediately inactive
+  ---
+  duration_ms: 0.9196
+  ...
+# Subtest: required gateway JSON Schema survives native endpoint metadata without response_format
+ok 4 - required gateway JSON Schema survives native endpoint metadata without response_format
+  ---
+  duration_ms: 1.565
+  ...
+# Subtest: expanded Studio protocol exposes discovery, mutation, validation, and recovery tools
+ok 5 - expanded Studio protocol exposes discovery, mutation, validation, and recovery tools
+  ---
+  duration_ms: 2.0105
+  ...
+# Subtest: unknown Studio tools are rejected instead of falling back to place inspection
+ok 6 - unknown Studio tools are rejected instead of falling back to place inspection
+  ---
+  duration_ms: 2.8565
+  ...
+# Subtest: insert_creator_store_asset is mutating but not destructive
+ok 7 - insert_creator_store_asset is mutating but not destructive
+  ---
+  duration_ms: 0.365
+  ...
+# Subtest: Agent auto-apply only interrupts for destructive Studio changes
+ok 8 - Agent auto-apply only interrupts for destructive Studio changes
+  ---
+  duration_ms: 0.2753
+  ...
+# Subtest: snapshot creation is mutating but not destructive
+ok 9 - snapshot creation is mutating but not destructive
+  ---
+  duration_ms: 0.2204
+  ...
+# Subtest: insert_uploaded_roblox_model is mutating but not destructive
+ok 10 - insert_uploaded_roblox_model is mutating but not destructive
+  ---
+  duration_ms: 0.2002
+  ...
+# Subtest: insert_creator_store_asset preserves only server-produced safe fields
+ok 11 - insert_creator_store_asset preserves only server-produced safe fields
+  ---
+  duration_ms: 2.5053
+  ...
+# Subtest: insert_creator_store_asset rejects executable and arbitrary payload fields
+ok 12 - insert_creator_store_asset rejects executable and arbitrary payload fields
+  ---
+  duration_ms: 0.542
+  ...
+# Subtest: insert_uploaded_roblox_model preserves only server-produced safe fields
+ok 13 - insert_uploaded_roblox_model preserves only server-produced safe fields
+  ---
+  duration_ms: 2.0184
+  ...
+# Subtest: insert_uploaded_roblox_model rejects source, URL, script, file, asset, and unknown injection
+ok 14 - insert_uploaded_roblox_model rejects source, URL, script, file, asset, and unknown injection
+  ---
+  duration_ms: 2.1581
+  ...
+# Subtest: build_native_model sanitizes through NativeModelSpec validation
+ok 15 - build_native_model sanitizes through NativeModelSpec validation
+  ---
+  duration_ms: 3.6516
+  ...
+# Subtest: canonical paths normalize backslashes and game prefix
+ok 16 - canonical paths normalize backslashes and game prefix
+  ---
+  duration_ms: 0.1417
+  ...
+# Subtest: Studio command paths reject blank and unrooted parent paths before dispatch
+ok 17 - Studio command paths reject blank and unrooted parent paths before dispatch
+  ---
+  duration_ms: 1.6413
+  ...
+# Subtest: create_instance normalizes common BasePart planner properties
+ok 18 - create_instance normalizes common BasePart planner properties
+  ---
+  duration_ms: 0.5595
+  ...
+# Subtest: create_instance normalizes uppercase 8-bit BasePart colors
+ok 19 - create_instance normalizes uppercase 8-bit BasePart colors
+  ---
+  duration_ms: 0.2624
+  ...
+# Subtest: create_instance normalizes Studio readback property values
+ok 20 - create_instance normalizes Studio readback property values
+  ---
+  duration_ms: 1.0199
+  ...
+# Subtest: create_animation_sequence validates and normalizes bounded R15 keyframes
+ok 21 - create_animation_sequence validates and normalizes bounded R15 keyframes
+  ---
+  duration_ms: 0.7958
+  ...
+# Subtest: create_animation_sequence rejects unbounded, non-R15, and executable transforms
+ok 22 - create_animation_sequence rejects unbounded, non-R15, and executable transforms
+  ---
+  duration_ms: 0.4331
+  ...
+# Subtest: create_script only enables parent creation when explicitly requested
+ok 23 - create_script only enables parent creation when explicitly requested
+  ---
+  duration_ms: 0.5377
+  ...
+# Subtest: write_script preserves optimistic concurrency fields
+ok 24 - write_script preserves optimistic concurrency fields
+  ---
+  duration_ms: 0.3023
+  ...
+# Subtest: create_script requires an explicit script class
+ok 25 - create_script requires an explicit script class
+  ---
+  duration_ms: 0.3515
+  ...
+# Subtest: create_script transparently corrects the fly GUI Script to a LocalScript
+ok 26 - create_script transparently corrects the fly GUI Script to a LocalScript
+  ---
+  duration_ms: 0.272
+  ...
+# Subtest: existing script class conversion requires an inspected target and explicit consent
+ok 27 - existing script class conversion requires an inspected target and explicit consent
+  ---
+  duration_ms: 0.3134
+  ...
+# Subtest: existing write_script candidates are blocked instead of auto-corrected
+ok 28 - existing write_script candidates are blocked instead of auto-corrected
+  ---
+  duration_ms: 0.3898
+  ...
+# Subtest: artifact application blocks mixed client and server runtime code
+ok 29 - artifact application blocks mixed client and server runtime code
+  ---
+  duration_ms: 6.7055
+  ...
+# Subtest: managed artifact class conversion inherits inspected authorization from its file
+ok 30 - managed artifact class conversion inherits inspected authorization from its file
+  ---
+  duration_ms: 2.5898
+  ...
+# Subtest: get_project_manifest carries pagination revision across pages
+ok 31 - get_project_manifest carries pagination revision across pages
+  ---
+  duration_ms: 0.1525
+  ...
+# Subtest: restore_snapshot keeps attributes and tags for rollback
+ok 32 - restore_snapshot keeps attributes and tags for rollback
+  ---
+  duration_ms: 0.3303
+  ...
+# Subtest: snapshot restore preserves connector conflict hashes and force policy
+ok 33 - snapshot restore preserves connector conflict hashes and force policy
+  ---
+  duration_ms: 0.148
+  ...
+# Subtest: playtests require bounded named inputs and reject executable code
+ok 34 - playtests require bounded named inputs and reject executable code
+  ---
+  duration_ms: 0.7203
+  ...
+# Subtest: destructive confirmation is preserved only from explicit top-level consent
+ok 35 - destructive confirmation is preserved only from explicit top-level consent
+  ---
+  duration_ms: 0.7687
+  ...
+# Subtest: batch_operations sanitizes nested operations without allowing recursive batch payloads
+ok 36 - batch_operations sanitizes nested operations without allowing recursive batch payloads
+  ---
+  duration_ms: 0.2592
+  ...
+# Subtest: known-script mutations preserve source preconditions and force destructive snapshots
+ok 37 - known-script mutations preserve source preconditions and force destructive snapshots
+  ---
+  duration_ms: 1.0397
+  ...
+# Subtest: apply_asset_reference accepts only a canonical server-owned asset target
+ok 38 - apply_asset_reference accepts only a canonical server-owned asset target
+  ---
+  duration_ms: 0.2193
+  ...
+# Subtest: apply_asset_reference rejects invalid targets, IDs, nested use, and generic-property bypasses
+ok 39 - apply_asset_reference rejects invalid targets, IDs, nested use, and generic-property bypasses
+  ---
+  duration_ms: 0.591
+  ...
+# Subtest: idempotency keys are stable for identical payloads
+ok 40 - idempotency keys are stable for identical payloads
+  ---
+  duration_ms: 0.1475
+  ...
+# Subtest: validation commands preserve bounded target and plan fields
+ok 41 - validation commands preserve bounded target and plan fields
+  ---
+  duration_ms: 0.2515
+  ...
+# Subtest: apply_artifact v3 preserves only allowlisted Roblox UI roots
+ok 42 - apply_artifact v3 preserves only allowlisted Roblox UI roots
+  ---
+  duration_ms: 16.3654
+  ...
+# Subtest: apply_artifact v3 rejects foreign UI paths and unsupported node classes
+ok 43 - apply_artifact v3 rejects foreign UI paths and unsupported node classes
+  ---
+  duration_ms: 0.6486
+  ...
+# Subtest: apply_artifact v3 binds a single UI root to the artifact identity and revision
+ok 44 - apply_artifact v3 binds a single UI root to the artifact identity and revision
+  ---
+  duration_ms: 2.3824
+  ...
+# Subtest: apply_artifact v3 rejects ambiguous, cyclic, reserved, and unbounded UI trees
+ok 45 - apply_artifact v3 rejects ambiguous, cyclic, reserved, and unbounded UI trees
+  ---
+  duration_ms: 1.729
+  ...
+# Subtest: execution ignores browser project, target, Studio, and asset tampering
+ok 46 - execution ignores browser project, target, Studio, and asset tampering
+  ---
+  duration_ms: 2.4742
+  ...
+# Subtest: plan fence rejects stale versions and hashes
+ok 47 - plan fence rejects stale versions and hashes
+  ---
+  duration_ms: 1.444
+  ...
+# Subtest: plan execution follows the original chat and ignores a browser chat override
+ok 48 - plan execution follows the original chat and ignores a browser chat override
+  ---
+  duration_ms: 0.6803
+  ...
+# Subtest: readiness blockers reject execution while advisory warnings remain executable
+ok 49 - readiness blockers reject execution while advisory warnings remain executable
+  ---
+  duration_ms: 0.2707
+  ...
+# Subtest: repeat execution requests produce deterministic idempotency identities
+ok 50 - repeat execution requests produce deterministic idempotency identities
+  ---
+  duration_ms: 0.338
+  ...
+# Subtest: approved plan compilation preserves trusted context for canonical task launch
+ok 51 - approved plan compilation preserves trusted context for canonical task launch
+  ---
+  duration_ms: 0.2438
+  ...
+# Subtest: approved plan compilation rejects a mismatched immutable reference
+ok 52 - approved plan compilation rejects a mismatched immutable reference
+  ---
+  duration_ms: 0.3986
+  ...
+# Subtest: Agent treats an implicit current-project outcome as immediate implementation
+ok 53 - Agent treats an implicit current-project outcome as immediate implementation
+  ---
+  duration_ms: 7.1163
+  ...
+# Subtest: Agent starts a direct sprint stamina build without a redundant approval loop
+ok 54 - Agent starts a direct sprint stamina build without a redundant approval loop
+  ---
+  duration_ms: 1.8596
+  ...
+# Subtest: unpublished Studio places retain confirmed target identity and mutation intent during manifest preflight
+ok 55 - unpublished Studio places retain confirmed target identity and mutation intent during manifest preflight
+  ---
+  duration_ms: 1.2266
+  ...
+# Subtest: unpublished Studio target identity does not override ambiguity or a signature mismatch
+ok 56 - unpublished Studio target identity does not override ambiguity or a signature mismatch
+  ---
+  duration_ms: 2.4743
+  ...
+# Subtest: Agent answers a conceptual project question without creating a task run
+ok 57 - Agent answers a conceptual project question without creating a task run
+  ---
+  duration_ms: 2.1283
+  ...
+# Subtest: an amendment stays bound to the active task and continues immediately
+ok 58 - an amendment stays bound to the active task and continues immediately
+  ---
+  duration_ms: 1.2234
+  ...
+# Subtest: Plan remains research-only while producing an approvable plan
+ok 59 - Plan remains research-only while producing an approvable plan
+  ---
+  duration_ms: 1.0998
+  ...
+# Subtest: Debug inspects first, applies the smallest fix, and verifies it
+ok 60 - Debug inspects first, applies the smallest fix, and verifies it
+  ---
+  duration_ms: 1.363
+  ...
+# Subtest: multiple live targets require exactly one target clarification
+ok 61 - multiple live targets require exactly one target clarification
+  ---
+  duration_ms: 0.6904
+  ...
+# Subtest: a live different Studio place is reported as a target mismatch, not disconnected
+ok 62 - a live different Studio place is reported as a target mismatch, not disconnected
+  ---
+  duration_ms: 1.9664
+  ...
+# Subtest: missing write capability permits inspection but never invents a write command
+ok 63 - missing write capability permits inspection but never invents a write command
+  ---
+  duration_ms: 0.4867
+  ...
+# Subtest: live visibility uses authoritative plugin commands to acquire a missing manifest
+ok 64 - live visibility uses authoritative plugin commands to acquire a missing manifest
+  ---
+  duration_ms: 0.4778
+  ...
+# Subtest: explicit manifest-only safety constraints stay read-only and start inspection
+ok 65 - explicit manifest-only safety constraints stay read-only and start inspection
+  ---
+  duration_ms: 0.2692
+  ...
+# Subtest: live MCP visibility admits either bounded search command and fails closed without both
+ok 66 - live MCP visibility admits either bounded search command and fails closed without both
+  ---
+  duration_ms: 0.6632
+  ...
+# Subtest: MCP mutations bootstrap project context with search instead of a plugin-only manifest
+ok 67 - MCP mutations bootstrap project context with search instead of a plugin-only manifest
+  ---
+  duration_ms: 0.3772
+  ...
+# Subtest: scoped named Studio search stays read-only and routes as search_and_compare
+ok 68 - scoped named Studio search stays read-only and routes as search_and_compare
+  ---
+  duration_ms: 0.2942
+  ...
+# Subtest: execution confidence is deterministic and uses the exact weighted factors
+ok 69 - execution confidence is deterministic and uses the exact weighted factors
+  ---
+  duration_ms: 0.4634
+  ...
+# Subtest: mandatory confidence caps cover environment, safety, context, and freshness
+ok 70 - mandatory confidence caps cover environment, safety, context, and freshness
+  ---
+  duration_ms: 0.877
+  ...
+# Subtest: decision telemetry uses only the shared exact event names
+ok 71 - decision telemetry uses only the shared exact event names
+  ---
+  duration_ms: 0.4897
+  ...
+# Subtest: forcing a task without approved execution does not turn inspection into a write
+ok 72 - forcing a task without approved execution does not turn inspection into a write
+  ---
+  duration_ms: 0.4509
+  ...
+# Subtest: planning respects the bound plugin's actual commands without inventing automatic Play support
+ok 73 - planning respects the bound plugin's actual commands without inventing automatic Play support
+  ---
+  duration_ms: 7.2992
+  ...
+# Subtest: advertises exactly the 17 canonical asset tools and strips credential-shaped metadata
+ok 74 - advertises exactly the 17 canonical asset tools and strips credential-shaped metadata
+  ---
+  duration_ms: 2.0521
+  ...
+# Subtest: builds owner-authorized Plan and Ask asset context with an active set capped at eight
+ok 75 - builds owner-authorized Plan and Ask asset context with an active set capped at eight
+  ---
+  duration_ms: 3.622
+  ...
+# Subtest: soft-misses unauthorized projects without resolving them under that project id
+ok 76 - soft-misses unauthorized projects without resolving them under that project id
+  ---
+  duration_ms: 1.3108
+  ...
+# Subtest: continues without project context when ownership is not explicitly approved
+ok 77 - continues without project context when ownership is not explicitly approved
+  ---
+  duration_ms: 1.9871
+  ...
+# Subtest: records a bounded omission instead of searching when canonical asset reads are disabled
+ok 78 - records a bounded omission instead of searching when canonical asset reads are disabled
+  ---
+  duration_ms: 3.148
+  ...
+# Subtest: deliverable references bind to real steps and normalize idempotently
+ok 79 - deliverable references bind to real steps and normalize idempotently
+  ---
+  duration_ms: 16.1114
+  ...
+# Subtest: legacy game intelligence stays byte-compatible during plan hydration
+ok 80 - legacy game intelligence stays byte-compatible during plan hydration
+  ---
+  duration_ms: 4.4616
+  ...
+# Subtest: structured plans keep stable section and step identities
+ok 81 - structured plans keep stable section and step identities
+  ---
+  duration_ms: 3.6754
+  ...
+# Subtest: derived steps remain dependency-free when the planner does not claim ordering
+ok 82 - derived steps remain dependency-free when the planner does not claim ordering
+  ---
+  duration_ms: 3.186
+  ...
+# Subtest: derived plans repair unique title dependencies to stable step IDs
+ok 83 - derived plans repair unique title dependencies to stable step IDs
+  ---
+  duration_ms: 3.1907
+  ...
+# Subtest: conversation plans include a rendered Mermaid workflow before implementation steps
+ok 84 - conversation plans include a rendered Mermaid workflow before implementation steps
+  ---
+  duration_ms: 7.8306
+  ...
+# Subtest: rich plans render stages, decisions, file targets, every verification, and rollback
+ok 85 - rich plans render stages, decisions, file targets, every verification, and rollback
+  ---
+  duration_ms: 1.6672
+  ...
+# Subtest: preserves the selected Studio target identity but not browser capability claims
+ok 86 - preserves the selected Studio target identity but not browser capability claims
+  ---
+  duration_ms: 1.3015
+  ...
+# Subtest: non-Studio plans default to runtime verification without requiring Studio
+ok 87 - non-Studio plans default to runtime verification without requiring Studio
+  ---
+  duration_ms: 1.6074
+  ...
+# Subtest: Studio capabilities infer Studio targeting and Studio validation
+ok 88 - Studio capabilities infer Studio targeting and Studio validation
+  ---
+  duration_ms: 1.3316
+  ...
+# Subtest: unsupported capability promises are removed from generated plans and templates
+ok 89 - unsupported capability promises are removed from generated plans and templates
+  ---
+  duration_ms: 0.8358
+  ...
+# Subtest: plan operations edit and reorder individual sections without replacing the plan
+ok 90 - plan operations edit and reorder individual sections without replacing the plan
+  ---
+  duration_ms: 5.6963
+  ...
+# Subtest: locked sections reject edits until explicitly unlocked
+ok 91 - locked sections reject edits until explicitly unlocked
+  ---
+  duration_ms: 4.6259
+  ...
+# Subtest: clarifications are contextual typed choices and capped to material questions
+ok 92 - clarifications are contextual typed choices and capped to material questions
+  ---
+  duration_ms: 0.535
+  ...
+# Subtest: all required NexusRBX planning templates are available
+ok 93 - all required NexusRBX planning templates are available
+  ---
+  duration_ms: 0.1069
+  ...
+# Subtest: strict planner output validation accepts a complete ready plan
+ok 94 - strict planner output validation accepts a complete ready plan
+  ---
+  duration_ms: 1.1036
+  ...
+# Subtest: planner accepts one complete JSON fence while retaining strict validation
+ok 95 - planner accepts one complete JSON fence while retaining strict validation
+  ---
+  duration_ms: 0.6842
+  ...
+# Subtest: invalid JSON diagnostics describe syntax without leaking model content
+ok 96 - invalid JSON diagnostics describe syntax without leaking model content
+  ---
+  duration_ms: 0.185
+  ...
+# Subtest: plan overview does not display an internal project identifier
+ok 97 - plan overview does not display an internal project identifier
+  ---
+  duration_ms: 1.3208
+  ...
+# Subtest: ready output rejects missing game intelligence and mode-specific contracts
+ok 98 - ready output rejects missing game intelligence and mode-specific contracts
+  ---
+  duration_ms: 0.7095
+  ...
+# Subtest: game intelligence and expected source hashes survive plan normalization and serialization
+ok 99 - game intelligence and expected source hashes survive plan normalization and serialization
+  ---
+  duration_ms: 2.3475
+  ...
+# Subtest: invalid or truncated planner JSON fails closed
+ok 100 - invalid or truncated planner JSON fails closed
+  ---
+  duration_ms: 0.1767
+  ...
+# Subtest: planner output without implementation work cannot create a plan
+ok 101 - planner output without implementation work cannot create a plan
+  ---
+  duration_ms: 0.2219
+  ...
+# Subtest: a clarification response is rejected after answers were supplied
+ok 102 - a clarification response is rejected after answers were supplied
+  ---
+  duration_ms: 0.3764
+  ...
+# Subtest: deterministic planner fallback uses only advertised capabilities and remains schema-valid
+ok 103 - deterministic planner fallback uses only advertised capabilities and remains schema-valid
+  ---
+  duration_ms: 1.2106
+  ...
+# Subtest: deterministic planner fallback remains valid when no capabilities are advertised
+ok 104 - deterministic planner fallback remains valid when no capabilities are advertised
+  ---
+  duration_ms: 0.4573
+  ...
+1..104
+# tests 104
+# suites 0
+# pass 104
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 285.2752

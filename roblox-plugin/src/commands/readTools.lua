@@ -848,7 +848,32 @@ local function readInstance(payload)
 	for _, path in ipairs(paths) do
 		local inst = resolvePath(path)
 		if inst then
-			table.insert(out, serializeFlat(inst, true, payload.includeAttributes ~= false, payload.includeTags ~= false))
+			local record = serializeFlat(inst, true, payload.includeAttributes ~= false, payload.includeTags ~= false)
+			local requested = type(payload.properties) == "table" and payload.properties or {}
+			local errors, seen = {}, {}
+			for index, property in ipairs(requested) do
+				if index > 100 then break end
+				local key = type(property) == "string" and property or ""
+				if key == "" or #key > 100 or not key:match("^[%a_][%w_]*$") then
+					table.insert(errors, { property = string.sub(tostring(property), 1, 100), code = "INVALID_PROPERTY_NAME", message = "Use a readable Studio property name." })
+				elseif not seen[key] then
+					seen[key] = true
+					if key == "Source" or key == "LinkedSource" then
+						table.insert(errors, { property = key, code = "PROPERTY_READ_REQUIRES_SCRIPT_TOOL", message = "Read script source with read_script or read_scripts." })
+					else
+						local value, propertyError = safePropertyValue(inst, key)
+						if value ~= nil then
+							record.properties[key] = value
+						else
+							propertyError = propertyError or { code = "PROPERTY_READ_FAILED", message = "The requested property could not be read." }
+							table.insert(errors, { property = key, code = propertyError.code, message = propertyError.message })
+						end
+					end
+				end
+			end
+			if #errors > 0 then record.propertyErrors = errors end
+			if #requested > 100 then record.propertiesTruncated = true end
+			table.insert(out, record)
 		else
 			table.insert(out, { path = path, error = "Instance not found" })
 		end

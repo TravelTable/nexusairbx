@@ -308,7 +308,7 @@ describe("useAiChat", () => {
     auth.currentUser = null;
   });
 
-  test("requires every new chat to belong to a project", async () => {
+  test("opens an unsaved draft when no project is selected", async () => {
     const user = { uid: "user_1", getIdToken: jest.fn().mockResolvedValue("token_1") };
     auth.currentUser = user;
     const settings = {};
@@ -316,12 +316,39 @@ describe("useAiChat", () => {
     const notify = jest.fn();
     const { result } = renderHook(() => useAiChat(user, settings, refreshBilling, notify));
 
-    await expect(act(async () => result.current.startNewChat())).rejects.toMatchObject({
-      message: "Open a project before starting a chat.",
-      code: "PROJECT_REQUIRED",
-    });
+    await act(async () => { await result.current.startNewChat(); });
+    expect(result.current.currentChatId).toBeNull();
+    expect(result.current.messages).toEqual([]);
     expect(setDoc).not.toHaveBeenCalled();
     expect(resolveChatAgentProjectionV2).not.toHaveBeenCalled();
+  });
+
+  test("persists Plan mode when a first submission creates the conversation", async () => {
+    const user = { uid: "user_1", getIdToken: jest.fn().mockResolvedValue("token_1") };
+    auth.currentUser = user;
+    const settings = {};
+    const refreshBilling = jest.fn();
+    const notify = jest.fn();
+    const { result } = renderHook(() => useAiChat(user, settings, refreshBilling, notify));
+    await act(async () => { await result.current.startNewChat({ projectId: "project_1", mode: "plan" }); });
+    expect(result.current.activeMode).toBe("plan");
+    expect(setDoc).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ activeMode: "plan", projectId: "project_1" }));
+  });
+
+  test("a late mode update saves its original conversation without changing the visible one", async () => {
+    const user = { uid: "user_1", getIdToken: jest.fn().mockResolvedValue("token_1") };
+    auth.currentUser = user;
+    const settings = { chatMode: "plan" };
+    const refreshBilling = jest.fn();
+    const notify = jest.fn();
+    const { result } = renderHook(() => useAiChat(user, settings, refreshBilling, notify));
+    await act(async () => { result.current.openChatById("chat-1"); });
+    const updateOriginalChat = result.current.updateChatMode;
+    await act(async () => { result.current.openChatById("chat-2"); });
+    await act(async () => { await updateOriginalChat("chat-1", "agent"); });
+    expect(result.current.activeMode).toBe("plan");
+    expect(result.current.currentChatId).toBe("chat-2");
+    expect(updateDoc).toHaveBeenCalledWith(expect.objectContaining({ segments: expect.arrayContaining(["chat-1"]) }), expect.objectContaining({ activeMode: "agent" }));
   });
 
   test("reads canonical pending runs from the v2 runtime", async () => {

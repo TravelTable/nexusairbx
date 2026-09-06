@@ -1,0 +1,15 @@
+npm warn "src/lib/taskRuntimeApi.test.js" is being parsed as a normal command line argument.
+npm warn Unknown cli config "--watchAll". This will stop working in the next major version of npm.
+npm warn Unknown cli config "--runInBand". This will stop working in the next major version of npm.
+
+> nexusrbx-react@0.1.0 test
+> react-scripts test src/lib/taskRuntimeApi.test.js src/hooks/useTaskRuntime.test.js
+
+PASS src/hooks/useTaskRuntime.test.js
+PASS src/lib/taskRuntimeApi.test.js
+
+Test Suites: 2 passed, 2 total
+Tests:       18 passed, 18 total
+Snapshots:   0 total
+Time:        3.898 s
+Ran all test suites matching /src\\lib\\taskRuntimeApi.test.js|src\\hooks\\useTaskRuntime.test.js/i.

@@ -1,0 +1,178 @@
+TAP version 13
+# (node:6488) Warning: Accessing non-existent property 'publicOperation' of module exports inside circular dependency
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:6488) Warning: Accessing non-existent property 'publicOperation' of module exports inside circular dependency
+# Subtest: operation persistence failure sends an error instead of hanging (200)
+ok 1 - operation persistence failure sends an error instead of hanging (200)
+  ---
+  duration_ms: 13.8936
+  ...
+# Subtest: operation persistence failure sends an error instead of hanging (502)
+ok 2 - operation persistence failure sends an error instead of hanging (502)
+  ---
+  duration_ms: 2.3239
+  ...
+# Subtest: execution ignores browser project, target, Studio, and asset tampering
+ok 3 - execution ignores browser project, target, Studio, and asset tampering
+  ---
+  duration_ms: 2.3375
+  ...
+# Subtest: plan fence rejects stale versions and hashes
+ok 4 - plan fence rejects stale versions and hashes
+  ---
+  duration_ms: 1.3625
+  ...
+# Subtest: plan execution follows the original chat and ignores a browser chat override
+ok 5 - plan execution follows the original chat and ignores a browser chat override
+  ---
+  duration_ms: 0.6145
+  ...
+# Subtest: readiness blockers reject execution while advisory warnings remain executable
+ok 6 - readiness blockers reject execution while advisory warnings remain executable
+  ---
+  duration_ms: 0.239
+  ...
+# Subtest: repeat execution requests produce deterministic idempotency identities
+ok 7 - repeat execution requests produce deterministic idempotency identities
+  ---
+  duration_ms: 0.3699
+  ...
+# Subtest: approved plan compilation preserves trusted context for canonical task launch
+ok 8 - approved plan compilation preserves trusted context for canonical task launch
+  ---
+  duration_ms: 0.3104
+  ...
+# Subtest: approved plan compilation rejects a mismatched immutable reference
+ok 9 - approved plan compilation rejects a mismatched immutable reference
+  ---
+  duration_ms: 0.3751
+  ...
+# Subtest: deliverable references bind to real steps and normalize idempotently
+ok 10 - deliverable references bind to real steps and normalize idempotently
+  ---
+  duration_ms: 12.2314
+  ...
+# Subtest: legacy game intelligence stays byte-compatible during plan hydration
+ok 11 - legacy game intelligence stays byte-compatible during plan hydration
+  ---
+  duration_ms: 3.0422
+  ...
+# Subtest: structured plans keep stable section and step identities
+ok 12 - structured plans keep stable section and step identities
+  ---
+  duration_ms: 3.4746
+  ...
+# Subtest: derived steps remain dependency-free when the planner does not claim ordering
+ok 13 - derived steps remain dependency-free when the planner does not claim ordering
+  ---
+  duration_ms: 3.5632
+  ...
+# Subtest: derived plans repair unique title dependencies to stable step IDs
+ok 14 - derived plans repair unique title dependencies to stable step IDs
+  ---
+  duration_ms: 2.0454
+  ...
+# Subtest: conversation plans include a rendered Mermaid workflow before implementation steps
+ok 15 - conversation plans include a rendered Mermaid workflow before implementation steps
+  ---
+  duration_ms: 4.3706
+  ...
+# Subtest: rich plans render stages, decisions, file targets, every verification, and rollback
+ok 16 - rich plans render stages, decisions, file targets, every verification, and rollback
+  ---
+  duration_ms: 2.7951
+  ...
+# Subtest: preserves the selected Studio target identity but not browser capability claims
+ok 17 - preserves the selected Studio target identity but not browser capability claims
+  ---
+  duration_ms: 1.3869
+  ...
+# Subtest: non-Studio plans default to runtime verification without requiring Studio
+ok 18 - non-Studio plans default to runtime verification without requiring Studio
+  ---
+  duration_ms: 1.5853
+  ...
+# Subtest: Studio capabilities infer Studio targeting and Studio validation
+ok 19 - Studio capabilities infer Studio targeting and Studio validation
+  ---
+  duration_ms: 1.3749
+  ...
+# Subtest: unsupported capability promises are removed from generated plans and templates
+ok 20 - unsupported capability promises are removed from generated plans and templates
+  ---
+  duration_ms: 0.8457
+  ...
+# Subtest: plan operations edit and reorder individual sections without replacing the plan
+ok 21 - plan operations edit and reorder individual sections without replacing the plan
+  ---
+  duration_ms: 4.6907
+  ...
+# Subtest: locked sections reject edits until explicitly unlocked
+ok 22 - locked sections reject edits until explicitly unlocked
+  ---
+  duration_ms: 8.0664
+  ...
+# Subtest: clarifications are contextual typed choices and capped to material questions
+ok 23 - clarifications are contextual typed choices and capped to material questions
+  ---
+  duration_ms: 0.4575
+  ...
+# Subtest: all required NexusRBX planning templates are available
+ok 24 - all required NexusRBX planning templates are available
+  ---
+  duration_ms: 0.1088
+  ...
+# Subtest: strict planner output validation accepts a complete ready plan
+ok 25 - strict planner output validation accepts a complete ready plan
+  ---
+  duration_ms: 1.1231
+  ...
+# Subtest: planner accepts one complete JSON fence while retaining strict validation
+ok 26 - planner accepts one complete JSON fence while retaining strict validation
+  ---
+  duration_ms: 0.6167
+  ...
+# Subtest: ready output rejects missing game intelligence and mode-specific contracts
+ok 27 - ready output rejects missing game intelligence and mode-specific contracts
+  ---
+  duration_ms: 0.5419
+  ...
+# Subtest: game intelligence and expected source hashes survive plan normalization and serialization
+ok 28 - game intelligence and expected source hashes survive plan normalization and serialization
+  ---
+  duration_ms: 2.3134
+  ...
+# Subtest: invalid or truncated planner JSON fails closed
+ok 29 - invalid or truncated planner JSON fails closed
+  ---
+  duration_ms: 0.193
+  ...
+# Subtest: planner output without implementation work cannot create a plan
+ok 30 - planner output without implementation work cannot create a plan
+  ---
+  duration_ms: 0.2174
+  ...
+# Subtest: a clarification response is rejected after answers were supplied
+ok 31 - a clarification response is rejected after answers were supplied
+  ---
+  duration_ms: 0.606
+  ...
+# Subtest: deterministic planner fallback uses only advertised capabilities and remains schema-valid
+ok 32 - deterministic planner fallback uses only advertised capabilities and remains schema-valid
+  ---
+  duration_ms: 0.9021
+  ...
+# Subtest: deterministic planner fallback remains valid when no capabilities are advertised
+ok 33 - deterministic planner fallback remains valid when no capabilities are advertised
+  ---
+  duration_ms: 0.3846
+  ...
+1..33
+# tests 33
+# suites 0
+# pass 33
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 240.3899

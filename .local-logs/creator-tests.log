@@ -1,0 +1,1206 @@
+npm warn "src/hooks/useAiChat.test.js" is being parsed as a normal command line argument.
+npm warn Unknown cli config "--watchAll". This will stop working in the next major version of npm.
+npm warn Unknown cli config "--runInBand". This will stop working in the next major version of npm.
+npm warn Unknown cli config "--runTestsByPath". This will stop working in the next major version of npm.
+
+> nexusrbx-react@0.1.0 test
+> react-scripts test src/hooks/useAiChat.test.js src/hooks/useUnifiedChat.test.js src/hooks/useProjectAssets.test.js src/lib/studioConnection.test.js src/components/ai/StudioPairControl.test.jsx src/pages/ai/ui/UiCreatorWorkspace.test.jsx src/pages/ai/ui/RobloxUiPreview.test.jsx src/pages/ai/useAiWorkspaceController.layout.test.js
+
+PASS src/pages/ai/ui/RobloxUiPreview.test.jsx
+PASS src/lib/studioConnection.test.js
+PASS src/hooks/useProjectAssets.test.js
+PASS src/hooks/useUnifiedChat.test.js
+PASS src/hooks/useAiChat.test.js
+  ● Console
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1135 |       if (cancelled || !isActive()) return;
+      1136 |       const history = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    > 1137 |       setMessages((current) => mergeChatMessages(history, current));
+           |       ^
+      1138 |     }).catch((err) => {
+      1139 |       if (cancelled || !isActive()) return;
+      1140 |       reportFirestoreFailure(err, { uid, chatId, operation: "messages-history-list" });
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setMessages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1137:7
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1055 |     )).then((snap) => {
+      1056 |       if (cancelled) return;
+    > 1057 |       setCustomModes(snap.docs.map((d) => ({ id: d.id, ...d.data(), isCustom: true })));
+           |       ^
+      1058 |     }).catch((err) => {
+      1059 |       if (cancelled) return;
+      1060 |       setCustomModes([]);
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setCustomModes (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1057:7
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1135 |       if (cancelled || !isActive()) return;
+      1136 |       const history = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    > 1137 |       setMessages((current) => mergeChatMessages(history, current));
+           |       ^
+      1138 |     }).catch((err) => {
+      1139 |       if (cancelled || !isActive()) return;
+      1140 |       reportFirestoreFailure(err, { uid, chatId, operation: "messages-history-list" });
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setMessages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1137:7
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1055 |     )).then((snap) => {
+      1056 |       if (cancelled) return;
+    > 1057 |       setCustomModes(snap.docs.map((d) => ({ id: d.id, ...d.data(), isCustom: true })));
+           |       ^
+      1058 |     }).catch((err) => {
+      1059 |       if (cancelled) return;
+      1060 |       setCustomModes([]);
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setCustomModes (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1057:7
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1261 |       await updateDoc(pendingRef, sanitizeTranscriptMessagePayload(backgroundPayload)).catch(() => {});
+      1262 |       if (!cancelled) {
+    > 1263 |         setMessages((current) => current.map((message) => (
+           |         ^
+      1264 |           message.id === currentPending.id
+      1265 |             ? {
+      1266 |                 ...message,
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setMessages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at handoffRecoveryToBackground (src/hooks/useAiChat.js:1263:9)
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1135 |       if (cancelled || !isActive()) return;
+      1136 |       const history = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    > 1137 |       setMessages((current) => mergeChatMessages(history, current));
+           |       ^
+      1138 |     }).catch((err) => {
+      1139 |       if (cancelled || !isActive()) return;
+      1140 |       reportFirestoreFailure(err, { uid, chatId, operation: "messages-history-list" });
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setMessages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1137:7
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1055 |     )).then((snap) => {
+      1056 |       if (cancelled) return;
+    > 1057 |       setCustomModes(snap.docs.map((d) => ({ id: d.id, ...d.data(), isCustom: true })));
+           |       ^
+      1058 |     }).catch((err) => {
+      1059 |       if (cancelled) return;
+      1060 |       setCustomModes([]);
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setCustomModes (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1057:7
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1135 |       if (cancelled || !isActive()) return;
+      1136 |       const history = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    > 1137 |       setMessages((current) => mergeChatMessages(history, current));
+           |       ^
+      1138 |     }).catch((err) => {
+      1139 |       if (cancelled || !isActive()) return;
+      1140 |       reportFirestoreFailure(err, { uid, chatId, operation: "messages-history-list" });
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setMessages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1137:7
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1055 |     )).then((snap) => {
+      1056 |       if (cancelled) return;
+    > 1057 |       setCustomModes(snap.docs.map((d) => ({ id: d.id, ...d.data(), isCustom: true })));
+           |       ^
+      1058 |     }).catch((err) => {
+      1059 |       if (cancelled) return;
+      1060 |       setCustomModes([]);
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setCustomModes (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1057:7
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1135 |       if (cancelled || !isActive()) return;
+      1136 |       const history = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    > 1137 |       setMessages((current) => mergeChatMessages(history, current));
+           |       ^
+      1138 |     }).catch((err) => {
+      1139 |       if (cancelled || !isActive()) return;
+      1140 |       reportFirestoreFailure(err, { uid, chatId, operation: "messages-history-list" });
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setMessages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1137:7
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1055 |     )).then((snap) => {
+      1056 |       if (cancelled) return;
+    > 1057 |       setCustomModes(snap.docs.map((d) => ({ id: d.id, ...d.data(), isCustom: true })));
+           |       ^
+      1058 |     }).catch((err) => {
+      1059 |       if (cancelled) return;
+      1060 |       setCustomModes([]);
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setCustomModes (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1057:7
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1055 |     )).then((snap) => {
+      1056 |       if (cancelled) return;
+    > 1057 |       setCustomModes(snap.docs.map((d) => ({ id: d.id, ...d.data(), isCustom: true })));
+           |       ^
+      1058 |     }).catch((err) => {
+      1059 |       if (cancelled) return;
+      1060 |       setCustomModes([]);
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setCustomModes (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1057:7
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      772 |     if (value) generatingRef.current[runKey] = true;
+      773 |     else delete generatingRef.current[runKey];
+    > 774 |     setGeneratingChats((prev) => {
+          |     ^
+      775 |       const chatRuns = prev[chatId] || {};
+      776 |       if (Boolean(chatRuns[requestId]) === Boolean(value)) return prev;
+      777 |       const nextChatRuns = { ...chatRuns };
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setGeneratingChats (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at setGeneratingForChat (src/hooks/useAiChat.js:774:5)
+      at beginGenerationState (src/hooks/useAiChat.js:1857:7)
+      at Object.handleSubmit (src/hooks/useAiChat.js:1878:23)
+      at Object.<anonymous> (src/hooks/useAiChat.test.js:1611:5)
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      737 |   const setPendingForChat = useCallback((chatId, updater, requestId = "__legacy__") => {
+      738 |     if (!chatId) return;
+    > 739 |     setPendingMessages((prev) => {
+          |     ^
+      740 |       const chatPending = prev[chatId] || {};
+      741 |       const cur = chatPending[requestId] ?? null;
+      742 |       const next = typeof updater === "function" ? updater(cur) : updater;
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setPendingMessages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at setPendingForChat (src/hooks/useAiChat.js:739:5)
+      at beginGenerationState (src/hooks/useAiChat.js:1864:7)
+      at Object.handleSubmit (src/hooks/useAiChat.js:1878:23)
+      at Object.<anonymous> (src/hooks/useAiChat.test.js:1611:5)
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      754 |   const setStageForChat = useCallback((chatId, value, requestId = "__legacy__") => {
+      755 |     if (!chatId) return;
+    > 756 |     setGenerationStages((prev) => {
+          |     ^
+      757 |       const chatStages = prev[chatId] || {};
+      758 |       if (chatStages[requestId] === value) return prev;
+      759 |       const nextChatStages = { ...chatStages };
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setGenerationStages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at setStageForChat (src/hooks/useAiChat.js:756:5)
+      at beginGenerationState (src/hooks/useAiChat.js:1875:7)
+      at Object.handleSubmit (src/hooks/useAiChat.js:1878:23)
+      at Object.<anonymous> (src/hooks/useAiChat.test.js:1611:5)
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      754 |   const setStageForChat = useCallback((chatId, value, requestId = "__legacy__") => {
+      755 |     if (!chatId) return;
+    > 756 |     setGenerationStages((prev) => {
+          |     ^
+      757 |       const chatStages = prev[chatId] || {};
+      758 |       if (chatStages[requestId] === value) return prev;
+      759 |       const nextChatStages = { ...chatStages };
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setGenerationStages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at setStageForChat (src/hooks/useAiChat.js:756:5)
+      at publishGenerationStage (src/hooks/useAiChat.js:1843:7)
+      at Object.handleSubmit (src/hooks/useAiChat.js:1912:7)
+      at Object.<anonymous> (src/hooks/useAiChat.test.js:1611:5)
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      737 |   const setPendingForChat = useCallback((chatId, updater, requestId = "__legacy__") => {
+      738 |     if (!chatId) return;
+    > 739 |     setPendingMessages((prev) => {
+          |     ^
+      740 |       const chatPending = prev[chatId] || {};
+      741 |       const cur = chatPending[requestId] ?? null;
+      742 |       const next = typeof updater === "function" ? updater(cur) : updater;
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setPendingMessages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at setPendingForChat (src/hooks/useAiChat.js:739:5)
+      at publishGenerationStage (src/hooks/useAiChat.js:1844:7)
+      at Object.handleSubmit (src/hooks/useAiChat.js:1912:7)
+      at Object.<anonymous> (src/hooks/useAiChat.test.js:1611:5)
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      754 |   const setStageForChat = useCallback((chatId, value, requestId = "__legacy__") => {
+      755 |     if (!chatId) return;
+    > 756 |     setGenerationStages((prev) => {
+          |     ^
+      757 |       const chatStages = prev[chatId] || {};
+      758 |       if (chatStages[requestId] === value) return prev;
+      759 |       const nextChatStages = { ...chatStages };
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setGenerationStages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at setStageForChat (src/hooks/useAiChat.js:756:5)
+      at publishGenerationStage (src/hooks/useAiChat.js:1843:7)
+      at Object.handleSubmit (src/hooks/useAiChat.js:2141:9)
+      at Object.<anonymous> (src/hooks/useAiChat.test.js:1611:5)
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      737 |   const setPendingForChat = useCallback((chatId, updater, requestId = "__legacy__") => {
+      738 |     if (!chatId) return;
+    > 739 |     setPendingMessages((prev) => {
+          |     ^
+      740 |       const chatPending = prev[chatId] || {};
+      741 |       const cur = chatPending[requestId] ?? null;
+      742 |       const next = typeof updater === "function" ? updater(cur) : updater;
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setPendingMessages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at setPendingForChat (src/hooks/useAiChat.js:739:5)
+      at publishGenerationStage (src/hooks/useAiChat.js:1844:7)
+      at Object.handleSubmit (src/hooks/useAiChat.js:2141:9)
+      at Object.<anonymous> (src/hooks/useAiChat.test.js:1611:5)
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      772 |     if (value) generatingRef.current[runKey] = true;
+      773 |     else delete generatingRef.current[runKey];
+    > 774 |     setGeneratingChats((prev) => {
+          |     ^
+      775 |       const chatRuns = prev[chatId] || {};
+      776 |       if (Boolean(chatRuns[requestId]) === Boolean(value)) return prev;
+      777 |       const nextChatRuns = { ...chatRuns };
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setGeneratingChats (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at setGeneratingForChat (src/hooks/useAiChat.js:774:5)
+      at setBusy (src/hooks/useAiChat.js:1828:32)
+      at persistJoblessTerminalState (src/hooks/useAiChat.js:2238:11)
+      at Object.handleSubmit (src/hooks/useAiChat.js:2269:11)
+      at Object.<anonymous> (src/hooks/useAiChat.test.js:1611:5)
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      737 |   const setPendingForChat = useCallback((chatId, updater, requestId = "__legacy__") => {
+      738 |     if (!chatId) return;
+    > 739 |     setPendingMessages((prev) => {
+          |     ^
+      740 |       const chatPending = prev[chatId] || {};
+      741 |       const cur = chatPending[requestId] ?? null;
+      742 |       const next = typeof updater === "function" ? updater(cur) : updater;
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setPendingMessages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at setPendingForChat (src/hooks/useAiChat.js:739:5)
+      at setPending (src/hooks/useAiChat.js:1826:37)
+      at persistJoblessTerminalState (src/hooks/useAiChat.js:2239:11)
+      at Object.handleSubmit (src/hooks/useAiChat.js:2269:11)
+      at Object.<anonymous> (src/hooks/useAiChat.test.js:1611:5)
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      754 |   const setStageForChat = useCallback((chatId, value, requestId = "__legacy__") => {
+      755 |     if (!chatId) return;
+    > 756 |     setGenerationStages((prev) => {
+          |     ^
+      757 |       const chatStages = prev[chatId] || {};
+      758 |       if (chatStages[requestId] === value) return prev;
+      759 |       const nextChatStages = { ...chatStages };
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setGenerationStages (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at setStageForChat (src/hooks/useAiChat.js:756:5)
+      at setStage (src/hooks/useAiChat.js:1827:33)
+      at persistJoblessTerminalState (src/hooks/useAiChat.js:2240:11)
+      at Object.handleSubmit (src/hooks/useAiChat.js:2269:11)
+      at Object.<anonymous> (src/hooks/useAiChat.test.js:1611:5)
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1055 |     )).then((snap) => {
+      1056 |       if (cancelled) return;
+    > 1057 |       setCustomModes(snap.docs.map((d) => ({ id: d.id, ...d.data(), isCustom: true })));
+           |       ^
+      1058 |     }).catch((err) => {
+      1059 |       if (cancelled) return;
+      1060 |       setCustomModes([]);
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setCustomModes (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1057:7
+
+    console.error
+      Warning: An update to TestComponent inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+          at TestComponent (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\node_modules\@testing-library\react\dist\pure.js:328:5)
+
+      1055 |     )).then((snap) => {
+      1056 |       if (cancelled) return;
+    > 1057 |       setCustomModes(snap.docs.map((d) => ({ id: d.id, ...d.data(), isCustom: true })));
+           |       ^
+      1058 |     }).catch((err) => {
+      1059 |       if (cancelled) return;
+      1060 |       setCustomModes([]);
+
+      at printWarning (node_modules/react-dom/cjs/react-dom.development.js:86:30)
+      at error (node_modules/react-dom/cjs/react-dom.development.js:60:7)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom.development.js:27628:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom.development.js:25547:5)
+      at setCustomModes (node_modules/react-dom/cjs/react-dom.development.js:16708:7)
+      at src/hooks/useAiChat.js:1057:7
+
+FAIL src/components/ai/StudioPairControl.test.jsx (5.387 s)
+  ● StudioPairControl › moves focus into the popup and restores it when Escape closes
+
+    TestingLibraryElementError: Unable to find an accessible element with the role "link" and name "Download Connector 0.3.5"
+
+    Here are the accessible roles:
+
+      button:
+
+      Name "Connect Roblox Studio":
+      <button
+        aria-controls="studio-connection-dialog"
+        aria-expanded="true"
+        aria-haspopup="dialog"
+        aria-label="Connect Roblox Studio"
+        class="inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all xl:min-h-0 border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+        title="Browser chat available — Studio not connected"
+        type="button"
+      />
+
+      --------------------------------------------------dialog:
+
+      Name "Connect Roblox Studio":
+      <div
+        aria-label="Connect Roblox Studio"
+        class="z-[9999] overflow-y-auto rounded border border-[var(--ds-border-strong)] bg-[var(--ds-surface-overlay)] p-4 scrollbar-subtle"
+        id="studio-connection-dialog"
+        role="dialog"
+        style="position: fixed; top: 8px; left: 8px; width: 400px; max-height: 520px; visibility: visible;"
+      />
+
+      --------------------------------------------------
+      button:
+
+      Name "Retry connection check":
+      <button
+        aria-label="Retry connection check"
+        class="rounded-lg bg-[var(--ds-fill-subtle)] p-2 text-[var(--ds-text-secondary)] transition-all hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+        title="Retry connection check"
+        type="button"
+      />
+
+      --------------------------------------------------
+      paragraph:
+
+      Name "":
+      <p
+        class="mb-3 text-[11px] leading-relaxed text-[var(--ds-text-secondary)]"
+      />
+
+      Name "":
+      <p
+        class="text-[11px] leading-relaxed text-[var(--ds-text-secondary)]"
+      />
+
+      --------------------------------------------------
+      tablist:
+
+      Name "Studio connection method":
+      <div
+        aria-label="Studio connection method"
+        class="mb-4 grid border-y border-[var(--ds-border-subtle)] sm:grid-cols-2"
+        role="tablist"
+      />
+
+      --------------------------------------------------
+      tab:
+
+      Name "Recommended: Studio plugin":
+      <button
+        aria-controls="studio-connection-plugin-panel"
+        aria-label="Recommended: Studio plugin"
+        aria-selected="false"
+        class="min-h-11 border-l-2 px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--ds-focus-ring)] border-l-transparent text-[var(--ds-text-muted)] hover:bg-[var(--ds-fill-subtle)] hover:text-[var(--ds-text-secondary)]"
+        data-studio-connection-method="plugin"
+        id="studio-connection-plugin-tab"
+        role="tab"
+        tabindex="-1"
+        type="button"
+      />
+
+      Name "Advanced: Connector / Roblox Studio MCP":
+      <button
+        aria-controls="studio-connection-mcp-panel"
+        aria-label="Advanced: Connector / Roblox Studio MCP"
+        aria-selected="true"
+        class="min-h-11 border-l-2 px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--ds-focus-ring)] border-l-[var(--ds-accent)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text)]"
+        data-studio-connection-method="mcp"
+        id="studio-connection-mcp-tab"
+        role="tab"
+        tabindex="0"
+        type="button"
+      />
+
+      --------------------------------------------------
+      img:
+
+      Name "More information: Direct access to the open project, including context, edits, validation, and recovery.":
+      <span
+        aria-label="More information: Direct access to the open project, including context, edits, validation, and recovery."
+        class="group relative inline-flex cursor-help"
+        role="img"
+      />
+
+      Name "More information: An advanced local MCP connection for compatible Studio tools.":
+      <span
+        aria-label="More information: An advanced local MCP connection for compatible Studio tools."
+        class="group relative inline-flex cursor-help"
+        role="img"
+      />
+
+      --------------------------------------------------
+      tooltip:
+
+      Name "Direct access to the open project, including context, edits, validation, and recovery.":
+      <span
+        class="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-52 -translate-x-1/2 rounded-lg border border-[var(--ds-border-strong)] bg-[var(--ds-surface-overlay)] px-2.5 py-2 text-[10px] font-normal leading-relaxed text-[var(--ds-text-secondary)] opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100"
+        role="tooltip"
+      />
+
+      Name "An advanced local MCP connection for compatible Studio tools.":
+      <span
+        class="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-52 -translate-x-1/2 rounded-lg border border-[var(--ds-border-strong)] bg-[var(--ds-surface-overlay)] px-2.5 py-2 text-[10px] font-normal leading-relaxed text-[var(--ds-text-secondary)] opacity-0 shadow-xl transition-opacity duration-150 group-hover:opacity-100"
+        role="tooltip"
+      />
+
+      --------------------------------------------------
+      tabpanel:
+
+      Name "Advanced: Connector / Roblox Studio MCP":
+      <div
+        aria-labelledby="studio-connection-mcp-tab"
+        class="space-y-3"
+        id="studio-connection-mcp-panel"
+        role="tabpanel"
+      />
+
+      --------------------------------------------------
+      list:
+
+      Name "":
+      <ol
+        class="list-inside list-decimal space-y-1 text-[11px] leading-relaxed text-[var(--ds-text-secondary)]"
+      />
+
+      --------------------------------------------------
+      listitem:
+
+      Name "":
+      <li />
+
+      Name "":
+      <li />
+
+      Name "":
+      <li />
+
+      Name "":
+      <li />
+
+      Name "":
+      <li />
+
+      --------------------------------------------------
+      link:
+
+      Name "Get or open the Connector":
+      <a
+        class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-3 py-2.5 text-xs font-semibold text-[var(--ds-accent)] transition-colors hover:bg-[var(--ds-fill-hover)]"
+        href="/downloads"
+      />
+
+      Name "Download Connector 0.3.4":
+      <a
+        class="inline-flex items-center gap-1 text-[10px] font-bold text-[var(--ds-text-muted)] transition-colors hover:text-[var(--ds-text-secondary)]"
+        href="/downloads"
+      />
+
+      --------------------------------------------------
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="relative"
+        >
+          <button
+            aria-controls="studio-connection-dialog"
+            aria-expanded="true"
+            aria-haspopup="dialog"
+            aria-label="Connect Roblox Studio"
+            class="inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all xl:min-h-0 border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]"
+            title="Browser chat available — Studio not connected"
+            type="button"
+          >
+            <svg
+              class="h-3.5 w-3.5 shrink-0 text-[var(--ds-text-secondary)]"
+              color="currentColor"
+              fill="none"
+              height="16"
+              stroke="currentColor"
+              stroke-width="1.5"
+              viewBox="0 0 24 24"
+              width="16"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                cx="14.5"
+                cy="13.5"
+                r="3.5"
+                stroke="currentColor"
+                stroke-width="1.5"
+              />
+              <path
+                d="M2 13.5C2 9.74142 2 7.86213 3.0528 6.60746C3.22119 6.40678 3.40678 6.22119 3.60746 6.0528C4.86213 5 6.74142 5 10.5 5H13.5C17.2586 5 19.1379 5 20.3925 6.0528C20.5932 6.22119 20.7788 6.40678 20.9472 6.60746C22 7.86213 22 9.74142 22 13.5C22 17.2586 22 19.1379 20.9472 20.3925C20.7788 20.5932 20.5932 20.7788 20.3925 20.9472C19.1379 22 17.2586 22 13.5 22H10.5C6.74142 22 4.86213 22 3.60746 20.9472C3.40678 20.7788 3.22119 20.5932 3.0528 20.3925C2 19.1379 2 17.2586 2 13.5Z"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+              />
+              <path
+                d="M10 5L14 2"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-width="1.5"
+              />
+              <path
+                d="M6 12H7M6 15H7"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-width="1.5"
+              />
+            </svg>
+            <span
+              class="truncate"
+            >
+              Connect Roblox Studio
+            </span>
+            <i
+              aria-hidden="true"
+              class="nx-build-signal"
+              data-state="idle"
+            />
+            <svg
+              class="h-3.5 w-3.5 shrink-0 transition-transform rotate-180"
+              color="currentColor"
+              fill="none"
+              height="16"
+              stroke="currentColor"
+              stroke-width="1.5"
+              viewBox="0 0 24 24"
+              width="16"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div
+        aria-label="Connect Roblox Studio"
+        class="z-[9999] overflow-y-auto rounded border border-[var(--ds-border-strong)] bg-[var(--ds-surface-overlay)] p-4 scrollbar-subtle"
+        id="studio-connection-dialog"
+        role="dialog"
+        style="position: fixed; top: 8px; left: 8px; width: 400px; max-height: 520px; visibility: visible;"
+      >
+        <div
+          class="mb-3 flex items-start justify-between gap-3"
+        >
+          <div
+            class="flex min-w-0 items-center gap-2.5"
+          >
+            <span
+              class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)]"
+            >
+              <svg
+                class="h-4 w-4"
+                color="currentColor"
+                fill="none"
+                height="16"
+                stroke="currentColor"
+                stroke-width="1.5"
+                viewBox="0 0 24 24"
+                width="16"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <circle
+                  cx="14.5"
+                  cy="13.5"
+                  r="3.5"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                />
+                <path
+                  d="M2 13.5C2 9.74142 2 7.86213 3.0528 6.60746C3.22119 6.40678 3.40678 6.22119 3.60746 6.0528C4.86213 5 6.74142 5 10.5 5H13.5C17.2586 5 19.1379 5 20.3925 6.0528C20.5932 6.22119 20.7788 6.40678 20.9472 6.60746C22 7.86213 22 9.74142 22 13.5C22 17.2586 22 19.1379 20.9472 20.3925C20.7788 20.5932 20.5932 20.7788 20.3925 20.9472C19.1379 22 17.2586 22 13.5 22H10.5C6.74142 22 4.86213 22 3.60746 20.9472C3.40678 20.7788 3.22119 20.5932 3.0528 20.3925C2 19.1379 2 17.2586 2 13.5Z"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                />
+                <path
+                  d="M10 5L14 2"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-width="1.5"
+                />
+      ...
+
+      117 |     ).toBeTruthy();
+      118 |     expect(
+    > 119 |       screen.getByRole("link", {
+          |              ^
+      120 |         name: `Download Connector ${desktopConnectorPackage.version}`,
+      121 |       }).getAttribute("href")
+      122 |     ).toBe("/downloads");
+
+      at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+      at node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at getByRole (node_modules/@testing-library/dom/dist/query-helpers.js:95:19)
+      at Object.<anonymous> (src/components/ai/StudioPairControl.test.jsx:119:14)
+
+  ● StudioPairControl › makes a missing Create Instance command recoverable without disconnecting
+
+    TestingLibraryElementError: Unable to find an element with the text: /current NexusRBXStudioBridge\.plugin\.lua artifact/i. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="relative"
+        >
+          <button
+            aria-controls="studio-connection-dialog"
+            aria-expanded="true"
+            aria-haspopup="dialog"
+            aria-label="Studio · Limited"
+            class="inline-flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all xl:min-h-0 border-[color-mix(in_srgb,var(--ds-warning)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-warning)_12%,transparent)] text-[var(--ds-warning)] hover:bg-[color-mix(in_srgb,var(--ds-warning)_20%,transparent)]"
+            title="Studio feature unavailable: instanceMutation"
+            type="button"
+          >
+            <svg
+              class="h-3.5 w-3.5 shrink-0"
+              color="currentColor"
+              fill="none"
+              height="16"
+              stroke="currentColor"
+              stroke-width="1.5"
+              viewBox="0 0 24 24"
+              width="16"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M13.9248 21H10.0752C5.44476 21 3.12955 21 2.27636 19.4939C1.42317 17.9879 2.60736 15.9914 4.97574 11.9985L6.90057 8.75333C9.17559 4.91778 10.3131 3 12 3C13.6869 3 14.8244 4.91777 17.0994 8.75332L19.0243 11.9985C21.3926 15.9914 22.5768 17.9879 21.7236 19.4939C20.8704 21 18.5552 21 13.9248 21Z"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+              />
+              <path
+                d="M12 9V13"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+              />
+              <path
+                d="M12.125 16.75H12M12.25 16.75C12.25 16.8881 12.1381 17 12 17C11.8619 17 11.75 16.8881 11.75 16.75C11.75 16.6119 11.8619 16.5 12 16.5C12.1381 16.5 12.25 16.6119 12.25 16.75Z"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+              />
+            </svg>
+            <span
+              class="truncate"
+            >
+              Studio · Limited
+            </span>
+            <i
+              aria-hidden="true"
+              class="nx-build-signal"
+              data-state="ready"
+            />
+            <svg
+              class="h-3.5 w-3.5 shrink-0 transition-transform rotate-180"
+              color="currentColor"
+              fill="none"
+              height="16"
+              stroke="currentColor"
+              stroke-width="1.5"
+              viewBox="0 0 24 24"
+              width="16"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="1.5"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div
+        aria-label="Connect Roblox Studio"
+        class="z-[9999] overflow-y-auto rounded border border-[var(--ds-border-strong)] bg-[var(--ds-surface-overlay)] p-4 scrollbar-subtle"
+        id="studio-connection-dialog"
+        role="dialog"
+        style="position: fixed; top: 8px; left: 8px; width: 400px; max-height: 520px; visibility: visible;"
+      >
+        <div
+          class="mb-3 flex items-start justify-between gap-3"
+        >
+          <div
+            class="flex min-w-0 items-center gap-2.5"
+          >
+            <span
+              class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--ds-accent-soft)] text-[var(--ds-accent)]"
+            >
+              <svg
+                class="h-4 w-4"
+                color="currentColor"
+                fill="none"
+                height="16"
+                stroke="currentColor"
+                stroke-width="1.5"
+                viewBox="0 0 24 24"
+                width="16"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <circle
+                  cx="14.5"
+                  cy="13.5"
+                  r="3.5"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                />
+                <path
+                  d="M2 13.5C2 9.74142 2 7.86213 3.0528 6.60746C3.22119 6.40678 3.40678 6.22119 3.60746 6.0528C4.86213 5 6.74142 5 10.5 5H13.5C17.2586 5 19.1379 5 20.3925 6.0528C20.5932 6.22119 20.7788 6.40678 20.9472 6.60746C22 7.86213 22 9.74142 22 13.5C22 17.2586 22 19.1379 20.9472 20.3925C20.7788 20.5932 20.5932 20.7788 20.3925 20.9472C19.1379 22 17.2586 22 13.5 22H10.5C6.74142 22 4.86213 22 3.60746 20.9472C3.40678 20.7788 3.22119 20.5932 3.0528 20.3925C2 19.1379 2 17.2586 2 13.5Z"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                />
+                <path
+                  d="M10 5L14 2"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-width="1.5"
+                />
+                <path
+                  d="M6 12H7M6 15H7"
+                  stroke="currentColor"
+                  stroke-linecap="ro...
+
+      446 |
+      447 |     expect(screen.getByText("Update Studio plugin to use Create Instance")).toBeTruthy();
+    > 448 |     expect(screen.getByText(/current NexusRBXStudioBridge\.plugin\.lua artifact/i)).toBeTruthy();
+          |                   ^
+      449 |     expect(screen.getByText(/other supported Studio features remain available/i)).toBeTruthy();
+      450 |     expect(screen.getByRole("link", { name: /View install steps/i }).getAttribute("href")).toBe("/docs/installation");
+      451 |
+
+      at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+      at node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at getByText (node_modules/@testing-library/dom/dist/query-helpers.js:95:19)
+      at Object.<anonymous> (src/components/ai/StudioPairControl.test.jsx:448:19)
+
+PASS src/pages/ai/ui/UiCreatorWorkspace.test.jsx (8.711 s)
+PASS src/pages/ai/useAiWorkspaceController.layout.test.js (10.328 s)
+
+Test Suites: 1 failed, 7 passed, 8 total
+Tests:       2 failed, 111 passed, 113 total
+Snapshots:   0 total
+Time:        13.155 s
+Ran all test suites matching /src\\hooks\\useAiChat.test.js|src\\hooks\\useUnifiedChat.test.js|src\\hooks\\useProjectAssets.test.js|src\\lib\\studioConnection.test.js|src\\components\\ai\\StudioPairControl.test.jsx|src\\pages\\ai\\ui\\UiCreatorWorkspace.test.jsx|src\\pages\\ai\\ui\\RobloxUiPreview.test.jsx|src\\pages\\ai\\useAiWorkspaceController.layout.test.js/i.

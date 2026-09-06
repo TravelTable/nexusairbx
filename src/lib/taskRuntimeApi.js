@@ -125,8 +125,10 @@ function disabledError() {
   });
 }
 
-function ensureEnabled() {
-  if (!FEATURE_FLAGS.newTaskRuntime) throw disabledError();
+function ensureEnabled({ creating = false } = {}) {
+  // Approved plans already launch durable tasks. Their progress and controls
+  // must remain reachable even when standalone task creation is not enabled.
+  if (!FEATURE_FLAGS.newTaskRuntime && (creating || !FEATURE_FLAGS.newPlanningMode)) throw disabledError();
 }
 
 function validationError(message = SAFE_ERROR_MESSAGES.TASK_VALIDATION_FAILED) {
@@ -265,8 +267,8 @@ async function request(path, {
   requestId,
   ...init
 } = {}, fallbackMessage = "The task request could not be completed.") {
-  ensureEnabled();
   const normalizedMethod = String(method || "GET").toUpperCase();
+  ensureEnabled({ creating: normalizedMethod === "POST" && path === "" });
   const mutationId = normalizedMethod === "GET" ? "" : firstString(requestId, idempotencyKey) || newMutationId();
   const requestHeaders = {
     Accept: "application/json",

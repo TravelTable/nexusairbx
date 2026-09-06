@@ -33,6 +33,7 @@ const EXPLANATION_RE = /\b(explain|describe|walk me through|how would|how does|w
 const BUILD_REQUEST_RE = new RegExp(`\\b(${BUILD_VERBS.join("|")})\\b`, "i");
 const REQUEST_DIRECTIVE_RE = /\b(please|can you|could you|i need you to|i want you to|let's|lets)\b/i;
 const NEGATED_BUILD_CLAUSE_RE = /\b(?:do not|don't|without)\b[^.!?;]*/gi;
+const PLAN_REQUEST_RE = /^(?:(?:please|can you please|could you please|can you|could you|would you|i want you to|i need you to|let's|lets)\s+)?(?:plan(?:\s+out)?\s+|(?:create|write|draft|prepare|make|give me)\s+(?:(?:an?|the)\s+)?(?:(?:implementation|build|development|project)\s+)?plan\b|i\s+(?:want|need)\s+(?:an?\s+)?plan\b)/i;
 
 function normalizePrompt(prompt) {
   return String(prompt || "").replace(/\s+/g, " ").trim();
@@ -49,6 +50,7 @@ export function classifyUserIntent(prompt) {
   if (ACK_RE.test(text)) return "GENERAL_QUESTION";
 
   const affirmativeText = text.replace(NEGATED_BUILD_CLAUSE_RE, " ");
+  if (PLAN_REQUEST_RE.test(affirmativeText.trim())) return "PLANNING_REQUEST";
   const hasBuildVerb = BUILD_REQUEST_RE.test(affirmativeText);
   const hasDirective = REQUEST_DIRECTIVE_RE.test(affirmativeText);
   const isQuestion = QUESTION_RE.test(affirmativeText.trim()) || text.endsWith("?");

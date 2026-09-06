@@ -1,0 +1,65 @@
+TAP version 13
+# Subtest: free port and official Studio server are left alone
+ok 1 - free port and official Studio server are left alone
+  ---
+  duration_ms: 2.0627
+  ...
+# Subtest: known same-user Ropilot proxy is released once before a fresh handshake
+ok 2 - known same-user Ropilot proxy is released once before a fresh handshake
+  ---
+  duration_ms: 2.1636
+  ...
+# Subtest: unknown apps, lookalike binaries, other users and multiple owners are never stopped
+ok 3 - unknown apps, lookalike binaries, other users and multiple owners are never stopped
+  ---
+  duration_ms: 0.8983
+  ...
+# Subtest: rapidly respawning Ropilot stops recovery with an actionable conflict
+ok 4 - rapidly respawning Ropilot stops recovery with an actionable conflict
+  ---
+  duration_ms: 0.4888
+  ...
+# Subtest: a Roblox server taking over immediately after recovery is accepted
+ok 5 - a Roblox server taking over immediately after recovery is accepted
+  ---
+  duration_ms: 0.2852
+  ...
+# Subtest: opt-out, custom launchers, alternate ports and non-Windows hosts are respected
+ok 6 - opt-out, custom launchers, alternate ports and non-Windows hosts are respected
+  ---
+  duration_ms: 0.6617
+  ...
+# Subtest: simultaneous attempts share inspection and cannot release overlapping helpers
+ok 7 - simultaneous attempts share inspection and cannot release overlapping helpers
+  ---
+  duration_ms: 0.2896
+  ...
+# Subtest: failed release is bounded and does not expose raw process errors or credentials
+ok 8 - failed release is bounded and does not expose raw process errors or credentials
+  ---
+  duration_ms: 0.7447
+  ...
+# Subtest: aborting during inspection never closes a process
+ok 9 - aborting during inspection never closes a process
+  ---
+  duration_ms: 0.5306
+  ...
+# Subtest: Windows native inspection works and refuses an unowned process identity
+ok 10 - Windows native inspection works and refuses an unowned process identity
+  ---
+  duration_ms: 7556.8603
+  ...
+# Subtest: Windows native recovery validates identity and stops only the isolated conflicting helper
+ok 11 - Windows native recovery validates identity and stops only the isolated conflicting helper
+  ---
+  duration_ms: 8974.4164
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 16934.7629

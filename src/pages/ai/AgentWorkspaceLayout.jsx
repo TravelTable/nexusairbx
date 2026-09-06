@@ -240,7 +240,6 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     handleFileUpload,
     retryAttachmentUpload,
     publishChatImage,
-    handleQuickStart,
     handleOpenArtifact,
     track,
     notify,
@@ -328,6 +327,12 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     }
     setStudioConnectionOpen(true);
   }, []);
+
+  useEffect(() => {
+    const open = () => handleStudioConnectionOpen();
+    window.addEventListener("nexus:open-studio", open);
+    return () => window.removeEventListener("nexus:open-studio", open);
+  }, [handleStudioConnectionOpen]);
 
   const handleStudioConnectionOpenChange = useCallback((nextOpen) => {
     setStudioConnectionOpen(Boolean(nextOpen));
@@ -520,6 +525,9 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     chatId: chat.currentChatId || "",
     enabled: generatorMode === "agent_build" && Boolean(user),
   });
+  const canonicalTaskActive = Boolean(taskRuntime.task
+    && !["succeeded", "completed", "failed", "cancelled", "canceled"].includes(taskRuntime.task.status)
+    && (!taskRuntime.task.chatId || taskRuntime.task.chatId === chat.currentChatId));
   const evidenceBadges = useMemo(
     () => ({
       files: hasUnseenArtifact,
@@ -1246,6 +1254,17 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
   );
 
   const handleStopActiveWork = useCallback(async () => {
+    // Canonical plan execution owns its downstream work. Stop it through the
+    // task API even after the short browser startup operation has finished.
+    if (canonicalTaskActive) {
+      unified.cancelCurrentFlow?.();
+      try {
+        await taskRuntime.cancel();
+      } catch (error) {
+        notify?.({ message: error?.message || "The build could not be stopped. Try Stop again.", type: "error" });
+      }
+      return;
+    }
     let stoppedCoordinatedOperation = false;
     try {
       const stopped = await stopChatOperation?.();
@@ -1296,7 +1315,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
           type: "error",
         });
       });
-  }, [activeAgentRuntime, chat, notify, stopChatOperation, unified]);
+  }, [activeAgentRuntime, canonicalTaskActive, chat, notify, stopChatOperation, taskRuntime, unified]);
 
   const openArtifactOnStage = (message) => {
     setOpenedCodeRequest(null);
@@ -1344,10 +1363,6 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
   );
 
   const handleDockNewChat = async () => {
-    if (!currentProjectId) {
-      openProjectSelector();
-      return;
-    }
     try {
       await chat.startNewChat({ projectId: currentProjectId });
     } catch (error) {
@@ -1441,7 +1456,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         user={user}
         profile={roblox?.connected ? roblox?.status?.connection?.profile || null : null}
         activeMode={chat.activeMode}
-        isBusy={Boolean(chatOperationState?.isBusy || unified.isGenerating)}
+        isBusy={Boolean(chatOperationState?.isBusy || unified.isGenerating || canonicalTaskActive)}
         operationState={chatOperationState}
         onApprovePlan={handleAgentApprovePlan}
         onPlanTaskAccepted={taskRuntime.selectTask}
@@ -1452,7 +1467,9 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         onStartRefine={onStartRefineCommand}
         onOpenArtifact={openArtifactOnStage}
         onOpenFileReference={handleOpenFileReference}
-        onQuickStart={handleQuickStart}
+        onQuickStart={setPrompt}
+        recentProjects={project?.projects || []}
+        onOpenProject={openWorkspaceProject}
         onStartGuide={guidedChat ? undefined : () => navigateTo?.('/onboarding')}
         guidedLaunchIdea={guidedChat ? guidedLaunch.progress.idea : undefined}
         startGuideLabel={guidedLaunch.progress && guidedLaunch.progress.stage !== 'complete' ? 'Resume Guided Launch' : 'Build your first idea with Guided Launch'}
@@ -1744,6 +1761,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
             onCancel={() => invokeTaskAction(taskRuntime.cancel)}
             onAmend={(payload) => invokeTaskAction(() => taskRuntime.amend(payload))}
             onApprove={(payload) => invokeTaskAction(() => taskRuntime.approve(payload))}
+            onStudioApproved={taskRuntime.refresh}
           />
           <div className="mt-3">
             <RunEventLog events={taskRuntime.events} agents={activeAgentRuntime.agents} />

@@ -34,7 +34,7 @@ function createNexusPluginHeader(parent, colors)
 	title.Font = Enum.Font.GothamBold
 	title.TextSize = 15
 	title.TextXAlignment = Enum.TextXAlignment.Left
-	title.TextColor3 = colors.text or Color3.fromRGB(239, 239, 236)
+	title.TextColor3 = colors.live or Color3.fromRGB(192, 132, 252)
 	title.Text = "Nexus"
 	title.Parent = header
 
@@ -65,6 +65,7 @@ function createNexusPluginHeader(parent, colors)
 
 	local settings = nexusHeaderButton(header, "Settings", "•••", -6)
 	settings.TextSize = 11
+	settings.TextColor3 = colors.textMuted or Color3.fromRGB(184, 167, 206)
 
 	local border = Instance.new("Frame")
 	border.Name = "HeaderBorder"

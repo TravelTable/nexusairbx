@@ -21,6 +21,7 @@ export function enqueueToast(queue, incoming, now = Date.now()) {
   if (!next.message) return queue;
 
   const duplicateIndex = queue.findIndex((item) => {
+    if (incoming.id && item.id === incoming.id) return true;
     if (item.type !== next.type) return false;
     if (item.message !== next.message) return false;
     return now - item.createdAt < DEDUPE_WINDOW_MS;

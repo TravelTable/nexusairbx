@@ -1,0 +1,232 @@
+{
+  "attemptStatus": "completed",
+  "jobId": "artifact_job_90bd6116100985fd573a5681c4d009e868ae9e416b9097dd",
+  "jobStatus": "succeeded",
+  "runId": "studio_run_1d15612b4a1cc9580071d9eb391ede91de05728373707807",
+  "runStatus": "succeeded",
+  "summary": "Studio changes were applied and verification completed successfully.",
+  "steps": [
+    {
+      "type": "create_instance",
+      "status": "succeeded",
+      "payload": {
+        "createParents": true,
+        "path": "Workspace/FlightFlowTest/FlowProbeFinal",
+        "schemaVersion": "2026-08-27-r15-animation",
+        "idempotencyKey": "5a81fc2185bc257d0859713468c194fe",
+        "attributes": {},
+        "className": "Part",
+        "expectedSourceHash": "",
+        "snapshot": true,
+        "properties": {
+          "Anchored": true,
+          "Position": {
+            "x": 24,
+            "y": 8,
+            "z": 0,
+            "type": "Vector3"
+          },
+          "Size": {
+            "x": 8,
+            "y": 1,
+            "z": 8,
+            "type": "Vector3"
+          },
+          "Color": {
+            "b": 1,
+            "r": 0,
+            "g": 0,
+            "type": "Color3"
+          }
+        },
+        "tags": []
+      },
+      "result": {},
+      "error": null
+    },
+    {
+      "type": "get_project_manifest",
+      "status": "succeeded",
+      "payload": {
+        "cursor": "",
+        "manifestRevision": "",
+        "maxDepth": 24,
+        "schemaVersion": "2026-08-27-r15-animation",
+        "includeSource": false,
+        "idempotencyKey": "22ef4b945012d21e5567600673371953",
+        "includeTags": true,
+        "pageSize": 500,
+        "sourceMaxChars": 0,
+        "includeAttributes": true,
+        "maxInstances": 10000,
+        "includeProperties": true
+      },
+      "result": {},
+      "error": null
+    },
+    {
+      "type": "run_project_validation",
+      "status": "succeeded",
+      "payload": {
+        "rulesVersion": "",
+        "checks": {},
+        "schemaVersion": 1,
+        "validationSessionId": "",
+        "visualOnly": false,
+        "idempotencyKey": "e2031e7ed766b33f68568f77c15a0137",
+        "includeSourceScan": true,
+        "diagnosticLimit": 500,
+        "maxScripts": 400,
+        "limits": {
+          "diagnosticLimit": 500,
+          "maxDescendants": 10000,
+          "maxTreeDepth": 64
+        },
+        "target": {
+          "path": "Workspace/FlightFlowTest/FlowProbeFinal",
+          "modelId": "",
+          "type": "managed_native_model",
+          "insertionId": ""
+        }
+      },
+      "result": {
+        "summary": {
+          "critical": 0,
+          "passed": 1,
+          "errors": 0,
+          "checksRun": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "type": "read_instance",
+      "status": "succeeded",
+      "payload": {
+        "path": "Workspace/FlightFlowTest/FlowProbeFinal",
+        "schemaVersion": "2026-08-27-r15-animation",
+        "includeChildren": false,
+        "idempotencyKey": "58b4f972e7796ba7f243ffa8f5024c59",
+        "includeTags": false,
+        "includeAttributes": true,
+        "properties": [
+          "Name",
+          "ClassName",
+          "Anchored",
+          "Color",
+          "Position",
+          "Size"
+        ]
+      },
+      "result": {
+        "retryable": false,
+        "resultingHashes": [],
+        "targetAttestation": {
+          "targetGeneration": 510,
+          "attestedAt": 1788685435,
+          "placeChanged": false,
+          "targetId": "st_8c5d17e8ee75c6d9aeebd894c2cadbf341aa72d1041774ef",
+          "connectorId": "db68202a-04ff-41fe-8a5e-2253a6b60898",
+          "placeId": "0",
+          "placeSignature": "8cef9f98",
+          "universeId": "0",
+          "sessionId": "MLq8J3mhz56J6BRsAeQe",
+          "placeName": "Place1"
+        },
+        "lifecycleVersion": 2,
+        "instanceRecords": [
+          {
+            "path": "Workspace/FlightFlowTest/FlowProbeFinal",
+            "className": "Part",
+            "name": "FlowProbeFinal",
+            "properties": {
+              "Reflectance": 0,
+              "Color": {
+                "b": 1,
+                "type": "Color3",
+                "g": 0,
+                "r": 0
+              },
+              "Anchored": true,
+              "Locked": false,
+              "Material": "Enum.Material.Plastic",
+              "Size": {
+                "y": 1,
+                "type": "Vector3",
+                "x": 8,
+                "z": 8
+              },
+              "CanCollide": true,
+              "CollisionGroup": "Default",
+              "CanTouch": true,
+              "CFrame": {
+                "components": [
+                  24,
+                  8,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  1
+                ],
+                "type": "CFrame"
+              },
+              "Rotation": {
+                "y": 0,
+                "type": "Vector3",
+                "x": 0,
+                "z": 0
+              },
+              "Transparency": 0,
+              "Name": "FlowProbeFinal",
+              "ClassName": "Part",
+              "Massless": false,
+              "CanQuery": true,
+              "CastShadow": true,
+              "Position": {
+                "y": 8,
+                "type": "Vector3",
+                "x": 24,
+                "z": 0
+              }
+            },
+            "attributes": {
+              "NexusManagedId": "cea9eee6-6d39-4cd8-af10-723f3949fd9b"
+            }
+          }
+        ],
+        "instances": {
+          "keys": [
+            "_summarized",
+            "count"
+          ],
+          "_summarized": true
+        },
+        "idempotencyKey": "vy2vHrm6gS5cndekJEOF",
+        "snapshotIds": [],
+        "warnings": [],
+        "stepId": "uJNzbrx7jcxUQKoFxJJ2",
+        "verified": true,
+        "leaseFence": 1,
+        "pageItemCount": 1,
+        "commandId": "vy2vHrm6gS5cndekJEOF",
+        "affectedPaths": [],
+        "duration": 1,
+        "output": [],
+        "diagnostics": [],
+        "success": true,
+        "operationId": "studio-agent:studio_run_1d15612b4a1cc9580071d9eb391ede91de05728373707807:uJNzbrx7jcxUQKoFxJJ2",
+        "runId": "studio_run_1d15612b4a1cc9580071d9eb391ede91de05728373707807",
+        "ok": true,
+        "operation": "read_instance",
+        "previousHashes": []
+      },
+      "error": null
+    }
+  ]
+}
