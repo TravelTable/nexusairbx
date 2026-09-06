@@ -20,6 +20,7 @@ import {
   disconnectStudioMcp,
   startStudioPairing,
   testStudioMcp,
+  selectStudioMcpTarget,
 } from "../../lib/studioBridgeApi";
 import {
   getStudioSessionId,
@@ -38,7 +39,7 @@ import {
 
 const MENU_WIDTH = 400;
 const MENU_MAX_HEIGHT = 520;
-const CURRENT_CONNECTOR_VERSION = "0.3.4";
+const CURRENT_CONNECTOR_VERSION = "0.3.6";
 
 function InfoTooltip({ children }) {
   return (
@@ -327,6 +328,8 @@ export default function StudioPairControl({
   const pluginSession = connection?.pluginSession || null;
   const mcpSession = connection?.mcpSession || null;
   const latestMcpSession = connection?.latestMcpSession || mcpSession;
+  const mcpTargets = latestMcpSession?.studio?.targets || [];
+  const mcpTargetPending = mcpTargets.length > 0 && latestMcpSession?.studio?.targetIdentityComplete !== true;
   const capabilities = connection?.capabilities || {
     supported: [],
     unavailable: [],
@@ -354,6 +357,8 @@ export default function StudioPairControl({
   const [busyMethod, setBusyMethod] = useState("");
   const [disconnectingMethod, setDisconnectingMethod] = useState("");
   const [testing, setTesting] = useState(false);
+  const [selectingTarget, setSelectingTarget] = useState("");
+  const [targetError, setTargetError] = useState("");
   const [copiedMethod, setCopiedMethod] = useState("");
 
   const rootRef = useRef(null);
@@ -563,17 +568,32 @@ export default function StudioPairControl({
     }
   };
 
+  const selectMcpTarget = async (studioId) => {
+    if (selectingTarget) return;
+    setSelectingTarget(studioId);
+    setTargetError("");
+    try {
+      await selectStudioMcpTarget({ sessionId: getStudioSessionId(latestMcpSession), studioId });
+      await refresh?.();
+    } catch (error) {
+      setTargetError(error?.message || "Could not select this Studio window. Try again.");
+    } finally {
+      setSelectingTarget("");
+    }
+  };
+
   const testMcpConnection = async () => {
     setTesting(true);
     try {
       const result = await testStudioMcp({
         sessionId: getStudioSessionId(latestMcpSession),
       });
-      const ok = result?.ok !== false && result?.connected !== false;
+      const pendingTarget = result?.studio?.targetIdentityComplete === false;
+      const ok = result?.ok !== false && result?.connected !== false && !pendingTarget;
       notify?.({
         message: ok
           ? "Roblox Studio MCP connection test passed"
-          : "Roblox Studio MCP connection test failed",
+          : pendingTarget ? "Select your Studio window to finish reconnecting" : "Roblox Studio MCP connection test failed",
         type: ok ? "success" : "error",
       });
       await refresh?.();
@@ -1001,6 +1021,21 @@ export default function StudioPairControl({
                       })}
                     </div>
                   </div>
+                )}
+
+                {mcpTargets.length > 0 && (
+                  <section aria-label="Studio window selection" className="space-y-2 rounded border border-[var(--ds-border)] p-3">
+                    <h3 className="text-xs font-semibold">{mcpTargetPending ? "Select your Studio window to reconnect" : "Studio window"}</h3>
+                    {mcpTargetPending && <p className="text-[11px] text-[var(--ds-text-secondary)]">Studio may have restarted. Select the open experience below, then wait for verification. Interrupted commands will not be replayed.</p>}
+                    {mcpTargets.map((target) => (
+                      <button key={target.studioId} type="button" disabled={Boolean(selectingTarget) || (!mcpTargetPending && latestMcpSession?.desiredStudioId === target.studioId)}
+                        onClick={() => selectMcpTarget(target.studioId)}
+                        className="block min-h-11 w-full rounded border border-[var(--ds-border)] px-3 py-2 text-left text-xs disabled:opacity-50">
+                        {selectingTarget === target.studioId ? "Selecting…" : `Use ${target.placeName || target.label || "Roblox Studio"}`} <span className="text-[var(--ds-text-muted)]">({target.studioId.slice(0, 8)})</span>
+                      </button>
+                    ))}
+                    {targetError && <p role="alert" className="text-xs text-red-400">{targetError}</p>}
+                  </section>
                 )}
 
                 {!mcpConnected && (

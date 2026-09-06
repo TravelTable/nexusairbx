@@ -10,6 +10,7 @@ import {
   disconnectStudioMcp,
   startStudioPairing,
   testStudioMcp,
+  selectStudioMcpTarget,
 } from "../../lib/studioBridgeApi";
 import { normalizeStudioConnectionSnapshot } from "../../lib/studioConnection";
 import desktopConnectorPackage from "../../../desktop-connector/package.json";
@@ -19,9 +20,53 @@ jest.mock("../../lib/studioBridgeApi", () => ({
   disconnectStudioMcp: jest.fn(),
   startStudioPairing: jest.fn(),
   testStudioMcp: jest.fn(),
+  selectStudioMcpTarget: jest.fn(),
 }));
 
 describe("StudioPairControl", () => {
+  test("a healthy transport with an unverified target does not report test success", async () => {
+    const notify = jest.fn();
+    testStudioMcp.mockResolvedValue({ ok: true, studio: { targetIdentityComplete: false } });
+    render(<StudioPairControl open notify={notify} connection={{ latestMcpSession: { id: "session-1" } }} />);
+    fireEvent.click(screen.getByRole("tab", { name: "Advanced: Connector / Roblox Studio MCP" }));
+    fireEvent.click(screen.getByRole("button", { name: "Test connection" }));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith({ type: "error", message: "Select your Studio window to finish reconnecting" }));
+  });
+
+  test("reselects a restarted Studio window only after a click and refreshes attestation", async () => {
+    const refresh = jest.fn();
+    selectStudioMcpTarget.mockResolvedValue({ ok: true });
+    render(<StudioPairControl open refresh={refresh} connection={{
+      mcpConnected: true, latestMcpSession: { id: "session-1", desiredStudioId: "old-window", studio: {
+        targetIdentityComplete: false, targets: [{ studioId: "new-window", placeName: "Place1" }],
+      } },
+    }} />);
+    fireEvent.click(screen.getByRole("tab", { name: "Advanced: Connector / Roblox Studio MCP" }));
+    expect(screen.getByText("Select your Studio window to reconnect")).toBeTruthy();
+    expect(selectStudioMcpTarget).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: /Use Place1/ }));
+    await waitFor(() => expect(refresh).toHaveBeenCalled());
+    expect(selectStudioMcpTarget).toHaveBeenCalledWith({ sessionId: "session-1", studioId: "new-window" });
+    expect(testStudioMcp).not.toHaveBeenCalled();
+  });
+
+  test("failed window selection retains a visible retry control", async () => {
+    selectStudioMcpTarget.mockRejectedValue(new Error("Studio window closed. Choose another window."));
+    render(<StudioPairControl open connection={{ latestMcpSession: { id: "session-1", studio: {
+      targets: [{ studioId: "window-a", placeName: "Arena" }, { studioId: "window-b", placeName: "Lobby" }],
+    } } }} />);
+    fireEvent.click(screen.getByRole("tab", { name: "Advanced: Connector / Roblox Studio MCP" }));
+    fireEvent.click(screen.getByRole("button", { name: /Use Arena/ }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Studio window closed");
+    expect(screen.getByRole("button", { name: /Use Lobby/ })).not.toBeDisabled();
+  });
+
+  test("an unattached Studio session does not offer a stale window selection", () => {
+    render(<StudioPairControl open connection={{ latestMcpSession: { id: "session-1", studio: { targets: [] } } }} />);
+    fireEvent.click(screen.getByRole("tab", { name: "Advanced: Connector / Roblox Studio MCP" }));
+    expect(screen.queryByRole("region", { name: "Studio window selection" })).toBeNull();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     localStorage.clear();
