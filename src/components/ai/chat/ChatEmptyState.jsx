@@ -85,7 +85,6 @@ export default function ChatEmptyState({
               { id: "adventure", title: "Adventure", detail: "Give players a place to explore", prompt: "Help me plan an island adventure with exploration, a first quest, collectibles, and a memorable starting area." },
             ].map((idea) => (
               <button type="button" key={idea.id} className="creator-starter focus-ring" onClick={() => onQuickStart(idea.prompt)}>
-                <img src={`/assets/nexus-template-worlds/${idea.id}.webp`} alt="" width="352" height="220" />
                 <span><strong>{idea.title}</strong><small>{idea.detail}</small></span>
                 <ArrowRight size={16} aria-hidden="true" />
               </button>
@@ -113,7 +112,7 @@ export default function ChatEmptyState({
               <div>
                 <dt>Project</dt>
                 <dd title={buildContext.projectTitle}>
-                  {buildContext.projectTitle}
+                  <span>{buildContext.projectTitle}</span>
                 </dd>
               </div>
             ) : null}
@@ -149,7 +148,8 @@ export default function ChatEmptyState({
                 onClick={onOpenTemplates}
                 className="chat-empty-state__templates focus-ring"
               >
-                Browse request templates →
+                <span>Browse request templates</span>
+                <ArrowRight size={14} aria-hidden="true" />
               </button>
             ) : null}
             {onStartGuide ? (
@@ -158,7 +158,8 @@ export default function ChatEmptyState({
                 onClick={onStartGuide}
                 className="chat-empty-state__templates focus-ring"
               >
-                {startGuideLabel} →
+                <span>{startGuideLabel}</span>
+                <ArrowRight size={14} aria-hidden="true" />
               </button>
             ) : null}
           </div>

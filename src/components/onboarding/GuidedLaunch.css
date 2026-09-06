@@ -2,7 +2,7 @@
 .guided-launch-loading { min-height: 60dvh; display: flex; gap: 20px; align-items: center; justify-content: center; flex-direction: column; color: var(--ds-text-secondary); background: var(--ds-bg-canvas); }
 .guided-launch-header { min-height: 88px; max-width: 1440px; margin: auto; padding: 20px 40px; display: flex; align-items: center; gap: 24px; }
 .guided-launch-brand { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 650; text-decoration: none; color: var(--ds-text); }
-.guided-launch-brand > span { display: grid; place-items: center; width: 30px; height: 32px; background: var(--ds-text); color: var(--ds-bg-canvas); border-radius: 8px; font-weight: 800; }
+.guided-launch-brand > img { display: block; width: 32px; height: 32px; object-fit: contain; flex-shrink: 0; }
 .guided-launch-save { margin-left: auto; font-size: 12px; color: var(--ds-text-muted); }
 .guided-launch-main { max-width: 1120px; margin: 34px auto 64px; padding: 0 32px; }
 .guided-launch-steps { padding: 0; margin: 0 0 48px; list-style: none; display: flex; gap: 32px; }

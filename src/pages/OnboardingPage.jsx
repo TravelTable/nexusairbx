@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Check, Copy, ExternalLink, Loader2, Monitor, PlugZap, Sparkles } from 'lib/icons';
+import { ArrowLeft, ArrowRight, Check, Copy, ExternalLink, Loader2, Monitor, PlugZap } from 'lib/icons';
 import { useRobloxConnection } from '../context/RobloxConnectionContext';
 import { useStudioConnection } from '../hooks/useStudioConnection';
 import { useGuidedLaunch } from '../components/onboarding/useGuidedLaunch';
@@ -142,7 +142,7 @@ export function GuidedLaunchSetup({ roblox }) {
   return (
     <div className="guided-launch" data-nexus-surface="onboarding">
       <header className="guided-launch-header">
-        <Link to="/" className="guided-launch-brand" aria-label="NexusRBX home"><span aria-hidden="true">N</span>NexusRBX</Link>
+        <Link to="/" className="guided-launch-brand" aria-label="NexusRBX home"><img src="/favicon.png" alt="" aria-hidden="true" width={32} height={32} />NexusRBX</Link>
         <span className="guided-launch-save">{busy ? 'Saving…' : idea !== (progress?.idea || '') ? 'Continue to save your idea to your account' : progress ? 'Progress saved to your account' : 'Your first creation starts here'}</span>
         <Button variant="ghost" disabled={busy} onClick={pause}>Save and leave</Button>
       </header>
@@ -212,7 +212,7 @@ export function GuidedLaunchSetup({ roblox }) {
             </>}
           </section>
           <aside className="guided-launch-aside" aria-label="Your creation journey">
-            <div className="guided-launch-aside-top"><Sparkles size={18} /><span>FROM IDEA TO SOMETHING PLAYABLE</span></div>
+            <div className="guided-launch-aside-top"><span>FROM IDEA TO SOMETHING PLAYABLE</span></div>
             <div className="guided-launch-illustration" aria-hidden="true"><svg viewBox="0 0 320 210" className="guided-launch-world">
               <path d="M34 135 160 72 286 135 160 198Z" fill="var(--ds-surface-2)" stroke="var(--ds-border-strong)" />
               <g stroke="var(--ds-border)" fill="none"><path d="m65 119 126 63m-95-79 126 63m-95-79 126 63M65 151l126-63m-95 79 126-63m-95 79 126-63" /></g>
