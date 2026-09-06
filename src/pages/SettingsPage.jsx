@@ -99,7 +99,6 @@ import {
 import { cn } from "../lib/utils";
 import { resolveSettingsTab } from "../lib/settingsNavigation";
 import { useSettingsLongForm } from "../hooks/useSettingsLongForm";
-import { requestTutorialRestart } from "../components/onboarding/useTutorial";
 import "./SettingsLedger.css";
 
 const NAV_GROUPS = [
@@ -1660,11 +1659,10 @@ export default function SettingsPage() {
             type="button"
             variant="outline"
             onClick={() => {
-              requestTutorialRestart();
-              navigate("/ai");
+              navigate("/onboarding");
             }}
           >
-            Restart guide
+            Open Guided Launch
           </Button>
           <Button asChild>
             <Link to="/ai">

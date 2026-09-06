@@ -37,8 +37,8 @@
   margin: 0 12px;
   padding: 6px 14px;
   border: 1px solid var(--nx-rule);
-  border-radius: var(--nx-radius-pill);
-  background: var(--nx-card);
+  border-radius: var(--nx-radius-control);
+  background: transparent;
   color: var(--nx-text);
   font-size: 0.82rem;
   font-weight: 550;
@@ -48,7 +48,7 @@
 
 .itemCard:hover {
   border-color: var(--nx-purple-border);
-  background: var(--nx-purple-soft);
+  background: transparent;
   transform: translateY(-1px);
 }
 

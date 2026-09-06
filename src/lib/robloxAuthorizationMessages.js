@@ -5,6 +5,23 @@ const CAPABILITY_COPY = {
   roblox_get_connection: "connect your Roblox account",
 };
 
+export function robloxSetupErrorMessage(error) {
+  switch (error?.code) {
+    case "ROBLOX_OAUTH_DENIED":
+      return "Setup isn’t finished yet. Connect Roblox when you’re ready to approve access.";
+    case "OAUTH_STATE_EXPIRED":
+    case "OAUTH_STATE_REPLAY":
+      return "This connection attempt has expired. Connect Roblox again to finish setup.";
+    case "OAUTH_STATE_BROWSER_MISMATCH":
+    case "OAUTH_STATE_INVALID":
+      return "We couldn’t verify this connection attempt. Start again in this browser.";
+    case "ROBLOX_OAUTH_UNCONFIGURED":
+      return "Roblox connection is temporarily unavailable. Please try again later.";
+    default:
+      return "We couldn’t complete your Roblox connection. Please try again in a moment.";
+  }
+}
+
 export function describeRobloxCapabilities(capabilityIds = []) {
   const labels = capabilityIds
     .map((id) => CAPABILITY_COPY[id] || null)

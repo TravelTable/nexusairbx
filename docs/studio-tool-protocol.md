@@ -2,9 +2,46 @@
 
 Active protocol version: `2026-08-27-r15-animation`
 
-Current plugin build: `nexusrbx-studio-0.14.0-r15-animation.3-live-apply`. The build
+Current plugin build: `nexusrbx-studio-0.14.0-r15-animation.12-toolbox`. The build
 identity changed for UI artifact v3 even though the transport protocol version
 did not; an older build must not receive a v3 `uiRoots` payload.
+
+### Toolbox upgrade verification
+
+The toolbox changes the plugin UI and reuses the conversation/run transport;
+it adds no Studio commands or payload fields. Deploy the matching backend release
+catalog before installing the new build. The previous `.11-chat-model-files`
+build remains accepted during rollout.
+
+Manually verify in Studio before publishing:
+
+1. Upgrade with an existing paired session and a saved Chat tab. Confirm Tools
+   opens, the project/place is correct, and the pairing token remains valid.
+2. Check light and dark themes, including changing theme while the panel is open,
+   floating/resizing, and docking at the 320-pixel minimum width.
+3. Inspect empty, single, and multiple selections. Confirm no writes occur and
+   properties and canonical paths match Explorer. AI tasks reject more than five
+   selected objects; changing selection during a run does not change its target.
+4. Run Fix and Improve against a disposable script/object. Confirm actual changes
+   appear under verified paths only after command-bound Studio readback succeeds.
+5. Create each script class in a valid destination. Reject empty descriptions,
+   duplicate names, deleted destinations, and incompatible script locations.
+6. Check empty output, then manually start a playtest with normal output, a warning,
+   and an error. Verify the toolbox displays the captured messages without starting
+   or stopping playtests itself.
+7. Double-click Run, interrupt networking during submission, reconnect, and restart
+   Studio during a run. Confirm one task runs, retry keeps its request/conversation
+   identity, and event following resumes without another submission.
+8. Stop a running task and verify it remains locked until terminal confirmation.
+   Switch project/place during work and confirm the original run is cancelled and
+   its requests are never redirected to the new target.
+9. Disable Automatic apply and verify both run and local command approvals render
+   in the result panel. Decline a change and confirm it is not applied.
+10. Verify failed writes/source conflicts are not reported as successful changes.
+    Undo a completed task and confirm the restore in Activity and Studio. Retry an
+    interrupted undo without creating a second restore request.
+
+Automated validation for this upgrade is documented in `roblox-plugin/README.md`.
 
 This protocol integrates Creator Store import, native model construction/refinement, trusted Roblox Open Cloud upload, server-owned asset-reference application, uploaded-model Studio insertion, the script execution-context quality gate, and the Phase 9 Studio validation quality gate. Uploaded assets, uploaded models, and validation targets must come from backend-held receipts; the browser never submits a trusted Roblox asset ID, Studio root path, inserted root path, model revision, insertion identity, or validation status for trusted commands.
 

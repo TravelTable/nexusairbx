@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { completedConnectionPatch } from "../src/connection-state.js";
+import { completedConnectionPatch, connectionFailureCopy } from "../src/connection-state.js";
 import type { CompanionSnapshot } from "../src/contracts.js";
 
 const snapshot = {
@@ -10,6 +10,19 @@ const snapshot = {
   supportedToolCount: 0,
   degradedReason: "multiple_studio_windows",
 } as CompanionSnapshot;
+
+test("failure screen distinguishes outdated proxy, cloud failure, missing Studio and no attached window", () => {
+  for (const [code, stage, title] of [
+    ["MCP_CLIENT_OUTDATED", "studio_target", "Restart or update Roblox Studio"],
+    ["BACKEND_TEMPORARY", "cloud_registration", "NexusRBX Cloud connection failed"],
+    ["MCP_STUDIO_NOT_ATTACHED", "tool_discovery", "Studio MCP not attached"],
+  ] as const) {
+    const failed = { ...snapshot, connectionFailure: { code, stage, diagnostic: "failure" } };
+    assert.equal(connectionFailureCopy(failed).title, title);
+    assert.equal(completedConnectionPatch({ ...failed, supportedToolCount: 30 }), null);
+  }
+  assert.equal(connectionFailureCopy({ ...snapshot, state: "studio_not_installed" }).title, "Studio MCP was not found");
+});
 
 test("completed discovery cannot remain stuck connecting with no runtime tools", () => {
   assert.deepEqual(completedConnectionPatch(snapshot), {

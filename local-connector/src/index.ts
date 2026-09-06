@@ -4,6 +4,7 @@ export { CommandExecutor, nexusStableHash, sha256, unsupportedResult } from "./c
 export { findWindowsStudioMcpExecutable, loadConfig, HELP_TEXT, type ConnectorConfig } from "./config.js";
 export { NexusLocalConnector, delay, type ConnectorLifecycleState, type ConnectorTelemetry, type LocalConnectorOptions } from "./connector.js";
 export { ConnectorError, asConnectorError } from "./errors.js";
+export { connectionFailure, type ConnectionFailure } from "./connection-failure.js";
 export { ConsoleLogger, redact, type Logger } from "./logger.js";
 export { RobloxStudioMcpClient, type RobloxStudioMcpOptions } from "./mcp-client.js";
 export { ToolCatalog } from "./tool-catalog.js";

@@ -66,5 +66,6 @@ export async function collectDiagnostics({
     lastHeartbeatAt: snapshot?.lastHeartbeatAt ?? null,
     lastActivityAt: snapshot?.lastActivityAt ?? null,
     lastCommand: snapshot?.lastCommand ?? null,
+    connectionFailure: snapshot?.connectionFailure ?? null,
   };
 }

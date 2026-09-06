@@ -29,6 +29,7 @@ function safeStringify(value: unknown): string {
 }
 
 export interface Logger {
+  sanitize?(value: unknown): string;
   info(message: string, details?: unknown): void;
   warn(message: string, details?: unknown): void;
   error(message: string, details?: unknown): void;
@@ -41,7 +42,9 @@ export class ConsoleLogger implements Logger {
   readonly #secrets = new Set<string>();
   readonly #transientSecrets: string[] = [];
 
-  constructor(private readonly verbose = false) {}
+  constructor(private readonly verbose = false, private readonly sink?: (line: string) => void) {}
+
+  sanitize(value: unknown): string { return redact(value, [...this.#secrets, ...this.#transientSecrets]); }
 
   addSecret(secret: string): void {
     if (secret.length >= 4) this.#secrets.add(secret);
@@ -77,6 +80,7 @@ export class ConsoleLogger implements Logger {
     const redactionSecrets = [...this.#secrets, ...this.#transientSecrets];
     const suffix = details === undefined ? "" : ` ${redact(details, redactionSecrets)}`;
     const line = `[${level}] ${redact(message, redactionSecrets)}${suffix}`;
+    try { this.sink?.(line); } catch { /* A log failure must not stop the connector. */ }
     if (level === "ERROR") console.error(line);
     else if (level === "WARN") console.warn(line);
     else console.log(line);

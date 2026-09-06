@@ -31,6 +31,7 @@ export default function ChatView({
   onOpenTemplates,
   onStartGuide,
   startGuideLabel,
+  guidedLaunchIdea,
   onRefine,
   onFixUiAudit,
   onApprovePlan,
@@ -94,6 +95,7 @@ export default function ChatView({
                 onOpenTemplates={onOpenTemplates}
                 onStartGuide={onStartGuide}
                 startGuideLabel={startGuideLabel}
+                guidedLaunchIdea={guidedLaunchIdea}
                 projectTitle={projectTitle}
                 projectId={projectId}
                 onPublishAttachment={onPublishAttachment} studioSessionId={studioSessionId} studioConnected={studioConnected}

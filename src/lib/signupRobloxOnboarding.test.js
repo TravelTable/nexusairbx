@@ -1,6 +1,7 @@
 jest.mock("./robloxOAuthApi", () => ({
   requireRobloxOnboarding: jest.fn(),
 }));
+jest.mock('./guidedLaunchApi', () => ({ startGuidedLaunch: jest.fn().mockResolvedValue({}), guidedLaunchSource: () => ({ idea: '' }), guidedLaunchPath: p => `/onboarding?return=${encodeURIComponent(p)}` }));
 
 import { requireRobloxOnboarding } from "./robloxOAuthApi";
 import {
@@ -35,7 +36,7 @@ test("keeps a retryable pending record until the server acknowledges the require
 
   requireRobloxOnboarding.mockResolvedValueOnce({ ok: true });
   await expect(registerRobloxSignupRequirement(user, "/assets")).resolves.toBe(
-    "/connect-roblox?return=%2Fassets"
+    "/onboarding?return=%2Fassets"
   );
   expect(localStorage.getItem(PENDING_ROBLOX_SIGNUP_KEY)).toBeNull();
 });

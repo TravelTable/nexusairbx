@@ -60,7 +60,7 @@ beforeEach(() => {
     .mockResolvedValueOnce({ user: { getIdToken: jest.fn(() => Promise.resolve("token")) } })
     .mockResolvedValue(null);
   mockGetAdditionalUserInfo.mockReturnValue({ isNewUser: false });
-  mockRegisterRobloxSignupRequirement.mockResolvedValue("/connect-roblox?return=%2Fai");
+  mockRegisterRobloxSignupRequirement.mockResolvedValue("/onboarding?return=%2Fai");
 });
 
 test("restores the complete stored OAuth return path", async () => {
@@ -88,7 +88,7 @@ test("registers Roblox onboarding for a genuinely new redirect signup", async ()
     returnPath: "/ai?project=one",
   });
   mockRegisterRobloxSignupRequirement.mockResolvedValue(
-    "/connect-roblox?return=%2Fai%3Fproject%3Done"
+    "/onboarding?return=%2Fai%3Fproject%3Done"
   );
 
   renderHandler({ pathname: "/ai", search: "?project=one" });
@@ -98,7 +98,7 @@ test("registers Roblox onboarding for a genuinely new redirect signup", async ()
     "/ai?project=one"
   ));
   expect(screen.getByTestId("location")).toHaveTextContent(
-    "/connect-roblox?return=%2Fai%3Fproject%3Done"
+    "/onboarding?return=%2Fai%3Fproject%3Done"
   );
 });
 

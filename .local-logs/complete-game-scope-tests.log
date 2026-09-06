@@ -1,0 +1,110 @@
+TAP version 13
+# Subtest: focused requests stay focused in empty Studio: Create a door
+ok 1 - focused requests stay focused in empty Studio: Create a door
+  ---
+  duration_ms: 6.6487
+  ...
+# Subtest: focused requests stay focused in empty Studio: Create a shop for my game
+ok 2 - focused requests stay focused in empty Studio: Create a shop for my game
+  ---
+  duration_ms: 1.2647
+  ...
+# Subtest: focused requests stay focused in empty Studio: Make a game icon
+ok 3 - focused requests stay focused in empty Studio: Make a game icon
+  ---
+  duration_ms: 0.8125
+  ...
+# Subtest: focused requests stay focused in empty Studio: Create a game pass
+ok 4 - focused requests stay focused in empty Studio: Create a game pass
+  ---
+  duration_ms: 1.1018
+  ...
+# Subtest: focused requests stay focused in empty Studio: Fix this door
+ok 5 - focused requests stay focused in empty Studio: Fix this door
+  ---
+  duration_ms: 0.6502
+  ...
+# Subtest: focused requests stay focused in empty Studio: Change the art style
+ok 6 - focused requests stay focused in empty Studio: Change the art style
+  ---
+  duration_ms: 0.5215
+  ...
+# Subtest: focused requests stay focused in empty Studio: Replace this icon
+ok 7 - focused requests stay focused in empty Studio: Replace this icon
+  ---
+  duration_ms: 0.4332
+  ...
+# Subtest: focused requests stay focused in empty Studio: Make my sword deal 25 damage
+ok 8 - focused requests stay focused in empty Studio: Make my sword deal 25 damage
+  ---
+  duration_ms: 0.4773
+  ...
+# Subtest: complete game includes connected deliverables: Make a cozy fishing game
+ok 9 - complete game includes connected deliverables: Make a cozy fishing game
+  ---
+  duration_ms: 1.224
+  ...
+# Subtest: complete game includes connected deliverables: Build a racing game
+ok 10 - complete game includes connected deliverables: Build a racing game
+  ---
+  duration_ms: 0.8056
+  ...
+# Subtest: complete game includes connected deliverables: Create a horror experience
+ok 11 - complete game includes connected deliverables: Create a horror experience
+  ---
+  duration_ms: 0.5448
+  ...
+# Subtest: complete game includes connected deliverables: Make me an obby
+ok 12 - complete game includes connected deliverables: Make me an obby
+  ---
+  duration_ms: 0.6626
+  ...
+# Subtest: complete game includes connected deliverables: Create a tower defense game
+ok 13 - complete game includes connected deliverables: Create a tower defense game
+  ---
+  duration_ms: 0.4124
+  ...
+# Subtest: complete game includes connected deliverables: A social party game
+ok 14 - complete game includes connected deliverables: A social party game
+  ---
+  duration_ms: 0.3788
+  ...
+# Subtest: complete game includes connected deliverables: I want a space exploration game
+ok 15 - complete game includes connected deliverables: I want a space exploration game
+  ---
+  duration_ms: 0.3714
+  ...
+# Subtest: a complete game in an existing place retains preservation boundaries
+ok 16 - a complete game in an existing place retains preservation boundaries
+  ---
+  duration_ms: 0.5154
+  ...
+# Subtest: planner cannot turn unspecified monetization into paid catalog operations
+ok 17 - planner cannot turn unspecified monetization into paid catalog operations
+  ---
+  duration_ms: 0.8131
+  ...
+# Subtest: creator-requested passes are in scope but no price or provider ID is fabricated
+ok 18 - creator-requested passes are in scope but no price or provider ID is fabricated
+  ---
+  duration_ms: 0.5767
+  ...
+# Subtest: negative monetization choices never add paid deliverables
+ok 19 - negative monetization choices never add paid deliverables
+  ---
+  duration_ms: 1.3328
+  ...
+# Subtest: overview requires linked verification evidence and distinguishes launch drafts
+ok 20 - overview requires linked verification evidence and distinguishes launch drafts
+  ---
+  duration_ms: 2.1441
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 110.4673

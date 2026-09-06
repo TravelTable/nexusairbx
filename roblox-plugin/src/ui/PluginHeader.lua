@@ -1,4 +1,4 @@
--- Minimal Nexus header: game context, live state, conversation affordances,
+-- Minimal Nexus header: game context, live state, toolbox navigation,
 -- and settings. Technical identifiers stay out of the primary surface.
 
 local function nexusHeaderButton(parent, name, text, x)
@@ -29,7 +29,7 @@ function createNexusPluginHeader(parent, colors)
 	local title = Instance.new("TextLabel")
 	title.Name = "NexusTitle"
 	title.Position = UDim2.new(0, 12, 0, 7)
-	title.Size = UDim2.new(1, -132, 0, 19)
+	title.Size = UDim2.new(1, -80, 0, 19)
 	title.BackgroundTransparency = 1
 	title.Font = Enum.Font.GothamBold
 	title.TextSize = 15
@@ -41,7 +41,7 @@ function createNexusPluginHeader(parent, colors)
 	local gameLabel = Instance.new("TextLabel")
 	gameLabel.Name = "GameName"
 	gameLabel.Position = UDim2.new(0, 12, 0, 27)
-	gameLabel.Size = UDim2.new(1, -132, 0, 16)
+	gameLabel.Size = UDim2.new(1, -80, 0, 16)
 	gameLabel.BackgroundTransparency = 1
 	gameLabel.Font = Enum.Font.Gotham
 	gameLabel.TextSize = 10
@@ -54,7 +54,7 @@ function createNexusPluginHeader(parent, colors)
 	local indicator = Instance.new("Frame")
 	indicator.Name = "ConnectionIndicator"
 	indicator.AnchorPoint = Vector2.new(1, 0)
-	indicator.Position = UDim2.new(1, -74, 0, 15)
+	indicator.Position = UDim2.new(1, -48, 0, 15)
 	indicator.Size = UDim2.new(0, 7, 0, 7)
 	indicator.BackgroundColor3 = colors.muted or Color3.fromRGB(108, 117, 125)
 	indicator.BorderSizePixel = 0
@@ -63,7 +63,6 @@ function createNexusPluginHeader(parent, colors)
 	indicatorCorner.CornerRadius = UDim.new(1, 0)
 	indicatorCorner.Parent = indicator
 
-	local newChat = nexusHeaderButton(header, "NewChat", "+", -38)
 	local settings = nexusHeaderButton(header, "Settings", "•••", -6)
 	settings.TextSize = 11
 
@@ -81,7 +80,6 @@ function createNexusPluginHeader(parent, colors)
 		root = header,
 		gameLabel = gameLabel,
 		indicator = indicator,
-		newChat = newChat,
 		settings = settings,
 	}
 end

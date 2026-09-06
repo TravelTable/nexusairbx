@@ -1,0 +1,753 @@
+✔ focused requests stay focused in empty Studio: Create a door (7.6091ms)
+✔ focused requests stay focused in empty Studio: Create a shop for my game (1.3335ms)
+✔ focused requests stay focused in empty Studio: Make a game icon (0.857ms)
+✔ focused requests stay focused in empty Studio: Create a game pass (1.3334ms)
+✔ focused requests stay focused in empty Studio: Fix this door (0.6952ms)
+✔ focused requests stay focused in empty Studio: Change the art style (0.5349ms)
+✔ focused requests stay focused in empty Studio: Replace this icon (0.4454ms)
+✔ focused requests stay focused in empty Studio: Make my sword deal 25 damage (0.4514ms)
+✔ complete game includes connected deliverables: Make a cozy fishing game (1.2768ms)
+✔ complete game includes connected deliverables: Build a racing game (0.8393ms)
+✔ complete game includes connected deliverables: Create a horror experience (0.6193ms)
+✔ complete game includes connected deliverables: Make me an obby (0.4964ms)
+✔ complete game includes connected deliverables: Create a tower defense game (0.7416ms)
+✔ complete game includes connected deliverables: A social party game (0.3888ms)
+✔ complete game includes connected deliverables: I want a space exploration game (0.3551ms)
+✔ a complete game in an existing place retains preservation boundaries (0.5585ms)
+✔ planner cannot turn unspecified monetization into paid catalog operations (0.9177ms)
+✔ creator-requested passes are in scope but no price or provider ID is fabricated (0.4766ms)
+✔ overview requires linked verification evidence and distinguishes launch drafts (2.1577ms)
+✔ plan hashes bind exact id, version, scope, markdown, steps, and assumptions (1.9621ms)
+✔ approved versions are immutable value documents (0.2064ms)
+✔ approved plan execution requires the caller to present the exact hash (1.4233ms)
+✔ approved plan execution rejects a version that is no longer current (0.3968ms)
+✔ approved plan execution requires the root plan to remain approved (0.3349ms)
+✔ approved plan execution rejects root approval version and hash mismatches (0.4981ms)
+✔ approved plan execution rejects a mismatched current root hash (0.3038ms)
+✔ approved plan execution validates stored approval status and content integrity (0.3514ms)
+✔ approved plan execution returns a trusted immutable v2 plan (0.5468ms)
+✔ legacy approved version-one roots remain executable when all approval hashes match (0.5653ms)
+✔ structured plan hash and approved loader preserve game intelligence (15.8817ms)
+✔ deliverable references bind to real steps and normalize idempotently (15.4935ms)
+✔ legacy game intelligence stays byte-compatible during plan hydration (2.5528ms)
+✔ structured plans keep stable section and step identities (2.6511ms)
+✔ derived steps remain dependency-free when the planner does not claim ordering (3.227ms)
+✔ derived plans repair unique title dependencies to stable step IDs (2.0037ms)
+✔ conversation plans include a rendered Mermaid workflow before implementation steps (4.1733ms)
+✔ rich plans render stages, decisions, file targets, every verification, and rollback (1.5736ms)
+✔ preserves the selected Studio target identity but not browser capability claims (1.924ms)
+✔ non-Studio plans default to runtime verification without requiring Studio (2.0977ms)
+✔ Studio capabilities infer Studio targeting and Studio validation (1.3883ms)
+✔ unsupported capability promises are removed from generated plans and templates (0.8462ms)
+✔ plan operations edit and reorder individual sections without replacing the plan (4.3891ms)
+✔ locked sections reject edits until explicitly unlocked (4.1569ms)
+✔ clarifications are contextual typed choices and capped to material questions (0.4001ms)
+✔ all required NexusRBX planning templates are available (0.1055ms)
+✔ strict planner output validation accepts a complete ready plan (0.6981ms)
+✔ ready output rejects missing game intelligence and mode-specific contracts (0.3764ms)
+✔ game intelligence and expected source hashes survive plan normalization and serialization (2.123ms)
+✔ invalid or truncated planner JSON fails closed (0.348ms)
+✔ planner output without implementation work cannot create a plan (0.2661ms)
+✔ a clarification response is rejected after answers were supplied (0.3078ms)
+✔ deterministic planner fallback uses only advertised capabilities and remains schema-valid (0.8312ms)
+✔ deterministic planner fallback remains valid when no capabilities are advertised (0.3754ms)
+✔ read dispatch derives owner scope and gives the adapter no OAuth credentials (4.915ms)
+✔ nested credentials and model-supplied authority are rejected before scope lookup (2.5315ms)
+✔ nested publishing bypass fields are rejected before scope lookup (0.4969ms)
+▶ task owner, project, and immutable capability snapshot mismatches fail closed
+  ✔ cross-user task record (0.3824ms)
+  ✔ caller-selected project (0.2795ms)
+  ✔ snapshot project binding (0.282ms)
+  ✔ capability was not frozen as available (0.2678ms)
+✔ task owner, project, and immutable capability snapshot mismatches fail closed (1.8147ms)
+✔ write dispatch requires the frozen step capability and records a fenced durable result (2.5353ms)
+✔ accepted publish steps receive server-derived explicit intent without OAuth credentials (0.8352ms)
+✔ write dispatch rejects a capability not authorized for the immutable step (0.4866ms)
+▶ write dispatch fails closed when the runtime returns a missing or invalid immutable step
+  ✔ missing step (0.3459ms)
+  ✔ array step (0.3277ms)
+  ✔ missing task id (0.2365ms)
+  ✔ mismatched step id (0.1435ms)
+✔ write dispatch fails closed when the runtime returns a missing or invalid immutable step (1.3822ms)
+✔ completed write operation replays its durable result without another side effect (0.2393ms)
+▶ TaskIntakeService applies write ownership and read availability before dispatch
+  ✔ legacy-owned runtime cannot dispatch an asset write (0.5148ms)
+  ✔ read tool uses the independent canonical read gate (0.1862ms)
+  ✔ disabled canonical reads stop a read before dispatch (0.1806ms)
+✔ TaskIntakeService applies write ownership and read availability before dispatch (1.1327ms)
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.858Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.865Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.868Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_d9842d627c6525fa5bab1db070dcd9e3a5317a5b7e921c6b3db20bfb09387bd9',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.869Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_47c96d77cf70790e48c54f2bfbe0af924a66e479b889740ac643430932993767',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.871Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_b50dade89df8453f50122faa5b0dde8dd40e5fa0c1ae44706c67db3c8c377dae',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.883Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_1df4a224e745c4df90725ec0a4c5c56c82cf0d36539d9f67fe09aeb3d9b82438',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.884Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_d90f86b87bba9fc9fd5a8302f1a660ed8def3507a21501972d63f8a4eb5b474e',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.884Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_8136fefb83b50a9034baeed03438ca8a4c812dd614daccc4dc95b4419b1763cf',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.885Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_64b0aec8062a1ac7593b8217420cd28050a42103d7f2e31e00bae42d558a817d',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.885Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_5321f2ee529f7bad2c4b9112a9c48cdf0a780e48e0c51c7bbb4ba3e21c90165f',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.886Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_814b942a37387509aa6ca26e495d75cb8b00b5e560463be5e778e7fc4bc5f8e0',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.886Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_afd7e2e6e7fa428b228e8efaec2e3cffec6ebf5bf3d34e9ab0a0f35f772137a9',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.887Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_f7bc1bb910dcca163e41fdeccbfc20937be3f66682a4eef7b9cf77157a74c753',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.887Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_5559710f4b5c35726fa7809a0554df6199c236eada5be211fdf704abb0101de6',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.887Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_4311e1d328487743e6eccd35806b2074930e9407f79572daace455550a499303',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.887Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_71b7f14a10ed99fde6036e7a53bdcec63b47541afc41b0975dd0746bf8937d02',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.887Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_19ad48ddc644446ae6dc22d62b99191c64484fb5ffc052e5a87a653c2b41f75b',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.888Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_97dba0355d8399fcb515afc8df79cef8aa93880dc36ff1eba79a4fec6e651936',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.888Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_72b4b4169ee0fec42d4bc7961191f892cc6c6e68eaf2f1c9749864b6ff13a9ee',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.888Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_48e7e508274e6b42a6e52d4f3b519ecc68a90b1dccd1f3a069e00e3615e4599a',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.888Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_84976dff7ca8c676e4bb22dfcb3e65ef5bd8f2d9166ffcbfe96a5194f4255298',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.896Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.started',
+  ts: '2026-09-05T17:47:59.898Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'running',
+  eventType: 'task_started',
+  sequence: 4,
+  eventId: 'e_0000000000000004'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.899Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_f18349ddec97743a434f11ef0a6dc56d334fa6e6d12b53c4153b33fa3fd6464d',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.899Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_f7e0596505b038677cc582def7648bcfbef4733264aa765a8d608876f4d0fbd5',
+  requestId: 'request-2',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.899Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_e8ddc400e076c62bfd5e4618e376a005dfa7fdecb1b8e9c7ddc0df2a3664b573',
+  requestId: 'request-3',
+  traceId: 'trace-1',
+  projectId: 'project-2',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.902Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'step.started',
+  ts: '2026-09-05T17:47:59.903Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'running',
+  eventType: 'task_step_claimed',
+  sequence: 3,
+  eventId: 'e_0000000000000003'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.908Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'checkpoint.created',
+  ts: '2026-09-05T17:47:59.909Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_checkpoint_created',
+  sequence: 2,
+  eventId: 'e_0000000000000002'
+}
+[ops] {
+  event: 'task.amended',
+  ts: '2026-09-05T17:47:59.910Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_amended',
+  sequence: 3,
+  eventId: 'e_0000000000000003'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.911Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_8ab23f4c5f2118bc119bdb4d12f92d8c6203aad12ab10876ae2e1133917c192c',
+  requestId: 'checkpoint-other-request',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.913Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'checkpoint.created',
+  ts: '2026-09-05T17:47:59.914Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_checkpoint_created',
+  sequence: 2,
+  eventId: 'e_0000000000000002'
+}
+[ops] {
+  event: 'checkpoint.created',
+  ts: '2026-09-05T17:47:59.914Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_checkpoint_created',
+  sequence: 3,
+  eventId: 'e_0000000000000003'
+}
+[ops] {
+  event: 'checkpoint.restored',
+  ts: '2026-09-05T17:47:59.915Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_checkpoint_restored',
+  sequence: 4,
+  eventId: 'e_0000000000000004'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.918Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.925Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.928Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.started',
+  ts: '2026-09-05T17:47:59.929Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'running',
+  eventType: 'task_started',
+  sequence: 2,
+  eventId: 'e_0000000000000002'
+}
+[ops] {
+  event: 'verification.started',
+  ts: '2026-09-05T17:47:59.929Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'verifying',
+  eventType: 'task_verification_started',
+  sequence: 3,
+  eventId: 'e_0000000000000003'
+}
+[ops] {
+  event: 'task.completed',
+  ts: '2026-09-05T17:47:59.930Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'succeeded',
+  eventType: 'task_succeeded',
+  sequence: 4,
+  eventId: 'e_0000000000000004'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.930Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'step.started',
+  ts: '2026-09-05T17:47:59.932Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'running',
+  eventType: 'task_step_claimed',
+  sequence: 3,
+  eventId: 'e_0000000000000003'
+}
+[ops] {
+  event: 'step.retrying',
+  ts: '2026-09-05T17:47:59.933Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'retry_scheduled',
+  eventType: 'task_step_waiting',
+  sequence: 4,
+  eventId: 'e_0000000000000004'
+}
+[ops] {
+  event: 'step.started',
+  ts: '2026-09-05T17:47:59.933Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'running',
+  eventType: 'task_step_claimed',
+  sequence: 5,
+  eventId: 'e_0000000000000005'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.934Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'step.started',
+  ts: '2026-09-05T17:47:59.934Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'running',
+  eventType: 'task_step_claimed',
+  sequence: 3,
+  eventId: 'e_0000000000000003'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.935Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:47:59.938Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+✔ acceptTask atomically reserves one task and replays the same root request (14.4984ms)
+✔ acceptTask persists trusted plan provenance and includes it in idempotency (3.8107ms)
+✔ acceptTask persists published and unpublished trusted Studio launch targets (2.0093ms)
+✔ acceptTask durably preserves and validates the UI Creator intent envelope (1.7875ms)
+✔ unpublished Studio acceptance remains replay-safe under concurrent load (23.3058ms)
+✔ task events and projections advance together with contiguous sequence numbers (3.2621ms)
+✔ owner-scoped task and step listings apply filters, activity, ordering, and limits (2.8572ms)
+✔ step leases fence stale workers and task cancellation fences late completion (2.2413ms)
+✔ capability and context snapshots are immutable, replay-safe, and fail closed without full scope (3.3337ms)
+✔ checkpoints are immutable and amendments are idempotent (4.8596ms)
+✔ checkpoint listing and restoration preserve immutable history and append recovery events (5.8869ms)
+✔ outbox enqueue, lease takeover, failure, and delivery are deterministic and replay-safe (6.571ms)
+✔ outbox dead-letter replay and cancellation fences reject stale workers (3.4898ms)
+✔ task success is impossible before verification and durable passing evidence (1.9567ms)
+✔ retry scheduling reuses the step and increments a monotonic fence (3.4547ms)
+✔ ambiguous step outcomes stay running until reconciliation (1.2579ms)
+✔ semantic operation identity prevents duplicate side effects across request IDs (3.0192ms)
+✔ ambiguous operation outcomes must reconcile before retrying the same operation (4.6012ms)
+ℹ tests 92
+ℹ suites 0
+ℹ pass 92
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 240.5087

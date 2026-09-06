@@ -1,3 +1,4 @@
+import type { ConnectionFailure } from "nexusrbx-local-connector";
 export type CompanionState = "awaiting_sign_in" | "connecting" | "studio_not_installed" | "studio_mcp_unavailable" | "connector_offline" | "ready" | "degraded" | "stopped" | "error";
 export type ServiceHealth = "disconnected" | "connecting" | "connected" | "warning";
 export type ConnectionStage = "cloud" | "runtime" | "studio_detection" | "mcp" | "tool_discovery" | null;
@@ -22,6 +23,7 @@ export interface LastCommandSummary {
 }
 
 export interface CompanionSnapshot {
+  connectionFailure?: ConnectionFailure | null;
   state: CompanionState;
   message: string;
   updatedAt: number;
@@ -44,6 +46,7 @@ export interface CompanionSnapshot {
 }
 
 export interface CompanionDiagnostics {
+  connectionFailure?: ConnectionFailure | null;
   studioInstalled: boolean;
   mcpCommandAvailable: boolean;
   mcpCommand: string;

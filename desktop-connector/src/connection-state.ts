@@ -10,6 +10,7 @@ const degradedMessages: Partial<Record<Exclude<DegradedReason, null>, string>> =
 
 /** Resolves terminal discovery state from the latest health and capability telemetry. */
 export function completedConnectionPatch(snapshot: CompanionSnapshot): Partial<CompanionSnapshot> | null {
+  if (snapshot.connectionFailure) return null;
   if (snapshot.mcpHealth !== "connected") return null;
   if (snapshot.cloudHealth !== "connected") {
     return {
@@ -38,5 +39,34 @@ export function completedConnectionPatch(snapshot: CompanionSnapshot): Partial<C
     degradedReason: reason,
     runtimeHealth: "connected",
     connectionStage: null,
+  };
+}
+
+export function connectionFailureCopy(snapshot: CompanionSnapshot): { title: string; message: string; steps: string[] } {
+  const failure = snapshot.connectionFailure;
+  if (failure?.code === "MCP_CLIENT_OUTDATED") return {
+    title: "Restart or update Roblox Studio",
+    message: "Roblox reports that its MCP client proxy is out of date. Your sign-in is retained.",
+    steps: ["Save your experience and fully quit Studio", "Reopen Studio and finish any update", "Reopen your experience, then try again"],
+  };
+  if (failure?.stage === "cloud_registration") return {
+    title: "NexusRBX Cloud connection failed",
+    message: "The connector could not register with NexusRBX Cloud. Check your connection, then try again.",
+    steps: ["Check your internet connection", "Try connecting again"],
+  };
+  if (snapshot.state === "studio_not_installed") return {
+    title: "Studio MCP was not found",
+    message: "Install or update Roblox Studio, then enable Studio as an MCP server.",
+    steps: ["Install or update Roblox Studio", "Open your experience", "Enable Studio as an MCP server"],
+  };
+  if (failure?.code === "MCP_STUDIO_NOT_ATTACHED") return {
+    title: "Studio MCP not attached",
+    message: "The MCP helper is running, but no usable Studio window is attached.",
+    steps: ["Open the experience you want to edit", "Enable Studio as an MCP server", "Try connecting again"],
+  };
+  return {
+    title: "Studio MCP connection failed",
+    message: "Roblox Studio could not complete the MCP connection. Try again, or open Diagnostics for the specific error.",
+    steps: ["Open your experience with Studio MCP enabled", "Try again or copy diagnostics from Settings"],
   };
 }

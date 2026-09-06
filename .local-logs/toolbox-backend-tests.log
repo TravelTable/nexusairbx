@@ -1,0 +1,360 @@
+TAP version 13
+# Subtest: plugin release identity matches the backend release contract
+ok 1 - plugin release identity matches the backend release contract
+  ---
+  duration_ms: 2.1713
+  ...
+# Subtest: source and generated plugin advertise the backend command contract
+ok 2 - source and generated plugin advertise the backend command contract
+  ---
+  duration_ms: 9.0358
+  ...
+# Subtest: frontend expected release matches the backend release contract
+ok 3 - frontend expected release matches the backend release contract
+  ---
+  duration_ms: 0.5115
+  ...
+# Subtest: source and generated plugin omit only compatibility-error handlers from attestation
+ok 4 - source and generated plugin omit only compatibility-error handlers from attestation
+  ---
+  duration_ms: 3.3473
+  ...
+# Subtest: plugin capabilities match the backend compatibility contract
+ok 5 - plugin capabilities match the backend compatibility contract
+  ---
+  duration_ms: 3.8077
+  ...
+# Subtest: plugin gates command polling until a heartbeat is acknowledged and retries with bounded jitter
+ok 6 - plugin gates command polling until a heartbeat is acknowledged and retries with bounded jitter
+  ---
+  duration_ms: 0.5573
+  ...
+# Subtest: toolbox retries preserve one request identity in source and bundle
+ok 7 - toolbox retries preserve one request identity in source and bundle
+  ---
+  duration_ms: 11.38
+  ...
+# Subtest: apply_artifact reports each validated Studio mutation over the durable command stream
+ok 8 - apply_artifact reports each validated Studio mutation over the durable command stream
+  ---
+  duration_ms: 8.2209
+  ...
+# Subtest: mutating acknowledgements carry command-bound Studio read-back evidence
+ok 9 - mutating acknowledgements carry command-bound Studio read-back evidence
+  ---
+  duration_ms: 5.934
+  ...
+# Subtest: batch failures preserve child diagnostics separately from rollback status
+ok 10 - batch failures preserve child diagnostics separately from rollback status
+  ---
+  duration_ms: 4.5266
+  ...
+# Subtest: Studio attestation and in-plugin chat persist the server-resolved Nexus project
+ok 11 - Studio attestation and in-plugin chat persist the server-resolved Nexus project
+  ---
+  duration_ms: 13.4589
+  ...
+# Subtest: normalizes a compatible current plugin
+ok 12 - normalizes a compatible current plugin
+  ---
+  duration_ms: 3.3061
+  ...
+# Subtest: compatibility-only protocol handlers do not make the current plugin look limited
+ok 13 - compatibility-only protocol handlers do not make the current plugin look limited
+  ---
+  duration_ms: 1.1507
+  ...
+# Subtest: requires a recognized build identity even when version strings match
+ok 14 - requires a recognized build identity even when version strings match
+  ---
+  duration_ms: 0.8586
+  ...
+# Subtest: repairs an unverified legacy session before declaring its release unsupported
+ok 15 - repairs an unverified legacy session before declaring its release unsupported
+  ---
+  duration_ms: 0.3875
+  ...
+# Subtest: returns structured release metadata for a verified stale session
+ok 16 - returns structured release metadata for a verified stale session
+  ---
+  duration_ms: 0.3374
+  ...
+# Subtest: degraded plugins keep advertised reads and writes while unavailable tools fail exactly
+ok 17 - degraded plugins keep advertised reads and writes while unavailable tools fail exactly
+  ---
+  duration_ms: 0.6088
+  ...
+# Subtest: a missing create_instance command remains limited while supported commands continue
+ok 18 - a missing create_instance command remains limited while supported commands continue
+  ---
+  duration_ms: 0.4148
+  ...
+# Subtest: accepted previous releases remain compatible during the rollout window
+ok 19 - accepted previous releases remain compatible during the rollout window
+  ---
+  duration_ms: 0.8003
+  ...
+# Subtest: server attestation fingerprints ignore ordering and client fingerprint claims
+ok 20 - server attestation fingerprints ignore ordering and client fingerprint claims
+  ---
+  duration_ms: 1.2674
+  ...
+# Subtest: expanded Studio protocol exposes discovery, mutation, validation, and recovery tools
+ok 21 - expanded Studio protocol exposes discovery, mutation, validation, and recovery tools
+  ---
+  duration_ms: 1.7949
+  ...
+# Subtest: unknown Studio tools are rejected instead of falling back to place inspection
+ok 22 - unknown Studio tools are rejected instead of falling back to place inspection
+  ---
+  duration_ms: 2.5103
+  ...
+# Subtest: insert_creator_store_asset is mutating but not destructive
+ok 23 - insert_creator_store_asset is mutating but not destructive
+  ---
+  duration_ms: 0.3036
+  ...
+# Subtest: Agent auto-apply only interrupts for destructive Studio changes
+ok 24 - Agent auto-apply only interrupts for destructive Studio changes
+  ---
+  duration_ms: 0.2219
+  ...
+# Subtest: snapshot creation is mutating but not destructive
+ok 25 - snapshot creation is mutating but not destructive
+  ---
+  duration_ms: 0.187
+  ...
+# Subtest: insert_uploaded_roblox_model is mutating but not destructive
+ok 26 - insert_uploaded_roblox_model is mutating but not destructive
+  ---
+  duration_ms: 0.1573
+  ...
+# Subtest: insert_creator_store_asset preserves only server-produced safe fields
+ok 27 - insert_creator_store_asset preserves only server-produced safe fields
+  ---
+  duration_ms: 2.1876
+  ...
+# Subtest: insert_creator_store_asset rejects executable and arbitrary payload fields
+ok 28 - insert_creator_store_asset rejects executable and arbitrary payload fields
+  ---
+  duration_ms: 0.5628
+  ...
+# Subtest: insert_uploaded_roblox_model preserves only server-produced safe fields
+ok 29 - insert_uploaded_roblox_model preserves only server-produced safe fields
+  ---
+  duration_ms: 1.4421
+  ...
+# Subtest: insert_uploaded_roblox_model rejects source, URL, script, file, asset, and unknown injection
+ok 30 - insert_uploaded_roblox_model rejects source, URL, script, file, asset, and unknown injection
+  ---
+  duration_ms: 1.0819
+  ...
+# Subtest: build_native_model sanitizes through NativeModelSpec validation
+ok 31 - build_native_model sanitizes through NativeModelSpec validation
+  ---
+  duration_ms: 2.404
+  ...
+# Subtest: canonical paths normalize backslashes and game prefix
+ok 32 - canonical paths normalize backslashes and game prefix
+  ---
+  duration_ms: 0.1283
+  ...
+# Subtest: Studio command paths reject blank and unrooted parent paths before dispatch
+ok 33 - Studio command paths reject blank and unrooted parent paths before dispatch
+  ---
+  duration_ms: 1.4709
+  ...
+# Subtest: create_instance normalizes common BasePart planner properties
+ok 34 - create_instance normalizes common BasePart planner properties
+  ---
+  duration_ms: 0.5092
+  ...
+# Subtest: create_instance normalizes uppercase 8-bit BasePart colors
+ok 35 - create_instance normalizes uppercase 8-bit BasePart colors
+  ---
+  duration_ms: 0.2405
+  ...
+# Subtest: create_instance normalizes Studio readback property values
+ok 36 - create_instance normalizes Studio readback property values
+  ---
+  duration_ms: 0.7909
+  ...
+# Subtest: create_animation_sequence validates and normalizes bounded R15 keyframes
+ok 37 - create_animation_sequence validates and normalizes bounded R15 keyframes
+  ---
+  duration_ms: 0.7687
+  ...
+# Subtest: create_animation_sequence rejects unbounded, non-R15, and executable transforms
+ok 38 - create_animation_sequence rejects unbounded, non-R15, and executable transforms
+  ---
+  duration_ms: 0.393
+  ...
+# Subtest: create_script only enables parent creation when explicitly requested
+ok 39 - create_script only enables parent creation when explicitly requested
+  ---
+  duration_ms: 0.634
+  ...
+# Subtest: write_script preserves optimistic concurrency fields
+ok 40 - write_script preserves optimistic concurrency fields
+  ---
+  duration_ms: 0.4025
+  ...
+# Subtest: create_script requires an explicit script class
+ok 41 - create_script requires an explicit script class
+  ---
+  duration_ms: 0.4051
+  ...
+# Subtest: create_script transparently corrects the fly GUI Script to a LocalScript
+ok 42 - create_script transparently corrects the fly GUI Script to a LocalScript
+  ---
+  duration_ms: 0.29
+  ...
+# Subtest: existing script class conversion requires an inspected target and explicit consent
+ok 43 - existing script class conversion requires an inspected target and explicit consent
+  ---
+  duration_ms: 0.2949
+  ...
+# Subtest: existing write_script candidates are blocked instead of auto-corrected
+ok 44 - existing write_script candidates are blocked instead of auto-corrected
+  ---
+  duration_ms: 0.4393
+  ...
+# Subtest: artifact application blocks mixed client and server runtime code
+ok 45 - artifact application blocks mixed client and server runtime code
+  ---
+  duration_ms: 4.8125
+  ...
+# Subtest: managed artifact class conversion inherits inspected authorization from its file
+ok 46 - managed artifact class conversion inherits inspected authorization from its file
+  ---
+  duration_ms: 2.06
+  ...
+# Subtest: get_project_manifest carries pagination revision across pages
+ok 47 - get_project_manifest carries pagination revision across pages
+  ---
+  duration_ms: 0.1397
+  ...
+# Subtest: restore_snapshot keeps attributes and tags for rollback
+ok 48 - restore_snapshot keeps attributes and tags for rollback
+  ---
+  duration_ms: 0.3467
+  ...
+# Subtest: snapshot restore preserves connector conflict hashes and force policy
+ok 49 - snapshot restore preserves connector conflict hashes and force policy
+  ---
+  duration_ms: 0.1515
+  ...
+# Subtest: playtests require bounded named inputs and reject executable code
+ok 50 - playtests require bounded named inputs and reject executable code
+  ---
+  duration_ms: 0.6843
+  ...
+# Subtest: destructive confirmation is preserved only from explicit top-level consent
+ok 51 - destructive confirmation is preserved only from explicit top-level consent
+  ---
+  duration_ms: 0.7444
+  ...
+# Subtest: batch_operations sanitizes nested operations without allowing recursive batch payloads
+ok 52 - batch_operations sanitizes nested operations without allowing recursive batch payloads
+  ---
+  duration_ms: 0.2359
+  ...
+# Subtest: known-script mutations preserve source preconditions and force destructive snapshots
+ok 53 - known-script mutations preserve source preconditions and force destructive snapshots
+  ---
+  duration_ms: 0.9748
+  ...
+# Subtest: apply_asset_reference accepts only a canonical server-owned asset target
+ok 54 - apply_asset_reference accepts only a canonical server-owned asset target
+  ---
+  duration_ms: 0.2313
+  ...
+# Subtest: apply_asset_reference rejects invalid targets, IDs, nested use, and generic-property bypasses
+ok 55 - apply_asset_reference rejects invalid targets, IDs, nested use, and generic-property bypasses
+  ---
+  duration_ms: 0.5233
+  ...
+# Subtest: idempotency keys are stable for identical payloads
+ok 56 - idempotency keys are stable for identical payloads
+  ---
+  duration_ms: 0.1393
+  ...
+# Subtest: validation commands preserve bounded target and plan fields
+ok 57 - validation commands preserve bounded target and plan fields
+  ---
+  duration_ms: 0.2647
+  ...
+# Subtest: apply_artifact v3 preserves only allowlisted Roblox UI roots
+ok 58 - apply_artifact v3 preserves only allowlisted Roblox UI roots
+  ---
+  duration_ms: 12.7671
+  ...
+# Subtest: apply_artifact v3 rejects foreign UI paths and unsupported node classes
+ok 59 - apply_artifact v3 rejects foreign UI paths and unsupported node classes
+  ---
+  duration_ms: 0.4736
+  ...
+# Subtest: apply_artifact v3 binds a single UI root to the artifact identity and revision
+ok 60 - apply_artifact v3 binds a single UI root to the artifact identity and revision
+  ---
+  duration_ms: 1.4275
+  ...
+# Subtest: apply_artifact v3 rejects ambiguous, cyclic, reserved, and unbounded UI trees
+ok 61 - apply_artifact v3 rejects ambiguous, cyclic, reserved, and unbounded UI trees
+  ---
+  duration_ms: 0.9657
+  ...
+# Subtest: chat matching never crosses projects and ignores legacy place scope
+ok 62 - chat matching never crosses projects and ignores legacy place scope
+  ---
+  duration_ms: 1.5889
+  ...
+# Subtest: a foreign website conversation cannot be opened against the active Nexus project
+ok 63 - a foreign website conversation cannot be opened against the active Nexus project
+  ---
+  duration_ms: 1.2425
+  ...
+# Subtest: Studio resolves the account active project without consulting place identity
+ok 64 - Studio resolves the account active project without consulting place identity
+  ---
+  duration_ms: 1.4618
+  ...
+# Subtest: Studio creates and selects the deterministic fallback when no active project is valid
+ok 65 - Studio creates and selects the deterministic fallback when no active project is valid
+  ---
+  duration_ms: 1.8188
+  ...
+# Subtest: selection context is bounded and tied to the current Studio generation
+ok 66 - selection context is bounded and tied to the current Studio generation
+  ---
+  duration_ms: 0.6047
+  ...
+# Subtest: public streaming events expose conversational progress instead of internal payloads
+ok 67 - public streaming events expose conversational progress instead of internal payloads
+  ---
+  duration_ms: 0.6641
+  ...
+# Subtest: completion events expose Undo only when a verified run produced snapshots
+ok 68 - completion events expose Undo only when a verified run produced snapshots
+  ---
+  duration_ms: 1.6333
+  ...
+# Subtest: Plan and Ask stay read-only while Agent routes hybrid Studio execution
+ok 69 - Plan and Ask stay read-only while Agent routes hybrid Studio execution
+  ---
+  duration_ms: 1.9131
+  ...
+# Subtest: Agent questions fall back to a conversational response without losing the canonical chat
+ok 70 - Agent questions fall back to a conversational response without losing the canonical chat
+  ---
+  duration_ms: 1.0431
+  ...
+1..70
+# tests 70
+# suites 0
+# pass 70
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 202.7041

@@ -276,24 +276,15 @@ playtestLogsButton.MouseButton1Click:Connect(function()
 	local warnings = tonumber(summary.warnings) or 0
 	local total = tonumber(summary.total) or 0
 	local lines = {}
-	if errors > 0 or warnings > 0 then
-		table.insert(lines, ("<b>%d error(s), %d warning(s)</b> of %d message(s)"):format(errors, warnings, total))
+	if total == 0 then
+		table.insert(lines, "No output captured yet. Start a playtest in Studio, then check again.")
 	else
-		table.insert(lines, ("No errors or warnings in %d message(s)."):format(total))
+		table.insert(lines, ("%d error(s), %d warning(s) in %d captured message(s)."):format(errors, warnings, total))
 	end
-	-- Show the last few error/warning lines for quick triage.
-	local shown = 0
 	local messages = result.output or {}
-	for i = #messages, 1, -1 do
+	for i = math.max(1, #messages - 19), #messages do
 		local entry = messages[i]
-		if entry and (entry.level == "error" or entry.level == "warning") then
-			local prefix = entry.level == "error" and '<font color="#D64550">ERR</font> ' or '<font color="#D39127">WARN</font> '
-			table.insert(lines, prefix .. tostring(entry.message):sub(1, 160))
-			shown = shown + 1
-			if shown >= 5 then
-				break
-			end
-		end
+		if entry then table.insert(lines, tostring(entry.level or "output") .. ": " .. tostring(entry.message):sub(1, 400)) end
 	end
 	playtestStrip.Visible = true
 	playtestStrip.Text = table.concat(lines, "\n")

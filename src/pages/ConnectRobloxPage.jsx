@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Check, Loader, LogOut, PlugZap } from "lib/icons";
 import { signOut } from "firebase/auth";
@@ -9,6 +9,7 @@ import { beginRobloxOAuth, ROBLOX_PRODUCT_DEFAULT_CAPABILITIES } from "../lib/ro
 import { connectRobloxPath, safeSignupReturnPath } from "../lib/signupRobloxOnboarding";
 import { AuthStatusAlert, NexusAuthShell } from "../components/auth/NexusAuthShell";
 import { Button } from "../components/shadcn/button";
+import { robloxSetupErrorMessage } from "../lib/robloxAuthorizationMessages";
 
 const CAPABILITY_COPY = [
   "Confirm your Roblox identity",
@@ -24,26 +25,47 @@ export default function ConnectRobloxPage() {
   const refreshRoblox = roblox.refresh;
   const [action, setAction] = useState("");
   const [localError, setLocalError] = useState("");
+  const actionRef = useRef(false);
+  const callbackSuccess = searchParams.get("roblox") === "connected";
+  const [callbackChecked, setCallbackChecked] = useState(false);
+  const [callbackDismissed, setCallbackDismissed] = useState(false);
+  const [checkFailed, setCheckFailed] = useState(false);
   const returnPath = useMemo(
     () => safeSignupReturnPath(searchParams.get("return"), "/ai"),
     [searchParams]
   );
   const callbackReturnPath = connectRobloxPath(returnPath);
-  const callbackError = searchParams.get("roblox") === "error"
-    ? searchParams.get("message") || "Roblox connection was cancelled."
+  const callbackError = !callbackDismissed && searchParams.get("roblox") === "error"
+    ? robloxSetupErrorMessage({ code: searchParams.get("code") })
     : "";
 
   useEffect(() => {
-    if (searchParams.get("roblox") === "connected") {
-      void refreshRoblox({ force: true });
-    }
-  }, [refreshRoblox, searchParams]);
+    if (!callbackSuccess) return undefined;
+    let active = true;
+    setCallbackChecked(false);
+    void refreshRoblox({ force: true }).then((status) => {
+      if (!active) return;
+      setCallbackChecked(true);
+      setCheckFailed(!status);
+      if (status?.connected && status?.onboarding?.satisfied === true) {
+        navigate(returnPath, { replace: true });
+      } else if (!status) {
+        setLocalError("We couldn’t check your Roblox connection. Check again to finish setup.");
+      }
+    }).catch(() => {
+      if (!active) return;
+      setCallbackChecked(true);
+      setCheckFailed(true);
+      setLocalError("We couldn’t check your Roblox connection. Check again to finish setup.");
+    });
+    return () => { active = false; };
+  }, [callbackSuccess, navigate, refreshRoblox, returnPath]);
 
   useEffect(() => {
-    if (roblox.status?.onboarding?.satisfied === true && roblox.connected) {
+    if (!callbackSuccess && roblox.phase !== "checking" && roblox.phase !== "refreshing" && !roblox.error && roblox.status?.onboarding?.satisfied === true && roblox.connected) {
       navigate(returnPath, { replace: true });
     }
-  }, [navigate, returnPath, roblox.connected, roblox.status]);
+  }, [callbackSuccess, navigate, returnPath, roblox.connected, roblox.error, roblox.phase, roblox.status]);
 
   if (roblox.authReady && !roblox.user) {
     return <Navigate to="/signin" replace state={{ from: { pathname: location.pathname, search: location.search } }} />;
@@ -54,40 +76,73 @@ export default function ConnectRobloxPage() {
   }
 
   const connect = async () => {
-    setAction("connect");
+    if (actionRef.current) return;
+    actionRef.current = true;
+    setAction(needsStatusCheck ? "check" : "connect");
     setLocalError("");
+    setCallbackDismissed(true);
     try {
+      if (needsStatusCheck) {
+        const status = await refreshRoblox({ force: true });
+        setCheckFailed(!status);
+        if (status?.connected && status?.onboarding?.satisfied === true) {
+          navigate(returnPath, { replace: true });
+        } else if (!status) {
+          setLocalError("We couldn’t check your Roblox connection. Try again in a moment.");
+        }
+        return;
+      }
       const result = await beginRobloxOAuth({
         capabilities: ROBLOX_PRODUCT_DEFAULT_CAPABILITIES,
         returnPath: callbackReturnPath,
       });
-      if (result?.authorized) await refreshRoblox({ force: true });
+      if (result?.authorized) {
+        const status = await refreshRoblox({ force: true });
+        setCheckFailed(!status);
+        if (status?.connected && status?.onboarding?.satisfied === true) navigate(returnPath, { replace: true });
+        else if (!status) setLocalError("We couldn’t check your Roblox connection. Check again to finish setup.");
+      }
     } catch (error) {
-      setLocalError(error?.message || "Could not start Roblox authorization.");
+      setLocalError(robloxSetupErrorMessage(error));
     } finally {
+      actionRef.current = false;
       setAction("");
     }
   };
 
   const leave = async () => {
+    if (actionRef.current) return;
+    actionRef.current = true;
     setAction("signout");
-    await signOut(auth);
-    navigate("/", { replace: true });
+    setLocalError("");
+    try {
+      await signOut(auth);
+      navigate("/", { replace: true });
+    } catch (_) {
+      setLocalError("Couldn’t sign out. Please try again.");
+    } finally {
+      actionRef.current = false;
+      setAction("");
+    }
   };
 
-  const statusMessage = localError || callbackError || roblox.error?.message || "";
+  const checking = roblox.phase === "checking" || roblox.phase === "refreshing" || (callbackSuccess && !callbackChecked);
+  const needsStatusCheck = checkFailed || Boolean(roblox.error) || roblox.phase === "unavailable" || (callbackSuccess && callbackChecked && !roblox.status);
+  const statusMessage = localError || callbackError || (roblox.error ? "We couldn’t check your Roblox connection. Check again before continuing." : "");
   const primaryLabel = action === "connect"
     ? "Opening Roblox…"
-    : roblox.phase === "checking"
+    : checking || action === "check"
       ? "Checking connection…"
-      : statusMessage
-        ? "Retry Roblox connection"
-        : "Connect Roblox";
+      : needsStatusCheck
+        ? "Check connection again"
+        : roblox.connected
+          ? "Update permissions"
+          : "Connect Roblox";
 
   return (
     <NexusAuthShell
       title="Connect your Roblox account"
-      description="Finish account setup so NexusRBX can work with your Roblox identity and creation tools."
+      description="One last step: connect Roblox to finish setting up NexusRBX. You’ll review and approve access on Roblox, then return here."
     >
       <div className="grid gap-5">
         <ol className="grid grid-cols-3 gap-2" aria-label="Account setup progress">
@@ -105,7 +160,9 @@ export default function ConnectRobloxPage() {
           })}
         </ol>
 
-        <AuthStatusAlert status={statusMessage ? "error" : "idle"} message={statusMessage} />
+        {callbackError && searchParams.get("code") === "ROBLOX_OAUTH_DENIED" && !localError
+          ? <p role="status" className="text-sm leading-6 text-[var(--ds-text-secondary)]">{callbackError}</p>
+          : <AuthStatusAlert status={statusMessage ? "error" : "idle"} message={statusMessage} />}
 
         <div className="rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] p-4">
           <h2 className="text-sm font-semibold text-[var(--ds-text)]">Standard Roblox access</h2>
@@ -125,10 +182,10 @@ export default function ConnectRobloxPage() {
         <Button
           type="button"
           className="h-12 w-full rounded-[10px] bg-[var(--ds-text)] text-[var(--ds-bg-canvas)]"
-          disabled={Boolean(action) || roblox.phase === "checking"}
+          disabled={Boolean(action) || checking}
           onClick={connect}
         >
-          {action === "connect" || roblox.phase === "checking" ? <Loader className="h-4 w-4 animate-spin" /> : <PlugZap className="h-4 w-4" />}
+          {action === "connect" || action === "check" || checking ? <Loader aria-hidden="true" className="h-4 w-4 animate-spin motion-reduce:animate-none" /> : <PlugZap aria-hidden="true" className="h-4 w-4" />}
           {primaryLabel}
         </Button>
         <Button type="button" variant="ghost" className="h-11" disabled={Boolean(action)} onClick={leave}>

@@ -1,0 +1,1107 @@
+▶ CREATE scenario evals produce genre-sensitive expandable quality contracts
+  ✔ Make a mining simulator (9.0742ms)
+  ✔ Make a horror game where players survive a creature in a supermarket (1.7477ms)
+  ✔ Make a fashion competition game (2.6376ms)
+  ✔ Make a tower defense game about defending a pizza shop (1.0294ms)
+  ✔ Make a social fishing game (1.2252ms)
+✔ CREATE scenario evals produce genre-sensitive expandable quality contracts (18.3812ms)
+▶ MODIFY scenario evals classify changes and preserve bounded mutation policy
+  ✔ Make my sword do 25 damage (2.4817ms)
+  ✔ Add daily rewards (1.862ms)
+  ✔ Add rebirths (0.9484ms)
+  ✔ Replace the inventory with a hotbar (1.0446ms)
+  ✔ Make combat feel better (0.6176ms)
+  ✔ Make the shop UI cleaner (0.3743ms)
+  ✔ Fix this round system (0.3068ms)
+✔ MODIFY scenario evals classify changes and preserve bounded mutation policy (9.0726ms)
+✔ resolved MODIFY plans derive bounded writes and creation roots from implementation targets (0.7865ms)
+✔ golden existing-game manifest selects combat evidence without unrelated economy, shop, or data paths (4.1703ms)
+✔ expanded Studio protocol exposes discovery, mutation, validation, and recovery tools (2.0234ms)
+✔ unknown Studio tools are rejected instead of falling back to place inspection (3.144ms)
+✔ insert_creator_store_asset is mutating but not destructive (0.3596ms)
+✔ Agent auto-apply only interrupts for destructive Studio changes (0.3022ms)
+✔ snapshot creation is mutating but not destructive (0.242ms)
+✔ insert_uploaded_roblox_model is mutating but not destructive (0.1892ms)
+✔ insert_creator_store_asset preserves only server-produced safe fields (2.4656ms)
+✔ insert_creator_store_asset rejects executable and arbitrary payload fields (0.4993ms)
+✔ insert_uploaded_roblox_model preserves only server-produced safe fields (1.9534ms)
+✔ insert_uploaded_roblox_model rejects source, URL, script, file, asset, and unknown injection (2.2256ms)
+✔ build_native_model sanitizes through NativeModelSpec validation (3.8934ms)
+✔ canonical paths normalize backslashes and game prefix (0.2446ms)
+✔ Studio command paths reject blank and unrooted parent paths before dispatch (2.421ms)
+✔ create_instance normalizes common BasePart planner properties (1.07ms)
+✔ create_instance normalizes uppercase 8-bit BasePart colors (0.4744ms)
+✔ create_instance normalizes Studio readback property values (0.5267ms)
+✔ create_animation_sequence validates and normalizes bounded R15 keyframes (1.2755ms)
+✔ create_animation_sequence rejects unbounded, non-R15, and executable transforms (0.6596ms)
+✔ create_script only enables parent creation when explicitly requested (0.8905ms)
+✔ write_script preserves optimistic concurrency fields (0.4034ms)
+✔ create_script requires an explicit script class (0.4752ms)
+✔ create_script transparently corrects the fly GUI Script to a LocalScript (0.4446ms)
+✔ existing script class conversion requires an inspected target and explicit consent (0.4369ms)
+✔ existing write_script candidates are blocked instead of auto-corrected (0.5909ms)
+✔ artifact application blocks mixed client and server runtime code (6.4123ms)
+✔ managed artifact class conversion inherits inspected authorization from its file (4.4906ms)
+✔ get_project_manifest carries pagination revision across pages (0.2952ms)
+✔ restore_snapshot keeps attributes and tags for rollback (0.6382ms)
+✔ snapshot restore preserves connector conflict hashes and force policy (0.3024ms)
+✔ playtests require bounded named inputs and reject executable code (1.1786ms)
+✔ destructive confirmation is preserved only from explicit top-level consent (1.1881ms)
+✔ batch_operations sanitizes nested operations without allowing recursive batch payloads (0.3941ms)
+✔ known-script mutations preserve source preconditions and force destructive snapshots (1.6805ms)
+✔ apply_asset_reference accepts only a canonical server-owned asset target (0.3669ms)
+✔ apply_asset_reference rejects invalid targets, IDs, nested use, and generic-property bypasses (0.8577ms)
+✔ idempotency keys are stable for identical payloads (0.3011ms)
+✔ validation commands preserve bounded target and plan fields (0.3626ms)
+✔ apply_artifact v3 preserves only allowlisted Roblox UI roots (26.5058ms)
+✔ apply_artifact v3 rejects foreign UI paths and unsupported node classes (0.8441ms)
+✔ apply_artifact v3 binds a single UI root to the artifact identity and revision (2.1736ms)
+✔ apply_artifact v3 rejects ambiguous, cyclic, reserved, and unbounded UI trees (1.5005ms)
+✔ library intent detection covers image-only Roblox asset requests (2.5603ms)
+✔ safe Studio context preserves attested command metadata without leaking unknown fields (2.0502ms)
+✔ assembles bounded manifest metadata and owner-scoped assets without source or credentials (62.1888ms)
+✔ rejects task and Studio ownership mismatches (3.1637ms)
+✔ does not query the asset registry for unrelated work (11.7541ms)
+✔ freezes the exact selected example text and provenance into the immutable snapshot (10.8314ms)
+✔ blank project is classified as create and game intelligence affects the context hash (11.8855ms)
+✔ safe project context bounds and redacts its system map (1.3846ms)
+✔ freezes bounded Nexus library retrieval into the immutable task snapshot (6.8146ms)
+✔ Studio catalog is derived from the protocol and marks writes for verification (0.7598ms)
+✔ runtime orchestration capabilities are trusted and snapshot-resolvable (3.6365ms)
+✔ generated metadata populates art direction without changing creator authority (11.6767ms)
+✔ a late result cannot overwrite another task's project decisions (1.043ms)
+✔ focused requests stay focused in empty Studio: Create a door (12.0189ms)
+✔ focused requests stay focused in empty Studio: Create a shop for my game (2.4336ms)
+✔ focused requests stay focused in empty Studio: Make a game icon (1.5522ms)
+✔ focused requests stay focused in empty Studio: Create a game pass (2.129ms)
+✔ focused requests stay focused in empty Studio: Fix this door (1.3144ms)
+✔ focused requests stay focused in empty Studio: Change the art style (1.0252ms)
+✔ focused requests stay focused in empty Studio: Replace this icon (0.9437ms)
+✔ focused requests stay focused in empty Studio: Make my sword deal 25 damage (0.8821ms)
+✔ complete game includes connected deliverables: Make a cozy fishing game (2.0097ms)
+✔ complete game includes connected deliverables: Build a racing game (1.407ms)
+✔ complete game includes connected deliverables: Create a horror experience (0.9914ms)
+✔ complete game includes connected deliverables: Make me an obby (0.8904ms)
+✔ complete game includes connected deliverables: Create a tower defense game (1.1487ms)
+✔ complete game includes connected deliverables: A social party game (0.6878ms)
+✔ complete game includes connected deliverables: I want a space exploration game (1.8977ms)
+✔ a complete game in an existing place retains preservation boundaries (1.1111ms)
+✔ planner cannot turn unspecified monetization into paid catalog operations (1.4141ms)
+✔ creator-requested passes are in scope but no price or provider ID is fabricated (1.0697ms)
+✔ negative monetization choices never add paid deliverables (2.2591ms)
+✔ overview requires linked verification evidence and distinguishes launch drafts (3.4271ms)
+✔ blank/new project becomes CREATE (11.6098ms)
+✔ existing project becomes MODIFY (3.4469ms)
+✔ small value change is direct edit (2.1494ms)
+✔ broad improvement remains bounded modify intent (0.7305ms)
+✔ create first-session contract contains machine-readable opening targets (2.1516ms)
+✔ only relevant production modules enter game-generation context (17.4823ms)
+✔ Luau production modules handle receipt replay and analytics transport boundaries (52.2698ms)
+✔ assembles a deterministic layered NexusRBX prompt (13.5641ms)
+✔ keeps injection strings and private project content out of privileged messages (1.016ms)
+✔ places curated library retrieval in its own untrusted context block (0.9523ms)
+✔ requires server-trusted approved plans and binds their exact version (1.6652ms)
+✔ unknown modes fail closed to read-only Ask (0.7053ms)
+✔ bounds, redacts, and reports every dynamic context section (1.0327ms)
+✔ ask retains stable identity and its mode contract (1.695ms)
+✔ plan retains stable identity and its mode contract (1.4657ms)
+✔ agent retains stable identity and its mode contract (0.8463ms)
+✔ debug retains stable identity and its mode contract (0.8596ms)
+✔ quick_script retains stable identity and its mode contract (0.5212ms)
+✔ project briefs persist revisions without stale retries overwriting later work (53.7771ms)
+✔ saveQuickScriptProject creates a private project and repeated save is idempotent (7.3436ms)
+✔ projects are scoped to their owner (5.6587ms)
+✔ anonymous Quick Script result can be claimed once (12.0681ms)
+✔ versions are created for meaningful changes and restore preserves the current state (5.5515ms)
+✔ deleted projects are excluded from recent work (5.0605ms)
+✔ Studio mutation scope observes by default and blocks before queue in enforce mode (6.7429ms)
+✔ Studio mutation scope guard is evaluated before the model-selected command is queued (3.1826ms)
+✔ Studio mutation scope allows approved patch and skips modify guard for create mode (0.4344ms)
+✔ completion preservation check reports successful out-of-scope mutations (1.5285ms)
+[studio-agent-manifest-page] {"runId":"run_1","revision":"manifest_rev_1","cursor":"cursor_final","nextCursor":null,"commandId":"command_manifest_final","stepId":"step_manifest","itemCount":1,"totalInstances":null,"terminalPage":true,"tryCompleteResult":true,"tryCompleteReason":null}
+[studio-agent-manifest-page] {"runId":"run_1","revision":"manifest_rev_1","cursor":"cursor_final","nextCursor":null,"commandId":"command_manifest_final","stepId":"step_manifest","itemCount":1,"totalInstances":null,"terminalPage":true,"tryCompleteResult":true,"tryCompleteReason":null}
+[studio-agent-manifest-page] {"runId":"run_1","revision":"manifest_rev_missing_step","cursor":"","nextCursor":"cursor_2","commandId":"command_manifest_first","stepId":"missing_manifest_step","itemCount":1,"totalInstances":null,"terminalPage":false,"tryCompleteResult":false,"tryCompleteReason":"manifest_incomplete"}
+[studio-agent-decision-rejected] {"runId":"run_1","iteration":0,"initialCode":"invalid_decision","repairCode":"invalid_decision","recoveryTool":"read_scripts","hasSuccessfulMutation":false}
+[studio-agent-decision-rejected] {"runId":"run_1","iteration":0,"initialCode":"invalid_decision","repairCode":"invalid_decision","recoveryTool":"search_project","hasSuccessfulMutation":false}
+[studio-agent-decision-rejected] {"runId":"run_1","iteration":0,"initialCode":"invalid_decision","repairCode":"invalid_decision","recoveryTool":null,"hasSuccessfulMutation":false}
+[studio-agent-decision-rejected] {"runId":"run_1","iteration":0,"initialCode":"invalid_decision","repairCode":"invalid_decision","recoveryTool":"build_native_model","hasSuccessfulMutation":false}
+[studio-agent-decision-rejected] {"runId":"run_1","iteration":0,"initialCode":"COMPLEX_BUILD_IMPLEMENTATION_REQUIRED","repairCode":"COMPLEX_BUILD_IMPLEMENTATION_REQUIRED","recoveryTool":"create_script","hasSuccessfulMutation":false}
+[studio-agent-decision-rejected] {"runId":"run_1","iteration":0,"initialCode":"COMPLEX_BUILD_SCRIPT_REQUIRED","repairCode":"COMPLEX_BUILD_SCRIPT_REQUIRED","recoveryTool":"create_script","hasSuccessfulMutation":false}
+[studio-agent-decision-rejected] {"runId":"run_1","iteration":0,"initialCode":"COMPLEX_BUILD_IMPLEMENTATION_REQUIRED","repairCode":"COMPLEX_BUILD_IMPLEMENTATION_REQUIRED","recoveryTool":"create_script","hasSuccessfulMutation":false}
+[studio-agent-decision-rejected] {"runId":"run_1","iteration":0,"initialCode":"invalid_decision","repairCode":"invalid_decision","recoveryTool":null,"hasSuccessfulMutation":true}
+[studio-agent-decision-rejected] {"runId":"run_1","iteration":0,"initialCode":"invalid_decision","repairCode":"invalid_decision","recoveryTool":null,"hasSuccessfulMutation":false}
+[studio-agent-decision-rejected] {"runId":"run_1","iteration":0,"initialCode":"invalid_decision","repairCode":"invalid_decision","recoveryTool":"create_instance","hasSuccessfulMutation":false}
+[studio-agent-manifest-page] {"runId":"run_1","revision":"rev_large","cursor":"","nextCursor":"500","commandId":"command_manifest_0","stepId":"step_manifest","itemCount":500,"totalInstances":2036,"terminalPage":false,"tryCompleteResult":false,"tryCompleteReason":"manifest_incomplete"}
+[studio-agent-manifest-page] {"runId":"run_1","revision":"rev_partial","cursor":"cursor_1","nextCursor":"cursor_2","commandId":"command_manifest_page","stepId":"step_manifest","itemCount":10,"totalInstances":null,"terminalPage":false,"tryCompleteResult":false,"tryCompleteReason":"manifest_incomplete"}
+[studio-agent-manifest-page] {"runId":"run_1","revision":"rev_loop","cursor":"cursor_1","nextCursor":"cursor_1","commandId":"command_manifest_loop","stepId":"step_manifest","itemCount":1,"totalInstances":null,"terminalPage":false,"tryCompleteResult":false,"tryCompleteReason":"manifest_incomplete"}
+[studio-agent-manifest-page] {"runId":"run_1","revision":"rev_conflict","cursor":"","nextCursor":null,"commandId":"command_manifest_conflict","stepId":"step_manifest","itemCount":0,"totalInstances":null,"terminalPage":true,"tryCompleteResult":false,"tryCompleteReason":"overlapping_canonical_paths"}
+[studio-agent-manifest-page] {"runId":"run_1","revision":"rev_conflict_2","cursor":"","nextCursor":null,"commandId":"command_manifest_conflict_exhausted","stepId":"step_manifest","itemCount":0,"totalInstances":null,"terminalPage":true,"tryCompleteResult":false,"tryCompleteReason":"overlapping_canonical_paths"}
+[studio-agent-manifest-page] {"runId":"run_1","revision":"rev_queue","cursor":"cursor_1","nextCursor":"cursor_2","commandId":"command_manifest_page","stepId":"step_manifest","itemCount":1,"totalInstances":null,"terminalPage":false,"tryCompleteResult":false,"tryCompleteReason":"manifest_incomplete"}
+[studio-agent-manifest-page] {"runId":"run_1","revision":"rev_terminal","cursor":"cursor_final","nextCursor":null,"commandId":"command_manifest_terminal","stepId":"step_manifest","itemCount":1,"totalInstances":null,"terminalPage":true,"tryCompleteResult":false,"tryCompleteReason":"missing_page"}
+[studio-agent-decision-rejected] {"runId":"run_1","iteration":0,"initialCode":"invalid_decision","repairCode":"invalid_decision","recoveryTool":"create_instance","hasSuccessfulMutation":false}
+✔ Studio decision timeout aborts a stalled planner request (29.181ms)
+✔ Studio decision timeout preserves ordinary planner failures (0.6069ms)
+✔ complex obby recovery builds persistent geometry before gameplay scripts (35.9203ms)
+✔ MCP tool adaptation removes unsupported inspection promises and implicit parent creation (0.6019ms)
+✔ plugin tool adaptation preserves the plugin payload contract (0.4724ms)
+✔ Studio run task links and Nexus catalog pins are exact (1.8695ms)
+✔ canonical Studio launch rejects a catalog newer than its sealed Task context (6.3635ms)
+✔ canonical Studio launch requires sealed library context and catalog revision as a pair (0.9522ms)
+✔ inspection routing uses an exact plugin manifest and bounded MCP search (1.3301ms)
+✔ scoped named inspection pins the exact MCP session and never enters mutation planning (20.6399ms)
+✔ scoped named inspection fails typed when its exact MCP session or search command is unavailable (1630.4032ms)
+✔ inspection evidence is durable, target-bound, and honest about MCP scope (0.6694ms)
+✔ Studio library steps refuse a catalog revision change before search (1.2861ms)
+✔ Studio run creation rejects an authenticated chat deletion fence (10.4878ms)
+▶ pure Local MCP run creation pins a confirmed opaque target before persistence
+  ✔ confirmed exact target queues with the same guards (6.3678ms)
+  ✔ activation failure leaves no run or step debris (4.9286ms)
+  ✔ missing target (4.2007ms)
+  ✔ missing confirmation (3.9406ms)
+  ✔ wrong opaque target (5.0039ms)
+✔ pure Local MCP run creation pins a confirmed opaque target before persistence (25.0816ms)
+✔ StudioAgentService preserves safe same-place provider choices through persistence, snapshots, and SSE (8.2153ms)
+✔ StudioAgentService cancels an approval-waiting run immediately (0.8322ms)
+✔ StudioAgentService waits for an in-flight Studio command before final cancellation (0.5928ms)
+✔ StudioAgentService queues final validation before declaring success (2.0755ms)
+✔ StudioAgentService trusts an exact deterministic validation already satisfied by the decision (0.3418ms)
+✔ StudioAgentService does not treat a successful write acknowledgement as verified completion (0.1826ms)
+✔ StudioAgentService does not repeat a failed deterministic validation (0.1839ms)
+✔ StudioAgentService accepts one clean deterministic validation without requiring every diagnostic tool (0.3321ms)
+✔ StudioAgentService adds targeted readback after clean validation when Studio supports it (0.2225ms)
+✔ StudioAgentService reads back an instance after clean validation (0.3179ms)
+✔ StudioAgentService gives diagnostics an explicit whole-project target (0.2482ms)
+✔ StudioAgentService accepts targeted readback after the latest mutation (0.1829ms)
+✔ post-mutation inspection budget hands repeated reads to deterministic validation (0.1586ms)
+✔ continueRun sends a simple create directly to deterministic verification (0.3525ms)
+✔ continueRun replaces another read with deterministic verification after the post-mutation budget (0.322ms)
+✔ continueRun allows a follow-up mutation after the post-mutation read budget (0.4915ms)
+✔ StudioAgentService detects repeated identical decisions and blocks the run (0.3991ms)
+✔ StudioAgentService ignores duplicate terminal command acknowledgements (0.969ms)
+✔ StudioAgentService continues once after final manifest page persistence (2.4632ms)
+✔ StudioAgentService decision lease prevents concurrent iteration claims (0.373ms)
+✔ StudioAgentService renews only the active decision lease owner (0.3566ms)
+✔ StudioAgentService persists queueing step before creating command (0.7464ms)
+✔ StudioAgentService does not queue a second model action while one awaits approval (0.636ms)
+✔ StudioAgentService queues no command for a blocked script-context decision (0.7399ms)
+✔ StudioAgentService records hybrid MCP mutation execution without pinning affinity (0.7209ms)
+✔ StudioAgentService records plugin execution without globally pinning later hybrid tools (0.5647ms)
+✔ StudioAgentService sends stop_play_test to the provider that started Play Test (1.2666ms)
+✔ StudioAgentService reconciles hybrid commands through the step execution provider (0.6524ms)
+✔ StudioAgentService blocks an uncertain Studio outcome without retrying the mutation (1.9041ms)
+✔ StudioAgentService continues after a deterministic duplicate-create rejection (0.5657ms)
+✔ explicit Folder completion accepts typed Studio attribute readback evidence (0.9056ms)
+✔ StudioAgentService preserves execution metadata while recovering a missing step (0.6232ms)
+✔ StudioAgentService switches initial MCP inspection fallback to manifest workflow (0.3918ms)
+✔ StudioAgentService recovers missing step from ack and continues manifest pagination (0.698ms)
+✔ StudioAgentService recovers missed terminal command ack during getRun reconciliation (3.0623ms)
+✔ StudioAgentService routes reconcile-required commands through deterministic recovery (0.3284ms)
+✔ StudioAgentService exposes the manifest conflict retry count in run snapshots (0.3264ms)
+✔ StudioAgentService waits indefinitely for delivered Studio commands without ACK (0.5477ms)
+✔ StudioAgentService parks active tool waits when the Studio session is disconnected (0.784ms)
+✔ StudioAgentService repairs a malformed model decision once (11.0475ms)
+✔ StudioAgentService falls back to relevant source reads after repeated malformed model decisions (2.6906ms)
+✔ StudioAgentService falls back to project search when malformed decisions have no relevant files (2.2327ms)
+✔ StudioAgentService blocks repeated malformed model decisions after recovery inspection is exhausted (2.5935ms)
+✔ StudioAgentService bootstraps bounded persistent geometry when a complex build decision is malformed (3.6196ms)
+✔ StudioAgentService cannot finish a complex lava game before gameplay code exists (3.78ms)
+✔ StudioAgentService rejects additional containers once a persistent complex build needs gameplay code (3.7816ms)
+✔ StudioAgentService repairs a complex game that is missing its requested visible HUD (2.6475ms)
+✔ StudioAgentService hands malformed post-mutation decisions to deterministic validation (2.2361ms)
+✔ StudioAgentService blocks MCP inspection-only sessions with an export-capability fallback (3.2591ms)
+✔ explicit create_instance-only GUI goals produce the exact requested instance deterministically (1.7746ms)
+✔ legacy Studio prompt includes canonical sealed library context only as untrusted user data (1.1079ms)
+✔ explicit create_instance goals do not repeat an already successful exact target (0.3136ms)
+✔ explicit create_instance goals complete after exact mutation readback and targeted validation (0.2038ms)
+✔ exact Folder requests create through MCP, read back attributes, and complete deterministically (1.0242ms)
+✔ Studio readback records retain bounded exact evidence after command summaries (0.3768ms)
+✔ StudioAgentService bootstraps create_instance after MCP inspection when planner JSON is invalid (2.1262ms)
+✔ main-menu recovery continues past the first mutation and validates the completed GUI (1.2618ms)
+✔ main-menu recovery does not start before Studio inspection succeeds (0.1309ms)
+✔ StudioAgentService does not bootstrap create_instance for hybrid MCP without a write capability (0.3124ms)
+✔ StudioAgentService returns an export-capability error for hybrid MCP tools it cannot run (0.3822ms)
+✔ StudioAgentService guides hybrid MCP inspection-only runs to export or reconnect a capability (0.2821ms)
+✔ StudioAgentService ignores legacy run limits while a Studio command awaits ACK (0.593ms)
+✔ StudioAgentService reconciles a terminal Studio command regardless of legacy run limits (0.3245ms)
+✔ StudioAgentService exposes usage-driven runs as unlimited (0.4936ms)
+✔ StudioAgentService excludes human approval wait before exposing the command to Studio (1.4914ms)
+✔ StudioAgentService rejects approvals after a run has ended (0.2862ms)
+✔ StudioAgentService continues to planning with partial manifest after preflight page budget (0.5138ms)
+✔ StudioAgentService keeps a completed manifest baseline after its own attested mutation (1.2222ms)
+✔ same-run mutation baseline requires matching target attestation (0.1607ms)
+✔ same-run mutation baseline accepts an attested unpublished Studio place (0.1645ms)
+✔ StudioAgentService reuses an expired manifest after a same-run unchanged attestation (1.106ms)
+✔ same-run manifest baseline rejects a changed place signature (0.1545ms)
+✔ same-run manifest baseline accepts unchanged unpublished Studio place attestations (0.1422ms)
+✔ StudioAgentService explicitly enables conflicted partial context after fallback completion (0.8876ms)
+✔ StudioAgentService keeps manifest pagination alive after the partial-context budget (0.6205ms)
+✔ StudioAgentService stops manifest pagination after manifest page cap (1.0171ms)
+✔ StudioAgentService blocks repeated manifest cursor with MANIFEST_REPEATED_CURSOR (0.7484ms)
+✔ manifest readiness failures defer to an in-flight conflict recovery (0.3562ms)
+✔ continueRun queues a fresh manifest when completed context is incomplete or stale for writes (1.6222ms)
+✔ continueRun yields to a concurrently queued manifest conflict recovery (0.7629ms)
+✔ StudioAgentService auto-retries a fresh manifest after an acknowledged conflict (1.5598ms)
+✔ StudioAgentService continues with a partial manifest after conflict retries are exhausted (0.7136ms)
+✔ StudioAgentService waits for an already queued manifest cursor instead of blocking (0.7353ms)
+✔ StudioAgentService surfaces terminal manifest completion reason on incomplete revision (0.6111ms)
+✔ StudioAgentService reaches model tool decision after manifest preflight instead of stalling (0.4202ms)
+✔ StudioAgentService resumes a retained Studio step exactly once after target selection (3.38ms)
+✔ StudioAgentService refreshes safe provider choices without losing the pending step when a selected target closed (1.3816ms)
+✔ buildDecisionHash ignores source changes for mutating write_script tools (0.1815ms)
+✔ isRetryableToolFailure treats plugin-required and MCP unavailable errors as terminal (0.2854ms)
+✔ StudioAgentService retries the first hybrid MCP mutation failure without requiring a plugin (0.7245ms)
+✔ StudioAgentService blocks after two consecutive mutation failures even with a plugin (1.4247ms)
+✔ StudioAgentService resets consecutive mutation failures after a successful write (0.4969ms)
+✔ StudioAgentService parks hybrid MCP-only runs after search with an export-capability fallback (0.4116ms)
+✔ StudioAgentService returns an export-capability fallback when queueStep needs an unavailable MCP command (2.0241ms)
+✔ StudioAgentService resumes parked create_script when plugin becomes LIVE mid-run (2.3192ms)
+✔ StudioAgentService refreshPluginAvailability clears stale pluginAvailable before planning (0.2615ms)
+✔ StudioAgentService still plans read/write when hybrid pluginAvailable is live (1.7122ms)
+✔ StudioAgentService blocks failed read_script when plugin is required (0.9823ms)
+✔ hybridTargetLockPatch persists studioTargetId with confirmation (0.1835ms)
+✔ summarizeToolResult shows manifest page progress instead of full total alone (0.2037ms)
+✔ StudioAgentService adopts a fresh Studio manifest revision after a scan restart (0.1642ms)
+✔ StudioAgentService queues manifest continuation against Studio's fresh revision (0.423ms)
+✔ StudioAgentService deduplicates a restarted manifest page by its fresh result revision (0.1294ms)
+✔ StudioAgentService locks hybrid studioTargetId after successful queueStep (0.4442ms)
+✔ StudioAgentService does not time out while awaiting studio target selection (0.538ms)
+✔ StudioAgentService cancels orphan manifest continues when parking on target selection (0.812ms)
+✔ StudioAgentService emitStep includes targetSelection without throwing (0.4486ms)
+✔ canAutoBindSoleTarget allows sole bind before first mutation (0.0966ms)
+✔ canAutoBindSoleTarget blocks silent switch after mutation (0.1011ms)
+✔ canAutoBindSoleTarget blocks switching away from an explicitly confirmed target (0.087ms)
+✔ continueRun auto-confirms sole parked target while holding the decision lease (1.6994ms)
+✔ reconcileAndMaybeContinue retries sole auto-confirm for awaiting_studio_target (1.3925ms)
+✔ buildDecisionHash ignores transport idempotency for repeated Studio reads (0.1327ms)
+✔ backfillExpectedSourceHash binds a known-script mutation to the latest read (0.1382ms)
+✔ reconcileAndMaybeContinue repairs a terminal run's Job projection (1.1247ms)
+✔ terminal repair preserves structured failure context (1.1275ms)
+✔ createRun soft-confirms a sole hybrid target and prefers its live plugin (8.0601ms)
+✔ unavailable automatic playtesting is advisory and survives successful completion (0.48ms)
+✔ advertised MCP playtesting is queued and real test failures remain failures (0.2909ms)
+✔ plan hashes bind exact id, version, scope, markdown, steps, and assumptions (3.2195ms)
+✔ approved versions are immutable value documents (1.3719ms)
+✔ approved plan execution requires the caller to present the exact hash (2.2775ms)
+✔ approved plan execution rejects a version that is no longer current (0.8752ms)
+✔ approved plan execution requires the root plan to remain approved (0.6939ms)
+✔ approved plan execution rejects root approval version and hash mismatches (1.0343ms)
+✔ approved plan execution rejects a mismatched current root hash (0.6259ms)
+✔ approved plan execution validates stored approval status and content integrity (0.752ms)
+✔ approved plan execution returns a trusted immutable v2 plan (1.1226ms)
+✔ legacy approved version-one roots remain executable when all approval hashes match (1.379ms)
+✔ structured plan hash and approved loader preserve game intelligence (31.7755ms)
+✔ deliverable references bind to real steps and normalize idempotently (18.6946ms)
+✔ legacy game intelligence stays byte-compatible during plan hydration (2.7516ms)
+✔ structured plans keep stable section and step identities (6.8059ms)
+✔ derived steps remain dependency-free when the planner does not claim ordering (3.726ms)
+✔ derived plans repair unique title dependencies to stable step IDs (2.6575ms)
+✔ conversation plans include a rendered Mermaid workflow before implementation steps (8.4511ms)
+✔ rich plans render stages, decisions, file targets, every verification, and rollback (2.7414ms)
+✔ preserves the selected Studio target identity but not browser capability claims (1.9335ms)
+✔ non-Studio plans default to runtime verification without requiring Studio (2.911ms)
+✔ Studio capabilities infer Studio targeting and Studio validation (2.9273ms)
+✔ unsupported capability promises are removed from generated plans and templates (1.5146ms)
+✔ plan operations edit and reorder individual sections without replacing the plan (7.2133ms)
+✔ locked sections reject edits until explicitly unlocked (8.9156ms)
+✔ clarifications are contextual typed choices and capped to material questions (0.6759ms)
+✔ all required NexusRBX planning templates are available (0.1831ms)
+✔ strict planner output validation accepts a complete ready plan (1.2396ms)
+✔ ready output rejects missing game intelligence and mode-specific contracts (0.7445ms)
+✔ game intelligence and expected source hashes survive plan normalization and serialization (3.3546ms)
+✔ invalid or truncated planner JSON fails closed (0.3042ms)
+✔ planner output without implementation work cannot create a plan (0.4803ms)
+✔ a clarification response is rejected after answers were supplied (0.5851ms)
+✔ deterministic planner fallback uses only advertised capabilities and remains schema-valid (1.6269ms)
+✔ deterministic planner fallback remains valid when no capabilities are advertised (1.1025ms)
+✔ workflow project context resolves the connected trusted Studio manifest (3.414ms)
+✔ workflow project context fails closed when Studio is disconnected (0.4195ms)
+✔ agent projection resolver reuses chat identity while legacy create remains strict (17.0709ms)
+✔ projectless projection resolution is sticky and never invents a project (1.4252ms)
+✔ agent projection resolution does not scan unrelated account history (12.1433ms)
+✔ reading one run does not reconcile unrelated account history (14.2778ms)
+✔ independent chats share entitlement slots, queue FIFO, replay once, and terminal completion promotes once (35.3546ms)
+✔ reconciliation clears stale occupancy from a terminal linked artifact job (4.0391ms)
+✔ server rejects browser-owned linkage and Ask/Plan never launch or consume active slots (3.832ms)
+✔ deletion fences reject v2 agent creation, run creation, and launch claims (5.003ms)
+✔ canonical run ignores stale client Studio target envelopes (2.7483ms)
+✔ empty agent binds its authorized project on first run and cannot change projects (3.1416ms)
+✔ executable run seals legacy generation inputs and redispatches the immutable envelope (2.2547ms)
+✔ execution inputs are bounded and participate in idempotency (1.4206ms)
+▶ executable access, Studio plan, and token gates run before canonical task intake
+  ✔ free users cannot request Studio execution (0.7992ms)
+  ✔ paid token preflight failure prevents task creation (0.6562ms)
+  ✔ paid deterministic Studio inspection does not require generation tokens (1.634ms)
+  ✔ generation kill switch prevents task creation (0.5055ms)
+✔ executable access, Studio plan, and token gates run before canonical task intake (4.2045ms)
+✔ canonical agent and run projections are ownership-safe and do not require a chat path (4.5226ms)
+✔ agent deletion rejects nonterminal work but removes an idle agent without deleting run history (10.8338ms)
+✔ event cursor pagination returns canonical identifiers without skipping a limited backlog (5.1864ms)
+✔ task cancellation failure never blocks FIFO promotion and reconcilePending retries it (6.4145ms)
+✔ FIFO promotion skips missing and terminal queue heads before launching later work (10.04ms)
+✔ reconcilePending recovers a durably deferred launch after transient dispatch failure (3.9756ms)
+✔ a launch fenced by concurrent cancellation compensates the created artifact job (3.7479ms)
+✔ marketing thumbnails export 1920x1080 with landscape previews (208.5669ms)
+✔ AssetQualityService returns non-empty file descriptors for canonical storage and validation (340.4949ms)
+✔ rejects an incompatible contract and caller authority conflicts before invoking services (4.2419ms)
+▶ rejects audio and model generation before creating records or invoking the image provider
+  ✔ audio (1.9307ms)
+  ✔ model (0.5996ms)
+✔ rejects audio and model generation before creating records or invoking the image provider (3.1256ms)
+✔ generate_asset persists the validated version and returns the exact durable identities (4.9934ms)
+✔ generate_asset records validation failures in the recoverable validation lifecycle (1.2001ms)
+▶ opaque and non-applicable generation modes do not request transparent output
+  ✔ solid (0.9991ms)
+  ✔ gradient (0.8182ms)
+  ✔ not_applicable (1.066ms)
+✔ opaque and non-applicable generation modes do not request transparent output (4.1889ms)
+✔ generate_asset_pack keeps completed items when a sibling generation fails (5.3944ms)
+✔ generate_asset_pack can establish a pack from concepts and add one matching item later (2.6761ms)
+✔ generate_asset_pack rejects invalid additions before mutating the existing pack (2.0908ms)
+✔ publish keeps the task operation identity separate from the Roblox provider operation (0.7111ms)
+✔ upload status remains nonterminal while Roblox processes and becomes verified only with an exact ID (1.4516ms)
+✔ Studio implementation and verification preserve the exact trusted Roblox asset reference (2.9933ms)
+✔ pending Studio readback is persisted and not reported as verified (0.4068ms)
+✔ Studio verification cannot attribute a trusted command receipt to another asset (0.5991ms)
+✔ Studio verification records usage against the asset in the trusted receipt (0.4367ms)
+✔ monetization persistence propagates registry outages instead of creating duplicate records (0.6023ms)
+▶ monetization tools resolve creator authority and delegate the trusted icon bytes with readback
+  ✔ create_game_pass (1.0556ms)
+  ✔ create_developer_product (0.4593ms)
+  ✔ update_game_pass (0.5425ms)
+  ✔ update_developer_product (0.6894ms)
+✔ monetization tools resolve creator authority and delegate the trusted icon bytes with readback (3.3567ms)
+✔ full-game artwork is executable and connected to the gameplay step (9.9383ms)
+✔ small changes and explicit artwork exclusions do not generate a launch package (0.8581ms)
+✔ a full game binds an explicit paid offer and leaves unknown pricing outstanding (8.4602ms)
+✔ approved plans cannot acquire undeclared asset operations (0.3746ms)
+✔ multiple bounded batches replay the same operation keys and bind returned asset IDs (5.8114ms)
+✔ an unavailable artwork branch remains visible while independent branches run (2.3697ms)
+✔ paid benefits continue to gameplay with trusted universe and returned product IDs (16.6119ms)
+✔ maps the requested asset-first examples to narrow canonical tools or explicit waits (8.9106ms)
+✔ suppresses informational, negated, and mixed non-asset-first requests (0.3967ms)
+✔ does not pretend a whole generated pack can be published as one asset (0.3286ms)
+✔ sound and model generation return explicit unsupported waits instead of image-generation calls (0.8962ms)
+✔ requires exact monetization fields and resolves a canonical icon before a write is planned (0.8416ms)
+✔ incomplete developer-product wording generates requested artwork then waits without a Roblox write (0.7582ms)
+✔ freezes inferred capabilities onto only the generic execute step (0.489ms)
+✔ write retries use the same deterministic idempotency key (1.3261ms)
+✔ generated monetization artwork binds only the returned canonical asset ID (3.7645ms)
+✔ outcome-unknown operations park immediately without polling (1.5427ms)
+✔ sanitization preserves safe receipts and drops credentials, files, and guessed IDs (0.3568ms)
+✔ read dispatch derives owner scope and gives the adapter no OAuth credentials (5.8267ms)
+✔ nested credentials and model-supplied authority are rejected before scope lookup (2.9496ms)
+✔ nested publishing bypass fields are rejected before scope lookup (0.8118ms)
+▶ task owner, project, and immutable capability snapshot mismatches fail closed
+  ✔ cross-user task record (0.8428ms)
+  ✔ caller-selected project (0.5117ms)
+  ✔ snapshot project binding (0.479ms)
+  ✔ capability was not frozen as available (0.692ms)
+✔ task owner, project, and immutable capability snapshot mismatches fail closed (3.7936ms)
+✔ write dispatch requires the frozen step capability and records a fenced durable result (2.8648ms)
+✔ accepted publish steps receive server-derived explicit intent without OAuth credentials (1.4756ms)
+✔ write dispatch rejects a capability not authorized for the immutable step (0.9003ms)
+▶ write dispatch fails closed when the runtime returns a missing or invalid immutable step
+  ✔ missing step (0.5685ms)
+  ✔ array step (0.5566ms)
+  ✔ missing task id (0.4115ms)
+  ✔ mismatched step id (0.2523ms)
+✔ write dispatch fails closed when the runtime returns a missing or invalid immutable step (2.3549ms)
+✔ completed write operation replays its durable result without another side effect (0.4059ms)
+▶ TaskIntakeService applies write ownership and read availability before dispatch
+  ✔ legacy-owned runtime cannot dispatch an asset write (0.8668ms)
+  ✔ read tool uses the independent canonical read gate (0.2839ms)
+  ✔ disabled canonical reads stop a read before dispatch (0.319ms)
+✔ TaskIntakeService applies write ownership and read availability before dispatch (1.8992ms)
+✔ constructor fails closed without a project authorizer (2.1647ms)
+✔ create-body normalization excludes caller-supplied ownership fields (1.5923ms)
+✔ trusted approved game intelligence enters the hashed plan execution context (4.8583ms)
+✔ approved plan with invalid game intelligence project mode is rejected (2.6282ms)
+✔ UI Creator task fields are revision-fenced and scoped to their workspace (2.8749ms)
+✔ trusted approved structured steps compile exactly into stable canonical runtime steps (5.2784ms)
+✔ approved v3 loader output compiles without shape translation or capability aliases (20.6891ms)
+✔ legacy approved plans retain generic planning while preserving source linkage (1.1667ms)
+✔ trusted structured plans fail closed on missing dependency IDs (0.9591ms)
+✔ trusted structured plans repair unique title dependencies before compilation (1.0547ms)
+✔ trusted structured plans fail closed on dependency cycles (1.2781ms)
+✔ normal conversation is classified without creating or mutating runtime state (8.483ms)
+✔ trusted approved plans force noun-like goals through exact task compilation (7.7413ms)
+✔ dual-write compatibility intake is internal-only and still authorizes the project (1.2917ms)
+✔ read re-authorizes the persisted project before returning task details (0.6009ms)
+✔ canonical reads remain independently disabled even while the canonical runtime owns writes (0.4132ms)
+✔ action rejects a no-longer-owned persisted project before any mutation (0.8094ms)
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.231Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.252Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.256Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_d9842d627c6525fa5bab1db070dcd9e3a5317a5b7e921c6b3db20bfb09387bd9',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.256Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_47c96d77cf70790e48c54f2bfbe0af924a66e479b889740ac643430932993767',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.258Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_b50dade89df8453f50122faa5b0dde8dd40e5fa0c1ae44706c67db3c8c377dae',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.268Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_1df4a224e745c4df90725ec0a4c5c56c82cf0d36539d9f67fe09aeb3d9b82438',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.268Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_d90f86b87bba9fc9fd5a8302f1a660ed8def3507a21501972d63f8a4eb5b474e',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.269Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_8136fefb83b50a9034baeed03438ca8a4c812dd614daccc4dc95b4419b1763cf',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.269Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_64b0aec8062a1ac7593b8217420cd28050a42103d7f2e31e00bae42d558a817d',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.270Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_5321f2ee529f7bad2c4b9112a9c48cdf0a780e48e0c51c7bbb4ba3e21c90165f',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.271Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_814b942a37387509aa6ca26e495d75cb8b00b5e560463be5e778e7fc4bc5f8e0',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.272Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_afd7e2e6e7fa428b228e8efaec2e3cffec6ebf5bf3d34e9ab0a0f35f772137a9',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.272Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_f7bc1bb910dcca163e41fdeccbfc20937be3f66682a4eef7b9cf77157a74c753',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.272Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_5559710f4b5c35726fa7809a0554df6199c236eada5be211fdf704abb0101de6',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.273Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_4311e1d328487743e6eccd35806b2074930e9407f79572daace455550a499303',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.273Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_71b7f14a10ed99fde6036e7a53bdcec63b47541afc41b0975dd0746bf8937d02',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.273Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_19ad48ddc644446ae6dc22d62b99191c64484fb5ffc052e5a87a653c2b41f75b',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.273Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_97dba0355d8399fcb515afc8df79cef8aa93880dc36ff1eba79a4fec6e651936',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.274Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_72b4b4169ee0fec42d4bc7961191f892cc6c6e68eaf2f1c9749864b6ff13a9ee',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.274Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_48e7e508274e6b42a6e52d4f3b519ecc68a90b1dccd1f3a069e00e3615e4599a',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.274Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_84976dff7ca8c676e4bb22dfcb3e65ef5bd8f2d9166ffcbfe96a5194f4255298',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.284Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.started',
+  ts: '2026-09-05T17:52:10.286Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'running',
+  eventType: 'task_started',
+  sequence: 4,
+  eventId: 'e_0000000000000004'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.287Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_f18349ddec97743a434f11ef0a6dc56d334fa6e6d12b53c4153b33fa3fd6464d',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.287Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_f7e0596505b038677cc582def7648bcfbef4733264aa765a8d608876f4d0fbd5',
+  requestId: 'request-2',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.288Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_e8ddc400e076c62bfd5e4618e376a005dfa7fdecb1b8e9c7ddc0df2a3664b573',
+  requestId: 'request-3',
+  traceId: 'trace-1',
+  projectId: 'project-2',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.290Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'step.started',
+  ts: '2026-09-05T17:52:10.292Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'running',
+  eventType: 'task_step_claimed',
+  sequence: 3,
+  eventId: 'e_0000000000000003'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.299Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'checkpoint.created',
+  ts: '2026-09-05T17:52:10.301Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_checkpoint_created',
+  sequence: 2,
+  eventId: 'e_0000000000000002'
+}
+[ops] {
+  event: 'task.amended',
+  ts: '2026-09-05T17:52:10.303Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_amended',
+  sequence: 3,
+  eventId: 'e_0000000000000003'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.305Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_8ab23f4c5f2118bc119bdb4d12f92d8c6203aad12ab10876ae2e1133917c192c',
+  requestId: 'checkpoint-other-request',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.307Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'checkpoint.created',
+  ts: '2026-09-05T17:52:10.308Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_checkpoint_created',
+  sequence: 2,
+  eventId: 'e_0000000000000002'
+}
+[ops] {
+  event: 'checkpoint.created',
+  ts: '2026-09-05T17:52:10.308Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_checkpoint_created',
+  sequence: 3,
+  eventId: 'e_0000000000000003'
+}
+[ops] {
+  event: 'checkpoint.restored',
+  ts: '2026-09-05T17:52:10.310Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_checkpoint_restored',
+  sequence: 4,
+  eventId: 'e_0000000000000004'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.316Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.325Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.328Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.started',
+  ts: '2026-09-05T17:52:10.329Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'running',
+  eventType: 'task_started',
+  sequence: 2,
+  eventId: 'e_0000000000000002'
+}
+[ops] {
+  event: 'verification.started',
+  ts: '2026-09-05T17:52:10.329Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'verifying',
+  eventType: 'task_verification_started',
+  sequence: 3,
+  eventId: 'e_0000000000000003'
+}
+[ops] {
+  event: 'task.completed',
+  ts: '2026-09-05T17:52:10.330Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'succeeded',
+  eventType: 'task_succeeded',
+  sequence: 4,
+  eventId: 'e_0000000000000004'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.330Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'step.started',
+  ts: '2026-09-05T17:52:10.332Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'running',
+  eventType: 'task_step_claimed',
+  sequence: 3,
+  eventId: 'e_0000000000000003'
+}
+[ops] {
+  event: 'step.retrying',
+  ts: '2026-09-05T17:52:10.333Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'retry_scheduled',
+  eventType: 'task_step_waiting',
+  sequence: 4,
+  eventId: 'e_0000000000000004'
+}
+[ops] {
+  event: 'step.started',
+  ts: '2026-09-05T17:52:10.333Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'running',
+  eventType: 'task_step_claimed',
+  sequence: 5,
+  eventId: 'e_0000000000000005'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.334Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'step.started',
+  ts: '2026-09-05T17:52:10.334Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'running',
+  eventType: 'task_step_claimed',
+  sequence: 3,
+  eventId: 'e_0000000000000003'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.335Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+[ops] {
+  event: 'task.created',
+  ts: '2026-09-05T17:52:10.338Z',
+  telemetryVersion: 'task-runtime-observability-v1',
+  taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+  requestId: 'request-1',
+  traceId: 'trace-1',
+  projectId: 'project-1',
+  status: 'accepted',
+  eventType: 'task_accepted',
+  sequence: 1,
+  eventId: 'e_0000000000000001'
+}
+✔ acceptTask atomically reserves one task and replays the same root request (25.9682ms)
+✔ acceptTask persists trusted plan provenance and includes it in idempotency (5.2116ms)
+✔ acceptTask persists published and unpublished trusted Studio launch targets (1.7541ms)
+✔ acceptTask durably preserves and validates the UI Creator intent envelope (1.0801ms)
+✔ unpublished Studio acceptance remains replay-safe under concurrent load (24.8111ms)
+✔ task events and projections advance together with contiguous sequence numbers (3.3705ms)
+✔ owner-scoped task and step listings apply filters, activity, ordering, and limits (3.3905ms)
+✔ step leases fence stale workers and task cancellation fences late completion (2.624ms)
+✔ capability and context snapshots are immutable, replay-safe, and fail closed without full scope (5.2854ms)
+✔ checkpoints are immutable and amendments are idempotent (7.6398ms)
+✔ checkpoint listing and restoration preserve immutable history and append recovery events (7.2363ms)
+✔ outbox enqueue, lease takeover, failure, and delivery are deterministic and replay-safe (11.4884ms)
+✔ outbox dead-letter replay and cancellation fences reject stale workers (3.4109ms)
+✔ task success is impossible before verification and durable passing evidence (1.8798ms)
+✔ retry scheduling reuses the step and increments a monotonic fence (3.3879ms)
+✔ ambiguous step outcomes stay running until reconciliation (1.2137ms)
+✔ semantic operation identity prevents duplicate side effects across request IDs (3.1634ms)
+✔ ambiguous operation outcomes must reconcile before retrying the same operation (6.6408ms)
+ℹ tests 418
+ℹ suites 0
+ℹ pass 418
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2311.9347

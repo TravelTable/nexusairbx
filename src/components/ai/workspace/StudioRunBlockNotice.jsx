@@ -12,7 +12,7 @@ const TARGET_CODES = new Set([
 ]);
 const PLUGIN_CODES = new Set([
   "PLUGIN_BUILD_UNVERIFIED",
-  "PLUGIN_COMMAND_UNSUPPORTED",
+  "PLUGIN_OUTDATED",
   "PLUGIN_PROTOCOL_OUTDATED",
   "PLUGIN_UPDATE_REQUIRED",
   "STUDIO_PLUGIN_UPDATE_REQUIRED",
@@ -76,6 +76,14 @@ export function getStudioRunBlock(value = {}) {
       recovery,
       title: "Reconnect Studio to continue",
       message: "The Studio plugin disconnected. Reconnect it, then retry; Nexus will use that sole live session automatically.",
+    };
+  }
+  if (code === "PLUGIN_COMMAND_UNSUPPORTED" || code === "STUDIO_TOOL_UNAVAILABLE") {
+    return {
+      kind: "capability",
+      code,
+      title: "Required Studio capability unavailable",
+      message: "The connected Studio session does not advertise a command required by this run. Reconnect the intended session. If the missing command is run_play_test, verify the game manually in Roblox Studio. This does not necessarily mean the plugin is outdated.",
     };
   }
   if (PLUGIN_CODES.has(code) || value?.status === "awaiting_plugin_update") {

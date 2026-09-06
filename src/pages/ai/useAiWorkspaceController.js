@@ -316,6 +316,7 @@ export function useAiWorkspaceController() {
   const sharedRobloxRefresh = sharedRoblox.refresh;
   const navigate = useNavigate();
   const location = useLocation();
+  const guidedLaunchRequested = new URLSearchParams(location.search).has('launch');
 
   const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
@@ -470,10 +471,10 @@ export function useAiWorkspaceController() {
   const openStarterPromo = starterPromo.openPromo;
 
   useEffect(() => {
-    if (!authReady || !user || billingLoading || billingError) return;
+    if (guidedLaunchRequested || !authReady || !user || billingLoading || billingError) return;
     if (!isFreeUsagePlan || isStarterOrAbove) return;
     openStarterPromo("post_sign_in", { force: true });
-  }, [authReady, billingError, billingLoading, isFreeUsagePlan, isStarterOrAbove, openStarterPromo, user]);
+  }, [guidedLaunchRequested, authReady, billingError, billingLoading, isFreeUsagePlan, isStarterOrAbove, openStarterPromo, user]);
 
   const chat = unified;
   const openStudioChatById = chat.openChatById;
@@ -1099,7 +1100,7 @@ export function useAiWorkspaceController() {
   }, [authReady, user?.uid, chat.currentChatId]);
 
   useEffect(() => {
-    if (!location?.state || typeof location.state !== "object") return;
+    if (guidedLaunchRequested || !location?.state || typeof location.state !== "object") return;
 
     const nextState = { ...location.state };
     let shouldReplace = false;
@@ -1154,10 +1155,10 @@ export function useAiWorkspaceController() {
         state: nextKeys.length ? nextState : null,
       }
     );
-  }, [location, navigate, setGeneratorMode]);
+  }, [guidedLaunchRequested, location, navigate, setGeneratorMode]);
 
   useEffect(() => {
-    if (pendingGenerationIntent || restoredIntentIdRef.current) return;
+    if (guidedLaunchRequested || pendingGenerationIntent || restoredIntentIdRef.current) return;
 
     const intent = restoreGenerationIntent();
     if (!intent) return;
@@ -1180,7 +1181,7 @@ export function useAiWorkspaceController() {
       prompt_length: intent.prompt.length,
       prompt_category: categorizePrompt(intent.prompt),
     });
-  }, [navigate, pendingGenerationIntent, setGeneratorMode]);
+  }, [guidedLaunchRequested, navigate, pendingGenerationIntent, setGeneratorMode]);
 
   useEffect(() => {
     const unbindStartDraft = onAiEvent(AI_EVENTS.START_DRAFT, (event) => {
@@ -2643,7 +2644,7 @@ export function useAiWorkspaceController() {
   }, [user]);
 
   useEffect(() => {
-    if (!user || pendingRobloxResumeRef.current) return;
+    if (guidedLaunchRequested || !user || pendingRobloxResumeRef.current) return;
     const pending = readPendingRobloxAction();
     if (!pending) return;
     pendingRobloxResumeRef.current = true;
@@ -2683,11 +2684,12 @@ export function useAiWorkspaceController() {
       });
     };
     void resumeRobloxAction();
-  }, [notify, user, refreshRobloxStatus]);
+  }, [guidedLaunchRequested, notify, user, refreshRobloxStatus]);
 
   useEffect(() => {
     if (!user) return;
     const pending = readPendingAuthAction();
+    if (guidedLaunchRequested) return;
     if (!pending || pendingAuthResumeRef.current === pending.id) return;
 
     const inProgress = markPendingAuthActionInProgress(pending.id);
@@ -2839,6 +2841,7 @@ export function useAiWorkspaceController() {
       cancelled = true;
     };
   }, [
+    guidedLaunchRequested,
     generatorMode,
     handleQuickScriptContinueEditing,
     handleQuickScriptExport,

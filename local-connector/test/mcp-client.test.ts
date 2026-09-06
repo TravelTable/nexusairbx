@@ -7,6 +7,40 @@ import { RobloxStudioMcpClient } from "../src/mcp-client.js";
 
 const fixture = fileURLToPath(new URL("./fixtures/mock-mcp-server.mjs", import.meta.url));
 
+for (const mode of ["outdated-rpc", "outdated-result", "outdated-list"]) {
+  test(`outdated Studio proxy is preserved and never retried in ${mode}`, async (t) => {
+    const mcp = client(mode);
+    t.after(() => mcp.disconnect());
+    await mcp.connect();
+    await assert.rejects(mode === "outdated-list" ? mcp.listTools() : mcp.callTool("multi_edit", {}), (error: unknown) => {
+      assert.ok(error instanceof ConnectorError);
+      assert.equal(error.code, "MCP_CLIENT_OUTDATED");
+      assert.equal(error.retryable, false);
+      assert.match(String(error.details?.diagnostic), /Client proxy is out of date/);
+      assert.doesNotMatch(String(error.details?.diagnostic), /secret-value/);
+      return true;
+    });
+    if (mode !== "outdated-list") {
+      const count = await mcp.callTool("test_call_count", {});
+      assert.match(JSON.stringify(count.content), /"text":"1"/);
+    }
+  });
+}
+
+test("reconnect resolves updated launch configuration after closing the old helper", async (t) => {
+  let launches = 0;
+  const mcp = new RobloxStudioMcpClient({
+    command: "must-not-launch", args: [], connectorVersion: "test", requestTimeoutMs: 5000, toolTimeoutMs: 5000, logger,
+    resolveLaunch: () => ({ command: process.execPath, args: [fixture, ++launches === 1 ? "outdated-rpc" : "normal"] }),
+  });
+  t.after(() => mcp.disconnect());
+  await mcp.connect();
+  await assert.rejects(mcp.callTool("get_studio_state", {}));
+  await mcp.connect();
+  assert.equal(launches, 2);
+  assert.notEqual((await mcp.callTool("get_studio_state", {})).isError, true);
+});
+
 const logger: Logger = {
   info() {},
   warn() {},

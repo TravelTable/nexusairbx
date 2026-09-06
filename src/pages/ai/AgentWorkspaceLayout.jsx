@@ -39,12 +39,13 @@ import {
   queueStudioTool,
 } from "../../lib/studioBridgeApi";
 import { TERMINAL_AGENT_STATES } from "../../lib/agentRuntimeV2Api";
+import { resolveGameOverview } from "../../lib/gameOverview";
 import { PENDING_AUTH_ACTIONS } from "../../lib/pendingAuthAction";
 import { getStudioSessionId } from "../../lib/studioConnection";
 import { buildRefineTargetFromWorkspace, messageHasRefineableFiles } from "../../lib/chatRefine";
 import { AI_EVENTS, onAiEvent } from "../../lib/aiEvents";
-import TutorialOverlay from "../../components/onboarding/TutorialOverlay";
-import { useTutorial } from "../../components/onboarding/useTutorial";
+import GuidedLaunchChecklist from "../../components/onboarding/GuidedLaunchChecklist";
+import { useGuidedLaunch } from "../../components/onboarding/useGuidedLaunch";
 import useAiPageZoom from "../../hooks/useAiPageZoom";
 import "./AgentWorkspaceLayout.css";
 import { Hero } from "../../components/ui/tailwind-css-background-snippet";
@@ -289,7 +290,15 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
   const [studioConnectionOpen, setStudioConnectionOpen] = useState(false);
   const openedCodeSequenceRef = useRef(0);
   const previousArtifactFileCountRef = useRef(null);
-  const tutorial = useTutorial();
+  const guidedLaunch = useGuidedLaunch(user?.uid);
+  const saveGuidedLaunch = guidedLaunch.save;
+  const guidedChat = Boolean(guidedLaunch.progress?.chatId && guidedLaunch.progress.chatId === chat.currentChatId && !guidedLaunch.progress.dismissed);
+  const guidedPlanModeRef = useRef('');
+  useEffect(() => {
+    if (!guidedChat || guidedLaunch.progress.stage !== 'plan' || chat.messages?.length || guidedPlanModeRef.current === chat.currentChatId) return;
+    guidedPlanModeRef.current = chat.currentChatId;
+    void chat.updateChatMode(chat.currentChatId, 'plan');
+  }, [guidedChat, guidedLaunch.progress?.stage, chat]);
   const aiPageRef = useRef(null);
   const projectSidebarRef = useRef(null);
   const sidebarToggleRef = useRef(null);
@@ -489,11 +498,11 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
 
   useEffect(() => {
     const handleRestartTour = () => {
-      tutorial.restartTutorial();
+      navigateTo?.('/onboarding');
     };
     window.addEventListener("nexus-restart-tour", handleRestartTour);
     return () => window.removeEventListener("nexus-restart-tour", handleRestartTour);
-  }, [tutorial]);
+  }, [navigateTo]);
   const [studioManifest, setStudioManifest] = useState([]);
   const [studioSearch, setStudioSearch] = useState("");
   const [studioFiles, setStudioFiles] = useState([]);
@@ -1218,10 +1227,15 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
   );
 
   const handleAgentApprovePlan = useCallback(
-    (message) => {
+    async (message) => {
+      if (guidedChat) {
+        if (!studioExecutionReady) { notify?.({ message: 'Reconnect Studio before building.', type: 'error' }); return; }
+        try { await saveGuidedLaunch({ stage: 'build' }); }
+        catch (error) { notify?.({ message: error.message || 'Could not save your progress. Try again before building.', type: 'error' }); return; }
+      }
       return onApprovePlan(message, taskSubmissionOptions);
     },
-    [onApprovePlan, taskSubmissionOptions]
+    [guidedChat, saveGuidedLaunch, studioExecutionReady, notify, onApprovePlan, taskSubmissionOptions]
   );
 
   const handleAgentClarifySubmit = useCallback(
@@ -1410,12 +1424,17 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
 
   const agentChat = (
     <div className="flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col">
+      <GuidedLaunchChecklist
+        launch={guidedLaunch} chat={chat} studio={studio} run={workspace.agentRun} task={taskRuntime.task}
+        isBusy={Boolean(chatOperationState?.isBusy || unified.isGenerating)} setPrompt={setPrompt}
+        onSubmit={handleAgentPromptSubmit} onOpenSetup={() => navigateTo?.('/onboarding')}
+      />
       <AgentChatPanel
         currentChatId={chat.currentChatId}
         chatTitle={chat.currentChatMeta?.title || "New chat"}
         projectTitle={workspaceProjectTitle}
         projectId={currentProjectId}
-        messages={chat.messages}
+        messages={guidedChat ? chat.messages.map(message => ({ ...message, guidedLaunch: true })) : chat.messages}
         pendingMessage={unified.pendingMessage}
         pendingMessages={unified.pendingMessages}
         generationStage={unified.generationStage}
@@ -1434,10 +1453,9 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         onOpenArtifact={openArtifactOnStage}
         onOpenFileReference={handleOpenFileReference}
         onQuickStart={handleQuickStart}
-        onStartGuide={tutorial.shouldOfferTutorial ? tutorial.resumeTutorial : undefined}
-        startGuideLabel={
-          tutorial.hasSavedProgress ? "Resume the 5-step creator guide" : "Show the 5-step creator guide"
-        }
+        onStartGuide={guidedChat ? undefined : () => navigateTo?.('/onboarding')}
+        guidedLaunchIdea={guidedChat ? guidedLaunch.progress.idea : undefined}
+        startGuideLabel={guidedLaunch.progress && guidedLaunch.progress.stage !== 'complete' ? 'Resume Guided Launch' : 'Build your first idea with Guided Launch'}
         onRenameChat={(title) => chat.handleRenameChat(chat.currentChatId, title)}
         onRetryMessage={handleRetryMessage}
         notify={notify}
@@ -1860,6 +1878,9 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     if (panelId === "details") {
       return (
         <WorkspaceDetailsPanel
+          gameOverview={resolveGameOverview(taskRuntime.task, workspace.agentRun, workspace.activeArtifact,
+            [...(chat.messages || [])].reverse().find((message) => message?.plan)?.plan)}
+          onRefineGame={setPrompt}
           view={detailsView}
           onViewChange={setDetailsView}
           projectContext={projectContext}
@@ -1966,13 +1987,6 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
           onDismissLong={starterPromo?.handleDismissLong}
         />
 
-        <TutorialOverlay
-          activeStep={tutorial.activeStep}
-          isActive={tutorial.isActive && !showSignInNudge && !showProNudge && !starterPromo?.isOpen}
-          nextStep={tutorial.nextStep}
-          prevStep={tutorial.prevStep}
-          skipTutorial={tutorial.skipTutorial}
-        />
 
       </div>
     </div>

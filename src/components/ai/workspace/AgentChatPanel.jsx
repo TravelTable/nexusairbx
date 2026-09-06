@@ -30,6 +30,7 @@ export default function AgentChatPanel({
   onQuickStart,
   onStartGuide,
   startGuideLabel,
+  guidedLaunchIdea,
   onRenameChat,
   onOpenNavigation,
   onRetryMessage,
@@ -173,6 +174,7 @@ export default function AgentChatPanel({
             onQuickStart={onQuickStart}
             onStartGuide={onStartGuide}
             startGuideLabel={startGuideLabel}
+            guidedLaunchIdea={guidedLaunchIdea}
             notify={notify}
             onApproveStep={onApproveStep}
             approvingStepId={approvingStepId}

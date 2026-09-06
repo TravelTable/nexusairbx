@@ -26,6 +26,7 @@ import type {
 } from "./types.js";
 import { EMPTY_CAPABILITIES } from "./types.js";
 import { CONNECTOR_PROTOCOL_VERSION } from "./version.js";
+import { connectionFailure, type ConnectionFailure } from "./connection-failure.js";
 
 const MUTATING_COMMANDS = new Set(["create_script", "write_script", "patch_script", "create_instance", "update_properties", "update_attributes", "update_tags", "rename_instance", "move_instance", "duplicate_instance", "delete_instance", "batch_operations", "create_snapshot", "restore_snapshot", "undo_last_batch", "insert_creator_store_asset", "run_test_service", "run_play_test", "stop_play_test"]);
 const TARGET_BOUND_COMMANDS = new Set(MUTATING_COMMANDS);
@@ -50,6 +51,7 @@ export interface LocalConnectorOptions {
 
 export type ConnectorLifecycleState = "connecting" | "studio_mcp_unavailable" | "degraded" | "ready" | "stopped";
 export interface ConnectorTelemetry {
+  connectionFailure?: ConnectionFailure | null;
   stage?: "runtime" | "studio_detection" | "mcp" | "tool_discovery" | "ready";
   cloudConnected?: boolean;
   mcpConnected?: boolean;
@@ -81,6 +83,7 @@ export class NexusLocalConnector {
   #toolsDirty = false;
   #mcpInfo: McpConnectionInfo = {};
   #announcedUnavailable = false;
+  #failureStage: ConnectionFailure["stage"] = "mcp";
   #targeting: StudioTargetManager | null = null;
   #targetObservationToken: string | null = null;
   #identityRequestTail: Promise<void> = Promise.resolve();
@@ -112,6 +115,7 @@ export class NexusLocalConnector {
       this.#logger.warn(error?.message ?? "Roblox Studio MCP disconnected; reconnecting.");
       this.emitLifecycleState("studio_mcp_unavailable");
       this.emitTelemetry({ mcpConnected: false, degradedReason: "mcp_transport_lost" });
+      this.emitTelemetry({ supportedTools: [], supportedToolCount: 0, experienceName: "", mcpServerVersion: "" });
     });
   }
 
@@ -148,6 +152,7 @@ export class NexusLocalConnector {
 
   private async commandLoop(claim: ConnectorSession, signal: AbortSignal): Promise<void> {
     let reconnectDelay = this.#config.reconnectMinMs;
+    let outdatedFailures = 0;
     while (!signal.aborted) {
       try {
         await this.flushPendingTerminalReceipts(claim.sessionId, signal);
@@ -165,15 +170,18 @@ export class NexusLocalConnector {
         try {
           await this.connectAndDiscover(signal);
           reconnectDelay = this.#config.reconnectMinMs;
+          outdatedFailures = 0;
         } catch (error) {
           if (signal.aborted) break;
           const connectorError = asConnectorError(error, "MCP_CONNECT_FAILED");
+          if (connectorError.code === "CONNECTOR_AUTH_FAILED") throw connectorError;
+          if (connectorError.code === "MCP_CLIENT_OUTDATED") outdatedFailures += 1;
           this.#logger.warn("Roblox Studio MCP is unavailable; retrying.", {
             code: connectorError.code,
             retryInMs: reconnectDelay,
           });
-          await this.announceUnavailable();
-          if (!this.#shouldAutoReconnect()) {
+          await this.announceUnavailable(connectionFailure(connectorError, this.#failureStage));
+          if (!this.#shouldAutoReconnect() || outdatedFailures >= 2) {
             await waitForAbort(signal);
             break;
           }
@@ -190,8 +198,10 @@ export class NexusLocalConnector {
           if (signal.aborted) break;
           const connectorError = asConnectorError(error);
           this.#logger.warn("Roblox Studio MCP capability refresh failed.", { code: connectorError.code });
-          if (new Set(["MCP_DISCONNECTED", "MCP_CONNECT_FAILED", "MCP_PROTOCOL_ERROR", "MCP_STUDIO_NOT_ATTACHED"]).has(connectorError.code)) {
+          if (new Set(["MCP_CLIENT_OUTDATED", "MCP_DISCONNECTED", "MCP_CONNECT_FAILED", "MCP_PROTOCOL_ERROR", "MCP_STUDIO_NOT_ATTACHED"]).has(connectorError.code)) {
+            if (connectorError.code === "MCP_CLIENT_OUTDATED") outdatedFailures += 1;
             await this.dropMcpConnection();
+            await this.announceUnavailable(connectionFailure(connectorError, this.#failureStage));
           } else {
             this.#toolsDirty = true;
             this.emitLifecycleState("degraded");
@@ -226,6 +236,12 @@ export class NexusLocalConnector {
         if (signal.aborted) break;
         const connectorError = asConnectorError(error);
         if (connectorError.code === "CONNECTOR_AUTH_FAILED") throw connectorError;
+        if (connectorError.code === "MCP_CLIENT_OUTDATED") {
+          outdatedFailures += 1;
+          await this.dropMcpConnection();
+          await this.announceUnavailable(connectionFailure(connectorError, "studio_target"));
+          continue;
+        }
         if (isTargetReattestationError(connectorError)) {
           this.#toolsDirty = true;
           try {
@@ -247,6 +263,7 @@ export class NexusLocalConnector {
   }
 
   private async connectAndDiscover(signal: AbortSignal): Promise<void> {
+    this.#failureStage = "mcp";
     this.#logger.info("Detecting Roblox Studio MCP…");
     this.emitTelemetry({ stage: "studio_detection" });
     try {
@@ -256,11 +273,12 @@ export class NexusLocalConnector {
       delete this.#runtimeCapabilityReasonCodes.playtest;
       this.emitTelemetry({ stage: "mcp" });
       this.#mcpInfo = await this.#mcp.connect(signal);
+      this.#failureStage = "tool_discovery";
       this.#announcedUnavailable = false;
       this.emitTelemetry({ stage: "tool_discovery", mcpConnected: false, ...(this.#mcpInfo.serverVersion ? { mcpServerVersion: this.#mcpInfo.serverVersion } : {}) });
       const runtime = await this.refreshCatalog(signal, true);
       this.#mcpConnected = true;
-      this.emitTelemetry({ mcpConnected: true });
+      this.emitTelemetry({ mcpConnected: true, cloudConnected: true, connectionFailure: null });
       this.#logger.info("Roblox Studio MCP connected.");
       this.#logCapabilities();
       this.#logger.info("NexusRBX is connected to Roblox Studio. Press Ctrl+C to disconnect.");
@@ -278,6 +296,7 @@ export class NexusLocalConnector {
   }
 
   private async refreshCatalog(signal: AbortSignal, waitForInitialStudio = false): Promise<RuntimeCapabilities> {
+    this.#failureStage = "tool_discovery";
     this.#toolsDirty = false;
     const tools = await this.discoverAttachedStudioTools(signal, waitForInitialStudio);
     const catalog = new ToolCatalog(tools, {
@@ -302,6 +321,7 @@ export class NexusLocalConnector {
         { retryable: true },
       );
     }
+    this.#failureStage = "studio_target";
     let targetObservation = await this.probeAndPingBackend(true, signal, {
       refresh: "full",
       waitForInitialStudio,
@@ -347,7 +367,7 @@ export class NexusLocalConnector {
       // the same observation lock so this token can describe only that fresh
       // Studio sample.
       await this.#targeting?.refresh(signal);
-      const response = await this.#backend.registerCapabilities(
+      const response = await this.cloudRegistration(this.#backend.registerCapabilities(
         runtime.capabilities,
         runtime.supportedCommands,
         tools.map((tool) => ({
@@ -357,7 +377,7 @@ export class NexusLocalConnector {
         runtime.capabilityDetails,
         this.studioIdentityMetadata(true, requestToken),
         signal,
-      );
+      ));
       if (this.acceptTargetObservationResponse(response, requestToken) === false) {
         this.#toolsDirty = true;
       }
@@ -391,6 +411,7 @@ export class NexusLocalConnector {
       const experienceName = extractExperienceName(result);
       if (experienceName) this.emitTelemetry({ experienceName });
     } catch (error) {
+      if (asConnectorError(error).code === "MCP_CLIENT_OUTDATED") throw error;
       this.#logger.debug("Could not read the active Studio experience summary.", {
         code: asConnectorError(error).code,
       });
@@ -789,6 +810,10 @@ export class NexusLocalConnector {
         const connectorError = asConnectorError(error);
         if (connectorError.code === "CONNECTOR_AUTH_FAILED") throw connectorError;
         this.#logger.warn("NexusRBX heartbeat failed temporarily.", { code: connectorError.code });
+        if (connectorError.code === "MCP_CLIENT_OUTDATED") {
+          this.#toolsDirty = true;
+          continue;
+        }
         this.emitTelemetry({ cloudConnected: false, degradedReason: "cloud_loss" });
       }
     }
@@ -886,17 +911,18 @@ export class NexusLocalConnector {
           }
         } catch (error) {
           targetRefreshError = asConnectorError(error, "STUDIO_TARGET_UNAVAILABLE");
+          if (targetRefreshError.code === "MCP_CLIENT_OUTDATED") throw targetRefreshError;
           // A failed observation is not evidence that Studio disappeared.
           // Preserve the last confirmed target and send liveness only.
           identityObserved = false;
         }
       }
-      const response = await this.#backend.ping(
+      const response = await this.cloudRegistration(this.#backend.ping(
         identityObserved
           ? this.pingPayload(available, requestToken)
           : this.livenessPingPayload(available, requestToken),
         signal,
-      );
+      ));
       const accepted = this.acceptTargetObservationResponse(response, requestToken);
       return {
         response,
@@ -1026,10 +1052,29 @@ export class NexusLocalConnector {
     return { ...identity, targetObservationToken };
   }
 
-  private async announceUnavailable(): Promise<void> {
-    if (this.#announcedUnavailable) return;
+  private async cloudRegistration<T>(request: Promise<T>): Promise<T> {
+    try { return await request; }
+    catch (error) {
+      const failure = asConnectorError(error);
+      throw new ConnectorError(failure.code, failure.message, {
+        retryable: failure.retryable, cause: error,
+        details: { ...failure.details, connectionStage: "cloud_registration" },
+      });
+    }
+  }
+
+  private async announceUnavailable(failure?: ConnectionFailure): Promise<void> {
+    if (failure && this.#logger.sanitize) failure = { ...failure, diagnostic: this.#logger.sanitize(failure.diagnostic) };
+    this.#logger.warn("Connector connection failed.", failure);
+    this.emitTelemetry({
+      mcpConnected: false, supportedTools: [], supportedToolCount: 0,
+      experienceName: "", mcpServerVersion: "",
+      ...(failure ? { connectionFailure: failure } : {}),
+      ...(failure?.stage === "cloud_registration" ? { cloudConnected: false } : {}),
+      degradedReason: failure?.stage === "cloud_registration" ? "cloud_loss" : "mcp_initialization_failed",
+    });
     this.emitLifecycleState("studio_mcp_unavailable");
-    this.emitTelemetry({ mcpConnected: false, degradedReason: "mcp_initialization_failed" });
+    if (this.#announcedUnavailable) return;
     try {
       await this.withIdentityRequest(async () => {
         const requestToken = this.#targetObservationToken;
@@ -1044,7 +1089,7 @@ export class NexusLocalConnector {
       });
       await this.#backend.ping({
         ...this.pingPayload(false),
-        unavailableReason: "studio_not_attached",
+        unavailableReason: failure?.code ?? "studio_not_attached",
       });
       this.#announcedUnavailable = true;
     } catch (error) {

@@ -38,6 +38,7 @@ export default function ChatEmptyState({
   onOpenTemplates,
   onStartGuide,
   startGuideLabel = "Show the 5-step creator guide",
+  guidedLaunchIdea,
   projectTitle,
   projectId,
   studioConnected,
@@ -62,7 +63,7 @@ export default function ChatEmptyState({
       >
         <div className="chat-empty-state__intro">
           <div className="chat-empty-state__copy">
-            <p className="chat-empty-state__eyebrow">Start building</p>
+            <p className="chat-empty-state__eyebrow">{guidedLaunchIdea ? 'Your first creation' : 'Start building'}</p>
             <h1 id="workspace-start-title">
               <Shimmer
                 as="span"
@@ -71,14 +72,13 @@ export default function ChatEmptyState({
                 baseColor="var(--nx-text)"
                 highlightColor="var(--nx-purple-strong)"
               >
-                What should Nexus build?
+                {guidedLaunchIdea ? 'Start with one playable part' : 'What should Nexus build?'}
               </Shimmer>
             </h1>
             <p>
-              Describe the result you want. Nexus will inspect the connected
-              Studio session, make safe assumptions, build the change, and return
-              verification evidence for review.
+              {guidedLaunchIdea ? 'Your idea is here. Choose Plan my first milestone above, or use the conversation to shape it together.' : 'Describe the result you want. Nexus will inspect the connected Studio session, make safe assumptions, build the change, and return verification evidence for review.'}
             </p>
+            {guidedLaunchIdea && <blockquote className="guided-launch-idea">{guidedLaunchIdea}</blockquote>}
           </div>
         </div>
 

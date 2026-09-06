@@ -133,6 +133,16 @@ Do not publish the disposable experience as part of this test.
 
 ## Troubleshooting
 
+- **Client proxy is out of date (`MCP_CLIENT_OUTDATED`):** save your experience,
+  fully quit Roblox Studio, reopen it and finish any update, then reopen the
+  experience and choose **Try Again** in NexusRBX. The connector makes one fresh
+  helper launch attempt before waiting for this action. It retains sign-in and
+  never closes Studio or replays an interrupted mutation automatically.
+- **Connection diagnostics:** the desktop app's **Copy diagnostics** includes the
+  failure code, connection stage and sanitized provider diagnostic. **Open logs**
+  includes `connection.log` and up to two rotated files, each capped at 1 MB.
+  Cloud registration errors are identified separately from Studio attachment.
+
 - **MCP request times out:** make sure Studio is running, the intended experience is open, and Studio MCP is enabled. Restart Studio after enabling it if the server does not respond.
 - **MCP executable not found:** update Roblox Studio or provide `--mcp-command` for a custom installation.
 - **A command is unavailable:** this is expected when the active Studio MCP version does not expose the exact required tool/schema. Use the plugin bridge for that operation.

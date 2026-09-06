@@ -1,8 +1,17 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import AgentStepList from "./AgentStepList";
+import { getStudioRunBlock } from "./StudioRunBlockNotice";
 
 describe("AgentStepList", () => {
+  test("only genuine release errors recommend updating the plugin", () => {
+    for (const code of ["PLUGIN_OUTDATED", "PLUGIN_UPDATE_REQUIRED", "PLUGIN_PROTOCOL_OUTDATED"]) {
+      expect(getStudioRunBlock({ code }).kind).toBe("plugin");
+    }
+    for (const code of ["PLUGIN_COMMAND_UNSUPPORTED", "studio_tool_unavailable"]) {
+      expect(getStudioRunBlock({ code, status: "awaiting_plugin_update" }).kind).toBe("capability");
+    }
+  });
   test("keeps completed Studio activity quiet until the user asks for details", () => {
     render(
       <AgentStepList
@@ -112,7 +121,7 @@ describe("AgentStepList", () => {
     expect(screen.getByText(/open the selected place in Local MCP, connect it, then retry/i)).toBeTruthy();
   });
 
-  test("gives a recoverable plugin update instruction", () => {
+  test("explains missing capabilities without recommending a plugin update", () => {
     render(
       <AgentStepList
         steps={[
@@ -127,7 +136,8 @@ describe("AgentStepList", () => {
       />
     );
 
-    expect(screen.getByText("Update the Studio plugin to continue")).toBeTruthy();
-    expect(screen.getByText(/Reinstall the latest NexusRBXStudioBridge plugin/i)).toBeTruthy();
+    expect(screen.getByText("Required Studio capability unavailable")).toBeTruthy();
+    expect(screen.getByText(/verify the game manually in Roblox Studio/i)).toBeTruthy();
+    expect(screen.queryByText(/Reinstall the latest NexusRBXStudioBridge plugin/i)).toBeNull();
   });
 });

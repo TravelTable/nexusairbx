@@ -158,6 +158,7 @@ export class StudioTargetManager {
           probe = parseState(probeResult);
         } catch (error) {
           if (signal?.aborted) throw error;
+          if (error instanceof ConnectorError && error.code === "MCP_CLIENT_OUTDATED") throw error;
           // A complete identity returned by the target/state tools remains usable.
           // Otherwise metadata and capabilities below fail closed.
         }

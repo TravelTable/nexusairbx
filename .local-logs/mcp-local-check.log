@@ -1,0 +1,1028 @@
+
+> nexusrbx-local-connector@0.3.5 check
+> npm run typecheck && npm test && npm run build
+
+
+> nexusrbx-local-connector@0.3.5 typecheck
+> tsc -p tsconfig.json --noEmit
+
+
+> nexusrbx-local-connector@0.3.5 test
+> tsx --test test/*.test.ts
+
+TAP version 13
+# Subtest: backend client exchanges browser authorization, authenticates, pings, registers, polls, and acknowledges
+ok 1 - backend client exchanges browser authorization, authenticates, pings, registers, polls, and acknowledges
+  ---
+  duration_ms: 52.3989
+  ...
+# Subtest: authorization exchange and heartbeat delivery are not retried
+ok 2 - authorization exchange and heartbeat delivery are not retried
+  ---
+  duration_ms: 3.601
+  ...
+# Subtest: backend client revokes only the authenticated current session
+ok 3 - backend client revokes only the authenticated current session
+  ---
+  duration_ms: 4.5609
+  ...
+# Subtest: backend client rejects malformed JSON, malformed commands, and authentication failure
+ok 4 - backend client rejects malformed JSON, malformed commands, and authentication failure
+  ---
+  duration_ms: 2.9899
+  ...
+# Subtest: backend client preserves typed Studio re-attestation errors
+ok 5 - backend client preserves typed Studio re-attestation errors
+  ---
+  duration_ms: 2.706
+  ...
+# Subtest: backend client preserves a complete lifecycle-v2 command and sends outcome_unknown details
+ok 6 - backend client preserves a complete lifecycle-v2 command and sends outcome_unknown details
+  ---
+  duration_ms: 2.2135
+  ...
+# Subtest: backend client rejects unversioned, partial, and unsupported lifecycle envelopes
+ok 7 - backend client rejects unversioned, partial, and unsupported lifecycle envelopes
+  ---
+  duration_ms: 11.0136
+  ...
+# Subtest: oversized request bodies fail locally without a network retry
+ok 8 - oversized request bodies fail locally without a network retry
+  ---
+  duration_ms: 12.5677
+  ...
+# Subtest: reads Studio source and returns a deterministic SHA-256 hash
+ok 9 - reads Studio source and returns a deterministic SHA-256 hash
+  ---
+  duration_ms: 11.1213
+  ...
+# Subtest: accepts the backend protocol's normalized single-script paths payload
+ok 10 - accepts the backend protocol's normalized single-script paths payload
+  ---
+  duration_ms: 1.8439
+  ...
+# Subtest: unsupported commands and malformed tool output return structured failures
+ok 11 - unsupported commands and malformed tool output return structured failures
+  ---
+  duration_ms: 0.9341
+  ...
+# Subtest: schema-validated inspect_instance supports bounded property reads without overstating parity
+ok 12 - schema-validated inspect_instance supports bounded property reads without overstating parity
+  ---
+  duration_ms: 3.0852
+  ...
+# Subtest: existing writes require a matching pre-read hash and never mutate on conflict
+ok 13 - existing writes require a matching pre-read hash and never mutate on conflict
+  ---
+  duration_ms: 1.8033
+  ...
+# Subtest: a guarded mutation is post-read exactly and only then marked verified
+ok 14 - a guarded mutation is post-read exactly and only then marked verified
+  ---
+  duration_ms: 1.6198
+  ...
+# Subtest: mutation errors are never retried and unknown or mismatched outcomes fail unverified
+ok 15 - mutation errors are never retried and unknown or mismatched outcomes fail unverified
+  ---
+  duration_ms: 1.3938
+  ...
+# Subtest: tool output is bounded before it is acknowledged
+ok 16 - tool output is bounded before it is acknowledged
+  ---
+  duration_ms: 3.8547
+  ...
+# Subtest: playtest start and stop transitions are verified and a started test always returns to Edit mode
+ok 17 - playtest start and stop transitions are verified and a started test always returns to Edit mode
+  ---
+  duration_ms: 2.5453
+  ...
+# Subtest: stop playtest fails closed when Edit mode is not observed before the deadline
+ok 18 - stop playtest fails closed when Edit mode is not observed before the deadline
+  ---
+  duration_ms: 1050.9943
+  ...
+# Subtest: snapshot creation is returned as a verified place mutation
+ok 19 - snapshot creation is returned as a verified place mutation
+  ---
+  duration_ms: 3.2196
+  ...
+# Subtest: fixed instance creation returns command-bound semantic Studio readback evidence
+ok 20 - fixed instance creation returns command-bound semantic Studio readback evidence
+  ---
+  duration_ms: 1.2589
+  ...
+# Subtest: a failed StudioMCP start is typed and does not issue a conflicting stop while Studio remains in Edit mode
+ok 21 - a failed StudioMCP start is typed and does not issue a conflicting stop while Studio remains in Edit mode
+  ---
+  duration_ms: 0.6199
+  ...
+# Subtest: a StudioMCP tool error is normalized to actionable play-control failure details
+ok 22 - a StudioMCP tool error is normalized to actionable play-control failure details
+  ---
+  duration_ms: 0.5503
+  ...
+# Subtest: multi-script results fail locally when the acknowledgement would exceed the backend limit
+ok 23 - multi-script results fail locally when the acknowledgement would exceed the backend limit
+  ---
+  duration_ms: 12.6361
+  ...
+# Subtest: decodes the numbered source presentation returned by Roblox Studio MCP
+ok 24 - decodes the numbered source presentation returned by Roblox Studio MCP
+  ---
+  duration_ms: 1.1987
+  ...
+# Subtest: snapshot-safe batches persist an undo receipt and reject overlapping paths before Studio
+ok 25 - snapshot-safe batches persist an undo receipt and reject overlapping paths before Studio
+  ---
+  duration_ms: 1.7241
+  ...
+# Subtest: an atomic batch failure returns a verified rollback receipt instead of swallowing compensation failure
+ok 26 - an atomic batch failure returns a verified rollback receipt instead of swallowing compensation failure
+  ---
+  duration_ms: 0.9477
+  ...
+# Subtest: an inner rollback failure can never be converted into BATCH_ROLLED_BACK
+ok 27 - an inner rollback failure can never be converted into BATCH_ROLLED_BACK
+  ---
+  duration_ms: 0.7183
+  ...
+# Subtest: create_script rolls back its snapshot when exact post-read verification fails
+ok 28 - create_script rolls back its snapshot when exact post-read verification fails
+  ---
+  duration_ms: 0.722
+  ...
+# Subtest: Creator Store insertion rejects connector-owned destinations before any MCP call
+ok 29 - Creator Store insertion rejects connector-owned destinations before any MCP call
+  ---
+  duration_ms: 0.9546
+  ...
+# Subtest: command journal survives restart and replays an atomic terminal record
+ok 30 - command journal survives restart and replays an atomic terminal record
+  ---
+  duration_ms: 93.9557
+  ...
+# Subtest: command journal is monotonic and rejects command ID reuse
+ok 31 - command journal is monotonic and rejects command ID reuse
+  ---
+  duration_ms: 16.5743
+  ...
+# Subtest: unacknowledged terminal receipts are never pruned
+ok 32 - unacknowledged terminal receipts are never pruned
+  ---
+  duration_ms: 24.8931
+  ...
+# Subtest: command journal fails closed when persisted state is corrupt
+ok 33 - command journal fails closed when persisted state is corrupt
+  ---
+  duration_ms: 6.3698
+  ...
+# Subtest: configuration uses the documented macOS launch and applies CLI precedence
+ok 34 - configuration uses the documented macOS launch and applies CLI precedence
+  ---
+  duration_ms: 3.0859
+  ...
+# Subtest: configuration retains the Windows batch launcher as a last-resort fallback
+ok 35 - configuration retains the Windows batch launcher as a last-resort fallback
+  ---
+  duration_ms: 0.4406
+  ...
+# Subtest: configuration launches the newest installed Windows StudioMCP executable directly
+ok 36 - configuration launches the newest installed Windows StudioMCP executable directly
+  ---
+  duration_ms: 78.0359
+  ...
+# Subtest: configuration prefers the valid StudioMCP executable named by Roblox's batch launcher
+ok 37 - configuration prefers the valid StudioMCP executable named by Roblox's batch launcher
+  ---
+  duration_ms: 52.579
+  ...
+# Subtest: configuration accepts MCP executable flags as repeatable argument values
+ok 38 - configuration accepts MCP executable flags as repeatable argument values
+  ---
+  duration_ms: 1.9364
+  ...
+# Subtest: configuration fails closed for unsafe URLs, malformed values, and unknown Linux defaults
+ok 39 - configuration fails closed for unsafe URLs, malformed values, and unknown Linux defaults
+  ---
+  duration_ms: 1.3401
+  ...
+# Subtest: redaction removes connector tokens, bearer credentials, configured secrets, and bounds output
+ok 40 - redaction removes connector tokens, bearer credentials, configured secrets, and bounds output
+  ---
+  duration_ms: 1.0691
+  ...
+# Subtest: rotating observation secrets stay bounded while current retries and permanent credentials remain redacted
+ok 41 - rotating observation secrets stay bounded while current retries and permanent credentials remain redacted
+  ---
+  duration_ms: 7.7729
+  ...
+# Subtest: extractExperienceName reads bounded structured Studio state
+ok 42 - extractExperienceName reads bounded structured Studio state
+  ---
+  duration_ms: 1.772
+  ...
+# Subtest: extractExperienceName reads JSON MCP text content
+ok 43 - extractExperienceName reads JSON MCP text content
+  ---
+  duration_ms: 0.3696
+  ...
+# Subtest: extractExperienceName ignores unstructured and generic names
+ok 44 - extractExperienceName ignores unstructured and generic names
+  ---
+  duration_ms: 0.2711
+  ...
+# Subtest: connector restores a browser session, discovers, registers, polls, executes, acknowledges, and shuts down
+ok 45 - connector restores a browser session, discovers, registers, polls, executes, acknowledges, and shuts down
+  ---
+  duration_ms: 17.4966
+  ...
+# Subtest: connector publishes an empty catalog while MCP is unavailable, then reconnects
+ok 46 - connector publishes an empty catalog while MCP is unavailable, then reconnects
+  ---
+  duration_ms: 34.3051
+  ...
+# Subtest: an unavailable capability publication retries after a transient backend failure
+ok 47 - an unavailable capability publication retries after a transient backend failure
+  ---
+  duration_ms: 16.6133
+  ...
+# Subtest: a hot-upgraded backend can request capability re-registration without reconnecting MCP
+ok 48 - a hot-upgraded backend can request capability re-registration without reconnecting MCP
+  ---
+  duration_ms: 4.9328
+  ...
+# Subtest: connector reports multiple Studio windows as a recoverable degraded state
+ok 49 - connector reports multiple Studio windows as a recoverable degraded state
+  ---
+  duration_ms: 15.6607
+  ...
+# Subtest: connector refreshes capabilities when a Studio window opens after discovery
+ok 50 - connector refreshes capabilities when a Studio window opens after discovery
+  ---
+  duration_ms: 5644.7372
+  ...
+# Subtest: initial discovery waits for StudioMCP to populate its Studio window registry
+ok 51 - initial discovery waits for StudioMCP to populate its Studio window registry
+  ---
+  duration_ms: 1023.584
+  ...
+# Subtest: connector leaves MCP reconnect paused when automatic reconnect is disabled
+ok 52 - connector leaves MCP reconnect paused when automatic reconnect is disabled
+  ---
+  duration_ms: 15.5003
+  ...
+# Subtest: tools/list_changed causes full rediscovery and capability re-registration
+ok 53 - tools/list_changed causes full rediscovery and capability re-registration
+  ---
+  duration_ms: 3.6149
+  ...
+# Subtest: a failed StudioMCP play-control self-check suppresses automated start and stop until reconnect
+ok 54 - a failed StudioMCP play-control self-check suppresses automated start and stop until reconnect
+  ---
+  duration_ms: 4.9458
+  ...
+# Subtest: heartbeat continues during long polling and shutdown clears the in-memory token
+ok 55 - heartbeat continues during long polling and shutdown clears the in-memory token
+  ---
+  duration_ms: 52.6927
+  ...
+# Subtest: an empty bounded poll observes a website target switch before the next long heartbeat
+ok 56 - an empty bounded poll observes a website target switch before the next long heartbeat
+  ---
+  duration_ms: 1.0977
+  ...
+# Subtest: attested Studio IDs reach both session pings and capability registration
+ok 57 - attested Studio IDs reach both session pings and capability registration
+  ---
+  duration_ms: 3.3612
+  ...
+# Subtest: a backend-selected Studio is re-attested and pinged before registration
+ok 58 - a backend-selected Studio is re-attested and pinged before registration
+  ---
+  duration_ms: 2.7418
+  ...
+# Subtest: closing the active Studio clears stale identity in ping and registration
+ok 59 - closing the active Studio clears stale identity in ping and registration
+  ---
+  duration_ms: 3.7082
+  ...
+# Subtest: an observation rejection re-attests the active Studio before polling again
+ok 60 - an observation rejection re-attests the active Studio before polling again
+  ---
+  duration_ms: 3.3557
+  ...
+# Subtest: same-window identity changes trigger a fresh target-bound registration
+ok 61 - same-window identity changes trigger a fresh target-bound registration
+  ---
+  duration_ms: 31.8509
+  ...
+# Subtest: lifecycle-v2 commands fence receipts before MCP work and persist the terminal result
+ok 62 - lifecycle-v2 commands fence receipts before MCP work and persist the terminal result
+  ---
+  duration_ms: 1.2999
+  ...
+# Subtest: a lifecycle read rejects a delayed wrong-window envelope before MCP execution
+ok 63 - a lifecycle read rejects a delayed wrong-window envelope before MCP execution
+  ---
+  duration_ms: 0.8717
+  ...
+# Subtest: an unpublished lifecycle read without an exact window fails closed
+ok 64 - an unpublished lifecycle read without an exact window fails closed
+  ---
+  duration_ms: 0.791
+  ...
+# Subtest: lifecycle envelope stripping, routing gaps, and identity ambiguity never reach Studio business tools
+    # Subtest: read: missing connection type
+    ok 1 - read: missing connection type
+      ---
+      duration_ms: 1.4767
+      ...
+    # Subtest: read: wrong connection type
+    ok 2 - read: wrong connection type
+      ---
+      duration_ms: 10.476
+      ...
+    # Subtest: read: stripped lifecycle
+    ok 3 - read: stripped lifecycle
+      ---
+      duration_ms: 1.7665
+      ...
+    # Subtest: read: published envelope missing exact window
+    ok 4 - read: published envelope missing exact window
+      ---
+      duration_ms: 1.0566
+      ...
+    # Subtest: read: unpublished envelope delivered after the same window becomes published
+    ok 5 - read: unpublished envelope delivered after the same window becomes published
+      ---
+      duration_ms: 0.7873
+      ...
+    # Subtest: mutation: missing connection type
+    ok 6 - mutation: missing connection type
+      ---
+      duration_ms: 1.0854
+      ...
+    # Subtest: mutation: wrong connection type
+    ok 7 - mutation: wrong connection type
+      ---
+      duration_ms: 0.7951
+      ...
+    # Subtest: mutation: stripped lifecycle
+    ok 8 - mutation: stripped lifecycle
+      ---
+      duration_ms: 0.7225
+      ...
+    # Subtest: mutation: published envelope missing exact window
+    ok 9 - mutation: published envelope missing exact window
+      ---
+      duration_ms: 0.7897
+      ...
+    # Subtest: mutation: unpublished envelope delivered after the same window becomes published
+    ok 10 - mutation: unpublished envelope delivered after the same window becomes published
+      ---
+      duration_ms: 0.61
+      ...
+    # Subtest: read: conflicting placeId alias
+    ok 11 - read: conflicting placeId alias
+      ---
+      duration_ms: 1.4407
+      ...
+    # Subtest: read: conflicting universeId alias
+    ok 12 - read: conflicting universeId alias
+      ---
+      duration_ms: 0.6974
+      ...
+    # Subtest: read: conflicting signature alias
+    ok 13 - read: conflicting signature alias
+      ---
+      duration_ms: 0.5556
+      ...
+    # Subtest: read: malformed expected place identity 1
+    ok 14 - read: malformed expected place identity 1
+      ---
+      duration_ms: 0.5504
+      ...
+    # Subtest: read: malformed expected place identity 2
+    ok 15 - read: malformed expected place identity 2
+      ---
+      duration_ms: 0.5402
+      ...
+    # Subtest: read: malformed expected place identity 3
+    ok 16 - read: malformed expected place identity 3
+      ---
+      duration_ms: 0.5387
+      ...
+    # Subtest: read: malformed expected place identity 4
+    ok 17 - read: malformed expected place identity 4
+      ---
+      duration_ms: 0.5447
+      ...
+    # Subtest: read: malformed expected place identity 5
+    ok 18 - read: malformed expected place identity 5
+      ---
+      duration_ms: 0.5402
+      ...
+    # Subtest: read: malformed expected place identity 6
+    ok 19 - read: malformed expected place identity 6
+      ---
+      duration_ms: 1.7606
+      ...
+    # Subtest: read: malformed expected place identity 7
+    ok 20 - read: malformed expected place identity 7
+      ---
+      duration_ms: 0.6914
+      ...
+    # Subtest: read: missing explicit expected place identity
+    ok 21 - read: missing explicit expected place identity
+      ---
+      duration_ms: 0.6547
+      ...
+    1..21
+ok 65 - lifecycle envelope stripping, routing gaps, and identity ambiguity never reach Studio business tools
+  ---
+  duration_ms: 30.1978
+  ...
+# Subtest: verified local writes attest the advanced signature and the next write uses it
+ok 66 - verified local writes attest the advanced signature and the next write uses it
+  ---
+  duration_ms: 2.6116
+  ...
+# Subtest: snapshot creation attests the advanced place signature
+ok 67 - snapshot creation attests the advanced place signature
+  ---
+  duration_ms: 707.0142
+  ...
+# Subtest: a verified mutation with failed post-write target attestation is durably demoted to outcome_unknown
+ok 68 - a verified mutation with failed post-write target attestation is durably demoted to outcome_unknown
+  ---
+  duration_ms: 1.3324
+  ...
+# Subtest: lifecycle-v2 execution renews the same started fence while MCP work is in flight
+ok 69 - lifecycle-v2 execution renews the same started fence while MCP work is in flight
+  ---
+  duration_ms: 188.1645
+  ...
+# Subtest: a journaled terminal is replayed after restart without invoking MCP again
+ok 70 - a journaled terminal is replayed after restart without invoking MCP again
+  ---
+  duration_ms: 1.0374
+  ...
+# Subtest: restart learns the current observation token before replaying a durable mutation receipt
+ok 71 - restart learns the current observation token before replaying a durable mutation receipt
+  ---
+  duration_ms: 0.7302
+  ...
+# Subtest: restart never replays a durable receipt when observation-token bootstrap fails
+ok 72 - restart never replays a durable receipt when observation-token bootstrap fails
+  ---
+  duration_ms: 0.4962
+  ...
+# Subtest: a terminal acknowledgement outage replays the exact durable receipt without re-executing Studio
+ok 73 - a terminal acknowledgement outage replays the exact durable receipt without re-executing Studio
+  ---
+  duration_ms: 2.0916
+  ...
+# Subtest: an unreplayable saved receipt does not block a fresh command from polling and completing
+ok 74 - an unreplayable saved receipt does not block a fresh command from polling and completing
+  ---
+  duration_ms: 1.0219
+  ...
+# Subtest: a mutation journaled as started before restart becomes outcome_unknown without re-execution
+ok 75 - a mutation journaled as started before restart becomes outcome_unknown without re-execution
+  ---
+  duration_ms: 0.671
+  ...
+# Subtest: an uncertain mutation failure is terminal outcome_unknown and is never blindly retried
+ok 76 - an uncertain mutation failure is terminal outcome_unknown and is never blindly retried
+  ---
+  duration_ms: 0.9344
+  ...
+# Subtest: MUTATION_NOT_APPLIED is a safe failed receipt, not outcome_unknown
+ok 77 - MUTATION_NOT_APPLIED is a safe failed receipt, not outcome_unknown
+  ---
+  duration_ms: 1.1756
+  ...
+# Subtest: losing the lease heartbeat during a mutation aborts work and forces reconciliation
+ok 78 - losing the lease heartbeat during a mutation aborts work and forces reconciliation
+  ---
+  duration_ms: 67.3143
+  ...
+# Subtest: outdated proxy gets one fresh helper attempt; recovery=false
+ok 79 - outdated proxy gets one fresh helper attempt; recovery=false
+  ---
+  duration_ms: 46.0304
+  ...
+# Subtest: outdated proxy gets one fresh helper attempt; recovery=true
+ok 80 - outdated proxy gets one fresh helper attempt; recovery=true
+  ---
+  duration_ms: 1.3204
+  ...
+# Subtest: cloud registration failure retains its actual stage and later clears on recovery
+ok 81 - cloud registration failure retains its actual stage and later clears on recovery
+  ---
+  duration_ms: 14.8142
+  ...
+# Subtest: fixed routines reject executable, malicious, and oversized inputs before Studio
+ok 82 - fixed routines reject executable, malicious, and oversized inputs before Studio
+  ---
+  duration_ms: 4.2754
+  ...
+# Subtest: snapshot references and named TestService profiles are fail-closed
+ok 83 - snapshot references and named TestService profiles are fail-closed
+  ---
+  duration_ms: 2.9445
+  ...
+# Subtest: snapshot and restore inputs reject ancestor-descendant overlap before Studio
+ok 84 - snapshot and restore inputs reject ancestor-descendant overlap before Studio
+  ---
+  duration_ms: 0.7532
+  ...
+# Subtest: asset finalization rejects every connector-owned ServerStorage tree before Studio
+ok 85 - asset finalization rejects every connector-owned ServerStorage tree before Studio
+  ---
+  duration_ms: 3.0806
+  ...
+# Subtest: mutations reject unsafe implicit parents and operation-specific omissions before Studio
+ok 86 - mutations reject unsafe implicit parents and operation-specific omissions before Studio
+  ---
+  duration_ms: 4.9321
+  ...
+# Subtest: the audited routine guards duplicate self-descendants and pins last-batch snapshots
+ok 87 - the audited routine guards duplicate self-descendants and pins last-batch snapshots
+  ---
+  duration_ms: 4.4626
+  ...
+# Subtest: snapshot conflict hashes cover every mutable property with deterministic serialization
+ok 88 - snapshot conflict hashes cover every mutable property with deterministic serialization
+  ---
+  duration_ms: 8.6404
+  ...
+# Subtest: deterministic destination failures happen before snapshots and untouched races skip rollback
+ok 89 - deterministic destination failures happen before snapshots and untouched races skip rollback
+  ---
+  duration_ms: 4.0286
+  ...
+# Subtest: operation-specific result checks reject empty success envelopes
+ok 90 - operation-specific result checks reject empty success envelopes
+  ---
+  duration_ms: 4.6833
+  ...
+# Subtest: routine envelopes require valid JSON and the connector nonce
+ok 91 - routine envelopes require valid JSON and the connector nonce
+  ---
+  duration_ms: 1.3151
+  ...
+# Subtest: outdated Studio proxy is preserved and never retried in outdated-rpc
+ok 92 - outdated Studio proxy is preserved and never retried in outdated-rpc
+  ---
+  duration_ms: 371.3735
+  ...
+# Subtest: outdated Studio proxy is preserved and never retried in outdated-result
+ok 93 - outdated Studio proxy is preserved and never retried in outdated-result
+  ---
+  duration_ms: 360.307
+  ...
+# Subtest: outdated Studio proxy is preserved and never retried in outdated-list
+ok 94 - outdated Studio proxy is preserved and never retried in outdated-list
+  ---
+  duration_ms: 357.2078
+  ...
+# Subtest: reconnect resolves updated launch configuration after closing the old helper
+ok 95 - reconnect resolves updated launch configuration after closing the old helper
+  ---
+  duration_ms: 715.1416
+  ...
+# Subtest: official MCP client initializes, discovers every page, calls tools, and receives list changes
+ok 96 - official MCP client initializes, discovers every page, calls tools, and receives list changes
+  ---
+  duration_ms: 718.7657
+  ...
+# Subtest: current Studio MCP per-call targeting synthesizes selection and injects the selected studio id
+ok 97 - current Studio MCP per-call targeting synthesizes selection and injects the selected studio id
+  ---
+  duration_ms: 364.6849
+  ...
+# Subtest: tool discovery rejects a repeated pagination cursor
+ok 98 - tool discovery rejects a repeated pagination cursor
+  ---
+  duration_ms: 349.3219
+  ...
+# Subtest: an unexpected stdio server exit emits disconnect and calls fail closed
+ok 99 - an unexpected stdio server exit emits disconnect and calls fail closed
+  ---
+  duration_ms: 402.1833
+  ...
+# Subtest: startup failure is structured and retryable
+ok 100 - startup failure is structured and retryable
+  ---
+  duration_ms: 328.5963
+  ...
+# Subtest: startup failure reports a Windows launcher diagnostic
+ok 101 - startup failure reports a Windows launcher diagnostic
+  ---
+  duration_ms: 333.3708
+  ...
+# Subtest: startup failure distinguishes a missing Studio attachment
+ok 102 - startup failure distinguishes a missing Studio attachment
+  ---
+  duration_ms: 339.703
+  ...
+# Subtest: a single open Studio is selected and its place is reported
+ok 103 - a single open Studio is selected and its place is reported
+  ---
+  duration_ms: 3.2384
+  ...
+# Subtest: multiple Studios require an enumerated backend choice
+ok 104 - multiple Studios require an enumerated backend choice
+  ---
+  duration_ms: 1.9372
+  ...
+# Subtest: a fixed identity probe enriches the exact selected Studio target
+ok 105 - a fixed identity probe enriches the exact selected Studio target
+  ---
+  duration_ms: 1.1921
+  ...
+# Subtest: an unpublished local place is targetable when its Studio window and signature are attested
+ok 106 - an unpublished local place is targetable when its Studio window and signature are attested
+  ---
+  duration_ms: 2.4525
+  ...
+# Subtest: post-mutation attestation accepts a fresh probe signature while MCP target metadata catches up
+ok 107 - post-mutation attestation accepts a fresh probe signature while MCP target metadata catches up
+  ---
+  duration_ms: 1.0883
+  ...
+# Subtest: the identity probe cannot override a conflicting declared place
+ok 108 - the identity probe cannot override a conflicting declared place
+  ---
+  duration_ms: 0.5103
+  ...
+# Subtest: identity probe JSON text wrappers are normalized
+ok 109 - identity probe JSON text wrappers are normalized
+  ---
+  duration_ms: 0.7362
+  ...
+# Subtest: a window switch during the identity probe fails post-confirmation
+ok 110 - a window switch during the identity probe fails post-confirmation
+  ---
+  duration_ms: 1.5852
+  ...
+# Subtest: a window label alone never becomes server-consumable target identity
+ok 111 - a window label alone never becomes server-consumable target identity
+  ---
+  duration_ms: 1.2877
+  ...
+# Subtest: a stale desired window prevents a sole different window from becoming complete
+ok 112 - a stale desired window prevents a sole different window from becoming complete
+  ---
+  duration_ms: 1.3807
+  ...
+# Subtest: multiple Studios require exact switch confirmation
+ok 113 - multiple Studios require exact switch confirmation
+  ---
+  duration_ms: 0.6118
+  ...
+# Subtest: per-call Studio targeting accepts a selected window when state omits the echoed id
+ok 114 - per-call Studio targeting accepts a selected window when state omits the echoed id
+  ---
+  duration_ms: 0.2612
+  ...
+# Subtest: a command cannot mutate a different place, universe, signature, or connection type
+ok 115 - a command cannot mutate a different place, universe, signature, or connection type
+  ---
+  duration_ms: 0.7805
+  ...
+# Subtest: a delayed command is rejected after Studio switches to a different attested window
+ok 116 - a delayed command is rejected after Studio switches to a different attested window
+  ---
+  duration_ms: 0.8505
+  ...
+# Subtest: conflicting command window aliases are rejected before execution
+ok 117 - conflicting command window aliases are rejected before execution
+  ---
+  duration_ms: 1.9437
+  ...
+# Subtest: lifecycle-v2 canonical target copies are present, type-strict, and equal for published and local targets
+    # Subtest: published: missing top-level targetId
+    ok 1 - published: missing top-level targetId
+      ---
+      duration_ms: 0.9619
+      ...
+    # Subtest: published: missing nested targetId
+    ok 2 - published: missing nested targetId
+      ---
+      duration_ms: 0.4774
+      ...
+    # Subtest: published: malformed/conflicting nested targetId
+    ok 3 - published: malformed/conflicting nested targetId
+      ---
+      duration_ms: 0.4196
+      ...
+    # Subtest: published: missing top-level sessionId
+    ok 4 - published: missing top-level sessionId
+      ---
+      duration_ms: 0.3543
+      ...
+    # Subtest: published: missing nested sessionId
+    ok 5 - published: missing nested sessionId
+      ---
+      duration_ms: 0.3324
+      ...
+    # Subtest: published: malformed/conflicting nested sessionId
+    ok 6 - published: malformed/conflicting nested sessionId
+      ---
+      duration_ms: 0.2899
+      ...
+    # Subtest: published: missing top-level expectedPlaceId
+    ok 7 - published: missing top-level expectedPlaceId
+      ---
+      duration_ms: 0.3547
+      ...
+    # Subtest: published: missing nested expectedPlaceId
+    ok 8 - published: missing nested expectedPlaceId
+      ---
+      duration_ms: 0.3933
+      ...
+    # Subtest: published: malformed/conflicting nested expectedPlaceId
+    ok 9 - published: malformed/conflicting nested expectedPlaceId
+      ---
+      duration_ms: 0.495
+      ...
+    # Subtest: published: missing top-level expectedUniverseId
+    ok 10 - published: missing top-level expectedUniverseId
+      ---
+      duration_ms: 0.3435
+      ...
+    # Subtest: published: missing nested expectedUniverseId
+    ok 11 - published: missing nested expectedUniverseId
+      ---
+      duration_ms: 0.408
+      ...
+    # Subtest: published: malformed/conflicting nested expectedUniverseId
+    ok 12 - published: malformed/conflicting nested expectedUniverseId
+      ---
+      duration_ms: 0.3269
+      ...
+    # Subtest: published: missing top-level expectedPlaceSignature
+    ok 13 - published: missing top-level expectedPlaceSignature
+      ---
+      duration_ms: 0.3174
+      ...
+    # Subtest: published: missing nested expectedPlaceSignature
+    ok 14 - published: missing nested expectedPlaceSignature
+      ---
+      duration_ms: 0.3277
+      ...
+    # Subtest: published: malformed/conflicting nested expectedPlaceSignature
+    ok 15 - published: malformed/conflicting nested expectedPlaceSignature
+      ---
+      duration_ms: 0.3142
+      ...
+    # Subtest: published: missing top-level targetGeneration
+    ok 16 - published: missing top-level targetGeneration
+      ---
+      duration_ms: 0.3757
+      ...
+    # Subtest: published: missing nested targetGeneration
+    ok 17 - published: missing nested targetGeneration
+      ---
+      duration_ms: 0.3351
+      ...
+    # Subtest: published: malformed/conflicting nested targetGeneration
+    ok 18 - published: malformed/conflicting nested targetGeneration
+      ---
+      duration_ms: 0.4496
+      ...
+    # Subtest: published: missing top-level expectedStudioWindowId
+    ok 19 - published: missing top-level expectedStudioWindowId
+      ---
+      duration_ms: 0.4012
+      ...
+    # Subtest: published: missing nested expectedStudioWindowId
+    ok 20 - published: missing nested expectedStudioWindowId
+      ---
+      duration_ms: 0.3609
+      ...
+    # Subtest: published: malformed/conflicting nested expectedStudioWindowId
+    ok 21 - published: malformed/conflicting nested expectedStudioWindowId
+      ---
+      duration_ms: 0.3063
+      ...
+    # Subtest: published: missing top-level placeId
+    ok 22 - published: missing top-level placeId
+      ---
+      duration_ms: 0.4689
+      ...
+    # Subtest: published: conflicting top-level placeId
+    ok 23 - published: conflicting top-level placeId
+      ---
+      duration_ms: 0.3918
+      ...
+    # Subtest: published: missing top-level universeId
+    ok 24 - published: missing top-level universeId
+      ---
+      duration_ms: 0.2844
+      ...
+    # Subtest: published: conflicting top-level universeId
+    ok 25 - published: conflicting top-level universeId
+      ---
+      duration_ms: 0.2598
+      ...
+    # Subtest: unpublished: missing top-level targetId
+    ok 26 - unpublished: missing top-level targetId
+      ---
+      duration_ms: 0.4623
+      ...
+    # Subtest: unpublished: missing nested targetId
+    ok 27 - unpublished: missing nested targetId
+      ---
+      duration_ms: 0.3362
+      ...
+    # Subtest: unpublished: malformed/conflicting nested targetId
+    ok 28 - unpublished: malformed/conflicting nested targetId
+      ---
+      duration_ms: 0.2914
+      ...
+    # Subtest: unpublished: missing top-level sessionId
+    ok 29 - unpublished: missing top-level sessionId
+      ---
+      duration_ms: 0.4114
+      ...
+    # Subtest: unpublished: missing nested sessionId
+    ok 30 - unpublished: missing nested sessionId
+      ---
+      duration_ms: 0.3104
+      ...
+    # Subtest: unpublished: malformed/conflicting nested sessionId
+    ok 31 - unpublished: malformed/conflicting nested sessionId
+      ---
+      duration_ms: 0.2803
+      ...
+    # Subtest: unpublished: missing top-level expectedPlaceId
+    ok 32 - unpublished: missing top-level expectedPlaceId
+      ---
+      duration_ms: 0.4054
+      ...
+    # Subtest: unpublished: missing nested expectedPlaceId
+    ok 33 - unpublished: missing nested expectedPlaceId
+      ---
+      duration_ms: 1.2444
+      ...
+    # Subtest: unpublished: malformed/conflicting nested expectedPlaceId
+    ok 34 - unpublished: malformed/conflicting nested expectedPlaceId
+      ---
+      duration_ms: 0.5483
+      ...
+    # Subtest: unpublished: missing top-level expectedUniverseId
+    ok 35 - unpublished: missing top-level expectedUniverseId
+      ---
+      duration_ms: 0.4491
+      ...
+    # Subtest: unpublished: missing nested expectedUniverseId
+    ok 36 - unpublished: missing nested expectedUniverseId
+      ---
+      duration_ms: 0.2494
+      ...
+    # Subtest: unpublished: malformed/conflicting nested expectedUniverseId
+    ok 37 - unpublished: malformed/conflicting nested expectedUniverseId
+      ---
+      duration_ms: 0.2442
+      ...
+    # Subtest: unpublished: missing top-level expectedPlaceSignature
+    ok 38 - unpublished: missing top-level expectedPlaceSignature
+      ---
+      duration_ms: 0.1504
+      ...
+    # Subtest: unpublished: missing nested expectedPlaceSignature
+    ok 39 - unpublished: missing nested expectedPlaceSignature
+      ---
+      duration_ms: 0.1326
+      ...
+    # Subtest: unpublished: malformed/conflicting nested expectedPlaceSignature
+    ok 40 - unpublished: malformed/conflicting nested expectedPlaceSignature
+      ---
+      duration_ms: 0.1297
+      ...
+    # Subtest: unpublished: missing top-level targetGeneration
+    ok 41 - unpublished: missing top-level targetGeneration
+      ---
+      duration_ms: 0.1331
+      ...
+    # Subtest: unpublished: missing nested targetGeneration
+    ok 42 - unpublished: missing nested targetGeneration
+      ---
+      duration_ms: 0.1711
+      ...
+    # Subtest: unpublished: malformed/conflicting nested targetGeneration
+    ok 43 - unpublished: malformed/conflicting nested targetGeneration
+      ---
+      duration_ms: 0.1516
+      ...
+    # Subtest: unpublished: missing top-level expectedStudioWindowId
+    ok 44 - unpublished: missing top-level expectedStudioWindowId
+      ---
+      duration_ms: 0.1802
+      ...
+    # Subtest: unpublished: missing nested expectedStudioWindowId
+    ok 45 - unpublished: missing nested expectedStudioWindowId
+      ---
+      duration_ms: 0.2361
+      ...
+    # Subtest: unpublished: malformed/conflicting nested expectedStudioWindowId
+    ok 46 - unpublished: malformed/conflicting nested expectedStudioWindowId
+      ---
+      duration_ms: 0.188
+      ...
+    # Subtest: unpublished: missing top-level placeId
+    ok 47 - unpublished: missing top-level placeId
+      ---
+      duration_ms: 0.1612
+      ...
+    # Subtest: unpublished: conflicting top-level placeId
+    ok 48 - unpublished: conflicting top-level placeId
+      ---
+      duration_ms: 0.152
+      ...
+    # Subtest: unpublished: missing top-level universeId
+    ok 49 - unpublished: missing top-level universeId
+      ---
+      duration_ms: 0.1568
+      ...
+    # Subtest: unpublished: conflicting top-level universeId
+    ok 50 - unpublished: conflicting top-level universeId
+      ---
+      duration_ms: 0.4241
+      ...
+    1..50
+ok 118 - lifecycle-v2 canonical target copies are present, type-strict, and equal for published and local targets
+  ---
+  duration_ms: 24.6276
+  ...
+# Subtest: a mismatched active Studio is refused before mutation
+ok 119 - a mismatched active Studio is refused before mutation
+  ---
+  duration_ms: 0.6884
+  ...
+# Subtest: closing the selected Studio clears stale place identity
+ok 120 - closing the selected Studio clears stale place identity
+  ---
+  duration_ms: 0.5274
+  ...
+# Subtest: catalog enables only exact, schema-validated Nexus commands
+ok 121 - catalog enables only exact, schema-validated Nexus commands
+  ---
+  duration_ms: 5.8782
+  ...
+# Subtest: insert_asset maps current optional fields without inventing schema keys
+ok 122 - insert_asset maps current optional fields without inventing schema keys
+  ---
+  duration_ms: 0.6299
+  ...
+# Subtest: catalog accepts current Studio MCP schemas with a required per-call studio id
+ok 123 - catalog accepts current Studio MCP schemas with a required per-call studio id
+  ---
+  duration_ms: 0.4253
+  ...
+# Subtest: inspect_instance fails closed on an unknown required argument
+ok 124 - inspect_instance fails closed on an unknown required argument
+  ---
+  duration_ms: 0.3017
+  ...
+# Subtest: inspect_instance fails closed when a declared datamodel excludes Edit mode
+ok 125 - inspect_instance fails closed when a declared datamodel excludes Edit mode
+  ---
+  duration_ms: 0.1996
+  ...
+# Subtest: wrong names, duplicate definitions, unknown required fields, and incompatible schemas fail closed
+ok 126 - wrong names, duplicate definitions, unknown required fields, and incompatible schemas fail closed
+  ---
+  duration_ms: 0.9361
+  ...
+# Subtest: validated full-file line edits support guarded writes but not creation
+ok 127 - validated full-file line edits support guarded writes but not creation
+  ---
+  duration_ms: 0.3644
+  ...
+# Subtest: create_script is advertised only when both its fixed routine and readback dependency validate
+ok 128 - create_script is advertised only when both its fixed routine and readback dependency validate
+  ---
+  duration_ms: 0.3124
+  ...
+# Subtest: runtime command suppression preserves safe tools and explains the failed playtest capability
+ok 129 - runtime command suppression preserves safe tools and explains the failed playtest capability
+  ---
+  duration_ms: 0.3751
+  ...
+1..129
+# tests 200
+# suites 0
+# pass 200
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8740.2706
+
+> nexusrbx-local-connector@0.3.5 build
+> tsc -p tsconfig.json
+

@@ -2,6 +2,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { ConnectorError } from "./errors.js";
 import type { Logger } from "./logger.js";
+import { redact } from "./logger.js";
 import type { DiscoveredTool, JsonObject, McpClientLike, McpConnectionInfo, ToolCallResult } from "./types.js";
 
 const MAX_TOOL_PAGES = 100;
@@ -14,6 +15,8 @@ export interface RobloxStudioMcpOptions {
 	requestTimeoutMs: number;
 	toolTimeoutMs: number;
   logger: Logger;
+  /** Re-resolve Studio's installation after updates, preserving explicit overrides. */
+  resolveLaunch?: () => { command: string; args: string[] };
 }
 
 export class RobloxStudioMcpClient implements McpClientLike {
@@ -50,9 +53,10 @@ export class RobloxStudioMcpClient implements McpClientLike {
       },
     );
     let stderrTail = "";
+    const launch = this.options.resolveLaunch?.() ?? this.options;
     const transport = new StdioClientTransport({
-      command: this.options.command,
-      args: this.options.args,
+      command: launch.command,
+      args: launch.args,
       stderr: "pipe",
     });
     transport.stderr?.on("data", (chunk: unknown) => {
@@ -85,6 +89,8 @@ export class RobloxStudioMcpClient implements McpClientLike {
         ...(diagnostic ? { studioDiagnostic: diagnostic } : {}),
       });
       await this.disconnect();
+      const outdated = outdatedClientError(error, stderrTail);
+      if (outdated) throw outdated;
       throw new ConnectorError("MCP_CONNECT_FAILED", startupMessage, {
         retryable: true,
         cause: error,
@@ -119,7 +125,8 @@ export class RobloxStudioMcpClient implements McpClientLike {
     const cursors = new Set<string>();
     let cursor: string | undefined;
     for (let page = 0; page < MAX_TOOL_PAGES; page += 1) {
-      const result = await client.listTools(cursor === undefined ? undefined : { cursor }, this.requestOptions(signal));
+      const result = await client.listTools(cursor === undefined ? undefined : { cursor }, this.requestOptions(signal))
+        .catch((error: unknown) => { throw outdatedClientError(error) ?? error; });
       for (const tool of result.tools) {
         if (tools.length >= MAX_TOOLS) throw new ConnectorError("MCP_TOOL_LIMIT", "Roblox Studio MCP returned too many tools.");
         tools.push({
@@ -168,13 +175,20 @@ export class RobloxStudioMcpClient implements McpClientLike {
       callArgs = { ...args, studio_id: this.#activeStudioId };
     }
     try {
-      return (await client.callTool(
+      const result = (await client.callTool(
         { name, arguments: callArgs },
         undefined,
 		this.requestOptions(signal, this.options.toolTimeoutMs),
       )) as ToolCallResult;
+      if (result.isError) {
+        const outdated = outdatedClientError(Array.isArray(result.content) ? result.content.filter(item => item.type === "text").map(item => item.text).join(" ") : "");
+        if (outdated) throw outdated;
+      }
+      return result;
     } catch (error) {
 		if (signal?.aborted) throw signal.reason ?? new DOMException("MCP request aborted", "AbortError");
+        const outdated = outdatedClientError(error);
+        if (outdated) throw outdated;
 		if (this.#client === null) throw new ConnectorError("MCP_DISCONNECTED", "Roblox Studio MCP disconnected during the request.", { retryable: true, cause: error });
 		const message = error instanceof Error ? error.message : String(error);
 		if (/timeout|timed out/i.test(message)) throw new ConnectorError("MCP_REQUEST_TIMEOUT", `Roblox Studio MCP tool ${name} timed out.`, { retryable: true, cause: error });
@@ -217,6 +231,17 @@ function requiresStudioId(tool: DiscoveredTool): boolean {
   return Array.isArray(schema?.required)
     && schema.required.includes("studio_id")
     && studioId?.type === "string";
+}
+
+function outdatedClientError(error: unknown, diagnostic = ""): ConnectorError | null {
+  if (error instanceof ConnectorError && error.code === "MCP_CLIENT_OUTDATED") return error;
+  const message = error instanceof Error ? error.message : String(error);
+  if (!/client proxy is out of date/i.test(`${message} ${diagnostic}`)) return null;
+  return new ConnectorError("MCP_CLIENT_OUTDATED", "Restart or update Roblox Studio, reopen your experience, then try again.", {
+    retryable: false,
+    details: { diagnostic: redact(diagnostic || message).replace(/\s+/g, " ").slice(0, 1000) },
+    cause: error,
+  });
 }
 
 function compactStudioMcpDiagnostic(value: string): string {

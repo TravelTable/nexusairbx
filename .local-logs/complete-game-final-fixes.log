@@ -1,0 +1,270 @@
+TAP version 13
+# Subtest: project briefs persist revisions without stale retries overwriting later work
+ok 1 - project briefs persist revisions without stale retries overwriting later work
+  ---
+  duration_ms: 29.9655
+  ...
+# Subtest: saveQuickScriptProject creates a private project and repeated save is idempotent
+ok 2 - saveQuickScriptProject creates a private project and repeated save is idempotent
+  ---
+  duration_ms: 2.6383
+  ...
+# Subtest: projects are scoped to their owner
+ok 3 - projects are scoped to their owner
+  ---
+  duration_ms: 2.7368
+  ...
+# Subtest: anonymous Quick Script result can be claimed once
+ok 4 - anonymous Quick Script result can be claimed once
+  ---
+  duration_ms: 6.1377
+  ...
+# Subtest: versions are created for meaningful changes and restore preserves the current state
+ok 5 - versions are created for meaningful changes and restore preserves the current state
+  ---
+  duration_ms: 3.2086
+  ...
+# Subtest: deleted projects are excluded from recent work
+ok 6 - deleted projects are excluded from recent work
+  ---
+  duration_ms: 2.9181
+  ...
+# Subtest: plan hashes bind exact id, version, scope, markdown, steps, and assumptions
+ok 7 - plan hashes bind exact id, version, scope, markdown, steps, and assumptions
+  ---
+  duration_ms: 1.9099
+  ...
+# Subtest: approved versions are immutable value documents
+ok 8 - approved versions are immutable value documents
+  ---
+  duration_ms: 0.2059
+  ...
+# Subtest: approved plan execution requires the caller to present the exact hash
+ok 9 - approved plan execution requires the caller to present the exact hash
+  ---
+  duration_ms: 1.3879
+  ...
+# Subtest: approved plan execution rejects a version that is no longer current
+ok 10 - approved plan execution rejects a version that is no longer current
+  ---
+  duration_ms: 0.4667
+  ...
+# Subtest: approved plan execution requires the root plan to remain approved
+ok 11 - approved plan execution requires the root plan to remain approved
+  ---
+  duration_ms: 0.3831
+  ...
+# Subtest: approved plan execution rejects root approval version and hash mismatches
+ok 12 - approved plan execution rejects root approval version and hash mismatches
+  ---
+  duration_ms: 0.511
+  ...
+# Subtest: approved plan execution rejects a mismatched current root hash
+ok 13 - approved plan execution rejects a mismatched current root hash
+  ---
+  duration_ms: 0.2959
+  ...
+# Subtest: approved plan execution validates stored approval status and content integrity
+ok 14 - approved plan execution validates stored approval status and content integrity
+  ---
+  duration_ms: 0.3534
+  ...
+# Subtest: approved plan execution returns a trusted immutable v2 plan
+ok 15 - approved plan execution returns a trusted immutable v2 plan
+  ---
+  duration_ms: 0.5095
+  ...
+# Subtest: legacy approved version-one roots remain executable when all approval hashes match
+ok 16 - legacy approved version-one roots remain executable when all approval hashes match
+  ---
+  duration_ms: 0.5712
+  ...
+# Subtest: structured plan hash and approved loader preserve game intelligence
+ok 17 - structured plan hash and approved loader preserve game intelligence
+  ---
+  duration_ms: 16.4179
+  ...
+# Subtest: deliverable references bind to real steps and normalize idempotently
+ok 18 - deliverable references bind to real steps and normalize idempotently
+  ---
+  duration_ms: 13.8888
+  ...
+# Subtest: legacy game intelligence stays byte-compatible during plan hydration
+ok 19 - legacy game intelligence stays byte-compatible during plan hydration
+  ---
+  duration_ms: 1.8345
+  ...
+# Subtest: structured plans keep stable section and step identities
+ok 20 - structured plans keep stable section and step identities
+  ---
+  duration_ms: 3.1036
+  ...
+# Subtest: derived steps remain dependency-free when the planner does not claim ordering
+ok 21 - derived steps remain dependency-free when the planner does not claim ordering
+  ---
+  duration_ms: 3.7297
+  ...
+# Subtest: derived plans repair unique title dependencies to stable step IDs
+ok 22 - derived plans repair unique title dependencies to stable step IDs
+  ---
+  duration_ms: 1.9528
+  ...
+# Subtest: conversation plans include a rendered Mermaid workflow before implementation steps
+ok 23 - conversation plans include a rendered Mermaid workflow before implementation steps
+  ---
+  duration_ms: 3.4742
+  ...
+# Subtest: rich plans render stages, decisions, file targets, every verification, and rollback
+ok 24 - rich plans render stages, decisions, file targets, every verification, and rollback
+  ---
+  duration_ms: 1.5357
+  ...
+# Subtest: preserves the selected Studio target identity but not browser capability claims
+ok 25 - preserves the selected Studio target identity but not browser capability claims
+  ---
+  duration_ms: 1.29
+  ...
+# Subtest: non-Studio plans default to runtime verification without requiring Studio
+ok 26 - non-Studio plans default to runtime verification without requiring Studio
+  ---
+  duration_ms: 1.4075
+  ...
+# Subtest: Studio capabilities infer Studio targeting and Studio validation
+ok 27 - Studio capabilities infer Studio targeting and Studio validation
+  ---
+  duration_ms: 1.5367
+  ...
+# Subtest: unsupported capability promises are removed from generated plans and templates
+ok 28 - unsupported capability promises are removed from generated plans and templates
+  ---
+  duration_ms: 0.7993
+  ...
+# Subtest: plan operations edit and reorder individual sections without replacing the plan
+ok 29 - plan operations edit and reorder individual sections without replacing the plan
+  ---
+  duration_ms: 4.2987
+  ...
+# Subtest: locked sections reject edits until explicitly unlocked
+ok 30 - locked sections reject edits until explicitly unlocked
+  ---
+  duration_ms: 4.0465
+  ...
+# Subtest: clarifications are contextual typed choices and capped to material questions
+ok 31 - clarifications are contextual typed choices and capped to material questions
+  ---
+  duration_ms: 0.3989
+  ...
+# Subtest: all required NexusRBX planning templates are available
+ok 32 - all required NexusRBX planning templates are available
+  ---
+  duration_ms: 0.1047
+  ...
+# Subtest: strict planner output validation accepts a complete ready plan
+ok 33 - strict planner output validation accepts a complete ready plan
+  ---
+  duration_ms: 0.7189
+  ...
+# Subtest: ready output rejects missing game intelligence and mode-specific contracts
+ok 34 - ready output rejects missing game intelligence and mode-specific contracts
+  ---
+  duration_ms: 0.3728
+  ...
+# Subtest: game intelligence and expected source hashes survive plan normalization and serialization
+ok 35 - game intelligence and expected source hashes survive plan normalization and serialization
+  ---
+  duration_ms: 2.0781
+  ...
+# Subtest: invalid or truncated planner JSON fails closed
+ok 36 - invalid or truncated planner JSON fails closed
+  ---
+  duration_ms: 0.1498
+  ...
+# Subtest: planner output without implementation work cannot create a plan
+ok 37 - planner output without implementation work cannot create a plan
+  ---
+  duration_ms: 0.2484
+  ...
+# Subtest: a clarification response is rejected after answers were supplied
+ok 38 - a clarification response is rejected after answers were supplied
+  ---
+  duration_ms: 0.2999
+  ...
+# Subtest: deterministic planner fallback uses only advertised capabilities and remains schema-valid
+ok 39 - deterministic planner fallback uses only advertised capabilities and remains schema-valid
+  ---
+  duration_ms: 0.809
+  ...
+# Subtest: deterministic planner fallback remains valid when no capabilities are advertised
+ok 40 - deterministic planner fallback remains valid when no capabilities are advertised
+  ---
+  duration_ms: 0.5822
+  ...
+# Subtest: paid benefits continue to gameplay with trusted universe and returned product IDs
+ok 41 - paid benefits continue to gameplay with trusted universe and returned product IDs
+  ---
+  duration_ms: 11.1054
+  ...
+# Subtest: maps the requested asset-first examples to narrow canonical tools or explicit waits
+ok 42 - maps the requested asset-first examples to narrow canonical tools or explicit waits
+  ---
+  duration_ms: 5.3244
+  ...
+# Subtest: suppresses informational, negated, and mixed non-asset-first requests
+ok 43 - suppresses informational, negated, and mixed non-asset-first requests
+  ---
+  duration_ms: 0.2338
+  ...
+# Subtest: does not pretend a whole generated pack can be published as one asset
+ok 44 - does not pretend a whole generated pack can be published as one asset
+  ---
+  duration_ms: 0.2182
+  ...
+# Subtest: sound and model generation return explicit unsupported waits instead of image-generation calls
+ok 45 - sound and model generation return explicit unsupported waits instead of image-generation calls
+  ---
+  duration_ms: 0.4842
+  ...
+# Subtest: requires exact monetization fields and resolves a canonical icon before a write is planned
+ok 46 - requires exact monetization fields and resolves a canonical icon before a write is planned
+  ---
+  duration_ms: 0.3499
+  ...
+# Subtest: incomplete developer-product wording generates requested artwork then waits without a Roblox write
+ok 47 - incomplete developer-product wording generates requested artwork then waits without a Roblox write
+  ---
+  duration_ms: 0.5107
+  ...
+# Subtest: freezes inferred capabilities onto only the generic execute step
+ok 48 - freezes inferred capabilities onto only the generic execute step
+  ---
+  duration_ms: 0.2793
+  ...
+# Subtest: write retries use the same deterministic idempotency key
+ok 49 - write retries use the same deterministic idempotency key
+  ---
+  duration_ms: 0.6967
+  ...
+# Subtest: generated monetization artwork binds only the returned canonical asset ID
+ok 50 - generated monetization artwork binds only the returned canonical asset ID
+  ---
+  duration_ms: 1.5177
+  ...
+# Subtest: outcome-unknown operations park immediately without polling
+ok 51 - outcome-unknown operations park immediately without polling
+  ---
+  duration_ms: 0.5328
+  ...
+# Subtest: sanitization preserves safe receipts and drops credentials, files, and guessed IDs
+ok 52 - sanitization preserves safe receipts and drops credentials, files, and guessed IDs
+  ---
+  duration_ms: 0.2294
+  ...
+1..52
+# tests 52
+# suites 0
+# pass 52
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 186.1067

@@ -1,4 +1,5 @@
 import { requireRobloxOnboarding } from "./robloxOAuthApi";
+import { startGuidedLaunch, guidedLaunchPath, guidedLaunchSource } from './guidedLaunchApi';
 
 export const PENDING_ROBLOX_SIGNUP_KEY = "nexusrbx:signupRobloxOnboarding";
 const PENDING_TTL_MS = 24 * 60 * 60 * 1000;
@@ -58,6 +59,10 @@ export async function registerRobloxSignupRequirement(user, returnPath = "/ai") 
   if (!user?.uid) throw new Error("A signed-in account is required to prepare Roblox onboarding.");
   const pending = persistPendingRobloxSignup(user.uid, returnPath);
   await requireRobloxOnboarding();
+  await startGuidedLaunch({
+    ...guidedLaunchSource(),
+    returnPath: pending?.returnPath || returnPath,
+  });
   clearPendingRobloxSignup(user.uid);
-  return connectRobloxPath(pending?.returnPath || returnPath);
+  return guidedLaunchPath(pending?.returnPath || returnPath);
 }

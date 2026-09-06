@@ -1,0 +1,19 @@
+PASS src/pages/ai/AgentWorkspaceLayout.taskRuntime.test.jsx
+PASS src/lib/guidedLaunchApi.test.js
+PASS src/pages/OnboardingPage.test.jsx
+PASS src/components/ai/chat/FlowCards.test.jsx
+PASS src/pages/SignUpPage.auth.test.jsx
+PASS src/pages/ConnectRobloxPage.test.jsx
+PASS src/components/AuthRedirectHandler.test.jsx
+PASS src/components/ai/chat/ChatEmptyState.test.jsx
+PASS src/components/onboarding/GuidedLaunchChecklist.test.jsx
+PASS src/components/auth/RobloxConnectionGate.test.jsx
+PASS src/lib/signupRobloxOnboarding.test.js
+PASS src/lib/productAnalytics.test.js
+PASS src/App.routes.test.js
+PASS src/lib/guidedLaunchEvidence.test.js
+
+Test Suites: 14 passed, 14 total
+Tests:       92 passed, 92 total
+Snapshots:   0 total
+Time:        9.767 s, estimated 20 s

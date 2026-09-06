@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: full-game artwork is executable and connected to the gameplay step
+ok 1 - full-game artwork is executable and connected to the gameplay step
+  ---
+  duration_ms: 6.2024
+  ...
+# Subtest: small changes and explicit artwork exclusions do not generate a launch package
+ok 2 - small changes and explicit artwork exclusions do not generate a launch package
+  ---
+  duration_ms: 0.4694
+  ...
+# Subtest: a full game binds an explicit paid offer and leaves unknown pricing outstanding
+ok 3 - a full game binds an explicit paid offer and leaves unknown pricing outstanding
+  ---
+  duration_ms: 4.9582
+  ...
+# Subtest: approved plans cannot acquire undeclared asset operations
+ok 4 - approved plans cannot acquire undeclared asset operations
+  ---
+  duration_ms: 0.2361
+  ...
+# Subtest: multiple bounded batches replay the same operation keys and bind returned asset IDs
+ok 5 - multiple bounded batches replay the same operation keys and bind returned asset IDs
+  ---
+  duration_ms: 3.8836
+  ...
+# Subtest: an unavailable artwork branch remains visible while independent branches run
+ok 6 - an unavailable artwork branch remains visible while independent branches run
+  ---
+  duration_ms: 1.3986
+  ...
+# Subtest: paid benefits continue to gameplay with trusted universe and returned product IDs
+ok 7 - paid benefits continue to gameplay with trusted universe and returned product IDs
+  ---
+  duration_ms: 10.6704
+  ...
+# Subtest: maps the requested asset-first examples to narrow canonical tools or explicit waits
+ok 8 - maps the requested asset-first examples to narrow canonical tools or explicit waits
+  ---
+  duration_ms: 5.4076
+  ...
+# Subtest: suppresses informational, negated, and mixed non-asset-first requests
+ok 9 - suppresses informational, negated, and mixed non-asset-first requests
+  ---
+  duration_ms: 0.2462
+  ...
+# Subtest: does not pretend a whole generated pack can be published as one asset
+ok 10 - does not pretend a whole generated pack can be published as one asset
+  ---
+  duration_ms: 0.2277
+  ...
+# Subtest: sound and model generation return explicit unsupported waits instead of image-generation calls
+ok 11 - sound and model generation return explicit unsupported waits instead of image-generation calls
+  ---
+  duration_ms: 0.4576
+  ...
+# Subtest: requires exact monetization fields and resolves a canonical icon before a write is planned
+ok 12 - requires exact monetization fields and resolves a canonical icon before a write is planned
+  ---
+  duration_ms: 0.3654
+  ...
+# Subtest: incomplete developer-product wording generates requested artwork then waits without a Roblox write
+ok 13 - incomplete developer-product wording generates requested artwork then waits without a Roblox write
+  ---
+  duration_ms: 0.4971
+  ...
+# Subtest: freezes inferred capabilities onto only the generic execute step
+ok 14 - freezes inferred capabilities onto only the generic execute step
+  ---
+  duration_ms: 0.2925
+  ...
+# Subtest: write retries use the same deterministic idempotency key
+ok 15 - write retries use the same deterministic idempotency key
+  ---
+  duration_ms: 0.7607
+  ...
+# Subtest: generated monetization artwork binds only the returned canonical asset ID
+ok 16 - generated monetization artwork binds only the returned canonical asset ID
+  ---
+  duration_ms: 1.0187
+  ...
+# Subtest: outcome-unknown operations park immediately without polling
+ok 17 - outcome-unknown operations park immediately without polling
+  ---
+  duration_ms: 0.9748
+  ...
+# Subtest: sanitization preserves safe receipts and drops credentials, files, and guessed IDs
+ok 18 - sanitization preserves safe receipts and drops credentials, files, and guessed IDs
+  ---
+  duration_ms: 0.2116
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 121.1193

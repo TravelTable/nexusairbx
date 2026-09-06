@@ -294,6 +294,10 @@
       "destination": "/api/render?path=/connect-roblox"
     },
     {
+      "source": "/onboarding",
+      "destination": "/api/render?path=/onboarding"
+    },
+    {
       "source": "/cli/authorize",
       "destination": "/api/render?path=/cli/authorize"
     },

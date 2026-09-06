@@ -13,7 +13,8 @@ import { DEFAULT_PREFERENCES, getAutoStart, PreferenceStore, setAutoStart, valid
 import { EncryptedTokenStore, type EncryptedStorage, type StoredConnectorSession } from "./token-store.js";
 import { ConnectorUpdater } from "./updater.js";
 import { ConnectionAttemptCoordinator } from "./connection-attempt.js";
-import { completedConnectionPatch } from "./connection-state.js";
+import { completedConnectionPatch, connectionFailureCopy } from "./connection-state.js";
+import { connectionLogSink } from "./connection-log.js";
 import { isTerminalSessionError, resetLocalSession } from "./session-lifecycle.js";
 
 // electron-updater is published as CommonJS. Reading autoUpdater from its default
@@ -67,6 +68,7 @@ class DesktopController {
   #lastNotifiedState: CompanionState | null = null;
   #hasExplainedCloseToTray = false;
   #discoveryComplete = false;
+  #logSink = connectionLogSink(app.getPath("logs"));
 
   constructor() {
     const userData = app.getPath("userData");
@@ -106,7 +108,7 @@ class DesktopController {
   async signIn(): Promise<CompanionSnapshot> {
     if (this.#attempts.active) await this.stop(false);
     const config = this.config();
-    const logger = new ConsoleLogger(config.verbose);
+    const logger = new ConsoleLogger(config.verbose, this.#logSink);
     const backend = this.createBackend(config, logger);
     this.patchSnapshot({ state: "connecting", message: "Waiting for browser sign-in…", connectionStage: "cloud", cloudHealth: "connecting", runtimeHealth: "disconnected", mcpHealth: "disconnected" });
     try {
@@ -141,7 +143,7 @@ class DesktopController {
       const saved = await this.#store.load();
       if (saved) {
         const config = this.config();
-        const logger = new ConsoleLogger(config.verbose);
+        const logger = new ConsoleLogger(config.verbose, this.#logSink);
         backend = this.createBackend(config, logger);
         backend.restoreSession(saved);
       }
@@ -154,7 +156,7 @@ class DesktopController {
     backend?.clearToken();
     if (remoteError) {
       const config = this.config();
-      new ConsoleLogger(config.verbose).warn("Remote session revocation failed; local sign-in was still cleared.", {
+      new ConsoleLogger(config.verbose, this.#logSink).warn("Remote session revocation failed; local sign-in was still cleared.", {
         error: remoteError instanceof Error ? remoteError.message : "unknown",
       });
     }
@@ -221,15 +223,16 @@ class DesktopController {
   private async startSession(session: StoredConnectorSession | ConnectorSession, existingBackend?: NexusBackendClient, existingLogger?: ConsoleLogger): Promise<void> {
     if (this.#attempts.active) return;
     const config = this.config();
-    const logger = existingLogger ?? new ConsoleLogger(config.verbose);
+    const logger = existingLogger ?? new ConsoleLogger(config.verbose, this.#logSink);
     const backend = existingBackend ?? this.createBackend(config, logger);
     if (!existingBackend) backend.restoreSession(session);
     this.#backend = backend;
     this.#discoveryComplete = false;
     const diagnostics = await this.diagnostics();
     this.#studioInstalled = diagnostics.studioInstalled;
-    this.patchSnapshot({ state: this.#studioInstalled ? "connecting" : "studio_not_installed", message: this.#studioInstalled ? "Starting the local connector…" : "Roblox Studio MCP was not found.", cloudHealth: "connected", runtimeHealth: "connecting", mcpHealth: "disconnected", connectionStage: "runtime", degradedReason: null, experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, mcpServerVersion: null, lastCommand: null });
+    this.patchSnapshot({ state: this.#studioInstalled ? "connecting" : "studio_not_installed", message: this.#studioInstalled ? "Starting the local connector…" : "Roblox Studio MCP was not found.", cloudHealth: "connected", runtimeHealth: "connecting", mcpHealth: "disconnected", connectionStage: "runtime", degradedReason: null, experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, mcpServerVersion: null, lastCommand: null, connectionFailure: null });
     const mcp = new RobloxStudioMcpClient({
+      resolveLaunch: () => { const latest = this.config(); return { command: latest.mcpCommand, args: latest.mcpArgs }; },
       command: config.mcpCommand,
       args: config.mcpArgs,
       connectorVersion: CONNECTOR_VERSION,
@@ -299,11 +302,10 @@ class DesktopController {
       this.#discoveryComplete = true;
       this.reconcileCompletedConnection();
     } else if (state === "studio_mcp_unavailable") {
+      this.#discoveryComplete = false;
       this.patchSnapshot({
         state: this.#studioInstalled ? "studio_mcp_unavailable" : "studio_not_installed",
-        message: this.#studioInstalled
-          ? "Studio MCP was found, but no Roblox Studio session accepted the connection. Open Studio, then go to Assistant > Manage MCP Servers and enable Studio as an MCP server."
-          : "Roblox Studio MCP was not found. Update Roblox Studio, reopen it, then enable Studio as an MCP server.",
+        message: connectionFailureCopy({ ...this.#snapshot, state: this.#studioInstalled ? "studio_mcp_unavailable" : "studio_not_installed" }).message,
         runtimeHealth: "connected",
         mcpHealth: "warning",
         connectionStage: null,
@@ -315,6 +317,7 @@ class DesktopController {
   private onTelemetry(attemptId: number, telemetry: ConnectorTelemetry): void {
     if (!this.#attempts.isCurrent(attemptId)) return;
     const patch: Partial<CompanionSnapshot> = {};
+    if (telemetry.connectionFailure !== undefined) patch.connectionFailure = telemetry.connectionFailure;
     if (telemetry.stage) patch.connectionStage = telemetry.stage === "ready" ? null : telemetry.stage;
     if (telemetry.cloudConnected !== undefined) patch.cloudHealth = telemetry.cloudConnected ? "connected" : "warning";
     if (telemetry.mcpConnected !== undefined) patch.mcpHealth = telemetry.mcpConnected ? "connected" : "warning";
@@ -322,8 +325,8 @@ class DesktopController {
     if (telemetry.stage === "studio_detection" || telemetry.stage === "mcp" || telemetry.stage === "tool_discovery" || telemetry.stage === "ready") patch.runtimeHealth = "connected";
     if (telemetry.supportedTools) patch.supportedTools = telemetry.supportedTools.slice(0, 200);
     if (telemetry.supportedToolCount !== undefined) patch.supportedToolCount = Math.max(0, telemetry.supportedToolCount);
-    if (telemetry.mcpServerVersion) patch.mcpServerVersion = telemetry.mcpServerVersion.slice(0, 80);
-    if (telemetry.experienceName) patch.experienceName = telemetry.experienceName.slice(0, 160);
+    if (telemetry.mcpServerVersion !== undefined) patch.mcpServerVersion = telemetry.mcpServerVersion.slice(0, 80) || null;
+    if (telemetry.experienceName !== undefined) patch.experienceName = telemetry.experienceName.slice(0, 160) || null;
     if (telemetry.lastHeartbeatAt) patch.lastHeartbeatAt = telemetry.lastHeartbeatAt;
     if (telemetry.lastActivityAt) patch.lastActivityAt = telemetry.lastActivityAt;
     if (telemetry.lastCommand) patch.lastCommand = telemetry.lastCommand;
@@ -376,14 +379,15 @@ class DesktopController {
   }
 
   private makeSnapshot(state: CompanionState, message: string): CompanionSnapshot {
-    return { state, message, updatedAt: Date.now(), autoStart: getAutoStart(app), updateState: "idle", preferences: { ...this.#preferences }, cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected", connectionStage: null, degradedReason: null, experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, connectorVersion: CONNECTOR_VERSION, mcpServerVersion: null, lastCommand: null };
+    return { state, message, updatedAt: Date.now(), autoStart: getAutoStart(app), updateState: "idle", preferences: { ...this.#preferences }, cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected", connectionStage: null, degradedReason: null, experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, connectorVersion: CONNECTOR_VERSION, mcpServerVersion: null, lastCommand: null, connectionFailure: null };
   }
-  private setSignInState(message = "Sign in with your browser to connect NexusRBX."): void { this.patchSnapshot({ state: "awaiting_sign_in", message, cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected", connectionStage: null, degradedReason: null, experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, mcpServerVersion: null, lastCommand: null }); }
+  private setSignInState(message = "Sign in with your browser to connect NexusRBX."): void { this.patchSnapshot({ state: "awaiting_sign_in", message, cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected", connectionStage: null, degradedReason: null, experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, mcpServerVersion: null, lastCommand: null, connectionFailure: null }); }
   private patchSnapshot(patch: Partial<CompanionSnapshot>): void {
     const previous = this.#snapshot.state;
     // The renderer uses updatedAt to order pushed events and state reads. Keep
     // it monotonic even when several lifecycle updates happen in one tick.
     this.#snapshot = { ...this.#snapshot, ...patch, updatedAt: Math.max(Date.now(), this.#snapshot.updatedAt + 1) };
+    if (previous !== this.#snapshot.state) new ConsoleLogger(false, this.#logSink).info(`${this.#snapshot.state}: ${this.#snapshot.message}`);
     if (this.#snapshot.state !== "connecting") this.clearStartupWatchdog();
     this.publish();
     if (previous !== this.#snapshot.state) this.notifyTransition(previous, this.#snapshot.state);

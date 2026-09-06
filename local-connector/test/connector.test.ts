@@ -6,7 +6,7 @@ import type {
   CommandJournalEntry,
   CommandJournalLike,
 } from "../src/command-journal.js";
-import { NexusLocalConnector } from "../src/connector.js";
+import { NexusLocalConnector, type ConnectorTelemetry } from "../src/connector.js";
 import { ConnectorError } from "../src/errors.js";
 import type { Logger } from "../src/logger.js";
 import type {
@@ -1946,4 +1946,57 @@ test("losing the lease heartbeat during a mutation aborts work and forces reconc
     "BACKEND_TEMPORARY_ERROR",
   );
   assert.equal(journal.entries.get(command.id)?.terminalStatus, "outcome_unknown");
+});
+
+for (const recover of [false, true]) {
+  test('outdated proxy gets one fresh helper attempt; recovery=' + recover, async () => {
+    const controller = new AbortController();
+    const backend = new FakeBackend(controller);
+    const mcp = new FakeMcp();
+    const telemetry: ConnectorTelemetry[] = [];
+    const originalConnect = mcp.connect.bind(mcp);
+    mcp.connect = async () => {
+      if (mcp.connectAttempts > 0) assert.ok(mcp.disconnects >= mcp.connectAttempts);
+      return originalConnect();
+    };
+    mcp.callToolHandler = (name) => {
+      if (name === 'get_studio_state' && (!recover || mcp.connectAttempts === 1))
+        throw new ConnectorError('MCP_CLIENT_OUTDATED', 'Restart Studio', { details: { diagnostic: 'Client proxy is out of date, restart to update' } });
+      return undefined;
+    };
+    backend.pollHandler = async () => { controller.abort(new DOMException('done', 'AbortError')); return null; };
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const run = new NexusLocalConnector({ config, connectorVersion: 'test', backend, mcp, logger,
+      clearTokenOnShutdown: false, commandJournal: new MemoryCommandJournal(),
+      onTelemetry: (event) => {
+        telemetry.push(event);
+        if (!recover && event.connectionFailure && mcp.connectAttempts === 2 && !timer)
+          timer = setTimeout(() => controller.abort(new DOMException('done', 'AbortError')), 40);
+      },
+    }).runClaimed(TEST_SESSION, AbortSignal.any([controller.signal, AbortSignal.timeout(2000)]));
+    await run;
+    if (timer) clearTimeout(timer);
+    assert.equal(mcp.connectAttempts, 2);
+    assert.equal(backend.clearCalls, 0);
+    assert.equal(mcp.callTools.some(call => call.name === 'multi_edit'), false);
+    const failures = telemetry.filter(event => event.connectionFailure);
+    assert.equal(failures[0]?.connectionFailure?.code, 'MCP_CLIENT_OUTDATED');
+    assert.equal(failures[0]?.connectionFailure?.stage, 'studio_target');
+    assert.equal(failures[0]?.supportedToolCount, 0);
+    assert.equal(telemetry.some(event => event.connectionFailure === null && event.mcpConnected === true), recover);
+    assert.equal(backend.polls > 0, recover);
+  });
+}
+
+test('cloud registration failure retains its actual stage and later clears on recovery', async () => {
+  const controller = new AbortController();
+  const backend = new FakeBackend(controller);
+  backend.registrationFailures = 1;
+  backend.pollHandler = async () => { controller.abort(new DOMException('done', 'AbortError')); return null; };
+  const telemetry: ConnectorTelemetry[] = [];
+  await new NexusLocalConnector({ config, connectorVersion: 'test', backend, mcp: new FakeMcp(), logger,
+    commandJournal: new MemoryCommandJournal(), onTelemetry: event => telemetry.push(event),
+  }).runClaimed(TEST_SESSION, AbortSignal.any([controller.signal, AbortSignal.timeout(2000)]));
+  assert.ok(telemetry.some(event => event.connectionFailure?.stage === 'cloud_registration' && event.connectionFailure.code === 'BACKEND_TEMPORARY' && event.cloudConnected === false));
+  assert.ok(telemetry.some(event => event.connectionFailure === null && event.mcpConnected === true));
 });

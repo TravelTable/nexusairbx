@@ -528,7 +528,7 @@ export function PlanCard({ message, onApprove, onEdit, onOpenFile, disabled }) {
                   className="flex-1 bg-[var(--ds-plan)] text-[var(--ds-plan-foreground)] font-semibold hover:opacity-90"
                 >
                   {disabled ? <Loader className="w-4 h-4" /> : <SendPrompt className="w-4 h-4" />}
-                  Approve &amp; Build
+                  {message.guidedLaunch ? 'Build this first' : 'Approve & Build'}
                 </Button>
               ) : null}
               {typeof onEdit === "function" ? (

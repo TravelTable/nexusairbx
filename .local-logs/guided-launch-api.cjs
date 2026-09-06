@@ -1,0 +1,11 @@
+const path = require('node:path');
+const root = path.resolve(__dirname, '../backend');
+const { createRequire } = require('node:module');
+const req = createRequire(path.join(root, 'server.js'));
+req('dotenv').config({ path: path.join(root, '.env'), quiet: true });
+const express = req('express');
+const app = express();
+app.use(express.json());
+app.use('/api/onboarding', req('./src/routes/onboarding'));
+app.use(req('./src/middleware/error').globalErrorHandler);
+app.listen(5002, '127.0.0.1', () => console.log('Guided Launch verification API on 5002'));

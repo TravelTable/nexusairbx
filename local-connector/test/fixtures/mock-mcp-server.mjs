@@ -1,8 +1,9 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { CallToolRequestSchema, ListToolsRequestSchema, McpError } from "@modelcontextprotocol/sdk/types.js";
 
 const mode = process.argv[2] ?? "normal";
+let toolCalls = 0;
 
 if (mode === "exit") process.exit(0);
 if (mode === "launcher-error") {
@@ -66,6 +67,7 @@ const disconnectTool = {
 };
 
 server.setRequestHandler(ListToolsRequestSchema, async (request) => {
+  if (mode === "outdated-list") throw new McpError(-32603, "Client proxy is out of date, restart to update");
   if (mode === "per-call-targeting") {
     return { tools: [listStudiosTool, perCallReadTool, perCallStateTool] };
   }
@@ -79,6 +81,10 @@ server.setRequestHandler(ListToolsRequestSchema, async (request) => {
 });
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  if (request.params.name === "test_call_count") return { content: [{ type: "text", text: String(toolCalls) }] };
+  toolCalls += 1;
+  if (mode === "outdated-rpc") throw new McpError(-32603, "Client proxy is out of date, restart to update; Bearer secret-value");
+  if (mode === "outdated-result") return { isError: true, content: [{ type: "text", text: "Client proxy is out of date, restart to update" }] };
   if (request.params.name === "disconnect_test_server") {
     setTimeout(() => process.exit(0), 25).unref();
     return { content: [{ type: "text", text: "disconnecting" }] };

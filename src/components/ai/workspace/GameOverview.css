@@ -1,0 +1,15 @@
+.game-overview { margin: 12px; padding: 12px; border: 1px solid var(--ds-border-subtle); border-radius: 12px; color: var(--ds-text-primary); background: var(--ds-fill-subtle); font-size: 12px; }
+.game-overview__summary { cursor: pointer; font-weight: 600; }
+.game-overview__count { float: right; color: var(--ds-text-secondary); font-weight: 400; }
+.game-overview__intro { margin: 12px 0; overflow-wrap: anywhere; color: var(--ds-text-secondary); }
+.game-overview__items { list-style: none; padding: 0; margin: 0; }
+.game-overview__item { padding: 10px 0; border-top: 1px solid var(--ds-border-subtle); }
+.game-overview__row { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
+.game-overview__status { color: var(--ds-text-secondary); font-size: 11px; }
+.game-overview__status--verified { color: var(--ds-success); }
+.game-overview__status--needs_attention, .game-overview__issue { color: var(--ds-warning); }
+.game-overview__note { margin: 6px 0 0; color: var(--ds-text-secondary); line-height: 1.5; }
+.game-overview__links { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+.game-overview__links a, .game-overview__edit { color: var(--ds-accent); text-decoration: underline; text-underline-offset: 3px; }
+.game-overview__edit { border: 0; background: transparent; padding: 8px 0 0; cursor: pointer; text-align: left; font-size: 11px; }
+.game-overview :is(summary, button, a):focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 3px; }

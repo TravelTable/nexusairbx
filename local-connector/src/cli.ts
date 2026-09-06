@@ -34,7 +34,7 @@ async function main(arguments_: string[]): Promise<void> {
     stdout.write("✓ Signed in to NexusRBX\n✓ This computer is authorized\n");
   }
   if (arguments_.includes("login")) return;
-  const mcp = new RobloxStudioMcpClient({ command: config.mcpCommand, args: config.mcpArgs, connectorVersion: CONNECTOR_VERSION, requestTimeoutMs: config.requestTimeoutMs, toolTimeoutMs: config.mcpToolTimeoutMs, logger });
+  const mcp = new RobloxStudioMcpClient({ resolveLaunch: () => { const latest = loadConfig(arguments_.filter((value) => !["login", "logout", "mcp"].includes(value))); return { command: latest.mcpCommand, args: latest.mcpArgs }; }, command: config.mcpCommand, args: config.mcpArgs, connectorVersion: CONNECTOR_VERSION, requestTimeoutMs: config.requestTimeoutMs, toolTimeoutMs: config.mcpToolTimeoutMs, logger });
   const connector = new NexusLocalConnector({ config, connectorVersion: CONNECTOR_VERSION, backend, mcp, logger, clearTokenOnShutdown: false });
   const controller = new AbortController();
   const stop = () => { if (!controller.signal.aborted) controller.abort(new DOMException("Connector stopped", "AbortError")); };

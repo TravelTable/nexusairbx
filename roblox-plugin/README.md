@@ -2,6 +2,30 @@
 
 Local Roblox Studio plugin for the NexusRBX website-to-Studio bridge.
 
+## Studio toolbox
+
+The plugin opens to **Tools**, with **Activity**, **Recovery**, and **Settings**
+navigation. There is no chat composer or conversation transcript in the dock.
+
+- Select objects in Explorer to inspect their properties, fix a problem, or
+  describe an improvement. AI tasks accept up to five selected objects.
+- **Create script** takes a name, script class, destination selected in Explorer,
+  and a short behavior description. Existing names and invalid execution contexts
+  are rejected before submission; generated source is validated again before apply.
+- **Check playtest output** reads captured output. Start playtests in Studio.
+- Results show progress and locally verified changed paths. Generated text alone
+  is never shown as evidence that the place changed.
+- Changes apply automatically unless **Automatic apply** is disabled in Settings.
+  **Undo changes** queues the existing snapshot restore; Activity reports execution.
+- **View latest task result** reopens the most recent task, including after restart.
+  Interrupted tasks keep their request identity and block another submission until
+  the previous outcome is resolved. Return to the original project/place when
+  required; changing project or place requests cancellation of the old run.
+
+Each submitted task has an independent backend conversation. Existing website
+conversations and pairing credentials are retained. Saved Chat navigation opens
+Tools after upgrading. Backend conversation endpoints remain unchanged.
+
 ## Source layout
 
 The editable plugin source lives under `roblox-plugin/src/` and is bundled into the single local-plugin artifact at `roblox-plugin/NexusRBXStudioBridge.plugin.lua`.
@@ -9,6 +33,8 @@ The editable plugin source lives under `roblox-plugin/src/` and is bundled into 
 - `src/Main.server.lua`: plugin lifecycle, toolbar wiring, pairing, polling, restore confirmation, disconnect.
 - `src/config.lua`: backend URL and plugin/protocol versions.
 - `src/ui/BridgePanel.lua`: dock widget layout, visual states, button interactions, banners, restore sheet.
+- `src/ui/Toolbox.lua`, `ToolForm.lua`, `TaskResult.lua`: toolbox, focused forms, and result controls.
+- `src/ui/TaskController.lua`: persisted task identity, submission, reconnect, cancel, approvals, and undo.
 - `src/net/httpClient.lua`: JSON helpers, backend requests, stored Studio token helpers.
 - `src/studio/`: path resolution, serialization, hashing, snapshots, change history.
 - `src/commands/`: Studio command handlers split by read/write, validation, native models, imports, and registry execution.
@@ -23,6 +49,18 @@ This build also runs the script-context safety regressions and verifies that the
 bundled artifact contains its build attestation and every registered Studio
 command. To run only the context regressions, use `npm run plugin:test`. To check
 an already-generated artifact, run `npm run plugin:verify`.
+
+For executable task lifecycle scenarios, install the official Luau CLI and set
+`LUAU_BIN` to its executable before running `npm run plugin:test`. Without it,
+the lifecycle test explicitly reports a skip. Compile the generated plugin with
+`luau-compile --null roblox-plugin/NexusRBXStudioBridge.plugin.lua` to check Luau
+syntax and register limits.
+
+The toolbox build is `nexusrbx-studio-0.14.0-r15-animation.12-toolbox`. Deploy the
+matching backend release catalog before installing it against that backend.
+The protocol version is unchanged and the prior chat build remains accepted.
+`npm run plugin:build` creates the Lua bundle, checksum, and installable
+`build/NexusRBXStudioBridge.rbxmx` without installing or publishing them.
 
 Install directly into Roblox Studio's local plugins folder:
 

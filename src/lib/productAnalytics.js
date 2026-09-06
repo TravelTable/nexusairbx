@@ -14,6 +14,12 @@ const DEDUPE_TTL_MS = 2000;
 const SESSION_TTL_MS = 30 * 60 * 1000;
 
 export const PRODUCT_EVENTS = Object.freeze({
+  ONBOARDING_STAGE_ENTERED: 'onboarding_stage_entered',
+  ONBOARDING_STAGE_COMPLETED: 'onboarding_stage_completed',
+  ONBOARDING_PAUSED: 'onboarding_paused',
+  ONBOARDING_CONNECTION_FAILED: 'onboarding_connection_failed',
+  ONBOARDING_FIRST_APPLY: 'onboarding_first_apply',
+  ONBOARDING_CONFIRMED_SUCCESS: 'onboarding_confirmed_success',
   LANDING_PAGE_VIEW: "landing_page_view",
   EXAMPLE_PROMPT_SELECTED: "example_prompt_selected",
   LANDING_PROMPT_SUBMITTED: "landing_prompt_submitted",

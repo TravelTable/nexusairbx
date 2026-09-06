@@ -93,10 +93,13 @@ test("diagnostics contain health summaries without session secrets or command pa
       connectorVersion: "1.2.3",
       mcpServerVersion: "4.5.6",
       lastCommand: { name: "read_script", status: "succeeded", at: 2 },
+      connectionFailure: { code: "MCP_CLIENT_OUTDATED", stage: "studio_target", diagnostic: "Client proxy is out of date, restart to update" },
     },
   });
 
   assert.deepEqual(result.lastCommand, { name: "read_script", status: "succeeded", at: 2 });
+  assert.equal(result.connectionFailure?.code, "MCP_CLIENT_OUTDATED");
+  assert.equal(result.connectionFailure?.stage, "studio_target");
   const serialized = JSON.stringify(result);
   assert.equal(serialized.includes("supportedTools"), false);
   assert.equal(serialized.includes("Example Place"), false);

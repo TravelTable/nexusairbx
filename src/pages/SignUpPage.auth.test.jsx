@@ -57,7 +57,7 @@ function renderSignup() {
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/ai" element={<div>AI workspace destination</div>} />
         <Route path="/verify-email" element={<div>Verify email destination</div>} />
-        <Route path="/connect-roblox" element={<div>Connect Roblox destination</div>} />
+        <Route path="/onboarding" element={<div>Guided Launch destination</div>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -82,7 +82,7 @@ describe("SignUpPage authenticated routing", () => {
     jest.useFakeTimers();
     const user = { uid: "password-user", emailVerified: false, getIdToken: jest.fn() };
     mockCreateUserWithEmailAndPassword.mockResolvedValue({ user });
-    mockRegisterRobloxSignupRequirement.mockResolvedValue("/connect-roblox?return=%2Fai");
+    mockRegisterRobloxSignupRequirement.mockResolvedValue("/onboarding?return=%2Fai");
     mockSendEmailVerification.mockResolvedValue();
     renderSignup();
 
@@ -110,7 +110,7 @@ describe("SignUpPage authenticated routing", () => {
     const user = { uid: "new-user", emailVerified: true, getIdToken: jest.fn() };
     mockSignInWithGoogleProvider.mockResolvedValue({ user });
     mockGetAdditionalUserInfo.mockReturnValue({ isNewUser: true });
-    mockRegisterRobloxSignupRequirement.mockResolvedValue("/connect-roblox?return=%2Fai");
+    mockRegisterRobloxSignupRequirement.mockResolvedValue("/onboarding?return=%2Fai");
     renderSignup();
 
     await act(async () => {
@@ -119,7 +119,7 @@ describe("SignUpPage authenticated routing", () => {
     });
     expect(mockRegisterRobloxSignupRequirement).toHaveBeenCalledWith(user, "/ai");
     await act(async () => { jest.advanceTimersByTime(800); });
-    expect(screen.getByText("Connect Roblox destination")).toBeTruthy();
+    expect(screen.getByText("Guided Launch destination")).toBeTruthy();
   });
 
   test("does not reclassify an existing provider user who signs in from signup", async () => {
@@ -143,7 +143,7 @@ describe("SignUpPage authenticated routing", () => {
     const user = { uid: "github-user", emailVerified: true, getIdToken: jest.fn() };
     mockSignInWithOAuthProvider.mockResolvedValue({ user });
     mockGetAdditionalUserInfo.mockReturnValue({ isNewUser: true });
-    mockRegisterRobloxSignupRequirement.mockResolvedValue("/connect-roblox?return=%2Fai");
+    mockRegisterRobloxSignupRequirement.mockResolvedValue("/onboarding?return=%2Fai");
     renderSignup();
 
     await act(async () => {
@@ -162,7 +162,7 @@ describe("SignUpPage authenticated routing", () => {
   test("retries a locally pending requirement before allowing an authenticated signup onward", async () => {
     const user = { uid: "pending-user", emailVerified: true };
     mockReadPendingRobloxSignup.mockReturnValue({ uid: user.uid, returnPath: "/assets" });
-    mockRegisterRobloxSignupRequirement.mockResolvedValue("/connect-roblox?return=%2Fassets");
+    mockRegisterRobloxSignupRequirement.mockResolvedValue("/onboarding?return=%2Fassets");
     renderSignup();
 
     await act(async () => {
@@ -172,7 +172,7 @@ describe("SignUpPage authenticated routing", () => {
     });
 
     expect(mockRegisterRobloxSignupRequirement).toHaveBeenCalledWith(user, "/assets");
-    expect(await screen.findByText("Connect Roblox destination")).toBeTruthy();
+    expect(await screen.findByText("Guided Launch destination")).toBeTruthy();
   });
 
   test("redirects an already signed-in verified account to the workspace", async () => {

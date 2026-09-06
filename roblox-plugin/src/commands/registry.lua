@@ -1303,6 +1303,9 @@ local function executeCommand(command)
 end
 
 local function finalizeCommandOutcome(command, applyOk, resultOrError)
+	if applyOk and type(resultOrError) == "table" then
+		pcall(recordToolboxReceipt, command, resultOrError)
+	end
 	local commandType = command.type or "command"
 	local snapshotCount = (type(resultOrError) == "table" and #(resultOrError.snapshots or {})) or 0
 	local duration = type(resultOrError) == "table" and resultOrError.duration or nil

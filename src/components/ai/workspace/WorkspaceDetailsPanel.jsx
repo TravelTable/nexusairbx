@@ -5,6 +5,7 @@ import ProjectArchitecturePanel from "../ProjectArchitecturePanel";
 import { Segmented } from "../../ui";
 import BuildDetailsPanel from "./BuildDetailsPanel";
 import ValidationReportPanel from "./ValidationReportPanel";
+import GameOverview from "./GameOverview";
 
 const DETAIL_VIEWS = [
   { id: "summary", label: "Summary", icon: ClipboardList },
@@ -46,6 +47,8 @@ export default function WorkspaceDetailsPanel({
   approvingStepId,
   restoringRun,
   notify,
+  gameOverview,
+  onRefineGame,
 }) {
   return (
     <div className="workspace-report-panel flex h-full min-h-0 flex-col">
@@ -66,6 +69,8 @@ export default function WorkspaceDetailsPanel({
         ) : view === "validation" ? (
           <ValidationView artifact={artifact} />
         ) : (
+          <div className="h-full overflow-y-auto">
+          <GameOverview overview={gameOverview} onRefine={onRefineGame} />
           <BuildDetailsPanel
             artifact={artifact}
             agentRun={agentRun}
@@ -76,6 +81,7 @@ export default function WorkspaceDetailsPanel({
             notify={notify}
             includeValidation={false}
           />
+          </div>
         )}
       </div>
     </div>

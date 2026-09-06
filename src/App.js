@@ -28,6 +28,7 @@ const NexusRBXForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage
 const NexusRBXSignUpPageContainer = lazy(() => import("./pages/SignUpPage"));
 const NexusRBXVerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
 const NexusRBXConnectRobloxPage = lazy(() => import("./pages/ConnectRobloxPage"));
+const NexusRBXOnboardingPage = lazy(() => import("./pages/OnboardingPage"));
 const NexusRBXCliAuthorizePage = lazy(() => import("./pages/CliAuthorizePage"));
 const NexusRBXTermsPage = lazy(() => import("./pages/TermsPage"));
 const NexusRBXPrivacyPage = lazy(() => import("./pages/PrivacyPage"));
@@ -90,6 +91,7 @@ function App() {
           <Route path="/" element={withSiteShell(<NexusRBXHomepageV2 />, "marketing")} />
           <Route path="/downloads" element={withSiteShell(<NexusRBXDownloadsPage />, "marketing")} />
           <Route path="/ai" element={withRobloxConnectionGate(<NexusRBXAIPageContainer />)} />
+          <Route path="/onboarding" element={<NexusRBXOnboardingPage />} />
           <Route path="/settings" element={withSiteShell(<NexusRBXSettingsPageContainer />, "account")} />
           <Route path="/billing" element={withSiteShell(<NexusRBXBillingPageContainer />, "account")} />
           <Route path="/contact" element={withSiteShell(<NexusRBXContactPageContainer />, "marketing")} />
