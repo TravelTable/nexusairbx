@@ -55,4 +55,4 @@ function getRunSpecialists(run, scope = {}) {
       status: String(item.status || "pending"), detail: String(item.title || "") }));
 }
 
-module.exports = { getRunPresentation, getRunSpecialists, scopeMatches };
+export { getRunPresentation, getRunSpecialists, scopeMatches };

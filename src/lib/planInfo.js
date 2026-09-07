@@ -7,9 +7,9 @@ const PLAN_INFO = {
     capText: "Daily Free usage",
     promptCap: 400,
     promptPlaceholder: "Describe a Roblox script (up to 400 chars).",
-    upgradeLine: "Free includes Quick Script plus a daily Agent Build allowance. Starter adds more usage, model choice, and saved scripts.",
-    upgradeCta: "Get Starter",
-    upgradeDesc: "Subscribe to Starter for more Agent usage, model selection, saved scripts, and longer history.",
+    upgradeLine: "Free includes Quick Script plus a daily Agent Build allowance. Pro adds 9 credits a month, model choice, and 90 days of history.",
+    upgradeCta: "Get Pro",
+    upgradeDesc: "Subscribe to Pro for 9 Nexus Credits a month, model selection, 90 days of history, and extra credits whenever you need them.",
     badgeClass: "border border-[var(--ds-border-strong)] text-[var(--ds-text-secondary)] bg-transparent",
     badgeFilled: false,
     planNudge: "Generated with Nexus Free",
@@ -17,24 +17,24 @@ const PLAN_INFO = {
       <span>
         Free —{" "}
         <a
-          href="/subscribe?highlight=starter"
+          href="/subscribe?plan=pro"
           className="text-accent underline hover:text-[var(--ds-accent-hover)] transition-colors"
         >
-          Get Starter
+          Get Pro
         </a>
       </span>
     ),
     welcome: "Quick Script and Agent Build are ready.",
-    welcomeCta: "See Starter features",
+    welcomeCta: "See Pro features",
     welcomeTokens: "Free includes three anonymous Quick Scripts per day and a fair-use Agent allowance after signup.",
-    toastNudge: "Need more Agent usage, model choice, or saved scripts? Upgrade to Starter.",
+    toastNudge: "Need more Agent usage, model choice, or longer history? Upgrade to Pro.",
     toastZero: "Daily Free usage reached. Try again tomorrow, or upgrade to continue now.",
     sidebarCta: "Subscribe",
-    sidebarCtaLink: "/subscribe?highlight=starter",
-    sidebarCtaDesc: "Starter adds more Agent usage, model choice, and saved scripts.",
+    sidebarCtaLink: "/subscribe?plan=pro",
+    sidebarCtaDesc: "Pro adds 9 credits a month, model choice, and 90 days of history.",
     sidebarCtaColor: "bg-accent text-accent-foreground hover:bg-[var(--ds-accent-hover)]",
-    sidebarCtaText: "Unlock Starter",
-    sidebarCtaSub: "More usage, model choice, saved scripts.",
+    sidebarCtaText: "Unlock Pro",
+    sidebarCtaSub: "More usage, model choice, longer history.",
   },
   starter: {
     label: "Starter",

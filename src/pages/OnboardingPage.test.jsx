@@ -50,9 +50,26 @@ test('requires sign-in and email verification without requiring Roblox first', (
   mockRoblox.user = { uid: 'alice', emailVerified: false };
   show(); expect(screen.getByText('Verify email')).toBeTruthy();
 });
+test('sends people to the workspace when Guided Launch is not enabled here', async () => {
+  getGuidedLaunch.mockRejectedValue(
+    Object.assign(new Error('API route not found'), { status: 404, code: 'API_ROUTE_NOT_FOUND' })
+  );
+  show();
+  expect(await screen.findByText('Workspace')).toBeTruthy();
+});
+test('still surfaces a real progress failure so it can be retried', async () => {
+  getGuidedLaunch.mockRejectedValue(
+    Object.assign(new Error('Your progress is unavailable.'), { status: 503 })
+  );
+  show();
+  const alert = await screen.findByRole('alert');
+  expect(alert.textContent).toContain('Your progress is unavailable.');
+  expect(screen.getByRole('button', { name: /try again/i })).toBeTruthy();
+});
 test('examples fill the idea without submitting; continuation saves before connection', async () => {
   show();
   await screen.findByLabelText('Your idea');
+  expect(screen.getByRole('link', { name: /compare plans/i })).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: /cozy café/i }));
   expect(screen.getByLabelText('Your idea').value).toContain('café');
   expect(updateGuidedLaunch).not.toHaveBeenCalled();

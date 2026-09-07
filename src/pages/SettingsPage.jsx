@@ -1017,7 +1017,7 @@ export default function SettingsPage() {
               isStarterOrAbove={billing.isStarterOrAbove}
               onChange={(modelVersion) => updateSetting({ modelVersion })}
               onProNudge={(reason) => setProNudgeReason(reason)}
-              onStarterNudge={() => navigate("/subscribe?highlight=starter")}
+              onStarterNudge={() => navigate("/subscribe?plan=pro")}
               fullWidth
             />
           </div>

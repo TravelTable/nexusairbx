@@ -15,6 +15,7 @@ export const FREE_USAGE_ERROR_CODES = new Set([
   "MODEL_REQUIRES_PREMIUM_BALANCE",
   "MODEL_PRICING_NOT_CONFIGURED",
   "PLAN_REQUIRED",
+  "LIMIT_REACHED",
   "TEAM_SEAT_LIMIT_REACHED",
   "TEAM_BILLING_PERMISSION_REQUIRED",
 ]);
@@ -32,7 +33,8 @@ const FREE_USAGE_MESSAGES = {
   PREMIUM_BALANCE_INSUFFICIENT: "Your Premium Balance is too low for this request. Add funds, choose an included model, or reduce the request size.",
   MODEL_REQUIRES_PREMIUM_BALANCE: "This model uses Premium Balance. Add funds or choose an included model.",
   MODEL_PRICING_NOT_CONFIGURED: "This model is temporarily unavailable because usage pricing is not configured.",
-  PLAN_REQUIRED: "This premium feature requires Starter or higher.",
+  PLAN_REQUIRED: "This premium feature requires Pro or higher.",
+  LIMIT_REACHED: "Free accounts can keep one active project. Upgrade to Pro for more.",
   TEAM_SEAT_LIMIT_REACHED: "Team seat count must stay within the allowed seat limits.",
   TEAM_BILLING_PERMISSION_REQUIRED: "Only team owners or billing administrators can manage team billing.",
 };

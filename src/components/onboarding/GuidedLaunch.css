@@ -1,4 +1,11 @@
-.guided-launch { min-height: 100dvh; background: var(--ds-bg-canvas); color: var(--ds-text); }
+.guided-launch {
+  min-height: 100dvh;
+  background:
+    radial-gradient(1200px 480px at 82% -8%, color-mix(in srgb, var(--ds-accent) 16%, transparent), transparent 62%),
+    linear-gradient(180deg, color-mix(in srgb, var(--ds-surface-1) 70%, transparent), transparent 36%),
+    var(--ds-bg-canvas);
+  color: var(--ds-text);
+}
 .guided-launch-loading { min-height: 60dvh; display: flex; gap: 20px; align-items: center; justify-content: center; flex-direction: column; color: var(--ds-text-secondary); background: var(--ds-bg-canvas); }
 .guided-launch-header { min-height: 88px; max-width: 1440px; margin: auto; padding: 20px 40px; display: flex; align-items: center; gap: 24px; }
 .guided-launch-brand { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 650; text-decoration: none; color: var(--ds-text); }
@@ -25,10 +32,19 @@
 .guided-launch-examples > span { color: var(--ds-text-muted); font-size: 11px; margin-bottom: 6px; }
 .guided-launch-examples button { display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: left; padding: 10px 0; min-height: 40px; background: none; border: 0; color: var(--ds-text-secondary); font-size: 12px; cursor: pointer; }
 .guided-launch-examples button:hover { color: var(--ds-text); }
-.guided-launch .guided-launch-primary { display: flex; width: 100%; min-height: 48px; height: auto; padding: 12px 18px; border-radius: 10px; background: var(--ds-text); color: var(--ds-bg-canvas); font-weight: 600; margin-top: 20px; white-space: normal; }
+.guided-launch .guided-launch-primary { display: flex; width: 100%; min-height: 48px; height: auto; padding: 12px 18px; border-radius: 10px; background: var(--ds-accent); color: var(--ds-accent-foreground, white); font-weight: 600; margin-top: 20px; white-space: normal; box-shadow: 0 0 0 1px color-mix(in srgb, var(--ds-accent) 40%, transparent); }
 .guided-launch .guided-launch-primary:disabled { opacity: .45; }
 .guided-launch-content > button:not(.guided-launch-primary) { min-height: 44px; margin-top: 12px; }
-.guided-launch-aside { padding: 26px 30px; border: 1px solid var(--ds-border); border-radius: 20px; background: var(--ds-surface-1); overflow: hidden; }
+.guided-launch-aside { position: relative; padding: 26px 30px; border: 1px solid var(--ds-border); border-radius: 20px; background: var(--ds-surface-1); overflow: hidden; }
+.guided-launch-aside::before {
+  content: "";
+  position: absolute;
+  inset: auto -40px -50px auto;
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--ds-accent) 28%, transparent), transparent 70%);
+  pointer-events: none;
+}
 .guided-launch-aside-top { display: flex; gap: 9px; align-items: center; color: var(--ds-text-muted); font-size: 9px; font-weight: 600; letter-spacing: .08em; }
 .guided-launch-illustration { min-height: 210px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
 .guided-launch-tile { width: 125px; height: 125px; display: grid; place-items: center; }
@@ -39,6 +55,8 @@
 .guided-launch-aside > p { color: var(--ds-text-secondary); font-size: 13px; line-height: 1.7; margin: 0; }
 .guided-launch-idea { border-left: 2px solid var(--ds-accent); padding: 2px 0 2px 14px; margin: 22px 0; font-size: 13px; color: var(--ds-text-secondary); line-height: 1.7; overflow-wrap: anywhere; max-height: 132px; overflow: auto; white-space: pre-wrap; }
 .guided-launch-outcomes { padding: 22px 0 0; margin: 24px 0 0; list-style: none; border-top: 1px solid var(--ds-border); display: grid; gap: 17px; }
+.guided-launch-pricing { margin: 22px 0 0; padding-top: 18px; border-top: 1px solid var(--ds-border); font-size: 12px; line-height: 1.7; color: var(--ds-text-secondary); }
+.guided-launch-pricing a { color: var(--ds-text); text-underline-offset: 3px; }
 .guided-launch-outcomes li { display: flex; gap: 14px; align-items: center; color: var(--ds-text-secondary); font-size: 12px; }
 .guided-launch-outcomes span { color: var(--ds-text-muted); font-size: 10px; font-variant-numeric: tabular-nums; }
 .guided-launch-tool { display: flex; gap: 14px; align-items: start; padding: 22px 0; border-bottom: 1px solid var(--ds-border); margin-bottom: 24px; }

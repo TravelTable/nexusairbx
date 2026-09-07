@@ -55,4 +55,4 @@ function reduceBuildWorkspace(state, event) {
   return { ...state, connection: "reconciling" };
 }
 
-module.exports = { createBuildWorkspaceState, reduceBuildWorkspace };
+export { createBuildWorkspaceState, reduceBuildWorkspace };

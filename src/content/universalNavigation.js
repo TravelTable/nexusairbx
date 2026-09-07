@@ -9,7 +9,7 @@ export const universalPrimaryNavigation = [
 
 export const universalSiteIndexSections = [
   {
-    label: "Creation tools",
+    label: "CREATE",
     items: [
       { href: "/ai", label: "Game workspace", description: "Plan, build, and test your Roblox game", icon: "sparkles" },
       { href: "/roblox-script-generator", label: "Script generator", description: "Generate focused Roblox scripts", icon: "code" },
@@ -18,7 +18,7 @@ export const universalSiteIndexSections = [
     ],
   },
   {
-    label: "Assets and artwork",
+    label: "ASSETS",
     items: [
       { href: "/icons-market", label: "Icons market", description: "Browse and reuse game-ready icons", icon: "store" },
       { href: "/assets", label: "Your assets", description: "Find and manage project assets", icon: "library" },
@@ -26,7 +26,7 @@ export const universalSiteIndexSections = [
     ],
   },
   {
-    label: "Resources",
+    label: "LEARN",
     items: [
       { href: "/docs", label: "Documentation", description: "Learn NexusRBX workflows and features", icon: "book" },
       { href: "/pricing", label: "Pricing & usage", description: "Compare plans and usage limits", icon: "usage" },
@@ -35,7 +35,7 @@ export const universalSiteIndexSections = [
     ],
   },
   {
-    label: "Your account",
+    label: "ACCOUNT",
     items: [
       { href: "/signin", label: "Sign in", description: "Continue with your NexusRBX account", icon: "signin" },
       { href: "/settings", label: "Settings", description: "Manage your account and connections", icon: "settings" },

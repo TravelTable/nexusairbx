@@ -31,7 +31,7 @@ test("public header keeps server ownership while delegating presentation to the 
 
   const expectedDestinations = [
     "/ai",
-    "/tools/icon-generator",
+    "/assets",
     "/icons-market",
     "/docs",
     "/pricing",
@@ -90,56 +90,65 @@ test("isolated account control exposes signed-out and signed-in actions", () => 
   assert.match(account, /signOut\(auth\)/);
 });
 
-test("public pricing reads the serializable catalog and preserves exact prices and Team limits", () => {
-  const catalog = JSON.parse(read("src/data/publicPlanCatalog.json"));
-  const byId = Object.fromEntries(catalog.map((plan) => [plan.id, plan]));
+test("public pricing quotes only plans a visitor can actually buy", () => {
+  const catalog = JSON.parse(read("src/data/billingCatalog.v2.json"));
+  const byId = Object.fromEntries(catalog.plans.map((plan) => [plan.id, plan]));
 
+  assert.deepEqual(catalog.plans.map((plan) => plan.id), ["FREE", "PRO", "TEAM"]);
   assert.equal(byId.FREE.monthly, 0);
-  assert.equal(byId.STARTER.monthly, 2);
-  assert.equal(byId.STARTER.yearly, null);
-  assert.equal(byId.PRO.monthly, 19.99);
-  assert.equal(byId.PRO.yearly, 199);
+  assert.equal(byId.PRO.monthly, 14.99);
+  assert.equal(byId.PRO.yearly, 152.9);
   assert.equal(byId.PRO.featured, true);
-  assert.equal(byId.PRO_PLUS.monthly, 39.99);
-  assert.equal(byId.PRO_PLUS.yearly, 399);
-  assert.equal(byId.TEAM.monthly, 29);
-  assert.equal(byId.TEAM.yearly, 290);
+  assert.equal(byId.TEAM.monthly, 24.99);
+  assert.equal(byId.TEAM.yearly, 254.9);
   assert.equal(byId.TEAM.minimumSeats, 2);
   assert.equal(byId.TEAM.maximumSeats, 50);
 
+  // Retired tiers may still be honoured for existing subscribers, but they
+  // must never be presented as a choice.
+  assert.deepEqual(
+    catalog.legacyPlans.map((plan) => plan.id).sort(),
+    ["PRO_PLUS", "STARTER"],
+  );
+  for (const legacy of catalog.legacyPlans) {
+    assert.equal(legacy.selectable, false, `${legacy.id} must not be selectable`);
+  }
+});
+
+test("the pricing page renders the canonical catalog rather than a hardcoded copy", () => {
   const pricing = read("public-frontend/components/PricingCatalog.jsx");
-  assert.match(pricing, /publicPlanCatalog\.json/);
-  assert.match(pricing, /plan\.yearly \/ 12/);
-  assert.match(pricing, /billed annually/i);
-  assert.match(pricing, /Monthly billing only/);
-  assert.match(pricing, /annualUnavailable/);
-  assert.match(pricing, /plan\.yearly == null/);
-  assert.match(pricing, /minimumSeats/);
-  assert.match(pricing, /maximumSeats/);
-  assert.match(pricing, /\/subscribe\?/);
-  assert.match(pricing, /PRICING_PLAN_SELECTED/);
-  assert.match(pricing, /getEntitlements/);
-  assert.match(pricing, /Manage plan/);
-  assert.match(pricing, /href="\/billing"/);
-  assert.match(pricing, /NexusRBX plans/);
-  assert.match(pricing, /Choose the plan that fits your build/);
-  assert.match(pricing, /PricingCard/);
-  assert.match(pricing, /Most popular/);
-  assert.match(pricing, /data-featured/);
-  assert.match(pricing, /aria-label="NexusRBX access plans"/);
-  assert.match(pricing, /data-plan=\{plan\.id\}/);
-  assert.match(pricing, /Detailed feature comparison/);
-  assert.match(pricing, /aria-label="Detailed feature comparison"/);
+
+  assert.match(pricing, /billingCatalog\.v2\.json/, "prices must come from the canonical catalog");
+  assert.match(pricing, /FinancialPlans/, "the plan cards are the shared billing component");
+  assert.doesNotMatch(pricing, /publicPlanCatalog/, "the retired duplicate catalog is gone");
   assert.doesNotMatch(
     pricing,
-    /gradient|testimonial|priority processing|collaboration/i,
+    /\$\d/,
+    "prices must not be hardcoded into the page",
   );
+  // Grandfathering is a promise to existing subscribers; keep it stated.
+  assert.match(pricing, /grandfathered/i);
+  assert.match(pricing, /href="\/billing"/);
+  assert.doesNotMatch(pricing, /gradient|testimonial|priority processing/i);
+});
+
+test("no shipped source quotes a retired plan as a purchase option", () => {
+  for (const file of [
+    "src/lib/planInfo.js",
+    "src/lib/billingErrors.js",
+    "src/components/NexusRBXHeader.jsx",
+  ]) {
+    const source = read(file);
+    assert.doesNotMatch(source, /highlight=starter/, `${file} links to a retired plan`);
+    assert.doesNotMatch(source, /Get Starter|Unlock Starter|Choose Starter|requires Starter/i,
+      `${file} still sells the retired Starter plan`);
+  }
 });
 
 test("pricing follows the selected reference-card design authority", () => {
   const routeMatrix = read("docs/design/revamp-route-matrix.md");
-  const pricing = read("public-frontend/components/PricingCatalog.jsx");
-  const styles = read("public-frontend/components/PricingWorkspace.module.css");
+  const pricing = read("src/components/billing/FinancialPlans.jsx");
+  const styles = read("src/components/billing/FinancialPlans.module.css");
 
   assert.match(routeMatrix, /`\/pricing`[\s\S]*Reference-inspired pricing cards/);
   assert.match(

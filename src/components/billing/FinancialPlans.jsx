@@ -19,7 +19,7 @@ export default function FinancialPlans({ compact = false }) {
       {compact ? <h2>Start free. Make Pro your daily workspace.</h2> : <h1>Choose the plan that fits your build.</h1>}
       <p>One credit system. Your choice of models. Reviewed changes before Studio.</p>
     </header>
-    <div className={styles.toggle} role="group" aria-label="Billing period">
+    <div className={styles.cycleToggle} role="group" aria-label="Billing period">
       <button type="button" aria-pressed={interval === "month"} onClick={() => select("month")}>Monthly</button>
       <button type="button" aria-pressed={interval === "year"} onClick={() => select("year")}>Annually · save 15%</button>
     </div>
@@ -28,7 +28,7 @@ export default function FinancialPlans({ compact = false }) {
         const annual = interval === "year" && plan.yearly != null;
         const amount = annual ? plan.yearly / 12 : plan.monthly;
         const href = plan.id === "FREE" ? "/signup" : "/subscribe?plan=" + plan.id + "&interval=" + interval;
-        return <article className={styles.card} data-featured={plan.featured || undefined} key={plan.id}>
+        return <article className={styles.planCard} data-featured={plan.featured ? "true" : undefined} key={plan.id}>
           <div className={styles.cardHeading}><h2>{plan.name}</h2>{plan.featured && <span>Recommended</span>}</div>
           <p>{plan.audience}</p>
           <p className={styles.price}>{formatMoney(Math.round(amount*100)/100)}<small>{plan.perSeat ? "/seat/month" : plan.monthly ? "/month" : ""}</small></p>

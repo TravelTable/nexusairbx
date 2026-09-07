@@ -18,6 +18,7 @@ import { useLocation } from "react-router-dom";
 import { auth } from "../firebase";
 import { signOut } from "firebase/auth";
 import { useBilling } from "../context/BillingContext";
+import { getPublicPlan, formatMoney } from "../lib/planCatalog";
 import { Button, cx } from "./ui";
 
 const DOCUMENT_ROUTES = new Set([
@@ -261,10 +262,10 @@ function NexusRBXHeader({
               ) : (
                 <button
                   type="button"
-                  onClick={() => navigate("/subscribe?highlight=starter")}
+                  onClick={() => navigate("/subscribe?plan=pro")}
                   className="rounded-lg border border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-accent hover:bg-[var(--ds-fill-hover)]"
                 >
-                  Starter $2/mo
+                  Pro {formatMoney(getPublicPlan("PRO").monthly)}/mo
                 </button>
               )}
             </div>

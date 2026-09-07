@@ -1,4 +1,4 @@
-const { getRunPresentation } = require("./runPresentation");
+import { getRunPresentation } from "./runPresentation";
 
 /**
  * The response kind is attached by the server/submit coordinator, not the LLM.
@@ -47,4 +47,4 @@ function projectAssistantMessage(message) {
   return projected;
 }
 
-module.exports = { getMessageResponseKind, projectAssistantMessage };
+export { getMessageResponseKind, projectAssistantMessage };

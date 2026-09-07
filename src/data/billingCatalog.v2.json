@@ -12,13 +12,14 @@
       "audience": "Take your first idea into Roblox Studio",
       "monthly": 0,
       "yearly": null,
-      "credits": 1.5,
+      "credits": 2.5,
       "creditWindow": "rolling_30_days",
       "perSeat": false,
       "featured": false,
       "cta": "Start building free",
       "features": [
-        "1.5 Nexus Credits per rolling 30 days",
+        "2.5 Nexus Credits per rolling 30 days",
+        "Up to 0.15 credits per day",
         "Nexus Auto for focused builds",
         "1 active project · 1 build at a time",
         "Studio connection and reviewed changes"
@@ -28,7 +29,11 @@
         "maximumSeats": 1,
         "concurrentJobs": 1,
         "maxProjects": 1,
-        "usageHistoryDays": 7
+        "usageHistoryDays": 7,
+        "dailyCredits": 0.15,
+        "newUserDailyCredits": 0.25,
+        "newUserBoostHours": 72,
+        "maxRequestCredits": 0.06
       },
       "access": {
         "nexusAuto": true,

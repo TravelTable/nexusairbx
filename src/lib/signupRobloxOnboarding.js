@@ -58,11 +58,17 @@ export function clearPendingRobloxSignup(uid = null) {
 export async function registerRobloxSignupRequirement(user, returnPath = "/ai") {
   if (!user?.uid) throw new Error("A signed-in account is required to prepare Roblox onboarding.");
   const pending = persistPendingRobloxSignup(user.uid, returnPath);
+  const destination = pending?.returnPath || returnPath;
   await requireRobloxOnboarding();
-  await startGuidedLaunch({
-    ...guidedLaunchSource(),
-    returnPath: pending?.returnPath || returnPath,
-  });
+  // The account already exists by this point, so a Guided Launch failure must
+  // never strand the new user on the signup form. Guided Launch is an
+  // enhancement; the Roblox connect gate is the requirement.
+  try {
+    await startGuidedLaunch({ ...guidedLaunchSource(), returnPath: destination });
+  } catch (_) {
+    clearPendingRobloxSignup(user.uid);
+    return connectRobloxPath(destination);
+  }
   clearPendingRobloxSignup(user.uid);
-  return guidedLaunchPath(pending?.returnPath || returnPath);
+  return guidedLaunchPath(destination);
 }

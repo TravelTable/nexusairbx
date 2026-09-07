@@ -431,7 +431,8 @@
   color: var(--nx-purple-strong);
   font-size: 0.7rem;
   font-weight: 750;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 .indexLinks {
   display: grid;

@@ -7,6 +7,12 @@ const TABS = [
 const statusLabel = status => ({ not_run: "Not yet run", unavailable: "Unavailable", passed: "Passed", failed: "Failed", running: "Running" }[status]
   || String(status || "Pending").replaceAll("_", " "));
 
+// Monaco Uri.parse treats text before the first ":" as a URI scheme. scopeKey is
+// JSON.stringify(scope), so `${scopeKey}:artifact:path` is not a legal URI.
+function toMonacoModelPath(identity) {
+  return `inmemory://model/${encodeURIComponent(identity)}`;
+}
+
 /**
  * items are canonical, current-project output references, NOT chat messages.
  * readFile({artifactId, revision, path}, {signal}) must perform an authenticated
@@ -125,7 +131,7 @@ export default function BuildWorkspace({ scopeKey, items = [], readFile, connect
             {fileState.status === "error" ? `${fileState.error} The last loaded revision remains visible.` : "Loading the latest saved revision…"}
           </p> : null}
           <div className="min-h-0 flex-1">
-            {ready ? <Editor height="100%" language="lua" path={fileIdentity} theme="vs-dark" value={fileState.source}
+            {ready ? <Editor height="100%" language="lua" path={toMonacoModelPath(fileIdentity)} theme="vs-dark" value={fileState.source}
               options={{ readOnly: true, minimap: { enabled: false }, fontSize: 13, scrollBeyondLastLine: false,
                 automaticLayout: true, wordWrap: "off", padding: { top: 12 } }} />
               : <p role={fileState.status === "error" ? "alert" : "status"} className="p-4 text-sm">

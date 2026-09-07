@@ -9,7 +9,7 @@ export default function CreditExplainer() {
   }}>
     <summary>How far do Nexus Credits go?</summary>
     <p>Credits measure AI usage, not messages. Request size, project context, output length, and model choice all affect the charge.</p>
-    <div className={styles.toggle} role="group" aria-label="Compare model approaches">
+    <div className={styles.cycleToggle} role="group" aria-label="Compare model approaches">
       <button type="button" aria-pressed={mode === "auto"} onClick={() => setMode("auto")}>Nexus Auto</button>
       <button type="button" aria-pressed={mode === "premium"} onClick={() => setMode("premium")}>Premium direct</button>
     </div>

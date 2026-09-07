@@ -109,6 +109,7 @@
     "sitemap": "node scripts/generate-sitemap.js",
     "test:production-routing": "node --test server/productionRouting.test.js",
     "test:public-frontend": "node --test server/publicFrontendHtml.test.js",
+    "test:billing-catalog": "node --test scripts/billing-catalog-parity.test.cjs",
     "design:guard": "node scripts/design-guard.mjs",
     "design:guard:report": "node scripts/design-guard.mjs --report-only"
   },

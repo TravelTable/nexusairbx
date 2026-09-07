@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getGuidedLaunch, updateGuidedLaunch } from '../../lib/guidedLaunchApi';
+import { getGuidedLaunch, isGuidedLaunchUnavailable, updateGuidedLaunch } from '../../lib/guidedLaunchApi';
 import { trackProductEvent } from '../../lib/productAnalytics';
 
 export function useGuidedLaunch(uid) {
-  const [state, setState] = useState({ uid, progress: null, loading: Boolean(uid), error: '' });
+  const [state, setState] = useState({ uid, progress: null, loading: Boolean(uid), error: '', available: true });
   const current = useRef(null);
   const owner = useRef(uid);
   const queue = useRef(Promise.resolve());
@@ -11,7 +11,7 @@ export function useGuidedLaunch(uid) {
   const accept = useCallback((progress) => {
     if (current.current && (!progress || progress.revision < current.current.revision)) return current.current;
     current.current = progress;
-    setState({ uid, progress, loading: false, error: '' });
+    setState({ uid, progress, loading: false, error: '', available: true });
     return progress;
   }, [uid]);
   const refresh = useCallback(async () => {
@@ -20,14 +20,20 @@ export function useGuidedLaunch(uid) {
       if (owner.current === uid) accept(progress);
       return progress;
     } catch (error) {
-      if (owner.current === uid) setState(s => ({ ...s, uid, loading: false, error: error.message }));
+      if (owner.current !== uid) return null;
+      // Guided Launch not being enabled here must not look like a broken page.
+      if (isGuidedLaunchUnavailable(error)) {
+        setState({ uid, progress: null, loading: false, error: '', available: false });
+        return null;
+      }
+      setState(s => ({ ...s, uid, loading: false, error: error.message }));
       return null;
     }
   }, [uid, accept]);
   useEffect(() => {
     current.current = null;
-    if (!uid) { setState({ uid, progress: null, loading: false, error: '' }); return; }
-    setState({ uid, progress: null, loading: true, error: '' });
+    if (!uid) { setState({ uid, progress: null, loading: false, error: '', available: true }); return; }
+    setState({ uid, progress: null, loading: true, error: '', available: true });
     void refresh();
   }, [uid, refresh]);
   const save = useCallback((patch) => {
@@ -46,5 +52,13 @@ export function useGuidedLaunch(uid) {
   useEffect(() => {
     if (stage && !dismissed) void trackProductEvent('onboarding_stage_entered', { stage, surface: 'guided_launch' });
   }, [stage, dismissed]);
-  return { progress, loading: state.uid !== uid || state.loading, error: state.uid === uid ? state.error : '', save, refresh, accept };
+  return {
+    progress,
+    loading: state.uid !== uid || state.loading,
+    error: state.uid === uid ? state.error : '',
+    available: state.uid !== uid ? true : state.available,
+    save,
+    refresh,
+    accept,
+  };
 }

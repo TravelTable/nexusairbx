@@ -24,15 +24,16 @@ describe("billingErrors", () => {
     expect(insufficientTokensToast("team").cta).toBeUndefined();
   });
 
-  it("maps PLAN_REQUIRED to Starter messaging", () => {
+  it("points PLAN_REQUIRED at a plan the user can actually buy", () => {
     const parsed = parseApiErrorPayload({ code: "PLAN_REQUIRED" });
-    expect(parsed.message).toMatch(/Starter/i);
+    expect(parsed.message).toMatch(/Pro/i);
+    expect(parsed.message).not.toMatch(/Starter/i);
   });
 
-  it("maps Free usage backend codes to friendly messages", () => {
-    const parsed = parseApiErrorPayload({ code: "FREE_CONCURRENT_JOB_LIMIT" });
-    expect(parsed.message).toMatch(/one AI job/i);
-    expect(parsed.message).not.toMatch(/FREE_CONCURRENT_JOB_LIMIT/);
+  it("maps a Free project cap to an upgrade prompt", () => {
+    const parsed = parseApiErrorPayload({ code: "LIMIT_REACHED" });
+    expect(parsed.message).toMatch(/one active project/i);
+    expect(parsed.message).not.toMatch(/LIMIT_REACHED/);
   });
 
   it("maps infrastructure quota errors to friendly copy", () => {

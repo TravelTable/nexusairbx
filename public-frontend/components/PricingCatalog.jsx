@@ -1,9 +1,13 @@
 "use client";
 import FinancialPlans from "../../src/components/billing/FinancialPlans";
 import styles from "../../src/components/billing/FinancialPlans.module.css";
+import catalog from "../../src/data/billingCatalog.v2.json";
+// Read allowances from the canonical catalog so the comparison table cannot
+// quote a number the product no longer honours.
+const plan = Object.fromEntries(catalog.plans.map((entry) => [entry.id, entry]));
 const groups = [
   ["Build", [["Project-aware builds", "Included", "Included", "Included"], ["Active projects", "1", "Multiple", "Shared workspace"]]],
-  ["Models and Credits", [["Nexus Auto", "Included", "Included", "Included"], ["Monthly credits", "1.5 / rolling 30 days", "9", "15 per seat, pooled"], ["Direct model choice", "—", "Included", "Included"]]],
+  ["Models and Credits", [["Nexus Auto", "Included", "Included", "Included"], ["Monthly credits", `${plan.FREE.credits} / rolling 30 days`, String(plan.PRO.credits), `${plan.TEAM.credits} per seat, pooled`], ["Direct model choice", "—", "Included", "Included"]]],
   ["Studio and Review", [["Review before applying", "Included", "Included", "Included"], ["Studio connection and recovery", "Included", "Included", "Included"]]],
   ["Collaboration", [["Workspace roles", "Personal", "Personal", "Owner / admin / member"], ["Paid seats", "—", "1", "2–50 · coming soon"]]],
 ];

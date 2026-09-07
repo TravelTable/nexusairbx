@@ -2,7 +2,10 @@ import React from "react";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import BuildWorkspace from "./BuildWorkspace";
 import { createBuildWorkspaceState, reduceBuildWorkspace } from "../../../lib/buildWorkspaceState";
-jest.mock("@monaco-editor/react", () => ({ __esModule: true, default: ({ value }) => <pre data-testid="source">{value}</pre> }));
+jest.mock("@monaco-editor/react", () => ({
+  __esModule: true,
+  default: ({ value, path }) => <pre data-testid="source" data-path={path}>{value}</pre>,
+}));
 const file = { id: "f", kind: "file", artifactId: "a", revision: "v1", path: "ServerScriptService/Main.lua", status: "Draft" };
 test("reads exact revisions preserving source bytes and shows actual stored statuses", async () => {
  const source = 'local x = {}\nreturn "🎮"';
@@ -13,6 +16,18 @@ test("reads exact revisions preserving source bytes and shows actual stored stat
  expect(screen.getByText(/Draft · showing revision v1/)).toBeInTheDocument();
  fireEvent.click(screen.getByRole("button", { name: /Tests/ }));
  expect(screen.getByText("Nothing recorded here yet.")).toBeInTheDocument();
+});
+
+test("monaco model path stays a legal URI when scopeKey is JSON.stringify(scope)", async () => {
+ const scopeKey = JSON.stringify({ taskId: "t1", chatId: "c1", projectId: "p1", runId: "r1" });
+ const readFile = jest.fn().mockResolvedValue({ source: "print(1)", revision: "v1" });
+ render(<BuildWorkspace scopeKey={scopeKey} items={[file]} readFile={readFile} />);
+ const editor = await screen.findByTestId("source");
+ const path = editor.getAttribute("data-path");
+ expect(path).toMatch(/^inmemory:\/\//);
+ expect(path).not.toMatch(/^\{/);
+ expect(decodeURIComponent(path.replace(/^inmemory:\/\/model\//, ""))).toContain(scopeKey);
+ expect(decodeURIComponent(path.replace(/^inmemory:\/\/model\//, ""))).toContain(file.path);
 });
 test("a failed revision fetch keeps the last loaded source visible and reports the failure", async () => {
  const readFile = jest.fn().mockResolvedValueOnce({ source: "saved", revision: "v1" }).mockRejectedValueOnce(new Error("Fetch failed"));

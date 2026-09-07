@@ -43,7 +43,7 @@ function resolveTurnRoute({ mode, prompt = "", intent = "AMBIGUOUS", hasSavedPla
   return "execute";
 }
 
-module.exports = {
+export {
   normalizeMode, normalizeFollowUp, isExecutionFollowUp,
   shouldUseConversationalRoute, resolveTurnRoute,
 };

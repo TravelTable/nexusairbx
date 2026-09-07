@@ -10,6 +10,14 @@ async function request(path = '', method = 'GET', body) {
   });
   return (await readJsonResponse(res, 'Your progress could not be saved. Please try again.')).progress;
 }
+// GET always answers with a progress envelope when the route exists, so a 404
+// there means Guided Launch is not deployed or not enabled in this environment.
+// That is "no guide available", not a failure the user can act on.
+export function isGuidedLaunchUnavailable(error) {
+  if (error?.code === 'API_ROUTE_NOT_FOUND') return true;
+  return error?.status === 404 && error?.code !== 'GUIDED_LAUNCH_NOT_FOUND';
+}
+
 export const getGuidedLaunch = () => request();
 export const startGuidedLaunch = (input = {}) => request('', 'POST', input);
 export const updateGuidedLaunch = (input) => request('', 'PATCH', input);
