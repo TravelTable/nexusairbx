@@ -1,8 +1,8 @@
 {
   "version": "0.14.0-r15-animation",
   "protocolVersion": "2026-08-27-r15-animation",
-  "buildId": "nexusrbx-studio-0.14.0-r15-animation.14-color-readback",
+  "buildId": "nexusrbx-studio-0.14.0-r15-animation.15-native-batch",
   "current": true,
   "url": "/studio-plugin/NexusRBXStudioBridge.rbxmx",
-  "sha256": "06969b1e25c4320182d78e22fd46dbbefe4a34a296171f4ebc081c3357f40605"
+  "sha256": "5ea9d029dda191363421ee8a72990b135d5508baa7fe10976b87ac8cc389f0aa"
 }

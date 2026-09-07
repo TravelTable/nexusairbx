@@ -1,3 +1,4 @@
+import { projectAssistantMessage } from "../../../lib/assistantMessageProjection";
 import AttachmentCard from "./AttachmentCard";
 import React from "react";
 import AssistantBubble from "./AssistantBubble";
@@ -62,7 +63,7 @@ export default function MessageBubble({
   onPublishAttachment,
   studioSessionId,
   studioConnected,
-  message: m,
+  message: rawMessage,
   activeMode,
   grouped = false,
   retryPrompt = "",
@@ -82,6 +83,7 @@ export default function MessageBubble({
   onEditMessage,
   onRetryMessage,
 }) {
+  const m = projectAssistantMessage(rawMessage);
   if (m.role === "user") {
     return (
       <div className="group/message flex w-full justify-end">

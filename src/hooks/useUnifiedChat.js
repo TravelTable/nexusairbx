@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import { mayResumeBuild, mayApprovePlan, mayUseAttachmentExecutor } from "../lib/chatModePolicy";
-import { assertResponseOk, checkAborted, pendingOperationError, readAskResponse, readNdjsonStream, withRequestDeadline } from "../lib/chatTransport";
+import { mayResumeBuild, mayApprovePlan } from "../lib/chatModePolicy";
+import { checkAborted, pendingOperationError, readAskResponse, withRequestDeadline } from "../lib/chatTransport";
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import { BACKEND_URL } from "../config";
@@ -16,13 +16,13 @@ import {
 } from "../lib/workflowApi";
 import { clarificationAnswerRows, formatClarificationAnswers } from "../lib/clarificationAnswers";
 import { decisionActionLabel } from "../lib/chatDecisionDisplay";
-import { getTask, approveTask, retryTask, cancelTask } from "../lib/taskRuntimeApi";
+import { getTask, cancelTask } from "../lib/taskRuntimeApi";
 import { isExplicitPlanApproval } from "../lib/planApproval";
+import { normalizeMode, isExecutionFollowUp, shouldUseConversationalRoute } from "../lib/interactionPolicy";
 import {
   classifyExecutionIntent,
   classifyUserIntent,
   explicitlyDisablesStudioContext,
-  isImplementationIntent,
 } from "../lib/intentClassifier";
 import { applyStreamActivity, createPendingStreamState, getPendingStreamSnapshot } from "../lib/streaming";
 import { stageSlug } from "../lib/streamEngagement";
@@ -101,13 +101,6 @@ export function reconcileUnifiedPendingMessages(generationPending = [], orchestr
   ]);
 }
 
-function chatMessageText(message) {
-  for (const value of [message?.content, message?.prompt, message?.explanation]) {
-    if (typeof value === "string" && value.trim()) return value.trim();
-  }
-  return "";
-}
-
 function decisionStage(decision) {
   return decisionActionLabel(decision, "Starting");
 }
@@ -134,30 +127,6 @@ async function resolveStudioContextSession(studioEnabled) {
     studioSessionId: getStudioSessionId(activeSession),
     studioConnectionType: activeSession ? getStudioConnectionType(activeSession) : null,
   };
-}
-
-/**
- * A short approval such as "just start" is executable only when it can inherit
- * a concrete earlier request. Keep the terse user turn in the transcript, but
- * give both runtimes the actual task so they cannot lose it during handoff.
- */
-export function resolveImplementationPrompt(prompt, messages = []) {
-  const normalizedPrompt = String(prompt || "").trim();
-  if (!normalizedPrompt || !isExplicitPlanApproval(normalizedPrompt)) {
-    return normalizedPrompt;
-  }
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const message = messages[index];
-    if (message?.role !== "user") continue;
-    const candidate = chatMessageText(message);
-    if (!candidate || isExplicitPlanApproval(candidate)) continue;
-    if (!isImplementationIntent(classifyUserIntent(candidate))) continue;
-    return [
-      "Implement the following request now. Infer safe defaults instead of asking optional questions:",
-      candidate,
-    ].join("\n\n");
-  }
-  return normalizedPrompt;
 }
 
 /**
@@ -349,6 +318,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       [chatId]: {
         ...(prev[chatId] || {}),
         [requestId]: buildOrchestrationPending(orchestrationStreamRef.current[streamKey], label, {
+          responseKind: prev[chatId]?.[requestId]?.responseKind,
+          selectedMode: prev[chatId]?.[requestId]?.selectedMode,
+          resolvedTurnIntent: prev[chatId]?.[requestId]?.resolvedTurnIntent,
+          pending: true,
           requestId,
           prompt: prev[chatId]?.[requestId]?.prompt,
         }),
@@ -356,7 +329,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     }));
   }, []);
 
-  const beginOrchestrationPending = useCallback((chatId, requestId, prompt = "", stage = "Understanding your task...") => {
+  const beginOrchestrationPending = useCallback((chatId, requestId, prompt = "", stage = "Understanding your task...", turnMetadata = {}) => {
     const state = seedOrchestrationStream(stage);
     orchestrationStreamRef.current[`${chatId}:${requestId}`] = state;
     setOrchestrationPendingByChat((prev) => ({
@@ -366,6 +339,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         [requestId]: buildOrchestrationPending(state, stage, {
           requestId,
           prompt,
+          pending: true,
+          ...turnMetadata,
         }),
       },
     }));
@@ -499,10 +474,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
 
   // Ensure a chat exists, returning its id (creating + opening if needed).
   const ensureChat = useCallback(
-    async (titleSeed, { projectId = null, mode = chat.activeMode } = {}) => {
+    async (titleSeed, { projectId = null, mode = chat.activeMode, selectedMode = mode } = {}) => {
       let activeChatId = chat.currentChatId;
       if (!activeChatId) {
-        activeChatId = await chat.startNewChat({ projectId, mode });
+        activeChatId = await chat.startNewChat({ projectId, mode: selectedMode });
         const seed = String(titleSeed || "New chat");
         if (activeChatId && seed !== "New chat") {
           await updateDoc(
@@ -538,7 +513,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   );
 
   const writeUserMessage = useCallback(
-    async (activeChatId, requestId, content, attachments = []) => {
+    async (activeChatId, requestId, content, attachments = [], turnMetadata = {}) => {
       const normalizedAttachments = normalizeChatAttachments(attachments);
       const displayContent = content || describeChatAttachments(normalizedAttachments) || "Attached file(s)";
       await setDoc(
@@ -546,6 +521,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         sanitizeTranscriptMessagePayload({
           role: "user",
           content: displayContent,
+          ...turnMetadata,
           ...(normalizedAttachments.length ? { attachments: normalizedAttachments } : {}),
           createdAt: serverTimestamp(),
           requestId,
@@ -612,6 +588,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       const existing = await getDoc(ref);
       const metadata = {
         mode,
+        responseKind: "build",
         type: null,
         runState: runId ? "planning" : "launching",
         launchRecoveryVersion: 1,
@@ -620,6 +597,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         ref,
         sanitizeTranscriptMessagePayload({
           role: "assistant",
+          responseKind: "build",
+          publicPhase: "accepted",
           content: "",
           pending: true,
           stage: stage || (runId ? "Planning..." : "Starting durable run..."),
@@ -728,6 +707,11 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           signal,
           prompt,
           mode,
+          requestId,
+          selectedMode: submissionOptions.selectedMode || mode,
+          resolvedTurnIntent: submissionOptions.resolvedTurnIntent || classifyUserIntent(prompt),
+          responseKind: "build",
+          continuation: isExecutionFollowUp(prompt),
           projectId: submissionOptions.projectId || agent.projectId,
           attachments: normalizeChatAttachments(attachments),
           settings: buildRuntimeSettings(settings, effectiveGameSpec),
@@ -887,6 +871,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`),
           sanitizeTranscriptMessagePayload({
             role: "assistant",
+            responseKind: "answer",
+            selectedMode: submissionContext.selectedMode || submissionContext.mode || "plan",
             stage: "conversation",
             intent: decision.intent || null,
             content: text,
@@ -915,6 +901,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-clarify`),
           sanitizeTranscriptMessagePayload({
             role: "assistant",
+            responseKind: "plan",
+            selectedMode: submissionContext.selectedMode || submissionContext.mode || "plan",
             stage: "clarify",
             questions: decision.questions || [],
             originPrompt,
@@ -936,6 +924,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-plan`),
         sanitizeTranscriptMessagePayload({
           role: "assistant",
+          responseKind: "plan",
+          selectedMode: submissionContext.selectedMode || submissionContext.mode || "plan",
           stage: "plan",
           planId: decision.planId,
           planVersion: decision.planVersion || 1,
@@ -1270,7 +1260,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       const requestPrompt = prompt || describeChatAttachments(normalizedAttachments)
         || "Please review the attached file(s).";
       chat.setPendingForChat(activeChatId, {
-        role: "assistant", content: "", type: "chat", prompt: requestPrompt, stage: "Thinking...",
+        role: "assistant", responseKind: submissionOptions.responseKind || "answer", selectedMode: submissionOptions.selectedMode || "ask", content: "", type: "chat", prompt: requestPrompt, stage: "Thinking...",
       }, requestId);
       try {
         const full = await withRequestDeadline(async requestSignal => {
@@ -1311,6 +1301,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
               chatId: activeChatId,
               projectId: String(submissionOptions?.projectId || "").trim() || null,
               prompt: requestPrompt,
+              requestId,
+              selectedMode: submissionOptions.selectedMode || "ask",
+              responseKind: submissionOptions.responseKind || "answer",
+              resolvedTurnIntent: submissionOptions.resolvedTurnIntent || classifyUserIntent(requestPrompt),
               attachments: normalizedAttachments,
               modelVersion: settings?.modelVersion || "",
               gameSpec: effectiveGameSpec,
@@ -1339,10 +1333,27 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`),
           sanitizeTranscriptMessagePayload({
             role: "assistant", content: text, explanation: text,
+            responseKind: submissionOptions.responseKind || "answer",
+            selectedMode: submissionOptions.selectedMode || "ask",
             createdAt: serverTimestamp(), requestId,
           })
         );
         await touchChat(activeChatId, text);
+      } catch (error) {
+        // A partial answer is recoverable discussion, never a completed build.
+        // Preserve its exact text and visible terminal state before cleanup.
+        if (typeof error?.partial === "string" && error.partial) {
+          await setDoc(doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`),
+            sanitizeTranscriptMessagePayload({
+              role: "assistant", responseKind: submissionOptions.responseKind || "answer",
+              content: error.partial, explanation: error.partial, requestId,
+              pending: false, status: "incomplete", errorCode: error.code || "CHAT_INCOMPLETE",
+              error: "Response interrupted. Your partial answer is saved.",
+              createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+            }), { merge: true });
+          error.partialSaved = true;
+        }
+        throw error;
       } finally {
         chat.setPendingForChat(activeChatId, null, requestId);
         refreshBilling?.();
@@ -1350,68 +1361,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
     },
     [user, chat, effectiveGameSpec, settings?.modelVersion, touchChat, refreshBilling]
   );
-
-  const handleAttachmentSubmit = useCallback(async ({
-    prompt, attachments, activeChatId, requestId, mode, signal, conversation, idempotencyKey,
-  }) => {
-    chat.setPendingForChat(activeChatId, {
-      role: "assistant", content: "", stage: "Reading files",
-    }, requestId);
-    const operationId = String(idempotencyKey || requestId);
-    try {
-      const result = await withRequestDeadline(async requestSignal => {
-        const token = await user.getIdToken();
-        checkAborted(requestSignal);
-        const response = await fetch(`${BACKEND_URL}/api/ai/attachments/chat`, {
-          method: "POST", signal: requestSignal,
-          headers: {
-            "Content-Type": "application/json", Authorization: `Bearer ${token}`,
-            "Idempotency-Key": operationId,
-          },
-          body: JSON.stringify({
-            requestId, prompt, attachments: normalizeChatAttachments(attachments),
-            chatId: activeChatId, mode, modelVersion: settings?.modelVersion || "",
-            conversation: (conversation || []).slice(-10).map(messageToConversationEntry).filter(Boolean),
-          }),
-        });
-        await assertResponseOk(response, "File operation failed.");
-        if (response.status === 202) {
-          const accepted = await response.json();
-          throw pendingOperationError(accepted?.operation?.operationId || operationId);
-        }
-        let completed;
-        await readNdjsonStream(response.body, {
-          signal: requestSignal,
-          onEvent: event => {
-            if (event?.error) {
-              throw new Error(typeof event.error === "string"
-                ? event.error : event.error.message || "The file operation failed.");
-            }
-            if (event?.stage) chat.setPendingForChat(activeChatId,
-              previous => previous ? { ...previous, stage: event.stage } : previous, requestId);
-            if (event?.result) completed = event.result;
-          },
-        });
-        if (!completed || typeof completed.content !== "string") {
-          throw new Error("The connection ended without a valid file result. Check the chat before retrying.");
-        }
-        return completed;
-      }, { signal, timeoutMs: 180000, timeoutError: pendingOperationError(operationId) });
-      checkAborted(signal);
-      await setDoc(
-        doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`),
-        sanitizeTranscriptMessagePayload({
-          role: "assistant", content: result.content, explanation: result.content,
-          attachments: normalizeChatAttachments(result.attachments || []),
-          createdAt: serverTimestamp(), requestId,
-        })
-      );
-      await touchChat(activeChatId, result.content);
-    } finally {
-      chat.setPendingForChat(activeChatId, null, requestId);
-      refreshBilling?.();
-    }
-  }, [user, chat, settings?.modelVersion, touchChat, refreshBilling]);
 
   // Stage 1: route by operating mode.
   //  - ask   -> conversational stream (read-only)
@@ -1421,7 +1370,15 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
   const handleSubmit = useCallback(
     async (currentPrompt, currentAttachments = [], baseArtifact = null, options = {}) => {
       const prompt = (currentPrompt || "").trim();
-      const mode = String(options?.mode || chat.activeMode || "agent").trim().toLowerCase();
+      const selectedMode = normalizeMode(options?.mode || chat.activeMode || "agent");
+      const resolvedTurnIntent = classifyUserIntent(prompt);
+      const explicitPlanTurn = ["agent", "debug"].includes(selectedMode)
+        && resolvedTurnIntent === "PLANNING_REQUEST";
+      const mode = explicitPlanTurn ? "plan" : selectedMode;
+      const responseKind = mode === "plan" ? "plan"
+        : mode === "ask" || shouldUseConversationalRoute(resolvedTurnIntent)
+          ? (/\b(?:show|explain|see|example)\b.*\b(?:code|script|luau|lua)\b/i.test(prompt) ? "code_explanation" : "answer")
+          : "build";
       if (!prompt && currentAttachments.length === 0) {
         if (!user && onSignInNudge) {
           void trackProductEvent(
@@ -1467,7 +1424,8 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         flowChatId,
         requestId,
         prompt,
-        mode === "agent" || mode === "debug" ? "Starting your request..." : "Understanding your task..."
+        mode === "agent" || mode === "debug" ? "Starting your request..." : "Understanding your task...",
+        { selectedMode, resolvedTurnIntent, responseKind }
       );
       const bindFlowToChat = (nextChatId) => {
         if (!nextChatId || nextChatId === flowChatId) return;
@@ -1491,31 +1449,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           if (!isAbortError(error)) notify?.({ message: error?.message, type: "error" });
           if (propagateOperationError) throw error;
           return;
-        }
-        const approvedTaskMessage = [...(chat.messages || [])].reverse().find((message) => message.stage === "plan_approved" && message.taskId);
-        if (mayResumeBuild(mode) && approvedTaskMessage && /^(continue|resume|keep going|finish it|proceed)[.!\s]*$/i.test(prompt.trim())) {
-          const taskId = approvedTaskMessage.taskId;
-          const snapshot = await getTask(taskId);
-          throwIfAborted(flowController.signal);
-          const allowed = snapshot.allowedActions || snapshot.task?.allowedActions || [];
-          let resumed = snapshot;
-          if (allowed.includes("retry")) resumed = await retryTask(taskId);
-          else if (allowed.includes("approve")) resumed = await approveTask(taskId);
-          if (visibleChatIdRef.current === flowChatId) {
-            options?.onTaskAccepted?.(resumed.task || snapshot.task || taskId);
-          }
-          const status = resumed.task?.status || snapshot.task?.status;
-          const content = status === "succeeded"
-            ? "This build has completed. Tell me what you want changed next."
-            : ["failed", "cancelled"].includes(status)
-              ? "This build stopped. Review the details in task progress, then choose Revise plan on the original plan to prepare a new draft. You can review it before starting another build."
-              : ["blocked_studio", "waiting_external", "waiting_user"].includes(status)
-                ? "This build needs attention. Open task progress to resolve the outstanding issue; your existing progress is saved."
-                : "Continuing the approved build. Its current progress is shown below.";
-          await writeUserMessage(flowChatId, requestId, prompt);
-          await setDoc(doc(db, "users", user.uid, "chats", flowChatId, "messages", `${requestId}-assistant`),
-            sanitizeTranscriptMessagePayload({ role: "assistant", content, requestId, taskId, createdAt: serverTimestamp() }));
-          return resumed;
         }
         let ownedProject;
         try {
@@ -1545,6 +1478,10 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
         const effectiveOptions = {
           ...transportOptions,
           mode,
+          selectedMode,
+          resolvedTurnIntent,
+          responseKind,
+          continuation: mayResumeBuild(mode) && isExecutionFollowUp(prompt),
           projectId: ownedProject.projectId,
           idempotencyKey: options?.idempotencyKey || `run-${requestId}`,
         };
@@ -1605,20 +1542,9 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             conversationMessages = historyForRun.slice(0, -1);
           }
         }
-        const implementationPrompt = resolveImplementationPrompt(prompt, conversationMessages);
-        const historicalFiles = conversationMessages.flatMap(m => m.attachments || []).filter(a => a.versionId);
-        const fileRequest = !prompt || /\b(file|attachment|model|rbxm|rbxmx|inspect|summarize|download|image|picture|screenshot)\b/i.test(prompt)
-          || historicalFiles.some(a => prompt.toLowerCase().includes(String(a.name).toLowerCase()));
-        const ownedFileContext = currentAttachments.some(a => a.versionId)
-          ? (fileRequest || !['agent', 'debug'].includes(mode) || currentAttachments.some(a => a.kind === 'model'))
-          : historicalFiles.length > 0 && fileRequest;
-        if (ownedFileContext && mayUseAttachmentExecutor(mode)) {
-          activeChatId = await ensureChat(titleSeed, effectiveOptions);
-          bindFlowToChat(activeChatId); await onChatReady?.(activeChatId);
-          if (writeUserTurn) await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
-          return await handleAttachmentSubmit({ prompt, attachments: currentAttachments, activeChatId, requestId, mode, signal: flowController.signal, conversation: conversationMessages, idempotencyKey: effectiveOptions.idempotencyKey });
-        }
-
+        // Continuations are resolved from trusted stored goals by canonical admission.
+        // Never rewrite this request with a browser-selected historical prompt.
+        const implementationPrompt = prompt;
 
         // Agent & Debug always go to the authoritative decision service. It may
         // execute, recover, clarify, or block without the frontend changing mode.
@@ -1629,7 +1555,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             await onChatReady?.(activeChatId);
             throwIfAborted(flowController.signal);
             if (writeUserTurn) {
-              await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
+              await writeUserMessage(activeChatId, requestId, prompt, currentAttachments, { selectedMode, resolvedTurnIntent, responseKind });
               throwIfAborted(flowController.signal);
             }
             onOperationStatus?.("Running");
@@ -1637,7 +1563,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             // A question stays conversational even when Agent is selected and
             // the chat already has a project. Project context enriches the
             // answer; it must not turn a question into an execution request.
-            if (!isImplementationIntent(userIntent)) {
+            if (shouldUseConversationalRoute(userIntent)) {
               publishOrchestrationStage(activeChatId, requestId, "Preparing a response...");
               await handleAskSubmit(
                 implementationPrompt,
@@ -1710,7 +1636,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
           await onChatReady?.(activeChatId);
           throwIfAborted(flowController.signal);
           if (writeUserTurn) {
-            await writeUserMessage(activeChatId, requestId, prompt, currentAttachments);
+            await writeUserMessage(activeChatId, requestId, prompt, currentAttachments, { selectedMode, resolvedTurnIntent, responseKind });
             throwIfAborted(flowController.signal);
           }
           onOperationStatus?.("Running");
@@ -1758,7 +1684,7 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
             const failure = isOutcomeUnknownError(err)
               ? `The result is not confirmed yet. ${err?.message || "The connection was interrupted."}\n\nRequest: ${err?.operationId || effectiveOptions.idempotencyKey}. Reconnect to this same request before starting another attempt.`
               : `I couldn't finish this request. ${err?.message || "The connection was interrupted."}\n\nYour prompt is saved. Use **Retry as new attempt** on your prompt to try again.`;
-            if (activeChatId) {
+            if (activeChatId && !err?.partialSaved) {
               await setDoc(
                 doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`),
                 sanitizeTranscriptMessagePayload({
@@ -1798,7 +1724,6 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       launchAuthoritativeRun,
       writeOrchestrationResult,
       handleAskSubmit,
-      handleAttachmentSubmit,
       effectiveGameSpec,
       notify,
     ]

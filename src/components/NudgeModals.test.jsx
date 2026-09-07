@@ -62,8 +62,8 @@ const cases = [
   },
   {
     name: "Starter offer",
-    dialogName: "Unlock what Free users hit first",
-    closeName: "Close Starter offer",
+    dialogName: "More room to build with Pro",
+    closeName: "Close modal",
     renderModal: (isOpen, onClose) => (
       <StarterPromoModal
         isOpen={isOpen}

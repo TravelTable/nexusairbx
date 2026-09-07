@@ -35,13 +35,17 @@ const baseProps = {
 };
 
 describe("MessageList pending activity", () => {
-  test("streams explanation and generated source in Agent chat", () => {
+  test("projects generated source out of pending Agent build chat", () => {
     render(
       <MessageList
         {...baseProps}
         activeMode="agent"
         pendingMessage={{
           role: "assistant",
+          responseKind: "build",
+          runId: "run1",
+          publicPhase: "building",
+          pending: true,
           content:
             "<explanation>Creating the controller.</explanation><code>local secretCode = true</code>",
           type: "chat",
@@ -50,10 +54,10 @@ describe("MessageList pending activity", () => {
       />,
     );
 
-    expect(screen.getByText("Writing files...")).toBeTruthy();
-    expect(screen.getByText("Creating the controller.")).toBeTruthy();
-    expect(screen.getByText("Streaming Code")).toBeTruthy();
-    expect(screen.getByText(/secretCode/)).toBeTruthy();
+    expect(screen.getByText("Building")).toBeTruthy();
+    expect(screen.queryByText("Creating the controller.")).toBeNull();
+    expect(screen.queryByText("Streaming Code")).toBeNull();
+    expect(screen.queryByText(/secretCode/)).toBeNull();
   });
 
   test("still shows short code snippets in read-only chat modes", () => {

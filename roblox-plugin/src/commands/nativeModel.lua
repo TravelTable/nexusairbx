@@ -509,6 +509,7 @@ local function buildNativeModel(payload, command)
 	local idMap = {}
 	local rootModel = nil
 	local createdTargets = {}
+	local snapshots = {}
 	local buildOk, buildErr = pcall(function()
 		rootModel = createNativeInstances(spec.root, nil, idMap)
 		validateNativeReferences(spec.root, idMap)
@@ -522,9 +523,12 @@ local function buildNativeModel(payload, command)
 		rootModel:SetAttribute("NexusSchemaVersion", 1)
 		rootModel:SetAttribute("NexusRevision", "rev_" .. stableHash(tostring(spec.modelId or "") .. ":" .. tostring(command and command.id or "") .. ":" .. tostring(os.clock())))
 		rootModel:SetAttribute("NexusIdempotencyKey", idempotencyKey)
+		local targetParentPath = spec.targetParentPath or "Workspace/NexusBuilds"
+		appendMissingPathSnapshots(targetParentPath, snapshots)
 		local targetParent
-		targetParent, createdTargets = ensureNativeTargetParent(spec.targetParentPath or "Workspace/NexusBuilds")
+		targetParent, createdTargets = ensureNativeTargetParent(targetParentPath)
 		rootModel.Name = uniqueNativeName(targetParent, tostring(spec.name or rootModel.Name))
+		table.insert(snapshots, snapshotInstance(fullPath(targetParent) .. "/" .. rootModel.Name))
 		rootModel.Parent = targetParent
 		rootModel:PivotTo(placementCFrame(spec))
 	end)
@@ -535,7 +539,9 @@ local function buildNativeModel(payload, command)
 		cleanupCreatedTargets(createdTargets)
 		return nativeBuildError("BUILD_FAILED", tostring(buildErr))
 	end
-	return buildNativeReceipt(command and command.id or "", spec, rootModel, state, spec.warnings or {}, false)
+	local receipt = buildNativeReceipt(command and command.id or "", spec, rootModel, state, spec.warnings or {}, false)
+	receipt.snapshots = snapshots
+	return receipt
 end
 
 local function nativeTypedValue(value)

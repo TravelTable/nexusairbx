@@ -20,6 +20,8 @@ function normalizeFileEventFile(raw = {}) {
     language: String(raw.language || "luau"),
     purpose: String(raw.purpose || ""),
     content,
+    artifactId: raw.artifactId || null,
+    revision: raw.revision || raw.versionId || null,
     contentHash: raw.contentHash || raw.sourceHash || "",
     status: raw.status || "writing",
     lineCount: countLines(content),

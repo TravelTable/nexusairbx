@@ -104,7 +104,7 @@ export function WorkspaceEmptyState({ title, description, action }) {
   return (
     <div className="workspace-stage-empty">
       <div className="workspace-stage-empty__content">
-        <span className="workspace-stage-empty__eyebrow">Waiting for evidence</span>
+        <span className="workspace-stage-empty__eyebrow">Waiting for build output</span>
         <h3>{title}</h3>
         {description ? <p>{description}</p> : null}
         {action ? (
@@ -204,6 +204,7 @@ export default function WorkspaceShell({
   onDrawerWidthChange,
   panelBadges = {},
   renderPanel,
+  buildWorkspace = false,
   hideEvidenceLauncher = false,
   evidenceLauncherRef = null,
 }) {
@@ -476,7 +477,7 @@ export default function WorkspaceShell({
             aria-expanded="false"
             onClick={(event) => openStage(visiblePanel, event.currentTarget)}
           >
-            <span>Evidence</span>
+            <span>Build</span>
             <span className="workspace-evidence-edge__count" aria-hidden="true">
               {evidenceCount}
             </span>
@@ -542,8 +543,7 @@ export default function WorkspaceShell({
 
             <div className="workspace-stage__identity">
               <div className="min-w-0">
-                <span className="workspace-stage__eyebrow">Evidence stage</span>
-                <h2 id={stageTitleId}>{selectedTool.label}</h2>
+                <h2 id={stageTitleId}>{buildWorkspace ? "Build" : selectedTool.label}</h2>
               </div>
             </div>
 
@@ -571,7 +571,7 @@ export default function WorkspaceShell({
                 <X className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
-            <EvidenceLensBar
+            {!buildWorkspace ? <EvidenceLensBar
               activePanel={activePanel}
               selectedPanel={visiblePanel}
               panelBadges={panelBadges}
@@ -579,14 +579,14 @@ export default function WorkspaceShell({
               tabPanelId={tabPanelId}
               tabIdPrefix={stageTabIdPrefix}
               containerRef={stageLensRef}
-            />
+            /> : null}
           </header>
 
           <div
             id={tabPanelId}
             className="workspace-stage__body"
             role="tabpanel"
-            aria-labelledby={`${stageTabIdPrefix}-${selectedTool.id}`}
+            aria-labelledby={buildWorkspace ? stageTitleId : `${stageTabIdPrefix}-${selectedTool.id}`}
             tabIndex={0}
           >
             {selectedTool ? renderPanel?.(selectedTool.id) : null}

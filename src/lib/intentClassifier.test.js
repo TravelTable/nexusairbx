@@ -31,7 +31,7 @@ describe("classifyUserIntent", () => {
   });
 
   test("classifies short continuation commands as implementation intent", () => {
-    expect(classifyUserIntent("continue")).toBe("CONTINUATION");
+    expect(classifyUserIntent("continue")).toBe("PLAN_APPROVAL");
     expect(classifyUserIntent("apply it")).toBe("CONTINUATION");
   });
 
@@ -90,7 +90,7 @@ describe("isImplementationIntent", () => {
     expect(isImplementationIntent("EXPLANATION_REQUEST")).toBe(false);
     expect(isImplementationIntent("BRAINSTORMING")).toBe(false);
     expect(isImplementationIntent("AMBIGUOUS")).toBe(false);
-    expect(isImplementationIntent("PLAN_APPROVAL")).toBe(false);
+    expect(isImplementationIntent("PLAN_APPROVAL")).toBe(true);
     expect(isImplementationIntent("CANCELLATION")).toBe(false);
   });
 });

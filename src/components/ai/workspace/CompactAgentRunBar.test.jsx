@@ -1,60 +1,33 @@
 import React from "react";
-import "@testing-library/jest-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
 import CompactAgentRunBar, { getCompactRunMeta, getVisibleRunAgents } from "./CompactAgentRunBar";
-
-describe("CompactAgentRunBar", () => {
-  test("condenses a timed-out Studio run into a one-line status", () => {
-    render(
-      <CompactAgentRunBar
-        agentRun={{
-          status: "timed_out",
-          steps: [
-            { id: "step-1", label: "Build Studio project manifest", type: "get_project_manifest", status: "succeeded" },
-          ],
-        }}
-      />,
-    );
-
-    expect(screen.getByText("Studio agent stopped · Runtime limit")).toBeInTheDocument();
-    expect(screen.getByText("1 Studio step")).toBeInTheDocument();
-    expect(screen.getByText("Show activity")).toBeInTheDocument();
-
-    const disclosure = screen.getByText("Studio agent stopped · Runtime limit").closest("details");
-    expect(disclosure).not.toHaveAttribute("open");
-    fireEvent.click(disclosure.querySelector("summary"));
-    expect(disclosure).toHaveAttribute("open");
-    expect(screen.getByText("Build Studio project manifest")).toBeInTheDocument();
-  });
-
-  test("uses the current stage for an active run", () => {
-    expect(getCompactRunMeta({ status: "generating", stage: "Reading project scripts…" })).toEqual({
-      label: "Reading project scripts…",
-      tone: "active",
-      active: true,
-    });
-  });
-
-  test("shows live agent projections with deterministic avatars", () => {
-    render(
-      <CompactAgentRunBar
-        agentRun={{ status: "running", stage: "Building…", steps: [] }}
-        agents={[{ agentId: "agent-1", title: "Gameplay agent", status: "running" }]}
-      />,
-    );
-
-    expect(screen.getByText("1 agent")).toBeInTheDocument();
-    fireEvent.click(screen.getByText("Show activity"));
-    expect(screen.getByText("Gameplay agent")).toBeInTheDocument();
-    expect(screen.getByText("Working")).toBeInTheDocument();
-    expect(screen.getAllByLabelText("Avatar for agent-1")).toHaveLength(2);
-  });
-
-  test("maps team assignments to the agents actually created for the run", () => {
-    expect(getVisibleRunAgents({ teamActivity: { executionMode: "team", assignments: [
-      { stepId: "ui-1", role: "ui", title: "Build the HUD", status: "queued" },
-    ] } })).toEqual([{
-      id: "ui-1", name: "Ui", detail: "Build the HUD", status: "queued",
-    }]);
-  });
+const scope = { taskId: "t", runId: "r", chatId: "c", projectId: "p" };
+test.each(["idle", "ready", ""])("hides %s runs and unallocated agents", status => {
+  const { container } = render(<CompactAgentRunBar agentRun={{ ...scope, status }} agents={[{ id: "a", status: "running" }]} />);
+  expect(container).toBeEmptyDOMElement();
+});
+test("does not manufacture an active build from an agent", () => {
+  expect(getCompactRunMeta({ agentId: "a", status: "running" })).toBeNull();
+  expect(getVisibleRunAgents({ ...scope, status: "running", agents: [{ id: "a" }] })).toEqual([]);
+});
+test("shows one scoped truthful line and opens actions through View", () => {
+  const onOpenActivity = jest.fn();
+  const { container, rerender } = render(<CompactAgentRunBar agentRun={{ ...scope, status: "timed_out" }} chatId="c" projectId="p" onOpenActivity={onOpenActivity} />);
+  expect(screen.getByRole("status")).toHaveTextContent("Build timed out");
+  expect(container.querySelector("details")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Open build activity" }));
+  expect(onOpenActivity).toHaveBeenCalledTimes(1);
+  rerender(<CompactAgentRunBar agentRun={{ ...scope, status: "running" }} chatId="other" projectId="p" />);
+  expect(container).toBeEmptyDOMElement();
+});
+test("completion requires server verification", () => {
+  expect(getCompactRunMeta({ ...scope, status: "applied" }).label).toBe("Applied · testing pending");
+  expect(getCompactRunMeta({ ...scope, status: "succeeded" }).label).toContain("unconfirmed");
+  expect(getCompactRunMeta({ ...scope, status: "succeeded", completion: { canComplete: true } }).label).toBe("Build complete");
+  expect(getCompactRunMeta({ ...scope, status: "running", connectionState: "reconnecting" }).label).toBe("Reconnecting to the build");
+});
+test("reports real specialist assignments only", () => {
+  expect(getVisibleRunAgents({ ...scope, status: "running", teamActivity: { executionMode: "team", assignments: [
+    { stepId: "ui", role: "ui", title: "HUD", status: "running" },
+  ] } })).toEqual([{ id: "ui", name: "ui", detail: "HUD", status: "running" }]);
 });

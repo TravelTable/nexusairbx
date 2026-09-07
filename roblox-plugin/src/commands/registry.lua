@@ -142,7 +142,7 @@ local function isMutatingCommand(commandType)
 	return MUTATING_COMMANDS[tostring(commandType or "")] == true
 end
 
-local function batchOperations(payload)
+local function batchOperations(payload, command)
 	local snapshots = {}
 	local results = {}
 	local failureCode = nil
@@ -207,7 +207,17 @@ local function batchOperations(payload)
 			if type(handler) ~= "function" or UNAVAILABLE_COMMANDS[opType] then
 				rejectUnsupportedBatchOperation(index, opType, "Unsupported batch operation: " .. opType)
 			end
-			local result = handler(op.payload or {})
+			local childCommand = {}
+			for key, value in pairs(command or {}) do childCommand[key] = value end
+			local parentCommandId = tostring(childCommand.id or childCommand.commandId or "")
+			if opType == "build_native_model" and parentCommandId == "" then
+				rejectUnsupportedBatchOperation(index, opType, "Native batch operations need their parent command identity")
+			end
+			childCommand.parentCommandId = parentCommandId
+			childCommand.operationIndex = index
+			childCommand.id = parentCommandId .. ":operation:" .. tostring(index)
+			childCommand.commandId = childCommand.id
+			local result = handler(op.payload or {}, childCommand)
 			if type(result) == "table" and result.snapshots then
 				for _, snap in ipairs(result.snapshots) do
 					table.insert(snapshots, snap)

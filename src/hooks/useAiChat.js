@@ -1,3 +1,4 @@
+import { getMessageResponseKind, projectAssistantMessage } from "../lib/assistantMessageProjection";
 import { resetDraftProject } from "../lib/draftProject";
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { 
@@ -348,9 +349,8 @@ export async function waitForAuthoritativeTaskCompletion({
   }
 }
 
-function findAuthoritativeRunOutput(run) {
+export function findAuthoritativeRunOutput(run) {
   const candidates = [
-    run?.summary,
     run?.result,
     run?.output,
     run?.generationResult,
@@ -358,6 +358,8 @@ function findAuthoritativeRunOutput(run) {
     run?.terminalDetails?.result,
     run?.terminalDetails?.output,
     run?.terminalDetails?.artifact,
+    run,
+    run?.summary,
   ];
   const usefulKeys = [
     "title",
@@ -367,6 +369,8 @@ function findAuthoritativeRunOutput(run) {
     "content",
     "code",
     "artifactId",
+    "artifactRefs",
+    "completion",
     "plan",
     "options",
     "files",
@@ -379,14 +383,14 @@ function findAuthoritativeRunOutput(run) {
 
   for (const candidate of candidates) {
     if (typeof candidate === "string" && candidate.trim()) {
-      return { summary: candidate.trim() };
+      return { summary: candidate.trim(), completion: run?.completion, publicPhase: run?.publicPhase, artifactRefs: run?.artifactRefs };
     }
     if (
       candidate
       && typeof candidate === "object"
       && usefulKeys.some((key) => candidate[key] !== undefined && candidate[key] !== null)
     ) {
-      return candidate;
+      return { ...candidate, completion: run?.completion || candidate.completion, publicPhase: run?.publicPhase || candidate.publicPhase, artifactRefs: run?.artifactRefs || candidate.artifactRefs };
     }
   }
 
@@ -643,10 +647,14 @@ export function resolveResultUrl(jobId, resultUrl) {
   return `${BACKEND_URL}/api/generate/result?jobId=${encodeURIComponent(jobId)}`;
 }
 
-function buildAssistantMessagePayload(data, { requestId, jobId, currentMode, isAutoExecuting }) {
+export function buildAssistantMessagePayload(data, { requestId, jobId, currentMode, isAutoExecuting }) {
   const userCancelled = isServerConfirmedUserCancellation(data);
   const payload = {
     role: "assistant",
+    responseKind: ["agent", "act", "debug"].includes(currentMode) ? "build" : currentMode === "plan" ? "plan" : "answer",
+    publicPhase: userCancelled ? "cancelled" : data?.publicPhase || data?.runState || data?.metadata?.runState || "succeeded",
+    completion: data?.completion || data?.metadata?.completion || null,
+    artifactRefs: data?.artifactRefs || (data?.files || []).filter(file => file.artifactId && file.revision && file.path).map(file => ({ artifactId: file.artifactId, revision: file.revision, path: file.path })),
     content: userCancelled ? "Generation canceled." : "",
     explanation: data?.explanation || "",
     summary: data?.summary || "",
@@ -662,6 +670,7 @@ function buildAssistantMessagePayload(data, { requestId, jobId, currentMode, isA
     metadata: {
       ...(data?.metadata || {}),
       mode: currentMode,
+      responseKind: ["agent", "act", "debug"].includes(currentMode) ? "build" : currentMode === "plan" ? "plan" : "answer",
       type: data?.artifactType || data?.metadata?.type || null,
       qaReport: data?.qaReport || null,
       runState: userCancelled
@@ -683,7 +692,14 @@ function buildAssistantMessagePayload(data, { requestId, jobId, currentMode, isA
   if (Array.isArray(data?.warnings) && data.warnings.length) payload.warnings = data.warnings;
   if (Array.isArray(data?.steps) && data.steps.length) payload.steps = data.steps.map(normalizeToolStep);
   if (data?.runId) payload.runId = data.runId;
-  return payload;
+  // Worker results already point at persisted artifacts. Never promote a raw
+  // result body to normal assistant prose, including job/reconnect recovery.
+  return payload.responseKind === "build" ? {
+    ...projectAssistantMessage(payload),
+    jobId: payload.jobId, artifactId: payload.artifactId, revision: payload.revision,
+    versionNumber: payload.versionNumber, stage: payload.stage,
+    metadata: { ...projectAssistantMessage(payload).metadata, mode: currentMode, runState: payload.metadata.runState },
+  } : payload;
 }
 
 export function useAiChat(user, settings, refreshBilling, notify, { authReady = true } = {}) {
@@ -746,7 +762,11 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       if (next === cur) return prev;
       const nextChatPending = { ...chatPending };
       if (next == null) delete nextChatPending[requestId];
-      else nextChatPending[requestId] = { ...next, requestId: next.requestId || requestId };
+      else nextChatPending[requestId] = {
+        ...next,
+        responseKind: next.responseKind || cur?.responseKind || getMessageResponseKind(next),
+        requestId: next.requestId || requestId,
+      };
       const result = { ...prev };
       if (Object.keys(nextChatPending).length) result[chatId] = nextChatPending;
       else delete result[chatId];
@@ -1400,10 +1420,10 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
               ? buildAssistantMessagePayload(authoritativeOutput, {
                   requestId: currentPending.requestId,
                   jobId: null,
-                  currentMode: currentPending.metadata?.mode || currentPending.mode || chatMode,
+                  currentMode: currentPending.metadata?.mode || currentPending.mode || (getMessageResponseKind(currentPending) === "build" ? "agent" : "ask"),
                   isAutoExecuting: Boolean(
                     currentPending.isAutoExecuting
-                    || isAutoExecutingMode(currentPending.metadata?.mode || currentPending.mode || chatMode)
+                    || isAutoExecutingMode(currentPending.metadata?.mode || currentPending.mode || (getMessageResponseKind(currentPending) === "build" ? "agent" : "ask"))
                   ),
                 })
               : null;
@@ -1681,7 +1701,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           data = body?.result || body;
         }
         if (data?.status === "pending" || data?.done === false) return;
-        const currentMode = currentPending.metadata?.mode || currentPending.mode || chatMode;
+        const currentMode = currentPending.metadata?.mode || currentPending.mode || (getMessageResponseKind(currentPending) === "build" ? "agent" : "ask");
         const msgPayload = buildAssistantMessagePayload(data, {
           requestId: currentPending.requestId,
           jobId: currentPending.jobId,
@@ -1792,6 +1812,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
 
     const requestedMode = modeOverride || (actNow ? "agent" : chatMode);
     const currentMode = requestedMode === "act" ? "agent" : requestedMode;
+    const responseKind = submissionOptions.responseKind || (["agent", "debug"].includes(currentMode) ? "build" : currentMode === "plan" ? "plan" : "answer");
     const requestId = existingRequestId || uuidv4();
     const authoritativeEnvelope = submissionOptions?.authoritativeRun;
     const authoritativeSignal = submissionOptions?.authoritativeSignal || null;
@@ -1866,6 +1887,10 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       streamStatesRef.current[runStreamKey(chatId)] = initialState;
       setPendingForChat(chatId, {
         role: "assistant",
+        responseKind,
+        selectedMode: submissionOptions.selectedMode || currentMode,
+        publicPhase: "accepted",
+        pending: true,
         content: "",
         type: "chat",
         prompt: displayContent,
@@ -1958,6 +1983,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           chatId: activeChatId,
           chatMode: expertMode,
           mode: currentMode,
+          responseKind: ["agent", "act", "debug"].includes(currentMode) ? "build" : currentMode === "plan" ? "plan" : "answer",
           conversation: messages.slice(-10).map(messageToConversationEntry).filter(Boolean),
           attachments: normalizedAttachments,
           studioEnabled,
@@ -2080,6 +2106,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           updatedAt: serverTimestamp(),
           metadata: {
             mode: currentMode,
+            responseKind: ["agent", "act", "debug"].includes(currentMode) ? "build" : currentMode === "plan" ? "plan" : "answer",
             type: null,
             runState: userCancelled ? "canceled" : "failed",
           },
@@ -2165,6 +2192,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           updatedAt: serverTimestamp(),
           metadata: {
             mode: currentMode,
+            responseKind: ["agent", "act", "debug"].includes(currentMode) ? "build" : currentMode === "plan" ? "plan" : "answer",
             type: null,
             runState: String(jobData.status || "queued").trim().toLowerCase() || "queued",
           },
@@ -2205,6 +2233,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
                 metadata: {
                   ...(completedPayload.metadata || {}),
                   mode: currentMode,
+                  responseKind: ["agent", "act", "debug"].includes(currentMode) ? "build" : currentMode === "plan" ? "plan" : "answer",
                   runState: "succeeded",
                 },
                 updatedAt: serverTimestamp(),
@@ -2357,6 +2386,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         updatedAt: serverTimestamp(),
         metadata: {
           mode: currentMode,
+          responseKind: ["agent", "act", "debug"].includes(currentMode) ? "build" : currentMode === "plan" ? "plan" : "answer",
           type: null,
           runState: "running",
         },
@@ -2404,6 +2434,8 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           persist: async (progress) => {
             await updateDoc(assistantMsgRef, sanitizeTranscriptMessagePayload({
               ...progress,
+              role: "assistant", responseKind,
+              metadata: { ...(progress.metadata || {}), mode: currentMode, responseKind },
               updatedAt: serverTimestamp(),
             }));
             recordChatMessageWrite({ jobId, reason: "assistant_progress_checkpoint" });
@@ -2429,12 +2461,14 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           streamFlushTimer = null;
           lastStreamFlushAt = Date.now();
           const snapshot = getPendingStreamSnapshot(streamStatesRef.current[runStreamKey(activeChatId)]);
-          const pendingContent = formatPendingStreamContent(streamStatesRef.current[runStreamKey(activeChatId)]);
+          const pendingContent = responseKind === "build" ? ""
+            : formatPendingStreamContent(streamStatesRef.current[runStreamKey(activeChatId)]);
           setPending((prev) => {
             if (!prev) return prev;
             return {
               ...prev,
               content: pendingContent,
+              responseKind,
               files: snapshot.files || [],
               streamState: snapshot,
               title: snapshot.files?.length ? "Generating Artifact" : prev.title,
@@ -2562,6 +2596,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             ...(userCancelled ? { content: friendlyMessage } : {}),
             metadata: {
               mode: currentMode,
+              responseKind: ["agent", "act", "debug"].includes(currentMode) ? "build" : currentMode === "plan" ? "plan" : "answer",
               type: null,
               runState: userCancelled ? "canceled" : "failed",
             },
@@ -2609,6 +2644,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             ...(agentRunId ? { runId: agentRunId } : {}),
             metadata: {
               mode: currentMode,
+              responseKind: ["agent", "act", "debug"].includes(currentMode) ? "build" : currentMode === "plan" ? "plan" : "answer",
               type: null,
               runState: "background",
             },
@@ -2673,6 +2709,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             ...(agentRunId ? { runId: agentRunId } : {}),
             metadata: {
               mode: currentMode,
+              responseKind: ["agent", "act", "debug"].includes(currentMode) ? "build" : currentMode === "plan" ? "plan" : "answer",
               type: null,
               runState: "failed",
             },
@@ -2734,6 +2771,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
                     steps: steps.length ? steps : previous.steps,
                     runId: run.runId || run.id || previous.runId || agentRunId,
                     runStatus: run.status || previous.runStatus,
+                    publicPhase: run.publicPhase || run.status || previous.publicPhase,
                     stage: nextStage,
                     targetSelection: Object.prototype.hasOwnProperty.call(run, "targetSelection")
                       ? run.targetSelection
@@ -2777,6 +2815,9 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
                   ...(authoritativeSteps.length ? { steps: authoritativeSteps } : {}),
                   runId: run?.runId || run?.id || data?.runId || agentRunId,
                   runState: run?.status || data?.runState || "succeeded",
+                  publicPhase: run?.publicPhase || data?.publicPhase || run?.status,
+                  completion: run?.completion || data?.completion,
+                  artifactRefs: run?.artifactRefs || data?.artifactRefs,
                 };
               }
             }
@@ -2851,6 +2892,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             ...(runtimeDecision ? { decision: runtimeDecision } : {}),
             metadata: {
               mode: currentMode,
+              responseKind: ["agent", "act", "debug"].includes(currentMode) ? "build" : currentMode === "plan" ? "plan" : "answer",
               type: null,
               runState: "canceled",
             },
@@ -3163,6 +3205,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
           const url = buildStreamUrl({
             jobId,
             mode: currentMode,
+            responseKind: ["agent", "act", "debug"].includes(currentMode) ? "build" : currentMode === "plan" ? "plan" : "answer",
             afterSeq: lastSeq,
             afterCursor: lastStreamCursor,
             streamToken: streamSessionToken,
@@ -3224,6 +3267,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             ...(authoritativeDecision ? { decision: authoritativeDecision } : {}),
             metadata: {
               mode: currentMode,
+              responseKind: ["agent", "act", "debug"].includes(currentMode) ? "build" : currentMode === "plan" ? "plan" : "answer",
               type: null,
               runState: "canceled",
             },
@@ -3265,6 +3309,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             ...(e?.details?.taskId ? { taskId: e.details.taskId } : {}),
             metadata: {
               mode: currentMode,
+              responseKind: ["agent", "act", "debug"].includes(currentMode) ? "build" : currentMode === "plan" ? "plan" : "answer",
               type: null,
               runState: "background",
               recoveryCategory: "outcome_unknown",

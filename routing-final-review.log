@@ -1,0 +1,427 @@
+TAP version 13
+# Subtest: Agent treats an implicit current-project outcome as immediate implementation
+ok 1 - Agent treats an implicit current-project outcome as immediate implementation
+  ---
+  duration_ms: 8.6073
+  ...
+# Subtest: Agent starts a direct sprint stamina build without a redundant approval loop
+ok 2 - Agent starts a direct sprint stamina build without a redundant approval loop
+  ---
+  duration_ms: 2.5068
+  ...
+# Subtest: unpublished Studio places retain confirmed target identity and mutation intent during manifest preflight
+ok 3 - unpublished Studio places retain confirmed target identity and mutation intent during manifest preflight
+  ---
+  duration_ms: 0.829
+  ...
+# Subtest: unpublished Studio target identity does not override ambiguity or a signature mismatch
+ok 4 - unpublished Studio target identity does not override ambiguity or a signature mismatch
+  ---
+  duration_ms: 1.095
+  ...
+# Subtest: Agent answers a conceptual project question without creating a task run
+ok 5 - Agent answers a conceptual project question without creating a task run
+  ---
+  duration_ms: 0.8849
+  ...
+# Subtest: an amendment stays bound to the active task and continues immediately
+ok 6 - an amendment stays bound to the active task and continues immediately
+  ---
+  duration_ms: 1.3619
+  ...
+# Subtest: Plan remains research-only while producing an approvable plan
+ok 7 - Plan remains research-only while producing an approvable plan
+  ---
+  duration_ms: 0.6755
+  ...
+# Subtest: Debug inspects first, applies the smallest fix, and verifies it
+ok 8 - Debug inspects first, applies the smallest fix, and verifies it
+  ---
+  duration_ms: 0.5044
+  ...
+# Subtest: multiple live targets require exactly one target clarification
+ok 9 - multiple live targets require exactly one target clarification
+  ---
+  duration_ms: 0.6062
+  ...
+# Subtest: a live different Studio place is reported as a target mismatch, not disconnected
+ok 10 - a live different Studio place is reported as a target mismatch, not disconnected
+  ---
+  duration_ms: 1.9285
+  ...
+# Subtest: missing write capability permits inspection but never invents a write command
+ok 11 - missing write capability permits inspection but never invents a write command
+  ---
+  duration_ms: 0.5264
+  ...
+# Subtest: live visibility uses authoritative plugin commands to acquire a missing manifest
+ok 12 - live visibility uses authoritative plugin commands to acquire a missing manifest
+  ---
+  duration_ms: 0.4571
+  ...
+# Subtest: explicit manifest-only safety constraints stay read-only and start inspection
+ok 13 - explicit manifest-only safety constraints stay read-only and start inspection
+  ---
+  duration_ms: 0.2791
+  ...
+# Subtest: live MCP visibility admits either bounded search command and fails closed without both
+ok 14 - live MCP visibility admits either bounded search command and fails closed without both
+  ---
+  duration_ms: 0.6573
+  ...
+# Subtest: MCP mutations bootstrap project context with search instead of a plugin-only manifest
+ok 15 - MCP mutations bootstrap project context with search instead of a plugin-only manifest
+  ---
+  duration_ms: 0.2932
+  ...
+# Subtest: scoped named Studio search stays read-only and routes as search_and_compare
+ok 16 - scoped named Studio search stays read-only and routes as search_and_compare
+  ---
+  duration_ms: 0.2567
+  ...
+# Subtest: execution confidence is deterministic and uses the exact weighted factors
+ok 17 - execution confidence is deterministic and uses the exact weighted factors
+  ---
+  duration_ms: 0.5118
+  ...
+# Subtest: mandatory confidence caps cover environment, safety, context, and freshness
+ok 18 - mandatory confidence caps cover environment, safety, context, and freshness
+  ---
+  duration_ms: 0.9832
+  ...
+# Subtest: decision telemetry uses only the shared exact event names
+ok 19 - decision telemetry uses only the shared exact event names
+  ---
+  duration_ms: 0.3829
+  ...
+# Subtest: forcing a task without approved execution does not turn inspection into a write
+ok 20 - forcing a task without approved execution does not turn inspection into a write
+  ---
+  duration_ms: 0.2507
+  ...
+# Subtest: explicit Agent planning is a one-turn read-only override and retains the selected mode
+ok 21 - explicit Agent planning is a one-turn read-only override and retains the selected mode
+  ---
+  duration_ms: 0.3821
+  ...
+# Subtest: unapproved Plan and old Ask task context cannot turn Agent into a continuation
+ok 22 - unapproved Plan and old Ask task context cannot turn Agent into a continuation
+  ---
+  duration_ms: 0.4747
+  ...
+# Subtest: team mode is frozen at admission and activity uses the existing v2 event stream
+ok 23 - team mode is frozen at admission and activity uses the existing v2 event stream
+  ---
+  duration_ms: 24.165
+  ...
+# Subtest: agent projection resolver reuses chat identity while legacy create remains strict
+ok 24 - agent projection resolver reuses chat identity while legacy create remains strict
+  ---
+  duration_ms: 4.0681
+  ...
+# Subtest: projectless projection resolution is sticky and never invents a project
+ok 25 - projectless projection resolution is sticky and never invents a project
+  ---
+  duration_ms: 0.6195
+  ...
+# Subtest: agent projection resolution does not scan unrelated account history
+ok 26 - agent projection resolution does not scan unrelated account history
+  ---
+  duration_ms: 5.3458
+  ...
+# Subtest: reading one run does not reconcile unrelated account history
+ok 27 - reading one run does not reconcile unrelated account history
+  ---
+  duration_ms: 7.2499
+  ...
+# Subtest: independent chats share entitlement slots, queue FIFO, replay once, and terminal completion promotes once
+ok 28 - independent chats share entitlement slots, queue FIFO, replay once, and terminal completion promotes once
+  ---
+  duration_ms: 18.7053
+  ...
+# Subtest: reconciliation clears stale occupancy from a terminal linked artifact job
+ok 29 - reconciliation clears stale occupancy from a terminal linked artifact job
+  ---
+  duration_ms: 4.3129
+  ...
+# Subtest: server rejects browser-owned linkage and Ask/Plan never launch or consume active slots
+ok 30 - server rejects browser-owned linkage and Ask/Plan never launch or consume active slots
+  ---
+  duration_ms: 3.6228
+  ...
+# Subtest: deletion fences reject v2 agent creation, run creation, and launch claims
+ok 31 - deletion fences reject v2 agent creation, run creation, and launch claims
+  ---
+  duration_ms: 4.2099
+  ...
+# Subtest: canonical run ignores stale client Studio target envelopes
+ok 32 - canonical run ignores stale client Studio target envelopes
+  ---
+  duration_ms: 2.7109
+  ...
+# Subtest: empty agent binds its authorized project on first run and cannot change projects
+ok 33 - empty agent binds its authorized project on first run and cannot change projects
+  ---
+  duration_ms: 2.1464
+  ...
+# Subtest: executable run seals legacy generation inputs and redispatches the immutable envelope
+ok 34 - executable run seals legacy generation inputs and redispatches the immutable envelope
+  ---
+  duration_ms: 2.0055
+  ...
+# Subtest: execution inputs are bounded and participate in idempotency
+ok 35 - execution inputs are bounded and participate in idempotency
+  ---
+  duration_ms: 3.0335
+  ...
+# Subtest: executable access, Studio plan, and token gates run before canonical task intake
+    # Subtest: free users cannot request Studio execution
+    ok 1 - free users cannot request Studio execution
+      ---
+      duration_ms: 0.8329
+      ...
+    # Subtest: paid token preflight failure prevents task creation
+    ok 2 - paid token preflight failure prevents task creation
+      ---
+      duration_ms: 0.8804
+      ...
+    # Subtest: paid deterministic Studio inspection does not require generation tokens
+    ok 3 - paid deterministic Studio inspection does not require generation tokens
+      ---
+      duration_ms: 1.7458
+      ...
+    # Subtest: generation kill switch prevents task creation
+    ok 4 - generation kill switch prevents task creation
+      ---
+      duration_ms: 0.5654
+      ...
+    1..4
+ok 36 - executable access, Studio plan, and token gates run before canonical task intake
+  ---
+  duration_ms: 4.4997
+  ...
+# Subtest: canonical agent and run projections are ownership-safe and do not require a chat path
+ok 37 - canonical agent and run projections are ownership-safe and do not require a chat path
+  ---
+  duration_ms: 3.944
+  ...
+# Subtest: agent deletion rejects nonterminal work but removes an idle agent without deleting run history
+ok 38 - agent deletion rejects nonterminal work but removes an idle agent without deleting run history
+  ---
+  duration_ms: 8.6186
+  ...
+# Subtest: event cursor pagination returns canonical identifiers without skipping a limited backlog
+ok 39 - event cursor pagination returns canonical identifiers without skipping a limited backlog
+  ---
+  duration_ms: 4.431
+  ...
+# Subtest: task cancellation failure never blocks FIFO promotion and reconcilePending retries it
+ok 40 - task cancellation failure never blocks FIFO promotion and reconcilePending retries it
+  ---
+  duration_ms: 5.7636
+  ...
+# Subtest: FIFO promotion skips missing and terminal queue heads before launching later work
+ok 41 - FIFO promotion skips missing and terminal queue heads before launching later work
+  ---
+  duration_ms: 5.4055
+  ...
+# Subtest: reconcilePending recovers a durably deferred launch after transient dispatch failure
+ok 42 - reconcilePending recovers a durably deferred launch after transient dispatch failure
+  ---
+  duration_ms: 2.6086
+  ...
+# Subtest: a launch fenced by concurrent cancellation compensates the created artifact job
+ok 43 - a launch fenced by concurrent cancellation compensates the created artifact job
+  ---
+  duration_ms: 2.9094
+  ...
+# Subtest: informal Agent continuation attaches the existing canonical task and run without launching again
+ok 44 - informal Agent continuation attaches the existing canonical task and run without launching again
+  ---
+  duration_ms: 1.4578
+  ...
+# Subtest: same-key and concurrent different-key continuation retries reconnect to one build
+ok 45 - same-key and concurrent different-key continuation retries reconnect to one build
+  ---
+  duration_ms: 2.1231
+  ...
+# Subtest: Ask continue with an old live build neither resumes it nor consumes a build slot
+ok 46 - Ask continue with an old live build neither resumes it nor consumes a build slot
+  ---
+  duration_ms: 3.3344
+  ...
+# Subtest: an Agent continuation without a saved goal fails explicitly before intake or launch
+ok 47 - an Agent continuation without a saved goal fails explicitly before intake or launch
+  ---
+  duration_ms: 0.706
+  ...
+# Subtest: full 60000-character build request reaches canonical intake and stored task without truncation
+ok 48 - full 60000-character build request reaches canonical intake and stored task without truncation
+  ---
+  duration_ms: 3.5719
+  ...
+# Subtest: eligible direct full-game request dispatches real team mode without a saved plan
+ok 49 - eligible direct full-game request dispatches real team mode without a saved plan
+  ---
+  duration_ms: 2.5019
+  ...
+# Subtest: a continuation cannot bind to another chat or another project
+ok 50 - a continuation cannot bind to another chat or another project
+  ---
+  duration_ms: 1.4299
+  ...
+# Subtest: Agent continuation does not adopt an unapproved Plan or prior Ask as its executable goal
+    # Subtest: ask
+    ok 1 - ask
+      ---
+      duration_ms: 0.8268
+      ...
+    # Subtest: plan
+    ok 2 - plan
+      ---
+      duration_ms: 0.6813
+      ...
+    1..2
+ok 51 - Agent continuation does not adopt an unapproved Plan or prior Ask as its executable goal
+  ---
+  duration_ms: 1.738
+  ...
+# Subtest: concurrent unresolved-goal continuations recover one saved admission and preserve original inputs
+ok 52 - concurrent unresolved-goal continuations recover one saved admission and preserve original inputs
+  ---
+  duration_ms: 1.8336
+  ...
+# Subtest: a terminal failed goal reports explicit recovery state without starting a second build
+ok 53 - a terminal failed goal reports explicit recovery state without starting a second build
+  ---
+  duration_ms: 2.1642
+  ...
+# Subtest: selected Agent explicit planning consumes no execution slot and later implementation executes
+ok 54 - selected Agent explicit planning consumes no execution slot and later implementation executes
+  ---
+  duration_ms: 2.2862
+  ...
+# Subtest: effective Plan preserves originating selector without letting selector metadata escalate Ask
+ok 55 - effective Plan preserves originating selector without letting selector metadata escalate Ask
+  ---
+  duration_ms: 1.4193
+  ...
+# Subtest: canonical reviewed success repairs only verification-pending run projections
+ok 56 - canonical reviewed success repairs only verification-pending run projections
+  ---
+  duration_ms: 2.8031
+  ...
+# Subtest: constructor fails closed without a project authorizer
+ok 57 - constructor fails closed without a project authorizer
+  ---
+  duration_ms: 1.4488
+  ...
+# Subtest: create-body normalization excludes caller-supplied ownership fields
+ok 58 - create-body normalization excludes caller-supplied ownership fields
+  ---
+  duration_ms: 1.0489
+  ...
+# Subtest: trusted approved game intelligence enters the hashed plan execution context
+ok 59 - trusted approved game intelligence enters the hashed plan execution context
+  ---
+  duration_ms: 3.2536
+  ...
+# Subtest: approved plan with invalid game intelligence project mode is rejected
+ok 60 - approved plan with invalid game intelligence project mode is rejected
+  ---
+  duration_ms: 1.6392
+  ...
+# Subtest: UI Creator task fields are revision-fenced and scoped to their workspace
+ok 61 - UI Creator task fields are revision-fenced and scoped to their workspace
+  ---
+  duration_ms: 0.6799
+  ...
+# Subtest: trusted approved structured steps compile exactly into stable canonical runtime steps
+ok 62 - trusted approved structured steps compile exactly into stable canonical runtime steps
+  ---
+  duration_ms: 1.6841
+  ...
+# Subtest: approved v3 loader output compiles without shape translation or capability aliases
+ok 63 - approved v3 loader output compiles without shape translation or capability aliases
+  ---
+  duration_ms: 15.5856
+  ...
+# Subtest: legacy approved plans retain generic planning while preserving source linkage
+ok 64 - legacy approved plans retain generic planning while preserving source linkage
+  ---
+  duration_ms: 0.681
+  ...
+# Subtest: trusted structured plans fail closed on missing dependency IDs
+ok 65 - trusted structured plans fail closed on missing dependency IDs
+  ---
+  duration_ms: 0.5366
+  ...
+# Subtest: trusted structured plans repair unique title dependencies before compilation
+ok 66 - trusted structured plans repair unique title dependencies before compilation
+  ---
+  duration_ms: 0.5759
+  ...
+# Subtest: trusted structured plans fail closed on dependency cycles
+ok 67 - trusted structured plans fail closed on dependency cycles
+  ---
+  duration_ms: 0.3459
+  ...
+# Subtest: normal conversation is classified without creating or mutating runtime state
+ok 68 - normal conversation is classified without creating or mutating runtime state
+  ---
+  duration_ms: 8.9398
+  ...
+# Subtest: trusted approved plans force noun-like goals through exact task compilation
+ok 69 - trusted approved plans force noun-like goals through exact task compilation
+  ---
+  duration_ms: 6.2204
+  ...
+# Subtest: dual-write compatibility intake is internal-only and still authorizes the project
+ok 70 - dual-write compatibility intake is internal-only and still authorizes the project
+  ---
+  duration_ms: 0.9406
+  ...
+# Subtest: read re-authorizes the persisted project before returning task details
+ok 71 - read re-authorizes the persisted project before returning task details
+  ---
+  duration_ms: 2.6328
+  ...
+# Subtest: canonical reads remain independently disabled even while the canonical runtime owns writes
+ok 72 - canonical reads remain independently disabled even while the canonical runtime owns writes
+  ---
+  duration_ms: 0.2726
+  ...
+# Subtest: action rejects a no-longer-owned persisted project before any mutation
+ok 73 - action rejects a no-longer-owned persisted project before any mutation
+  ---
+  duration_ms: 0.5991
+  ...
+# Subtest: active-task lookup ignores Ask, Plan, and explicit planning turns
+ok 74 - active-task lookup ignores Ask, Plan, and explicit planning turns
+  ---
+  duration_ms: 0.3648
+  ...
+# Subtest: scheduled retry without a durable worker leaves the task scheduled
+ok 75 - scheduled retry without a durable worker leaves the task scheduled
+  ---
+  duration_ms: 0.4429
+  ...
+# Subtest: scheduled retry is consumed by the existing team worker without repeating completed specialists
+ok 76 - scheduled retry is consumed by the existing team worker without repeating completed specialists
+  ---
+  duration_ms: 80.555
+  ...
+# Subtest: Agent planning intent is persisted as a Plan task with original selected mode
+ok 77 - Agent planning intent is persisted as a Plan task with original selected mode
+  ---
+  duration_ms: 5.39
+  ...
+1..77
+# tests 83
+# suites 0
+# pass 83
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 329.4487

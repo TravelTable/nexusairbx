@@ -175,6 +175,7 @@ describe("TaskProgressPanel", () => {
       <TaskProgressPanel
         task={task({
           status: "succeeded",
+          completion: { canComplete: true },
           currentStepId: "",
           steps: task().steps.map((step) => ({ ...step, status: "succeeded" })),
           finalEvidence: [{ type: "manifest" }, { type: "studio_ack" }],
@@ -201,7 +202,7 @@ describe("TaskProgressPanel", () => {
       />
     );
 
-    expect(screen.getByText(/task completed and verified/i)).toBeTruthy();
+    expect(screen.getByText(/build complete/i)).toBeTruthy();
     expect(screen.getByText(/lobby spawn exists in the requested location/i)).toBeTruthy();
     expect(screen.queryByText(/live updates paused/i)).toBeNull();
   });
@@ -265,7 +266,7 @@ describe("TaskProgressPanel", () => {
       />
     );
 
-    expect(screen.getByText(/changes saved; test the behavior in studio/i)).toBeTruthy();
+    expect(screen.getByText(/Build finished · verification unconfirmed/i)).toBeTruthy();
     expect(screen.getByText(/player input must run from a client script/i)).toBeTruthy();
     expect(screen.getByText(/created the input controller/i)).toBeTruthy();
     expect(screen.getByText(/press play in roblox studio/i)).toBeTruthy();

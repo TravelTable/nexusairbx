@@ -14,6 +14,16 @@ const DEDUPE_TTL_MS = 2000;
 const SESSION_TTL_MS = 30 * 60 * 1000;
 
 export const PRODUCT_EVENTS = Object.freeze({
+  PRICING_VIEWED: "pricing_viewed",
+  BILLING_PERIOD_SELECTED: "billing_period_selected",
+  CREDIT_EXPLAINER_OPENED: "credit_explainer_opened",
+  CHECKOUT_RETURNED: "checkout_returned",
+  BILLING_PORTAL_OPENED: "billing_portal_opened",
+  SUBSCRIPTION_CANCELED: "subscription_canceled",
+  CREDIT_PACK_PURCHASED: "credit_pack_purchased",
+  TEAM_SEAT_CHANGED: "team_seat_changed",
+  CREDIT_SETTLED: "credit_settled",
+  PAYMENT_REFUNDED: "payment_refunded",
   ONBOARDING_STAGE_ENTERED: 'onboarding_stage_entered',
   ONBOARDING_STAGE_COMPLETED: 'onboarding_stage_completed',
   ONBOARDING_PAUSED: 'onboarding_paused',
@@ -79,6 +89,11 @@ export const PRODUCT_EVENTS = Object.freeze({
 
 const ALLOWED_EVENTS = new Set(Object.values(PRODUCT_EVENTS));
 const SERVER_CONFIRMED_ONLY = new Set([
+  PRODUCT_EVENTS.SUBSCRIPTION_CANCELED,
+  PRODUCT_EVENTS.CREDIT_PACK_PURCHASED,
+  PRODUCT_EVENTS.TEAM_SEAT_CHANGED,
+  PRODUCT_EVENTS.CREDIT_SETTLED,
+  PRODUCT_EVENTS.PAYMENT_REFUNDED,
   PRODUCT_EVENTS.GENERATION_COMPLETED,
   PRODUCT_EVENTS.ARTIFACT_PUSHED_TO_STUDIO,
   PRODUCT_EVENTS.PURCHASE_COMPLETED,

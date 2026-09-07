@@ -14,7 +14,7 @@ local STUDIO_PROTOCOL_VERSION = "2026-08-27-r15-animation"
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.14.0-r15-animation.14-color-readback"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.14.0-r15-animation.15-native-batch"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the

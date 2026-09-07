@@ -1,3 +1,4 @@
+import { projectAssistantMessage } from "../../../lib/assistantMessageProjection";
 import React, { useMemo } from "react";
 import { NexusRBXAvatar, SkeletonArtifact } from "../AiComponents";
 import MarkdownMessage from "./MarkdownMessage";
@@ -391,7 +392,10 @@ function SingleMessageList({
   );
 }
 
-export default function MessageList({ pendingMessage, pendingMessages, messages = [], ...props }) {
+export default function MessageList({ pendingMessage: rawPendingMessage, pendingMessages: rawPendingMessages, messages: rawMessages = [], ...props }) {
+  const messages = useMemo(() => rawMessages.map(projectAssistantMessage), [rawMessages]);
+  const pendingMessages = useMemo(() => (rawPendingMessages || []).map(projectAssistantMessage), [rawPendingMessages]);
+  const pendingMessage = useMemo(() => rawPendingMessage ? projectAssistantMessage(rawPendingMessage) : null, [rawPendingMessage]);
   const keylessRenderKeys = React.useRef(new WeakMap());
   const keylessRenderSequence = React.useRef(0);
   const knownMessageIdsRef = React.useRef(

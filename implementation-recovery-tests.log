@@ -1,0 +1,332 @@
+TAP version 13
+# Subtest: team routing requires a new approved canonical game and the rollout flag
+ok 1 - team routing requires a new approved canonical game and the rollout flag
+  ---
+  duration_ms: 4.5276
+  ...
+# Subtest: lead rejects overlapping paths, dependency cycles, and missing dependencies
+ok 2 - lead rejects overlapping paths, dependency cycles, and missing dependencies
+  ---
+  duration_ms: 1.739
+  ...
+# Subtest: specialists cannot stage writes outside owned paths or destructive commands
+ok 3 - specialists cannot stage writes outside owned paths or destructive commands
+  ---
+  duration_ms: 1.7234
+  ...
+# Subtest: shared model slots enforce both user capacity and the four-call build cap
+ok 4 - shared model slots enforce both user capacity and the four-call build cap
+  ---
+  duration_ms: 3.2213
+  ...
+# Subtest: durable lead dispatches independent specialists in parallel; completion waits for playtest
+ok 5 - durable lead dispatches independent specialists in parallel; completion waits for playtest
+  ---
+  duration_ms: 36.6014
+  ...
+# Subtest: a changed plan fences old workers and preserves staged outputs
+ok 6 - a changed plan fences old workers and preserves staged outputs
+  ---
+  duration_ms: 12.4241
+  ...
+# Subtest: team projections expose saved output references without source or prompts
+ok 7 - team projections expose saved output references without source or prompts
+  ---
+  duration_ms: 0.2265
+  ...
+# Subtest: dependent specialists wait for accepted dependency artifacts
+ok 8 - dependent specialists wait for accepted dependency artifacts
+  ---
+  duration_ms: 16.7757
+  ...
+# Subtest: shared interface revisions reuse completed unrelated assignments
+ok 9 - shared interface revisions reuse completed unrelated assignments
+  ---
+  duration_ms: 27.0746
+  ...
+# Subtest: three targeted repair cycles preserve successful siblings and reject a fourth
+ok 10 - three targeted repair cycles preserve successful siblings and reject a fourth
+  ---
+  duration_ms: 71.0966
+  ...
+# Subtest: usage includes invalid paid output and retries do not restart successful assignments
+ok 11 - usage includes invalid paid output and retries do not restart successful assignments
+  ---
+  duration_ms: 1017.7776
+  ...
+# Subtest: cancellation fences a worker response already in flight
+ok 12 - cancellation fences a worker response already in flight
+  ---
+  duration_ms: 14.6359
+  ...
+# Subtest: stale artifact payloads cannot smuggle a second target
+ok 13 - stale artifact payloads cannot smuggle a second target
+  ---
+  duration_ms: 0.5408
+  ...
+# Subtest: worker restart recovers a stored artifact without another lead model call
+ok 14 - worker restart recovers a stored artifact without another lead model call
+  ---
+  duration_ms: 9.2606
+  ...
+# Subtest: direct build team creation verifies authorization against the stored task and keeps the full goal
+ok 15 - direct build team creation verifies authorization against the stored task and keeps the full goal
+  ---
+  duration_ms: 0.7516
+  ...
+# Subtest: specialist source is durably published before a successful step becomes visible
+ok 16 - specialist source is durably published before a successful step becomes visible
+  ---
+  duration_ms: 8.4561
+  ...
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:21:31.874Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'step.started',
+#   ts: '2026-09-06T15:21:31.878Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'running',
+#   eventType: 'task_step_claimed',
+#   sequence: 3,
+#   eventId: 'e_0000000000000003'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:21:31.882Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:21:31.884Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:21:31.885Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:21:31.888Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:21:31.891Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:21:31.893Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:21:31.894Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:21:31.895Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:21:31.896Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:21:31.897Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:21:31.899Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:21:31.902Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# Subtest: a specialist success receipt projects only its owning attempt and never completes the parent
+ok 17 - a specialist success receipt projects only its owning attempt and never completes the parent
+  ---
+  duration_ms: 12.0296
+  ...
+# Subtest: legacy success stops at verifying and stale receipts cannot regress it
+ok 18 - legacy success stops at verifying and stale receipts cannot regress it
+  ---
+  duration_ms: 1.8872
+  ...
+# Subtest: successful Studio inspection terminalizes its canonical task
+ok 19 - successful Studio inspection terminalizes its canonical task
+  ---
+  duration_ms: 1.555
+  ...
+# Subtest: successful Studio job without canonical deliverable proof remains verifying
+ok 20 - successful Studio job without canonical deliverable proof remains verifying
+  ---
+  duration_ms: 2.1788
+  ...
+# Subtest: inspection success follows the canonical verifying transition before success
+ok 21 - inspection success follows the canonical verifying transition before success
+  ---
+  duration_ms: 0.7285
+  ...
+# Subtest: running resumes work and timeout becomes a typed canonical failure
+ok 22 - running resumes work and timeout becomes a typed canonical failure
+  ---
+  duration_ms: 3.1496
+  ...
+# Subtest: blocked Studio builds preserve failure causes without inventing a disconnection
+ok 23 - blocked Studio builds preserve failure causes without inventing a disconnection
+  ---
+  duration_ms: 4.4207
+  ...
+# Subtest: terminal canonical tasks consume superseded legacy job receipts
+ok 24 - terminal canonical tasks consume superseded legacy job receipts
+  ---
+  duration_ms: 1.1098
+  ...
+# Subtest: a nonterminal task consumes receipts from a superseded legacy job without changing the task
+ok 25 - a nonterminal task consumes receipts from a superseded legacy job without changing the task
+  ---
+  duration_ms: 1.5183
+  ...
+# Subtest: processPending dead-letters permanent validation failures
+ok 26 - processPending dead-letters permanent validation failures
+  ---
+  duration_ms: 1.7207
+  ...
+# Subtest: processPending schedules transient failures with per-receipt exponential backoff
+ok 27 - processPending schedules transient failures with per-receipt exponential backoff
+  ---
+  duration_ms: 1.501
+  ...
+# Subtest: Studio manual verification blockers remain verifiable instead of becoming immutable failures
+ok 28 - Studio manual verification blockers remain verifiable instead of becoming immutable failures
+  ---
+  duration_ms: 0.7839
+  ...
+1..28
+# tests 28
+# suites 0
+# pass 28
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1342.673

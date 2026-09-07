@@ -3,7 +3,7 @@ import { BILLING_INTERVAL, PLAN } from "./prices";
 export const CHECKOUT_INTENT_KEY = "nexusrbx:checkout-intent:v1";
 export const CHECKOUT_INTENT_TTL_MS = 60 * 60 * 1000;
 
-const ALLOWED_PLANS = new Set([PLAN.STARTER, PLAN.PRO, PLAN.PRO_PLUS, PLAN.TEAM]);
+const ALLOWED_PLANS = new Set([PLAN.PRO, PLAN.TEAM]);
 const ALLOWED_INTERVALS = new Set([BILLING_INTERVAL.MONTH, BILLING_INTERVAL.YEAR]);
 
 function storage() {
@@ -47,18 +47,19 @@ export function validateCheckoutIntent(value, now = Date.now()) {
   return {
     plan,
     interval,
-    ...(plan === PLAN.TEAM ? { seatCount: normalizeSeats(value.seatCount) } : {}),
+    ...(plan === PLAN.TEAM ? { seatCount: normalizeSeats(value.seatCount), teamId: String(value.teamId || "") } : {}),
     returnPath: "/subscribe",
     createdAt,
     expiresAt,
   };
 }
 
-export function createCheckoutIntent({ plan, interval, seatCount } = {}, now = Date.now()) {
+export function createCheckoutIntent({ plan, interval, seatCount, teamId } = {}, now = Date.now()) {
   return validateCheckoutIntent({
     plan,
     interval,
     seatCount,
+    teamId,
     returnPath: "/subscribe",
     createdAt: now,
     expiresAt: now + CHECKOUT_INTENT_TTL_MS,
@@ -102,5 +103,6 @@ export function checkoutIntentFromSearchParams(searchParams, now = Date.now()) {
     plan: searchParams.get("plan"),
     interval: searchParams.get("interval"),
     seatCount: searchParams.get("seats"),
+    teamId: searchParams.get("teamId"),
   }, now);
 }

@@ -1,4 +1,7 @@
-import publicPlanCatalog from "../data/publicPlanCatalog.json";
+import catalog from "../data/billingCatalog.v2.json";
+const publicPlanCatalog = catalog.plans;
+export const BILLING_CATALOG = catalog;
+export const CREDIT_PACKS = catalog.packs;
 
 export const PUBLIC_PLAN_CATALOG = Object.freeze(
   publicPlanCatalog.map((plan) => Object.freeze({

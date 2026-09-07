@@ -174,14 +174,14 @@ export default function WorkspaceRibbon({
               data-active={evidenceOpen ? "true" : "false"}
               aria-label={
                 evidenceCount
-                  ? `Open Evidence, ${evidenceCount} new ${evidenceCount === 1 ? "item" : "items"}`
-                  : "Open Evidence"
+                  ? `Open Build, ${evidenceCount} new ${evidenceCount === 1 ? "item" : "items"}`
+                  : "Open Build"
               }
               aria-expanded={evidenceOpen}
               onClick={onOpenEvidence}
             >
               <ClipboardList aria-hidden="true" />
-              <span>Evidence</span>
+              <span>Build</span>
               <b aria-hidden="true">{evidenceCount}</b>
             </button>
           ) : null}

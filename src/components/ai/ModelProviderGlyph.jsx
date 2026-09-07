@@ -60,6 +60,7 @@ export default function ModelProviderGlyph({
   const key = resolveLobeProviderKey(provider);
   const src = iconUrl(key, type);
   const label = providerLabel(provider);
+  const needsContrastChip = DARK_PROVIDER_ICONS.has(key);
 
   if (!src || failedSrc === src) {
     return (
@@ -78,7 +79,7 @@ export default function ModelProviderGlyph({
     );
   }
 
-  return (
+  const image = (
     <img
       src={src}
       onError={() => setFailedSrc(src)}
@@ -90,6 +91,18 @@ export default function ModelProviderGlyph({
       className={`shrink-0 object-contain ${className}`.trim()}
       draggable={false}
     />
+  );
+
+  if (!needsContrastChip) return image;
+
+  return (
+    <span
+      aria-hidden="true"
+      className={`inline-flex shrink-0 items-center justify-center rounded-md bg-white ${className}`.trim()}
+      style={{ width: size, height: size }}
+    >
+      {image}
+    </span>
   );
 }
 

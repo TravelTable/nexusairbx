@@ -1,6 +1,8 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import {
   hasTerminalStudioTaskSuccess,
+  findAuthoritativeRunOutput,
+  buildAssistantMessagePayload,
   normalizeGenerationErrorPayload,
   readPendingAgentRun,
   resolveResultUrl,
@@ -473,7 +475,7 @@ describe("useAiChat", () => {
       Array.isArray(ref?.segments)
       && ref.segments.includes("req_finalize-assistant")
       && payload?.pending === false
-      && payload?.title === "Fly GUI"
+      && payload?.responseKind === "build"
     ));
 
     expect(terminalWrites).toHaveLength(1);
@@ -482,7 +484,7 @@ describe("useAiChat", () => {
     expect(payload).not.toHaveProperty("createdAt");
     expect(payload).toEqual(expect.objectContaining({
       pending: false,
-      title: "Fly GUI",
+      responseKind: "build",
       jobId: "job_1",
       runId: "run_1",
       requestId: "req_finalize",
@@ -1033,7 +1035,8 @@ describe("useAiChat", () => {
         segments: expect.arrayContaining(["req_immediate_failure-assistant"]),
       }),
       expect.objectContaining({
-        content: message,
+        responseKind: "build",
+        content: "Open Build to check the saved output and run status.",
         error: message,
         errorCode: "GENERATION_FAILED",
         pending: false,
@@ -1503,7 +1506,7 @@ describe("useAiChat", () => {
       expect(updateDoc).toHaveBeenCalledWith(
         expect.objectContaining({ segments: expect.arrayContaining(["stale-outer-message"]) }),
         expect.objectContaining({
-          title: "Lava survival arena",
+          responseKind: "build",
           pending: false,
         }),
       );
@@ -1558,8 +1561,8 @@ describe("useAiChat", () => {
           segments: expect.arrayContaining(["terminal-message"]),
         }),
         expect.objectContaining({
-          title: "Studio task completed",
-          summary: expect.stringContaining("Created ServerScriptService/RoundManager."),
+          responseKind: "build",
+          content: "Build finished · verification unconfirmed",
           pending: false,
           stage: "completed",
           agentId: "agent-terminal",
@@ -1569,9 +1572,10 @@ describe("useAiChat", () => {
       );
     });
     const terminalWrite = updateDoc.mock.calls.find(([, payload]) => (
-      payload?.title === "Studio task completed"
+      payload?.responseKind === "build" && payload?.pending === false
     ));
-    expect(terminalWrite[1].summary).toContain("The Studio changes were applied.");
+    expect(terminalWrite[1].summary).toBeUndefined();
+    expect(terminalWrite[1].content).toContain("verification unconfirmed");
     hook.unmount();
   });
 
@@ -1657,7 +1661,7 @@ describe("useAiChat", () => {
         segments: expect.arrayContaining(["request_inspection-assistant"]),
       }),
       expect.objectContaining({
-        summary: "Found NexusShowcase at Workspace/NexusShowcase.",
+        responseKind: "build",
         pending: false,
         stage: "completed",
         runId: "run-inspection",
@@ -1730,7 +1734,7 @@ describe("useAiChat", () => {
         segments: expect.arrayContaining(["req_cancel_canonical-assistant"]),
       }),
       expect.objectContaining({
-        content: "Generation canceled.",
+        content: "Build stopped",
         pending: false,
         runId: "run_cancel_me",
         stage: "canceled",
@@ -1798,7 +1802,7 @@ describe("useAiChat", () => {
         ]),
       }),
       expect.objectContaining({
-        content: "Generation canceled.",
+        content: "Build stopped",
         pending: false,
         runId: "run-recovered-cancel",
         stage: "canceled",
@@ -1863,4 +1867,15 @@ describe("useAiChat", () => {
     );
     hook.unmount();
   });
+});
+
+test("canonical recovery chooses saved artifacts ahead of a run summary", () => {
+  const ref={artifactId:"a1",revision:"v1",path:"ReplicatedStorage/Config"};
+  const output=findAuthoritativeRunOutput({runId:"r1",summary:"done",result:{artifactRefs:[ref],code:"local Config = {}"},completion:{canComplete:false,changesApplied:true}});
+  expect(output.artifactRefs).toEqual([ref]);
+  const message=buildAssistantMessagePayload(output,{requestId:"request1",jobId:"job1",currentMode:"agent"});
+  expect(message.artifactRefs).toEqual([ref]);
+  expect(message.code).toBeUndefined();
+  expect(message.content).not.toContain("local Config");
+  expect(message.completion.canComplete).toBe(false);
 });

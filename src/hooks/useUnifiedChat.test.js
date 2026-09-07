@@ -1127,11 +1127,10 @@ describe("useUnifiedChat", () => {
     getTask.mockResolvedValue({ task, allowedActions: ["cancel", "amend"] });
     const onTaskAccepted = jest.fn();
     const { result } = renderHook(() => useUnifiedChat({ uid: "user-1" }, {}, jest.fn(), jest.fn()));
-    await act(async () => { await result.current.handleSubmit("continue", [], null, { onTaskAccepted }); });
-    expect(getTask).toHaveBeenCalledWith("task-plan-1");
-    expect(onTaskAccepted).toHaveBeenCalledWith(task);
-    expect(createAgentRunV2).not.toHaveBeenCalled();
-    expect(chatHandleSubmit).not.toHaveBeenCalled();
+    await act(async () => { await result.current.handleSubmit("continue", [], null, { onTaskAccepted, projectId: "project-1" }); });
+    expect(getTask).not.toHaveBeenCalled();
+    expect(createAgentRunV2).toHaveBeenCalledWith(expect.objectContaining({ prompt: "continue", continuation: true }));
+    expect(chatHandleSubmit).toHaveBeenCalled();
     expect(retryTask).not.toHaveBeenCalled();
     expect(approveTask).not.toHaveBeenCalled();
   });
@@ -1312,7 +1311,7 @@ describe("useUnifiedChat", () => {
     expect(notify).not.toHaveBeenCalledWith(expect.objectContaining({ type: "error" }));
   });
 
-  test("binds a terse start approval to the latest concrete build request", async () => {
+  test("sends a terse start command unchanged for authoritative goal recovery", async () => {
     const priorRequest = "Build a fly GUI with a shop and money system";
     useAiChat.mockReturnValue({
       activeMode: "agent",
@@ -1351,13 +1350,11 @@ describe("useUnifiedChat", () => {
       });
     });
 
-    const expectedPrompt = [
-      "Implement the following request now. Infer safe defaults instead of asking optional questions:",
-      priorRequest,
-    ].join("\n\n");
+    const expectedPrompt = "just start";
     expect(createAgentRunV2).toHaveBeenCalledWith(
       expect.objectContaining({
         prompt: expectedPrompt,
+        continuation: true,
         conversation: expect.arrayContaining([expect.objectContaining({ role: "user", content: priorRequest })]),
       })
     );
@@ -2037,4 +2034,32 @@ describe("useUnifiedChat", () => {
     expect(onRunId).toHaveBeenCalledWith("run-created-during-stop");
     expect(chatHandleSubmit).not.toHaveBeenCalled();
   });
+  test.each(["Assemble a weapon bench", "the shooting does not work", "Fix the shooting?"])("unrecognized Agent implementation %s reaches canonical admission", async prompt => {
+    classifyUserIntent.mockImplementation(jest.requireActual("../lib/intentClassifier").classifyUserIntent);
+    useAiChat.mockReturnValue({ ...useAiChat(), currentChatId: "chat-1", currentChatMeta: {projectId:"project-1"} });
+    const {result}=renderHook(()=>useUnifiedChat({uid:"user-1"},{},jest.fn(),jest.fn()));
+    await act(async()=>{await result.current.handleSubmit(prompt,[],null,{projectId:"project-1"});});
+    expect(createAgentRunV2).toHaveBeenCalledWith(expect.objectContaining({prompt,responseKind:"build",selectedMode:"agent"}));
+    expect(orchestrate).not.toHaveBeenCalled();
+  });
+
+  test("old model attachments cannot hijack Agent admission", async () => {
+    const attachment={id:"a1",versionId:"v1",name:"Ship.rbxm",kind:"model"};
+    useAiChat.mockReturnValue({...useAiChat(),currentChatId:"chat-1",messages:[{role:"user",content:"old model",attachments:[attachment]}]});
+    const {result}=renderHook(()=>useUnifiedChat({uid:"user-1"},{},jest.fn(),jest.fn()));
+    await act(async()=>{await result.current.handleSubmit("Build a map around this model",[attachment],null,{projectId:"project-1"});});
+    expect(createAgentRunV2).toHaveBeenCalledWith(expect.objectContaining({attachments:[expect.objectContaining({id:"a1",versionId:"v1"})]}));
+  });
+
+  test("explicit Agent planning stays a one-turn Plan override", async () => {
+    classifyUserIntent.mockReturnValue("PLANNING_REQUEST");
+    useAiChat.mockReturnValue({...useAiChat(),currentChatId:"chat-1"});
+    orchestrate.mockResolvedValue({status:"plan",planId:"p1",planVersion:1,planHash:"h1"});
+    const {result}=renderHook(()=>useUnifiedChat({uid:"user-1"},{},jest.fn(),jest.fn()));
+    await act(async()=>{await result.current.handleSubmit("Plan this first",[],null,{projectId:"project-1"});});
+    expect(orchestrate).toHaveBeenCalledWith(expect.objectContaining({mode:"plan"}));
+    expect(createAgentRunV2).not.toHaveBeenCalled();
+    expect(setDoc.mock.calls.some(([,payload])=>payload.role==="user"&&payload.selectedMode==="agent"&&payload.responseKind==="plan")).toBe(true);
+  });
+
 });

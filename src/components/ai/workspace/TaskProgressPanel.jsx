@@ -14,6 +14,7 @@ import {
 } from "lib/icons";
 import { formatTaskRuntimeError } from "../../../lib/taskRuntimeApi";
 import StudioTaskApprovalCard from "./StudioTaskApprovalCard";
+import { getRunPresentation } from "../../../lib/runPresentation";
 import {
   getAuthorizedTaskActions,
   isTaskTerminal,
@@ -361,6 +362,13 @@ function currentStepFor(task, steps) {
 
 function statusPresentation(task, currentStep, structuredResult) {
   const status = normalizedStatus(task?.status) || "accepted";
+  const publicRun = getRunPresentation(task);
+  if (["succeeded", "completed", "done", "applied", "verification_pending", "manual_verification_required", "incomplete"].includes(status) && publicRun) {
+    return { eyebrow: task.completion?.canComplete ? "Verified" : "Build result", title: publicRun.label,
+      body: task.completion?.canComplete ? "All required deliverables have passed their recorded completion checks."
+        : "Saved files and recorded changes remain available. Open Tests to see the checks that are still needed.",
+      tone: task.completion?.canComplete ? "success" : "waiting" };
+  }
   const structuredCopy =
     STRUCTURED_STATUS_COPY[normalizedStatus(structuredResult?.status)];
   if (structuredCopy && isTaskTerminal(task)) return structuredCopy;
@@ -1020,7 +1028,7 @@ export default function TaskProgressPanel({
         </div>
       )}
 
-      {normalizedStatus(task.status) === "succeeded" && !structuredResult && (
+      {normalizedStatus(task.status) === "succeeded" && task.completion?.canComplete === true && !structuredResult && (
         <div className="rounded-xl border border-[color-mix(in_srgb,var(--ds-success)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-success)_12%,transparent)] px-3 py-2.5">
           <div className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-success)] ">
             Task summary

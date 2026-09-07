@@ -61,6 +61,17 @@ export function TokenBar({
   const premiumMicros = Number(premiumBalance?.balanceMicros);
   const showPremiumBalance = !isFreeUsagePlan && Number.isFinite(premiumMicros);
   const premiumDollars = showPremiumBalance ? dollarsFromMicros(premiumMicros) : null;
+  if (includedUsage?.catalogVersion === "v2" && !unlimitedTokens) {
+    const amount = (Number(includedUsage.creditRemainingMicros || 0)/1e6).toLocaleString(undefined, { maximumFractionDigits: 2 });
+    const percent = Number(includedUsage.percentUsed || 0);
+    const warning = percent >= 100 ? 100 : percent >= 90 ? 90 : percent >= 70 ? 70 : null;
+    return <div id="cloud-token-bar" className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--nx-text-muted)]" role="status">
+      <a href="/billing" className="font-semibold text-[var(--nx-text)]">{usageLoading ? "Checking credits…" : usageUnavailable ? "Credits unavailable" : `${amount} Nexus Credits`}</a>
+      <span>{includedUsage.billingScope?.type === "team" ? "Team pool" : "Personal balance"} · included first</span>
+      {includedUsage.resetsAt && <span>Refreshes {formatResetDate(includedUsage.resetsAt)}</span>}
+      {warning && <span>{warning}% of included credits used</span>}
+    </div>;
+  }
 
   if (unlimitedTokens) {
     if (compact) {

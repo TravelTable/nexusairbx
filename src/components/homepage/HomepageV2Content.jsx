@@ -8,11 +8,12 @@ import ConnectorReleaseCard from "./ConnectorReleaseCard";
 import VideoShowcase from "./VideoShowcase";
 import NexusFeaturesGrid from "./NexusFeaturesGrid";
 import AiProvidersBand from "./AiProvidersBand";
+import FinancialPlans from "../billing/FinancialPlans";
 import { trackProductEvent } from "../../lib/productAnalytics";
 import styles from "./HomepageCinematic.module.css";
 
 const HERO_WORDS = ["playable", "testable", "reviewable", "real"];
-const HERO_LETTER_COLORS = ["#eca8d6", "#b591f3", "#81c3f9", "#a2d8a4", "#f8ba48"];
+const HERO_LETTER_COLORS = ["var(--nx-purple)", "var(--nx-text)", "var(--nx-purple)", "var(--nx-success)", "var(--nx-text)"];
 
 const STACK_ITEMS = [
   ["01", "Project-aware agent", "Reads the current place and keeps work grounded in the real object tree."],
@@ -24,6 +25,10 @@ const STACK_ITEMS = [
 ];
 
 const FAQ_ITEMS = [
+  ["How do Nexus Credits work?", "Pro includes 9 Nexus Credits each month. Nexus Auto uses cost-aware routing to stretch your allowance; premium direct models consume credits faster. Cost also depends on context and output length."],
+  ["Do annual plans refresh credits monthly?", "Yes. You pay annually and receive fresh included credits every month. Included credits do not roll over. Purchased credits do not expire."],
+  ["Can I cancel?", "Yes. Cancel in billing settings and keep paid access through the end of your paid subscription period. There is no paid trial—start with Free."],
+  ["How will Team usage work?", "Team will pool 15 Nexus Credits per paid seat each month. Team checkout remains closed until invitations, seats, and pooled billing have been verified."],
   [
     "Can Nexus work with an existing Roblox game?",
     "Yes. The Studio workflow reads the current project first, then scopes changes around what already exists.",
@@ -107,7 +112,7 @@ function Hero({ surface, navigate, inputRef }) {
     <section className={styles.hero} aria-labelledby="homepage-hero-heading" data-home-hero>
       <div className={styles.heroCopy}>
         <h1 id="homepage-hero-heading" className={styles.heroHeading}>
-          AI Roblox Script Generator <span>and Studio Agent</span>
+          Turn your Roblox idea <span>into a reviewed Studio build.</span>
         </h1>
         <div className={styles.connectorReleaseSlot}>
           <ConnectorReleaseCard />
@@ -125,7 +130,7 @@ function Hero({ surface, navigate, inputRef }) {
           promptId="homepage-hero-prompt"
           suggestedPrompt="Build a round-based horror game with simple mobile controls and rooms that shift after each round."
           suggestionVersion={0}
-          submitLabel="Start building"
+          submitLabel="Start building free"
           helperText="Your request is saved before the workspace opens."
           inputRef={inputRef}
           showLabel
@@ -255,6 +260,7 @@ export default function HomepageV2Content({ surface = "homepage", navigate }) {
         <NexusFeaturesGrid />
         <FocusedTools />
         <StackSection />
+        <FinancialPlans compact />
         <FaqSection />
         <FinalCta surface={surface} navigate={navigate} />
       </main>

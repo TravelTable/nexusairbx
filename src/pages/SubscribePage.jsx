@@ -153,7 +153,9 @@ export default function SubscribePage() {
     sessionUnsubscribers.current = [];
   }, [user?.uid]);
 
-  const isSubscriber = isSubscriberPlan(entitlements?.plan, entitlements?.entitlements);
+  // A personal subscription does not prevent an independently billed Team.
+  // Team membership and its existing subscription are checked by the server.
+  const isSubscriber = intent?.plan !== PLAN.TEAM && isSubscriberPlan(entitlements?.plan, entitlements?.entitlements);
   const seatCount = intent?.plan === PLAN.TEAM ? intent.seatCount : 1;
   const unitPrice = intent?.interval === BILLING_INTERVAL.YEAR ? plan?.yearly : plan?.monthly;
   const billedTotal = Number.isFinite(unitPrice) ? unitPrice * seatCount : null;
@@ -205,7 +207,7 @@ export default function SubscribePage() {
       const result = await startSubscriptionCheckout({
         plan: intent.plan,
         interval: intent.interval,
-        ...(intent.plan === PLAN.TEAM ? { seatCount: intent.seatCount } : {}),
+        ...(intent.plan === PLAN.TEAM ? { seatCount: intent.seatCount, teamId: intent.teamId } : {}),
       });
       if (result?.url) {
         setStatus("Opening Stripe checkout…");
@@ -330,6 +332,14 @@ export default function SubscribePage() {
           </p>
 
           <dl className="account-ledger-charge-record">
+            <div className="account-ledger-charge-row">
+              <dt>Monthly credits</dt>
+              <dd>{plan.credits * seatCount} Nexus Credits · refresh monthly, no rollover</dd>
+            </div>
+            <div className="account-ledger-charge-row">
+              <dt>Tax treatment</dt>
+              <dd>USD, plus applicable tax. No paid trial—start with Free.</dd>
+            </div>
             <div className="account-ledger-charge-row">
               <dt>Plan</dt>
               <dd>{plan.name}</dd>

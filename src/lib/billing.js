@@ -377,6 +377,9 @@ export function summarizeEntitlements(e) {
 
   const subRemaining = Math.max(0, limit - used);
   return {
+    ...(e?.catalogVersion === "v2" ? { catalogVersion: "v2", billingScope: e.billingScope,
+      includedCredits: e.includedCredits, purchasedCredits: e.purchasedCredits,
+      totalAvailableCreditsMicros: e.totalAvailableCreditsMicros, usageWindow: e.usageWindow, refreshAt: e.refreshAt } : {}),
     plan,
     cycle,
     subRemaining,
@@ -457,10 +460,15 @@ async function postCheckout(body) {
   return r.json().catch(() => ({})); // {url} OR {sessionDocPath}
 }
 
-export async function startSubscriptionCheckout({ plan, interval, seatCount } = {}) {
+export async function startSubscriptionCheckout({ plan, interval, seatCount, teamId } = {}) {
   if (!plan) throw new Error("Missing plan");
   if (!["month", "year"].includes(interval)) throw new Error("Invalid billing interval");
-  return postCheckout({ mode: "subscription", plan, interval, ...(seatCount ? { seatCount } : {}) });
+  return postCheckout({ catalogVersion: "v2", purchaseType: "subscription", plan, interval,
+    ...(plan === "TEAM" ? { seatCount, teamId } : {}) });
+}
+
+export async function startCreditPackCheckout({ creditPack, teamId } = {}) {
+  return postCheckout({ catalogVersion: "v2", purchaseType: "credits", creditPack, ...(teamId ? { teamId } : {}) });
 }
 
 export async function startPremiumBalanceCheckout({ packageKey, teamId } = {}) {

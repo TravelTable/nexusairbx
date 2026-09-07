@@ -1,0 +1,716 @@
+TAP version 13
+# Subtest: recognizes execution follow-up: mate just start
+ok 1 - recognizes execution follow-up: mate just start
+  ---
+  duration_ms: 1.9922
+  ...
+# Subtest: recognizes execution follow-up: bro, build it
+ok 2 - recognizes execution follow-up: bro, build it
+  ---
+  duration_ms: 0.3301
+  ...
+# Subtest: recognizes execution follow-up: Please go ahead
+ok 3 - recognizes execution follow-up: Please go ahead
+  ---
+  duration_ms: 0.0898
+  ...
+# Subtest: recognizes execution follow-up: okay mate just start now!
+ok 4 - recognizes execution follow-up: okay mate just start now!
+  ---
+  duration_ms: 0.0885
+  ...
+# Subtest: recognizes execution follow-up: continue the build
+ok 5 - recognizes execution follow-up: continue the build
+  ---
+  duration_ms: 0.1585
+  ...
+# Subtest: recognizes execution follow-up: resume the build
+ok 6 - recognizes execution follow-up: resume the build
+  ---
+  duration_ms: 0.0809
+  ...
+# Subtest: recognizes execution follow-up: Nexus: finish it
+ok 7 - recognizes execution follow-up: Nexus: finish it
+  ---
+  duration_ms: 0.1577
+  ...
+# Subtest: recognizes execution follow-up: build it please
+ok 8 - recognizes execution follow-up: build it please
+  ---
+  duration_ms: 0.0799
+  ...
+# Subtest: does not manufacture approval: yes
+ok 9 - does not manufacture approval: yes
+  ---
+  duration_ms: 0.345
+  ...
+# Subtest: does not manufacture approval: do not start
+ok 10 - does not manufacture approval: do not start
+  ---
+  duration_ms: 0.3398
+  ...
+# Subtest: does not manufacture approval: never start
+ok 11 - does not manufacture approval: never start
+  ---
+  duration_ms: 0.1308
+  ...
+# Subtest: does not manufacture approval: start over but do not apply anything
+ok 12 - does not manufacture approval: start over but do not apply anything
+  ---
+  duration_ms: 0.069
+  ...
+# Subtest: does not manufacture approval: how do I start?
+ok 13 - does not manufacture approval: how do I start?
+  ---
+  duration_ms: 0.0522
+  ...
+# Subtest: does not manufacture approval: continue explaining that
+ok 14 - does not manufacture approval: continue explaining that
+  ---
+  duration_ms: 0.0648
+  ...
+# Subtest: does not manufacture approval: go ahead and delete everything
+ok 15 - does not manufacture approval: go ahead and delete everything
+  ---
+  duration_ms: 0.0517
+  ...
+# Subtest: Agent does not demote AMBIGUOUS to Ask
+ok 16 - Agent does not demote AMBIGUOUS to Ask
+  ---
+  duration_ms: 0.1945
+  ...
+# Subtest: Agent does not demote PLAN_APPROVAL to Ask
+ok 17 - Agent does not demote PLAN_APPROVAL to Ask
+  ---
+  duration_ms: 0.0569
+  ...
+# Subtest: Agent does not demote CONTINUATION to Ask
+ok 18 - Agent does not demote CONTINUATION to Ask
+  ---
+  duration_ms: 0.0528
+  ...
+# Subtest: Agent does not demote BUILD_REQUEST to Ask
+ok 19 - Agent does not demote BUILD_REQUEST to Ask
+  ---
+  duration_ms: 0.0531
+  ...
+# Subtest: Agent does not demote MODIFICATION_REQUEST to Ask
+ok 20 - Agent does not demote MODIFICATION_REQUEST to Ask
+  ---
+  duration_ms: 0.0505
+  ...
+# Subtest: agent recognizes explicit question
+ok 21 - agent recognizes explicit question
+  ---
+  duration_ms: 0.0827
+  ...
+# Subtest: agent honors explicit planning request
+ok 22 - agent honors explicit planning request
+  ---
+  duration_ms: 0.0737
+  ...
+# Subtest: debug recognizes explicit question
+ok 23 - debug recognizes explicit question
+  ---
+  duration_ms: 0.0511
+  ...
+# Subtest: debug honors explicit planning request
+ok 24 - debug honors explicit planning request
+  ---
+  duration_ms: 0.0552
+  ...
+# Subtest: Ask stays read-only for mate just start
+ok 25 - Ask stays read-only for mate just start
+  ---
+  duration_ms: 0.0848
+  ...
+# Subtest: Ask stays read-only for continue
+ok 26 - Ask stays read-only for continue
+  ---
+  duration_ms: 0.0461
+  ...
+# Subtest: Ask stays read-only for build it
+ok 27 - Ask stays read-only for build it
+  ---
+  duration_ms: 0.0696
+  ...
+# Subtest: Ask stays read-only for yes, build
+ok 28 - Ask stays read-only for yes, build
+  ---
+  duration_ms: 0.0493
+  ...
+# Subtest: Ask stays read-only for create a game
+ok 29 - Ask stays read-only for create a game
+  ---
+  duration_ms: 0.0485
+  ...
+# Subtest: Plan draft stays a draft without an existing plan
+ok 30 - Plan draft stays a draft without an existing plan
+  ---
+  duration_ms: 0.1702
+  ...
+# Subtest: Plan approval is a separate fenced command
+ok 31 - Plan approval is a separate fenced command
+  ---
+  duration_ms: 0.0949
+  ...
+# Subtest: invalid modes fail rather than default to mutation
+ok 32 - invalid modes fail rather than default to mutation
+  ---
+  duration_ms: 0.3733
+  ...
+# Subtest: frontend/backend policy copies are identical
+not ok 33 - frontend/backend policy copies are identical
+  ---
+  duration_ms: 1.8321
+  location: 'C:\\Users\\jackt\\Documents\\Codex\\2026-08-09\\can\\nexusairbx\\tests\\core.test.cjs:39:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + '// This module chooses product behavior. It never grants Studio permissions.\r\n' +
+    - '"use strict";\r\n' +
+    -   '\r\n' +
+    -   '// This module chooses product behavior. It never grants Studio permissions.\r\n' +
+        'const MODES = new Set(["agent", "plan", "ask", "debug"]);\r\n' +
+        'const CONVERSATION_INTENTS = new Set([\r\n' +
+        '  "GREETING", "GENERAL_QUESTION", "BRAINSTORMING", "EXPLANATION_REQUEST",\r\n' +
+        ']);\r\n' +
+        'const FOLLOW_UP = /^(?:start(?: now| build| building)?|just start(?: now)?|get started|build it|just do it|do it|go ahead|proceed|continue(?: the build)?|resume(?: the build)?|keep going|finish it|carry on|implement(?: that| the)? plan|approved|approve|yes,?\\s*(?:build|proceed|go ahead))[\\s.!?]*$/i;\r\n' +
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: |-
+    "use strict";
+    
+    // This module chooses product behavior. It never grants Studio permissions.
+    const MODES = new Set(["agent", "plan", "ask", "debug"]);
+    const CONVERSATION_INTENTS = new Set([
+      "GREETING", "GENERAL_QUESTION", "BRAINSTORMING", "EXPLANATION_REQUEST",
+    ]);
+    const FOLLOW_UP = /^(?:start(?: now| build| building)?|just start(?: now)?|get started|build it|just do it|do it|go ahead|proceed|continue(?: the build)?|resume(?: the build)?|keep going|finish it|carry on|implement(?: that| the)? plan|approved|approve|yes,?\s*(?:build|proceed|go ahead))[\s.!?]*$/i;
+    
+    function normalizeMode(value) {
+      const mode = String(value || "agent").trim().toLowerCase();
+      if (mode === "act") return "agent";
+      if (!MODES.has(mode)) throw new TypeError(`Unsupported interaction mode: ${mode}`);
+      return mode;
+    }
+    
+    function normalizeFollowUp(value) {
+      return String(value || "").replace(/\s+/g, " ").trim()
+        .replace(/^(?:(?:mate|bro|please|okay|ok|alright|all right|nexus)[,!:]?\s+)+/i, "")
+        .replace(/\b(?:fucking|bloody|damn)\b/gi, " ")
+        .replace(/\s+please[.!?]*$/i, "").replace(/\s+/g, " ").trim();
+    }
+    
+    function isExecutionFollowUp(value) {
+      return FOLLOW_UP.test(normalizeFollowUp(value));
+    }
+    
+    function shouldUseConversationalRoute(intent) {
+      // AMBIGUOUS is intentionally not here. Agent must not silently become Ask
+      // merely because a short imperative escaped a regex classifier.
+      return CONVERSATION_INTENTS.has(String(intent || "").toUpperCase());
+    }
+    
+    function resolveTurnRoute({ mode, prompt = "", intent = "AMBIGUOUS", hasSavedPlan = false } = {}) {
+      const selectedMode = normalizeMode(mode);
+      // A word such as "start" must NEVER make Ask approve or resume a task.
+      if (selectedMode === "ask") return "answer";
+      if (String(intent).toUpperCase() === "CANCELLATION") return "cancel";
+      if (selectedMode === "plan") {
+        return hasSavedPlan && isExecutionFollowUp(prompt) ? "approve_saved_plan" : "plan";
+      }
+      if (isExecutionFollowUp(prompt)) return "resume_or_execute";
+      if (String(intent).toUpperCase() === "PLANNING_REQUEST") return "plan";
+      if (shouldUseConversationalRoute(intent)) return "answer";
+      return "execute";
+    }
+    
+    module.exports = {
+      normalizeMode, normalizeFollowUp, isExecutionFollowUp,
+      shouldUseConversationalRoute, resolveTurnRoute,
+    };
+    
+  actual: |-
+    // This module chooses product behavior. It never grants Studio permissions.
+    const MODES = new Set(["agent", "plan", "ask", "debug"]);
+    const CONVERSATION_INTENTS = new Set([
+      "GREETING", "GENERAL_QUESTION", "BRAINSTORMING", "EXPLANATION_REQUEST",
+    ]);
+    const FOLLOW_UP = /^(?:start(?: now| build| building)?|just start(?: now)?|get started|build it|just do it|do it|go ahead|proceed|continue(?: the build)?|resume(?: the build)?|keep going|finish it|carry on|implement(?: that| the)? plan|approved|approve|yes,?\s*(?:build|proceed|go ahead))[\s.!?]*$/i;
+    
+    function normalizeMode(value) {
+      const mode = String(value || "agent").trim().toLowerCase();
+      if (mode === "act") return "agent";
+      if (!MODES.has(mode)) throw new TypeError(`Unsupported interaction mode: ${mode}`);
+      return mode;
+    }
+    
+    function normalizeFollowUp(value) {
+      return String(value || "").replace(/\s+/g, " ").trim()
+        .replace(/^(?:(?:mate|bro|please|okay|ok|alright|all right|nexus)[,!:]?\s+)+/i, "")
+        .replace(/\b(?:fucking|bloody|damn)\b/gi, " ")
+        .replace(/\s+please[.!?]*$/i, "").replace(/\s+/g, " ").trim();
+    }
+    
+    function isExecutionFollowUp(value) {
+      return FOLLOW_UP.test(normalizeFollowUp(value));
+    }
+    
+    function shouldUseConversationalRoute(intent) {
+      // AMBIGUOUS is intentionally not here. Agent must not silently become Ask
+      // merely because a short imperative escaped a regex classifier.
+      return CONVERSATION_INTENTS.has(String(intent || "").toUpperCase());
+    }
+    
+    function resolveTurnRoute({ mode, prompt = "", intent = "AMBIGUOUS", hasSavedPlan = false } = {}) {
+      const selectedMode = normalizeMode(mode);
+      // A word such as "start" must NEVER make Ask approve or resume a task.
+      if (selectedMode === "ask") return "answer";
+      if (String(intent).toUpperCase() === "CANCELLATION") return "cancel";
+      if (selectedMode === "plan") {
+        return hasSavedPlan && isExecutionFollowUp(prompt) ? "approve_saved_plan" : "plan";
+      }
+      if (isExecutionFollowUp(prompt)) return "resume_or_execute";
+      if (String(intent).toUpperCase() === "PLANNING_REQUEST") return "plan";
+      if (shouldUseConversationalRoute(intent)) return "answer";
+      return "execute";
+    }
+    
+    module.exports = {
+      normalizeMode, normalizeFollowUp, isExecutionFollowUp,
+      shouldUseConversationalRoute, resolveTurnRoute,
+    };
+    
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\tests\core.test.cjs:39:67)
+    Test.runInAsyncScope (node:async_hooks:211:14)
+    Test.run (node:internal/test_runner/test:979:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:677:18)
+    Test.postRun (node:internal/test_runner/test:1090:19)
+    Test.run (node:internal/test_runner/test:1018:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
+  ...
+# Subtest: act rejects prose-only output
+ok 34 - act rejects prose-only output
+  ---
+  duration_ms: 0.1855
+  ...
+# Subtest: act rejects truncated executable output
+ok 35 - act rejects truncated executable output
+  ---
+  duration_ms: 0.13
+  ...
+# Subtest: agent rejects prose-only output
+ok 36 - agent rejects prose-only output
+  ---
+  duration_ms: 0.0682
+  ...
+# Subtest: agent rejects truncated executable output
+ok 37 - agent rejects truncated executable output
+  ---
+  duration_ms: 0.0636
+  ...
+# Subtest: debug rejects prose-only output
+ok 38 - debug rejects prose-only output
+  ---
+  duration_ms: 0.0606
+  ...
+# Subtest: debug rejects truncated executable output
+ok 39 - debug rejects truncated executable output
+  ---
+  duration_ms: 0.0606
+  ...
+# Subtest: valid parsed operations pass output-presence check
+ok 40 - valid parsed operations pass output-presence check
+  ---
+  duration_ms: 0.1414
+  ...
+# Subtest: a native model also satisfies output presence
+ok 41 - a native model also satisfies output presence
+  ---
+  duration_ms: 0.0887
+  ...
+# Subtest: read-only modes do not require mutations
+ok 42 - read-only modes do not require mutations
+  ---
+  duration_ms: 0.0783
+  ...
+# Subtest: activity cannot carry raw executor source or arbitrary status text
+ok 43 - activity cannot carry raw executor source or arbitrary status text
+  ---
+  duration_ms: 0.3049
+  ...
+# Subtest: raw model delta cannot be treated as a public event
+ok 44 - raw model delta cannot be treated as a public event
+  ---
+  duration_ms: 0.1113
+  ...
+# Subtest: completion cannot be emitted as an arbitrary phase
+ok 45 - completion cannot be emitted as an arbitrary phase
+  ---
+  duration_ms: 0.1045
+  ...
+# Subtest: partial build never gets completion receipt
+ok 46 - partial build never gets completion receipt
+  ---
+  duration_ms: 0.0842
+  ...
+# Subtest: failed empty build has no successful receipt
+ok 47 - failed empty build has no successful receipt
+  ---
+  duration_ms: 0.0784
+  ...
+# Subtest: artifact projection keeps only a versioned reference
+ok 48 - artifact projection keeps only a versioned reference
+  ---
+  duration_ms: 0.197
+  ...
+# Subtest: invalid public event sequence rejected
+ok 49 - invalid public event sequence rejected
+  ---
+  duration_ms: 0.1061
+  ...
+# Subtest: gate passes current observed required deliverables
+ok 50 - gate passes current observed required deliverables
+  ---
+  duration_ms: 0.5468
+  ...
+# Subtest: missing UI remains a blocker
+ok 51 - missing UI remains a blocker
+  ---
+  duration_ms: 0.1902
+  ...
+# Subtest: old revision proof does not verify new code
+ok 52 - old revision proof does not verify new code
+  ---
+  duration_ms: 0.1262
+  ...
+# Subtest: wrong project proof rejected
+ok 53 - wrong project proof rejected
+  ---
+  duration_ms: 0.2182
+  ...
+# Subtest: wrong run proof rejected
+ok 54 - wrong run proof rejected
+  ---
+  duration_ms: 0.1401
+  ...
+# Subtest: model-written test claims are not evidence
+ok 55 - model-written test claims are not evidence
+  ---
+  duration_ms: 0.1114
+  ...
+# Subtest: rolled-back outputs are not applied
+ok 56 - rolled-back outputs are not applied
+  ---
+  duration_ms: 0.1103
+  ...
+# Subtest: pre-write visual proof is stale
+ok 57 - pre-write visual proof is stale
+  ---
+  duration_ms: 0.1044
+  ...
+# Subtest: no contract is not a successful build
+ok 58 - no contract is not a successful build
+  ---
+  duration_ms: 0.1168
+  ...
+# Subtest: stale plan contract rejected
+ok 59 - stale plan contract rejected
+  ---
+  duration_ms: 0.1139
+  ...
+# Subtest: duplicate current output revisions rejected
+ok 60 - duplicate current output revisions rejected
+  ---
+  duration_ms: 0.1285
+  ...
+# Subtest: optional missing art does not block required gameplay
+ok 61 - optional missing art does not block required gameplay
+  ---
+  duration_ms: 0.1265
+  ...
+# Subtest: all-optional empty game cannot complete
+ok 62 - all-optional empty game cannot complete
+  ---
+  duration_ms: 0.1202
+  ...
+# Subtest: visual checks cannot be manufactured by a syntax validator
+ok 63 - visual checks cannot be manufactured by a syntax validator
+  ---
+  duration_ms: 0.097
+  ...
+# Subtest: no idle build card for idle
+ok 64 - no idle build card for idle
+  ---
+  duration_ms: 0.2072
+  ...
+# Subtest: no idle build card for ready
+ok 65 - no idle build card for ready
+  ---
+  duration_ms: 0.0628
+  ...
+# Subtest: no idle build card for empty
+ok 66 - no idle build card for empty
+  ---
+  duration_ms: 0.0554
+  ...
+# Subtest: agent metadata without task/run id is not a build
+ok 67 - agent metadata without task/run id is not a build
+  ---
+  duration_ms: 0.0772
+  ...
+# Subtest: wrong chat build is hidden
+ok 68 - wrong chat build is hidden
+  ---
+  duration_ms: 0.0812
+  ...
+# Subtest: applied is not fully complete
+ok 69 - applied is not fully complete
+  ---
+  duration_ms: 0.0904
+  ...
+# Subtest: completion label requires canonical gate
+ok 70 - completion label requires canonical gate
+  ---
+  duration_ms: 0.0833
+  ...
+# Subtest: verified completion label
+ok 71 - verified completion label
+  ---
+  duration_ms: 0.0882
+  ...
+# Subtest: one team assignment is not faked from top-level agent metadata
+ok 72 - one team assignment is not faked from top-level agent metadata
+  ---
+  duration_ms: 0.5726
+  ...
+# Subtest: actual team assignments are projected
+ok 73 - actual team assignments are projected
+  ---
+  duration_ms: 0.1565
+  ...
+# Subtest: workspace accepts versioned artifacts without exposing code as chat
+ok 74 - workspace accepts versioned artifacts without exposing code as chat
+  ---
+  duration_ms: 0.3295
+  ...
+# Subtest: workspace ignores a different chat
+ok 75 - workspace ignores a different chat
+  ---
+  duration_ms: 0.1026
+  ...
+# Subtest: duplicate events cannot overwrite newer file state
+ok 76 - duplicate events cannot overwrite newer file state
+  ---
+  duration_ms: 0.1733
+  ...
+# Subtest: missing event forces reconciliation
+ok 77 - missing event forces reconciliation
+  ---
+  duration_ms: 0.119
+  ...
+# Subtest: snapshot resolves gaps without preserving old item copies
+ok 78 - snapshot resolves gaps without preserving old item copies
+  ---
+  duration_ms: 0.1116
+  ...
+# Subtest: snapshot rejects duplicate file identities
+ok 79 - snapshot rejects duplicate file identities
+  ---
+  duration_ms: 0.1435
+  ...
+# Subtest: workspace item id cannot mutate the prototype
+ok 80 - workspace item id cannot mutate the prototype
+  ---
+  duration_ms: 0.1128
+  ...
+# Subtest: chat collector preserves code newlines/Unicode without formatting mutations
+ok 81 - chat collector preserves code newlines/Unicode without formatting mutations
+  ---
+  duration_ms: 0.6242
+  ...
+# Subtest: chat collector reads usage-only trailer
+ok 82 - chat collector reads usage-only trailer
+  ---
+  duration_ms: 0.2161
+  ...
+# Subtest: chat length finish is incomplete, with partial text and usage
+ok 83 - chat length finish is incomplete, with partial text and usage
+  ---
+  duration_ms: 0.4463
+  ...
+# Subtest: clean transport EOF without model stop is not success
+ok 84 - clean transport EOF without model stop is not success
+  ---
+  duration_ms: 0.3555
+  ...
+# Subtest: empty model response is not success
+ok 85 - empty model response is not success
+  ---
+  duration_ms: 0.3054
+  ...
+# Subtest: unexpected Ask tool call is not executed
+ok 86 - unexpected Ask tool call is not executed
+  ---
+  duration_ms: 0.9672
+  ...
+# Subtest: stalled stream read is bounded
+ok 87 - stalled stream read is bounded
+  ---
+  duration_ms: 29.862
+  ...
+# Subtest: pre-aborted stream stops without reading
+ok 88 - pre-aborted stream stops without reading
+  ---
+  duration_ms: 0.3634
+  ...
+# Subtest: character budget is enforced
+ok 89 - character budget is enforced
+  ---
+  duration_ms: 0.3064
+  ...
+# Subtest: explicit model is honored for visible chat
+ok 90 - explicit model is honored for visible chat
+  ---
+  duration_ms: 0.2102
+  ...
+# Subtest: auto chat has role-specific configurable model
+ok 91 - auto chat has role-specific configurable model
+  ---
+  duration_ms: 0.0777
+  ...
+# Subtest: chat token budget respects supported model cap
+ok 92 - chat token budget respects supported model cap
+  ---
+  duration_ms: 0.0677
+  ...
+# Subtest: free gating overrides unauthorized paid selection
+ok 93 - free gating overrides unauthorized paid selection
+  ---
+  duration_ms: 0.0789
+  ...
+# Subtest: free cap cannot be guessed when missing
+ok 94 - free cap cannot be guessed when missing
+  ---
+  duration_ms: 0.085
+  ...
+# Subtest: bad output limit configuration fails visibly
+ok 95 - bad output limit configuration fails visibly
+  ---
+  duration_ms: 0.0855
+  ...
+# Subtest: world extension stages a native model without executing it
+ok 96 - world extension stages a native model without executing it
+  ---
+  duration_ms: 0.515
+  ...
+# Subtest: UI worker can have zero native models
+ok 97 - UI worker can have zero native models
+  ---
+  duration_ms: 0.0839
+  ...
+# Subtest: non-world specialist cannot emit native chunks
+ok 98 - non-world specialist cannot emit native chunks
+  ---
+  duration_ms: 0.1149
+  ...
+# Subtest: world output cannot target another subtree
+ok 99 - world output cannot target another subtree
+  ---
+  duration_ms: 0.1438
+  ...
+# Subtest: non-deterministic camera placement rejected
+ok 100 - non-deterministic camera placement rejected
+  ---
+  duration_ms: 0.1099
+  ...
+# Subtest: world compile policy comes from server at integration
+ok 101 - world compile policy comes from server at integration
+  ---
+  duration_ms: 0.1579
+  ...
+# Subtest: changed native model hash is not integrated
+ok 102 - changed native model hash is not integrated
+  ---
+  duration_ms: 0.1377
+  ...
+# Subtest: duplicate native managed identities rejected
+ok 103 - duplicate native managed identities rejected
+  ---
+  duration_ms: 0.1523
+  ...
+# Subtest: build messages never fall back to raw source
+ok 104 - build messages never fall back to raw source
+  ---
+  duration_ms: 0.252
+  ...
+# Subtest: projector uses per-turn kind not composer mode
+ok 105 - projector uses per-turn kind not composer mode
+  ---
+  duration_ms: 0.0901
+  ...
+# Subtest: user text is never filtered as executor content
+ok 106 - user text is never filtered as executor content
+  ---
+  duration_ms: 0.0597
+  ...
+# Subtest: unknown build state does not claim completion or execution
+ok 107 - unknown build state does not claim completion or execution
+  ---
+  duration_ms: 0.1692
+  ...
+# Subtest: artifact ref cannot leak embedded code fields
+ok 108 - artifact ref cannot leak embedded code fields
+  ---
+  duration_ms: 0.1781
+  ...
+# Subtest: native integration accepts only an owned staged artifact
+ok 109 - native integration accepts only an owned staged artifact
+  ---
+  duration_ms: 0.2536
+  ...
+# Subtest: native integration rejects a model invented during integration
+ok 110 - native integration rejects a model invented during integration
+  ---
+  duration_ms: 0.1145
+  ...
+# Subtest: informal emphatic start command still resumes rather than chats
+ok 111 - informal emphatic start command still resumes rather than chats
+  ---
+  duration_ms: 0.0685
+  ...
+# Subtest: emphasis does not authorize expanded destructive scope
+ok 112 - emphasis does not authorize expanded destructive scope
+  ---
+  duration_ms: 0.0578
+  ...
+# Subtest: only missing verification is presented as verification pending
+ok 113 - only missing verification is presented as verification pending
+  ---
+  duration_ms: 0.1179
+  ...
+# Subtest: missing required map is incomplete, not just pending tests
+ok 114 - missing required map is incomplete, not just pending tests
+  ---
+  duration_ms: 0.1275
+  ...
+# Subtest: new unapplied draft does not erase the fact that previous changes applied
+ok 115 - new unapplied draft does not erase the fact that previous changes applied
+  ---
+  duration_ms: 0.0826
+  ...
+1..115
+# tests 115
+# suites 0
+# pass 114
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 149.2593

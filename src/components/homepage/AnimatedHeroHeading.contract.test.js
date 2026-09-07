@@ -8,10 +8,10 @@ test("keeps the search-focused heading static while animating the supporting pro
   const styles = read("src/components/homepage/HomepageCinematic.module.css");
 
   expect(component).toContain('<h1 id="homepage-hero-heading" className={styles.heroHeading}>');
-  expect(component).toContain('AI Roblox Script Generator <span>and Studio Agent</span>');
+  expect(component).toContain('Turn your Roblox idea <span>into a reviewed Studio build.</span>');
   expect(component).toContain("<AnimatedHeroPromise />");
   expect(component).toContain('const HERO_WORDS = ["playable", "testable", "reviewable", "real"]');
-  expect(component).toContain('const HERO_LETTER_COLORS = ["#eca8d6", "#b591f3", "#81c3f9", "#a2d8a4", "#f8ba48"]');
+  expect(component).toContain('const HERO_LETTER_COLORS = ["var(--nx-purple)", "var(--nx-text)", "var(--nx-purple)", "var(--nx-success)", "var(--nx-text)"]');
   expect(component).toContain("window.setInterval(() => setMorphing(true), 3000)");
   expect(component).toContain("}, 1150)");
   expect(component).toContain('`${index * 42}ms`');

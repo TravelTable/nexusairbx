@@ -1,3 +1,4 @@
+import { getMessageResponseKind, projectAssistantMessage } from "./assistantMessageProjection";
 import { normalizeChatAttachments } from "./chatAttachments";
 import { normalizeRobloxPlaceId } from "./robloxPlaceId";
 
@@ -89,13 +90,29 @@ function sanitizePersistedTargeting(targeting) {
 }
 
 export function sanitizeTranscriptMessagePayload(payload = {}) {
-  const sanitized = sanitizeFirestoreValue(payload);
+  // The transcript is a public channel. Keep durable identity/recovery fields,
+  // but never store executor source or provider diagnostics here.
+  const isBuild = (payload.role === "assistant" || (!payload.role && payload.metadata?.mode))
+    && getMessageResponseKind(payload) === "build";
+  const publicPayload = isBuild ? projectAssistantMessage({ ...payload, role: "assistant" }) : payload;
+  if (isBuild) {
+    for (const key of ["stage", "status", "error", "errorCode", "artifactId", "revision", "versionNumber", "queuePosition", "isAutoExecuting", "lastSeq", "lastStreamCursor", "streamCursor", "resultUrl"]) {
+      if (payload[key] !== undefined) publicPayload[key] = payload[key];
+    }
+    for (const key of ["mode", "runState", "launchRecoveryVersion", "streamCursor", "lastSeq", "lastStreamCursor", "resultUrl"]) {
+      if (payload.metadata?.[key] !== undefined) publicPayload.metadata[key] = payload.metadata[key];
+    }
+  }
+  const sanitized = sanitizeFirestoreValue(publicPayload);
   if (!sanitized || typeof sanitized !== "object") return {};
+  // Full user requests are authoritative input, not a classifier hint. Do not
+  // truncate them using the generic small-document string budget.
+  if (payload.role === "user" && typeof payload.content === "string") sanitized.content = payload.content;
 
-  if (Object.prototype.hasOwnProperty.call(payload, "questions")) {
+  if (!isBuild && Object.prototype.hasOwnProperty.call(payload, "questions")) {
     sanitized.questions = sanitizeClarificationQuestions(payload.questions);
   }
-  if (Object.prototype.hasOwnProperty.call(payload, "attachments")) {
+  if (!isBuild && Object.prototype.hasOwnProperty.call(payload, "attachments")) {
     sanitized.attachments = normalizeChatAttachments(payload.attachments, {
       limit: 16,
       dataLimit: 120_000,

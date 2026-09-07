@@ -158,7 +158,7 @@ const legalRoutes = [...indexableLegalRoutes, ...noindexLegalRoutes];
 test("homepage raw HTML is meaningful before client JavaScript", () => {
   const html = readHtml("/");
   assert.equal(extractTitle(html), "AI Roblox Script Generator &amp; Studio Agent | NexusRBX");
-  assert.equal(extractH1(html), "AI Roblox Script Generator and Studio Agent");
+  assert.equal(extractH1(html), "Turn your Roblox idea into a reviewed Studio build.");
   assert.equal(
     extractMetaContent(html, "description"),
     "Generate Roblox Luau scripts with AI, inspect Studio projects, review multi-file changes, and playtest safely with NexusRBX.",
@@ -171,8 +171,8 @@ test("homepage raw HTML is meaningful before client JavaScript", () => {
   assert.match(html, /aria-busy="false"/);
   assert.match(html, /<button[^>]*type="submit"[^>]*disabled=""[^>]*>[\s\S]*?Start building[\s\S]*?<\/button>/);
   assert.match(html, /id="homepage-hero-prompt-message"[^>]*>[\s\S]*?Your request is saved before the workspace opens\./);
-  assert.match(html, /Show what creators are building with Nexus/);
-  assert.match(html, /Get every build tool in one place/);
+  assert.match(html, /See what creators build with NexusRBX/);
+  assert.match(html, /Built for serious Roblox developers/);
   assert.match(html, /Start with the scripting task you need/);
   assert.match(html, /One workspace\. Your whole Roblox build stack\./);
   assert.match(html, /Build more of the game you actually want to ship\./);

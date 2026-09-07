@@ -1,0 +1,138 @@
+{
+  "version": "v2",
+  "currency": "usd",
+  "microcreditsPerCredit": 1000000,
+  "providerCostMultiplier": 3,
+  "graceDays": 7,
+  "plans": [
+    {
+      "id": "FREE",
+      "slug": "free",
+      "name": "Free",
+      "audience": "Take your first idea into Roblox Studio",
+      "monthly": 0,
+      "yearly": null,
+      "credits": 1.5,
+      "creditWindow": "rolling_30_days",
+      "perSeat": false,
+      "featured": false,
+      "cta": "Start building free",
+      "features": [
+        "1.5 Nexus Credits per rolling 30 days",
+        "Nexus Auto for focused builds",
+        "1 active project · 1 build at a time",
+        "Studio connection and reviewed changes"
+      ],
+      "limits": {
+        "minimumSeats": 1,
+        "maximumSeats": 1,
+        "concurrentJobs": 1,
+        "maxProjects": 1,
+        "usageHistoryDays": 7
+      },
+      "access": {
+        "nexusAuto": true,
+        "directModels": false,
+        "studioReview": true,
+        "teamWorkspace": false
+      }
+    },
+    {
+      "id": "PRO",
+      "slug": "pro",
+      "name": "Pro",
+      "audience": "Keep building the game you want to ship",
+      "monthly": 14.99,
+      "yearly": 152.9,
+      "credits": 9,
+      "creditWindow": "monthly",
+      "perSeat": false,
+      "featured": true,
+      "cta": "Get Pro",
+      "features": [
+        "9 Nexus Credits refreshed every month",
+        "Model choice for scripts, UI, and game systems",
+        "Reviewed Studio changes and recovery",
+        "90 days of usage history",
+        "Add credits whenever you need them"
+      ],
+      "limits": {
+        "minimumSeats": 1,
+        "maximumSeats": 1,
+        "concurrentJobs": null,
+        "maxProjects": null,
+        "usageHistoryDays": 90
+      },
+      "access": {
+        "nexusAuto": true,
+        "directModels": true,
+        "studioReview": true,
+        "teamWorkspace": false
+      }
+    },
+    {
+      "id": "TEAM",
+      "slug": "team",
+      "name": "Team",
+      "audience": "Bring your studio together",
+      "monthly": 24.99,
+      "yearly": 254.9,
+      "credits": 15,
+      "creditWindow": "monthly",
+      "perSeat": true,
+      "minimumSeats": 2,
+      "maximumSeats": 50,
+      "featured": false,
+      "cta": "Set up Team",
+      "features": [
+        "15 Nexus Credits per seat, pooled monthly",
+        "Everything in Pro",
+        "Owner, admin, and member roles",
+        "One subscription for 2–50 creators"
+      ],
+      "limits": {
+        "minimumSeats": 2,
+        "maximumSeats": 50,
+        "concurrentJobs": null,
+        "maxProjects": null,
+        "usageHistoryDays": 90
+      },
+      "access": {
+        "nexusAuto": true,
+        "directModels": true,
+        "studioReview": true,
+        "teamWorkspace": true
+      }
+    }
+  ],
+  "packs": [
+    {
+      "id": "EXTRA",
+      "name": "Extra",
+      "price": 14.99,
+      "credits": 9
+    },
+    {
+      "id": "BUILDER",
+      "name": "Builder",
+      "price": 34.99,
+      "credits": 22
+    },
+    {
+      "id": "STUDIO",
+      "name": "Studio",
+      "price": 69.99,
+      "credits": 45
+    }
+  ],
+  "legacyPlans": [
+    {
+      "id": "STARTER",
+      "selectable": false
+    },
+    {
+      "id": "PRO_PLUS",
+      "selectable": false
+    }
+  ]
+}

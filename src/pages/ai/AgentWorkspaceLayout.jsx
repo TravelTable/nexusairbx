@@ -17,6 +17,8 @@ import CodeFileTree from "../../components/ai/workspace/CodeFileTree";
 import CodeWorkspace from "../../components/ai/workspace/CodeWorkspace";
 import AgentChatPanel from "../../components/ai/workspace/AgentChatPanel";
 import TaskProgressPanel from "../../components/ai/workspace/TaskProgressPanel";
+import BuildWorkspace from "../../components/ai/workspace/BuildWorkspace";
+import useBuildWorkspace from "../../hooks/useBuildWorkspace";
 import RunEventLog from "../../components/ai/workspace/RunEventLog";
 import ActiveAgentsTray from "../../components/ai/workspace/ActiveAgentsTray";
 import WorkspaceAssetsPanel from "../../components/ai/workspace/WorkspaceAssetsPanel";
@@ -524,6 +526,15 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     projectId: currentProjectId,
     chatId: chat.currentChatId || "",
     enabled: generatorMode === "agent_build" && Boolean(user),
+  });
+  const taskScopeMatches = taskRuntime.task
+    && (!taskRuntime.task.chatId || taskRuntime.task.chatId === chat.currentChatId)
+    && (!taskRuntime.task.projectId || taskRuntime.task.projectId === currentProjectId);
+  const buildWorkspace = useBuildWorkspace({
+    taskId: taskScopeMatches ? taskRuntime.task?.taskId : null,
+    chatId: chat.currentChatId,
+    projectId: currentProjectId,
+    enabled: Boolean(activeDockPanel) && Boolean(user),
   });
   const canonicalTaskActive = Boolean(taskRuntime.task
     && !["succeeded", "completed", "failed", "cancelled", "canceled"].includes(taskRuntime.task.status)
@@ -1445,6 +1456,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         onSubmit={handleAgentPromptSubmit} onOpenSetup={() => navigateTo?.('/onboarding')}
       />
       <AgentChatPanel
+        modelVersion={settings.modelVersion}
         currentChatId={chat.currentChatId}
         chatTitle={chat.currentChatMeta?.title || "New chat"}
         projectTitle={workspaceProjectTitle}
@@ -1460,7 +1472,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         operationState={chatOperationState}
         onApprovePlan={handleAgentApprovePlan}
         onPlanTaskAccepted={taskRuntime.selectTask}
-        executionTask={taskRuntime.task}
+        executionTask={taskScopeMatches ? { ...taskRuntime.task, connectionState: taskRuntime.connectionState } : null}
         onClarifySubmit={handleAgentClarifySubmit}
         onEditPlan={handleEditPlan}
         onRefine={onRefine}
@@ -1631,7 +1643,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     />
   );
 
-  const fileTreeArtifact = openedCodeArtifact || (studioFiles.length ? studioArtifact : workspace.activeArtifact);
+  const fileTreeArtifact = openedCodeArtifact || (studioFiles.length ? studioArtifact : null);
   const fileTreeCount = fileTreeArtifact?.files?.length || 0;
   const fileTree = (
     <div className="p-2">
@@ -1730,10 +1742,12 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     </div>
   );
 
+  const scopedActiveAgents = activeAgentRuntime.agents.filter(agent => agent.chatId === chat.currentChatId
+    && (!agent.projectId || agent.projectId === currentProjectId));
   const activityPanel = (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
-      <ActiveAgentsTray
-        agents={activeAgentRuntime.agents}
+      {scopedActiveAgents.length ? <ActiveAgentsTray
+        agents={scopedActiveAgents}
         onOpenChat={chat.openChatById}
         onCancelRun={(runId) => {
           Promise.resolve(activeAgentRuntime.cancelRun(runId))
@@ -1749,8 +1763,8 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
               });
             });
         }}
-      />
-      {taskRuntime.task ? (
+      /> : null}
+      {taskScopeMatches ? (
         <div className="min-h-0 flex-1 overflow-y-auto p-3 scrollbar-subtle">
           <TaskProgressPanel
             task={taskRuntime.task}
@@ -1765,13 +1779,13 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
             onStudioApproved={taskRuntime.refresh}
           />
           <div className="mt-3">
-            <RunEventLog events={taskRuntime.events} agents={activeAgentRuntime.agents} />
+            <RunEventLog events={taskRuntime.events} agents={scopedActiveAgents} />
           </div>
         </div>
-      ) : activeAgentRuntime.agents.length ? (
+      ) : scopedActiveAgents.length ? (
         <div className="min-h-0 flex-1 overflow-y-auto p-3 scrollbar-subtle" aria-label="Current agent runs">
           <div className="space-y-2">
-            {activeAgentRuntime.agents.map((agent) => {
+            {scopedActiveAgents.map((agent) => {
               const agentRuns = [
                 ...(agent?.currentRun ? [agent.currentRun] : []),
                 ...(Array.isArray(agent?.runs) ? agent.runs : []),
@@ -1866,6 +1880,28 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
   );
 
   const renderDockPanel = (panelId) => {
+    // Explicit authorized Studio/creation reads retain the existing editing and
+    // source-hash conflict controls. Generated build files use exact artifacts.
+    if (panelId === "code" && (openedCodeArtifact || studioFiles.length)) return codeWorkspace;
+    return <BuildWorkspace
+      scopeKey={buildWorkspace.scopeKey}
+      items={buildWorkspace.items}
+      readFile={buildWorkspace.readFile}
+      connection={buildWorkspace.connection}
+      error={buildWorkspace.error}
+      onReconnect={buildWorkspace.reconnect}
+      onClose={() => handleDockPanelChange(null)}
+      initialView={panelId === "activity" ? "activity" : panelId === "assets" ? "asset" : "file"}
+      activity={activityPanel}
+      advanced={renderAdvancedPanel("details")}
+      studioContent={fileTree}
+      embedded
+    />;
+  };
+
+  // Existing operator tools remain reachable only from deliberate advanced
+  // workspace actions; the Build surface never derives outputs from chat text.
+  const renderAdvancedPanel = (panelId) => {
     if (panelId === "files") {
       return <div className="h-full overflow-y-auto scrollbar-subtle">{fileTree}</div>;
     }
@@ -1972,6 +2008,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
               <AnimateWorkspace modelVersion={settings.modelVersion} onBillingRefresh={refreshBilling} />
             ) : (
               <WorkspaceShell
+                buildWorkspace
                 activePanel={activeDockPanel}
                 onPanelChange={handleDockPanelChange}
                 drawerWidth={drawerWidth}

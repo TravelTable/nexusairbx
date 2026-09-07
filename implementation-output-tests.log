@@ -1,0 +1,50 @@
+TAP version 13
+# Subtest: Studio producer persists real source before references; endpoint reads exact UTF-8 revision
+ok 1 - Studio producer persists real source before references; endpoint reads exact UTF-8 revision
+  ---
+  duration_ms: 11.6897
+  ...
+# Subtest: real HTTP workspace route checks ownership, run scope and exact artifact revision
+ok 2 - real HTTP workspace route checks ownership, run scope and exact artifact revision
+  ---
+  duration_ms: 81.882
+  ...
+# Subtest: a draft repair invalidates current verification without losing prior saved source
+ok 3 - a draft repair invalidates current verification without losing prior saved source
+  ---
+  duration_ms: 3.1353
+  ...
+# Subtest: wrong source readback and model-authored done do not verify a build
+ok 4 - wrong source readback and model-authored done do not verify a build
+  ---
+  duration_ms: 0.6159
+  ...
+# Subtest: full original request keeps late map, UI and asset requirements
+ok 5 - full original request keeps late map, UI and asset requirements
+  ---
+  duration_ms: 0.4889
+  ...
+# Subtest: parallel specialist publication merges saved files; replay cannot duplicate rows
+ok 6 - parallel specialist publication merges saved files; replay cannot duplicate rows
+  ---
+  duration_ms: 2.2114
+  ...
+# Subtest: cancelled task does not publish late artifacts or completion
+ok 7 - cancelled task does not publish late artifacts or completion
+  ---
+  duration_ms: 1.1001
+  ...
+# Subtest: sourceFiles preserves draft newline and Unicode without Markdown processing
+ok 8 - sourceFiles preserves draft newline and Unicode without Markdown processing
+  ---
+  duration_ms: 0.2931
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3224.5128

@@ -1,7 +1,9 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useRef, useState } from "react";
+import { authedFetch } from "../../../lib/billing";
 import ChatView from "../ChatView";
 import ChatComposer from "../chat/ChatComposer";
 import CompactAgentRunBar, { getCompactRunMeta } from "./CompactAgentRunBar";
+import { scopeMatches } from "../../../lib/runPresentation";
 
 // Primary Studio agent surface. Chat drives the workflow; deeper build state
 // lives in the workspace dock so the conversation keeps the available width.
@@ -11,6 +13,7 @@ export default function AgentChatPanel({
   chatTitle = "New chat",
   projectTitle = "Workspace",
   projectId = "",
+  modelVersion = "nexus-auto",
   messages,
   pendingMessage,
   pendingMessages,
@@ -127,14 +130,39 @@ export default function AgentChatPanel({
   onDockBuildOptionsClose,
   renderDockNavigation,
 }) {
-  const planTaskVisible = executionTask && (messages || []).some((message) => message.stage === "plan_approved" && message.taskId === executionTask.taskId);
-  const visibleRun = planTaskVisible ? { ...executionTask, steps: executionTask.steps || [] } : agentRun;
-  const compactRunVisible = Boolean(getCompactRunMeta(visibleRun) || activeAgents.length);
+  const quotePending = useRef(false);
+  const [creditNotice, setCreditNotice] = useState("");
+  const scope = { chatId: currentChatId, projectId };
+  const visibleRun = executionTask?.taskId && scopeMatches(executionTask, scope) ? executionTask
+    : scopeMatches(agentRun, scope) ? agentRun : null;
+  const compactRunVisible = Boolean(getCompactRunMeta(visibleRun));
   const handleComposerSubmit = useCallback(
-    (event, overridePrompt = null, composerOptions = {}) => {
+    async (event, overridePrompt = null, composerOptions = {}) => {
+      if (includedUsage?.catalogVersion === "v2" && !isBusy) {
+        event?.preventDefault?.();
+        if (quotePending.current) return;
+        quotePending.current = true;
+        setCreditNotice("Checking the starting credit estimate…");
+        try {
+          const text = overridePrompt || prompt || "";
+          const contextChars = (messages || []).reduce((n, message) => n + String(message.content || message.text || "").length, text.length);
+          const response = await authedFetch("/api/billing/estimate", { method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ model: modelVersion, estimatedInputTokens: Math.max(1, Math.min(1000000, Math.ceil(contextChars / 4))), maxOutputTokens: 8000, projectId: projectId || undefined }) });
+          const quote = await response.json();
+          if (!response.ok) throw new Error(quote.error || quote.code || "Could not estimate credits.");
+          const amount = (quote.estimatedCreditsMicros / 1e6).toFixed(2);
+          const scope = quote.billingScope?.type === "team" ? "Team pool" : "personal balance";
+          const source = quote.balanceSource === "included" ? "included credits" : quote.balanceSource === "purchased" ? "purchased credits" : "included and purchased credits";
+          if (!quote.affordable) throw new Error(`Starting estimate: ${amount} Nexus Credits. Your ${scope} needs more credits.`);
+          const explanation = `${quote.modelLabel} · starting estimate ${amount} Nexus Credits from your ${scope} (${source}). Additional project context and agent steps can increase the total.`;
+          setCreditNotice(explanation);
+          if ((quote.estimatedCreditsMicros >= 250000 || quote.modelLabel === "Premium" || quote.balanceSource !== "included") && !window.confirm(explanation + " Continue?")) return;
+        } catch (error) { setCreditNotice(error.message); return; }
+        finally { quotePending.current = false; }
+      }
       return onSubmit?.(event, overridePrompt, composerOptions);
     },
-    [onSubmit]
+    [onSubmit, includedUsage, isBusy, prompt, messages, modelVersion, projectId]
   );
 
   const handleEditMessage = useCallback(
@@ -159,8 +187,6 @@ export default function AgentChatPanel({
       <div className="agent-chat-panel__content flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col">
         <div className="relative flex min-h-0 min-w-0 w-full max-w-full flex-1 flex-col">
           <ChatView
-            teamActivity={executionTask?.chatId === currentChatId ? executionTask.teamActivity
-              : agentRun?.chatId === currentChatId ? agentRun.teamActivity : null}
             chatId={currentChatId}
             chatTitle={chatTitle}
             projectTitle={projectTitle}
@@ -211,14 +237,16 @@ export default function AgentChatPanel({
       {compactRunVisible ? (
         <CompactAgentRunBar
           agentRun={visibleRun}
-          agents={activeAgents}
-          onApproveStep={onApproveStep}
-          approvingStepId={approvingStepId}
+          chatId={currentChatId}
+          projectId={projectId}
+          onOpenActivity={onDockOpenActivity}
         />
       ) : null}
 
       <div className="shrink-0">
+        {creditNotice && <p className="px-4 py-2 text-xs text-[var(--nx-text-muted)]" role="status">{creditNotice}</p>}
         <ChatComposer
+          showDock={false}
           prompt={prompt}
           setPrompt={setPrompt}
           attachments={attachments}

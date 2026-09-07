@@ -90,7 +90,7 @@
 .heroHeading {
   max-width: none;
   margin: 20px 0 0 !important;
-  color: #fff;
+  color: var(--nx-text);
   font-family:
     "Instrument Sans Variable", "Instrument Sans", system-ui, sans-serif !important;
   font-size: clamp(2.15rem, 5vw, 5.25rem);
@@ -104,7 +104,7 @@
 .heroPromise {
   max-width: none !important;
   margin-top: 20px !important;
-  color: #fff !important;
+  color: var(--nx-text) !important;
   font-family:
     "Instrument Sans Variable", "Instrument Sans", system-ui, sans-serif !important;
   font-size: clamp(1.35rem, 2.8vw, 2.75rem) !important;
@@ -154,7 +154,7 @@
     opacity: 0;
   }
   to {
-    color: #fff;
+    color: var(--nx-text);
     filter: blur(0);
     opacity: 1;
   }

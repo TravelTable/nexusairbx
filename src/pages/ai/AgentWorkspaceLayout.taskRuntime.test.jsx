@@ -7,6 +7,9 @@ const mockTaskProgressPanel = jest.fn();
 const mockAgentChatPanel = jest.fn();
 const mockStudioPairControl = jest.fn();
 const mockCodeWorkspace = jest.fn();
+jest.mock("../../hooks/useBuildWorkspace", () => ({ __esModule: true, default: () => ({
+  scopeKey: "task-scope", items: [], connection: "connected", error: "", readFile: jest.fn(), reconnect: jest.fn(),
+}) }));
 
 jest.mock("../../hooks/useTaskRuntime", () => ({
   __esModule: true,
@@ -210,9 +213,8 @@ import AgentWorkspaceLayout from "./AgentWorkspaceLayout";
 const noop = jest.fn();
 
 function openStageView(label) {
-  const evidenceLens = label === "Activity" ? "Run" : label;
-  fireEvent.click(screen.getByRole("button", { name: /^Open Evidence/ }));
-  fireEvent.click(screen.getByRole("tab", { name: `Open ${evidenceLens} evidence` }));
+  fireEvent.click(screen.getByRole("button", { name: /^Open Build/ }));
+  fireEvent.click(screen.getByRole("button", { name: label === "Activity" ? "Activity and actions" : new RegExp(`^${label}`) }));
 }
 
 function makeController({
@@ -851,7 +853,7 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
     expect(props.activeFile.content).toBe("print('stage')");
     expect(props.activeFile.name).toBe("Round Manager");
     expect(props.onSaveToCreations).toEqual(expect.any(Function));
-    expect(screen.getByRole("heading", { name: "Editor" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Build" })).toBeTruthy();
 
     await act(async () => props.onSaveToCreations(props.artifact.title, props.activeFile.content));
     expect(handleCreateScript).toHaveBeenCalledWith(

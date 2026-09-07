@@ -69,8 +69,9 @@ test("renders a final review with the annual equivalent and billed total", async
   renderPage();
 
   expect(await screen.findByRole("heading", { name: "Review your Pro plan" })).toBeInTheDocument();
-  expect(screen.getByText("$16.58/month")).toBeInTheDocument();
-  expect(screen.getByText("$199 billed yearly")).toBeInTheDocument();
+  expect(screen.getByText("$12.74/month")).toBeInTheDocument();
+  expect(screen.getByText("$152.90 billed yearly")).toBeInTheDocument();
+  expect(screen.getByText("9 Nexus Credits · refresh monthly, no rollover")).toBeInTheDocument();
   expect(screen.getByText("builder@example.com")).toBeInTheDocument();
   expect(await screen.findByRole("button", { name: "Continue to secure checkout" })).toBeEnabled();
   expect(screen.queryByText("Pro+")).not.toBeInTheDocument();
@@ -81,14 +82,14 @@ test("validates Team seats and shows the complete annual charge", async () => {
 
   expect(await screen.findByRole("heading", { name: "Review your Team plan" })).toBeInTheDocument();
   expect(screen.getByText("50 paid seats")).toBeInTheDocument();
-  expect(screen.getByText("$1208.33/month")).toBeInTheDocument();
-  expect(screen.getByText("$14500 billed yearly")).toBeInTheDocument();
-  expect(screen.getByText("$290 per user, per year")).toBeInTheDocument();
+  expect(screen.getByText("$1062.08/month")).toBeInTheDocument();
+  expect(screen.getByText("$12745 billed yearly")).toBeInTheDocument();
+  expect(screen.getByText("$254.90 per user, per year")).toBeInTheDocument();
 });
 
 test("shows Manage plan instead of another purchase action for subscribers", async () => {
   mockGetEntitlements.mockResolvedValue({ plan: "PRO", entitlements: ["pro"] });
-  renderPage("/subscribe?plan=PRO_PLUS&interval=month");
+  renderPage("/subscribe?plan=PRO&interval=month");
 
   expect(await screen.findByRole("button", { name: "Manage plan" })).toBeEnabled();
   expect(screen.queryByRole("button", { name: "Continue to secure checkout" })).not.toBeInTheDocument();
@@ -96,10 +97,10 @@ test("shows Manage plan instead of another purchase action for subscribers", asy
 
 test("preserves the complete checkout return path when sign-in is required", async () => {
   mockCurrentUser = null;
-  renderPage("/subscribe?plan=PRO_PLUS&interval=year");
+  renderPage("/subscribe?plan=PRO&interval=year");
 
   await waitFor(() => expect(screen.getByTestId("signin-location")).toBeInTheDocument());
   expect(screen.getByTestId("signin-location")).toHaveTextContent(
-    '"pathname":"/subscribe","search":"?plan=PRO_PLUS&interval=year"'
+    '"pathname":"/subscribe","search":"?plan=PRO&interval=year"'
   );
 });

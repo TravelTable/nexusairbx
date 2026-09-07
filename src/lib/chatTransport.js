@@ -171,12 +171,24 @@ export async function waitForOperationResult({
       checkAborted(pollingSignal);
       if (operation) {
         const status = String(operation.status || "").toLowerCase();
-        if (status === "completed") return operation.result?.body ?? operation.result;
+        if (status === "completed") {
+          const result = operation.result;
+          if (String(result?.contentType || "").includes("text/event-stream")) {
+            if (result.terminal?.complete !== true || result.terminal?.status !== "completed") {
+              throw Object.assign(new Error("The saved answer did not complete."), {
+                code: result.terminal?.code || "CHAT_INCOMPLETE", partial: result.text || "", operationId,
+              });
+            }
+            return result;
+          }
+          return result?.body ?? result;
+        }
         if (status === "failed" || status === "cancelled") {
           throw Object.assign(new Error(operation.error?.message || "The request did not complete."), {
             code: operation.error?.code || "OPERATION_FAILED",
             status: operation.httpStatus || (status === "cancelled" ? 409 : 500),
             operationId,
+            ...(typeof operation.result?.text === "string" ? { partial: operation.result.text } : {}),
           });
         }
         if (!PENDING.has(status)) {
@@ -217,18 +229,79 @@ export async function assertResponseOk(response, fallback = "The request failed.
   });
 }
 
+/** Parse the public Ask SSE contract. Transport EOF is never model success. */
+export async function readAskEventStream(body, { signal, onText, maxEventChars = 1024 * 1024 } = {}) {
+  let buffer = "";
+  let text = "";
+  let terminal = null;
+  const consume = frame => {
+    const payload = frame.split(/\r?\n/).filter(line => line.startsWith("data:"))
+      .map(line => line.slice(5).replace(/^ /, "")).join("\n");
+    if (!payload) return;
+    let event;
+    try { event = JSON.parse(payload); } catch (_) {
+      throw Object.assign(new Error("The chat stream contained an invalid event."), { code: "INVALID_STREAM_EVENT", partial: text });
+    }
+    if (terminal) throw Object.assign(new Error("The chat stream continued after its terminal event."), { code: "INVALID_STREAM_EVENT", partial: text });
+    if (event.type === "delta" && typeof event.text === "string") {
+      text += event.text;
+      onText?.(text);
+    } else if (event.type === "terminal") {
+      terminal = event;
+      if (event.complete !== true || event.status !== "completed") {
+        throw Object.assign(new Error(event.message || "The response was interrupted. Its partial text is saved."), {
+          code: event.code || "CHAT_INCOMPLETE", partial: text, terminal: event,
+        });
+      }
+    }
+  };
+  try {
+    for await (const chunk of decodedChunks(body, signal)) {
+      buffer += chunk;
+      let boundary;
+      while ((boundary = /\r?\n\r?\n/.exec(buffer))) {
+        consume(buffer.slice(0, boundary.index));
+        buffer = buffer.slice(boundary.index + boundary[0].length);
+      }
+      if (buffer.length > maxEventChars) throw Object.assign(new Error("The chat event exceeded its size limit."), { code: "CHAT_OUTPUT_LIMIT", partial: text });
+    }
+    if (buffer.trim()) consume(buffer);
+    if (!terminal) throw Object.assign(new Error("The connection ended before the response completed."), { code: "CHAT_INCOMPLETE", partial: text });
+    if (!text.trim()) throw Object.assign(new Error("The assistant returned an empty response."), { code: "CHAT_EMPTY", partial: text });
+    return text;
+  } catch (error) {
+    if (error && error.partial === undefined) error.partial = text;
+    throw error;
+  }
+}
+
 export async function readAskResponse(response, {
   operationId, readOperation, signal, onText, timeoutMs = 170000, pollMs = 500,
 } = {}) {
   await assertResponseOk(response, "Ask request failed.");
-  if (response.status !== 202) return readTextStream(response.body, { signal, onText });
+  if (response.status !== 202) {
+    const contentType = response.headers?.get?.("content-type") || "";
+    if (contentType.includes("text/event-stream")) return readAskEventStream(response.body, { signal, onText });
+    // Compatibility with older deployments: require authoritative persisted
+    // completion after plain transport EOF rather than claiming it was a stop.
+    const partial = await readTextStream(response.body, { signal, onText });
+    if (!readOperation || !operationId) {
+      throw Object.assign(new Error("The server did not confirm response completion."), { code: "CHAT_INCOMPLETE", partial });
+    }
+    const recovered = await waitForOperationResult({ operationId, readOperation, signal, timeoutMs, pollMs });
+    const text = typeof recovered === "string" ? recovered : recovered?.text;
+    if (typeof text !== "string") throw Object.assign(new Error("The recovered Ask response was not text."), { code: "INVALID_ASK_RESPONSE", partial });
+    onText?.(text);
+    return text;
+  }
   const accepted = await response.json();
   const canonicalOperationId = accepted?.operation?.operationId || operationId;
-  const body = await waitForOperationResult({
+  const result = await waitForOperationResult({
     operationId: canonicalOperationId, initialOperation: accepted?.operation,
     readOperation, signal, timeoutMs, pollMs,
   });
-  // This endpoint stores the completed text, not a serialized object to display.
+  const body = typeof result === "string" ? result : result?.text;
+  // This endpoint stores completed text, not a serialized object to display.
   if (typeof body !== "string") {
     throw Object.assign(new Error("The recovered Ask response was not text."), {
       code: "INVALID_ASK_RESPONSE", operationId: canonicalOperationId,

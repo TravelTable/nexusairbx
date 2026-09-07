@@ -43,7 +43,7 @@ describe("HomepageV2Content", () => {
 
   test("keeps a static search-intent heading, animated promise, lead image, and real video showcases", () => {
     const { container } = render(<HomepageV2Content navigate={jest.fn()} />);
-    expect(screen.getByRole("heading", { name: "AI Roblox Script Generator and Studio Agent", level: 1 })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Turn your Roblox idea into a reviewed Studio build.", level: 1 })).toBeTruthy();
     expect(screen.getByLabelText("Build your Roblox game. Make it playable.")).toBeTruthy();
     expect(screen.getByLabelText("Supported AI companies and models")).toBeTruthy();
     expect(container.querySelectorAll("img[class*='heroImage']")).toHaveLength(1);
@@ -84,7 +84,7 @@ describe("HomepageV2Content", () => {
       "/pricing",
     ]);
     expect(screen.getByRole("link", { name: "Download" })).toBeTruthy();
-    expect(hero.querySelector("button[type='submit']").textContent).toBe("Start building");
+    expect(hero.querySelector("button[type='submit']").textContent).toBe("Start building free");
   });
 
   test("links to every focused search landing page with descriptive anchor text", () => {

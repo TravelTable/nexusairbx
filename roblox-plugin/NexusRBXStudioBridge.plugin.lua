@@ -18,7 +18,7 @@ local STUDIO_PROTOCOL_VERSION = "2026-08-27-r15-animation"
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.14.0-r15-animation.14-color-readback"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.14.0-r15-animation.15-native-batch"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the
@@ -6689,6 +6689,7 @@ buildNativeModel = function(payload, command)
 	local idMap = {}
 	local rootModel = nil
 	local createdTargets = {}
+	local snapshots = {}
 	local buildOk, buildErr = pcall(function()
 		rootModel = createNativeInstances(spec.root, nil, idMap)
 		validateNativeReferences(spec.root, idMap)
@@ -6702,9 +6703,12 @@ buildNativeModel = function(payload, command)
 		rootModel:SetAttribute("NexusSchemaVersion", 1)
 		rootModel:SetAttribute("NexusRevision", "rev_" .. stableHash(tostring(spec.modelId or "") .. ":" .. tostring(command and command.id or "") .. ":" .. tostring(os.clock())))
 		rootModel:SetAttribute("NexusIdempotencyKey", idempotencyKey)
+		local targetParentPath = spec.targetParentPath or "Workspace/NexusBuilds"
+		appendMissingPathSnapshots(targetParentPath, snapshots)
 		local targetParent
-		targetParent, createdTargets = ensureNativeTargetParent(spec.targetParentPath or "Workspace/NexusBuilds")
+		targetParent, createdTargets = ensureNativeTargetParent(targetParentPath)
 		rootModel.Name = uniqueNativeName(targetParent, tostring(spec.name or rootModel.Name))
+		table.insert(snapshots, snapshotInstance(fullPath(targetParent) .. "/" .. rootModel.Name))
 		rootModel.Parent = targetParent
 		rootModel:PivotTo(placementCFrame(spec))
 	end)
@@ -6715,7 +6719,9 @@ buildNativeModel = function(payload, command)
 		cleanupCreatedTargets(createdTargets)
 		return nativeBuildError("BUILD_FAILED", tostring(buildErr))
 	end
-	return buildNativeReceipt(command and command.id or "", spec, rootModel, state, spec.warnings or {}, false)
+	local receipt = buildNativeReceipt(command and command.id or "", spec, rootModel, state, spec.warnings or {}, false)
+	receipt.snapshots = snapshots
+	return receipt
 end
 
 local function nativeTypedValue(value)
@@ -9838,7 +9844,7 @@ local function isMutatingCommand(commandType)
 	return MUTATING_COMMANDS[tostring(commandType or "")] == true
 end
 
-local function batchOperations(payload)
+local function batchOperations(payload, command)
 	local snapshots = {}
 	local results = {}
 	local failureCode = nil
@@ -9903,7 +9909,17 @@ local function batchOperations(payload)
 			if type(handler) ~= "function" or UNAVAILABLE_COMMANDS[opType] then
 				rejectUnsupportedBatchOperation(index, opType, "Unsupported batch operation: " .. opType)
 			end
-			local result = handler(op.payload or {})
+			local childCommand = {}
+			for key, value in pairs(command or {}) do childCommand[key] = value end
+			local parentCommandId = tostring(childCommand.id or childCommand.commandId or "")
+			if opType == "build_native_model" and parentCommandId == "" then
+				rejectUnsupportedBatchOperation(index, opType, "Native batch operations need their parent command identity")
+			end
+			childCommand.parentCommandId = parentCommandId
+			childCommand.operationIndex = index
+			childCommand.id = parentCommandId .. ":operation:" .. tostring(index)
+			childCommand.commandId = childCommand.id
+			local result = handler(op.payload or {}, childCommand)
 			if type(result) == "table" and result.snapshots then
 				for _, snap in ipairs(result.snapshots) do
 					table.insert(snapshots, snap)

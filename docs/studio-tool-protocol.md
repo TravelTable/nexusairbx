@@ -456,3 +456,19 @@ The backend validates schema version, model ID, expected revision, operation cou
 Revision conflicts return `MODEL_REVISION_CONFLICT` with the stale expected revision and current revision. The frontend should disable apply, show that Studio changed the model, and offer Refresh/Recalculate/Cancel. There is no force-overwrite flow in Phase 4.
 
 Unsupported edits include generated Luau, script or remote creation, Terrain, MeshPart/external mesh upload, CSG, arbitrary property paths, raw CFrame matrices from the browser, cross-model references, reparenting to Roblox services, editing unmanaged objects by default, and taking ownership of arbitrary project objects. NexusRBX edits models it manages; manually added descendants are reported as warnings instead of silently modified.
+
+### Staged native chunks and batch identity (build `.15-native-batch`)
+
+Game Team native chunks are validated and saved before the single Studio integrator compiles their commands. Staging is bounded to 12 chunks, 3,000 instances and 1,600 parts across the world assignment, in addition to each compiler/plugin chunk limit. Origin and explicit-position placement are accepted; camera-relative placement is rejected for staged maps.
+
+A `batch_operations` child now receives a stable command identity `<parent-command-id>:operation:<one-based-index>`. Native roots and child receipts retain that identity, while the parent command remains the durable queue item. Evidence resolves each child by its declared `index` and `type`, never its position in a receipt array. Existing `.14-color-readback` remains an accepted release for inspection during rollout. The existing mutation compatibility gate requires the current `.15-native-batch` build before dispatching writes, including native chunks inside a batch.
+
+Native creation now snapshots every previously missing parent and its newly inserted root. Those snapshots participate in the existing atomic batch rollback and normal undo path. No command types or runtime-playtest capabilities were added.
+
+Additional manual checks (not satisfied by Node protocol tests):
+
+1. Apply a batch containing two distinct staged native chunks. Confirm each root's `NexusCommandId` equals its indexed child receipt's `commandId`, both command IDs include the same parent prefix, and `inspect_native_model` returns the expected model IDs, current bounds/counts and required named nodes.
+2. Reverse receipt-array order in a backend fixture while keeping declared indices; evidence must still resolve correctly. Missing indices or foreign subcommand IDs must fail verification.
+3. In a disposable Studio fixture, force the next batch operation to fail after native creation. Confirm verified rollback removes the inserted native root and only parent folders created by that batch. Confirm a pre-existing sibling remains.
+4. Retry a lost acknowledgement with the same parent/child identity and spec hash; confirm no duplicate native roots. Change the managed model after application and confirm stale staged proof cannot mark completion.
+5. Run the HUD in Play on desktop and a narrow mobile viewport. Observe PlayerGui, required controls/state changes, respawn/rejoin cleanup and input behavior. The plugin still advertises automated Play/TestService operations as unavailable; these checks require an available approved runtime channel or manual evidence.

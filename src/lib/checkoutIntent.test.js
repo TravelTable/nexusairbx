@@ -26,9 +26,9 @@ test("creates a bounded checkout intent with a fixed review return path", () => 
   });
 });
 
-test("enforces Starter monthly billing and Team seat limits", () => {
-  expect(createCheckoutIntent({ plan: PLAN.STARTER, interval: BILLING_INTERVAL.YEAR }, NOW)?.interval)
-    .toBe(BILLING_INTERVAL.MONTH);
+test("rejects legacy purchases and bounds Team seat controls", () => {
+  expect(createCheckoutIntent({ plan: PLAN.STARTER, interval: BILLING_INTERVAL.YEAR }, NOW)).toBeNull();
+  expect(createCheckoutIntent({ plan: PLAN.PRO_PLUS, interval: BILLING_INTERVAL.MONTH }, NOW)).toBeNull();
   expect(createCheckoutIntent({ plan: PLAN.TEAM, interval: BILLING_INTERVAL.MONTH, seatCount: 1 }, NOW)?.seatCount)
     .toBe(2);
   expect(createCheckoutIntent({ plan: PLAN.TEAM, interval: BILLING_INTERVAL.YEAR, seatCount: 99 }, NOW)?.seatCount)
@@ -57,9 +57,9 @@ test("rejects expired, overlong, and future-dated intents", () => {
 });
 
 test("restores a valid same-tab intent and clears it after expiry", () => {
-  saveCheckoutIntent({ plan: PLAN.PRO_PLUS, interval: BILLING_INTERVAL.YEAR }, NOW);
+  saveCheckoutIntent({ plan: PLAN.PRO, interval: BILLING_INTERVAL.YEAR }, NOW);
   expect(readCheckoutIntent(NOW + 1)).toMatchObject({
-    plan: PLAN.PRO_PLUS,
+    plan: PLAN.PRO,
     interval: BILLING_INTERVAL.YEAR,
   });
 

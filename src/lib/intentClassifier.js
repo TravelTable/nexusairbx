@@ -7,7 +7,6 @@ import { isExplicitPlanApproval } from "./planApproval";
 const GREETING_RE = /^(hi|hello|hey|yo|good\s+(morning|afternoon|evening)|howdy)[.!?\s]*$/i;
 const ACK_RE = /^(ok|okay|cool|nice|great|sounds good|that sounds good|thanks|thank you|understood|got it)[.!?\s]*$/i;
 const CANCELLATION_RE = /^(cancel|stop|never mind|nevermind|abort|discard|don't build|do not build)\b/i;
-const PLAN_APPROVAL_RE = /^(start|just start|start now|get started|start build|build it|just do it|go ahead|proceed|implement( that| the)? plan|approved|approve|yes,?\s*(build|proceed|go ahead))[\s.!]*$/i;
 const CONTINUATION_RE = /^(continue|do it|apply that|apply it|finish it|carry on)[.!\s]*$/i;
 
 const BUILD_VERBS = [
@@ -32,7 +31,7 @@ const QUESTION_RE = /^(what|how|why|when|where|who|which|is|are|can|could|should
 const EXPLANATION_RE = /\b(explain|describe|walk me through|how would|how does|what is|what are)\b/i;
 const BUILD_REQUEST_RE = new RegExp(`\\b(${BUILD_VERBS.join("|")})\\b`, "i");
 const REQUEST_DIRECTIVE_RE = /\b(please|can you|could you|i need you to|i want you to|let's|lets)\b/i;
-const NEGATED_BUILD_CLAUSE_RE = /\b(?:do not|don't|without)\b[^.!?;]*/gi;
+const NEGATED_BUILD_CLAUSE_RE = /\b(?:do not|don't|without)\b(?:(?!\b(?:but|however|instead)\b)[^.!?;])*/gi;
 const PLAN_REQUEST_RE = /^(?:(?:please|can you please|could you please|can you|could you|would you|i want you to|i need you to|let's|lets)\s+)?(?:plan(?:\s+out)?\s+|(?:create|write|draft|prepare|make|give me)\s+(?:(?:an?|the)\s+)?(?:(?:implementation|build|development|project)\s+)?plan\b|i\s+(?:want|need)\s+(?:an?\s+)?plan\b)/i;
 
 function normalizePrompt(prompt) {
@@ -44,16 +43,17 @@ export function classifyUserIntent(prompt) {
   if (!text) return "AMBIGUOUS";
 
   if (CANCELLATION_RE.test(text)) return "CANCELLATION";
-  if (PLAN_APPROVAL_RE.test(text)) return "PLAN_APPROVAL";
+  if (isExplicitPlanApproval(text)) return "PLAN_APPROVAL";
   if (CONTINUATION_RE.test(text)) return "CONTINUATION";
   if (GREETING_RE.test(text)) return "GREETING";
   if (ACK_RE.test(text)) return "GENERAL_QUESTION";
+  if (/^(?:please\s+)?(?:show|explain|display|let me see)\b.*\b(?:code|scripts?|luau|lua)\b/i.test(text)) return "EXPLANATION_REQUEST";
 
   const affirmativeText = text.replace(NEGATED_BUILD_CLAUSE_RE, " ");
   if (PLAN_REQUEST_RE.test(affirmativeText.trim())) return "PLANNING_REQUEST";
   const hasBuildVerb = BUILD_REQUEST_RE.test(affirmativeText);
   const hasDirective = REQUEST_DIRECTIVE_RE.test(affirmativeText);
-  const isQuestion = QUESTION_RE.test(affirmativeText.trim()) || text.endsWith("?");
+  const isQuestion = QUESTION_RE.test(affirmativeText.trim());
 
   if (hasBuildVerb && (hasDirective || !isQuestion)) {
     const lower = affirmativeText.toLowerCase();
@@ -70,7 +70,7 @@ export function classifyUserIntent(prompt) {
 }
 
 export function isImplementationIntent(intent) {
-  return intent === "BUILD_REQUEST" || intent === "MODIFICATION_REQUEST" || intent === "REFINEMENT" || intent === "CONTINUATION";
+  return ["BUILD_REQUEST", "MODIFICATION_REQUEST", "REFINEMENT", "CONTINUATION", "PLAN_APPROVAL"].includes(intent);
 }
 
 const STUDIO_DISABLED_RE = /\b(?:do not|don't|without)\s+(?:use\s+)?studio\b|\b(?:do not|don't|without)\s+(?:push|apply|edit|change|touch)(?:\s+(?:it\s+)?(?:to|in))?\s+studio\b/i;

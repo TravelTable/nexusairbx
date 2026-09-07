@@ -1,0 +1,750 @@
+TAP version 13
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.154Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.160Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.163Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_d9842d627c6525fa5bab1db070dcd9e3a5317a5b7e921c6b3db20bfb09387bd9',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.164Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_47c96d77cf70790e48c54f2bfbe0af924a66e479b889740ac643430932993767',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.165Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_b50dade89df8453f50122faa5b0dde8dd40e5fa0c1ae44706c67db3c8c377dae',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.173Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_1df4a224e745c4df90725ec0a4c5c56c82cf0d36539d9f67fe09aeb3d9b82438',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.173Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_d90f86b87bba9fc9fd5a8302f1a660ed8def3507a21501972d63f8a4eb5b474e',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.174Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_8136fefb83b50a9034baeed03438ca8a4c812dd614daccc4dc95b4419b1763cf',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.174Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_64b0aec8062a1ac7593b8217420cd28050a42103d7f2e31e00bae42d558a817d',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.174Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_5321f2ee529f7bad2c4b9112a9c48cdf0a780e48e0c51c7bbb4ba3e21c90165f',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.176Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_814b942a37387509aa6ca26e495d75cb8b00b5e560463be5e778e7fc4bc5f8e0',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.176Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_afd7e2e6e7fa428b228e8efaec2e3cffec6ebf5bf3d34e9ab0a0f35f772137a9',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.176Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_f7bc1bb910dcca163e41fdeccbfc20937be3f66682a4eef7b9cf77157a74c753',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.176Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_5559710f4b5c35726fa7809a0554df6199c236eada5be211fdf704abb0101de6',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.176Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_4311e1d328487743e6eccd35806b2074930e9407f79572daace455550a499303',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.177Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_71b7f14a10ed99fde6036e7a53bdcec63b47541afc41b0975dd0746bf8937d02',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.177Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_19ad48ddc644446ae6dc22d62b99191c64484fb5ffc052e5a87a653c2b41f75b',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.177Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_97dba0355d8399fcb515afc8df79cef8aa93880dc36ff1eba79a4fec6e651936',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.177Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_72b4b4169ee0fec42d4bc7961191f892cc6c6e68eaf2f1c9749864b6ff13a9ee',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.177Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_48e7e508274e6b42a6e52d4f3b519ecc68a90b1dccd1f3a069e00e3615e4599a',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.177Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_84976dff7ca8c676e4bb22dfcb3e65ef5bd8f2d9166ffcbfe96a5194f4255298',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.185Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.started',
+#   ts: '2026-09-06T15:11:11.187Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'running',
+#   eventType: 'task_started',
+#   sequence: 4,
+#   eventId: 'e_0000000000000004'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.189Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_f18349ddec97743a434f11ef0a6dc56d334fa6e6d12b53c4153b33fa3fd6464d',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.189Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_f7e0596505b038677cc582def7648bcfbef4733264aa765a8d608876f4d0fbd5',
+#   requestId: 'request-2',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.189Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_e8ddc400e076c62bfd5e4618e376a005dfa7fdecb1b8e9c7ddc0df2a3664b573',
+#   requestId: 'request-3',
+#   traceId: 'trace-1',
+#   projectId: 'project-2',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.192Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'step.started',
+#   ts: '2026-09-06T15:11:11.194Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'running',
+#   eventType: 'task_step_claimed',
+#   sequence: 3,
+#   eventId: 'e_0000000000000003'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.198Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'checkpoint.created',
+#   ts: '2026-09-06T15:11:11.200Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_checkpoint_created',
+#   sequence: 2,
+#   eventId: 'e_0000000000000002'
+# }
+# [ops] {
+#   event: 'task.amended',
+#   ts: '2026-09-06T15:11:11.201Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_amended',
+#   sequence: 3,
+#   eventId: 'e_0000000000000003'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.203Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_8ab23f4c5f2118bc119bdb4d12f92d8c6203aad12ab10876ae2e1133917c192c',
+#   requestId: 'checkpoint-other-request',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.204Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'checkpoint.created',
+#   ts: '2026-09-06T15:11:11.205Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_checkpoint_created',
+#   sequence: 2,
+#   eventId: 'e_0000000000000002'
+# }
+# [ops] {
+#   event: 'checkpoint.created',
+#   ts: '2026-09-06T15:11:11.206Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_checkpoint_created',
+#   sequence: 3,
+#   eventId: 'e_0000000000000003'
+# }
+# [ops] {
+#   event: 'checkpoint.restored',
+#   ts: '2026-09-06T15:11:11.207Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_checkpoint_restored',
+#   sequence: 4,
+#   eventId: 'e_0000000000000004'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.210Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.217Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.220Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.started',
+#   ts: '2026-09-06T15:11:11.220Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'running',
+#   eventType: 'task_started',
+#   sequence: 2,
+#   eventId: 'e_0000000000000002'
+# }
+# [ops] {
+#   event: 'verification.started',
+#   ts: '2026-09-06T15:11:11.221Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'verifying',
+#   eventType: 'task_verification_started',
+#   sequence: 3,
+#   eventId: 'e_0000000000000003'
+# }
+# [ops] {
+#   event: 'task.completed',
+#   ts: '2026-09-06T15:11:11.223Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'succeeded',
+#   eventType: 'task_succeeded',
+#   sequence: 4,
+#   eventId: 'e_0000000000000004'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.224Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'step.started',
+#   ts: '2026-09-06T15:11:11.225Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'running',
+#   eventType: 'task_step_claimed',
+#   sequence: 3,
+#   eventId: 'e_0000000000000003'
+# }
+# [ops] {
+#   event: 'step.retrying',
+#   ts: '2026-09-06T15:11:11.227Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'retry_scheduled',
+#   eventType: 'task_step_waiting',
+#   sequence: 4,
+#   eventId: 'e_0000000000000004'
+# }
+# [ops] {
+#   event: 'step.started',
+#   ts: '2026-09-06T15:11:11.227Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'running',
+#   eventType: 'task_step_claimed',
+#   sequence: 5,
+#   eventId: 'e_0000000000000005'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.228Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'step.started',
+#   ts: '2026-09-06T15:11:11.228Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'running',
+#   eventType: 'task_step_claimed',
+#   sequence: 3,
+#   eventId: 'e_0000000000000003'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.229Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-06T15:11:11.232Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_ad645a24b4aab153221d51200f9261efec4be67233fa5cc5235fcaa6f0bd3499',
+#   requestId: 'request-1',
+#   traceId: 'trace-1',
+#   projectId: 'project-1',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# Subtest: acceptTask atomically reserves one task and replays the same root request
+ok 1 - acceptTask atomically reserves one task and replays the same root request
+  ---
+  duration_ms: 8.805
+  ...
+# Subtest: acceptTask persists trusted plan provenance and includes it in idempotency
+ok 2 - acceptTask persists trusted plan provenance and includes it in idempotency
+  ---
+  duration_ms: 3.7813
+  ...
+# Subtest: acceptTask persists published and unpublished trusted Studio launch targets
+ok 3 - acceptTask persists published and unpublished trusted Studio launch targets
+  ---
+  duration_ms: 1.8379
+  ...
+# Subtest: acceptTask durably preserves and validates the UI Creator intent envelope
+ok 4 - acceptTask durably preserves and validates the UI Creator intent envelope
+  ---
+  duration_ms: 1.0948
+  ...
+# Subtest: unpublished Studio acceptance remains replay-safe under concurrent load
+ok 5 - unpublished Studio acceptance remains replay-safe under concurrent load
+  ---
+  duration_ms: 19.0442
+  ...
+# Subtest: task events and projections advance together with contiguous sequence numbers
+ok 6 - task events and projections advance together with contiguous sequence numbers
+  ---
+  duration_ms: 3.7307
+  ...
+# Subtest: owner-scoped task and step listings apply filters, activity, ordering, and limits
+ok 7 - owner-scoped task and step listings apply filters, activity, ordering, and limits
+  ---
+  duration_ms: 3.5629
+  ...
+# Subtest: step leases fence stale workers and task cancellation fences late completion
+ok 8 - step leases fence stale workers and task cancellation fences late completion
+  ---
+  duration_ms: 2.5194
+  ...
+# Subtest: capability and context snapshots are immutable, replay-safe, and fail closed without full scope
+ok 9 - capability and context snapshots are immutable, replay-safe, and fail closed without full scope
+  ---
+  duration_ms: 3.194
+  ...
+# Subtest: checkpoints are immutable and amendments are idempotent
+ok 10 - checkpoints are immutable and amendments are idempotent
+  ---
+  duration_ms: 5.4283
+  ...
+# Subtest: checkpoint listing and restoration preserve immutable history and append recovery events
+ok 11 - checkpoint listing and restoration preserve immutable history and append recovery events
+  ---
+  duration_ms: 6.579
+  ...
+# Subtest: outbox enqueue, lease takeover, failure, and delivery are deterministic and replay-safe
+ok 12 - outbox enqueue, lease takeover, failure, and delivery are deterministic and replay-safe
+  ---
+  duration_ms: 6.4543
+  ...
+# Subtest: outbox dead-letter replay and cancellation fences reject stale workers
+ok 13 - outbox dead-letter replay and cancellation fences reject stale workers
+  ---
+  duration_ms: 3.3888
+  ...
+# Subtest: task success is impossible before verification and durable passing evidence
+ok 14 - task success is impossible before verification and durable passing evidence
+  ---
+  duration_ms: 3.5896
+  ...
+# Subtest: retry scheduling reuses the step and increments a monotonic fence
+ok 15 - retry scheduling reuses the step and increments a monotonic fence
+  ---
+  duration_ms: 3.9413
+  ...
+# Subtest: ambiguous step outcomes stay running until reconciliation
+ok 16 - ambiguous step outcomes stay running until reconciliation
+  ---
+  duration_ms: 1.293
+  ...
+# Subtest: semantic operation identity prevents duplicate side effects across request IDs
+ok 17 - semantic operation identity prevents duplicate side effects across request IDs
+  ---
+  duration_ms: 2.9955
+  ...
+# Subtest: ambiguous operation outcomes must reconcile before retrying the same operation
+ok 18 - ambiguous operation outcomes must reconcile before retrying the same operation
+  ---
+  duration_ms: 4.5194
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 208.3023
