@@ -246,7 +246,6 @@ export default function AgentChatPanel({
       <div className="shrink-0">
         {creditNotice && <p className="px-4 py-2 text-xs text-[var(--nx-text-muted)]" role="status">{creditNotice}</p>}
         <ChatComposer
-          showDock={false}
           prompt={prompt}
           setPrompt={setPrompt}
           attachments={attachments}
