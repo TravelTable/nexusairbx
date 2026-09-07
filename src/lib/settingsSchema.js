@@ -31,7 +31,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   studioAutoPushPolicy: "after_validation",
   lastAuthorizedStudioSessionId: null,
   activeProjectId: null,
-  robloxAssetUploadsEnabled: false,
+  robloxAssetUploadsEnabled: true,
   assetPublishingPreference: "auto_explicit_request",
   allowPlaceholderAssets: false,
   useExamples: false,

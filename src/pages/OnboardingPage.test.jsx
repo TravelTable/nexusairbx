@@ -25,9 +25,9 @@ jest.mock('../lib/signupRobloxOnboarding', () => ({ safeSignupReturnPath: p => p
 jest.mock('../context/SettingsContext', () => ({
   useSettings: () => ({
     settings: {
-      robloxAssetUploadsEnabled: false,
+      robloxAssetUploadsEnabled: true,
       assetPublishingPreference: 'auto_explicit_request',
-      studioApplyPolicy: 'ask_before_applying',
+      studioApplyPolicy: 'after_validation',
     },
     updateSettings: jest.fn(async () => ({ ok: true })),
   }),

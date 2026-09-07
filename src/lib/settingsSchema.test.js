@@ -64,6 +64,12 @@ describe("settingsSchema", () => {
     });
   });
 
+  it("defaults Auto Upload Assets on so image publish consent starts enabled", () => {
+    expect(DEFAULT_SETTINGS.robloxAssetUploadsEnabled).toBe(true);
+    expect(normalizeSettings({}).robloxAssetUploadsEnabled).toBe(true);
+    expect(normalizeSettings({ robloxAssetUploadsEnabled: false }).robloxAssetUploadsEnabled).toBe(false);
+  });
+
   it("keeps the Animate workspace hidden unless explicitly enabled", () => {
     expect(DEFAULT_SETTINGS.animateWorkspaceEnabled).toBe(false);
     expect(normalizeSettings({}).animateWorkspaceEnabled).toBe(false);

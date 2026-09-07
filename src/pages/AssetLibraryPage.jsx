@@ -46,10 +46,6 @@ function universeOptions(context, selectedProjectId) {
   return nested.length ? nested : asArray(context?.universes);
 }
 
-function generatorUrl() {
-  return `/icons-market`;
-}
-
 function normalizeCreator(value = {}) {
   const creator = value?.creator && typeof value.creator === "object" ? value.creator : value;
   const rawType = String(creator?.type || creator?.creatorType || "").trim().toLowerCase();

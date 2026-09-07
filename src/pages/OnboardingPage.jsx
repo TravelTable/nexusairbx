@@ -119,10 +119,10 @@ export function GuidedLaunchSetup({ roblox }) {
 
   useEffect(() => {
     setPublishChoice(resolvePublishChoiceFromSettings(settings));
-  }, [settings.robloxAssetUploadsEnabled, settings.assetPublishingPreference]);
+  }, [settings]);
 
   const persistPublishChoice = async () => {
-    const choice = ASSET_PUBLISH_CHOICES.find((entry) => entry.id === publishChoice) || ASSET_PUBLISH_CHOICES[2];
+    const choice = ASSET_PUBLISH_CHOICES.find((entry) => entry.id === publishChoice) || ASSET_PUBLISH_CHOICES[0];
     const result = await updateSettings(choice.settings);
     if (!result?.ok) {
       throw new Error(result?.error || 'Could not save your asset publishing preference.');
