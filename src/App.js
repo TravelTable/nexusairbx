@@ -33,8 +33,6 @@ const NexusRBXCliAuthorizePage = lazy(() => import("./pages/CliAuthorizePage"));
 const NexusRBXTermsPage = lazy(() => import("./pages/TermsPage"));
 const NexusRBXPrivacyPage = lazy(() => import("./pages/PrivacyPage"));
 const NexusRBXSettingsPageContainer = lazy(() => import("./pages/SettingsPage"));
-const NexusRBXIconGeneratorPage = lazy(() => import("./pages/IconGeneratorPage"));
-const NexusRBXIconGeneratorUnavailablePage = lazy(() => import("./pages/IconGeneratorUnavailablePage"));
 const NexusRBXAssetLibraryPage = lazy(() => import("./pages/AssetLibraryPage"));
 const NexusRBXAssetDetailPage = lazy(() => import("./pages/AssetDetailPage"));
 const NexusRBXAssetPlatformUnavailablePage = lazy(() => import("./pages/AssetPlatformUnavailablePage"));
@@ -59,10 +57,8 @@ function withRobloxConnectionGate(element) {
 
 export const AUTHENTICATED_ICON_DETAIL_ROUTE = "/icons-market/:id";
 
-export function IconGeneratorRouteContent({
-  readsEnabled = ASSET_PLATFORM_READS_ENABLED,
-}) {
-  return readsEnabled ? <NexusRBXIconGeneratorPage /> : <NexusRBXIconGeneratorUnavailablePage />;
+export function IconGeneratorRouteContent() {
+  return <Navigate to="/icons-market" replace />;
 }
 
 export function AssetLibraryRouteContent({

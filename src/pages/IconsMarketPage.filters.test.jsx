@@ -89,6 +89,24 @@ describe("IconsMarketPage responsive filters", () => {
     });
   });
 
+  test("loads the catalogue for signed-out visitors without redirecting to sign-in", async () => {
+    mockOnAuthStateChanged.mockImplementation((_auth, callback) => {
+      callback(null);
+      return jest.fn();
+    });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining("/api/icons/market"));
+    });
+    expect(screen.getByRole("heading", { level: 1, name: "Creator Store" })).toBeTruthy();
+    expect(screen.queryByText("Sign in")).toBeNull();
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Collections" })[0]);
+    expect(screen.getAllByRole("button", { name: "Sign in for collections" }).length).toBeGreaterThan(0);
+  });
+
   test("makes Collections reachable from the mobile layout", async () => {
     renderPage();
     await waitFor(() => expect(global.fetch).toHaveBeenCalled());

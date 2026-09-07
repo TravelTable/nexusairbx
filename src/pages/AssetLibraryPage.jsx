@@ -46,10 +46,8 @@ function universeOptions(context, selectedProjectId) {
   return nested.length ? nested : asArray(context?.universes);
 }
 
-function generatorUrl(mode, field, value) {
-  const params = new URLSearchParams({ mode });
-  if (value) params.set(field, value);
-  return `/tools/icon-generator?${params.toString()}`;
+function generatorUrl() {
+  return `/icons-market`;
 }
 
 function normalizeCreator(value = {}) {
@@ -299,7 +297,7 @@ export default function AssetLibraryPage() {
             <p>Find your game artwork, models, and asset packs.</p>
           </div>
           <div className="asset-platform-header__actions">
-            {canGenerate ? <Button icon={ImagePlus} onClick={() => navigate("/tools/icon-generator")}>Generate assets</Button> : null}
+            {canGenerate ? <Button icon={ImagePlus} onClick={() => navigate("/icons-market")}>Browse Icons market</Button> : null}
           </div>
         </header>
 
@@ -421,12 +419,12 @@ export default function AssetLibraryPage() {
                     onOpen={() => navigate(`/assets/${encodeURIComponent(asset.assetId)}`)}
                     onRetryUpload={canPublishAsset ? (entry) => updateOneAsset(entry, "publish_asset_to_roblox", "retry", retryAssetUpload, { requiresUploadConsent: true }) : undefined}
                     onPoll={canGetUploadStatus ? (entry) => updateOneAsset(entry, "get_roblox_upload_status", "poll", (assetId) => getRobloxUploadStatus(assetId, { operationId: entry.robloxOperationId || undefined })) : undefined}
-                    onSimilar={canGenerateVariation ? (entry) => navigate(generatorUrl("similar", "assetId", entry.assetId)) : undefined}
-                    onReplace={canGenerateVariation ? (entry) => navigate(generatorUrl("replacement", "assetId", entry.assetId)) : undefined}
+                    onSimilar={canGenerateVariation ? () => navigate("/icons-market") : undefined}
+                    onReplace={canGenerateVariation ? () => navigate("/icons-market") : undefined}
                   />
                 ))}
               </div>
-            ) : <AssetEmptyState title="No matching assets" description="Try another search or clear your filters." action={canGenerate ? <Button icon={ImagePlus} onClick={() => navigate("/tools/icon-generator")}>Generate assets</Button> : null} />
+            ) : <AssetEmptyState title="No matching assets" description="Try another search or clear your filters." action={canGenerate ? <Button icon={ImagePlus} onClick={() => navigate("/icons-market")}>Browse Icons market</Button> : null} />
           ) : packs.length ? (
             <div className="asset-pack-list">
               {packs.map((pack) => (
@@ -437,11 +435,11 @@ export default function AssetLibraryPage() {
                     <div><dt>Assets</dt><dd>{pack.assets.length || pack.iconAssetIds.length || pack.requestedCount || 0}</dd></div>
                     <div><dt>Status</dt><dd><AssetLifecycleBadge status={pack.lifecycle} /></dd></div>
                   </dl>
-                  {canGeneratePack ? <Button size="sm" variant="ghost" icon={Package} iconRight={ArrowRight} onClick={() => navigate(generatorUrl("extend", "packId", pack.packId))}>Extend pack</Button> : null}
+                  {canGeneratePack ? <Button size="sm" variant="ghost" icon={Package} iconRight={ArrowRight} onClick={() => navigate("/icons-market")}>Browse more icons</Button> : null}
                 </article>
               ))}
             </div>
-          ) : <AssetEmptyState title="No matching packs" description="No pack records match these filters." action={canGeneratePack ? <Button icon={Package} onClick={() => navigate("/tools/icon-generator?mode=pack")}>Create a pack</Button> : null} />}
+          ) : <AssetEmptyState title="No matching packs" description="No pack records match these filters." action={canGeneratePack ? <Button icon={Package} onClick={() => navigate("/icons-market")}>Browse Icons market</Button> : null} />}
         </section>
       </div>
     </main>

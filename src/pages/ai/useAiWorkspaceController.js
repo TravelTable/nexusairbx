@@ -1111,7 +1111,7 @@ export function useAiWorkspaceController() {
       const intent = restoreGenerationIntent(intentId);
       if (intent) {
         if (intent.mode === "asset") {
-          navigate("/tools/icon-generator", {
+          navigate("/icons-market", {
             replace: true,
             state: { generationIntentId: intent.id },
           });
@@ -1164,7 +1164,7 @@ export function useAiWorkspaceController() {
     const intent = restoreGenerationIntent();
     if (!intent) return;
     if (intent.mode === "asset") {
-      navigate("/tools/icon-generator", {
+      navigate("/icons-market", {
         replace: true,
         state: { generationIntentId: intent.id },
       });

@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Check, Copy, ExternalLink, Loader2, Monitor, Plu
 import { useRobloxConnection } from '../context/RobloxConnectionContext';
 import { useStudioConnection } from '../hooks/useStudioConnection';
 import { useGuidedLaunch } from '../components/onboarding/useGuidedLaunch';
+import { useSettings } from '../context/SettingsContext';
 import { Button } from '../components/shadcn/button';
 import { beginRobloxOAuth, ROBLOX_PRODUCT_DEFAULT_CAPABILITIES } from '../lib/robloxOAuthApi';
 import { startStudioPairing } from '../lib/studioBridgeApi';
@@ -18,6 +19,42 @@ import '../components/onboarding/GuidedLaunch.css';
 
 const EXAMPLES = ['A cozy café where players serve their friends', 'An obstacle course with moving platforms', 'A haunted hotel with a mystery to solve'];
 const TITLES = { idea: 'What do you want to make?', roblox: 'Let’s connect your tools', studio: 'Bring your idea into Studio' };
+const ASSET_PUBLISH_CHOICES = [
+  {
+    id: 'auto',
+    label: 'Auto upload when I ask',
+    description: 'Recommended. When you ask Nexus to use an icon, it can publish to Roblox and apply it in Studio after validation.',
+    settings: {
+      robloxAssetUploadsEnabled: true,
+      assetPublishingPreference: 'auto_explicit_request',
+      studioApplyPolicy: 'after_validation',
+    },
+  },
+  {
+    id: 'review',
+    label: 'Review each asset first',
+    description: 'Keep master upload consent on, but require your approval before each Roblox publish and Studio apply.',
+    settings: {
+      robloxAssetUploadsEnabled: true,
+      assetPublishingPreference: 'review_every_asset',
+      studioApplyPolicy: 'ask_before_applying',
+    },
+  },
+  {
+    id: 'skip',
+    label: 'Skip for now',
+    description: 'Pick icons in Nexus only. Nothing uploads to Roblox until you turn this on in Settings.',
+    settings: {
+      robloxAssetUploadsEnabled: false,
+    },
+  },
+];
+
+function resolvePublishChoiceFromSettings(settings = {}) {
+  if (settings.robloxAssetUploadsEnabled !== true) return 'skip';
+  if (settings.assetPublishingPreference === 'review_every_asset') return 'review';
+  return 'auto';
+}
 
 export default function OnboardingPage() {
   const roblox = useRobloxConnection();
@@ -33,6 +70,7 @@ export function GuidedLaunchSetup({ roblox }) {
   const [params, setParams] = useSearchParams();
   const launch = useGuidedLaunch(roblox.user.uid);
   const studio = useStudioConnection();
+  const { settings, updateSettings } = useSettings();
   const refreshStudio = studio.refresh;
   const refreshRoblox = roblox.refresh;
   const draftKey = `nexusrbx:guided-launch-draft:v1:${roblox.user.uid}`;
@@ -44,6 +82,7 @@ export function GuidedLaunchSetup({ roblox }) {
   const [now, setNow] = useState(Date.now());
   const [copied, setCopied] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
+  const [publishChoice, setPublishChoice] = useState(() => resolvePublishChoiceFromSettings(settings));
   const restored = useRef(false);
   const heading = useRef(null);
   const progress = launch.progress;
@@ -77,6 +116,23 @@ export function GuidedLaunchSetup({ roblox }) {
     const timer = setInterval(() => { void refreshStudio({ force: false }); }, 5000);
     return () => clearInterval(timer);
   }, [pair, studioReady, refreshStudio]);
+
+  useEffect(() => {
+    setPublishChoice(resolvePublishChoiceFromSettings(settings));
+  }, [settings.robloxAssetUploadsEnabled, settings.assetPublishingPreference]);
+
+  const persistPublishChoice = async () => {
+    const choice = ASSET_PUBLISH_CHOICES.find((entry) => entry.id === publishChoice) || ASSET_PUBLISH_CHOICES[2];
+    const result = await updateSettings(choice.settings);
+    if (!result?.ok) {
+      throw new Error(result?.error || 'Could not save your asset publishing preference.');
+    }
+    void trackProductEvent('onboarding_asset_publish_preference', {
+      stage: 'roblox',
+      preference: choice.id,
+      roblox_uploads_enabled: choice.settings.robloxAssetUploadsEnabled === true,
+    });
+  };
 
   const editIdea = value => {
     setIdea(value);
@@ -175,7 +231,45 @@ export function GuidedLaunchSetup({ roblox }) {
               <div className="guided-launch-tool"><PlugZap size={22} /><div><h2>1. Your Roblox account</h2><p>Connect your identity and give Nexus access to your creation tools.</p></div>{accountReady && <Check className="guided-launch-success" />}</div>
               <ul className="guided-launch-permissions"><li>Confirm your Roblox identity</li><li>Read and upload Roblox assets</li><li>Search the Creator Store</li></ul>
               <p className="guided-launch-hint">Roblox shows the exact permissions before you approve. Connecting your account is separate from connecting the place open in Studio.</p>
-              <Button className="guided-launch-primary" disabled={busy || roblox.phase === 'checking'} onClick={accountReady ? () => next({ stage: 'studio' }) : connect}>{busy || roblox.phase === 'checking' ? <Loader2 className="animate-spin" size={16} /> : accountReady ? <Check size={16} /> : <PlugZap size={16} />}{accountReady ? 'Continue to Studio setup' : 'Connect Roblox'}</Button>
+              {!accountReady ? (
+                <Button className="guided-launch-primary" disabled={busy || roblox.phase === 'checking'} onClick={connect}>{busy || roblox.phase === 'checking' ? <Loader2 className="animate-spin" size={16} /> : <PlugZap size={16} />}Connect Roblox</Button>
+              ) : (
+                <>
+                  <fieldset className="guided-launch-publish-choices">
+                    <legend>How should Nexus use icons from the Icons market?</legend>
+                    <p className="guided-launch-hint">This is your master Roblox asset-write preference. You can change it later in Settings.</p>
+                    <div className="guided-launch-publish-options" role="radiogroup" aria-label="Asset publishing preference">
+                      {ASSET_PUBLISH_CHOICES.map((choice) => (
+                        <label key={choice.id} className={`guided-launch-publish-option${publishChoice === choice.id ? ' is-selected' : ''}`}>
+                          <input
+                            type="radio"
+                            name="asset-publish-preference"
+                            value={choice.id}
+                            checked={publishChoice === choice.id}
+                            onChange={() => setPublishChoice(choice.id)}
+                          />
+                          <span>
+                            <strong>{choice.label}</strong>
+                            <small>{choice.description}</small>
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+                  <Button
+                    className="guided-launch-primary"
+                    disabled={busy}
+                    onClick={() => act(async () => {
+                      await persistPublishChoice();
+                      await save({ stage: 'studio' });
+                      void trackProductEvent('onboarding_stage_completed', { stage: setupStage });
+                    })}
+                  >
+                    {busy ? <Loader2 className="animate-spin" size={16} /> : <Check size={16} />}
+                    Continue to Studio setup
+                  </Button>
+                </>
+              )}
               <Button variant="ghost" onClick={() => next({ stage: 'idea' })} disabled={busy}><ArrowLeft size={15} /> Back to my idea</Button>
             </> : <>
               <div className="guided-launch-tool"><Monitor size={22} /><div><h2>2. Your Roblox Studio place</h2><p>{studioReady ? 'Connected and ready for your first creation.' : 'This is where your creation will come to life.'}</p></div>{studioReady && <Check className="guided-launch-success" />}</div>

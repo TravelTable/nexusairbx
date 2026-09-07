@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import BetaBadge from "./BetaBadge";
 import {
   ChevronDown,
-  ImagePlus,
   Volume2,
   Activity,
   User,
@@ -129,14 +128,6 @@ function NexusRBXHeader({
   }, []);
 
   const tools = [
-    {
-      name: "Icon Generator",
-      description: "AI-powered Roblox game assets",
-      icon: ImagePlus,
-      href: "/tools/icon-generator",
-      premium: true,
-      badge: "PRO"
-    },
     {
       name: "Icons Market",
       description: "Browse professional game icons",

@@ -32,7 +32,7 @@ const MARKET_ACCESS_OPTIONS = [
   { label: "Pro Only", value: true },
 ];
 const MARKET_STYLES = ["3D Rendered", "Flat Vector", "Cartoonish", "Outline"];
-const MARKET_CATEGORIES = ["Egg", "UI Element", "UI Component"];
+const MARKET_CATEGORIES = ["Egg", "UI Element", "UI Component", "Game Icon"];
 const MARKET_TABS = [
   { label: "Browse", value: "browse" },
   { label: "Collections", value: "collections" },
@@ -115,7 +115,24 @@ function MarketFilterControls({ isPro, setIsPro, style, setStyle, category, setC
   );
 }
 
-function MarketCollections({ collections, onCreate, onDownload, onDelete }) {
+function MarketCollections({ collections, onCreate, onDownload, onDelete, signedIn, onSignIn }) {
+  if (!signedIn) {
+    return (
+      <div className="space-y-4 rounded-[14px] border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-5">
+        <p className="text-sm leading-relaxed text-[var(--ds-text-muted)]">
+          Sign in to save icon collections for your projects.
+        </p>
+        <button
+          type="button"
+          onClick={onSignIn}
+          className="flex min-h-11 w-full items-center justify-center rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] py-3 text-xs font-semibold text-[var(--ds-text)] transition-colors hover:bg-[var(--ds-fill-hover)]"
+        >
+          Sign in for collections
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <button
@@ -329,22 +346,27 @@ export default function IconsMarketPage() {
         setCollectionError("");
         setNewCollectionName("");
         setShowCreateCollection(false);
+        if (!nextUid) {
+          setActiveMarketTab((tab) => (tab === "collections" ? "browse" : tab));
+        }
       }
       setUser(u);
-      if (!u) navigate("/signin");
     });
     return () => unsubscribe();
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
-    if (!user) return;
     fetchIcons();
-  }, [user, fetchIcons]);
+  }, [fetchIcons]);
 
   useEffect(() => {
     if (!user?.uid) return;
     fetchCollections(user);
   }, [fetchCollections, user]);
+
+  const requestSignIn = useCallback(() => {
+    navigate("/signin", { state: { from: "/icons-market" } });
+  }, [navigate]);
 
   const handleCreateCollection = async () => {
     if (!newCollectionName) return;
@@ -461,6 +483,8 @@ export default function IconsMarketPage() {
             ) : (
               <MarketCollections
                 collections={collections}
+                signedIn={Boolean(user)}
+                onSignIn={requestSignIn}
                 onCreate={() => setShowCreateCollection(true)}
                 onDownload={handleDownloadCollection}
                 onDelete={handleDeleteCollection}
@@ -478,7 +502,7 @@ export default function IconsMarketPage() {
                   <h1 className={`${editorialDisplayClass} text-5xl`}>Creator Store</h1>
                 </div>
                 <p className="max-w-xl text-[var(--ds-text-muted)]">
-                  Browse curated, game-ready icons, upload them to Roblox, and copy an editable Studio snippet.
+                  Browse curated, game-ready icons and UI components. Anyone can browse; sign in to save collections and publish to Roblox.
                 </p>
               </div>
 
@@ -523,6 +547,8 @@ export default function IconsMarketPage() {
               ) : (
                 <MarketCollections
                   collections={collections}
+                  signedIn={Boolean(user)}
+                  onSignIn={requestSignIn}
                   onCreate={() => setShowCreateCollection(true)}
                   onDownload={handleDownloadCollection}
                   onDelete={handleDeleteCollection}

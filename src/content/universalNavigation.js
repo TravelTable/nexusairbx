@@ -20,8 +20,8 @@ export const universalSiteIndexSections = [
   {
     label: "Assets and artwork",
     items: [
-      { href: "/tools/icon-generator", label: "Icon generator", description: "Create game-ready icon artwork", icon: "image" },
-      { href: "/assets", label: "Your assets", description: "Find and manage generated assets", icon: "library" },
+      { href: "/icons-market", label: "Icons market", description: "Browse and reuse game-ready icons", icon: "store" },
+      { href: "/assets", label: "Your assets", description: "Find and manage project assets", icon: "library" },
       { href: "/icons-market", label: "Creator Store", description: "Browse community-ready resources", icon: "store" },
     ],
   },

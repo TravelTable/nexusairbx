@@ -64,9 +64,8 @@ function referenceLabel(value) {
   return String(value.name || value.displayName || value.path || value.fileId || value.assetId || value.id || value.type || "Stored reference");
 }
 
-function generatorUrl(mode, assetId) {
-  const params = new URLSearchParams({ mode, assetId });
-  return `/tools/icon-generator?${params.toString()}`;
+function generatorUrl() {
+  return `/icons-market`;
 }
 
 function asArray(value) {
@@ -418,7 +417,7 @@ export default function AssetDetailPage() {
           </div>
           <div className="asset-platform-header__actions">
             <Button variant="ghost" icon={Library} onClick={() => navigate("/assets")}>Asset library</Button>
-            {canGenerate ? <Button icon={ImagePlus} onClick={() => navigate("/tools/icon-generator")}>Generate assets</Button> : null}
+            {canGenerate ? <Button icon={ImagePlus} onClick={() => navigate("/icons-market")}>Browse Icons market</Button> : null}
           </div>
         </header>
 

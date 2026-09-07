@@ -22,6 +22,16 @@ jest.mock('../lib/productAnalytics', () => ({ trackProductEvent: jest.fn() }));
 jest.mock('../lib/pendingAuthAction', () => ({ readPendingAuthAction: () => null }));
 jest.mock('../lib/generationIntent', () => ({ restoreGenerationIntent: () => null }));
 jest.mock('../lib/signupRobloxOnboarding', () => ({ safeSignupReturnPath: p => p?.startsWith('/') && !p.startsWith('//') ? p : '/ai' }));
+jest.mock('../context/SettingsContext', () => ({
+  useSettings: () => ({
+    settings: {
+      robloxAssetUploadsEnabled: false,
+      assetPublishingPreference: 'auto_explicit_request',
+      studioApplyPolicy: 'ask_before_applying',
+    },
+    updateSettings: jest.fn(async () => ({ ok: true })),
+  }),
+}));
 
 function show(path = '/onboarding') { return render(<MemoryRouter initialEntries={[path]}><Routes><Route path="/onboarding" element={<OnboardingPage />} /><Route path="/signin" element={<p>Sign in</p>} /><Route path="/verify-email" element={<p>Verify email</p>} /><Route path="/ai" element={<p>Workspace</p>} /></Routes></MemoryRouter>); }
 beforeEach(() => {

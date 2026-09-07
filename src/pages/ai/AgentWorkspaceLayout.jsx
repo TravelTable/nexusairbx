@@ -33,7 +33,7 @@ import useActiveAgents from "../../hooks/useActiveAgents";
 import WorkspaceRibbon from "./WorkspaceRibbon";
 import AnimateWorkspace from "./AnimateWorkspace";
 import UiCreatorWorkspace from "./ui/UiCreatorWorkspace";
-import IconGeneratorPage from "../IconGeneratorPage";
+import IconsMarketWorkspacePanel from "../IconsMarketWorkspacePanel";
 import {
   getStudioCommand,
   getStudioManifest,
@@ -2003,7 +2003,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
                 navigateTo={navigateTo}
               />
             ) : creationMode === "asset" ? (
-              <IconGeneratorPage embedded />
+              <IconsMarketWorkspacePanel embedded />
             ) : creationMode === "animate" ? (
               <AnimateWorkspace modelVersion={settings.modelVersion} onBillingRefresh={refreshBilling} />
             ) : (

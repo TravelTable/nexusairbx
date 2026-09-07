@@ -68,7 +68,7 @@ export function submitHomepagePrompt({
     });
 
     const creationModeQuery = mode === "asset" ? "asset" : "agent";
-    const target = mode === "asset" ? "/tools/icon-generator" : `/ai?mode=${creationModeQuery}`;
+    const target = mode === "asset" ? "/icons-market" : `/ai?mode=${creationModeQuery}`;
     navigate?.(target, {
       state: {
         generationIntentId: intent.id,

@@ -8,7 +8,7 @@ export default function NexusRBXNotFoundPage() {
   const links = [
     { to: "/", label: "Home", document: true },
     { to: "/ai", label: "AI Workspace" },
-    { to: "/tools/icon-generator", label: "Icon Generator" },
+    { to: "/icons-market", label: "Icons Market" },
     { to: "/docs", label: "Docs", document: true },
     { to: "/contact", label: "Contact" },
   ];

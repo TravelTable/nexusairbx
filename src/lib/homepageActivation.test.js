@@ -284,7 +284,7 @@ describe("homepageActivation", () => {
       mode: "asset",
       source: "homepage",
     });
-    expect(harness.navigate).toHaveBeenCalledWith("/tools/icon-generator", {
+    expect(harness.navigate).toHaveBeenCalledWith("/icons-market", {
       state: { generationIntentId: "intent-123" },
     });
     expect(harness.navigate.mock.calls[0][0]).not.toContain("crystal");

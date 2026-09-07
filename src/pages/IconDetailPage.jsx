@@ -101,25 +101,38 @@ export default function IconDetailPage() {
       return;
     }
     try {
-      const proxyUrl = `${API_BASE}/api/tools/download-proxy?url=${encodeURIComponent(icon.imageUrl)}`;
-      const response = await fetch(proxyUrl);
+      const response = await fetch(icon.imageUrl, { mode: "cors" });
+      if (!response.ok) throw new Error("Download unavailable");
       const blob = await response.blob();
+      const ext = (() => {
+        const fromUrl = String(icon.imageUrl || "").split("?")[0].split(".").pop()?.toLowerCase();
+        if (fromUrl && ["png", "jpg", "jpeg", "svg", "webp"].includes(fromUrl)) return fromUrl;
+        if (blob.type.includes("svg")) return "svg";
+        if (blob.type.includes("webp")) return "webp";
+        if (blob.type.includes("jpeg") || blob.type.includes("jpg")) return "jpg";
+        return "png";
+      })();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${icon.name.replace(/\s+/g, '_')}.png`;
+      link.download = `${icon.name.replace(/\s+/g, '_')}.${ext}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (e) {
       console.error("Download failed", e);
+      window.open(icon.imageUrl, "_blank", "noopener,noreferrer");
     }
   };
 
   const handlePostToRoblox = async () => {
     if (icon.isPro && !isPremium) {
       setShowProNudge(true);
+      return;
+    }
+    if (!user) {
+      navigate("/signin", { state: { from: `/icons-market/${id}` } });
       return;
     }
 
@@ -268,18 +281,24 @@ export default function IconDetailPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-5 text-center">
                     <p className="mb-1 text-xs font-semibold text-[var(--ds-text-muted)]">Format</p>
-                    <p className="text-sm font-semibold">PNG</p>
+                    <p className="text-sm font-semibold">
+                      {String(icon.imageUrl || "").toLowerCase().includes(".svg") ? "SVG" : "PNG"}
+                    </p>
                   </div>
                   <div className="rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-5 text-center">
                     <p className="mb-1 text-xs font-semibold text-[var(--ds-text-muted)]">Resolution</p>
-                    <p className="text-sm font-semibold">512x512</p>
+                    <p className="text-sm font-semibold">
+                      {String(icon.imageUrl || "").toLowerCase().includes(".svg") ? "Vector" : "512x512"}
+                    </p>
                   </div>
                 </div>
 
                 <div className="nexus-page-card flex items-start gap-4 border-[color-mix(in_srgb,var(--ds-info)_28%,transparent)] bg-[color-mix(in_srgb,var(--ds-info)_7%,transparent)] p-6">
                   <Info className="mt-0.5 h-5 w-5 shrink-0 text-[var(--ds-info)]" />
                   <p className="text-sm leading-relaxed text-[var(--ds-text-secondary)]">
-                    This asset is licensed for use in Roblox experiences. High-contrast lighting and centered composition ensure visibility across all devices.
+                    {icon.source === "game-icons.net" || icon.license === "CC-BY-3.0"
+                      ? `Licensed ${icon.license || "CC-BY-3.0"}. ${icon.attribution || "Icons by Lorc, Delapouite and contributors from game-icons.net"}. Credit the authors when you use this asset.`
+                      : "This asset is licensed for use in Roblox experiences. High-contrast lighting and centered composition ensure visibility across all devices."}
                   </p>
                 </div>
               </div>
@@ -294,14 +313,18 @@ export default function IconDetailPage() {
                     className={`${editorialPrimaryButtonClass} gap-2 py-3`}
                   >
                     {icon.isPro && !isPremium ? <ShieldCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                    {icon.isPro && !isPremium ? "Unlock Pro" : (copied ? "Snippet copied" : "Copy Studio snippet")}
+                    {icon.isPro && !isPremium
+                      ? "Unlock Pro"
+                      : !user
+                        ? "Sign in to copy snippet"
+                        : (copied ? "Snippet copied" : "Copy Studio snippet")}
                   </button>
                   
                   <button
                     onClick={handleDownload}
                     className={`${editorialSecondaryButtonClass} gap-2 py-3`}
                   >
-                    <Download className="h-5 w-5" /> Download PNG
+                    <Download className="h-5 w-5" /> Download
                   </button>
                 </div>
 
