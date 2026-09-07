@@ -326,7 +326,7 @@ export function GuidedLaunchSetup({ roblox }) {
             {idea && <blockquote className="guided-launch-idea">{idea}</blockquote>}
             {setupStage === 'studio' && visual.assetAvailable && !imageFailed && <figure><img src={visual.src} alt={visual.alt} onError={() => setImageFailed(true)} /><figcaption>{visual.title} · Setup reference</figcaption></figure>}
             <ol className="guided-launch-outcomes"><li><span>01</span>Shape your first playable milestone</li><li><span>02</span>Watch it take shape in Studio</li><li><span>03</span>Try it, then make it your own</li></ol>
-            {setupStage === 'idea' && <p className="guided-launch-pricing">Free includes {getPublicPlan('FREE').credits} Nexus Credits every 30 days. <Link to="/pricing">Compare plans</Link></p>}
+            {setupStage === 'idea' && <p className="guided-launch-pricing">Pro includes {getPublicPlan('PRO').credits} Nexus Credits every month. No free trial. <Link to="/pricing">Compare plans</Link></p>}
           </aside>
         </div>
       </main>

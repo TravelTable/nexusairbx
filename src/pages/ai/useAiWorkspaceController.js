@@ -471,12 +471,6 @@ export function useAiWorkspaceController() {
   });
   const openStarterPromo = starterPromo.openPromo;
 
-  useEffect(() => {
-    if (guidedLaunchRequested || !authReady || !user || billingLoading || billingError) return;
-    if (!isFreeUsagePlan || isStarterOrAbove) return;
-    openStarterPromo("post_sign_in", { force: true });
-  }, [guidedLaunchRequested, authReady, billingError, billingLoading, isFreeUsagePlan, isStarterOrAbove, openStarterPromo, user]);
-
   const chat = unified;
   const openStudioChatById = chat.openChatById;
 
@@ -1526,6 +1520,13 @@ export function useAiWorkspaceController() {
       const hasProjectAssets = projectAssets.assets.length > 0;
       if (!currentPrompt && currentAttachments.length === 0 && !hasProjectAssets) return undefined;
 
+      // Paid-only product: signed-in accounts without a subscription see pricing
+      // before any generation path (Agent, Quick Script, or resume).
+      if (user && !isStarterOrAbove && !unlimitedTokens && !devOverride) {
+        openStarterPromo("message_send", { force: true });
+        return undefined;
+      }
+
       // Quick Script and the sign-in gate do not create a chat operation. Their
       // existing local lifecycle remains independent from Agent chat queues.
       const canUseQuickScript = !refineTarget && currentAttachments.length === 0 && !hasProjectAssets;
@@ -1667,15 +1668,19 @@ export function useAiWorkspaceController() {
       attachments,
       activeConversationMode,
       chat.currentChatId,
+      devOverride,
       executePromptOperation,
       generatorMode,
+      isStarterOrAbove,
       notify,
+      openStarterPromo,
       projectAssets.assets.length,
       prompt,
       refineTarget,
       studioConnection,
       studioRuntimePreferences.studioEnabled,
       unified,
+      unlimitedTokens,
       user,
     ]
   );

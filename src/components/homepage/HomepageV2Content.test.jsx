@@ -84,7 +84,7 @@ describe("HomepageV2Content", () => {
       "/pricing",
     ]);
     expect(screen.getByRole("link", { name: "Download" })).toBeTruthy();
-    expect(hero.querySelector("button[type='submit']").textContent).toBe("Start building free");
+    expect(hero.querySelector("button[type='submit']").textContent).toBe("Start building");
   });
 
   test("links to every focused search landing page with descriptive anchor text", () => {

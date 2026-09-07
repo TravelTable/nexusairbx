@@ -18,15 +18,16 @@ describe("billingErrors", () => {
   });
 
   it("builds plan-aware toast copy", () => {
-    expect(insufficientTokensMessage("free")).toMatch(/Daily Free usage reached/i);
+    expect(insufficientTokensMessage("free")).toMatch(/paid plan is required/i);
     expect(insufficientTokensToast("free").cta?.label).toBe("View plans");
     expect(insufficientTokensToast("pro").cta?.label).toBe("Add balance");
     expect(insufficientTokensToast("team").cta).toBeUndefined();
   });
 
-  it("points PLAN_REQUIRED at a plan the user can actually buy", () => {
+  it("points PLAN_REQUIRED at a paid subscription without free usage", () => {
     const parsed = parseApiErrorPayload({ code: "PLAN_REQUIRED" });
-    expect(parsed.message).toMatch(/Pro/i);
+    expect(parsed.message).toMatch(/paid subscription/i);
+    expect(parsed.message).toMatch(/no free trial/i);
     expect(parsed.message).not.toMatch(/Starter/i);
   });
 

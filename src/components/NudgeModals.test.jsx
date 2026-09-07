@@ -62,7 +62,7 @@ const cases = [
   },
   {
     name: "Starter offer",
-    dialogName: "More room to build with Pro",
+    dialogName: "Subscribe to start building",
     closeName: "Close modal",
     renderModal: (isOpen, onClose) => (
       <StarterPromoModal

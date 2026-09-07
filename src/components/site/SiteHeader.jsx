@@ -118,7 +118,7 @@ function AccountControl({ identity, mobile = false, compact = false, showWorkspa
     return (
       <div className={groupClass}>
         <AppLink to="/signin" className={styles.textAction}>Sign in</AppLink>
-        <AppLink to="/signup" className={`${styles.textAction} ${styles.primaryAction}`}>Start free</AppLink>
+        <AppLink to="/signup" className={`${styles.textAction} ${styles.primaryAction}`}>Get started</AppLink>
       </div>
     );
   }

@@ -9,36 +9,35 @@
       "id": "FREE",
       "slug": "free",
       "name": "Free",
-      "audience": "Take your first idea into Roblox Studio",
+      "audience": "Account shell before you subscribe",
       "monthly": 0,
       "yearly": null,
-      "credits": 2.5,
-      "creditWindow": "rolling_30_days",
+      "credits": 0,
+      "creditWindow": "none",
       "perSeat": false,
       "featured": false,
-      "cta": "Start building free",
+      "selectable": false,
+      "cta": "Subscribe to build",
       "features": [
-        "2.5 Nexus Credits per rolling 30 days",
-        "Up to 0.15 credits per day",
-        "Nexus Auto for focused builds",
-        "1 active project · 1 build at a time",
-        "Studio connection and reviewed changes"
+        "No free AI usage or trial",
+        "Browse the workspace after signup",
+        "Subscribe to Pro to generate and apply changes"
       ],
       "limits": {
         "minimumSeats": 1,
         "maximumSeats": 1,
-        "concurrentJobs": 1,
+        "concurrentJobs": 0,
         "maxProjects": 1,
         "usageHistoryDays": 7,
-        "dailyCredits": 0.15,
-        "newUserDailyCredits": 0.25,
-        "newUserBoostHours": 72,
-        "maxRequestCredits": 0.06
+        "dailyCredits": 0,
+        "newUserDailyCredits": 0,
+        "newUserBoostHours": 0,
+        "maxRequestCredits": 0
       },
       "access": {
-        "nexusAuto": true,
+        "nexusAuto": false,
         "directModels": false,
-        "studioReview": true,
+        "studioReview": false,
         "teamWorkspace": false
       }
     },

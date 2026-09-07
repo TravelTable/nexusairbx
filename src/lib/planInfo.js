@@ -4,15 +4,15 @@ const PLAN_INFO = {
     badge: "outline",
     color: "gray",
     cap: 0,
-    capText: "Daily Free usage",
+    capText: "Subscription required",
     promptCap: 400,
     promptPlaceholder: "Describe a Roblox script (up to 400 chars).",
-    upgradeLine: "Free includes Quick Script plus a daily Agent Build allowance. Pro adds 9 credits a month, model choice, and 90 days of history.",
+    upgradeLine: "NexusRBX is paid only. Pro adds 9 credits a month, model choice, and 90 days of history.",
     upgradeCta: "Get Pro",
     upgradeDesc: "Subscribe to Pro for 9 Nexus Credits a month, model selection, 90 days of history, and extra credits whenever you need them.",
     badgeClass: "border border-[var(--ds-border-strong)] text-[var(--ds-text-secondary)] bg-transparent",
     badgeFilled: false,
-    planNudge: "Generated with Nexus Free",
+    planNudge: "Subscribe to generate with NexusRBX",
     sidebarStrip: (
       <span>
         Free —{" "}
@@ -24,11 +24,11 @@ const PLAN_INFO = {
         </a>
       </span>
     ),
-    welcome: "Quick Script and Agent Build are ready.",
+    welcome: "Subscribe to start building.",
     welcomeCta: "See Pro features",
-    welcomeTokens: "Free includes three anonymous Quick Scripts per day and a fair-use Agent allowance after signup.",
-    toastNudge: "Need more Agent usage, model choice, or longer history? Upgrade to Pro.",
-    toastZero: "Daily Free usage reached. Try again tomorrow, or upgrade to continue now.",
+    welcomeTokens: "There is no free trial or free usage. Subscribe to Pro to generate and apply changes.",
+    toastNudge: "Need Agent usage, model choice, or longer history? Subscribe to Pro.",
+    toastZero: "A paid plan is required to generate. Subscribe to continue.",
     sidebarCta: "Subscribe",
     sidebarCtaLink: "/subscribe?plan=pro",
     sidebarCtaDesc: "Pro adds 9 credits a month, model choice, and 90 days of history.",

@@ -338,7 +338,7 @@ export default function SubscribePage() {
             </div>
             <div className="account-ledger-charge-row">
               <dt>Tax treatment</dt>
-              <dd>USD, plus applicable tax. No paid trial—start with Free.</dd>
+              <dd>USD, plus applicable tax. No free trial—subscribe to start building.</dd>
             </div>
             <div className="account-ledger-charge-row">
               <dt>Plan</dt>

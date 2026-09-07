@@ -48,9 +48,12 @@ export function useStarterPromo({
       setIsOpen(true);
       return true;
     }
-    const canOpen = force ? eligibleForSoftPromo : canShowSoftPromo;
-    if (!canOpen || shownThisSession.current || isGenerating) return false;
-    shownThisSession.current = true;
+    const canOpen = force ? needsSubscription : canShowSoftPromo;
+    if (!canOpen || isGenerating) return false;
+    // Soft promos are once-per-session; forced gates (e.g. message send) must
+    // reopen whenever the user tries again after dismissing.
+    if (!force && shownThisSession.current) return false;
+    if (!force) shownThisSession.current = true;
     setTrigger(nextTrigger);
     setIsOpen(true);
     void trackProductEvent("starter_promo_viewed", {
@@ -58,7 +61,7 @@ export function useStarterPromo({
       daily_usage_percent: dailyUsagePercent,
     }, { dedupeKey: `starter_promo:${nextTrigger}` });
     return true;
-  }, [blocking, canShowSoftPromo, dailyUsagePercent, eligibleForSoftPromo, isGenerating, needsSubscription]);
+  }, [blocking, canShowSoftPromo, dailyUsagePercent, isGenerating, needsSubscription]);
 
   useEffect(() => {
     if (blocking || !canShowSoftPromo || dailyUsagePercent < 70) return;

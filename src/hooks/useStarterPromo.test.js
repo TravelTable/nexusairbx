@@ -27,6 +27,28 @@ describe("useStarterPromo", () => {
     expect(result.current.trigger).toBe("post_sign_in");
   });
 
+  test("a forced message-send gate reopens after dismiss in the same session", () => {
+    const { result } = renderHook(() => useStarterPromo({
+      user: { uid: "free-user" },
+      isFreeUsagePlan: true,
+      isSubscriber: false,
+    }));
+
+    act(() => {
+      expect(result.current.openPromo("message_send", { force: true })).toBe(true);
+    });
+    act(() => {
+      result.current.handleClose();
+    });
+    expect(result.current.isOpen).toBe(false);
+
+    act(() => {
+      expect(result.current.openPromo("message_send", { force: true })).toBe(true);
+    });
+    expect(result.current.isOpen).toBe(true);
+    expect(result.current.trigger).toBe("message_send");
+  });
+
   test("a subscriber never receives the post-sign-in offer", () => {
     const { result } = renderHook(() => useStarterPromo({
       user: { uid: "paid-user" },

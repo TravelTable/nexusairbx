@@ -76,7 +76,7 @@ test("isolated account control exposes signed-out and signed-in actions", () => 
   assert.match(account, /^\s*["']use client["']/m);
   assert.match(account, /import\("\.\.\/\.\.\/src\/firebase"\)/);
   assert.match(account, /Sign in/);
-  assert.match(account, /Start free/);
+  assert.match(account, /Get started/);
   assert.match(account, /Open workspace/);
   for (const label of [
     "Roblox + Studio",
@@ -96,6 +96,8 @@ test("public pricing quotes only plans a visitor can actually buy", () => {
 
   assert.deepEqual(catalog.plans.map((plan) => plan.id), ["FREE", "PRO", "TEAM"]);
   assert.equal(byId.FREE.monthly, 0);
+  assert.equal(byId.FREE.credits, 0);
+  assert.equal(byId.FREE.selectable, false);
   assert.equal(byId.PRO.monthly, 14.99);
   assert.equal(byId.PRO.yearly, 152.9);
   assert.equal(byId.PRO.featured, true);
@@ -103,6 +105,12 @@ test("public pricing quotes only plans a visitor can actually buy", () => {
   assert.equal(byId.TEAM.yearly, 254.9);
   assert.equal(byId.TEAM.minimumSeats, 2);
   assert.equal(byId.TEAM.maximumSeats, 50);
+
+  // FREE is an account shell only; paid plans are the purchasable set.
+  const plans = read("src/components/billing/FinancialPlans.jsx");
+  assert.match(plans, /SUBSCRIPTION_PLANS/);
+  assert.doesNotMatch(plans, /plan\.id === "FREE"/);
+  assert.match(plans, /No free trial/);
 
   // Retired tiers may still be honoured for existing subscribers, but they
   // must never be presented as a choice.
@@ -129,6 +137,7 @@ test("the pricing page renders the canonical catalog rather than a hardcoded cop
   // Grandfathering is a promise to existing subscribers; keep it stated.
   assert.match(pricing, /grandfathered/i);
   assert.match(pricing, /href="\/billing"/);
+  assert.doesNotMatch(pricing, /scope="col">Free</);
   assert.doesNotMatch(pricing, /gradient|testimonial|priority processing/i);
 });
 

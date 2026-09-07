@@ -154,7 +154,7 @@ export default function PublicAccountState({
           Sign in
         </a>
         <a className={primaryClass} href="/signup">
-          Start free
+          Get started
         </a>
       </div>
     );

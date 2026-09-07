@@ -11,7 +11,9 @@ export const PUBLIC_PLAN_CATALOG = Object.freeze(
   }))
 );
 
-export const SUBSCRIPTION_PLANS = PUBLIC_PLAN_CATALOG.filter((plan) => plan.id !== "FREE");
+export const SUBSCRIPTION_PLANS = PUBLIC_PLAN_CATALOG.filter(
+  (plan) => plan.id !== "FREE" && plan.selectable !== false
+);
 
 export function getPublicPlan(planId) {
   return PUBLIC_PLAN_CATALOG.find((plan) => plan.id === String(planId || "").toUpperCase()) || null;

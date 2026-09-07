@@ -27,7 +27,7 @@ const STACK_ITEMS = [
 const FAQ_ITEMS = [
   ["How do Nexus Credits work?", "Pro includes 9 Nexus Credits each month. Nexus Auto uses cost-aware routing to stretch your allowance; premium direct models consume credits faster. Cost also depends on context and output length."],
   ["Do annual plans refresh credits monthly?", "Yes. You pay annually and receive fresh included credits every month. Included credits do not roll over. Purchased credits do not expire."],
-  ["Can I cancel?", "Yes. Cancel in billing settings and keep paid access through the end of your paid subscription period. There is no paid trial—start with Free."],
+  ["Can I cancel?", "Yes. Cancel in billing settings and keep paid access through the end of your paid subscription period. There is no free trial—subscribe to start building."],
   ["How will Team usage work?", "Team will pool 15 Nexus Credits per paid seat each month. Team checkout remains closed until invitations, seats, and pooled billing have been verified."],
   [
     "Can Nexus work with an existing Roblox game?",
@@ -130,7 +130,7 @@ function Hero({ surface, navigate, inputRef }) {
           promptId="homepage-hero-prompt"
           suggestedPrompt="Build a round-based horror game with simple mobile controls and rooms that shift after each round."
           suggestionVersion={0}
-          submitLabel="Start building free"
+          submitLabel="Start building"
           helperText="Your request is saved before the workspace opens."
           inputRef={inputRef}
           showLabel
