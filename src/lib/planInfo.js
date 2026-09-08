@@ -7,9 +7,9 @@ const PLAN_INFO = {
     capText: "Subscription required",
     promptCap: 400,
     promptPlaceholder: "Describe a Roblox script (up to 400 chars).",
-    upgradeLine: "NexusRBX is paid only. Pro adds 9 credits a month, model choice, and 90 days of history.",
-    upgradeCta: "Get Pro",
-    upgradeDesc: "Subscribe to Pro for 9 Nexus Credits a month, model selection, 90 days of history, and extra credits whenever you need them.",
+    upgradeLine: "NexusRBX is paid only. Starter is $2/mo with 1.5 credits. Pro adds 9 credits a month, longer history, and extra packs.",
+    upgradeCta: "Get Starter",
+    upgradeDesc: "Subscribe to Starter for 1.5 Nexus Credits a month, included model selection, and reviewable Studio changes.",
     badgeClass: "border border-[var(--ds-border-strong)] text-[var(--ds-text-secondary)] bg-transparent",
     badgeFilled: false,
     planNudge: "Subscribe to generate with NexusRBX",
@@ -17,24 +17,24 @@ const PLAN_INFO = {
       <span>
         Free —{" "}
         <a
-          href="/subscribe?plan=pro"
+          href="/subscribe?plan=starter"
           className="text-accent underline hover:text-[var(--ds-accent-hover)] transition-colors"
         >
-          Get Pro
+          Get Starter
         </a>
       </span>
     ),
     welcome: "Subscribe to start building.",
-    welcomeCta: "See Pro features",
-    welcomeTokens: "There is no free trial or free usage. Subscribe to Pro to generate and apply changes.",
-    toastNudge: "Need Agent usage, model choice, or longer history? Subscribe to Pro.",
+    welcomeCta: "See Starter",
+    welcomeTokens: "There is no free trial or free usage. Starter is $2/mo to generate and apply changes.",
+    toastNudge: "Need Agent usage, model choice, or longer history? Start with Starter or upgrade to Pro.",
     toastZero: "A paid plan is required to generate. Subscribe to continue.",
     sidebarCta: "Subscribe",
-    sidebarCtaLink: "/subscribe?plan=pro",
-    sidebarCtaDesc: "Pro adds 9 credits a month, model choice, and 90 days of history.",
+    sidebarCtaLink: "/subscribe?plan=starter",
+    sidebarCtaDesc: "Starter is $2/mo. Pro adds 9 credits a month and longer history.",
     sidebarCtaColor: "bg-accent text-accent-foreground hover:bg-[var(--ds-accent-hover)]",
-    sidebarCtaText: "Unlock Pro",
-    sidebarCtaSub: "More usage, model choice, longer history.",
+    sidebarCtaText: "Get Starter",
+    sidebarCtaSub: "Build for $2/mo, upgrade anytime.",
   },
   starter: {
     label: "Starter",
@@ -44,9 +44,9 @@ const PLAN_INFO = {
     capText: "Included Usage",
     promptCap: 900,
     promptPlaceholder: "Describe your idea (up to 900 chars).",
-    upgradeLine: "Pro unlocks Premium Direct, Icon Generator, and Studio Agent workflows.",
+    upgradeLine: "Pro unlocks more monthly credits, longer history, and extra credit packs.",
     upgradeCta: "Upgrade to Pro",
-    upgradeDesc: "Upgrade to Pro for Premium Direct models, Icon Generator, and higher included usage.",
+    upgradeDesc: "Upgrade to Pro for 9 Nexus Credits a month, 90 days of history, and extra packs whenever you need them.",
     badgeClass: "bg-[var(--ds-accent-soft)] text-accent border border-[var(--ds-accent-border)]",
     badgeFilled: true,
     planNudge: "Generated with Starter Plan",
@@ -62,17 +62,17 @@ const PLAN_INFO = {
         </button>
       </span>
     ),
-    welcome: "Starter is active — model selection and saved scripts are unlocked.",
+    welcome: "Starter is active — builds and reviewed Studio changes are unlocked.",
     welcomeCta: "See Plans",
-    welcomeTokens: "Included Usage resets at the end of your billing period.",
-    toastNudge: "Need Icon Generator or Premium Direct? Upgrade to Pro.",
-    toastZero: "Included Usage reached. Upgrade to Pro or wait for the reset.",
+    welcomeTokens: "Included credits refresh every month on your subscription anniversary.",
+    toastNudge: "Need more credits or longer history? Upgrade to Pro.",
+    toastZero: "Included credits reached. Upgrade to Pro or wait for the reset.",
     sidebarCta: "Upgrade",
-    sidebarCtaLink: "/subscribe",
-    sidebarCtaDesc: "Upgrade to Pro for Premium Direct and Icon Generator.",
+    sidebarCtaLink: "/subscribe?plan=pro",
+    sidebarCtaDesc: "Upgrade to Pro for 9 credits a month and 90 days of history.",
     sidebarCtaColor: "bg-gradient-to-r from-[var(--ds-plan)] to-accent text-white",
     sidebarCtaText: "Upgrade to Pro",
-    sidebarCtaSub: "Premium Direct, Icon Generator, Studio Agent.",
+    sidebarCtaSub: "More credits, longer history, credit packs.",
   },
   pro: {
     label: "Pro",

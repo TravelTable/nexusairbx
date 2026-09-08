@@ -49,7 +49,7 @@ export default function UiPreviewPane({ designId, projectId, sourceRevision, cap
           : !capture ? 'Capture needed'
           : !currentCapture ? 'Studio capture needed for this revision'
           : data.status === 'loading' ? 'Rendering preview…'
-          : data.preview ? `${data.preview.simulated ? 'Simulated state' : data.preview.captureKind === 'studio_runtime' ? 'Runtime snapshot redraw' : 'Studio snapshot redraw'} · browser approximation${provenanceExtra ? ` · ${provenanceExtra}` : ''}`
+          : data.preview ? `${data.preview.simulated ? 'Simulated state' : data.preview.captureKind === 'studio_runtime' ? 'Runtime snapshot redraw' : 'Studio snapshot redraw'} · browser approximation${data.preview.rendererBackend === 'public' ? ' · hosted preview' : ''}${provenanceExtra ? ` · ${provenanceExtra}` : ''}`
           : 'Waiting for a preview'}
       </div>
       {data.error && !rendererUnavailable ? <p className="nx-ui-preview__error" role="alert">{data.error} <button type="button" onClick={data.retry}>Retry preview</button></p> : null}

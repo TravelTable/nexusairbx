@@ -6,10 +6,10 @@ import catalog from "../../src/data/billingCatalog.v2.json";
 // quote a number the product no longer honours.
 const plan = Object.fromEntries(catalog.plans.map((entry) => [entry.id, entry]));
 const groups = [
-  ["Build", [["Project-aware builds", "Included", "Included"], ["Active projects", "Multiple", "Shared workspace"]]],
-  ["Models and Credits", [["Nexus Auto", "Included", "Included"], ["Monthly credits", String(plan.PRO.credits), `${plan.TEAM.credits} per seat, pooled`], ["Direct model choice", "Included", "Included"]]],
-  ["Studio and Review", [["Review before applying", "Included", "Included"], ["Studio connection and recovery", "Included", "Included"]]],
-  ["Collaboration", [["Workspace roles", "Personal", "Owner / admin / member"], ["Paid seats", "1", "2–50 · coming soon"]]],
+  ["Build", [["Project-aware builds", "Included", "Included", "Included"], ["Active projects", "3", "Multiple", "Shared workspace"]]],
+  ["Models and Credits", [["Nexus Auto", "Included", "Included", "Included"], ["Monthly credits", String(plan.STARTER.credits), String(plan.PRO.credits), `${plan.TEAM.credits} per seat, pooled`], ["Direct model choice", "Included", "Included", "Included"]]],
+  ["Studio and Review", [["Review before applying", "Included", "Included", "Included"], ["Studio connection and recovery", "Included", "Included", "Included"]]],
+  ["Collaboration", [["Workspace roles", "Personal", "Personal", "Owner / admin / member"], ["Paid seats", "1", "1", "2–50 · coming soon"]]],
 ];
 export default function PricingCatalog() {
   return <main id="main-content">
@@ -17,16 +17,16 @@ export default function PricingCatalog() {
     <section className={styles.section} aria-labelledby="comparison-title">
       <h2 id="comparison-title">The details, before you decide.</h2>
       <div className={styles.comparison} role="region" aria-label="Plan comparison" tabIndex={0}>
-        <table><thead><tr><th scope="col">Feature</th><th scope="col">Pro</th><th scope="col">Team</th></tr></thead>
+        <table><thead><tr><th scope="col">Feature</th><th scope="col">Starter</th><th scope="col">Pro</th><th scope="col">Team</th></tr></thead>
           {groups.map(([group, rows]) => <tbody key={group}>
-            <tr><th colSpan={3} scope="rowgroup">{group}</th></tr>
+            <tr><th colSpan={4} scope="rowgroup">{group}</th></tr>
             {rows.map(([label, ...values]) => <tr key={label}><th scope="row">{label}</th>{values.map((value, i) => <td key={i}>{value}</td>)}</tr>)}
           </tbody>)}
         </table>
       </div>
       <h2>Keep control of your subscription.</h2>
-      <p>Cancel in billing settings and retain paid access through the end of your paid period. Annual plans charge the full yearly amount upfront and refresh credits monthly.</p>
-      <p>Starter, Pro+, and older subscriptions remain grandfathered. <a href="/billing">Your billing page</a> shows your existing allowance.</p>
+      <p>Cancel in billing settings and retain paid access through the end of your paid period. Annual plans charge the full yearly amount upfront and refresh credits monthly. Starter is billed monthly only.</p>
+      <p>Pro+ and older subscriptions remain grandfathered. <a href="/billing">Your billing page</a> shows your existing allowance.</p>
     </section>
   </main>;
 }

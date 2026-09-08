@@ -94,10 +94,13 @@ test("public pricing quotes only plans a visitor can actually buy", () => {
   const catalog = JSON.parse(read("src/data/billingCatalog.v2.json"));
   const byId = Object.fromEntries(catalog.plans.map((plan) => [plan.id, plan]));
 
-  assert.deepEqual(catalog.plans.map((plan) => plan.id), ["FREE", "PRO", "TEAM"]);
+  assert.deepEqual(catalog.plans.map((plan) => plan.id), ["FREE", "STARTER", "PRO", "TEAM"]);
   assert.equal(byId.FREE.monthly, 0);
   assert.equal(byId.FREE.credits, 0);
   assert.equal(byId.FREE.selectable, false);
+  assert.equal(byId.STARTER.monthly, 2);
+  assert.equal(byId.STARTER.yearly, null);
+  assert.equal(byId.STARTER.credits, 1.5);
   assert.equal(byId.PRO.monthly, 14.99);
   assert.equal(byId.PRO.yearly, 152.9);
   assert.equal(byId.PRO.featured, true);
@@ -116,7 +119,7 @@ test("public pricing quotes only plans a visitor can actually buy", () => {
   // must never be presented as a choice.
   assert.deepEqual(
     catalog.legacyPlans.map((plan) => plan.id).sort(),
-    ["PRO_PLUS", "STARTER"],
+    ["PRO_PLUS"],
   );
   for (const legacy of catalog.legacyPlans) {
     assert.equal(legacy.selectable, false, `${legacy.id} must not be selectable`);
@@ -138,6 +141,7 @@ test("the pricing page renders the canonical catalog rather than a hardcoded cop
   assert.match(pricing, /grandfathered/i);
   assert.match(pricing, /href="\/billing"/);
   assert.doesNotMatch(pricing, /scope="col">Free</);
+  assert.match(pricing, /scope="col">Starter</);
   assert.doesNotMatch(pricing, /gradient|testimonial|priority processing/i);
 });
 
@@ -148,9 +152,9 @@ test("no shipped source quotes a retired plan as a purchase option", () => {
     "src/components/NexusRBXHeader.jsx",
   ]) {
     const source = read(file);
-    assert.doesNotMatch(source, /highlight=starter/, `${file} links to a retired plan`);
-    assert.doesNotMatch(source, /Get Starter|Unlock Starter|Choose Starter|requires Starter/i,
-      `${file} still sells the retired Starter plan`);
+    assert.doesNotMatch(source, /highlight=starter/, `${file} uses a retired highlight query`);
+    assert.doesNotMatch(source, /Get Pro\+|Unlock Pro\+|Choose Pro\+|requires Pro\+/i,
+      `${file} still sells the retired Pro+ plan`);
   }
 });
 

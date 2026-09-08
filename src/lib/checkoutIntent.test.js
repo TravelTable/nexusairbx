@@ -26,8 +26,14 @@ test("creates a bounded checkout intent with a fixed review return path", () => 
   });
 });
 
-test("rejects legacy purchases and bounds Team seat controls", () => {
-  expect(createCheckoutIntent({ plan: PLAN.STARTER, interval: BILLING_INTERVAL.YEAR }, NOW)).toBeNull();
+test("rejects retired purchases, allows Starter monthly, and bounds Team seat controls", () => {
+  expect(createCheckoutIntent({ plan: PLAN.STARTER, interval: BILLING_INTERVAL.YEAR }, NOW)).toEqual({
+    plan: PLAN.STARTER,
+    interval: BILLING_INTERVAL.MONTH,
+    returnPath: "/subscribe",
+    createdAt: NOW,
+    expiresAt: NOW + CHECKOUT_INTENT_TTL_MS,
+  });
   expect(createCheckoutIntent({ plan: PLAN.PRO_PLUS, interval: BILLING_INTERVAL.MONTH }, NOW)).toBeNull();
   expect(createCheckoutIntent({ plan: PLAN.TEAM, interval: BILLING_INTERVAL.MONTH, seatCount: 1 }, NOW)?.seatCount)
     .toBe(2);

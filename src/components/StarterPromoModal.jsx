@@ -2,9 +2,9 @@ import React from "react";
 import Modal from "./Modal";
 import { getPublicPlan, formatMoney } from "../lib/planCatalog";
 
-// Compatibility name for existing workspace triggers; Starter is no longer purchasable.
+// Compatibility name for existing workspace triggers; entry plan is Starter ($2).
 export default function StarterPromoModal({ isOpen, onClose, onDismiss, onDismissLong }) {
-  const plan = getPublicPlan("PRO");
+  const plan = getPublicPlan("STARTER");
   return (
     <Modal
       isOpen={isOpen}
@@ -19,15 +19,15 @@ export default function StarterPromoModal({ isOpen, onClose, onDismiss, onDismis
           <span className="text-sm"> / month</span>
         </p>
         <p>
-          NexusRBX is paid only—no free trial or free usage. Pro includes {plan.credits} Nexus
-          Credits each month, model choice, and reviewable Studio changes.
+          NexusRBX is paid only—no free trial or free usage. Starter includes {plan.credits} Nexus
+          Credits each month, included model selection, and reviewable Studio changes.
         </p>
-        <p>Optional credit packs do not expire. Cancel anytime in billing settings.</p>
+        <p>Need more room later? Upgrade to Pro for 9 credits, longer history, and extra packs.</p>
         <a
           className="nexus-button inline-flex min-h-11 items-center"
-          href="/subscribe?plan=PRO&interval=month"
+          href="/subscribe?plan=STARTER&interval=month"
         >
-          Get Pro
+          Get Starter
         </a>
         <p className="text-sm">
           USD, plus applicable tax.{" "}

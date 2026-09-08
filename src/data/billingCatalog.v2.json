@@ -21,7 +21,7 @@
       "features": [
         "No free AI usage or trial",
         "Browse the workspace after signup",
-        "Subscribe to Pro to generate and apply changes"
+        "Subscribe to Starter or Pro to generate and apply changes"
       ],
       "limits": {
         "minimumSeats": 1,
@@ -38,6 +38,39 @@
         "nexusAuto": false,
         "directModels": false,
         "studioReview": false,
+        "teamWorkspace": false
+      }
+    },
+    {
+      "id": "STARTER",
+      "slug": "starter",
+      "name": "Starter",
+      "audience": "Start building without the Pro jump",
+      "monthly": 2,
+      "yearly": null,
+      "credits": 1.5,
+      "creditWindow": "monthly",
+      "perSeat": false,
+      "featured": false,
+      "cta": "Get Starter",
+      "features": [
+        "1.5 Nexus Credits refreshed every month",
+        "Nexus Auto plus included model selection",
+        "Reviewed Studio changes and recovery",
+        "3 active projects · 2 builds at a time",
+        "30 days of usage history"
+      ],
+      "limits": {
+        "minimumSeats": 1,
+        "maximumSeats": 1,
+        "concurrentJobs": 2,
+        "maxProjects": 3,
+        "usageHistoryDays": 30
+      },
+      "access": {
+        "nexusAuto": true,
+        "directModels": true,
+        "studioReview": true,
         "teamWorkspace": false
       }
     },
@@ -130,10 +163,6 @@
     }
   ],
   "legacyPlans": [
-    {
-      "id": "STARTER",
-      "selectable": false
-    },
     {
       "id": "PRO_PLUS",
       "selectable": false

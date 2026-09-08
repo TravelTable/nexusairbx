@@ -3,7 +3,7 @@ import { BILLING_INTERVAL, PLAN } from "./prices";
 export const CHECKOUT_INTENT_KEY = "nexusrbx:checkout-intent:v1";
 export const CHECKOUT_INTENT_TTL_MS = 60 * 60 * 1000;
 
-const ALLOWED_PLANS = new Set([PLAN.PRO, PLAN.TEAM]);
+const ALLOWED_PLANS = new Set([PLAN.STARTER, PLAN.PRO, PLAN.TEAM]);
 const ALLOWED_INTERVALS = new Set([BILLING_INTERVAL.MONTH, BILLING_INTERVAL.YEAR]);
 
 function storage() {

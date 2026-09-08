@@ -16,8 +16,8 @@ export default function FinancialPlans({ compact = false }) {
   return <section className={styles.section} aria-label="NexusRBX plans">
     <header className={styles.heading}>
       <p className={styles.eyebrow}>Paid plans only</p>
-      {compact ? <h2>Subscribe to keep building.</h2> : <h1>Choose the plan that fits your build.</h1>}
-      <p>No free trial or free usage. One credit system. Your choice of models. Reviewed changes before Studio.</p>
+      {compact ? <h2>Start at $2. Grow into Pro.</h2> : <h1>Choose the plan that fits your build.</h1>}
+      <p>No free trial or free usage. Starter gets you building. Pro adds room. One credit system.</p>
     </header>
     <div className={styles.cycleToggle} role="group" aria-label="Billing period">
       <button type="button" aria-pressed={interval === "month"} onClick={() => select("month")}>Monthly</button>

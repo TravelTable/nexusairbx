@@ -155,6 +155,20 @@ test("the rendered image carries meaningful alt text and explicit dimensions", (
   expect(image).toHaveAttribute("height", "720");
 });
 
+test("a public-hosted preview is labeled without claiming Studio parity", () => {
+  mockHook({ preview: makePreview({ rendererBackend: "public" }) });
+  renderPane();
+  expect(screen.getByRole("status")).toHaveTextContent("Studio snapshot redraw · browser approximation · hosted preview");
+  expect(screen.getByRole("status")).not.toHaveTextContent("pixel");
+});
+
+test("a private fallback preview keeps approximation copy and does not say hosted", () => {
+  mockHook({ preview: makePreview({ rendererBackend: "private" }) });
+  renderPane();
+  expect(screen.getByRole("status")).toHaveTextContent("browser approximation");
+  expect(screen.getByRole("status")).not.toHaveTextContent("hosted preview");
+});
+
 test("an unavailable renderer renders truthful copy and never requests a preview", () => {
   mockHook({ status: "waiting_capture", preview: null, imageUrl: "" });
   renderPane({

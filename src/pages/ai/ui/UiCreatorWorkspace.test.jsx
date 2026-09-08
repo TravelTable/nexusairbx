@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 
 import UiCreatorWorkspace from "./UiCreatorWorkspace";
 import {
+  acceptUiDraft,
   compileUiDesign,
   createUiCheckpoint,
   generateUiDraft,
@@ -12,7 +13,7 @@ import {
 } from "../../../lib/uiDesignApi";
 import { getStudioCommand, queueStudioTool } from "../../../lib/studioBridgeApi";
 import { getAssetFileBlob } from "../../../lib/assetPlatformApi";
-import { getUiPreviewManifest } from "../../../lib/uiPreviewApi";
+import { getUiPreviewManifest, readUiCapture, requestUiCapture } from "../../../lib/uiPreviewApi";
 import useUiPreview from "../../../hooks/useUiPreview";
 
 jest.mock("@headless-tree/core", () => ({
@@ -529,4 +530,64 @@ test("switching design drops the previous design's capture before the new manife
     pending.resolve(makePreviewManifest("design-2"));
     await pending.promise;
   });
+});
+
+test("connected generate accepts, applies, captures, and opens Preview without Accept", async () => {
+  const accepted = makeDocument("revision-2");
+  generateUiDraft.mockResolvedValue({ draft: { draftId: "draft-1" }, messages: [] });
+  acceptUiDraft.mockResolvedValue({ document: accepted });
+  compileUiDesign.mockResolvedValue({
+    document: accepted,
+    studioReady: true,
+    compiled: { uiRoots: [{ targetPath: "StarterGui/NexusRBX_UI/UI_design1" }], files: [] },
+  });
+  createUiCheckpoint.mockResolvedValue({});
+  queueStudioTool.mockResolvedValue({ commandId: "apply-gen" });
+  getStudioCommand.mockResolvedValue({ status: "succeeded", result: { uiRoots: [{ nodeCount: 2, treeHash: "tree-2" }] } });
+  requestUiCapture.mockResolvedValue({ status: "queued", captureRequestId: "cap-1" });
+  readUiCapture.mockResolvedValue({ status: "ready", capture: { snapshotId: "snap-2" } });
+
+  render(
+    <UiCreatorWorkspace
+      user={{ uid: "user-1" }}
+      projectId="project-1"
+      studio={{ connected: true }}
+      studioSessionId="studio-1"
+      isStarterOrAbove
+      notify={jest.fn()}
+    />,
+  );
+
+  fireEvent.change(await screen.findByLabelText("Prompt input"), { target: { value: "Build a shop" } });
+  fireEvent.click(screen.getByRole("button", { name: "Send prompt" }));
+
+  await waitFor(() => expect(acceptUiDraft).toHaveBeenCalledWith("design-1", "draft-1"));
+  expect(queueStudioTool).toHaveBeenCalled();
+  await waitFor(() => expect(requestUiCapture).toHaveBeenCalled());
+  expect(screen.queryByRole("button", { name: "Accept" })).not.toBeInTheDocument();
+  await screen.findByRole("region", { name: "Roblox UI preview workspace" });
+});
+
+test("disconnected generate does not queue Studio commands", async () => {
+  generateUiDraft.mockResolvedValue({ draft: { draftId: "draft-1" }, messages: [] });
+  acceptUiDraft.mockResolvedValue({ document: makeDocument("revision-2") });
+
+  render(
+    <UiCreatorWorkspace
+      user={{ uid: "user-1" }}
+      projectId="project-1"
+      studio={{ connected: false }}
+      studioSessionId=""
+      isStarterOrAbove
+      notify={jest.fn()}
+    />,
+  );
+
+  fireEvent.change(await screen.findByLabelText("Prompt input"), { target: { value: "Build a shop" } });
+  fireEvent.click(screen.getByRole("button", { name: "Send prompt" }));
+
+  await waitFor(() => expect(acceptUiDraft).toHaveBeenCalled());
+  expect(queueStudioTool).not.toHaveBeenCalled();
+  expect(requestUiCapture).not.toHaveBeenCalled();
+  expect(screen.getByTestId("roblox-ui-preview")).toBeInTheDocument();
 });

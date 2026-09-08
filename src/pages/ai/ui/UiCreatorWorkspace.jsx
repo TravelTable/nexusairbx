@@ -686,35 +686,10 @@ export default function UiCreatorWorkspace({
     }
   }, [document, mutate, redoStack]);
 
+  const generateRef = useRef(null);
   const generate = useCallback(async (requestedPrompt) => {
-    if (!document || busy) return;
-    const cleanPrompt = String(requestedPrompt || "").trim();
-    if (!cleanPrompt) return;
-    setBusy("generating");
-    setError("");
-    setLastPrompt(cleanPrompt);
-    try {
-      const response = await generateUiDraft(document.designId, {
-        workspace: "ui_creator",
-        designId: document.designId,
-        baseRevision: document.revision,
-        uiIntent: document.screens?.[0]?.nodes?.length ? "edit" : "create",
-        prompt: cleanPrompt,
-        model: modelVersion,
-      });
-      setDraft(response.draft);
-      if (Array.isArray(response.messages)) {
-        setDesign((current) => current ? { ...current, messages: response.messages } : current);
-      }
-      setPrompt("");
-      setMode("design");
-      onBillingRefresh?.();
-    } catch (reason) {
-      showError(reason, "The UI revision could not be generated.");
-    } finally {
-      setBusy("");
-    }
-  }, [busy, document, modelVersion, onBillingRefresh, showError]);
+    if (typeof generateRef.current === "function") return generateRef.current(requestedPrompt);
+  }, []);
 
   const acceptDraft = useCallback(async () => {
     if (!draft || !document) return;
@@ -798,27 +773,30 @@ export default function UiCreatorWorkspace({
     }
   }, [document, hooksSource, notify, showError]);
 
-  const applyToStudio = useCallback(async (replaceModifiedRoot = false) => {
+  const applyToStudio = useCallback(async (replaceModifiedRoot = false, nextDocument = null) => {
+    const currentDocument = nextDocument || document;
+    if (!currentDocument) return { ok: false };
     if (!studio?.connected || !studioSessionId) {
       showError(null, "Connect Roblox Studio before applying this UI.");
-      return;
+      return { ok: false };
     }
     setBusy("applying");
     try {
-      const response = await compileUiDesign(document.designId, {
+      const response = await compileUiDesign(currentDocument.designId, {
         forStudio: true,
-        expectedRevision: document.revision,
+        expectedRevision: currentDocument.revision,
         expectedTreeHash: lastStudioTreeHash || null,
         replaceModifiedRoot: replaceModifiedRoot === true,
       });
-      const compiledDocument = response.document || document;
+      const compiledDocument = response.document || currentDocument;
       if (response.document) {
         documentRef.current = response.document;
         setDocument(response.document);
         setDesign((current) => current ? { ...current, document: response.document, revision: response.document.revision } : current);
       }
+      setCompiled(response);
       if (!response.studioReady) throw new Error("Publish, replace, or remove every unresolved required image before applying to Studio.");
-      await createUiCheckpoint(document.designId, {
+      await createUiCheckpoint(currentDocument.designId, {
         expectedRevision: compiledDocument.revision,
         reason: "before_studio_apply",
       });
@@ -831,9 +809,9 @@ export default function UiCreatorWorkspace({
       });
       const command = await waitForStudioCommand(queued.commandId);
       if (!["succeeded", "failed"].includes(command.status)) {
-        const pending = { commandId: queued.commandId, designId: document.designId };
+        const pending = { commandId: queued.commandId, designId: currentDocument.designId };
         setPendingStudioCommand(pending);
-        try { sessionStorage.setItem(`nexusrbx:ui-pending:${user.uid}:${document.designId}`, JSON.stringify(pending)); } catch { /* Optional recovery. */ }
+        try { sessionStorage.setItem(`nexusrbx:ui-pending:${user.uid}:${currentDocument.designId}`, JSON.stringify(pending)); } catch { /* Optional recovery. */ }
       }
       if (command.status === "failed") {
         const commandError = command.error || command.result?.error || "Studio rejected the UI apply.";
@@ -849,15 +827,20 @@ export default function UiCreatorWorkspace({
       } else if (command.status === "succeeded") {
         const receipt = readStudioUiReceipt(command);
         setLastStudioTreeHash(receipt.treeHash);
-        try { window.localStorage.setItem(`nexusrbx:ui-tree-hash:${document.designId}`, receipt.treeHash); } catch { /* Optional recovery. */ }
+        try { window.localStorage.setItem(`nexusrbx:ui-tree-hash:${currentDocument.designId}`, receipt.treeHash); } catch { /* Optional recovery. */ }
         setStudioReceipt(receipt);
         setStudioTreeConflict(false);
         notify?.({ message: "Editable UI applied and verified in Studio.", type: "success" });
       } else {
         notify?.({ message: "UI apply queued for Studio.", type: "info" });
       }
+      return {
+        ok: command.status === "succeeded",
+        rootPath: response.compiled?.uiRoots?.[0]?.targetPath || "",
+      };
     } catch (reason) {
       showError(reason, "The UI could not be applied to Studio.");
+      return { ok: false };
     } finally {
       setBusy("");
     }
@@ -896,16 +879,18 @@ export default function UiCreatorWorkspace({
     || (previewDesignId ? `StarterGui/NexusRBX_UI/UI_${cleanIdentifier(previewDesignId) || "NexusUI"}` : "");
   const previewSourceRevision = previewManifest?.manifest?.sourceRevision || "";
 
-  const refreshUiCapture = useCallback(async () => {
-    if (!previewDesignId || !previewCaptureRootPath || !previewSourceRevision) return;
+  const refreshUiCapture = useCallback(async (sourceRevisionOverride = "", rootPathOverride = "") => {
+    const sourceRevision = String(sourceRevisionOverride || previewSourceRevision || "").trim();
+    const rootPath = String(rootPathOverride || previewCaptureRootPath || "").trim();
+    if (!previewDesignId || !rootPath || !sourceRevision) return false;
     setCaptureBusy(true);
     setError("");
     try {
       const idempotencyKey = `ui-capture-${cleanIdentifier(previewDesignId) || "design"}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
       const started = await requestUiCapture(previewDesignId, {
         mode: "studio_edit",
-        rootPath: previewCaptureRootPath,
-        sourceRevision: previewSourceRevision,
+        rootPath,
+        sourceRevision,
       }, { idempotencyKey });
       if (started.status === "unavailable") {
         throw new Error(started.capability?.reason || "Studio capture is not available for this connection.");
@@ -919,12 +904,66 @@ export default function UiCreatorWorkspace({
       }
       if (record.status !== "ready") throw new Error(record.message || "Studio could not capture this UI.");
       setPreviewManifestNonce((value) => value + 1);
+      return true;
     } catch (reason) {
       showError(reason, "The Studio UI capture could not be completed.");
+      return false;
     } finally {
       setCaptureBusy(false);
     }
   }, [previewCaptureRootPath, previewDesignId, previewSourceRevision, showError]);
+
+  generateRef.current = async (requestedPrompt) => {
+    if (!document || busy) return;
+    const cleanPrompt = String(requestedPrompt || "").trim();
+    if (!cleanPrompt) return;
+    setBusy("generating");
+    setError("");
+    setLastPrompt(cleanPrompt);
+    try {
+      const response = await generateUiDraft(document.designId, {
+        workspace: "ui_creator",
+        designId: document.designId,
+        baseRevision: document.revision,
+        uiIntent: document.screens?.[0]?.nodes?.length ? "edit" : "create",
+        prompt: cleanPrompt,
+        model: modelVersion,
+      });
+      if (Array.isArray(response.messages)) {
+        setDesign((current) => current ? { ...current, messages: response.messages } : current);
+      }
+      if (!response.draft?.draftId) throw new Error("The UI generator did not return a draft.");
+      const accepted = await acceptUiDraft(document.designId, response.draft.draftId);
+      setUndoStack((items) => [...items.slice(-39), document]);
+      setRedoStack([]);
+      documentRef.current = accepted.document;
+      setDocument(accepted.document);
+      setDesign((current) => current ? { ...current, document: accepted.document, revision: accepted.document.revision } : current);
+      setDraft(null);
+      setSelectedId(null);
+      setCompiled(null);
+      setPrompt("");
+      onBillingRefresh?.();
+      if (studio?.connected && studioSessionId) {
+        const applied = await applyToStudio(false, accepted.document);
+        if (applied?.ok) {
+          setMode("preview");
+          await refreshUiCapture(accepted.document.revision, applied.rootPath);
+          return;
+        }
+        setMode("design");
+        notify?.({ message: "The UI was generated, but Studio apply or capture is blocked. Connect the bound place and use Apply to Studio.", type: "info" });
+        return;
+      }
+      setMode("design");
+      notify?.({ message: "The UI revision is ready. Connect Roblox Studio to apply and preview the real ScreenGui.", type: "info" });
+    } catch (reason) {
+      showError(reason, "The UI revision could not be generated.");
+      setMode("design");
+    } finally {
+      setBusy("");
+    }
+  };
 
   useEffect(() => {
     if (!user?.uid || !document?.designId) return;
