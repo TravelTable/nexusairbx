@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import UiPreviewPane from "./UiPreviewPane";
 import useUiPreview from "../../../hooks/useUiPreview";
@@ -7,195 +7,140 @@ import useUiPreview from "../../../hooks/useUiPreview";
 jest.mock("../../../hooks/useUiPreview", () => jest.fn());
 
 const capture = {
-  snapshotId: "snapshot-1",
+  snapshotId: "snap-1",
   captureKind: "studio_edit",
-  capturedAt: "2026-01-01T00:00:00.000Z",
-  treeHash: "tree-1",
   sourceRevision: "revision-1",
-  nodeCount: 12,
+  rootPath: "StarterGui/NexusRBX_UI/UI_design1",
+  treeHash: "tree-1",
+  nodeCount: 3,
   complete: true,
-  rootPath: "StarterGui/NexusRBX_UI/UI_design-1",
   warnings: [],
 };
-
 const viewports = [
-  { id: "desktop", label: "Desktop", width: 1280, height: 720, insets: { left: 0, right: 0, top: 0, bottom: 0 }, presetVersion: 1 },
-  { id: "phone", label: "Phone portrait", width: 390, height: 844, insets: { left: 0, right: 0, top: 44, bottom: 34 }, presetVersion: 1 },
+  { id: "desktop", label: "Desktop", width: 1280, height: 720 },
+  { id: "phone", label: "Phone portrait", width: 390, height: 844 },
 ];
-
 const states = [
-  { id: "default", label: "Default", version: 1, baseTreeHash: "tree-1", sourceRevision: "revision-1", stale: false },
-  { id: "shop-open", label: "Shop open", version: 1, baseTreeHash: "tree-1", sourceRevision: "revision-1", stale: false },
+  { id: "default", label: "Default", stale: false },
+  { id: "shop-open", label: "Shop open", stale: false },
+  { id: "old", label: "Old state", stale: true },
 ];
+const capabilities = { previewEnabled: true, rendererAvailable: true };
 
-function makePreview(overrides = {}) {
-  return {
-    projectId: "project-1",
-    designId: "design-1",
-    snapshotId: "snapshot-1",
-    sourceRevision: "revision-1",
-    treeHash: "tree-1",
-    stateId: "default",
+const waiting = { status: "waiting_capture", preview: null, imageUrl: "", error: "", retry: jest.fn() };
+const ready = {
+  status: "ready",
+  imageUrl: "blob:preview",
+  error: "",
+  retry: jest.fn(),
+  preview: {
+    snapshotId: "snap-1",
     stateLabel: "Default",
+    viewport: { width: 1280, height: 720 },
+    rendererBackend: "public",
+    imageHash: "hash-1",
     viewportId: "desktop",
-    viewport: { width: 1280, height: 720, insets: { left: 0, right: 0, top: 0, bottom: 0 } },
-    rendererRevision: "renderer-1",
-    fontRevision: "font-1",
-    imageHash: "image-hash",
-    simulated: false,
     captureKind: "studio_edit",
-    capturedAt: "2026-01-01T00:00:00.000Z",
-    fidelity: "approximate",
-    runtimeVerified: false,
-    warnings: [],
-    ...overrides,
-  };
-}
+    warnings: [{ nodeId: "n1", code: "font", message: "Font approximated." }, { nodeId: "n2", code: "gradient", message: "Gradient flattened." }],
+  },
+};
 
-function mockHook(result = {}) {
-  useUiPreview.mockImplementation(() => ({
-    status: "ready",
-    preview: makePreview(),
-    imageUrl: "blob:preview-1",
-    error: "",
-    retry: jest.fn(),
-    ...result,
-  }));
-}
-
-function renderPane(props = {}) {
-  return render(
-    <UiPreviewPane
-      designId="design-1"
-      projectId="project-1"
-      sourceRevision="revision-1"
-      capture={capture}
-      states={states}
-      viewports={viewports}
-      {...props}
-    />,
-  );
-}
+const baseProps = {
+  designId: "design-1",
+  projectId: "project-1",
+  sourceRevision: "revision-1",
+  capture,
+  states,
+  viewports,
+  capabilities,
+  studioConnected: true,
+  hasNodes: true,
+};
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockHook();
+  useUiPreview.mockReturnValue(waiting);
 });
 
-test("provenance reads Studio snapshot redraw for an edit capture", () => {
-  renderPane();
-  expect(screen.getByRole("status")).toHaveTextContent("Studio snapshot redraw · browser approximation");
+test("connect state when Studio is not bound and nothing has been captured", () => {
+  render(<UiPreviewPane {...baseProps} capture={null} studioConnected={false} />);
+  expect(screen.getByText("Open your bound place in Roblox Studio to start")).toBeInTheDocument();
+  expect(screen.getByRole("status")).toHaveTextContent("Studio not connected");
+  expect(screen.queryByRole("button", { name: "Apply to Studio" })).not.toBeInTheDocument();
 });
 
-test("provenance reads Runtime snapshot redraw for a runtime capture", () => {
-  mockHook({ preview: makePreview({ captureKind: "studio_runtime" }) });
-  renderPane({ capture: { ...capture, captureKind: "studio_runtime" } });
-  expect(screen.getByRole("status")).toHaveTextContent("Runtime snapshot redraw");
+test("empty state before the first generation", () => {
+  render(<UiPreviewPane {...baseProps} capture={null} hasNodes={false} />);
+  expect(screen.getByText("Describe the UI you want")).toBeInTheDocument();
+  expect(screen.getByRole("status")).toHaveTextContent("No UI yet");
 });
 
-test("provenance reads Simulated state for a simulated preview", () => {
-  mockHook({ preview: makePreview({ simulated: true, stateId: "shop-open", stateLabel: "Shop open" }) });
-  renderPane();
-  expect(screen.getByRole("status")).toHaveTextContent("Simulated state");
-  expect(screen.getByRole("status")).not.toHaveTextContent("Studio snapshot redraw");
-});
+test("blocked state offers the one action that fixes it and stays blocked while Studio approval is pending", () => {
+  const onApplyToStudio = jest.fn();
+  const onRefreshCapture = jest.fn();
+  const { rerender } = render(<UiPreviewPane {...baseProps} capture={{ ...capture, sourceRevision: "revision-0" }} onApplyToStudio={onApplyToStudio} onRefreshCapture={onRefreshCapture} />);
 
-test("with no capture it shows the capture-needed copy and disables state selection", () => {
-  mockHook({ status: "waiting_capture", preview: null, imageUrl: "" });
-  renderPane({ capture: null, onRefreshCapture: jest.fn() });
-
-  expect(screen.getByRole("status")).toHaveTextContent("Capture needed");
-  expect(screen.getByText("Build or sync the UI in Studio to see its preview.")).toBeInTheDocument();
+  expect(screen.getByText("This revision is not in Studio yet")).toBeInTheDocument();
+  const body = screen.getByText("This revision is not in Studio yet").closest(".nx-ui-preview__empty");
+  fireEvent.click(within(body).getByRole("button", { name: "Apply to Studio" }));
+  expect(onApplyToStudio).toHaveBeenCalledTimes(1);
+  fireEvent.click(within(body).getByRole("button", { name: "Sync Studio" }));
+  expect(onRefreshCapture).toHaveBeenCalledTimes(1);
   expect(screen.getByRole("combobox", { name: "Preview state" })).toBeDisabled();
-  expect(screen.getByRole("button", { name: "Sync Studio" })).toBeEnabled();
+
+  rerender(<UiPreviewPane {...baseProps} capture={{ ...capture, sourceRevision: "revision-0" }} onApplyToStudio={onApplyToStudio} pendingStudioCommand={{ commandId: "c1" }} />);
+  expect(screen.getByText("Studio has not approved the last apply")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Apply to Studio" })).not.toBeInTheDocument();
 });
 
-test("Reset preview returns the requested stateId to default", () => {
-  renderPane();
+test("ready state shows the image, hosted provenance, non-stale state chips, and warnings; nothing is editable", () => {
+  useUiPreview.mockReturnValue(ready);
+  const { container } = render(<UiPreviewPane {...baseProps} />);
+
+  const image = screen.getByRole("img", { name: "Default state of the captured Roblox UI" });
+  expect(image).toHaveAttribute("src", "blob:preview");
+  expect(image).toHaveAttribute("draggable", "false");
+  expect(screen.getByRole("status")).toHaveTextContent("Studio edit snapshot · rev revision · hosted render");
+  expect(screen.getByRole("button", { name: "Shop open" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Old state" })).not.toBeInTheDocument();
+  expect(screen.getByText("1 saved state needs rebuilding for the current revision.")).toBeInTheDocument();
+  expect(screen.getByText("State previews do not click Roblox buttons or change Studio.")).toBeInTheDocument();
+  expect(screen.getByText("2 preview limitations")).toBeInTheDocument();
+  expect(container.querySelectorAll("input, textarea, [contenteditable]")).toHaveLength(0);
+});
+
+test("state selection only changes the requested image, scoped to the current capture", () => {
+  useUiPreview.mockReturnValue(ready);
+  render(<UiPreviewPane {...baseProps} />);
 
   fireEvent.click(screen.getByRole("button", { name: "Shop open" }));
-  expect(useUiPreview).toHaveBeenLastCalledWith(expect.objectContaining({ stateId: "shop-open" }));
-
-  fireEvent.click(screen.getByRole("button", { name: "Reset preview" }));
-  expect(useUiPreview).toHaveBeenLastCalledWith(expect.objectContaining({ stateId: "default" }));
+  expect(useUiPreview).toHaveBeenLastCalledWith(expect.objectContaining({ snapshotId: "snap-1", stateId: "shop-open", viewportId: "desktop" }));
+  fireEvent.change(screen.getByRole("combobox", { name: "Preview viewport" }), { target: { value: "phone" } });
+  expect(useUiPreview).toHaveBeenLastCalledWith(expect.objectContaining({ stateId: "shop-open", viewportId: "phone" }));
 });
 
-test("stale states are not offered and are disclosed as needing a rebuild", () => {
-  renderPane({
-    states: [
-      ...states,
-      { id: "old-error", label: "Error (old revision)", version: 1, baseTreeHash: "tree-0", sourceRevision: "revision-0", stale: true },
-    ],
-  });
+test("a live run shows one status line and reports the render outcome for the current capture only", () => {
+  const onRenderStatus = jest.fn();
+  const { rerender } = render(<UiPreviewPane {...baseProps} run={{ stage: "Rendering preview..." }} onRenderStatus={onRenderStatus} />);
 
-  expect(screen.queryByRole("button", { name: "Error (old revision)" })).not.toBeInTheDocument();
-  expect(screen.queryByRole("option", { name: "Error (old revision)" })).not.toBeInTheDocument();
-  expect(screen.getByText("1 saved state needs rebuilding for the current revision.")).toBeInTheDocument();
+  const [statusLine, body] = screen.getAllByRole("status");
+  expect(statusLine).toHaveTextContent("Rendering preview...");
+  expect(body).toHaveTextContent("Rendering preview...");
+  expect(screen.queryByTestId("live-work-stream")).not.toBeInTheDocument();
+  expect(onRenderStatus).toHaveBeenLastCalledWith(expect.objectContaining({ status: "waiting_capture", snapshotId: "snap-1", sourceRevision: "revision-1" }));
+
+  useUiPreview.mockReturnValue(ready);
+  rerender(<UiPreviewPane {...baseProps} run={{ stage: "Rendering preview..." }} onRenderStatus={onRenderStatus} />);
+  expect(onRenderStatus).toHaveBeenLastCalledWith(expect.objectContaining({ status: "ready", preview: ready.preview }));
+
+  onRenderStatus.mockClear();
+  rerender(<UiPreviewPane {...baseProps} capture={{ ...capture, sourceRevision: "revision-0" }} onRenderStatus={onRenderStatus} />);
+  expect(onRenderStatus).not.toHaveBeenCalled();
 });
 
-test("the limitation disclosure exists and is collapsed by default", () => {
-  mockHook({
-    preview: makePreview({ warnings: [{ nodeId: "shop", code: "UNSUPPORTED_CLASS", message: "UISizeConstraint is not drawn." }] }),
-  });
-  renderPane();
-
-  const details = screen.getByRole("group");
-  expect(details.tagName).toBe("DETAILS");
-  expect(details).toHaveTextContent("1 preview limitation");
-  expect(details).not.toHaveAttribute("open");
-});
-
-test("the rendered image carries meaningful alt text and explicit dimensions", () => {
-  mockHook({ preview: makePreview({ stateLabel: "Shop open", stateId: "shop-open" }) });
-  renderPane();
-
-  const image = screen.getByRole("img");
-  expect(image.getAttribute("alt")).toBe("Shop open Roblox UI state preview");
-  expect(image).toHaveAttribute("width", "1280");
-  expect(image).toHaveAttribute("height", "720");
-});
-
-test("a public-hosted preview is labeled without claiming Studio parity", () => {
-  mockHook({ preview: makePreview({ rendererBackend: "public" }) });
-  renderPane();
-  expect(screen.getByRole("status")).toHaveTextContent("Studio snapshot redraw · browser approximation · hosted preview");
-  expect(screen.getByRole("status")).not.toHaveTextContent("pixel");
-});
-
-test("a private fallback preview keeps approximation copy and does not say hosted", () => {
-  mockHook({ preview: makePreview({ rendererBackend: "private" }) });
-  renderPane();
-  expect(screen.getByRole("status")).toHaveTextContent("browser approximation");
-  expect(screen.getByRole("status")).not.toHaveTextContent("hosted preview");
-});
-
-test("an unavailable renderer renders truthful copy and never requests a preview", () => {
-  mockHook({ status: "waiting_capture", preview: null, imageUrl: "" });
-  renderPane({
-    capabilities: {
-      previewEnabled: true,
-      rendererAvailable: false,
-      rendererRevision: null,
-      fontRevision: null,
-      studioEditCapture: true,
-      studioRuntimeCapture: false,
-      captureUnavailableReason: "The preview renderer is not deployed in this environment.",
-    },
-  });
-
-  expect(screen.getByRole("status")).toHaveTextContent("Preview renderer unavailable");
-  expect(screen.getByText(/cannot draw UI previews right now/)).toHaveTextContent(
-    "The preview renderer is not deployed in this environment.",
-  );
-  expect(screen.queryByRole("img")).not.toBeInTheDocument();
-  expect(useUiPreview).toHaveBeenLastCalledWith(expect.objectContaining({ enabled: false }));
-});
-
-test("the code tab renders the supplied code panel instead of preview controls", () => {
-  renderPane({ codePanel: <div data-testid="code-panel" /> });
-
-  fireEvent.click(screen.getByRole("button", { name: "Code" }));
-  expect(screen.getByTestId("code-panel")).toBeInTheDocument();
-  expect(screen.queryByRole("combobox", { name: "Preview viewport" })).not.toBeInTheDocument();
+test("renderer unavailable explains itself instead of spinning", () => {
+  render(<UiPreviewPane {...baseProps} capabilities={{ previewEnabled: false, rendererAvailable: false, captureUnavailableReason: "Renderer offline." }} />);
+  expect(screen.getByText("No preview image right now")).toBeInTheDocument();
+  expect(screen.getByText(/Renderer offline\./)).toBeInTheDocument();
   expect(useUiPreview).toHaveBeenLastCalledWith(expect.objectContaining({ enabled: false }));
 });

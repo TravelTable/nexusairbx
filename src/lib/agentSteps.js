@@ -397,7 +397,21 @@ export function summarizeStepResult(step) {
   if (type === "run_smoke_check") {
     return `${result.issues?.length || 0} issue(s), ${result.checkedScripts || 0} script(s) checked`;
   }
-  if (type === "apply_artifact") return "Applied artifact to Studio";
+  if (type === "apply_artifact") {
+    if (result.treeHash) return `Verified tree ${String(result.treeHash).slice(0, 8)}`;
+    return "Applied artifact to Studio";
+  }
+  if (type === "generate_ui") {
+    const revision = result.revision ? `Revision ${String(result.revision).slice(0, 8)}` : "UI revision generated";
+    return result.nodeCount ? `${revision} · ${result.nodeCount} nodes` : revision;
+  }
+  if (type === "capture_ui") {
+    return result.snapshotId ? `Snapshot ${String(result.snapshotId).slice(0, 8)}` : "ScreenGui captured";
+  }
+  if (type === "render_preview") {
+    const backend = result.rendererBackend ? ` · ${result.rendererBackend}` : "";
+    return `Preview rendered${backend}`;
+  }
 
   return step.status || "pending";
 }

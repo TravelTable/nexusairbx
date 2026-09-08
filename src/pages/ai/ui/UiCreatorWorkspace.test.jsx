@@ -1,5 +1,5 @@
 import React from "react";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 import UiCreatorWorkspace from "./UiCreatorWorkspace";
 import {
@@ -9,61 +9,20 @@ import {
   generateUiDraft,
   getUiDesign,
   listUiDesigns,
-  patchUiDesign,
 } from "../../../lib/uiDesignApi";
 import { getStudioCommand, queueStudioTool } from "../../../lib/studioBridgeApi";
-import { getAssetFileBlob } from "../../../lib/assetPlatformApi";
 import { getUiPreviewManifest, readUiCapture, requestUiCapture } from "../../../lib/uiPreviewApi";
 import useUiPreview from "../../../hooks/useUiPreview";
 
-jest.mock("@headless-tree/core", () => ({
-  hotkeysCoreFeature: {},
-  selectionFeature: {},
-  syncDataLoaderFeature: {},
-}));
-jest.mock("@headless-tree/react", () => ({
-  useTree: (options) => {
-    const itemIds = [];
-    const visit = (itemId) => {
-      (options.dataLoader.getChildren(itemId) || []).forEach((childId) => {
-        itemIds.push(childId);
-        visit(childId);
-      });
-    };
-    visit(options.rootItemId);
-    return {
-      getItems: () => itemIds.map((itemId) => ({
-        getId: () => itemId,
-        getItemData: () => options.dataLoader.getItem(itemId),
-      })),
-    };
-  },
-}));
-jest.mock("../../../components/ui/tree", () => ({
-  Tree: ({ children }) => <div>{children}</div>,
-  TreeItem: ({ children }) => children,
-  TreeItemLabel: ({ children }) => children,
-}));
-jest.mock("./RobloxUiPreview", () => ({ document }) => <div data-testid="roblox-ui-preview" data-asset-preview={document?.assets?.[0]?.previewUrl || ""} />);
 jest.mock("../../../lib/uiDesignApi", () => ({
   acceptUiDraft: jest.fn(),
   compileUiDesign: jest.fn(),
   createUiCheckpoint: jest.fn(),
   createUiDesign: jest.fn(),
-  discardUiDraft: jest.fn(),
   generateUiDraft: jest.fn(),
   getUiDesign: jest.fn(),
-  listUiCheckpoints: jest.fn(),
   listUiDesigns: jest.fn(),
-  patchUiDesign: jest.fn(),
-  restoreUiCheckpoint: jest.fn(),
   saveUiHooks: jest.fn(),
-}));
-jest.mock("../../../lib/assetPlatformApi", () => ({
-  ASSET_PLATFORM_WRITES_ENABLED: true,
-  createAssetOperationKey: jest.fn(() => "operation-1"),
-  generateAsset: jest.fn(),
-  getAssetFileBlob: jest.fn(),
 }));
 jest.mock("../../../lib/studioBridgeApi", () => ({
   getStudioCommand: jest.fn(),
@@ -75,8 +34,24 @@ jest.mock("../../../lib/uiPreviewApi", () => ({
   readUiCapture: jest.fn(),
 }));
 jest.mock("../../../hooks/useUiPreview", () => jest.fn());
+jest.mock("../../../lib/featureFlags", () => {
+  const flags = { streamV2: true, unifiedAgent: true, rawReasoning: true };
+  return { __esModule: true, FEATURE_FLAGS: flags, default: flags };
+});
+jest.mock("../../../context/SettingsContext", () => ({
+  useSettings: () => ({ settings: { showThinking: true } }),
+}));
+jest.mock("../../../components/ai-elements/conversation", () => {
+  const ReactModule = require("react");
+  const Passthrough = ({ children }) => ReactModule.createElement("div", null, children);
+  return {
+    Conversation: Passthrough,
+    ConversationContent: Passthrough,
+    ConversationScrollButton: () => null,
+  };
+});
 
-function makeDocument(revision, { name = "Panel", width = 240, assets = [] } = {}) {
+function makeDocument(revision, { name = "Panel", width = 240, nodes } = {}) {
   return {
     schemaVersion: 1,
     kind: "roblox-ui",
@@ -90,7 +65,7 @@ function makeDocument(revision, { name = "Panel", width = 240, assets = [] } = {
       id: "main",
       name: "Main",
       className: "ScreenGui",
-      nodes: [{
+      nodes: nodes || [{
         id: "panel",
         name,
         className: "Frame",
@@ -110,18 +85,18 @@ function makeDocument(revision, { name = "Panel", width = 240, assets = [] } = {
       states: {},
       timelines: [],
     }],
-    assets,
+    assets: [],
     hooks: [],
   };
 }
 
-function makePreviewManifest(designId, { sourceRevision = "revision-1", states = [] } = {}) {
+function makePreviewManifest(designId, { sourceRevision = "revision-1", states = [], snapshotId = `snapshot-${designId}` } = {}) {
   return {
     designId,
     projectId: "project-1",
     sourceRevision,
     capture: {
-      snapshotId: `snapshot-${designId}`,
+      snapshotId,
       captureKind: "studio_edit",
       capturedAt: "2026-01-01T00:00:00.000Z",
       treeHash: `tree-${designId}`,
@@ -157,10 +132,21 @@ function deferred() {
   return { promise, resolve };
 }
 
+const connectedProps = {
+  user: { uid: "user-1" },
+  projectId: "project-1",
+  projectTitle: "Test Game",
+  modelVersion: "gpt-5",
+  studio: { connected: true },
+  studioSessionId: "studio-1",
+  isStarterOrAbove: true,
+  notify: jest.fn(),
+};
+
 beforeEach(() => {
   jest.clearAllMocks();
   window.localStorage.removeItem("nexusrbx:ui-creator-left-width");
-  window.localStorage.removeItem("nexusrbx:ui-creator-right-width");
+  window.sessionStorage.clear();
   Object.defineProperty(window, "matchMedia", {
     configurable: true,
     writable: true,
@@ -173,8 +159,6 @@ beforeEach(() => {
       removeListener: jest.fn(),
     })),
   });
-  Object.defineProperty(URL, "createObjectURL", { configurable: true, writable: true, value: jest.fn(() => "blob:private-preview") });
-  Object.defineProperty(URL, "revokeObjectURL", { configurable: true, writable: true, value: jest.fn() });
   const initial = makeDocument("revision-1");
   useUiPreview.mockImplementation(() => ({ status: "waiting_capture", preview: null, imageUrl: "", error: "", retry: jest.fn() }));
   getUiPreviewManifest.mockResolvedValue(makePreviewManifest("design-1"));
@@ -191,85 +175,15 @@ beforeEach(() => {
   });
 });
 
-test("loads a private canonical asset preview without persisting its temporary URL", async () => {
-  const canonicalAsset = {
-    refId: "asset-1",
-    canonicalAssetId: "canonical-1",
-    name: "Gold coin",
-    kind: "icon",
-    required: true,
-    status: "generated",
-  };
-  const initial = makeDocument("revision-1", { assets: [canonicalAsset] });
-  getUiDesign.mockResolvedValue({
-    design: {
-      designId: "design-1",
-      title: "Test UI",
-      revision: initial.revision,
-      document: initial,
-      messages: [],
-      hooksSource: "",
-    },
-  });
-  getAssetFileBlob.mockResolvedValue(new Blob(["private-preview"], { type: "image/webp" }));
-
-  const { container, unmount } = render(
-    <UiCreatorWorkspace
-      user={{ uid: "user-1" }}
-      projectId="project-1"
-      projectTitle="Test Game"
-      modelVersion="gpt-5"
-      studio={{ connected: false }}
-      studioSessionId=""
-      isStarterOrAbove
-      notify={jest.fn()}
-    />,
-  );
-
-  await waitFor(() => expect(getAssetFileBlob).toHaveBeenCalledWith(
-    "canonical-1",
-    "preview",
-    expect.objectContaining({ projectId: "project-1" }),
-  ));
-  await waitFor(() => expect(screen.getByTestId("roblox-ui-preview")).toHaveAttribute("data-asset-preview", "blob:private-preview"));
-
-  fireEvent.click(screen.getByRole("tab", { name: "Assets" }));
-  await waitFor(() => expect(container.querySelector(".ui-asset-list img")).toHaveAttribute("src", "blob:private-preview"));
-
-  expect(patchUiDesign).not.toHaveBeenCalled();
-  unmount();
-  expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:private-preview");
-});
-
 test("sends the selected top-bar model with the UI prompt", async () => {
-  generateUiDraft.mockResolvedValue({
-    draft: {
-      draftId: "draft-1",
-      document: makeDocument("draft-revision"),
-      validation: { score: 88 },
-      repairPasses: 0,
-    },
-    messages: [],
-  });
+  generateUiDraft.mockResolvedValue({ draft: { draftId: "draft-1" }, messages: [] });
+  acceptUiDraft.mockResolvedValue({ document: makeDocument("revision-2") });
 
-  render(
-    <UiCreatorWorkspace
-      user={{ uid: "user-1" }}
-      projectId="project-1"
-      projectTitle="Test Game"
-      modelVersion="anthropic/claude-sonnet-5"
-      studio={{ connected: false }}
-      studioSessionId=""
-      isStarterOrAbove
-      notify={jest.fn()}
-    />,
-  );
+  render(<UiCreatorWorkspace {...connectedProps} modelVersion="anthropic/claude-sonnet-5" />);
 
   const promptInput = await screen.findByRole("textbox", { name: "Prompt input" });
   expect(promptInput.closest("[data-tour='prompt-composer']")).toHaveClass("nexus-composer");
-  fireEvent.change(promptInput, {
-    target: { value: "Make the shop header more playful" },
-  });
+  fireEvent.change(promptInput, { target: { value: "Make the shop header more playful" } });
   fireEvent.click(screen.getByRole("button", { name: "Send prompt" }));
 
   await waitFor(() => expect(generateUiDraft).toHaveBeenCalledWith("design-1", expect.objectContaining({
@@ -280,28 +194,10 @@ test("sends the selected top-bar model with the UI prompt", async () => {
 });
 
 test("submits the UI prompt with Enter and keeps Shift+Enter for a new line", async () => {
-  generateUiDraft.mockResolvedValue({
-    draft: {
-      draftId: "draft-1",
-      document: makeDocument("draft-revision"),
-      validation: { score: 88 },
-      repairPasses: 0,
-    },
-    messages: [],
-  });
+  generateUiDraft.mockResolvedValue({ draft: { draftId: "draft-1" }, messages: [] });
+  acceptUiDraft.mockResolvedValue({ document: makeDocument("revision-2") });
 
-  render(
-    <UiCreatorWorkspace
-      user={{ uid: "user-1" }}
-      projectId="project-1"
-      projectTitle="Test Game"
-      modelVersion="gpt-5"
-      studio={{ connected: false }}
-      studioSessionId=""
-      isStarterOrAbove
-      notify={jest.fn()}
-    />,
-  );
+  render(<UiCreatorWorkspace {...connectedProps} />);
 
   const input = await screen.findByRole("textbox", { name: "Prompt input" });
   fireEvent.change(input, { target: { value: "Create a responsive inventory" } });
@@ -315,100 +211,59 @@ test("submits the UI prompt with Enter and keeps Shift+Enter for a new line", as
   })));
 });
 
-test("serializes rapid property saves and rebases the second edit onto the latest revision", async () => {
-  const first = deferred();
-  const second = deferred();
-  patchUiDesign
-    .mockImplementationOnce(() => first.promise)
-    .mockImplementationOnce(() => second.promise);
+test("disconnected Studio gates the composer and never generates", async () => {
+  render(<UiCreatorWorkspace {...connectedProps} studio={{ connected: false }} studioSessionId="" />);
 
-  render(
-    <UiCreatorWorkspace
-      user={{ uid: "user-1" }}
-      projectId="project-1"
-      projectTitle="Test Game"
-      modelVersion="gpt-5"
-      studio={{ connected: false }}
-      studioSessionId=""
-      isStarterOrAbove
-      notify={jest.fn()}
-    />,
-  );
+  const input = await screen.findByRole("textbox", { name: "Prompt input" });
+  expect(input).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Connect Studio to generate" })).toBeDisabled();
+  expect(screen.getByText("Open your bound place in Roblox Studio to start")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Apply to Studio" })).toBeDisabled();
 
-  fireEvent.click(await screen.findByRole("tab", { name: "Layers" }));
-  fireEvent.click(await screen.findByRole("button", { name: "Panel Frame" }));
+  fireEvent.change(input, { target: { value: "Build a shop" } });
+  fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
+  await act(async () => { await Promise.resolve(); });
+  expect(generateUiDraft).not.toHaveBeenCalled();
+  expect(queueStudioTool).not.toHaveBeenCalled();
+  expect(requestUiCapture).not.toHaveBeenCalled();
+});
 
-  const nameField = screen.getByRole("textbox", { name: "Name" });
-  const widthField = screen.getByRole("spinbutton", { name: "Width" });
-  fireEvent.change(nameField, { target: { value: "FastPanel" } });
-  fireEvent.blur(nameField);
-  fireEvent.change(widthField, { target: { value: "320" } });
-  fireEvent.blur(widthField);
+test("the stage exposes no editable UI controls", async () => {
+  render(<UiCreatorWorkspace {...connectedProps} />);
 
-  await waitFor(() => expect(patchUiDesign).toHaveBeenCalledTimes(1));
-  expect(patchUiDesign).toHaveBeenNthCalledWith(
-    1,
-    "design-1",
-    "revision-1",
-    [{ type: "updateNode", nodeId: "panel", patch: { name: "FastPanel" } }],
-  );
-
-  await act(async () => {
-    first.resolve({ document: makeDocument("revision-2", { name: "FastPanel" }) });
-    await first.promise;
-  });
-
-  await waitFor(() => expect(patchUiDesign).toHaveBeenCalledTimes(2));
-  expect(patchUiDesign).toHaveBeenNthCalledWith(
-    2,
-    "design-1",
-    "revision-2",
-    [{ type: "updateNode", nodeId: "panel", patch: { props: { size: { x: { offset: 320 } } } } }],
-  );
-
-  await act(async () => {
-    second.resolve({ document: makeDocument("revision-3", { name: "FastPanel", width: 320 }) });
-    await second.promise;
-  });
-
-  await waitFor(() => {
-    expect(screen.getByRole("textbox", { name: "Name" })).toHaveValue("FastPanel");
-    expect(screen.getByRole("spinbutton", { name: "Width" })).toHaveValue(320);
-  });
+  const stage = await screen.findByRole("region", { name: "Roblox UI preview workspace" });
+  await waitFor(() => expect(getUiPreviewManifest).toHaveBeenCalledWith("design-1", expect.anything()));
+  expect(within(stage).queryAllByRole("textbox")).toHaveLength(0);
+  expect(within(stage).queryAllByRole("spinbutton")).toHaveLength(0);
+  expect(screen.queryByRole("tab", { name: "Design" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("tab", { name: "Layers" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Undo UI edit" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Open inspector" })).not.toBeInTheDocument();
+  const comboboxes = within(stage).getAllByRole("combobox").map((node) => node.getAttribute("aria-label"));
+  expect(comboboxes).toEqual(["Preview viewport", "Preview state"]);
 });
 
 test("supports keyboard mode switching and persists keyboard pane resizing", async () => {
-  render(
-    <UiCreatorWorkspace
-      user={{ uid: "user-1" }}
-      projectId="project-1"
-      projectTitle="Test Game"
-      modelVersion="gpt-5"
-      studio={{ connected: false }}
-      studioSessionId=""
-      isStarterOrAbove
-      notify={jest.fn()}
-    />,
-  );
+  render(<UiCreatorWorkspace {...connectedProps} />);
 
-  const designTab = await screen.findByRole("tab", { name: "Design" });
-  fireEvent.keyDown(designTab, { key: "ArrowRight" });
-  expect(screen.getByRole("tab", { name: "Preview" })).toHaveAttribute("aria-selected", "true");
-  expect(screen.getByRole("tab", { name: "Preview" })).toHaveFocus();
-  await waitFor(() => expect(getUiPreviewManifest).toHaveBeenCalledWith("design-1", expect.anything()));
+  const previewTab = await screen.findByRole("tab", { name: "Preview" });
+  expect(previewTab).toHaveAttribute("aria-selected", "true");
+  fireEvent.keyDown(previewTab, { key: "ArrowRight" });
+  expect(screen.getByRole("tab", { name: "Code" })).toHaveAttribute("aria-selected", "true");
+  expect(screen.getByRole("tab", { name: "Code" })).toHaveFocus();
 
-  const separator = screen.getByRole("separator", { name: "Resize Chat and Layers panel" });
-  expect(separator).toHaveAttribute("aria-valuenow", "280");
+  const separator = screen.getByRole("separator", { name: "Resize conversation panel" });
+  expect(separator).toHaveAttribute("aria-valuenow", "320");
   fireEvent.keyDown(separator, { key: "ArrowRight" });
-  expect(separator).toHaveAttribute("aria-valuenow", "296");
-  expect(window.localStorage.getItem("nexusrbx:ui-creator-left-width")).toBe("296");
+  expect(separator).toHaveAttribute("aria-valuenow", "336");
+  expect(window.localStorage.getItem("nexusrbx:ui-creator-left-width")).toBe("336");
 
   fireEvent.doubleClick(separator);
-  expect(separator).toHaveAttribute("aria-valuenow", "280");
-  expect(window.localStorage.getItem("nexusrbx:ui-creator-left-width")).toBe("280");
+  expect(separator).toHaveAttribute("aria-valuenow", "320");
+  expect(window.localStorage.getItem("nexusrbx:ui-creator-left-width")).toBe("320");
 });
 
-test("uses focus-managed drawers and an overflow menu on compact viewports", async () => {
+test("uses a focus-managed conversation drawer on compact viewports", async () => {
   window.matchMedia.mockImplementation(() => ({
     matches: true,
     media: "(max-width: 900px)",
@@ -416,37 +271,23 @@ test("uses focus-managed drawers and an overflow menu on compact viewports", asy
     removeEventListener: jest.fn(),
   }));
 
-  render(
-    <UiCreatorWorkspace
-      user={{ uid: "user-1" }}
-      projectId="project-1"
-      projectTitle="Test Game"
-      modelVersion="gpt-5"
-      studio={{ connected: false }}
-      studioSessionId=""
-      isStarterOrAbove
-      notify={jest.fn()}
-    />,
-  );
+  render(<UiCreatorWorkspace {...connectedProps} />);
 
-  const inspectorTrigger = await screen.findByRole("button", { name: "Open inspector" });
-  expect(screen.queryByRole("dialog", { name: "Inspector" })).not.toBeInTheDocument();
-  fireEvent.click(inspectorTrigger);
+  const trigger = await screen.findByRole("button", { name: "Open conversation" });
+  expect(screen.queryByRole("dialog", { name: "Conversation" })).not.toBeInTheDocument();
+  fireEvent.click(trigger);
 
-  const inspector = await screen.findByRole("dialog", { name: "Inspector" });
-  await waitFor(() => expect(inspector).toHaveFocus());
-  expect(screen.getByRole("button", { name: "More UI Creator actions" })).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Apply to Studio" })).toBeInTheDocument();
+  const drawer = await screen.findByRole("dialog", { name: "Conversation" });
+  await waitFor(() => expect(drawer).toHaveFocus());
 
   fireEvent.keyDown(document, { key: "Escape" });
-  await waitFor(() => expect(screen.queryByRole("dialog", { name: "Inspector" })).not.toBeInTheDocument());
-  await waitFor(() => expect(screen.getByRole("button", { name: "Open inspector" })).toHaveFocus());
+  await waitFor(() => expect(screen.queryByRole("dialog", { name: "Conversation" })).not.toBeInTheDocument());
+  await waitFor(() => expect(screen.getByRole("button", { name: "Open conversation" })).toHaveFocus());
 });
-
 
 test("a failed code preview stops retrying until the creator retries", async () => {
   compileUiDesign.mockRejectedValue(new Error("Compiler unavailable"));
-  render(<UiCreatorWorkspace user={{ uid: "user-1" }} projectId="project-1" isStarterOrAbove notify={jest.fn()} />);
+  render(<UiCreatorWorkspace {...connectedProps} />);
   await screen.findByRole("tab", { name: "Code" });
   fireEvent.click(screen.getByRole("tab", { name: "Code" }));
   await screen.findByRole("button", { name: "Retry code preview" });
@@ -455,40 +296,34 @@ test("a failed code preview stops retrying until the creator retries", async () 
   await waitFor(() => expect(compileUiDesign).toHaveBeenCalledTimes(2));
 });
 
-test("Studio apply snapshots first and only reports verified receipt success", async () => {
+test("Studio apply snapshots first, reports the verified receipt, and streams the steps into chat", async () => {
   const notify = jest.fn();
   const document = makeDocument("revision-1");
-  compileUiDesign.mockResolvedValue({ document, studioReady: true, compiled: { files: [] } });
+  compileUiDesign.mockResolvedValue({ document, studioReady: true, compiled: { files: [], uiRoots: [{ targetPath: "StarterGui/NexusRBX_UI/UI_design1" }] } });
   createUiCheckpoint.mockResolvedValue({});
   queueStudioTool.mockResolvedValue({ commandId: "apply-test" });
   getStudioCommand.mockResolvedValue({ status: "succeeded", result: { uiRoots: [{ nodeCount: 3, treeHash: "verified-tree" }], snapshots: ["snapshot-1"] } });
-  render(<UiCreatorWorkspace user={{ uid: "user-1" }} projectId="project-1" studio={{ connected: true }} studioSessionId="studio-1" isStarterOrAbove notify={notify} />);
-  fireEvent.click(await screen.findByRole("button", { name: "Apply to Studio" }));
+  requestUiCapture.mockResolvedValue({ status: "ready", capture: { snapshotId: "snapshot-design-1" } });
+
+  const { container } = render(<UiCreatorWorkspace {...connectedProps} notify={notify} />);
+  await screen.findByRole("region", { name: "Roblox UI preview workspace" });
+  fireEvent.click(container.querySelector(".ui-creator__toolbar .ui-creator__apply"));
+
   await screen.findByText("Studio apply verified");
   expect(createUiCheckpoint.mock.invocationCallOrder[0]).toBeLessThan(queueStudioTool.mock.invocationCallOrder[0]);
   expect(notify).toHaveBeenCalledWith(expect.objectContaining({ type: "success", message: "Editable UI applied and verified in Studio." }));
+  expect(generateUiDraft).not.toHaveBeenCalled();
+  await waitFor(() => expect(requestUiCapture).toHaveBeenCalledWith("design-1", expect.objectContaining({ mode: "studio_edit", sourceRevision: "revision-1" }), expect.anything()));
+  expect(screen.getAllByText("Apply to Studio").length).toBeGreaterThan(1);
+  expect(screen.getAllByText("Capture ScreenGui in Studio").length).toBeGreaterThan(0);
 });
 
-test("preview mode renders the server preview pane and loads its manifest", async () => {
-  render(<UiCreatorWorkspace user={{ uid: "user-1" }} projectId="project-1" isStarterOrAbove notify={jest.fn()} />);
-
-  await screen.findByTestId("roblox-ui-preview");
-  expect(getUiPreviewManifest).not.toHaveBeenCalled();
-
-  fireEvent.click(screen.getByRole("tab", { name: "Preview" }));
-
-  await screen.findByRole("region", { name: "Roblox UI preview workspace" });
-  expect(screen.queryByTestId("roblox-ui-preview")).not.toBeInTheDocument();
-  await waitFor(() => expect(getUiPreviewManifest).toHaveBeenCalledWith("design-1", expect.anything()));
-});
-
-test("changing preview state or viewport never generates or compiles", async () => {
+test("changing preview state or viewport never generates, compiles, or captures", async () => {
   getUiPreviewManifest.mockResolvedValue(makePreviewManifest("design-1", {
     states: [{ id: "shop-open", label: "Shop open", version: 1, baseTreeHash: "tree-design-1", sourceRevision: "revision-1", stale: false }],
   }));
 
-  render(<UiCreatorWorkspace user={{ uid: "user-1" }} projectId="project-1" isStarterOrAbove notify={jest.fn()} />);
-  fireEvent.click(await screen.findByRole("tab", { name: "Preview" }));
+  render(<UiCreatorWorkspace {...connectedProps} />);
 
   const stateChip = await screen.findByRole("button", { name: "Shop open" });
   fireEvent.click(stateChip);
@@ -498,7 +333,7 @@ test("changing preview state or viewport never generates or compiles", async () 
   expect(generateUiDraft).not.toHaveBeenCalled();
   expect(compileUiDesign).not.toHaveBeenCalled();
   expect(queueStudioTool).not.toHaveBeenCalled();
-  expect(patchUiDesign).not.toHaveBeenCalled();
+  expect(requestUiCapture).not.toHaveBeenCalled();
 });
 
 test("switching design drops the previous design's capture before the new manifest arrives", async () => {
@@ -516,15 +351,14 @@ test("switching design drops the previous design's capture before the new manife
     }))
     : pending.promise));
 
-  render(<UiCreatorWorkspace user={{ uid: "user-1" }} projectId="project-1" isStarterOrAbove notify={jest.fn()} />);
-  fireEvent.click(await screen.findByRole("tab", { name: "Preview" }));
+  render(<UiCreatorWorkspace {...connectedProps} />);
   await screen.findByRole("button", { name: "Shop open" });
 
   fireEvent.change(screen.getByRole("combobox", { name: "UI design" }), { target: { value: "design-2" } });
 
   await waitFor(() => expect(getUiPreviewManifest).toHaveBeenCalledWith("design-2", expect.anything()));
   expect(screen.queryByRole("button", { name: "Shop open" })).not.toBeInTheDocument();
-  expect(screen.getAllByRole("status").some((node) => node.textContent.includes("Capture needed"))).toBe(true);
+  expect(screen.getByText("This revision is not in Studio yet")).toBeInTheDocument();
 
   await act(async () => {
     pending.resolve(makePreviewManifest("design-2"));
@@ -532,9 +366,16 @@ test("switching design drops the previous design's capture before the new manife
   });
 });
 
-test("connected generate accepts, applies, captures, and opens Preview without Accept", async () => {
+test("connected generate streams generate, apply, capture, and render steps into the chat and finishes on the rendered image", async () => {
   const accepted = makeDocument("revision-2");
-  generateUiDraft.mockResolvedValue({ draft: { draftId: "draft-1" }, messages: [] });
+  let captured = false;
+  generateUiDraft.mockResolvedValue({
+    draft: { draftId: "draft-1" },
+    messages: [
+      { id: "m-user", role: "user", prompt: "Build a shop", createdAt: "2026-01-01T00:00:01.000Z" },
+      { id: "draft-1:assistant", role: "assistant", text: "A new UI revision is ready for review.", draftId: "draft-1", createdAt: "2026-01-01T00:00:02.000Z" },
+    ],
+  });
   acceptUiDraft.mockResolvedValue({ document: accepted });
   compileUiDesign.mockResolvedValue({
     document: accepted,
@@ -545,49 +386,84 @@ test("connected generate accepts, applies, captures, and opens Preview without A
   queueStudioTool.mockResolvedValue({ commandId: "apply-gen" });
   getStudioCommand.mockResolvedValue({ status: "succeeded", result: { uiRoots: [{ nodeCount: 2, treeHash: "tree-2" }] } });
   requestUiCapture.mockResolvedValue({ status: "queued", captureRequestId: "cap-1" });
-  readUiCapture.mockResolvedValue({ status: "ready", capture: { snapshotId: "snap-2" } });
+  readUiCapture.mockImplementation(async () => {
+    captured = true;
+    return { status: "ready", capture: { snapshotId: "snap-2" } };
+  });
+  getUiPreviewManifest.mockImplementation(async () => (captured
+    ? makePreviewManifest("design-1", { sourceRevision: "revision-2", snapshotId: "snap-2" })
+    : makePreviewManifest("design-1")));
+  useUiPreview.mockImplementation(({ snapshotId }) => (snapshotId === "snap-2"
+    ? {
+      status: "ready",
+      imageUrl: "blob:preview-2",
+      error: "",
+      retry: jest.fn(),
+      preview: { snapshotId: "snap-2", stateLabel: "Default", viewport: { width: 1280, height: 720 }, rendererBackend: "public", imageHash: "hash-2", viewportId: "desktop", captureKind: "studio_edit", warnings: [] },
+    }
+    : { status: "waiting_capture", preview: null, imageUrl: "", error: "", retry: jest.fn() }));
 
-  render(
-    <UiCreatorWorkspace
-      user={{ uid: "user-1" }}
-      projectId="project-1"
-      studio={{ connected: true }}
-      studioSessionId="studio-1"
-      isStarterOrAbove
-      notify={jest.fn()}
-    />,
-  );
+  render(<UiCreatorWorkspace {...connectedProps} />);
 
   fireEvent.change(await screen.findByLabelText("Prompt input"), { target: { value: "Build a shop" } });
   fireEvent.click(screen.getByRole("button", { name: "Send prompt" }));
+
+  const live = await screen.findByTestId("live-work-stream");
+  expect(within(live).getByText("Generate UI revision")).toBeInTheDocument();
+  expect(within(live).getByText("Render preview")).toBeInTheDocument();
 
   await waitFor(() => expect(acceptUiDraft).toHaveBeenCalledWith("design-1", "draft-1"));
-  expect(queueStudioTool).toHaveBeenCalled();
-  await waitFor(() => expect(requestUiCapture).toHaveBeenCalled());
   expect(screen.queryByRole("button", { name: "Accept" })).not.toBeInTheDocument();
-  await screen.findByRole("region", { name: "Roblox UI preview workspace" });
+  await waitFor(() => expect(queueStudioTool).toHaveBeenCalled());
+  await waitFor(() => expect(requestUiCapture).toHaveBeenCalledWith("design-1", expect.objectContaining({ sourceRevision: "revision-2", rootPath: "StarterGui/NexusRBX_UI/UI_design1" }), expect.anything()), { timeout: 4000 });
+
+  await screen.findByText("UI revision revision is in Studio and previewed.", {}, { timeout: 4000 });
+  expect(screen.queryByTestId("live-work-stream")).not.toBeInTheDocument();
+  expect(screen.queryByText("A new UI revision is ready for review.")).not.toBeInTheDocument();
+  expect(screen.getByText("Build a shop")).toBeInTheDocument();
+  expect(screen.getAllByText("Success").length).toBe(4);
+  expect(screen.getByRole("img", { name: "Default state of the captured Roblox UI" })).toHaveAttribute("src", "blob:preview-2");
+  expect(screen.getAllByRole("status").some((node) => node.textContent.includes("hosted render"))).toBe(true);
 });
 
-test("disconnected generate does not queue Studio commands", async () => {
-  generateUiDraft.mockResolvedValue({ draft: { draftId: "draft-1" }, messages: [] });
-  acceptUiDraft.mockResolvedValue({ document: makeDocument("revision-2") });
+test("a rejected Studio apply fails the apply step, leaves later steps untouched, and offers a retry on the stage", async () => {
+  const accepted = makeDocument("revision-2");
+  generateUiDraft.mockResolvedValue({
+    draft: { draftId: "draft-1" },
+    messages: [
+      { id: "m-user", role: "user", prompt: "Build a shop", createdAt: "2026-01-01T00:00:01.000Z" },
+      { id: "draft-1:assistant", role: "assistant", text: "A new UI revision is ready for review.", draftId: "draft-1", createdAt: "2026-01-01T00:00:02.000Z" },
+    ],
+  });
+  let acceptedRevision = "revision-1";
+  acceptUiDraft.mockImplementation(async () => {
+    acceptedRevision = "revision-2";
+    return { document: accepted };
+  });
+  // The server manifest follows the design revision; the capture stays at the old one.
+  getUiPreviewManifest.mockImplementation(async () => ({
+    ...makePreviewManifest("design-1"),
+    sourceRevision: acceptedRevision,
+  }));
+  compileUiDesign.mockResolvedValue({ document: accepted, studioReady: true, compiled: { uiRoots: [{ targetPath: "StarterGui/NexusRBX_UI/UI_design1" }], files: [] } });
+  createUiCheckpoint.mockResolvedValue({});
+  queueStudioTool.mockResolvedValue({ commandId: "apply-fail" });
+  getStudioCommand.mockResolvedValue({ status: "failed", error: { code: "APPLY_REJECTED", message: "Studio rejected the shop frame." } });
 
-  render(
-    <UiCreatorWorkspace
-      user={{ uid: "user-1" }}
-      projectId="project-1"
-      studio={{ connected: false }}
-      studioSessionId=""
-      isStarterOrAbove
-      notify={jest.fn()}
-    />,
-  );
+  render(<UiCreatorWorkspace {...connectedProps} />);
 
   fireEvent.change(await screen.findByLabelText("Prompt input"), { target: { value: "Build a shop" } });
   fireEvent.click(screen.getByRole("button", { name: "Send prompt" }));
 
-  await waitFor(() => expect(acceptUiDraft).toHaveBeenCalled());
-  expect(queueStudioTool).not.toHaveBeenCalled();
+  await waitFor(() => expect(getStudioCommand).toHaveBeenCalled());
+  await screen.findByText("The UI revision is saved, but it is not in Studio yet. Use Apply to Studio to retry.");
   expect(requestUiCapture).not.toHaveBeenCalled();
-  expect(screen.getByTestId("roblox-ui-preview")).toBeInTheDocument();
+  expect(screen.queryByTestId("live-work-stream")).not.toBeInTheDocument();
+  expect(screen.getByText("Error")).toBeInTheDocument();
+  expect(screen.getAllByText("Pending")).toHaveLength(2);
+  expect(screen.getAllByText("Studio rejected the shop frame.").length).toBeGreaterThan(0);
+
+  const stage = screen.getByRole("region", { name: "Roblox UI preview workspace" });
+  expect(within(stage).getByText("This revision is not in Studio yet")).toBeInTheDocument();
+  expect(within(stage).getByRole("button", { name: "Apply to Studio" })).toBeEnabled();
 });

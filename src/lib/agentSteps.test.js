@@ -221,6 +221,34 @@ describe("agentSteps", () => {
     expect(step.errorCode).toBe("invalid_property_value");
   });
 
+  test("summarizeStepResult covers UI creator pipeline evidence", () => {
+    expect(summarizeStepResult({
+      type: "generate_ui",
+      status: "succeeded",
+      result: { revision: "revision-2abcdef", nodeCount: 12 },
+    })).toBe("Revision revision · 12 nodes");
+    expect(summarizeStepResult({
+      type: "apply_artifact",
+      status: "succeeded",
+      result: { treeHash: "verified-tree" },
+    })).toBe("Verified tree verified");
+    expect(summarizeStepResult({
+      type: "apply_artifact",
+      status: "succeeded",
+      result: {},
+    })).toBe("Applied artifact to Studio");
+    expect(summarizeStepResult({
+      type: "capture_ui",
+      status: "succeeded",
+      result: { snapshotId: "snap-2xyz" },
+    })).toBe("Snapshot snap-2xy");
+    expect(summarizeStepResult({
+      type: "render_preview",
+      status: "succeeded",
+      result: { rendererBackend: "public" },
+    })).toBe("Preview rendered · public");
+  });
+
   test("countStepSnapshots sums snapshotCount", () => {
     expect(
       countStepSnapshots([
