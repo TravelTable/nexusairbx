@@ -14,6 +14,7 @@ const sources = [
   "src/studio/serialization.lua",
   "src/studio/path.lua",
   "src/studio/snapshot.lua",
+  "src/studio/uiSnapshotSerializer.lua",
   "src/ui/PluginHeader.lua",
   "src/ui/Toolbox.lua",
   "src/ui/ToolForm.lua",
@@ -57,6 +58,7 @@ const WRAPPED_SOURCES = new Set([
   "src/studio/serialization.lua",
   "src/studio/path.lua",
   "src/studio/snapshot.lua",
+  "src/studio/uiSnapshotSerializer.lua",
   "src/ui/PluginHeader.lua",
   "src/ui/Toolbox.lua",
   "src/ui/ToolForm.lua",
@@ -200,6 +202,11 @@ const MODULE_EXPORTS = {
     "snapshotStateHash",
     "createOrReplaceInstance",
   ],
+  "src/studio/uiSnapshotSerializer.lua": [
+    "UI_SNAPSHOT",
+    "encodeUiSnapshotValue",
+    "captureUiSnapshot",
+  ],
   "src/commands/readTools.lua": [
     "getInspectionRoots",
     "inspectPlace",
@@ -294,7 +301,13 @@ const EARLY_TOP_LEVEL_LOCALS = [...EARLY_EXPORT_MODULES]
 // of them as locals makes every later module inherit their live registers and
 // pushes Luau over its hard 200-register limit. Script globals are isolated to
 // this plugin script, so use that environment for this one register-heavy API.
-const SCRIPT_GLOBAL_EXPORT_MODULES = new Set(["src/ui/BridgePanel.lua"]);
+// uiSnapshotSerializer.lua joins it for the same reason: the artifact already
+// sits at MAX_TOP_LEVEL_LOCAL_STATEMENTS, so its exports are promoted to script
+// globals instead of adding another top-level `local` declaration line.
+const SCRIPT_GLOBAL_EXPORT_MODULES = new Set([
+  "src/ui/BridgePanel.lua",
+  "src/studio/uiSnapshotSerializer.lua",
+]);
 
 const header = [
   "-- NexusRBX Studio Bridge",

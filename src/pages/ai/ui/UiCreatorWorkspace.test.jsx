@@ -12,6 +12,8 @@ import {
 } from "../../../lib/uiDesignApi";
 import { getStudioCommand, queueStudioTool } from "../../../lib/studioBridgeApi";
 import { getAssetFileBlob } from "../../../lib/assetPlatformApi";
+import { getUiPreviewManifest } from "../../../lib/uiPreviewApi";
+import useUiPreview from "../../../hooks/useUiPreview";
 
 jest.mock("@headless-tree/core", () => ({
   hotkeysCoreFeature: {},
@@ -66,6 +68,12 @@ jest.mock("../../../lib/studioBridgeApi", () => ({
   getStudioCommand: jest.fn(),
   queueStudioTool: jest.fn(),
 }));
+jest.mock("../../../lib/uiPreviewApi", () => ({
+  getUiPreviewManifest: jest.fn(),
+  requestUiCapture: jest.fn(),
+  readUiCapture: jest.fn(),
+}));
+jest.mock("../../../hooks/useUiPreview", () => jest.fn());
 
 function makeDocument(revision, { name = "Panel", width = 240, assets = [] } = {}) {
   return {
@@ -106,6 +114,42 @@ function makeDocument(revision, { name = "Panel", width = 240, assets = [] } = {
   };
 }
 
+function makePreviewManifest(designId, { sourceRevision = "revision-1", states = [] } = {}) {
+  return {
+    designId,
+    projectId: "project-1",
+    sourceRevision,
+    capture: {
+      snapshotId: `snapshot-${designId}`,
+      captureKind: "studio_edit",
+      capturedAt: "2026-01-01T00:00:00.000Z",
+      treeHash: `tree-${designId}`,
+      sourceRevision,
+      nodeCount: 4,
+      complete: true,
+      rootPath: `StarterGui/NexusRBX_UI/UI_${designId}`,
+      warnings: [],
+    },
+    states: [
+      { id: "default", label: "Default", version: 1, baseTreeHash: `tree-${designId}`, sourceRevision, stale: false },
+      ...states,
+    ],
+    viewports: [
+      { id: "desktop", label: "Desktop", width: 1280, height: 720, insets: { left: 0, right: 0, top: 0, bottom: 0 }, presetVersion: 1 },
+      { id: "phone", label: "Phone portrait", width: 390, height: 844, insets: { left: 0, right: 0, top: 44, bottom: 34 }, presetVersion: 1 },
+    ],
+    capabilities: {
+      previewEnabled: true,
+      rendererAvailable: true,
+      rendererRevision: "renderer-1",
+      fontRevision: "font-1",
+      studioEditCapture: true,
+      studioRuntimeCapture: false,
+      captureUnavailableReason: null,
+    },
+  };
+}
+
 function deferred() {
   let resolve;
   const promise = new Promise((next) => { resolve = next; });
@@ -131,6 +175,8 @@ beforeEach(() => {
   Object.defineProperty(URL, "createObjectURL", { configurable: true, writable: true, value: jest.fn(() => "blob:private-preview") });
   Object.defineProperty(URL, "revokeObjectURL", { configurable: true, writable: true, value: jest.fn() });
   const initial = makeDocument("revision-1");
+  useUiPreview.mockImplementation(() => ({ status: "waiting_capture", preview: null, imageUrl: "", error: "", retry: jest.fn() }));
+  getUiPreviewManifest.mockResolvedValue(makePreviewManifest("design-1"));
   listUiDesigns.mockResolvedValue({ designs: [{ designId: "design-1", title: "Test UI" }] });
   getUiDesign.mockResolvedValue({
     design: {
@@ -348,6 +394,7 @@ test("supports keyboard mode switching and persists keyboard pane resizing", asy
   fireEvent.keyDown(designTab, { key: "ArrowRight" });
   expect(screen.getByRole("tab", { name: "Preview" })).toHaveAttribute("aria-selected", "true");
   expect(screen.getByRole("tab", { name: "Preview" })).toHaveFocus();
+  await waitFor(() => expect(getUiPreviewManifest).toHaveBeenCalledWith("design-1", expect.anything()));
 
   const separator = screen.getByRole("separator", { name: "Resize Chat and Layers panel" });
   expect(separator).toHaveAttribute("aria-valuenow", "280");
@@ -419,4 +466,67 @@ test("Studio apply snapshots first and only reports verified receipt success", a
   await screen.findByText("Studio apply verified");
   expect(createUiCheckpoint.mock.invocationCallOrder[0]).toBeLessThan(queueStudioTool.mock.invocationCallOrder[0]);
   expect(notify).toHaveBeenCalledWith(expect.objectContaining({ type: "success", message: "Editable UI applied and verified in Studio." }));
+});
+
+test("preview mode renders the server preview pane and loads its manifest", async () => {
+  render(<UiCreatorWorkspace user={{ uid: "user-1" }} projectId="project-1" isStarterOrAbove notify={jest.fn()} />);
+
+  await screen.findByTestId("roblox-ui-preview");
+  expect(getUiPreviewManifest).not.toHaveBeenCalled();
+
+  fireEvent.click(screen.getByRole("tab", { name: "Preview" }));
+
+  await screen.findByRole("region", { name: "Roblox UI preview workspace" });
+  expect(screen.queryByTestId("roblox-ui-preview")).not.toBeInTheDocument();
+  await waitFor(() => expect(getUiPreviewManifest).toHaveBeenCalledWith("design-1", expect.anything()));
+});
+
+test("changing preview state or viewport never generates or compiles", async () => {
+  getUiPreviewManifest.mockResolvedValue(makePreviewManifest("design-1", {
+    states: [{ id: "shop-open", label: "Shop open", version: 1, baseTreeHash: "tree-design-1", sourceRevision: "revision-1", stale: false }],
+  }));
+
+  render(<UiCreatorWorkspace user={{ uid: "user-1" }} projectId="project-1" isStarterOrAbove notify={jest.fn()} />);
+  fireEvent.click(await screen.findByRole("tab", { name: "Preview" }));
+
+  const stateChip = await screen.findByRole("button", { name: "Shop open" });
+  fireEvent.click(stateChip);
+  fireEvent.change(screen.getByRole("combobox", { name: "Preview viewport" }), { target: { value: "phone" } });
+  fireEvent.change(screen.getByRole("combobox", { name: "Preview state" }), { target: { value: "default" } });
+
+  expect(generateUiDraft).not.toHaveBeenCalled();
+  expect(compileUiDesign).not.toHaveBeenCalled();
+  expect(queueStudioTool).not.toHaveBeenCalled();
+  expect(patchUiDesign).not.toHaveBeenCalled();
+});
+
+test("switching design drops the previous design's capture before the new manifest arrives", async () => {
+  listUiDesigns.mockResolvedValue({
+    designs: [{ designId: "design-1", title: "Test UI" }, { designId: "design-2", title: "Second UI" }],
+  });
+  getUiDesign.mockImplementation(async (designId) => {
+    const documentForDesign = { ...makeDocument("revision-1"), designId };
+    return { design: { designId, title: designId, revision: "revision-1", document: documentForDesign, messages: [], hooksSource: "" } };
+  });
+  const pending = deferred();
+  getUiPreviewManifest.mockImplementation((designId) => (designId === "design-1"
+    ? Promise.resolve(makePreviewManifest("design-1", {
+      states: [{ id: "shop-open", label: "Shop open", version: 1, baseTreeHash: "tree-design-1", sourceRevision: "revision-1", stale: false }],
+    }))
+    : pending.promise));
+
+  render(<UiCreatorWorkspace user={{ uid: "user-1" }} projectId="project-1" isStarterOrAbove notify={jest.fn()} />);
+  fireEvent.click(await screen.findByRole("tab", { name: "Preview" }));
+  await screen.findByRole("button", { name: "Shop open" });
+
+  fireEvent.change(screen.getByRole("combobox", { name: "UI design" }), { target: { value: "design-2" } });
+
+  await waitFor(() => expect(getUiPreviewManifest).toHaveBeenCalledWith("design-2", expect.anything()));
+  expect(screen.queryByRole("button", { name: "Shop open" })).not.toBeInTheDocument();
+  expect(screen.getAllByRole("status").some((node) => node.textContent.includes("Capture needed"))).toBe(true);
+
+  await act(async () => {
+    pending.resolve(makePreviewManifest("design-2"));
+    await pending.promise;
+  });
 });

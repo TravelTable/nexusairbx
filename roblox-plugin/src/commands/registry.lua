@@ -62,6 +62,7 @@ local TOOL_HANDLERS = {
 	read_scripts = readScript,
 	read_instance = readInstance,
 	read_properties = readProperties,
+	read_ui_snapshot = captureUiSnapshot,
 	get_selection = getSelectionTool,
 	get_studio_context = getStudioContext,
 	get_change_history = function()

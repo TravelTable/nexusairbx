@@ -34,6 +34,7 @@ import {
 } from "../../../components/ui/AnimatedActionIcon";
 import { Tree, TreeItem, TreeItemLabel } from "../../../components/ui/tree";
 import RobloxUiPreview from "./RobloxUiPreview";
+import UiPreviewPane from "./UiPreviewPane";
 import { indexUiNodes, UI_DEVICE_PRESETS } from "../../../lib/robloxUiPreview";
 import {
   acceptUiDraft,
@@ -55,6 +56,7 @@ import {
   generateAsset,
   getAssetFileBlob,
 } from "../../../lib/assetPlatformApi";
+import { getUiPreviewManifest, readUiCapture, requestUiCapture } from "../../../lib/uiPreviewApi";
 import { getStudioCommand, queueStudioTool } from "../../../lib/studioBridgeApi";
 import { readStudioUiReceipt } from "../../../lib/studioUiReceipt";
 import "./UiCreatorWorkspace.css";
@@ -341,6 +343,10 @@ export default function UiCreatorWorkspace({
   const [studioTreeConflict, setStudioTreeConflict] = useState(false);
   const [pendingStudioCommand, setPendingStudioCommand] = useState(null);
   const [studioReceipt, setStudioReceipt] = useState(null);
+  const [previewManifestRecord, setPreviewManifestRecord] = useState(null);
+  const [previewManifestNonce, setPreviewManifestNonce] = useState(0);
+  const [captureBusy, setCaptureBusy] = useState(false);
+  const previewManifestKeyRef = useRef("");
   const initialLoadKeyRef = useRef("");
   const documentRef = useRef(null);
   const mutationQueueRef = useRef(Promise.resolve());
@@ -857,6 +863,69 @@ export default function UiCreatorWorkspace({
     }
   }, [document, lastStudioTreeHash, notify, showError, studio, studioSessionId, user?.uid]);
 
+  const previewDesignId = design?.designId || null;
+  const previewRevision = document?.revision || "";
+
+  useEffect(() => {
+    if (!previewDesignId || mode !== "preview") return undefined;
+    const requestKey = `${previewDesignId}:${previewRevision}:${previewManifestNonce}`;
+    previewManifestKeyRef.current = requestKey;
+    const controller = new AbortController();
+    getUiPreviewManifest(previewDesignId, controller.signal).then((manifest) => {
+      if (previewManifestKeyRef.current !== requestKey) return;
+      setPreviewManifestRecord({ designId: previewDesignId, requestKey, manifest, error: "" });
+    }).catch((reason) => {
+      if (previewManifestKeyRef.current !== requestKey || reason?.name === "AbortError") return;
+      setPreviewManifestRecord({
+        designId: previewDesignId,
+        requestKey,
+        manifest: null,
+        error: reason?.message || "The preview manifest could not be loaded.",
+      });
+    });
+    return () => controller.abort();
+  }, [mode, previewDesignId, previewManifestNonce, previewRevision]);
+
+  // Derived, not stored: a manifest captured for another design can never reach the pane.
+  const previewManifest = previewManifestRecord?.designId === previewDesignId ? previewManifestRecord : null;
+  const previewCapabilities = previewManifest?.manifest?.capabilities
+    || (previewManifest?.error
+      ? { previewEnabled: false, rendererAvailable: false, captureUnavailableReason: previewManifest.error }
+      : null);
+  const previewCaptureRootPath = compiled?.compiled?.uiRoots?.[0]?.targetPath
+    || (previewDesignId ? `StarterGui/NexusRBX_UI/UI_${cleanIdentifier(previewDesignId) || "NexusUI"}` : "");
+  const previewSourceRevision = previewManifest?.manifest?.sourceRevision || "";
+
+  const refreshUiCapture = useCallback(async () => {
+    if (!previewDesignId || !previewCaptureRootPath || !previewSourceRevision) return;
+    setCaptureBusy(true);
+    setError("");
+    try {
+      const idempotencyKey = `ui-capture-${cleanIdentifier(previewDesignId) || "design"}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+      const started = await requestUiCapture(previewDesignId, {
+        mode: "studio_edit",
+        rootPath: previewCaptureRootPath,
+        sourceRevision: previewSourceRevision,
+      }, { idempotencyKey });
+      if (started.status === "unavailable") {
+        throw new Error(started.capability?.reason || "Studio capture is not available for this connection.");
+      }
+      let record = started;
+      const deadline = Date.now() + 90_000;
+      while (!["ready", "failed", "unavailable"].includes(record.status)) {
+        if (Date.now() >= deadline) throw new Error("Studio has not returned this capture yet. Retry once Studio responds.");
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        record = await readUiCapture(previewDesignId, started.captureRequestId);
+      }
+      if (record.status !== "ready") throw new Error(record.message || "Studio could not capture this UI.");
+      setPreviewManifestNonce((value) => value + 1);
+    } catch (reason) {
+      showError(reason, "The Studio UI capture could not be completed.");
+    } finally {
+      setCaptureBusy(false);
+    }
+  }, [previewCaptureRootPath, previewDesignId, previewSourceRevision, showError]);
+
   useEffect(() => {
     if (!user?.uid || !document?.designId) return;
     try {
@@ -1029,11 +1098,24 @@ export default function UiCreatorWorkspace({
   const publishingAssetId = [...(document.assets || [])]
     .reverse()
     .find((asset) => asset.canonicalAssetId && !asset.robloxAssetId)?.canonicalAssetId || "";
+  const codeWorkspace = (
+    <div className="ui-code-workspace">
+      <section>
+        <header><div><span>GENERATED · READ ONLY</span><strong>GeneratedUI.lua</strong></div><Button type="button" size="sm" variant="secondary" onClick={compile} icon={RotateCcw}>Compile</Button></header>
+        <pre><code>{compiled?.compiled?.generatedLua || (busy === "compiling" ? "Compiling Luau…" : "Code preview is not ready.")}</code></pre>
+        {!compiled && !busy ? <Button type="button" variant="secondary" size="sm" onClick={compile}>Retry code preview</Button> : null}
+      </section>
+      <section>
+        <header><div><span>STUDIO ONLY · EDITABLE</span><strong>Hooks.client.lua</strong></div><Button type="button" size="sm" variant="secondary" onClick={saveHooks} icon={Save}>Save hooks</Button></header>
+        <textarea value={hooksSource} onChange={(event) => setHooksSource(event.target.value)} spellCheck="false" aria-label="Editable Hooks.client.lua" />
+      </section>
+    </div>
+  );
 
   return (
     <section className="ui-creator" aria-label="Roblox UI Creator" aria-busy={Boolean(busy)}>
       {pendingStudioCommand ? <div className="ui-creator__mode-hint" role="status">Waiting for Studio · Approve the change in Studio if prompted. You can keep editing here.</div> : null}
-      <div className="ui-creator__mode-hint" role="status">{mode === "preview" ? "Preview · Try buttons, menus, and interactions. Custom game hooks run in Studio." : mode === "code" ? "Code · Review the generated Luau and add your game hooks." : "Design · Select an object to edit its appearance and behavior."}</div>
+      <div className="ui-creator__mode-hint" role="status">{mode === "preview" ? "Preview · Rendered state previews of the captured UI. Buttons and hooks run in Studio, not here." : mode === "code" ? "Code · Review the generated Luau and add your game hooks." : "Design · Select an object to edit its appearance and behavior."}</div>
       <header className="ui-creator__toolbar">
         <div className="ui-creator__design-switcher">
           <div className="ui-creator__design-identity">
@@ -1134,23 +1216,26 @@ export default function UiCreatorWorkspace({
         {!leftOpen ? <Button ref={leftReopenRef} type="button" variant="secondary" size="sm" className="ui-creator__reopen ui-creator__reopen--left" onClick={(event) => openPanel("left", event.currentTarget)} aria-label="Open Chat and Layers" icon={ChevronRight}><span>Chat & Layers</span></Button> : null}
 
         <main className="ui-creator__stage" role="tabpanel" aria-label={`${mode} workspace`}>
-          {mode === "code" ? (
-            <div className="ui-code-workspace">
-              <section>
-                <header><div><span>GENERATED · READ ONLY</span><strong>GeneratedUI.lua</strong></div><Button type="button" size="sm" variant="secondary" onClick={compile} icon={RotateCcw}>Compile</Button></header>
-                <pre><code>{compiled?.compiled?.generatedLua || (busy === "compiling" ? "Compiling Luau…" : "Code preview is not ready.")}</code></pre>
-                {!compiled && !busy ? <Button type="button" variant="secondary" size="sm" onClick={compile}>Retry code preview</Button> : null}
-              </section>
-              <section>
-                <header><div><span>STUDIO ONLY · EDITABLE</span><strong>Hooks.client.lua</strong></div><Button type="button" size="sm" variant="secondary" onClick={saveHooks} icon={Save}>Save hooks</Button></header>
-                <textarea value={hooksSource} onChange={(event) => setHooksSource(event.target.value)} spellCheck="false" aria-label="Editable Hooks.client.lua" />
-              </section>
+          {mode === "code" ? codeWorkspace : mode === "preview" ? (
+            <div className="ui-creator__preview-host">
+              <UiPreviewPane
+                designId={previewDesignId}
+                projectId={projectId}
+                sourceRevision={previewSourceRevision}
+                capture={previewManifest?.manifest?.capture || null}
+                states={previewManifest?.manifest?.states || []}
+                viewports={previewManifest?.manifest?.viewports || []}
+                capabilities={previewCapabilities}
+                onRefreshCapture={previewCaptureRootPath && previewSourceRevision ? refreshUiCapture : undefined}
+                captureBusy={captureBusy}
+                codePanel={codeWorkspace}
+              />
             </div>
           ) : (
             <RobloxUiPreview
               document={previewDocument}
               device={device}
-              mode={draft && mode === "design" ? "review" : mode}
+              mode={draft ? "review" : "design"}
               selectedId={selectedId}
               onSelect={setSelectedId}
               onNodeChange={(nodeId, patch) => !draft && mutate([{ type: "updateNode", nodeId, patch }])}

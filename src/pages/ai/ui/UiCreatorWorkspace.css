@@ -484,6 +484,14 @@
   background: var(--nx-depth);
 }
 
+.ui-creator__preview-host {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
 .ui-creator__reopen {
   position: absolute;
   z-index: 25;
