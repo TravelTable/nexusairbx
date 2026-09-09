@@ -16670,3 +16670,953 @@ project_resolution {
   status: 200,
   durationMs: 844
 }
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:35.563Z',
+  requestId: '0984af3d-3c07-42fe-b7ad-4e35cdd4c9f8',
+  method: 'OPTIONS',
+  route: '/api/v2/agents/active',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:35.564Z',
+  requestId: '6c6af654-b323-4f84-ac6c-276f27fd8a77',
+  method: 'OPTIONS',
+  route: '/api/v2/agents/active',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:35.610Z',
+  requestId: 'd9a9e50d-0466-45c8-81bf-0c2d2e699aea',
+  method: 'OPTIONS',
+  route: '/api/v2/agents/active',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:35.670Z',
+  requestId: '2c2757ee-7052-42fe-8241-e758857feef8',
+  method: 'OPTIONS',
+  route: '/api/v2/agents/active',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:35.876Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/agents/active'
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:35.878Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/agents/active'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:36.637Z',
+  requestId: '7c896ecd-99e7-400d-9e16-3354367b11de',
+  method: 'GET',
+  route: '/api/v2/agents/active',
+  status: 200,
+  durationMs: 759
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:36.639Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/agents/active'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:36.655Z',
+  requestId: '210140d2-baa9-480c-9596-94c48cfeabca',
+  method: 'GET',
+  route: '/api/v2/agents/active',
+  status: 200,
+  durationMs: 780
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:36.656Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/agents/active'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:37.351Z',
+  requestId: '88205656-8eba-41de-853c-0cd16fa8870e',
+  method: 'GET',
+  route: '/api/v2/agents/active',
+  status: 200,
+  durationMs: 713
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:37.450Z',
+  requestId: 'af077d5a-21fc-443a-8986-56e00d3d4b50',
+  method: 'GET',
+  route: '/api/v2/agents/active',
+  status: 200,
+  durationMs: 794
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:37.689Z',
+  requestId: 'ff617468-7640-4813-a044-3c4af555936d',
+  method: 'GET',
+  route: '/api/v2/events',
+  status: 200,
+  durationMs: 24626
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:37.748Z',
+  requestId: 'bae806a1-14bd-491c-8f63-f1b3581a85e5',
+  method: 'OPTIONS',
+  route: '/api/v2/events',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:37.748Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/events'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:39.099Z',
+  requestId: 'bccb2d02-73de-49eb-a3c0-d23b2c170500',
+  method: 'OPTIONS',
+  route: '/api/v2/agents/active',
+  status: 204,
+  durationMs: 1
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:39.408Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/agents/active'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:40.314Z',
+  requestId: '20e4a242-0098-416a-9f72-c3b270167905',
+  method: 'GET',
+  route: '/api/v2/agents/active',
+  status: 200,
+  durationMs: 906
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:41.803Z',
+  requestId: 'c18b5533-e71f-4843-b10a-a7d97c87a0c4',
+  method: 'GET',
+  route: '/api/v2/events',
+  status: 200,
+  durationMs: 25513
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:42.769Z',
+  requestId: '9157a204-c12a-432b-ab27-b4c59fadbd0c',
+  method: 'GET',
+  route: '/api/v2/events',
+  status: 200,
+  durationMs: 22161
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:43.107Z',
+  requestId: 'c9f4c34c-31b9-47ca-ae3e-a1be489f61b5',
+  method: 'OPTIONS',
+  route: '/api/v2/events',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:43.108Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/events'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:43.788Z',
+  requestId: 'eb983398-a444-4e29-a2a1-27bda7ac6da1',
+  method: 'OPTIONS',
+  route: '/api/v2/events',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:43.789Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/events'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:45.246Z',
+  requestId: '51e8a446-dbf5-407d-a3bd-8a58d0cc53a1',
+  method: 'OPTIONS',
+  route: '/api/v2/agents/active',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:45.294Z',
+  requestId: '9f3381f0-2a39-44a6-a7d0-22be4ea749af',
+  method: 'OPTIONS',
+  route: '/api/v2/agents/active',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:45.555Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/agents/active'
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:45.603Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/agents/active'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:45.604Z',
+  requestId: 'ebb24bf1-c4e8-4ab1-8e41-aae6653ef6ef',
+  method: 'OPTIONS',
+  route: '/api/v2/agents/active',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:45.668Z',
+  requestId: '92b99c1b-0be4-4d1b-9319-12c98fa6d07d',
+  method: 'OPTIONS',
+  route: '/api/v2/agents/active',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:46.413Z',
+  requestId: '6563dcfd-bc20-427e-ba82-7a148cee9e11',
+  method: 'GET',
+  route: '/api/v2/agents/active',
+  status: 200,
+  durationMs: 858
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:46.414Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/agents/active'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:46.571Z',
+  requestId: '0d8e4c6b-e0fc-492d-ba3b-3f60e6d9de68',
+  method: 'GET',
+  route: '/api/v2/agents/active',
+  status: 200,
+  durationMs: 968
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:46.575Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/agents/active'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:46.646Z',
+  requestId: '6c52c972-cab6-4d7f-8918-a6784d1d175f',
+  method: 'OPTIONS',
+  route: '/api/studio/status',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:46.646Z',
+  requestId: 'fef37665-5e6d-4ba1-bd32-28b4429a3716',
+  method: 'OPTIONS',
+  route: '/api/studio/mcp/status',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:46.954Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/studio/status'
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:46.956Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/studio/mcp/status'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:47.274Z',
+  requestId: '7055defe-12bc-46e1-bac6-caec99e7c24b',
+  method: 'GET',
+  route: '/api/v2/agents/active',
+  status: 200,
+  durationMs: 860
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:47.290Z',
+  requestId: 'f8d1808c-699d-416f-910b-41a10c023eb8',
+  method: 'GET',
+  route: '/api/v2/agents/active',
+  status: 200,
+  durationMs: 716
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:47.628Z',
+  requestId: '03341a98-7fc9-483c-9b2a-fa8891f41a06',
+  method: 'GET',
+  route: '/api/studio/mcp/status',
+  status: 200,
+  durationMs: 672
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:47.912Z',
+  requestId: '07c86426-6670-412c-a2be-d6edfe4f5571',
+  method: 'GET',
+  route: '/api/v2/events',
+  status: 200,
+  durationMs: 25129
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:48.003Z',
+  requestId: 'b75ca026-0a44-4305-99ad-f3c9d9b7bdb8',
+  method: 'GET',
+  route: '/api/studio/status',
+  status: 200,
+  durationMs: 1049
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:48.428Z',
+  requestId: '3205b6a8-ba1c-4295-a206-5733a4d64d58',
+  method: 'OPTIONS',
+  route: '/api/studio/status',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:48.429Z',
+  requestId: 'd642e517-bb91-468f-a381-1745a252dfe8',
+  method: 'OPTIONS',
+  route: '/api/studio/mcp/status',
+  status: 204,
+  durationMs: 1
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:48.430Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/studio/status'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:48.432Z',
+  requestId: '3b8cfcce-c534-4ae9-bda5-e1be66f5990e',
+  method: 'GET',
+  route: '/api/studio/status',
+  status: 200,
+  durationMs: 3
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:48.433Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/studio/mcp/status'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:48.797Z',
+  requestId: 'e878e783-0d13-4b9b-86f3-ee0bdf2b398c',
+  method: 'OPTIONS',
+  route: '/api/v2/agents/active',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:48.798Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/agents/active'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:48.935Z',
+  requestId: 'bb799f36-1652-4d7f-9248-6bb2b4e89002',
+  method: 'GET',
+  route: '/api/studio/mcp/status',
+  status: 200,
+  durationMs: 502
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:49.090Z',
+  requestId: '0036e232-d169-48c8-aa60-dbd8681c606f',
+  method: 'OPTIONS',
+  route: '/api/studio/status',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:49.091Z',
+  requestId: '5e5fabef-2329-4cac-8628-b4acf05977f3',
+  method: 'OPTIONS',
+  route: '/api/studio/mcp/status',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:49.091Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/studio/status'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:49.093Z',
+  requestId: '9ed1b089-432f-4825-84fd-57a37b4388db',
+  method: 'GET',
+  route: '/api/studio/status',
+  status: 200,
+  durationMs: 2
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:49.093Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/studio/mcp/status'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:49.555Z',
+  requestId: '32eebda5-4f1d-40aa-bb38-74e39d19093f',
+  method: 'GET',
+  route: '/api/v2/agents/active',
+  status: 200,
+  durationMs: 758
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:49.584Z',
+  requestId: '07100e0d-80a4-498c-b41a-263748d71d66',
+  method: 'OPTIONS',
+  route: '/api/studio/status',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:49.585Z',
+  requestId: '76a5ace6-f390-429d-86e1-3b8346041bf7',
+  method: 'OPTIONS',
+  route: '/api/studio/mcp/status',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:49.586Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/studio/status'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:49.587Z',
+  requestId: '2cfadd2c-d4a7-46f1-9967-24d362c5c1eb',
+  method: 'GET',
+  route: '/api/studio/status',
+  status: 200,
+  durationMs: 1
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:49.587Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/studio/mcp/status'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:49.594Z',
+  requestId: 'b2a9ce7a-706b-4905-950e-8469585b16ea',
+  method: 'GET',
+  route: '/api/studio/mcp/status',
+  status: 200,
+  durationMs: 501
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:50.016Z',
+  requestId: 'f0bf74f9-da19-4ac6-8e4c-4310ba193957',
+  method: 'GET',
+  route: '/api/v2/events',
+  status: 200,
+  durationMs: 26843
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:50.064Z',
+  requestId: '95556df7-ebad-4a3f-a699-e43c757c80a1',
+  method: 'GET',
+  route: '/api/studio/mcp/status',
+  status: 200,
+  durationMs: 477
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:50.295Z',
+  requestId: 'edcfa9f7-2247-4ea5-b69c-543ec60b9200',
+  method: 'OPTIONS',
+  route: '/api/v2/events',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:50.296Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/events'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:50.669Z',
+  requestId: '4236558d-8f93-4348-8b7e-3adf07c9913f',
+  method: 'OPTIONS',
+  route: '/api/v2/events',
+  status: 204,
+  durationMs: 1
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:50.670Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/events'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:51.765Z',
+  requestId: '5f7f7796-2b4c-4154-bdf9-9b8d4c08bfec',
+  method: 'GET',
+  route: '/api/v2/events',
+  status: 200,
+  durationMs: 14017
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:52.749Z',
+  requestId: '60862768-0292-438f-b04b-da59f8075142',
+  method: 'OPTIONS',
+  route: '/api/v2/events',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:52.750Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/events'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:55.242Z',
+  requestId: '0d48e95c-06db-4f2e-b79a-b1ec3cbc66bb',
+  method: 'OPTIONS',
+  route: '/api/v2/agents/active',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:55.243Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/agents/active'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:55.286Z',
+  requestId: '314c1d79-506e-44fc-8d58-885e996051c3',
+  method: 'OPTIONS',
+  route: '/api/v2/agents/active',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:55.287Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/agents/active'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:55.612Z',
+  requestId: '9089ae38-966c-4605-8e39-ddc91736743e',
+  method: 'OPTIONS',
+  route: '/api/v2/agents/active',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:55.671Z',
+  requestId: 'ef48f287-4f39-45b8-ae12-b7519b039055',
+  method: 'OPTIONS',
+  route: '/api/v2/agents/active',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:56.012Z',
+  requestId: '2f9d74b4-c84c-4142-980c-7c4dc6cd33cd',
+  method: 'GET',
+  route: '/api/v2/agents/active',
+  status: 200,
+  durationMs: 725
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:56.014Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/agents/active'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:56.018Z',
+  requestId: '571b5150-d18b-478e-8046-9dc3017c3357',
+  method: 'GET',
+  route: '/api/v2/agents/active',
+  status: 200,
+  durationMs: 776
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:56.020Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/agents/active'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:56.748Z',
+  requestId: '28c8c4f5-8465-4ff6-89d3-3e45e7c8143a',
+  method: 'GET',
+  route: '/api/v2/agents/active',
+  status: 200,
+  durationMs: 728
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:56.802Z',
+  requestId: 'ada9a0ca-aa33-4c78-a7a7-7066abf359a2',
+  method: 'GET',
+  route: '/api/v2/agents/active',
+  status: 200,
+  durationMs: 788
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:23:59.097Z',
+  requestId: '1b80b82f-820b-4312-b0eb-44276ea28283',
+  method: 'OPTIONS',
+  route: '/api/v2/agents/active',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:23:59.409Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/agents/active'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:24:00.138Z',
+  requestId: '15c23f00-f043-4773-881f-2535034dea6a',
+  method: 'GET',
+  route: '/api/v2/agents/active',
+  status: 200,
+  durationMs: 729
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:24:04.927Z',
+  requestId: '52e31527-6101-4711-be41-336e061f50af',
+  method: 'GET',
+  route: '/api/v2/events',
+  status: 200,
+  durationMs: 14631
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:24:05.248Z',
+  requestId: '0166a5be-9c10-42fe-a22f-55a30320edfd',
+  method: 'OPTIONS',
+  route: '/api/v2/agents/active',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:24:05.249Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/agents/active'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:24:05.293Z',
+  requestId: '007ffa70-a517-4dfa-bbd5-06509aa8e59a',
+  method: 'OPTIONS',
+  route: '/api/v2/agents/active',
+  status: 204,
+  durationMs: 1
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:24:05.295Z',
+  requestId: '102a22ea-42cb-4cd1-b7a5-7a127b8bbf91',
+  method: 'OPTIONS',
+  route: '/api/v2/events',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:24:05.606Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/agents/active'
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:24:05.608Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/events'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:24:05.610Z',
+  requestId: '09035dfb-41f6-4401-a236-e2f1c4cedf62',
+  method: 'OPTIONS',
+  route: '/api/v2/agents/active',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:24:05.664Z',
+  requestId: 'ac9b3495-0ae8-40c1-b4bf-ef41c22c6099',
+  method: 'OPTIONS',
+  route: '/api/v2/agents/active',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:24:06.113Z',
+  requestId: '52e0eef7-1f07-43a5-8057-bbad3cb8c091',
+  method: 'GET',
+  route: '/api/v2/agents/active',
+  status: 200,
+  durationMs: 864
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:24:06.114Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/agents/active'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:24:06.436Z',
+  requestId: '76686f92-6209-4e5c-9fba-7ada8c651d41',
+  method: 'GET',
+  route: '/api/v2/agents/active',
+  status: 200,
+  durationMs: 830
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:24:06.437Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/agents/active'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:24:06.993Z',
+  requestId: '6dbb068c-f642-4f61-9127-baf5a287d9a2',
+  method: 'GET',
+  route: '/api/v2/agents/active',
+  status: 200,
+  durationMs: 879
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:24:07.463Z',
+  requestId: '7c599f81-db4e-4e58-828a-d5b95863af76',
+  method: 'GET',
+  route: '/api/v2/agents/active',
+  status: 200,
+  durationMs: 1026
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:24:07.979Z',
+  requestId: 'f4e20051-94fd-4b0c-abca-4811c2002a49',
+  method: 'GET',
+  route: '/api/v2/events',
+  status: 200,
+  durationMs: 17309
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:24:08.161Z',
+  requestId: 'f8209017-837c-4a3a-b192-27a096eee976',
+  method: 'OPTIONS',
+  route: '/api/v2/events',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:24:08.162Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/events'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:24:08.791Z',
+  requestId: '1a88843b-75c9-4b64-a168-239a0700dc58',
+  method: 'OPTIONS',
+  route: '/api/v2/agents/active',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:24:09.078Z',
+  requestId: 'fad79c12-2724-42d2-86f0-8200d533a3d7',
+  method: 'GET',
+  route: '/api/v2/events',
+  status: 200,
+  durationMs: 25970
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:24:09.109Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/agents/active'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:24:09.944Z',
+  requestId: 'fa3a929d-e9a6-425e-bffd-752c8a387f0a',
+  method: 'GET',
+  route: '/api/v2/agents/active',
+  status: 200,
+  durationMs: 835
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:24:10.609Z',
+  requestId: '8378dcb3-eba4-4e1c-b8ff-8b9db18b740e',
+  method: 'OPTIONS',
+  route: '/api/v2/events',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:24:10.610Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/events'
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:24:11.052Z',
+  requestId: '3059ba39-70b7-43f2-a5ad-dccff26f941b',
+  method: 'GET',
+  route: '/api/v2/events',
+  status: 200,
+  durationMs: 27262
+}
+[ops] {
+  event: 'http_request',
+  ts: '2026-09-09T09:24:11.291Z',
+  requestId: '23167e7d-0a37-48cb-b119-fa8e143edf45',
+  method: 'OPTIONS',
+  route: '/api/v2/events',
+  status: 204,
+  durationMs: 0
+}
+[ops] {
+  event: 'security.app_check_rejected',
+  ts: '2026-09-09T09:24:11.293Z',
+  reason: 'missing_token',
+  mode: 'monitor',
+  route: '/api/v2/events'
+}
