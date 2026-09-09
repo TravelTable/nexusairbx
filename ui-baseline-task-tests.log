@@ -1,0 +1,228 @@
+TAP version 13
+# project_resolution {
+#   requestId: null,
+#   userHash: '39697a37837e315a',
+#   projectHash: '3092c59e4c0059c2',
+#   resolutionState: 'legacy_owned',
+#   failureCode: null
+# }
+# project_resolution {
+#   requestId: null,
+#   userHash: '783c0da52b25a6e0',
+#   projectHash: '3ffa6da77bcbe04f',
+#   resolutionState: 'owned_incomplete',
+#   failureCode: null
+# }
+# project_resolution {
+#   requestId: null,
+#   userHash: '783c0da52b25a6e0',
+#   projectHash: 'fc282c92a7b5955f',
+#   resolutionState: 'missing',
+#   failureCode: 'OWNERSHIP_MISMATCH'
+# }
+# Subtest: artifact redispatch preserves sealed execution inputs and derives exact Studio identity from the Task
+ok 1 - artifact redispatch preserves sealed execution inputs and derives exact Studio identity from the Task
+  ---
+  duration_ms: 25.7539
+  ...
+# Subtest: artifact redispatch forwards one launch key through the outbox transport
+ok 2 - artifact redispatch forwards one launch key through the outbox transport
+  ---
+  duration_ms: 0.6387
+  ...
+# Subtest: canonical artifact redispatch rejects a missing server launch key
+ok 3 - canonical artifact redispatch rejects a missing server launch key
+  ---
+  duration_ms: 2.5422
+  ...
+# Subtest: legacy artifact redispatch compensates a Job when cancellation wins after launch
+ok 4 - legacy artifact redispatch compensates a Job when cancellation wins after launch
+  ---
+  duration_ms: 1.2073
+  ...
+# Subtest: default project authorization rejects non-default tenants before UID-only storage lookup
+ok 5 - default project authorization rejects non-default tenants before UID-only storage lookup
+  ---
+  duration_ms: 26.3808
+  ...
+# Subtest: default project authorization accepts an owned workspace binding before legacy project lookup
+ok 6 - default project authorization accepts an owned workspace binding before legacy project lookup
+  ---
+  duration_ms: 1.2856
+  ...
+# Subtest: trusted context accepts an owned export-only workspace project without Studio
+ok 7 - trusted context accepts an owned export-only workspace project without Studio
+  ---
+  duration_ms: 2.9354
+  ...
+# Subtest: trusted context routes an organizational project to the sole live plugin session
+ok 8 - trusted context routes an organizational project to the sole live plugin session
+  ---
+  duration_ms: 3.9992
+  ...
+# Subtest: trusted context accepts a sole live attested MCP target
+ok 9 - trusted context accepts a sole live attested MCP target
+  ---
+  duration_ms: 1.666
+  ...
+# Subtest: trusted context fails closed if more than one live plugin target matches the project
+ok 10 - trusted context fails closed if more than one live plugin target matches the project
+  ---
+  duration_ms: 1.3316
+  ...
+# Subtest: trusted context distinguishes a live different place from a disconnected Studio
+ok 11 - trusted context distinguishes a live different place from a disconnected Studio
+  ---
+  duration_ms: 1.7576
+  ...
+# Subtest: project routing binds a connector-confirmed MCP Studio window
+ok 12 - project routing binds a connector-confirmed MCP Studio window
+  ---
+  duration_ms: 1.6251
+  ...
+# Subtest: project routing activates and binds a server-owned unpublished MCP target
+ok 13 - project routing activates and binds a server-owned unpublished MCP target
+  ---
+  duration_ms: 1.7965
+  ...
+# Subtest: target routing keeps uncorrelated plugin and MCP windows separate even when place IDs match
+ok 14 - target routing keeps uncorrelated plugin and MCP windows separate even when place IDs match
+  ---
+  duration_ms: 1.2145
+  ...
+# Subtest: target routing binds an explicitly selected provider target
+ok 15 - target routing binds an explicitly selected provider target
+  ---
+  duration_ms: 1.3257
+  ...
+# Subtest: target routing activates structural target snapshots
+ok 16 - target routing activates structural target snapshots
+  ---
+  duration_ms: 0.74
+  ...
+# Subtest: target routing matches selected targets to project metadata
+ok 17 - target routing matches selected targets to project metadata
+  ---
+  duration_ms: 0.5226
+  ...
+# Subtest: target routing reuses a valid project-saved MCP window
+ok 18 - target routing reuses a valid project-saved MCP window
+  ---
+  duration_ms: 0.4624
+  ...
+# Subtest: target routing rebinds a disconnected saved MCP session to its sole replacement
+ok 19 - target routing rebinds a disconnected saved MCP session to its sole replacement
+  ---
+  duration_ms: 0.5996
+  ...
+# Subtest: target routing fails closed when multiple live MCP targets match a saved project
+ok 20 - target routing fails closed when multiple live MCP targets match a saved project
+  ---
+  duration_ms: 0.6393
+  ...
+# Subtest: target routing replaces a stale saved MCP session with the matching live target
+ok 21 - target routing replaces a stale saved MCP session with the matching live target
+  ---
+  duration_ms: 3.7718
+  ...
+# Subtest: target routing rebinds a saved MCP session by its attested Studio window
+ok 22 - target routing rebinds a saved MCP session by its attested Studio window
+  ---
+  duration_ms: 1.7117
+  ...
+# Subtest: target routing rebinds the authoritative replacement plugin session
+ok 23 - target routing rebinds the authoritative replacement plugin session
+  ---
+  duration_ms: 1.625
+  ...
+# Subtest: default trusted context wires all canonical asset tools into capability assembly without executing them
+not ok 24 - default trusted context wires all canonical asset tools into capability assembly without executing them
+  ---
+  duration_ms: 39.3228
+  location: 'C:\\Users\\jackt\\Documents\\Codex\\2026-08-09\\can\\ui-baseline-check\\src\\routes\\taskRuntime.test.js:1212:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    19 !== 17
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 17
+  actual: 19
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (C:\Users\jackt\Documents\Codex\2026-08-09\can\ui-baseline-check\src\routes\taskRuntime.test.js:1306:10)
+    async Test.run (node:internal/test_runner/test:980:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
+  ...
+# Subtest: default task intake wires canonical owner-scoped asset search into context assembly
+ok 25 - default task intake wires canonical owner-scoped asset search into context assembly
+  ---
+  duration_ms: 69.7028
+  ...
+# Subtest: default task runtime catalog keeps direct search available while marking executor tools unavailable when executor loading fails
+not ok 26 - default task runtime catalog keeps direct search available while marking executor tools unavailable when executor loading fails
+  ---
+  duration_ms: 0.5918
+  location: 'C:\\Users\\jackt\\Documents\\Codex\\2026-08-09\\can\\ui-baseline-check\\src\\routes\\taskRuntime.test.js:1368:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    19 !== 17
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 17
+  actual: 19
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (C:\Users\jackt\Documents\Codex\2026-08-09\can\ui-baseline-check\src\routes\taskRuntime.test.js:1412:10)
+    async Test.run (node:internal/test_runner/test:980:9)
+    async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
+  ...
+# Subtest: target routing groups prompt targets across providers
+ok 27 - target routing groups prompt targets across providers
+  ---
+  duration_ms: 0.675
+  ...
+# Subtest: target routing couples bound sessions to project target metadata
+ok 28 - target routing couples bound sessions to project target metadata
+  ---
+  duration_ms: 0.4006
+  ...
+# Subtest: POST / accepts only authenticated identity and forwards deterministic request metadata
+ok 29 - POST / accepts only authenticated identity and forwards deterministic request metadata
+  ---
+  duration_ms: 286.416
+  ...
+# Subtest: action routes choose the action server-side and forward the idempotency key
+ok 30 - action routes choose the action server-side and forward the idempotency key
+  ---
+  duration_ms: 14.1538
+  ...
+# Subtest: GET /:taskId/events supports a bounded finite SSE projection
+ok 31 - GET /:taskId/events supports a bounded finite SSE projection
+  ---
+  duration_ms: 12.3025
+  ...
+# Subtest: typed failures use a safe public envelope and Retry-After header
+ok 32 - typed failures use a safe public envelope and Retry-After header
+  ---
+  duration_ms: 10.4813
+  ...
+# Subtest: ownership failures are indistinguishable from an unavailable task
+ok 33 - ownership failures are indistinguishable from an unavailable task
+  ---
+  duration_ms: 8.5696
+  ...
+1..33
+# tests 33
+# suites 0
+# pass 31
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4821.0742

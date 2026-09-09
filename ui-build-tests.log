@@ -1,0 +1,145 @@
+TAP version 13
+# Subtest: acceptance matrix uses Default and at most three declared scenarios on both devices
+ok 1 - acceptance matrix uses Default and at most three declared scenarios on both devices
+  ---
+  duration_ms: 2.1018
+  ...
+# Subtest: one successful PNG and same-revision images from another capture cannot finish a matrix
+ok 2 - one successful PNG and same-revision images from another capture cannot finish a matrix
+  ---
+  duration_ms: 0.8674
+  ...
+# Subtest: resuming capture uses the saved request and releases the worker for rendering
+ok 3 - resuming capture uses the saved request and releases the worker for rendering
+  ---
+  duration_ms: 1.9263
+  ...
+# Subtest: resuming rendering never reviews before every exact matrix slot is ready
+ok 4 - resuming rendering never reviews before every exact matrix slot is ready
+  ---
+  duration_ms: 0.7833
+  ...
+# Subtest: renderer limitations have a separate outcome and never become visual success
+ok 5 - renderer limitations have a separate outcome and never become visual success
+  ---
+  duration_ms: 0.458
+  ...
+# Subtest: review batches contain at most four images and repair cycles stop at two
+ok 6 - review batches contain at most four images and repair cycles stop at two
+  ---
+  duration_ms: 0.6579
+  ...
+# Subtest: constructor fails closed without a project authorizer
+ok 7 - constructor fails closed without a project authorizer
+  ---
+  duration_ms: 2.417
+  ...
+# Subtest: create-body normalization excludes caller-supplied ownership fields
+ok 8 - create-body normalization excludes caller-supplied ownership fields
+  ---
+  duration_ms: 1.8232
+  ...
+# Subtest: trusted approved game intelligence enters the hashed plan execution context
+ok 9 - trusted approved game intelligence enters the hashed plan execution context
+  ---
+  duration_ms: 4.7228
+  ...
+# Subtest: approved plan with invalid game intelligence project mode is rejected
+ok 10 - approved plan with invalid game intelligence project mode is rejected
+  ---
+  duration_ms: 3.0467
+  ...
+# Subtest: UI Creator task fields are revision-fenced and scoped to their workspace
+ok 11 - UI Creator task fields are revision-fenced and scoped to their workspace
+  ---
+  duration_ms: 1.8102
+  ...
+# Subtest: trusted approved structured steps compile exactly into stable canonical runtime steps
+ok 12 - trusted approved structured steps compile exactly into stable canonical runtime steps
+  ---
+  duration_ms: 2.3363
+  ...
+# Subtest: approved v3 loader output compiles without shape translation or capability aliases
+ok 13 - approved v3 loader output compiles without shape translation or capability aliases
+  ---
+  duration_ms: 19.1415
+  ...
+# Subtest: legacy approved plans retain generic planning while preserving source linkage
+ok 14 - legacy approved plans retain generic planning while preserving source linkage
+  ---
+  duration_ms: 0.6644
+  ...
+# Subtest: trusted structured plans fail closed on missing dependency IDs
+ok 15 - trusted structured plans fail closed on missing dependency IDs
+  ---
+  duration_ms: 0.5157
+  ...
+# Subtest: trusted structured plans repair unique title dependencies before compilation
+ok 16 - trusted structured plans repair unique title dependencies before compilation
+  ---
+  duration_ms: 0.5584
+  ...
+# Subtest: trusted structured plans fail closed on dependency cycles
+ok 17 - trusted structured plans fail closed on dependency cycles
+  ---
+  duration_ms: 0.33
+  ...
+# Subtest: normal conversation is classified without creating or mutating runtime state
+ok 18 - normal conversation is classified without creating or mutating runtime state
+  ---
+  duration_ms: 9.5487
+  ...
+# Subtest: trusted approved plans force noun-like goals through exact task compilation
+ok 19 - trusted approved plans force noun-like goals through exact task compilation
+  ---
+  duration_ms: 7.531
+  ...
+# Subtest: dual-write compatibility intake is internal-only and still authorizes the project
+ok 20 - dual-write compatibility intake is internal-only and still authorizes the project
+  ---
+  duration_ms: 0.8759
+  ...
+# Subtest: read re-authorizes the persisted project before returning task details
+ok 21 - read re-authorizes the persisted project before returning task details
+  ---
+  duration_ms: 2.6285
+  ...
+# Subtest: canonical reads remain independently disabled even while the canonical runtime owns writes
+ok 22 - canonical reads remain independently disabled even while the canonical runtime owns writes
+  ---
+  duration_ms: 0.2706
+  ...
+# Subtest: action rejects a no-longer-owned persisted project before any mutation
+ok 23 - action rejects a no-longer-owned persisted project before any mutation
+  ---
+  duration_ms: 0.6687
+  ...
+# Subtest: active-task lookup ignores Ask, Plan, and explicit planning turns
+ok 24 - active-task lookup ignores Ask, Plan, and explicit planning turns
+  ---
+  duration_ms: 0.4574
+  ...
+# Subtest: scheduled retry without a durable worker leaves the task scheduled
+ok 25 - scheduled retry without a durable worker leaves the task scheduled
+  ---
+  duration_ms: 0.5967
+  ...
+# Subtest: scheduled retry is consumed by the existing team worker without repeating completed specialists
+ok 26 - scheduled retry is consumed by the existing team worker without repeating completed specialists
+  ---
+  duration_ms: 75.343
+  ...
+# Subtest: Agent planning intent is persisted as a Plan task with original selected mode
+ok 27 - Agent planning intent is persisted as a Plan task with original selected mode
+  ---
+  duration_ms: 4.1716
+  ...
+1..27
+# tests 27
+# suites 0
+# pass 27
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 300.6981

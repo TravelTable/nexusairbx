@@ -1,0 +1,6 @@
+
+> nexusrbx-react@0.1.0 plugin:verify
+> node roblox-plugin/build/verify-plugin-artifact.js
+
+Plugin artifact verified (53 handlers, nexusrbx-studio-0.15.1-ui-build.17-stable-ui-capture).
+sha256=0186a01dd51c1e9cf739b23072adb3cdf1abe6cf7c35a2ddd7d48fe2a081109a

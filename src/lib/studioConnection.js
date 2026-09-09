@@ -18,8 +18,8 @@ export const MCP_CAPABILITY_LABELS = Object.freeze({
   snapshots: "Create snapshots",
 });
 
-export const EXPECTED_STUDIO_PLUGIN_VERSION = "0.15.0-ui-snapshot";
-export const EXPECTED_STUDIO_PROTOCOL_VERSION = "2026-09-08-ui-snapshot";
+export const EXPECTED_STUDIO_PLUGIN_VERSION = "0.15.1-ui-build";
+export const EXPECTED_STUDIO_PROTOCOL_VERSION = "2026-09-08-ui-build";
 
 const LIVE_IDLE_MS = 45000;
 const RUNNABLE_PLUGIN_COMPATIBILITY_STATES = new Set(["compatible", "degraded"]);

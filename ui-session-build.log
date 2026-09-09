@@ -1,0 +1,743 @@
+
+> nexusrbx-react@0.1.0 build
+> node scripts/verify-studio-download.cjs && node scripts/generate-sitemap.js --best-effort && react-scripts build && npm run public:build && node scripts/merge-public-export.js
+
+Verified Studio download: nexusrbx-studio-0.15.1-ui-build.17-stable-ui-capture
+[sitemap] fetching icon page 1: https://api.nexusrbx.com/api/icons/market?limit=500
+[sitemap] page 1: 100 icons
+[sitemap] fetching icon page 2: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJzdElGajJlaGg3bkVRWkZLcFRKWiJ9
+[sitemap] page 2: 100 icons
+[sitemap] fetching icon page 3: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJyZGh0cTBFRjlXaDBMcUNnMnQyeiJ9
+[sitemap] page 3: 100 icons
+[sitemap] fetching icon page 4: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJsQXBvcHVFeklYSk9zbndUYzBnZiJ9
+[sitemap] page 4: 100 icons
+[sitemap] fetching icon page 5: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJJR1BUNDNCUUZIYU1nTlMxSWNnOSJ9
+[sitemap] page 5: 100 icons
+[sitemap] fetching icon page 6: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJkaENpWGRsT3pxenUzUzBaWEFwSiJ9
+[sitemap] page 6: 100 icons
+[sitemap] fetching icon page 7: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJSNURhWDNSd3NMVWk1UjZmZ2puYSJ9
+[sitemap] page 7: 100 icons
+[sitemap] fetching icon page 8: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJnRzNONWhMc3AxeUJFRWN2TlBjciJ9
+[sitemap] page 8: 100 icons
+[sitemap] fetching icon page 9: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiI1Y2JNbTl6ZEN4S2ZNRkUyaFU3RiJ9
+[sitemap] page 9: 100 icons
+[sitemap] fetching icon page 10: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJOVFVmVXZOOXVhRDBYbmZqalo0dCJ9
+[sitemap] page 10: 100 icons
+[sitemap] fetching icon page 11: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiIyME0xS2lrWG9EdEM5TVZabFFYTyJ9
+[sitemap] page 11: 100 icons
+[sitemap] fetching icon page 12: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiIzNkVQZU1iWk9pUE5ERDRWbnZINiJ9
+[sitemap] page 12: 100 icons
+[sitemap] fetching icon page 13: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJHb1VYbTZDMGVrbHZTREZMbzk4RSJ9
+[sitemap] page 13: 100 icons
+[sitemap] fetching icon page 14: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJHaFFWaE1SdWN3ajFOM0VEUXFBMCJ9
+[sitemap] page 14: 100 icons
+[sitemap] fetching icon page 15: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJIamp4enR1TlhKdXozM0V1YmtTNCJ9
+[sitemap] page 15: 100 icons
+[sitemap] fetching icon page 16: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJodGtoaEFxZkNiZXRuUHZic2pQSSJ9
+[sitemap] page 16: 100 icons
+[sitemap] fetching icon page 17: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJNOFJ4NHZTOEVGZXF4bjhPQzEwaiJ9
+[sitemap] page 17: 100 icons
+[sitemap] fetching icon page 18: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJNdG1nV0ltclhLa3ZqS2VIbTBvayJ9
+[sitemap] page 18: 100 icons
+[sitemap] fetching icon page 19: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJ4WDAzOW9tVHBMZmJ3anB5WDR5WiJ9
+[sitemap] page 19: 100 icons
+[sitemap] fetching icon page 20: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJPd0N3N2QyYThibnF3cTJiNGkwVyJ9
+[sitemap] page 20: 100 icons
+[sitemap] fetching icon page 21: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJPeDZHbkpOQjhGR1VONUlmcVF3MSJ9
+[sitemap] page 21: 100 icons
+[sitemap] fetching icon page 22: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJDdWRpTlQxMHAwZ3Y3aHNBVFFMSiJ9
+[sitemap] page 22: 100 icons
+[sitemap] fetching icon page 23: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJMVnppeG5SeDFKTUl2T1haaW1DYSJ9
+[sitemap] page 23: 100 icons
+[sitemap] fetching icon page 24: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJKYUlTTVdWRUtDQzlIb2xNOTF1VyJ9
+[sitemap] page 24: 100 icons
+[sitemap] fetching icon page 25: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJpanhKQlZPR0pzS2hMdWtrWkhmTSJ9
+[sitemap] page 25: 100 icons
+[sitemap] fetching icon page 26: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJ2Um1pR0FnMHNzaTkycEQ1cmJvaSJ9
+[sitemap] page 26: 100 icons
+[sitemap] fetching icon page 27: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJQOWV1aFhpUjJlWHE2eDB0dFB3SCJ9
+[sitemap] page 27: 100 icons
+[sitemap] fetching icon page 28: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJ5ZGg4Q3NYb205bFNFQlFUbVh2NiJ9
+[sitemap] page 28: 100 icons
+[sitemap] fetching icon page 29: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJRTFNNS1J5OTMya0NsQzU0VjVEVSJ9
+[sitemap] page 29: 100 icons
+[sitemap] fetching icon page 30: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJjSm10UTZPbWwxN1dMZ1dxempjaCJ9
+[sitemap] page 30: 100 icons
+[sitemap] fetching icon page 31: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJiQnhTUmJ2TmRoVHlVNm5NekltUCJ9
+[sitemap] page 31: 100 icons
+[sitemap] fetching icon page 32: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJldkJpQnBxZWVVc2ZWUEdTZnMyeiJ9
+[sitemap] page 32: 100 icons
+[sitemap] fetching icon page 33: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJUb1owTUh2UGJ1TktkNjY5WHFneiJ9
+[sitemap] page 33: 100 icons
+[sitemap] fetching icon page 34: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJicFU3bkV0ajZjSW5qNThsUTNGVSJ9
+[sitemap] page 34: 100 icons
+[sitemap] fetching icon page 35: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJoVXc5UXJ2bEFEVUdZdlRxcW9xaSJ9
+[sitemap] page 35: 100 icons
+[sitemap] fetching icon page 36: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJFS0tPYTdtcWJDWkpISEhWRTJuNyJ9
+[sitemap] page 36: 100 icons
+[sitemap] fetching icon page 37: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJXTU1QdG5LZFFZNGxRNzd1RTFBbyJ9
+[sitemap] page 37: 100 icons
+[sitemap] fetching icon page 38: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJMUFplQko5UmpHYXlQbGRYQllwZyJ9
+[sitemap] page 38: 100 icons
+[sitemap] fetching icon page 39: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJwTTh4M0lVT1RxYVNlelZyTTUyUyJ9
+[sitemap] page 39: 100 icons
+[sitemap] fetching icon page 40: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJmNEk1Uk9Mb1RYMnZoZW9palJDYiJ9
+[sitemap] page 40: 100 icons
+[sitemap] fetching icon page 41: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJOQTZ3Ylg4b2xnTGpFYXlDc3JOVSJ9
+[sitemap] page 41: 100 icons
+[sitemap] fetching icon page 42: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJlU2Q0SGN6QVhPOExaY2Y4VjdKVyJ9
+[sitemap] page 42: 100 icons
+[sitemap] fetching icon page 43: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJ1MWFNNzFFTG81N0xzYmQ2SVdsOSJ9
+[sitemap] page 43: 80 icons
+[sitemap] fetching icon page 44: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJnNGNxVmNEZ2hCSjFFbkZoTnI1bCJ9
+[sitemap] page 44: 100 icons
+[sitemap] fetching icon page 45: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJiSkxvUFNUanVEUTRzVTlzNlFjYyJ9
+[sitemap] page 45: 100 icons
+[sitemap] fetching icon page 46: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJXQzNGV3dqUlFBUHZDWllFSG1iZiJ9
+[sitemap] page 46: 100 icons
+[sitemap] fetching icon page 47: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJZVWpFeXVTSExaU0NNR0NRME5obSJ9
+[sitemap] page 47: 100 icons
+[sitemap] fetching icon page 48: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiI5QlJVOThqd2pmWHQ1dXN4SE8zVyJ9
+[sitemap] page 48: 100 icons
+[sitemap] fetching icon page 49: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJVaG5oZjl0S1pSU1c0WnNlWlkzdCJ9
+[sitemap] page 49: 100 icons
+[sitemap] fetching icon page 50: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJYMkRLdGUySlBIeXNQTmszS3NmMyJ9
+[sitemap] page 50: 100 icons
+[sitemap] fetching icon page 51: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJDYnNtNGlsdnlUUXR5V2U1VFJJcCJ9
+[sitemap] page 51: 100 icons
+[sitemap] fetching icon page 52: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJJQnVrTXdsWlp1dndkaHVyMldBYyJ9
+[sitemap] page 52: 100 icons
+[sitemap] fetching icon page 53: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJvcXRtZTljdGFhQjRMeTZtd0hJQSJ9
+[sitemap] page 53: 100 icons
+[sitemap] fetching icon page 54: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiI2dmI3QWNqNmNuY01ycFI3Y2l6QSJ9
+[sitemap] page 54: 100 icons
+[sitemap] fetching icon page 55: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJiNXk1QnVsdmpSeUZPaUdhMFlzcyJ9
+[sitemap] page 55: 100 icons
+[sitemap] fetching icon page 56: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiIySDFFQll0TVcwU3llc1JzNzJVbiJ9
+[sitemap] page 56: 100 icons
+[sitemap] fetching icon page 57: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJKbWhVaTY2R3ZBR0R4RHVmZFRnRSJ9
+[sitemap] page 57: 100 icons
+[sitemap] fetching icon page 58: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJBZkRoMXYzdWxuYlkyOHVPbk55ZSJ9
+[sitemap] page 58: 100 icons
+[sitemap] fetching icon page 59: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJScWF1ekh5ajJIYVNBdXJQcnVmcyJ9
+[sitemap] page 59: 100 icons
+[sitemap] fetching icon page 60: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiI5emczWGxDeVJzM0I0dWZHRUEyOCJ9
+[sitemap] page 60: 100 icons
+[sitemap] fetching icon page 61: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJ1ZnppQ2F4N2JxbEthRWNqWDhHWSJ9
+[sitemap] page 61: 100 icons
+[sitemap] fetching icon page 62: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJuSUduZWNVVlpXRGp6TUh0R3hPTCJ9
+[sitemap] page 62: 100 icons
+[sitemap] fetching icon page 63: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiIwbThQa2E3MTIxaHkxWnZQTm1QQyJ9
+[sitemap] page 63: 100 icons
+[sitemap] fetching icon page 64: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJSOUFCR3dKRDJPR2ZyQ2JpVlVGVSJ9
+[sitemap] page 64: 100 icons
+[sitemap] fetching icon page 65: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiI3VkM1VjZuS2FJYXN2TmpVenBLeiJ9
+[sitemap] page 65: 100 icons
+[sitemap] fetching icon page 66: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJqOEVodVlmRFVnRmZxMWoydDlVZiJ9
+[sitemap] page 66: 100 icons
+[sitemap] fetching icon page 67: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJST3VGQjZCQWtFMHpEcE80OVhXTiJ9
+[sitemap] page 67: 100 icons
+[sitemap] fetching icon page 68: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJBTHQyRXZoNEhjS1piNE90MXF1QSJ9
+[sitemap] page 68: 100 icons
+[sitemap] fetching icon page 69: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJKWFdJYUl1TFdHdEtqMEJMdDFMQiJ9
+[sitemap] page 69: 100 icons
+[sitemap] fetching icon page 70: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiIxYUc4UFoxU1VWNVN1NzhhVUJISyJ9
+[sitemap] page 70: 100 icons
+[sitemap] fetching icon page 71: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJBNHJXcndHQTNFeGhsajYwV3J6NiJ9
+[sitemap] page 71: 100 icons
+[sitemap] fetching icon page 72: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiIzbThSdmRad2xiN25xc1ZscVlRViJ9
+[sitemap] page 72: 100 icons
+[sitemap] fetching icon page 73: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJ3cE1nR0lSd0NiRVFLT21WUUhJeCJ9
+[sitemap] page 73: 100 icons
+[sitemap] fetching icon page 74: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJjUnlhbWdEOWNDODMzYXlVeVBWbiJ9
+[sitemap] page 74: 100 icons
+[sitemap] fetching icon page 75: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJzdXRWdE0zVjV4VkdDTUxKMng5UiJ9
+[sitemap] page 75: 100 icons
+[sitemap] fetching icon page 76: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJuN2J3blZzS0dtVTlub2NFR1diNyJ9
+[sitemap] page 76: 100 icons
+[sitemap] fetching icon page 77: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJNVlVXZ2p1cXdEQ0paN05HT1lxcCJ9
+[sitemap] page 77: 100 icons
+[sitemap] fetching icon page 78: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJuN0M2YW9lZ3V0bTVveVJidU5QTiJ9
+[sitemap] page 78: 100 icons
+[sitemap] fetching icon page 79: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJiVkJnc2Znd2hEZnNoUG9pZll3UCJ9
+[sitemap] page 79: 100 icons
+[sitemap] fetching icon page 80: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiIyeUFjYVVxaTBEanUzYnlmSmZZcyJ9
+[sitemap] page 80: 100 icons
+[sitemap] fetching icon page 81: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiI3d3g4N0ZpeWJ4Z254OVlaN3J1aiJ9
+[sitemap] page 81: 100 icons
+[sitemap] fetching icon page 82: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiIzc1B1Tk9NblZ2S3dqbVdLY2lqZSJ9
+[sitemap] page 82: 100 icons
+[sitemap] fetching icon page 83: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiI5Y3doYk90MndDTTh4VUdFVktJMiJ9
+[sitemap] page 83: 100 icons
+[sitemap] fetching icon page 84: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJyTUwwaFlSSlFub2U4MUM0Y1FwRSJ9
+[sitemap] page 84: 100 icons
+[sitemap] fetching icon page 85: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJoVjlZQlB0bzJEZGwyclExajFRcCJ9
+[sitemap] page 85: 100 icons
+[sitemap] fetching icon page 86: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJtdUhKYWJ2anNhS3F2VXEwZmwwViJ9
+[sitemap] page 86: 100 icons
+[sitemap] fetching icon page 87: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJPWXA5Ymt3QzNZRXNhWW5EdFg1bSJ9
+[sitemap] page 87: 100 icons
+[sitemap] fetching icon page 88: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiI5UUpzTU5JUWh2VXJrT2dJdU5jSCJ9
+[sitemap] page 88: 100 icons
+[sitemap] fetching icon page 89: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJxMlNFR3VxdW1GQnhIVGoyckVXdCJ9
+[sitemap] page 89: 100 icons
+[sitemap] fetching icon page 90: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJRTGR0eVE5cjhyZ1c3VGliZEZhMSJ9
+[sitemap] page 90: 100 icons
+[sitemap] fetching icon page 91: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJSVFVVT3MwMWNORzhhMmhQc2lBYyJ9
+[sitemap] page 91: 100 icons
+[sitemap] fetching icon page 92: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJEWkpWR3V5d2RyQlpmb1VVUzhyMiJ9
+[sitemap] page 92: 100 icons
+[sitemap] fetching icon page 93: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJjMlJCREVYYzg4OWNNdmE1c25hYiJ9
+[sitemap] page 93: 100 icons
+[sitemap] fetching icon page 94: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJWRWRFSWhIYXFlRkR1SGxYa2dzMiJ9
+[sitemap] page 94: 100 icons
+[sitemap] fetching icon page 95: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJ4SG1lamZhVlhreEtYdW9ES0hCSiJ9
+[sitemap] page 95: 100 icons
+[sitemap] fetching icon page 96: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJLZXV4VWpnNFJmcUVWc3ZyUkNLUiJ9
+[sitemap] page 96: 100 icons
+[sitemap] fetching icon page 97: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJiTkFwRkt1RXB1Uk9QSzN6WlM0YSJ9
+[sitemap] page 97: 100 icons
+[sitemap] fetching icon page 98: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJGc3JrdE1FMWhoYVJIMlh3cEpKeSJ9
+[sitemap] page 98: 100 icons
+[sitemap] fetching icon page 99: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiI3T0hnempxYW9XMFp6MUk0S0ZLOCJ9
+[sitemap] page 99: 100 icons
+[sitemap] fetching icon page 100: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiI0djdOVlJtbjVMRE1FU2tTY1Q0QiJ9
+[sitemap] page 100: 100 icons
+[sitemap] fetching icon page 101: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJjZVhJcG85aUJpR21BaHQ4UkVCRCJ9
+[sitemap] page 101: 100 icons
+[sitemap] fetching icon page 102: https://api.nexusrbx.com/api/icons/market?limit=500&lastDocId=nexus-icon-v1.eyJ2IjoxLCJtIjoiY3JlYXRlZF9hdCIsImQiOiJSUWhJS0FJYmp4akhTcUhaNVk3YyJ9
+[sitemap] page 102: 61 icons
+[sitemap] generated sitemap index and child sitemaps
+[sitemap] included core=3, docs=22, examples=5, icons=150
+[sitemap] qualified icons=7457, published icons=150, unpublished qualified icons=7307
+[sitemap] excluded icons=2684
+[sitemap] exclusion reasons={"thin_or_duplicate_name":2684}
+[sitemap] indexable categories=6, excluded categories=0
+[sitemap] unpublished qualified samples=["0up5ed6UJtS3CGovHpvk","0uPuoD5mcosLXxHcrOx1","0uT9rqQuygEXsqCDxtVA","0UvVsQSymrB75VGYOblq","0UX0yN718RSqA0UjCCAT","0VQBbiB0XRV5wqsStZO2","0vqmt5kO0wjSvrgXFVNu","0VvgxAA4AAC700GyhaOI","0W7KgaEqSj8Fz4ERWHSF","0WC4UrffPtpUmQcxe3vN","0wd2FNGfjHsFs6y3cL9O","0Weth2wYLMKJe9ILAYwZ","0wqvRxswdUqDe6vsTD7M","0X9whhed2lmabjc4P2qt","0XfrR6tPnkeRhOLj4azj","0xLLOTuuH9NB20DbXrfz","0xo3IY7571QF6qWN3qdh","0xVGyuTve7IPsHGycmHU","0Yb4I7ZC0pUMHkla2QUQ","0ZNuroRnJ5IGR28j8hlr"]
+[sitemap] exclusion samples=[{"id":"0knZqgRQvMauQHWEa7ho","name":"Button - Button Round 3d 2.5 Brown Standard","reasons":["thin_or_duplicate_name"]},{"id":"1h8lpp5fYElxJ9Js6ZhX","name":"Diamond","reasons":["thin_or_duplicate_name"]},{"id":"1mB2kynzaBrfVEg1t0pT","name":"Button - Button Round Flat 1 White Focus","reasons":["thin_or_duplicate_name"]},{"id":"1UwhmHLEHtimCVr6atxF","name":"Cloud 2nd Outline 64px","reasons":["thin_or_duplicate_name"]},{"id":"1Zsc3ULwJME4Hp6zT4Jo","name":"Cross","reasons":["thin_or_duplicate_name"]},{"id":"27BBLe1aEv0tKrsvbroR","name":"Bar - Progress Container Thin Grey Lighter","reasons":["thin_or_duplicate_name"]},{"id":"2E6GfHEJXZpvj41dkq9h","name":"Widget - Checkbox Cross Black","reasons":["thin_or_duplicate_name"]},{"id":"2LxD15k1v5Tqa4b2fzG5","name":"Green Upgrade 2nd Outline 256px","reasons":["thin_or_duplicate_name"]},{"id":"2oD8bgGT5hvtBh3EkYZ6","name":"Silver 1st Outline 256px","reasons":["thin_or_duplicate_name"]},{"id":"2UQtEN6oaRzCeNdZgltT","name":"Chat 1st Outline 64px","reasons":["thin_or_duplicate_name"]},{"id":"2uUAGWDkY0ihuU79IH8w","name":"Moon","reasons":["thin_or_duplicate_name"]},{"id":"3fX6rWralyj9E9XyNYZF","name":"Egg - Kraken Egg Golden Outline 64px","reasons":["thin_or_duplicate_name"]},{"id":"3mUhaXxmM9PbHDmqJ5Jp","name":"Music ON 2nd 256px","reasons":["thin_or_duplicate_name"]},{"id":"3nJEMWRrgjNEILbXnTZJ","name":"Torch 2nd 256px","reasons":["thin_or_duplicate_name"]},{"id":"3QgMOkgzb7Cw6zWgwCmU","name":"Button - Button Square 3d 1 Yellow Light Hover","reasons":["thin_or_duplicate_name"]},{"id":"3UKK6M5tM5nwHs4QlCP2","name":"Golden Shopping Bag 1st 64px","reasons":["thin_or_duplicate_name"]},{"id":"3w503HT7O3ifJz3eVHjH","name":"RightRed","reasons":["thin_or_duplicate_name"]},{"id":"4CGSnQvBTiR7hO1zZFnd","name":"Button - Button Round Flat 1 Forestgreen Regular Focus","reasons":["thin_or_duplicate_name"]},{"id":"4IRlf0caHf4pnXE4OIeR","name":"Tv","reasons":["thin_or_duplicate_name"]},{"id":"4KrI9AoDZh2ou2W6tR6X","name":"Button - Button Square 3d 1 Green Regular Hover","reasons":["thin_or_duplicate_name"]}]
+Creating an optimized production build...
+Compiled with warnings.
+
+[eslint] 
+src\pages\ai\ui\UiCreatorChrome.jsx
+  Line 2:118:  'Settings' is defined but never used                                                                                                      no-unused-vars
+  Line 35:6:   React Hook useEffect has a missing dependency: 'drawer'. Either include it or remove the dependency array                                 react-hooks/exhaustive-deps
+  Line 35:7:   React Hook useEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked  react-hooks/exhaustive-deps
+
+src\pages\ai\ui\UiCreatorWorkspace.jsx
+  Line 84:51:  The ref value 'loadSequence.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'loadSequence.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+src\pages\ai\ui\UiPreviewPane.jsx
+  Line 50:63:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 50:81:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 51:60:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 51:78:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+File sizes after gzip:
+
+  466.63 kB          build\static\js\5129.e544daa6.chunk.js
+  321.82 kB (-84 B)  build\static\js\main.db5f127f.js
+  255.29 kB          build\static\js\7326.e132fd43.chunk.js
+  230.33 kB          build\static\js\9960.1bbe7ba0.chunk.js
+  196.08 kB          build\static\js\892.6a6bf1e8.chunk.js
+  151.05 kB          build\static\js\5502.269ee099.chunk.js
+  135.78 kB          build\static\js\646.bea42bd9.chunk.js
+  83.74 kB           build\static\js\9408.1bfa48ea.chunk.js
+  77.18 kB           build\static\js\4498.a04155a0.chunk.js
+  57.04 kB           build\static\js\9435.4ee02b46.chunk.js
+  46.47 kB           build\static\js\7933.53abad3c.chunk.js
+  42.01 kB           build\static\js\370.c8dea3c8.chunk.js
+  41.37 kB           build\static\js\6206.8fa7a66b.chunk.js
+  40.36 kB           build\static\js\7162.f250e12f.chunk.js
+  31.3 kB            build\static\js\4181.f082ba7c.chunk.js
+  30.53 kB           build\static\js\1451.23695fbc.chunk.js
+  29.88 kB           build\static\js\1876.ef32fce5.chunk.js
+  29.02 kB           build\static\js\9850.11f85867.chunk.js
+  28.32 kB           build\static\js\8685.6709c6cf.chunk.js
+  27.3 kB            build\static\css\main.d372a863.css
+  26.21 kB           build\static\js\3961.5a14d92b.chunk.js
+  25.19 kB           build\static\js\7160.34093bb6.chunk.js
+  23.4 kB            build\static\js\1112.f9ee7e5f.chunk.js
+  23.39 kB           build\static\js\9715.34047089.chunk.js
+  21.49 kB           build\static\js\3315.72387f1b.chunk.js
+  20.89 kB           build\static\js\655.288c8d50.chunk.js
+  20.58 kB           build\static\js\2365.a4a1c976.chunk.js
+  20.07 kB           build\static\js\6942.1bd33d3c.chunk.js
+  19.46 kB           build\static\css\7326.89c3c147.chunk.css
+  19.37 kB           build\static\js\9807.014d9245.chunk.js
+  17.61 kB           build\static\js\7010.309f9d8f.chunk.js
+  17.01 kB           build\static\js\4885.72e11f89.chunk.js
+  16.9 kB            build\static\js\7718.1e737fe8.chunk.js
+  16.56 kB           build\static\js\8126.1d6421ba.chunk.js
+  16.37 kB           build\static\js\2085.be7da9af.chunk.js
+  16.35 kB           build\static\js\6141.982a841b.chunk.js
+  16.26 kB           build\static\js\723.e44c0abf.chunk.js
+  16.26 kB           build\static\js\407.961ff3a3.chunk.js
+  16.2 kB            build\static\js\7948.8d3225c1.chunk.js
+  15.82 kB           build\static\js\1539.b01e788c.chunk.js
+  15.25 kB           build\static\js\4347.0f226a0d.chunk.js
+  15.05 kB           build\static\js\7572.4fc8d066.chunk.js
+  14.7 kB            build\static\js\1705.690ee1b5.chunk.js
+  14.63 kB           build\static\js\6955.4641d721.chunk.js
+  14.34 kB           build\static\js\3140.07222021.chunk.js
+  13.4 kB            build\static\js\5843.ff0f8b50.chunk.js
+  13.22 kB           build\static\js\8942.d960ac15.chunk.js
+  12.46 kB           build\static\js\6010.929432be.chunk.js
+  12.41 kB           build\static\js\2321.ba45b99a.chunk.js
+  12.08 kB           build\static\css\5360.1a53ea9a.chunk.css
+  11.94 kB           build\static\js\4727.63efce99.chunk.js
+  11.7 kB            build\static\js\6757.90b21c21.chunk.js
+  11.68 kB           build\static\js\6147.afe19767.chunk.js
+  11.61 kB           build\static\js\1217.eedf8755.chunk.js
+  11.32 kB           build\static\js\4685.6363b913.chunk.js
+  11.2 kB            build\static\js\3446.f60cd59c.chunk.js
+  11.01 kB           build\static\js\2190.558cd01a.chunk.js
+  10.91 kB           build\static\js\35.6db3c7ef.chunk.js
+  10.9 kB            build\static\js\7801.de59084a.chunk.js
+  10.83 kB           build\static\js\6506.d66d5834.chunk.js
+  10.75 kB           build\static\js\3762.4747b1ca.chunk.js
+  10.66 kB           build\static\js\851.e836a27b.chunk.js
+  10.58 kB           build\static\js\962.66be39a9.chunk.js
+  10.53 kB           build\static\js\5281.59544412.chunk.js
+  10.08 kB           build\static\js\3356.11861241.chunk.js
+  10.04 kB           build\static\js\6575.61a71246.chunk.js
+  9.8 kB             build\static\js\9721.cba31c6b.chunk.js
+  9.8 kB             build\static\js\9349.3ae033f0.chunk.js
+  9.77 kB            build\static\js\3663.46d1d42c.chunk.js
+  9.49 kB            build\static\js\123.4b3d8363.chunk.js
+  9.39 kB            build\static\js\4967.b5c008f1.chunk.js
+  9.28 kB            build\static\js\5299.35ad5ab1.chunk.js
+  9.17 kB            build\static\js\772.02fbdbc8.chunk.js
+  9.16 kB            build\static\js\2684.7833b719.chunk.js
+  9 kB               build\static\js\555.5da67996.chunk.js
+  8.93 kB            build\static\js\3608.95e84edc.chunk.js
+  8.79 kB            build\static\js\8106.ba72ab07.chunk.js
+  8.55 kB            build\static\js\3095.a1289d75.chunk.js
+  8.5 kB             build\static\js\6718.3a65d88c.chunk.js
+  8.5 kB             build\static\js\9756.8c703cdc.chunk.js
+  8.48 kB            build\static\js\6487.4fc81a5c.chunk.js
+  8.48 kB            build\static\js\7981.b59afaab.chunk.js
+  8.48 kB            build\static\js\9011.3c6eb5bb.chunk.js
+  8.34 kB            build\static\js\4337.16c5f7cc.chunk.js
+  8.2 kB             build\static\js\4896.92bba94e.chunk.js
+  8.2 kB             build\static\js\4463.8482532b.chunk.js
+  8.12 kB            build\static\js\9802.c733b7fa.chunk.js
+  8.09 kB            build\static\js\3444.0115caa5.chunk.js
+  8.07 kB            build\static\js\2305.a94baea8.chunk.js
+  8.07 kB            build\static\js\3162.5b16f893.chunk.js
+  8.06 kB            build\static\js\7458.fcd9692f.chunk.js
+  8.06 kB            build\static\js\2117.23aa9cf9.chunk.js
+  7.91 kB            build\static\js\1405.b4e407db.chunk.js
+  7.5 kB             build\static\js\1662.90761fc1.chunk.js
+  7.4 kB             build\static\js\7134.ba6d7c8a.chunk.js
+  7.28 kB            build\static\js\1459.79be565d.chunk.js
+  7.13 kB            build\static\js\62.a620f10c.chunk.js
+  6.98 kB            build\static\js\2800.dee665ab.chunk.js
+  6.83 kB            build\static\js\4026.d3fac39d.chunk.js
+  6.82 kB            build\static\js\2030.84f629ba.chunk.js
+  6.81 kB            build\static\js\641.504a5d8f.chunk.js
+  6.78 kB            build\static\js\5437.7f81df36.chunk.js
+  6.75 kB            build\static\js\6847.44b2028b.chunk.js
+  6.64 kB            build\static\js\9825.2b5c036a.chunk.js
+  6.59 kB            build\static\js\8807.76df78e8.chunk.js
+  6.47 kB            build\static\js\6590.7e4a2c3d.chunk.js
+  6.43 kB            build\static\js\1910.f23d7249.chunk.js
+  6.3 kB             build\static\js\2408.9a4f4121.chunk.js
+  6.17 kB            build\static\js\1746.625eea69.chunk.js
+  6.15 kB            build\static\js\3265.7bd94469.chunk.js
+  6.1 kB             build\static\js\9047.2a1d8e2e.chunk.js
+  6.06 kB            build\static\js\9230.df360389.chunk.js
+  6.02 kB            build\static\js\7850.d4100bb0.chunk.js
+  6.01 kB            build\static\js\3996.b42c9442.chunk.js
+  6 kB               build\static\js\8487.e0ee2208.chunk.js
+  5.98 kB            build\static\js\3427.f59bc02a.chunk.js
+  5.98 kB            build\static\js\3662.a79b6420.chunk.js
+  5.94 kB            build\static\js\6345.3f7bda1e.chunk.js
+  5.86 kB            build\static\js\1789.ae0859d1.chunk.js
+  5.84 kB            build\static\js\454.af1d2c5a.chunk.js
+  5.83 kB            build\static\js\337.a00b373d.chunk.js
+  5.82 kB            build\static\js\3837.bfdf39a7.chunk.js
+  5.75 kB            build\static\js\4626.4700ae7c.chunk.js
+  5.74 kB            build\static\js\908.701f0352.chunk.js
+  5.71 kB            build\static\js\4089.73f9a1f4.chunk.js
+  5.71 kB            build\static\css\7160.f2e8df50.chunk.css
+  5.64 kB            build\static\js\3263.aad0cf05.chunk.js
+  5.6 kB             build\static\js\2927.0370d039.chunk.js
+  5.59 kB            build\static\js\6894.cb7df3e8.chunk.js
+  5.56 kB            build\static\js\6071.9da049c4.chunk.js
+  5.5 kB             build\static\js\616.f134f1e1.chunk.js
+  5.38 kB            build\static\js\582.c9d5e323.chunk.js
+  5.31 kB            build\static\js\7670.84c8885c.chunk.js
+  5.31 kB            build\static\js\2329.dc9bc58c.chunk.js
+  5.28 kB            build\static\js\8192.4a0e4a6c.chunk.js
+  5.26 kB            build\static\js\9570.c05c26e2.chunk.js
+  5.25 kB            build\static\js\5024.d49027fe.chunk.js
+  5.24 kB            build\static\js\9405.199ea509.chunk.js
+  5.17 kB            build\static\js\1424.d9bd23f9.chunk.js
+  5.07 kB            build\static\js\5714.49e63ff4.chunk.js
+  5.05 kB            build\static\js\471.47c0e830.chunk.js
+  4.93 kB            build\static\js\8412.374a8f83.chunk.js
+  4.85 kB            build\static\js\911.afe1bd2a.chunk.js
+  4.85 kB            build\static\js\3047.9664bbca.chunk.js
+  4.84 kB            build\static\js\875.e5523415.chunk.js
+  4.8 kB             build\static\js\8946.cab310c1.chunk.js
+  4.7 kB             build\static\js\1313.2e25d0d8.chunk.js
+  4.68 kB            build\static\js\8593.15247417.chunk.js
+  4.6 kB             build\static\js\3906.bde82279.chunk.js
+  4.52 kB            build\static\css\4885.6f9592c1.chunk.css
+  4.49 kB            build\static\js\5810.d5e9bdd7.chunk.js
+  4.47 kB            build\static\js\9172.3f9c8b73.chunk.js
+  4.44 kB            build\static\js\31.acf3acab.chunk.js
+  4.44 kB            build\static\js\7583.3ebe18d8.chunk.js
+  4.38 kB            build\static\js\1878.f2aa1d43.chunk.js
+  4.37 kB            build\static\js\4591.8a6ee87c.chunk.js
+  4.36 kB            build\static\js\2659.595033c1.chunk.js
+  4.36 kB            build\static\js\418.bcac1b45.chunk.js
+  4.29 kB            build\static\js\2319.0942f8b9.chunk.js
+  4.28 kB            build\static\js\7738.26124c3a.chunk.js
+  4.28 kB            build\static\js\3789.ba6a6d22.chunk.js
+  4.28 kB            build\static\js\4478.eb207af6.chunk.js
+  4.28 kB            build\static\js\9417.cb9c12ef.chunk.js
+  4.28 kB            build\static\js\9488.89c42b4d.chunk.js
+  4.28 kB            build\static\js\2883.b9f9f7be.chunk.js
+  4.21 kB            build\static\js\9298.3facecfd.chunk.js
+  4.2 kB             build\static\js\5316.60737b9c.chunk.js
+  4.2 kB             build\static\js\3796.bfa7caf7.chunk.js
+  4.19 kB            build\static\js\2066.3db0d5d6.chunk.js
+  4.14 kB            build\static\js\6381.0c49919a.chunk.js
+  4.13 kB            build\static\js\918.8add0e11.chunk.js
+  4.1 kB             build\static\js\4793.ee53ac8f.chunk.js
+  4.09 kB            build\static\js\2526.31973e9f.chunk.js
+  4.04 kB            build\static\js\9930.2b546750.chunk.js
+  4.03 kB            build\static\js\7278.78df8dfd.chunk.js
+  4.02 kB            build\static\js\4028.c880d127.chunk.js
+  4.02 kB            build\static\js\3242.4e796991.chunk.js
+  4.01 kB            build\static\js\5023.d7ceaa31.chunk.js
+  4.01 kB            build\static\js\3256.6ef1d49c.chunk.js
+  3.99 kB            build\static\css\3419.2cd930d7.chunk.css
+  3.99 kB            build\static\js\1646.d4919c86.chunk.js
+  3.98 kB            build\static\js\4479.8cbe4ce1.chunk.js
+  3.97 kB            build\static\js\5888.2289ba3c.chunk.js
+  3.96 kB            build\static\js\2531.5a904e75.chunk.js
+  3.96 kB            build\static\js\811.ad93a10d.chunk.js
+  3.95 kB            build\static\js\9008.514df425.chunk.js
+  3.95 kB            build\static\js\6027.5be9d7a3.chunk.js
+  3.92 kB            build\static\js\1496.3c324985.chunk.js
+  3.92 kB            build\static\js\1259.338e2bf2.chunk.js
+  3.91 kB            build\static\js\3129.636b1d0a.chunk.js
+  3.88 kB            build\static\js\442.2d44976a.chunk.js
+  3.86 kB            build\static\js\6408.bd71e663.chunk.js
+  3.85 kB            build\static\js\5790.27b350db.chunk.js
+  3.83 kB            build\static\js\1916.3edd53e6.chunk.js
+  3.77 kB            build\static\js\5216.836129ce.chunk.js
+  3.74 kB            build\static\js\4944.f25b35a5.chunk.js
+  3.74 kB            build\static\js\4323.7b9fad24.chunk.js
+  3.74 kB            build\static\js\3778.b06203fb.chunk.js
+  3.73 kB            build\static\js\2451.5fcca0d6.chunk.js
+  3.72 kB            build\static\js\1421.f5694c54.chunk.js
+  3.69 kB            build\static\js\5340.17f1a717.chunk.js
+  3.66 kB            build\static\js\8937.46f78fd3.chunk.js
+  3.65 kB            build\static\js\2780.be439e39.chunk.js
+  3.61 kB            build\static\js\9982.94360d42.chunk.js
+  3.59 kB            build\static\js\9877.0aca1164.chunk.js
+  3.51 kB            build\static\js\9283.5b6c21b4.chunk.js
+  3.5 kB             build\static\js\5563.fb5775cb.chunk.js
+  3.49 kB            build\static\css\2301.8e322ab3.chunk.css
+  3.42 kB            build\static\js\4766.d15ecbce.chunk.js
+  3.36 kB            build\static\js\6395.60259ae8.chunk.js
+  3.34 kB            build\static\js\4229.8561819f.chunk.js
+  3.33 kB            build\static\js\5571.bd0723bf.chunk.js
+  3.29 kB            build\static\js\469.aaafd1d7.chunk.js
+  3.27 kB            build\static\js\3761.517895a1.chunk.js
+  3.25 kB            build\static\js\3600.220bc293.chunk.js
+  3.22 kB            build\static\js\7839.a57d81c6.chunk.js
+  3.22 kB            build\static\js\9153.307d2172.chunk.js
+  3.22 kB (-1 B)     build\static\js\7251.17664d5c.chunk.js
+  3.21 kB            build\static\js\2638.da123805.chunk.js
+  3.2 kB             build\static\js\5022.8d1098f7.chunk.js
+  3.2 kB             build\static\js\8026.b25d144b.chunk.js
+  3.2 kB             build\static\js\5032.b1083d5e.chunk.js
+  3.19 kB            build\static\js\4217.b159504e.chunk.js
+  3.17 kB            build\static\js\129.c4156f74.chunk.js
+  3.17 kB            build\static\js\8735.71e56b72.chunk.js
+  3.16 kB            build\static\js\6848.39996494.chunk.js
+  3.16 kB            build\static\js\8565.e2723115.chunk.js
+  3.16 kB            build\static\js\2289.09a5d901.chunk.js
+  3.14 kB            build\static\js\2881.c287c6b4.chunk.js
+  3.13 kB            build\static\js\2063.0f3ebdf1.chunk.js
+  3.11 kB            build\static\js\4283.a2b9d390.chunk.js
+  3.1 kB             build\static\js\8530.bb6aab94.chunk.js
+  3.07 kB            build\static\css\3095.a1783087.chunk.css
+  3.05 kB            build\static\js\9213.e65ac835.chunk.js
+  3.03 kB            build\static\js\2634.ccb2c011.chunk.js
+  3.03 kB            build\static\js\7426.add8c2be.chunk.js
+  3.02 kB            build\static\js\1444.bdcd7843.chunk.js
+  3.01 kB            build\static\js\5792.da344907.chunk.js
+  3 kB               build\static\js\5449.b718502d.chunk.js
+  3 kB               build\static\js\3011.f6a8f0ee.chunk.js
+  2.99 kB            build\static\js\5065.127fdc32.chunk.js
+  2.98 kB            build\static\js\7826.686b4dba.chunk.js
+  2.97 kB            build\static\js\711.9e69f21d.chunk.js
+  2.91 kB            build\static\js\2613.cdb5e09f.chunk.js
+  2.83 kB            build\static\js\8307.99a32f07.chunk.js
+  2.83 kB            build\static\js\5820.58d4d545.chunk.js
+  2.8 kB             build\static\js\1776.7cb084a4.chunk.js
+  2.77 kB            build\static\js\7253.e9152859.chunk.js
+  2.7 kB             build\static\js\7258.f87ea032.chunk.js
+  2.69 kB            build\static\js\9627.6b96a10a.chunk.js
+  2.69 kB            build\static\js\5929.fbf9f863.chunk.js
+  2.68 kB            build\static\js\8385.72e30fd3.chunk.js
+  2.67 kB            build\static\js\858.7b32604b.chunk.js
+  2.66 kB            build\static\js\3928.4150f543.chunk.js
+  2.65 kB            build\static\js\6607.37d490b3.chunk.js
+  2.64 kB            build\static\js\4897.d74e97d0.chunk.js
+  2.61 kB            build\static\js\1442.a6059774.chunk.js
+  2.61 kB            build\static\js\1195.70e81c34.chunk.js
+  2.59 kB            build\static\js\714.62347aa7.chunk.js
+  2.59 kB            build\static\js\8728.3cc393ad.chunk.js
+  2.58 kB            build\static\js\3787.c58f8365.chunk.js
+  2.57 kB            build\static\js\1934.234cd503.chunk.js
+  2.55 kB            build\static\js\5729.46242801.chunk.js
+  2.5 kB             build\static\css\62.38c59e5e.chunk.css
+  2.47 kB            build\static\js\2141.7c77fe6b.chunk.js
+  2.46 kB            build\static\js\626.33e28e96.chunk.js
+  2.39 kB            build\static\js\6466.7f4046bb.chunk.js
+  2.38 kB            build\static\js\224.67593249.chunk.js
+  2.37 kB            build\static\js\9783.8b28b24d.chunk.js
+  2.36 kB            build\static\js\4360.74a8a123.chunk.js
+  2.35 kB            build\static\js\2693.f3030457.chunk.js
+  2.34 kB            build\static\js\7353.c696d953.chunk.js
+  2.33 kB            build\static\js\9947.6036f8ca.chunk.js
+  2.3 kB             build\static\js\4755.7194381b.chunk.js
+  2.29 kB            build\static\js\1082.205d783a.chunk.js
+  2.24 kB            build\static\js\4501.d5e5ca00.chunk.js
+  2.23 kB            build\static\js\4160.a0fc704f.chunk.js
+  2.22 kB            build\static\js\8114.b25d478b.chunk.js
+  2.21 kB            build\static\js\3614.1c459a95.chunk.js
+  2.21 kB            build\static\js\2384.3ee18317.chunk.js
+  2.2 kB             build\static\js\4475.501d8a60.chunk.js
+  2.18 kB            build\static\js\7881.3393d43b.chunk.js
+  2.17 kB            build\static\js\7607.bad6dcde.chunk.js
+  2.15 kB            build\static\js\3627.91d1f3d7.chunk.js
+  2.12 kB            build\static\js\4877.81ddbe16.chunk.js
+  2.1 kB             build\static\js\6399.2c49f722.chunk.js
+  2.08 kB            build\static\js\223.6cfeef91.chunk.js
+  2.08 kB            build\static\js\7234.baf73b74.chunk.js
+  2.08 kB            build\static\js\9176.2188e2f8.chunk.js
+  2.07 kB            build\static\js\959.1822d13e.chunk.js
+  2.06 kB            build\static\js\5198.6f44faea.chunk.js
+  2.04 kB            build\static\js\703.3a5e9504.chunk.js
+  2.02 kB            build\static\js\4913.36f7cc72.chunk.js
+  2.02 kB            build\static\js\1969.ba53256d.chunk.js
+  2.02 kB            build\static\js\3801.5a8e2794.chunk.js
+  2.02 kB            build\static\js\7066.6122c4e8.chunk.js
+  2.01 kB            build\static\js\9985.174c0257.chunk.js
+  2 kB               build\static\js\27.7b68b58e.chunk.js
+  2 kB               build\static\js\1768.ce996385.chunk.js
+  2 kB               build\static\js\1273.fb508ce8.chunk.js
+  1.95 kB            build\static\js\5427.1881a758.chunk.js
+  1.92 kB            build\static\js\1856.125da61b.chunk.js
+  1.91 kB            build\static\js\7071.52ab766e.chunk.js
+  1.9 kB             build\static\js\6143.b73cba75.chunk.js
+  1.9 kB             build\static\js\452.ba5d1058.chunk.js
+  1.88 kB            build\static\js\4208.4fc6a132.chunk.js
+  1.87 kB            build\static\js\3060.479bff93.chunk.js
+  1.84 kB            build\static\js\4287.315a70d4.chunk.js
+  1.84 kB            build\static\js\640.a0c71966.chunk.js
+  1.84 kB            build\static\js\2337.b8756149.chunk.js
+  1.83 kB            build\static\js\4620.43b534e4.chunk.js
+  1.82 kB            build\static\js\8104.04b3c22a.chunk.js
+  1.78 kB            build\static\js\2214.bdf77c18.chunk.js
+  1.78 kB            build\static\js\7486.67b521cc.chunk.js
+  1.78 kB            build\static\js\9948.f1088776.chunk.js
+  1.78 kB            build\static\js\2252.470bc34b.chunk.js
+  1.75 kB            build\static\js\3964.9eb275e5.chunk.js
+  1.72 kB            build\static\js\7549.df1abaec.chunk.js
+  1.71 kB            build\static\js\6049.50f8c47a.chunk.js
+  1.71 kB            build\static\js\9578.dc687284.chunk.js
+  1.71 kB            build\static\js\7169.8374f80e.chunk.js
+  1.71 kB            build\static\js\5855.22645163.chunk.js
+  1.66 kB            build\static\js\2792.bb3b9061.chunk.js
+  1.65 kB            build\static\js\5822.3bb63be8.chunk.js
+  1.63 kB            build\static\js\6379.c1cbb000.chunk.js
+  1.62 kB            build\static\js\1019.8fa4f789.chunk.js
+  1.62 kB            build\static\js\7999.7daa6b23.chunk.js
+  1.6 kB             build\static\js\6753.bfeb7743.chunk.js
+  1.6 kB             build\static\js\1823.70a10dd1.chunk.js
+  1.59 kB            build\static\js\8991.598ca775.chunk.js
+  1.53 kB            build\static\js\1185.50a04476.chunk.js
+  1.52 kB            build\static\js\7918.332e6a40.chunk.js
+  1.52 kB            build\static\js\7672.3ac750b4.chunk.js
+  1.52 kB            build\static\js\4429.2008f066.chunk.js
+  1.51 kB            build\static\js\9766.0ba6983f.chunk.js
+  1.49 kB            build\static\js\4854.6ba138a9.chunk.js
+  1.49 kB            build\static\js\3281.b2f2029f.chunk.js
+  1.49 kB            build\static\js\3631.97910322.chunk.js
+  1.48 kB            build\static\js\2045.ef8b2eaa.chunk.js
+  1.48 kB            build\static\css\2800.11e2cbd6.chunk.css
+  1.48 kB            build\static\css\4626.11e2cbd6.chunk.css
+  1.48 kB            build\static\css\9047.11e2cbd6.chunk.css
+  1.48 kB            build\static\css\9405.11e2cbd6.chunk.css
+  1.48 kB            build\static\css\9570.11e2cbd6.chunk.css
+  1.48 kB            build\static\css\908.11e2cbd6.chunk.css
+  1.48 kB            build\static\css\7850.8b8d17ed.chunk.css
+  1.48 kB            build\static\js\2980.e9ee6ac8.chunk.js
+  1.46 kB            build\static\js\7024.e437f68a.chunk.js
+  1.41 kB            build\static\js\8783.4476d72d.chunk.js
+  1.39 kB            build\static\js\7404.6e6090c9.chunk.js
+  1.38 kB            build\static\js\6170.c26e9a03.chunk.js
+  1.37 kB            build\static\js\3413.3ea14da9.chunk.js
+  1.32 kB            build\static\js\264.2e964876.chunk.js
+  1.32 kB            build\static\js\3121.61c87da5.chunk.js
+  1.32 kB            build\static\js\7883.d814a401.chunk.js
+  1.31 kB            build\static\js\1070.79f2642d.chunk.js
+  1.3 kB             build\static\js\4409.0ad413ea.chunk.js
+  1.29 kB            build\static\js\6068.d5fbf420.chunk.js
+  1.29 kB            build\static\js\7459.93251a37.chunk.js
+  1.28 kB            build\static\js\1164.7d10f4b7.chunk.js
+  1.26 kB            build\static\js\3487.9e83fc86.chunk.js
+  1.23 kB            build\static\js\1734.29a72107.chunk.js
+  1.22 kB            build\static\js\3678.3c2a745e.chunk.js
+  1.21 kB            build\static\js\6828.d98c9a82.chunk.js
+  1.2 kB             build\static\js\6335.c3eb98dc.chunk.js
+  1.17 kB            build\static\js\4465.7ab1784c.chunk.js
+  1.15 kB            build\static\js\1229.bb6538c7.chunk.js
+  1.15 kB            build\static\js\2641.f25a4802.chunk.js
+  1.13 kB            build\static\js\4168.bf6b9a39.chunk.js
+  1.11 kB            build\static\js\6307.40a8cd24.chunk.js
+  1.09 kB            build\static\js\5567.e3e9876c.chunk.js
+  1.08 kB            build\static\js\8836.5a04b296.chunk.js
+  1.02 kB            build\static\js\3549.7f1a1a57.chunk.js
+  1.01 kB            build\static\js\6796.e87253a3.chunk.js
+  1.01 kB            build\static\js\412.a5035b76.chunk.js
+  989 B              build\static\js\5965.9fd6e38e.chunk.js
+  959 B              build\static\js\2778.d31e87e4.chunk.js
+  958 B              build\static\js\6948.6e855db5.chunk.js
+  950 B              build\static\js\2712.51a0b9d8.chunk.js
+  942 B              build\static\js\1341.b2f30d2a.chunk.js
+  931 B              build\static\css\7071.1612f020.chunk.css
+  928 B              build\static\js\3758.b4ba17f4.chunk.js
+  922 B              build\static\js\6250.e1c13a29.chunk.js
+  917 B              build\static\js\5856.60e642f7.chunk.js
+  913 B              build\static\js\8784.100cff96.chunk.js
+  907 B              build\static\js\6150.95cab631.chunk.js
+  906 B              build\static\js\6651.451eb483.chunk.js
+  901 B              build\static\js\8884.7eda9f82.chunk.js
+  890 B              build\static\js\972.e0c1660a.chunk.js
+  872 B              build\static\js\4218.2f437d4d.chunk.js
+  802 B              build\static\js\4700.9dfed0de.chunk.js
+  799 B              build\static\js\247.a4c3c466.chunk.js
+  790 B              build\static\js\5139.2995094a.chunk.js
+  786 B              build\static\js\7052.22dd27e9.chunk.js
+  722 B              build\static\js\4155.61fde73a.chunk.js
+  710 B              build\static\js\1271.287aa14d.chunk.js
+  705 B              build\static\js\9454.f8b91a0b.chunk.js
+  691 B              build\static\css\962.130a9c6e.chunk.css
+  664 B              build\static\js\5327.371e390f.chunk.js
+  645 B              build\static\js\8356.e3c077fa.chunk.js
+  605 B              build\static\js\1292.cb002382.chunk.js
+  596 B              build\static\js\6720.5c5f17aa.chunk.js
+  561 B              build\static\js\5185.939d5b45.chunk.js
+  557 B              build\static\js\9353.d82abd53.chunk.js
+  544 B              build\static\js\8731.df935f20.chunk.js
+  536 B              build\static\js\7675.8fa1404d.chunk.js
+  522 B              build\static\js\8504.478ef153.chunk.js
+  475 B              build\static\js\3458.c6a71d63.chunk.js
+  458 B              build\static\js\7179.73950966.chunk.js
+  456 B              build\static\js\2076.2555f942.chunk.js
+  449 B              build\static\js\6921.aeded034.chunk.js
+  430 B              build\static\js\6261.1b307982.chunk.js
+  414 B              build\static\js\9166.a27c5aa1.chunk.js
+  403 B              build\static\js\7500.cc7113d9.chunk.js
+  377 B              build\static\css\911.b2f4c423.chunk.css
+  361 B              build\static\js\1303.687b4c9f.chunk.js
+  361 B              build\static\js\6730.0b03b7fb.chunk.js
+  359 B              build\static\js\8997.bc267f58.chunk.js
+  222 B              build\static\js\3004.51f6a222.chunk.js
+  163 B              build\static\js\5584.107151e8.chunk.js
+  162 B              build\static\js\1824.80d3aafa.chunk.js
+  161 B              build\static\js\3718.7875810f.chunk.js
+  160 B              build\static\js\8271.a8f27969.chunk.js
+  159 B              build\static\js\9539.4df30580.chunk.js
+  159 B              build\static\js\9079.bb48bfda.chunk.js
+  158 B              build\static\js\9221.671316fe.chunk.js
+  157 B              build\static\js\1715.d3014007.chunk.js
+  157 B              build\static\js\5835.a1385cec.chunk.js
+  157 B              build\static\js\5336.3b4ccaa9.chunk.js
+  156 B              build\static\js\9940.c5867a2e.chunk.js
+  155 B              build\static\js\6638.f94394b3.chunk.js
+  155 B              build\static\js\4827.ccd03438.chunk.js
+  155 B              build\static\js\672.d5cc9f06.chunk.js
+  154 B              build\static\js\4561.7481eec1.chunk.js
+  141 B              build\static\js\1465.e9a528a4.chunk.js
+
+The project was built assuming it is hosted at /.
+You can control this with the homepage field in your package.json.
+
+The build folder is ready to be deployed.
+You may serve it with a static server:
+
+  yarn global add serve
+  serve -s build
+
+Find out more about deployment here:
+
+  https://cra.link/deployment
+
+
+> nexusrbx-react@0.1.0 public:build
+> next build public-frontend
+
+▲ Next.js 16.3.0 (Turbopack)
+✓ Running next.config.js took 51ms
+- Experiments (use with caution):
+  ✓ externalDir
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 11.1s
+  Running TypeScript ...
+  Finished TypeScript in 4ms ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/188) ...
+  Generating static pages using 11 workers (47/188) 
+  Generating static pages using 11 workers (94/188) 
+  Generating static pages using 11 workers (141/188) 
+✓ Generating static pages using 11 workers (188/188) in 3.7s
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├   /[slug]
+│ ├ ● /roblox-script-generator
+│ ├ ● /roblox-ai-scripter
+│ ├ ● /roblox-lua-script-generator
+│ └ ● [+2 more paths]
+├ ○ /docs
+├   /docs/[slug]
+│ ├ ● /docs/installation
+│ ├ ● /docs/getting-started
+│ ├ ● /docs/studio-plugin
+│ └ ● [+18 more paths]
+├ ○ /downloads
+├   /icons/[id]
+│ ├ ● /icons/00z2BcLFgn0ooTXLMaVR
+│ ├ ● /icons/01aBqf6RMiGTAevKfEVH
+│ ├ ● /icons/023l23NZghaqycdKL8mx
+│ └ ● [+147 more paths]
+├ ○ /legal
+├   /legal/[slug]
+│ ├ ● /legal/terms
+│ ├ ● /legal/privacy
+│ ├ ● /legal/acceptable-use
+│ └ ● [+2 more paths]
+└ ○ /pricing
+
+
+○  (Static)  prerendered as static content
+●  (SSG)     prerendered as static HTML (uses generateStaticParams)
+
+Merged public-frontend/out into build/__public and copied public static assets and the custom 404 page.

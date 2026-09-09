@@ -1,0 +1,225 @@
+TAP version 13
+# Subtest: acceptance matrix uses Default and at most three declared scenarios on both devices
+ok 1 - acceptance matrix uses Default and at most three declared scenarios on both devices
+  ---
+  duration_ms: 8.0909
+  ...
+# Subtest: one successful PNG and same-revision images from another capture cannot finish a matrix
+ok 2 - one successful PNG and same-revision images from another capture cannot finish a matrix
+  ---
+  duration_ms: 0.5424
+  ...
+# Subtest: resuming capture uses the saved request and releases the worker for rendering
+ok 3 - resuming capture uses the saved request and releases the worker for rendering
+  ---
+  duration_ms: 1.954
+  ...
+# Subtest: resuming rendering never reviews before every exact matrix slot is ready
+ok 4 - resuming rendering never reviews before every exact matrix slot is ready
+  ---
+  duration_ms: 0.9904
+  ...
+# Subtest: renderer limitations have a separate outcome and never become visual success
+ok 5 - renderer limitations have a separate outcome and never become visual success
+  ---
+  duration_ms: 0.5544
+  ...
+# Subtest: review batches contain at most four images and repair cycles stop at two
+ok 6 - review batches contain at most four images and repair cycles stop at two
+  ---
+  duration_ms: 0.7369
+  ...
+# Subtest: capture polling keeps the admission request ID across multiple responses
+ok 7 - capture polling keeps the admission request ID across multiple responses
+  ---
+  duration_ms: 74.0352
+  ...
+# Subtest: cancellation stops capture polling before another read
+ok 8 - cancellation stops capture polling before another read
+  ---
+  duration_ms: 7.9945
+  ...
+# Subtest: matrix completion waits for every exact state and viewport job
+ok 9 - matrix completion waits for every exact state and viewport job
+  ---
+  duration_ms: 9.3205
+  ...
+# Subtest: capture request is unavailable when Studio cannot read a UI snapshot
+ok 10 - capture request is unavailable when Studio cannot read a UI snapshot
+  ---
+  duration_ms: 28.9657
+  ...
+# Subtest: studio_runtime capture stays unavailable through the edit-mode bridge
+ok 11 - studio_runtime capture stays unavailable through the edit-mode bridge
+  ---
+  duration_ms: 10.3099
+  ...
+# Subtest: a verified Studio receipt becomes a server-owned capture, never client metadata
+ok 12 - a verified Studio receipt becomes a server-owned capture, never client metadata
+  ---
+  duration_ms: 17.1496
+  ...
+# Subtest: capture queues only the Studio session bound to the design project
+ok 13 - capture queues only the Studio session bound to the design project
+  ---
+  duration_ms: 26.8515
+  ...
+# Subtest: an ambiguous or unbound Studio target is unavailable instead of capturing the first session
+ok 14 - an ambiguous or unbound Studio target is unavailable instead of capturing the first session
+  ---
+  duration_ms: 7.9281
+  ...
+# Subtest: an incomplete Studio traversal cannot become a synced capture
+ok 15 - an incomplete Studio traversal cannot become a synced capture
+  ---
+  duration_ms: 5.5902
+  ...
+# Subtest: manifest exposes the latest capture, server-owned viewports and honest capabilities
+ok 16 - manifest exposes the latest capture, server-owned viewports and honest capabilities
+  ---
+  duration_ms: 43.4794
+  ...
+# Subtest: a capture is validated before storage and rejects an incomplete traversal
+ok 17 - a capture is validated before storage and rejects an incomplete traversal
+  ---
+  duration_ms: 7.0178
+  ...
+# Subtest: the capture tree hash is computed from the observed tree, not supplied
+ok 18 - the capture tree hash is computed from the observed tree, not supplied
+  ---
+  duration_ms: 3.9853
+  ...
+# Subtest: enqueue rejects a stale source revision instead of rendering the wrong thing
+ok 19 - enqueue rejects a stale source revision instead of rendering the wrong thing
+  ---
+  duration_ms: 5.4763
+  ...
+# Subtest: enqueue rejects an unknown viewport rather than coercing to a default
+ok 20 - enqueue rejects an unknown viewport rather than coercing to a default
+  ---
+  duration_ms: 6.5385
+  ...
+# Subtest: reconnecting with a new idempotency key deduplicates instead of launching a duplicate render
+ok 21 - reconnecting with a new idempotency key deduplicates instead of launching a duplicate render
+  ---
+  duration_ms: 14.7257
+  ...
+# Subtest: replaying the same idempotency key with different input is a conflict
+ok 22 - replaying the same idempotency key with different input is a conflict
+  ---
+  duration_ms: 9.9559
+  ...
+# Subtest: a newer request supersedes the older in-flight preview for the same slot
+ok 23 - a newer request supersedes the older in-flight preview for the same slot
+  ---
+  duration_ms: 9.2901
+  ...
+# Subtest: a slow superseded worker cannot overwrite the newer published preview
+ok 24 - a slow superseded worker cannot overwrite the newer published preview
+  ---
+  duration_ms: 10.1703
+  ...
+# Subtest: publication is refused once the design moved to a newer source revision
+ok 25 - publication is refused once the design moved to a newer source revision
+  ---
+  duration_ms: 6.5984
+  ...
+# Subtest: states are bound to the capture hash and the source revision
+ok 26 - states are bound to the capture hash and the source revision
+  ---
+  duration_ms: 4.0778
+  ...
+# Subtest: a state bound to an older capture cannot be enqueued
+ok 27 - a state bound to an older capture cannot be enqueued
+  ---
+  duration_ms: 4.0363
+  ...
+# Subtest: default is reserved for the captured baseline and cannot be saved as a state
+ok 28 - default is reserved for the captured baseline and cannot be saved as a state
+  ---
+  duration_ms: 6.5209
+  ...
+# Subtest: image reads verify the stored bytes against the published manifest hash
+ok 29 - image reads verify the stored bytes against the published manifest hash
+  ---
+  duration_ms: 5.4362
+  ...
+# Subtest: another user cannot read a design, its previews or its images
+ok 30 - another user cannot read a design, its previews or its images
+  ---
+  duration_ms: 2.8872
+  ...
+# Subtest: losing project access blocks preview reads even for the design owner
+ok 31 - losing project access blocks preview reads even for the design owner
+  ---
+  duration_ms: 4.22
+  ...
+# Subtest: the daily render budget is separate from generation credits
+ok 32 - the daily render budget is separate from generation credits
+  ---
+  duration_ms: 5.5454
+  ...
+# Subtest: simultaneous preview admissions reserve one job and bind every request key
+ok 33 - simultaneous preview admissions reserve one job and bind every request key
+  ---
+  duration_ms: 4.9471
+  ...
+# Subtest: a cache hit is served without admitting a new render job
+ok 34 - a cache hit is served without admitting a new render job
+  ---
+  duration_ms: 5.5711
+  ...
+# Subtest: unset UI_PREVIEW_ENABLED still admits a render job
+ok 35 - unset UI_PREVIEW_ENABLED still admits a render job
+  ---
+  duration_ms: 7.6441
+  ...
+# Subtest: UI_PREVIEW_ENABLED=false still disables enqueue
+ok 36 - UI_PREVIEW_ENABLED=false still disables enqueue
+  ---
+  duration_ms: 5.4678
+  ...
+# Subtest: manifest reports rendererBackend and fallbackConfigured from the renderer descriptor
+ok 37 - manifest reports rendererBackend and fallbackConfigured from the renderer descriptor
+  ---
+  duration_ms: 5.3246
+  ...
+# Subtest: published previews expose rendererBackend without claiming runtime verification
+ok 38 - published previews expose rendererBackend without claiming runtime verification
+  ---
+  duration_ms: 7.5534
+  ...
+# Subtest: manual compilation and repair share verified tree and source preconditions and saved hooks
+ok 39 - manual compilation and repair share verified tree and source preconditions and saved hooks
+  ---
+  duration_ms: 14.2868
+  ...
+# Subtest: a concurrent edit stops application before Studio is queued
+ok 40 - a concurrent edit stops application before Studio is queued
+  ---
+  duration_ms: 2.6675
+  ...
+# Subtest: verified script hashes wait for readback before replacing applied identity
+ok 41 - verified script hashes wait for readback before replacing applied identity
+  ---
+  duration_ms: 2.2756
+  ...
+# Subtest: hook source identity changes the revision without migrating legacy documents
+ok 42 - hook source identity changes the revision without migrating legacy documents
+  ---
+  duration_ms: 2.2287
+  ...
+# Subtest: cancelled tasks and newer drafts invalidate undelivered UI writes
+ok 43 - cancelled tasks and newer drafts invalidate undelivered UI writes
+  ---
+  duration_ms: 4.2718
+  ...
+1..43
+# tests 43
+# suites 0
+# pass 43
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 484.1123

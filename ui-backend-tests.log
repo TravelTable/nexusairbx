@@ -1,0 +1,595 @@
+TAP version 13
+# Subtest: openModal on a captured overlay becomes a shop-open Visible patch
+ok 1 - openModal on a captured overlay becomes a shop-open Visible patch
+  ---
+  duration_ms: 3.1619
+  ...
+# Subtest: a patch for a node missing from the capture is dropped
+ok 2 - a patch for a node missing from the capture is dropped
+  ---
+  duration_ms: 0.2607
+  ...
+# Subtest: setText and a captured loading node produce restricted visual patches only
+ok 3 - setText and a captured loading node produce restricted visual patches only
+  ---
+  duration_ms: 0.491
+  ...
+# Subtest: capture request is unavailable when Studio cannot read a UI snapshot
+ok 4 - capture request is unavailable when Studio cannot read a UI snapshot
+  ---
+  duration_ms: 94.2674
+  ...
+# Subtest: studio_runtime capture stays unavailable through the edit-mode bridge
+ok 5 - studio_runtime capture stays unavailable through the edit-mode bridge
+  ---
+  duration_ms: 4.6922
+  ...
+# Subtest: a verified Studio receipt becomes a server-owned capture, never client metadata
+ok 6 - a verified Studio receipt becomes a server-owned capture, never client metadata
+  ---
+  duration_ms: 8.4654
+  ...
+# Subtest: capture queues only the Studio session bound to the design project
+ok 7 - capture queues only the Studio session bound to the design project
+  ---
+  duration_ms: 56.1592
+  ...
+# Subtest: an ambiguous or unbound Studio target is unavailable instead of capturing the first session
+ok 8 - an ambiguous or unbound Studio target is unavailable instead of capturing the first session
+  ---
+  duration_ms: 4.5059
+  ...
+# Subtest: an incomplete Studio traversal cannot become a synced capture
+ok 9 - an incomplete Studio traversal cannot become a synced capture
+  ---
+  duration_ms: 4.7649
+  ...
+# Subtest: manifest exposes the latest capture, server-owned viewports and honest capabilities
+ok 10 - manifest exposes the latest capture, server-owned viewports and honest capabilities
+  ---
+  duration_ms: 88.9643
+  ...
+# Subtest: a capture is validated before storage and rejects an incomplete traversal
+ok 11 - a capture is validated before storage and rejects an incomplete traversal
+  ---
+  duration_ms: 2.7702
+  ...
+# Subtest: the capture tree hash is computed from the observed tree, not supplied
+ok 12 - the capture tree hash is computed from the observed tree, not supplied
+  ---
+  duration_ms: 3.2013
+  ...
+# Subtest: enqueue rejects a stale source revision instead of rendering the wrong thing
+ok 13 - enqueue rejects a stale source revision instead of rendering the wrong thing
+  ---
+  duration_ms: 2.6609
+  ...
+# Subtest: enqueue rejects an unknown viewport rather than coercing to a default
+ok 14 - enqueue rejects an unknown viewport rather than coercing to a default
+  ---
+  duration_ms: 2.378
+  ...
+# Subtest: reconnecting with a new idempotency key deduplicates instead of launching a duplicate render
+ok 15 - reconnecting with a new idempotency key deduplicates instead of launching a duplicate render
+  ---
+  duration_ms: 4.0273
+  ...
+# Subtest: replaying the same idempotency key with different input is a conflict
+ok 16 - replaying the same idempotency key with different input is a conflict
+  ---
+  duration_ms: 3.1629
+  ...
+# Subtest: a newer request supersedes the older in-flight preview for the same slot
+ok 17 - a newer request supersedes the older in-flight preview for the same slot
+  ---
+  duration_ms: 4.0108
+  ...
+# Subtest: a slow superseded worker cannot overwrite the newer published preview
+ok 18 - a slow superseded worker cannot overwrite the newer published preview
+  ---
+  duration_ms: 4.6839
+  ...
+# Subtest: publication is refused once the design moved to a newer source revision
+ok 19 - publication is refused once the design moved to a newer source revision
+  ---
+  duration_ms: 3.8807
+  ...
+# Subtest: states are bound to the capture hash and the source revision
+ok 20 - states are bound to the capture hash and the source revision
+  ---
+  duration_ms: 3.1719
+  ...
+# Subtest: a state bound to an older capture cannot be enqueued
+ok 21 - a state bound to an older capture cannot be enqueued
+  ---
+  duration_ms: 2.6733
+  ...
+# Subtest: default is reserved for the captured baseline and cannot be saved as a state
+ok 22 - default is reserved for the captured baseline and cannot be saved as a state
+  ---
+  duration_ms: 2.4037
+  ...
+# Subtest: image reads verify the stored bytes against the published manifest hash
+ok 23 - image reads verify the stored bytes against the published manifest hash
+  ---
+  duration_ms: 3.271
+  ...
+# Subtest: another user cannot read a design, its previews or its images
+ok 24 - another user cannot read a design, its previews or its images
+  ---
+  duration_ms: 2.9488
+  ...
+# Subtest: losing project access blocks preview reads even for the design owner
+ok 25 - losing project access blocks preview reads even for the design owner
+  ---
+  duration_ms: 2.7262
+  ...
+# Subtest: the daily render budget is separate from generation credits
+ok 26 - the daily render budget is separate from generation credits
+  ---
+  duration_ms: 2.6301
+  ...
+# Subtest: a cache hit is served without admitting a new render job
+ok 27 - a cache hit is served without admitting a new render job
+  ---
+  duration_ms: 2.8138
+  ...
+# Subtest: unset UI_PREVIEW_ENABLED still admits a render job
+ok 28 - unset UI_PREVIEW_ENABLED still admits a render job
+  ---
+  duration_ms: 2.7101
+  ...
+# Subtest: UI_PREVIEW_ENABLED=false still disables enqueue
+ok 29 - UI_PREVIEW_ENABLED=false still disables enqueue
+  ---
+  duration_ms: 2.4038
+  ...
+# Subtest: manifest reports rendererBackend and fallbackConfigured from the renderer descriptor
+ok 30 - manifest reports rendererBackend and fallbackConfigured from the renderer descriptor
+  ---
+  duration_ms: 2.3433
+  ...
+# Subtest: published previews expose rendererBackend without claiming runtime verification
+ok 31 - published previews expose rendererBackend without claiming runtime verification
+  ---
+  duration_ms: 3.5586
+  ...
+# Subtest: recapture waits until the new revision has rendered images before the next review
+ok 32 - recapture waits until the new revision has rendered images before the next review
+  ---
+  duration_ms: 2.0897
+  ...
+# Subtest: UiVisualReviewService recapture polls capture then waits for new-revision renders
+ok 33 - UiVisualReviewService recapture polls capture then waits for new-revision renders
+  ---
+  duration_ms: 21.775
+  ...
+# Subtest: a recapture that does not produce images stays awaiting_preview
+ok 34 - a recapture that does not produce images stays awaiting_preview
+  ---
+  duration_ms: 0.3768
+  ...
+# Subtest: snapshot computes hash from observed tree rather than supplied hash
+ok 35 - snapshot computes hash from observed tree rather than supplied hash
+  ---
+  duration_ms: 2.7562
+  ...
+# Subtest: popup state is a copy; does not mutate captured hierarchy
+ok 36 - popup state is a copy; does not mutate captured hierarchy
+  ---
+  duration_ms: 0.7907
+  ...
+# Subtest: default state preserves hidden popup
+ok 37 - default state preserves hidden popup
+  ---
+  duration_ms: 0.8253
+  ...
+# Subtest: state rejects old capture hash
+ok 38 - state rejects old capture hash
+  ---
+  duration_ms: 0.8125
+  ...
+# Subtest: state rejects old source revision
+ok 39 - state rejects old source revision
+  ---
+  duration_ms: 0.4781
+  ...
+# Subtest: state rejects missing node rather than inventing popup
+ok 40 - state rejects missing node rather than inventing popup
+  ---
+  duration_ms: 0.4049
+  ...
+# Subtest: state cannot patch Source
+ok 41 - state cannot patch Source
+  ---
+  duration_ms: 0.4851
+  ...
+# Subtest: state cannot patch Parent
+ok 42 - state cannot patch Parent
+  ---
+  duration_ms: 0.4032
+  ...
+# Subtest: state cannot patch ClassName
+ok 43 - state cannot patch ClassName
+  ---
+  duration_ms: 0.6954
+  ...
+# Subtest: state cannot patch Name
+ok 44 - state cannot patch Name
+  ---
+  duration_ms: 0.6865
+  ...
+# Subtest: state cannot patch Image
+ok 45 - state cannot patch Image
+  ---
+  duration_ms: 0.4956
+  ...
+# Subtest: state cannot patch RunCode
+ok 46 - state cannot patch RunCode
+  ---
+  duration_ms: 0.6997
+  ...
+# Subtest: state cannot patch Active
+ok 47 - state cannot patch Active
+  ---
+  duration_ms: 0.3053
+  ...
+# Subtest: state cannot patch __proto__
+ok 48 - state cannot patch __proto__
+  ---
+  duration_ms: 0.3232
+  ...
+# Subtest: duplicate state writes are rejected
+ok 49 - duplicate state writes are rejected
+  ---
+  duration_ms: 0.3651
+  ...
+# Subtest: state data cannot introduce prototype keys
+ok 50 - state data cannot introduce prototype keys
+  ---
+  duration_ms: 0.3698
+  ...
+# Subtest: same property on different nodes is permitted
+ok 51 - same property on different nodes is permitted
+  ---
+  duration_ms: 0.3792
+  ...
+# Subtest: state accepts valid full UDim2 without destroying the baseline
+ok 52 - state accepts valid full UDim2 without destroying the baseline
+  ---
+  duration_ms: 1.0741
+  ...
+# Subtest: invalid color channel is rejected
+ok 53 - invalid color channel is rejected
+  ---
+  duration_ms: 0.5371
+  ...
+# Subtest: snapshot rejects partial tree
+ok 54 - snapshot rejects partial tree
+  ---
+  duration_ms: 0.2102
+  ...
+# Subtest: snapshot rejects AI-authored source claimed as capture
+ok 55 - snapshot rejects AI-authored source claimed as capture
+  ---
+  duration_ms: 0.2045
+  ...
+# Subtest: snapshot rejects duplicate stable IDs
+ok 56 - snapshot rejects duplicate stable IDs
+  ---
+  duration_ms: 0.3215
+  ...
+# Subtest: snapshot rejects cycles
+ok 57 - snapshot rejects cycles
+  ---
+  duration_ms: 0.4583
+  ...
+# Subtest: snapshot rejects excessive depth
+ok 58 - snapshot rejects excessive depth
+  ---
+  duration_ms: 0.8908
+  ...
+# Subtest: snapshot rejects nonfinite numbers
+ok 59 - snapshot rejects nonfinite numbers
+  ---
+  duration_ms: 0.2108
+  ...
+# Subtest: hash is stable across object key order
+ok 60 - hash is stable across object key order
+  ---
+  duration_ms: 0.1123
+  ...
+# Subtest: false, zero and empty text survive projection
+ok 61 - false, zero and empty text survive projection
+  ---
+  duration_ms: 1.4233
+  ...
+# Subtest: full viewport wrapper never crops or recentres original nodes
+ok 62 - full viewport wrapper never crops or recentres original nodes
+  ---
+  duration_ms: 0.4387
+  ...
+# Subtest: ScreenGui disabled hides its entire subtree
+ok 63 - ScreenGui disabled hides its entire subtree
+  ---
+  duration_ms: 0.332
+  ...
+# Subtest: image source URLs never reach the renderer
+ok 64 - image source URLs never reach the renderer
+  ---
+  duration_ms: 0.48
+  ...
+# Subtest: scoped image keys replace rbxasset references
+ok 65 - scoped image keys replace rbxasset references
+  ---
+  duration_ms: 0.3667
+  ...
+# Subtest: font substitution is explicit
+ok 66 - font substitution is explicit
+  ---
+  duration_ms: 0.3702
+  ...
+# Subtest: exact allowlisted font family is retained
+ok 67 - exact allowlisted font family is retained
+  ---
+  duration_ms: 0.3022
+  ...
+# Subtest: grid preserves scale and pixel offsets instead of dropping them
+ok 68 - grid preserves scale and pixel offsets instead of dropping them
+  ---
+  duration_ms: 0.6939
+  ...
+# Subtest: unsupported root ViewportFrame is reported
+ok 69 - unsupported root ViewportFrame is reported
+  ---
+  duration_ms: 0.4071
+  ...
+# Subtest: scripts are not converted to renderable nodes
+ok 70 - scripts are not converted to renderable nodes
+  ---
+  duration_ms: 0.6008
+  ...
+# Subtest: ScreenGui insets are explicit in layout and diagnostics
+ok 71 - ScreenGui insets are explicit in layout and diagnostics
+  ---
+  duration_ms: 0.3691
+  ...
+# Subtest: rejects invalid viewport {"width":0,"height":720}
+ok 72 - rejects invalid viewport {"width":0,"height":720}
+  ---
+  duration_ms: 0.1805
+  ...
+# Subtest: rejects invalid viewport {"width":2560,"height":2560}
+ok 73 - rejects invalid viewport {"width":2560,"height":2560}
+  ---
+  duration_ms: 0.1169
+  ...
+# Subtest: rejects invalid viewport {"width":640.5,"height":480}
+ok 74 - rejects invalid viewport {"width":640.5,"height":480}
+  ---
+  duration_ms: 0.127
+  ...
+# Subtest: rejects invalid viewport {"width":640,"height":480,"insets":{"top":400,"bottom":400}}
+ok 75 - rejects invalid viewport {"width":640,"height":480,"insets":{"top":400,"bottom":400}}
+  ---
+  duration_ms: 0.0791
+  ...
+# Subtest: cache separates userId
+ok 76 - cache separates userId
+  ---
+  duration_ms: 0.305
+  ...
+# Subtest: cache separates projectId
+ok 77 - cache separates projectId
+  ---
+  duration_ms: 0.1355
+  ...
+# Subtest: cache separates designId
+ok 78 - cache separates designId
+  ---
+  duration_ms: 0.1242
+  ...
+# Subtest: cache separates sourceRevision
+ok 79 - cache separates sourceRevision
+  ---
+  duration_ms: 0.1012
+  ...
+# Subtest: cache separates rendererRevision
+ok 80 - cache separates rendererRevision
+  ---
+  duration_ms: 0.0898
+  ...
+# Subtest: cache separates fontRevision
+ok 81 - cache separates fontRevision
+  ---
+  duration_ms: 0.0984
+  ...
+# Subtest: cache separates UI state and image content
+ok 82 - cache separates UI state and image content
+  ---
+  duration_ms: 0.1754
+  ...
+# Subtest: automatic model cannot silently become GPT mini
+ok 83 - automatic model cannot silently become GPT mini
+  ---
+  duration_ms: 0.2702
+  ...
+# Subtest: explicit paid selection is not silently replaced by UI policy
+ok 84 - explicit paid selection is not silently replaced by UI policy
+  ---
+  duration_ms: 0.1361
+  ...
+# Subtest: concrete non-mini model passes UI policy
+ok 85 - concrete non-mini model passes UI policy
+  ---
+  duration_ms: 0.0761
+  ...
+# Subtest: worker produces preview without claiming runtime verification
+ok 86 - worker produces preview without claiming runtime verification
+  ---
+  duration_ms: 1.1111
+  ...
+# Subtest: worker rejects cross-project capture
+ok 87 - worker rejects cross-project capture
+  ---
+  duration_ms: 0.371
+  ...
+# Subtest: worker rejects unknown state instead of rendering default
+ok 88 - worker rejects unknown state instead of rendering default
+  ---
+  duration_ms: 0.3494
+  ...
+# Subtest: worker reports simulated popup without Studio writes
+ok 89 - worker reports simulated popup without Studio writes
+  ---
+  duration_ms: 1.1295
+  ...
+# Subtest: worker drops stale result after render
+ok 90 - worker drops stale result after render
+  ---
+  duration_ms: 0.5512
+  ...
+# Subtest: worker respects cancellation before fetching capture
+ok 91 - worker respects cancellation before fetching capture
+  ---
+  duration_ms: 0.2323
+  ...
+# Subtest: worker uses cached image without new render
+ok 92 - worker uses cached image without new render
+  ---
+  duration_ms: 0.6682
+  ...
+# Subtest: worker preserves capture limitations
+ok 93 - worker preserves capture limitations
+  ---
+  duration_ms: 0.7065
+  ...
+# Subtest: worker refuses missing production dependencies
+ok 94 - worker refuses missing production dependencies
+  ---
+  duration_ms: 0.1187
+  ...
+# Subtest: renderer client refuses mismatched renderer build
+ok 95 - renderer client refuses mismatched renderer build
+  ---
+  duration_ms: 19.0272
+  ...
+# Subtest: renderer client sends private auth and refuses redirects
+ok 96 - renderer client sends private auth and refuses redirects
+  ---
+  duration_ms: 0.4166
+  ...
+# Subtest: renderer client rejects invalid PNG output
+ok 97 - renderer client rejects invalid PNG output
+  ---
+  duration_ms: 0.5755
+  ...
+# Subtest: public renderer never requests luau and accepts a data-URI PNG
+ok 98 - public renderer never requests luau and accepts a data-URI PNG
+  ---
+  duration_ms: 1.4948
+  ...
+# Subtest: public renderer describe uses /health and does not require the private PIN
+ok 99 - public renderer describe uses /health and does not require the private PIN
+  ---
+  duration_ms: 0.6389
+  ...
+# Subtest: public renderer rejects a cropped PNG
+ok 100 - public renderer rejects a cropped PNG
+  ---
+  duration_ms: 0.6008
+  ...
+# Subtest: chain uses private even when a public client is supplied
+ok 101 - chain uses private even when a public client is supplied
+  ---
+  duration_ms: 0.3964
+  ...
+# Subtest: chain falls over to private after public failure
+ok 102 - chain falls over to private after public failure
+  ---
+  duration_ms: 0.2413
+  ...
+# Subtest: chain fails when both backends fail
+ok 103 - chain fails when both backends fail
+  ---
+  duration_ms: 0.216
+  ...
+# Subtest: chain skips public when materialized images exist and private is configured
+ok 104 - chain skips public when materialized images exist and private is configured
+  ---
+  duration_ms: 0.2351
+  ...
+# Subtest: public and private renderer identities do not share a cache key
+ok 105 - public and private renderer identities do not share a cache key
+  ---
+  duration_ms: 0.1542
+  ...
+# Subtest: default renderer factory remains unavailable without a private key
+ok 106 - default renderer factory remains unavailable without a private key
+  ---
+  duration_ms: 0.1326
+  ...
+# Subtest: empty public and private URLs produce no renderer
+ok 107 - empty public and private URLs produce no renderer
+  ---
+  duration_ms: 0.0844
+  ...
+# Subtest: worker records the backend that produced the PNG
+ok 108 - worker records the backend that produced the PNG
+  ---
+  duration_ms: 0.6628
+  ...
+# Subtest: explicit non-mini model cannot be downgraded to mini
+ok 109 - explicit non-mini model cannot be downgraded to mini
+  ---
+  duration_ms: 0.2255
+  ...
+# Subtest: visual review never asserts runtime verification
+ok 110 - visual review never asserts runtime verification
+  ---
+  duration_ms: 0.6087
+  ...
+# Subtest: missing images cannot pass visual review
+ok 111 - missing images cannot pass visual review
+  ---
+  duration_ms: 0.133
+  ...
+# Subtest: font substitution does not trigger destructive design repair
+ok 112 - font substitution does not trigger destructive design repair
+  ---
+  duration_ms: 0.2375
+  ...
+# Subtest: review rejects fabricated render identity
+ok 113 - review rejects fabricated render identity
+  ---
+  duration_ms: 0.1934
+  ...
+# Subtest: review checks budget before calling vision model
+ok 114 - review checks budget before calling vision model
+  ---
+  duration_ms: 0.1633
+  ...
+# Subtest: major issue repairs Studio and then recaptures new revision
+ok 115 - major issue repairs Studio and then recaptures new revision
+  ---
+  duration_ms: 0.3426
+  ...
+# Subtest: repair loop stops at the configured budget
+ok 116 - repair loop stops at the configured budget
+  ---
+  duration_ms: 0.211
+  ...
+# Subtest: stale build does not call vision or repair
+ok 117 - stale build does not call vision or repair
+  ---
+  duration_ms: 0.1131
+  ...
+1..117
+# tests 117
+# suites 0
+# pass 117
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 286.7629

@@ -1,0 +1,173 @@
+TAP version 13
+# Subtest: a scenario preserves ordered effects and final writes
+ok 1 - a scenario preserves ordered effects and final writes
+  ---
+  duration_ms: 2.7442
+  ...
+# Subtest: tab selection hides managed siblings, never unrelated objects
+ok 2 - tab selection hides managed siblings, never unrelated objects
+  ---
+  duration_ms: 0.7583
+  ...
+# Subtest: boolean state changes have no guessed visual binding
+ok 3 - boolean state changes have no guessed visual binding
+  ---
+  duration_ms: 0.3894
+  ...
+# Subtest: conflicting identities cannot derive targeted scenarios
+ok 4 - conflicting identities cannot derive targeted scenarios
+  ---
+  duration_ms: 0.2692
+  ...
+# Subtest: an unobserved event source cannot derive a targeted scenario
+ok 5 - an unobserved event source cannot derive a targeted scenario
+  ---
+  duration_ms: 0.2222
+  ...
+# Subtest: sequence IDs survive renaming but distinguish events
+ok 6 - sequence IDs survive renaming but distinguish events
+  ---
+  duration_ms: 1.1003
+  ...
+# Subtest: openModal on a captured overlay becomes a shop-open Visible patch
+ok 7 - openModal on a captured overlay becomes a shop-open Visible patch
+  ---
+  duration_ms: 0.8188
+  ...
+# Subtest: a patch for a node missing from the capture is dropped
+ok 8 - a patch for a node missing from the capture is dropped
+  ---
+  duration_ms: 0.3765
+  ...
+# Subtest: setText and a captured loading node produce restricted visual patches only
+ok 9 - setText and a captured loading node produce restricted visual patches only
+  ---
+  duration_ms: 0.9326
+  ...
+# Subtest: replayed preview queue creation preserves the active worker and refuses an old claim update
+ok 10 - replayed preview queue creation preserves the active worker and refuses an old claim update
+  ---
+  duration_ms: 15.6957
+  ...
+# Subtest: claiming a queued job is exclusive until the lease is stale
+ok 11 - claiming a queued job is exclusive until the lease is stale
+  ---
+  duration_ms: 3.2524
+  ...
+# Subtest: a scoped local worker claims only its developer's jobs
+ok 12 - a scoped local worker claims only its developer's jobs
+  ---
+  duration_ms: 3.5409
+  ...
+# Subtest: worker heartbeats preserve live claims and reject a previous attempt
+ok 13 - worker heartbeats preserve live claims and reject a previous attempt
+  ---
+  duration_ms: 3.1486
+  ...
+# Subtest: deletion fences reject job creation and cancel a pre-existing queued claim
+ok 14 - deletion fences reject job creation and cancel a pre-existing queued claim
+  ---
+  duration_ms: 5.5585
+  ...
+# Subtest: durable idempotency claims are exclusive and only their owner can complete
+ok 15 - durable idempotency claims are exclusive and only their owner can complete
+  ---
+  duration_ms: 2.1509
+  ...
+# Subtest: terminal job updates are idempotent and cannot be overwritten by late workers
+ok 16 - terminal job updates are idempotent and cannot be overwritten by late workers
+  ---
+  duration_ms: 4.7235
+  ...
+# Subtest: timed out terminal updates clear worker lease and ignore late success
+ok 17 - timed out terminal updates clear worker lease and ignore late success
+  ---
+  duration_ms: 3.2592
+  ...
+# Subtest: stale jobs at the retry limit are marked failed instead of reclaimed
+ok 18 - stale jobs at the retry limit are marked failed instead of reclaimed
+  ---
+  duration_ms: 3.2981
+  ...
+# Subtest: terminal ai outcomes are finalized and emitted with normalized response metadata
+ok 19 - terminal ai outcomes are finalized and emitted with normalized response metadata
+  ---
+  duration_ms: 12.1716
+  ...
+# Subtest: terminalization accepts legacy wrapped ai outcomes
+ok 20 - terminalization accepts legacy wrapped ai outcomes
+  ---
+  duration_ms: 5.9134
+  ...
+# Subtest: generic job writes cannot forge canonical task linkage
+ok 21 - generic job writes cannot forge canonical task linkage
+  ---
+  duration_ms: 1.5692
+  ...
+# Subtest: trusted linked jobs atomically emit deterministic lifecycle receipts
+ok 22 - trusted linked jobs atomically emit deterministic lifecycle receipts
+  ---
+  duration_ms: 3.0649
+  ...
+# Subtest: task-linked cancellation is owner scoped, tenant scoped, and replay safe
+ok 23 - task-linked cancellation is owner scoped, tenant scoped, and replay safe
+  ---
+  duration_ms: 9.0501
+  ...
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-08T12:04:09.456Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_81e1f53a3aab9a8516e3d0d617cc4fcfb264774e98b6f2835fe3a59b90b4dbce',
+#   requestId: 'request',
+#   traceId: 'trace',
+#   projectId: 'project',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# Subtest: canonical task storage preserves review counters, capture identity, and artifacts across restart and rejects a lost worker
+ok 24 - canonical task storage preserves review counters, capture identity, and artifacts across restart and rejects a lost worker
+  ---
+  duration_ms: 11.2493
+  ...
+# Subtest: acceptance matrix uses Default and at most three declared scenarios on both devices
+ok 25 - acceptance matrix uses Default and at most three declared scenarios on both devices
+  ---
+  duration_ms: 0.5255
+  ...
+# Subtest: one successful PNG and same-revision images from another capture cannot finish a matrix
+ok 26 - one successful PNG and same-revision images from another capture cannot finish a matrix
+  ---
+  duration_ms: 0.3023
+  ...
+# Subtest: resuming capture uses the saved request and releases the worker for rendering
+ok 27 - resuming capture uses the saved request and releases the worker for rendering
+  ---
+  duration_ms: 0.9333
+  ...
+# Subtest: resuming rendering never reviews before every exact matrix slot is ready
+ok 28 - resuming rendering never reviews before every exact matrix slot is ready
+  ---
+  duration_ms: 0.4294
+  ...
+# Subtest: renderer limitations have a separate outcome and never become visual success
+ok 29 - renderer limitations have a separate outcome and never become visual success
+  ---
+  duration_ms: 0.2978
+  ...
+# Subtest: review batches contain at most four images and repair cycles stop at two
+ok 30 - review batches contain at most four images and repair cycles stop at two
+  ---
+  duration_ms: 0.4474
+  ...
+1..30
+# tests 30
+# suites 0
+# pass 30
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 203.7842

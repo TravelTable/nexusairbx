@@ -1,0 +1,85 @@
+TAP version 13
+# Subtest: acceptance matrix uses Default and at most three declared scenarios on both devices
+ok 1 - acceptance matrix uses Default and at most three declared scenarios on both devices
+  ---
+  duration_ms: 3.0526
+  ...
+# Subtest: one successful PNG and same-revision images from another capture cannot finish a matrix
+ok 2 - one successful PNG and same-revision images from another capture cannot finish a matrix
+  ---
+  duration_ms: 0.3918
+  ...
+# Subtest: resuming capture uses the saved request and releases the worker for rendering
+ok 3 - resuming capture uses the saved request and releases the worker for rendering
+  ---
+  duration_ms: 1.0902
+  ...
+# Subtest: resuming rendering never reviews before every exact matrix slot is ready
+ok 4 - resuming rendering never reviews before every exact matrix slot is ready
+  ---
+  duration_ms: 0.4589
+  ...
+# Subtest: renderer limitations have a separate outcome and never become visual success
+ok 5 - renderer limitations have a separate outcome and never become visual success
+  ---
+  duration_ms: 0.2972
+  ...
+# Subtest: review batches contain at most four images and repair cycles stop at two
+ok 6 - review batches contain at most four images and repair cycles stop at two
+  ---
+  duration_ms: 0.4218
+  ...
+# Subtest: capture polling keeps the admission request ID across multiple responses
+ok 7 - capture polling keeps the admission request ID across multiple responses
+  ---
+  duration_ms: 52.185
+  ...
+# Subtest: cancellation stops capture polling before another read
+ok 8 - cancellation stops capture polling before another read
+  ---
+  duration_ms: 5.0839
+  ...
+# Subtest: matrix completion waits for every exact state and viewport job
+ok 9 - matrix completion waits for every exact state and viewport job
+  ---
+  duration_ms: 8.8871
+  ...
+# Subtest: capture request is unavailable when Studio cannot read a UI snapshot
+ok 10 - capture request is unavailable when Studio cannot read a UI snapshot
+  ---
+  duration_ms: 13.5813
+  ...
+# Subtest: studio_runtime capture stays unavailable through the edit-mode bridge
+ok 11 - studio_runtime capture stays unavailable through the edit-mode bridge
+  ---
+  duration_ms: 4.6807
+  ...
+# Subtest: a verified Studio receipt becomes a server-owned capture, never client metadata
+ok 12 - a verified Studio receipt becomes a server-owned capture, never client metadata
+  ---
+  duration_ms: 11.3447
+  ...
+# Subtest: capture queues only the Studio session bound to the design project
+ok 13 - capture queues only the Studio session bound to the design project
+  ---
+  duration_ms: 17.432
+  ...
+# Subtest: an ambiguous or unbound Studio target is unavailable instead of capturing the first session
+ok 14 - an ambiguous or unbound Studio target is unavailable instead of capturing the first session
+  ---
+  duration_ms: 4.597
+  ...
+# Subtest: an incomplete Studio traversal cannot become a synced capture
+ok 15 - an incomplete Studio traversal cannot become a synced capture
+  ---
+  duration_ms: 4.709
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 230.7197

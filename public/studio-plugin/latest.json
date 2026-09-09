@@ -1,8 +1,8 @@
 {
-  "version": "0.15.0-ui-snapshot",
-  "protocolVersion": "2026-09-08-ui-snapshot",
-  "buildId": "nexusrbx-studio-0.15.0-ui-snapshot.16-read-ui-snapshot",
+  "version": "0.15.1-ui-build",
+  "protocolVersion": "2026-09-08-ui-build",
+  "buildId": "nexusrbx-studio-0.15.1-ui-build.17-stable-ui-capture",
   "current": true,
   "url": "/studio-plugin/NexusRBXStudioBridge.rbxmx",
-  "sha256": "c7f35cae083e39540ebaa5979332c80187bb2d9522d6985e12149502b15ff002"
+  "sha256": "c9a64061bd50d442a0011820d258e2a691a2bc4f522182e048701f87f2ae96c4"
 }

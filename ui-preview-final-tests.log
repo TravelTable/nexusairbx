@@ -1,0 +1,249 @@
+TAP version 13
+# Subtest: a scenario preserves ordered effects and final writes
+not ok 1 - a scenario preserves ordered effects and final writes
+  ---
+  duration_ms: 1.9845
+  location: 'C:\\Users\\jackt\\Documents\\Codex\\2026-08-09\\can\\nexusairbx\\backend\\src\\lib\\uiPreviewStates.test.js:42:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    0 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\backend\src\lib\uiPreviewStates.test.js:50:10)
+    Test.runInAsyncScope (node:async_hooks:211:14)
+    Test.run (node:internal/test_runner/test:979:25)
+    Test.start (node:internal/test_runner/test:877:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+# Subtest: tab selection hides managed siblings, never unrelated objects
+not ok 2 - tab selection hides managed siblings, never unrelated objects
+  ---
+  duration_ms: 0.2523
+  location: 'C:\\Users\\jackt\\Documents\\Codex\\2026-08-09\\can\\nexusairbx\\backend\\src\\lib\\uiPreviewStates.test.js:55:1'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'patches')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\backend\src\lib\uiPreviewStates.test.js:59:30)
+    Test.runInAsyncScope (node:async_hooks:211:14)
+    Test.run (node:internal/test_runner/test:979:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:677:18)
+    Test.postRun (node:internal/test_runner/test:1090:19)
+    Test.run (node:internal/test_runner/test:1018:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: boolean state changes have no guessed visual binding
+ok 3 - boolean state changes have no guessed visual binding
+  ---
+  duration_ms: 0.7604
+  ...
+# Subtest: conflicting identities cannot derive targeted scenarios
+ok 4 - conflicting identities cannot derive targeted scenarios
+  ---
+  duration_ms: 0.1699
+  ...
+# Subtest: sequence IDs survive renaming but distinguish events
+not ok 5 - sequence IDs survive renaming but distinguish events
+  ---
+  duration_ms: 0.2217
+  location: 'C:\\Users\\jackt\\Documents\\Codex\\2026-08-09\\can\\nexusairbx\\backend\\src\\lib\\uiPreviewStates.test.js:70:1'
+  failureType: 'testCodeFailure'
+  error: "Cannot read properties of undefined (reading 'id')"
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\backend\src\lib\uiPreviewStates.test.js:75:31)
+    Test.runInAsyncScope (node:async_hooks:211:14)
+    Test.run (node:internal/test_runner/test:979:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:677:18)
+    Test.postRun (node:internal/test_runner/test:1090:19)
+    Test.run (node:internal/test_runner/test:1018:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
+  ...
+# Subtest: openModal on a captured overlay becomes a shop-open Visible patch
+not ok 6 - openModal on a captured overlay becomes a shop-open Visible patch
+  ---
+  duration_ms: 0.2479
+  location: 'C:\\Users\\jackt\\Documents\\Codex\\2026-08-09\\can\\nexusairbx\\backend\\src\\lib\\uiPreviewStates.test.js:78:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    0 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\backend\src\lib\uiPreviewStates.test.js:85:10)
+    Test.runInAsyncScope (node:async_hooks:211:14)
+    Test.run (node:internal/test_runner/test:979:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:677:18)
+    Test.postRun (node:internal/test_runner/test:1090:19)
+    Test.run (node:internal/test_runner/test:1018:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
+  ...
+# Subtest: a patch for a node missing from the capture is dropped
+ok 7 - a patch for a node missing from the capture is dropped
+  ---
+  duration_ms: 0.1995
+  ...
+# Subtest: setText and a captured loading node produce restricted visual patches only
+not ok 8 - setText and a captured loading node produce restricted visual patches only
+  ---
+  duration_ms: 21.0567
+  location: 'C:\\Users\\jackt\\Documents\\Codex\\2026-08-09\\can\\nexusairbx\\backend\\src\\lib\\uiPreviewStates.test.js:101:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+    
+      assert.ok(states.some((state) => state.patches.some((patch) => patch.property === "Text" && patch.value === "Loading…")))
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\backend\src\lib\uiPreviewStates.test.js:115:10)
+    Test.runInAsyncScope (node:async_hooks:211:14)
+    Test.run (node:internal/test_runner/test:979:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:677:18)
+    Test.postRun (node:internal/test_runner/test:1090:19)
+    Test.run (node:internal/test_runner/test:1018:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:677:7)
+  ...
+# Subtest: manifest exposes the latest capture, server-owned viewports and honest capabilities
+ok 9 - manifest exposes the latest capture, server-owned viewports and honest capabilities
+  ---
+  duration_ms: 29.7785
+  ...
+# Subtest: a capture is validated before storage and rejects an incomplete traversal
+ok 10 - a capture is validated before storage and rejects an incomplete traversal
+  ---
+  duration_ms: 3.4434
+  ...
+# Subtest: the capture tree hash is computed from the observed tree, not supplied
+ok 11 - the capture tree hash is computed from the observed tree, not supplied
+  ---
+  duration_ms: 3.5399
+  ...
+# Subtest: enqueue rejects a stale source revision instead of rendering the wrong thing
+ok 12 - enqueue rejects a stale source revision instead of rendering the wrong thing
+  ---
+  duration_ms: 3.5143
+  ...
+# Subtest: enqueue rejects an unknown viewport rather than coercing to a default
+ok 13 - enqueue rejects an unknown viewport rather than coercing to a default
+  ---
+  duration_ms: 3.5302
+  ...
+# Subtest: reconnecting with a new idempotency key deduplicates instead of launching a duplicate render
+ok 14 - reconnecting with a new idempotency key deduplicates instead of launching a duplicate render
+  ---
+  duration_ms: 4.8039
+  ...
+# Subtest: replaying the same idempotency key with different input is a conflict
+ok 15 - replaying the same idempotency key with different input is a conflict
+  ---
+  duration_ms: 3.877
+  ...
+# Subtest: a newer request supersedes the older in-flight preview for the same slot
+ok 16 - a newer request supersedes the older in-flight preview for the same slot
+  ---
+  duration_ms: 4.1647
+  ...
+# Subtest: a slow superseded worker cannot overwrite the newer published preview
+ok 17 - a slow superseded worker cannot overwrite the newer published preview
+  ---
+  duration_ms: 6.459
+  ...
+# Subtest: publication is refused once the design moved to a newer source revision
+ok 18 - publication is refused once the design moved to a newer source revision
+  ---
+  duration_ms: 3.7319
+  ...
+# Subtest: states are bound to the capture hash and the source revision
+ok 19 - states are bound to the capture hash and the source revision
+  ---
+  duration_ms: 3.0712
+  ...
+# Subtest: a state bound to an older capture cannot be enqueued
+ok 20 - a state bound to an older capture cannot be enqueued
+  ---
+  duration_ms: 2.7465
+  ...
+# Subtest: default is reserved for the captured baseline and cannot be saved as a state
+ok 21 - default is reserved for the captured baseline and cannot be saved as a state
+  ---
+  duration_ms: 3.4737
+  ...
+# Subtest: image reads verify the stored bytes against the published manifest hash
+ok 22 - image reads verify the stored bytes against the published manifest hash
+  ---
+  duration_ms: 3.7155
+  ...
+# Subtest: another user cannot read a design, its previews or its images
+ok 23 - another user cannot read a design, its previews or its images
+  ---
+  duration_ms: 2.9175
+  ...
+# Subtest: losing project access blocks preview reads even for the design owner
+ok 24 - losing project access blocks preview reads even for the design owner
+  ---
+  duration_ms: 2.5568
+  ...
+# Subtest: the daily render budget is separate from generation credits
+ok 25 - the daily render budget is separate from generation credits
+  ---
+  duration_ms: 3.241
+  ...
+# Subtest: simultaneous preview admissions reserve one job and bind every request key
+ok 26 - simultaneous preview admissions reserve one job and bind every request key
+  ---
+  duration_ms: 4.2208
+  ...
+# Subtest: a cache hit is served without admitting a new render job
+ok 27 - a cache hit is served without admitting a new render job
+  ---
+  duration_ms: 3.5318
+  ...
+# Subtest: unset UI_PREVIEW_ENABLED still admits a render job
+ok 28 - unset UI_PREVIEW_ENABLED still admits a render job
+  ---
+  duration_ms: 3.4406
+  ...
+# Subtest: UI_PREVIEW_ENABLED=false still disables enqueue
+ok 29 - UI_PREVIEW_ENABLED=false still disables enqueue
+  ---
+  duration_ms: 4.1116
+  ...
+# Subtest: manifest reports rendererBackend and fallbackConfigured from the renderer descriptor
+ok 30 - manifest reports rendererBackend and fallbackConfigured from the renderer descriptor
+  ---
+  duration_ms: 2.2874
+  ...
+# Subtest: public renderer results cannot be published
+ok 31 - public renderer results cannot be published
+  ---
+  duration_ms: 3.3215
+  ...
+1..31
+# tests 31
+# suites 0
+# pass 26
+# fail 5
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 218.4735

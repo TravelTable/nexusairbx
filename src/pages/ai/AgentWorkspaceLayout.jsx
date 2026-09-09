@@ -1957,7 +1957,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
       <Hero />
       <div ref={aiPageRef} className="ai-page nexus-studio-page relative flex flex-col overflow-hidden font-sans">
         <SkipToMainContent targetId="ai-workspace-main" />
-      <WorkspaceRibbon
+      {creationMode !== "ui" && <WorkspaceRibbon
         mode={creationMode}
         onModeChange={handleCreationModeChange}
         uiEnabled={uiCreatorEnabled}
@@ -1977,7 +1977,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
           evidenceOpen={Boolean(activeDockPanel)}
           evidenceCount={evidenceCount}
           evidenceButtonRef={evidenceButtonRef}
-        />
+        />}
         <div className="nexus-studio-layout flex min-h-0 flex-1 overflow-hidden">
           {/* CENTER: Studio agent chat */}
           <main
@@ -1989,6 +1989,12 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
           >
             {creationMode === "ui" ? (
               <UiCreatorWorkspace
+                modelControl={modelControl}
+                studioControl={studioControl}
+                onModeChange={handleCreationModeChange}
+                onChangeProject={openProjectSelector}
+                onOpenEvidence={() => { handleCreationModeChange("agent"); handleDockPanelChange("details"); }}
+                onOpenStudio={() => handleStudioConnectionOpenChange(true)}
                 user={user}
                 projectId={currentProjectId}
                 projectTitle={workspaceProjectTitle}

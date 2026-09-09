@@ -23,8 +23,8 @@ async function request(path, init = {}) {
   return data;
 }
 
-export function listUiDesigns(projectId = "") {
-  const query = projectId ? `?projectId=${encodeURIComponent(projectId)}` : "";
+export function listUiDesigns(projectId = "", deleted = false) {
+  const query = `?projectId=${encodeURIComponent(projectId)}${deleted ? "&deleted=true" : ""}`;
   return request(`/${query}`);
 }
 
@@ -34,6 +34,16 @@ export function createUiDesign(input = {}) {
 
 export function getUiDesign(designId) {
   return request(`/${encodeURIComponent(designId)}`);
+}
+
+export function renameUiDesign(designId, expectedRevision, title) {
+  return request(`/${encodeURIComponent(designId)}/title`, { method: "PATCH", body: JSON.stringify({ expectedRevision, title }) });
+}
+export function deleteUiDesign(designId) {
+  return request(`/${encodeURIComponent(designId)}`, { method: "DELETE" });
+}
+export function recoverUiDesign(designId) {
+  return request(`/${encodeURIComponent(designId)}/recover`, { method: "POST" });
 }
 
 export function patchUiDesign(designId, expectedRevision, operations) {

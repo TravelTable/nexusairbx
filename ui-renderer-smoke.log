@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "rendererRevision": "db292aca2b319c7204f494175c59ed9bd9552930+nexus-preview-v1",
+  "checks": [
+    "uncropped viewport",
+    "pixel grid cell size",
+    "pixel grid padding"
+  ]
+}
+{
+  "status": "passed",
+  "fontRevision": "b570b2e5083344d47e3c9519c34a61741832969219d38981fdc5df80c0760678",
+  "checks": [
+    "popup visibility",
+    "clipping",
+    "materialized image identity",
+    "pinned font",
+    "text wrapping",
+    "phone viewport"
+  ]
+}

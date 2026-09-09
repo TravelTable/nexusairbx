@@ -221,16 +221,24 @@ local function captureUiSnapshot(payload)
 		return candidate
 	end
 
-	-- DEVIATION from the supplied module: it asserted on duplicate node IDs,
-	-- which lets one authoring mistake abort an entire capture. Fall back to a
-	-- generated ID and surface the collision as a warning instead.
+	-- Read both generations without mutating Studio. Identity conflicts cannot
+	-- become a trusted capture or be repaired by guessing which node was meant.
 	local function claimId(instance, ordinal)
-		local rawId = instance:GetAttribute("NexusUiNodeId")
+		local canonicalId = instance:GetAttribute("NexusNodeId")
+		local aliasId = instance:GetAttribute("NexusUiNodeId")
+		if canonicalId ~= nil and aliasId ~= nil and canonicalId ~= aliasId then
+			complete = false
+			local conflictId = uniqueId(ordinal)
+			warn(conflictId, "NODE_ID_CONFLICT", "NexusNodeId and NexusUiNodeId disagree. Resolve the node identity before capturing.")
+			return conflictId, nil
+		end
+		local rawId = canonicalId or aliasId
 		if typeof(rawId) == "string" and #rawId > 0 and #rawId <= UI_SNAPSHOT.MAX_NODE_ID_LENGTH then
 			if not usedIds[rawId] then
 				usedIds[rawId] = true
 				return rawId, nil
 			end
+			complete = false
 			return uniqueId(ordinal), rawId
 		end
 		return uniqueId(ordinal), nil
@@ -322,6 +330,9 @@ local function captureUiSnapshot(payload)
 		warnings = warnings,
 		captureMode = "studio_edit",
 		rootPath = fullPath(root),
+		managedTreeHash = UiArtifact.treeHash(root),
+		documentRevision = root:GetAttribute("NexusRevision"),
+		designId = root:GetAttribute("NexusDesignId"),
 		requestedPath = requestedPath,
 		maxNodes = maxNodes,
 		maxDepth = maxDepth,

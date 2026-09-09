@@ -1,0 +1,220 @@
+TAP version 13
+# Subtest: claiming a queued job is exclusive until the lease is stale
+ok 1 - claiming a queued job is exclusive until the lease is stale
+  ---
+  duration_ms: 25.1883
+  ...
+# Subtest: a scoped local worker claims only its developer's jobs
+ok 2 - a scoped local worker claims only its developer's jobs
+  ---
+  duration_ms: 3.7091
+  ...
+# Subtest: worker heartbeats preserve live claims and reject a previous attempt
+ok 3 - worker heartbeats preserve live claims and reject a previous attempt
+  ---
+  duration_ms: 10.7685
+  ...
+# Subtest: deletion fences reject job creation and cancel a pre-existing queued claim
+ok 4 - deletion fences reject job creation and cancel a pre-existing queued claim
+  ---
+  duration_ms: 13.9282
+  ...
+# Subtest: durable idempotency claims are exclusive and only their owner can complete
+ok 5 - durable idempotency claims are exclusive and only their owner can complete
+  ---
+  duration_ms: 4.4098
+  ...
+# Subtest: terminal job updates are idempotent and cannot be overwritten by late workers
+ok 6 - terminal job updates are idempotent and cannot be overwritten by late workers
+  ---
+  duration_ms: 4.3071
+  ...
+# Subtest: timed out terminal updates clear worker lease and ignore late success
+ok 7 - timed out terminal updates clear worker lease and ignore late success
+  ---
+  duration_ms: 10.8728
+  ...
+# Subtest: stale jobs at the retry limit are marked failed instead of reclaimed
+ok 8 - stale jobs at the retry limit are marked failed instead of reclaimed
+  ---
+  duration_ms: 3.3163
+  ...
+# Subtest: terminal ai outcomes are finalized and emitted with normalized response metadata
+ok 9 - terminal ai outcomes are finalized and emitted with normalized response metadata
+  ---
+  duration_ms: 16.381
+  ...
+# Subtest: terminalization accepts legacy wrapped ai outcomes
+ok 10 - terminalization accepts legacy wrapped ai outcomes
+  ---
+  duration_ms: 10.0348
+  ...
+# Subtest: generic job writes cannot forge canonical task linkage
+ok 11 - generic job writes cannot forge canonical task linkage
+  ---
+  duration_ms: 4.7561
+  ...
+# Subtest: trusted linked jobs atomically emit deterministic lifecycle receipts
+ok 12 - trusted linked jobs atomically emit deterministic lifecycle receipts
+  ---
+  duration_ms: 5.4219
+  ...
+# Subtest: task-linked cancellation is owner scoped, tenant scoped, and replay safe
+ok 13 - task-linked cancellation is owner scoped, tenant scoped, and replay safe
+  ---
+  duration_ms: 14.7988
+  ...
+# Subtest: acceptance matrix uses Default and at most three declared scenarios on both devices
+ok 14 - acceptance matrix uses Default and at most three declared scenarios on both devices
+  ---
+  duration_ms: 3.6785
+  ...
+# Subtest: one successful PNG and same-revision images from another capture cannot finish a matrix
+ok 15 - one successful PNG and same-revision images from another capture cannot finish a matrix
+  ---
+  duration_ms: 0.9382
+  ...
+# Subtest: resuming capture uses the saved request and releases the worker for rendering
+ok 16 - resuming capture uses the saved request and releases the worker for rendering
+  ---
+  duration_ms: 2.0135
+  ...
+# Subtest: resuming rendering never reviews before every exact matrix slot is ready
+ok 17 - resuming rendering never reviews before every exact matrix slot is ready
+  ---
+  duration_ms: 0.7792
+  ...
+# Subtest: renderer limitations have a separate outcome and never become visual success
+ok 18 - renderer limitations have a separate outcome and never become visual success
+  ---
+  duration_ms: 0.5262
+  ...
+# Subtest: review batches contain at most four images and repair cycles stop at two
+ok 19 - review batches contain at most four images and repair cycles stop at two
+  ---
+  duration_ms: 0.7865
+  ...
+# Subtest: manifest exposes the latest capture, server-owned viewports and honest capabilities
+ok 20 - manifest exposes the latest capture, server-owned viewports and honest capabilities
+  ---
+  duration_ms: 58.2668
+  ...
+# Subtest: a capture is validated before storage and rejects an incomplete traversal
+ok 21 - a capture is validated before storage and rejects an incomplete traversal
+  ---
+  duration_ms: 4.7494
+  ...
+# Subtest: the capture tree hash is computed from the observed tree, not supplied
+ok 22 - the capture tree hash is computed from the observed tree, not supplied
+  ---
+  duration_ms: 8.3399
+  ...
+# Subtest: enqueue rejects a stale source revision instead of rendering the wrong thing
+ok 23 - enqueue rejects a stale source revision instead of rendering the wrong thing
+  ---
+  duration_ms: 5.8019
+  ...
+# Subtest: enqueue rejects an unknown viewport rather than coercing to a default
+ok 24 - enqueue rejects an unknown viewport rather than coercing to a default
+  ---
+  duration_ms: 7.8102
+  ...
+# Subtest: reconnecting with a new idempotency key deduplicates instead of launching a duplicate render
+ok 25 - reconnecting with a new idempotency key deduplicates instead of launching a duplicate render
+  ---
+  duration_ms: 14.8732
+  ...
+# Subtest: replaying the same idempotency key with different input is a conflict
+ok 26 - replaying the same idempotency key with different input is a conflict
+  ---
+  duration_ms: 9.4378
+  ...
+# Subtest: a newer request supersedes the older in-flight preview for the same slot
+ok 27 - a newer request supersedes the older in-flight preview for the same slot
+  ---
+  duration_ms: 13.0882
+  ...
+# Subtest: a slow superseded worker cannot overwrite the newer published preview
+ok 28 - a slow superseded worker cannot overwrite the newer published preview
+  ---
+  duration_ms: 12.7832
+  ...
+# Subtest: publication is refused once the design moved to a newer source revision
+ok 29 - publication is refused once the design moved to a newer source revision
+  ---
+  duration_ms: 6.1699
+  ...
+# Subtest: states are bound to the capture hash and the source revision
+ok 30 - states are bound to the capture hash and the source revision
+  ---
+  duration_ms: 5.0587
+  ...
+# Subtest: a state bound to an older capture cannot be enqueued
+ok 31 - a state bound to an older capture cannot be enqueued
+  ---
+  duration_ms: 6.8126
+  ...
+# Subtest: default is reserved for the captured baseline and cannot be saved as a state
+ok 32 - default is reserved for the captured baseline and cannot be saved as a state
+  ---
+  duration_ms: 12.2204
+  ...
+# Subtest: image reads verify the stored bytes against the published manifest hash
+ok 33 - image reads verify the stored bytes against the published manifest hash
+  ---
+  duration_ms: 8.9886
+  ...
+# Subtest: another user cannot read a design, its previews or its images
+ok 34 - another user cannot read a design, its previews or its images
+  ---
+  duration_ms: 6.3324
+  ...
+# Subtest: losing project access blocks preview reads even for the design owner
+ok 35 - losing project access blocks preview reads even for the design owner
+  ---
+  duration_ms: 5.2071
+  ...
+# Subtest: the daily render budget is separate from generation credits
+ok 36 - the daily render budget is separate from generation credits
+  ---
+  duration_ms: 3.9701
+  ...
+# Subtest: simultaneous preview admissions reserve one job and bind every request key
+ok 37 - simultaneous preview admissions reserve one job and bind every request key
+  ---
+  duration_ms: 4.6491
+  ...
+# Subtest: a cache hit is served without admitting a new render job
+ok 38 - a cache hit is served without admitting a new render job
+  ---
+  duration_ms: 8.1535
+  ...
+# Subtest: unset UI_PREVIEW_ENABLED still admits a render job
+ok 39 - unset UI_PREVIEW_ENABLED still admits a render job
+  ---
+  duration_ms: 4.72
+  ...
+# Subtest: UI_PREVIEW_ENABLED=false still disables enqueue
+ok 40 - UI_PREVIEW_ENABLED=false still disables enqueue
+  ---
+  duration_ms: 4.7183
+  ...
+# Subtest: manifest reports rendererBackend and fallbackConfigured from the renderer descriptor
+ok 41 - manifest reports rendererBackend and fallbackConfigured from the renderer descriptor
+  ---
+  duration_ms: 4.4984
+  ...
+# Subtest: public renderer results cannot be published
+ok 42 - public renderer results cannot be published
+  ---
+  duration_ms: 3.8622
+  ...
+1..42
+# tests 42
+# suites 0
+# pass 42
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 463.4402

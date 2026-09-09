@@ -1,0 +1,21 @@
+npm warn "src/hooks/useUiPreview.test.js" is being parsed as a normal command line argument.
+npm warn Unknown cli config "--watchAll". This will stop working in the next major version of npm.
+npm warn Unknown cli config "--runInBand". This will stop working in the next major version of npm.
+
+> nexusrbx-react@0.1.0 test
+> react-scripts test src/hooks/useUiPreview.test.js
+
+PASS src/hooks/useUiPreview.test.js (8.129 s)
+  √ a ready job exposes the verified preview and its object URL (34 ms)
+  √ cached-ready admission fetches and validates the saved manifest before loading PNG bytes (3 ms)
+  √ a slow response for an older identity cannot overwrite the newer one (4 ms)
+  √ a slow response for an older project cannot overwrite the newer project (3 ms)
+  √ status is waiting_capture until a snapshot exists (2 ms)
+  √ a failed job surfaces an error message and a callable retry (8 ms)
+  √ switching identity revokes the previous object URL (3 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       7 passed, 7 total
+Snapshots:   0 total
+Time:        20.063 s
+Ran all test suites matching /src\\hooks\\useUiPreview.test.js/i.

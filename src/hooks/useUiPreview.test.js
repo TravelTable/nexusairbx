@@ -112,6 +112,17 @@ test("a ready job exposes the verified preview and its object URL", async () => 
   }, expect.objectContaining({ idempotencyKey: expect.stringContaining("ui-preview-") }));
 });
 
+test("cached-ready admission fetches and validates the saved manifest before loading PNG bytes", async () => {
+  requestUiPreview.mockResolvedValue({ jobId: "cached-job", status: "ready" });
+  readUiPreview.mockResolvedValue({ jobId: "cached-job", status: "ready", preview: makePreview() });
+  readUiPreviewImage.mockResolvedValue(new Blob(["png"], { type: "image/png" }));
+  renderHook(baseOptions);
+  await flush();
+  await waitFor(() => expect(latest.current.status).toBe("ready"));
+  expect(readUiPreview).toHaveBeenCalled();
+  expect(readUiPreviewImage).toHaveBeenCalled();
+});
+
 test("a slow response for an older identity cannot overwrite the newer one", async () => {
   const oldPreview = makePreview({ stateId: "shop-open", stateLabel: "Shop open", imageHash: "old-hash" });
   const newPreview = makePreview({ stateId: "error", stateLabel: "Error", imageHash: "new-hash" });
@@ -213,4 +224,37 @@ test("switching identity revokes the previous object URL", async () => {
   await flush();
   await waitFor(() => expect(latest.current.imageUrl).toBe("blob:preview-2"));
   expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:preview-1");
+});
+
+test("the previous image remains visible through a new revision and a failed replacement", async () => {
+  requestUiPreview.mockResolvedValue({jobId:"old-job",status:"ready",preview:makePreview()});
+  readUiPreviewImage.mockResolvedValue(new Blob(["png"]));
+  const view=renderHook({...baseOptions,userId:"user"}); await flush();
+  view.rerender(<Probe {...baseOptions} userId="user" sourceRevision="new-revision" snapshotId={null}/>);
+  expect(latest.current.imageUrl).toBe("blob:preview-1");expect(latest.current.earlier).toBe(true);
+  expect(URL.revokeObjectURL).not.toHaveBeenCalled();
+  requestUiPreview.mockResolvedValue({jobId:"failed",status:"failed",message:"Renderer offline"});
+  view.rerender(<Probe {...baseOptions} userId="user" sourceRevision="new-revision" snapshotId="new-capture"/>);
+  await flush();expect(latest.current.status).toBe("error");expect(latest.current.imageUrl).toBe("blob:preview-1");
+});
+
+test("switching users immediately hides and releases the previous private image",async()=>{
+  requestUiPreview.mockResolvedValue({jobId:"old-job",status:"ready",preview:makePreview()});
+  readUiPreviewImage.mockResolvedValue(new Blob(["png"]));
+  const view=renderHook({...baseOptions,userId:"user-a"});await flush();
+  view.rerender(<Probe {...baseOptions} userId="user-b" snapshotId={null}/>);
+  expect(latest.current.imageUrl).toBe("");expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:preview-1");
+});
+
+test("reload restores the last successful reference through authenticated manifest and image reads",async()=>{
+  readUiPreview.mockResolvedValue({jobId:"saved-job",status:"ready",preview:makePreview()});readUiPreviewImage.mockResolvedValue(new Blob(["png"]));
+  renderHook({...baseOptions,userId:"user",sourceRevision:"new-revision",snapshotId:null,lastSuccessfulJobId:"saved-job"});await flush();
+  expect(latest.current.imageUrl).toBe("blob:preview-1");expect(latest.current.earlier).toBe(true);
+  expect(readUiPreviewImage).toHaveBeenCalledWith("design-1","saved-job","image-hash",expect.anything());expect(requestUiPreview).not.toHaveBeenCalled();
+});
+
+test("a supplied build render is read without enqueueing another preview",async()=>{
+  readUiPreview.mockResolvedValue({jobId:"build-job",status:"ready",preview:makePreview()});readUiPreviewImage.mockResolvedValue(new Blob(["png"]));
+  renderHook({...baseOptions,renderJobId:"build-job",waitForBuild:true});await flush();
+  expect(latest.current.status).toBe("ready");expect(requestUiPreview).not.toHaveBeenCalled();
 });

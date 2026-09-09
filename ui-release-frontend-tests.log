@@ -1,0 +1,10 @@
+PASS src/pages/ai/ui/UiPreviewPane.test.jsx
+PASS src/pages/ai/ui/UiCreatorWorkspace.test.jsx (6.29 s)
+PASS src/hooks/useUiPreview.test.js
+PASS src/lib/studioConnection.test.js
+
+Test Suites: 4 passed, 4 total
+Tests:       38 passed, 38 total
+Snapshots:   0 total
+Time:        23.773 s
+Ran all test suites matching /src\\pages\\ai\\ui\\UiCreatorWorkspace.test.jsx|src\\pages\\ai\\ui\\UiPreviewPane.test.jsx|src\\hooks\\useUiPreview.test.js|src\\lib\\studioConnection.test.js/i.

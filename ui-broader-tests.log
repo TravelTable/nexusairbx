@@ -1,0 +1,249 @@
+TAP version 13
+# Subtest: normalization is deterministic and keeps one versioned ScreenGui
+ok 1 - normalization is deterministic and keeps one versioned ScreenGui
+  ---
+  duration_ms: 13.3138
+  ...
+# Subtest: screen states are a bounded flat JSON-compatible map
+ok 2 - screen states are a bounded flat JSON-compatible map
+  ---
+  duration_ms: 2.4321
+  ...
+# Subtest: typed operations reject stale revisions and preserve unrelated nodes
+ok 3 - typed operations reject stale revisions and preserve unrelated nodes
+  ---
+  duration_ms: 27.4346
+  ...
+# Subtest: partial nested node patches preserve sibling layout values across serialized edits
+ok 4 - partial nested node patches preserve sibling layout values across serialized edits
+  ---
+  duration_ms: 6.2693
+  ...
+# Subtest: typed operations keep stable ids, merge nested tokens and cascade deleted references
+ok 5 - typed operations keep stable ids, merge nested tokens and cascade deleted references
+  ---
+  duration_ms: 16.6921
+  ...
+# Subtest: validation reports broken references and unresolved required assets
+ok 6 - validation reports broken references and unresolved required assets
+  ---
+  duration_ms: 4.1485
+  ...
+# Subtest: compilation is deterministic, dependency-free, and emits a v3 UI root
+ok 7 - compilation is deterministic, dependency-free, and emits a v3 UI root
+  ---
+  duration_ms: 10.9805
+  ...
+# Subtest: Luau compilation safely handles dashed ids, reuses locals, and exports constraints and tab actions
+ok 8 - Luau compilation safely handles dashed ids, reuses locals, and exports constraints and tab actions
+  ---
+  duration_ms: 8.4344
+  ...
+# Subtest: validation rejects actions and tweens that cannot run on their source class
+ok 9 - validation rejects actions and tweens that cannot run on their source class
+  ---
+  duration_ms: 2.6395
+  ...
+# Subtest: hook operations use stable ids, validate duplicate names, and remove emitted references
+ok 10 - hook operations use stable ids, validate duplicate names, and remove emitted references
+  ---
+  duration_ms: 11.906
+  ...
+# Subtest: canonical assets can be attached without putting temporary URLs in Luau
+ok 11 - canonical assets can be attached without putting temporary URLs in Luau
+  ---
+  duration_ms: 4.6781
+  ...
+# Subtest: asset status updates preserve canonical identity and reject malformed Roblox ids
+ok 12 - asset status updates preserve canonical identity and reject malformed Roblox ids
+  ---
+  duration_ms: 5.2741
+  ...
+# Subtest: visual evaluation contact sheets render all four device presets without remote content
+ok 13 - visual evaluation contact sheets render all four device presets without remote content
+  ---
+  duration_ms: 4.3577
+  ...
+# Subtest: task-linked job replays sequentially with one deterministic document
+ok 14 - task-linked job replays sequentially with one deterministic document
+  ---
+  duration_ms: 45.1031
+  ...
+# Subtest: concurrent task-linked replay creates one job and one projection receipt
+ok 15 - concurrent task-linked replay creates one job and one projection receipt
+  ---
+  duration_ms: 31.0616
+  ...
+# Subtest: same launch key with changed input is an idempotency conflict
+ok 16 - same launch key with changed input is an idempotency conflict
+  ---
+  duration_ms: 4.7043
+  ...
+# Subtest: an explicit new launch key creates a separate job
+ok 17 - an explicit new launch key creates a separate job
+  ---
+  duration_ms: 5.0503
+  ...
+# Subtest: an existing job with a run ID replays without mutation
+ok 18 - an existing job with a run ID replays without mutation
+  ---
+  duration_ms: 8.7485
+  ...
+# Subtest: claiming a queued job is exclusive until the lease is stale
+ok 19 - claiming a queued job is exclusive until the lease is stale
+  ---
+  duration_ms: 34.5329
+  ...
+# Subtest: a scoped local worker claims only its developer's jobs
+ok 20 - a scoped local worker claims only its developer's jobs
+  ---
+  duration_ms: 3.8482
+  ...
+# Subtest: worker heartbeats preserve live claims and reject a previous attempt
+ok 21 - worker heartbeats preserve live claims and reject a previous attempt
+  ---
+  duration_ms: 19.5277
+  ...
+# Subtest: deletion fences reject job creation and cancel a pre-existing queued claim
+ok 22 - deletion fences reject job creation and cancel a pre-existing queued claim
+  ---
+  duration_ms: 10.6517
+  ...
+# Subtest: durable idempotency claims are exclusive and only their owner can complete
+ok 23 - durable idempotency claims are exclusive and only their owner can complete
+  ---
+  duration_ms: 4.1768
+  ...
+# Subtest: terminal job updates are idempotent and cannot be overwritten by late workers
+ok 24 - terminal job updates are idempotent and cannot be overwritten by late workers
+  ---
+  duration_ms: 6.2461
+  ...
+# Subtest: timed out terminal updates clear worker lease and ignore late success
+ok 25 - timed out terminal updates clear worker lease and ignore late success
+  ---
+  duration_ms: 6.1197
+  ...
+# Subtest: stale jobs at the retry limit are marked failed instead of reclaimed
+ok 26 - stale jobs at the retry limit are marked failed instead of reclaimed
+  ---
+  duration_ms: 3.5803
+  ...
+# Subtest: terminal ai outcomes are finalized and emitted with normalized response metadata
+ok 27 - terminal ai outcomes are finalized and emitted with normalized response metadata
+  ---
+  duration_ms: 17.7088
+  ...
+# Subtest: terminalization accepts legacy wrapped ai outcomes
+ok 28 - terminalization accepts legacy wrapped ai outcomes
+  ---
+  duration_ms: 8.1025
+  ...
+# Subtest: generic job writes cannot forge canonical task linkage
+ok 29 - generic job writes cannot forge canonical task linkage
+  ---
+  duration_ms: 2.47
+  ...
+# Subtest: trusted linked jobs atomically emit deterministic lifecycle receipts
+ok 30 - trusted linked jobs atomically emit deterministic lifecycle receipts
+  ---
+  duration_ms: 3.9113
+  ...
+# Subtest: task-linked cancellation is owner scoped, tenant scoped, and replay safe
+ok 31 - task-linked cancellation is owner scoped, tenant scoped, and replay safe
+  ---
+  duration_ms: 11.0096
+  ...
+# Subtest: major UI generation uses separate planning and evaluation roles with at most two repair passes
+ok 32 - major UI generation uses separate planning and evaluation roles with at most two repair passes
+  ---
+  duration_ms: 954.4938
+  ...
+# Subtest: small UI property edits remain a single immediate generation pass
+ok 33 - small UI property edits remain a single immediate generation pass
+  ---
+  duration_ms: 3.2657
+  ...
+# Subtest: a structurally invalid final repair does not discard an earlier valid candidate
+ok 34 - a structurally invalid final repair does not discard an earlier valid candidate
+  ---
+  duration_ms: 35.6865
+  ...
+# Subtest: major generation recovers from a truncated first document response
+ok 35 - major generation recovers from a truncated first document response
+  ---
+  duration_ms: 34.4498
+  ...
+# Subtest: an operator-configured JSON recovery model is used when it is not a mini alias
+ok 36 - an operator-configured JSON recovery model is used when it is not a mini alias
+  ---
+  duration_ms: 36.8478
+  ...
+# Subtest: small edits get one compact JSON recovery attempt without visual evaluation
+ok 37 - small edits get one compact JSON recovery attempt without visual evaluation
+  ---
+  duration_ms: 1.9252
+  ...
+# Subtest: generation quality gate rejects an overlapping empty interaction shell
+ok 38 - generation quality gate rejects an overlapping empty interaction shell
+  ---
+  duration_ms: 1.2671
+  ...
+# Subtest: generated parent and action names reconcile to stable node ids
+ok 39 - generated parent and action names reconcile to stable node ids
+  ---
+  duration_ms: 2.5797
+  ...
+# Subtest: behavior-only quality gaps are repaired deterministically without rebuilding the visual document
+ok 40 - behavior-only quality gaps are repaired deterministically without rebuilding the visual document
+  ---
+  duration_ms: 38.8185
+  ...
+# Subtest: bounded worker pool overlaps independent jobs and never exceeds capacity
+ok 41 - bounded worker pool overlaps independent jobs and never exceeds capacity
+  ---
+  duration_ms: 30.0096
+  ...
+# [JobWorker] artifact generation timed out after 20ms: job_1
+# Subtest: hung artifact job times out and releases the worker
+ok 42 - hung artifact job times out and releases the worker
+  ---
+  duration_ms: 37.2327
+  ...
+# [JobWorker] recovered completed artifact after finalization timeout: job_complete_then_hung
+# Subtest: completed artifact checkpoint is recovered instead of timing out
+ok 43 - completed artifact checkpoint is recovered instead of timing out
+  ---
+  duration_ms: 30.6413
+  ...
+# [JobWorker] artifact generation timed out after 20ms: hung
+# Subtest: worker processes the next queued artifact job after a timeout
+ok 44 - worker processes the next queued artifact job after a timeout
+  ---
+  duration_ms: 33.5498
+  ...
+# [JobWorker] artifact generation timed out after 10ms: job_1
+# Subtest: late artifact success cannot overwrite a timed out job
+ok 45 - late artifact success cannot overwrite a timed out job
+  ---
+  duration_ms: 106.1788
+  ...
+# Subtest: user cancel aborts the in-flight artifact job without marking failed
+ok 46 - user cancel aborts the in-flight artifact job without marking failed
+  ---
+  duration_ms: 31.2186
+  ...
+# Subtest: stopJobWorkerLoop waits for an in-flight processOnce
+ok 47 - stopJobWorkerLoop waits for an in-flight processOnce
+  ---
+  duration_ms: 2.9693
+  ...
+1..47
+# tests 47
+# suites 0
+# pass 47
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1320.5914

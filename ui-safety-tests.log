@@ -1,0 +1,225 @@
+TAP version 13
+# Subtest: manifest exposes the latest capture, server-owned viewports and honest capabilities
+ok 1 - manifest exposes the latest capture, server-owned viewports and honest capabilities
+  ---
+  duration_ms: 30.2063
+  ...
+# Subtest: a capture is validated before storage and rejects an incomplete traversal
+ok 2 - a capture is validated before storage and rejects an incomplete traversal
+  ---
+  duration_ms: 3.4017
+  ...
+# Subtest: the capture tree hash is computed from the observed tree, not supplied
+ok 3 - the capture tree hash is computed from the observed tree, not supplied
+  ---
+  duration_ms: 3.2799
+  ...
+# Subtest: enqueue rejects a stale source revision instead of rendering the wrong thing
+ok 4 - enqueue rejects a stale source revision instead of rendering the wrong thing
+  ---
+  duration_ms: 3.7638
+  ...
+# Subtest: enqueue rejects an unknown viewport rather than coercing to a default
+ok 5 - enqueue rejects an unknown viewport rather than coercing to a default
+  ---
+  duration_ms: 2.9237
+  ...
+# Subtest: reconnecting with a new idempotency key deduplicates instead of launching a duplicate render
+ok 6 - reconnecting with a new idempotency key deduplicates instead of launching a duplicate render
+  ---
+  duration_ms: 5.0821
+  ...
+# Subtest: replaying the same idempotency key with different input is a conflict
+ok 7 - replaying the same idempotency key with different input is a conflict
+  ---
+  duration_ms: 4.2011
+  ...
+# Subtest: a newer request supersedes the older in-flight preview for the same slot
+ok 8 - a newer request supersedes the older in-flight preview for the same slot
+  ---
+  duration_ms: 5.8957
+  ...
+# Subtest: a slow superseded worker cannot overwrite the newer published preview
+ok 9 - a slow superseded worker cannot overwrite the newer published preview
+  ---
+  duration_ms: 6.74
+  ...
+# Subtest: publication is refused once the design moved to a newer source revision
+ok 10 - publication is refused once the design moved to a newer source revision
+  ---
+  duration_ms: 3.3468
+  ...
+# Subtest: states are bound to the capture hash and the source revision
+ok 11 - states are bound to the capture hash and the source revision
+  ---
+  duration_ms: 4.5449
+  ...
+# Subtest: a state bound to an older capture cannot be enqueued
+ok 12 - a state bound to an older capture cannot be enqueued
+  ---
+  duration_ms: 2.9626
+  ...
+# Subtest: default is reserved for the captured baseline and cannot be saved as a state
+ok 13 - default is reserved for the captured baseline and cannot be saved as a state
+  ---
+  duration_ms: 2.2838
+  ...
+# Subtest: image reads verify the stored bytes against the published manifest hash
+ok 14 - image reads verify the stored bytes against the published manifest hash
+  ---
+  duration_ms: 3.8933
+  ...
+# Subtest: another user cannot read a design, its previews or its images
+ok 15 - another user cannot read a design, its previews or its images
+  ---
+  duration_ms: 2.6007
+  ...
+# Subtest: losing project access blocks preview reads even for the design owner
+ok 16 - losing project access blocks preview reads even for the design owner
+  ---
+  duration_ms: 3.0794
+  ...
+# Subtest: the daily render budget is separate from generation credits
+ok 17 - the daily render budget is separate from generation credits
+  ---
+  duration_ms: 3.2138
+  ...
+# Subtest: a cache hit is served without admitting a new render job
+ok 18 - a cache hit is served without admitting a new render job
+  ---
+  duration_ms: 4.8147
+  ...
+# Subtest: unset UI_PREVIEW_ENABLED still admits a render job
+ok 19 - unset UI_PREVIEW_ENABLED still admits a render job
+  ---
+  duration_ms: 2.8759
+  ...
+# Subtest: UI_PREVIEW_ENABLED=false still disables enqueue
+ok 20 - UI_PREVIEW_ENABLED=false still disables enqueue
+  ---
+  duration_ms: 2.5708
+  ...
+# Subtest: manifest reports rendererBackend and fallbackConfigured from the renderer descriptor
+ok 21 - manifest reports rendererBackend and fallbackConfigured from the renderer descriptor
+  ---
+  duration_ms: 3.5035
+  ...
+# Subtest: published previews expose rendererBackend without claiming runtime verification
+ok 22 - published previews expose rendererBackend without claiming runtime verification
+  ---
+  duration_ms: 3.8513
+  ...
+# Subtest: constructor fails closed without a project authorizer
+ok 23 - constructor fails closed without a project authorizer
+  ---
+  duration_ms: 1.5711
+  ...
+# Subtest: create-body normalization excludes caller-supplied ownership fields
+ok 24 - create-body normalization excludes caller-supplied ownership fields
+  ---
+  duration_ms: 1.0638
+  ...
+# Subtest: trusted approved game intelligence enters the hashed plan execution context
+ok 25 - trusted approved game intelligence enters the hashed plan execution context
+  ---
+  duration_ms: 3.1588
+  ...
+# Subtest: approved plan with invalid game intelligence project mode is rejected
+ok 26 - approved plan with invalid game intelligence project mode is rejected
+  ---
+  duration_ms: 2.7417
+  ...
+# Subtest: UI Creator task fields are revision-fenced and scoped to their workspace
+ok 27 - UI Creator task fields are revision-fenced and scoped to their workspace
+  ---
+  duration_ms: 1.2985
+  ...
+# Subtest: trusted approved structured steps compile exactly into stable canonical runtime steps
+ok 28 - trusted approved structured steps compile exactly into stable canonical runtime steps
+  ---
+  duration_ms: 2.5019
+  ...
+# Subtest: approved v3 loader output compiles without shape translation or capability aliases
+ok 29 - approved v3 loader output compiles without shape translation or capability aliases
+  ---
+  duration_ms: 17.348
+  ...
+# Subtest: legacy approved plans retain generic planning while preserving source linkage
+ok 30 - legacy approved plans retain generic planning while preserving source linkage
+  ---
+  duration_ms: 0.7267
+  ...
+# Subtest: trusted structured plans fail closed on missing dependency IDs
+ok 31 - trusted structured plans fail closed on missing dependency IDs
+  ---
+  duration_ms: 0.622
+  ...
+# Subtest: trusted structured plans repair unique title dependencies before compilation
+ok 32 - trusted structured plans repair unique title dependencies before compilation
+  ---
+  duration_ms: 0.596
+  ...
+# Subtest: trusted structured plans fail closed on dependency cycles
+ok 33 - trusted structured plans fail closed on dependency cycles
+  ---
+  duration_ms: 0.3408
+  ...
+# Subtest: normal conversation is classified without creating or mutating runtime state
+ok 34 - normal conversation is classified without creating or mutating runtime state
+  ---
+  duration_ms: 9.0484
+  ...
+# Subtest: trusted approved plans force noun-like goals through exact task compilation
+ok 35 - trusted approved plans force noun-like goals through exact task compilation
+  ---
+  duration_ms: 5.9249
+  ...
+# Subtest: dual-write compatibility intake is internal-only and still authorizes the project
+ok 36 - dual-write compatibility intake is internal-only and still authorizes the project
+  ---
+  duration_ms: 0.9266
+  ...
+# Subtest: read re-authorizes the persisted project before returning task details
+ok 37 - read re-authorizes the persisted project before returning task details
+  ---
+  duration_ms: 2.8822
+  ...
+# Subtest: canonical reads remain independently disabled even while the canonical runtime owns writes
+ok 38 - canonical reads remain independently disabled even while the canonical runtime owns writes
+  ---
+  duration_ms: 0.2658
+  ...
+# Subtest: action rejects a no-longer-owned persisted project before any mutation
+ok 39 - action rejects a no-longer-owned persisted project before any mutation
+  ---
+  duration_ms: 0.6411
+  ...
+# Subtest: active-task lookup ignores Ask, Plan, and explicit planning turns
+ok 40 - active-task lookup ignores Ask, Plan, and explicit planning turns
+  ---
+  duration_ms: 0.5147
+  ...
+# Subtest: scheduled retry without a durable worker leaves the task scheduled
+ok 41 - scheduled retry without a durable worker leaves the task scheduled
+  ---
+  duration_ms: 0.4636
+  ...
+# Subtest: scheduled retry is consumed by the existing team worker without repeating completed specialists
+ok 42 - scheduled retry is consumed by the existing team worker without repeating completed specialists
+  ---
+  duration_ms: 75.9687
+  ...
+# Subtest: Agent planning intent is persisted as a Plan task with original selected mode
+ok 43 - Agent planning intent is persisted as a Plan task with original selected mode
+  ---
+  duration_ms: 4.4106
+  ...
+1..43
+# tests 43
+# suites 0
+# pass 43
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 293.1188

@@ -1,0 +1,832 @@
+TAP version 13
+# Subtest: expanded Studio protocol exposes discovery, mutation, validation, and recovery tools
+ok 1 - expanded Studio protocol exposes discovery, mutation, validation, and recovery tools
+  ---
+  duration_ms: 5.2783
+  ...
+# Subtest: unknown Studio tools are rejected instead of falling back to place inspection
+ok 2 - unknown Studio tools are rejected instead of falling back to place inspection
+  ---
+  duration_ms: 4.6548
+  ...
+# Subtest: insert_creator_store_asset is mutating but not destructive
+ok 3 - insert_creator_store_asset is mutating but not destructive
+  ---
+  duration_ms: 0.4444
+  ...
+# Subtest: Agent auto-apply only interrupts for destructive Studio changes
+ok 4 - Agent auto-apply only interrupts for destructive Studio changes
+  ---
+  duration_ms: 0.2869
+  ...
+# Subtest: snapshot creation is mutating but not destructive
+ok 5 - snapshot creation is mutating but not destructive
+  ---
+  duration_ms: 0.9043
+  ...
+# Subtest: insert_uploaded_roblox_model is mutating but not destructive
+ok 6 - insert_uploaded_roblox_model is mutating but not destructive
+  ---
+  duration_ms: 0.5022
+  ...
+# Subtest: insert_creator_store_asset preserves only server-produced safe fields
+ok 7 - insert_creator_store_asset preserves only server-produced safe fields
+  ---
+  duration_ms: 11.8822
+  ...
+# Subtest: insert_creator_store_asset rejects executable and arbitrary payload fields
+ok 8 - insert_creator_store_asset rejects executable and arbitrary payload fields
+  ---
+  duration_ms: 0.8215
+  ...
+# Subtest: insert_uploaded_roblox_model preserves only server-produced safe fields
+ok 9 - insert_uploaded_roblox_model preserves only server-produced safe fields
+  ---
+  duration_ms: 4.7695
+  ...
+# Subtest: insert_uploaded_roblox_model rejects source, URL, script, file, asset, and unknown injection
+ok 10 - insert_uploaded_roblox_model rejects source, URL, script, file, asset, and unknown injection
+  ---
+  duration_ms: 3.3048
+  ...
+# Subtest: build_native_model sanitizes through NativeModelSpec validation
+ok 11 - build_native_model sanitizes through NativeModelSpec validation
+  ---
+  duration_ms: 5.068
+  ...
+# Subtest: canonical paths normalize backslashes and game prefix
+ok 12 - canonical paths normalize backslashes and game prefix
+  ---
+  duration_ms: 0.2578
+  ...
+# Subtest: Studio command paths reject blank and unrooted parent paths before dispatch
+ok 13 - Studio command paths reject blank and unrooted parent paths before dispatch
+  ---
+  duration_ms: 3.5487
+  ...
+# Subtest: create_instance normalizes common BasePart planner properties
+ok 14 - create_instance normalizes common BasePart planner properties
+  ---
+  duration_ms: 1.1359
+  ...
+# Subtest: create_instance normalizes uppercase 8-bit BasePart colors
+ok 15 - create_instance normalizes uppercase 8-bit BasePart colors
+  ---
+  duration_ms: 1.3915
+  ...
+# Subtest: create_instance normalizes Studio readback property values
+ok 16 - create_instance normalizes Studio readback property values
+  ---
+  duration_ms: 0.5558
+  ...
+# Subtest: create_animation_sequence validates and normalizes bounded R15 keyframes
+ok 17 - create_animation_sequence validates and normalizes bounded R15 keyframes
+  ---
+  duration_ms: 3.7362
+  ...
+# Subtest: create_animation_sequence rejects unbounded, non-R15, and executable transforms
+ok 18 - create_animation_sequence rejects unbounded, non-R15, and executable transforms
+  ---
+  duration_ms: 0.9537
+  ...
+# Subtest: create_script only enables parent creation when explicitly requested
+ok 19 - create_script only enables parent creation when explicitly requested
+  ---
+  duration_ms: 1.1574
+  ...
+# Subtest: write_script preserves optimistic concurrency fields
+ok 20 - write_script preserves optimistic concurrency fields
+  ---
+  duration_ms: 0.6254
+  ...
+# Subtest: create_script requires an explicit script class
+ok 21 - create_script requires an explicit script class
+  ---
+  duration_ms: 0.6784
+  ...
+# Subtest: create_script transparently corrects the fly GUI Script to a LocalScript
+ok 22 - create_script transparently corrects the fly GUI Script to a LocalScript
+  ---
+  duration_ms: 0.5843
+  ...
+# Subtest: existing script class conversion requires an inspected target and explicit consent
+ok 23 - existing script class conversion requires an inspected target and explicit consent
+  ---
+  duration_ms: 0.6833
+  ...
+# Subtest: existing write_script candidates are blocked instead of auto-corrected
+ok 24 - existing write_script candidates are blocked instead of auto-corrected
+  ---
+  duration_ms: 1.6658
+  ...
+# Subtest: artifact application blocks mixed client and server runtime code
+ok 25 - artifact application blocks mixed client and server runtime code
+  ---
+  duration_ms: 9.0661
+  ...
+# Subtest: managed artifact class conversion inherits inspected authorization from its file
+ok 26 - managed artifact class conversion inherits inspected authorization from its file
+  ---
+  duration_ms: 4.6822
+  ...
+# Subtest: get_project_manifest carries pagination revision across pages
+ok 27 - get_project_manifest carries pagination revision across pages
+  ---
+  duration_ms: 0.8224
+  ...
+# Subtest: restore_snapshot keeps attributes and tags for rollback
+ok 28 - restore_snapshot keeps attributes and tags for rollback
+  ---
+  duration_ms: 1.0614
+  ...
+# Subtest: snapshot restore preserves connector conflict hashes and force policy
+ok 29 - snapshot restore preserves connector conflict hashes and force policy
+  ---
+  duration_ms: 0.425
+  ...
+# Subtest: playtests require bounded named inputs and reject executable code
+ok 30 - playtests require bounded named inputs and reject executable code
+  ---
+  duration_ms: 1.291
+  ...
+# Subtest: destructive confirmation is preserved only from explicit top-level consent
+ok 31 - destructive confirmation is preserved only from explicit top-level consent
+  ---
+  duration_ms: 1.449
+  ...
+# Subtest: batch_operations sanitizes nested operations without allowing recursive batch payloads
+ok 32 - batch_operations sanitizes nested operations without allowing recursive batch payloads
+  ---
+  duration_ms: 0.5293
+  ...
+# Subtest: known-script mutations preserve source preconditions and force destructive snapshots
+ok 33 - known-script mutations preserve source preconditions and force destructive snapshots
+  ---
+  duration_ms: 2.4338
+  ...
+# Subtest: apply_asset_reference accepts only a canonical server-owned asset target
+ok 34 - apply_asset_reference accepts only a canonical server-owned asset target
+  ---
+  duration_ms: 0.5158
+  ...
+# Subtest: apply_asset_reference rejects invalid targets, IDs, nested use, and generic-property bypasses
+ok 35 - apply_asset_reference rejects invalid targets, IDs, nested use, and generic-property bypasses
+  ---
+  duration_ms: 1.0221
+  ...
+# Subtest: idempotency keys are stable for identical payloads
+ok 36 - idempotency keys are stable for identical payloads
+  ---
+  duration_ms: 0.2643
+  ...
+# Subtest: validation commands preserve bounded target and plan fields
+ok 37 - validation commands preserve bounded target and plan fields
+  ---
+  duration_ms: 0.3707
+  ...
+# Subtest: apply_artifact v3 preserves only allowlisted Roblox UI roots
+ok 38 - apply_artifact v3 preserves only allowlisted Roblox UI roots
+  ---
+  duration_ms: 37.8119
+  ...
+# Subtest: apply_artifact v3 rejects foreign UI paths and unsupported node classes
+ok 39 - apply_artifact v3 rejects foreign UI paths and unsupported node classes
+  ---
+  duration_ms: 3.6757
+  ...
+# Subtest: apply_artifact v3 binds a single UI root to the artifact identity and revision
+ok 40 - apply_artifact v3 binds a single UI root to the artifact identity and revision
+  ---
+  duration_ms: 5.0243
+  ...
+# Subtest: apply_artifact v3 rejects ambiguous, cyclic, reserved, and unbounded UI trees
+ok 41 - apply_artifact v3 rejects ambiguous, cyclic, reserved, and unbounded UI trees
+  ---
+  duration_ms: 1.994
+  ...
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-09T09:11:56.736Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_81e1f53a3aab9a8516e3d0d617cc4fcfb264774e98b6f2835fe3a59b90b4dbce',
+#   requestId: 'request',
+#   traceId: 'trace',
+#   projectId: 'project',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# Subtest: canonical task storage preserves review counters, capture identity, and artifacts across restart and rejects a lost worker
+ok 42 - canonical task storage preserves review counters, capture identity, and artifacts across restart and rejects a lost worker
+  ---
+  duration_ms: 31.6965
+  ...
+# Subtest: acceptance matrix uses Default and at most three declared scenarios on both devices
+ok 43 - acceptance matrix uses Default and at most three declared scenarios on both devices
+  ---
+  duration_ms: 1.115
+  ...
+# Subtest: one successful PNG and same-revision images from another capture cannot finish a matrix
+ok 44 - one successful PNG and same-revision images from another capture cannot finish a matrix
+  ---
+  duration_ms: 0.8291
+  ...
+# Subtest: resuming capture uses the saved request and releases the worker for rendering
+ok 45 - resuming capture uses the saved request and releases the worker for rendering
+  ---
+  duration_ms: 3.0693
+  ...
+# Subtest: resuming rendering never reviews before every exact matrix slot is ready
+ok 46 - resuming rendering never reviews before every exact matrix slot is ready
+  ---
+  duration_ms: 1.3149
+  ...
+# Subtest: renderer limitations have a separate outcome and never become visual success
+ok 47 - renderer limitations have a separate outcome and never become visual success
+  ---
+  duration_ms: 0.6142
+  ...
+# Subtest: review batches contain at most four images and repair cycles stop at two
+ok 48 - review batches contain at most four images and repair cycles stop at two
+  ---
+  duration_ms: 0.8561
+  ...
+# Subtest: disconnected Studio finishes Saved with the artifact revision intact and no capture or render
+ok 49 - disconnected Studio finishes Saved with the artifact revision intact and no capture or render
+  ---
+  duration_ms: 0.6426
+  ...
+# Subtest: failed render preserves the applied build and returns a separate preview outcome
+ok 50 - failed render preserves the applied build and returns a separate preview outcome
+  ---
+  duration_ms: 1.0986
+  ...
+# Subtest: generation runs before any Studio capability check and emits bounded public actions
+ok 51 - generation runs before any Studio capability check and emits bounded public actions
+  ---
+  duration_ms: 73.6032
+  ...
+# Subtest: major UI generation uses separate planning and evaluation roles with at most two repair passes
+ok 52 - major UI generation uses separate planning and evaluation roles with at most two repair passes
+  ---
+  duration_ms: 529.1554
+  ...
+# Subtest: small UI property edits remain a single immediate generation pass
+ok 53 - small UI property edits remain a single immediate generation pass
+  ---
+  duration_ms: 5.3057
+  ...
+# Subtest: a structurally invalid final repair does not discard an earlier valid candidate
+ok 54 - a structurally invalid final repair does not discard an earlier valid candidate
+  ---
+  duration_ms: 58.2047
+  ...
+# Subtest: major generation recovers from a truncated first document response
+ok 55 - major generation recovers from a truncated first document response
+  ---
+  duration_ms: 50.4731
+  ...
+# Subtest: an operator-configured JSON recovery model is used when it is not a mini alias
+ok 56 - an operator-configured JSON recovery model is used when it is not a mini alias
+  ---
+  duration_ms: 50.0676
+  ...
+# Subtest: small edits get one compact JSON recovery attempt without visual evaluation
+ok 57 - small edits get one compact JSON recovery attempt without visual evaluation
+  ---
+  duration_ms: 2.9399
+  ...
+# Subtest: generation quality gate rejects an overlapping empty interaction shell
+ok 58 - generation quality gate rejects an overlapping empty interaction shell
+  ---
+  duration_ms: 2.7034
+  ...
+# Subtest: generated parent and action names reconcile to stable node ids
+ok 59 - generated parent and action names reconcile to stable node ids
+  ---
+  duration_ms: 6.0809
+  ...
+# Subtest: behavior-only quality gaps are repaired deterministically without rebuilding the visual document
+ok 60 - behavior-only quality gaps are repaired deterministically without rebuilding the visual document
+  ---
+  duration_ms: 65.7591
+  ...
+# Subtest: continuous UI generation defers visual review to verified Pinevex captures
+ok 61 - continuous UI generation defers visual review to verified Pinevex captures
+  ---
+  duration_ms: 6.187
+  ...
+# Subtest: capture polling keeps the admission request ID across multiple responses
+ok 62 - capture polling keeps the admission request ID across multiple responses
+  ---
+  duration_ms: 129.2526
+  ...
+# Subtest: cancellation stops capture polling before another read
+ok 63 - cancellation stops capture polling before another read
+  ---
+  duration_ms: 8.6562
+  ...
+# Subtest: matrix completion waits for every exact state and viewport job
+ok 64 - matrix completion waits for every exact state and viewport job
+  ---
+  duration_ms: 11.0242
+  ...
+# Subtest: capture request is unavailable when Studio cannot read a UI snapshot
+ok 65 - capture request is unavailable when Studio cannot read a UI snapshot
+  ---
+  duration_ms: 27.6919
+  ...
+# Subtest: studio_runtime capture stays unavailable through the edit-mode bridge
+ok 66 - studio_runtime capture stays unavailable through the edit-mode bridge
+  ---
+  duration_ms: 10.0817
+  ...
+# Subtest: a verified Studio receipt becomes a server-owned capture, never client metadata
+ok 67 - a verified Studio receipt becomes a server-owned capture, never client metadata
+  ---
+  duration_ms: 31.2418
+  ...
+# Subtest: capture queues only the Studio session bound to the design project
+ok 68 - capture queues only the Studio session bound to the design project
+  ---
+  duration_ms: 37.7895
+  ...
+# Subtest: an ambiguous or unbound Studio target is unavailable instead of capturing the first session
+ok 69 - an ambiguous or unbound Studio target is unavailable instead of capturing the first session
+  ---
+  duration_ms: 10.6182
+  ...
+# Subtest: an incomplete Studio traversal cannot become a synced capture
+ok 70 - an incomplete Studio traversal cannot become a synced capture
+  ---
+  duration_ms: 6.1795
+  ...
+# Subtest: applied identity advances only after matching readback (true)
+ok 71 - applied identity advances only after matching readback (true)
+  ---
+  duration_ms: 16.7015
+  ...
+# Subtest: applied identity advances only after matching readback (false)
+ok 72 - applied identity advances only after matching readback (false)
+  ---
+  duration_ms: 16.0923
+  ...
+# Subtest: manifest exposes the latest capture, server-owned viewports and honest capabilities
+ok 73 - manifest exposes the latest capture, server-owned viewports and honest capabilities
+  ---
+  duration_ms: 78.533
+  ...
+# Subtest: a capture is validated before storage and rejects an incomplete traversal
+ok 74 - a capture is validated before storage and rejects an incomplete traversal
+  ---
+  duration_ms: 9.4421
+  ...
+# Subtest: the capture tree hash is computed from the observed tree, not supplied
+ok 75 - the capture tree hash is computed from the observed tree, not supplied
+  ---
+  duration_ms: 4.7559
+  ...
+# Subtest: enqueue rejects a stale source revision instead of rendering the wrong thing
+ok 76 - enqueue rejects a stale source revision instead of rendering the wrong thing
+  ---
+  duration_ms: 8.0943
+  ...
+# Subtest: enqueue rejects an unknown viewport rather than coercing to a default
+ok 77 - enqueue rejects an unknown viewport rather than coercing to a default
+  ---
+  duration_ms: 7.8565
+  ...
+# Subtest: reconnecting with a new idempotency key deduplicates instead of launching a duplicate render
+ok 78 - reconnecting with a new idempotency key deduplicates instead of launching a duplicate render
+  ---
+  duration_ms: 18.8221
+  ...
+# Subtest: replaying the same idempotency key with different input is a conflict
+ok 79 - replaying the same idempotency key with different input is a conflict
+  ---
+  duration_ms: 7.1336
+  ...
+# Subtest: a newer request supersedes the older in-flight preview for the same slot
+ok 80 - a newer request supersedes the older in-flight preview for the same slot
+  ---
+  duration_ms: 13.5884
+  ...
+# Subtest: a slow superseded worker cannot overwrite the newer published preview
+ok 81 - a slow superseded worker cannot overwrite the newer published preview
+  ---
+  duration_ms: 16.9684
+  ...
+# Subtest: publication is refused once the design moved to a newer source revision
+ok 82 - publication is refused once the design moved to a newer source revision
+  ---
+  duration_ms: 7.8104
+  ...
+# Subtest: states are bound to the capture hash and the source revision
+ok 83 - states are bound to the capture hash and the source revision
+  ---
+  duration_ms: 7.8193
+  ...
+# Subtest: a state bound to an older capture cannot be enqueued
+ok 84 - a state bound to an older capture cannot be enqueued
+  ---
+  duration_ms: 8.331
+  ...
+# Subtest: default is reserved for the captured baseline and cannot be saved as a state
+ok 85 - default is reserved for the captured baseline and cannot be saved as a state
+  ---
+  duration_ms: 4.4154
+  ...
+# Subtest: image reads verify the stored bytes against the published manifest hash
+ok 86 - image reads verify the stored bytes against the published manifest hash
+  ---
+  duration_ms: 13.1446
+  ...
+# Subtest: another user cannot read a design, its previews or its images
+ok 87 - another user cannot read a design, its previews or its images
+  ---
+  duration_ms: 6.4471
+  ...
+# Subtest: losing project access blocks preview reads even for the design owner
+ok 88 - losing project access blocks preview reads even for the design owner
+  ---
+  duration_ms: 9.7452
+  ...
+# Subtest: the daily render budget is separate from generation credits
+ok 89 - the daily render budget is separate from generation credits
+  ---
+  duration_ms: 5.5536
+  ...
+# Subtest: simultaneous preview admissions reserve one job and bind every request key
+ok 90 - simultaneous preview admissions reserve one job and bind every request key
+  ---
+  duration_ms: 8.3592
+  ...
+# Subtest: a cache hit is served without admitting a new render job
+ok 91 - a cache hit is served without admitting a new render job
+  ---
+  duration_ms: 6.9895
+  ...
+# Subtest: unset UI_PREVIEW_ENABLED still admits a render job
+ok 92 - unset UI_PREVIEW_ENABLED still admits a render job
+  ---
+  duration_ms: 7.7324
+  ...
+# Subtest: UI_PREVIEW_ENABLED=false still disables enqueue
+ok 93 - UI_PREVIEW_ENABLED=false still disables enqueue
+  ---
+  duration_ms: 4.2601
+  ...
+# Subtest: manifest reports rendererBackend and fallbackConfigured from the renderer descriptor
+ok 94 - manifest reports rendererBackend and fallbackConfigured from the renderer descriptor
+  ---
+  duration_ms: 3.6285
+  ...
+# Subtest: public renderer results cannot be published
+ok 95 - public renderer results cannot be published
+  ---
+  duration_ms: 4.2195
+  ...
+# Subtest: manual compilation and repair share verified tree and source preconditions and saved hooks
+ok 96 - manual compilation and repair share verified tree and source preconditions and saved hooks
+  ---
+  duration_ms: 22.6306
+  ...
+# Subtest: a concurrent edit stops application before Studio is queued
+ok 97 - a concurrent edit stops application before Studio is queued
+  ---
+  duration_ms: 3.565
+  ...
+# Subtest: verified script hashes wait for readback before replacing applied identity
+ok 98 - verified script hashes wait for readback before replacing applied identity
+  ---
+  duration_ms: 3.3469
+  ...
+# Subtest: hook source identity changes the revision without migrating legacy documents
+ok 99 - hook source identity changes the revision without migrating legacy documents
+  ---
+  duration_ms: 1.2972
+  ...
+# Subtest: cancelled tasks and newer drafts invalidate undelivered UI writes
+ok 100 - cancelled tasks and newer drafts invalidate undelivered UI writes
+  ---
+  duration_ms: 2.6903
+  ...
+# Subtest: offline compilation succeeds and Studio application returns a resumable reason
+ok 101 - offline compilation succeeds and Studio application returns a resumable reason
+  ---
+  duration_ms: 6.7104
+  ...
+# Subtest: artifact intake preserves the canonical UI Creator launch envelope
+ok 102 - artifact intake preserves the canonical UI Creator launch envelope
+  ---
+  duration_ms: 10.7233
+  ...
+# Subtest: artifact intake does not discard malformed orphaned UI fields before validation
+ok 103 - artifact intake does not discard malformed orphaned UI fields before validation
+  ---
+  duration_ms: 0.4727
+  ...
+# Subtest: artifact execution uses the accepted Task UI envelope instead of stale caller fields
+ok 104 - artifact execution uses the accepted Task UI envelope instead of stale caller fields
+  ---
+  duration_ms: 0.4961
+  ...
+# Subtest: legacy mode invokes only the legacy launcher exactly once
+ok 105 - legacy mode invokes only the legacy launcher exactly once
+  ---
+  duration_ms: 10.9746
+  ...
+# Subtest: dual mode mirrors an authorized project, then invokes one legacy launcher
+ok 106 - dual mode mirrors an authorized project, then invokes one legacy launcher
+  ---
+  duration_ms: 2.0432
+  ...
+# Subtest: dual mode without project context stays legacy-only
+ok 107 - dual mode without project context stays legacy-only
+  ---
+  duration_ms: 1.619
+  ...
+# Subtest: dual mirror authorization failure occurs before any launch
+ok 108 - dual mirror authorization failure occurs before any launch
+  ---
+  duration_ms: 1.7667
+  ...
+# Subtest: canonical adapter performs intake before exactly one legacy launch
+ok 109 - canonical adapter performs intake before exactly one legacy launch
+  ---
+  duration_ms: 1.0722
+  ...
+# Subtest: canonical intake receives only the server-trusted approved plan
+ok 110 - canonical intake receives only the server-trusted approved plan
+  ---
+  duration_ms: 1.4569
+  ...
+# Subtest: canonical intake ignores the selected Studio target while launch routing stays Task-owned
+ok 111 - canonical intake ignores the selected Studio target while launch routing stays Task-owned
+  ---
+  duration_ms: 2.0561
+  ...
+# Subtest: durable execution identity is fenced to the trusted approved plan reference
+ok 112 - durable execution identity is fenced to the trusted approved plan reference
+  ---
+  duration_ms: 5.678
+  ...
+# Subtest: durable scoped replay returns the prior launch without a second side effect
+ok 113 - durable scoped replay returns the prior launch without a second side effect
+  ---
+  duration_ms: 1.5384
+  ...
+# Subtest: durable replay rejects a changed request before a second launch
+ok 114 - durable replay rejects a changed request before a second launch
+  ---
+  duration_ms: 1.4044
+  ...
+# Subtest: concurrent canonical retries share one intake and one side effect
+ok 115 - concurrent canonical retries share one intake and one side effect
+  ---
+  duration_ms: 26.224
+  ...
+# Subtest: canonical mode fails closed when transport selection is zero or both
+    # Subtest: no transport
+    ok 1 - no transport
+      ---
+      duration_ms: 3.528
+      ...
+    # Subtest: both transports
+    ok 2 - both transports
+      ---
+      duration_ms: 0.6274
+      ...
+    1..2
+ok 116 - canonical mode fails closed when transport selection is zero or both
+  ---
+  duration_ms: 8.7407
+  ...
+# Subtest: canonical outbox transport enqueues and launches exactly once through the dispatcher
+ok 117 - canonical outbox transport enqueues and launches exactly once through the dispatcher
+  ---
+  duration_ms: 3.0434
+  ...
+# Subtest: canonical outbox without a dispatcher remains fail-closed
+ok 118 - canonical outbox without a dispatcher remains fail-closed
+  ---
+  duration_ms: 0.5716
+  ...
+# Subtest: canonical waiting_user intake returns without launching
+ok 119 - canonical waiting_user intake returns without launching
+  ---
+  duration_ms: 0.4321
+  ...
+# Subtest: canonical mode rejects missing project and intake failures before launch
+    # Subtest: missing project
+    ok 1 - missing project
+      ---
+      duration_ms: 0.3967
+      ...
+    # Subtest: unauthorized project
+    ok 2 - unauthorized project
+      ---
+      duration_ms: 0.4336
+      ...
+    1..2
+ok 120 - canonical mode rejects missing project and intake failures before launch
+  ---
+  duration_ms: 1.1814
+  ...
+# Subtest: canonical non-executable intake outcomes remain structured and never launch
+    # Subtest: conversation
+    ok 1 - conversation
+      ---
+      duration_ms: 0.5225
+      ...
+    # Subtest: continuation
+    ok 2 - continuation
+      ---
+      duration_ms: 0.2258
+      ...
+    # Subtest: amendment
+    ok 3 - amendment
+      ---
+      duration_ms: 0.2016
+      ...
+    1..3
+ok 121 - canonical non-executable intake outcomes remain structured and never launch
+  ---
+  duration_ms: 1.4097
+  ...
+# Subtest: independent facade instances resume through the same deterministic downstream identity
+ok 122 - independent facade instances resume through the same deterministic downstream identity
+  ---
+  duration_ms: 3.1446
+  ...
+# Subtest: an uncertain launch retains its durable claim and retries return recovery identities
+ok 123 - an uncertain launch retains its durable claim and retries return recovery identities
+  ---
+  duration_ms: 2.4882
+  ...
+# Subtest: a crash after deterministic job creation checkpoints and replays that job without relaunch
+ok 124 - a crash after deterministic job creation checkpoints and replays that job without relaunch
+  ---
+  duration_ms: 1.0999
+  ...
+# Subtest: deterministic launch rejection remains terminal instead of becoming outcome unknown
+ok 125 - deterministic launch rejection remains terminal instead of becoming outcome unknown
+  ---
+  duration_ms: 0.9953
+  ...
+# Subtest: canonical launch derives Studio routing only from a complete trusted Task target
+    # Subtest: complete Task target replaces every caller-supplied target alias
+    ok 1 - complete Task target replaces every caller-supplied target alias
+      ---
+      duration_ms: 2.8432
+      ...
+    # Subtest: caller opt-out disables an otherwise complete Task target
+    ok 2 - caller opt-out disables an otherwise complete Task target
+      ---
+      duration_ms: 0.6079
+      ...
+    # Subtest: a server-owned Studio session remains valid when place attestation is unavailable
+    ok 3 - a server-owned Studio session remains valid when place attestation is unavailable
+      ---
+      duration_ms: 0.9905
+      ...
+    1..3
+ok 126 - canonical launch derives Studio routing only from a complete trusted Task target
+  ---
+  duration_ms: 5.2283
+  ...
+# Subtest: canonical mode rejects an intake result without trusted ownership before launching
+ok 127 - canonical mode rejects an intake result without trusted ownership before launching
+  ---
+  duration_ms: 1.0438
+  ...
+# Subtest: canonical transport helper enforces exclusive selection
+ok 128 - canonical transport helper enforces exclusive selection
+  ---
+  duration_ms: 0.6271
+  ...
+# Subtest: requestFingerprint includes refine base identity
+ok 129 - requestFingerprint includes refine base identity
+  ---
+  duration_ms: 0.3289
+  ...
+# Subtest: requestFingerprint ignores deprecated client Studio targets
+ok 130 - requestFingerprint ignores deprecated client Studio targets
+  ---
+  duration_ms: 0.1624
+  ...
+# Subtest: constructor fails closed without a project authorizer
+ok 131 - constructor fails closed without a project authorizer
+  ---
+  duration_ms: 10.8803
+  ...
+# Subtest: create-body normalization excludes caller-supplied ownership fields
+ok 132 - create-body normalization excludes caller-supplied ownership fields
+  ---
+  duration_ms: 2.8016
+  ...
+# Subtest: trusted approved game intelligence enters the hashed plan execution context
+ok 133 - trusted approved game intelligence enters the hashed plan execution context
+  ---
+  duration_ms: 9.3981
+  ...
+# Subtest: approved plan with invalid game intelligence project mode is rejected
+ok 134 - approved plan with invalid game intelligence project mode is rejected
+  ---
+  duration_ms: 2.8266
+  ...
+# Subtest: UI Creator task fields are revision-fenced and scoped to their workspace
+ok 135 - UI Creator task fields are revision-fenced and scoped to their workspace
+  ---
+  duration_ms: 1.596
+  ...
+# Subtest: trusted approved structured steps compile exactly into stable canonical runtime steps
+ok 136 - trusted approved structured steps compile exactly into stable canonical runtime steps
+  ---
+  duration_ms: 4.2062
+  ...
+# Subtest: approved v3 loader output compiles without shape translation or capability aliases
+ok 137 - approved v3 loader output compiles without shape translation or capability aliases
+  ---
+  duration_ms: 35.4787
+  ...
+# Subtest: legacy approved plans retain generic planning while preserving source linkage
+ok 138 - legacy approved plans retain generic planning while preserving source linkage
+  ---
+  duration_ms: 3.6653
+  ...
+# Subtest: trusted structured plans fail closed on missing dependency IDs
+ok 139 - trusted structured plans fail closed on missing dependency IDs
+  ---
+  duration_ms: 3.7247
+  ...
+# Subtest: trusted structured plans repair unique title dependencies before compilation
+ok 140 - trusted structured plans repair unique title dependencies before compilation
+  ---
+  duration_ms: 2.5431
+  ...
+# Subtest: trusted structured plans fail closed on dependency cycles
+ok 141 - trusted structured plans fail closed on dependency cycles
+  ---
+  duration_ms: 0.8589
+  ...
+# Subtest: normal conversation is classified without creating or mutating runtime state
+ok 142 - normal conversation is classified without creating or mutating runtime state
+  ---
+  duration_ms: 16.4036
+  ...
+# Subtest: trusted approved plans force noun-like goals through exact task compilation
+ok 143 - trusted approved plans force noun-like goals through exact task compilation
+  ---
+  duration_ms: 9.0922
+  ...
+# Subtest: dual-write compatibility intake is internal-only and still authorizes the project
+ok 144 - dual-write compatibility intake is internal-only and still authorizes the project
+  ---
+  duration_ms: 1.9163
+  ...
+# Subtest: read re-authorizes the persisted project before returning task details
+ok 145 - read re-authorizes the persisted project before returning task details
+  ---
+  duration_ms: 6.8745
+  ...
+# Subtest: canonical reads remain independently disabled even while the canonical runtime owns writes
+ok 146 - canonical reads remain independently disabled even while the canonical runtime owns writes
+  ---
+  duration_ms: 0.5624
+  ...
+# Subtest: action rejects a no-longer-owned persisted project before any mutation
+ok 147 - action rejects a no-longer-owned persisted project before any mutation
+  ---
+  duration_ms: 0.7565
+  ...
+# Subtest: active-task lookup ignores Ask, Plan, and explicit planning turns
+ok 148 - active-task lookup ignores Ask, Plan, and explicit planning turns
+  ---
+  duration_ms: 0.4597
+  ...
+# Subtest: scheduled retry without a durable worker leaves the task scheduled
+ok 149 - scheduled retry without a durable worker leaves the task scheduled
+  ---
+  duration_ms: 0.5589
+  ...
+# Subtest: scheduled retry is consumed by the existing team worker without repeating completed specialists
+ok 150 - scheduled retry is consumed by the existing team worker without repeating completed specialists
+  ---
+  duration_ms: 184.5848
+  ...
+# Subtest: Agent planning intent is persisted as a Plan task with original selected mode
+ok 151 - Agent planning intent is persisted as a Plan task with original selected mode
+  ---
+  duration_ms: 16.2495
+  ...
+1..151
+# tests 161
+# suites 0
+# pass 161
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1021.2623

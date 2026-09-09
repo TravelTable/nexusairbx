@@ -1,0 +1,65 @@
+TAP version 13
+# Subtest: capture polling keeps the admission request ID across multiple responses
+ok 1 - capture polling keeps the admission request ID across multiple responses
+  ---
+  duration_ms: 52.3455
+  ...
+# Subtest: cancellation stops capture polling before another read
+ok 2 - cancellation stops capture polling before another read
+  ---
+  duration_ms: 3.3042
+  ...
+# Subtest: matrix completion waits for every exact state and viewport job
+ok 3 - matrix completion waits for every exact state and viewport job
+  ---
+  duration_ms: 4.687
+  ...
+# Subtest: capture request is unavailable when Studio cannot read a UI snapshot
+ok 4 - capture request is unavailable when Studio cannot read a UI snapshot
+  ---
+  duration_ms: 12.0674
+  ...
+# Subtest: studio_runtime capture stays unavailable through the edit-mode bridge
+ok 5 - studio_runtime capture stays unavailable through the edit-mode bridge
+  ---
+  duration_ms: 4.319
+  ...
+# Subtest: a verified Studio receipt becomes a server-owned capture, never client metadata
+ok 6 - a verified Studio receipt becomes a server-owned capture, never client metadata
+  ---
+  duration_ms: 11.0475
+  ...
+# Subtest: capture queues only the Studio session bound to the design project
+ok 7 - capture queues only the Studio session bound to the design project
+  ---
+  duration_ms: 17.2551
+  ...
+# Subtest: an ambiguous or unbound Studio target is unavailable instead of capturing the first session
+ok 8 - an ambiguous or unbound Studio target is unavailable instead of capturing the first session
+  ---
+  duration_ms: 4.077
+  ...
+# Subtest: an incomplete Studio traversal cannot become a synced capture
+ok 9 - an incomplete Studio traversal cannot become a synced capture
+  ---
+  duration_ms: 4.9398
+  ...
+# Subtest: applied identity advances only after matching readback (true)
+ok 10 - applied identity advances only after matching readback (true)
+  ---
+  duration_ms: 6.7763
+  ...
+# Subtest: applied identity advances only after matching readback (false)
+ok 11 - applied identity advances only after matching readback (false)
+  ---
+  duration_ms: 4.0676
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 204.3126

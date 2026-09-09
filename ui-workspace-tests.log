@@ -1,0 +1,17 @@
+PASS src/pages/ai/ui/UiCreatorWorkspace.test.jsx
+  √ Agent starts one durable UI task and cancellation uses the task action (232 ms)
+  √ reload reconnects to saved generating without another build (85 ms)
+  √ reload reconnects to saved awaiting_studio without another build (22 ms)
+  √ reload reconnects to saved awaiting_capture without another build (24 ms)
+  √ reload reconnects to saved awaiting_renders without another build (28 ms)
+  √ reload reconnects to saved repairing without another build (22 ms)
+  √ Plan waits for the explicit Build action (104 ms)
+  √ saved manual changes apply without asking for new generation (74 ms)
+  √ keyboard resizing stays bounded and a drawer restores focus (82 ms)
+  √ mobile offers Chat, Preview and Code views (56 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       10 passed, 10 total
+Snapshots:   0 total
+Time:        6.135 s
+Ran all test suites matching /src\\pages\\ai\\ui\\UiCreatorWorkspace.test.jsx/i.

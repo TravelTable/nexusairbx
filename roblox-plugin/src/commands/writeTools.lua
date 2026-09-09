@@ -1692,6 +1692,7 @@ UiArtifact.applyRoot = function(rootSpec, artifactId, snapshots, seenPaths)
 				node:SetAttribute(AGENT_ARTIFACT_ID_ATTRIBUTE, tostring(artifactId or ""))
 				node:SetAttribute("NexusDesignId", tostring(rootSpec.designId or ""))
 				node:SetAttribute("NexusNodeId", tostring(nodeSpec.nodeId or ""))
+				node:SetAttribute("NexusUiNodeId", tostring(nodeSpec.nodeId or ""))
 				node:SetAttribute("NexusRevision", tostring(rootSpec.documentRevision or ""))
 				node.Parent = nodeParent
 				byId[tostring(nodeSpec.nodeId or "")] = node

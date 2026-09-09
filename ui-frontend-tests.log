@@ -1,0 +1,154 @@
+npm warn "src/pages/ai/ui/UiCreatorWorkspace.test.jsx" is being parsed as a normal command line argument.
+npm warn Unknown cli config "--watchAll". This will stop working in the next major version of npm.
+npm warn Unknown cli config "--runInBand". This will stop working in the next major version of npm.
+
+> nexusrbx-react@0.1.0 test
+> react-scripts test src/pages/ai/ui/UiCreatorWorkspace.test.jsx src/hooks/useUiPreview.test.js
+
+PASS src/hooks/useUiPreview.test.js
+FAIL src/pages/ai/ui/UiCreatorWorkspace.test.jsx
+  ● Agent starts one durable UI task and cancellation uses the task action
+
+    ReferenceError: crypto is not defined
+
+      34 |   localStorage.clear();
+      35 |   window.matchMedia = jest.fn(() => ({ matches: false, addEventListener: jest.fn(), removeEventListener: jest.fn() }));
+    > 36 |   if (!crypto.randomUUID) crypto.randomUUID = () => "test-id";
+         |   ^
+      37 |   designs.listUiDesigns.mockResolvedValue({ designs: [record] });
+      38 |   designs.getUiDesign.mockResolvedValue({ design: record });
+      39 |   designs.listUiCheckpoints.mockResolvedValue({ checkpoints: [] });
+
+      at Object.<anonymous> (src/pages/ai/ui/UiCreatorWorkspace.test.jsx:36:3)
+
+  ● reload reconnects to saved generating without another build
+
+    ReferenceError: crypto is not defined
+
+      34 |   localStorage.clear();
+      35 |   window.matchMedia = jest.fn(() => ({ matches: false, addEventListener: jest.fn(), removeEventListener: jest.fn() }));
+    > 36 |   if (!crypto.randomUUID) crypto.randomUUID = () => "test-id";
+         |   ^
+      37 |   designs.listUiDesigns.mockResolvedValue({ designs: [record] });
+      38 |   designs.getUiDesign.mockResolvedValue({ design: record });
+      39 |   designs.listUiCheckpoints.mockResolvedValue({ checkpoints: [] });
+
+      at Object.<anonymous> (src/pages/ai/ui/UiCreatorWorkspace.test.jsx:36:3)
+
+  ● reload reconnects to saved awaiting_studio without another build
+
+    ReferenceError: crypto is not defined
+
+      34 |   localStorage.clear();
+      35 |   window.matchMedia = jest.fn(() => ({ matches: false, addEventListener: jest.fn(), removeEventListener: jest.fn() }));
+    > 36 |   if (!crypto.randomUUID) crypto.randomUUID = () => "test-id";
+         |   ^
+      37 |   designs.listUiDesigns.mockResolvedValue({ designs: [record] });
+      38 |   designs.getUiDesign.mockResolvedValue({ design: record });
+      39 |   designs.listUiCheckpoints.mockResolvedValue({ checkpoints: [] });
+
+      at Object.<anonymous> (src/pages/ai/ui/UiCreatorWorkspace.test.jsx:36:3)
+
+  ● reload reconnects to saved awaiting_capture without another build
+
+    ReferenceError: crypto is not defined
+
+      34 |   localStorage.clear();
+      35 |   window.matchMedia = jest.fn(() => ({ matches: false, addEventListener: jest.fn(), removeEventListener: jest.fn() }));
+    > 36 |   if (!crypto.randomUUID) crypto.randomUUID = () => "test-id";
+         |   ^
+      37 |   designs.listUiDesigns.mockResolvedValue({ designs: [record] });
+      38 |   designs.getUiDesign.mockResolvedValue({ design: record });
+      39 |   designs.listUiCheckpoints.mockResolvedValue({ checkpoints: [] });
+
+      at Object.<anonymous> (src/pages/ai/ui/UiCreatorWorkspace.test.jsx:36:3)
+
+  ● reload reconnects to saved awaiting_renders without another build
+
+    ReferenceError: crypto is not defined
+
+      34 |   localStorage.clear();
+      35 |   window.matchMedia = jest.fn(() => ({ matches: false, addEventListener: jest.fn(), removeEventListener: jest.fn() }));
+    > 36 |   if (!crypto.randomUUID) crypto.randomUUID = () => "test-id";
+         |   ^
+      37 |   designs.listUiDesigns.mockResolvedValue({ designs: [record] });
+      38 |   designs.getUiDesign.mockResolvedValue({ design: record });
+      39 |   designs.listUiCheckpoints.mockResolvedValue({ checkpoints: [] });
+
+      at Object.<anonymous> (src/pages/ai/ui/UiCreatorWorkspace.test.jsx:36:3)
+
+  ● reload reconnects to saved repairing without another build
+
+    ReferenceError: crypto is not defined
+
+      34 |   localStorage.clear();
+      35 |   window.matchMedia = jest.fn(() => ({ matches: false, addEventListener: jest.fn(), removeEventListener: jest.fn() }));
+    > 36 |   if (!crypto.randomUUID) crypto.randomUUID = () => "test-id";
+         |   ^
+      37 |   designs.listUiDesigns.mockResolvedValue({ designs: [record] });
+      38 |   designs.getUiDesign.mockResolvedValue({ design: record });
+      39 |   designs.listUiCheckpoints.mockResolvedValue({ checkpoints: [] });
+
+      at Object.<anonymous> (src/pages/ai/ui/UiCreatorWorkspace.test.jsx:36:3)
+
+  ● Plan waits for the explicit Build action
+
+    ReferenceError: crypto is not defined
+
+      34 |   localStorage.clear();
+      35 |   window.matchMedia = jest.fn(() => ({ matches: false, addEventListener: jest.fn(), removeEventListener: jest.fn() }));
+    > 36 |   if (!crypto.randomUUID) crypto.randomUUID = () => "test-id";
+         |   ^
+      37 |   designs.listUiDesigns.mockResolvedValue({ designs: [record] });
+      38 |   designs.getUiDesign.mockResolvedValue({ design: record });
+      39 |   designs.listUiCheckpoints.mockResolvedValue({ checkpoints: [] });
+
+      at Object.<anonymous> (src/pages/ai/ui/UiCreatorWorkspace.test.jsx:36:3)
+
+  ● saved manual changes apply without asking for new generation
+
+    ReferenceError: crypto is not defined
+
+      34 |   localStorage.clear();
+      35 |   window.matchMedia = jest.fn(() => ({ matches: false, addEventListener: jest.fn(), removeEventListener: jest.fn() }));
+    > 36 |   if (!crypto.randomUUID) crypto.randomUUID = () => "test-id";
+         |   ^
+      37 |   designs.listUiDesigns.mockResolvedValue({ designs: [record] });
+      38 |   designs.getUiDesign.mockResolvedValue({ design: record });
+      39 |   designs.listUiCheckpoints.mockResolvedValue({ checkpoints: [] });
+
+      at Object.<anonymous> (src/pages/ai/ui/UiCreatorWorkspace.test.jsx:36:3)
+
+  ● keyboard resizing stays bounded and a drawer restores focus
+
+    ReferenceError: crypto is not defined
+
+      34 |   localStorage.clear();
+      35 |   window.matchMedia = jest.fn(() => ({ matches: false, addEventListener: jest.fn(), removeEventListener: jest.fn() }));
+    > 36 |   if (!crypto.randomUUID) crypto.randomUUID = () => "test-id";
+         |   ^
+      37 |   designs.listUiDesigns.mockResolvedValue({ designs: [record] });
+      38 |   designs.getUiDesign.mockResolvedValue({ design: record });
+      39 |   designs.listUiCheckpoints.mockResolvedValue({ checkpoints: [] });
+
+      at Object.<anonymous> (src/pages/ai/ui/UiCreatorWorkspace.test.jsx:36:3)
+
+  ● mobile offers Chat, Preview and Code views
+
+    ReferenceError: crypto is not defined
+
+      34 |   localStorage.clear();
+      35 |   window.matchMedia = jest.fn(() => ({ matches: false, addEventListener: jest.fn(), removeEventListener: jest.fn() }));
+    > 36 |   if (!crypto.randomUUID) crypto.randomUUID = () => "test-id";
+         |   ^
+      37 |   designs.listUiDesigns.mockResolvedValue({ designs: [record] });
+      38 |   designs.getUiDesign.mockResolvedValue({ design: record });
+      39 |   designs.listUiCheckpoints.mockResolvedValue({ checkpoints: [] });
+
+      at Object.<anonymous> (src/pages/ai/ui/UiCreatorWorkspace.test.jsx:36:3)
+
+Test Suites: 1 failed, 1 passed, 2 total
+Tests:       10 failed, 7 passed, 17 total
+Snapshots:   0 total
+Time:        4.223 s, estimated 9 s
+Ran all test suites matching /src\\pages\\ai\\ui\\UiCreatorWorkspace.test.jsx|src\\hooks\\useUiPreview.test.js/i.

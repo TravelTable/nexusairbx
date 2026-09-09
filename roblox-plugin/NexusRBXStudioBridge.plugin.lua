@@ -11,14 +11,14 @@ if not game:GetService("RunService"):IsEdit() then return end
 
 local BACKEND_URL = "https://api.nexusrbx.com"
 local BACKEND_HOST = "api.nexusrbx.com"
-local PLUGIN_VERSION = "0.15.0-ui-snapshot"
-local STUDIO_PROTOCOL_VERSION = "2026-09-08-ui-snapshot"
+local PLUGIN_VERSION = "0.15.1-ui-build"
+local STUDIO_PROTOCOL_VERSION = "2026-09-08-ui-build"
 
 -- This identifies the exact release artifact, independently of the user-facing
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.15.0-ui-snapshot.16-read-ui-snapshot"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.15.1-ui-build.17-stable-ui-capture"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the
@@ -2070,16 +2070,24 @@ captureUiSnapshot = function(payload)
 		return candidate
 	end
 
-	-- DEVIATION from the supplied module: it asserted on duplicate node IDs,
-	-- which lets one authoring mistake abort an entire capture. Fall back to a
-	-- generated ID and surface the collision as a warning instead.
+	-- Read both generations without mutating Studio. Identity conflicts cannot
+	-- become a trusted capture or be repaired by guessing which node was meant.
 	local function claimId(instance, ordinal)
-		local rawId = instance:GetAttribute("NexusUiNodeId")
+		local canonicalId = instance:GetAttribute("NexusNodeId")
+		local aliasId = instance:GetAttribute("NexusUiNodeId")
+		if canonicalId ~= nil and aliasId ~= nil and canonicalId ~= aliasId then
+			complete = false
+			local conflictId = uniqueId(ordinal)
+			warn(conflictId, "NODE_ID_CONFLICT", "NexusNodeId and NexusUiNodeId disagree. Resolve the node identity before capturing.")
+			return conflictId, nil
+		end
+		local rawId = canonicalId or aliasId
 		if typeof(rawId) == "string" and #rawId > 0 and #rawId <= UI_SNAPSHOT.MAX_NODE_ID_LENGTH then
 			if not usedIds[rawId] then
 				usedIds[rawId] = true
 				return rawId, nil
 			end
+			complete = false
 			return uniqueId(ordinal), rawId
 		end
 		return uniqueId(ordinal), nil
@@ -2171,6 +2179,9 @@ captureUiSnapshot = function(payload)
 		warnings = warnings,
 		captureMode = "studio_edit",
 		rootPath = fullPath(root),
+		managedTreeHash = UiArtifact.treeHash(root),
+		documentRevision = root:GetAttribute("NexusRevision"),
+		designId = root:GetAttribute("NexusDesignId"),
 		requestedPath = requestedPath,
 		maxNodes = maxNodes,
 		maxDepth = maxDepth,
@@ -6194,6 +6205,7 @@ UiArtifact.applyRoot = function(rootSpec, artifactId, snapshots, seenPaths)
 				node:SetAttribute(AGENT_ARTIFACT_ID_ATTRIBUTE, tostring(artifactId or ""))
 				node:SetAttribute("NexusDesignId", tostring(rootSpec.designId or ""))
 				node:SetAttribute("NexusNodeId", tostring(nodeSpec.nodeId or ""))
+				node:SetAttribute("NexusUiNodeId", tostring(nodeSpec.nodeId or ""))
 				node:SetAttribute("NexusRevision", tostring(rootSpec.documentRevision or ""))
 				node.Parent = nodeParent
 				byId[tostring(nodeSpec.nodeId or "")] = node

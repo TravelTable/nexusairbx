@@ -1,0 +1,418 @@
+
+> nexusrbx-react@0.1.0 plugin:build
+> node roblox-plugin/build/bundle-plugin.js && npm run plugin:test && node roblox-plugin/build/verify-plugin-artifact.js && node roblox-plugin/build/write-plugin-checksum.js && node roblox-plugin/build/install-local-plugin.js --build-only --from-bundle && node scripts/prepare-studio-download.cjs
+
+Bundled 25 source files into roblox-plugin\NexusRBXStudioBridge.plugin.lua (160 top-level locals)
+
+> nexusrbx-react@0.1.0 plugin:test
+> node --test roblox-plugin/build/*.test.js
+
+TAP version 13
+# Subtest: create_instance accepts only allowlisted native BasePart properties
+ok 1 - create_instance accepts only allowlisted native BasePart properties
+  ---
+  duration_ms: 5.9933
+  ...
+# Subtest: src/commands/registry.lua: only BasePart.Color accepts its exact quantized channel readback
+ok 2 - src/commands/registry.lua: only BasePart.Color accepts its exact quantized channel readback
+  ---
+  duration_ms: 36.6712
+  ...
+# Subtest: NexusRBXStudioBridge.plugin.lua: only BasePart.Color accepts its exact quantized channel readback
+ok 3 - NexusRBXStudioBridge.plugin.lua: only BasePart.Color accepts its exact quantized channel readback
+  ---
+  duration_ms: 21.3146
+  ...
+# Subtest: complete Color3 matcher rejects wrong classes, properties, types, and actual colors
+ok 4 - complete Color3 matcher rejects wrong classes, properties, types, and actual colors # SKIP Set LUAU_BIN to run the complete Luau matcher regression
+  ---
+  duration_ms: 0.3448
+  ...
+# Subtest: src/ui/BridgePanel.lua presents MCP as an optional enhanced connection
+ok 5 - src/ui/BridgePanel.lua presents MCP as an optional enhanced connection
+  ---
+  duration_ms: 3.2131
+  ...
+# Subtest: NexusRBXStudioBridge.plugin.lua presents MCP as an optional enhanced connection
+ok 6 - NexusRBXStudioBridge.plugin.lua presents MCP as an optional enhanced connection
+  ---
+  duration_ms: 19.2817
+  ...
+# Subtest: Studio plugin accepts every create_instance class allowed by the backend
+ok 7 - Studio plugin accepts every create_instance class allowed by the backend
+  ---
+  duration_ms: 3.7577
+  ...
+# Subtest: src/Main.server.lua never renders pairing credentials
+ok 8 - src/Main.server.lua never renders pairing credentials
+  ---
+  duration_ms: 2.9314
+  ...
+# Subtest: NexusRBXStudioBridge.plugin.lua never renders pairing credentials
+ok 9 - NexusRBXStudioBridge.plugin.lua never renders pairing credentials
+  ---
+  duration_ms: 9.6861
+  ...
+# Subtest: BridgePanel success banners recognize generic pairing copy without credential fields
+ok 10 - BridgePanel success banners recognize generic pairing copy without credential fields
+  ---
+  duration_ms: 2.5903
+  ...
+# Subtest: runtime copies exit before shared connector, UI, and network initialization
+ok 11 - runtime copies exit before shared connector, UI, and network initialization
+  ---
+  duration_ms: 11.9086
+  ...
+# Subtest: a long poll crossing into Play rejects claimed work before queueing or execution
+ok 12 - a long poll crossing into Play rejects claimed work before queueing or execution
+  ---
+  duration_ms: 0.9481
+  ...
+# Subtest: explicit property readback is bounded, keeps false values and uses the canonical serializer
+ok 13 - explicit property readback is bounded, keeps false values and uses the canonical serializer
+  ---
+  duration_ms: 10.1129
+  ...
+# Subtest: HTTP failures are converted to user-facing strings before reaching plugin UI
+ok 14 - HTTP failures are converted to user-facing strings before reaching plugin UI
+  ---
+  duration_ms: 2.6599
+  ...
+# Subtest: src/commands/registry.lua: native batches pass stable command identity to child handlers
+ok 15 - src/commands/registry.lua: native batches pass stable command identity to child handlers
+  ---
+  duration_ms: 12.6709
+  ...
+# Subtest: NexusRBXStudioBridge.plugin.lua: native batches pass stable command identity to child handlers
+ok 16 - NexusRBXStudioBridge.plugin.lua: native batches pass stable command identity to child handlers
+  ---
+  duration_ms: 11.7357
+  ...
+# Subtest: src/commands/nativeModel.lua: native creation snapshots missing parents and its root before insertion
+ok 17 - src/commands/nativeModel.lua: native creation snapshots missing parents and its root before insertion
+  ---
+  duration_ms: 5.0271
+  ...
+# Subtest: NexusRBXStudioBridge.plugin.lua: native creation snapshots missing parents and its root before insertion
+ok 18 - NexusRBXStudioBridge.plugin.lua: native creation snapshots missing parents and its root before insertion
+  ---
+  duration_ms: 9.2567
+  ...
+# Subtest: accepts a loopback HTTP backend for local Studio testing
+ok 19 - accepts a loopback HTTP backend for local Studio testing
+  ---
+  duration_ms: 2.8876
+  ...
+# Subtest: rejects insecure non-local plugin backends
+ok 20 - rejects insecure non-local plugin backends
+  ---
+  duration_ms: 0.9113
+  ...
+# Subtest: rewrites only the bundled plugin endpoint declarations
+ok 21 - rewrites only the bundled plugin endpoint declarations
+  ---
+  duration_ms: 0.7262
+  ...
+# Subtest: duplicate NexusRBX plugin builds are quarantined while the canonical and unrelated plugins remain
+ok 22 - duplicate NexusRBX plugin builds are quarantined while the canonical and unrelated plugins remain
+  ---
+  duration_ms: 22.0155
+  ...
+# Subtest: Windows install uses Roblox Studio's LOCALAPPDATA plugins directory
+ok 23 - Windows install uses Roblox Studio's LOCALAPPDATA plugins directory
+  ---
+  duration_ms: 1.9877
+  ...
+# Subtest: Windows environment lookup is case-insensitive
+ok 24 - Windows environment lookup is case-insensitive
+  ---
+  duration_ms: 0.3678
+  ...
+# Subtest: explicit plugin-directory override wins without querying Windows
+ok 25 - explicit plugin-directory override wins without querying Windows
+  ---
+  duration_ms: 0.2683
+  ...
+# Subtest: override rejects paths outside a Roblox Plugins directory
+ok 26 - override rejects paths outside a Roblox Plugins directory
+  ---
+  duration_ms: 0.9177
+  ...
+# Subtest: Windows retains an AppData Local fallback when LOCALAPPDATA is unavailable
+ok 27 - Windows retains an AppData Local fallback when LOCALAPPDATA is unavailable
+  ---
+  duration_ms: 0.6595
+  ...
+# Subtest: Windows rejects a non-absolute LOCALAPPDATA value before using fallback
+ok 28 - Windows rejects a non-absolute LOCALAPPDATA value before using fallback
+  ---
+  duration_ms: 1.7007
+  ...
+# Subtest: non-Windows installs retain the home Documents behavior
+ok 29 - non-Windows installs retain the home Documents behavior
+  ---
+  duration_ms: 1.4099
+  ...
+# Subtest: rbxmx identifiers are deterministic for identical plugin source
+ok 30 - rbxmx identifiers are deterministic for identical plugin source
+  ---
+  duration_ms: 3.4303
+  ...
+# Subtest: rbxmx identifiers change when plugin source changes
+ok 31 - rbxmx identifiers change when plugin source changes
+  ---
+  duration_ms: 1.9135
+  ...
+# Subtest: rbxmx source preserves CDATA terminators safely
+ok 32 - rbxmx source preserves CDATA terminators safely
+  ---
+  duration_ms: 0.3903
+  ...
+# Subtest: the context guard is shared by every bundled plugin section
+ok 33 - the context guard is shared by every bundled plugin section
+  ---
+  duration_ms: 11.5464
+  ...
+# Subtest: the plugin guard detects real GetService calls while blanking ordinary strings
+ok 34 - the plugin guard detects real GetService calls while blanking ordinary strings
+  ---
+  duration_ms: 0.9545
+  ...
+# Subtest: managed instance IDs are exported across bundled plugin sections
+ok 35 - managed instance IDs are exported across bundled plugin sections
+  ---
+  duration_ms: 9.7241
+  ...
+# Subtest: native model safety tables are exported into the bundled command scope
+ok 36 - native model safety tables are exported into the bundled command scope
+  ---
+  duration_ms: 8.8687
+  ...
+# Subtest: the bundled placement guard keeps canonical service path names
+ok 37 - the bundled placement guard keeps canonical service path names
+  ---
+  duration_ms: 7.413
+  ...
+# Subtest: create, write, patch, and replace validate before snapshots or source changes
+ok 38 - create, write, patch, and replace validate before snapshots or source changes
+  ---
+  duration_ms: 1.268
+  ...
+# Subtest: existing class conversion requires consent, inspection evidence, and a pre-mutation snapshot
+ok 39 - existing class conversion requires consent, inspection evidence, and a pre-mutation snapshot
+  ---
+  duration_ms: 1.1275
+  ...
+# Subtest: legacy and managed artifact application validate all scripts before mutation
+ok 40 - legacy and managed artifact application validate all scripts before mutation
+  ---
+  duration_ms: 0.7403
+  ...
+# Subtest: plugin smoke checks report script-context findings
+ok 41 - plugin smoke checks report script-context findings
+  ---
+  duration_ms: 1.9221
+  ...
+# Subtest: whole-project validation reports existing script-context findings
+ok 42 - whole-project validation reports existing script-context findings
+  ---
+  duration_ms: 1.0895
+  ...
+# Subtest: service rewriting changes unqualified code identifiers only
+ok 43 - service rewriting changes unqualified code identifiers only
+  ---
+  duration_ms: 0.9913
+  ...
+# Subtest: service rewriting preserves short and long string literals byte-for-byte
+ok 44 - service rewriting preserves short and long string literals byte-for-byte
+  ---
+  duration_ms: 0.1923
+  ...
+# Subtest: service rewriting preserves line and long comments byte-for-byte
+ok 45 - service rewriting preserves line and long comments byte-for-byte
+  ---
+  duration_ms: 0.1472
+  ...
+# Subtest: bundle rewriting leaves config and CRLF literal data untouched
+ok 46 - bundle rewriting leaves config and CRLF literal data untouched
+  ---
+  duration_ms: 0.18
+  ...
+# Subtest: the generated artifact preserves canonical path and diagnostic strings
+ok 47 - the generated artifact preserves canonical path and diagnostic strings
+  ---
+  duration_ms: 8.1135
+  ...
+# Subtest: managed artifact writes wait for Studio source to match the requested content
+ok 48 - managed artifact writes wait for Studio source to match the requested content
+  ---
+  duration_ms: 1.7477
+  ...
+# Subtest: apply_artifact verification re-resolves the Studio path on every retry
+ok 49 - apply_artifact verification re-resolves the Studio path on every retry
+  ---
+  duration_ms: 5.7464
+  ...
+# Subtest: source read failures preserve bounded editor and property diagnostics
+ok 50 - source read failures preserve bounded editor and property diagnostics
+  ---
+  duration_ms: 10.5625
+  ...
+# Subtest: bundled script hashing captures the live source reader
+ok 51 - bundled script hashing captures the live source reader
+  ---
+  duration_ms: 3.7662
+  ...
+# Subtest: script deletion reports the verified pre-delete source baseline
+ok 52 - script deletion reports the verified pre-delete source baseline
+  ---
+  duration_ms: 9.3892
+  ...
+# Subtest: native model verification shares the canonical revision binding
+ok 53 - native model verification shares the canonical revision binding
+  ---
+  duration_ms: 5.8223
+  ...
+# Subtest: managed artifact projection is unique in source and bundled artifact
+ok 54 - managed artifact projection is unique in source and bundled artifact
+  ---
+  duration_ms: 11.3947
+  ...
+# Subtest: v2 mutations require the complete immutable target envelope
+ok 55 - v2 mutations require the complete immutable target envelope
+  ---
+  duration_ms: 2.2407
+  ...
+# Subtest: target identity is checked before approval and at the final mutation boundary
+ok 56 - target identity is checked before approval and at the final mutation boundary
+  ---
+  duration_ms: 0.7298
+  ...
+# Subtest: an authenticated heartbeat resumes a restarted plugin at the server generation
+ok 57 - an authenticated heartbeat resumes a restarted plugin at the server generation
+  ---
+  duration_ms: 6.2664
+  ...
+# Subtest: move and duplicate refuse source-descendant destinations before snapshot mutation
+ok 58 - move and duplicate refuse source-descendant destinations before snapshot mutation
+  ---
+  duration_ms: 1.0722
+  ...
+# Subtest: operation receipts are bounded, durable, and reconciled before redelivery
+ok 59 - operation receipts are bounded, durable, and reconciled before redelivery
+  ---
+  duration_ms: 0.7745
+  ...
+# Subtest: generated install artifact contains target diagnostics and the current build
+ok 60 - generated install artifact contains target diagnostics and the current build
+  ---
+  duration_ms: 4.5431
+  ...
+# Subtest: diagnostic collection defaults to the connected Studio project
+ok 61 - diagnostic collection defaults to the connected Studio project
+  ---
+  duration_ms: 0.6337
+  ...
+# Subtest: safe GUI properties accept planner shapes and participate in readback verification
+ok 62 - safe GUI properties accept planner shapes and participate in readback verification
+  ---
+  duration_ms: 1.4565
+  ...
+# Subtest: the installable plugin exposes native tools and no conversation UI
+ok 63 - the installable plugin exposes native tools and no conversation UI
+  ---
+  duration_ms: 7.4543
+  ...
+# Subtest: Studio result capture is attached after execution and verification
+ok 64 - Studio result capture is attached after execution and verification
+  ---
+  duration_ms: 5.4393
+  ...
+# Subtest: toolbox task lifecycle executes safely through retries, resumption, cancellation, and receipts
+ok 65 - toolbox task lifecycle executes safely through retries, resumption, cancellation, and receipts # SKIP Set LUAU_BIN to the Luau CLI to run lifecycle scenarios
+  ---
+  duration_ms: 0.1096
+  ...
+# Subtest: v3 UI artifacts snapshot, conflict-check, apply, and read back managed ScreenGui trees
+ok 66 - v3 UI artifacts snapshot, conflict-check, apply, and read back managed ScreenGui trees
+  ---
+  duration_ms: 2.1317
+  ...
+# Subtest: UI artifact creation remains allowlisted and does not execute document-provided Luau
+ok 67 - UI artifact creation remains allowlisted and does not execute document-provided Luau
+  ---
+  duration_ms: 1.7628
+  ...
+# Subtest: UI root fingerprints cover every applied property, identity, descendant, and script source
+ok 68 - UI root fingerprints cover every applied property, identity, descendant, and script source
+  ---
+  duration_ms: 0.7685
+  ...
+# Subtest: UI-only artifacts participate in command-bound verification and affected-path receipts
+ok 69 - UI-only artifacts participate in command-bound verification and affected-path receipts
+  ---
+  duration_ms: 0.7902
+  ...
+# Subtest: snapshot serialization restores UI decorators, sequences, layout padding, and ScreenGui state
+ok 70 - snapshot serialization restores UI decorators, sequences, layout padding, and ScreenGui state
+  ---
+  duration_ms: 1.2988
+  ...
+# Subtest: read_ui_snapshot is dispatchable from the generated bundle
+ok 71 - read_ui_snapshot is dispatchable from the generated bundle
+  ---
+  duration_ms: 6.8573
+  ...
+# Subtest: the bundled serializer body is present and exported without a require()
+ok 72 - the bundled serializer body is present and exported without a require()
+  ---
+  duration_ms: 5.9695
+  ...
+# Subtest: the serializer performs no writes and executes no source
+ok 73 - the serializer performs no writes and executes no source
+  ---
+  duration_ms: 6.5476
+  ...
+# Subtest: the plugin advertises readUiSnapshot and nothing more
+ok 74 - the plugin advertises readUiSnapshot and nothing more
+  ---
+  duration_ms: 4.88
+  ...
+# Subtest: studio_runtime capture is refused with a structured error, never invented
+ok 75 - studio_runtime capture is refused with a structured error, never invented
+  ---
+  duration_ms: 5.0161
+  ...
+# Subtest: budget exhaustion marks the capture incomplete instead of reporting success
+ok 76 - budget exhaustion marks the capture incomplete instead of reporting success
+  ---
+  duration_ms: 3.6026
+  ...
+# Subtest: unknown properties and classes surface as warnings, not silent drops
+ok 77 - unknown properties and classes surface as warnings, not silent drops
+  ---
+  duration_ms: 3.6955
+  ...
+1..77
+# tests 77
+# suites 0
+# pass 75
+# fail 0
+# cancelled 0
+# skipped 2
+# todo 0
+# duration_ms 465.5422
+Plugin artifact verified (53 handlers, nexusrbx-studio-0.15.1-ui-build.17-stable-ui-capture).
+sha256=0186a01dd51c1e9cf739b23072adb3cdf1abe6cf7c35a2ddd7d48fe2a081109a
+{
+  "artifact": "NexusRBXStudioBridge.plugin.lua",
+  "buildId": "nexusrbx-studio-0.15.1-ui-build.17-stable-ui-capture",
+  "bytes": 472294,
+  "sha256": "0186a01dd51c1e9cf739b23072adb3cdf1abe6cf7c35a2ddd7d48fe2a081109a",
+  "checksumFile": "roblox-plugin\\NexusRBXStudioBridge.plugin.lua.sha256"
+}
+Build artifact: C:\Users\jackt\Documents\Codex\2026-08-09\can\nexusairbx\roblox-plugin\build\NexusRBXStudioBridge.rbxmx
+Source bytes: 472230
+Plugin artifact verified (53 handlers, nexusrbx-studio-0.15.1-ui-build.17-stable-ui-capture).
+sha256=0186a01dd51c1e9cf739b23072adb3cdf1abe6cf7c35a2ddd7d48fe2a081109a
+Studio download matches the backend release.
