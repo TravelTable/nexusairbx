@@ -23,8 +23,7 @@ jest.mock("./billing", () => ({
 describe("agentRuntimeV2Api projections", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    clearApiRetryCooldown("agent-runtime-v2:active-agents");
-    clearApiRetryCooldown("agent-runtime-v2:events");
+    clearApiRetryCooldown("agent-runtime-v2:polling");
   });
 
   test("normalizes nested and snake-case agent projections", () => {
@@ -153,7 +152,7 @@ describe("agentRuntimeV2Api projections", () => {
     expect(authedFetch).toHaveBeenCalledTimes(1);
   });
 
-  test("backs off duplicate event polls independently after a transport failure", async () => {
+  test("backs off duplicate event polls after a transport failure", async () => {
     authedFetch.mockRejectedValue(new TypeError("Load failed"));
 
     await expect(getAgentEventsV2(5)).rejects.toThrow("Load failed");
@@ -352,6 +351,29 @@ describe("agentRuntimeV2Api projections", () => {
       signal: controller.signal,
       prompt: "Build it",
     })).rejects.toMatchObject({ name: "AbortError" });
+    expect(authedFetch).toHaveBeenCalledTimes(1);
+  });
+
+  test("shares capacity backoff across snapshot and event pollers", async () => {
+    authedFetch.mockResolvedValue({
+      ok: false,
+      status: 503,
+      headers: { get: jest.fn((name) => name === "Retry-After" ? "30" : null) },
+      text: jest.fn().mockResolvedValue(JSON.stringify({
+        code: "FIRESTORE_QUOTA_EXCEEDED",
+        error: "Database temporarily unavailable.",
+        retryable: true,
+      })),
+    });
+
+    await expect(getActiveAgentsV2()).rejects.toMatchObject({
+      code: "FIRESTORE_QUOTA_EXCEEDED",
+      status: 503,
+    });
+    await expect(getAgentEventsV2(0)).rejects.toMatchObject({
+      code: "API_RETRY_COOLDOWN",
+      localCooldown: true,
+    });
     expect(authedFetch).toHaveBeenCalledTimes(1);
   });
 

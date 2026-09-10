@@ -1,8 +1,10 @@
 import { authedFetch } from "./billing";
 import { withApiRetryCooldown } from "./apiErrors";
 
-const ACTIVE_AGENTS_COOLDOWN_KEY = "agent-runtime-v2:active-agents";
-const AGENT_EVENTS_COOLDOWN_KEY = "agent-runtime-v2:events";
+// Both pollers hit the same Firestore-backed runtime. A quota/capacity failure
+// from either endpoint must stop both loops instead of letting the other one
+// continue to hammer the unavailable dependency.
+const AGENT_POLL_COOLDOWN_KEY = "agent-runtime-v2:polling";
 const AGENT_POLL_RETRY_MS = 30_000;
 
 function emitLaunchHandoffClientTelemetry(event, fields = {}) {
@@ -398,7 +400,7 @@ export async function createAgentRunV2({
 
 export function getActiveAgentsV2() {
   return withApiRetryCooldown(
-    ACTIVE_AGENTS_COOLDOWN_KEY,
+    AGENT_POLL_COOLDOWN_KEY,
     "Agent status is temporarily unavailable.",
     () => request("/api/v2/agents/active", { method: "GET", noCache: true }),
     { fallbackMs: AGENT_POLL_RETRY_MS }
@@ -490,7 +492,7 @@ function normalizeErrorPayload(payload = {}) {
 
 export function getAgentEventsV2(afterSequence = 0) {
   return withApiRetryCooldown(
-    AGENT_EVENTS_COOLDOWN_KEY,
+    AGENT_POLL_COOLDOWN_KEY,
     "Agent updates are temporarily unavailable.",
     () => request(`/api/v2/events?afterSequence=${encodeURIComponent(afterSequence)}`, {
       method: "GET",

@@ -48,9 +48,9 @@
 }
 
 .settings-ledger-sidebar {
-  padding: 18px 16px;
+  padding: 22px 18px;
   border-right: 1px solid var(--nx-rule);
-  background: color-mix(in srgb, var(--nx-card) 78%, var(--nx-canvas));
+  background: color-mix(in srgb, var(--nx-card) 88%, var(--nx-canvas));
 }
 
 .settings-ledger-sidebar > div {
@@ -123,7 +123,7 @@
   padding: 11px;
   border: 1px solid var(--nx-rule);
   border-radius: var(--nx-radius-panel);
-  background: color-mix(in srgb, var(--nx-muted-surface) 70%, transparent);
+  background: color-mix(in srgb, var(--nx-muted-surface) 88%, transparent);
   box-shadow: var(--nx-inner-highlight);
 }
 
@@ -176,8 +176,8 @@
 .settings-ledger-layout > section {
   min-width: 0;
   width: 100%;
-  max-width: 1180px;
-  padding: 40px clamp(32px, 4.5vw, 64px) 88px;
+  max-width: 1440px;
+  padding: 46px clamp(36px, 5vw, 80px) 88px;
 }
 
 .settings-ledger-shell > [role="status"],
@@ -242,7 +242,8 @@
   min-height: 38px;
   padding-left: 34px;
   border-color: var(--nx-rule-quiet);
-  background: color-mix(in srgb, var(--nx-field) 72%, transparent);
+  background: color-mix(in srgb, var(--nx-field) 92%, transparent);
+  color: var(--nx-text);
   font-size: 0.75rem;
 }
 
@@ -264,7 +265,9 @@
   background: transparent !important;
   padding: 7px 9px;
   font-size: 0.8125rem;
-  font-weight: 500;
+  color: var(--nx-text-secondary);
+  font-weight: 550;
+  transition: border-color var(--nx-motion-fast), background var(--nx-motion-fast), color var(--nx-motion-fast);
 }
 
 .settings-tab-list button::before {
@@ -524,7 +527,7 @@
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--nx-space-4);
-  padding-bottom: var(--nx-space-7);
+  padding-bottom: 28px;
   border-bottom: 1px solid var(--nx-rule);
 }
 
@@ -560,8 +563,8 @@
 .settings-section-heading p {
   max-width: 680px;
   margin: var(--nx-space-2) 0 0;
-  color: var(--nx-text-muted);
-  font-size: 0.8125rem;
+  color: var(--nx-text-secondary);
+  font-size: 0.875rem;
   line-height: 1.5;
 }
 
@@ -592,7 +595,7 @@
 .settings-section-status[data-tone="info"] { color: var(--nx-info); }
 
 .settings-section-content {
-  margin-top: var(--nx-space-7);
+  margin-top: 28px;
   animation: settings-section-enter var(--nx-motion-spatial) var(--nx-ease-spatial) both;
 }
 
@@ -605,7 +608,7 @@
   overflow: hidden;
   border: 1px solid var(--nx-rule);
   border-radius: var(--nx-radius-card);
-  background: color-mix(in srgb, var(--nx-card) 96%, var(--nx-muted-surface));
+  background: color-mix(in srgb, var(--nx-card) 92%, var(--nx-muted-surface));
   box-shadow: var(--nx-shadow-card), var(--nx-inner-highlight);
 }
 
@@ -625,9 +628,9 @@
 .settings-panel-heading p {
   max-width: 680px;
   margin: 5px 0 0;
-  color: var(--nx-text-muted);
-  font-size: 0.75rem;
-  line-height: 1.45;
+  color: var(--nx-text-secondary);
+  font-size: 0.8125rem;
+  line-height: 1.55;
 }
 
 .settings-panel-body {
@@ -974,6 +977,22 @@
   background-color: var(--nx-field) !important;
 }
 
+.settings-ledger-page :where(input, textarea, [role="combobox"]):focus-visible {
+  border-color: var(--nx-purple-border) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--nx-purple) 18%, transparent) !important;
+}
+
+.settings-interface-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(19rem, 0.8fr);
+  align-items: start;
+  gap: 20px;
+}
+
+.settings-interface-card {
+  min-height: 100%;
+}
+
 .settings-interface-record {
   margin: 0;
   border-top: 1px solid var(--nx-rule);
@@ -981,13 +1000,16 @@
 
 .settings-interface-record div {
   display: grid;
-  grid-template-columns: minmax(8rem, 0.35fr) minmax(0, 1fr);
+  grid-template-columns: minmax(8rem, 0.32fr) minmax(0, 1fr);
   gap: var(--nx-space-4);
   padding: var(--nx-space-3) 0;
   border-bottom: 1px solid var(--nx-rule);
 }
 
 .settings-interface-record dt {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   color: var(--nx-purple-muted);
   font-size: 0.6875rem;
   font-weight: 700;
@@ -996,8 +1018,108 @@
 }
 
 .settings-interface-record dd {
+  display: grid;
+  gap: 3px;
   margin: 0;
   color: var(--nx-text-secondary);
+}
+
+.settings-interface-record dd strong {
+  color: var(--nx-text);
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.settings-interface-record dd span {
+  color: var(--nx-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.settings-interface-swatch {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  border: 1px solid var(--nx-rule-strong);
+  border-radius: 3px;
+  box-shadow: var(--nx-inner-highlight);
+}
+
+.settings-interface-swatch[data-swatch="surface"] { background: var(--nx-muted-surface); }
+.settings-interface-swatch[data-swatch="accent"] { background: var(--nx-purple-strong); }
+.settings-interface-swatch[data-swatch="text"] { background: var(--nx-text); }
+
+.settings-interface-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 13px 14px;
+  border: 1px solid var(--nx-rule-quiet);
+  border-radius: var(--nx-radius-control);
+  background: var(--nx-depth);
+}
+
+.settings-interface-note svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  margin-top: 2px;
+  color: var(--nx-purple-strong);
+}
+
+.settings-interface-note p {
+  margin: 0;
+  color: var(--nx-text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.settings-interface-features {
+  display: grid;
+}
+
+.settings-interface-features > div {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--nx-rule);
+}
+
+.settings-interface-features > div:first-child { padding-top: 0; }
+.settings-interface-features > div:last-child { border-bottom: 0; }
+
+.settings-interface-features > div > span {
+  color: var(--nx-purple-strong);
+  font-family: var(--nx-font-code);
+  font-size: 0.625rem;
+  font-weight: 700;
+}
+
+.settings-interface-features strong {
+  color: var(--nx-text);
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.settings-interface-features p {
+  margin: 4px 0 0;
+  color: var(--nx-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.settings-interface-signin {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--nx-rule);
+}
+
+@media (max-width: 1180px) {
+  .settings-interface-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .settings-ledger-state,
@@ -1175,6 +1297,10 @@
   .settings-interface-record div {
     grid-template-columns: 1fr;
     gap: var(--nx-space-1);
+  }
+
+  .settings-interface-grid {
+    gap: 14px;
   }
 }
 

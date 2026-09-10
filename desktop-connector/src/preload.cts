@@ -18,6 +18,7 @@ const api: ConnectorDesktopApi = {
   copyDiagnostics: () => ipcRenderer.invoke("connector:copy-diagnostics"),
   openLogs: () => ipcRenderer.invoke("connector:open-logs"),
   resizeWindow: (mode) => ipcRenderer.invoke("connector:resize-window", mode),
+  setFullscreen: (fullscreen) => ipcRenderer.invoke("connector:set-fullscreen", fullscreen),
   minimizeWindow: () => ipcRenderer.invoke("connector:minimize-window"),
   closeWindow: () => ipcRenderer.invoke("connector:close-window"),
   checkForUpdates: () => ipcRenderer.invoke("connector:check-updates"),

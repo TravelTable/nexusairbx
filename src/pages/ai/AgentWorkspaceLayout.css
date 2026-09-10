@@ -7,7 +7,9 @@
 }
 
 .nexus-studio-root {
-  background: var(--nx-depth);
+  background:
+    radial-gradient(circle at 72% 92%, rgb(var(--nx-purple-rgb) / 10%), transparent 38%),
+    var(--nx-depth);
 }
 
 .nexus-studio-page,
@@ -31,9 +33,9 @@
   isolation: isolate;
   overflow: hidden;
   border-color: var(--nx-rule) !important;
-  border-radius: var(--nx-radius-panel);
-  background: var(--nx-work) !important;
-  box-shadow: var(--nx-shadow-card);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--nx-work) 94%, black 6%) !important;
+  box-shadow: none;
 }
 
 .nexus-project-sidebar .nexus-project-tree {
@@ -44,9 +46,9 @@
   position: relative;
   isolation: isolate;
   border-left: 0;
-  border-radius: var(--nx-radius-panel);
+  border-radius: 0;
   background: transparent;
-  box-shadow: var(--nx-shadow-card);
+  box-shadow: none;
 }
 
 .nexus-studio-root :where(.rounded, .rounded-md, .rounded-lg) {
@@ -63,7 +65,7 @@
 
 .nexus-studio-root
   :where(.shadow, .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl) {
-  box-shadow: var(--nx-shadow-card) !important;
+  box-shadow: none !important;
 }
 
 .nexus-studio-root [class*="bg-gradient"] {
@@ -71,12 +73,22 @@
   background-image: none !important;
 }
 
-.nexus-studio-root :where(button, a, input, textarea, select) {
-  box-shadow: var(--nx-shadow-control);
+.nexus-studio-root :where(button, a) {
+  box-shadow: none !important;
+}
+
+.nexus-studio-root :where(input, textarea, select) {
+  border-color: var(--ai-control-border);
+  box-shadow: none;
 }
 
 .nexus-studio-root :where(button, a) {
   touch-action: manipulation;
+}
+
+.nexus-studio-root button:not(:disabled):hover,
+.nexus-studio-root [role="button"]:not([aria-disabled="true"]):hover {
+  border-color: color-mix(in srgb, var(--nx-rule-strong) 78%, var(--nx-purple) 22%);
 }
 
 .nexus-studio-root :where(input, textarea, select) {
@@ -92,6 +104,23 @@
 @media (max-width: 1199px) {
   .nexus-project-sidebar {
     position: fixed;
+    width: min(320px, calc(100vw - 48px));
+    border-right: 1px solid var(--nx-rule-strong) !important;
+    border-radius: 0 var(--nx-radius-panel) var(--nx-radius-panel) 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .ai-page {
+    --pc-gutter: 14px;
+  }
+
+  .nexus-studio-layout {
+    min-height: 0;
+  }
+
+  .nexus-studio-main {
+    border-inline: 0;
   }
 }
 

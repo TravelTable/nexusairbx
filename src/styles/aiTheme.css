@@ -18,6 +18,9 @@
   --ai-accent-2: var(--nx-purple-muted);
   --ai-info: var(--nx-info);
   --ai-danger: var(--nx-danger);
+  --ai-control-border: color-mix(in srgb, var(--nx-rule) 82%, transparent);
+  --ai-control-hover: color-mix(in srgb, var(--nx-field) 84%, var(--nx-purple) 16%);
+  --ai-control-active: color-mix(in srgb, var(--nx-field) 72%, var(--nx-purple) 28%);
 
   background-color: transparent !important;
   color: var(--nx-text);
@@ -119,10 +122,39 @@
   color: var(--ai-accent-2);
 }
 
-.ai-page button:not(:disabled):active,
-.ai-page [role="button"]:not([aria-disabled="true"]):active {
-  transform: translateY(1px) scale(0.99);
-  transition-duration: var(--nx-motion-color);
+/* Flat interaction contract for the AI workspace. State is conveyed with
+   surface, border and focus treatment rather than elevation or movement. */
+.ai-page :where(button, [role="button"]) {
+  box-shadow: none !important;
+  transform: none !important;
+  transition:
+    color var(--nx-motion-color),
+    background-color var(--nx-motion-color),
+    border-color var(--nx-motion-color),
+    opacity var(--nx-motion-color) !important;
+}
+
+.ai-page :where(button, [role="button"])::before,
+.ai-page :where(button, [role="button"])::after {
+  box-shadow: none !important;
+}
+
+.ai-page :where(button, [role="button"]):where(:hover, :active):not(:disabled):not([aria-disabled="true"]) {
+  transform: none !important;
+}
+
+.ai-page :where(button, [role="button"]):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--nx-purple) 84%, white 16%) !important;
+  outline-offset: 2px !important;
+  box-shadow: none !important;
+}
+
+.ai-page :where(button:disabled, [role="button"][aria-disabled="true"]) {
+  opacity: 0.48;
+}
+
+.ai-page .nexus-composer__toolbar button:hover:not(:disabled) svg {
+  transform: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -132,9 +164,8 @@
     scroll-behavior: auto !important;
   }
 
-  .ai-page button:not(:disabled):active,
-  .ai-page [role="button"]:not([aria-disabled="true"]):active {
-    transform: none;
+  .ai-page :where(button, [role="button"]) {
+    transition: none !important;
   }
 }
 

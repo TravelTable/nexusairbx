@@ -3,7 +3,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react
 import type React from "react";
 import {
   Activity, AlertTriangle, ArrowLeft, Check, CheckCircle2, ChevronDown, CircleHelp, Cloud,
-  Copy, ExternalLink, FolderOpen, Info, Link2, Link2Off, LoaderCircle, Menu, Minus, MoreHorizontal,
+  Copy, ExternalLink, FolderOpen, Info, Link2, Link2Off, LoaderCircle, Maximize2, Minus, Minimize2, MoreHorizontal,
   Power, RefreshCw, Search, Settings, ShieldCheck, Sparkles, Terminal, Wrench, X,
 } from "lucide-react";
 import type { CompanionDiagnostics, CompanionPreferences, CompanionSnapshot, ConnectionStage, DegradedReason, PreferenceKey, RendererDestination, ServiceHealth } from "../contracts";
@@ -41,6 +41,7 @@ export function App() {
   const [diagnostics, setDiagnostics] = useState<CompanionDiagnostics | null>(null);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const loadDiagnostics = useCallback(async () => {
     try {
@@ -103,12 +104,21 @@ export function App() {
       setBusy(false);
     }
   };
+  const toggleFullscreen = useCallback(async () => {
+    const next = !isFullscreen;
+    setIsFullscreen(next);
+    try { await window.nexusConnector?.setFullscreen(next); }
+    catch {
+      setIsFullscreen((current) => !current);
+      setActionError("That action could not be completed. Check the connection and try again.");
+    }
+  }, [isFullscreen]);
   useEffect(() => { if (destination !== "home" && settingsSection === "diagnostics") void loadDiagnostics(); }, [destination, settingsSection, loadDiagnostics]);
 
   return <TooltipProvider delayDuration={350}>
     <main className={cn("app-shell", destination !== "home" && "settings-size")}>
-      <TitleBar destination={destination} navigate={navigate} />
-      {workspaceOpen ? <Suspense fallback={<p role="status" className="p-4">Opening workspace…</p>}><Workspace onBack={() => { setWorkspaceOpen(false); void navigate("settings"); }} /></Suspense> : <Button variant="secondary" className="m-3" onClick={() => setWorkspaceOpen(true)}><Terminal size={15} /> Open desktop workspace</Button>}
+      <TitleBar destination={destination} navigate={navigate} isFullscreen={isFullscreen} onToggleFullscreen={toggleFullscreen} />
+      {workspaceOpen ? <Suspense fallback={<p role="status" className="p-4">Opening workspace…</p>}><Workspace onBack={() => { setWorkspaceOpen(false); void navigate("settings"); }} /></Suspense> : <div className="workspace-launch-wrap"><Button variant="secondary" className="workspace-launch" onClick={() => setWorkspaceOpen(true)}><span className="workspace-launch-icon"><Terminal size={14} /></span><span>Open desktop workspace</span><ExternalLink size={12} className="workspace-launch-arrow" /></Button></div>}
       {actionError && <div className="action-error" role="alert"><AlertTriangle size={14} /><span>{actionError}</span><button type="button" aria-label="Dismiss error" onClick={() => setActionError(null)}><X size={13} /></button></div>}
       <UpdateNotice updateState={snapshot.updateState} />
       {!workspaceOpen && (destination === "home"
@@ -128,13 +138,14 @@ function UpdateNotice({ updateState }: { updateState: CompanionSnapshot["updateS
   return <div className="update-notice" role="status" aria-live="polite"><RefreshCw size={14} className={updateState === "downloading" ? "animate-spin" : undefined} /><span className="min-w-0 flex-1"><strong>Update available</strong><span className="update-notice-detail">{detail}</span></span><Button variant="ghost" size="sm" className="h-7 px-2 text-[11px]" onClick={() => void window.nexusConnector?.openDownloads()}>Downloads <ExternalLink size={12} /></Button></div>;
 }
 
-function TitleBar({ destination, navigate }: { destination: RendererDestination; navigate: (next: RendererDestination) => void }) {
+function TitleBar({ destination, navigate, isFullscreen, onToggleFullscreen }: { destination: RendererDestination; navigate: (next: RendererDestination) => void; isFullscreen: boolean; onToggleFullscreen: () => void }) {
   return <header className="titlebar">
     <div className="flex min-w-0 items-center gap-2.5"><img src="./logo.png" alt="" className="h-5 w-5 object-contain" /><span className="truncate text-[11px] font-semibold tracking-wide">NEXUSRBX <span className="font-normal text-muted-foreground">CONNECTOR</span></span></div>
     <div className="no-drag flex items-center gap-0.5">
-      {destination === "home" && <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label="Connector menu"><MoreHorizontal size={15} /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => void navigate("settings")}><Settings size={14} /> Settings</DropdownMenuItem><DropdownMenuItem onSelect={() => void navigate("diagnostics")}><Activity size={14} /> Diagnostics</DropdownMenuItem><DropdownMenuItem onSelect={() => void window.nexusConnector?.checkForUpdates()}><RefreshCw size={14} /> Check for updates</DropdownMenuItem></DropdownMenuContent></DropdownMenu>}
-      <Button variant="ghost" size="icon" aria-label="Minimize" onClick={() => void window.nexusConnector?.minimizeWindow()}><Minus size={15} /></Button>
-      <Button variant="ghost" size="icon" aria-label="Close to tray" onClick={() => void window.nexusConnector?.closeWindow()}><X size={15} /></Button>
+      {destination === "home" && <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label="Connector menu" className="window-button"><MoreHorizontal size={15} /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onSelect={() => void navigate("settings")}><Settings size={14} /> Settings</DropdownMenuItem><DropdownMenuItem onSelect={() => void navigate("diagnostics")}><Activity size={14} /> Diagnostics</DropdownMenuItem><DropdownMenuItem onSelect={() => void window.nexusConnector?.checkForUpdates()}><RefreshCw size={14} /> Check for updates</DropdownMenuItem></DropdownMenuContent></DropdownMenu>}
+      <Button variant="ghost" size="icon" aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"} aria-pressed={isFullscreen} className={cn("window-button", isFullscreen && "window-button-active")} onClick={() => void onToggleFullscreen()}>{isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}</Button>
+      <Button variant="ghost" size="icon" aria-label="Minimize" className="window-button" onClick={() => void window.nexusConnector?.minimizeWindow()}><Minus size={15} /></Button>
+      <Button variant="ghost" size="icon" aria-label="Close to tray" className="window-button close" onClick={() => void window.nexusConnector?.closeWindow()}><X size={15} /></Button>
     </div>
   </header>;
 }
@@ -151,7 +162,7 @@ function HomeView({ snapshot, busy, run, navigate }: { snapshot: CompanionSnapsh
 
 function OfflineView({ snapshot, busy, resume, diagnostics }: { snapshot: CompanionSnapshot; busy: boolean; resume: () => Promise<void>; diagnostics: () => Promise<void> }) {
   const paused = snapshot.state === "stopped";
-  return <section className="compact-content justify-between px-5 pb-5"><div className="flex flex-1 flex-col items-center justify-center text-center"><WarningMark /><p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-400">Connector offline</p><h1 className="mt-2 text-xl font-semibold">{paused ? "Connector paused" : "Connection stopped"}</h1><p className="mt-3 max-w-[330px] text-sm leading-relaxed text-muted-foreground">{snapshot.message || "Your encrypted sign-in is retained on this computer."}</p><Card className="mt-6 w-full p-4 text-left"><div className="flex gap-3"><ShieldCheck size={16} className="mt-0.5 shrink-0 text-violet-400" /><p className="text-xs leading-relaxed text-muted-foreground">Resume with the saved encrypted browser session. Sign in again only if NexusRBX reports that it expired or was revoked.</p></div></Card></div><div className="grid grid-cols-2 gap-2"><Button disabled={busy} onClick={() => void resume()}><Power size={15} /><span>{busy ? "Resuming…" : "Resume"}</span></Button><Button variant="secondary" onClick={() => void diagnostics()}><Activity size={15} /> Diagnostics</Button></div><Footer snapshot={snapshot} /></section>;
+  return <section className="compact-content offline-view justify-between px-5 pb-5"><div className="offline-hero"><WarningMark /><div><p className="mt-0 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-400">Connector offline</p><h1 className="mt-2 text-xl font-semibold">{paused ? "Connector paused" : "Connection stopped"}</h1><p className="mt-3 max-w-[390px] text-sm leading-relaxed text-muted-foreground">{snapshot.message || "Your encrypted sign-in is retained on this computer."}</p></div></div><Card className="offline-session-card p-4 text-left"><div className="flex gap-3"><ShieldCheck size={16} className="mt-0.5 shrink-0 text-violet-400" /><div><strong className="text-xs font-medium text-foreground">Your session is protected</strong><p className="mt-1 text-xs leading-relaxed text-muted-foreground">Resume with the saved encrypted browser session. Sign in again only if NexusRBX reports that it expired or was revoked.</p></div></div></Card><div className="offline-actions grid grid-cols-2 gap-2"><Button disabled={busy} onClick={() => void resume()}><Power size={15} /><span>{busy ? "Resuming…" : "Resume connector"}</span></Button><Button variant="secondary" onClick={() => void diagnostics()}><Activity size={15} /> View diagnostics</Button></div><Footer snapshot={snapshot} /></section>;
 }
 
 function SignInView({ snapshot, busy, signIn }: { snapshot: CompanionSnapshot; busy: boolean; signIn: () => Promise<void> }) {

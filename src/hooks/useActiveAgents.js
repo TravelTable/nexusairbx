@@ -11,8 +11,15 @@ import {
 } from "../lib/agentRuntimeV2Api";
 import { cancelAgentRun as cancelLegacyAgentRun } from "../lib/workflowApi";
 
-const REFRESH_INTERVAL_MS = 10000;
-const EVENT_INTERVAL_MS = 2500;
+// Keep idle workspaces inexpensive on Firestore. Event polling is only needed
+// while an agent is active; the slower snapshot poll discovers newly started
+// agents and reconciles any missed event transitions.
+const REFRESH_INTERVAL_MS = 30000;
+const EVENT_INTERVAL_MS = 10000;
+
+function pageIsVisible() {
+  return typeof document === "undefined" || document.visibilityState !== "hidden";
+}
 
 function newestSequence(payload, fallback) {
   const explicit = Number(
@@ -58,17 +65,32 @@ export default function useActiveAgents(user, { fallbackChatIds = [] } = {}) {
       setLoading(false);
       return undefined;
     }
-    void refresh();
-    const refreshTimer = window.setInterval(refresh, REFRESH_INTERVAL_MS);
-    return () => window.clearInterval(refreshTimer);
+    const refreshWhileVisible = () => {
+      if (pageIsVisible()) void refresh();
+    };
+    refreshWhileVisible();
+    const refreshTimer = window.setInterval(refreshWhileVisible, REFRESH_INTERVAL_MS);
+    const handleVisibilityChange = () => {
+      if (pageIsVisible()) void refresh();
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.clearInterval(refreshTimer);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [refresh, user]);
 
+  const hasActiveAgent = useMemo(
+    () => agents.some((agent) => ACTIVE_AGENT_STATES.has(agent.status)),
+    [agents]
+  );
+
   useEffect(() => {
-    if (!user || !runtimeAvailable) return undefined;
+    if (!user || !runtimeAvailable || !hasActiveAgent) return undefined;
     let disposed = false;
     let polling = false;
     const poll = async () => {
-      if (polling || disposed) return;
+      if (polling || disposed || !pageIsVisible()) return;
       polling = true;
       try {
         const payload = await getAgentEventsV2(sequenceRef.current);
@@ -91,7 +113,7 @@ export default function useActiveAgents(user, { fallbackChatIds = [] } = {}) {
       disposed = true;
       window.clearInterval(timer);
     };
-  }, [refresh, runtimeAvailable, user]);
+  }, [hasActiveAgent, refresh, runtimeAvailable, user]);
 
   const visibleAgents = useMemo(() => {
     if (runtimeAvailable) {

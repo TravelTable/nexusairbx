@@ -32,7 +32,7 @@ export function previewApi(): ConnectorDesktopApi {
     openHelp: async () => undefined, openDownloads: async () => undefined,
     setPreference: async (key: PreferenceKey, value: unknown) => { snapshot = { ...snapshot, preferences: { ...snapshot.preferences, [key]: value } }; publish(); return snapshot; },
     getAvailableTools: async () => snapshot.supportedTools, copyDiagnostics: async () => true, openLogs: async () => undefined,
-    resizeWindow: async (_mode: WindowMode) => undefined, minimizeWindow: async () => undefined, closeWindow: async () => undefined,
+    resizeWindow: async (_mode: WindowMode) => undefined, setFullscreen: async () => undefined, minimizeWindow: async () => undefined, closeWindow: async () => undefined,
     checkForUpdates: async () => snapshot, installUpdate: async () => undefined,
     onState: (listener) => { listeners.add(listener); return () => listeners.delete(listener); },
     onNavigate: (listener) => { navListeners.add(listener); return () => navListeners.delete(listener); },

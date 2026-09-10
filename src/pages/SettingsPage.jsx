@@ -1122,19 +1122,34 @@ export default function SettingsPage() {
   );
 
   const renderAppearance = () => (
-    <div className="space-y-6">
+    <div className="settings-interface-grid">
       <Panel
+        className="settings-interface-card"
         title="Dark Build Ledger"
         description="NexusRBX uses one durable dark identity across the public site, AI workspace, tools, and account records."
       >
         <dl className="settings-interface-record">
-          <div><dt>Surface</dt><dd>Warm graphite and plum-brown</dd></div>
-          <div><dt>Text ink</dt><dd>Muted purple for headings and authored emphasis</dd></div>
-          <div><dt>Motion</dt><dd>Meaning-led state changes; reduced-motion preferences are respected</dd></div>
-          <div><dt>Contrast</dt><dd>Keyboard focus and increased-contrast modes remain first-class</dd></div>
+          <div><dt><span className="settings-interface-swatch" data-swatch="surface" />Surface</dt><dd><strong>Warm graphite</strong><span>Layered depth without losing the dark product identity.</span></dd></div>
+          <div><dt><span className="settings-interface-swatch" data-swatch="accent" />Accent</dt><dd><strong>Nexus purple</strong><span>Reserved for selection, focus, and important actions.</span></dd></div>
+          <div><dt><span className="settings-interface-swatch" data-swatch="text" />Text</dt><dd><strong>High-contrast ink</strong><span>Clear primary, secondary, and supporting reading levels.</span></dd></div>
         </dl>
-        <p className="mt-4 text-sm leading-6 text-muted-foreground">Previously stored appearance preferences remain safe but no longer change the product into a separate visual identity.</p>
-        {!user && <div className="mt-4"><SettingsSignInAction /></div>}
+        <div className="settings-interface-note">
+          <Shield aria-hidden="true" />
+          <p>Stored appearance preferences remain safe, but the workspace now keeps one consistent visual identity.</p>
+        </div>
+      </Panel>
+
+      <Panel
+        className="settings-interface-card"
+        title="Accessibility defaults"
+        description="Comfort and clarity are built into every workspace surface."
+      >
+        <div className="settings-interface-features">
+          <div><span>01</span><div><strong>Keyboard ready</strong><p>Controls keep a visible, high-contrast focus state.</p></div></div>
+          <div><span>02</span><div><strong>Reduced motion</strong><p>Decorative movement follows your system preference.</p></div></div>
+          <div><span>03</span><div><strong>Readable contrast</strong><p>Content and controls remain distinct across dark surfaces.</p></div></div>
+        </div>
+        {!user && <div className="settings-interface-signin"><SettingsSignInAction /></div>}
       </Panel>
     </div>
   );

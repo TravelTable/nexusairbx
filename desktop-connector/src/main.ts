@@ -198,6 +198,7 @@ class DesktopController {
   async copyDiagnostics(): Promise<boolean> { clipboard.writeText(JSON.stringify(await this.diagnostics(), null, 2)); return true; }
   async openLogs(): Promise<void> { await mkdir(app.getPath("logs"), { recursive: true }); await shell.openPath(app.getPath("logs")); }
   resizeWindow(mode: WindowMode): void { const size = mode === "settings" ? SETTINGS_SIZE : COMPACT_SIZE; this.#window?.setMinimumSize(size.width, size.height); this.#window?.setSize(size.width, size.height, true); }
+  setFullscreen(fullscreen: boolean): void { this.#window?.setFullScreen(Boolean(fullscreen)); }
   show(destination: RendererDestination = "home"): void { this.#window?.show(); this.#window?.focus(); this.#window?.webContents.send("connector:navigate", destination); }
   closeWindow(): void {
     if (!this.#preferences.minimizeToTray) { app.quit(); return; }
@@ -609,6 +610,10 @@ function registerIpc(): void {
   handle("connector:copy-diagnostics", () => controller.copyDiagnostics());
   handle("connector:open-logs", () => controller.openLogs());
   handle("connector:resize-window", (mode) => controller.resizeWindow(validateWindowMode(mode)));
+  handle("connector:set-fullscreen", (value) => {
+    if (typeof value !== "boolean") throw new TypeError("Invalid fullscreen state.");
+    controller.setFullscreen(value);
+  });
   handle("connector:minimize-window", () => mainWindow?.minimize());
   handle("connector:close-window", () => controller.closeWindow());
   handle("connector:check-updates", () => controller.checkForUpdates());

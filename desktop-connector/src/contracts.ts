@@ -84,6 +84,7 @@ export interface ConnectorDesktopApi {
   copyDiagnostics(): Promise<boolean>;
   openLogs(): Promise<void>;
   resizeWindow(mode: WindowMode): Promise<void>;
+  setFullscreen(fullscreen: boolean): Promise<void>;
   minimizeWindow(): Promise<void>;
   closeWindow(): Promise<void>;
   checkForUpdates(): Promise<CompanionSnapshot>;
