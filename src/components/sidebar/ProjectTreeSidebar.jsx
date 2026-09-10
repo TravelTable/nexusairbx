@@ -37,6 +37,7 @@ export default function ProjectTreeSidebar({
   onCreateProject = () => {}, onRenameChat = () => {}, onRenameProject = () => {},
   onDeleteChat = () => {}, onDeleteProject = () => {}, onRetryProjects = () => {},
   onCollapse = () => {},
+  onNavigate = null,
 }) {
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
@@ -186,8 +187,8 @@ export default function ProjectTreeSidebar({
       </>}
 
       <nav className="nexus-project-tree__footer" aria-label="Workspace destinations">
-        <a href="/settings" className="nexus-project-tree__destination focus-ring"><Settings className="h-3.5 w-3.5" /><span>Settings</span></a>
-        <a href="/billing" className="nexus-project-tree__destination focus-ring"><CreditCard className="h-3.5 w-3.5" /><span>Plan &amp; usage</span></a>
+        <a href="/settings" onClick={event => { if (onNavigate) { event.preventDefault(); onNavigate('/settings'); } }} className="nexus-project-tree__destination focus-ring"><Settings className="h-3.5 w-3.5" /><span>Settings</span></a>
+        <a href="/billing" onClick={event => { if (onNavigate) { event.preventDefault(); onNavigate('/billing'); } }} className="nexus-project-tree__destination focus-ring"><CreditCard className="h-3.5 w-3.5" /><span>Plan &amp; usage</span></a>
       </nav>
       <SidebarContextMenu menu={menu} onClose={() => setMenu(null)} />
     </div>

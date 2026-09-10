@@ -7,6 +7,7 @@ export interface LoginItemController {
 }
 
 export const DEFAULT_PREFERENCES: CompanionPreferences = {
+  workspaceEnabled: false,
   autoStart: true,
   minimizeToTray: true,
   startMinimized: false,
@@ -23,7 +24,7 @@ export function setAutoStart(controller: LoginItemController, enabled: boolean):
 }
 
 export function validatePreferenceUpdate(key: unknown, value: unknown): { key: PreferenceKey; value: CompanionPreferences[PreferenceKey] } {
-  if (key === "autoStart" || key === "minimizeToTray" || key === "startMinimized" || key === "autoReconnect" || key === "automaticUpdates") {
+  if (key === "workspaceEnabled" || key === "autoStart" || key === "minimizeToTray" || key === "startMinimized" || key === "autoReconnect" || key === "automaticUpdates") {
     if (typeof value !== "boolean") throw new TypeError("Preference must be a boolean.");
     return { key, value };
   }

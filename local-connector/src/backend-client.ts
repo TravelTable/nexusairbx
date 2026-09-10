@@ -59,6 +59,11 @@ export class NexusBackendClient implements BackendClientLike {
     }
   }
 
+  /** Exchanges browser-authorized connector identity for a narrow desktop session. */
+  desktopSession(): Promise<JsonObject> {
+    return this.request("POST", "/api/desktop/v1/session", {}, { authenticated: true, retry: false });
+  }
+
   async logoutStoredSession(): Promise<void> {
     if (this.#refreshToken) await this.request("POST", "/api/studio/mcp/cli/revoke", { refreshToken: this.#refreshToken }, { authenticated: false, retry: false });
     this.clearToken();

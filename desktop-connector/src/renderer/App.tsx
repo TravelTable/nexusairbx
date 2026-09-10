@@ -1,5 +1,5 @@
 import { connectionFailureCopy } from "../connection-state";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import type React from "react";
 import {
   Activity, AlertTriangle, ArrowLeft, Check, CheckCircle2, ChevronDown, CircleHelp, Cloud,
@@ -22,6 +22,7 @@ import { cn } from "./lib/utils";
 import { getMainView, newestSnapshot, relativeTime } from "./lib/view-state";
 
 const previewPreferences: CompanionPreferences = { autoStart: true, minimizeToTray: true, startMinimized: false, theme: "dark", autoReconnect: true, reconnectDelayMs: 2_000, automaticUpdates: true };
+const Workspace = lazy(() => import('./Workspace').then(module => ({ default: module.Workspace })));
 const previewSnapshot: CompanionSnapshot = {
   // The preview is older than every real main-process snapshot. This lets the
   // first installed-app state hydrate even when the connector was already open.
@@ -33,6 +34,7 @@ const previewSnapshot: CompanionSnapshot = {
 const previewDiagnostics: CompanionDiagnostics = { studioInstalled: false, mcpCommandAvailable: false, mcpCommand: "Not detected", backendUrl: "https://api.nexusrbx.com", platform: navigator.platform || "Desktop", architecture: "—", connectorVersion: "0.2.17", mcpServerVersion: null, mcpHealth: "disconnected", backendHealth: "disconnected", lastHeartbeatAt: null, lastActivityAt: null, lastCommand: null, logLocation: "Available in the installed app" };
 
 export function App() {
+  const [workspaceOpen, setWorkspaceOpen] = useState(false);
   const [snapshot, setSnapshot] = useState(previewSnapshot);
   const [destination, setDestination] = useState<RendererDestination>("home");
   const [settingsSection, setSettingsSection] = useState<SettingsSection>("general");
@@ -53,12 +55,16 @@ export function App() {
   useEffect(() => {
     const api = window.nexusConnector;
     if (!api) return;
-    const applySnapshot = (next: CompanionSnapshot) => setSnapshot((current) => newestSnapshot(current, next));
+    const applySnapshot = (next: CompanionSnapshot) => {
+      setSnapshot((current) => newestSnapshot(current, next));
+      if (next.state === 'awaiting_sign_in') setWorkspaceOpen(false);
+    };
     // Subscribe before loading. The timestamp guard prevents a slower initial
     // response from overwriting a newer pushed connection stage.
     const removeState = api.onState(applySnapshot);
-    void api.getState().then(applySnapshot).catch(() => setActionError("The connector state could not be loaded. Try again in a moment."));
+    void api.getState().then(next => { applySnapshot(next); if (next.preferences.workspaceEnabled && next.state !== 'awaiting_sign_in') setWorkspaceOpen(true); }).catch(() => setActionError("The connector state could not be loaded. Try again in a moment."));
     const removeNavigation = api.onNavigate((next) => {
+      setWorkspaceOpen(false);
       setDestination(next === "home" ? "home" : "settings");
       if (next !== "home") setSettingsSection(next === "diagnostics" ? "diagnostics" : "general");
       void api.resizeWindow(next === "home" ? "compact" : "settings");
@@ -73,13 +79,14 @@ export function App() {
   useEffect(() => {
     const theme = snapshot.preferences.theme;
     const root = document.documentElement;
-    const apply = () => root.classList.toggle("light", theme === "light" || (theme === "system" && matchMedia("(prefers-color-scheme: light)").matches));
+    const apply = () => { const light = theme === "light" || (theme === "system" && matchMedia("(prefers-color-scheme: light)").matches); root.classList.toggle("light", light); root.classList.toggle("dark", !light); root.dataset.theme = light ? 'light' : 'dark'; };
     apply();
     if (theme !== "system") return;
     const media = matchMedia("(prefers-color-scheme: light)"); media.addEventListener("change", apply); return () => media.removeEventListener("change", apply);
   }, [snapshot.preferences.theme]);
 
   const navigate = async (next: RendererDestination) => {
+    setWorkspaceOpen(false);
     setDestination(next === "home" ? "home" : "settings");
     if (next !== "home") setSettingsSection(next === "diagnostics" ? "diagnostics" : "general");
     await window.nexusConnector?.resizeWindow(next === "home" ? "compact" : "settings");
@@ -101,11 +108,12 @@ export function App() {
   return <TooltipProvider delayDuration={350}>
     <main className={cn("app-shell", destination !== "home" && "settings-size")}>
       <TitleBar destination={destination} navigate={navigate} />
+      {workspaceOpen ? <Suspense fallback={<p role="status" className="p-4">Opening workspace…</p>}><Workspace onBack={() => { setWorkspaceOpen(false); void navigate("settings"); }} /></Suspense> : <Button variant="secondary" className="m-3" onClick={() => setWorkspaceOpen(true)}><Terminal size={15} /> Open desktop workspace</Button>}
       {actionError && <div className="action-error" role="alert"><AlertTriangle size={14} /><span>{actionError}</span><button type="button" aria-label="Dismiss error" onClick={() => setActionError(null)}><X size={13} /></button></div>}
       <UpdateNotice updateState={snapshot.updateState} />
-      {destination === "home"
+      {!workspaceOpen && (destination === "home"
         ? <HomeView snapshot={snapshot} busy={busy} run={run} navigate={navigate} />
-        : <SettingsView snapshot={snapshot} diagnostics={diagnostics} section={settingsSection} onSection={setSettingsSection} onRefreshDiagnostics={loadDiagnostics} run={run} navigate={navigate} />}
+        : <SettingsView snapshot={snapshot} diagnostics={diagnostics} section={settingsSection} onSection={setSettingsSection} onRefreshDiagnostics={loadDiagnostics} run={run} navigate={navigate} />)}
     </main>
   </TooltipProvider>;
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { BACKEND_URL } from "../config";
+import { desktopWorkspace, desktopRequest } from "../lib/workspaceRuntime";
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const STORAGE_KEY = "nexus:model-catalog:v2";
@@ -170,9 +171,9 @@ function isFresh(cached) {
 }
 
 async function fetchCatalog() {
-  const response = await fetch(`${BACKEND_URL}/api/models`, {
+  const response = await (desktopWorkspace() ? desktopRequest('/api/models') : fetch(`${BACKEND_URL}/api/models`, {
     headers: { Accept: "application/json" },
-  });
+  }));
   if (!response.ok) throw new Error(`models responded ${response.status}`);
   const data = await response.json();
   const models = Array.isArray(data?.models) ? data.models : [];

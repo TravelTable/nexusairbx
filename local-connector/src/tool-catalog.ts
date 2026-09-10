@@ -108,6 +108,7 @@ export class ToolCatalog {
       commands.add("create_script");
     }
     if (targetToolsReady && this.executeLuau) {
+      commands.add("get_project_manifest");
       commands.add("get_selection");
       for (const command of INSTANCE_COMMANDS) commands.add(command);
       for (const command of SNAPSHOT_COMMANDS) commands.add(command);

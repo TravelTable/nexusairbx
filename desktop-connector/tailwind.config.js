@@ -1,9 +1,14 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: ["class"],
-  content: ["./src/renderer/**/*.{ts,tsx,html}"],
+  content: ["./src/renderer/**/*.{js,jsx,ts,tsx,html}", "../src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--nx-font-body)', 'Segoe UI', 'sans-serif'],
+        display: ['var(--nx-font-display)', 'Arial Narrow', 'sans-serif'],
+        mono: ['var(--nx-font-code)', 'monospace'],
+      },
       colors: {
         background: "rgb(var(--background) / <alpha-value>)",
         foreground: "rgb(var(--foreground) / <alpha-value>)",

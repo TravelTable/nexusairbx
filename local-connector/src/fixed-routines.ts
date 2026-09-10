@@ -22,6 +22,8 @@ const SAFE_PROPERTIES = new Set([
 ]);
 const TEST_PROFILES = new Set(["smoke", "project_smoke", "testservice_run"]);
 const ROUTINE_COMMANDS = new Set([
+  "finalize_snapshots",
+  "get_project_manifest",
   "get_selection", "create_script", "create_instance", "update_properties", "update_attributes", "update_tags",
   "rename_instance", "move_instance", "duplicate_instance", "delete_instance", "batch_operations", "create_snapshot",
   "restore_snapshot", "undo_last_batch", "prepare_asset_quarantine", "finalize_asset_quarantine", "run_test_service",
@@ -63,6 +65,10 @@ export class FixedRoutineRunner {
 }
 
 function validatePayload(operation: string, payload: JsonObject): void {
+  if (operation === "get_project_manifest") {
+    if (payload.includeSource === true) throw new ConnectorError("SOURCE_NOT_ALLOWED", "The manifest contains metadata only. Use targeted script reads for source.");
+    if (payload.cursor && !/^\d{1,6}$/.test(String(payload.cursor))) throw new ConnectorError("COMMAND_PAYLOAD_INVALID", "Invalid manifest cursor.");
+  }
   for (const forbidden of ["code", "luau", "sourceCode", "sourceText", "executable"]) {
     if (forbidden in payload) throw new ConnectorError("EXECUTABLE_INPUT_FORBIDDEN", "Connector routines do not accept executable input.");
   }
@@ -140,7 +146,7 @@ function validatePayload(operation: string, payload: JsonObject): void {
   if (operation === "create_snapshot" && payload.paths === undefined) {
     throw new ConnectorError("COMMAND_PAYLOAD_INVALID", "create_snapshot requires 1-500 paths.");
   }
-  if ((operation === "restore_snapshot" || operation === "record_last_batch") && payload.snapshots === undefined) {
+  if ((operation === "restore_snapshot" || operation === "record_last_batch" || operation === "finalize_snapshots") && payload.snapshots === undefined) {
     throw new ConnectorError("COMMAND_PAYLOAD_INVALID", `${operation} requires 1-500 snapshot references.`);
   }
   if (operation === "undo_last_batch" && payload.snapshots !== undefined) {
@@ -227,11 +233,16 @@ function validateRoutineResult(operation: string, data: JsonObject): void {
     return snapshots;
   };
 
+  if (operation === "get_project_manifest") {
+    requireObjects(data.instances, "manifest", true);
+    if (typeof data.truncated !== "boolean") invalid("The manifest is missing its completeness indicator.");
+    return;
+  }
   if (operation === "get_selection") {
     requireObjects(data.instances, "selection", true);
     return;
   }
-  if (operation === "create_snapshot") {
+  if (operation === "create_snapshot" || operation === "finalize_snapshots") {
     const snapshots = requireSnapshots();
     if (data.snapshotCount !== snapshots.length) invalid("The Studio routine returned an inconsistent snapshot count.");
     return;
@@ -708,8 +719,32 @@ local function connectorInternalDestination(inst)
   return false
 end
 local function mutate(op, p, nonce)
+  if op == "get_project_manifest" then
+    local out, visited, truncated = {}, 0, false
+    local maxDepth = math.clamp(tonumber(p.maxDepth) or 12, 1, 32)
+    local maxInstances = math.clamp(tonumber(p.maxInstances) or 2000, 20, 10000)
+    local function walk(parent, depth)
+      if depth > maxDepth then if #parent:GetChildren() > 0 then truncated = true end; return end
+      for _, inst in ipairs(parent:GetChildren()) do
+        if visited >= maxInstances then truncated = true; return end
+        if not connectorInternalDestination(inst) then
+          visited = visited + 1
+          table.insert(out, { path = pathOf(inst), name = inst.Name, className = inst.ClassName, depth = depth, isScript = inst:IsA("LuaSourceContainer") })
+          walk(inst, depth + 1)
+        end
+      end
+    end
+    walk(game, 1)
+    table.sort(out, function(a,b) return a.path < b.path end)
+    local offset = tonumber(p.cursor) or 0
+    local pageSize = math.clamp(tonumber(p.pageSize) or 200, 20, 200)
+    local page = {}; for i = offset + 1, math.min(#out, offset + pageSize) do table.insert(page, out[i]) end
+    local hasMore = offset + #page < #out
+    return { instances = page, total = #out, truncated = truncated, hasMore = hasMore, cursor = hasMore and tostring(offset + #page) or "", sourceIncluded = false }
+  end
   if op == "get_selection" then local out = {}; for i, inst in ipairs(Selection:Get()) do if i > 100 then break end; table.insert(out, describe(inst)) end; return { instances = out } end
   if op == "create_snapshot" then local refs = createSnapshots(p.paths or {}, p.snapshotId or nonce); return { snapshots = finishSnapshots(refs), snapshotCount = #refs } end
+  if op == "finalize_snapshots" then local refs = finishSnapshots(p.snapshots or {}); recordLastBatch(refs); return { snapshots = refs, snapshotCount = #refs } end
   if op == "restore_snapshot" then local restored = restoreSnapshots(p.snapshots or {}, p.force == true, nonce .. "_guard"); return { restored = restored, restoredCount = #restored } end
   if op == "record_last_batch" then local storedCount, pinnedCount = recordLastBatch(p.snapshots or {}); return { storedCount = storedCount, pinnedCount = pinnedCount } end
   if op == "undo_last_batch" then

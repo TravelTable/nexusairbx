@@ -1,0 +1,255 @@
+
+> nexusrbx-desktop-connector@0.3.6 test
+> tsx --test test/*.test.ts && vitest run
+
+TAP version 13
+# Subtest: a replacement waits until the active connector has actually stopped
+ok 1 - a replacement waits until the active connector has actually stopped
+  ---
+  duration_ms: 3.3723
+  ...
+# Subtest: completed attempts cannot remain current
+ok 2 - completed attempts cannot remain current
+  ---
+  duration_ms: 0.4579
+  ...
+# [INFO] connection {"diagnostic":"[REDACTED] Bearer [REDACTED]","i":0}
+# [INFO] connection {"diagnostic":"[REDACTED] Bearer [REDACTED]","i":1}
+# [INFO] connection {"diagnostic":"[REDACTED] Bearer [REDACTED]","i":2}
+# [INFO] connection {"diagnostic":"[REDACTED] Bearer [REDACTED]","i":3}
+# [INFO] connection {"diagnostic":"[REDACTED] Bearer [REDACTED]","i":4}
+# [INFO] connection {"diagnostic":"[REDACTED] Bearer [REDACTED]","i":5}
+# [INFO] connection {"diagnostic":"[REDACTED] Bearer [REDACTED]","i":6}
+# [INFO] connection {"diagnostic":"[REDACTED] Bearer [REDACTED]","i":7}
+# [INFO] connection {"diagnostic":"[REDACTED] Bearer [REDACTED]","i":8}
+# [INFO] connection {"diagnostic":"[REDACTED] Bearer [REDACTED]","i":9}
+# [INFO] connection {"diagnostic":"[REDACTED] Bearer [REDACTED]","i":10}
+# [INFO] connection {"diagnostic":"[REDACTED] Bearer [REDACTED]","i":11}
+# [INFO] connection {"diagnostic":"[REDACTED] Bearer [REDACTED]","i":12}
+# [INFO] connection {"diagnostic":"[REDACTED] Bearer [REDACTED]","i":13}
+# [INFO] connection {"diagnostic":"[REDACTED] Bearer [REDACTED]","i":14}
+# [WARN] Still running
+# Subtest: connection logs retain at most three bounded files and redact before persistence
+ok 3 - connection logs retain at most three bounded files and redact before persistence
+  ---
+  duration_ms: 33.8867
+  ...
+# Subtest: unwritable connection logs do not interrupt the session
+ok 4 - unwritable connection logs do not interrupt the session
+  ---
+  duration_ms: 0.3575
+  ...
+# Subtest: failure screen distinguishes outdated proxy, cloud failure, missing Studio and no attached window
+ok 5 - failure screen distinguishes outdated proxy, cloud failure, missing Studio and no attached window
+  ---
+  duration_ms: 1.6159
+  ...
+# Subtest: port conflicts display the blocking app and preserve recovery controls
+ok 6 - port conflicts display the blocking app and preserve recovery controls
+  ---
+  duration_ms: 0.5432
+  ...
+# Subtest: completed discovery cannot remain stuck connecting with no runtime tools
+ok 7 - completed discovery cannot remain stuck connecting with no runtime tools
+  ---
+  duration_ms: 6.659
+  ...
+# Subtest: later capability telemetry automatically promotes the connector to ready
+ok 8 - later capability telemetry automatically promotes the connector to ready
+  ---
+  duration_ms: 0.3651
+  ...
+# Subtest: reports a missing Studio MCP executable without launching it
+ok 9 - reports a missing Studio MCP executable without launching it
+  ---
+  duration_ms: 3.0753
+  ...
+# Subtest: Windows detection requires a real StudioMCP executable instead of treating mcp.bat as Studio MCP
+ok 10 - Windows detection requires a real StudioMCP executable instead of treating mcp.bat as Studio MCP
+  ---
+  duration_ms: 16.8795
+  ...
+# Subtest: diagnostics contain health summaries without session secrets or command payloads
+ok 11 - diagnostics contain health summaries without session secrets or command payloads
+  ---
+  duration_ms: 1.0667
+  ...
+# Subtest: connector help opens the authoritative Studio plugin documentation
+ok 12 - connector help opens the authoritative Studio plugin documentation
+  ---
+  duration_ms: 2.5717
+  ...
+# Subtest: updates only the constrained login preference
+ok 13 - updates only the constrained login preference
+  ---
+  duration_ms: 1.4287
+  ...
+# Subtest: preference validation accepts only the renderer allowlist and clamps reconnect delay
+ok 14 - preference validation accepts only the renderer allowlist and clamps reconnect delay
+  ---
+  duration_ms: 1.9283
+  ...
+# Subtest: resetLocalSession clears local state when remote revocation fails
+ok 15 - resetLocalSession clears local state when remote revocation fails
+  ---
+  duration_ms: 3.2599
+  ...
+# Subtest: resetLocalSession clears credentials even when local shutdown fails
+ok 16 - resetLocalSession clears credentials even when local shutdown fails
+  ---
+  duration_ms: 1.2859
+  ...
+# Subtest: identifies revoked connector sessions as terminal
+ok 17 - identifies revoked connector sessions as terminal
+  ---
+  duration_ms: 0.7442
+  ...
+# Subtest: encrypts the complete browser-authenticated connector session
+ok 18 - encrypts the complete browser-authenticated connector session
+  ---
+  duration_ms: 3.6741
+  ...
+# Subtest: packaged builds are locked to the official HTTPS update feed
+ok 19 - packaged builds are locked to the official HTTPS update feed
+  ---
+  duration_ms: 2.1156
+  ...
+# Subtest: manual checks download an update even when automatic updates are disabled
+ok 20 - manual checks download an update even when automatic updates are disabled
+  ---
+  duration_ms: 2.423
+  ...
+# Subtest: automatic updates check after startup, reschedule, and deduplicate active checks
+ok 21 - automatic updates check after startup, reschedule, and deduplicate active checks
+  ---
+  duration_ms: 1.0011
+  ...
+# Subtest: enabling automatic updates starts checking without an app restart
+ok 22 - enabling automatic updates starts checking without an app restart
+  ---
+  duration_ms: 1.358
+  ...
+# Subtest: does not start a second check while an update download is active
+ok 23 - does not start a second check while an update download is active
+  ---
+  duration_ms: 0.7952
+  ...
+# Subtest: preserves the restart action when a late updater error follows a verified download
+ok 24 - preserves the restart action when a late updater error follows a verified download
+  ---
+  duration_ms: 0.8081
+  ...
+# (node:23384) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: all six desktop modes finish locally; plans have version-bound approval
+ok 25 - all six desktop modes finish locally; plans have version-bound approval
+  ---
+  duration_ms: 125.7861
+  ...
+# Subtest: manifest inspection precedes inference and read-only mode cannot execute a model-requested write
+ok 26 - manifest inspection precedes inference and read-only mode cannot execute a model-requested write
+  ---
+  duration_ms: 14.9302
+  ...
+# Subtest: resume reuses the exact saved model body after a lost response
+ok 27 - resume reuses the exact saved model body after a lost response
+  ---
+  duration_ms: 27.4528
+  ...
+# Subtest: playtest output cannot grant itself permission; declining never executes Studio
+ok 28 - playtest output cannot grant itself permission; declining never executes Studio
+  ---
+  duration_ms: 30.7243
+  ...
+# Subtest: approving a concrete playtest permits exactly that command and cancellation clears pending approval
+ok 29 - approving a concrete playtest permits exactly that command and cancellation clears pending approval
+  ---
+  duration_ms: 47.4064
+  ...
+# Subtest: streaming progress remains local and only complete entities enter the sync outbox
+ok 30 - streaming progress remains local and only complete entities enter the sync outbox
+  ---
+  duration_ms: 15.6736
+  ...
+# Subtest: hashed files upload before metadata and another device downloads the identical bytes
+ok 31 - hashed files upload before metadata and another device downloads the identical bytes
+  ---
+  duration_ms: 19.8137
+  ...
+# Subtest: editor writes require a read hash and destructive controls wait for local approval
+ok 32 - editor writes require a read hash and destructive controls wait for local approval
+  ---
+  duration_ms: 8.266
+  ...
+# Subtest: local project ownership and plan revisions cannot inherit execution approval
+ok 33 - local project ownership and plan revisions cannot inherit execution approval
+  ---
+  duration_ms: 4.8112
+  ...
+# Subtest: editor source is bound to the place it was read from, including the same window
+ok 34 - editor source is bound to the place it was read from, including the same window
+  ---
+  duration_ms: 1.8594
+  ...
+# Subtest: conflict resolution retains evidence and requires fresh approval for a recovered plan
+ok 35 - conflict resolution retains evidence and requires fresh approval for a recovered plan
+  ---
+  duration_ms: 2.1635
+  ...
+# (node:8528) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: local writes survive restart and interrupted runs cannot resume silently
+ok 36 - local writes survive restart and interrupted runs cannot resume silently
+  ---
+  duration_ms: 68.4617
+  ...
+# Subtest: schema upgrades preserve a backup and startup does not interrupt another device's run
+ok 37 - schema upgrades preserve a backup and startup does not interrupt another device's run
+  ---
+  duration_ms: 68.0485
+  ...
+# Subtest: a sync acknowledgement cannot discard edits made while uploading
+ok 38 - a sync acknowledgement cannot discard edits made while uploading
+  ---
+  duration_ms: 3.1627
+  ...
+# Subtest: a lost upload reply retries the original operation before a newer edit
+ok 39 - a lost upload reply retries the original operation before a newer edit
+  ---
+  duration_ms: 3.3235
+  ...
+# Subtest: conflicting revisions retain both copies and don't overwrite pending local work
+ok 40 - conflicting revisions retain both copies and don't overwrite pending local work
+  ---
+  duration_ms: 1.5057
+  ...
+# Subtest: a failed transaction leaves neither an entity nor an outbox operation
+ok 41 - a failed transaction leaves neither an entity nor an outbox operation
+  ---
+  duration_ms: 1.0035
+  ...
+# Subtest: history pages stay scoped and stable across equal timestamps and new inserts
+ok 42 - history pages stay scoped and stable across equal timestamps and new inserts
+  ---
+  duration_ms: 3.2177
+  ...
+1..42
+# tests 42
+# suites 0
+# pass 42
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1688.2642
+
+ RUN  v2.1.9 C:/Users/jackt/Documents/Codex/2026-08-09/can/nexusairbx/desktop-connector
+
+ ✓ src/renderer/lib/view-state.test.ts (6 tests) 7ms
+ ✓ src/renderer/connection-failure.test.tsx (1 test) 70ms
+
+ Test Files  2 passed (2)
+      Tests  7 passed (7)
+   Start at  23:15:44
+   Duration  5.55s (transform 296ms, setup 29ms, collect 905ms, tests 78ms, environment 5.76s, prepare 549ms)
+

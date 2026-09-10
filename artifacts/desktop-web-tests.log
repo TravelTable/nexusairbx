@@ -1,0 +1,20 @@
+npm warn "src/lib/billing.test.js" is being parsed as a normal command line argument.
+npm warn Unknown cli config "--watchAll". This will stop working in the next major version of npm.
+npm warn Unknown cli config "--runInBand". This will stop working in the next major version of npm.
+npm warn Unknown cli config "--runTestsByPath". This will stop working in the next major version of npm.
+
+> nexusrbx-react@0.1.0 test
+> react-scripts test src/lib/billing.test.js src/lib/billing.authedFetch.test.js src/lib/billingTimezone.test.js src/pages/BillingPage.test.jsx src/components/sidebar/ProjectTreeSidebar.test.jsx src/components/SidebarContent.test.jsx
+
+PASS src/lib/billing.authedFetch.test.js (10.126 s)
+PASS src/pages/BillingPage.test.jsx (11.812 s)
+PASS src/lib/billingTimezone.test.js (12.777 s)
+PASS src/lib/billing.test.js (12.82 s)
+PASS src/components/sidebar/ProjectTreeSidebar.test.jsx (13.158 s)
+PASS src/components/SidebarContent.test.jsx (13.412 s)
+
+Test Suites: 6 passed, 6 total
+Tests:       29 passed, 29 total
+Snapshots:   0 total
+Time:        26.819 s
+Ran all test suites matching /src\\lib\\billing.test.js|src\\lib\\billing.authedFetch.test.js|src\\lib\\billingTimezone.test.js|src\\pages\\BillingPage.test.jsx|src\\components\\sidebar\\ProjectTreeSidebar.test.jsx|src\\components\\SidebarContent.test.jsx/i.

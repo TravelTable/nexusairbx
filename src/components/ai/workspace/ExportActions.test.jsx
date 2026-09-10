@@ -1,9 +1,9 @@
 import React from "react";
 import "@testing-library/jest-dom";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import ExportActions from "./ExportActions";
 import { getStudioStatus } from "../../../lib/studioBridgeApi";
-import { buildPlacementZip } from "../../../lib/rojoExport";
+import { buildPlacementZip, safeProjectName } from "../../../lib/rojoExport";
 
 jest.mock("../../../lib/studioBridgeApi", () => ({
   getStudioStatus: jest.fn(),
@@ -36,6 +36,7 @@ describe("ExportActions", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     getStudioStatus.mockResolvedValue({ sessions: [] });
+    safeProjectName.mockReturnValue('sample-project');
   });
 
   test("makes the placement-aware Project ZIP available without a live Studio session", async () => {
@@ -47,5 +48,20 @@ describe("ExportActions", () => {
     expect(screen.getByText("Project ZIP includes Studio placement steps")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /push to studio/i })).toBeNull();
     expect(buildPlacementZip).not.toHaveBeenCalled();
+  });
+
+  test('desktop exports and Studio apply use the local runtime without cloud polling', async () => {
+    const blob = new Blob(['export']);
+    buildPlacementZip.mockResolvedValue(blob);
+    const runtime = { studioId: 'local-studio', download: jest.fn().mockResolvedValue(true), apply: jest.fn().mockResolvedValue({}), verify: jest.fn().mockResolvedValue({ ok: true }) };
+    render(<ExportActions artifact={artifact} activeFile={artifact.files[0]} runtime={runtime} notify={jest.fn()} />);
+    expect(getStudioStatus).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: /project zip/i }));
+    await waitFor(() => expect(runtime.download).toHaveBeenCalledWith(blob, 'sample-project.zip'));
+    fireEvent.click(screen.getByRole('button', { name: /push to studio/i }));
+    await waitFor(() => expect(runtime.apply).toHaveBeenCalledWith(artifact));
+    fireEvent.click(screen.getByRole('button', { name: /verify/i }));
+    await waitFor(() => expect(runtime.verify).toHaveBeenCalled());
+    expect(getStudioStatus).not.toHaveBeenCalled();
   });
 });

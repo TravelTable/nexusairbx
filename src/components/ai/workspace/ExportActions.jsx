@@ -30,7 +30,7 @@ function rojoInputFromArtifact(artifact) {
 }
 
 // Unified export surface for a multi-file artifact (code-first; no boardState).
-export default function ExportActions({ artifact, activeFile, notify }) {
+export default function ExportActions({ artifact, activeFile, notify, runtime }) {
   const [copied, setCopied] = useState(false);
   const [copiedAll, setCopiedAll] = useState(false);
   const [bundling, setBundling] = useState(false);
@@ -39,10 +39,12 @@ export default function ExportActions({ artifact, activeFile, notify }) {
   const [studioBusy, setStudioBusy] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [studioSession, setStudioSession] = useState(null);
-  const studioSessionId = getStudioSessionId(studioSession);
+  const studioSessionId = runtime ? runtime.studioId : getStudioSessionId(studioSession);
   const studioConnected = Boolean(studioSessionId);
+  const download = runtime?.download || downloadBlob;
 
   useEffect(() => {
+    if (runtime) return undefined;
     let cancelled = false;
     getStudioStatus()
       .then((status) => {
@@ -53,7 +55,7 @@ export default function ExportActions({ artifact, activeFile, notify }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [runtime]);
 
   if (!artifact) return null;
   const files = artifact.files || [];
@@ -83,10 +85,11 @@ export default function ExportActions({ artifact, activeFile, notify }) {
     setTimeout(() => setCopiedAll(false), 2000);
   };
 
-  const handleDownloadFile = () => {
+  const handleDownloadFile = async () => {
     if (!activeFile) return;
     const ext = activeFile.kind === "docs" ? "md" : activeFile.kind === "config" ? "json" : activeFile.kind === "server" ? "server.lua" : activeFile.kind === "client" ? "client.lua" : "lua";
-    downloadBlob(new Blob([activeFile.content || ""], { type: "text/plain;charset=utf-8" }), `${activeFile.name}.${ext}`);
+    try { if (await download(new Blob([activeFile.content || ""], { type: "text/plain;charset=utf-8" }), `${activeFile.name}.${ext}`) === false) return; }
+    catch (error) { notify?.({ message: error.message || 'File export failed', type: 'error' }); return; }
     void trackProductEvent("artifact_downloaded", {
       output_type: activeFile.kind || "file",
       file_count: 1,
@@ -99,7 +102,7 @@ export default function ExportActions({ artifact, activeFile, notify }) {
     setBundling(true);
     try {
       const blob = await buildPlacementZip(artifact);
-      downloadBlob(blob, `${safeName}.zip`);
+      if (await download(blob, `${safeName}.zip`) === false) return;
       void trackProductEvent("artifact_downloaded", {
         output_type: "project",
         file_count: files.length,
@@ -118,7 +121,7 @@ export default function ExportActions({ artifact, activeFile, notify }) {
     setRojoBuilding(true);
     try {
       const blob = await buildRojoZip(rojoInputFromArtifact(artifact));
-      downloadBlob(blob, `${safeName}_rojo.zip`);
+      if (await download(blob, `${safeName}_rojo.zip`) === false) return;
       void trackProductEvent("artifact_downloaded", {
         output_type: "rojo_project",
         file_count: files.length,
@@ -161,6 +164,11 @@ export default function ExportActions({ artifact, activeFile, notify }) {
     if (studioBusy || !studioSessionId) return;
     setStudioBusy(true);
     try {
+      if (runtime) {
+        await runtime.apply(artifact);
+        notify?.({ message: 'Studio changes applied and verified', type: 'success' });
+        return;
+      }
       const result = await applyArtifactToStudio({
         artifact: buildBaseArtifactSnapshot(artifact),
         sessionId: studioSessionId,
@@ -178,7 +186,7 @@ export default function ExportActions({ artifact, activeFile, notify }) {
     if (verifying || !activeFile) return;
     setVerifying(true);
     try {
-      const report = await verifyRobloxReadiness({ lua: activeFile.content || "", manifest: { kind: activeFile.kind } });
+      const report = await (runtime?.verify || verifyRobloxReadiness)({ lua: activeFile.content || "", manifest: { kind: activeFile.kind } });
       const issues = report?.issues || report?.errors || [];
       if (report?.ok || issues.length === 0) {
         notify?.({ message: "Roblox readiness check passed", type: "success" });

@@ -22,9 +22,10 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: |
+            package-lock.json
             local-connector/package-lock.json
             desktop-connector/package-lock.json
-      - run: npm ci --prefix local-connector && npm ci --prefix desktop-connector
+      - run: npm ci && npm ci --prefix local-connector && npm ci --prefix desktop-connector
       - name: Verify local connector lifecycle and security gates
         run: npm run check --prefix local-connector
       - name: Verify desktop connector types, tests, and release contract
@@ -45,6 +46,7 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: |
+            package-lock.json
             local-connector/package-lock.json
             desktop-connector/package-lock.json
       - name: Require Apple release credentials
@@ -58,7 +60,7 @@ jobs:
           for value in CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID; do
             test -n "${!value}" || { echo "Missing required secret: $value" >&2; exit 1; }
           done
-      - run: npm ci --prefix local-connector && npm ci --prefix desktop-connector
+      - run: npm ci && npm ci --prefix local-connector && npm ci --prefix desktop-connector
       - name: Verify connector release version
         run: npm run version:check --prefix desktop-connector
       - name: Build, sign, and notarize universal macOS app
@@ -127,23 +129,32 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: |
+            package-lock.json
             local-connector/package-lock.json
             desktop-connector/package-lock.json
-      - run: npm ci --prefix local-connector && npm ci --prefix desktop-connector
+      - run: npm ci && npm ci --prefix local-connector && npm ci --prefix desktop-connector
       - name: Verify connector release version
         run: npm run version:check --prefix desktop-connector
-      - name: Build unsigned Windows 10/11 x64 installer
+      - name: Require Windows release credentials
+        shell: pwsh
+        env:
+          CSC_LINK: ${{ secrets.CONNECTOR_WINDOWS_SIGNING_CERTIFICATE }}
+          CSC_KEY_PASSWORD: ${{ secrets.CONNECTOR_WINDOWS_SIGNING_CERTIFICATE_PASSWORD }}
+        run: |
+          if (-not $env:CSC_LINK -or -not $env:CSC_KEY_PASSWORD) { throw "Windows signing credentials are required for public releases." }
+      - name: Build signed Windows 10/11 x64 installer
         run: npm run package:win --prefix desktop-connector
         env:
-          CSC_IDENTITY_AUTO_DISCOVERY: "false"
-      - name: Verify expected unsigned installer
+          CSC_LINK: ${{ secrets.CONNECTOR_WINDOWS_SIGNING_CERTIFICATE }}
+          CSC_KEY_PASSWORD: ${{ secrets.CONNECTOR_WINDOWS_SIGNING_CERTIFICATE_PASSWORD }}
+      - name: Verify Windows release signature
         shell: pwsh
         run: |
           $installers = @(Get-ChildItem desktop-connector/release -File -Filter '*.exe')
           if ($installers.Count -ne 1) { throw "Expected one Windows installer, found $($installers.Count)." }
           $signature = Get-AuthenticodeSignature $installers[0].FullName
-          if ($signature.Status -ne 'NotSigned') {
-            throw "Expected an unsigned Windows installer, got signature status $($signature.Status)."
+          if ($signature.Status -ne 'Valid') {
+            throw "Expected a valid signed Windows installer, got signature status $($signature.Status)."
           }
       - name: Silent install, secure startup smoke, and uninstall
         shell: pwsh

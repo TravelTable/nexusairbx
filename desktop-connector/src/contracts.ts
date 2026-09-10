@@ -7,6 +7,7 @@ export type CompanionUpdateState = "idle" | "checking" | "available" | "download
 export type ThemePreference = "dark" | "light" | "system";
 
 export interface CompanionPreferences {
+  workspaceEnabled?: boolean;
   autoStart: boolean;
   minimizeToTray: boolean;
   startMinimized: boolean;

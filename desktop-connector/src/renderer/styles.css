@@ -2,6 +2,41 @@
 @tailwind components;
 @tailwind utilities;
 
+.workspace { display: flex; flex: 1; min-height: 0; user-select: text; }
+.workspace-sidebar { width: 240px; flex-shrink: 0; padding: 16px; display: flex; flex-direction: column; gap: 14px; border-right: 1px solid rgb(var(--line)); background: rgb(var(--panel)); }
+.workspace-brand { display: flex; align-items: center; gap: 12px; margin: 8px 0 16px; }
+.workspace-brand small { display: block; color: rgb(var(--muted-foreground)); font-size: 11px; }
+.workspace-conversations { flex: 1; overflow: auto; }
+.workspace-conversations button { width: 100%; padding: 10px; text-align: left; border: 0; background: transparent; border-radius: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.workspace-conversations button:hover, .workspace-conversations button[aria-current] { background: rgb(var(--muted)); }
+.workspace-sync { display: flex; align-items: center; gap: 8px; font-size: 11px; color: rgb(var(--muted-foreground)); }
+.workspace-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.workspace-toolbar { padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid rgb(var(--line)); font-size: 13px; }
+.workspace select, .workspace input { border: 1px solid rgb(var(--line)); border-radius: 6px; background: rgb(var(--panel)); color: rgb(var(--foreground)); padding: 8px; font-size: 12px; max-width: 210px; }
+.workspace-error { padding: 12px 24px; color: #fda4af; background: rgba(190,18,60,.1); font-size: 13px; }
+.workspace-messages { flex: 1; overflow: auto; padding: 28px max(24px, calc((100% - 760px) / 2)); }
+.workspace-empty { max-width: 480px; margin: 8vh auto; color: rgb(var(--muted-foreground)); }
+.workspace-empty h1 { font-size: 26px; line-height: 1.25; color: rgb(var(--foreground)); margin: 18px 0; }
+.workspace-empty p { font-size: 14px; line-height: 1.7; margin-top: 12px; }
+.workspace-message { margin-bottom: 28px; line-height: 1.7; font-size: 14px; overflow-wrap: anywhere; }
+.workspace-message small { display: block; font-size: 11px; font-weight: 600; margin-bottom: 8px; color: rgb(var(--muted-foreground)); }
+.workspace-message div { white-space: pre-wrap; }
+.workspace-message.user { border-left: 2px solid #a78bfa; padding-left: 16px; }
+.workspace-composer { padding: 14px 24px 22px; border-top: 1px solid rgb(var(--line)); }
+.workspace-composer textarea { resize: vertical; width: 100%; min-height: 76px; max-height: 200px; border: none; background: transparent; color: rgb(var(--foreground)); font: inherit; font-size: 14px; padding: 8px; }
+.workspace-composer-controls { display: flex; gap: 8px; align-items: center; }
+.workspace-composer-controls > button { margin-left: auto; }
+.workspace-run, .workspace-plan { display: flex; gap: 10px; align-items: center; color: rgb(var(--muted-foreground)); font-size: 12px; }
+.workspace-run button { margin-left: auto; }
+.workspace-approved { font-size: 12px; color: #a78bfa; }
+.workspace-files { display: flex; gap: 4px; flex-wrap: wrap; max-height: 88px; overflow: auto; }
+.workspace-plan { border: 1px solid rgb(var(--line)); border-radius: 8px; padding: 14px; margin-bottom: 16px; align-items: flex-start; }
+.workspace-plan > div { min-width: 0; width: 100%; }
+.workspace-plan pre { max-height: 200px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+.workspace-plan p { line-height: 1.6; }
+.workspace button:focus-visible, .workspace select:focus-visible, .workspace textarea:focus-visible, .workspace input:focus-visible { outline: 2px solid #a78bfa; outline-offset: 2px; }
+@media (max-width: 860px) { .workspace-sidebar { width: 200px; } .workspace-toolbar { flex-wrap: wrap; } }
+
 :root { --background: 7 7 12; --foreground: 244 244 248; --panel: 15 15 23; --elevated: 20 19 30; --muted: 29 27 40; --muted-foreground: 158 156 171; --line: 45 43 59; font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: rgb(var(--foreground)); background: rgb(var(--background)); }
 :root.light { --background: 239 238 244; --foreground: 24 21 32; --panel: 250 249 252; --elevated: 255 255 255; --muted: 229 226 237; --muted-foreground: 103 97 116; --line: 211 207 219; }
 * { box-sizing: border-box; }

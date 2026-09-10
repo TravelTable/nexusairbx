@@ -68,6 +68,7 @@ export class CommandExecutor {
       case "patch_script":
         return await this.mutateScript(command, signal);
       case "get_selection":
+      case "get_project_manifest":
       case "create_instance":
       case "update_properties":
       case "update_attributes":
@@ -102,7 +103,7 @@ export class CommandExecutor {
     const data = await this.#routines.run(command.type, command.payload, signal);
     // Snapshot creation writes connector-owned state into the place and advances
     // its signature, even though it does not alter the selected user instance.
-    const mutation = command.type !== "get_selection";
+    const mutation = !["get_selection", "get_project_manifest"].includes(command.type);
     const snapshotChecks = command.type === "create_snapshot" && Array.isArray(data.snapshots)
       ? data.snapshots.flatMap((snapshot) => isRecord(snapshot) ? [{
           kind: "snapshot_record",

@@ -1,0 +1,94 @@
+TAP version 13
+# (node:36008) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: all six desktop modes finish locally; plans have version-bound approval
+ok 1 - all six desktop modes finish locally; plans have version-bound approval
+  ---
+  duration_ms: 111.2788
+  ...
+# Subtest: manifest inspection precedes inference and read-only mode cannot execute a model-requested write
+ok 2 - manifest inspection precedes inference and read-only mode cannot execute a model-requested write
+  ---
+  duration_ms: 15.6992
+  ...
+# Subtest: resume reuses the exact saved model body after a lost response
+ok 3 - resume reuses the exact saved model body after a lost response
+  ---
+  duration_ms: 30.6481
+  ...
+# Subtest: playtest output cannot grant itself permission; declining never executes Studio
+ok 4 - playtest output cannot grant itself permission; declining never executes Studio
+  ---
+  duration_ms: 31.494
+  ...
+# Subtest: approving a concrete playtest permits exactly that command and cancellation clears pending approval
+ok 5 - approving a concrete playtest permits exactly that command and cancellation clears pending approval
+  ---
+  duration_ms: 48.3971
+  ...
+# Subtest: streaming progress remains local and only complete entities enter the sync outbox
+ok 6 - streaming progress remains local and only complete entities enter the sync outbox
+  ---
+  duration_ms: 12.8585
+  ...
+# Subtest: hashed files upload before metadata and another device downloads the identical bytes
+ok 7 - hashed files upload before metadata and another device downloads the identical bytes
+  ---
+  duration_ms: 11.0701
+  ...
+# Subtest: editor writes require a read hash and destructive controls wait for local approval
+ok 8 - editor writes require a read hash and destructive controls wait for local approval
+  ---
+  duration_ms: 18.5474
+  ...
+# Subtest: local project ownership and plan revisions cannot inherit execution approval
+ok 9 - local project ownership and plan revisions cannot inherit execution approval
+  ---
+  duration_ms: 2.4905
+  ...
+# (node:9556) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: local writes survive restart and interrupted runs cannot resume silently
+ok 10 - local writes survive restart and interrupted runs cannot resume silently
+  ---
+  duration_ms: 73.9021
+  ...
+# Subtest: schema upgrades preserve a backup and startup does not interrupt another device's run
+ok 11 - schema upgrades preserve a backup and startup does not interrupt another device's run
+  ---
+  duration_ms: 56.3796
+  ...
+# Subtest: a sync acknowledgement cannot discard edits made while uploading
+ok 12 - a sync acknowledgement cannot discard edits made while uploading
+  ---
+  duration_ms: 1.7131
+  ...
+# Subtest: a lost upload reply retries the original operation before a newer edit
+ok 13 - a lost upload reply retries the original operation before a newer edit
+  ---
+  duration_ms: 1.948
+  ...
+# Subtest: conflicting revisions retain both copies and don't overwrite pending local work
+ok 14 - conflicting revisions retain both copies and don't overwrite pending local work
+  ---
+  duration_ms: 1.3027
+  ...
+# Subtest: a failed transaction leaves neither an entity nor an outbox operation
+ok 15 - a failed transaction leaves neither an entity nor an outbox operation
+  ---
+  duration_ms: 0.813
+  ...
+# Subtest: history pages stay scoped and stable across equal timestamps and new inserts
+ok 16 - history pages stay scoped and stable across equal timestamps and new inserts
+  ---
+  duration_ms: 2.3766
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 766.47

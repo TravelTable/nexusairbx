@@ -1,0 +1,8 @@
+
+> nexusrbx-desktop-connector@0.3.6 typecheck
+> tsc -p tsconfig.json --noEmit && tsc -p tsconfig.preload.json --noEmit && tsc -p tsconfig.renderer.json --noEmit
+
+src/workspace-runtime.ts(93,23): error TS2339: Property 'title' does not exist on type '{ conflictOf: null; resolvedConflictOf: string; updatedAt: number; }'.
+src/workspace-runtime.ts(93,48): error TS2339: Property 'title' does not exist on type '{ conflictOf: null; resolvedConflictOf: string; updatedAt: number; }'.
+src/workspace-runtime.ts(93,61): error TS2339: Property 'title' does not exist on type '{ conflictOf: null; resolvedConflictOf: string; updatedAt: number; }'.
+src/workspace-runtime.ts(95,55): error TS2339: Property 'content' does not exist on type '{ conflictOf: null; resolvedConflictOf: string; updatedAt: number; }'.

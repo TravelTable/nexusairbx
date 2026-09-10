@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "platform": "win32",
+  "architecture": "x64",
+  "version": "0.3.6",
+  "checks": {
+    "main": true,
+    "preload": true,
+    "renderer": true,
+    "tray": true,
+    "secureStorage": true,
+    "contextIsolation": true,
+    "sandbox": true,
+    "nodeIntegrationDisabled": true,
+    "workspaceWorker": true
+  }
+}

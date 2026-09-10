@@ -28,6 +28,7 @@ class RoutineMcp implements McpClientLike {
     if (this.mode === "malformed") return { content: [{ type: "text", text: "not-json" }] };
     const snapshot = { snapshotId: "snapshot-1", path: "Workspace/Part", preHash: "before", postHash: "after" };
     const validData: Record<string, JsonObject> = {
+      get_project_manifest: { instances: [], truncated: false, sourceIncluded: false },
       get_selection: { instances: [] },
       create_snapshot: { snapshots: [snapshot], snapshotCount: 1 },
       restore_snapshot: { restored: [{ path: "Workspace/Part", resultingHash: "before" }], restoredCount: 1 },
@@ -140,6 +141,13 @@ test("the audited routine guards duplicate self-descendants and pins last-batch 
   assert.match(mcp.lastCode, /PinnedLastBatch/);
   assert.match(mcp.lastCode, /while #children > 100/);
   assert.match(mcp.lastCode, /DateTime\.now\(\)\.UnixTimestampMillis/);
+});
+test("the manifest uses a bounded metadata routine and refuses source inclusion", async () => {
+  const mcp = new RoutineMcp(); const runner = new FixedRoutineRunner(mcp);
+  assert.equal((await runner.run("get_project_manifest", { includeSource: false, pageSize: 100 })).sourceIncluded, false);
+  await expectCode(runner.run("get_project_manifest", { includeSource: true }), "SOURCE_NOT_ALLOWED");
+  await expectCode(runner.run("get_project_manifest", { cursor: "../other" }), "COMMAND_PAYLOAD_INVALID");
+  assert.equal(mcp.calls, 1);
 });
 
 test("the behavioral profile uses RunAsync and cannot pass an empty TestService suite", async () => {

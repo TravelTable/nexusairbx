@@ -5,6 +5,7 @@ import { CREDIT_PACKS, formatMoney } from "../lib/planCatalog";
 import { trackProductEvent } from "../lib/productAnalytics";
 import CreditExplainer from "../components/billing/CreditExplainer";
 import TeamBillingPanel from "../components/billing/TeamBillingPanel";
+import { openAccountLink } from '../lib/workspaceRuntime';
 import "./AccountLedger.css";
 
 const credits = value => (Number(value || 0)/1e6).toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -38,7 +39,8 @@ export default function BillingPage() {
       const result = await action();
       if (!result.url) throw new Error("Billing is still being prepared. Please retry shortly.");
       if (id === "portal") void trackProductEvent("billing_portal_opened", {});
-      window.location.assign(result.url);
+      await openAccountLink(result.url);
+      setBusy('');
     } catch (e) { setError(e.message || "Could not open Stripe."); setBusy(""); }
   }
   const v2 = ent?.catalogVersion === "v2", sub = ent?.subscription;

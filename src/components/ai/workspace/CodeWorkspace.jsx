@@ -114,6 +114,7 @@ export default function CodeWorkspace({
   saving = false,
   conflict = null,
   notify,
+  exportRuntime,
 }) {
   const [editing, setEditing] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -426,7 +427,7 @@ export default function CodeWorkspace({
 
       <ArtifactInspector file={activeFile} />
 
-      <ExportActions artifact={artifact} activeFile={activeFile} notify={notify} />
+      <ExportActions artifact={artifact} activeFile={activeFile} notify={notify} runtime={exportRuntime} />
     </div>
   );
 }

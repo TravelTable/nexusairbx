@@ -10,3 +10,4 @@ export { RobloxStudioMcpClient, type RobloxStudioMcpOptions } from "./mcp-client
 export { ToolCatalog } from "./tool-catalog.js";
 export * from "./types.js";
 export { CONNECTOR_PROTOCOL_VERSION, CONNECTOR_VERSION } from "./version.js";
+export { LocalStudio, type LocalReceiptStore } from "./local-studio.js";

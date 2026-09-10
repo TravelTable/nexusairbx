@@ -1,0 +1,21 @@
+src\components\ai\workspace\CodeWorkspace.jsx:22:31 info design-hardcoded-color Hardcoded color may drift from project design tokens.
+src\components\ai\workspace\CodeWorkspace.jsx:23:31 info design-hardcoded-color Hardcoded color may drift from project design tokens.
+src\components\ai\workspace\CodeWorkspace.jsx:24:41 info design-hardcoded-color Hardcoded color may drift from project design tokens.
+src\components\ai\workspace\CodeWorkspace.jsx:25:47 info design-hardcoded-color Hardcoded color may drift from project design tokens.
+src\components\ai\workspace\CodeWorkspace.jsx:26:40 info design-hardcoded-color Hardcoded color may drift from project design tokens.
+src\components\ai\workspace\CodeWorkspace.jsx:27:48 info design-hardcoded-color Hardcoded color may drift from project design tokens.
+src\components\ai\workspace\CodeWorkspace.jsx:28:44 info design-hardcoded-color Hardcoded color may drift from project design tokens.
+src\components\ai\workspace\CodeWorkspace.jsx:29:37 info design-hardcoded-color Hardcoded color may drift from project design tokens.
+src\components\ai\workspace\CodeWorkspace.jsx:30:37 info design-hardcoded-color Hardcoded color may drift from project design tokens.
+src\components\ai\workspace\CodeWorkspace.jsx:31:33 info design-hardcoded-color Hardcoded color may drift from project design tokens.
+src\components\ai\workspace\CodeWorkspace.jsx:45:31 info design-hardcoded-color Hardcoded color may drift from project design tokens.
+src\components\ai\workspace\CodeWorkspace.jsx:46:31 info design-hardcoded-color Hardcoded color may drift from project design tokens.
+src\components\ai\workspace\CodeWorkspace.jsx:47:41 info design-hardcoded-color Hardcoded color may drift from project design tokens.
+src\components\ai\workspace\CodeWorkspace.jsx:48:47 info design-hardcoded-color Hardcoded color may drift from project design tokens.
+src\components\ai\workspace\CodeWorkspace.jsx:49:40 info design-hardcoded-color Hardcoded color may drift from project design tokens.
+src\components\ai\workspace\CodeWorkspace.jsx:50:48 info design-hardcoded-color Hardcoded color may drift from project design tokens.
+src\components\ai\workspace\CodeWorkspace.jsx:51:44 info design-hardcoded-color Hardcoded color may drift from project design tokens.
+src\components\ai\workspace\CodeWorkspace.jsx:52:37 info design-hardcoded-color Hardcoded color may drift from project design tokens.
+src\components\ai\workspace\CodeWorkspace.jsx:53:37 info design-hardcoded-color Hardcoded color may drift from project design tokens.
+src\components\ai\workspace\CodeWorkspace.jsx:54:33 info design-hardcoded-color Hardcoded color may drift from project design tokens.
+4 file(s), 20 finding(s), 0 fixed.
