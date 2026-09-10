@@ -1,4 +1,5 @@
 import React from "react";
+import { selectOption } from '../../../testUtils/selectOption';
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import BuildWorkspace from "./BuildWorkspace";
 import { createBuildWorkspaceState, reduceBuildWorkspace } from "../../../lib/buildWorkspaceState";
@@ -59,10 +60,11 @@ test("saved revision history loads the selected exact artifact version", async (
  const readFile = jest.fn(reference => Promise.resolve({ source: `source ${reference.revision}`, revision: reference.revision }));
  render(<BuildWorkspace scopeKey="one" items={[{ ...file, revision: "v2", revisions: ["v2", "v1"] }]} readFile={readFile} />);
  await waitFor(() => expect(screen.getByTestId("source")).toHaveTextContent("source v2"));
- fireEvent.change(screen.getByRole("combobox", { name: "Saved file revision" }), { target: { value: "v1" } });
+ await selectOption(screen.getByRole("combobox", { name: "Saved file revision" }), 'v1 (saved)');
  await waitFor(() => expect(screen.getByTestId("source")).toHaveTextContent("source v1"));
  expect(readFile).toHaveBeenLastCalledWith({ artifactId: "a", revision: "v1", path: file.path }, expect.any(Object));
- expect(screen.getByRole("combobox", { name: "Generated file path" }).querySelector("optgroup").label).toBe("ServerScriptService");
+ fireEvent.keyDown(screen.getByRole("combobox", { name: "Generated file path" }), { key: 'ArrowDown' });
+ expect(await screen.findByRole('group', { name: 'ServerScriptService' })).toBeVisible();
 });
 
 test("stored test statuses distinguish unavailable checks from failures and unrun checks", () => {

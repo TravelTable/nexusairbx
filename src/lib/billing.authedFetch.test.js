@@ -57,4 +57,35 @@ describe("shared authenticated backend requests", () => {
       expect.objectContaining({ method: "GET" })
     );
   });
+
+  test("backs off failed reads across cache busters, then reconnects", async () => {
+    const now = jest.spyOn(Date, "now").mockReturnValue(1000);
+    global.fetch.mockResolvedValueOnce({ status: 500, ok: false });
+    try {
+      expect((await authedFetch("/api/test-outage?t=1")).status).toBe(500);
+      await expect(authedFetch("/api/test-outage?t=2")).rejects.toMatchObject({
+        code: "API_RETRY_COOLDOWN", retryAfterMs: 30000,
+      });
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      now.mockReturnValue(31001);
+      expect((await authedFetch("/api/test-outage?t=3")).ok).toBe(true);
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+    } finally { now.mockRestore(); }
+  });
+
+  test("honors Retry-After without blocking another signed-in user", async () => {
+    global.fetch.mockResolvedValueOnce({ status: 503, ok: false, headers: { get: () => "45" } });
+    await authedFetch("/api/test-user-outage");
+    await expect(authedFetch("/api/test-user-outage")).rejects.toMatchObject({ code: "API_RETRY_COOLDOWN" });
+    getAuth.mockReturnValue({ currentUser: { uid: "user-2", getIdToken: jest.fn().mockResolvedValue("second-token") } });
+    expect((await authedFetch("/api/test-user-outage")).ok).toBe(true);
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  test("does not replay or suppress writes after a failed read", async () => {
+    global.fetch.mockResolvedValue({ status: 500, ok: false });
+    await authedFetch("/api/test-write-outage");
+    expect((await authedFetch("/api/test-write-outage", { method: "POST" })).status).toBe(500);
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
 });

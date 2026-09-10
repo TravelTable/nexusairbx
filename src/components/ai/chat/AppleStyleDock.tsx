@@ -32,10 +32,10 @@ import {
 import type * as React from 'react';
 import { cn } from '../../../lib/utils';
 
-const DOCK_HEIGHT = 110;
-const DEFAULT_MAGNIFICATION = 64;
+const DOCK_HEIGHT = 48;
+const DEFAULT_MAGNIFICATION = 36;
 const DEFAULT_DISTANCE = 150;
-const DEFAULT_PANEL_HEIGHT = 54;
+const DEFAULT_PANEL_HEIGHT = 42;
 
 type DockProps = {
   children: React.ReactNode;
@@ -153,7 +153,7 @@ function DockItem({ children, className, onClick, active = false, ariaLabel, has
   const widthTransform = useTransform(
     mouseDistance,
     [-distance, 0, distance],
-    [40, magnification, 40]
+    [30, magnification, 30]
   );
 
   const width = useSpring(widthTransform, spring);

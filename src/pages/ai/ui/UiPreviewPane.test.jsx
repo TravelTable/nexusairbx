@@ -1,4 +1,5 @@
 import React from 'react';
+import { selectOption } from '../../../testUtils/selectOption';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import UiPreviewPane from './UiPreviewPane';
 import useUiPreview from '../../../hooks/useUiPreview';
@@ -13,24 +14,25 @@ const image={status:'ready',imageUrl:'blob:verified',error:'',retry:jest.fn(),pr
 beforeEach(()=>{jest.clearAllMocks();useUiPreview.mockReturnValue(waiting);});
 test('empty preview encourages generation without Studio and shows no fabricated image',()=>{
   render(<UiPreviewPane {...base} hasNodes={false} studioConnected={false} capture={null}/>);
-  expect(screen.getByText(/Generation starts immediately, even without Studio/)).toBeVisible();
+  expect(screen.getByText(/Start with a prompt on the left/)).toBeVisible();
   expect(screen.queryByRole('img')).not.toBeInTheDocument();
 });
-test('saved disconnected revision can connect later without blocking generation',()=>{
-  const connect=jest.fn();render(<UiPreviewPane {...base} capture={null} studioConnected={false} onConnectStudio={connect}/>);
-  expect(screen.getByText('Saved · Studio not applied yet')).toBeVisible();
-  fireEvent.click(screen.getByRole('button',{name:'Connect Studio'}));expect(connect).toHaveBeenCalledTimes(1);
+test('saved designs request Pinevex automatically without Studio',()=>{
+  render(<UiPreviewPane {...base} capture={{...capture,captureKind:'design'}} studioConnected={false} run={{stage:'Building UI layout'}}/>);
+  expect(useUiPreview).toHaveBeenLastCalledWith(expect.objectContaining({snapshotId:'snap',enabled:true,waitForBuild:false}));
+  expect(screen.queryByRole('button',{name:'Connect Studio'})).not.toBeInTheDocument();
 });
+
 test('a previous revision cannot be requested as the current capture',()=>{
   render(<UiPreviewPane {...base} capture={{...capture,sourceRevision:'old'}}/>);
   expect(useUiPreview).toHaveBeenLastCalledWith(expect.objectContaining({snapshotId:null}));
   expect(screen.getByLabelText('Preview viewport')).toBeDisabled();
 });
-test('device and state switches only change the requested render identity',()=>{
+test('device and state switches only change the requested render identity',async()=>{
   useUiPreview.mockReturnValue(image);const apply=jest.fn(),sync=jest.fn();
   render(<UiPreviewPane {...base} onApplyToStudio={apply} onRefreshCapture={sync}/>);
-  fireEvent.change(screen.getByLabelText('Preview viewport'),{target:{value:'phone'}});
-  fireEvent.change(screen.getByLabelText('Preview state'),{target:{value:'open'}});
+  await selectOption(screen.getByLabelText('Preview viewport'), 'Phone');
+  await selectOption(screen.getByLabelText('Preview state'), 'Shop open');
   expect(useUiPreview).toHaveBeenLastCalledWith(expect.objectContaining({viewportId:'phone',stateId:'open',snapshotId:'snap'}));
   expect(apply).not.toHaveBeenCalled();expect(sync).not.toHaveBeenCalled();expect(screen.queryByRole('option',{name:'Old state'})).not.toBeInTheDocument();
 });
@@ -39,7 +41,7 @@ test('render failure preserves the earlier image and retries preview without app
   useUiPreview.mockReturnValue({...image,status:'error',earlier:true,error:'Renderer offline',retry,preview:{...image.preview,sourceRevision:'old'}});
   render(<UiPreviewPane {...base} onApplyToStudio={apply} onRefreshCapture={sync} onRefreshManifest={refresh}/>);
   expect(screen.getByRole('img')).toHaveAttribute('src','blob:verified');expect(screen.getByText('Earlier version')).toBeVisible();
-  expect(screen.getByText(/Saved code and successful Studio application are preserved/)).toBeVisible();
+  expect(screen.getByText(/Your saved work is retained/)).toBeVisible();
   fireEvent.click(screen.getByRole('button',{name:'Retry Preview'}));await waitFor(()=>expect(retry).toHaveBeenCalledTimes(1));
   expect(refresh).toHaveBeenCalledTimes(1);expect(apply).not.toHaveBeenCalled();expect(sync).not.toHaveBeenCalled();
 });

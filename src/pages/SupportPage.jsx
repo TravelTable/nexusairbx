@@ -1,3 +1,4 @@
+import NexusSelect from "../components/ui/NexusSelect";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -86,9 +87,9 @@ export default function SupportPage() {
         <div className="account-ledger-section-head account-ledger-section">
           <div className="account-ledger-field-group">
           <label htmlFor="support-filter" className="account-ledger-field-label">Filter requests</label>
-          <select id="support-filter" value={filter} onChange={(event) => setFilter(event.target.value)} className="account-ledger-select">
+          <NexusSelect id="support-filter" value={filter} onChange={(event) => setFilter(event.target.value)} className="account-ledger-select">
             {FILTERS.map((item) => <option key={item.value || "all"} value={item.value}>{item.label}</option>)}
-          </select>
+          </NexusSelect>
           </div>
         </div>
 

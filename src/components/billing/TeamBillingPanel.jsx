@@ -1,3 +1,4 @@
+import NexusSelect from "../ui/NexusSelect";
 import React, { useEffect, useState } from "react";
 import { authedFetch, startCreditPackCheckout } from "../../lib/billing";
 import { CREDIT_PACKS, formatMoney } from "../../lib/planCatalog";
@@ -52,9 +53,9 @@ export default function TeamBillingPanel() {
       <label>New workspace name <input required maxLength={100} value={name} onChange={e=>setName(e.target.value)} /></label>
       <button className="account-ledger-button" disabled={busy}>Create workspace</button>
     </form>
-    <label>Workspace <select value={selected} onChange={e=>setSelected(e.target.value)}>
+    <label>Workspace <NexusSelect value={selected} onChange={e=>setSelected(e.target.value)}>
       <option value="">Choose a workspace</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}
-    </select></label>
+    </NexusSelect></label>
     {team&&<>
       <p>{team.name} · your role: {team.role} · {(team.credits.totalAvailableCreditsMicros/1e6).toFixed(2)} pooled Nexus Credits available</p>
       <ul>{team.members.map(member=><li key={member.uid}>{member.uid} · {member.role}

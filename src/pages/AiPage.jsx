@@ -2,6 +2,7 @@ import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../styles/aiTheme.css";
 import AgentWorkspaceLayout from "./ai/AgentWorkspaceLayout";
+import '../components/ai/chat/WorkspaceControls.css';
 import { useAiWorkspaceController } from "./ai/useAiWorkspaceController";
 
 function AiPage() {

@@ -1,3 +1,4 @@
+import NexusSelect from "../../ui/NexusSelect";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
 
@@ -101,12 +102,12 @@ export default function BuildWorkspace({ scopeKey, items = [], readFile, connect
       </div> : tab === "file" ? (
         files.length ? <div className="flex min-h-0 flex-1 flex-col">
           <label className="shrink-0 px-3 pt-2 text-xs text-[var(--ds-text-muted)]">Open file
-            <select aria-label="Generated file path" value={selected?.id || ""} onChange={event => setSelectedId(event.target.value)}
+            <NexusSelect aria-label="Generated file path" value={selected?.id || ""} onChange={event => setSelectedId(event.target.value)}
               className="mt-1 w-full min-w-0 rounded border border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)] px-2 py-1">
               {fileGroups.map(([directory, entries]) => <optgroup key={directory} label={directory}>
                 {entries.map(file => <option key={file.id} value={file.id}>{file.path?.split("/").pop() || file.name || "File"}</option>)}
               </optgroup>)}
-            </select>
+            </NexusSelect>
           </label>
           <div className="flex shrink-0 gap-2 overflow-x-auto border-b border-[var(--ds-border-subtle)] p-2" aria-label="Generated files">
             {files.map(file => <button key={file.id} type="button" onClick={() => setSelectedId(file.id)}
@@ -119,11 +120,11 @@ export default function BuildWorkspace({ scopeKey, items = [], readFile, connect
             {selected?.path} · {selected?.status || "Draft"}
             {ready ? ` · showing revision ${fileState.loadedRevision}` : ""}
             {revisions.length > 1 ? <label className="mt-2 flex items-center gap-2">Revision
-              <select aria-label="Saved file revision" value={selectedRevision}
+              <NexusSelect aria-label="Saved file revision" value={selectedRevision}
                 onChange={event => setHistorySelection({ identity: fileIdentity, revision: event.target.value })}
                 className="min-w-0 rounded border border-[var(--ds-border-subtle)] bg-[var(--ds-bg-workspace)] p-1">
                 {revisions.map(revision => <option key={revision} value={revision}>{revision}{revision === selected?.revision ? " (current)" : " (saved)"}</option>)}
-              </select>
+              </NexusSelect>
             </label> : null}
           </div>
           {ready && fileState.status !== "ready" ? <p role={fileState.status === "error" ? "alert" : "status"}

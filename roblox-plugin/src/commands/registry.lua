@@ -23,6 +23,7 @@ local MUTATING_COMMANDS = {
 	insert_creator_store_asset = true,
 	insert_uploaded_roblox_model = true,
 	import_model_file = true,
+	apply_ui_model = true,
 	create_animation_sequence = true,
 	apply_native_model_patch = true,
 	restore_snapshot = true,
@@ -44,6 +45,7 @@ local UNAVAILABLE_COMMANDS = {
 
 local TOOL_HANDLERS = {
 	import_model_file = ImportedAsset.importChatModelFile,
+	apply_ui_model = ImportedAsset.applyUiModel,
 	apply_artifact = applyArtifact,
 	insert_creator_store_asset = function(payload)
 		return ImportedAsset.insertTrustedRobloxAsset(payload, "insert_creator_store_asset")
@@ -720,7 +722,7 @@ local function verifyCommandOutcome(command, payload, result)
 				addCheck("tag", target, false, { reason = "no_requested_tags" })
 			end
 		end
-	elseif commandType == "import_model_file" then
+	elseif commandType == "import_model_file" or commandType == "apply_ui_model" then
 		for _, item in ipairs(result.inserted or {}) do
 			local inst = resolvePath(item.path)
 			addCheck("instance_identity", item.path, inst ~= nil and readManagedId(inst) == item.managedId, { managedId = item.managedId })

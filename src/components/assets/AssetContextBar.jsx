@@ -1,3 +1,4 @@
+import NexusSelect from "../ui/NexusSelect";
 import React from "react";
 import { CloudUpload, Coins, Globe, Link, ShieldCheck } from "../../lib/icons";
 import { Toggle } from "../ui";
@@ -46,17 +47,17 @@ export default function AssetContextBar({
       <div className="asset-context-bar__selectors">
         <label>
           <span>Project</span>
-          <select className="nexus-input" value={selectedProjectId || ""} disabled={controlsDisabled} onChange={(event) => onProjectChange?.(event.target.value)}>
+          <NexusSelect className="nexus-input" value={selectedProjectId || ""} disabled={controlsDisabled} onChange={(event) => onProjectChange?.(event.target.value)}>
             {!projects.length ? <option value="">No project selected</option> : null}
             {projects.map((project) => <option key={projectId(project)} value={projectId(project)}>{project.name || project.title || projectId(project)}</option>)}
-          </select>
+          </NexusSelect>
         </label>
         <label>
           <span>Universe</span>
-          <select className="nexus-input" value={selectedUniverseId || ""} disabled={controlsDisabled} onChange={(event) => onUniverseChange?.(event.target.value)}>
+          <NexusSelect className="nexus-input" value={selectedUniverseId || ""} disabled={controlsDisabled} onChange={(event) => onUniverseChange?.(event.target.value)}>
             <option value="">Project default</option>
             {universes.map((universe) => <option key={universeId(universe)} value={universeId(universe)}>{universe.name || universe.title || universeId(universe)}</option>)}
-          </select>
+          </NexusSelect>
         </label>
       </div>
 

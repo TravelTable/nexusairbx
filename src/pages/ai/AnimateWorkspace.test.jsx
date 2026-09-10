@@ -135,14 +135,13 @@ describe("AnimateWorkspace", () => {
 
   test("selects the default model and imports a custom R15 GLB preview", () => {
     render(<AnimateWorkspace />);
-    expect(screen.getByLabelText("Preview model").value).toBe("blocky-r15");
+    expect(screen.getByLabelText("Preview model")).toHaveTextContent("Blocky R15");
     expect(screen.getByTestId("r15-preview").getAttribute("data-model-url")).toBe("/models/nexusrbx-r15-preview.glb");
 
     const file = new File([new Uint8Array([1, 2, 3])], "MyAvatar.glb", { type: "model/gltf-binary" });
     fireEvent.change(screen.getByLabelText("Import R15 GLB"), { target: { files: [file] } });
 
-    expect(screen.getByLabelText("Preview model").value).toBe("custom-r15");
-    expect(screen.getByRole("option", { name: "MyAvatar" })).toBeTruthy();
+    expect(screen.getByLabelText("Preview model")).toHaveTextContent("MyAvatar");
     expect(screen.getByTestId("r15-preview").getAttribute("data-model-url")).toBe("blob:custom-r15");
   });
 

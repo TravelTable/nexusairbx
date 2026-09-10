@@ -1,3 +1,4 @@
+import NexusSelect from "../components/ui/NexusSelect";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, ImagePlus, Library, Package, Search } from "../lib/icons";
@@ -313,19 +314,19 @@ export default function AssetLibraryPage() {
               <Search aria-hidden="true" />
               <input className="nexus-input" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search names, IDs, or briefs" />
             </label>
-            <select className="nexus-input" aria-label="Library scope" value={scope} onChange={(event) => setScope(event.target.value)}>
+            <NexusSelect className="nexus-input" aria-label="Library scope" value={scope} onChange={(event) => setScope(event.target.value)}>
               <option value="project">Project</option>
               <option value="universe">Universe</option>
               <option value="global">All my assets</option>
-            </select>
-            {scope !== "global" && <select className="nexus-input" aria-label="Project" value={selectedProjectId} disabled={scope === "global"} onChange={(event) => { setSelectedProjectId(event.target.value); setSelectedUniverseId(""); }}>
+            </NexusSelect>
+            {scope !== "global" && <NexusSelect className="nexus-input" aria-label="Project" value={selectedProjectId} disabled={scope === "global"} onChange={(event) => { setSelectedProjectId(event.target.value); setSelectedUniverseId(""); }}>
               {projects.length ? projects.map((project) => <option key={itemId(project, "projectId")} value={itemId(project, "projectId")}>{project.name || project.displayName || "Untitled project"}</option>) : <option value="">No projects</option>}
-            </select>}
-            {scope === "universe" && <select className="nexus-input" aria-label="Universe" value={selectedUniverseId} disabled={scope !== "universe"} onChange={(event) => setSelectedUniverseId(event.target.value)}>
+            </NexusSelect>}
+            {scope === "universe" && <NexusSelect className="nexus-input" aria-label="Universe" value={selectedUniverseId} disabled={scope !== "universe"} onChange={(event) => setSelectedUniverseId(event.target.value)}>
               {universes.length ? universes.map((universe) => <option key={itemId(universe, "universeId")} value={itemId(universe, "universeId")}>{universe.name || universe.displayName || "Untitled universe"}</option>) : <option value="">No universes</option>}
-            </select>}
+            </NexusSelect>}
             {tab === "assets" ? (
-              <select className="nexus-input" aria-label="Asset kind" value={kind} onChange={(event) => setKind(event.target.value)}>
+              <NexusSelect className="nexus-input" aria-label="Asset kind" value={kind} onChange={(event) => setKind(event.target.value)}>
                 <option value="all">All types</option>
                 <option value="icon">Icons</option>
                 <option value="image">Images</option>
@@ -339,32 +340,32 @@ export default function AssetLibraryPage() {
                 <option value="badge">Badges</option>
                 <option value="game_pass">Game passes</option>
                 <option value="developer_product">Developer products</option>
-              </select>
+              </NexusSelect>
             ) : <span />}
             <details className="asset-library-advanced">
               <summary>More filters</summary>
               <div className="asset-library-advanced__fields">
             {tab === "assets" && creatorOptions.length ? (
-              <select className="nexus-input" aria-label="Roblox creator" value={creator} onChange={(event) => setCreator(event.target.value)}>
+              <NexusSelect className="nexus-input" aria-label="Roblox creator" value={creator} onChange={(event) => setCreator(event.target.value)}>
                 <option value="all">All creators</option>
                 {creatorOptions.map((entry) => {
                   const key = creatorKey(entry);
                   return <option key={key} value={key}>{creatorLabel(entry)}</option>;
                 })}
-              </select>
+              </NexusSelect>
             ) : null}
             {tab === "assets" ? (
-              <select className="nexus-input" aria-label="Moderation status" value={moderation} onChange={(event) => setModeration(event.target.value)}>
+              <NexusSelect className="nexus-input" aria-label="Moderation status" value={moderation} onChange={(event) => setModeration(event.target.value)}>
                 <option value="all">Any moderation</option>
                 <option value="not_submitted">Not submitted</option>
                 <option value="pending">Pending</option>
                 <option value="approved">Approved</option>
                 <option value="rejected">Rejected</option>
                 <option value="unknown">Unknown</option>
-              </select>
+              </NexusSelect>
             ) : null}
             {tab === "assets" ? (
-              <select className="nexus-input" aria-label="Lifecycle status" value={lifecycle} onChange={(event) => setLifecycle(event.target.value)}>
+              <NexusSelect className="nexus-input" aria-label="Lifecycle status" value={lifecycle} onChange={(event) => setLifecycle(event.target.value)}>
                 <option value="all">Any lifecycle</option>
                 <option value="generating">Generating</option>
                 <option value="validation_failed">Validation failed</option>
@@ -377,22 +378,22 @@ export default function AssetLibraryPage() {
                 <option value="failed">Failed</option>
                 <option value="archived">Archived</option>
                 <option value="replaced">Replaced</option>
-              </select>
+              </NexusSelect>
             ) : null}
             {tab === "assets" ? (
-              <select className="nexus-input" aria-label="Usage state" value={usage} onChange={(event) => setUsage(event.target.value)}>
+              <NexusSelect className="nexus-input" aria-label="Usage state" value={usage} onChange={(event) => setUsage(event.target.value)}>
                 <option value="all">Any usage</option>
                 <option value="unused">Unused</option>
                 <option value="used">In use</option>
-              </select>
+              </NexusSelect>
             ) : null}
             {tab === "assets" ? (
-              <select className="nexus-input" aria-label="Visibility" value={visibility} onChange={(event) => setVisibility(event.target.value)}>
+              <NexusSelect className="nexus-input" aria-label="Visibility" value={visibility} onChange={(event) => setVisibility(event.target.value)}>
                 <option value="all">Any visibility</option>
                 <option value="project">This project only</option>
                 <option value="universe_shared">Universe shared</option>
                 <option value="user_global">My global library</option>
-              </select>
+              </NexusSelect>
             ) : null}              </div>
             </details>
           </div>

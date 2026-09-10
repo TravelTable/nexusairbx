@@ -14,7 +14,7 @@ local STUDIO_PROTOCOL_VERSION = "2026-09-08-ui-build"
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.15.1-ui-build.17-stable-ui-capture"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.15.1-ui-build.18-files-first"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the

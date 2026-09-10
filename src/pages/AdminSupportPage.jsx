@@ -1,3 +1,4 @@
+import NexusSelect from "../components/ui/NexusSelect";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
@@ -193,11 +194,11 @@ export default function AdminSupportPage({ isAdmin = false }) {
                   <div className="account-ledger-case-controls">
                     <div className="account-ledger-field-group">
                       <label className="account-ledger-field-label" htmlFor="ticket-status">Status</label>
-                      <select id="ticket-status" value={ticket.status} disabled={Boolean(busy)} onChange={(event) => void mutateTicket("status", event.target.value)} className="account-ledger-select">{SUPPORT_STATUSES.map((value) => <option key={value} value={value}>{supportStatusLabel(value)}</option>)}</select>
+                      <NexusSelect id="ticket-status" value={ticket.status} disabled={Boolean(busy)} onChange={(event) => void mutateTicket("status", event.target.value)} className="account-ledger-select">{SUPPORT_STATUSES.map((value) => <option key={value} value={value}>{supportStatusLabel(value)}</option>)}</NexusSelect>
                     </div>
                     <div className="account-ledger-field-group">
                       <label className="account-ledger-field-label" htmlFor="ticket-priority">Priority</label>
-                      <select id="ticket-priority" value={ticket.priority} disabled={Boolean(busy)} onChange={(event) => void mutateTicket("priority", event.target.value)} className="account-ledger-select capitalize">{SUPPORT_PRIORITIES.map((value) => <option key={value} value={value}>{value}</option>)}</select>
+                      <NexusSelect id="ticket-priority" value={ticket.priority} disabled={Boolean(busy)} onChange={(event) => void mutateTicket("priority", event.target.value)} className="account-ledger-select capitalize">{SUPPORT_PRIORITIES.map((value) => <option key={value} value={value}>{value}</option>)}</NexusSelect>
                     </div>
                   </div>
                 </header>
@@ -252,7 +253,7 @@ export default function AdminSupportPage({ isAdmin = false }) {
               </div>
               <div className="account-ledger-field-group">
                 <label className="account-ledger-field-label" htmlFor="support-role-action">Access action</label>
-                <select id="support-role-action" value={roleForm.enabled ? "grant" : "revoke"} onChange={(event) => setRoleForm((current) => ({ ...current, enabled: event.target.value === "grant" }))} className="account-ledger-select"><option value="grant">Grant support role</option><option value="revoke">Revoke support role</option></select>
+                <NexusSelect id="support-role-action" value={roleForm.enabled ? "grant" : "revoke"} onChange={(event) => setRoleForm((current) => ({ ...current, enabled: event.target.value === "grant" }))} className="account-ledger-select"><option value="grant">Grant support role</option><option value="revoke">Revoke support role</option></NexusSelect>
               </div>
               <button type="submit" className="account-ledger-button account-ledger-button--primary">Update access</button>
             </form>
@@ -267,5 +268,5 @@ export default function AdminSupportPage({ isAdmin = false }) {
 function QueueSelect({ label, value, onChange, options }) {
   const id = `queue-${label.toLowerCase()}`;
   const plural = { Category: "categories", Status: "statuses", Priority: "priorities" }[label] || `${label.toLowerCase()}s`;
-  return <div className="account-ledger-field-group"><label className="account-ledger-field-label" htmlFor={id}>{label}</label><select id={id} value={value} onChange={(event) => onChange(event.target.value)} className="account-ledger-select"><option value="">All {plural}</option>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></div>;
+  return <div className="account-ledger-field-group"><label className="account-ledger-field-label" htmlFor={id}>{label}</label><NexusSelect id={id} value={value} onChange={(event) => onChange(event.target.value)} className="account-ledger-select"><option value="">All {plural}</option>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</NexusSelect></div>;
 }

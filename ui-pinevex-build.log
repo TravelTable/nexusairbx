@@ -1,0 +1,55 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.20kB 0.0s done
+#1 DONE 0.2s
+
+#2 [internal] load metadata for docker.io/library/python:3.11-slim@sha256:9534e5a8e315485d4061ed659af0fd78a284c015f9b73661b41d6bab25604534
+#2 DONE 0.1s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 90B 0.0s done
+#3 DONE 0.0s
+
+#4 [ 1/11] FROM docker.io/library/python:3.11-slim@sha256:9534e5a8e315485d4061ed659af0fd78a284c015f9b73661b41d6bab25604534
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 172B done
+#5 DONE 0.0s
+
+#6 [ 4/11] RUN git init /opt/pinevex && cd /opt/pinevex && git remote add origin https://github.com/whutdev/pinevex-renderer.git     && git fetch --depth 1 origin "db292aca2b319c7204f494175c59ed9bd9552930" && git checkout --detach FETCH_HEAD     && test "$(git rev-parse HEAD)" = "db292aca2b319c7204f494175c59ed9bd9552930"
+#6 CACHED
+
+#7 [ 3/11] RUN apt-get update && apt-get install -y --no-install-recommends $(tr -d '\r' < /tmp/apt-packages.lock)     && rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [ 7/11] RUN python -m pip install --no-cache-dir --require-hashes --only-binary=:all: -r /app/requirements.lock
+#8 CACHED
+
+#9 [ 8/11] COPY patch_grid.py /app/patch_grid.py
+#9 CACHED
+
+#10 [10/11] COPY render_core.py server.py /app/
+#10 CACHED
+
+#11 [ 5/11] WORKDIR /app
+#11 CACHED
+
+#12 [ 6/11] COPY requirements.lock /app/requirements.lock
+#12 CACHED
+
+#13 [ 9/11] RUN python /app/patch_grid.py /opt/pinevex/src/ui_engine/renderer.py
+#13 CACHED
+
+#14 [ 2/11] COPY apt-packages.lock /tmp/apt-packages.lock
+#14 CACHED
+
+#15 [11/11] RUN useradd --uid 10001 --create-home renderer
+#15 CACHED
+
+#16 exporting to image
+#16 exporting layers done
+#16 writing image sha256:2d35e787617ed255455aff0545b8753f27f8e3c5fc4f21a0eba81f123a85484b done
+#16 naming to docker.io/library/nexus-ui-renderer:preview-v1 0.0s done
+#16 DONE 0.1s

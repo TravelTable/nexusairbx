@@ -7,6 +7,10 @@ import {
   NexusApiError,
   readJsonResponse,
   withApiRetryCooldown,
+  throwIfApiRetryCooldownActive,
+  rememberApiRetryCooldown,
+  clearApiRetryCooldown,
+  parseRetryAfterMs,
 } from "./apiErrors";
 import { getProductAnalyticsHeaders } from "./productAnalytics";
 import { getFirebaseAppCheckHeaders } from "./appCheck";
@@ -248,6 +252,14 @@ export async function authedFetch(path, init = {}) {
   }
 
   let token = await getIdToken({ force: false });
+  // Share a bounded cooldown between polling consumers of the same read.
+  // Never replay mutations, and never share a private response across users.
+  const readOnly = ["GET", "HEAD"].includes(String(requestInit.method || "GET").toUpperCase());
+  const cooldownUrl = new URL(url);
+  cooldownUrl.searchParams.delete("t");
+  cooldownUrl.searchParams.sort();
+  const cooldownKey = readOnly ? `api-read:${getAuth().currentUser?.uid || "anonymous"}:${cooldownUrl}` : null;
+  if (cooldownKey) throwIfApiRetryCooldownActive(cooldownKey, "The server is temporarily unavailable. Reconnecting shortly.");
   let appCheckHeaders = await getFirebaseAppCheckHeaders();
   const requestId = headerValue(requestInit.headers, "X-Request-ID") || randomRequestId();
 
@@ -274,6 +286,14 @@ export async function authedFetch(path, init = {}) {
     });
   }
 
+  if (cooldownKey) {
+    if ([500, 502, 503, 504].includes(res.status)) {
+      const retryAfterMs = parseRetryAfterMs(res.headers?.get?.("Retry-After")) ?? 30_000;
+      rememberApiRetryCooldown(cooldownKey, new NexusApiError("The server is temporarily unavailable.", {
+        status: res.status, retryable: true, retryAfterMs,
+      }));
+    } else if (res.ok) clearApiRetryCooldown(cooldownKey);
+  }
   return res;
 }
 

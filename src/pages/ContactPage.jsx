@@ -1,3 +1,4 @@
+import NexusSelect from "../components/ui/NexusSelect";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -192,7 +193,7 @@ export default function ContactPage() {
 
           <div className="contact-ledger-form grid gap-7 p-5 sm:p-8">
             <Field label="Category">
-              <select
+              <NexusSelect
                 className={FIELD_CLASS}
                 value={form.category}
                 onChange={(event) => update("category", event.target.value)}
@@ -200,7 +201,7 @@ export default function ContactPage() {
                 {SUPPORT_CATEGORIES.map((category) => (
                   <option key={category.id} value={category.id}>{category.label}</option>
                 ))}
-              </select>
+              </NexusSelect>
             </Field>
 
             <Field label="Subject" hint="Required">
@@ -255,14 +256,14 @@ export default function ContactPage() {
 
             {security && (
               <Field label="Security or privacy request type">
-                <select className={FIELD_CLASS} value={form.privacyRequestType} onChange={(event) => update("privacyRequestType", event.target.value)}>
+                <NexusSelect className={FIELD_CLASS} value={form.privacyRequestType} onChange={(event) => update("privacyRequestType", event.target.value)}>
                   <option value="">Select a request type</option>
                   <option value="Security report">Security report</option>
                   <option value="Access my data">Access my data</option>
                   <option value="Delete my account data">Delete my account data</option>
                   <option value="Correct my data">Correct my data</option>
                   <option value="Other privacy request">Other privacy request</option>
-                </select>
+                </NexusSelect>
               </Field>
             )}
 

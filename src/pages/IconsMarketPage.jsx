@@ -180,14 +180,15 @@ function MarketCollections({ collections, onCreate, onDownload, onDelete, signed
 }
 
 export default function IconsMarketPage() {
+  const [initialFilters] = useState(() => new URLSearchParams(window.location.search));
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [marketError, setMarketError] = useState(null);
   const [icons, setIcons] = useState([]);
-  const [search, setSearch] = useState("");
-  const [style, setStyle] = useState("");
+  const [search, setSearch] = useState(() => initialFilters.get('q') || '');
+  const [style, setStyle] = useState(() => MARKET_STYLES.includes(initialFilters.get('style')) ? initialFilters.get('style') : '');
   const [category, setCategory] = useState("");
-  const [isPro, setIsPro] = useState(null);
+  const [isPro, setIsPro] = useState(() => initialFilters.get('access') === 'free' ? false : null);
   const [hasMore, setHasMore] = useState(true);
   const { isPremium } = useBilling();
   const [collections, setCollections] = useState([]);

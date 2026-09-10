@@ -60,6 +60,7 @@ describe("taskRuntimeApi", () => {
   beforeEach(() => {
     FEATURE_FLAGS.newTaskRuntime = true;
     FEATURE_FLAGS.newPlanningMode = false;
+    FEATURE_FLAGS.aiPageV2 = false;
     authedFetch.mockReset();
   });
 
@@ -116,6 +117,15 @@ describe("taskRuntimeApi", () => {
         "X-Request-ID": expect.any(String),
       }),
     }));
+  });
+
+  test("UI Creator can create and observe builds independently of the Agent rollout", async () => {
+    FEATURE_FLAGS.newTaskRuntime = false;
+    FEATURE_FLAGS.aiPageV2 = true;
+    authedFetch.mockResolvedValue(response({ task: { taskId: "ui_task", status: "running" } }));
+    await expect(createTask({ workspace: "ui_creator", designId: "design", uiIntent: "create" })).resolves.toMatchObject({ task: { taskId: "ui_task" } });
+    await expect(getTask("ui_task")).resolves.toMatchObject({ task: { status: "running" } });
+    await expect(createTask({ message: "Unrelated Agent task" })).rejects.toMatchObject({ code: "TASK_RUNTIME_DISABLED" });
   });
 
   test("normalizes list, task, and cursor-based event responses", async () => {

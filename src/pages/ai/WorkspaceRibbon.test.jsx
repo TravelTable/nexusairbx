@@ -47,4 +47,24 @@ describe("WorkspaceRibbon Animate visibility", () => {
 
     expect(screen.getByRole("button", { name: "Choose model" })).toBeInTheDocument();
   });
+
+  it("switches page actions while retaining the same navigation and Studio control", () => {
+    const { rerender } = render(<WorkspaceRibbon {...baseProps} modelControl={<button>Choose model</button>} onOpenEvidence={jest.fn()} />);
+    expect(screen.getByRole('button', { name: 'Code / Files' })).toBeInTheDocument();
+    rerender(<WorkspaceRibbon {...baseProps} mode="asset" assetControls={<input aria-label="Search assets" />} />);
+    expect(screen.getByRole('button', { name: 'Assets' })).toHaveAttribute('aria-pressed','true');
+    expect(screen.getByLabelText('Search assets')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Choose model' })).not.toBeInTheDocument();
+    expect(screen.getByText('Studio')).toBeInTheDocument();
+  });
+
+  it("closes secondary controls with Escape and restores focus", () => {
+    render(<WorkspaceRibbon {...baseProps} />);
+    const more = screen.getByRole('button', { name: 'Page actions' });
+    fireEvent.click(more);
+    expect(more).toHaveAttribute('aria-expanded','true');
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(more).toHaveAttribute('aria-expanded','false');
+    expect(more).toHaveFocus();
+  });
 });

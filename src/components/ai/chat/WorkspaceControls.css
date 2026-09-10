@@ -1,0 +1,24 @@
+/* Shared Agent, UI and Asset controls. The composer keeps the Nexus gradient. */
+.nexus-composer-region { background: transparent !important; }
+.nexus-composer-frame.nexus-composer-beam { border-radius: 16px; }
+.nexus-composer.nx-composer-shine {
+  border: 1px solid transparent !important;
+  border-radius: 16px !important;
+  background: linear-gradient(var(--nx-card, #17141d), var(--nx-card, #17141d)) padding-box,
+    linear-gradient(120deg, #8754c6, #b194dd55 45%, #6858ad) border-box !important;
+  box-shadow: none !important;
+}
+.nexus-composer .nexus-composer__body { display: flex; flex-direction: column; align-items: stretch; gap: 2px; padding: 10px 11px 7px; }
+.nexus-composer .nexus-composer__input-shell { width: 100%; }
+.nexus-composer .nexus-composer__input { min-height: 42px; max-height: 200px; font-size: 14px; line-height: 1.6; padding: 3px 2px; box-shadow: none !important; }
+.nexus-composer .nexus-composer__toolbar { display: flex; justify-content: space-between; align-items: center; }
+.nexus-composer .nexus-composer__toolbar button { width: 30px; height: 30px; min-height: 30px; border-radius: 10px; }
+.nexus-composer .nexus-composer__toolbar button:not([aria-label]) { width: auto; }
+.nexus-composer #tour-generate-button { width: 30px !important; height: 30px !important; min-width: 30px; min-height: 30px; border-radius: 10px !important; box-shadow: none; }
+.nexus-composer__toolbar button svg { transition: transform 160ms ease; }
+.nexus-composer__toolbar button:hover:not(:disabled) svg { transform: translateY(-1px); }
+.nexus-composer .nexus-composer__request-label { display: none; }
+.nx-workspace-drawer { background: var(--nx-card, #17141d); color: var(--nx-text, #eeedf5); }
+.nx-workspace-drawer button { border-radius: 9px; }
+.nx-workspace-drawer header { min-height: 48px; }
+@media (prefers-reduced-motion: reduce) { .nexus-composer__toolbar button svg { transition: none; transform: none !important; } }

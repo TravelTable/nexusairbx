@@ -1,3 +1,4 @@
+import NexusSelect from "../ui/NexusSelect";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
@@ -785,11 +786,11 @@ export default function ModelFilePipelinePanel({ notify }) {
       {canOptimize && (
         <div className="mt-3 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2">
           <div className="flex flex-wrap items-center gap-2">
-            <select value={profile} onChange={(event) => setProfile(event.target.value)} aria-label="Optimization profile" className="min-h-[44px] rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-2 py-1 text-[var(--ds-text)] focus-ring">
+            <NexusSelect value={profile} onChange={(event) => setProfile(event.target.value)} aria-label="Optimization profile" className="min-h-[44px] rounded-lg border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-2 py-1 text-[var(--ds-text)] focus-ring">
               <option value="conservative">Conservative</option>
               <option value="roblox_balanced">Roblox balanced</option>
               <option value="aggressive">Aggressive</option>
-            </select>
+            </NexusSelect>
             <button type="button" onClick={createPlan} disabled={busy === "plan"} className="min-h-[44px] rounded-lg border border-[var(--ds-border)] px-2 py-1 font-semibold text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] disabled:opacity-40 focus-ring">
               Review plan
             </button>

@@ -31,6 +31,8 @@ import WorkspaceShell, {
 import useTaskRuntime from "../../hooks/useTaskRuntime";
 import useActiveAgents from "../../hooks/useActiveAgents";
 import WorkspaceRibbon from "./WorkspaceRibbon";
+import WorkspaceAssetControls from "./WorkspaceAssetControls";
+import WorkspaceAccountControl from "../../components/site/WorkspaceAccountControl";
 import AnimateWorkspace from "./AnimateWorkspace";
 import UiCreatorWorkspace from "./ui/UiCreatorWorkspace";
 import IconsMarketWorkspacePanel from "../IconsMarketWorkspacePanel";
@@ -283,6 +285,8 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
   );
 
   const [activeDockPanel, setActiveDockPanel] = useState(null);
+  const [headerActionTarget, setHeaderActionTarget] = useState(null);
+  const [headerInert, setHeaderInert] = useState(false);
   const [dockBuildOptionsOpen, setDockBuildOptionsOpen] = useState(false);
   const [drawerWidth, setDrawerWidth] = useState(readWorkspaceDrawerWidth);
   const [detailsView, setDetailsView] = useState("summary");
@@ -525,7 +529,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     user,
     projectId: currentProjectId,
     chatId: chat.currentChatId || "",
-    enabled: generatorMode === "agent_build" && Boolean(user),
+    enabled: creationMode === "agent" && generatorMode === "agent_build" && Boolean(user),
   });
   const taskScopeMatches = taskRuntime.task
     && (!taskRuntime.task.chatId || taskRuntime.task.chatId === chat.currentChatId)
@@ -1957,7 +1961,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
       <Hero />
       <div ref={aiPageRef} className="ai-page nexus-studio-page relative flex flex-col overflow-hidden font-sans">
         <SkipToMainContent targetId="ai-workspace-main" />
-      {creationMode !== "ui" && <WorkspaceRibbon
+      <WorkspaceRibbon
         mode={creationMode}
         onModeChange={handleCreationModeChange}
         uiEnabled={uiCreatorEnabled}
@@ -1966,6 +1970,10 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         chatTitle={chat.currentChatMeta?.title || "New chat"}
         modelControl={modelControl}
         studioControl={studioControl}
+        accountControl={<WorkspaceAccountControl />}
+        actionSlotRef={setHeaderActionTarget}
+        inert={headerInert}
+        assetControls={<WorkspaceAssetControls navigateTo={navigateTo} user={user} planKey={planKey} devOverride={devOverride} roblox={roblox} projectId={currentProjectId} onAuthRequired={handleAuthRequired} notify={notify}/>}
         isBusy={Boolean(chatOperationState?.isBusy || unified.isGenerating)}
         onRenameChat={
           creationMode === "agent" ? (title) => chat.handleRenameChat(chat.currentChatId, title) : undefined
@@ -1973,11 +1981,11 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         onChangeProject={() => {
           openProjectSelector();
         }}
-          onOpenEvidence={() => handleDockPanelChange(activeDockPanel ? null : "details")}
+          onOpenEvidence={() => handleDockPanelChange(activeDockPanel ? null : "files")}
           evidenceOpen={Boolean(activeDockPanel)}
           evidenceCount={evidenceCount}
           evidenceButtonRef={evidenceButtonRef}
-        />}
+        />
         <div className="nexus-studio-layout flex min-h-0 flex-1 overflow-hidden">
           {/* CENTER: Studio agent chat */}
           <main
@@ -1989,6 +1997,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
           >
             {creationMode === "ui" ? (
               <UiCreatorWorkspace
+                sharedHeader headerActionTarget={headerActionTarget} onHeaderModalChange={setHeaderInert}
                 modelControl={modelControl}
                 studioControl={studioControl}
                 onModeChange={handleCreationModeChange}

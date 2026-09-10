@@ -21,20 +21,40 @@ export default function useUiPreview({ userId = '', designId, projectId, sourceR
   const [image, setImage] = useState(null);
   const [attempt, setAttempt] = useState(0);
   const urlRef = useRef(null);
+  const urls = useRef(new Set());
+  const mounted = useRef(false);
   const latest = useRef({ scope, identity }); latest.current = { scope, identity };
   const admitted = useRef(null);
-  useEffect(() => () => { if (urlRef.current) URL.revokeObjectURL(urlRef.current.url); }, []);
+  useEffect(() => {
+    mounted.current = true;
+    const owned = urls.current;
+    return () => {
+      mounted.current = false;
+      // Strict Mode and Fast Refresh may immediately reattach this same state.
+      Promise.resolve().then(() => {
+        if (mounted.current) return;
+        owned.forEach(url => URL.revokeObjectURL(url));
+        owned.clear();
+      });
+    };
+  }, []);
+  useEffect(() => {
+    // Release replaced URLs only after React has committed the new image src.
+    const visibleUrl = image?.scope === scope ? image.url : null;
+    urls.current.forEach(url => {
+      if (url !== visibleUrl) { URL.revokeObjectURL(url); urls.current.delete(url); }
+    });
+  }, [image, scope]);
   useEffect(() => {
     if (urlRef.current && urlRef.current.scope !== scope) {
-      URL.revokeObjectURL(urlRef.current.url); urlRef.current = null;
+      urlRef.current = null;
     }
   }, [scope]);
 
   const install = (blob, preview, imageScope) => {
-    const old = urlRef.current;
     const next = { scope: imageScope, identity: identityOf(preview), url: URL.createObjectURL(blob), preview };
+    urls.current.add(next.url);
     urlRef.current = next; setImage(next);
-    if (old) URL.revokeObjectURL(old.url);
   };
   useEffect(() => {
     if (!lastSuccessfulJobId || !designId || !projectId || urlRef.current?.scope === scope) return undefined;

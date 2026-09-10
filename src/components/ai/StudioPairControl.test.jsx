@@ -1,4 +1,5 @@
 import React from "react";
+import { selectOption } from '../../testUtils/selectOption';
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import StudioPairControl, {
   computeStudioPairMenuPosition,
@@ -243,7 +244,7 @@ describe("StudioPairControl", () => {
     expect(document.activeElement).toBe(desktopTrigger);
   });
 
-  test("integrates all maintained plugin screenshot slots with an honest fallback", () => {
+  test("integrates all maintained plugin screenshot slots with an honest fallback", async () => {
     render(<StudioPairControl refresh={jest.fn()} />);
 
     fireEvent.click(
@@ -251,15 +252,15 @@ describe("StudioPairControl", () => {
     );
 
     const stepSelect = screen.getByLabelText("Setup step");
-    expect(
-      Array.from(stepSelect.options).map((option) => option.textContent),
-    ).toEqual([
+    fireEvent.keyDown(stepSelect, { key: 'ArrowDown' });
+    expect((await screen.findAllByRole('option')).map(option => option.textContent)).toEqual([
       "1. Install plugin",
       "2. Open plugin",
       "3. Enter pair code",
       "4. Allow HTTP",
       "5. Connected state",
     ]);
+    fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Escape' });
 
     expect(document.querySelector("img")).toBeNull();
     expect(
@@ -268,7 +269,7 @@ describe("StudioPairControl", () => {
       }),
     ).toBeTruthy();
 
-    fireEvent.change(stepSelect, { target: { value: "allow-http" } });
+    await selectOption(stepSelect, '4. Allow HTTP');
     expect(
       screen.getByRole("img", {
         name: /Game Settings Security panel with Allow HTTP Requests enabled.*Screenshot unavailable/i,
@@ -290,7 +291,7 @@ describe("StudioPairControl", () => {
       screen.getByRole("button", { name: "Connect Roblox Studio" }),
     );
 
-    expect(screen.getByLabelText("Setup step").value).toBe("enter-pair-code");
+    expect(screen.getByLabelText("Setup step")).toHaveTextContent("3. Enter pair code");
     expect(screen.getByText(/Generate a one-time code here/i)).toBeTruthy();
   });
 
@@ -303,16 +304,16 @@ describe("StudioPairControl", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Connect Roblox Studio" }),
     );
-    expect(screen.getByLabelText("Setup step").value).toBe("allow-http");
+    expect(screen.getByLabelText("Setup step")).toHaveTextContent("4. Allow HTTP");
 
     rerender(<StudioPairControl connected refresh={jest.fn()} />);
-    expect(screen.getByLabelText("Setup step").value).toBe("connected-state");
+    expect(screen.getByLabelText("Setup step")).toHaveTextContent("5. Connected state");
     expect(localStorage.getItem(STUDIO_SETUP_VISUAL_PREFERENCE_KEY)).toBe(
       "allow-http",
     );
 
     rerender(<StudioPairControl connected={false} refresh={jest.fn()} />);
-    expect(screen.getByLabelText("Setup step").value).toBe("allow-http");
+    expect(screen.getByLabelText("Setup step")).toHaveTextContent("4. Allow HTTP");
   });
 
   test("uses live connection state while labelling screenshots as references", () => {
@@ -321,7 +322,7 @@ describe("StudioPairControl", () => {
     fireEvent.click(screen.getByRole("button", { name: "Studio" }));
 
     expect(screen.getAllByText("Connected via NexusRBX Studio Plugin").length).toBeGreaterThan(0);
-    expect(screen.getByLabelText("Setup step").value).toBe("connected-state");
+    expect(screen.getByLabelText("Setup step")).toHaveTextContent("5. Connected state");
     expect(
       screen.getByText("Setup reference, not live Studio state"),
     ).toBeTruthy();

@@ -1,0 +1,43 @@
+Scoped UI build and Pinevex worker started.
+{"type":"firestore_write_metric","ts":1788955822628,"counter":"job_document","count":1,"total":1,"jobId":"artifact_job_2d6c180cf2cac4ea7711a4f2a831882b81cdf429f074ffb5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788955838943,"counter":"job_document","count":1,"total":2,"jobId":"artifact_job_2d6c180cf2cac4ea7711a4f2a831882b81cdf429f074ffb5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788955843314,"counter":"job_document","count":1,"total":3,"jobId":"artifact_job_2d6c180cf2cac4ea7711a4f2a831882b81cdf429f074ffb5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788955848949,"counter":"job_document","count":1,"total":4,"jobId":"artifact_job_2d6c180cf2cac4ea7711a4f2a831882b81cdf429f074ffb5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788955853389,"counter":"job_document","count":1,"total":5,"jobId":"artifact_job_2d6c180cf2cac4ea7711a4f2a831882b81cdf429f074ffb5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788955887557,"counter":"job_document","count":1,"total":6,"jobId":"artifact_job_2d6c180cf2cac4ea7711a4f2a831882b81cdf429f074ffb5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788955892602,"counter":"job_document","count":1,"total":7,"jobId":"artifact_job_2d6c180cf2cac4ea7711a4f2a831882b81cdf429f074ffb5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788955898088,"counter":"job_document","count":1,"total":8,"jobId":"artifact_job_2d6c180cf2cac4ea7711a4f2a831882b81cdf429f074ffb5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788955902470,"counter":"job_document","count":1,"total":9,"jobId":"artifact_job_2d6c180cf2cac4ea7711a4f2a831882b81cdf429f074ffb5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788955930121,"counter":"job_document","count":1,"total":10,"jobId":"artifact_job_2d6c180cf2cac4ea7711a4f2a831882b81cdf429f074ffb5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788955935086,"counter":"job_document","count":1,"total":11,"jobId":"artifact_job_2d6c180cf2cac4ea7711a4f2a831882b81cdf429f074ffb5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788955949326,"counter":"job_document","count":1,"total":12,"jobId":"artifact_job_2d6c180cf2cac4ea7711a4f2a831882b81cdf429f074ffb5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788956928311,"counter":"job_document","count":1,"total":13,"jobId":"preview_2dcdc71461d1e7cce61b02f46a4b2ea2de6deaa256eb445cd36f257bbf2fb13c_1","sessionId":null}
+{"type":"firestore_write_metric","ts":1788956929790,"counter":"job_document","count":1,"total":14,"jobId":"preview_2dcdc71461d1e7cce61b02f46a4b2ea2de6deaa256eb445cd36f257bbf2fb13c_1","sessionId":null}
+[JobWorker] UI preview render failed: UI preview renderer is unavailable.
+{"type":"firestore_write_metric","ts":1788956957097,"counter":"job_document","count":1,"total":15,"jobId":"preview_2dcdc71461d1e7cce61b02f46a4b2ea2de6deaa256eb445cd36f257bbf2fb13c_1","sessionId":null}
+{"type":"firestore_write_metric","ts":1788958156455,"counter":"job_document","count":1,"total":16,"jobId":"artifact_job_b1ec5f294d2f46681355aa49ff4c2c2f87730e5e29767ea5","sessionId":null}
+[ui-generation] { kind: 'planner_json_fallback', model: 'google/gemini-2.5-flash' }
+[ui-generation] { kind: 'invalid_json', attempt: 1, model: 'google/gemini-2.5-flash' }
+{"type":"firestore_write_metric","ts":1788958412427,"counter":"job_document","count":1,"total":17,"jobId":"artifact_job_b1ec5f294d2f46681355aa49ff4c2c2f87730e5e29767ea5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788958416824,"counter":"job_document","count":1,"total":18,"jobId":"artifact_job_b1ec5f294d2f46681355aa49ff4c2c2f87730e5e29767ea5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788958424566,"counter":"job_document","count":1,"total":19,"jobId":"artifact_job_b1ec5f294d2f46681355aa49ff4c2c2f87730e5e29767ea5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788958428943,"counter":"job_document","count":1,"total":20,"jobId":"artifact_job_b1ec5f294d2f46681355aa49ff4c2c2f87730e5e29767ea5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788958434174,"counter":"job_document","count":1,"total":21,"jobId":"artifact_job_b1ec5f294d2f46681355aa49ff4c2c2f87730e5e29767ea5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788958437469,"counter":"job_document","count":1,"total":22,"jobId":"preview_35a5ac03740d5cc96fda5e515f04dda21f95c67888cf4fe86160ec94298ed846_1","sessionId":null}
+{"type":"firestore_write_metric","ts":1788958438715,"counter":"job_document","count":1,"total":23,"jobId":"preview_35a5ac03740d5cc96fda5e515f04dda21f95c67888cf4fe86160ec94298ed846_1","sessionId":null}
+{"type":"firestore_write_metric","ts":1788958453664,"counter":"job_document","count":1,"total":24,"jobId":"preview_35a5ac03740d5cc96fda5e515f04dda21f95c67888cf4fe86160ec94298ed846_1","sessionId":null}
+{"type":"firestore_write_metric","ts":1788958458094,"counter":"job_document","count":1,"total":25,"jobId":"artifact_job_b1ec5f294d2f46681355aa49ff4c2c2f87730e5e29767ea5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788958465518,"counter":"job_document","count":1,"total":26,"jobId":"artifact_job_b1ec5f294d2f46681355aa49ff4c2c2f87730e5e29767ea5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788958469538,"counter":"job_document","count":1,"total":27,"jobId":"artifact_job_b1ec5f294d2f46681355aa49ff4c2c2f87730e5e29767ea5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788958484846,"counter":"job_document","count":1,"total":28,"jobId":"artifact_job_b1ec5f294d2f46681355aa49ff4c2c2f87730e5e29767ea5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788958488195,"counter":"job_document","count":1,"total":29,"jobId":"preview_4c40400ac50aae5ce21fc2358a3996c4b1ebb586d9f6c6b24b0878b71121045e_1","sessionId":null}
+{"type":"firestore_write_metric","ts":1788958489485,"counter":"job_document","count":1,"total":30,"jobId":"preview_4c40400ac50aae5ce21fc2358a3996c4b1ebb586d9f6c6b24b0878b71121045e_1","sessionId":null}
+{"type":"firestore_write_metric","ts":1788958504447,"counter":"job_document","count":1,"total":31,"jobId":"preview_4c40400ac50aae5ce21fc2358a3996c4b1ebb586d9f6c6b24b0878b71121045e_1","sessionId":null}
+{"type":"firestore_write_metric","ts":1788958508638,"counter":"job_document","count":1,"total":32,"jobId":"artifact_job_b1ec5f294d2f46681355aa49ff4c2c2f87730e5e29767ea5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788958513463,"counter":"job_document","count":1,"total":33,"jobId":"artifact_job_b1ec5f294d2f46681355aa49ff4c2c2f87730e5e29767ea5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788958517529,"counter":"job_document","count":1,"total":34,"jobId":"artifact_job_b1ec5f294d2f46681355aa49ff4c2c2f87730e5e29767ea5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788958541393,"counter":"job_document","count":1,"total":35,"jobId":"artifact_job_b1ec5f294d2f46681355aa49ff4c2c2f87730e5e29767ea5","sessionId":null}
+{"type":"firestore_write_metric","ts":1788958545596,"counter":"job_document","count":1,"total":36,"jobId":"artifact_job_b1ec5f294d2f46681355aa49ff4c2c2f87730e5e29767ea5","sessionId":null}
+[ui-generation] { kind: 'invalid_json', attempt: 1, model: 'google/gemini-2.5-flash' }
+[ui-generation] { kind: 'invalid_json', attempt: 2, model: 'google/gemini-2.5-flash' }
+{"type":"firestore_write_metric","ts":1788958720549,"counter":"job_document","count":1,"total":37,"jobId":"artifact_job_b1ec5f294d2f46681355aa49ff4c2c2f87730e5e29767ea5","sessionId":null}

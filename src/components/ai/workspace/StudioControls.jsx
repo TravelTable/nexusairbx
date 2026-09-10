@@ -1,3 +1,4 @@
+import NexusSelect from "../../ui/NexusSelect";
 import React, { useMemo, useState } from "react";
 import { ChevronRight, Loader2, Radio } from "lib/icons";
 import { FEATURE_FLAGS } from "../../../lib/featureFlags";
@@ -39,7 +40,7 @@ function ControlRow({ label, value, options, onChange, disabled = false, help = 
         <span className="block text-xs font-semibold text-[var(--ds-text)]">{label}</span>
         {help ? <span className="mt-0.5 block text-[10px] leading-4 text-[var(--ds-text-muted)]">{help}</span> : null}
       </span>
-      <select
+      <NexusSelect
         aria-label={label}
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -56,7 +57,7 @@ function ControlRow({ label, value, options, onChange, disabled = false, help = 
             {option.label}{option.disabled ? " — unavailable" : ""}
           </option>
         ))}
-      </select>
+      </NexusSelect>
     </label>
   );
 }

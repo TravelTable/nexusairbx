@@ -1,9 +1,11 @@
 import React from "react";
 import ChatComposer from "./ChatComposer";
+import './WorkspaceControls.css';
 
 export default function CreationPromptComposer({
   contextIcon: ContextIcon,
   contextLabel,
+  modeControl: customModeControl,
   promptAriaLabel,
   submitLabel,
   showWorkspaceOptions = false,
@@ -12,7 +14,7 @@ export default function CreationPromptComposer({
   workspaceOptionsDescription,
   ...props
 }) {
-  const modeControl = contextLabel ? (
+  const modeControl = customModeControl !== undefined ? customModeControl : contextLabel ? (
     <span className="nexus-composer-context" aria-label={`${contextLabel} composer`}>
       {ContextIcon ? <ContextIcon className="h-3.5 w-3.5" /> : null}
       <span>{contextLabel}</span>

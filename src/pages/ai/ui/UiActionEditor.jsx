@@ -1,3 +1,4 @@
+import NexusSelect from "../../../components/ui/NexusSelect";
 import React, { useState } from "react";
 import { Button } from "../../../components/ui";
 
@@ -13,12 +14,12 @@ export default function UiActionEditor({ node, nodes, disabled, onSave }) {
   const update = next => { setInteractions(current => ({ ...current, [event]: next })); setDirty(true); };
   const patch = (index, value) => update(actions.map((action, i) => i === index ? { ...action, ...value } : action));
   return <div className="ui-creator__actions">
-    <label>When<select value={event} onChange={e => setEvent(e.target.value)}>{Object.entries(events).map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label>
+    <label>When<NexusSelect value={event} onChange={e => setEvent(e.target.value)}>{Object.entries(events).map(([id, label]) => <option key={id} value={id}>{label}</option>)}</NexusSelect></label>
     {actions.map((action, index) => <fieldset key={action.id || index} disabled={disabled}>
       <legend>Action {index + 1}</legend>
-      <label>Do<select value={action.type} onChange={e => patch(index, { type: e.target.value, value: e.target.value === "setVisible" ? true : "" })}>{Object.entries(types).map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label>
-      {!["setState", "emitHook"].includes(action.type) ? <label>Element<select value={action.targetId || ""} onChange={e => patch(index, { targetId: e.target.value })}><option value="">Choose an element</option>{nodes.map(n => <option key={n.id} value={n.id}>{n.name}</option>)}</select></label> : null}
-      {action.type === "setVisible" ? <label>Visibility<select value={String(action.value === true)} onChange={e => patch(index, { value: e.target.value === "true" })}><option value="true">Visible</option><option value="false">Hidden</option></select></label> : null}
+      <label>Do<NexusSelect value={action.type} onChange={e => patch(index, { type: e.target.value, value: e.target.value === "setVisible" ? true : "" })}>{Object.entries(types).map(([id, label]) => <option key={id} value={id}>{label}</option>)}</NexusSelect></label>
+      {!["setState", "emitHook"].includes(action.type) ? <label>Element<NexusSelect value={action.targetId || ""} onChange={e => patch(index, { targetId: e.target.value })}><option value="">Choose an element</option>{nodes.map(n => <option key={n.id} value={n.id}>{n.name}</option>)}</NexusSelect></label> : null}
+      {action.type === "setVisible" ? <label>Visibility<NexusSelect value={String(action.value === true)} onChange={e => patch(index, { value: e.target.value === "true" })}><option value="true">Visible</option><option value="false">Hidden</option></NexusSelect></label> : null}
       {action.type === "setText" ? <label>Text<input value={action.value ?? ""} onChange={e => patch(index, { value: e.target.value })} /></label> : null}
       {action.type === "setState" ? <><label>State key<input value={action.key || ""} onChange={e => patch(index, { key: e.target.value })} /></label>
         <label>Value<input value={String(action.value ?? "")} onChange={e => patch(index, { value: e.target.value === "true" ? true : e.target.value === "false" ? false : e.target.value })} /></label></> : null}

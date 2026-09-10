@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import AssetGenerationForm, { DEFAULT_ASSET_GENERATION_FORM } from "./AssetGenerationForm";
+import { selectOption } from '../../testUtils/selectOption';
 
 function ControlledAssetGenerationForm(props) {
   const [form, setForm] = useState(DEFAULT_ASSET_GENERATION_FORM);
@@ -28,32 +29,31 @@ describe("AssetGenerationForm", () => {
     expect(screen.getByRole("radio", { name: /^Replace\b/i }).disabled).toBe(false);
   });
 
-  test("submits Prompt 1 canonical artwork and background values", () => {
+  test("submits Prompt 1 canonical artwork and background values", async () => {
     render(<ControlledAssetGenerationForm />);
 
     const artworkMode = screen.getByRole("combobox", { name: /Artwork mode/i });
-    expect(artworkMode.value).toBe("transparent_game_ui_icon");
-    expect(Array.from(artworkMode.options).map((option) => option.value)).toEqual([
-      "transparent_game_ui_icon",
-      "badge_artwork",
-      "game_pass_artwork",
-      "template_based_artwork",
-      "not_artwork",
+    expect(artworkMode).toHaveTextContent('Transparent game UI icon');
+    fireEvent.keyDown(artworkMode, { key: 'ArrowDown' });
+    expect((await screen.findAllByRole('option')).map(option => option.textContent)).toEqual([
+      'Transparent game UI icon', 'Badge artwork', 'Game pass artwork', 'Template-based artwork', 'Not artwork',
     ]);
+    fireEvent.click(screen.getByRole('option', { name: 'Badge artwork' }));
+    expect(artworkMode).toHaveTextContent('Badge artwork');
 
     const backgroundMode = screen.getByRole("combobox", { name: /Background/i });
-    expect(Array.from(backgroundMode.options).map((option) => option.value)).toEqual([
-      "transparent",
-      "background_enabled",
-      "not_applicable",
-    ]);
+    await selectOption(backgroundMode, 'Background enabled');
+    expect(backgroundMode).toHaveTextContent('Background enabled');
   });
 
-  test("uses a saved NexusRBX asset as the optional style reference", () => {
+  test("uses a saved NexusRBX asset as the optional style reference", async () => {
     render(<ControlledAssetGenerationForm assets={[{ assetId: "asset_one", name: "Sword" }]} />);
 
     const reference = screen.getByRole("combobox", { name: /Style reference asset/i });
-    expect(Array.from(reference.options).map((option) => option.value)).toEqual(["", "asset_one"]);
+    await selectOption(reference, 'Sword');
+    expect(reference).toHaveTextContent('Sword');
+    await selectOption(reference, 'Use project style context');
+    expect(reference).toHaveTextContent('Use project style context');
     expect(screen.queryByRole("button", { name: /Add a visual reference/i })).toBeNull();
   });
 

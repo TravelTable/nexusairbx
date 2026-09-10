@@ -125,7 +125,9 @@ function disabledError() {
   });
 }
 
-function ensureEnabled({ creating = false } = {}) {
+function ensureEnabled({ creating = false, workspace } = {}) {
+  // UI Creator uses durable builds even when standalone Agent tasks are off.
+  if (workspace === 'ui_creator' || (!creating && FEATURE_FLAGS.aiPageV2)) return;
   // Approved plans already launch durable tasks. Their progress and controls
   // must remain reachable even when standalone task creation is not enabled.
   if (!FEATURE_FLAGS.newTaskRuntime && (creating || !FEATURE_FLAGS.newPlanningMode)) throw disabledError();
@@ -268,7 +270,7 @@ async function request(path, {
   ...init
 } = {}, fallbackMessage = "The task request could not be completed.") {
   const normalizedMethod = String(method || "GET").toUpperCase();
-  ensureEnabled({ creating: normalizedMethod === "POST" && path === "" });
+  ensureEnabled({ creating: normalizedMethod === "POST" && path === "", workspace: body?.workspace });
   const mutationId = normalizedMethod === "GET" ? "" : firstString(requestId, idempotencyKey) || newMutationId();
   const requestHeaders = {
     Accept: "application/json",

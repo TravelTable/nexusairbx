@@ -1,0 +1,8 @@
+PASS src/pages/ai/ui/UiCreatorWorkspace.test.jsx (9.155 s)
+PASS src/lib/taskRuntimeApi.test.js
+
+Test Suites: 2 passed, 2 total
+Tests:       25 passed, 25 total
+Snapshots:   0 total
+Time:        12.614 s
+Ran all test suites within paths "src/pages/ai/ui/UiCreatorWorkspace.test.jsx", "src/lib/taskRuntimeApi.test.js".

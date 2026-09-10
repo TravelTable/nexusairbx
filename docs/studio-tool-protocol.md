@@ -472,3 +472,10 @@ Additional manual checks (not satisfied by Node protocol tests):
 3. In a disposable Studio fixture, force the next batch operation to fail after native creation. Confirm verified rollback removes the inserted native root and only parent folders created by that batch. Confirm a pre-existing sibling remains.
 4. Retry a lost acknowledgement with the same parent/child identity and spec hash; confirm no duplicate native roots. Change the managed model after application and confirm stale staged proof cannot mark completion.
 5. Run the HUD in Play on desktop and a narrow mobile viewport. Observe PlayerGui, required controls/state changes, respawn/rejoin cleanup and input behavior. The plugin still advertises automated Play/TestService operations as unavailable; these checks require an available approved runtime channel or manual evidence.
+# Files-first UI model application
+
+`apply_ui_model` is a plugin-owned mutating command for a saved UI design revision. The bridge resolves ownership and the immutable RBXM again before queueing; client URLs are discarded. Payloads carry model/content identity, expected prior model identity, old and new source hashes, and a short-lived private storage URL. Targeting is fixed to `StarterGui/UI_<designId>`.
+
+The plugin snapshots a replaced root, checks the existing View and Controller source hashes, imports the exact binary model in edit mode, and returns root identity, model hash, source hashes, and recovery snapshots. Failed imports restore the previous root. The command is advertised separately so older plugins cannot silently accept this workflow.
+
+Required manual verification in a disposable Studio place (not completed by automated tests): import a new saved RBXM; check visible hierarchy and both script sources; reapply the same model without duplicates; apply a new revision and undo it; edit a source in Studio and confirm conflict preservation; force a download/deserialization failure and confirm the old root remains; run the controller interactions in Play. No connected Studio was available during files-first implementation verification.

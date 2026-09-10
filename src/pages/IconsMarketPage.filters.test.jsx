@@ -38,6 +38,7 @@ function renderPage() {
 
 describe("IconsMarketPage responsive filters", () => {
   beforeEach(() => {
+    window.history.replaceState({}, '', '/icons-market');
     mockUser.getIdToken.mockClear();
     mockOnAuthStateChanged.mockImplementation((_auth, callback) => {
       callback(mockUser);
@@ -63,6 +64,16 @@ describe("IconsMarketPage responsive filters", () => {
     expect(container.firstChild.className).toContain("creator-store-page");
     expect(container.firstChild.className).not.toContain("overflow-hidden");
     expect(container.innerHTML).not.toContain("100vh-64px");
+  });
+
+  test('workspace search and filters reach the catalog request', async () => {
+    window.history.replaceState({}, '', '/icons-market?q=gold+coin&style=Outline&access=free');
+    renderPage();
+    await waitFor(() => expect(global.fetch.mock.calls.some(([url]) => {
+      const parsed = new URL(url, 'http://localhost');
+      return parsed.pathname.endsWith('/icons/market') && parsed.searchParams.get('search') === 'gold coin'
+        && parsed.searchParams.get('style') === 'Outline' && parsed.searchParams.get('isPro') === 'false';
+    })).toBe(true));
   });
 
   test("exposes mobile filters and announces the selected choices", async () => {

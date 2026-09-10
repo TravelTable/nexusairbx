@@ -36,6 +36,14 @@ export function getUiDesign(designId) {
   return request(`/${encodeURIComponent(designId)}`);
 }
 
+export async function downloadUiModel(designId) {
+  const response = await authedFetch(`/api/ui-designs/${encodeURIComponent(designId)}/model`, { noCache: true });
+  if (!response.ok) throw new Error('The RBXM is not available yet. Your source files are saved.');
+  const url = URL.createObjectURL(await response.blob());
+  const link = document.createElement('a'); link.href = url; link.download = 'UI.rbxm'; link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 export function renameUiDesign(designId, expectedRevision, title) {
   return request(`/${encodeURIComponent(designId)}/title`, { method: "PATCH", body: JSON.stringify({ expectedRevision, title }) });
 }

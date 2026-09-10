@@ -57,13 +57,14 @@ export function isRetryableApiError(error) {
   return Boolean(
     error?.retryable === true ||
       error?.status === 429 ||
-      error?.status === 503 ||
+      [500, 502, 503, 504].includes(Number(error?.status)) ||
       error?.code === "FIRESTORE_QUOTA_EXCEEDED" ||
       isNetworkTransportFailure
   );
 }
 
 export function getRetryDelayMs(error, fallbackMs = 30000) {
+  if (error?.retryAfterMs == null) return fallbackMs;
   const parsed = Number(error?.retryAfterMs);
   if (Number.isFinite(parsed) && parsed >= 0) {
     return Math.min(parsed, MAX_RETRY_AFTER_MS);
@@ -219,7 +220,7 @@ export async function readJsonResponse(res, fallbackMessage = "Request failed") 
       {
         status: res.status,
         code: data?.code || data?.errorCode || "API_REQUEST_FAILED",
-        retryable: data?.retryable === true || res.status === 429 || res.status === 503,
+        retryable: data?.retryable === true || res.status === 429 || [500, 502, 503, 504].includes(res.status),
         retryAfter,
         retryAfterMs: parseRetryAfterMs(retryAfter),
         requestId,

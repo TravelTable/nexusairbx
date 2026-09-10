@@ -1,3 +1,4 @@
+import NexusSelect from "../../components/ui/NexusSelect";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Clock3,
@@ -332,10 +333,10 @@ export default function AnimateWorkspace({ modelVersion = "", onBillingRefresh =
             <div>
               <label className="animate-toolbar__model">
                 <span>Preview model</span>
-                <select aria-label="Preview model" value={previewModel.id} onChange={selectPreviewModel} disabled={busy}>
+                <NexusSelect aria-label="Preview model" value={previewModel.id} onChange={selectPreviewModel} disabled={busy}>
                   <option value="blocky-r15">Blocky R15</option>
                   {customPreviewModel ? <option value="custom-r15">{customPreviewModel.label}</option> : null}
-                </select>
+                </NexusSelect>
               </label>
               <button type="button" className="animate-toolbar__import" onClick={() => modelInputRef.current?.click()} disabled={busy}>
                 <AnimatedUploadIcon aria-hidden="true" /> Import R15 GLB

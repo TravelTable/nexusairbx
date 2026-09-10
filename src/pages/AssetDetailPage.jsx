@@ -1,3 +1,4 @@
+import NexusSelect from "../components/ui/NexusSelect";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Copy, ImageIcon, ImagePlus, Layers, Library, RefreshCw, RotateCcw } from "../lib/icons";
@@ -581,10 +582,10 @@ export default function AssetDetailPage() {
                 <div className="asset-detail-action-row">
                   <label>
                     <span>Project</span>
-                    <select className="nexus-input" value={attachProjectId} onChange={(event) => setAttachProjectId(event.target.value)}>
+                    <NexusSelect className="nexus-input" value={attachProjectId} onChange={(event) => setAttachProjectId(event.target.value)}>
                       {!projects.length ? <option value={attachProjectId || ""}>{attachProjectId || "No authorized projects available"}</option> : null}
                       {projects.map((project) => <option key={projectRecordId(project)} value={projectRecordId(project)}>{project.name || project.title || projectRecordId(project)}</option>)}
-                    </select>
+                    </NexusSelect>
                   </label>
                   <Button
                     size="sm"
@@ -620,15 +621,15 @@ export default function AssetDetailPage() {
                     </label>
                     <label>
                       <span>Instance class</span>
-                      <select className="nexus-input" value={studioClassName} onChange={(event) => setStudioClassName(event.target.value)}>
+                      <NexusSelect className="nexus-input" value={studioClassName} onChange={(event) => setStudioClassName(event.target.value)}>
                         {Object.keys(STUDIO_ASSET_TARGETS).map((className) => <option key={className} value={className}>{className}</option>)}
-                      </select>
+                      </NexusSelect>
                     </label>
                     <label>
                       <span>Property</span>
-                      <select className="nexus-input" value={studioProperty} onChange={(event) => setStudioProperty(event.target.value)}>
+                      <NexusSelect className="nexus-input" value={studioProperty} onChange={(event) => setStudioProperty(event.target.value)}>
                         {studioProperties.map((property) => <option key={property} value={property}>{property}</option>)}
-                      </select>
+                      </NexusSelect>
                     </label>
                   </div>
                 ) : null}

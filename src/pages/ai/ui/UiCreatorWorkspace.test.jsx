@@ -1,9 +1,11 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import UiCreatorWorkspace from "./UiCreatorWorkspace";
+import UiCreatorChrome from "./UiCreatorChrome";
 import * as designs from "../../../lib/uiDesignApi";
 import * as tasks from "../../../lib/taskRuntimeApi";
 import * as previews from "../../../lib/uiPreviewApi";
+import { getBuildWorkspaceSnapshot } from "../../../lib/buildWorkspaceApi";
 import { askUiQuestion } from "../../../lib/uiConversation";
 jest.mock("../../../lib/uiConversation", () => ({ watchUiConversation: jest.fn(() => () => {}), askUiQuestion: jest.fn(async () => "A useful answer") }));
 
@@ -13,7 +15,7 @@ jest.mock("../../../lib/uiPreviewApi", () => Object.fromEntries(["getUiPreviewMa
 jest.mock("../../../lib/buildWorkspaceApi", () => ({ getBuildWorkspaceSnapshot: jest.fn(async () => ({ items: [] })), readBuildWorkspaceFile: jest.fn() }));
 jest.mock("@monaco-editor/react", () => () => <div>Monaco hooks editor</div>);
 jest.mock("../../../hooks/useChatAttachmentUpload", () => () => ({ upload: jest.fn(), retry: jest.fn() }));
-jest.mock("../../../components/ai/chat/CreationPromptComposer", () => props => <form onSubmit={props.onSubmit}>
+jest.mock("../../../components/ai/chat/CreationPromptComposer", () => props => <form onSubmit={event => props.onSubmit(event, props.prompt, { attachments: [] })}>
   <textarea aria-label="UI prompt" value={props.prompt} onChange={e => props.setPrompt(e.target.value)} />
   <select aria-label="Conversation mode" value={props.mode} onChange={e => props.onModeChange(e.target.value)}>
     <option value="agent">Agent</option><option value="plan">Plan</option><option value="ask">Ask</option>
@@ -33,6 +35,7 @@ const savedTask = (stage = "generating") => ({ taskId: "task-1", chatId: "chat-1
   uiBuild: { stage, sourceRevision: "rev-1" } });
 beforeEach(() => {
   jest.resetAllMocks();
+  getBuildWorkspaceSnapshot.mockResolvedValue({ items: [] });
   tasks.streamTaskEvents.mockImplementation(() => new Promise(() => {}));
   localStorage.clear();
   window.matchMedia = jest.fn(() => ({ matches: false, addEventListener: jest.fn(), removeEventListener: jest.fn() }));
@@ -59,6 +62,7 @@ test("Agent starts one durable UI task and cancellation uses the task action", a
   fireEvent.click(screen.getByRole("button", {name:"Send prompt"}));
   await waitFor(() => expect(tasks.createTask).toHaveBeenCalledTimes(1));
   expect(tasks.createTask.mock.calls[0][0]).toMatchObject({ mode:"agent", workspace:"ui_creator", designId:"design-1", baseRevision:"rev-1" });
+  expect(designs.createUiDesign).not.toHaveBeenCalled();
   fireEvent.click(await screen.findByRole("button", {name:"Stop build"}));
   await waitFor(() => expect(tasks.cancelTask).toHaveBeenCalledWith("task-1"));
 });
@@ -103,13 +107,31 @@ test("Ask uses the shared read-only response path without applying or approving 
   expect(tasks.approveTask).not.toHaveBeenCalled();
   expect(designs.patchUiDesign).not.toHaveBeenCalled();
 });
+test("shared header drawer retains focus during streamed updates and restores its trigger", async () => {
+  const slot = document.createElement('div');
+  document.body.appendChild(slot);
+  const close = jest.fn();
+  const base = { sharedHeader: true, headerActionTarget: slot, onDrawer: jest.fn(), onCloseDrawer: close };
+  const mounted = render(<UiCreatorChrome {...base} />);
+  const trigger = screen.getByRole('button', { name: 'Code / Files' });
+  trigger.focus();
+  mounted.rerender(<UiCreatorChrome {...base} drawer="luau" working status="Writing controller" />);
+  expect(screen.getByLabelText('Close files drawer')).toHaveFocus();
+  mounted.rerender(<UiCreatorChrome {...base} drawer="luau" working status="Saving revision" onCloseDrawer={() => close()} />);
+  expect(screen.getByLabelText('Close files drawer')).toHaveFocus();
+  mounted.rerender(<UiCreatorChrome {...base} />);
+  await waitFor(() => expect(trigger).toHaveFocus());
+  mounted.unmount();
+  slot.remove();
+});
+
 test("the files drawer stays inspectable during generation and restores focus", async () => {
   await open();
   fireEvent.change(screen.getByLabelText("UI prompt"), {target:{value:"Build a shop"}});
   fireEvent.click(screen.getByRole("button", {name:"Send prompt"}));
   await screen.findByRole("button", {name:"Stop build"});
   const opener=screen.getByRole("button",{name:"Code / Files"});
-  opener.focus(); fireEvent.click(opener);
+  await act(async () => { opener.focus(); fireEvent.click(opener); });
   expect(screen.getByRole("dialog",{name:"Code and files"})).toBeVisible();
   expect(screen.getByText("Writing your implementation")).toBeVisible();
   expect(screen.getByLabelText("AI build conversation")).toBeVisible();
@@ -155,7 +177,7 @@ test("live actions use readable labels, never raw backend payloads", async () =>
   await waitFor(() => expect(deliver).toBeDefined());
   const {act}=require("@testing-library/react");
   await act(async()=>deliver({eventId:"stream-1",sequence:1,eventType:"ui_build_progress",payload:{designId:"design-1",stage:"preparing",message:'RAW_BACKEND_PAYLOAD',sourceRevision:"rev-1"}}));
-  expect(screen.getByLabelText("Build actions")).toHaveTextContent("Writing controller");
+  expect(screen.getByLabelText("Build actions")).toHaveTextContent("Saving files");
   expect(screen.queryByText("RAW_BACKEND_PAYLOAD")).not.toBeInTheDocument();
 });
 
@@ -178,4 +200,18 @@ test("application retries reuse the request identity after an uncertain network 
   fireEvent.click(screen.getByRole("button",{name:"Apply to Studio",exact:true}));
   await waitFor(()=>expect(tasks.createTask).toHaveBeenCalledTimes(2));
   expect(tasks.createTask.mock.calls[0][1].idempotencyKey).toBe(tasks.createTask.mock.calls[1][1].idempotencyKey);
+});
+
+test("an incomplete visual review retries the saved revision without a generate or apply request", async () => {
+  const failed = savedTask('failed');
+  failed.uiBuild.errorCode = 'UI_VISUAL_REVIEW_INCOMPLETE';
+  designs.getUiDesign.mockResolvedValue({ design: { ...record, activeUiTaskId: failed.taskId } });
+  tasks.getTask.mockResolvedValue({ task: failed });
+  tasks.getTaskEvents.mockResolvedValue({ task: failed, events: [], lastSequence: 0 });
+  render(<UiCreatorWorkspace {...props} studio={{ connected: false }} studioSessionId={null} />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Retry review' }));
+  await waitFor(() => expect(tasks.createTask).toHaveBeenCalledTimes(1));
+  expect(tasks.createTask.mock.calls[0][0]).toMatchObject({ uiIntent: 'review', baseRevision: 'rev-1', designId: 'design-1', executionInput: { studioEnabled: false } });
+  expect(designs.compileUiDesign).not.toHaveBeenCalled();
+  expect(previews.requestUiCapture).not.toHaveBeenCalled();
 });

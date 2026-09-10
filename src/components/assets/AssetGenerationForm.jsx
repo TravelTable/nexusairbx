@@ -1,3 +1,4 @@
+import NexusSelect from "../ui/NexusSelect";
 import React, { useId, useRef } from "react";
 import { ChevronDown } from "../../lib/icons";
 import { Toggle } from "../ui";
@@ -155,12 +156,12 @@ export default function AssetGenerationForm({
 
         <label className="asset-reference-input">
           <span className="nexus-field-label">Style reference asset <small>optional</small></span>
-          <select ref={referenceSelectRef} className="nexus-input" value={form.referenceAssetId} disabled={disabled} onChange={(event) => patch({ referenceAssetId: event.target.value })}>
+          <NexusSelect ref={referenceSelectRef} className="nexus-input" value={form.referenceAssetId} disabled={disabled} onChange={(event) => patch({ referenceAssetId: event.target.value })}>
             <option value="">Use project style context</option>
             {assets.filter((asset) => assetId(asset)).map((asset) => (
               <option key={assetId(asset)} value={assetId(asset)}>{asset.name || assetId(asset)}</option>
             ))}
-          </select>
+          </NexusSelect>
           <small className="asset-field-help">Uses a saved NexusRBX asset as visual context.</small>
         </label>
       </div>
@@ -175,10 +176,10 @@ export default function AssetGenerationForm({
           {form.mode === "extend" ? (
             <label>
               <span className="nexus-field-label">Pack to extend</span>
-              <select className="nexus-input" required value={form.packId} disabled={disabled} onChange={(event) => patch({ packId: event.target.value })}>
+              <NexusSelect className="nexus-input" required value={form.packId} disabled={disabled} onChange={(event) => patch({ packId: event.target.value })}>
                 <option value="">Select a pack</option>
                 {packs.map((pack) => <option key={packId(pack)} value={packId(pack)}>{pack.name || packId(pack)}</option>)}
-              </select>
+              </NexusSelect>
             </label>
           ) : null}
         </div>
@@ -196,10 +197,10 @@ export default function AssetGenerationForm({
         <div className="asset-generation-form__row">
           <label>
             <span className="nexus-field-label">Source asset</span>
-            <select className="nexus-input" required value={form.sourceAssetId} disabled={disabled} onChange={(event) => patch({ sourceAssetId: event.target.value })}>
+            <NexusSelect className="nexus-input" required value={form.sourceAssetId} disabled={disabled} onChange={(event) => patch({ sourceAssetId: event.target.value })}>
               <option value="">Select an existing asset</option>
               {assets.map((asset) => <option key={assetId(asset)} value={assetId(asset)}>{asset.name || assetId(asset)}</option>)}
-            </select>
+            </NexusSelect>
             <small className="asset-field-help">{form.mode === "replacement" ? "A new variation keeps the source lineage; the existing asset is not overwritten." : "The source is used as a style anchor; it is not overwritten."}</small>
           </label>
           <label>
@@ -224,28 +225,28 @@ export default function AssetGenerationForm({
         <div className="asset-generation-form__row">
           <label>
             <span className="nexus-field-label">Style profile</span>
-            <select className="nexus-input" value={form.styleProfileId} disabled={disabled} onChange={(event) => patch({ styleProfileId: event.target.value })}>
+            <NexusSelect className="nexus-input" value={form.styleProfileId} disabled={disabled} onChange={(event) => patch({ styleProfileId: event.target.value })}>
               <option value="">Project default</option>
               {styleProfiles.map((profile) => <option key={profile.styleProfileId} value={profile.styleProfileId}>{profile.name}</option>)}
-            </select>
+            </NexusSelect>
           </label>
           <label>
             <span className="nexus-field-label">Artwork mode</span>
-            <select className="nexus-input" value={form.artworkMode} disabled={disabled} onChange={(event) => patch({ artworkMode: event.target.value })}>
+            <NexusSelect className="nexus-input" value={form.artworkMode} disabled={disabled} onChange={(event) => patch({ artworkMode: event.target.value })}>
               <option value="transparent_game_ui_icon">Transparent game UI icon</option>
               <option value="badge_artwork">Badge artwork</option>
               <option value="game_pass_artwork">Game pass artwork</option>
               <option value="template_based_artwork">Template-based artwork</option>
               <option value="not_artwork">Not artwork</option>
-            </select>
+            </NexusSelect>
           </label>
           <label>
             <span className="nexus-field-label">Background</span>
-            <select className="nexus-input" value={form.backgroundMode} disabled={disabled} onChange={(event) => patch({ backgroundMode: event.target.value, transparencyRequired: event.target.value === "transparent" })}>
+            <NexusSelect className="nexus-input" value={form.backgroundMode} disabled={disabled} onChange={(event) => patch({ backgroundMode: event.target.value, transparencyRequired: event.target.value === "transparent" })}>
               <option value="transparent">Transparent</option>
               <option value="background_enabled">Background enabled</option>
               <option value="not_applicable">Not applicable</option>
-            </select>
+            </NexusSelect>
           </label>
         </div>
       </details>

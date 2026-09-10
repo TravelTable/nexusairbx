@@ -1,3 +1,4 @@
+import NexusSelect from "../ui/NexusSelect";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -280,7 +281,7 @@ function StudioPluginSetupReference({ suggestedVisualId }) {
       >
         Step
       </label>
-      <select
+      <NexusSelect
         id="studio-plugin-setup-step"
         aria-label="Setup step"
         value={selectedVisual.id}
@@ -293,7 +294,7 @@ function StudioPluginSetupReference({ suggestedVisualId }) {
             {index + 1}. {visual.title}
           </option>
         ))}
-      </select>
+      </NexusSelect>
       <p
         id="studio-plugin-setup-instruction"
         className="my-3 text-[11px] leading-relaxed text-[var(--ds-text-secondary)]"
@@ -429,7 +430,7 @@ export default function StudioPairControl({
       ?.querySelector('[role="tab"][aria-selected="true"]')
       ?.focus();
     const onKeyDown = (event) => {
-      if (event.key !== "Escape") return;
+      if (event.key !== "Escape" || event.defaultPrevented || event.target.closest?.('[role="listbox"]')) return;
       event.preventDefault();
       requestOpenChange(false);
       const focusTarget = dialogReturnFocusRef.current;
@@ -1162,7 +1163,7 @@ export default function StudioPairControl({
             className={`h-3.5 w-3.5 shrink-0 ${overallConnected ? "" : "text-[var(--ds-text-secondary)]"}`}
           />
         )}
-        <span className="truncate">{buttonLabel}</span>
+        <span className="truncate workspace-studio-label">{buttonLabel}</span>
         <i
           className="nx-build-signal"
           data-state={
@@ -1176,7 +1177,7 @@ export default function StudioPairControl({
           aria-hidden="true"
         />
         <ChevronDown
-          className={`h-3.5 w-3.5 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`workspace-studio-chevron h-3.5 w-3.5 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
         />
       </button>
       {menu}

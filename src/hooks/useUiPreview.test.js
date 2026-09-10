@@ -1,4 +1,4 @@
-import { act, render, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 
 import useUiPreview from "./useUiPreview";
@@ -54,7 +54,7 @@ const latest = { current: null };
 
 function Probe(props) {
   latest.current = useUiPreview(props);
-  return null;
+  return latest.current.imageUrl ? <img src={latest.current.imageUrl} alt="Preview" /> : null;
 }
 
 function renderHook(props) {
@@ -110,6 +110,19 @@ test("a ready job exposes the verified preview and its object URL", async () => 
     stateId: "default",
     viewportId: "desktop",
   }, expect.objectContaining({ idempotencyKey: expect.stringContaining("ui-preview-") }));
+});
+
+test('Strict Mode keeps the live preview URL and releases it after real unmount', async () => {
+  requestUiPreview.mockResolvedValue({ jobId: 'job-1', status: 'ready', preview: makePreview() });
+  readUiPreviewImage.mockResolvedValue(new Blob(['png']));
+  const view = render(<React.StrictMode><Probe {...baseOptions} /></React.StrictMode>);
+  await flush();
+  expect(latest.current.status).toBe('ready');
+  const url = latest.current.imageUrl;
+  expect(URL.revokeObjectURL).not.toHaveBeenCalledWith(url);
+  view.unmount();
+  await act(async () => { await Promise.resolve(); });
+  expect(URL.revokeObjectURL).toHaveBeenCalledWith(url);
 });
 
 test("cached-ready admission fetches and validates the saved manifest before loading PNG bytes", async () => {
@@ -209,6 +222,9 @@ test("a failed job surfaces an error message and a callable retry", async () => 
 });
 
 test("switching identity revokes the previous object URL", async () => {
+  URL.revokeObjectURL.mockImplementation(url => {
+    expect(screen.queryAllByRole('img').some(img => img.getAttribute('src') === url)).toBe(false);
+  });
   requestUiPreview.mockImplementation((designId, references) => Promise.resolve({
     jobId: `job-${references.viewportId}`,
     status: "ready",

@@ -44,6 +44,7 @@ test("readJsonResponse preserves retryable error metadata", async () => {
 });
 
 test("retry helpers parse seconds, HTTP dates, and retryable status codes", () => {
+  expect(getRetryDelayMs({ retryAfterMs: null })).toBe(30000);
   expect(parseRetryAfterMs("3")).toBe(3000);
   expect(parseRetryAfterMs("Thu, 09 Jul 2026 00:01:00 GMT", Date.parse("Thu, 09 Jul 2026 00:00:00 GMT"))).toBe(60000);
   expect(isRetryableApiError({ status: 503 })).toBe(true);
@@ -53,6 +54,12 @@ test("retry helpers parse seconds, HTTP dates, and retryable status codes", () =
   expect(isRetryableApiError(new Error("The network connection was lost."))).toBe(true);
   expect(isRetryableApiError(new Error("Fetch API cannot load https://api.example.com due to access control checks."))).toBe(true);
   expect(getRetryDelayMs({ retryAfterMs: 12000 })).toBe(12000);
+});
+
+test.each([500, 502, 504])("HTTP %s is a retryable server failure", async (status) => {
+  expect(isRetryableApiError({ status })).toBe(true);
+  await expect(readJsonResponse(response({ status }), "Server unavailable"))
+    .rejects.toMatchObject({ status, retryable: true });
 });
 
 test("withApiRetryCooldown skips duplicate network work during retry window", async () => {

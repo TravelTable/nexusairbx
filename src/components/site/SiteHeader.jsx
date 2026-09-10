@@ -97,7 +97,7 @@ function AccountAvatar({ identity, menu = false }) {
   );
 }
 
-function AccountControl({ identity, mobile = false, compact = false, showWorkspaceAction = true }) {
+export function AccountControl({ identity, mobile = false, compact = false, showWorkspaceAction = true }) {
   const [open, setOpen] = useState(false);
   const buttonRef = useRef(null);
   const menuRef = useRef(null);

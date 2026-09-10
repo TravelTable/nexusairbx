@@ -608,7 +608,7 @@ function CodeDrawerUI({
       <motion.div
         key="drawer"
         ref={drawerRef}
-        className="fixed right-0 top-0 z-[120] h-full flex flex-col bg-[var(--ds-surface-1)] text-[var(--ds-text)] border-l border-[var(--ds-border-strong)] shadow-[var(--ds-shadow-overlay)] code-drawer-root"
+        className="fixed right-0 top-0 z-[120] h-full flex flex-col bg-[var(--ds-surface-1)] text-[var(--ds-text)] border-l border-[var(--ds-border-strong)] shadow-[var(--ds-shadow-overlay)] code-drawer-root nx-workspace-drawer"
         style={{
           width: drawerWidth,
           minWidth: 280,

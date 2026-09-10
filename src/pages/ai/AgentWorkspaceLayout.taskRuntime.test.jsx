@@ -97,6 +97,7 @@ jest.mock("../../components/site/SiteHeader", () => (props) => {
   const ReactModule = require("react");
   return ReactModule.createElement("header", null, props.workspaceLeft, props.workspaceRight);
 });
+jest.mock("../../components/site/WorkspaceAccountControl", () => () => null);
 jest.mock("../../components/ui", () => ({ Segmented: () => null }));
 jest.mock("../../components/ai/workspace/CodeFileTree", () => () => null);
 jest.mock("../../components/ai/workspace/CodeWorkspace", () => ({
@@ -170,11 +171,14 @@ jest.mock("../../components/ai/workspace/AgentChatPanel", () => ({
 jest.mock("../../components/ai/workspace/BuildDetailsPanel", () => () => null);
 jest.mock("../../components/ai/workspace/RobloxDecalUploadDropdown", () => () => null);
 jest.mock("./QuickScriptWorkspace", () => () => null);
+jest.mock("./ui/UiCreatorWorkspace", () => () => null);
+jest.mock("../IconsMarketWorkspacePanel", () => () => null);
 jest.mock("./AnimateWorkspace", () => () => {
   const ReactModule = require("react");
   return ReactModule.createElement("div", null, "Animation workspace ready");
 });
 jest.mock("../../components/onboarding/TutorialOverlay", () => () => null);
+jest.mock("../../components/onboarding/useGuidedLaunch", () => ({ useGuidedLaunch: () => ({ progress: null, save: jest.fn() }) }));
 jest.mock("../../components/onboarding/useTutorial", () => ({
   useTutorial: () => ({
     activeStep: 0,
@@ -213,7 +217,7 @@ import AgentWorkspaceLayout from "./AgentWorkspaceLayout";
 const noop = jest.fn();
 
 function openStageView(label) {
-  fireEvent.click(screen.getByRole("button", { name: /^Open Build/ }));
+  fireEvent.click(screen.getByRole("button", { name: 'Code / Files' }));
   fireEvent.click(screen.getByRole("button", { name: label === "Activity" ? "Activity and actions" : new RegExp(`^${label}`) }));
 }
 
@@ -451,6 +455,15 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
     ));
     expect(stopChatOperation).toHaveBeenCalledTimes(1);
     expect(cancelCurrentFlow).toHaveBeenCalledTimes(1);
+  });
+
+  test.each(["ui", "asset"])("pauses the Agent task observer in the %s workspace", (mode) => {
+    mockUseTaskRuntime.mockReturnValue({ task: null, events: [], selectTask: jest.fn() });
+    const controller = makeController();
+    const { rerender } = render(<AgentWorkspaceLayout controller={controller} locationSearch={`?mode=${mode}`} />);
+    expect(mockUseTaskRuntime.mock.calls.at(-1)[0].enabled).toBe(false);
+    rerender(<AgentWorkspaceLayout controller={controller} locationSearch="?mode=agent" />);
+    expect(mockUseTaskRuntime.mock.calls.at(-1)[0].enabled).toBe(true);
   });
 
   test("keeps Stop available for an accepted canonical build and cancels that task", async () => {
