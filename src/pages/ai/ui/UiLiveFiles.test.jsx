@@ -19,3 +19,12 @@ test('packaging keeps completed code inspectable', () => {
   expect(screen.getByText('Building RBXM')).toBeInTheDocument();
   expect(screen.getByLabelText('Live source')).toHaveTextContent('return UI');
 });
+test('shows the generated manifest count instead of a fixed two-file limit', () => {
+  render(<UiLiveFiles files={[
+    { path: 'View.luau', content: 'return UI', status: 'saved' },
+    { path: 'Controller.client.luau', content: '', status: 'writing' },
+    { path: 'Components/Button.luau', content: '', status: 'pending' },
+  ]} stage="generating"/>);
+  expect(screen.getByText('1 / 3 files')).toBeInTheDocument();
+  expect(screen.getByRole('tab', { name: 'Components/Button.luau' })).toBeInTheDocument();
+});
