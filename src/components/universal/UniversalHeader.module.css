@@ -224,7 +224,7 @@
   inset: 0;
   z-index: 110;
   display: grid;
-  min-width: 320px;
+  min-width: 0;
   grid-template-rows: var(--nx-header-height) 1fr auto;
   overflow: auto;
   background: var(--nx-canvas);

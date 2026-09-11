@@ -23,6 +23,9 @@ export default function UniversalCommandMenu({
     if (!normalized) return items;
     return items.filter((item) => `${item.label} ${item.section} ${item.href}`.toLowerCase().includes(normalized));
   }, [items, query]);
+  const activeOptionId = results[activeIndex]
+    ? `nexus-command-option-${activeIndex}`
+    : undefined;
 
   useEffect(() => {
     if (!open) return undefined;
@@ -88,10 +91,16 @@ export default function UniversalCommandMenu({
             onKeyDown={(event) => {
               if (event.key === "ArrowDown") {
                 event.preventDefault();
-                setActiveIndex((index) => Math.min(results.length - 1, index + 1));
+                if (results.length) setActiveIndex((index) => Math.min(results.length - 1, index + 1));
               } else if (event.key === "ArrowUp") {
                 event.preventDefault();
-                setActiveIndex((index) => Math.max(0, index - 1));
+                if (results.length) setActiveIndex((index) => Math.max(0, index - 1));
+              } else if (event.key === "Home" && results.length) {
+                event.preventDefault();
+                setActiveIndex(0);
+              } else if (event.key === "End" && results.length) {
+                event.preventDefault();
+                setActiveIndex(results.length - 1);
               } else if (event.key === "Enter" && results[activeIndex]) {
                 event.preventDefault();
                 surfaceRef.current?.querySelector('[data-active="true"]')?.click();
@@ -100,15 +109,21 @@ export default function UniversalCommandMenu({
             className={styles.commandInput}
             placeholder="Search pages and tools…"
             aria-label="Search pages and tools"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-controls="nexus-command-results"
+            aria-expanded="true"
+            aria-activedescendant={activeOptionId}
           />
           <button type="button" className={styles.commandClose} onClick={onClose}>Esc</button>
         </div>
-        <div className={styles.commandResults} role="listbox" aria-label="Search results">
+        <div id="nexus-command-results" className={styles.commandResults} role="listbox" aria-label="Search results">
           {results.length ? results.map((item, index) => renderLink(
             LinkComponent,
             item.href,
             {
-              key: `${item.section}-${item.href}`,
+              key: `${item.section}-${item.href}-${item.label}`,
+              id: `nexus-command-option-${index}`,
               className: styles.commandResult,
               role: "option",
               "aria-selected": index === activeIndex,
@@ -117,7 +132,7 @@ export default function UniversalCommandMenu({
               onClick: onClose,
             },
             <><span>{item.label}</span><small>{item.section}</small></>,
-          )) : <p className={styles.commandEmpty}>No matching NexusRBX route.</p>}
+          )) : <p className={styles.commandEmpty} role="status">No matching pages or tools.</p>}
         </div>
         <footer className={styles.commandFooter}>
           <span>Enter to open</span><span>↑↓ to browse</span><span>Esc to close</span>

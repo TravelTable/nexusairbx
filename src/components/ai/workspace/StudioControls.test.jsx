@@ -2,6 +2,7 @@ import React from "react";
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import StudioControls from "./StudioControls";
+import "../../../testUtils/selectOption";
 
 describe("StudioControls", () => {
   test("lets users choose build preferences while disconnected", () => {
@@ -15,7 +16,7 @@ describe("StudioControls", () => {
     expect(screen.queryByLabelText("Auto Push")).toBeNull();
   });
 
-  test("explains unavailable write and playtest options for a read-only MCP target", () => {
+  test("explains unavailable write and playtest options for a read-only MCP target", async () => {
     render(
       <StudioControls
         connected
@@ -36,12 +37,19 @@ describe("StudioControls", () => {
 
     expect(screen.getByText("Connected — Baseplate")).toBeTruthy();
     expect(screen.getByText("Automatic routing · Local MCP")).toBeTruthy();
-    expect(screen.getByRole("option", { name: "Automatic — unavailable" })).toBeDisabled();
-    expect(screen.getByRole("option", { name: "Playtest — unavailable" })).toBeDisabled();
+    const apply = screen.getByRole("combobox", { name: "Apply changes" });
+    fireEvent.keyDown(apply, { key: "ArrowDown" });
+    expect(await screen.findByRole("option", { name: "Automatic — unavailable" })).toHaveAttribute("aria-disabled", "true");
+    fireEvent.keyDown(screen.getByRole("listbox"), { key: "Escape" });
+    await waitFor(() => expect(apply).toHaveFocus());
+
+    const checks = screen.getByRole("combobox", { name: "Checks" });
+    fireEvent.keyDown(checks, { key: "ArrowDown" });
+    expect(await screen.findByRole("option", { name: "Playtest — unavailable" })).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByText(/Playtest needs/)).toBeTruthy();
   });
 
-  test("enables playtest policies when the target registry advertises MCP playtest and writes", () => {
+  test("enables playtest policies when the target registry advertises MCP playtest and writes", async () => {
     render(
       <StudioControls
         connected
@@ -62,8 +70,14 @@ describe("StudioControls", () => {
     );
 
     expect(screen.getByText("Automatic routing · Plugin + MCP")).toBeTruthy();
+    const apply = screen.getByRole("combobox", { name: "Apply changes" });
+    fireEvent.keyDown(apply, { key: "ArrowDown" });
     expect(screen.queryByRole("option", { name: "After playtest (legacy)" })).toBeNull();
-    expect(screen.getByRole("option", { name: "Playtest" })).toBeEnabled();
+    fireEvent.keyDown(screen.getByRole("listbox"), { key: "Escape" });
+    await waitFor(() => expect(apply).toHaveFocus());
+
+    fireEvent.keyDown(screen.getByRole("combobox", { name: "Checks" }), { key: "ArrowDown" });
+    expect(await screen.findByRole("option", { name: "Playtest" })).not.toHaveAttribute("aria-disabled", "true");
   });
 
   test("surfaces a settings save failure instead of silently swallowing it", async () => {

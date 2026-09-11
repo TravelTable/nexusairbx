@@ -86,15 +86,12 @@ test("makes the homepage skip link the first keyboard target", async () => {
   expect(
     screen.getByRole("navigation", { name: "Primary navigation" }),
   ).toBeTruthy();
-  expect(screen.getByRole("link", { name: "Build" }).getAttribute("href")).toBe(
+  expect(screen.getByRole("link", { name: "Workspace" }).getAttribute("href")).toBe(
     "/ai",
   );
   expect(
     screen.getByRole("link", { name: "Assets" }).getAttribute("href"),
   ).toBe("/assets");
-  expect(screen.getByRole("link", { name: "Icons" }).getAttribute("href")).toBe(
-    "/icons-market",
-  );
   expect(
     screen.getByRole("link", { name: "Studio" }).getAttribute("href"),
   ).toBe("/downloads");
@@ -111,7 +108,7 @@ test("makes the homepage skip link the first keyboard target", async () => {
   expect(screen.getByRole("dialog", { name: "Search NexusRBX" })).toBeTruthy();
   await waitFor(() =>
     expect(document.activeElement).toBe(
-      screen.getByRole("textbox", { name: "Search pages and tools" }),
+      screen.getByRole("combobox", { name: "Search pages and tools" }),
     ),
   );
   fireEvent.keyDown(document, { key: "Escape" });

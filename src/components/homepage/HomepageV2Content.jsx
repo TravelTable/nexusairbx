@@ -252,7 +252,7 @@ export default function HomepageV2Content({ surface = "homepage", navigate }) {
     return () => window.clearTimeout(timeoutId);
   }, []);
   return (
-    <div className={styles.page}>
+    <div className={styles.page} data-nexus-protected-homepage-body="true">
       <main id="main-content" tabIndex={-1}>
         <AiProvidersBand />
         <Hero surface={surface} navigate={navigate} inputRef={heroPromptRef} />

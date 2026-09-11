@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { User } from "lib/icons";
 import UniversalHeaderFrame from "../universal/UniversalHeaderFrame";
 import WorkspaceRibbon from "../universal/WorkspaceRibbon";
 import { Avatar, AvatarFallback, AvatarImage } from "../shadcn/avatar";
@@ -103,6 +104,30 @@ export function AccountControl({ identity, mobile = false, compact = false, show
   const menuRef = useRef(null);
   useDismissibleMenu(open, setOpen, buttonRef, menuRef);
 
+  useEffect(() => {
+    if (!open) return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      menuRef.current?.querySelector('[role="menuitem"]')?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [open]);
+
+  const handleMenuKeyDown = (event) => {
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+    const items = Array.from(menuRef.current?.querySelectorAll('[role="menuitem"]:not([disabled])') || []);
+    if (!items.length) return;
+    const currentIndex = items.indexOf(document.activeElement);
+    const nextIndex = event.key === "Home"
+      ? 0
+      : event.key === "End"
+        ? items.length - 1
+        : event.key === "ArrowDown"
+          ? (currentIndex + 1 + items.length) % items.length
+          : (currentIndex - 1 + items.length) % items.length;
+    event.preventDefault();
+    items[nextIndex]?.focus();
+  };
+
   const groupClass = compact
     ? `${styles.accountGroup} ${styles.accountGroupCompact}`
     : mobile
@@ -114,7 +139,19 @@ export function AccountControl({ identity, mobile = false, compact = false, show
   }
 
   if (!identity.user) {
-    if (compact) return <AppLink to="/signin" className={styles.compactAccountButton} aria-label="Sign in">Sign in</AppLink>;
+    if (compact) {
+      return (
+        <AppLink
+          to="/signin"
+          className={styles.compactAccountButton}
+          aria-label="Sign in"
+          title="Sign in"
+        >
+          <User className={styles.compactAccountIcon} aria-hidden="true" />
+          <span className={styles.compactAccountText}>Sign in</span>
+        </AppLink>
+      );
+    }
     return (
       <div className={groupClass}>
         <AppLink to="/signin" className={styles.textAction}>Sign in</AppLink>
@@ -131,7 +168,7 @@ export function AccountControl({ identity, mobile = false, compact = false, show
 
   return (
     <div className={groupClass}>
-      {showWorkspaceAction ? <AppLink to="/ai" className={`${styles.textAction} ${styles.primaryAction}`}>Open workspace</AppLink> : null}
+      {showWorkspaceAction ? <AppLink to="/ai" className={`${styles.textAction} ${styles.primaryAction}`}>Open Nexus Workspace</AppLink> : null}
       <div className={styles.accountRoot}>
         <button
           ref={buttonRef}
@@ -139,7 +176,7 @@ export function AccountControl({ identity, mobile = false, compact = false, show
           className={`${styles.accountButton} ${styles.accountAvatarButton}`}
           aria-haspopup="menu"
           aria-expanded={open}
-          aria-label={`Open account menu for ${identity.displayName || identity.email || "your account"}`}
+          aria-label={`${open ? "Close" : "Open"} account menu for ${identity.displayName || identity.email || "your account"}`}
           title={identity.displayName || identity.email || "Account"}
           onClick={() => setOpen((value) => !value)}
         >
@@ -152,6 +189,7 @@ export function AccountControl({ identity, mobile = false, compact = false, show
             role="menu"
             aria-label="Account menu"
             className={`${styles.accountMenu} ${mobile ? styles.accountMenuMobile : ""}`}
+            onKeyDown={handleMenuKeyDown}
           >
             <div className={styles.accountIdentity}>
               <AccountAvatar identity={identity} menu />
@@ -162,7 +200,7 @@ export function AccountControl({ identity, mobile = false, compact = false, show
               </div>
             </div>
             <nav>
-              <AppLink role="menuitem" to="/billing" className={styles.menuItem} onClick={() => setOpen(false)}>Billing</AppLink>
+              <AppLink role="menuitem" to="/billing" className={styles.menuItem} onClick={() => setOpen(false)}>Billing and usage</AppLink>
               <AppLink role="menuitem" to="/settings" className={styles.menuItem} onClick={() => setOpen(false)}>Settings</AppLink>
               <AppLink role="menuitem" to="/support" className={styles.menuItem} onClick={() => setOpen(false)}>
                 <span>Support</span><UnreadCount count={identity.supportUnreadCount} />

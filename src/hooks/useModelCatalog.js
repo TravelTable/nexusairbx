@@ -144,7 +144,7 @@ function readStoredCache() {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed?.models) || !parsed.models.length) return null;
-    return { models: parsed.models, fetchedAt: Number(parsed.fetchedAt) || 0 };
+    return { models: parsed.models, fetchedAt: Number(parsed.fetchedAt) || 0, source: "storage", error: null };
   } catch (_) {
     return null;
   }
@@ -189,13 +189,18 @@ async function loadCatalog({ force = false } = {}) {
   inFlight = (async () => {
     try {
       const models = await fetchCatalog();
-      moduleCache = { models, fetchedAt: Date.now() };
+      moduleCache = { models, fetchedAt: Date.now(), source: "remote", error: null };
       writeStoredCache(moduleCache);
       return models;
-    } catch (_) {
-      if (moduleCache?.models?.length) return moduleCache.models;
-      moduleCache = { models: FALLBACK_MODELS, fetchedAt: 0 };
-      return FALLBACK_MODELS;
+    } catch (error) {
+      const models = moduleCache?.models?.length ? moduleCache.models : FALLBACK_MODELS;
+      moduleCache = {
+        models,
+        fetchedAt: moduleCache?.fetchedAt || 0,
+        source: moduleCache?.models?.length ? "stale-cache" : "fallback",
+        error,
+      };
+      return models;
     } finally {
       inFlight = null;
     }
@@ -215,7 +220,7 @@ export function useModelCatalog() {
     try {
       const list = await loadCatalog({ force: true });
       setModels(list);
-      setError(null);
+      setError(moduleCache?.error || null);
       return list;
     } catch (err) {
       setError(err);
@@ -242,7 +247,7 @@ export function useModelCatalog() {
         setModels(list);
         setLoading(false);
         setRefreshing(false);
-        setError(null);
+        setError(moduleCache?.error || null);
       })
       .catch((err) => {
         if (!active) return;
@@ -256,7 +261,7 @@ export function useModelCatalog() {
     };
   }, []);
 
-  return { models, loading, refreshing, error, refresh };
+  return { models, loading, refreshing, error, refresh, source: moduleCache?.source || "loading" };
 }
 
 export default useModelCatalog;

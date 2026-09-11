@@ -104,7 +104,7 @@ class DesktopController {
     if (this.#workspaceMode) {
       const saved = await this.#store.load();
       if (!saved) this.setSignInState();
-      else this.patchSnapshot({ state: "stopped", message: "Open your desktop workspace to continue. History is available offline." });
+      else this.patchSnapshot({ state: "stopped", message: "Open the legacy local workspace to continue. History is available offline." });
       return this.state;
     }
     this.clearReconnectTimer();
@@ -131,7 +131,7 @@ class DesktopController {
       });
       if (this.#workspaceMode) {
         await this.#store.save(session); this.#backend = backend;
-        this.patchSnapshot({ state: "stopped", message: "Signed in. Open your desktop workspace to continue.", cloudHealth: "connected", connectionStage: null });
+        this.patchSnapshot({ state: "stopped", message: "Signed in. Open the legacy local workspace to continue.", cloudHealth: "connected", connectionStage: null });
       } else await this.startSession(session, backend, logger);
     } catch (error) {
       await backend.revokeCurrentSession().catch(() => undefined);
@@ -191,6 +191,16 @@ class DesktopController {
     await this.#preferenceStore.save(this.#preferences);
     connectorUpdater?.setAutomaticUpdates(this.#preferences.automaticUpdates);
     this.patchSnapshot({ autoStart: this.#preferences.autoStart, preferences: { ...this.#preferences } });
+    if (update.key === "workspaceEnabled") {
+      await workspaceHost?.close();
+      this.#workspaceMode = normalizedValue === true;
+      if (this.#workspaceMode) {
+        await this.stop(false);
+        this.patchSnapshot({ state: "stopped", message: "Advanced compatibility workspace enabled. Open it from the Connector to continue; normal Connector polling is paused.", cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected", connectionStage: null });
+      } else {
+        await this.retry();
+      }
+    }
     if (update.key === "reconnectDelayMs" || (update.key === "autoReconnect" && normalizedValue === true)) void this.retry();
     return this.state;
   }
@@ -247,7 +257,7 @@ class DesktopController {
         this.#workspaceMode = true;
         this.#preferences = { ...this.#preferences, workspaceEnabled: true };
         await this.#preferenceStore.save(this.#preferences);
-        this.patchSnapshot({ state: "stopped", message: "Desktop workspace owns the local Studio connection. Cloud command polling is paused.", cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected" });
+        this.patchSnapshot({ state: "stopped", message: "The legacy local workspace owns this Studio connection. Normal Connector polling is paused.", cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected" });
       }
       await workspaceHost.start(saved.userId);
       mainWindow?.setResizable(true); mainWindow?.setMinimumSize(800, 600); mainWindow?.setSize(1180, 800);

@@ -85,7 +85,7 @@ function looksLikeInfrastructureQuotaError(input) {
 }
 
 export function formatUserFacingError(input) {
-  if (!input) return "Something went wrong. Please try again.";
+  if (!input) return "Nexus could not complete this request. Try again; your existing work is unchanged.";
   if (looksLikeStudioConnectionError(input)) return STUDIO_CONNECTION_MESSAGE;
   if (typeof input === "string") {
     if (WORKSPACE_CONFLICT_ERROR_MESSAGES[input]) {

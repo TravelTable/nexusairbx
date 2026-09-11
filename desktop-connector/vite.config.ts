@@ -1,7 +1,12 @@
 import { readFile, readdir } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import { defineConfig, type Plugin, transformWithEsbuild } from "vite";
 import react from "@vitejs/plugin-react";
 import { resolve } from "node:path";
+
+const connectorVersion = JSON.parse(
+  readFileSync(new URL("./package.json", import.meta.url), "utf8"),
+).version as string;
 
 function officialLogo(): Plugin {
   const logoPath = resolve(import.meta.dirname, "../public/logo.png");
@@ -56,7 +61,10 @@ export default defineConfig({
       }
     } },
   ],
-  define: { "process.env": JSON.stringify({ NODE_ENV: "production", PUBLIC_URL: ".", REACT_APP_DESKTOP: "true" }) },
+  define: {
+    "process.env": JSON.stringify({ NODE_ENV: "production", PUBLIC_URL: ".", REACT_APP_DESKTOP: "true" }),
+    __NEXUS_CONNECTOR_VERSION__: JSON.stringify(connectorVersion),
+  },
   resolve: {
     dedupe: ["react", "react-dom"],
     alias: [

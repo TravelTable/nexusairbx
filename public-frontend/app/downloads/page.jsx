@@ -5,8 +5,8 @@ import PublicHeader from "../../components/PublicHeader";
 import styles from "../../components/PublicEditorial.module.css";
 
 export const metadata = buildPublicMetadata({
-  title: "Download NexusRBX Connector for macOS and Windows",
-  description: "Download the NexusRBX Connector for macOS (Developer ID signed and notarized) or Windows 10 and 11 (currently unsigned).",
+  title: "Connect NexusRBX to Roblox Studio | Plugin and Connector",
+  description: "Install the recommended NexusRBX Studio Plugin, or download NexusRBX Connector for advanced local Studio MCP workflows on macOS and Windows.",
   path: "/downloads",
 });
 

@@ -1,4 +1,56 @@
 .page {
+  /*
+   * Protected homepage compatibility boundary.
+   * Keep these values local so future shared-token migrations can update the
+   * product without restyling the approved homepage body. The shared header is
+   * rendered outside this element and intentionally does not inherit them.
+   */
+  --nx-canvas: #0a0a0a;
+  --nx-card: #171717;
+  --nx-muted-surface: #262626;
+  --nx-raised-surface: #303030;
+  --nx-text: #fafafa;
+  --nx-text-secondary: #d4d4d4;
+  --nx-text-muted: #a1a1a1;
+  --nx-text-disabled: #737373;
+  --nx-purple: #b45cff;
+  --nx-purple-strong: #c77dff;
+  --nx-purple-muted: #9333ea;
+  --nx-purple-rgb: 180, 92, 255;
+  --nx-purple-soft: rgb(180 92 255 / 12%);
+  --nx-purple-border: rgb(180 92 255 / 34%);
+  --nx-purple-wash: rgb(180 92 255 / 10%);
+  --nx-rule: rgb(255 255 255 / 10%);
+  --nx-rule-quiet: rgb(255 255 255 / 7%);
+  --nx-rule-strong: rgb(255 255 255 / 18%);
+  --nx-success: #86efac;
+  --nx-danger: #fda4af;
+  --nx-focus-ring: rgb(180 92 255 / 45%);
+  --nx-space-1: 4px;
+  --nx-space-3: 12px;
+  --nx-space-4: 16px;
+  --nx-space-5: 20px;
+  --nx-radius-control: 10px;
+  --nx-radius-panel: 14px;
+  --nx-radius-card: 18px;
+  --nx-radius-overlay: 20px;
+  --nx-radius-feature: 24px;
+  --nx-radius-pill: 999px;
+  --nx-header-height: 48px;
+  --nx-header-height-touch: 52px;
+  --nx-control-height: 36px;
+  --nx-touch-target: 44px;
+  --nx-content-compact: 1160px;
+  --nx-font-display: "DM Sans Variable", "DM Sans", system-ui, sans-serif;
+  --nx-font-body: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --nx-motion-color: 150ms;
+  --nx-motion-elevation: 200ms;
+  --nx-motion-spatial: 280ms;
+  --nx-shadow-control: inset 0 1px 0 rgb(255 255 255 / 8%), 0 1px 2px rgb(0 0 0 / 38%), 0 3px 9px rgb(0 0 0 / 16%);
+  --nx-shadow-card: inset 0 1px 0 rgb(255 255 255 / 6%), 0 1px 2px rgb(0 0 0 / 48%), 0 9px 26px rgb(0 0 0 / 25%);
+  --nx-shadow-floating: inset 0 1px 0 rgb(255 255 255 / 8%), 0 2px 4px rgb(0 0 0 / 50%), 0 18px 54px rgb(0 0 0 / 44%);
+  --nx-purple-glow: 0 0 36px rgb(180 92 255 / 16%);
+
   min-width: 320px;
   min-height: 100dvh;
   overflow-x: clip;

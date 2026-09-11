@@ -215,7 +215,7 @@ export const searchLandingPages = [
     toolLinks: [
       { href: "/roblox-script-generator", label: "General script generator" },
       { href: "/roblox-ai-scripter", label: "AI debugging help" },
-      { href: "/ai", label: "Open workspace" },
+      { href: "/ai", label: "Open Nexus Workspace" },
     ],
   },
   {

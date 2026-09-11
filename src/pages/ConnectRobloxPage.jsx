@@ -13,8 +13,8 @@ import { robloxSetupErrorMessage } from "../lib/robloxAuthorizationMessages";
 
 const CAPABILITY_COPY = [
   "Confirm your Roblox identity",
-  "Read and upload Roblox assets",
-  "Search the Creator Store",
+  "Read asset details and search the Creator Store",
+  "Upload an asset only when you request or approve it",
 ];
 
 export default function ConnectRobloxPage() {
@@ -142,7 +142,7 @@ export default function ConnectRobloxPage() {
   return (
     <NexusAuthShell
       title="Connect your Roblox account"
-      description="One last step: connect Roblox to finish setting up NexusRBX. You’ll review and approve access on Roblox, then return here."
+      description="Connect Roblox when a Nexus workflow needs your identity or assets. You’ll review the exact access on Roblox before returning here."
     >
       <div className="grid gap-5">
         <ol className="grid grid-cols-3 gap-2" aria-label="Account setup progress">
@@ -175,7 +175,7 @@ export default function ConnectRobloxPage() {
             ))}
           </ul>
           <p className="mt-3 text-xs leading-5 text-[var(--ds-text-muted)]">
-            NexusRBX stores the connection securely. Roblox will show the exact permissions before you approve them.
+            This account connection does not publish your experience or modify the place open in Studio. Studio changes use the separate NexusRBX Studio Plugin flow, with review and recovery controls. You can disconnect Roblox later in Settings.
           </p>
         </div>
 

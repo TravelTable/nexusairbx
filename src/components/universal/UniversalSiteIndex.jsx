@@ -161,7 +161,7 @@ export default function UniversalSiteIndex({
               <strong>{featuredItem.label}</strong>
               <span>{featuredItem.description}</span>
             </span>
-            <span className={styles.featuredAction}>Open workspace <ArrowUpRight aria-hidden="true" size={16} /></span>
+            <span className={styles.featuredAction}>Open Nexus Workspace <ArrowUpRight aria-hidden="true" size={16} /></span>
           </>,
         ) : null}
         <div className={styles.indexSections} aria-live="polite">

@@ -17,6 +17,7 @@ import {
 } from "../../ai-elements/chain-of-thought";
 import { Shimmer } from "../../ai-elements/shimmer";
 import StudioRunBlockNotice from "../workspace/StudioRunBlockNotice";
+import { getLifecyclePresentationFromText } from "../../../lib/productLifecycle";
 
 function cleanText(value = "") {
   return String(value || "").replace(/<\/?(thinking|progress)>/gi, "").trim();
@@ -25,6 +26,32 @@ function cleanText(value = "") {
 function codeTail(value = "", maxLines = 18) {
   const lines = String(value || "").split(/\r?\n/);
   return lines.slice(Math.max(0, lines.length - maxLines)).join("\n");
+}
+
+const TOOL_LABELS = Object.freeze({
+  get_project_manifest: "Reading project structure",
+  search_project: "Searching the project",
+  read_script: "Reading script",
+  create_script: "Creating script",
+  edit_script: "Editing script",
+  delete_script: "Removing script",
+  create_instance: "Creating Studio object",
+  update_instance: "Updating Studio object",
+  delete_instance: "Removing Studio object",
+  apply_change_set: "Applying change set",
+  create_snapshot: "Creating recovery snapshot",
+  restore_snapshot: "Restoring snapshot",
+  run_test: "Testing in Studio",
+  verify_change: "Verifying Studio change",
+});
+
+function humanizeToolName(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (!normalized) return "Working on the project";
+  if (TOOL_LABELS[normalized]) return TOOL_LABELS[normalized];
+  return normalized
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function synthesizeActivity(streamState = {}, pendingMessage = {}) {
@@ -51,7 +78,7 @@ function synthesizeActivity(streamState = {}, pendingMessage = {}) {
     out.push({
       id: `tool-${step.id || step.type}`,
       type: "tool_step",
-      text: step.label || step.type,
+      text: step.label || humanizeToolName(step.type),
       status: step.status,
       stepType: step.type,
       path: step.result?.path || "",
@@ -103,10 +130,21 @@ function stepIconFor(item, motionStatus) {
 function stepDescription(item) {
   const parts = [];
   if (item.path) parts.push(item.path);
-  if (item.type === "tool_step" && item.stepType) {
-    parts.push(item.status ? `${item.stepType} / ${item.status}` : item.stepType);
-  }
+  if (item.type === "tool_step") parts.push({
+    active: "In progress",
+    complete: "Complete",
+    error: "Failed",
+    waiting: "Needs review",
+    pending: "Queued",
+  }[activityMotionStatus(item)] || "Status available");
   return parts.join(" · ") || undefined;
+}
+
+function activityLabel(item) {
+  const label = cleanText(item.text);
+  if (item.type !== "tool_step") return label || item.status || "Working on the project";
+  if (!label || label === item.stepType || label.includes("_")) return humanizeToolName(item.stepType || label);
+  return label;
 }
 
 export default function LiveWorkStream({
@@ -155,7 +193,7 @@ export default function LiveWorkStream({
         : "Stream interrupted — reconnecting..."
     : backendStage || "Working...";
 
-  const headerLabel = status;
+  const headerLabel = getLifecyclePresentationFromText(status).label;
 
   return (
     <div className="w-full py-1" data-testid="live-work-stream">
@@ -196,7 +234,7 @@ export default function LiveWorkStream({
                 <ChainOfThoughtStep
                   key={item.id}
                   icon={Icon}
-                  label={cleanText(item.text) || item.status || "Working..."}
+                  label={activityLabel(item)}
                   description={stepDescription(item)}
                   status={motionStatus}
                   motionStatus={motionStatus}
@@ -217,6 +255,18 @@ export default function LiveWorkStream({
                       )}
                       Approve step
                     </button>
+                  ) : null}
+                  {step?.type ? (
+                    <details className="mt-1.5 text-[10px] text-[var(--ds-text-muted)]">
+                      <summary className="w-fit cursor-pointer rounded-sm underline decoration-[var(--ds-border-strong)] underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)]">
+                        Technical details
+                      </summary>
+                      <dl className="mt-1.5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-1 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-2 font-mono">
+                        <dt>Operation</dt><dd className="break-all text-[var(--ds-text-secondary)]">{step.type}</dd>
+                        <dt>Status</dt><dd className="break-all text-[var(--ds-text-secondary)]">{step.status || "unknown"}</dd>
+                        {step.id ? <><dt>ID</dt><dd className="break-all text-[var(--ds-text-secondary)]">{step.id}</dd></> : null}
+                      </dl>
+                    </details>
                   ) : null}
                   {isCode && item.code ? (
                     <pre className="mt-1 max-h-52 overflow-auto rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-hover)] p-3 text-[11px] leading-relaxed text-[var(--ds-text-secondary)] whitespace-pre">

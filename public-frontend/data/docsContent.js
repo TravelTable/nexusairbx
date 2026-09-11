@@ -95,14 +95,14 @@ export const DOC_PAGES = [
     "path": "/docs",
     "navTitle": "Overview",
     "title": "Take your Roblox idea to Play mode",
-    "metaTitle": "NexusRBX AI Documentation | NexusRBX AI Docs",
+    "metaTitle": "NexusRBX Documentation | NexusRBX Docs",
     "description": "Describe your game idea, approve a plan, build systems, UI, and assets, review Studio changes, and verify each result in Play mode.",
     "category": "start",
     "updated": DOC_UPDATED,
     "readingTime": "3 min read",
     "status": "Start here",
     "primaryAction": {
-      "label": "Open NexusRBX AI",
+      "label": "Open Nexus Workspace",
       "href": "/ai"
     },
     "secondaryAction": {
@@ -155,7 +155,7 @@ export const DOC_PAGES = [
               },
               {
                 "title": "Plan a feature",
-                "body": "Move from a focused request to a reviewable Studio workflow with clear checkpoints.",
+                "body": "Move from a focused request to a reviewable Studio workflow with clear Snapshots and recovery points.",
                 "href": "/docs/basic-workflow"
               },
               {
@@ -213,15 +213,15 @@ export const DOC_PAGES = [
     "slug": "installation",
     "path": "/docs/installation",
     "navTitle": "Installation",
-    "title": "Install NexusRBX AI",
-    "metaTitle": "Install NexusRBX AI | NexusRBX AI Docs",
-    "description": "Install NexusRBX AI from the Creator Store or from the generated local plugin artifact, then open it inside Roblox Studio.",
+    "title": "Install the NexusRBX Studio Plugin",
+    "metaTitle": "Install the NexusRBX Studio Plugin | NexusRBX Docs",
+    "description": "Install the NexusRBX Studio Plugin from the Creator Store or the generated local plugin artifact, then open it inside Roblox Studio.",
     "category": "start",
     "updated": DOC_UPDATED,
     "readingTime": "3 min read",
     "status": "Setup guide",
     "primaryAction": {
-      "label": "Open NexusRBX AI",
+      "label": "Open Nexus Workspace",
       "href": "/ai"
     },
     "secondaryAction": {
@@ -235,7 +235,7 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "This page explains how to install NexusRBX AI from the Roblox Creator Store and open it inside Roblox Studio."
+            "text": "This page explains how to install NexusRBX from the Roblox Creator Store and open it inside Roblox Studio."
           }
         ]
       },
@@ -270,7 +270,7 @@ export const DOC_PAGES = [
             "items": [
               "Roblox Studio installed.",
               "A Roblox account.",
-              "Access to the NexusRBX AI Creator Store listing.",
+              "Access to the NexusRBX Studio Plugin Creator Store listing.",
               "Permission to install plugins in Roblox Studio."
             ]
           }
@@ -284,8 +284,8 @@ export const DOC_PAGES = [
             "type": "cards",
             "items": [
               {
-                "title": "Official NexusRBX AI plugin",
-                "body": "Open the verified NexusRBX AI listing in the Roblox Creator Store.",
+                "title": "Official NexusRBX Studio Plugin",
+                "body": "Open the verified NexusRBX Studio Plugin listing in the Roblox Creator Store.",
                 "href": "https://create.roblox.com/store/asset/83865885181263/NexusRBX-Ai"
               }
             ]
@@ -295,15 +295,15 @@ export const DOC_PAGES = [
             "items": [
               {
                 "title": "Open the Roblox Creator Store",
-                "body": "Use the official NexusRBX AI listing linked above."
+                "body": "Use the official NexusRBX Studio Plugin listing linked above."
               },
               {
-                "title": "Search for NexusRBX AI if you are not using a direct link",
-                "body": "Search for NexusRBX AI if you are not using a direct link."
+                "title": "Search for NexusRBX if you are not using a direct link",
+                "body": "Search for NexusRBX if you are not using a direct link."
               },
               {
-                "title": "Open the NexusRBX AI plugin listing",
-                "body": "Open the NexusRBX AI plugin listing."
+                "title": "Open the NexusRBX Studio Plugin listing",
+                "body": "Open the NexusRBX Studio Plugin listing."
               },
               {
                 "title": "Click the install, get, or add button shown by Roblox",
@@ -337,8 +337,8 @@ export const DOC_PAGES = [
                 "body": "Select the Plugins tab."
               },
               {
-                "title": "Look for NexusRBX AI",
-                "body": "Look for NexusRBX AI."
+                "title": "Look for NexusRBX Studio Plugin",
+                "body": "Look for NexusRBX Studio Plugin."
               },
               {
                 "title": "Click the plugin button to open it",
@@ -373,7 +373,7 @@ export const DOC_PAGES = [
               ],
               [
                 "Plugin disabled",
-                "Open Studio plugin management and confirm NexusRBX AI is enabled."
+                "Open Studio plugin management and confirm NexusRBX is enabled."
               ],
               [
                 "Installation did not complete",
@@ -398,14 +398,14 @@ export const DOC_PAGES = [
     "path": "/docs/getting-started",
     "navTitle": "First-Time Setup",
     "title": "First-Time Setup",
-    "metaTitle": "First-Time Setup | NexusRBX AI Docs",
-    "description": "Open NexusRBX AI for the first time, sign in, pair Studio when needed, and run a safe setup test.",
+    "metaTitle": "First-Time Setup | NexusRBX Docs",
+    "description": "Open the NexusRBX Studio Plugin for the first time, sign in, connect Studio when needed, and run a safe setup test.",
     "category": "start",
     "updated": DOC_UPDATED,
     "readingTime": "3 min read",
     "status": "Beginner guide",
     "primaryAction": {
-      "label": "Open NexusRBX AI",
+      "label": "Open Nexus Workspace",
       "href": "/ai"
     },
     "secondaryAction": {
@@ -419,13 +419,13 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "This page explains what to do the first time you open NexusRBX AI in Roblox Studio."
+            "text": "This page explains what to do the first time you open the NexusRBX Studio Plugin in Roblox Studio."
           }
         ]
       },
       {
         "id": "open-nexusrbx-ai",
-        "title": "Open NexusRBX AI",
+        "title": "Open the NexusRBX Studio Plugin",
         "blocks": [
           {
             "type": "steps",
@@ -443,8 +443,8 @@ export const DOC_PAGES = [
                 "body": "Go to the Plugins tab."
               },
               {
-                "title": "Click NexusRBX AI",
-                "body": "Click NexusRBX AI."
+                "title": "Open NexusRBX Studio Plugin",
+                "body": "Open NexusRBX Studio Plugin."
               },
               {
                 "title": "Wait for the plugin panel or window to load",
@@ -464,7 +464,7 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "NexusRBX AI may require a NexusRBX account before generation, Studio connection, or saved history works."
+            "text": "NexusRBX may require a NexusRBX account before generation, Studio connection, or saved history works."
           },
           {
             "type": "paragraph",
@@ -473,7 +473,7 @@ export const DOC_PAGES = [
           {
             "type": "list",
             "items": [
-              "Sign-in method: sign in through the NexusRBX AI workspace",
+              "Sign-in method: sign in through the Nexus Workspace",
               "Web app URL: /ai",
               "Account connection requirement: A NexusRBX account is required for authenticated AI workspace features and Studio pairing."
             ]
@@ -490,7 +490,7 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "If NexusRBX AI uses a web pairing flow, follow the on-screen steps:"
+            "text": "If the NexusRBX Studio Plugin opens a web connection flow, follow the on-screen steps:"
           },
           {
             "type": "steps",
@@ -557,7 +557,7 @@ export const DOC_PAGES = [
           {
             "type": "code",
             "language": "text",
-            "code": "Create a beginner-friendly ServerScript for ServerScriptService that prints \"NexusRBX AI setup test\" when the game starts. Include where to put it and how to check the Output window."
+            "code": "Create a beginner-friendly ServerScript for ServerScriptService that prints \"NexusRBX setup test\" when the game starts. Include where to put it and how to check the Output window."
           },
           {
             "type": "paragraph",
@@ -571,15 +571,15 @@ export const DOC_PAGES = [
     "slug": "studio-plugin",
     "path": "/docs/studio-plugin",
     "navTitle": "Studio Plugin",
-    "title": "Connect NexusRBX AI to Roblox Studio",
-    "metaTitle": "Connect NexusRBX AI to Roblox Studio | NexusRBX AI Docs",
-    "description": "Connect NexusRBX AI to Roblox Studio with the recommended plugin or the advanced local MCP connector.",
+    "title": "Connect NexusRBX to Roblox Studio",
+    "metaTitle": "Connect NexusRBX to Roblox Studio | NexusRBX Docs",
+    "description": "Connect Nexus Workspace to Roblox Studio with the recommended NexusRBX Studio Plugin or NexusRBX Connector for advanced local Studio MCP workflows.",
     "category": "studio-workflow",
     "updated": DOC_UPDATED,
     "readingTime": "4 min read",
     "status": "Studio guide",
     "primaryAction": {
-      "label": "Open NexusRBX AI",
+      "label": "Open Nexus Workspace",
       "href": "/ai"
     },
     "secondaryAction": {
@@ -593,7 +593,7 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "Choose the NexusRBX Studio plugin for the recommended setup. Advanced users can optionally run the local Roblox Studio MCP connector; neither connection depends on the other."
+            "text": "Choose the NexusRBX Studio Plugin for the recommended setup. Advanced users can optionally run NexusRBX Connector for local Studio MCP workflows; neither connection depends on the other."
           }
         ]
       },
@@ -610,13 +610,13 @@ export const DOC_PAGES = [
             ],
             "rows": [
               [
-                "NexusRBX Studio plugin — recommended",
+                "NexusRBX Studio Plugin — recommended",
                 "Beginners and complete NexusRBX workflows",
                 "Supports pairing, reviewed actions, snapshots, artifacts, native models, trusted insertions, and validation."
               ],
               [
-                "Roblox Studio MCP — advanced",
-                "Developers who want a local external connector",
+                "NexusRBX Connector / Studio MCP — advanced",
+                "Developers who want an advanced local connection",
                 "Supports only commands that the installed Studio MCP server exposes with a known safe schema."
               ]
             ]
@@ -625,7 +625,7 @@ export const DOC_PAGES = [
             "type": "callout",
             "tone": "info",
             "title": "Both can be connected",
-            "text": "The plugin and MCP connector can run together. NexusRBX keeps them as separate sessions and prefers the plugin when no connection is explicitly selected."
+            "text": "The NexusRBX Studio Plugin and NexusRBX Connector can run together. NexusRBX keeps them as separate sessions and prefers the Plugin when no connection is explicitly selected."
           }
         ]
       },
@@ -635,7 +635,7 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "The local connector runs on the same computer as Roblox Studio. It connects outward to NexusRBX and launches Studio's local MCP server; your browser never connects directly to that local process."
+            "text": "NexusRBX Connector runs on the same computer as Roblox Studio. It connects outward to NexusRBX and launches Studio's local MCP server; your browser never connects directly to that local process."
           },
           {
             "type": "steps",
@@ -646,11 +646,11 @@ export const DOC_PAGES = [
               },
               {
                 "title": "Create a pairing code",
-                "body": "In NexusRBX AI, open Connect Roblox Studio, choose Advanced, then Roblox Studio MCP, and create a short-lived code."
+                "body": "In Nexus Workspace, open Roblox and Studio, choose Advanced, then Studio MCP, and create a short-lived code."
               },
               {
                 "title": "Run the local connector",
-                "body": "Start the NexusRBX Local Connector on the same computer, enter the code when prompted, and keep the terminal open. Never paste the connector token into chat or logs."
+                "body": "Start NexusRBX Connector on the same computer, enter the code when prompted, and keep it running. Never paste the connection token into chat or logs."
               },
               {
                 "title": "Check both status lines",
@@ -711,7 +711,7 @@ export const DOC_PAGES = [
             "type": "callout",
             "tone": "warning",
             "title": "Review remains required",
-            "text": "Studio connection gives NexusRBX AI useful context, but generated changes still need user review, project-specific testing, and careful handling of rewards, purchases, data, and RemoteEvents."
+            "text": "Studio connection gives NexusRBX useful context, but generated changes still need user review, project-specific testing, and careful handling of rewards, purchases, data, and RemoteEvents."
           }
         ]
       },
@@ -721,11 +721,11 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "Some NexusRBX AI workflows may need to know basic Studio context, such as where a script should go or whether Studio is ready for insertion. Connection helps the plugin support Studio-ready workflows while still requiring user review."
+            "text": "Some NexusRBX workflows may need to know basic Studio context, such as where a script should go or whether Studio is ready for insertion. Connection helps the plugin support Studio-ready workflows while still requiring user review."
           },
           {
             "type": "paragraph",
-            "text": "Exact connection behavior depends on the current NexusRBX AI implementation:"
+            "text": "Exact connection behavior depends on the current NexusRBX implementation:"
           },
           {
             "type": "list",
@@ -753,8 +753,8 @@ export const DOC_PAGES = [
                 "body": "Open the place you want to work on."
               },
               {
-                "title": "Open NexusRBX AI from the Plugins tab",
-                "body": "Open NexusRBX AI from the Plugins tab."
+                "title": "Open NexusRBX Studio Plugin from the Plugins tab",
+                "body": "Open NexusRBX Studio Plugin from the Plugins tab."
               },
               {
                 "title": "Sign in or connect your account if prompted",
@@ -794,7 +794,7 @@ export const DOC_PAGES = [
               "The target script location.",
               "The script type.",
               "The object names referenced by the code.",
-              "Any warnings shown by NexusRBX AI.",
+              "Any warnings shown by NexusRBX.",
               "Whether the change affects important systems."
             ]
           }
@@ -919,14 +919,14 @@ export const DOC_PAGES = [
     "path": "/docs/basic-workflow",
     "navTitle": "Basic Workflow",
     "title": "Basic Workflow",
-    "metaTitle": "Basic Workflow | NexusRBX AI Docs",
-    "description": "Follow the normal prompt, review, insert, test, and follow-up loop for NexusRBX AI scripting help.",
+    "metaTitle": "Basic Workflow | NexusRBX Docs",
+    "description": "Follow the normal prompt, review, insert, test, and follow-up loop for NexusRBX scripting help.",
     "category": "studio-workflow",
     "updated": DOC_UPDATED,
     "readingTime": "3 min read",
     "status": "Workflow guide",
     "primaryAction": {
-      "label": "Open NexusRBX AI",
+      "label": "Open Nexus Workspace",
       "href": "/ai"
     },
     "secondaryAction": {
@@ -940,7 +940,7 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "This page explains the normal NexusRBX AI workflow from prompt to tested script."
+            "text": "This page explains the normal NexusRBX workflow from prompt to tested script."
           }
         ]
       },
@@ -952,7 +952,7 @@ export const DOC_PAGES = [
             "type": "list",
             "items": [
               "Open Roblox Studio.",
-              "Open NexusRBX AI.",
+              "Open Nexus Workspace.",
               "Describe what you want to build.",
               "Include where the script will go.",
               "Generate a Luau starting point.",
@@ -1014,7 +1014,7 @@ export const DOC_PAGES = [
           },
           {
             "type": "paragraph",
-            "text": "If an error appears, copy the exact error text and ask NexusRBX AI to explain it."
+            "text": "If an error appears, copy the exact error text and ask NexusRBX to explain it."
           }
         ]
       },
@@ -1085,14 +1085,14 @@ export const DOC_PAGES = [
     "path": "/docs/reviewing-and-inserting-generated-code",
     "navTitle": "Review & Insert",
     "title": "Reviewing and Inserting Generated Code",
-    "metaTitle": "Reviewing and Inserting Generated Code | NexusRBX AI Docs",
+    "metaTitle": "Reviewing and Inserting Generated Code | NexusRBX Docs",
     "description": "Check generated Luau, object names, script placement, and test behavior before applying code to a Roblox project.",
     "category": "studio-workflow",
     "updated": DOC_UPDATED,
     "readingTime": "3 min read",
     "status": "Safety guide",
     "primaryAction": {
-      "label": "Open NexusRBX AI",
+      "label": "Open Nexus Workspace",
       "href": "/ai"
     },
     "secondaryAction": {
@@ -1116,7 +1116,7 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "NexusRBX AI can generate a starting point, but your Roblox game has its own object names, folder structure, scripts, and gameplay rules."
+            "text": "NexusRBX can generate a starting point, but your Roblox game has its own object names, folder structure, scripts, and gameplay rules."
           },
           {
             "type": "paragraph",
@@ -1226,8 +1226,8 @@ export const DOC_PAGES = [
                 "body": "Test with multiple players if the script affects multiplayer behavior."
               },
               {
-                "title": "Ask NexusRBX AI for a fix if something fails",
-                "body": "Ask NexusRBX AI for a fix if something fails."
+                "title": "Ask NexusRBX for a fix if something fails",
+                "body": "Ask NexusRBX for a fix if something fails."
               }
             ]
           }
@@ -1254,7 +1254,7 @@ export const DOC_PAGES = [
           },
           {
             "type": "paragraph",
-            "text": "For these systems, ask NexusRBX AI to explain security risks and testing steps before using the code."
+            "text": "For these systems, ask NexusRBX to explain security risks and testing steps before using the code."
           }
         ]
       }
@@ -1265,7 +1265,7 @@ export const DOC_PAGES = [
     "path": "/docs/generating-your-first-script",
     "navTitle": "First Script",
     "title": "Generate Your First Script",
-    "metaTitle": "Generate Your First Script | NexusRBX AI Docs",
+    "metaTitle": "Generate Your First Script | NexusRBX Docs",
     "description": "Use a simple, safe first prompt to create a Roblox Luau script and test it in Studio Play mode.",
     "category": "creating",
     "updated": DOC_UPDATED,
@@ -1286,7 +1286,7 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "This page walks through a simple first script request for new NexusRBX AI users."
+            "text": "This page walks through a simple first script request for new NexusRBX users."
           }
         ]
       },
@@ -1369,7 +1369,7 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "If NexusRBX AI provides an insert button, review any confirmation screen before accepting."
+            "text": "If NexusRBX provides an insert button, review any confirmation screen before accepting."
           },
           {
             "type": "paragraph",
@@ -1449,8 +1449,8 @@ export const DOC_PAGES = [
     "path": "/docs/prompting-guide",
     "navTitle": "Prompting Guide",
     "title": "Prompting Guide",
-    "metaTitle": "Prompting Guide | NexusRBX AI Docs",
-    "description": "Write better NexusRBX AI prompts for generation, debugging, explanation, and Studio-ready Luau workflows.",
+    "metaTitle": "Prompting Guide | NexusRBX Docs",
+    "description": "Write better NexusRBX prompts for generation, debugging, explanation, and Studio-ready Luau workflows.",
     "category": "creating",
     "updated": DOC_UPDATED,
     "readingTime": "3 min read",
@@ -1599,8 +1599,8 @@ export const DOC_PAGES = [
     "path": "/docs/understanding-script-types",
     "navTitle": "Script Types",
     "title": "Understanding Script Types",
-    "metaTitle": "Understanding Script Types | NexusRBX AI Docs",
-    "description": "Choose between ServerScripts, LocalScripts, and ModuleScripts before asking NexusRBX AI to generate Roblox code.",
+    "metaTitle": "Understanding Script Types | NexusRBX Docs",
+    "description": "Choose between ServerScripts, LocalScripts, and ModuleScripts before asking NexusRBX to generate Roblox code.",
     "category": "creating",
     "updated": DOC_UPDATED,
     "readingTime": "3 min read",
@@ -1801,7 +1801,7 @@ export const DOC_PAGES = [
     "path": "/docs/common-use-cases",
     "navTitle": "Use Cases",
     "title": "Common Use Cases",
-    "metaTitle": "Common Use Cases | NexusRBX AI Docs",
+    "metaTitle": "Common Use Cases | NexusRBX Docs",
     "description": "Prompt patterns for sprint systems, leaderstats, shops, UI buttons, tools, RemoteEvents, NPCs, debugging, and feature plans.",
     "category": "creating",
     "updated": DOC_UPDATED,
@@ -2143,8 +2143,8 @@ export const DOC_PAGES = [
     "path": "/docs/debugging-guide",
     "navTitle": "Debugging Guide",
     "title": "Debugging Guide",
-    "metaTitle": "Debugging Guide | NexusRBX AI Docs",
-    "description": "Use exact Output errors, clear reproduction steps, and one-change-at-a-time testing to debug Roblox scripts with NexusRBX AI.",
+    "metaTitle": "Debugging Guide | NexusRBX Docs",
+    "description": "Use exact Output errors, clear reproduction steps, and one-change-at-a-time testing to debug Roblox scripts with NexusRBX.",
     "category": "troubleshooting",
     "updated": DOC_UPDATED,
     "readingTime": "3 min read",
@@ -2164,7 +2164,7 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "This page explains how to use NexusRBX AI to understand and fix Roblox script problems."
+            "text": "This page explains how to use NexusRBX to understand and fix Roblox script problems."
           }
         ]
       },
@@ -2317,8 +2317,8 @@ export const DOC_PAGES = [
     "path": "/docs/troubleshooting",
     "navTitle": "Troubleshooting",
     "title": "Troubleshooting",
-    "metaTitle": "Troubleshooting | NexusRBX AI Docs",
-    "description": "Fix common NexusRBX AI plugin, account, connection, generated-code, and update problems.",
+    "metaTitle": "Troubleshooting | NexusRBX Docs",
+    "description": "Fix common NexusRBX Studio Plugin, account, connection, generated-code, and update problems.",
     "category": "troubleshooting",
     "updated": DOC_UPDATED,
     "readingTime": "3 min read",
@@ -2338,7 +2338,7 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "This page lists common NexusRBX AI problems, possible causes, and practical fixes."
+            "text": "This page lists common NexusRBX problems, possible causes, and practical fixes."
           },
           {
             "type": "table",
@@ -2361,7 +2361,7 @@ export const DOC_PAGES = [
               [
                 "User cannot sign in",
                 "Account flow is incomplete or browser/plugin sign-in failed.",
-                "Confirm the sign-in method: sign in through the NexusRBX AI workspace. Retry in the plugin or web app."
+                "Confirm the sign-in method: sign in through the Nexus Workspace. Retry in the plugin or web app."
               ],
               [
                 "Studio does not connect to NexusRBX",
@@ -2371,7 +2371,7 @@ export const DOC_PAGES = [
               [
                 "Generated script has errors",
                 "Prompt missed object names, script type, or placement details.",
-                "Paste the exact Output error and ask NexusRBX AI to debug it."
+                "Paste the exact Output error and ask NexusRBX to debug it."
               ],
               [
                 "Script does not run",
@@ -2445,8 +2445,8 @@ export const DOC_PAGES = [
     "path": "/docs/safety-permissions-privacy",
     "navTitle": "Safety & Privacy",
     "title": "Safety, Permissions, and Privacy",
-    "metaTitle": "Safety, Permissions, and Privacy | NexusRBX AI Docs",
-    "description": "Understand what NexusRBX AI may inspect, how review gates work, what not to paste into prompts, and where to find privacy terms.",
+    "metaTitle": "Safety, Permissions, and Privacy | NexusRBX Docs",
+    "description": "Understand what NexusRBX may inspect, how review gates work, what not to paste into prompts, and where to find privacy terms.",
     "category": "account-safety",
     "updated": DOC_UPDATED,
     "readingTime": "3 min read",
@@ -2470,7 +2470,7 @@ export const DOC_PAGES = [
           },
           {
             "type": "paragraph",
-            "text": "NexusRBX AI is currently in beta. Generated code should be reviewed and tested before it is used in a live Roblox game."
+            "text": "NexusRBX is currently in beta. Generated code should be reviewed and tested before it is used in a live Roblox game."
           },
           {
             "type": "paragraph",
@@ -2480,7 +2480,7 @@ export const DOC_PAGES = [
       },
       {
         "id": "what-nexusrbx-ai-needs-access-to",
-        "title": "What NexusRBX AI Needs Access To",
+        "title": "What NexusRBX Needs Access To",
         "blocks": [
           {
             "type": "table",
@@ -2523,7 +2523,7 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "NexusRBX AI should clearly show when the user needs to approve generated code before it is inserted or applied."
+            "text": "NexusRBX should clearly show when the user needs to approve generated code before it is inserted or applied."
           },
           {
             "type": "paragraph",
@@ -2614,14 +2614,14 @@ export const DOC_PAGES = [
     "path": "/docs/faq",
     "navTitle": "FAQ",
     "title": "Frequently Asked Questions",
-    "metaTitle": "Frequently Asked Questions | NexusRBX AI Docs",
+    "metaTitle": "Frequently Asked Questions | NexusRBX Docs",
     "description": "Answers about planning a game, building systems, UI, and assets, reviewing Studio changes, Play-mode testing, billing, safety, and support.",
     "category": "reference",
     "updated": DOC_UPDATED,
     "readingTime": "3 min read",
     "status": "Reference",
     "primaryAction": {
-      "label": "Open NexusRBX AI",
+      "label": "Open Nexus Workspace",
       "href": "/ai"
     },
     "secondaryAction": {
@@ -2641,7 +2641,7 @@ export const DOC_PAGES = [
       },
       {
         "id": "is-nexusrbx-ai-free",
-        "title": "Is NexusRBX AI free?",
+        "title": "Is NexusRBX free?",
         "blocks": [
           {
             "type": "paragraph",
@@ -2651,27 +2651,27 @@ export const DOC_PAGES = [
       },
       {
         "id": "is-nexusrbx-ai-still-in-beta",
-        "title": "Is NexusRBX AI still in beta?",
+        "title": "Is NexusRBX still in beta?",
         "blocks": [
           {
             "type": "paragraph",
-            "text": "Yes. NexusRBX AI is currently in beta. Features, UI labels, connection steps, and generated suggestions may change."
+            "text": "Yes. NexusRBX is currently in beta. Features, UI labels, connection steps, and generated suggestions may change."
           }
         ]
       },
       {
         "id": "does-nexusrbx-ai-replace-learning-luau",
-        "title": "Does NexusRBX AI replace learning Luau?",
+        "title": "Does NexusRBX replace learning Luau?",
         "blocks": [
           {
             "type": "paragraph",
-            "text": "No. NexusRBX AI helps you generate starting points, understand scripts, and debug issues, but learning Luau is still important. You should understand and test code before publishing it."
+            "text": "No. NexusRBX helps you generate starting points, understand scripts, and debug issues, but learning Luau is still important. You should understand and test code before publishing it."
           }
         ]
       },
       {
         "id": "can-nexusrbx-ai-make-a-full-game",
-        "title": "Can NexusRBX AI make a full game?",
+        "title": "Can NexusRBX make a full game?",
         "blocks": [
           {
             "type": "paragraph",
@@ -2695,7 +2695,7 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "NexusRBX AI can help explain and generate suggestions for ServerScripts, LocalScripts, and ModuleScripts. Include the script type and placement in your prompt for better results."
+            "text": "NexusRBX can help explain and generate suggestions for ServerScripts, LocalScripts, and ModuleScripts. Include the script type and placement in your prompt for better results."
           }
         ]
       },
@@ -2721,7 +2721,7 @@ export const DOC_PAGES = [
       },
       {
         "id": "can-nexusrbx-ai-debug-my-script",
-        "title": "Can NexusRBX AI debug my script?",
+        "title": "Can NexusRBX debug my script?",
         "blocks": [
           {
             "type": "paragraph",
@@ -2774,14 +2774,14 @@ export const DOC_PAGES = [
     "path": "/docs/changelog",
     "navTitle": "Changelog",
     "title": "Release notes and compatibility",
-    "metaTitle": "Changelog and Release Notes | NexusRBX AI Docs",
+    "metaTitle": "Changelog and Release Notes | NexusRBX Docs",
     "description": "How NexusRBX documents verified product changes and how creators should re-check Studio-connected work after an update.",
     "category": "reference",
     "updated": DOC_UPDATED,
     "readingTime": "2 min read",
     "status": "Release notes",
     "primaryAction": {
-      "label": "Open NexusRBX AI",
+      "label": "Open Nexus Workspace",
       "href": "/ai"
     },
     "secondaryAction": {
@@ -2845,7 +2845,7 @@ export const DOC_PAGES = [
     "path": "/docs/support-and-bug-reports",
     "navTitle": "Support & Bug Reports",
     "title": "Support and Bug Reports",
-    "metaTitle": "Support and Bug Reports | NexusRBX AI Docs",
+    "metaTitle": "Support and Bug Reports | NexusRBX Docs",
     "description": "Send useful bug reports and feature requests with environment details, reproduction steps, expected behavior, and screenshots.",
     "category": "troubleshooting",
     "updated": DOC_UPDATED,
@@ -2866,7 +2866,7 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "This page explains how users can report bugs, request features, and get help with NexusRBX AI."
+            "text": "This page explains how users can report bugs, request features, and get help with NexusRBX."
           }
         ]
       },
@@ -2904,8 +2904,8 @@ export const DOC_PAGES = [
                 "body": "Restart Roblox Studio."
               },
               {
-                "title": "Reopen NexusRBX AI",
-                "body": "Reopen NexusRBX AI."
+                "title": "Reopen NexusRBX Studio Plugin",
+                "body": "Reopen NexusRBX Studio Plugin."
               },
               {
                 "title": "Check whether the plugin needs an update",
@@ -2950,7 +2950,7 @@ export const DOC_PAGES = [
           {
             "type": "code",
             "language": "text",
-            "code": "Roblox username: [Your username]\nPlugin version: [Plugin version]\nRoblox Studio version: [Studio version]\nWhat were you trying to do? Generate and insert a LocalScript for a shop button.\nWhat happened? The plugin showed an error after I clicked insert.\nWhat did you expect to happen? The script should be inserted into StarterGui.\nError message: [Paste exact error]\nScreenshot or video: [Attach if available]\nSteps to reproduce:\n1. Open Studio.\n2. Open NexusRBX AI.\n3. Ask for a shop button LocalScript.\n4. Click insert."
+            "code": "Roblox username: [Your username]\nPlugin version: [Plugin version]\nRoblox Studio version: [Studio version]\nWhat were you trying to do? Generate and insert a LocalScript for a shop button.\nWhat happened? The plugin showed an error after I clicked insert.\nWhat did you expect to happen? The script should be inserted into StarterGui.\nError message: [Paste exact error]\nScreenshot or video: [Attach if available]\nSteps to reproduce:\n1. Open Studio.\n2. Open NexusRBX Studio Plugin.\n3. Ask for a shop button LocalScript.\n4. Click insert."
           }
         ]
       },
@@ -3000,7 +3000,7 @@ export const DOC_PAGES = [
     "path": "/docs/script-generation",
     "navTitle": "Script Generation",
     "title": "Script Generation",
-    "description": "Use the current NexusRBX AI script-generation guides for first scripts, stronger prompts, script types, and common Luau use cases.",
+    "description": "Use the current NexusRBX script-generation guides for first scripts, stronger prompts, script types, and common Luau use cases.",
     "category": "reference",
     "status": "Compatibility guide",
     "primaryAction": {
@@ -3018,7 +3018,7 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "This page keeps the older script-generation docs URL working while pointing to the newer, more detailed NexusRBX AI guides."
+            "text": "This page keeps the older script-generation docs URL working while pointing to the newer, more detailed NexusRBX guides."
           },
           {
             "type": "cards",
@@ -3071,14 +3071,14 @@ export const DOC_PAGES = [
     ],
     "updated": DOC_UPDATED,
     "readingTime": "3 min read",
-    "metaTitle": "Script Generation | NexusRBX AI Docs"
+    "metaTitle": "Script Generation | NexusRBX Docs"
   },
   {
     "slug": "ui-generation",
     "path": "/docs/ui-generation",
     "navTitle": "UI Generation",
     "title": "Roblox UI Generation",
-    "description": "Plan ScreenGui behavior, LocalScript placement, RemoteEvent boundaries, and safe UI testing with NexusRBX AI.",
+    "description": "Plan ScreenGui behavior, LocalScript placement, RemoteEvent boundaries, and safe UI testing with NexusRBX.",
     "category": "creating",
     "status": "Compatibility guide",
     "primaryAction": {
@@ -3096,7 +3096,7 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "Use NexusRBX AI to draft ScreenGui LocalScripts, button behavior, menu toggles, shop flows, HUD updates, and RemoteEvent connections. Describe the visible UI objects and where they live before asking for code."
+            "text": "Use NexusRBX to draft ScreenGui LocalScripts, button behavior, menu toggles, shop flows, HUD updates, and RemoteEvent connections. Describe the visible UI objects and where they live before asking for code."
           },
           {
             "type": "list",
@@ -3139,18 +3139,18 @@ export const DOC_PAGES = [
     ],
     "updated": DOC_UPDATED,
     "readingTime": "3 min read",
-    "metaTitle": "Roblox UI Generation | NexusRBX AI Docs"
+    "metaTitle": "Roblox UI Generation | NexusRBX Docs"
   },
   {
     "slug": "assets",
     "path": "/docs/assets",
     "navTitle": "Assets",
     "title": "Assets and Generated Content",
-    "description": "Use NexusRBX AI output as a reviewed development aid for scripts, UI behavior, and asset-related workflow planning.",
+    "description": "Use NexusRBX output as a reviewed development aid for scripts, UI behavior, and asset-related workflow planning.",
     "category": "creating",
     "status": "Compatibility guide",
     "primaryAction": {
-      "label": "Open NexusRBX AI",
+      "label": "Open Nexus Workspace",
       "href": "/ai"
     },
     "secondaryAction": {
@@ -3164,7 +3164,7 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "For asset-adjacent tasks, use NexusRBX AI to plan folders, references, UI usage, scripts, and testing steps. Confirm generated names, IDs, permissions, and moderation-sensitive content before using anything in a live experience."
+            "text": "For asset-adjacent tasks, use NexusRBX to plan folders, references, UI usage, scripts, and testing steps. Confirm generated names, IDs, permissions, and moderation-sensitive content before using anything in a live experience."
           },
           {
             "type": "callout",
@@ -3203,14 +3203,14 @@ export const DOC_PAGES = [
     ],
     "updated": DOC_UPDATED,
     "readingTime": "3 min read",
-    "metaTitle": "Assets and Generated Content | NexusRBX AI Docs"
+    "metaTitle": "Assets and Generated Content | NexusRBX Docs"
   },
   {
     "slug": "projects",
     "path": "/docs/projects",
     "navTitle": "Projects",
     "title": "Projects and Studio Context",
-    "description": "Understand how NexusRBX AI should use targeted Studio context without sending full place source by default.",
+    "description": "Understand how NexusRBX should use targeted Studio context without sending full place source by default.",
     "category": "studio-workflow",
     "status": "Compatibility guide",
     "primaryAction": {
@@ -3228,7 +3228,7 @@ export const DOC_PAGES = [
         "blocks": [
           {
             "type": "paragraph",
-            "text": "When a Studio-connected task needs project context, NexusRBX AI should start with a project manifest, search or targeted reads, and then request only the scripts or objects needed for the task."
+            "text": "When a Studio-connected task needs project context, NexusRBX should start with a project manifest, search or targeted reads, and then request only the scripts or objects needed for the task."
           },
           {
             "type": "path",
@@ -3246,18 +3246,18 @@ export const DOC_PAGES = [
     ],
     "updated": DOC_UPDATED,
     "readingTime": "3 min read",
-    "metaTitle": "Projects and Studio Context | NexusRBX AI Docs"
+    "metaTitle": "Projects and Studio Context | NexusRBX Docs"
   },
   {
     "slug": "account",
     "path": "/docs/account",
     "navTitle": "Account",
     "title": "Account and Workspace Access",
-    "description": "Sign in to use authenticated NexusRBX AI workspace features, saved context, and Studio pairing.",
+    "description": "Sign in to use authenticated Nexus Workspace features, saved context, and Studio pairing.",
     "category": "account-safety",
     "status": "Compatibility guide",
     "primaryAction": {
-      "label": "Open NexusRBX AI",
+      "label": "Open Nexus Workspace",
       "href": "/ai"
     },
     "secondaryAction": {
@@ -3277,7 +3277,7 @@ export const DOC_PAGES = [
             "type": "list",
             "style": "checks",
             "items": [
-              "Use the sign-in flow shown in the NexusRBX AI workspace.",
+              "Use the sign-in flow shown in the Nexus Workspace.",
               "Keep Roblox, billing, and account credentials out of prompts.",
               "Use /contact for account deletion or data requests."
             ]
@@ -3287,14 +3287,14 @@ export const DOC_PAGES = [
     ],
     "updated": DOC_UPDATED,
     "readingTime": "3 min read",
-    "metaTitle": "Account and Workspace Access | NexusRBX AI Docs"
+    "metaTitle": "Account and Workspace Access | NexusRBX Docs"
   },
   {
     "slug": "api",
     "path": "/docs/api",
     "navTitle": "API & Protocol",
     "title": "Studio Bridge API and Protocol",
-    "description": "Reference the high-level Studio bridge behavior used by NexusRBX AI for manifests, targeted reads, reviewed writes, and structured errors.",
+    "description": "Reference the high-level Studio bridge behavior used by NexusRBX for manifests, targeted reads, reviewed writes, and structured errors.",
     "category": "reference",
     "status": "Compatibility guide",
     "primaryAction": {
@@ -3344,7 +3344,7 @@ export const DOC_PAGES = [
     ],
     "updated": DOC_UPDATED,
     "readingTime": "3 min read",
-    "metaTitle": "Studio Bridge API and Protocol | NexusRBX AI Docs"
+    "metaTitle": "Studio Bridge API and Protocol | NexusRBX Docs"
   }
 ];
 export const LEGAL_PAGES = [

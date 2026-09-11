@@ -15,9 +15,9 @@ function cx(...parts) {
 // --- Button -----------------------------------------------------------------
 
 const BTN_SIZES = {
-  sm: "min-h-11 px-3 text-xs gap-1.5 rounded-full md:min-h-9",
-  md: "min-h-11 px-4 text-sm gap-2 rounded-full md:min-h-9",
-  lg: "min-h-11 px-5 text-[15px] gap-2 rounded-full md:min-h-9",
+  sm: "px-3 text-xs gap-1.5",
+  md: "px-4 text-sm gap-2",
+  lg: "px-5 text-[15px] gap-2",
 };
 
 const BTN_VARIANTS = {
@@ -41,24 +41,53 @@ export const Button = React.forwardRef(function Button({
   className = "",
   children,
   type = "button",
+  loading = false,
+  loadingLabel = "Working…",
+  disabled = false,
   ...rest
 }, ref) {
   return (
     <button
       ref={ref}
       type={type}
+      data-size={size}
+      aria-busy={loading || undefined}
+      disabled={disabled || loading}
       className={cx(
-        "inline-flex items-center justify-center transition-[background-color,border-color,color,box-shadow,transform] duration-150 focus-ring disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100",
+        "nx-control inline-flex items-center justify-center rounded-[var(--nx-radius-control)] transition-[background-color,border-color,color,box-shadow,transform] duration-150 focus-ring disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100",
         BTN_SIZES[size] || BTN_SIZES.md,
         BTN_VARIANTS[variant] || BTN_VARIANTS.primary,
         className
       )}
       {...rest}
     >
-      {Icon ? <Icon className="w-4 h-4 shrink-0" /> : null}
-      {children}
-      {IconRight ? <IconRight className="w-4 h-4 shrink-0" /> : null}
+      {loading ? <span className="nx-control-spinner" aria-hidden="true" /> : Icon ? <Icon className="w-4 h-4 shrink-0" aria-hidden="true" /> : null}
+      {loading ? loadingLabel : children}
+      {!loading && IconRight ? <IconRight className="w-4 h-4 shrink-0" aria-hidden="true" /> : null}
     </button>
+  );
+});
+
+export const IconButton = React.forwardRef(function IconButton({
+  icon: Icon,
+  label,
+  size = "md",
+  variant = "ghost",
+  className = "",
+  ...rest
+}, ref) {
+  return (
+    <Button
+      ref={ref}
+      size={size}
+      variant={variant}
+      aria-label={label}
+      title={rest.title || label}
+      className={cx("aspect-square px-0", className)}
+      {...rest}
+    >
+      {Icon ? <Icon className="h-4 w-4" aria-hidden="true" /> : null}
+    </Button>
   );
 });
 
@@ -84,6 +113,19 @@ export function Panel({ className = "", children, ...rest }) {
     <div className={cx("h-full flex flex-col min-h-0 bg-[var(--ds-bg-workspace)] text-[var(--ds-text)]", className)} {...rest}>
       {children}
     </div>
+  );
+}
+
+export function PageHeader({ eyebrow, title, description, actions, className = "", titleAs: Title = "h1" }) {
+  return (
+    <header className={cx("flex flex-wrap items-end justify-between gap-4", className)}>
+      <div className="min-w-0 max-w-3xl">
+        {eyebrow ? <p className="nx-phase-label mb-2">{eyebrow}</p> : null}
+        <Title className="nx-route-heading">{title}</Title>
+        {description ? <p className="mt-3 text-sm leading-relaxed text-[var(--ds-text-secondary)]">{description}</p> : null}
+      </div>
+      {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
+    </header>
   );
 }
 
@@ -228,6 +270,19 @@ export function Input({
   );
 }
 
+export const Textarea = React.forwardRef(function Textarea({ className = "", ...rest }, ref) {
+  return (
+    <textarea
+      ref={ref}
+      className={cx(
+        "min-h-24 w-full resize-y rounded-[var(--nx-radius-control)] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] px-3 py-2.5 text-sm text-[var(--ds-text)] outline-none transition-[border-color,background-color,box-shadow] duration-150 placeholder:text-[var(--ds-text-subtle)] focus:border-[var(--ds-accent-border)] focus:bg-[var(--ds-surface-1)] focus-ring disabled:cursor-not-allowed disabled:opacity-50",
+        className,
+      )}
+      {...rest}
+    />
+  );
+});
+
 // --- Badge ------------------------------------------------------------------
 
 const BADGE_TONES = {
@@ -236,6 +291,9 @@ const BADGE_TONES = {
   muted: "bg-[var(--ds-fill-subtle)] text-[var(--ds-text-muted)] border-[var(--ds-border)]",
   info: "bg-[color-mix(in_srgb,var(--ds-info)_13%,transparent)] text-[var(--ds-info)] border-[color-mix(in_srgb,var(--ds-info)_30%,transparent)]",
   danger: "bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] text-[var(--ds-danger)] border-[color-mix(in_srgb,var(--ds-danger)_30%,transparent)]",
+  success: "bg-[var(--ds-success-soft)] text-[var(--ds-success)] border-[var(--ds-success-border)]",
+  warning: "bg-[var(--ds-warning-soft)] text-[var(--ds-warning)] border-[var(--ds-warning-border)]",
+  inProgress: "bg-[var(--ds-accent-soft)] text-[var(--ds-accent)] border-[var(--ds-accent-border)]",
 };
 
 export function Badge({ tone = "muted", className = "", children, ...rest }) {
@@ -250,6 +308,93 @@ export function Badge({ tone = "muted", className = "", children, ...rest }) {
     >
       {children}
     </span>
+  );
+}
+
+export function Status({ tone = "muted", label, description, icon: Icon, live = false, className = "" }) {
+  return (
+    <div
+      className={cx("flex min-w-0 items-start gap-2", className)}
+      role={live ? "status" : undefined}
+      aria-live={live ? "polite" : undefined}
+      aria-atomic={live ? "true" : undefined}
+    >
+      {Icon ? <Icon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> : <span className="nx-state-mark mt-1" data-state={tone} aria-hidden="true" />}
+      <span className="min-w-0">
+        <strong className="block text-sm text-[var(--ds-text)]">{label}</strong>
+        {description ? <span className="mt-0.5 block text-xs leading-relaxed text-[var(--ds-text-muted)]">{description}</span> : null}
+      </span>
+    </div>
+  );
+}
+
+const ALERT_TONES = {
+  neutral: "border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)]",
+  info: "border-[var(--ds-info-border)] bg-[var(--ds-info-soft)] text-[var(--ds-info)]",
+  success: "border-[var(--ds-success-border)] bg-[var(--ds-success-soft)] text-[var(--ds-success)]",
+  warning: "border-[var(--ds-warning-border)] bg-[var(--ds-warning-soft)] text-[var(--ds-warning)]",
+  danger: "border-[var(--ds-danger-border)] bg-[var(--ds-danger-soft)] text-[var(--ds-danger)]",
+};
+
+export function Alert({ tone = "neutral", title, children, actions, className = "" }) {
+  return (
+    <div role={tone === "danger" ? "alert" : undefined} className={cx("rounded-[var(--nx-radius-panel)] border p-3", ALERT_TONES[tone] || ALERT_TONES.neutral, className)}>
+      {title ? <strong className="block text-sm">{title}</strong> : null}
+      {children ? <div className="mt-1 text-xs leading-relaxed opacity-90">{children}</div> : null}
+      {actions ? <div className="mt-3 flex flex-wrap gap-2">{actions}</div> : null}
+    </div>
+  );
+}
+
+export function ErrorState({ title = "This could not be completed", description, actions, technicalDetails, className = "" }) {
+  return (
+    <Alert tone="danger" title={title} actions={actions} className={className}>
+      {description ? <p>{description}</p> : null}
+      {technicalDetails ? (
+        <details className="mt-2">
+          <summary className="w-fit cursor-pointer underline underline-offset-2">Technical details</summary>
+          <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded-[var(--nx-radius-control)] bg-[var(--ds-fill-hover)] p-2 text-[11px]">{technicalDetails}</pre>
+        </details>
+      ) : null}
+    </Alert>
+  );
+}
+
+export function Skeleton({ className = "", ...rest }) {
+  return <span className={cx("block animate-pulse rounded-[var(--nx-radius-control)] bg-[var(--ds-fill-hover)] motion-reduce:animate-none", className)} aria-hidden="true" {...rest} />;
+}
+
+export function FormField({ id, label, description, error, required = false, children, className = "" }) {
+  const generatedId = React.useId();
+  const controlId = id || generatedId;
+  const descriptionId = description ? `${controlId}-description` : undefined;
+  const errorId = error ? `${controlId}-error` : undefined;
+  const describedBy = [descriptionId, errorId].filter(Boolean).join(" ") || undefined;
+  const control = typeof children === "function"
+    ? children({ id: controlId, "aria-describedby": describedBy, "aria-invalid": Boolean(error) })
+    : children;
+  return (
+    <div className={cx("grid gap-1.5", className)}>
+      <label htmlFor={controlId} className="text-xs font-semibold text-[var(--ds-text-secondary)]">
+        {label}{required ? <span aria-hidden="true"> *</span> : null}
+      </label>
+      {control}
+      {description ? <p id={descriptionId} className="text-xs leading-relaxed text-[var(--ds-text-muted)]">{description}</p> : null}
+      {error ? <p id={errorId} className="text-xs leading-relaxed text-[var(--ds-danger)]" role="alert">{error}</p> : null}
+    </div>
+  );
+}
+
+export function SettingsRow({ title, description, state, control, destructive = false, className = "" }) {
+  return (
+    <div className={cx("grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-[var(--ds-border-subtle)] py-4 last:border-b-0", destructive && "text-[var(--ds-danger)]", className)}>
+      <div className="min-w-0">
+        <div className="text-sm font-semibold">{title}</div>
+        {description ? <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[var(--ds-text-muted)]">{description}</p> : null}
+        {state ? <div className="mt-1.5 text-xs text-[var(--ds-text-secondary)]">{state}</div> : null}
+      </div>
+      <div className="shrink-0">{control}</div>
+    </div>
   );
 }
 

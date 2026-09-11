@@ -21,7 +21,7 @@ test("shows one scoped truthful line and opens actions through View", () => {
   expect(container).toBeEmptyDOMElement();
 });
 test("completion requires server verification", () => {
-  expect(getCompactRunMeta({ ...scope, status: "applied" }).label).toBe("Applied · testing pending");
+  expect(getCompactRunMeta({ ...scope, status: "applied" }).label).toBe("Applied · verification pending");
   expect(getCompactRunMeta({ ...scope, status: "succeeded" }).label).toContain("unconfirmed");
   expect(getCompactRunMeta({ ...scope, status: "succeeded", completion: { canComplete: true } }).label).toBe("Build complete");
   expect(getCompactRunMeta({ ...scope, status: "running", connectionState: "reconnecting" }).label).toBe("Reconnecting to the build");

@@ -146,7 +146,7 @@ export function GuidedLaunchSetup({ roblox }) {
     setBusy(true); setError('');
     try { await operation(); }
     catch (err) {
-      setError(err.message || 'Something went wrong. Please try again.');
+      setError(err.message || 'That setup action could not be completed. Your saved idea and progress are unchanged. Try again.');
       void trackProductEvent('onboarding_connection_failed', { stage: setupStage, error_category: 'setup_action_failed' });
     } finally { busyRef.current = false; setBusy(false); }
   };
@@ -169,6 +169,17 @@ export function GuidedLaunchSetup({ roblox }) {
     const clean = new URLSearchParams(params); clean.delete('roblox'); clean.delete('message'); setParams(clean, { replace: true });
     const result = await beginRobloxOAuth({ capabilities: ROBLOX_PRODUCT_DEFAULT_CAPABILITIES, returnPath: guidedLaunchPath(returnPath) });
     if (result?.authorized) await roblox.refresh({ force: true });
+  });
+  const beginPlanning = () => act(async () => {
+    await save({ idea: idea.trim(), dismissed: false });
+    const result = await openGuidedWorkspace();
+    consumeGuidedLaunchSource(result);
+    void trackProductEvent('onboarding_value_first_workspace_opened', {
+      stage: 'plan',
+      roblox_connected: accountReady,
+      studio_connected: studioReady,
+    });
+    navigate(guidedWorkspacePath(result));
   });
   const enterWorkspace = () => act(async () => {
     const fresh = await studio.refresh({ force: true });
@@ -227,12 +238,13 @@ export function GuidedLaunchSetup({ roblox }) {
               <blockquote className="guided-launch-idea">{progress.idea}</blockquote>
               <Button className="guided-launch-primary" onClick={() => act(async () => { const resumed = await save({ dismissed: false }); consumeGuidedLaunchSource(resumed); navigate(guidedWorkspacePath(resumed)); })} disabled={busy}>Continue my creation <ArrowRight size={16} /></Button>
               <Button variant="ghost" onClick={restart} disabled={busy}>Start a new guided creation</Button>
-            </> : setupStage === 'idea' ? <form onSubmit={e => { e.preventDefault(); if (idea.trim()) next({ idea: idea.trim(), stage: 'roblox', dismissed: false }); }}>
-              <p className="guided-launch-description">A game, a mechanic, a world. Tell us what’s in your head—we’ll help you bring the first playable part to life.</p>
+            </> : setupStage === 'idea' ? <form onSubmit={e => { e.preventDefault(); if (idea.trim()) beginPlanning(); }}>
+              <p className="guided-launch-description">Describe the idea first. Nexus will help shape one reviewable milestone in Plan mode; connect Roblox and Studio only when you are ready to apply changes.</p>
               <label className="guided-launch-label" htmlFor="launch-idea">Your idea</label>
               <textarea id="launch-idea" value={idea} maxLength={12000} onChange={e => editIdea(e.target.value)} placeholder="I want to make a game where…" required rows={5} />
               <div className="guided-launch-examples"><span>Need a starting point?</span>{EXAMPLES.map(example => <button type="button" key={example} onClick={() => editIdea(example)}>{example}<ArrowRight size={14} /></button>)}</div>
-              <Button type="submit" className="guided-launch-primary" disabled={!idea.trim() || busy}>Continue with this idea <ArrowRight size={16} /></Button>
+              <Button type="submit" className="guided-launch-primary" disabled={!idea.trim() || busy}>Plan in Nexus Workspace <ArrowRight size={16} /></Button>
+              <Button type="button" variant="ghost" disabled={!idea.trim() || busy} onClick={() => next({ idea: idea.trim(), stage: 'roblox', dismissed: false })}>Set up Roblox and Studio first</Button>
             </form> : setupStage === 'roblox' ? <>
               <div className="guided-launch-tool"><PlugZap size={22} /><div><h2>1. Your Roblox account</h2><p>Connect your identity and give Nexus access to your creation tools.</p></div>{accountReady && <Check className="guided-launch-success" />}</div>
               <ul className="guided-launch-permissions"><li>Confirm your Roblox identity</li><li>Read and upload Roblox assets</li><li>Search the Creator Store</li></ul>

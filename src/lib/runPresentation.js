@@ -1,28 +1,5 @@
-const STATES = Object.freeze({
-  accepted: ["Starting build", true], queued: ["Build queued", true],
-  planning: ["Organizing the build", true], inspecting: ["Reading the project", true],
-  running: ["Building", true], building: ["Building", true], generating: ["Building", true],
-  applying: ["Applying to Studio", true], ready_to_apply: ["Preparing Studio changes", true],
-  verifying: ["Testing", true], testing: ["Testing", true], validating: ["Testing", true],
-  repairing: ["Fixing issues", true], retry_scheduled: ["Retrying a failed step", true],
-  waiting_for_tool: ["Waiting for Studio", true],
-  waiting_studio: ["Reconnect Studio to continue", false], blocked_studio: ["Reconnect Studio to continue", false],
-  awaiting_studio_reconnect: ["Reconnect Studio to continue", false],
-  awaiting_studio_target: ["Select a Studio place", false],
-  awaiting_plugin_update: ["Update the Studio connection", false],
-  waiting_user: ["Action required", false], waiting_for_approval: ["Action required", false],
-  needs_action: ["Action required", false], waiting_external: ["Waiting for an asset", true],
-  assets_pending: ["Waiting for an asset", true], interrupted: ["Reconnecting to the build", true],
-  verification_pending: ["Applied · testing pending", false],
-  incomplete: ["Build incomplete · open details", false],
-  manual_verification_required: ["Applied · gameplay check needed", false],
-  applied: ["Applied · testing pending", false],
-  failed: ["Build stopped before completion", false], blocked: ["Build paused", false],
-  conflict: ["Project changed · review needed", false], paused: ["Build paused", false],
-  timed_out: ["Build timed out", false], iteration_limit: ["Build stopped at its runtime limit", false],
-  cancelled: ["Build stopped", false], canceled: ["Build stopped", false],
-  push_skipped: ["Saved to Files · not applied", false],
-});
+import { getLifecyclePresentation } from "./productLifecycle";
+
 const identity = run => String(run?.taskId || run?.runId || run?.id || "");
 
 function scopeMatches(run, scope = {}) {
@@ -34,17 +11,20 @@ function getRunPresentation(run, scope = {}) {
   const status = String(run?.status || run?.state || "").trim().toLowerCase();
   if (["", "idle", "ready"].includes(status)) return null;
   if (["reconnecting", "disconnected"].includes(run.connectionState) && !["succeeded", "completed", "done", "failed", "cancelled", "canceled"].includes(status)) {
-    return { id: identity(run), status: "interrupted", label: "Reconnecting to the build", active: true, tone: "active" };
+    const reconnecting = getLifecyclePresentation("reconnecting");
+    return { id: identity(run), status: reconnecting.state, label: reconnecting.label, active: reconnecting.active, tone: reconnecting.tone };
   }
-  if (["succeeded", "completed", "done"].includes(status)) {
-    // Only the server completion gate can assert full verification.
-    const verified = run.completion?.canComplete === true;
-    return { id: identity(run), status, label: verified ? "Build complete" : "Build finished · verification unconfirmed",
-      active: false, tone: verified ? "success" : "muted" };
-  }
-  const [label, active] = STATES[status] || ["Checking build status", false];
-  const failed = ["failed", "timed_out", "iteration_limit"].includes(status);
-  return { id: identity(run), status, label, active, tone: failed ? "danger" : active ? "active" : "muted" };
+  // Only the server completion gate can assert full verification.
+  const presentation = getLifecyclePresentation(status, {
+    verified: run.completion?.canComplete === true,
+  });
+  return {
+    id: identity(run),
+    status,
+    label: presentation.label,
+    active: presentation.active,
+    tone: presentation.tone === "waiting" ? "muted" : presentation.tone,
+  };
 }
 
 function getRunSpecialists(run, scope = {}) {

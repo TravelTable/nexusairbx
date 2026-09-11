@@ -18,9 +18,8 @@ test("keeps both runtimes on the shared compact purple soft-depth header", () =>
     'import UniversalHeaderFrame from "../../src/components/universal/UniversalHeaderFrame"',
   );
   for (const [label, href] of [
-    ["Build", "/ai"],
+    ["Workspace", "/ai"],
     ["Assets", "/assets"],
-    ["Icons", "/icons-market"],
     ["Studio", "/downloads"],
     ["Docs", "/docs"],
     ["Pricing", "/pricing"],
@@ -42,6 +41,17 @@ test("keeps both runtimes on the shared compact purple soft-depth header", () =>
   expect(styles).toContain('data-scrolled="true"');
   expect(styles).toContain("var(--nx-purple-wash)");
   expect(styles).toContain("prefers-reduced-transparency: reduce");
+});
+
+test("keeps the homepage body behind an explicit visual compatibility boundary", () => {
+  const homepage = read("src/components/homepage/HomepageV2Content.jsx");
+  const homepageStyles = read("src/components/homepage/HomepageCinematic.module.css");
+
+  expect(homepage).toContain('data-nexus-protected-homepage-body="true"');
+  expect(homepageStyles).toMatch(
+    /\.page\s*\{[\s\S]*?--nx-canvas:\s*#0a0a0a;[\s\S]*?--nx-purple:\s*#b45cff;/,
+  );
+  expect(homepageStyles).toContain("Protected homepage compatibility boundary");
 });
 
 test("keeps Tools and command search focus-trapped with Escape restoration", () => {

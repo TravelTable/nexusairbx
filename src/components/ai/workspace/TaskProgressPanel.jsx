@@ -15,6 +15,7 @@ import {
 import { formatTaskRuntimeError } from "../../../lib/taskRuntimeApi";
 import StudioTaskApprovalCard from "./StudioTaskApprovalCard";
 import { getRunPresentation } from "../../../lib/runPresentation";
+import { getLifecyclePresentation } from "../../../lib/productLifecycle";
 import {
   getAuthorizedTaskActions,
   isTaskTerminal,
@@ -65,87 +66,6 @@ const CHECKLIST_PRESENTATION = Object.freeze({
     icon: AlertTriangle,
     className: " text-[var(--ds-warning)] ",
     iconClassName: " text-[var(--ds-warning)] ",
-  },
-});
-
-const STATUS_COPY = Object.freeze({
-  queued: {
-    eyebrow: "Queued",
-    title: "Your request is safely queued",
-    body: "It has not completed yet. Execution will begin when runtime capacity is available.",
-    tone: "neutral",
-  },
-  accepted: {
-    eyebrow: "Accepted",
-    title: "Your task is saved",
-    body: "The runtime accepted the request and is preparing its first durable step.",
-    tone: "active",
-  },
-  planning: {
-    eyebrow: "Planning",
-    title: "Preparing the execution plan",
-    body: "The runtime is choosing auditable steps before making changes.",
-    tone: "active",
-  },
-  running: {
-    eyebrow: "Executing",
-    title: "Executing the approved plan",
-    body: "Progress is recorded after each durable step.",
-    tone: "active",
-  },
-  waiting_user: {
-    eyebrow: "Your input is needed",
-    title: "Review the next step",
-    body: "The task is paused at a confirmation gate and will not continue without your input.",
-    tone: "waiting",
-  },
-  blocked_studio: {
-    eyebrow: "Studio connection needed",
-    title: "Reconnect Roblox Studio",
-    body: "Saved progress is intact. Reconnect the Studio bridge to resume from the blocked step.",
-    tone: "waiting",
-  },
-  waiting_external: {
-    eyebrow: "External result pending",
-    title: "Waiting for an external service",
-    body: "The task is paused safely and will resume when the external result arrives.",
-    tone: "waiting",
-  },
-  retry_scheduled: {
-    eyebrow: "Recovering",
-    title: "A safe retry is scheduled",
-    body: "The failed step remains recorded and will retry without repeating completed work.",
-    tone: "waiting",
-  },
-  verifying: {
-    eyebrow: "Verification",
-    title: "Verifying the result",
-    body: "The runtime is checking evidence before reporting completion.",
-    tone: "active",
-  },
-  compensating: {
-    eyebrow: "Recovery",
-    title: "Restoring the last verified state",
-    body: "The runtime is applying its recorded recovery steps before it stops.",
-    tone: "waiting",
-  },
-  succeeded: {
-    eyebrow: "Task finished",
-    title: "The task reached a terminal state",
-    body: "Review the recorded checks below to see what was verified and what may still need testing.",
-    tone: "success",
-  },
-  failed: {
-    eyebrow: "Stopped",
-    title: "The task could not be completed",
-    body: "Review the typed error and use only the recovery actions authorized by the server.",
-    tone: "danger",
-  },
-  cancelled: {
-    eyebrow: "Cancelled",
-    title: "Task cancelled",
-    body: "No further steps will run. Completed ledger entries remain available in technical details.",
-    tone: "neutral",
   },
 });
 
@@ -372,7 +292,9 @@ function statusPresentation(task, currentStep, structuredResult) {
   const structuredCopy =
     STRUCTURED_STATUS_COPY[normalizedStatus(structuredResult?.status)];
   if (structuredCopy && isTaskTerminal(task)) return structuredCopy;
-  const base = STATUS_COPY[status] || STATUS_COPY.accepted;
+  const base = getLifecyclePresentation(status, {
+    verified: task?.completion?.canComplete === true,
+  });
   const currentDescription = safeDisplayText(
     currentStep?.description,
     currentStep?.summary,
@@ -694,6 +616,7 @@ export default function TaskProgressPanel({
   return (
     <section
       aria-label="Task progress"
+      aria-busy={!terminal}
       className={`rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-4 space-y-3 ${!terminal ? "nx-soft-depth-active" : ""} ${className}`.trim()}
     >
       <div className="flex items-center gap-2">
@@ -707,7 +630,7 @@ export default function TaskProgressPanel({
           <ListChecks className="h-4 w-4 text-[var(--ds-accent)]" />
         )}
         <span className="text-[10px] font-black uppercase tracking-widest text-[var(--ds-text-secondary)]">
-          Durable task
+          Nexus run
         </span>
         {!terminal && connectionState === "live" && (
           <span className="ml-auto inline-flex items-center gap-1.5 text-[10px] font-bold text-[var(--ds-accent)]">
@@ -723,6 +646,9 @@ export default function TaskProgressPanel({
 
       <div
         className={`rounded-xl border px-3 py-3 ${TONE_CLASSES[presentation.tone]}`}
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
       >
         <div className="text-[10px] font-black uppercase tracking-[0.16em] opacity-70">
           {presentation.eyebrow}

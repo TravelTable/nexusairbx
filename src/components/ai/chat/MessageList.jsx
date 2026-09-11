@@ -12,6 +12,7 @@ import { RotateCcw } from "lib/icons";
 import { getAssistantTurnIdentity, reconcileAssistantTurns } from "../../../lib/assistantTurnIdentity";
 import AnimatedStatusText from "./AnimatedStatusText";
 import RunContextBar from "./RunContextBar";
+import { getLifecyclePresentationFromText } from "../../../lib/productLifecycle";
 import "./ChatMotion.css";
 
 export function groupMessagesByRole(messages = []) {
@@ -52,7 +53,8 @@ function resolveActivityStage(pendingMessage, generationStage, parsed) {
  */
 function LiveActivityHeader({ pendingMessage, generationStage, parsed, embedded = false }) {
   const stage = resolveActivityStage(pendingMessage, generationStage, parsed);
-  const isRecovering = String(stage).toLowerCase().includes("recovering");
+  const presentation = getLifecyclePresentationFromText(stage);
+  const isRecovering = ["recovering", "reconnecting"].includes(presentation.state);
 
   return (
     <div className={embedded ? "flex items-center gap-2 px-4 py-2.5" : "flex min-h-7 items-center gap-2"}>
@@ -61,7 +63,7 @@ function LiveActivityHeader({ pendingMessage, generationStage, parsed, embedded 
         {isRecovering ? <RotateCcw className="h-3.5 w-3.5 animate-spin" /> : "◌"}
       </span>
       <AnimatedStatusText
-        value={stage}
+        value={presentation.label}
         className="min-w-0 break-words text-sm text-[var(--ds-text-secondary)]"
       />
     </div>
@@ -126,11 +128,11 @@ function CheckpointMarker({ checkpoint, onRestoreRun }) {
         type="button"
         onClick={() => onRestoreRun(checkpoint.runId, checkpoint.transcriptPivot)}
         className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2.5 py-1 text-[11px] font-medium text-[var(--ds-text-muted)] transition hover:border-[var(--ds-accent-border)] hover:bg-[var(--ds-accent-soft)] hover:text-[var(--ds-text-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-accent-border)]"
-        aria-label="Restore checkpoint before this Nexus build"
-        title="Restore Studio and chat to before this Nexus build"
+        aria-label="Restore snapshot from before this Nexus build"
+        title="Review and restore Studio and chat to this pre-build snapshot"
       >
         <RotateCcw className="h-3 w-3" />
-        Checkpoint
+        Snapshot
         <span className="hidden text-[var(--ds-text-muted)] sm:inline">· before this build</span>
       </button>
       <div className="h-px flex-1 bg-[var(--ds-fill-hover)]" />

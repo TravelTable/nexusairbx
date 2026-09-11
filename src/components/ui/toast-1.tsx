@@ -31,7 +31,7 @@ export function notifyToast(input: SiteToastInput) {
   return siteToastManager.add({
     id: input.id,
     type,
-    title: input.title || (type === "error" ? "Something went wrong" : type === "success" ? "Done" : "Notice"),
+    title: input.title || (type === "error" ? "Action not completed" : type === "success" ? "Done" : "Notice"),
     description: message,
     timeout: input.duration || 4000,
     priority: type === "error" ? "high" : "low",

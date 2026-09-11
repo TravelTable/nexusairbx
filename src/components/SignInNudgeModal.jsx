@@ -19,7 +19,7 @@ export default function SignInNudgeModal({ isOpen, onClose, reason = "", blockin
   if (shouldHideLocalSignInNudge()) return null;
 
   const aiFrom = location?.pathname === "/ai" ? location : { pathname: "/ai" };
-  const title = blocking ? "Sign in to use NexusRBX AI" : "Sign in to save and continue your work";
+  const title = blocking ? "Sign in to use Nexus Workspace" : "Sign in to save and continue your work";
 
   return (
     <Modal
@@ -54,7 +54,7 @@ export default function SignInNudgeModal({ isOpen, onClose, reason = "", blockin
 
         <h2 className="mb-2 text-xl font-bold text-[var(--ds-text)] sm:text-2xl">
           {blocking ? (
-            "Sign in to use NexusRBX AI"
+            "Sign in to use Nexus Workspace"
           ) : (
             <>
               Sign in to save and <br /> continue your work

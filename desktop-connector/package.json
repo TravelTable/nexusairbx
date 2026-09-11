@@ -4,7 +4,7 @@
   "private": true,
   "author": "NexusRBX",
   "type": "module",
-  "description": "Customer desktop companion for NexusRBX Studio MCP",
+  "description": "Advanced NexusRBX local connection and Studio MCP diagnostics companion",
   "main": "dist/main.js",
   "scripts": {
     "preview:capture": "node scripts/capture-workspace-preview.mjs",

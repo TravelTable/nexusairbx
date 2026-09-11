@@ -253,7 +253,7 @@ function SetupSteps({ steps }) {
     <section className={styles.setupSection} aria-labelledby="setup-title">
       <header>
         <span>SETUP</span>
-        <h2 id="setup-title">Three clicks to Studio.</h2>
+        <h2 id="setup-title">Advanced local setup.</h2>
         <DevTip label="About automatic updates">
           <span>The connector checks the verified release feed, downloads updates in the background, and installs them when you restart or quit the app.</span>
         </DevTip>
@@ -333,11 +333,21 @@ export default function DownloadsContent() {
   return (
     <TooltipProvider delayDuration={120}>
       <main className={styles.main} id="main-content">
+        <section id="studio-plugin" className={`${styles.pluginDownload} ${styles.recommendedPlugin}`} aria-labelledby="studio-plugin-title">
+          <div>
+            <p className={styles.phase}>RECOMMENDED STUDIO INTEGRATION</p>
+            <h1 id="studio-plugin-title">NexusRBX Studio Plugin</h1>
+            <p>The Studio-side companion to Nexus Workspace. Review connection state, approved change sets, activity, and verification beside your open place.</p>
+          </div>
+          <a href="/studio-plugin/NexusRBXStudioBridge.rbxmx" download className={styles.primaryDownload}><Download aria-hidden="true" size={18} /> Download Studio Plugin</a>
+          <details><summary>Install or update the Plugin</summary><ol><li>In Roblox Studio, open the Plugins tab and choose Plugins Folder.</li><li>Close Studio. Replace your existing NexusRBX Plugin with the downloaded file in that folder.</li><li>Reopen Studio, open NexusRBX, and reconnect your account.</li></ol><p>Your Nexus Workspace projects and conversations stay saved.</p></details>
+        </section>
+
         <section className={styles.hero}>
           <div className={styles.heroCopy}>
-            <p className={styles.phase}>DESKTOP CONNECTOR</p>
-            <h1>Nexus <span>↔</span> Roblox Studio.</h1>
-            <p className={styles.lead}>One local bridge. Pair once.</p>
+            <p className={styles.phase}>ADVANCED LOCAL INTEGRATION</p>
+            <h1>NexusRBX <span>Connector.</span></h1>
+            <p className={styles.lead}>Local connection health and diagnostics for advanced Studio workflows using Studio MCP.</p>
 
             <PlatformTabs selectedPlatform={selectedPlatform} detectedPlatform={detectedPlatform} onChange={handlePlatformChange} />
             <InstallerPanel
@@ -364,11 +374,6 @@ export default function DownloadsContent() {
         ) : null}
 
         <SetupSteps steps={selectedCopy.steps} />
-        <section id="studio-plugin" className={styles.pluginDownload} aria-labelledby="studio-plugin-title">
-          <div><h2 id="studio-plugin-title">Nexus RBX for Studio</h2><p>Use the Studio plugin to connect your game directly to Nexus RBX.</p></div>
-          <a href="/studio-plugin/NexusRBXStudioBridge.rbxmx" download className={styles.primaryDownload}><Download aria-hidden="true" size={18} /> Download Studio plugin</a>
-          <details><summary>Install or update the plugin</summary><ol><li>In Roblox Studio, open the Plugins tab and choose Plugins Folder.</li><li>Close Studio. Replace your existing Nexus RBX plugin with the downloaded file in that folder.</li><li>Reopen Studio, open Nexus RBX, and reconnect your account.</li></ol><p>Your projects and chats stay saved.</p></details>
-        </section>
         <p className={styles.disclaimer}>NexusRBX is not affiliated with or endorsed by Roblox Corporation.</p>
       </main>
     </TooltipProvider>

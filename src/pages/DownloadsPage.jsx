@@ -4,8 +4,8 @@ import DownloadsContent from "../components/downloads/DownloadsContent";
 import HomepageFooter from "../components/homepage/HomepageFooter";
 import { canonicalUrl } from "../lib/seo";
 
-const title = "Download NexusRBX Connector for macOS and Windows";
-const description = "Download the NexusRBX Connector for macOS (Developer ID signed and notarized) or Windows 10 and 11 (currently unsigned).";
+const title = "Connect NexusRBX to Roblox Studio | Plugin and Connector";
+const description = "Install the recommended NexusRBX Studio Plugin, or download NexusRBX Connector for advanced local Studio MCP workflows on macOS and Windows.";
 
 export default function DownloadsPage() {
   return (

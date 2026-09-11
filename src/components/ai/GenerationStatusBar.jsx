@@ -1,46 +1,27 @@
 import React from "react";
-import { Loader } from "lib/icons";
-
-const stages = [
-  { id: "planning", label: "Planning Layout", match: ["Planning Layout..."] },
-  { id: "analyzing", label: "Analyzing Components", match: ["Analyzing Components...", "Analyzing Request..."] },
-  { id: "generating", label: "Writing Luau Code", match: ["Writing Luau Code...", "Generating Response..."] },
-  { id: "finalizing", label: "Finalizing", match: ["Finalizing UI...", "Finalizing..."] },
-];
+import { Loader, RotateCcw } from "lib/icons";
+import { getLifecyclePresentationFromText } from "../../lib/productLifecycle";
 
 export default function GenerationStatusBar({ currentStage }) {
   if (!currentStage) return null;
+  const presentation = getLifecyclePresentationFromText(currentStage);
+  const StatusIcon = presentation.state === "reconnecting" || presentation.state === "recovering"
+    ? RotateCcw
+    : Loader;
 
   return (
-    <div className="w-full card-surface rounded-xl p-4 mb-4 animate-fade-in-up">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Loader className="w-4 h-4 text-[var(--ds-accent)] animate-spin" />
-          <span className="font-display text-sm font-bold text-[var(--ds-text)]">Nexus is working...</span>
+    <div
+      className="mb-4 w-full rounded-xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-3 animate-fade-in-up"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      <div className="flex items-start gap-2.5">
+        <StatusIcon className="mt-0.5 h-4 w-4 shrink-0 text-[var(--ds-accent)] motion-safe:animate-spin" aria-hidden="true" />
+        <div className="min-w-0">
+          <span className="block font-display text-sm font-semibold text-[var(--ds-text)]">{presentation.label}</span>
+          <span className="mt-0.5 block text-xs leading-relaxed text-[var(--ds-text-muted)]">{presentation.body}</span>
         </div>
-        <span className="text-[10px] font-mono text-[var(--ds-text-muted)] uppercase tracking-widest">{currentStage}</span>
-      </div>
-      
-      <div className="flex items-center gap-2">
-        {stages.map((stage, index) => {
-          const isCompleted = stages.slice(0, index).some(s => s.match.includes(currentStage)) || 
-                             (!stage.match.includes(currentStage) && stages.slice(index + 1).some(s => s.match.includes(currentStage)));
-          const isActive = stage.match.includes(currentStage);
-          
-          return (
-            <React.Fragment key={stage.id}>
-              <div className="flex flex-col items-center gap-1 flex-1">
-                <div className={`h-1.5 w-full rounded-full transition-all duration-500 ${
-                  isCompleted ? "bg-[var(--ds-success)]" : isActive ? "bg-[var(--ds-accent)] animate-pulse" : "bg-[var(--ds-surface-2)]"
-                }`} />
-                <span className={`text-[9px] uppercase tracking-tighter ${
-                  isActive ? "text-[var(--ds-text)] font-bold" : "text-[var(--ds-text-muted)]"
-                }`}>{stage.label}</span>
-              </div>
-              {index < stages.length - 1 && <div className="w-2" />}
-            </React.Fragment>
-          );
-        })}
       </div>
     </div>
   );

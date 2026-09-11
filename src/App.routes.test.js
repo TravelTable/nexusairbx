@@ -20,9 +20,10 @@ test("keeps both asset deep links owned when capability reads are disabled", () 
   expect(appSource).toContain('<NexusRBXAssetPlatformUnavailablePage view="detail" />');
 });
 
-test("gates creation routes while keeping Roblox recovery explicit", () => {
+test("opens Plan-mode Workspace before Roblox while gating write-dependent routes", () => {
   expect(appSource).toContain('<Route path="/connect-roblox"');
-  for (const route of ["/ai", "/tools/icon-generator", "/assets", "/assets/:assetId", "/script/:id"]) {
+  expect(appSource).toContain('<Route path="/ai" element={<NexusRBXAIPageContainer />}');
+  for (const route of ["/tools/icon-generator", "/assets", "/assets/:assetId", "/script/:id"]) {
     expect(appSource).toContain(`<Route path="${route}" element={withRobloxConnectionGate(`);
   }
   for (const route of ["/settings", "/billing", "/support", "/subscribe", "/icons-market"]) {

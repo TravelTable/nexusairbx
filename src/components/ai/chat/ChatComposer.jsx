@@ -9,6 +9,7 @@ import {
   Edit,
   FileCode,
   Loader,
+  Square,
   X,
 } from "lib/icons";
 import { TokenBar } from "../AiComponents";
@@ -887,9 +888,9 @@ export default function ChatComposer({
         size="md"
         colorVariant="colorful"
         theme="dark"
-        strength={disabled ? 0.28 : isGenerating ? 1 : 0.72}
-        duration={isGenerating ? 1.65 : 3.2}
-        active={!disabled}
+        strength={disabled ? 0 : isGenerating ? 0.72 : 0}
+        duration={1.9}
+        active={!disabled && isGenerating}
       >
         <div
           data-tour="prompt-composer"
@@ -1187,7 +1188,7 @@ export default function ChatComposer({
                 title={isGenerating ? "Stop generation" : submitLabel}
               >
                 {isGenerating ? (
-                  <Loader className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  <Square className="h-3.5 w-3.5" aria-hidden="true" />
                 ) : showSuccess ? (
                   <Check className="h-4 w-4" aria-hidden="true" />
                 ) : (

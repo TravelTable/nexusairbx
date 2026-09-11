@@ -8,6 +8,28 @@
   line-height: 1;
 }
 
+.nx-control {
+  min-height: var(--nx-control-height-normal);
+}
+.nx-control[data-size="sm"] {
+  min-height: var(--nx-control-height-compact);
+}
+.nx-control[data-size="lg"] {
+  min-height: var(--nx-control-height-large);
+}
+.nx-control-spinner {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: nx-control-spin 700ms linear infinite;
+}
+@keyframes nx-control-spin {
+  to { transform: rotate(360deg); }
+}
+
 .nx-phase-label {
   color: var(--nx-purple-strong);
   font-size: 0.75rem;
@@ -150,7 +172,7 @@
   translate: 0;
 }
 .nx-site-shell {
-  min-width: 320px;
+  min-width: 0;
   min-height: 100dvh;
   background: var(--nx-canvas);
   color: var(--nx-text);
@@ -256,8 +278,14 @@
 
 @media (max-width: 720px), (pointer: coarse) {
   .nx-text-action,
-  .nx-skip-link {
+  .nx-skip-link,
+  .nx-control {
     min-height: var(--nx-touch-target);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nx-control-spinner {
+    animation-duration: 1400ms;
   }
 }
 @media (max-width: 640px) {

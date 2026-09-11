@@ -37,6 +37,28 @@
   --nx-focus: rgb(180 92 255 / 45%);
   --nx-focus-ring: var(--nx-focus);
 
+  /* Product-facing semantic roles. */
+  --nx-surface-canvas: var(--nx-canvas);
+  --nx-surface: var(--nx-card);
+  --nx-surface-elevated: var(--nx-raised-surface);
+  --nx-surface-interactive: var(--nx-muted-surface);
+  --nx-surface-hover: var(--nx-raised-surface);
+  --nx-surface-selected: var(--nx-purple-soft);
+  --nx-surface-disabled: rgb(255 255 255 / 3%);
+  --nx-surface-overlay: var(--nx-card);
+  --nx-text-primary: var(--nx-text);
+  --nx-text-inverse: var(--nx-canvas);
+  --nx-text-link: var(--nx-purple-strong);
+  --nx-text-code: var(--nx-text-secondary);
+  --nx-text-status: var(--nx-text-secondary);
+  --nx-border-subtle: var(--nx-rule-quiet);
+  --nx-border-normal: var(--nx-rule);
+  --nx-border-strong: var(--nx-rule-strong);
+  --nx-border-interactive: var(--nx-purple-border);
+  --nx-border-focus: var(--nx-purple);
+  --nx-border-error: var(--nx-danger);
+  --nx-border-success: var(--nx-success);
+
   /* 4px spatial rhythm. */
   --nx-space-1: 4px;
   --nx-space-2: 8px;
@@ -64,6 +86,9 @@
   --nx-header-height: 48px;
   --nx-header-height-touch: 52px;
   --nx-control-height: 36px;
+  --nx-control-height-compact: 32px;
+  --nx-control-height-normal: 40px;
+  --nx-control-height-large: 48px;
   --nx-touch-target: 44px;
   --nx-content-compact: 1160px;
   --nx-content-reading: 720px;
@@ -219,7 +244,7 @@
 }
 
 html {
-  min-width: 320px;
+  min-width: 0;
   background: var(--nx-canvas);
 }
 

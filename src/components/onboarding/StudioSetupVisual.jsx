@@ -13,7 +13,7 @@ export const STUDIO_SETUP_VISUALS = Object.freeze([
     assetAvailable: false,
     alt: "Roblox Studio plugin management showing the NexusRBX Studio plugin installed and enabled.",
     instruction:
-      "Install NexusRBX from the Creator Store, or use the generated NexusRBXStudioBridge.plugin.lua artifact for a local repository build.",
+      "Install NexusRBX Studio Plugin from the Creator Store, or use the generated NexusRBXStudioBridge.plugin.lua artifact for a local repository build.",
     width: 1600,
     height: 1000,
     aspectRatio: "8 / 5",

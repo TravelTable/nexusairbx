@@ -671,9 +671,17 @@
   .spinner { animation: none; }
 }
 
-.pluginDownload { scroll-margin-top: 90px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; padding: 24px; margin: 32px 0; border: 1px solid var(--nx-rule); border-radius: 14px; background: var(--nx-card); }
-.pluginDownload h2 { font-size: 1.25rem; margin: 0 0 8px; }
+.pluginDownload { scroll-margin-top: 90px; display: flex; width: min(100% - 40px, var(--nx-content-compact)); flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; padding: 24px; margin: 32px auto; border: 1px solid var(--nx-rule); border-radius: var(--nx-radius-panel); background: var(--nx-card); }
+.recommendedPlugin { margin-top: clamp(48px, 7vw, 80px); border-color: var(--nx-purple-border); }
+.pluginDownload h1,
+.pluginDownload h2 { max-width: 18ch; margin: 0 0 8px; font-family: var(--nx-font-display); font-size: clamp(1.5rem, 3vw, 2.25rem); line-height: 1.05; letter-spacing: -0.035em; }
+.pluginDownload > div { max-width: 44rem; }
+.pluginDownload .phase { margin-bottom: 10px; font-size: .6875rem; }
 .pluginDownload p, .pluginDownload li { color: var(--nx-text-secondary); font-size: .875rem; line-height: 1.7; }
 .pluginDownload details { flex-basis: 100%; }
 .pluginDownload summary { cursor: pointer; font-size: .875rem; }
 .pluginDownload ol { list-style: decimal; padding-left: 24px; margin-top: 12px; }
+@media (max-width: 640px) {
+  .pluginDownload { width: min(100% - 24px, var(--nx-content-compact)); padding: 20px; }
+  .pluginDownload .primaryDownload { width: 100%; }
+}

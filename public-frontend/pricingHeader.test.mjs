@@ -49,9 +49,8 @@ test("public header keeps server ownership while delegating presentation to the 
     );
   }
   for (const label of [
-    "Build",
+    "Workspace",
     "Assets",
-    "Icons",
     "Studio",
     "Docs",
     "Pricing",
@@ -77,10 +76,10 @@ test("isolated account control exposes signed-out and signed-in actions", () => 
   assert.match(account, /import\("\.\.\/\.\.\/src\/firebase"\)/);
   assert.match(account, /Sign in/);
   assert.match(account, /Get started/);
-  assert.match(account, /Open workspace/);
+  assert.match(account, /Open Nexus Workspace/);
   for (const label of [
-    "Roblox + Studio",
-    "Billing",
+    "Roblox and Studio",
+    "Billing and usage",
     "Settings",
     "Support",
     "Sign out",

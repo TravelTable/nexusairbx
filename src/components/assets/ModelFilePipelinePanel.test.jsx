@@ -3,6 +3,7 @@ import "@testing-library/jest-dom";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import ModelFilePipelinePanel from "./ModelFilePipelinePanel";
 import * as api from "../../lib/modelPipelineApi";
+import { selectOption } from "../../testUtils/selectOption";
 
 jest.mock("../../lib/modelPipelineApi");
 
@@ -112,7 +113,7 @@ test("requires explicit confirmation for aggressive derivative plans", async () 
 
   render(<ModelFilePipelinePanel />);
   expect(await screen.findByText(/tree.glb/)).toBeInTheDocument();
-  fireEvent.change(screen.getByDisplayValue("Roblox balanced"), { target: { value: "aggressive" } });
+  await selectOption(screen.getByRole("combobox", { name: "Optimization profile" }), "Aggressive");
   fireEvent.click(screen.getByText("Review plan"));
   expect(await screen.findByText("Confirm aggressive lossy optimization")).toBeInTheDocument();
   expect(screen.getByText("Queue derivative")).toBeDisabled();

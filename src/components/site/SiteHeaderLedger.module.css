@@ -14,6 +14,12 @@
   gap: var(--nx-space-1);
 }
 
+.compactAccountIcon {
+  display: none;
+  width: 17px;
+  height: 17px;
+}
+
 .compactAccountButton,
 .accountGroupCompact .accountButton {
   display: inline-flex;
@@ -294,12 +300,14 @@
   .compactAccountButton {
     width: 44px;
     padding: 0;
-    overflow: hidden;
-    font-size: 0;
   }
-  .compactAccountButton::before {
-    font-size: 0.78rem;
-    content: "Sign in";
+
+  .compactAccountIcon {
+    display: block;
+  }
+
+  .compactAccountText {
+    display: none;
   }
 }
 

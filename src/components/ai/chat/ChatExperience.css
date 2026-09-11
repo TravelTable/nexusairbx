@@ -189,6 +189,24 @@
   width: min(100%, 760px);
 }
 
+/* Eight dock actions remain directly reachable on the narrowest supported
+   viewport. Their 30px controls still exceed the WCAG 2.2 minimum target;
+   only ornamental desktop spacing is reduced. */
+@media (max-width: 360px) {
+  .nexus-workspace-dock {
+    width: 100%;
+  }
+
+  .nexus-workspace-dock__viewport {
+    margin-inline: 0;
+  }
+
+  .nexus-workspace-dock__items {
+    gap: 4px;
+    padding-inline: 4px;
+  }
+}
+
 .nexus-composer-beam {
   border-radius: var(--nx-radius-feature);
 }

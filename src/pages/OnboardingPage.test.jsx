@@ -43,6 +43,10 @@ beforeEach(() => {
   getGuidedLaunch.mockImplementation(async () => mockProgress);
   startGuidedLaunch.mockImplementation(async () => mockProgress);
   updateGuidedLaunch.mockImplementation(async patch => { mockProgress = { ...mockProgress, ...patch, revision: mockProgress.revision + 1 }; return mockProgress; });
+  openGuidedWorkspace.mockImplementation(async () => {
+    mockProgress = { ...mockProgress, stage: 'plan', chatId: 'launch-1', revision: mockProgress.revision + 1 };
+    return mockProgress;
+  });
 });
 test('requires sign-in and email verification without requiring Roblox first', () => {
   mockRoblox.user = null;
@@ -66,17 +70,26 @@ test('still surfaces a real progress failure so it can be retried', async () => 
   expect(alert.textContent).toContain('Your progress is unavailable.');
   expect(screen.getByRole('button', { name: /try again/i })).toBeTruthy();
 });
-test('examples fill the idea without submitting; continuation saves before connection', async () => {
+test('examples fill the idea without submitting; planning opens Workspace before connection', async () => {
   show();
   await screen.findByLabelText('Your idea');
   expect(screen.getByRole('link', { name: /compare plans/i })).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: /cozy café/i }));
   expect(screen.getByLabelText('Your idea').value).toContain('café');
   expect(updateGuidedLaunch).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole('button', { name: /continue with this idea/i }));
+  fireEvent.click(screen.getByRole('button', { name: /plan in nexus workspace/i }));
+  await screen.findByText('Workspace');
+  expect(mockProgress.stage).toBe('plan');
+  expect(openGuidedWorkspace).toHaveBeenCalledTimes(1);
+  expect(beginRobloxOAuth).not.toHaveBeenCalled();
+});
+test('keeps an explicit setup-first path for creators who want it', async () => {
+  show();
+  fireEvent.change(await screen.findByLabelText('Your idea'), { target: { value: 'A co-op bakery' } });
+  fireEvent.click(screen.getByRole('button', { name: /set up roblox and studio first/i }));
   await screen.findByRole('heading', { name: 'Let’s connect your tools' });
   expect(mockProgress.stage).toBe('roblox');
-  expect(beginRobloxOAuth).not.toHaveBeenCalled();
+  expect(openGuidedWorkspace).not.toHaveBeenCalled();
 });
 test('a failed save keeps the draft and prevents OAuth redirect', async () => {
   mockProgress = { ...mockProgress, stage: 'roblox', idea: 'My hotel' };

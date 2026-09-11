@@ -144,7 +144,7 @@ test("the AI entry sign-in gate cannot be dismissed", () => {
   );
 
   expect(
-    screen.getByRole("dialog", { name: "Sign in to use NexusRBX AI" }),
+    screen.getByRole("dialog", { name: "Sign in to use Nexus Workspace" }),
   ).toBeInTheDocument();
   expect(
     screen.queryByRole("button", { name: "Dismiss sign-in prompt" }),

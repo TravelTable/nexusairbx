@@ -182,7 +182,7 @@ test("homepage raw HTML is meaningful before client JavaScript", () => {
   assert.match(brandLink, /<span\b(?=[^>]*\baria-hidden="true")[^>]*>PROJECT \/<\/span>/);
   assert.match(
     brandLink,
-    /<img\b(?=[^>]*\bsrc="\/favicon-transparent\.png")(?=[^>]*\balt="")(?=[^>]*\baria-hidden="true")[^>]*>/,
+    /<img\b(?=[^>]*\bsrc="\/favicon\.png")(?=[^>]*\balt="")(?=[^>]*\baria-hidden="true")[^>]*>/,
   );
   assert.match(html, /nexusrbx-og-flat-world\.jpg/);
   assert.doesNotMatch(html, /nexusrbx-og-purple-workshop\.png/);
@@ -197,7 +197,6 @@ test("homepage raw HTML is meaningful before client JavaScript", () => {
   [
     "/ai",
     "/assets",
-    "/icons-market",
     "/downloads",
     "/docs",
     "/pricing",
@@ -222,18 +221,20 @@ test("homepage trust copy is specific without implying verification or earnings"
 
 test("downloads raw HTML is meaningful and fails closed before release verification", () => {
   const html = readHtml("/downloads");
-  assert.equal(extractTitle(html), "Download NexusRBX Connector for macOS and Windows");
+  assert.equal(extractTitle(html), "Connect NexusRBX to Roblox Studio | Plugin and Connector");
   assert.equal(
     extractMetaContent(html, "description"),
-    "Download the NexusRBX Connector for macOS (Developer ID signed and notarized) or Windows 10 and 11 (currently unsigned).",
+    "Install the recommended NexusRBX Studio Plugin, or download NexusRBX Connector for advanced local Studio MCP workflows on macOS and Windows.",
   );
-  assert.equal(extractH1(html), "Nexus ↔ Roblox Studio.");
+  assert.equal(extractH1(html), "NexusRBX Studio Plugin");
   assert.equal(extractCanonical(html), "https://www.nexusrbx.com/downloads");
   assert.equal(countCanonical(html), 1);
   assert.match(html, /macOS \(Universal\)/);
   assert.match(html, /View macOS \(Universal\) download/);
   assert.match(html, /Windows \(64-bit\)/);
   assert.match(html, /Windows 10 and 11 · Intel or AMD x64/);
+  assert.match(html, /RECOMMENDED STUDIO INTEGRATION/);
+  assert.match(html, /ADVANCED LOCAL INTEGRATION/);
   assert.match(html, /Checking release/);
   assert.match(html, /href="\/downloads"/);
   assert.match(html, /href="\/docs\/troubleshooting"/);
@@ -244,7 +245,7 @@ test("downloads raw HTML is meaningful and fails closed before release verificat
 
 test("docs raw HTML has route-specific metadata and content", () => {
   const html = readHtml("/docs");
-  assert.match(html, /<title>NexusRBX AI Documentation \| NexusRBX AI Docs<\/title>/);
+  assert.match(html, /<title>NexusRBX Documentation \| NexusRBX Docs<\/title>/);
   assert.match(html, /<h1[^>]*>Take your Roblox idea to Play mode<\/h1>/);
   assert.match(html, /Describe your game idea, approve a plan, build systems, UI, and assets/);
   assert.match(html, /The creator loop/);
@@ -252,7 +253,7 @@ test("docs raw HTML has route-specific metadata and content", () => {
   assert.match(html, /Approve a plan/);
   assert.match(html, /Build systems, UI, and assets/);
   assert.match(html, /Verify in Play mode/);
-  assert.match(html, /Open NexusRBX AI/);
+  assert.match(html, /Open Nexus Workspace/);
   assert.match(html, /Install the Studio plugin/);
   assert.equal(countCanonical(html), 1);
   assert.match(html, /href="https:\/\/www\.nexusrbx\.com\/docs"/);

@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import UiImplementationDrawer from './UiImplementationDrawer';
+import { selectOption } from '../../../testUtils/selectOption';
 jest.mock('@monaco-editor/react',()=>({value,options})=><textarea aria-label="Saved source" readOnly={options.readOnly} value={value}/>);
 const document={designId:'design',revision:'revision',screens:[{nodes:[{id:'root',name:'Root',interactions:{}}]}],assets:[]};
 const files=[{kind:'file',artifactId:'artifact',revision:'file-rev',path:'ReplicatedStorage/UI/GeneratedUI'},{kind:'file',artifactId:'artifact',revision:'file-rev',path:'StarterGui/UI/Controller'}];
@@ -11,7 +12,7 @@ test('Luau reads the exact saved artifact while the build continues, without com
   expect(readFile).toHaveBeenCalledWith({artifactId:'artifact',revision:'file-rev',path:'ReplicatedStorage/UI/GeneratedUI'},expect.objectContaining({signal:expect.anything()}));
   expect(screen.getByLabelText('Saved source')).toHaveValue('return { RealUI = true }');expect(screen.getByLabelText('Saved source')).toHaveAttribute('readonly');
   expect(screen.getByText(/Build continues/)).toBeVisible();
-  fireEvent.change(screen.getByLabelText('Generated file'),{target:{value:'StarterGui/UI/Controller'}});
+  await selectOption(screen.getByLabelText('Generated file'), 'StarterGui/UI/Controller');
   await waitFor(()=>expect(readFile).toHaveBeenCalledTimes(2));
 });
 test('no generated files means no sample scaffold or export',()=>{

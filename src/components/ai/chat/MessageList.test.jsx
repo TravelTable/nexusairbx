@@ -54,7 +54,7 @@ describe("MessageList pending activity", () => {
       />,
     );
 
-    expect(screen.getByText("Building")).toBeTruthy();
+    expect(screen.getByText("Generating files")).toBeTruthy();
     expect(screen.queryByText("Creating the controller.")).toBeNull();
     expect(screen.queryByText("Streaming Code")).toBeNull();
     expect(screen.queryByText(/secretCode/)).toBeNull();
@@ -94,7 +94,7 @@ describe("MessageList pending activity", () => {
     );
 
     expect(screen.getByText("Nexus is working")).toBeTruthy();
-    expect(screen.getByText("Planning Layout...")).toBeTruthy();
+    expect(screen.getByText("Planning the change")).toBeTruthy();
     // The fixed fake checklist is gone — progress now streams live below the header.
     expect(screen.queryByText("Understanding task")).toBeNull();
     expect(screen.queryByText("Finalizing")).toBeNull();
@@ -154,7 +154,7 @@ describe("MessageList pending activity", () => {
       />
     );
 
-    expect(screen.getByText("Analyzing Request...")).toBeTruthy();
+    expect(screen.getByText("Reading the project")).toBeTruthy();
     expect(screen.getByText("Reasoning about the datastore approach")).toBeTruthy();
     expect(screen.queryByText("Build reasoning")).toBeNull();
   });
@@ -217,7 +217,7 @@ describe("MessageList pending activity", () => {
       />
     );
 
-    expect(screen.getByText("Writing files...")).toBeTruthy();
+    expect(screen.getByText("Generating files")).toBeTruthy();
     expect(screen.getAllByText("ServerScriptService/InventoryService.server.lua").length).toBeGreaterThan(0);
     expect(screen.getByText(/local InventoryService/)).toBeTruthy();
     expect(screen.queryByText("Active file preview")).toBeNull();
@@ -474,7 +474,7 @@ describe("MessageList pending activity", () => {
     );
 
     expect(screen.getAllByTestId("nexusrbx-avatar")).toHaveLength(1);
-    expect(screen.getAllByText("Writing checkpoint HUD...")).toHaveLength(1);
+    expect(screen.getAllByText("Generating files")).toHaveLength(1);
     expect(screen.getByText("Write checkpoint HUD")).toBeTruthy();
     expect(screen.queryByText("Persisted stage that must not render")).toBeNull();
   });
@@ -534,8 +534,8 @@ describe("MessageList pending activity", () => {
 
     expect(screen.getByText("Build the inventory")).toBeTruthy();
     expect(screen.getByText("Fix the round timer")).toBeTruthy();
-    expect(screen.getByText("Planning inventory...")).toBeTruthy();
-    expect(screen.getByText("Inspecting timer...")).toBeTruthy();
+    expect(screen.getByText("Planning the change")).toBeTruthy();
+    expect(screen.getByText("Reading the project")).toBeTruthy();
     expect(screen.getAllByTestId("nexusrbx-avatar")).toHaveLength(2);
   });
 
@@ -555,12 +555,12 @@ describe("MessageList pending activity", () => {
     );
 
     expect(screen.getAllByTestId("nexusrbx-avatar")).toHaveLength(4);
-    expect(screen.getByText("Run source stage")).toBeTruthy();
-    expect(screen.queryByText("Run duplicate stage")).toBeNull();
-    expect(screen.getByText("Job source stage")).toBeTruthy();
-    expect(screen.queryByText("Job duplicate stage")).toBeNull();
-    expect(screen.getByText("Keyless first stage")).toBeTruthy();
-    expect(screen.getByText("Keyless second stage")).toBeTruthy();
+    expect(screen.getByText("Run source")).toBeTruthy();
+    expect(screen.queryByText("Run duplicate")).toBeNull();
+    expect(screen.getByText("Job source")).toBeTruthy();
+    expect(screen.queryByText("Job duplicate")).toBeNull();
+    expect(screen.getByText("Keyless first")).toBeTruthy();
+    expect(screen.getByText("Keyless second")).toBeTruthy();
   });
 });
 
@@ -580,7 +580,7 @@ describe("MessageList conversation layout", () => {
     );
 
     const checkpoint = screen.getByRole("button", {
-      name: "Restore checkpoint before this Nexus build",
+      name: "Restore snapshot from before this Nexus build",
     });
     const prompt = screen.getByText("Build a round system.");
     expect(checkpoint.compareDocumentPosition(prompt) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -606,7 +606,7 @@ describe("MessageList conversation layout", () => {
       />
     );
 
-    expect(screen.queryByRole("button", { name: /Restore checkpoint/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Restore snapshot/i })).toBeNull();
   });
 
   test("shows an accessible run context with keyboard-reachable confidence details", () => {

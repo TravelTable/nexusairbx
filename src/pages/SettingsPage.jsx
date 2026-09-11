@@ -103,35 +103,35 @@ import "./SettingsLedger.css";
 
 const NAV_GROUPS = [
   {
-    label: "Workspace",
+    label: "Nexus Workspace",
     items: [
       { id: "overview", label: "Overview", icon: Activity, searchTerms: "status usage readiness" },
-      { id: "ai", label: "AI defaults", icon: Bot, searchTerms: "model mode code creativity project context" },
+      { id: "ai", label: "Models and generation", icon: Bot, searchTerms: "model mode code creativity project context" },
     ],
   },
   {
     label: "Connections",
     items: [
-      { id: "roblox", label: "Roblox & Studio", icon: PlugZap, searchTerms: "oauth publish creator handoff" },
+      { id: "roblox", label: "Roblox and Studio", icon: PlugZap, searchTerms: "oauth publish creator handoff plugin connector" },
     ],
   },
   {
     label: "Account",
     items: [
-      { id: "billing", label: "Plan & usage", icon: CreditCard, searchTerms: "billing tokens balance subscription" },
-      { id: "team", label: "Team", icon: Users, searchTerms: "members workspace roles" },
-      { id: "account", label: "Security & data", icon: Database, searchTerms: "profile session chats scripts delete" },
+      { id: "billing", label: "Billing and usage", icon: CreditCard, searchTerms: "billing credits limits balance subscription" },
+      { id: "team", label: "Team access", icon: Users, searchTerms: "members workspace roles" },
+      { id: "account", label: "Privacy and data", icon: Database, searchTerms: "profile security session chats scripts delete" },
     ],
   },
   {
-    label: "Support",
+    label: "Help",
     items: [
       { id: "help", label: "Support & diagnostics", icon: HelpCircle, searchTerms: "guide help onboarding diagnostics" },
     ],
   },
 ];
 
-const ANONYMOUS_NAV_GROUPS = [{ label: "Interface", items: [{ id: "appearance", label: "Interface", icon: Settings }] }];
+const ANONYMOUS_NAV_GROUPS = [{ label: "Interface", items: [{ id: "appearance", label: "Appearance", icon: Settings }] }];
 
 const SECTION_META = {
   overview: {
@@ -139,27 +139,27 @@ const SECTION_META = {
     description: "Check service readiness, recent usage, and the settings that affect your workspace.",
   },
   appearance: {
-    label: "Interface",
+    label: "Appearance",
     description: "Review the fixed Dark Build Ledger interface and accessibility behavior.",
   },
   ai: {
-    label: "AI",
+    label: "Models and generation",
     description: "Choose the defaults and project context used when a new generation run starts.",
   },
   roblox: {
-    label: "Roblox + Studio",
+    label: "Roblox and Studio",
     description: "Manage publishing consent, Roblox authorization, creator targets, and Studio handoff.",
   },
   billing: {
-    label: "Plan & usage",
+    label: "Billing and usage",
     description: "Understand your plan, token consumption, balances, and billing controls.",
   },
   team: {
-    label: "Team",
+    label: "Team access",
     description: "Create and review the workspaces available to your account.",
   },
   account: {
-    label: "Security & data",
+    label: "Privacy and data",
     description: "Manage your signed-in identity, session, stored work, and irreversible data actions.",
   },
   help: {
@@ -399,7 +399,7 @@ function SectionHeader({ section, icon: Icon = Settings, status, statusTone = "n
     <header className="settings-section-heading">
       <div className="settings-section-heading__icon" aria-hidden="true"><Icon /></div>
       <div className="settings-section-heading__copy">
-        <span className="settings-section-eyebrow">Workspace settings</span>
+        <span className="settings-section-eyebrow">Nexus Workspace settings</span>
         <h2 id="settings-section-title" tabIndex="-1">{section.label}</h2>
         <p>{section.description}</p>
       </div>
@@ -908,7 +908,7 @@ export default function SettingsPage() {
     const health = [
       {
         icon: Bot,
-        label: "AI defaults",
+        label: "Models and generation",
         value: settings.modelVersion || DEFAULT_SETTINGS.modelVersion,
         detail: `${formatChatModeLabel(settings.chatMode) || "Build"} mode`,
         state: "good",
@@ -916,7 +916,7 @@ export default function SettingsPage() {
       },
       {
         icon: CreditCard,
-        label: "Plan & usage",
+        label: "Billing and usage",
         value: billing.loading ? "Loading" : billing.plan || "FREE",
         detail: billing.error || `${formatNumber(billing.totalRemaining)} tokens available`,
         state: billing.error ? "warn" : "good",
@@ -953,7 +953,7 @@ export default function SettingsPage() {
               ? "Your defaults, plan, Roblox connection, and Studio handoff are all in good shape."
               : "Finish the recommended setup below, or jump straight back into your workspace."}</p>
             <div className="settings-overview-actions">
-              <Button asChild><Link to="/ai">Open workspace <ArrowRight className="h-4 w-4" /></Link></Button>
+              <Button asChild><Link to="/ai">Open Nexus Workspace <ArrowRight className="h-4 w-4" /></Link></Button>
               <Button type="button" variant="outline" onClick={() => { loadUsage(); loadRoblox(); billing.refresh?.(); }}>
                 <RefreshCcw className="h-4 w-4" /> Refresh status
               </Button>
@@ -1004,7 +1004,7 @@ export default function SettingsPage() {
 
   const renderAI = () => (
     <div className="space-y-6">
-      <Panel title="AI defaults" description="These defaults are used when new chats and generation runs start.">
+      <Panel title="Models and generation" description="These defaults are used when new conversations and generation runs start.">
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="space-y-2" role="group" aria-labelledby="model-setting-label">
             <div className="settings-field-label">
@@ -1831,7 +1831,7 @@ export default function SettingsPage() {
               <div className="settings-title-row">
                 <h1 className="font-[var(--ds-font-display)] text-4xl font-semibold leading-tight tracking-[-0.04em] sm:text-5xl">Settings</h1>
                 <DevTip label="About settings" side="right">
-                  Configure AI defaults, Roblox consent, billing, team access, and account data.
+                  Configure models, Roblox and Studio access, billing, usage, team access, and account data.
                 </DevTip>
               </div>
             </div>

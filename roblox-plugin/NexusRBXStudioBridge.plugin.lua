@@ -8367,7 +8367,7 @@ do
 
 local TweenService = game:GetService("TweenService")
 
-local displayPluginVersion, displayProtocolVersion, MAX_ACTIVITY_ENTRIES = PLUGIN_VERSION or "0.14.0-r15-animation", STUDIO_PROTOCOL_VERSION or "2026-08-27-r15-animation", 25
+local displayPluginVersion, displayProtocolVersion, MAX_ACTIVITY_ENTRIES = PLUGIN_VERSION or "unavailable", STUDIO_PROTOCOL_VERSION or "unavailable", 25
 
 local toolbar = plugin:CreateToolbar("NexusRBX")
 toggleButton = toolbar:CreateButton("NexusRBX", "Open Nexus", "")
@@ -8446,8 +8446,8 @@ local BRIDGE_STATES = {
 	working = { label = "Working", color = COLORS.accent, pulse = true },
 	degraded = { label = "Reconnecting", color = COLORS.warning, pulse = true },
 	reconciling = { label = "Confirming", color = COLORS.warning, pulse = true },
-	target_changed = { label = "Wrong place", color = COLORS.error, pulse = false },
-	target_stale = { label = "Target stale", color = COLORS.error, pulse = false },
+	target_changed = { label = "Different place open", color = COLORS.error, pulse = false },
+	target_stale = { label = "Studio context changed", color = COLORS.error, pulse = false },
 	error = { label = "Action needed", color = COLORS.error, pulse = false },
 }
 
@@ -9063,7 +9063,7 @@ do
 end
 
 restoreButton = makeButton(UI_HELPERS.safetySection, "RestoreButton", "Restore Selected Snapshots", COLORS.accent)
-undoBatchButton = makeButton(UI_HELPERS.safetySection, "UndoBatchButton", "Undo Last Batch", themeColor(Enum.StudioStyleGuideColor.Button))
+undoBatchButton = makeButton(UI_HELPERS.safetySection, "UndoBatchButton", "Restore latest change set", themeColor(Enum.StudioStyleGuideColor.Button))
 
 UI_HELPERS.settingsSection = makeSection("Settings")
 makeText(UI_HELPERS.settingsSection, "SettingsTitle", "Settings", 18, 13, true)
@@ -9096,12 +9096,12 @@ do
 	companionList.Padding = UDim.new(0, 3)
 	companionList.SortOrder = Enum.SortOrder.LayoutOrder
 	companionList.Parent = companionSection
-	makeText(companionSection, "McpCompanionTitle", "Enhanced connection", 17, 12, true)
+	makeText(companionSection, "McpCompanionTitle", "Advanced local connection", 17, 12, true)
 	mcpCompanionLabel = makeText(companionSection, "McpCompanionStatus", "Not configured", 17, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText))
 	mcpCompanionHelpLabel = makeText(
 		companionSection,
 		"McpCompanionHelp",
-		"Recommended for the best Nexus experience. The Studio plugin works independently.",
+		"Optional Connector diagnostics for advanced local workflows. This Studio Plugin works independently.",
 		nil,
 		11,
 		false,
@@ -9324,9 +9324,9 @@ end
 -- call sites keep working without ever mislabeling the connection.
 function UI_HELPERS.stateFromLegacy(text)
 	local lowered = string.lower(tostring(text or ""))
-	if string.find(lowered, "wrong place") or string.find(lowered, "target changed") then
+	if string.find(lowered, "wrong place") or string.find(lowered, "different place") or string.find(lowered, "target changed") then
 		return "target_changed"
-	elseif string.find(lowered, "target stale") then
+	elseif string.find(lowered, "target stale") or string.find(lowered, "studio context changed") then
 		return "target_stale"
 	elseif string.find(lowered, "confirming") or string.find(lowered, "reconcil") then
 		return "reconciling"
@@ -9466,7 +9466,7 @@ refreshControls = function()
 	local hasSnapshots = #localSnapshots > 0
 	setButtonEnabled(restoreButton, paired and (not busy) and hasSnapshots, hasSnapshots and "Restore All Snapshots" or "No Snapshots Yet")
 	local hasBatch = type(lastBatchSnapshots) == "table" and #lastBatchSnapshots > 0
-	setButtonEnabled(undoBatchButton, paired and (not busy) and hasBatch, hasBatch and "Undo Last Batch" or "No Batch To Undo")
+	setButtonEnabled(undoBatchButton, paired and (not busy) and hasBatch, hasBatch and "Restore latest change set" or "No change set to restore")
 	setButtonEnabled(disconnectButton, paired and (not busy), busy and "Command Running" or "Disconnect Studio")
 	if nexusHeader then
 		nexusHeader.indicator.BackgroundColor3 = paired and BRIDGE_STATES[currentBridgeState].color or COLORS.muted
@@ -9604,15 +9604,15 @@ setMcpCompanionStatus = function(summary)
 		ready = COLORS.success,
 	}
 	local help = {
-		not_configured = "Recommended for the best Nexus experience. The Studio plugin remains fully available.",
-		connector_offline = "The enhanced connection is offline. Nexus will continue through the Studio plugin.",
-		studio_mcp_unavailable = "The enhanced connection is unavailable. Nexus will continue through the Studio plugin.",
-		ready = "The enhanced connection is ready.",
+		not_configured = "Optional advanced local diagnostics. The Studio Plugin remains fully available.",
+		connector_offline = "The advanced local connection is offline. Nexus will continue through the Studio Plugin.",
+		studio_mcp_unavailable = "The advanced local connection is unavailable. Nexus will continue through the Studio Plugin.",
+		ready = "The advanced local connection is ready.",
 	}
 	local commandCount = tonumber(summary.supportedCommandCount) or 0
 	mcpCompanionLabel.Text = labels[state] or "Unavailable"
 	mcpCompanionLabel.TextColor3 = colors[state] or COLORS.muted
-	mcpCompanionHelpLabel.Text = help[state] or "The Studio connection remains available while Nexus reconnects enhanced features."
+	mcpCompanionHelpLabel.Text = help[state] or "The Studio Plugin remains available while Nexus reconnects advanced diagnostics."
 end
 
 function UI_HELPERS.errorHelpFor(value)

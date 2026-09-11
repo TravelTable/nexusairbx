@@ -86,7 +86,7 @@ function App() {
         <Routes>
           <Route path="/" element={withSiteShell(<NexusRBXHomepageV2 />, "marketing")} />
           <Route path="/downloads" element={withSiteShell(<NexusRBXDownloadsPage />, "marketing")} />
-          <Route path="/ai" element={withRobloxConnectionGate(<NexusRBXAIPageContainer />)} />
+          <Route path="/ai" element={<NexusRBXAIPageContainer />} />
           <Route path="/onboarding" element={<NexusRBXOnboardingPage />} />
           <Route path="/settings" element={withSiteShell(<NexusRBXSettingsPageContainer />, "account")} />
           <Route path="/billing" element={withSiteShell(<NexusRBXBillingPageContainer />, "account")} />

@@ -196,10 +196,10 @@ export default function PublicAccountState({
             {account.email}
           </p>
           <a className={`${menuItemClass} mt-1`} href="/settings?tab=roblox">
-            Roblox + Studio
+            Roblox and Studio
           </a>
           <a className={menuItemClass} href="/billing">
-            Billing
+            Billing and usage
           </a>
           <a className={menuItemClass} href="/settings">
             Settings
@@ -235,7 +235,7 @@ export default function PublicAccountState({
       </details>
       {!compact ? (
         <a className={primaryClass} href="/ai">
-          Open workspace
+          Open Nexus Workspace
         </a>
       ) : null}
     </div>

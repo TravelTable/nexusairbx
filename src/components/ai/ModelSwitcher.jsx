@@ -62,6 +62,7 @@ function primaryDescriptor(model) {
 
 function ModelRow({ model, selected, locked, onSelect, showDescriptor = false }) {
   const descriptor = showDescriptor ? primaryDescriptor(model) : null;
+  const usageLabel = model.costTierLabel || (Number.isFinite(model.creditMultiplier) ? `${model.creditMultiplier}× usage` : null);
   return (
     <button
       type="button"
@@ -81,8 +82,8 @@ function ModelRow({ model, selected, locked, onSelect, showDescriptor = false })
           NEW
         </span>
       ) : null}
-      {descriptor ? (
-        <span className="shrink-0 text-[9px] text-[var(--ds-text-muted)]">{descriptor}</span>
+      {descriptor || usageLabel ? (
+        <span className="shrink-0 text-[9px] text-[var(--ds-text-muted)]">{[descriptor, usageLabel].filter(Boolean).join(" · ")}</span>
       ) : null}
       {locked ? (
         <Lock className="h-3 w-3 shrink-0 text-[var(--ds-text-muted)]" />
@@ -136,7 +137,7 @@ export default function ModelSwitcher({
   fullWidth = false,
   recommendedModelId = null,
 }) {
-  const { models, loading, refreshing } = useModelCatalog();
+  const { models, loading, refreshing, error: catalogError, refresh } = useModelCatalog();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [menuPosition, setMenuPosition] = useState(null);
@@ -351,6 +352,12 @@ export default function ModelSwitcher({
           {!autoVisible && !searchedModels.length ? (
             <div className="px-3 py-7 text-center text-[11px] text-[var(--ds-text-muted)]">
               No models found.
+            </div>
+          ) : null}
+          {catalogError ? (
+            <div role="status" className="mt-1 flex items-center justify-between gap-2 border-t border-[var(--ds-warning-border)] px-2 py-2 text-[9px] text-[var(--ds-warning)]">
+              <span>Live availability is unavailable. Showing the last safe catalog.</span>
+              <button type="button" onClick={() => void refresh?.()} className="shrink-0 rounded px-1.5 py-1 font-semibold underline underline-offset-2 focus-ring">Retry</button>
             </div>
           ) : null}
           {refreshing ? (

@@ -10,7 +10,7 @@ describe("LiveWorkStream motion states", () => {
       />
     );
 
-    expect(screen.getByRole("status").textContent).toContain("Understanding your task...");
+    expect(screen.getByRole("status").textContent).toContain("Understanding your task");
     expect(screen.getByTestId("live-work-stream").className).toContain("py-1");
     expect(container.querySelector(".nexus-build-loader")).toBeNull();
     expect(screen.queryByText("Starting work...")).toBeNull();

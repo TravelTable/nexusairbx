@@ -1,11 +1,12 @@
 import type { CompanionDiagnostics, CompanionSnapshot, ConnectorDesktopApi, PreferenceKey, RendererDestination, WindowMode } from "../contracts";
+import { CONNECTOR_VERSION } from "./version";
 
 const now = Date.now();
 const defaults: CompanionSnapshot = {
   state: "awaiting_sign_in", message: "Sign in with your browser to connect NexusRBX.", updatedAt: now, autoStart: true, updateState: "idle",
-  preferences: { autoStart: true, minimizeToTray: true, startMinimized: false, theme: "dark", autoReconnect: true, reconnectDelayMs: 2500, automaticUpdates: true },
+  preferences: { workspaceEnabled: false, autoStart: true, minimizeToTray: true, startMinimized: false, theme: "dark", autoReconnect: true, reconnectDelayMs: 2500, automaticUpdates: true },
   cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected", connectionStage: null, degradedReason: null,
-  experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, connectorVersion: "0.2.17", mcpServerVersion: null, lastCommand: null,
+  experienceName: null, supportedToolCount: 0, supportedTools: [], lastActivityAt: null, lastHeartbeatAt: null, connectorVersion: CONNECTOR_VERSION, mcpServerVersion: null, lastCommand: null,
 };
 
 export function previewSnapshot(): CompanionSnapshot {

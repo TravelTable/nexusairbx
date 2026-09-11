@@ -111,7 +111,7 @@ function Dock({
         height: height,
         scrollbarWidth: 'none',
       }}
-      className='mx-2 flex max-w-full items-end overflow-x-auto'
+      className='nexus-workspace-dock__viewport mx-2 flex max-w-full items-end overflow-x-auto'
     >
       <motion.div
         onMouseMove={({ pageX }) => {
@@ -123,7 +123,7 @@ function Dock({
           mouseX.set(Infinity);
         }}
         className={cn(
-          'mx-auto flex w-fit gap-3 rounded-2xl bg-gray-50 px-3 dark:bg-neutral-900',
+          'nexus-workspace-dock__items mx-auto flex w-fit gap-3 rounded-2xl bg-gray-50 px-3 dark:bg-neutral-900',
           className
         )}
         style={{ height: panelHeight }}
@@ -168,7 +168,7 @@ function DockItem({ children, className, onClick, active = false, ariaLabel, has
       onBlur={() => isHovered.set(0)}
       onClick={onClick}
       className={cn(
-        'relative inline-flex items-center justify-center',
+        'nexus-workspace-dock__item relative inline-flex items-center justify-center',
         className
       )}
       tabIndex={0}
@@ -409,7 +409,7 @@ export function AppleStyleDock({
   };
 
   return (
-    <div ref={rootRef} className='absolute bottom-0 left-1/2 z-30 max-w-full -translate-x-1/2'>
+    <div ref={rootRef} className='nexus-workspace-dock absolute bottom-0 left-1/2 z-30 max-w-full -translate-x-1/2'>
       <AnimatePresence initial={false}>
         {popupView && (
           popupView === 'usage'

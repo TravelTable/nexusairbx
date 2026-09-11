@@ -1,12 +1,12 @@
-# NexusRBX Studio Bridge
+# NexusRBX Studio Plugin
 
-Local Roblox Studio plugin for the NexusRBX website-to-Studio bridge.
+The recommended Roblox Studio companion for Nexus Workspace.
 
 ## Studio toolbox
 
 The plugin opens to **Tools**, with **Activity**, **Recovery**, and **Settings**
-navigation. The dock uses a fixed dark plum palette with purple actions and
-lavender text, independent of Studio’s light/dark setting. There is no chat
+navigation. The dock uses Roblox Studio system surfaces with a restrained Nexus
+accent and follows the active Studio theme where supported. There is no chat
 composer or conversation transcript in the dock.
 
 - Select objects in Explorer to inspect their properties, fix a problem, or
@@ -58,7 +58,7 @@ the lifecycle test explicitly reports a skip. Compile the generated plugin with
 `luau-compile --null roblox-plugin/NexusRBXStudioBridge.plugin.lua` to check Luau
 syntax and register limits.
 
-The toolbox build is `nexusrbx-studio-0.14.0-r15-animation.12-toolbox`. Deploy the
+The toolbox build is `nexusrbx-studio-0.15.1-ui-build.18-files-first`. Deploy the
 matching backend release catalog before installing it against that backend.
 The protocol version is unchanged and the prior chat build remains accepted.
 `npm run plugin:build` creates the Lua bundle, checksum, and installable
