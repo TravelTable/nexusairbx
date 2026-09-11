@@ -23,7 +23,7 @@ export const UI_BUILD_LABELS = { generating: 'Writing UI files', preparing: 'Sav
   awaiting_renders: 'Rendering preview', reviewing: 'Reviewing the render', repairing: 'Refining your UI', complete: 'Ready', saved: 'Saved',
   preview_unavailable: 'Preview unavailable', needs_review: 'Review needs attention', renderer_limited: 'Preview limitations',
   budget_exhausted: 'Review budget reached', failed: 'Build needs attention' };
-const actions = { finding_assets: 'Finding icons and images', building_layout: 'Building UI layout', writing_implementation: 'Writing UI implementation', validating_implementation: 'Checking UI implementation' };
+const actions = { finding_assets: 'Finding icons and images', uploading_assets: 'Uploading images to Roblox', building_layout: 'Building UI layout', writing_implementation: 'Writing UI implementation', validating_implementation: 'Checking UI implementation' };
 const ended = new Set(['complete','saved','preview_unavailable','needs_review','renderer_limited','budget_exhausted','failed']);
 const terminalTask = task => ended.has(task?.uiBuild?.stage) || ['cancelled','failed','succeeded'].includes(task?.status);
 const metadata = { workspace: 'ui_creator', displayPolicy: 'ui_build' };
