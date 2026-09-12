@@ -1,0 +1,17 @@
+    const result = await runUiStructured({
+      chat: input => this.chat(input),
+      name: "ui_visual_review",
+      schema: createUiDesignReviewSchema(renders),
+      model, signal, maxTokens: 9000, temperature: 0,
+      normalizeUi: false,
+      messages: [
+        { role: "system", content: REVIEW_SYSTEM_PROMPT },
+        { role: "user", content: evidence },
+      ],
+      // This retains image identity checks, scores, thresholds and rejection rules.
+      // A well-formed negative review stays negative; it is not a repairable parse error.
+      validate: value => normalizeReview(value, renders),
+    });
+    return result.value;
+  }
+

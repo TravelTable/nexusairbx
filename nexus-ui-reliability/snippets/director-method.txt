@@ -1,0 +1,12 @@
+  async structured({ name, schema, system, payload, model, signal, validate, maxTokens }) {
+    return runUiStructured({
+      chat: input => this.chat(input),
+      name, schema, system, payload, model, signal, maxTokens,
+      normalize: (value, localSchema) => normalizeStructuredDesignOutput(value, localSchema),
+      validate: value => {
+        assertSchema(value, schema, name);
+        return validate(value);
+      },
+    });
+  }
+
