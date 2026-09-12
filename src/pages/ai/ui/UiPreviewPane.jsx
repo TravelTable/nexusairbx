@@ -9,7 +9,7 @@ import WorkspaceHelp from '../../../components/ai/chat/WorkspaceHelp';
 export default function UiPreviewPane({ userId, designId, projectId, sourceRevision, capture,
   states = [], viewports = [], capabilities = null, lastSuccessfulJobId, renderJobs = [],
   onRefreshCapture, onRefreshManifest, captureBusy = false, run = null, studioConnected = false,
-  hasNodes = false, studioReceipt = null, pendingStudioCommand = null, onApplyToStudio,
+  hasNodes = false, sourceOwned = false, studioReceipt = null, pendingStudioCommand = null, onApplyToStudio,
   onConnectStudio, applyBusy = false, onRenderStatus, previewFailed = false, updatingRevision = false }) {
   const [selection, setSelection] = useState({ snapshotId: '', stateId: 'default', viewportId: '' });
   const rendererUnavailable = capabilities?.previewEnabled === false || capabilities?.rendererAvailable === false || capabilities?.rendererBackend === 'public';
@@ -42,17 +42,17 @@ export default function UiPreviewPane({ userId, designId, projectId, sourceRevis
       <label><span className="nx-ui-preview__sr">Preview state</span><NexusSelect aria-label="Preview state" value={stateId} disabled={!currentCapture} onChange={e => changeState(e.target.value)}>
         <option value="default">Default</option>{selectableStates.filter(s => s.id !== 'default').map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
       </NexusSelect></label>
-      <WorkspaceHelp>Pinevex renders your built Roblox UI. Studio is optional. Previews show appearance; runtime behaviour is tested in Roblox.</WorkspaceHelp>
+      <WorkspaceHelp>{sourceOwned ? 'Nexus owns these generated source files. Studio edits are checked and preserved on conflict; recapture does not rewrite the saved source. Previews verify appearance only, and runtime behavior must be tested in Roblox.' : 'Pinevex renders your built Roblox UI. Studio is optional. Previews verify appearance only, and runtime behavior must be tested in Roblox.'}</WorkspaceHelp>
       {hasNodes && studioConnected && onRefreshCapture ? <button type="button" disabled={captureBusy || Boolean(run)} onClick={onRefreshCapture}>{captureBusy ? 'Capturing…' : 'Recapture Studio'}</button> : null}
     </header>
     {failed ? <div className="nx-ui-preview__error" role="status"><strong>Preview unavailable</strong><span> Your saved work is retained.</span> <button type="button" onClick={retry}>Retry Preview</button></div> : null}
     <div className="nx-ui-preview__body">
       {data.imageUrl ? <figure className="nx-ui-preview__frame" data-running={run ? 'true' : 'false'}>
         {loading ? <span className="nx-preview-updating" aria-label="Updating preview"><WorkingDots/></span> : null}
-        {data.earlier || updatingRevision ? <span className="nx-ui-preview__earlier">Earlier version</span> : null}
+        {data.earlier || updatingRevision ? <span className="nx-ui-preview__earlier">Previous preview</span> : null}
         <img className="nx-ui-preview__image" src={data.imageUrl} draggable="false" alt={`${data.preview?.stateLabel || 'Default'} state of the generated Roblox UI`}
           width={data.preview?.viewport?.width} height={data.preview?.viewport?.height} />
-        <figcaption>{originalViewport?.label || data.preview?.viewportId} · {data.preview?.stateLabel || 'Default'} · rev {String(data.preview?.sourceRevision || '').slice(0, 8)} · Pinevex{data.preview?.simulated ? ' · Simulated state' : ''}</figcaption>
+        <figcaption>{originalViewport?.label || data.preview?.viewportId} · {data.preview?.stateLabel || 'Default'} · Pinevex{data.preview?.simulated ? ' · Simulated state' : ''}</figcaption>
       </figure> : <div className={`nx-ui-preview__empty ${run || (currentCapture && !failed) ? 'nx-ui-preview__empty--working' : ''}`}>
         {loading ? <WorkingDots/> : null}
         <strong>{failed ? 'Preview unavailable' : run ? run.stage : !hasNodes ? 'Your preview appears here' : 'Preparing preview'}</strong>

@@ -1473,6 +1473,11 @@ UiArtifact.treeHash = function(root)
 		local values = {
 			fullPath(inst),
 			inst.ClassName,
+			-- Includes every captured mutable property, every attribute, and every
+			-- CollectionService tag. Source is added separately below.
+			-- NexusTreeHash is the derived value produced by this function. Excluding
+			-- only that field keeps the fingerprint stable instead of self-referential.
+			tostring(propertyHash(inst, { NexusTreeHash = true }) or ""),
 			tostring(inst:GetAttribute(AGENT_ARTIFACT_ID_ATTRIBUTE) or ""),
 			tostring(inst:GetAttribute(AGENT_FILE_ID_ATTRIBUTE) or ""),
 			tostring(inst:GetAttribute("NexusRootId") or ""),

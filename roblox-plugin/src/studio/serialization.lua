@@ -389,7 +389,7 @@ local function propertiesOf(inst)
 	return props
 end
 
-local function propertyHash(inst)
+local function propertyHash(inst, excludedAttributes)
 	-- Nested helpers avoid spending scarce top-level local registers in the
 	-- generated single-chunk plugin bundle.
 	local function isArrayTable(value)
@@ -432,10 +432,14 @@ local function propertyHash(inst)
 	end
 	local tags = CollectionService:GetTags(inst)
 	table.sort(tags)
+	local attributes = attributesOf(inst)
+	for attributeName in pairs(excludedAttributes or {}) do
+		attributes[attributeName] = nil
+	end
 	return stableHash(
 		canonicalEncode(propertiesOf(inst))
 			.. "\0"
-			.. canonicalEncode(attributesOf(inst))
+			.. canonicalEncode(attributes)
 			.. "\0"
 			.. table.concat(tags, "\0")
 	)

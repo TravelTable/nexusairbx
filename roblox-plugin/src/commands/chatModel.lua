@@ -68,35 +68,79 @@ function ImportedAsset.applyUiModel(payload)
 		end
 		return string.format("%08x", value)
 	end
+	local function uiSourceInstance(root, relativePath)
+		local path = tostring(relativePath or "")
+		if path == "View.luau" then return root:FindFirstChild("View") end
+		if path == "Controller.client.luau" then return root:FindFirstChild("Controller") end
+		local parts = {}
+		for part in string.gmatch(path, "[^/]+") do table.insert(parts, part) end
+		local current = root:FindFirstChild("_NexusSource")
+		for index = 1, #parts - 1 do
+			current = current and current:FindFirstChild(parts[index]) or nil
+		end
+		local name = parts[#parts] or ""
+		name = string.gsub(name, "%.client%.luau$", "")
+		name = string.gsub(name, "%.luau$", "")
+		return current and current:FindFirstChild(name) or nil
+	end
+	local function verifyUiSources(root, expectedHashes)
+		local hashes = {}
+		local expectedCount = 0
+		for relativePath, expectedHash in pairs(expectedHashes or {}) do
+			expectedCount += 1
+			local source = uiSourceInstance(root, relativePath)
+			if not source or not source:IsA("LuaSourceContainer") then
+				return false, hashes, relativePath, "missing"
+			end
+			local currentHash = uiSourceHash(source.Source)
+			hashes[relativePath] = currentHash
+			if currentHash ~= expectedHash then return false, hashes, relativePath, "changed" end
+		end
+		local actualCount = root:IsA("LuaSourceContainer") and 1 or 0
+		for _, descendant in ipairs(root:GetDescendants()) do
+			if descendant:IsA("LuaSourceContainer") then actualCount += 1 end
+		end
+		if actualCount ~= expectedCount then return false, hashes, "", "count" end
+		return true, hashes
+	end
+	local function currentTreeHash(root)
+		if type(UiArtifact) ~= "table" or type(UiArtifact.treeHash) ~= "function" then return nil end
+		local ok, value = pcall(UiArtifact.treeHash, root)
+		return ok and value or nil
+	end
 	if game:GetService("RunService"):IsRunning() then return { ok = false, code = "studio_edit_mode_required", error = "Stop the playtest before applying this UI." } end
 	local parent = game:GetService("StarterGui")
 	local previous = parent:FindFirstChild(payload.rootName)
 	local snapshots = {}
 	if previous then
-		if previous:GetAttribute("NexusUiModelHash") == payload.contentHash then
-			local hashes = {}
-			for _, name in ipairs({"View", "Controller"}) do
-				local source = previous:FindFirstChild(name)
-				if not source or not source:IsA("LuaSourceContainer") or uiSourceHash(source.Source) ~= (payload.newSourceHashes or {})[name] then
-					return { ok = false, code = "source_hash_mismatch", error = "An applied UI source changed in Studio. Your edits were preserved." }
-				end
-				hashes[name] = uiSourceHash(source.Source)
-			end
-			return { ok = true, duplicate = true, contentHash = payload.contentHash, sourceHashes = hashes, inserted = {{ path = fullPath(previous), managedId = ensureManagedId(previous) }} }
-		end
-		if previous:GetAttribute("NexusUiDesignId") ~= payload.designId or previous:GetAttribute("NexusUiModelHash") ~= payload.expectedContentHash then
+		local duplicate = previous:GetAttribute("NexusUiModelHash") == payload.contentHash
+		if not duplicate and (previous:GetAttribute("NexusUiDesignId") ~= payload.designId or previous:GetAttribute("NexusUiModelHash") ~= payload.expectedContentHash) then
 			return { ok = false, code = "ui_model_conflict", error = "The existing UI does not match the last applied revision." }
 		end
-		for _, name in ipairs({"View", "Controller"}) do
-			local source = previous:FindFirstChild(name)
-			local expectedSourceHash = (payload.expectedSourceHashes or {})[name]
-			if not source or not source:IsA("LuaSourceContainer") or not expectedSourceHash or uiSourceHash(source.Source) ~= expectedSourceHash then
-				return { ok = false, code = "source_hash_mismatch", error = "A UI source file changed in Studio. Your edits were preserved." }
-			end
+		local expectedTreeHash = tostring(payload.expectedTreeHash or "")
+		if expectedTreeHash == "" then
+			return { ok = false, code = "ui_tree_precondition_required", error = "The existing UI predates full conflict protection. Your Studio copy was preserved." }
 		end
-		local snapshot = snapshotInstance(fullPath(previous))
-		if not snapshot or snapshot.ok == false then return { ok = false, code = "snapshot_failed", error = "Could not snapshot the existing UI." } end
-		table.insert(snapshots, snapshot)
+		local actualTreeHash = currentTreeHash(previous)
+		if not actualTreeHash or actualTreeHash ~= expectedTreeHash then
+			return { ok = false, code = "ui_tree_conflict", error = "The UI tree changed in Studio. Your edits were preserved.", expectedTreeHash = expectedTreeHash, currentTreeHash = actualTreeHash }
+		end
+		local expectedSources = duplicate and payload.newSourceHashes or payload.expectedSourceHashes
+		if type(expectedSources) ~= "table" or next(expectedSources) == nil then
+			return { ok = false, code = "ui_source_precondition_required", error = "The existing UI source identity is unavailable. Your Studio copy was preserved." }
+		end
+		local sourcesOk, hashes, changedPath = verifyUiSources(previous, expectedSources)
+		if not sourcesOk then
+			return { ok = false, code = "source_hash_mismatch", error = "A UI source file changed in Studio. Your edits were preserved.", sourcePath = changedPath }
+		end
+		if duplicate then
+			return { ok = true, duplicate = true, contentHash = payload.contentHash, treeHash = actualTreeHash, sourceHashes = hashes, inserted = {{ path = fullPath(previous), managedId = ensureManagedId(previous) }} }
+		end
+		local snapshotOk = pcall(function() appendSnapshotTree(previous, snapshots) end)
+		if not snapshotOk or #snapshots == 0 then return { ok = false, code = "snapshot_failed", error = "Could not snapshot the complete existing UI." } end
+		-- The root is restored by replacing the whole applied subtree. This removes
+		-- descendants introduced by the new revision before recreating the old tree.
+		snapshots[#snapshots].replaceSubtree = true
 		previous.Parent = nil
 	end
 	local ok, result = pcall(ImportedAsset.importChatModelFile, payload)
@@ -112,14 +156,17 @@ function ImportedAsset.applyUiModel(payload)
 	root:SetAttribute("NexusUiDesignId", payload.designId)
 	root:SetAttribute("NexusUiModelHash", payload.contentHash)
 	root:SetAttribute("NexusRevision", payload.sourceRevision)
-	local hashes = {}
-	for _, name in ipairs({"View", "Controller"}) do
-		local source = root:FindFirstChild(name)
-		if source and source:IsA("LuaSourceContainer") then hashes[name] = uiSourceHash(source.Source) end
+	local sourcesOk, hashes, changedPath = verifyUiSources(root, payload.newSourceHashes)
+	local treeHash = currentTreeHash(root)
+	if not sourcesOk or not treeHash then
+		root:Destroy()
+		if previous then previous.Parent = parent end
+		return { ok = false, code = sourcesOk and "ui_tree_hash_failed" or "source_hash_mismatch", error = sourcesOk and "Studio could not fingerprint the imported UI tree." or "The imported model did not contain every saved UI source file.", sourcePath = changedPath, snapshots = snapshots }
 	end
 	if previous then previous:Destroy() end
 	if not previous then for _, snapshot in ipairs(result.snapshots or {}) do table.insert(snapshots, snapshot) end end
 	result.snapshots = snapshots
 	result.sourceHashes = hashes
+	result.treeHash = treeHash
 	return result
 end

@@ -6,7 +6,6 @@ import * as designs from "../../../lib/uiDesignApi";
 import * as tasks from "../../../lib/taskRuntimeApi";
 import * as previews from "../../../lib/uiPreviewApi";
 import { getBuildWorkspaceSnapshot } from "../../../lib/buildWorkspaceApi";
-import { askUiQuestion } from "../../../lib/uiConversation";
 jest.mock("../../../lib/uiConversation", () => ({ watchUiConversation: jest.fn(() => () => {}), askUiQuestion: jest.fn(async () => "A useful answer") }));
 
 jest.mock("../../../lib/uiDesignApi", () => Object.fromEntries(["createUiDesign","listUiDesigns","getUiDesign","patchUiDesign","saveUiHooks","compileUiDesign","createUiCheckpoint","listUiCheckpoints","restoreUiCheckpoint","renameUiDesign","deleteUiDesign","recoverUiDesign"].map(name => [name, jest.fn()])));
@@ -17,9 +16,7 @@ jest.mock("@monaco-editor/react", () => () => <div>Monaco hooks editor</div>);
 jest.mock("../../../hooks/useChatAttachmentUpload", () => () => ({ upload: jest.fn(), retry: jest.fn() }));
 jest.mock("../../../components/ai/chat/CreationPromptComposer", () => props => <form onSubmit={event => props.onSubmit(event, props.prompt, { attachments: [] })}>
   <textarea aria-label="UI prompt" value={props.prompt} onChange={e => props.setPrompt(e.target.value)} />
-  <select aria-label="Conversation mode" value={props.mode} onChange={e => props.onModeChange(e.target.value)}>
-    <option value="agent">Agent</option><option value="plan">Plan</option><option value="ask">Ask</option>
-  </select><button disabled={props.isGenerating}>Send prompt</button></form>);
+  {props.modeControl}<button disabled={props.isGenerating}>Send prompt</button></form>);
 jest.mock("../../../components/ai/chat/MessageList", () => ({ messages }) => <div>{messages.map(m => <p key={m.id}>{m.content}</p>)}</div>);
 jest.mock("../../../components/ai-elements/conversation", () => ({ Conversation: ({children}) => <div>{children}</div>, ConversationContent: ({children}) => <div>{children}</div>, ConversationScrollButton: () => null }));
 jest.mock("../../../components/ai/workspace/BuildWorkspace", () => () => <div>Saved code workspace</div>);
@@ -38,6 +35,7 @@ beforeEach(() => {
   getBuildWorkspaceSnapshot.mockResolvedValue({ items: [] });
   tasks.streamTaskEvents.mockImplementation(() => new Promise(() => {}));
   localStorage.clear();
+  localStorage.setItem('nexusrbx:ui:last-open:user-1:project-1', 'design-1');
   window.matchMedia = jest.fn(() => ({ matches: false, addEventListener: jest.fn(), removeEventListener: jest.fn() }));
   if (!global.crypto) global.crypto = {};
   if (!global.crypto.randomUUID) global.crypto.randomUUID = () => "test-id";
@@ -61,7 +59,8 @@ test("Agent starts one durable UI task and cancellation uses the task action", a
   fireEvent.change(screen.getByLabelText("UI prompt"), { target: { value: "Build a shop" } });
   fireEvent.click(screen.getByRole("button", {name:"Send prompt"}));
   await waitFor(() => expect(tasks.createTask).toHaveBeenCalledTimes(1));
-  expect(tasks.createTask.mock.calls[0][0]).toMatchObject({ mode:"agent", workspace:"ui_creator", designId:"design-1", baseRevision:"rev-1" });
+  expect(tasks.createTask.mock.calls[0][0]).toMatchObject({ mode:"agent", workspace:"ui_creator", designId:"design-1", baseRevision:"rev-1",
+    executionInput: { applyMode: 'manual_review', studioEnabled: false } });
   expect(designs.createUiDesign).not.toHaveBeenCalled();
   fireEvent.click(await screen.findByRole("button", {name:"Stop build"}));
   await waitFor(() => expect(tasks.cancelTask).toHaveBeenCalledWith("task-1"));
@@ -75,19 +74,13 @@ test.each(["generating","awaiting_studio","awaiting_capture","awaiting_renders",
   expect(tasks.getTask).toHaveBeenCalledWith("task-1");
   expect(tasks.createTask).not.toHaveBeenCalled();
 });
-test("Plan waits for the explicit Build action", async () => {
-  const plan = { ...savedTask(), mode:"plan", status:"waiting_user", uiBuild:undefined };
-  tasks.createTask.mockResolvedValue({ task: plan });
-  tasks.getTaskEvents.mockResolvedValue({ task: plan, events:[], lastSequence:0 });
-  tasks.approveTask.mockResolvedValue({task:savedTask()});
+test("the dedicated UI composer stays focused on Build mode", async () => {
   await open();
-  fireEvent.change(screen.getByLabelText("Conversation mode"), {target:{value:"plan"}});
-  fireEvent.change(screen.getByLabelText("UI prompt"), {target:{value:"Plan a shop"}});
+  expect(screen.queryByLabelText("Conversation mode")).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("UI prompt"), {target:{value:"Build a shop"}});
   fireEvent.click(screen.getByRole("button", {name:"Send prompt"}));
-  const build = await screen.findByRole("button", {name:"Build this plan"});
-  expect(tasks.approveTask).not.toHaveBeenCalled();
-  fireEvent.click(build);
-  await waitFor(() => expect(tasks.approveTask).toHaveBeenCalledTimes(1));
+  await waitFor(() => expect(tasks.createTask).toHaveBeenCalledTimes(1));
+  expect(tasks.createTask.mock.calls[0][0].mode).toBe("agent");
 });
 test("saved revisions apply without generating again", async () => {
   await open();
@@ -96,29 +89,18 @@ test("saved revisions apply without generating again", async () => {
   expect(tasks.createTask.mock.calls[0][0]).toMatchObject({uiIntent:"apply",baseRevision:"rev-1", executionInput:{applyMode:"auto_after_approval"}});
 });
 
-test("Ask uses the shared read-only response path without applying or approving a UI", async () => {
-  tasks.createTask.mockResolvedValue({kind:"conversation",accepted:false,task:{taskId:""}});
-  await open();
-  fireEvent.change(screen.getByLabelText("Conversation mode"), {target:{value:"ask"}});
-  fireEvent.change(screen.getByLabelText("UI prompt"), {target:{value:"How should this menu behave?"}});
-  fireEvent.click(screen.getByRole("button", {name:"Send prompt"}));
-  await waitFor(() => expect(askUiQuestion).toHaveBeenCalledTimes(1));
-  expect(tasks.createTask.mock.calls[0][0].mode).toBe("ask");
-  expect(tasks.approveTask).not.toHaveBeenCalled();
-  expect(designs.patchUiDesign).not.toHaveBeenCalled();
-});
 test("shared header drawer retains focus during streamed updates and restores its trigger", async () => {
   const slot = document.createElement('div');
   document.body.appendChild(slot);
   const close = jest.fn();
   const base = { sharedHeader: true, headerActionTarget: slot, onDrawer: jest.fn(), onCloseDrawer: close };
   const mounted = render(<UiCreatorChrome {...base} />);
-  const trigger = screen.getByRole('button', { name: 'Code / Files' });
+  const trigger = screen.getByRole('button', { name: 'Inspect' });
   trigger.focus();
   mounted.rerender(<UiCreatorChrome {...base} drawer="luau" working status="Writing controller" />);
-  expect(screen.getByLabelText('Close files drawer')).toHaveFocus();
+  expect(screen.getByLabelText('Close drawer')).toHaveFocus();
   mounted.rerender(<UiCreatorChrome {...base} drawer="luau" working status="Saving revision" onCloseDrawer={() => close()} />);
-  expect(screen.getByLabelText('Close files drawer')).toHaveFocus();
+  expect(screen.getByLabelText('Close drawer')).toHaveFocus();
   mounted.rerender(<UiCreatorChrome {...base} />);
   await waitFor(() => expect(trigger).toHaveFocus());
   mounted.unmount();
@@ -130,9 +112,9 @@ test("the files drawer stays inspectable during generation and restores focus", 
   fireEvent.change(screen.getByLabelText("UI prompt"), {target:{value:"Build a shop"}});
   fireEvent.click(screen.getByRole("button", {name:"Send prompt"}));
   await screen.findByRole("button", {name:"Stop build"});
-  const opener=screen.getByRole("button",{name:"Code / Files"});
+  const opener=screen.getByRole("button",{name:"Inspect"});
   await act(async () => { opener.focus(); fireEvent.click(opener); });
-  expect(screen.getByRole("dialog",{name:"Code and files"})).toBeVisible();
+  expect(screen.getByRole("dialog",{name:"Inspect UI"})).toBeVisible();
   expect(screen.getByText("Writing your implementation")).toBeVisible();
   expect(screen.getByLabelText("AI build conversation")).toBeVisible();
   fireEvent.keyDown(screen.getByRole("dialog"),{key:"Escape"});
@@ -150,7 +132,20 @@ test("Studio is not required to generate and Saved does not keep the composer bu
   await waitFor(() => expect(tasks.createTask).toHaveBeenCalledTimes(1));
   expect(tasks.createTask.mock.calls[0][0].executionInput.studioEnabled).toBe(false);
   await waitFor(() => expect(screen.getByRole("button",{name:"Send prompt"})).toBeEnabled());
-  expect(screen.getByText("Studio not applied yet")).toBeVisible();
+  expect(screen.getByText(/Saved · Not applied to this Studio · Runtime not verified/, { selector: '.uc-design-status' })).toBeVisible();
+});
+
+test("a pending Studio application is acknowledged but never presented as applied", async () => {
+  designs.getUiDesign.mockResolvedValue({ design: { ...record, pendingApplication: { revision: 'rev-1', commandId: 'command-1' } } });
+  await open();
+  expect(screen.getByText(/Saved · Not applied to this Studio · Runtime not verified/, { selector: '.uc-design-status' })).toBeVisible();
+  expect(screen.queryByText(/^Applied$/)).not.toBeInTheDocument();
+});
+
+test("Applied is scoped to the matching revision and connected Studio session", async () => {
+  designs.getUiDesign.mockResolvedValue({ design: { ...record, appliedRevision: 'rev-1', appliedSessionId: 'session-1' } });
+  await open();
+  expect(screen.getByText(/Saved · Applied · Runtime not verified/, { selector: '.uc-design-status' })).toBeVisible();
 });
 
 test("empty project creates no sample design, and a template immediately builds a fresh design", async () => {
@@ -162,6 +157,7 @@ test("empty project creates no sample design, and a template immediately builds 
   await open();
   expect(designs.createUiDesign).not.toHaveBeenCalled();
   expect(screen.queryByText("Template scaffold")).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button",{name:"New UI"}));
   fireEvent.click(screen.getByRole("button",{name:"Shop Menu",exact:true}));
   await waitFor(() => expect(tasks.createTask).toHaveBeenCalledTimes(1));
   expect(designs.createUiDesign).toHaveBeenCalledWith({projectId:"project-1",title:"Shop Menu"});
@@ -184,7 +180,7 @@ test("live actions use readable labels, never raw backend payloads", async () =>
 test("connecting later applies the saved revision in the same conversation", async () => {
   const onOpenStudio=jest.fn();
   const view=render(<UiCreatorWorkspace {...props} studio={{connected:false}} studioSessionId={null} onOpenStudio={onOpenStudio}/>);
-  fireEvent.click(await screen.findByRole("button",{name:"Connect & Apply"}));
+  fireEvent.click(await screen.findByRole("button",{name:"Apply to Studio"}));
   expect(onOpenStudio).toHaveBeenCalledTimes(1);
   expect(tasks.createTask).not.toHaveBeenCalled();
   view.rerender(<UiCreatorWorkspace {...props} onOpenStudio={onOpenStudio}/>);
@@ -200,6 +196,24 @@ test("application retries reuse the request identity after an uncertain network 
   fireEvent.click(screen.getByRole("button",{name:"Apply to Studio",exact:true}));
   await waitFor(()=>expect(tasks.createTask).toHaveBeenCalledTimes(2));
   expect(tasks.createTask.mock.calls[0][1].idempotencyKey).toBe(tasks.createTask.mock.calls[1][1].idempotencyKey);
+});
+
+test("entering UI mode only restores an explicitly last-opened design", async () => {
+  localStorage.removeItem('nexusrbx:ui:last-open:user-1:project-1');
+  render(<UiCreatorWorkspace {...props} />);
+  await waitFor(() => expect(designs.listUiDesigns).toHaveBeenCalledWith('project-1'));
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Send prompt' })).toBeEnabled());
+  expect(designs.getUiDesign).not.toHaveBeenCalled();
+  expect(screen.getByTestId('preview')).toBeEmptyDOMElement();
+});
+
+test("New UI is an action that opens the library, not a selected navigation item", () => {
+  render(<UiCreatorChrome onDrawer={jest.fn()} onNew={jest.fn()} onLoad={jest.fn()} onTemplate={jest.fn()} />);
+  const action = screen.getByRole('button', { name: 'New UI' });
+  expect(action).not.toHaveClass('is-active');
+  fireEvent.click(action);
+  expect(screen.getByLabelText('Choose or create a UI')).toBeVisible();
+  expect(screen.getByRole('button', { name: /Blank UI/ })).toBeVisible();
 });
 
 test("an incomplete visual review retries the saved revision without a generate or apply request", async () => {

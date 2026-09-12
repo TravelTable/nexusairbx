@@ -7,14 +7,14 @@ if not game:GetService("RunService"):IsEdit() then return end
 
 local BACKEND_URL = "https://api.nexusrbx.com"
 local BACKEND_HOST = "api.nexusrbx.com"
-local PLUGIN_VERSION = "0.15.1-ui-build"
-local STUDIO_PROTOCOL_VERSION = "2026-09-08-ui-build"
+local PLUGIN_VERSION = "0.15.2-ui-safety"
+local STUDIO_PROTOCOL_VERSION = "2026-09-12-ui-safety"
 
 -- This identifies the exact release artifact, independently of the user-facing
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.15.1-ui-build.18-files-first"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.15.2-ui-safety.19-full-model-guard"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the

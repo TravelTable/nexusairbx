@@ -1,12 +1,10 @@
-import NexusSelect from "../../../components/ui/NexusSelect";
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Sparkles } from 'lib/icons';
 import CreationPromptComposer from '../../../components/ai/chat/CreationPromptComposer';
 import MessageList from '../../../components/ai/chat/MessageList';
 import { Conversation, ConversationContent, ConversationScrollButton } from '../../../components/ai-elements/conversation';
 import UiPreviewPane from './UiPreviewPane';
 import UiLiveFiles from './UiLiveFiles';
-import UiCreatorChrome, { UI_TEMPLATES } from './UiCreatorChrome';
+import UiCreatorChrome from './UiCreatorChrome';
 import UiImplementationDrawer from './UiImplementationDrawer';
 import { createUiDesign, listUiDesigns, getUiDesign, renameUiDesign, deleteUiDesign, recoverUiDesign,
   createUiCheckpoint, listUiCheckpoints, restoreUiCheckpoint } from '../../../lib/uiDesignApi';
@@ -20,10 +18,10 @@ import './UiCreatorWorkspace.css';
 
 export const UI_BUILD_LABELS = { generating: 'Writing UI files', preparing: 'Saving files', building_model: 'Building RBXM', applying: 'Checking Studio',
   awaiting_studio: 'Applying to Studio', capturing: 'Capturing UI', awaiting_capture: 'Capturing UI', design_preview: 'Preparing preview', rendering: 'Rendering preview',
-  awaiting_renders: 'Rendering preview', reviewing: 'Reviewing the render', repairing: 'Refining your UI', complete: 'Ready', saved: 'Saved',
+  awaiting_renders: 'Rendering preview', reviewing: 'Reviewing the render', repairing: 'Refining your UI', complete: 'Visually reviewed', saved: 'Saved',
   preview_unavailable: 'Preview unavailable', needs_review: 'Review needs attention', renderer_limited: 'Preview limitations',
   budget_exhausted: 'Review budget reached', failed: 'Build needs attention' };
-const actions = { finding_assets: 'Finding icons and images', uploading_assets: 'Uploading images to Roblox', building_layout: 'Building UI layout', writing_implementation: 'Writing UI implementation', validating_implementation: 'Checking UI implementation' };
+const actions = { understanding_request: 'Understanding your request', planning_design: 'Planning the design', resolving_assets: 'Resolving icons and assets', writing_ui: 'Writing your UI', rendering_desktop: 'Rendering desktop', rendering_mobile: 'Rendering mobile', reviewing_design: 'Reviewing design quality', improving_design: 'Improving the design', finding_assets: 'Finding icons and images', uploading_assets: 'Uploading images to Roblox', building_layout: 'Building UI layout', writing_implementation: 'Writing UI implementation', validating_implementation: 'Checking UI implementation' };
 const ended = new Set(['complete','saved','preview_unavailable','needs_review','renderer_limited','budget_exhausted','failed']);
 const terminalTask = task => ended.has(task?.uiBuild?.stage) || ['cancelled','failed','succeeded'].includes(task?.status);
 const metadata = { workspace: 'ui_creator', displayPolicy: 'ui_build' };
@@ -35,7 +33,7 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
   const [designs, setDesigns] = useState([]), [design, setDesign] = useState(null), [task, setTask] = useState(null);
   const [events, setEvents] = useState([]), [history, setHistory] = useState([]), [answer, setAnswer] = useState('');
   const [files, setFiles] = useState([]), [manifest, setManifest] = useState(null), [prompt, setPrompt] = useState('');
-  const [attachments, setAttachments] = useState([]), [mode, setMode] = useState('agent'), [drawer, setDrawer] = useState('');
+  const [attachments, setAttachments] = useState([]), [drawer, setDrawer] = useState('');
   const [checkpoints, setCheckpoints] = useState([]), [busy, setBusy] = useState(''), [error, setError] = useState('');
   const [pendingPrompt, setPendingPrompt] = useState(''), [connection, setConnection] = useState(''), [undo, setUndo] = useState(null);
   const [connectApply, setConnectApply] = useState(null);
@@ -44,6 +42,8 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
   const [previewIdentity, setPreviewIdentity] = useState('');
   const onRenderStatus = useCallback(result => { if (result.status === 'ready') setPreviewIdentity(result.sourceRevision); }, []);
   const scope = `${user?.uid || ''}:${projectId || ''}`;
+  const lastOpenKey = `nexusrbx:ui:last-open:${scope}`;
+  const mode = 'agent';
   const scopeRef = useRef(scope); scopeRef.current = scope;
   const designRef = useRef(design); designRef.current = design;
   const drawerRef = useRef(drawer); drawerRef.current = drawer;
@@ -54,7 +54,18 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
   const studioReady = Boolean(studio?.connected && studioSessionId);
   const nodes = document?.screens?.flatMap(s => s.nodes || []) || [];
   const saved = nodes.length > 0 || Boolean(document?.sourceFiles?.length);
-  const applied = saved && [design?.appliedRevision, design?.pendingApplication?.revision, build?.appliedRevision, build?.acknowledgedRevision].includes(document?.revision);
+  // Only the authoritative design receipt can mark a revision applied. A
+  // pending/acknowledged command still needs its matching Studio readback.
+  const applied = saved && Boolean(studioSessionId) && design?.appliedRevision === document?.revision && design?.appliedSessionId === studioSessionId;
+  const currentBuild = build?.sourceRevision === document?.revision;
+  const applyIntent = task?.intent?.uiIntent === 'apply';
+  const applyState = applied ? 'Applied' : currentBuild && ['capturing','awaiting_capture'].includes(build?.stage)
+    ? 'Acknowledged · verifying' : currentBuild && build?.stage === 'awaiting_studio'
+      ? 'Awaiting Studio acknowledgement' : currentBuild && build?.stage === 'applying'
+        ? 'Applying' : applyIntent && (task?.outcomeUnknown || build?.outcome === 'studio_state_uncertain')
+          ? 'Application outcome uncertain' : applyIntent && ['failed','cancelled'].includes(task?.status)
+            ? 'Apply failed' : 'Not applied to this Studio';
+  const visuallyReviewed = currentBuild && build?.stage === 'complete' && build?.outcome === 'visual_review_passed';
   const report = useCallback(e => setError(e?.message || String(e)), []);
   const closeDrawer = useCallback(() => setDrawer(''), []);
   const fileScope = JSON.stringify(task ? { taskId, projectId, chatId: task.chatId } : null);
@@ -89,9 +100,21 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
     let stopped = false; ++loadSequence.current; resetSession(); setDesigns([]); setPrompt(''); setAttachments([]); setDrawer(''); setUndo(null); setError(''); setBusy(''); lock.current = false;
     if (!user?.uid || !isStarterOrAbove || !projectId) return undefined;
     setBusy('Loading project');
-    listUiDesigns(projectId).then(async result => { if (stopped) return; setDesigns(result.designs || []); if (result.designs?.length) await load(result.designs[0].designId); else setBusy(''); }).catch(e => { if (!stopped) { report(e); setBusy(''); } });
+    listUiDesigns(projectId).then(async result => {
+      if (stopped) return;
+      const available = result.designs || [];
+      setDesigns(available);
+      let lastOpen = '';
+      try { lastOpen = window.localStorage.getItem(lastOpenKey) || ''; } catch {}
+      if (lastOpen && available.some(item => item.designId === lastOpen)) await load(lastOpen);
+      else setBusy('');
+    }).catch(e => { if (!stopped) { report(e); setBusy(''); } });
     return () => { stopped = true; };
-  }, [scope, user?.uid, projectId, isStarterOrAbove, load, report, resetSession]);
+  }, [scope, user?.uid, projectId, isStarterOrAbove, lastOpenKey, load, report, resetSession]);
+  useEffect(() => {
+    if (!document?.designId) return;
+    try { window.localStorage.setItem(lastOpenKey, document.designId); } catch {}
+  }, [document?.designId, lastOpenKey]);
   useEffect(() => {
     setHistory([]); setAnswer('');
     if (!user?.uid || !conversationId) return undefined;
@@ -159,7 +182,7 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
       const input = { message: draft, mode: selectedMode, workspace: 'ui_creator', designId: target.designId,
         baseRevision: targetDoc.revision, uiIntent: targetDoc.sourceFiles?.length || targetDoc.screens?.some(s => s.nodes?.length) ? 'edit' : 'create', projectId,
         chatId: target.chatId || target.designId, attachments: normalizeChatAttachments(attachments, { includeData: false }),
-        executionInput: { settings: { modelVersion }, applyMode: 'auto_after_approval', studioEnabled: studioReady } };
+        executionInput: { settings: { modelVersion }, applyMode: 'manual_review', studioEnabled: false } };
       const inputKey = JSON.stringify(input);
       if (requestKey.current?.input !== inputKey) requestKey.current = { input: inputKey, key: `ui-task:${crypto.randomUUID()}` };
       setPendingPrompt(draft); setPrompt('');
@@ -235,7 +258,7 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
     if (name === 'history' && document) { const id = document.designId; try { const result = await listUiCheckpoints(id); if (designRef.current?.designId === id) setCheckpoints(result.checkpoints || []); } catch (e) { report(e); } }
   };
   const stop = async () => { if (busy === 'Answering') { askController.current?.abort(); return; } if (taskId) try { await cancelTask(taskId); setTask(t => ({ ...t, status: 'cancelled' })); } catch (e) { report(e); } };
-  const newUI = async () => { if (working || !allowed()) return; ++loadSequence.current; resetSession(); setPrompt(''); setAttachments([]); setError(''); setDrawer(''); };
+  const newUI = async () => { if (working || !allowed()) return; ++loadSequence.current; resetSession(); try { window.localStorage.removeItem(lastOpenKey); } catch {} setPrompt(''); setAttachments([]); setError(''); setDrawer(''); };
   const checkpoint = async () => { try { await createUiCheckpoint(document.designId, { expectedRevision: document.revision }); await openDrawer('history'); } catch (e) { report(e); } };
   const restore = async c => { try { await restoreUiCheckpoint(document.designId, c.checkpointId, document.revision); await load(document.designId); } catch (e) { report(e); } };
   const rename = async title => { try { await renameUiDesign(document.designId, document.revision, title); await load(document.designId); } catch (e) { report(e); } };
@@ -247,18 +270,17 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
   const progress = events.filter(e => e.eventType === 'ui_build_progress').map(e => actions[e.payload?.action] || UI_BUILD_LABELS[e.payload?.stage]).filter(Boolean).filter((label, i, all) => i === 0 || label !== all[i - 1]);
   const status = busy || connection || (task?.status === 'cancelled' ? 'Stopped · saved work retained' : actions[build?.action] || UI_BUILD_LABELS[build?.stage]) || '';
   const conversation = <><Conversation className="ui-creator__conversation"><ConversationContent className="ui-creator__messages">
-    {messages.length ? <MessageList messages={messages} activeMode="ui" isBusy={working} studioConnected={studioReady} studioSessionId={studioSessionId} notify={notify}/> : !livePrompt ? <div className="ui-creator__intro"><Sparkles size={25}/><h2>What will your players see?</h2><p>Start with a screen you have in mind.</p><div className="uc-suggestions">{UI_TEMPLATES.map(t => <button key={t.title} disabled={working} onClick={() => submit(null, t.prompt, t.title)}>{t.title}</button>)}</div></div> : null}
+    {messages.length ? <MessageList messages={messages} activeMode="ui" isBusy={working} studioConnected={studioReady} studioSessionId={studioSessionId} notify={notify}/> : null}
     {showPrompt ? <div className="uc-session-message">{livePrompt}</div> : null}
     {progress.length ? <ol className="uc-live-actions" aria-label="Build actions">{progress.map((label, i) => <li key={i} data-active={active && i === progress.length - 1} data-attention={i === progress.length - 1 && ['failed', 'budget_exhausted', 'preview_unavailable', 'needs_review', 'renderer_limited'].includes(build?.stage)}>{label}</li>)}</ol> : active ? <p className="uc-file-note">Starting your build…</p> : null}
     {answer ? <MessageList messages={[{ id: 'live-answer', role: 'assistant', content: answer, metadata }]} activeMode="ui" isBusy={working}/> : null}
     {!working && saved && build?.stage === 'failed' && (build.errorCode === 'UI_VISUAL_REVIEW_INCOMPLETE' || build.message === 'Invalid UI visual review.') ? <button type="button" className="uc-button" onClick={retryReview}>Retry review</button> : null}
-    {task?.mode === 'plan' && !build ? <div className="uc-session-message"><p>{task.intent?.normalizedGoal}</p><button className="uc-button uc-primary" onClick={async () => { try { const result = await approveTask(taskId, { executionInput: { settings: { modelVersion }, applyMode: 'auto_after_approval', studioEnabled: studioReady } }); setTask(result.task); } catch (e) { report(e); } }}>Build this plan</button></div> : null}
+    {task?.mode === 'plan' && !build ? <div className="uc-session-message"><p>{task.intent?.normalizedGoal}</p><button className="uc-button uc-primary" onClick={async () => { try { const result = await approveTask(taskId, { executionInput: { settings: { modelVersion }, applyMode: 'manual_review', studioEnabled: false } }); setTask(result.task); } catch (e) { report(e); } }}>Build this plan</button></div> : null}
   </ConversationContent><ConversationScrollButton/></Conversation>{active || busy === 'Answering' ? <div className="uc-conversation-footer"><button onClick={stop}>Stop {busy === 'Answering' ? 'response' : 'build'}</button></div> : null}</>;
   const composer = <CreationPromptComposer prompt={prompt} setPrompt={setPrompt} attachments={attachments} setAttachments={setAttachments}
     onFileUpload={attachmentUpload.upload} onRetryAttachment={attachmentUpload.retry} onSubmit={submit} onStop={stop} onCancel={stop}
     isGenerating={working} disabled={busy === 'Starting build'} placeholder="Describe your UI…" promptAriaLabel="UI prompt" submitLabel="Send prompt"
-    mode={mode} onModeChange={setMode} showDock={false} showWorkspaceOptions={false}
-    modeControl={<NexusSelect aria-label="UI conversation mode" value={mode} disabled={working} onChange={e => setMode(e.target.value)}><option value="agent">Build</option><option value="ask">Ask</option><option value="plan">Plan</option></NexusSelect>}
+    mode={mode} showDock={false} showWorkspaceOptions={false} modeControl={null}
     studioConnectionRequired={false} studioConnected={studioReady} studioConnectionType={studio?.connectionType}/>;
   const showLiveFiles = active && (['generating', 'repairing', 'preparing', 'building_model', 'design_preview'].includes(build?.stage)
     || Boolean(build?.sourceFiles?.length && previewIdentity !== build?.sourceRevision));
@@ -266,13 +288,13 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
     capture={manifest?.capture} states={manifest?.states || []} viewports={manifest?.viewports || []} capabilities={manifest?.capabilities}
     lastSuccessfulJobId={manifest?.lastSuccessfulPreviewJobId} renderJobs={build?.sourceRevision === document?.revision && build?.snapshotId === manifest?.capture?.snapshotId ? build?.matrix : []}
     studioConnected={studioReady} hasNodes={saved} studioReceipt={applied} onApplyToStudio={applySaved} onConnectStudio={connect}
-    onRefreshCapture={studioReady && !document?.sourceFiles ? sync : undefined} onRefreshManifest={refreshManifest} captureBusy={busy === 'Capturing UI'} applyBusy={working}
+    onRefreshCapture={studioReady && !document?.sourceFiles ? sync : undefined} sourceOwned={Boolean(document?.sourceFiles)} onRefreshManifest={refreshManifest} captureBusy={busy === 'Capturing UI'} applyBusy={working}
     updatingRevision={busy === 'Starting build' || (['generating','repairing'].includes(build?.stage) && active)} previewFailed={build?.stage === 'preview_unavailable'} pendingStudioCommand={build?.stage === 'awaiting_studio' ? build.commandId : null}
     onRenderStatus={onRenderStatus} run={active ? { stage: actions[build?.action] || UI_BUILD_LABELS[build?.stage] || 'Starting build' } : null}/></div>
     {showLiveFiles ? <UiLiveFiles key={taskId} files={build?.sourceFiles || []} stage={build?.stage}/> : null}</>;
   return <UiCreatorChrome document={document} designs={designs} projectTitle={projectTitle} studioReady={studioReady} working={working} loading={Boolean(busy)} status={status}
     sharedHeader={sharedHeader} headerActionTarget={headerActionTarget} onHeaderModalChange={onHeaderModalChange}
-    saved={saved} applied={applied} ready={!working && build?.stage === 'complete' && build?.sourceRevision === document?.revision}
+    saved={saved} applied={applied} applyState={applyState} visuallyReviewed={visuallyReviewed}
     error={error} onDismissError={() => setError('')} modelControl={modelControl} studioControl={studioControl} onModeChange={onModeChange}
     onChangeProject={onChangeProject} onOpenEvidence={onOpenEvidence} onOpenStudio={connect} onAccount={() => navigateTo?.('/settings')}
     onNew={newUI} onLoad={load} onApply={applySaved} onDrawer={openDrawer} onPrompt={setPrompt} onTemplate={t => submit(null, t.prompt, t.title)}

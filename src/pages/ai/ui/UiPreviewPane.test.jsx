@@ -40,7 +40,7 @@ test('render failure preserves the earlier image and retries preview without app
   const retry=jest.fn(),apply=jest.fn(),sync=jest.fn(),refresh=jest.fn();
   useUiPreview.mockReturnValue({...image,status:'error',earlier:true,error:'Renderer offline',retry,preview:{...image.preview,sourceRevision:'old'}});
   render(<UiPreviewPane {...base} onApplyToStudio={apply} onRefreshCapture={sync} onRefreshManifest={refresh}/>);
-  expect(screen.getByRole('img')).toHaveAttribute('src','blob:verified');expect(screen.getByText('Earlier version')).toBeVisible();
+  expect(screen.getByRole('img')).toHaveAttribute('src','blob:verified');expect(screen.getByText('Previous preview')).toBeVisible();
   expect(screen.getByText(/Your saved work is retained/)).toBeVisible();
   fireEvent.click(screen.getByRole('button',{name:'Retry Preview'}));await waitFor(()=>expect(retry).toHaveBeenCalledTimes(1));
   expect(refresh).toHaveBeenCalledTimes(1);expect(apply).not.toHaveBeenCalled();expect(sync).not.toHaveBeenCalled();
@@ -54,7 +54,7 @@ test('renderer outage still keeps the prior Pinevex image visible',()=>{
 test('the retained image keeps its original device and state caption during updates',()=>{
   useUiPreview.mockReturnValue({...image,earlier:true,preview:{...image.preview,viewportId:'phone',stateLabel:'Shop open',sourceRevision:'old'}});
   render(<UiPreviewPane {...base} run={{stage:'Rendering preview'}}/>);
-  expect(screen.getByText(/Phone · Shop open · rev old · Pinevex/)).toBeVisible();
+  expect(screen.getByText(/Phone · Shop open · Pinevex/)).toBeVisible();
 });
 test('build render jobs are observed directly instead of starting duplicate renders',()=>{
   render(<UiPreviewPane {...base} renderJobs={[{stateId:'default',viewportId:'desktop',jobId:'build-render'}]} run={{stage:'Rendering preview'}}/>);

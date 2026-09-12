@@ -185,9 +185,9 @@ local function createOrReplaceInstance(path, className, properties, createParent
 	return inst
 end
 
--- Snapshot restoration must not replace a same-class container. Replacing a
--- Folder, Model, or GUI root destroys descendants that may have been added by
--- a creator after Nexus ran, bypassing the keep-my-edits protection.
+-- Snapshot restoration normally keeps same-class containers. A snapshot may
+-- explicitly mark a fully captured replacement root; that root is replaced only
+-- after its whole-tree post-hash proves the creator has not edited it since.
 local function restoreSnapshots(payload)
 	local function restoreSnapshotInstance(snap)
 	local inst = resolvePath(snap.path)
@@ -257,6 +257,15 @@ local function restoreSnapshots(payload)
 	local kept = 0
 	local errors = {}
 	local deferredHashChecks = {}
+	local replacedSubtrees = {}
+	local keptSubtrees = {}
+	local function withinSubtree(path, roots)
+		local candidate = tostring(path or "")
+		for _, rootPath in ipairs(roots) do
+			if candidate == rootPath or string.sub(candidate, 1, #rootPath + 1) == rootPath .. "/" then return true end
+		end
+		return false
+	end
 	local force = type(payload) == "table" and payload.force == true
 	local snapshots = (type(payload) == "table" and payload.snapshots) or localSnapshots
 	if type(snapshots) ~= "table" then
@@ -265,6 +274,7 @@ local function restoreSnapshots(payload)
 	for i = #snapshots, 1, -1 do
 		local snap = snapshots[i]
 		local ok, restoreErr = pcall(function()
+			if withinSubtree(snap.path, keptSubtrees) and snap.replaceSubtree ~= true then return end
 			if snap.existed == false then
 				local current = resolvePath(snap.path)
 				if current then
@@ -284,10 +294,25 @@ local function restoreSnapshots(payload)
 					removed = removed + 1
 				end
 			elseif snap.path and snap.className and snap.className ~= "" then
+				local replacingSubtree = withinSubtree(snap.path, replacedSubtrees)
+				if snap.replaceSubtree == true then
+					local current = resolvePath(snap.path)
+					if not force and snap.postHash then
+						local currentHash = snapshotStateHash(current)
+						if not current or not currentHash or (currentHash ~= snap.postHash and currentHash ~= snap.preHash) then
+							kept = kept + 1
+							table.insert(keptSubtrees, snap.path)
+							return
+						end
+					end
+					if current then current:Destroy() end
+					table.insert(replacedSubtrees, snap.path)
+					replacingSubtree = true
+				end
 				-- The agent overwrote/edited this. If the current state no longer
 				-- matches what the agent produced (and isn't already the pre-edit
 				-- state), a human edited it since -> keep their edits.
-				if not force and snap.postHash then
+				if not replacingSubtree and not force and snap.postHash then
 					local current = resolvePath(snap.path)
 					if not current then
 						-- The instance existed immediately after Nexus wrote it but is now

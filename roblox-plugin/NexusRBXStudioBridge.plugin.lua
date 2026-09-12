@@ -11,14 +11,14 @@ if not game:GetService("RunService"):IsEdit() then return end
 
 local BACKEND_URL = "https://api.nexusrbx.com"
 local BACKEND_HOST = "api.nexusrbx.com"
-local PLUGIN_VERSION = "0.15.1-ui-build"
-local STUDIO_PROTOCOL_VERSION = "2026-09-08-ui-build"
+local PLUGIN_VERSION = "0.15.2-ui-safety"
+local STUDIO_PROTOCOL_VERSION = "2026-09-12-ui-safety"
 
 -- This identifies the exact release artifact, independently of the user-facing
 -- version. Keep it in lockstep with the generated bundle and backend allowlist.
 -- A plugin session must attest its build and actual command handlers at pairing
 -- time; version strings alone are not evidence that a command exists.
-local PLUGIN_BUILD_ID = "nexusrbx-studio-0.15.1-ui-build.18-files-first"
+local PLUGIN_BUILD_ID = "nexusrbx-studio-0.15.2-ui-safety.19-full-model-guard"
 
 -- These are deliberately capability-level (rather than UI-level) claims. The
 -- pairing payload also includes the exact sorted command list derived from the
@@ -879,7 +879,7 @@ propertiesOf = function(inst)
 	return props
 end
 
-propertyHash = function(inst)
+propertyHash = function(inst, excludedAttributes)
 	-- Nested helpers avoid spending scarce top-level local registers in the
 	-- generated single-chunk plugin bundle.
 	local function isArrayTable(value)
@@ -922,10 +922,14 @@ propertyHash = function(inst)
 	end
 	local tags = Services.CollectionService:GetTags(inst)
 	table.sort(tags)
+	local attributes = attributesOf(inst)
+	for attributeName in pairs(excludedAttributes or {}) do
+		attributes[attributeName] = nil
+	end
 	return stableHash(
 		canonicalEncode(propertiesOf(inst))
 			.. "\0"
-			.. canonicalEncode(attributesOf(inst))
+			.. canonicalEncode(attributes)
 			.. "\0"
 			.. table.concat(tags, "\0")
 	)
@@ -1611,9 +1615,9 @@ createOrReplaceInstance = function(path, className, properties, createParents)
 	return inst
 end
 
--- Snapshot restoration must not replace a same-class container. Replacing a
--- Folder, Model, or GUI root destroys descendants that may have been added by
--- a creator after Nexus ran, bypassing the keep-my-edits protection.
+-- Snapshot restoration normally keeps same-class containers. A snapshot may
+-- explicitly mark a fully captured replacement root; that root is replaced only
+-- after its whole-tree post-hash proves the creator has not edited it since.
 restoreSnapshots = function(payload)
 	local function restoreSnapshotInstance(snap)
 	local inst = resolvePath(snap.path)
@@ -1683,6 +1687,15 @@ restoreSnapshots = function(payload)
 	local kept = 0
 	local errors = {}
 	local deferredHashChecks = {}
+	local replacedSubtrees = {}
+	local keptSubtrees = {}
+	local function withinSubtree(path, roots)
+		local candidate = tostring(path or "")
+		for _, rootPath in ipairs(roots) do
+			if candidate == rootPath or string.sub(candidate, 1, #rootPath + 1) == rootPath .. "/" then return true end
+		end
+		return false
+	end
 	local force = type(payload) == "table" and payload.force == true
 	local snapshots = (type(payload) == "table" and payload.snapshots) or localSnapshots
 	if type(snapshots) ~= "table" then
@@ -1691,6 +1704,7 @@ restoreSnapshots = function(payload)
 	for i = #snapshots, 1, -1 do
 		local snap = snapshots[i]
 		local ok, restoreErr = pcall(function()
+			if withinSubtree(snap.path, keptSubtrees) and snap.replaceSubtree ~= true then return end
 			if snap.existed == false then
 				local current = resolvePath(snap.path)
 				if current then
@@ -1710,10 +1724,25 @@ restoreSnapshots = function(payload)
 					removed = removed + 1
 				end
 			elseif snap.path and snap.className and snap.className ~= "" then
+				local replacingSubtree = withinSubtree(snap.path, replacedSubtrees)
+				if snap.replaceSubtree == true then
+					local current = resolvePath(snap.path)
+					if not force and snap.postHash then
+						local currentHash = snapshotStateHash(current)
+						if not current or not currentHash or (currentHash ~= snap.postHash and currentHash ~= snap.preHash) then
+							kept = kept + 1
+							table.insert(keptSubtrees, snap.path)
+							return
+						end
+					end
+					if current then current:Destroy() end
+					table.insert(replacedSubtrees, snap.path)
+					replacingSubtree = true
+				end
 				-- The agent overwrote/edited this. If the current state no longer
 				-- matches what the agent produced (and isn't already the pre-edit
 				-- state), a human edited it since -> keep their edits.
-				if not force and snap.postHash then
+				if not replacingSubtree and not force and snap.postHash then
 					local current = resolvePath(snap.path)
 					if not current then
 						-- The instance existed immediately after Nexus wrote it but is now
@@ -5986,6 +6015,11 @@ UiArtifact.treeHash = function(root)
 		local values = {
 			fullPath(inst),
 			inst.ClassName,
+			-- Includes every captured mutable property, every attribute, and every
+			-- CollectionService tag. Source is added separately below.
+			-- NexusTreeHash is the derived value produced by this function. Excluding
+			-- only that field keeps the fingerprint stable instead of self-referential.
+			tostring(propertyHash(inst, { NexusTreeHash = true }) or ""),
 			tostring(inst:GetAttribute(AGENT_ARTIFACT_ID_ATTRIBUTE) or ""),
 			tostring(inst:GetAttribute(AGENT_FILE_ID_ATTRIBUTE) or ""),
 			tostring(inst:GetAttribute("NexusRootId") or ""),
@@ -8304,35 +8338,79 @@ function ImportedAsset.applyUiModel(payload)
 		end
 		return string.format("%08x", value)
 	end
+	local function uiSourceInstance(root, relativePath)
+		local path = tostring(relativePath or "")
+		if path == "View.luau" then return root:FindFirstChild("View") end
+		if path == "Controller.client.luau" then return root:FindFirstChild("Controller") end
+		local parts = {}
+		for part in string.gmatch(path, "[^/]+") do table.insert(parts, part) end
+		local current = root:FindFirstChild("_NexusSource")
+		for index = 1, #parts - 1 do
+			current = current and current:FindFirstChild(parts[index]) or nil
+		end
+		local name = parts[#parts] or ""
+		name = string.gsub(name, "%.client%.luau$", "")
+		name = string.gsub(name, "%.luau$", "")
+		return current and current:FindFirstChild(name) or nil
+	end
+	local function verifyUiSources(root, expectedHashes)
+		local hashes = {}
+		local expectedCount = 0
+		for relativePath, expectedHash in pairs(expectedHashes or {}) do
+			expectedCount += 1
+			local source = uiSourceInstance(root, relativePath)
+			if not source or not source:IsA("LuaSourceContainer") then
+				return false, hashes, relativePath, "missing"
+			end
+			local currentHash = uiSourceHash(source.Source)
+			hashes[relativePath] = currentHash
+			if currentHash ~= expectedHash then return false, hashes, relativePath, "changed" end
+		end
+		local actualCount = root:IsA("LuaSourceContainer") and 1 or 0
+		for _, descendant in ipairs(root:GetDescendants()) do
+			if descendant:IsA("LuaSourceContainer") then actualCount += 1 end
+		end
+		if actualCount ~= expectedCount then return false, hashes, "", "count" end
+		return true, hashes
+	end
+	local function currentTreeHash(root)
+		if type(UiArtifact) ~= "table" or type(UiArtifact.treeHash) ~= "function" then return nil end
+		local ok, value = pcall(UiArtifact.treeHash, root)
+		return ok and value or nil
+	end
 	if game:GetService("RunService"):IsRunning() then return { ok = false, code = "studio_edit_mode_required", error = "Stop the playtest before applying this UI." } end
 	local parent = game:GetService("StarterGui")
 	local previous = parent:FindFirstChild(payload.rootName)
 	local snapshots = {}
 	if previous then
-		if previous:GetAttribute("NexusUiModelHash") == payload.contentHash then
-			local hashes = {}
-			for _, name in ipairs({"View", "Controller"}) do
-				local source = previous:FindFirstChild(name)
-				if not source or not source:IsA("LuaSourceContainer") or uiSourceHash(source.Source) ~= (payload.newSourceHashes or {})[name] then
-					return { ok = false, code = "source_hash_mismatch", error = "An applied UI source changed in Studio. Your edits were preserved." }
-				end
-				hashes[name] = uiSourceHash(source.Source)
-			end
-			return { ok = true, duplicate = true, contentHash = payload.contentHash, sourceHashes = hashes, inserted = {{ path = fullPath(previous), managedId = ensureManagedId(previous) }} }
-		end
-		if previous:GetAttribute("NexusUiDesignId") ~= payload.designId or previous:GetAttribute("NexusUiModelHash") ~= payload.expectedContentHash then
+		local duplicate = previous:GetAttribute("NexusUiModelHash") == payload.contentHash
+		if not duplicate and (previous:GetAttribute("NexusUiDesignId") ~= payload.designId or previous:GetAttribute("NexusUiModelHash") ~= payload.expectedContentHash) then
 			return { ok = false, code = "ui_model_conflict", error = "The existing UI does not match the last applied revision." }
 		end
-		for _, name in ipairs({"View", "Controller"}) do
-			local source = previous:FindFirstChild(name)
-			local expectedSourceHash = (payload.expectedSourceHashes or {})[name]
-			if not source or not source:IsA("LuaSourceContainer") or not expectedSourceHash or uiSourceHash(source.Source) ~= expectedSourceHash then
-				return { ok = false, code = "source_hash_mismatch", error = "A UI source file changed in Studio. Your edits were preserved." }
-			end
+		local expectedTreeHash = tostring(payload.expectedTreeHash or "")
+		if expectedTreeHash == "" then
+			return { ok = false, code = "ui_tree_precondition_required", error = "The existing UI predates full conflict protection. Your Studio copy was preserved." }
 		end
-		local snapshot = snapshotInstance(fullPath(previous))
-		if not snapshot or snapshot.ok == false then return { ok = false, code = "snapshot_failed", error = "Could not snapshot the existing UI." } end
-		table.insert(snapshots, snapshot)
+		local actualTreeHash = currentTreeHash(previous)
+		if not actualTreeHash or actualTreeHash ~= expectedTreeHash then
+			return { ok = false, code = "ui_tree_conflict", error = "The UI tree changed in Studio. Your edits were preserved.", expectedTreeHash = expectedTreeHash, currentTreeHash = actualTreeHash }
+		end
+		local expectedSources = duplicate and payload.newSourceHashes or payload.expectedSourceHashes
+		if type(expectedSources) ~= "table" or next(expectedSources) == nil then
+			return { ok = false, code = "ui_source_precondition_required", error = "The existing UI source identity is unavailable. Your Studio copy was preserved." }
+		end
+		local sourcesOk, hashes, changedPath = verifyUiSources(previous, expectedSources)
+		if not sourcesOk then
+			return { ok = false, code = "source_hash_mismatch", error = "A UI source file changed in Studio. Your edits were preserved.", sourcePath = changedPath }
+		end
+		if duplicate then
+			return { ok = true, duplicate = true, contentHash = payload.contentHash, treeHash = actualTreeHash, sourceHashes = hashes, inserted = {{ path = fullPath(previous), managedId = ensureManagedId(previous) }} }
+		end
+		local snapshotOk = pcall(function() appendSnapshotTree(previous, snapshots) end)
+		if not snapshotOk or #snapshots == 0 then return { ok = false, code = "snapshot_failed", error = "Could not snapshot the complete existing UI." } end
+		-- The root is restored by replacing the whole applied subtree. This removes
+		-- descendants introduced by the new revision before recreating the old tree.
+		snapshots[#snapshots].replaceSubtree = true
 		previous.Parent = nil
 	end
 	local ok, result = pcall(ImportedAsset.importChatModelFile, payload)
@@ -8348,15 +8426,18 @@ function ImportedAsset.applyUiModel(payload)
 	root:SetAttribute("NexusUiDesignId", payload.designId)
 	root:SetAttribute("NexusUiModelHash", payload.contentHash)
 	root:SetAttribute("NexusRevision", payload.sourceRevision)
-	local hashes = {}
-	for _, name in ipairs({"View", "Controller"}) do
-		local source = root:FindFirstChild(name)
-		if source and source:IsA("LuaSourceContainer") then hashes[name] = uiSourceHash(source.Source) end
+	local sourcesOk, hashes, changedPath = verifyUiSources(root, payload.newSourceHashes)
+	local treeHash = currentTreeHash(root)
+	if not sourcesOk or not treeHash then
+		root:Destroy()
+		if previous then previous.Parent = parent end
+		return { ok = false, code = sourcesOk and "ui_tree_hash_failed" or "source_hash_mismatch", error = sourcesOk and "Studio could not fingerprint the imported UI tree." or "The imported model did not contain every saved UI source file.", sourcePath = changedPath, snapshots = snapshots }
 	end
 	if previous then previous:Destroy() end
 	if not previous then for _, snapshot in ipairs(result.snapshots or {}) do table.insert(snapshots, snapshot) end end
 	result.snapshots = snapshots
 	result.sourceHashes = hashes
+	result.treeHash = treeHash
 	return result
 end
 -- END src/commands/chatModel.lua
