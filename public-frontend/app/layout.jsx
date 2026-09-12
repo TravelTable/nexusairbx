@@ -1,7 +1,6 @@
 import { Analytics } from "@vercel/analytics/react";
-import "@fontsource-variable/sofia-sans-condensed/wght.css";
-import "@fontsource-variable/atkinson-hyperlegible-next/wght.css";
-import "@fontsource-variable/atkinson-hyperlegible-mono/wght.css";
+import "@fontsource-variable/geist/wght.css";
+import "@fontsource-variable/geist-mono/wght.css";
 import "./globals.css";
 import "../../src/design/nexus-foundation.css";
 import "../../src/design/nexus-primitives.css";

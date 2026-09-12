@@ -22,13 +22,13 @@ const BTN_SIZES = {
 
 const BTN_VARIANTS = {
   primary:
-    "border border-transparent bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] font-semibold shadow-[var(--nx-shadow-control)] hover:bg-[var(--ds-accent-hover)] hover:-translate-y-px active:bg-[var(--ds-accent-pressed)] active:translate-y-0 active:scale-[0.99]",
+    "border border-transparent bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] font-semibold hover:bg-[var(--ds-accent-hover)] active:bg-[var(--ds-accent-pressed)]",
   secondary:
-    "bg-[var(--ds-surface-2)] border border-[var(--ds-border)] text-[var(--ds-text)] font-semibold hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-surface-3)] active:scale-[0.98]",
+    "bg-[var(--ds-surface-2)] border border-[var(--ds-border)] text-[var(--ds-text)] font-semibold hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-surface-3)]",
   ghost:
-    "bg-[var(--ds-fill-subtle)] border border-[var(--ds-border)] text-[var(--ds-text-secondary)] font-semibold hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)] active:scale-[0.98]",
+    "bg-[var(--ds-fill-subtle)] border border-[var(--ds-border)] text-[var(--ds-text-secondary)] font-semibold hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]",
   danger:
-    "bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)] text-[var(--ds-danger)] font-semibold hover:bg-[color-mix(in_srgb,var(--ds-danger)_18%,transparent)] active:scale-[0.98]",
+    "bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)] text-[var(--ds-danger)] font-semibold hover:bg-[color-mix(in_srgb,var(--ds-danger)_18%,transparent)]",
   subtle:
     "text-[var(--ds-text-muted)] font-semibold hover:text-[var(--ds-text)] hover:bg-[var(--ds-fill-hover)]",
 };
@@ -54,7 +54,7 @@ export const Button = React.forwardRef(function Button({
       aria-busy={loading || undefined}
       disabled={disabled || loading}
       className={cx(
-        "nx-control inline-flex items-center justify-center rounded-[var(--nx-radius-control)] transition-[background-color,border-color,color,box-shadow,transform] duration-150 focus-ring disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100",
+        "nx-control inline-flex items-center justify-center rounded-[var(--nx-radius-control)] transition-[background-color,border-color,color] duration-150 focus-ring disabled:opacity-50 disabled:cursor-not-allowed",
         BTN_SIZES[size] || BTN_SIZES.md,
         BTN_VARIANTS[variant] || BTN_VARIANTS.primary,
         className
@@ -97,8 +97,8 @@ export function Card({ as: Tag = "div", className = "", interactive = false, chi
   return (
     <Tag
       className={cx(
-        "card-surface shadow-panel",
-        interactive && "transition-[background-color,border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-surface-2)]",
+        "card-surface",
+        interactive && "transition-[background-color,border-color] duration-150 hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-surface-2)]",
         className
       )}
       {...rest}
@@ -136,7 +136,7 @@ export function SectionHeader({ icon: Icon, title, subtitle, right, className = 
     <div className={cx("flex items-start justify-between gap-4", className)}>
       <div className="flex items-start gap-3 min-w-0">
         {Icon ? (
-          <div className="mt-0.5 p-2 rounded-xl bg-[var(--ds-accent-soft)] border border-[var(--ds-accent-border)] text-[var(--ds-accent)] shrink-0">
+          <div className="mt-0.5 p-2 rounded-[var(--nx-radius-control)] bg-[var(--ds-fill-subtle)] border border-[var(--ds-border)] text-[var(--ds-text-secondary)] shrink-0">
             <Icon className="w-4 h-4" />
           </div>
         ) : null}
@@ -204,7 +204,7 @@ export function Segmented({
     <div
       className={cx(
         fullWidth ? "flex w-full" : "inline-flex",
-        "bg-[var(--ds-fill-subtle)] border border-[var(--ds-border)] rounded-full p-1 shadow-[var(--nx-shadow-control)]",
+        "bg-[var(--ds-fill-subtle)] border border-[var(--ds-border)] rounded-[var(--nx-radius-control)] p-0.5",
         className
       )}
       role="group"
@@ -220,12 +220,12 @@ export function Segmented({
             aria-pressed={active}
             onClick={() => onChange?.(opt.id)}
             className={cx(
-              "inline-flex items-center justify-center gap-1.5 rounded-full font-semibold transition-[background-color,color,box-shadow] duration-150 focus-ring",
+              "inline-flex items-center justify-center gap-1.5 rounded-[6px] font-semibold transition-[background-color,color] duration-150 focus-ring",
               fullWidth && "flex-1",
               pad,
               active
-                ? "bg-[var(--ds-surface-1)] text-[var(--ds-accent)] shadow-sm"
-                : "text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
+                ? "bg-[var(--ds-surface-1)] text-[var(--ds-text)] border border-[var(--ds-border)]"
+                : "border border-transparent text-[var(--ds-text-muted)] hover:text-[var(--ds-text)]"
             )}
           >
             {Icon ? <Icon className="w-3.5 h-3.5" /> : null}
@@ -259,7 +259,7 @@ export function Input({
       ) : null}
       <input
         className={cx(
-          "w-full rounded-xl border border-[var(--ds-border)] bg-[var(--ds-surface-2)] text-[var(--ds-text)] outline-none transition-[border-color,background-color,box-shadow] duration-150 focus:border-[var(--ds-accent-border)] focus:bg-[var(--ds-surface-1)] focus-ring placeholder:text-[var(--ds-text-subtle)]",
+          "w-full rounded-[var(--nx-radius-field)] border border-[var(--ds-border)] bg-[var(--ds-surface-2)] text-[var(--ds-text)] outline-none transition-[border-color,background-color] duration-150 focus:border-[var(--ds-accent)] focus:bg-[var(--ds-surface-1)] focus-ring placeholder:text-[var(--ds-text-subtle)]",
           Icon ? "pl-9" : "",
           pad,
           className
@@ -300,7 +300,7 @@ export function Badge({ tone = "muted", className = "", children, ...rest }) {
   return (
     <span
       className={cx(
-        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold",
+        "inline-flex items-center gap-1 rounded-[6px] border px-2 py-0.5 text-[11px] font-semibold tracking-[0.01em]",
         BADGE_TONES[tone] || BADGE_TONES.muted,
         className
       )}
@@ -410,7 +410,7 @@ export function EmptyState({
   return (
     <div
       className={cx(
-        "rounded-xl border border-dashed border-[var(--ds-border)] bg-[var(--ds-surface-muted)] px-3 py-4 text-center",
+        "rounded-[var(--nx-radius-panel)] border border-dashed border-[var(--ds-border)] bg-[var(--ds-surface-muted)] px-3 py-4 text-center",
         className
       )}
     >
@@ -438,10 +438,10 @@ export function ListItem({
     <Tag
       type={Tag === "button" ? "button" : undefined}
       className={cx(
-        "w-full rounded-xl border px-3 py-2 text-left transition-colors focus-ring",
+        "w-full rounded-[var(--nx-radius-control)] border px-3 py-2 text-left transition-colors focus-ring",
         selected
-          ? "border-[var(--ds-accent-border)] bg-[var(--ds-accent-soft)] text-[var(--ds-text)]"
-          : "border-[var(--ds-border)] bg-[var(--ds-fill-subtle)] text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]",
+          ? "border-[var(--ds-border-strong)] bg-[var(--ds-surface-2)] text-[var(--ds-text)]"
+          : "border-[var(--ds-border)] bg-transparent text-[var(--ds-text-secondary)] hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]",
         className
       )}
       {...rest}

@@ -1,5 +1,6 @@
 import React from "react";
-import { X, Sparkles, Zap, ShieldCheck, Save } from "lib/icons";
+import { Zap, ShieldCheck, Save } from "lib/icons";
+import { NexusAnimatedIcon } from "./ui/NexusAnimatedIcon";
 import { useNavigate, useLocation } from "react-router-dom";
 import Modal from "./Modal";
 
@@ -40,13 +41,13 @@ export default function SignInNudgeModal({ isOpen, onClose, reason = "", blockin
           aria-label="Dismiss sign-in prompt"
           className="nexus-icon-button absolute right-3 top-3 h-11 w-11 rounded-full sm:right-4 sm:top-4"
         >
-          <X className="w-5 h-5" />
+          <NexusAnimatedIcon name="close" size={20} className="w-5 h-5" />
         </button>
       ) : null}
 
       <div className="p-4 pt-10 text-center sm:p-6 sm:pt-7">
-        <div className="relative mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--nx-purple-edge)] bg-[var(--nx-purple-soft)] text-[var(--nx-purple-strong)] shadow-[var(--nx-purple-glow)]">
-          <Sparkles className="h-7 w-7" />
+        <div className="relative mb-4 inline-flex h-14 w-14 items-center justify-center rounded-[10px] border border-[var(--nx-rule)] bg-[var(--nx-muted-surface)] text-[var(--nx-text-secondary)]">
+          <NexusAnimatedIcon name="ai" size={28} />
           <span className="absolute -right-1 -top-1" aria-hidden="true">
             <i className="nx-build-signal" data-active="true" />
           </span>

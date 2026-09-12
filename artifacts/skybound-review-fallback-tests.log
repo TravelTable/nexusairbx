@@ -1,0 +1,103 @@
+TAP version 13
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-12T18:27:33.173Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_81e1f53a3aab9a8516e3d0d617cc4fcfb264774e98b6f2835fe3a59b90b4dbce',
+#   requestId: 'request',
+#   traceId: 'trace',
+#   projectId: 'project',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# Subtest: new builds resolve Auth billing identity and use the versioned worker queue
+ok 1 - new builds resolve Auth billing identity and use the versioned worker queue
+  ---
+  duration_ms: 5.6637
+  ...
+# Subtest: canonical task storage preserves review counters, capture identity, and artifacts across restart and rejects a lost worker
+ok 2 - canonical task storage preserves review counters, capture identity, and artifacts across restart and rejects a lost worker
+  ---
+  duration_ms: 9.8395
+  ...
+# Subtest: acceptance matrix uses Default and at most three declared scenarios on both devices
+ok 3 - acceptance matrix uses Default and at most three declared scenarios on both devices
+  ---
+  duration_ms: 0.5125
+  ...
+# Subtest: one successful PNG and same-revision images from another capture cannot finish a matrix
+ok 4 - one successful PNG and same-revision images from another capture cannot finish a matrix
+  ---
+  duration_ms: 0.3157
+  ...
+# Subtest: files are streamed and committed before the RBXM stage, with Studio disconnected
+ok 5 - files are streamed and committed before the RBXM stage, with Studio disconnected
+  ---
+  duration_ms: 10.1455
+  ...
+# Subtest: generation previews and reviews without applying until the explicit apply task
+ok 6 - generation previews and reviews without applying until the explicit apply task
+  ---
+  duration_ms: 0.3728
+  ...
+# Subtest: resuming capture uses the saved request and releases the worker for rendering
+ok 7 - resuming capture uses the saved request and releases the worker for rendering
+  ---
+  duration_ms: 0.353
+  ...
+# Subtest: resuming rendering never reviews before every exact matrix slot is ready
+ok 8 - resuming rendering never reviews before every exact matrix slot is ready
+  ---
+  duration_ms: 0.416
+  ...
+# Subtest: renderer limitations have a separate outcome and never become visual success
+ok 9 - renderer limitations have a separate outcome and never become visual success
+  ---
+  duration_ms: 0.5422
+  ...
+# Subtest: review batches contain at most four images and repair cycles stop at two
+ok 10 - review batches contain at most four images and repair cycles stop at two
+  ---
+  duration_ms: 2.0814
+  ...
+# Subtest: an incomplete reviewer response preserves finished previews for manual review
+ok 11 - an incomplete reviewer response preserves finished previews for manual review
+  ---
+  duration_ms: 0.4003
+  ...
+# Subtest: review fallback does not conceal authorization or provider failures
+ok 12 - review fallback does not conceal authorization or provider failures
+  ---
+  duration_ms: 0.2689
+  ...
+# Subtest: a low-quality first render of the exact brainrot request enters targeted repair
+ok 13 - a low-quality first render of the exact brainrot request enters targeted repair
+  ---
+  duration_ms: 0.4051
+  ...
+# Subtest: disconnected Studio continues to design rendering with the saved artifact intact
+ok 14 - disconnected Studio continues to design rendering with the saved artifact intact
+  ---
+  duration_ms: 0.3106
+  ...
+# Subtest: failed render preserves the applied build and returns a separate preview outcome
+ok 15 - failed render preserves the applied build and returns a separate preview outcome
+  ---
+  duration_ms: 0.2173
+  ...
+# Subtest: generation runs before any Studio capability check and emits bounded public actions
+ok 16 - generation runs before any Studio capability check and emits bounded public actions
+  ---
+  duration_ms: 2.673
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 207.6425

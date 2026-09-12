@@ -5,7 +5,8 @@ import {
   CollapsibleTrigger,
 } from "components/shadcn/collapsible";
 import { cn } from "lib/utils";
-import { BrainIcon, ChevronDownIcon } from "lucide-react";
+import { ChevronDownIcon } from "lucide-react";
+import { NexusAnimatedIcon } from "components/ui/NexusAnimatedIcon";
 import {
   createContext,
   memo,
@@ -141,7 +142,7 @@ export const ReasoningTrigger = memo(
       >
         {children ?? (
           <>
-            <BrainIcon className="size-4" />
+            <NexusAnimatedIcon name="cpu" size={16} className="size-4" loading={isStreaming} />
             {getThinkingMessage(isStreaming, duration)}
             <ChevronDownIcon
               className={cn("size-4 transition-transform", isOpen ? "rotate-180" : "rotate-0")}

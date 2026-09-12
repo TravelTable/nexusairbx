@@ -14,9 +14,17 @@ const image={status:'ready',imageUrl:'blob:verified',error:'',retry:jest.fn(),pr
 beforeEach(()=>{jest.clearAllMocks();useUiPreview.mockReturnValue(waiting);});
 test('empty preview encourages generation without Studio and shows no fabricated image',()=>{
   render(<UiPreviewPane {...base} hasNodes={false} studioConnected={false} capture={null}/>);
-  expect(screen.getByText(/Start with a prompt on the left/)).toBeVisible();
+  expect(screen.getByText(/Use the chat to describe a shop/)).toBeVisible();
   expect(screen.queryByRole('img')).not.toBeInTheDocument();
 });
+test('a failed build without a model stops preparing and cannot retry a nonexistent capture',()=>{
+  render(<UiPreviewPane {...base} capture={null} buildFailure="A paid plan is required."/>);
+  expect(screen.getAllByText('Build failed').length).toBeGreaterThan(0);
+  expect(screen.getByText(/A paid plan is required/)).toBeVisible();
+  expect(screen.queryByText('Preparing preview')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button',{name:'Retry Preview'})).not.toBeInTheDocument();
+});
+
 test('saved designs request Pinevex automatically without Studio',()=>{
   render(<UiPreviewPane {...base} capture={{...capture,captureKind:'design'}} studioConnected={false} run={{stage:'Building UI layout'}}/>);
   expect(useUiPreview).toHaveBeenLastCalledWith(expect.objectContaining({snapshotId:'snap',enabled:true,waitForBuild:false}));
@@ -26,12 +34,12 @@ test('saved designs request Pinevex automatically without Studio',()=>{
 test('a previous revision cannot be requested as the current capture',()=>{
   render(<UiPreviewPane {...base} capture={{...capture,sourceRevision:'old'}}/>);
   expect(useUiPreview).toHaveBeenLastCalledWith(expect.objectContaining({snapshotId:null}));
-  expect(screen.getByLabelText('Preview viewport')).toBeDisabled();
+  expect(screen.getByRole('button',{name:/Phone/})).toBeDisabled();
 });
 test('device and state switches only change the requested render identity',async()=>{
   useUiPreview.mockReturnValue(image);const apply=jest.fn(),sync=jest.fn();
   render(<UiPreviewPane {...base} onApplyToStudio={apply} onRefreshCapture={sync}/>);
-  await selectOption(screen.getByLabelText('Preview viewport'), 'Phone');
+  fireEvent.click(screen.getByRole('button',{name:/Phone/}));
   await selectOption(screen.getByLabelText('Preview state'), 'Shop open');
   expect(useUiPreview).toHaveBeenLastCalledWith(expect.objectContaining({viewportId:'phone',stateId:'open',snapshotId:'snap'}));
   expect(apply).not.toHaveBeenCalled();expect(sync).not.toHaveBeenCalled();expect(screen.queryByRole('option',{name:'Old state'})).not.toBeInTheDocument();

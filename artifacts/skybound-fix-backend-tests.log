@@ -1,0 +1,287 @@
+TAP version 13
+# Subtest: local development sessions require development mode and a loopback caller
+ok 1 - local development sessions require development mode and a loopback caller
+  ---
+  duration_ms: 2.4328
+  ...
+# Subtest: createLocalDevelopmentSession creates a verified developer and custom token
+ok 2 - createLocalDevelopmentSession creates a verified developer and custom token
+  ---
+  duration_ms: 3.6017
+  ...
+# Subtest: configured dev email reuses its existing account without changing its profile
+ok 3 - configured dev email reuses its existing account without changing its profile
+  ---
+  duration_ms: 0.4059
+  ...
+# Subtest: local build and render stages cannot be consumed by hosted worker queues
+ok 4 - local build and render stages cannot be consumed by hosted worker queues
+  ---
+  duration_ms: 256.842
+  ...
+# Subtest: replayed preview queue creation preserves the active worker and refuses an old claim update
+ok 5 - replayed preview queue creation preserves the active worker and refuses an old claim update
+  ---
+  duration_ms: 30.8329
+  ...
+# Subtest: claiming a queued job is exclusive until the lease is stale
+ok 6 - claiming a queued job is exclusive until the lease is stale
+  ---
+  duration_ms: 7.6296
+  ...
+# Subtest: a scoped local worker claims only its developer's jobs
+ok 7 - a scoped local worker claims only its developer's jobs
+  ---
+  duration_ms: 3.7489
+  ...
+# Subtest: versioned UI builds survive normal stage resumes and cannot be claimed as legacy builds
+ok 8 - versioned UI builds survive normal stage resumes and cannot be claimed as legacy builds
+  ---
+  duration_ms: 14.4993
+  ...
+# Subtest: worker heartbeats preserve live claims and reject a previous attempt
+ok 9 - worker heartbeats preserve live claims and reject a previous attempt
+  ---
+  duration_ms: 9.9949
+  ...
+# Subtest: deletion fences reject job creation and cancel a pre-existing queued claim
+ok 10 - deletion fences reject job creation and cancel a pre-existing queued claim
+  ---
+  duration_ms: 7.5081
+  ...
+# Subtest: durable idempotency claims are exclusive and only their owner can complete
+ok 11 - durable idempotency claims are exclusive and only their owner can complete
+  ---
+  duration_ms: 7.0086
+  ...
+# Subtest: terminal job updates are idempotent and cannot be overwritten by late workers
+ok 12 - terminal job updates are idempotent and cannot be overwritten by late workers
+  ---
+  duration_ms: 4.4005
+  ...
+# Subtest: timed out terminal updates clear worker lease and ignore late success
+ok 13 - timed out terminal updates clear worker lease and ignore late success
+  ---
+  duration_ms: 3.5137
+  ...
+# Subtest: stale jobs at the retry limit are marked failed instead of reclaimed
+ok 14 - stale jobs at the retry limit are marked failed instead of reclaimed
+  ---
+  duration_ms: 8.0091
+  ...
+# Subtest: terminal ai outcomes are finalized and emitted with normalized response metadata
+ok 15 - terminal ai outcomes are finalized and emitted with normalized response metadata
+  ---
+  duration_ms: 19.0842
+  ...
+# Subtest: terminalization accepts legacy wrapped ai outcomes
+ok 16 - terminalization accepts legacy wrapped ai outcomes
+  ---
+  duration_ms: 8.0874
+  ...
+# Subtest: generic job writes cannot forge canonical task linkage
+ok 17 - generic job writes cannot forge canonical task linkage
+  ---
+  duration_ms: 6.4312
+  ...
+# Subtest: trusted linked jobs atomically emit deterministic lifecycle receipts
+ok 18 - trusted linked jobs atomically emit deterministic lifecycle receipts
+  ---
+  duration_ms: 4.2194
+  ...
+# Subtest: task-linked cancellation is owner scoped, tenant scoped, and replay safe
+ok 19 - task-linked cancellation is owner scoped, tenant scoped, and replay safe
+  ---
+  duration_ms: 15.0347
+  ...
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-12T17:14:33.279Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_81e1f53a3aab9a8516e3d0d617cc4fcfb264774e98b6f2835fe3a59b90b4dbce',
+#   requestId: 'request',
+#   traceId: 'trace',
+#   projectId: 'project',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# Subtest: new builds resolve Auth billing identity and use the versioned worker queue
+ok 20 - new builds resolve Auth billing identity and use the versioned worker queue
+  ---
+  duration_ms: 9.5883
+  ...
+# Subtest: canonical task storage preserves review counters, capture identity, and artifacts across restart and rejects a lost worker
+ok 21 - canonical task storage preserves review counters, capture identity, and artifacts across restart and rejects a lost worker
+  ---
+  duration_ms: 20.3135
+  ...
+# Subtest: acceptance matrix uses Default and at most three declared scenarios on both devices
+ok 22 - acceptance matrix uses Default and at most three declared scenarios on both devices
+  ---
+  duration_ms: 1.5964
+  ...
+# Subtest: one successful PNG and same-revision images from another capture cannot finish a matrix
+ok 23 - one successful PNG and same-revision images from another capture cannot finish a matrix
+  ---
+  duration_ms: 0.4507
+  ...
+# Subtest: files are streamed and committed before the RBXM stage, with Studio disconnected
+ok 24 - files are streamed and committed before the RBXM stage, with Studio disconnected
+  ---
+  duration_ms: 24.1076
+  ...
+# Subtest: generation previews and reviews without applying until the explicit apply task
+ok 25 - generation previews and reviews without applying until the explicit apply task
+  ---
+  duration_ms: 0.8584
+  ...
+# Subtest: resuming capture uses the saved request and releases the worker for rendering
+ok 26 - resuming capture uses the saved request and releases the worker for rendering
+  ---
+  duration_ms: 0.8159
+  ...
+# Subtest: resuming rendering never reviews before every exact matrix slot is ready
+ok 27 - resuming rendering never reviews before every exact matrix slot is ready
+  ---
+  duration_ms: 0.7519
+  ...
+# Subtest: renderer limitations have a separate outcome and never become visual success
+ok 28 - renderer limitations have a separate outcome and never become visual success
+  ---
+  duration_ms: 1.6621
+  ...
+# Subtest: review batches contain at most four images and repair cycles stop at two
+ok 29 - review batches contain at most four images and repair cycles stop at two
+  ---
+  duration_ms: 3.3855
+  ...
+# Subtest: a low-quality first render of the exact brainrot request enters targeted repair
+ok 30 - a low-quality first render of the exact brainrot request enters targeted repair
+  ---
+  duration_ms: 0.9576
+  ...
+# Subtest: disconnected Studio continues to design rendering with the saved artifact intact
+ok 31 - disconnected Studio continues to design rendering with the saved artifact intact
+  ---
+  duration_ms: 0.6783
+  ...
+# Subtest: failed render preserves the applied build and returns a separate preview outcome
+ok 32 - failed render preserves the applied build and returns a separate preview outcome
+  ---
+  duration_ms: 2.9151
+  ...
+# Subtest: generation runs before any Studio capability check and emits bounded public actions
+ok 33 - generation runs before any Studio capability check and emits bounded public actions
+  ---
+  duration_ms: 3.6546
+  ...
+# Subtest: initial generation and truncated-file recovery share exact artwork rendering bindings
+ok 34 - initial generation and truncated-file recovery share exact artwork rendering bindings
+  ---
+  duration_ms: 34.0096
+  ...
+# Subtest: file boundaries survive arbitrary provider chunking and incomplete drafts are retained
+ok 35 - file boundaries survive arbitrary provider chunking and incomplete drafts are retained
+  ---
+  duration_ms: 2.6409
+  ...
+# Subtest: manifest permits bounded modular UI source and exposes pending files while streaming
+ok 36 - manifest permits bounded modular UI source and exposes pending files while streaming
+  ---
+  duration_ms: 1.0689
+  ...
+# Subtest: generation accepts a model-selected modular file layout
+ok 37 - generation accepts a model-selected modular file layout
+  ---
+  duration_ms: 16.4655
+  ...
+# Subtest: generation streams real files and never asks for a JSON source document
+ok 38 - generation streams real files and never asks for a JSON source document
+  ---
+  duration_ms: 15.8331
+  ...
+# Subtest: a truncated file is regenerated without repeating the completed file
+ok 39 - a truncated file is regenerated without repeating the completed file
+  ---
+  duration_ms: 4.3299
+  ...
+# Subtest: an unfinished recovery remains a retained draft and fails safely
+ok 40 - an unfinished recovery remains a retained draft and fails safely
+  ---
+  duration_ms: 8.7542
+  ...
+# Subtest: a nominally stopped response that omitted a file also enters recovery
+ok 41 - a nominally stopped response that omitted a file also enters recovery
+  ---
+  duration_ms: 5.6177
+  ...
+# Subtest: generation automatically injects the matching bounded UI skills and returns their identities
+ok 42 - generation automatically injects the matching bounded UI skills and returns their identities
+  ---
+  duration_ms: 12.5862
+  ...
+# Subtest: generation exposes returned Roblox audio as sound URIs instead of image assets
+ok 43 - generation exposes returned Roblox audio as sound URIs instead of image assets
+  ---
+  duration_ms: 5.2589
+  ...
+# Subtest: exact brainrot request reaches Luau only with its locked plan, resolved icons, audio and trusted runtime helpers
+ok 44 - exact brainrot request reaches Luau only with its locked plan, resolved icons, audio and trusted runtime helpers
+  ---
+  duration_ms: 11.6831
+  ...
+# Subtest: Luau generation rejects malformed or missing structured planning before calling the code model
+ok 45 - Luau generation rejects malformed or missing structured planning before calling the code model
+  ---
+  duration_ms: 2.8628
+  ...
+# Subtest: bounded worker pool overlaps independent jobs and never exceeds capacity
+ok 46 - bounded worker pool overlaps independent jobs and never exceeds capacity
+  ---
+  duration_ms: 35.0116
+  ...
+# [JobWorker] artifact generation timed out after 20ms: job_1
+# Subtest: hung artifact job times out and releases the worker
+ok 47 - hung artifact job times out and releases the worker
+  ---
+  duration_ms: 33.9013
+  ...
+# [JobWorker] recovered completed artifact after finalization timeout: job_complete_then_hung
+# Subtest: completed artifact checkpoint is recovered instead of timing out
+ok 48 - completed artifact checkpoint is recovered instead of timing out
+  ---
+  duration_ms: 31.6722
+  ...
+# [JobWorker] artifact generation timed out after 20ms: hung
+# Subtest: worker processes the next queued artifact job after a timeout
+ok 49 - worker processes the next queued artifact job after a timeout
+  ---
+  duration_ms: 31.5936
+  ...
+# [JobWorker] artifact generation timed out after 10ms: job_1
+# Subtest: late artifact success cannot overwrite a timed out job
+ok 50 - late artifact success cannot overwrite a timed out job
+  ---
+  duration_ms: 109.0608
+  ...
+# Subtest: user cancel aborts the in-flight artifact job without marking failed
+ok 51 - user cancel aborts the in-flight artifact job without marking failed
+  ---
+  duration_ms: 32.1332
+  ...
+# Subtest: stopJobWorkerLoop waits for an in-flight processOnce
+ok 52 - stopJobWorkerLoop waits for an in-flight processOnce
+  ---
+  duration_ms: 5.4024
+  ...
+1..52
+# tests 52
+# suites 0
+# pass 52
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 510.6795

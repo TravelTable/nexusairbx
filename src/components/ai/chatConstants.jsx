@@ -1,4 +1,5 @@
-import { WandSparkles, ClipboardList, HelpCircle } from "lib/icons";
+import { ClipboardList, HelpCircle } from "lib/icons";
+import { NexusIcons } from "../ui/NexusAnimatedIcon";
 import { DEFAULT_CHAT_MODE } from "../../lib/chatModes";
 
 /**
@@ -9,6 +10,7 @@ import { DEFAULT_CHAT_MODE } from "../../lib/chatModes";
  *  - agent : autonomously inspects, implements, and verifies actionable requests.
  *
  * All modes are free; premium is gated on model + token limits, not mode.
+ * Agent uses CommandLine (tooling), never Sparkles/Wand.
  */
 export const CHAT_MODES = [
   {
@@ -38,7 +40,7 @@ export const CHAT_MODES = [
   {
     id: "agent",
     label: "Agent",
-    icon: <WandSparkles className="w-4 h-4" />,
+    icon: <NexusIcons.Ai size={16} className="w-4 h-4" />,
     color: "text-[var(--ds-text)]",
     bg: "bg-[var(--ds-fill-selected)]",
     border: "hover:border-[var(--ds-border-strong)]",

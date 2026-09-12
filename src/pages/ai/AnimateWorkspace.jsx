@@ -9,10 +9,9 @@ import {
   RotateCcw,
   Save,
   Send,
-  Sparkles,
   Square,
-  WandSparkles,
 } from "lib/icons";
+import { NexusAnimatedIcon } from "components/ui/NexusAnimatedIcon";
 import {
   AnimatedGenerateIcon,
   AnimatedMotionIcon,
@@ -316,7 +315,7 @@ export default function AnimateWorkspace({ modelVersion = "", onBillingRefresh =
       <header className="animate-toolbar">
         <div className="animate-toolbar__identity">
           <div className="animate-toolbar__eyebrow">
-            <WandSparkles aria-hidden="true" />
+            <NexusAnimatedIcon name="ai" size={14} />
             <span>AI ANIMATION</span>
             <i>R15</i>
           </div>
@@ -435,7 +434,7 @@ export default function AnimateWorkspace({ modelVersion = "", onBillingRefresh =
 
           <section className="animate-plan-summary">
             <div className="animate-section-heading">
-              <h3><Sparkles aria-hidden="true" /> AI motion plan</h3>
+              <h3><NexusAnimatedIcon name="play" size={16} /> Motion plan</h3>
               <div className="animate-section-heading__aside">
                 <span>{animation?.plan ? "Ready" : "Pending"}</span>
                 <InfoHint label="Shows the interpreted action, mood, handedness, and planning route." side="left" />

@@ -41,8 +41,8 @@
   --nx-control-height: 36px;
   --nx-touch-target: 44px;
   --nx-content-compact: 1160px;
-  --nx-font-display: "DM Sans Variable", "DM Sans", system-ui, sans-serif;
-  --nx-font-body: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --nx-font-display: var(--nx-font-sans, "Geist Variable", "Geist", "Inter", system-ui, sans-serif);
+  --nx-font-body: var(--nx-font-sans, "Geist Variable", "Geist", "Inter", system-ui, sans-serif);
   --nx-motion-color: 150ms;
   --nx-motion-elevation: 200ms;
   --nx-motion-spatial: 280ms;
@@ -143,10 +143,9 @@
   max-width: none;
   margin: 20px 0 0 !important;
   color: var(--nx-text);
-  font-family:
-    "Instrument Sans Variable", "Instrument Sans", system-ui, sans-serif !important;
+  font-family: var(--nx-font-sans, "Geist Variable", "Geist", system-ui, sans-serif) !important;
   font-size: clamp(2.15rem, 5vw, 5.25rem);
-  font-weight: 400;
+  font-weight: 550;
   letter-spacing: -0.025em;
   line-height: 0.94;
 }
@@ -157,8 +156,7 @@
   max-width: none !important;
   margin-top: 20px !important;
   color: var(--nx-text) !important;
-  font-family:
-    "Instrument Sans Variable", "Instrument Sans", system-ui, sans-serif !important;
+  font-family: var(--nx-font-sans, "Geist Variable", "Geist", system-ui, sans-serif) !important;
   font-size: clamp(1.35rem, 2.8vw, 2.75rem) !important;
   font-weight: 400;
   letter-spacing: -0.025em;

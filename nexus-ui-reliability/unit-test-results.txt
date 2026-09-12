@@ -1,0 +1,448 @@
+TAP version 13
+# Subtest: palette conversion "\#aAbBcC"
+ok 1 - palette conversion "\#aAbBcC"
+  ---
+  duration_ms: 2.155834
+  type: 'test'
+  ...
+# Subtest: palette conversion "\#abc"
+ok 2 - palette conversion "\#abc"
+  ---
+  duration_ms: 0.271959
+  type: 'test'
+  ...
+# Subtest: palette conversion " \#abc "
+ok 3 - palette conversion " \#abc "
+  ---
+  duration_ms: 0.1797
+  type: 'test'
+  ...
+# Subtest: palette conversion "rgb(1, 2, 255)"
+ok 4 - palette conversion "rgb(1, 2, 255)"
+  ---
+  duration_ms: 0.230898
+  type: 'test'
+  ...
+# Subtest: palette conversion "\#AABBCCff"
+ok 5 - palette conversion "\#AABBCCff"
+  ---
+  duration_ms: 0.207633
+  type: 'test'
+  ...
+# Subtest: palette conversion "\#AABBCC80"
+ok 6 - palette conversion "\#AABBCC80"
+  ---
+  duration_ms: 0.107982
+  type: 'test'
+  ...
+# Subtest: palette conversion "rgb(999, 0, 0)"
+ok 7 - palette conversion "rgb(999, 0, 0)"
+  ---
+  duration_ms: 0.111207
+  type: 'test'
+  ...
+# Subtest: palette conversion "var(--brand)"
+ok 8 - palette conversion "var(--brand)"
+  ---
+  duration_ms: 0.052309
+  type: 'test'
+  ...
+# Subtest: palette conversion null
+ok 9 - palette conversion null
+  ---
+  duration_ms: 0.216546
+  type: 'test'
+  ...
+# Subtest: palette conversion 42
+ok 10 - palette conversion 42
+  ---
+  duration_ms: 0.297338
+  type: 'test'
+  ...
+# Subtest: primitive conversion primary_game_cta
+ok 11 - primitive conversion primary_game_cta
+  ---
+  duration_ms: 0.532902
+  type: 'test'
+  ...
+# Subtest: primitive conversion PRIMARYGAMECTA
+ok 12 - primitive conversion PRIMARYGAMECTA
+  ---
+  duration_ms: 0.163496
+  type: 'test'
+  ...
+# Subtest: primitive conversion textbutton
+ok 13 - primitive conversion textbutton
+  ---
+  duration_ms: 0.151258
+  type: 'test'
+  ...
+# Subtest: primitive conversion ImageButton
+ok 14 - primitive conversion ImageButton
+  ---
+  duration_ms: 0.104047
+  type: 'test'
+  ...
+# Subtest: primitive conversion PrimaryButton
+ok 15 - primitive conversion PrimaryButton
+  ---
+  duration_ms: 0.058938
+  type: 'test'
+  ...
+# Subtest: primitive conversion Frame
+ok 16 - primitive conversion Frame
+  ---
+  duration_ms: 0.048613
+  type: 'test'
+  ...
+# Subtest: primitive conversion TextLabel
+ok 17 - primitive conversion TextLabel
+  ---
+  duration_ms: 0.049525
+  type: 'test'
+  ...
+# Subtest: primitive conversion TitleLabel
+ok 18 - primitive conversion TitleLabel
+  ---
+  duration_ms: 0.04674
+  type: 'test'
+  ...
+# Subtest: primitive conversion QuantumWidget
+ok 19 - primitive conversion QuantumWidget
+  ---
+  duration_ms: 0.051727
+  type: 'test'
+  ...
+# Subtest: a secondary TextButton remains a MenuButton
+ok 20 - a secondary TextButton remains a MenuButton
+  ---
+  duration_ms: 0.105218
+  type: 'test'
+  ...
+# Subtest: an unknown primitive is never replaced with Custom
+ok 21 - an unknown primitive is never replaced with Custom
+  ---
+  duration_ms: 0.667324
+  type: 'test'
+  ...
+# Subtest: serving schema keeps nested enum values and field names; source remains unchanged
+ok 22 - serving schema keeps nested enum values and field names; source remains unchanged
+  ---
+  duration_ms: 0.695397
+  type: 'test'
+  ...
+# Subtest: recognizes provider schema incompatibility: 400 The specified schema produces a constrain
+ok 23 - recognizes provider schema incompatibility: 400 The specified schema produces a constrain
+  ---
+  duration_ms: 0.286471
+  type: 'test'
+  ...
+# Subtest: recognizes provider schema incompatibility: The compiled grammar is too large, which woul
+ok 24 - recognizes provider schema incompatibility: The compiled grammar is too large, which woul
+  ---
+  duration_ms: 0.114923
+  type: 'test'
+  ...
+# Subtest: recognizes provider schema incompatibility: Schema is too complex for compilation.
+ok 25 - recognizes provider schema incompatibility: Schema is too complex for compilation.
+  ---
+  duration_ms: 0.054673
+  type: 'test'
+  ...
+# Subtest: recognizes provider schema incompatibility: response_format is not supported for this mod
+ok 26 - recognizes provider schema incompatibility: response_format is not supported for this mod
+  ---
+  duration_ms: 0.87031
+  type: 'test'
+  ...
+# Subtest: does not classify operational error 400 invalid input
+ok 27 - does not classify operational error 400 invalid input
+  ---
+  duration_ms: 0.109354
+  type: 'test'
+  ...
+# Subtest: does not classify operational error 400 schema missing a required property
+ok 28 - does not classify operational error 400 schema missing a required property
+  ---
+  duration_ms: 0.051728
+  type: 'test'
+  ...
+# Subtest: does not classify operational error 401 unauthorized
+ok 29 - does not classify operational error 401 unauthorized
+  ---
+  duration_ms: 0.03989
+  type: 'test'
+  ...
+# Subtest: does not classify operational error 402 no credit
+ok 30 - does not classify operational error 402 no credit
+  ---
+  duration_ms: 0.037076
+  type: 'test'
+  ...
+# Subtest: does not classify operational error 429 rate limit
+ok 31 - does not classify operational error 429 rate limit
+  ---
+  duration_ms: 0.083346
+  type: 'test'
+  ...
+# Subtest: does not classify operational error 503 schema compiler unavailable
+ok 32 - does not classify operational error 503 schema compiler unavailable
+  ---
+  duration_ms: 0.095193
+  type: 'test'
+  ...
+# Subtest: reads bounded nested SDK error envelopes
+ok 33 - reads bounded nested SDK error envelopes
+  ---
+  duration_ms: 0.104057
+  type: 'test'
+  ...
+# Subtest: audio intent Add subtle hover and click sounds.
+ok 34 - audio intent Add subtle hover and click sounds.
+  ---
+  duration_ms: 0.646043
+  type: 'test'
+  ...
+# Subtest: audio intent Add a sound when the button is clicked.
+ok 35 - audio intent Add a sound when the button is clicked.
+  ---
+  duration_ms: 0.188403
+  type: 'test'
+  ...
+# Subtest: audio intent Use subtle click sounds.
+ok 36 - audio intent Use subtle click sounds.
+  ---
+  duration_ms: 0.068113
+  type: 'test'
+  ...
+# Subtest: audio intent Use hover animations, with background music.
+ok 37 - audio intent Use hover animations, with background music.
+  ---
+  duration_ms: 0.0994
+  type: 'test'
+  ...
+# Subtest: audio intent No hover or click sounds.
+ok 38 - audio intent No hover or click sounds.
+  ---
+  duration_ms: 0.046961
+  type: 'test'
+  ...
+# Subtest: audio intent Make the layout smaller.
+ok 39 - audio intent Make the layout smaller.
+  ---
+  duration_ms: 0.03942
+  type: 'test'
+  ...
+# Subtest: evidence is a real original prompt slice, not model-authored prose
+ok 40 - evidence is a real original prompt slice, not model-authored prose
+  ---
+  duration_ms: 3.77501
+  type: 'test'
+  ...
+# Subtest: a negative mention never becomes positive requirement evidence
+ok 41 - a negative mention never becomes positive requirement evidence
+  ---
+  duration_ms: 2.204568
+  type: 'test'
+  ...
+# Subtest: invented explicit feature is left for the grounding validator to reject
+ok 42 - invented explicit feature is left for the grounding validator to reject
+  ---
+  duration_ms: 1.908152
+  type: 'test'
+  ...
+# Subtest: previous trusted requirements retain provenance on narrow edits
+ok 43 - previous trusted requirements retain provenance on narrow edits
+  ---
+  duration_ms: 0.136706
+  type: 'test'
+  ...
+# Subtest: audio canonicalization is idempotent
+ok 44 - audio canonicalization is idempotent
+  ---
+  duration_ms: 1.683965
+  type: 'test'
+  ...
+# Subtest: click-only audio passes without inventing a hover role
+ok 45 - click-only audio passes without inventing a hover role
+  ---
+  duration_ms: 0.315034
+  type: 'test'
+  ...
+# Subtest: generic requested audio still needs an asset requirement
+ok 46 - generic requested audio still needs an asset requirement
+  ---
+  duration_ms: 0.084006
+  type: 'test'
+  ...
+# Subtest: accepts bounded complete JSON: {}
+ok 47 - accepts bounded complete JSON: {}
+  ---
+  duration_ms: 0.260932
+  type: 'test'
+  ...
+# Subtest: accepts bounded complete JSON: ```json\\n{}\\n`
+ok 48 - accepts bounded complete JSON: ```json\\n{}\\n`
+  ---
+  duration_ms: 0.180391
+  type: 'test'
+  ...
+# Subtest: rejects invalid/dangerous JSON: Here is {}
+ok 49 - rejects invalid/dangerous JSON: Here is {}
+  ---
+  duration_ms: 0.227542
+  type: 'test'
+  ...
+# Subtest: rejects invalid/dangerous JSON: []
+ok 50 - rejects invalid/dangerous JSON: []
+  ---
+  duration_ms: 0.058669
+  type: 'test'
+  ...
+# Subtest: rejects invalid/dangerous JSON: null
+ok 51 - rejects invalid/dangerous JSON: null
+  ---
+  duration_ms: 0.043856
+  type: 'test'
+  ...
+# Subtest: rejects invalid/dangerous JSON: {"a":1,}
+ok 52 - rejects invalid/dangerous JSON: {"a":1,}
+  ---
+  duration_ms: 0.051318
+  type: 'test'
+  ...
+# Subtest: rejects invalid/dangerous JSON: {"__proto__":{}}
+ok 53 - rejects invalid/dangerous JSON: {"__proto__":{}}
+  ---
+  duration_ms: 0.051317
+  type: 'test'
+  ...
+# Subtest: rejects invalid/dangerous JSON: {"constructor":{}}
+ok 54 - rejects invalid/dangerous JSON: {"constructor":{}}
+  ---
+  duration_ms: 0.045909
+  type: 'test'
+  ...
+# Subtest: rejects oversized output before attempting JSON repair
+ok 55 - rejects oversized output before attempting JSON repair
+  ---
+  duration_ms: 0.070606
+  type: 'test'
+  ...
+# Subtest: prompt-json mode sends exact contract as text and no response_format or tools
+ok 56 - prompt-json mode sends exact contract as text and no response_format or tools
+  ---
+  duration_ms: 1.492717
+  type: 'test'
+  ...
+# Subtest: reduced-schema rejection changes the payload exactly once, keeping the model
+ok 57 - reduced-schema rejection changes the payload exactly once, keeping the model
+  ---
+  duration_ms: 0.495886
+  type: 'test'
+  ...
+# Subtest: fallback request errors propagate instead of looping
+ok 58 - fallback request errors propagate instead of looping
+  ---
+  duration_ms: 0.532331
+  type: 'test'
+  ...
+# Subtest: status 401 is not a local validation retry
+ok 59 - status 401 is not a local validation retry
+  ---
+  duration_ms: 0.283076
+  type: 'test'
+  ...
+# Subtest: status 402 is not a local validation retry
+ok 60 - status 402 is not a local validation retry
+  ---
+  duration_ms: 0.221283
+  type: 'test'
+  ...
+# Subtest: status 429 is not a local validation retry
+ok 61 - status 429 is not a local validation retry
+  ---
+  duration_ms: 0.205199
+  type: 'test'
+  ...
+# Subtest: status 503 is not a local validation retry
+ok 62 - status 503 is not a local validation retry
+  ---
+  duration_ms: 0.1723
+  type: 'test'
+  ...
+# Subtest: primitive alias and short hex normalize before strict validation
+ok 63 - primitive alias and short hex normalize before strict validation
+  ---
+  duration_ms: 0.454464
+  type: 'test'
+  ...
+# Subtest: semantic rejection supplies prior candidate and exact defects for bounded repair
+ok 64 - semantic rejection supplies prior candidate and exact defects for bounded repair
+  ---
+  duration_ms: 0.75082
+  type: 'test'
+  ...
+# Subtest: unknown primitive retries with allowed values and then fails honestly
+ok 65 - unknown primitive retries with allowed values and then fails honestly
+  ---
+  duration_ms: 0.61822
+  type: 'test'
+  ...
+# Subtest: truncation never becomes success and gets one complete-object repair
+ok 66 - truncation never becomes success and gets one complete-object repair
+  ---
+  duration_ms: 0.292891
+  type: 'test'
+  ...
+# Subtest: refusals do not cause automatic retry
+ok 67 - refusals do not cause automatic retry
+  ---
+  duration_ms: 0.217197
+  type: 'test'
+  ...
+# Subtest: parent cancellation prevents calls
+ok 68 - parent cancellation prevents calls
+  ---
+  duration_ms: 0.177948
+  type: 'test'
+  ...
+# Subtest: cancellation during an in-flight call does not reissue it
+ok 69 - cancellation during an in-flight call does not reissue it
+  ---
+  duration_ms: 18.99177
+  type: 'test'
+  ...
+# Subtest: whole-stage timeout also settles when a faulty adapter ignores abort
+ok 70 - whole-stage timeout also settles when a faulty adapter ignores abort
+  ---
+  duration_ms: 20.937259
+  type: 'test'
+  ...
+# Subtest: multimodal image parts are kept and a negative review remains negative
+ok 71 - multimodal image parts are kept and a negative review remains negative
+  ---
+  duration_ms: 0.497278
+  type: 'test'
+  ...
+# Subtest: diagnostic logs contain no prompts, output, credentials or image bytes
+ok 72 - diagnostic logs contain no prompts, output, credentials or image bytes
+  ---
+  duration_ms: 0.324838
+  type: 'test'
+  ...
+# Subtest: trusted review projection removes derived fields without changing provider verdict or evidence
+ok 73 - trusted review projection removes derived fields without changing provider verdict or evidence
+  ---
+  duration_ms: 0.160321
+  type: 'test'
+  ...
+1..73
+# tests 73
+# suites 0
+# pass 73
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 122.53945

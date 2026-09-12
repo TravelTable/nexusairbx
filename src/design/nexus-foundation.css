@@ -4,37 +4,37 @@
 :root[data-nexus-theme="soft-depth"] {
   color-scheme: dark;
 
-  /* Purple soft-depth contract. Keep literals here; components consume tokens. */
-  --nx-canvas: #0a0a0a;
-  --nx-depth: #0a0a0a;
-  --nx-card: #171717;
-  --nx-work: #171717;
-  --nx-muted-surface: #262626;
-  --nx-field: #262626;
-  --nx-raised-surface: #303030;
-  --nx-field-strong: #303030;
-  --nx-text: #fafafa;
-  --nx-text-secondary: #d4d4d4;
-  --nx-text-muted: #a1a1a1;
-  --nx-text-disabled: #737373;
-  --nx-purple: #b45cff;
-  --nx-purple-strong: #c77dff;
+  /* Technical/editorial soft-depth. Depth from surfaces + borders, not glow. */
+  --nx-canvas: #090909;
+  --nx-depth: #0c0c0c;
+  --nx-card: #111111;
+  --nx-work: #111111;
+  --nx-muted-surface: #171717;
+  --nx-field: #171717;
+  --nx-raised-surface: #1c1c1c;
+  --nx-field-strong: #1c1c1c;
+  --nx-text: #f5f5f5;
+  --nx-text-secondary: #c7c7c7;
+  --nx-text-muted: #858585;
+  --nx-text-disabled: #5f5f5f;
+  --nx-purple: #a855f7;
+  --nx-purple-strong: #c084fc;
   --nx-purple-muted: #9333ea;
-  --nx-purple-rgb: 180, 92, 255;
-  --nx-purple-soft: rgb(180 92 255 / 12%);
-  --nx-purple-border: rgb(180 92 255 / 34%);
-  --nx-purple-wash: rgb(180 92 255 / 10%);
-  --nx-purple-edge: rgb(199 125 255 / 28%);
-  --nx-purple-glow: 0 0 36px rgb(180 92 255 / 16%);
-  --nx-inner-highlight: inset 0 1px rgb(255 255 255 / 8%);
-  --nx-rule: rgb(255 255 255 / 10%);
-  --nx-rule-quiet: rgb(255 255 255 / 7%);
-  --nx-rule-strong: rgb(255 255 255 / 18%);
+  --nx-purple-rgb: 168, 85, 247;
+  --nx-purple-soft: rgb(168 85 247 / 10%);
+  --nx-purple-border: rgb(168 85 247 / 28%);
+  --nx-purple-wash: rgb(168 85 247 / 6%);
+  --nx-purple-edge: rgb(192 132 252 / 22%);
+  --nx-purple-glow: none;
+  --nx-inner-highlight: none;
+  --nx-rule: rgb(255 255 255 / 9%);
+  --nx-rule-quiet: rgb(255 255 255 / 6%);
+  --nx-rule-strong: rgb(255 255 255 / 14%);
   --nx-info: #7dd3fc;
   --nx-success: #86efac;
   --nx-warning: #fcd34d;
   --nx-danger: #fda4af;
-  --nx-focus: rgb(180 92 255 / 45%);
+  --nx-focus: rgb(168 85 247 / 40%);
   --nx-focus-ring: var(--nx-focus);
 
   /* Product-facing semantic roles. */
@@ -74,12 +74,12 @@
   --nx-space-20: 80px;
   --nx-space-24: 96px;
 
-  --nx-radius-control: 10px;
-  --nx-radius-field: 10px;
-  --nx-radius-panel: 14px;
-  --nx-radius-card: 18px;
-  --nx-radius-overlay: 20px;
-  --nx-radius-feature: 24px;
+  --nx-radius-control: 7px;
+  --nx-radius-field: 7px;
+  --nx-radius-panel: 9px;
+  --nx-radius-card: 10px;
+  --nx-radius-overlay: 12px;
+  --nx-radius-feature: 12px;
   --nx-radius-pill: 999px;
 
   /* Compact layout and typography roles. */
@@ -96,11 +96,21 @@
   --nx-type-body: 1rem;
   --nx-type-label: 0.75rem;
 
-  --nx-font-display: "DM Sans Variable", "DM Sans", system-ui, sans-serif;
-  --nx-font-body:
-    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --nx-font-sans:
+    "Geist Variable", "Geist", "Inter", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  --nx-font-display: var(--nx-font-sans);
+  --nx-font-body: var(--nx-font-sans);
   --nx-font-code:
-    "Atkinson Hyperlegible Mono Variable", "SFMono-Regular", Consolas, monospace;
+    "Geist Mono Variable", "Geist Mono", "SFMono-Regular", Consolas,
+    "Liberation Mono", monospace;
+  --font-sans: var(--nx-font-sans);
+  --font-mono: var(--nx-font-code);
+
+  --nx-weight-body: 400;
+  --nx-weight-control: 500;
+  --nx-weight-heading: 600;
+  --nx-weight-label: 650;
 
   --nx-motion-color: 150ms;
   --nx-motion-fast: 150ms;
@@ -110,16 +120,10 @@
   --nx-ease-state: cubic-bezier(0.22, 0.72, 0.24, 1);
   --nx-ease-spatial: cubic-bezier(0.2, 0.8, 0.2, 1);
 
-  --nx-shadow-control:
-    inset 0 1px 0 rgb(255 255 255 / 8%), 0 1px 2px rgb(0 0 0 / 38%),
-    0 3px 9px rgb(0 0 0 / 16%);
-  --nx-shadow-card:
-    inset 0 1px 0 rgb(255 255 255 / 6%), 0 1px 2px rgb(0 0 0 / 48%),
-    0 9px 26px rgb(0 0 0 / 25%);
-  --nx-shadow-floating:
-    inset 0 1px 0 rgb(255 255 255 / 8%), 0 2px 4px rgb(0 0 0 / 50%),
-    0 18px 54px rgb(0 0 0 / 44%);
-  --nx-shadow-focus: 0 0 0 4px var(--nx-focus);
+  --nx-shadow-control: none;
+  --nx-shadow-card: none;
+  --nx-shadow-floating: 0 16px 40px rgb(0 0 0 / 40%);
+  --nx-shadow-focus: 0 0 0 3px var(--nx-focus);
 
   /* shadcn compatibility */
   --background: 0 0% 4%;
@@ -141,7 +145,7 @@
   --border: 0 0% 100% / 0.1;
   --input: 0 0% 100% / 0.1;
   --ring: 274 100% 68%;
-  --radius: 0.625rem;
+  --radius: 0.4375rem;
 
   /* Compatibility bridge for existing customer-facing surfaces. */
   --ds-bg-canvas: var(--nx-canvas);
@@ -254,6 +258,7 @@ body {
   color: var(--nx-text);
   font-family: var(--nx-font-body);
   font-size: var(--nx-type-interface);
+  font-weight: var(--nx-weight-body);
   line-height: 1.55;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -267,15 +272,18 @@ h5,
 h6,
 .font-display {
   font-family: var(--nx-font-display);
+  font-weight: var(--nx-weight-heading);
 }
 code,
 kbd,
 pre,
-samp {
+samp,
+.uc-code,
+.uc-file-path {
   font-family: var(--nx-font-code);
 }
 ::selection {
-  background: rgb(180 92 255 / 30%);
+  background: rgb(168 85 247 / 28%);
   color: var(--nx-text);
 }
 button,
@@ -283,6 +291,7 @@ input,
 textarea,
 select {
   font: inherit;
+  font-weight: var(--nx-weight-control);
 }
 a,
 button,

@@ -21,7 +21,7 @@ export const UI_BUILD_LABELS = { generating: 'Writing UI files', preparing: 'Sav
   awaiting_renders: 'Rendering preview', reviewing: 'Reviewing the render', repairing: 'Refining your UI', complete: 'Visually reviewed', saved: 'Saved',
   preview_unavailable: 'Preview unavailable', needs_review: 'Review needs attention', renderer_limited: 'Preview limitations',
   budget_exhausted: 'Review budget reached', failed: 'Build needs attention' };
-const actions = { understanding_request: 'Understanding your request', planning_design: 'Planning the design', resolving_assets: 'Resolving icons and assets', writing_ui: 'Writing your UI', rendering_desktop: 'Rendering desktop', rendering_mobile: 'Rendering mobile', reviewing_design: 'Reviewing design quality', improving_design: 'Improving the design', finding_assets: 'Finding icons and images', uploading_assets: 'Uploading images to Roblox', building_layout: 'Building UI layout', writing_implementation: 'Writing UI implementation', validating_implementation: 'Checking UI implementation' };
+const actions = { understanding_request: 'Understanding your request', planning_design: 'Planning the design', resolving_assets: 'Resolving icons and assets', generating_artwork: 'Generating artwork', writing_ui: 'Writing your UI', rendering_desktop: 'Rendering desktop', rendering_mobile: 'Rendering mobile', reviewing_design: 'Reviewing design quality', improving_design: 'Improving the design', finding_assets: 'Finding icons and images', uploading_assets: 'Uploading images to Roblox', building_layout: 'Building UI layout', writing_implementation: 'Writing UI implementation', validating_implementation: 'Checking UI implementation' };
 const ended = new Set(['complete','saved','preview_unavailable','needs_review','renderer_limited','budget_exhausted','failed']);
 const terminalTask = task => ended.has(task?.uiBuild?.stage) || ['cancelled','failed','succeeded'].includes(task?.status);
 const metadata = { workspace: 'ui_creator', displayPolicy: 'ui_build' };
@@ -289,9 +289,9 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
     lastSuccessfulJobId={manifest?.lastSuccessfulPreviewJobId} renderJobs={build?.sourceRevision === document?.revision && build?.snapshotId === manifest?.capture?.snapshotId ? build?.matrix : []}
     studioConnected={studioReady} hasNodes={saved} studioReceipt={applied} onApplyToStudio={applySaved} onConnectStudio={connect}
     onRefreshCapture={studioReady && !document?.sourceFiles ? sync : undefined} sourceOwned={Boolean(document?.sourceFiles)} onRefreshManifest={refreshManifest} captureBusy={busy === 'Capturing UI'} applyBusy={working}
-    updatingRevision={busy === 'Starting build' || (['generating','repairing'].includes(build?.stage) && active)} previewFailed={build?.stage === 'preview_unavailable'} pendingStudioCommand={build?.stage === 'awaiting_studio' ? build.commandId : null}
+    updatingRevision={busy === 'Starting build' || (['generating','repairing'].includes(build?.stage) && active)} previewFailed={build?.stage === 'preview_unavailable'} buildFailure={build?.stage === 'failed' ? build.message || 'The UI build could not finish.' : null} pendingStudioCommand={build?.stage === 'awaiting_studio' ? build.commandId : null}
     onRenderStatus={onRenderStatus} run={active ? { stage: actions[build?.action] || UI_BUILD_LABELS[build?.stage] || 'Starting build' } : null}/></div>
-    {showLiveFiles ? <UiLiveFiles key={taskId} files={build?.sourceFiles || []} stage={build?.stage}/> : null}</>;
+    {showLiveFiles ? <UiLiveFiles key={taskId} files={build?.sourceFiles || []} stage={build?.stage} action={build?.action}/> : null}</>;
   return <UiCreatorChrome document={document} designs={designs} projectTitle={projectTitle} studioReady={studioReady} working={working} loading={Boolean(busy)} status={status}
     sharedHeader={sharedHeader} headerActionTarget={headerActionTarget} onHeaderModalChange={onHeaderModalChange}
     saved={saved} applied={applied} applyState={applyState} visuallyReviewed={visuallyReviewed}

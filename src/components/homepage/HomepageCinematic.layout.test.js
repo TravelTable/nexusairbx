@@ -12,7 +12,7 @@ test("uses the shared near-black and electric purple soft-depth theme", () => {
 });
 
 test("keeps the exact animated hero typography", () => {
-  expect(css).toMatch(/font-family:\s*[\r\n\s]*"Instrument Sans Variable"/);
+  expect(css).toMatch(/font-family:\s*var\(--nx-font-sans/);
   expect(css).toMatch(/font-size:\s*clamp\(2\.15rem,\s*5vw,\s*5\.25rem\)/);
   expect(css).toMatch(/letter-spacing:\s*-0?\.025em/);
   expect(css).toMatch(/line-height:\s*0?\.94/);

@@ -1,0 +1,49 @@
+TAP version 13
+# Subtest: bounded worker pool overlaps independent jobs and never exceeds capacity
+ok 1 - bounded worker pool overlaps independent jobs and never exceeds capacity
+  ---
+  duration_ms: 16.2159
+  ...
+# [JobWorker] artifact generation timed out after 20ms: job_1
+# Subtest: hung artifact job times out and releases the worker
+ok 2 - hung artifact job times out and releases the worker
+  ---
+  duration_ms: 29.5302
+  ...
+# [JobWorker] recovered completed artifact after finalization timeout: job_complete_then_hung
+# Subtest: completed artifact checkpoint is recovered instead of timing out
+ok 3 - completed artifact checkpoint is recovered instead of timing out
+  ---
+  duration_ms: 28.6444
+  ...
+# [JobWorker] artifact generation timed out after 20ms: hung
+# Subtest: worker processes the next queued artifact job after a timeout
+ok 4 - worker processes the next queued artifact job after a timeout
+  ---
+  duration_ms: 32.6446
+  ...
+# [JobWorker] artifact generation timed out after 10ms: job_1
+# Subtest: late artifact success cannot overwrite a timed out job
+ok 5 - late artifact success cannot overwrite a timed out job
+  ---
+  duration_ms: 107.6453
+  ...
+# Subtest: user cancel aborts the in-flight artifact job without marking failed
+ok 6 - user cancel aborts the in-flight artifact job without marking failed
+  ---
+  duration_ms: 45.4958
+  ...
+# Subtest: stopJobWorkerLoop waits for an in-flight processOnce
+ok 7 - stopJobWorkerLoop waits for an in-flight processOnce
+  ---
+  duration_ms: 6.8292
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 372.1576

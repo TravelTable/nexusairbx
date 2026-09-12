@@ -2,13 +2,12 @@ import React from "react";
 import { render } from "@testing-library/react";
 import ModelProviderGlyph, { iconUrl, NEXUS_AGENT_LOGO } from "../ModelProviderGlyph";
 
-test("renders openai glyph image", () => {
+test("renders openai glyph image without a white contrast chip", () => {
   const { container } = render(<ModelProviderGlyph provider="openai" size={16} type="mono" />);
   const img = container.querySelector("img");
   expect(img).toBeTruthy();
   expect(img.getAttribute("src")).toBe(iconUrl("openai", "mono"));
-  expect(img.parentElement).toHaveClass("bg-white");
-  expect(img.parentElement).toHaveStyle({ width: "16px", height: "16px" });
+  expect(img.parentElement).not.toHaveClass("bg-white");
 });
 
 test("uses color asset for deepseek when available", () => {
@@ -18,12 +17,15 @@ test("uses color asset for deepseek when available", () => {
   expect(container.querySelector("img").parentElement).not.toHaveClass("bg-white");
 });
 
-test("places every intrinsically dark provider logo on a light contrast chip", () => {
+test("light mono brands render directly so they stay visible on dark surfaces", () => {
   ["openai", "anthropic", "xai"].forEach((provider) => {
     const { container, unmount } = render(
       <ModelProviderGlyph provider={provider} size={17} type="color" />
     );
-    expect(container.querySelector("img").parentElement).toHaveClass("bg-white");
+    const img = container.querySelector("img");
+    expect(img).toBeTruthy();
+    expect(img.parentElement).not.toHaveClass("bg-white");
+    expect(img.getAttribute("src")).toBe(iconUrl(provider, "color"));
     unmount();
   });
 });

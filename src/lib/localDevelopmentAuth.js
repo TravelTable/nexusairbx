@@ -2,6 +2,7 @@ import { signInWithCustomToken } from "firebase/auth";
 import { BACKEND_URL } from "../config";
 
 export const LOCAL_DEVELOPMENT_UID = "nexusrbx-local-dev";
+const localSessions = new WeakMap();
 
 function isLoopbackHostname(hostname = "") {
   return ["localhost", "127.0.0.1", "::1", "[::1]"].includes(
@@ -37,7 +38,7 @@ export async function ensureLocalDevelopmentAuth(
     return null;
   }
 
-  if (auth.currentUser?.uid === LOCAL_DEVELOPMENT_UID) return auth.currentUser;
+  if (auth.currentUser && localSessions.get(auth) === auth.currentUser.uid) return auth.currentUser;
 
   const response = await fetchImpl(`${backendUrl.replace(/\/$/, "")}/api/auth/local-dev-session`, {
     method: "POST",
@@ -49,9 +50,10 @@ export async function ensureLocalDevelopmentAuth(
   }
   const session = await response.json();
   if (!session?.token) throw new Error("Local developer sign-in returned no token.");
-  if (auth.currentUser?.uid === session.uid) return auth.currentUser;
   const credential = await signIn(auth, session.token);
-  return credential?.user || auth.currentUser;
+  const user = credential?.user || auth.currentUser;
+  if (user?.uid === session.uid) localSessions.set(auth, user.uid);
+  return user;
 }
 
 export function startLocalDevelopmentAuthRecovery(
@@ -77,7 +79,7 @@ export function startLocalDevelopmentAuthRecovery(
   let disposed = false;
   let inFlight = false;
   const attempt = async () => {
-    if (disposed || inFlight || auth.currentUser?.uid === LOCAL_DEVELOPMENT_UID) return;
+    if (disposed || inFlight || (auth.currentUser && localSessions.get(auth) === auth.currentUser.uid)) return;
     inFlight = true;
     try {
       await ensureLocalDevelopmentAuth(auth, {

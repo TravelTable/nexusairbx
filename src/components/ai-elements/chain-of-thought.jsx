@@ -6,7 +6,8 @@ import {
   CollapsibleTrigger,
 } from "components/shadcn/collapsible";
 import { cn } from "lib/utils";
-import { BrainIcon, ChevronDownIcon, DotIcon } from "lucide-react";
+import { ChevronDownIcon, DotIcon } from "lucide-react";
+import { NexusAnimatedIcon } from "components/ui/NexusAnimatedIcon";
 import { createContext, memo, useContext, useMemo } from "react";
 
 const ChainOfThoughtContext = createContext(null);
@@ -51,7 +52,7 @@ export const ChainOfThoughtHeader = memo(({ className, children, ...props }) => 
         )}
         {...props}
       >
-        <BrainIcon className="size-4" />
+        <NexusAnimatedIcon name="cpu" size={16} className="size-4" />
         <span className="flex-1 text-left">{children ?? "Chain of Thought"}</span>
         <ChevronDownIcon
           className={cn("size-4 transition-transform duration-150 ease-out", isOpen ? "rotate-180" : "rotate-0")}

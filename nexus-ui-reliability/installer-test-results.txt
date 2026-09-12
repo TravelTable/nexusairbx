@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: installer preflights every transformation without writing repository files
+ok 1 - installer preflights every transformation without writing repository files
+  ---
+  duration_ms: 238.901701
+  type: 'test'
+  ...
+# Subtest: installer applies all files, makes backups, and is idempotent
+ok 2 - installer applies all files, makes backups, and is idempotent
+  ---
+  duration_ms: 243.021802
+  type: 'test'
+  ...
+# Subtest: unknown local changes refuse installation before any writes
+ok 3 - unknown local changes refuse installation before any writes
+  ---
+  duration_ms: 1.576124
+  type: 'test'
+  ...
+# Subtest: CRLF sources are accepted and unrelated methods remain intact
+ok 4 - CRLF sources are accepted and unrelated methods remain intact
+  ---
+  duration_ms: 0.227943
+  type: 'test'
+  ...
+# Subtest: review patch preserves image guards and subsequent methods
+ok 5 - review patch preserves image guards and subsequent methods
+  ---
+  duration_ms: 0.143847
+  type: 'test'
+  ...
+# Subtest: partial write error triggers rollback of previously written files
+ok 6 - partial write error triggers rollback of previously written files
+  ---
+  duration_ms: 228.174639
+  type: 'test'
+  ...
+# Subtest: installer does not overwrite a user-modified helper module
+ok 7 - installer does not overwrite a user-modified helper module
+  ---
+  duration_ms: 1.243172
+  type: 'test'
+  ...
+# Subtest: ai retry guard precedes all legacy identical-payload retry logic
+ok 8 - ai retry guard precedes all legacy identical-payload retry logic
+  ---
+  duration_ms: 0.116786
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 765.700032

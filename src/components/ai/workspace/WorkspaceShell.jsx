@@ -17,6 +17,7 @@ import {
   Maximize2,
   X,
 } from "lib/icons";
+import { NexusIcons } from "../../ui/NexusAnimatedIcon";
 import { useMotionPresence } from "../../../hooks/useMotionPresence";
 import "./WorkspaceShell.css";
 
@@ -72,31 +73,31 @@ export const WORKSPACE_DOCK_PANELS = [
     id: "files",
     label: "Files",
     description: "Project files and the live Studio manifest",
-    icon: FolderTree,
+    icon: NexusIcons.Folder,
   },
   {
     id: "code",
     label: "Editor",
     description: "Inspect and edit the selected Roblox script",
-    icon: FileCode2,
+    icon: NexusIcons.Code,
   },
   {
     id: "activity",
     label: "Run",
     description: "Request progress, agent runs, tests, and approvals",
-    icon: Activity,
+    icon: NexusIcons.Usage,
   },
   {
     id: "assets",
     label: "Assets",
     description: "Project assets and Creator Store references",
-    icon: Boxes,
+    icon: NexusIcons.Assets,
   },
   {
     id: "details",
     label: "Report",
     description: "Build summary, project structure, and validation evidence",
-    icon: ClipboardList,
+    icon: NexusIcons.Document,
   },
 ];
 

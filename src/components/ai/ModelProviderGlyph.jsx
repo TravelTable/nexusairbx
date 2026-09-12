@@ -11,27 +11,23 @@ import {
 const LOBE_STATIC_BASE = "/assets/providers";
 
 const PROVIDER_ICON_SLUGS = Object.freeze({
-  openai: { mono: "openai", color: "openai" },
-  anthropic: { mono: "anthropic", color: "anthropic" },
-  google: { mono: "google", color: "google-color" },
-  deepseek: { mono: "deepseek", color: "deepseek-color" },
-  xai: { mono: "xai", color: "xai" },
-  meta: { mono: "meta", color: "meta-color" },
-  mistral: { mono: "mistral", color: "mistral-color" },
-  alibaba: { mono: "alibaba", color: "alibaba-color" },
-  cohere: {}, moonshotai: {}, zai: {},
+  openai: true,
+  anthropic: true,
+  google: true,
+  deepseek: true,
+  xai: true,
+  meta: true,
+  mistral: true,
+  alibaba: true,
+  cohere: true,
+  moonshotai: true,
+  zai: true,
 });
 
-// These brand assets are intrinsically near-black SVGs. External SVG images
-// cannot inherit the app's current text color, so give them a stable light
-// chip instead of letting them disappear into dark surfaces.
-const DARK_PROVIDER_ICONS = new Set(["openai", "anthropic", "xai"]);
-
 function iconUrl(providerKey, type) {
-  const slugs = PROVIDER_ICON_SLUGS[providerKey];
-  if (!slugs) return null;
-  const slug = `${providerKey}-${type === "color" ? "color" : "mono"}`;
-  return `${LOBE_STATIC_BASE}/${slug}.svg`;
+  if (!PROVIDER_ICON_SLUGS[providerKey]) return null;
+  const variant = type === "color" ? "color" : "mono";
+  return `${LOBE_STATIC_BASE}/${providerKey}-${variant}.svg`;
 }
 
 export default function ModelProviderGlyph({
@@ -60,7 +56,6 @@ export default function ModelProviderGlyph({
   const key = resolveLobeProviderKey(provider);
   const src = iconUrl(key, type);
   const label = providerLabel(provider);
-  const needsContrastChip = DARK_PROVIDER_ICONS.has(key);
 
   if (!src || failedSrc === src) {
     return (
@@ -79,7 +74,7 @@ export default function ModelProviderGlyph({
     );
   }
 
-  const image = (
+  return (
     <img
       src={src}
       onError={() => setFailedSrc(src)}
@@ -92,18 +87,6 @@ export default function ModelProviderGlyph({
       draggable={false}
     />
   );
-
-  if (!needsContrastChip) return image;
-
-  return (
-    <span
-      aria-hidden="true"
-      className={`inline-flex shrink-0 items-center justify-center rounded-md bg-white ${className}`.trim()}
-      style={{ width: size, height: size }}
-    >
-      {image}
-    </span>
-  );
 }
 
-export { DARK_PROVIDER_ICONS, iconUrl, LOBE_STATIC_BASE, NEXUS_AGENT_LOGO };
+export { iconUrl, LOBE_STATIC_BASE, NEXUS_AGENT_LOGO };

@@ -37,7 +37,7 @@
 .workspace button:focus-visible, .workspace select:focus-visible, .workspace textarea:focus-visible, .workspace input:focus-visible { outline: 2px solid #a78bfa; outline-offset: 2px; }
 @media (max-width: 860px) { .workspace-sidebar { width: 200px; } .workspace-toolbar { flex-wrap: wrap; } }
 
-:root { --connector-background: 7 7 12; --connector-foreground: 244 244 248; --connector-panel: 15 15 23; --connector-elevated: 20 19 30; --connector-muted: 29 27 40; --connector-muted-foreground: 158 156 171; --connector-line: 45 43 59; font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: rgb(var(--connector-foreground)); background: rgb(var(--connector-background)); }
+:root { --connector-background: 7 7 12; --connector-foreground: 244 244 248; --connector-panel: 15 15 23; --connector-elevated: 20 19 30; --connector-muted: 29 27 40; --connector-muted-foreground: 158 156 171; --connector-line: 45 43 59; font-family: "Geist Variable", "Geist", Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: rgb(var(--connector-foreground)); background: rgb(var(--connector-background)); }
 :root.light { --connector-background: 239 238 244; --connector-foreground: 24 21 32; --connector-panel: 250 249 252; --connector-elevated: 255 255 255; --connector-muted: 229 226 237; --connector-muted-foreground: 103 97 116; --connector-line: 211 207 219; }
 * { box-sizing: border-box; }
 html, body, #root { width: 100%; height: 100%; margin: 0; overflow: hidden; }

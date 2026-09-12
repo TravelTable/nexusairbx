@@ -1,0 +1,95 @@
+TAP version 13
+# Subtest: local build and render stages cannot be consumed by hosted worker queues
+ok 1 - local build and render stages cannot be consumed by hosted worker queues
+  ---
+  duration_ms: 160.6834
+  ...
+# Subtest: replayed preview queue creation preserves the active worker and refuses an old claim update
+ok 2 - replayed preview queue creation preserves the active worker and refuses an old claim update
+  ---
+  duration_ms: 103.0394
+  ...
+# Subtest: claiming a queued job is exclusive until the lease is stale
+ok 3 - claiming a queued job is exclusive until the lease is stale
+  ---
+  duration_ms: 6.3236
+  ...
+# Subtest: a scoped local worker claims only its developer's jobs
+ok 4 - a scoped local worker claims only its developer's jobs
+  ---
+  duration_ms: 2.1729
+  ...
+# Subtest: local UI jobs remain discoverable beyond a hundred historical jobs
+ok 5 - local UI jobs remain discoverable beyond a hundred historical jobs
+  ---
+  duration_ms: 5.7278
+  ...
+# Subtest: versioned UI builds survive normal stage resumes and cannot be claimed as legacy builds
+ok 6 - versioned UI builds survive normal stage resumes and cannot be claimed as legacy builds
+  ---
+  duration_ms: 6.8442
+  ...
+# Subtest: worker heartbeats preserve live claims and reject a previous attempt
+ok 7 - worker heartbeats preserve live claims and reject a previous attempt
+  ---
+  duration_ms: 3.1749
+  ...
+# Subtest: deletion fences reject job creation and cancel a pre-existing queued claim
+ok 8 - deletion fences reject job creation and cancel a pre-existing queued claim
+  ---
+  duration_ms: 7.2604
+  ...
+# Subtest: durable idempotency claims are exclusive and only their owner can complete
+ok 9 - durable idempotency claims are exclusive and only their owner can complete
+  ---
+  duration_ms: 2.9715
+  ...
+# Subtest: terminal job updates are idempotent and cannot be overwritten by late workers
+ok 10 - terminal job updates are idempotent and cannot be overwritten by late workers
+  ---
+  duration_ms: 5.6251
+  ...
+# Subtest: timed out terminal updates clear worker lease and ignore late success
+ok 11 - timed out terminal updates clear worker lease and ignore late success
+  ---
+  duration_ms: 4.8341
+  ...
+# Subtest: stale jobs at the retry limit are marked failed instead of reclaimed
+ok 12 - stale jobs at the retry limit are marked failed instead of reclaimed
+  ---
+  duration_ms: 2.8783
+  ...
+# Subtest: terminal ai outcomes are finalized and emitted with normalized response metadata
+ok 13 - terminal ai outcomes are finalized and emitted with normalized response metadata
+  ---
+  duration_ms: 17.2838
+  ...
+# Subtest: terminalization accepts legacy wrapped ai outcomes
+ok 14 - terminalization accepts legacy wrapped ai outcomes
+  ---
+  duration_ms: 7.8819
+  ...
+# Subtest: generic job writes cannot forge canonical task linkage
+ok 15 - generic job writes cannot forge canonical task linkage
+  ---
+  duration_ms: 1.5584
+  ...
+# Subtest: trusted linked jobs atomically emit deterministic lifecycle receipts
+ok 16 - trusted linked jobs atomically emit deterministic lifecycle receipts
+  ---
+  duration_ms: 2.8369
+  ...
+# Subtest: task-linked cancellation is owner scoped, tenant scoped, and replay safe
+ok 17 - task-linked cancellation is owner scoped, tenant scoped, and replay safe
+  ---
+  duration_ms: 7.1106
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 479.2299

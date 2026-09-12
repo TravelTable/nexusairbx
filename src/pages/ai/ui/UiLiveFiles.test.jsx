@@ -19,6 +19,14 @@ test('packaging keeps completed code inspectable', () => {
   expect(screen.getByText('Building RBXM')).toBeInTheDocument();
   expect(screen.getByLabelText('Live source')).toHaveTextContent('return UI');
 });
+
+test('planning and validation labels do not claim source is still being written', () => {
+  const view = render(<UiLiveFiles stage="generating" action="planning_design"/>);
+  expect(screen.getByText('Planning the design')).toBeInTheDocument();
+  expect(screen.queryByText('Writing files')).not.toBeInTheDocument();
+  view.rerender(<UiLiveFiles stage="generating" action="validating_implementation" files={[{path:'View.luau',content:'return {}',status:'saved'}]}/>);
+  expect(screen.getByText('Checking UI implementation')).toBeInTheDocument();
+});
 test('shows the generated manifest count instead of a fixed two-file limit', () => {
   render(<UiLiveFiles files={[
     { path: 'View.luau', content: 'return UI', status: 'saved' },

@@ -55,18 +55,16 @@ test("ensureLocalDevelopmentAuth exchanges the local token for a Firebase user",
   expect(signIn).toHaveBeenCalledWith(auth, "custom-token");
 });
 
-test("ensureLocalDevelopmentAuth does not request another token for the local developer", async () => {
-  const user = { uid: LOCAL_DEVELOPMENT_UID };
-  const fetchImpl = jest.fn();
-
-  await expect(ensureLocalDevelopmentAuth({ currentUser: user }, {
-    fetchImpl,
-    backendUrl: "http://localhost:3001",
-    environment: "development",
-    locationObject: { hostname: "localhost" },
-  })).resolves.toBe(user);
-
-  expect(fetchImpl).not.toHaveBeenCalled();
+test("configured local identity replaces a cached default user and is reused after exchange", async () => {
+  const user = { uid: "configured-developer" };
+  const auth = { currentUser: { uid: LOCAL_DEVELOPMENT_UID } };
+  const fetchImpl = jest.fn(async () => ({ ok: true, json: async () => ({ token: "token", uid: user.uid }) }));
+  const signIn = jest.fn(async () => { auth.currentUser = user; return { user }; });
+  const options = { fetchImpl, signIn, backendUrl: "http://localhost:3001", environment: "development", locationObject: { hostname: "localhost" } };
+  await expect(ensureLocalDevelopmentAuth(auth, options)).resolves.toBe(user);
+  await expect(ensureLocalDevelopmentAuth(auth, options)).resolves.toBe(user);
+  expect(fetchImpl).toHaveBeenCalledTimes(1);
+  expect(signIn).toHaveBeenCalledTimes(1);
 });
 
 test("local auth recovery retries when a restarted backend becomes available", async () => {

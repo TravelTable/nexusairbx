@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Brain, ChevronDown } from "lib/icons";
+import { ChevronDown } from "lib/icons";
+import { NexusAnimatedIcon } from "../../ui/NexusAnimatedIcon";
 import FEATURE_FLAGS from "../../../lib/featureFlags";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../shadcn/collapsible";
 import { cn } from "../../../lib/utils";
@@ -62,7 +63,12 @@ export default function RawReasoningPanel({ text = "", live = false, embedded = 
           className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-[var(--ds-fill-subtle)] transition-colors"
           aria-expanded={open}
         >
-          <Brain className={`w-3.5 h-3.5 ${live ? "text-[var(--ds-accent)] motion-safe:animate-pulse" : "text-[var(--ds-text-muted)]"}`} />
+          <NexusAnimatedIcon
+            name="cpu"
+            size={14}
+            loading={live}
+            className={`w-3.5 h-3.5 ${live ? "text-[var(--ds-accent)]" : "text-[var(--ds-text-muted)]"}`}
+          />
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--ds-text-muted)]">
             {live ? "Thinking" : "Thought process"}
           </span>

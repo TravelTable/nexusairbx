@@ -132,20 +132,30 @@ test("Studio is not required to generate and Saved does not keep the composer bu
   await waitFor(() => expect(tasks.createTask).toHaveBeenCalledTimes(1));
   expect(tasks.createTask.mock.calls[0][0].executionInput.studioEnabled).toBe(false);
   await waitFor(() => expect(screen.getByRole("button",{name:"Send prompt"})).toBeEnabled());
-  expect(screen.getByText(/Saved · Not applied to this Studio · Runtime not verified/, { selector: '.uc-design-status' })).toBeVisible();
+  const offlineStatus = screen.getByLabelText("UI status");
+  expect(offlineStatus).toHaveTextContent("Saved");
+  expect(offlineStatus).toHaveTextContent("Not applied");
+  expect(offlineStatus).toHaveTextContent("Runtime untested");
 });
 
 test("a pending Studio application is acknowledged but never presented as applied", async () => {
   designs.getUiDesign.mockResolvedValue({ design: { ...record, pendingApplication: { revision: 'rev-1', commandId: 'command-1' } } });
   await open();
-  expect(screen.getByText(/Saved · Not applied to this Studio · Runtime not verified/, { selector: '.uc-design-status' })).toBeVisible();
+  const pendingStatus = screen.getByLabelText("UI status");
+  expect(pendingStatus).toHaveTextContent("Saved");
+  expect(pendingStatus).toHaveTextContent("Not applied");
+  expect(pendingStatus).toHaveTextContent("Runtime untested");
   expect(screen.queryByText(/^Applied$/)).not.toBeInTheDocument();
+  expect(screen.queryByText("Studio applied")).not.toBeInTheDocument();
 });
 
 test("Applied is scoped to the matching revision and connected Studio session", async () => {
   designs.getUiDesign.mockResolvedValue({ design: { ...record, appliedRevision: 'rev-1', appliedSessionId: 'session-1' } });
   await open();
-  expect(screen.getByText(/Saved · Applied · Runtime not verified/, { selector: '.uc-design-status' })).toBeVisible();
+  const appliedStatus = screen.getByLabelText("UI status");
+  expect(appliedStatus).toHaveTextContent("Saved");
+  expect(appliedStatus).toHaveTextContent("Studio applied");
+  expect(appliedStatus).toHaveTextContent("Runtime untested");
 });
 
 test("empty project creates no sample design, and a template immediately builds a fresh design", async () => {
@@ -180,7 +190,7 @@ test("live actions use readable labels, never raw backend payloads", async () =>
 test("connecting later applies the saved revision in the same conversation", async () => {
   const onOpenStudio=jest.fn();
   const view=render(<UiCreatorWorkspace {...props} studio={{connected:false}} studioSessionId={null} onOpenStudio={onOpenStudio}/>);
-  fireEvent.click(await screen.findByRole("button",{name:"Apply to Studio"}));
+  fireEvent.click(await screen.findByRole("button",{name:"Connect Studio"}));
   expect(onOpenStudio).toHaveBeenCalledTimes(1);
   expect(tasks.createTask).not.toHaveBeenCalled();
   view.rerender(<UiCreatorWorkspace {...props} onOpenStudio={onOpenStudio}/>);

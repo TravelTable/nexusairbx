@@ -1,27 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  ArrowUpRight,
-  BookOpen,
-  CircleDollarSign,
-  Code2,
-  CreditCard,
-  Gauge,
-  Image,
-  Library,
-  LifeBuoy,
-  LogIn,
-  Mail,
-  PanelsTopLeft,
-  Plug,
-  Scale,
-  Search,
-  Settings,
-  ShoppingBag,
-  X,
-} from "lucide-react";
-import BotMessageSquareIcon from "./BotMessageSquareIcon";
+import { NexusAnimatedIcon } from "../ui/NexusAnimatedIcon";
 import UniversalBrand, { renderLink } from "./UniversalBrand";
 import styles from "./UniversalHeader.module.css";
 
@@ -31,27 +11,8 @@ function isCurrent(pathname, href) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-const routeIcons = {
-  billing: CreditCard,
-  book: BookOpen,
-  code: Code2,
-  contact: Mail,
-  image: Image,
-  layout: PanelsTopLeft,
-  legal: Scale,
-  library: Library,
-  plug: Plug,
-  settings: Settings,
-  signin: LogIn,
-  sparkles: BotMessageSquareIcon,
-  store: ShoppingBag,
-  support: LifeBuoy,
-  usage: Gauge,
-};
-
 function RouteIcon({ name }) {
-  const Icon = routeIcons[name] || CircleDollarSign;
-  return <Icon aria-hidden="true" size={18} strokeWidth={1.7} />;
+  return <NexusAnimatedIcon name={name || "document"} size="nav" />;
 }
 
 export default function UniversalSiteIndex({
@@ -124,7 +85,7 @@ export default function UniversalSiteIndex({
       <div className={styles.indexHeader}>
         <UniversalBrand LinkComponent={LinkComponent} />
         <button ref={closeRef} type="button" className={styles.indexClose} onClick={onClose}>
-          <X aria-hidden="true" size={15} strokeWidth={2} />
+          <NexusAnimatedIcon name="close" size={15} />
           <span>Close</span>
         </button>
       </div>
@@ -134,7 +95,7 @@ export default function UniversalSiteIndex({
           <h1 className="nx-route-heading">Make something playable.</h1>
           <p>Your creation tools, assets, and Studio resources in one place.</p>
           <label className={styles.indexSearch}>
-            <Search aria-hidden="true" size={17} strokeWidth={1.8} />
+            <NexusAnimatedIcon name="search" size={17} />
             <span className={styles.srOnly}>Search tools and routes</span>
             <input
               type="search"
@@ -161,7 +122,7 @@ export default function UniversalSiteIndex({
               <strong>{featuredItem.label}</strong>
               <span>{featuredItem.description}</span>
             </span>
-            <span className={styles.featuredAction}>Open Nexus Workspace <ArrowUpRight aria-hidden="true" size={16} /></span>
+            <span className={styles.featuredAction}>Open Nexus Workspace <NexusAnimatedIcon name="open-external" size={16} /></span>
           </>,
         ) : null}
         <div className={styles.indexSections} aria-live="polite">
@@ -184,7 +145,7 @@ export default function UniversalSiteIndex({
                       <strong>{item.shortLabel || item.label}</strong>
                       <span>{item.description}</span>
                     </span>
-                    <ArrowUpRight className={styles.routeArrow} aria-hidden="true" size={15} strokeWidth={1.8} />
+                    <NexusAnimatedIcon name="open-external" className={styles.routeArrow} size={15} />
                   </>,
                 ))}
               </div>
@@ -192,7 +153,7 @@ export default function UniversalSiteIndex({
           ))}
           {filteredSections.length === 0 ? (
             <div className={styles.indexEmpty}>
-              <Search aria-hidden="true" size={20} />
+              <NexusAnimatedIcon name="search" size={20} />
               <strong>No matching routes</strong>
               <span>Try a tool name, category, or task.</span>
             </div>

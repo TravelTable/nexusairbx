@@ -1,0 +1,94 @@
+.ERROR:root:UI preview render failed
+Traceback (most recent call last):
+  File "/tests/renderer/server.py", line 63, in child_render
+    result = build_model(payload)
+             ^^^^^^^^^^^^^^^^^^^^
+  File "/tests/renderer/build_core.py", line 49, in build_model
+    raise ValueError("Luau build failed: " + diagnostic)
+ValueError: Luau build failed: syntax error: 1: Expected identifier when parsing variable name, got '='
+[Stack Begin]
+    Script '[C]'
+    Script '/tests/renderer/build_ui', Line 20
+[Stack End]
+
+
+.ERROR:root:UI preview render failed
+Traceback (most recent call last):
+  File "/tests/renderer/server.py", line 63, in child_render
+    result = build_model(payload)
+             ^^^^^^^^^^^^^^^^^^^^
+  File "/tests/renderer/build_core.py", line 49, in build_model
+    raise ValueError("Luau build failed: " + diagnostic)
+ValueError: Luau build failed: attempt to call a nil value
+[Stack Begin]
+    Script 'View.luau', Line 1
+    Script '/tests/renderer/build_ui', Line 23
+[Stack End]
+
+
+ERROR:root:UI preview render failed
+Traceback (most recent call last):
+  File "/tests/renderer/server.py", line 63, in child_render
+    result = build_model(payload)
+             ^^^^^^^^^^^^^^^^^^^^
+  File "/tests/renderer/build_core.py", line 49, in build_model
+    raise ValueError("Luau build failed: " + diagnostic)
+ValueError: Luau build failed: attempt to call a nil value
+[Stack Begin]
+    Script 'View.luau', Line 1
+    Script '/tests/renderer/build_ui', Line 23
+[Stack End]
+
+
+ERROR:root:UI preview render failed
+Traceback (most recent call last):
+  File "/tests/renderer/server.py", line 63, in child_render
+    result = build_model(payload)
+             ^^^^^^^^^^^^^^^^^^^^
+  File "/tests/renderer/build_core.py", line 49, in build_model
+    raise ValueError("Luau build failed: " + diagnostic)
+ValueError: Luau build failed: attempt to call a nil value
+[Stack Begin]
+    Script 'View.luau', Line 1
+    Script '/tests/renderer/build_ui', Line 23
+[Stack End]
+
+
+ERROR:root:UI preview render failed
+Traceback (most recent call last):
+  File "/tests/renderer/server.py", line 63, in child_render
+    result = build_model(payload)
+             ^^^^^^^^^^^^^^^^^^^^
+  File "/tests/renderer/build_core.py", line 49, in build_model
+    raise ValueError("Luau build failed: " + diagnostic)
+ValueError: Luau build failed: attempt to index nil with 'GetService'
+[Stack Begin]
+    Script 'View.luau', Line 1
+    Script '/tests/renderer/build_ui', Line 23
+[Stack End]
+
+
+...ERROR:root:UI preview render failed
+Traceback (most recent call last):
+  File "/tests/renderer/server.py", line 63, in child_render
+    result = build_model(payload)
+             ^^^^^^^^^^^^^^^^^^^^
+  File "/tests/renderer/build_core.py", line 45, in build_model
+    result = subprocess.run([os.getenv("LUNE_BIN", "/usr/local/bin/lune"), "run", str(Path(__file__).with_name("build_ui.luau")), str(source), str(model), str(tree)],
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/subprocess.py", line 550, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/subprocess.py", line 1209, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/subprocess.py", line 2116, in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+  File "/usr/local/lib/python3.11/subprocess.py", line 1253, in _check_timeout
+    raise TimeoutExpired(
+subprocess.TimeoutExpired: Command '['/usr/local/bin/lune', 'run', '/tests/renderer/build_ui.luau', '/tmp/ui-build-07wng_nn/input.json', '/tmp/ui-build-07wng_nn/UI.rbxm', '/tmp/ui-build-07wng_nn/tree.json']' timed out after 12 seconds
+..
+----------------------------------------------------------------------
+Ran 7 tests in 21.487s
+
+OK

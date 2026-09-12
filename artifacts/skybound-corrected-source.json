@@ -1,0 +1,2896 @@
+{
+  "schemaVersion": 1,
+  "kind": "roblox-ui",
+  "designId": "sUlmbOLCMNIzjn8faG6E",
+  "projectId": "proj_e237b4d5b7634cf2a503723f3f8beff7",
+  "chatId": "sUlmbOLCMNIzjn8faG6E",
+  "title": "Untitled UI",
+  "canvas": {
+    "baseWidth": 1280,
+    "baseHeight": 720,
+    "safeAreaMode": "device",
+    "backgroundColor": "#101014"
+  },
+  "tokens": {
+    "colors": {
+      "background": "#171318",
+      "surface": "#241f25",
+      "surfaceRaised": "#302931",
+      "primary": "#9f7aea",
+      "text": "#f4eef4",
+      "textMuted": "#b8aeb8",
+      "success": "#6fbf91",
+      "warning": "#d5a65a",
+      "error": "#df7777"
+    },
+    "typography": {
+      "heading": "GothamBold",
+      "body": "Gotham",
+      "mono": "Code"
+    },
+    "spacing": {
+      "xs": 4,
+      "sm": 8,
+      "md": 16,
+      "lg": 24,
+      "xl": 32
+    },
+    "radius": {
+      "sm": 4,
+      "md": 8,
+      "lg": 12
+    },
+    "motion": {
+      "fast": 0.1,
+      "normal": 0.18,
+      "slow": 0.28
+    }
+  },
+  "screens": [
+    {
+      "id": "main",
+      "name": "Main",
+      "className": "ScreenGui",
+      "screenGui": {
+        "resetOnSpawn": false,
+        "ignoreGuiInset": true,
+        "displayOrder": 0,
+        "enabled": true
+      },
+      "nodes": [],
+      "states": {},
+      "timelines": []
+    }
+  ],
+  "assets": [
+    {
+      "refId": "asset_asset_991513550a8249a6a0109de63ddb4c5a",
+      "canonicalAssetId": "asset_991513550a8249a6a0109de63ddb4c5a",
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 2,
+        "generationUse": "ui_artwork",
+        "role": "panel_surface",
+        "styleFingerprint": "366719dd2e181ce07e00b4df3c43714f7319a3903ffea3f5fe7d5a476cc46ed8",
+        "componentIds": [
+          "comp_panel_credits"
+        ],
+        "nodeNames": [
+          "PanelCredits"
+        ],
+        "requirementIds": [],
+        "required": false,
+        "width": 512,
+        "height": 512,
+        "renderStrategy": "image_9slice",
+        "scaleType": "Slice",
+        "tintable": true,
+        "sliceCenter": [
+          96,
+          96,
+          416,
+          416
+        ],
+        "sliceScale": 0.2
+      },
+      "name": "UI panel_surface",
+      "kind": "image",
+      "requirementId": null,
+      "semanticRole": "panel_surface",
+      "styleFamily": null,
+      "required": false,
+      "previewUrl": null,
+      "robloxAssetId": null,
+      "status": "generated"
+    },
+    {
+      "refId": "asset_asset_c1f2d36cdd3345d794b7484db0be0a35",
+      "canonicalAssetId": "asset_c1f2d36cdd3345d794b7484db0be0a35",
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 2,
+        "generationUse": "ui_artwork",
+        "role": "component_surface",
+        "styleFingerprint": "bbd8e2119c4125b1458043ea8dd4b7beca6dc21d1d41832b65b1cb3f51fa0b48",
+        "componentIds": [
+          "comp_btn_play"
+        ],
+        "nodeNames": [
+          "BtnPlay"
+        ],
+        "requirementIds": [],
+        "required": false,
+        "width": 512,
+        "height": 512,
+        "renderStrategy": "image_9slice",
+        "scaleType": "Slice",
+        "tintable": true,
+        "sliceCenter": [
+          96,
+          96,
+          416,
+          416
+        ],
+        "sliceScale": 0.2
+      },
+      "name": "UI component_surface",
+      "kind": "image",
+      "requirementId": null,
+      "semanticRole": "component_surface",
+      "styleFamily": null,
+      "required": false,
+      "previewUrl": null,
+      "robloxAssetId": null,
+      "status": "generated"
+    },
+    {
+      "refId": "asset_asset_02d3c8eba7a4481db446147a12db63df",
+      "canonicalAssetId": "asset_02d3c8eba7a4481db446147a12db63df",
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 2,
+        "generationUse": "ui_artwork",
+        "role": "background",
+        "styleFingerprint": "1fc2b5ef88ca24fcf0f69b739e64c590da4c4b7c9ec680fbef7262e7f02b8a71",
+        "componentIds": [
+          "comp_bg_sky"
+        ],
+        "nodeNames": [
+          "BackgroundSkyClouds"
+        ],
+        "requirementIds": [],
+        "required": false,
+        "width": 512,
+        "height": 512,
+        "renderStrategy": "image_crop",
+        "scaleType": "Crop",
+        "tintable": false
+      },
+      "name": "UI background",
+      "kind": "image",
+      "requirementId": null,
+      "semanticRole": "background",
+      "styleFamily": null,
+      "required": false,
+      "previewUrl": null,
+      "robloxAssetId": null,
+      "status": "generated"
+    },
+    {
+      "refId": "asset_asset_8c0b38b992904a039f01307911701d98",
+      "canonicalAssetId": "asset_8c0b38b992904a039f01307911701d98",
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 2,
+        "generationUse": "ui_artwork",
+        "role": "badge_decoration",
+        "styleFingerprint": "9c6996b98fabd857e1a2a0c6f8d34bd005092665e68239a7836ef47b7e139567",
+        "componentIds": [
+          "comp_lbl_version"
+        ],
+        "nodeNames": [
+          "LblVersion"
+        ],
+        "requirementIds": [],
+        "required": false,
+        "width": 512,
+        "height": 480,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false
+      },
+      "name": "UI badge_decoration",
+      "kind": "image",
+      "requirementId": null,
+      "semanticRole": "badge_decoration",
+      "styleFamily": null,
+      "required": false,
+      "previewUrl": null,
+      "robloxAssetId": null,
+      "status": "generated"
+    },
+    {
+      "refId": "asset_asset_d563402d9d3f4755ae38eebb5b8a0470",
+      "canonicalAssetId": "asset_d563402d9d3f4755ae38eebb5b8a0470",
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 2,
+        "generationUse": "ui_artwork",
+        "role": "ornament",
+        "styleFingerprint": "a5ed0bf8e77bc2221d066b7d1e46f21211d4d8bf5b75f15c3c9f1144e9477bc9",
+        "componentIds": [
+          "comp_title_skybound"
+        ],
+        "nodeNames": [
+          "TitleSkybound"
+        ],
+        "requirementIds": [],
+        "required": false,
+        "width": 512,
+        "height": 310,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false
+      },
+      "name": "UI ornament",
+      "kind": "image",
+      "requirementId": null,
+      "semanticRole": "ornament",
+      "styleFamily": null,
+      "required": false,
+      "previewUrl": null,
+      "robloxAssetId": null,
+      "status": "generated"
+    }
+  ],
+  "hooks": [],
+  "createdAt": "2026-09-12T17:18:37.233Z",
+  "updatedAt": "2026-09-12T18:20:36.476Z",
+  "revision": "17bfc0175e16ab9c57c855c8",
+  "sourceFiles": [
+    {
+      "path": "View.luau",
+      "content": "local View = {}\n\nlocal function createNexusIcon(parent, role, options)\n\toptions = options or {}\n\tlocal holder = Instance.new(\"Frame\")\n\tholder.Name = options.name or (role .. \"Icon\")\n\tholder.BackgroundTransparency = 1\n\tholder.BorderSizePixel = 0\n\tholder.Size = UDim2.fromOffset(options.size or 32, options.size or 32)\n\tholder.Parent = parent\n\tlocal aspect = Instance.new(\"UIAspectRatioConstraint\")\n\taspect.AspectRatio = 1\n\taspect.Parent = holder\n\tlocal padding = math.clamp(options.padding or 12, 0, 25) / 100\n\tlocal canvas = Instance.new(\"Frame\")\n\tcanvas.Name = \"Glyph\"\n\tcanvas.BackgroundTransparency = 1\n\tcanvas.BorderSizePixel = 0\n\tcanvas.Position = UDim2.fromScale(padding, padding)\n\tcanvas.Size = UDim2.fromScale(1 - padding * 2, 1 - padding * 2)\n\tcanvas.Parent = holder\n\tlocal color = options.color or Color3.fromRGB(255, 255, 255)\n\tlocal function shape(x, y, w, h, rotation, round)\n\t\tlocal part = Instance.new(\"Frame\")\n\t\tpart.Name = \"GlyphPart\"\n\t\tpart.AnchorPoint = Vector2.new(0.5, 0.5)\n\t\tpart.Position = UDim2.fromScale(x, y)\n\t\tpart.Size = UDim2.fromScale(w, h)\n\t\tpart.Rotation = rotation or 0\n\t\tpart.BackgroundColor3 = color\n\t\tpart.BorderSizePixel = 0\n\t\tpart.Parent = canvas\n\t\tif round then\n\t\t\tlocal corner = Instance.new(\"UICorner\")\n\t\t\tcorner.CornerRadius = UDim.new(round, 0)\n\t\t\tcorner.Parent = part\n\t\tend\n\t\treturn part\n\tend\n\tlocal function bar(x1, y1, x2, y2, width)\n\t\tlocal dx, dy = x2 - x1, y2 - y1\n\t\treturn shape((x1 + x2) / 2, (y1 + y2) / 2,\n\t\t\tmath.sqrt(dx * dx + dy * dy), width or 0.14,\n\t\t\tmath.deg(math.atan2(dy, dx)), 0.5)\n\tend\n\tlocal function ring(x, y, radius, width)\n\t\tfor index = 0, 11 do\n\t\t\tlocal a, b = index * math.pi / 6, (index + 1) * math.pi / 6\n\t\t\tbar(x + math.cos(a) * radius, y + math.sin(a) * radius,\n\t\t\t\tx + math.cos(b) * radius, y + math.sin(b) * radius, width or 0.12)\n\t\tend\n\tend\n\tlocal function ticket()\n\t\tbar(0.18, 0.2, 0.82, 0.2)\n\t\tbar(0.18, 0.8, 0.82, 0.8)\n\t\tbar(0.18, 0.2, 0.18, 0.36)\n\t\tbar(0.18, 0.64, 0.18, 0.8)\n\t\tbar(0.82, 0.2, 0.82, 0.36)\n\t\tbar(0.82, 0.64, 0.82, 0.8)\n\t\tfor index = 0, 2 do shape(0.62, 0.32 + index * 0.18, 0.07, 0.09, 0, 0.3) end\n\t\tbar(0.29, 0.4, 0.41, 0.5, 0.09)\n\t\tbar(0.41, 0.5, 0.29, 0.6, 0.09)\n\tend\n\tif role == \"play\" then\n\t\tfor index = 0, 15 do\n\t\t\tlocal x = index / 16\n\t\t\tshape(0.22 + x * 0.58, 0.5, 0.58 / 16 + 0.005, 0.76 * (1 - x), 0, nil)\n\t\tend\n\telseif role == \"close\" or role == \"plus\" then\n\t\tshape(0.5, 0.5, 0.88, 0.15, role == \"close\" and 45 or 0, 0.5)\n\t\tshape(0.5, 0.5, 0.88, 0.15, role == \"close\" and -45 or 90, 0.5)\n\telseif role == \"minus\" then\n\t\tshape(0.5, 0.5, 0.85, 0.15, 0, 0.5)\n\telseif role == \"back\" or role == \"chevron\" then\n\t\tlocal edge, point = 0.68, 0.32\n\t\tif role == \"chevron\" then edge, point = 0.32, 0.68 end\n\t\tbar(edge, 0.16, point, 0.5)\n\t\tbar(point, 0.5, edge, 0.84)\n\telseif role == \"settings\" then\n\t\tring(0.5, 0.5, 0.25, 0.16)\n\t\tfor index = 0, 7 do\n\t\t\tlocal angle = index * math.pi / 4\n\t\t\tshape(0.5 + math.cos(angle) * 0.33, 0.5 + math.sin(angle) * 0.33,\n\t\t\t\t0.26, 0.16, math.deg(angle), 0.3)\n\t\tend\n\telseif role == \"codes\" then\n\t\tticket()\n\telseif role == \"shop\" or role == \"inventory\" or role == \"lock\" then\n\t\tring(0.5, 0.32, 0.2, 0.12)\n\t\tshape(0.5, 0.66, 0.72, 0.54, 0, 0.12)\n\telseif role == \"gift\" then\n\t\tshape(0.5, 0.65, 0.76, 0.58, 0, 0.09)\n\t\tshape(0.5, 0.32, 0.92, 0.16, 0, 0.2)\n\t\tring(0.35, 0.16, 0.1, 0.09)\n\t\tring(0.65, 0.16, 0.1, 0.09)\n\telseif role == \"home\" then\n\t\tbar(0.1, 0.46, 0.5, 0.12)\n\t\tbar(0.5, 0.12, 0.9, 0.46)\n\t\tbar(0.24, 0.42, 0.24, 0.85)\n\t\tbar(0.76, 0.42, 0.76, 0.85)\n\t\tbar(0.24, 0.85, 0.76, 0.85)\n\telseif role == \"currency\" then\n\t\tring(0.5, 0.5, 0.38, 0.12)\n\t\tshape(0.5, 0.5, 0.15, 0.43, 0, 0.4)\n\telseif role == \"profile\" then\n\t\tshape(0.5, 0.25, 0.38, 0.38, 0, 0.5)\n\t\tshape(0.5, 0.75, 0.8, 0.4, 0, 0.5)\n\telseif role == \"search\" then\n\t\tring(0.41, 0.4, 0.28, 0.13)\n\t\tbar(0.63, 0.63, 0.89, 0.89, 0.15)\n\telseif role == \"quest\" then\n\t\tbar(0.22, 0.54, 0.43, 0.75, 0.16)\n\t\tbar(0.43, 0.75, 0.82, 0.23, 0.16)\n\telse\n\t\tring(0.5, 0.5, 0.39, 0.11)\n\t\tshape(0.5, 0.31, 0.14, 0.14, 0, 0.5)\n\t\tshape(0.5, 0.62, 0.14, 0.3, 0, 0.4)\n\tend\n\treturn holder\nend\n\nfunction View.build()\n\tlocal screenGui = Instance.new(\"ScreenGui\")\n\tscreenGui.Name = \"SkyboundMainMenu\"\n\tscreenGui.ResetOnSpawn = false\n\tscreenGui.IgnoreGuiInset = false\n\n\tlocal COLOR_BG = Color3.fromRGB(11, 19, 43)\n\tlocal COLOR_SURFACE = Color3.fromRGB(28, 37, 65)\n\tlocal COLOR_TEAL = Color3.fromRGB(0, 180, 216)\n\tlocal COLOR_ACCENT = Color3.fromRGB(72, 202, 228)\n\tlocal COLOR_GOLD = Color3.fromRGB(255, 209, 102)\n\tlocal COLOR_IVORY = Color3.fromRGB(253, 240, 213)\n\n\tlocal FONT_MONT_BLACK = Font.new(\"rbxasset://fonts/families/Montserrat.json\", Enum.FontWeight.Heavy, Enum.FontStyle.Normal)\n\tlocal FONT_MONT_BOLD = Font.new(\"rbxasset://fonts/families/Montserrat.json\", Enum.FontWeight.Bold, Enum.FontStyle.Normal)\n\tlocal FONT_MONT_SEMI = Font.new(\"rbxasset://fonts/families/Montserrat.json\", Enum.FontWeight.SemiBold, Enum.FontStyle.Normal)\n\n\t-- Base background canvas\n\tlocal bgFrame = Instance.new(\"Frame\")\n\tbgFrame.Name = \"MainCanvas\"\n\tbgFrame.Size = UDim2.fromScale(1, 1)\n\tbgFrame.BackgroundColor3 = COLOR_BG\n\tbgFrame.BorderSizePixel = 0\n\tbgFrame.Parent = screenGui\n\n\t-- Skyscape Artwork Overlay\n\tlocal bgClouds = Instance.new(\"ImageLabel\")\n\tbgClouds.Name = \"BackgroundSkyClouds\"\n\tbgClouds.Size = UDim2.fromScale(1, 1)\n\tbgClouds.BackgroundTransparency = 1\n\tbgClouds.Image = \"nexusasset://asset_02d3c8eba7a4481db446147a12db63df\"\n\tbgClouds.ScaleType = Enum.ScaleType.Crop\n\tbgClouds.ImageTransparency = 0.25\n\tbgClouds.Parent = bgFrame\n\n\t-- Atmospheric subtle gradient overlay\n\tlocal bgGrad = Instance.new(\"UIGradient\")\n\tbgGrad.Color = ColorSequence.new({\n\t\tColorSequenceKeypoint.new(0, COLOR_BG),\n\t\tColorSequenceKeypoint.new(0.5, COLOR_SURFACE),\n\t\tColorSequenceKeypoint.new(1, COLOR_BG)\n\t})\n\tbgGrad.Rotation = 45\n\tbgGrad.Parent = bgFrame\n\n\t---------------------------------------------------------\n\t-- HELPER: Hero Branding Title Block\n\t---------------------------------------------------------\n\tlocal function createHeroBranding(parent, isMobile)\n\t\tlocal container = Instance.new(\"Frame\")\n\t\tcontainer.Name = \"HeroContainer\"\n\t\tcontainer.BackgroundTransparency = 1\n\t\tcontainer.Size = isMobile and UDim2.new(1, 0, 0, 80) or UDim2.new(0, 420, 0, 110)\n\n\t\tlocal titleLabel = Instance.new(\"TextLabel\")\n\t\ttitleLabel.Name = \"TitleSkybound\"\n\t\ttitleLabel.Size = isMobile and UDim2.new(1, 0, 0, 50) or UDim2.new(1, 0, 0, 70)\n\t\ttitleLabel.Position = UDim2.new(0, 0, 0, 0)\n\t\ttitleLabel.BackgroundTransparency = 1\n\t\ttitleLabel.Text = \"SKYBOUND\"\n\t\ttitleLabel.FontFace = FONT_MONT_BLACK\n\t\ttitleLabel.TextColor3 = COLOR_IVORY\n\t\ttitleLabel.TextSize = isMobile and 38 or 60\n\t\ttitleLabel.TextXAlignment = isMobile and Enum.TextXAlignment.Center or Enum.TextXAlignment.Left\n\t\ttitleLabel.TextYAlignment = Enum.TextYAlignment.Center\n\t\ttitleLabel.Parent = container\n\n\t\tlocal textStroke = Instance.new(\"UIStroke\")\n\t\ttextStroke.Color = COLOR_BG\n\t\ttextStroke.Thickness = 2\n\t\ttextStroke.Parent = titleLabel\n\n\t\t-- Custom Divider\n\t\tlocal divider = Instance.new(\"Frame\")\n\t\tdivider.Name = \"DecorDivider\"\n\t\tdivider.Size = isMobile and UDim2.new(0, 200, 0, 3) or UDim2.new(0, 320, 0, 4)\n\t\tdivider.AnchorPoint = isMobile and Vector2.new(0.5, 0) or Vector2.new(0, 0)\n\t\tdivider.Position = isMobile and UDim2.new(0.5, 0, 0, 56) or UDim2.new(0, 0, 0, 76)\n\t\tdivider.BackgroundColor3 = COLOR_TEAL\n\t\tdivider.BorderSizePixel = 0\n\t\tdivider.Parent = container\n\n\t\tlocal divGrad = Instance.new(\"UIGradient\")\n\t\tdivGrad.Color = ColorSequence.new({\n\t\t\tColorSequenceKeypoint.new(0, COLOR_TEAL),\n\t\t\tColorSequenceKeypoint.new(0.5, COLOR_GOLD),\n\t\t\tColorSequenceKeypoint.new(1, COLOR_TEAL)\n\t\t})\n\t\tdivGrad.Parent = divider\n\n\t\tlocal centerDiamond = Instance.new(\"Frame\")\n\t\tcenterDiamond.Name = \"DiamondAccent\"\n\t\tcenterDiamond.Size = UDim2.fromOffset(10, 10)\n\t\tcenterDiamond.AnchorPoint = Vector2.new(0.5, 0.5)\n\t\tcenterDiamond.Position = UDim2.fromScale(0.5, 0.5)\n\t\tcenterDiamond.BackgroundColor3 = COLOR_GOLD\n\t\tcenterDiamond.Rotation = 45\n\t\tcenterDiamond.BorderSizePixel = 0\n\t\tcenterDiamond.Parent = divider\n\n\t\treturn container\n\tend\n\n\t---------------------------------------------------------\n\t-- HELPER: Main Navigation Buttons\n\t---------------------------------------------------------\n\tlocal function createNavButtons(parent, isMobile)\n\t\tlocal navStack = Instance.new(\"Frame\")\n\t\tnavStack.Name = \"NavStack\"\n\t\tnavStack.BackgroundTransparency = 1\n\t\tnavStack.Size = isMobile and UDim2.new(0, 260, 0, 180) or UDim2.new(0, 280, 0, 200)\n\n\t\tlocal list = Instance.new(\"UIListLayout\")\n\t\tlist.SortOrder = Enum.SortOrder.LayoutOrder\n\t\tlist.Padding = UDim.new(0, isMobile and 12 or 16)\n\t\tlist.HorizontalAlignment = isMobile and Enum.HorizontalAlignment.Center or Enum.HorizontalAlignment.Left\n\t\tlist.Parent = navStack\n\n\t\t-- Primary PLAY button (Skinned Artwork)\n\t\tlocal btnPlay = Instance.new(\"ImageButton\")\n\t\tbtnPlay.Name = \"BtnPlay\"\n\t\tbtnPlay.LayoutOrder = 1\n\t\tbtnPlay.Size = isMobile and UDim2.new(1, 0, 0, 54) or UDim2.new(1, 0, 0, 64)\n\t\tbtnPlay.BackgroundTransparency = 1\n\t\tbtnPlay.AutoButtonColor = false\n\t\tbtnPlay.Image = \"\"\n        btnPlay.BackgroundTransparency = 0\n        btnPlay.BackgroundColor3 = Color3.fromRGB(8, 110, 125)\n        btnPlay.BorderSizePixel = 0\n        local playCorner = Instance.new(\"UICorner\")\n        playCorner.CornerRadius = UDim.new(0, 12)\n        playCorner.Parent = btnPlay\n        local playBorder = Instance.new(\"UIStroke\")\n        playBorder.Color = COLOR_GOLD\n        playBorder.Thickness = 1.5\n        playBorder.Transparency = 0.25\n        playBorder.Parent = btnPlay\n\t\tbtnPlay.ScaleType = Enum.ScaleType.Slice\n\t\tbtnPlay.SliceCenter = Rect.new(96, 96, 416, 416)\n\t\tbtnPlay.SliceScale = 0.2\n\t\tbtnPlay.ImageColor3 = COLOR_TEAL\n\t\tbtnPlay.Parent = navStack\n\n\t\tlocal playLayout = Instance.new(\"UIListLayout\")\n\t\tplayLayout.FillDirection = Enum.FillDirection.Horizontal\n\t\tplayLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center\n\t\tplayLayout.VerticalAlignment = Enum.VerticalAlignment.Center\n\t\tplayLayout.Padding = UDim.new(0, 10)\n\t\tplayLayout.Parent = btnPlay\n\n\t\tcreateNexusIcon(btnPlay, \"play\", {\n\t\t\tname = \"BtnPlayIcon\",\n\t\t\tsize = isMobile and 22 or 26,\n\t\t\tpadding = 4,\n\t\t\tcolor = COLOR_IVORY\n\t\t})\n\n\t\tlocal playText = Instance.new(\"TextLabel\")\n\t\tplayText.Name = \"Label\"\n\t\tplayText.BackgroundTransparency = 1\n\t\tplayText.Size = UDim2.new(0, 148, 1, 0)\n\t\tplayText.Text = \"PLAY GAME\"\n\t\tplayText.FontFace = FONT_MONT_BLACK\n\t\tplayText.TextColor3 = COLOR_IVORY\n\t\tplayText.TextSize = isMobile and 18 or 20\n\t\tplayText.TextXAlignment = Enum.TextXAlignment.Left\n\t\tplayText.Parent = btnPlay\n\n\t\t-- Secondary SETTINGS button\n\t\tlocal btnSettings = Instance.new(\"ImageButton\")\n\t\tbtnSettings.Name = \"BtnSettings\"\n\t\tbtnSettings.LayoutOrder = 2\n\t\tbtnSettings.Size = isMobile and UDim2.new(1, 0, 0, 48) or UDim2.new(1, 0, 0, 50)\n\t\tbtnSettings.BackgroundColor3 = COLOR_SURFACE\n\t\tbtnSettings.BackgroundTransparency = 0.2\n\t\tbtnSettings.AutoButtonColor = false\n\t\tbtnSettings.BorderSizePixel = 0\n\t\tbtnSettings.Parent = navStack\n\n\t\tlocal settingsCorner = Instance.new(\"UICorner\")\n\t\tsettingsCorner.CornerRadius = UDim.new(0, 12)\n\t\tsettingsCorner.Parent = btnSettings\n\n\t\tlocal settingsStroke = Instance.new(\"UIStroke\")\n\t\tsettingsStroke.Color = COLOR_TEAL\n\t\tsettingsStroke.Thickness = 1.5\n\t\tsettingsStroke.Transparency = 0.3\n\t\tsettingsStroke.Parent = btnSettings\n\n\t\tlocal settingsLayout = Instance.new(\"UIListLayout\")\n\t\tsettingsLayout.FillDirection = Enum.FillDirection.Horizontal\n\t\tsettingsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center\n\t\tsettingsLayout.VerticalAlignment = Enum.VerticalAlignment.Center\n\t\tsettingsLayout.Padding = UDim.new(0, 10)\n\t\tsettingsLayout.Parent = btnSettings\n\n\t\tcreateNexusIcon(btnSettings, \"settings\", {\n\t\t\tname = \"BtnSettingsIcon\",\n\t\t\tsize = isMobile and 20 or 22,\n\t\t\tpadding = 4,\n\t\t\tcolor = COLOR_ACCENT\n\t\t})\n\n\t\tlocal settingsText = Instance.new(\"TextLabel\")\n\t\tsettingsText.Name = \"Label\"\n\t\tsettingsText.BackgroundTransparency = 1\n\t\tsettingsText.Size = UDim2.new(0, 110, 1, 0)\n\t\tsettingsText.Text = \"SETTINGS\"\n\t\tsettingsText.FontFace = FONT_MONT_BOLD\n\t\tsettingsText.TextColor3 = COLOR_IVORY\n\t\tsettingsText.TextSize = isMobile and 16 or 18\n\t\tsettingsText.TextXAlignment = Enum.TextXAlignment.Left\n\t\tsettingsText.Parent = btnSettings\n\n\t\t-- Secondary CREDITS button\n\t\tlocal btnCredits = Instance.new(\"ImageButton\")\n\t\tbtnCredits.Name = \"BtnCredits\"\n\t\tbtnCredits.LayoutOrder = 3\n\t\tbtnCredits.Size = isMobile and UDim2.new(1, 0, 0, 48) or UDim2.new(1, 0, 0, 50)\n\t\tbtnCredits.BackgroundColor3 = COLOR_SURFACE\n\t\tbtnCredits.BackgroundTransparency = 0.2\n\t\tbtnCredits.AutoButtonColor = false\n\t\tbtnCredits.BorderSizePixel = 0\n\t\tbtnCredits.Parent = navStack\n\n\t\tlocal creditsCorner = Instance.new(\"UICorner\")\n\t\tcreditsCorner.CornerRadius = UDim.new(0, 12)\n\t\tcreditsCorner.Parent = btnCredits\n\n\t\tlocal creditsStroke = Instance.new(\"UIStroke\")\n\t\tcreditsStroke.Color = COLOR_TEAL\n\t\tcreditsStroke.Thickness = 1.5\n\t\tcreditsStroke.Transparency = 0.3\n\t\tcreditsStroke.Parent = btnCredits\n\n\t\tlocal creditsLayout = Instance.new(\"UIListLayout\")\n\t\tcreditsLayout.FillDirection = Enum.FillDirection.Horizontal\n\t\tcreditsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center\n\t\tcreditsLayout.VerticalAlignment = Enum.VerticalAlignment.Center\n\t\tcreditsLayout.Padding = UDim.new(0, 10)\n\t\tcreditsLayout.Parent = btnCredits\n\n\t\tcreateNexusIcon(btnCredits, \"info\", {\n\t\t\tname = \"BtnCreditsIcon\",\n\t\t\tsize = isMobile and 20 or 22,\n\t\t\tpadding = 4,\n\t\t\tcolor = COLOR_ACCENT\n\t\t})\n\n\t\tlocal creditsText = Instance.new(\"TextLabel\")\n\t\tcreditsText.Name = \"Label\"\n\t\tcreditsText.BackgroundTransparency = 1\n\t\tcreditsText.Size = UDim2.new(0, 110, 1, 0)\n\t\tcreditsText.Text = \"CREDITS\"\n\t\tcreditsText.FontFace = FONT_MONT_BOLD\n\t\tcreditsText.TextColor3 = COLOR_IVORY\n\t\tcreditsText.TextSize = isMobile and 16 or 18\n\t\tcreditsText.TextXAlignment = Enum.TextXAlignment.Left\n\t\tcreditsText.Parent = btnCredits\n\n\t\treturn navStack\n\tend\n\n\t---------------------------------------------------------\n\t-- DESKTOP LAYOUT (_NexusDesktop)\n\t---------------------------------------------------------\n\tlocal desktopGroup = Instance.new(\"Frame\")\n\tdesktopGroup.Name = \"_NexusDesktop\"\n\tdesktopGroup.Size = UDim2.fromScale(1, 1)\n\tdesktopGroup.BackgroundTransparency = 1\n\tdesktopGroup.Visible = true\n\tdesktopGroup.Parent = bgFrame\n\n\tlocal desktopPadding = Instance.new(\"UIPadding\")\n\tdesktopPadding.PaddingLeft = UDim.new(0.08, 0)\n\tdesktopPadding.PaddingTop = UDim.new(0.12, 0)\n\tdesktopPadding.PaddingBottom = UDim.new(0.06, 0)\n\tdesktopPadding.Parent = desktopGroup\n\n\tlocal desktopHero = createHeroBranding(desktopGroup, false)\n\tdesktopHero.Position = UDim2.new(0, 0, 0, 0)\n\tdesktopHero.Parent = desktopGroup\n\n\tlocal desktopNav = createNavButtons(desktopGroup, false)\n\tdesktopNav.Position = UDim2.new(0, 0, 0, 150)\n\tdesktopNav.Parent = desktopGroup\n\n\tlocal desktopVersion = Instance.new(\"TextLabel\")\n\tdesktopVersion.Name = \"LblVersion\"\n\tdesktopVersion.Size = UDim2.new(0, 100, 0, 26)\n\tdesktopVersion.Position = UDim2.new(0, 0, 1, -28)\n\tdesktopVersion.BackgroundColor3 = COLOR_SURFACE\n\tdesktopVersion.BackgroundTransparency = 0.4\n\tdesktopVersion.Text = \"v1.0.0\"\n\tdesktopVersion.FontFace = FONT_MONT_SEMI\n\tdesktopVersion.TextColor3 = COLOR_GOLD\n\tdesktopVersion.TextSize = 11\n\tdesktopVersion.Parent = desktopGroup\n\n\tlocal verCorner = Instance.new(\"UICorner\")\n\tverCorner.CornerRadius = UDim.new(0, 6)\n\tverCorner.Parent = desktopVersion\n\n\tlocal verStroke = Instance.new(\"UIStroke\")\n\tverStroke.Color = COLOR_TEAL\n\tverStroke.Thickness = 1\n\tverStroke.Transparency = 0.5\n\tverStroke.Parent = desktopVersion\n\n\t---------------------------------------------------------\n\t-- MOBILE LAYOUT (_NexusMobile)\n\t---------------------------------------------------------\n\tlocal mobileGroup = Instance.new(\"Frame\")\n\tmobileGroup.Name = \"_NexusMobile\"\n\tmobileGroup.Size = UDim2.fromScale(1, 1)\n\tmobileGroup.BackgroundTransparency = 1\n\tmobileGroup.Visible = false\n\tmobileGroup.Parent = bgFrame\n\n\tlocal mobileLayout = Instance.new(\"UIListLayout\")\n\tmobileLayout.FillDirection = Enum.FillDirection.Vertical\n\tmobileLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center\n\tmobileLayout.VerticalAlignment = Enum.VerticalAlignment.Center\n\tmobileLayout.Padding = UDim.new(0, 18)\n\tmobileLayout.Parent = mobileGroup\n\n\tlocal mobileHero = createHeroBranding(mobileGroup, true)\n\tmobileHero.Parent = mobileGroup\n\n\tlocal mobileNav = createNavButtons(mobileGroup, true)\n\tmobileNav.Parent = mobileGroup\n\n\tlocal mobileVersion = Instance.new(\"TextLabel\")\n\tmobileVersion.Name = \"LblVersion\"\n\tmobileVersion.Size = UDim2.new(0, 90, 0, 24)\n\tmobileVersion.BackgroundColor3 = COLOR_SURFACE\n\tmobileVersion.BackgroundTransparency = 0.4\n\tmobileVersion.Text = \"v1.0.0\"\n\tmobileVersion.FontFace = FONT_MONT_SEMI\n\tmobileVersion.TextColor3 = COLOR_GOLD\n\tmobileVersion.TextSize = 10\n\tmobileVersion.Parent = mobileGroup\n\n\tlocal mVerCorner = Instance.new(\"UICorner\")\n\tmVerCorner.CornerRadius = UDim.new(0, 6)\n\tmVerCorner.Parent = mobileVersion\n\n\tlocal mVerStroke = Instance.new(\"UIStroke\")\n\tmVerStroke.Color = COLOR_TEAL\n\tmVerStroke.Thickness = 1\n\tmVerStroke.Transparency = 0.5\n\tmVerStroke.Parent = mobileVersion\n\n\t---------------------------------------------------------\n\t-- MODAL OVERLAYS LAYER\n\t---------------------------------------------------------\n\tlocal modalLayer = Instance.new(\"Frame\")\n\tmodalLayer.Name = \"ModalLayer\"\n\tmodalLayer.Size = UDim2.fromScale(1, 1)\n\tmodalLayer.BackgroundTransparency = 1\n\tmodalLayer.ZIndex = 20\n\tmodalLayer.Parent = screenGui\n\n\t-- Dim Backdrop\n\tlocal modalBackdrop = Instance.new(\"ImageButton\")\n\tmodalBackdrop.Name = \"ModalBackdrop\"\n\tmodalBackdrop.Size = UDim2.fromScale(1, 1)\n\tmodalBackdrop.BackgroundColor3 = Color3.fromRGB(3, 7, 18)\n\tmodalBackdrop.BackgroundTransparency = 1\n\tmodalBackdrop.AutoButtonColor = false\n\tmodalBackdrop.Image = \"\"\n\tmodalBackdrop.BorderSizePixel = 0\n\tmodalBackdrop.Visible = false\n\tmodalBackdrop.Parent = modalLayer\n\n\t---------------------------------------------------------\n\t-- PANEL: SETTINGS\n\t---------------------------------------------------------\n\tlocal panelSettings = Instance.new(\"Frame\")\n\tpanelSettings.Name = \"PanelSettings\"\n\tpanelSettings.AnchorPoint = Vector2.new(0.5, 0.5)\n\tpanelSettings.Position = UDim2.fromScale(0.5, 0.5)\n\tpanelSettings.Size = UDim2.fromOffset(420, 320)\n\tpanelSettings.BackgroundColor3 = COLOR_SURFACE\n\tpanelSettings.BorderSizePixel = 0\n\tpanelSettings.Visible = false\n\tpanelSettings.ZIndex = 22\n\tpanelSettings.Parent = modalLayer\n\n\tlocal setCorner = Instance.new(\"UICorner\")\n\tsetCorner.CornerRadius = UDim.new(0, 16)\n\tsetCorner.Parent = panelSettings\n\n\tlocal setStroke = Instance.new(\"UIStroke\")\n\tsetStroke.Color = COLOR_GOLD\n\tsetStroke.Thickness = 1.5\n\tsetStroke.Transparency = 0.2\n\tsetStroke.Parent = panelSettings\n\n\tlocal setPadding = Instance.new(\"UIPadding\")\n\tsetPadding.PaddingTop = UDim.new(0, 20)\n\tsetPadding.PaddingBottom = UDim.new(0, 20)\n\tsetPadding.PaddingLeft = UDim.new(0, 24)\n\tsetPadding.PaddingRight = UDim.new(0, 24)\n\tsetPadding.Parent = panelSettings\n\n\tlocal setHeader = Instance.new(\"TextLabel\")\n\tsetHeader.Name = \"Header\"\n\tsetHeader.Size = UDim2.new(1, 0, 0, 32)\n\tsetHeader.BackgroundTransparency = 1\n\tsetHeader.Text = \"SETTINGS\"\n\tsetHeader.FontFace = FONT_MONT_BLACK\n\tsetHeader.TextColor3 = COLOR_IVORY\n\tsetHeader.TextSize = 24\n\tsetHeader.TextXAlignment = Enum.TextXAlignment.Left\n\tsetHeader.Parent = panelSettings\n\n\tlocal setList = Instance.new(\"Frame\")\n\tsetList.Name = \"ContentList\"\n\tsetList.Size = UDim2.new(1, 0, 0, 160)\n\tsetList.Position = UDim2.new(0, 0, 0, 50)\n\tsetList.BackgroundTransparency = 1\n\tsetList.Parent = panelSettings\n\n\tlocal setListLayout = Instance.new(\"UIListLayout\")\n\tsetListLayout.SortOrder = Enum.SortOrder.LayoutOrder\n\tsetListLayout.Padding = UDim.new(0, 14)\n\tsetListLayout.Parent = setList\n\n\t-- Music Toggle Row\n\tlocal toggleMusic = Instance.new(\"TextButton\")\n\ttoggleMusic.Name = \"ToggleMusic\"\n\ttoggleMusic.LayoutOrder = 1\n\ttoggleMusic.Size = UDim2.new(1, 0, 0, 52)\n\ttoggleMusic.BackgroundColor3 = COLOR_BG\n\ttoggleMusic.AutoButtonColor = false\n\ttoggleMusic.BorderSizePixel = 0\n\ttoggleMusic.Text = \"\"\n\ttoggleMusic.Parent = setList\n\n\tlocal musicRowCorner = Instance.new(\"UICorner\")\n\tmusicRowCorner.CornerRadius = UDim.new(0, 10)\n\tmusicRowCorner.Parent = toggleMusic\n\n\tlocal musicRowStroke = Instance.new(\"UIStroke\")\n\tmusicRowStroke.Color = COLOR_TEAL\n\tmusicRowStroke.Thickness = 1\n\tmusicRowStroke.Transparency = 0.5\n\tmusicRowStroke.Parent = toggleMusic\n\n\tlocal musicLeft = Instance.new(\"Frame\")\n\tmusicLeft.Size = UDim2.new(0.6, 0, 1, 0)\n\tmusicLeft.BackgroundTransparency = 1\n\tmusicLeft.Parent = toggleMusic\n\n\tlocal mLeftLayout = Instance.new(\"UIListLayout\")\n\tmLeftLayout.FillDirection = Enum.FillDirection.Horizontal\n\tmLeftLayout.VerticalAlignment = Enum.VerticalAlignment.Center\n\tmLeftLayout.Padding = UDim.new(0, 12)\n\tmLeftLayout.Parent = musicLeft\n\n\tlocal mPad = Instance.new(\"UIPadding\")\n\tmPad.PaddingLeft = UDim.new(0, 12)\n\tmPad.Parent = musicLeft\n\n\tcreateNexusIcon(musicLeft, \"info\", {\n\t\tname = \"ToggleMusicIcon\",\n\t\tsize = 20,\n\t\tpadding = 4,\n\t\tcolor = COLOR_TEAL\n\t})\n\n\tlocal musicLabel = Instance.new(\"TextLabel\")\n\tmusicLabel.Name = \"Label\"\n\tmusicLabel.BackgroundTransparency = 1\n\tmusicLabel.Size = UDim2.new(0, 140, 1, 0)\n\tmusicLabel.Text = \"Music\"\n\tmusicLabel.FontFace = FONT_MONT_BOLD\n\tmusicLabel.TextColor3 = COLOR_IVORY\n\tmusicLabel.TextSize = 16\n\tmusicLabel.TextXAlignment = Enum.TextXAlignment.Left\n\tmusicLabel.Parent = musicLeft\n\n\t-- Pill Switch Graphics\n\tlocal musicPill = Instance.new(\"Frame\")\n\tmusicPill.Name = \"PillSwitch\"\n\tmusicPill.Size = UDim2.new(0, 60, 0, 28)\n\tmusicPill.AnchorPoint = Vector2.new(1, 0.5)\n\tmusicPill.Position = UDim2.new(1, -12, 0.5, 0)\n\tmusicPill.BackgroundColor3 = COLOR_TEAL\n\tmusicPill.BorderSizePixel = 0\n\tmusicPill.Parent = toggleMusic\n\n\tlocal pillCorner1 = Instance.new(\"UICorner\")\n\tpillCorner1.CornerRadius = UDim.new(1, 0)\n\tpillCorner1.Parent = musicPill\n\n\tlocal musicKnob = Instance.new(\"Frame\")\n\tmusicKnob.Name = \"Knob\"\n\tmusicKnob.Size = UDim2.new(0, 22, 0, 22)\n\tmusicKnob.AnchorPoint = Vector2.new(0, 0.5)\n\tmusicKnob.Position = UDim2.new(1, -25, 0.5, 0)\n\tmusicKnob.BackgroundColor3 = COLOR_IVORY\n\tmusicKnob.BorderSizePixel = 0\n\tmusicKnob.Parent = musicPill\n\n\tlocal knobCorner1 = Instance.new(\"UICorner\")\n\tknobCorner1.CornerRadius = UDim.new(1, 0)\n\tknobCorner1.Parent = musicKnob\n\n\t-- Sound Toggle Row\n\tlocal toggleSound = Instance.new(\"TextButton\")\n\ttoggleSound.Name = \"ToggleSound\"\n\ttoggleSound.LayoutOrder = 2\n\ttoggleSound.Size = UDim2.new(1, 0, 0, 52)\n\ttoggleSound.BackgroundColor3 = COLOR_BG\n\ttoggleSound.AutoButtonColor = false\n\ttoggleSound.BorderSizePixel = 0\n\ttoggleSound.Text = \"\"\n\ttoggleSound.Parent = setList\n\n\tlocal soundRowCorner = Instance.new(\"UICorner\")\n\tsoundRowCorner.CornerRadius = UDim.new(0, 10)\n\tsoundRowCorner.Parent = toggleSound\n\n\tlocal soundRowStroke = Instance.new(\"UIStroke\")\n\tsoundRowStroke.Color = COLOR_TEAL\n\tsoundRowStroke.Thickness = 1\n\tsoundRowStroke.Transparency = 0.5\n\tsoundRowStroke.Parent = toggleSound\n\n\tlocal soundLeft = Instance.new(\"Frame\")\n\tsoundLeft.Size = UDim2.new(0.6, 0, 1, 0)\n\tsoundLeft.BackgroundTransparency = 1\n\tsoundLeft.Parent = toggleSound\n\n\tlocal sLeftLayout = Instance.new(\"UIListLayout\")\n\tsLeftLayout.FillDirection = Enum.FillDirection.Horizontal\n\tsLeftLayout.VerticalAlignment = Enum.VerticalAlignment.Center\n\tsLeftLayout.Padding = UDim.new(0, 12)\n\tsLeftLayout.Parent = soundLeft\n\n\tlocal sPad = Instance.new(\"UIPadding\")\n\tsPad.PaddingLeft = UDim.new(0, 12)\n\tsPad.Parent = soundLeft\n\n\tcreateNexusIcon(soundLeft, \"info\", {\n\t\tname = \"ToggleSoundIcon\",\n\t\tsize = 20,\n\t\tpadding = 4,\n\t\tcolor = COLOR_TEAL\n\t})\n\n\tlocal soundLabel = Instance.new(\"TextLabel\")\n\tsoundLabel.Name = \"Label\"\n\tsoundLabel.BackgroundTransparency = 1\n\tsoundLabel.Size = UDim2.new(0, 140, 1, 0)\n\tsoundLabel.Text = \"Sound Effects\"\n\tsoundLabel.FontFace = FONT_MONT_BOLD\n\tsoundLabel.TextColor3 = COLOR_IVORY\n\tsoundLabel.TextSize = 16\n\tsoundLabel.TextXAlignment = Enum.TextXAlignment.Left\n\tsoundLabel.Parent = soundLeft\n\n\tlocal soundPill = Instance.new(\"Frame\")\n\tsoundPill.Name = \"PillSwitch\"\n\tsoundPill.Size = UDim2.new(0, 60, 0, 28)\n\tsoundPill.AnchorPoint = Vector2.new(1, 0.5)\n\tsoundPill.Position = UDim2.new(1, -12, 0.5, 0)\n\tsoundPill.BackgroundColor3 = COLOR_TEAL\n\tsoundPill.BorderSizePixel = 0\n\tsoundPill.Parent = toggleSound\n\n\tlocal pillCorner2 = Instance.new(\"UICorner\")\n\tpillCorner2.CornerRadius = UDim.new(1, 0)\n\tpillCorner2.Parent = soundPill\n\n\tlocal soundKnob = Instance.new(\"Frame\")\n\tsoundKnob.Name = \"Knob\"\n\tsoundKnob.Size = UDim2.new(0, 22, 0, 22)\n\tsoundKnob.AnchorPoint = Vector2.new(0, 0.5)\n\tsoundKnob.Position = UDim2.new(1, -25, 0.5, 0)\n\tsoundKnob.BackgroundColor3 = COLOR_IVORY\n\tsoundKnob.BorderSizePixel = 0\n\tsoundKnob.Parent = soundPill\n\n\tlocal knobCorner2 = Instance.new(\"UICorner\")\n\tknobCorner2.CornerRadius = UDim.new(1, 0)\n\tknobCorner2.Parent = soundKnob\n\n\t-- Close Settings Button\n\tlocal btnCloseSettings = Instance.new(\"ImageButton\")\n\tbtnCloseSettings.Name = \"BtnCloseSettings\"\n\tbtnCloseSettings.AnchorPoint = Vector2.new(0.5, 1)\n\tbtnCloseSettings.Position = UDim2.new(0.5, 0, 1, 0)\n\tbtnCloseSettings.Size = UDim2.new(0, 140, 0, 44)\n\tbtnCloseSettings.BackgroundColor3 = COLOR_TEAL\n\tbtnCloseSettings.AutoButtonColor = false\n\tbtnCloseSettings.BorderSizePixel = 0\n\tbtnCloseSettings.Parent = panelSettings\n\n\tlocal closeSetCorner = Instance.new(\"UICorner\")\n\tcloseSetCorner.CornerRadius = UDim.new(0, 10)\n\tcloseSetCorner.Parent = btnCloseSettings\n\n\tlocal closeSetLayout = Instance.new(\"UIListLayout\")\n\tcloseSetLayout.FillDirection = Enum.FillDirection.Horizontal\n\tcloseSetLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center\n\tcloseSetLayout.VerticalAlignment = Enum.VerticalAlignment.Center\n\tcloseSetLayout.Padding = UDim.new(0, 8)\n\tcloseSetLayout.Parent = btnCloseSettings\n\n\tcreateNexusIcon(btnCloseSettings, \"close\", {\n\t\tname = \"BtnCloseSettingsIcon\",\n\t\tsize = 18,\n\t\tpadding = 4,\n\t\tcolor = COLOR_IVORY\n\t})\n\n\tlocal closeSetLabel = Instance.new(\"TextLabel\")\n\tcloseSetLabel.Name = \"Label\"\n\tcloseSetLabel.BackgroundTransparency = 1\n\tcloseSetLabel.Size = UDim2.new(0, 60, 1, 0)\n\tcloseSetLabel.Text = \"CLOSE\"\n\tcloseSetLabel.FontFace = FONT_MONT_BLACK\n\tcloseSetLabel.TextColor3 = COLOR_IVORY\n\tcloseSetLabel.TextSize = 15\n\tcloseSetLabel.Parent = btnCloseSettings\n\n\t---------------------------------------------------------\n\t-- PANEL: CREDITS (Skinned Artwork)\n\t---------------------------------------------------------\n\tlocal panelCredits = Instance.new(\"ImageLabel\")\n\tpanelCredits.Name = \"PanelCredits\"\n\tpanelCredits.AnchorPoint = Vector2.new(0.5, 0.5)\n\tpanelCredits.Position = UDim2.fromScale(0.5, 0.5)\n\tpanelCredits.Size = UDim2.fromOffset(460, 360)\n\tpanelCredits.BackgroundTransparency = 1\n\tpanelCredits.Image = \"nexusasset://asset_991513550a8249a6a0109de63ddb4c5a\"\n\tpanelCredits.ScaleType = Enum.ScaleType.Slice\n\tpanelCredits.SliceCenter = Rect.new(96, 96, 416, 416)\n\tpanelCredits.SliceScale = 0.2\n\tpanelCredits.ImageColor3 = COLOR_SURFACE\n\tpanelCredits.Visible = false\n\tpanelCredits.ZIndex = 22\n\tpanelCredits.Parent = modalLayer\n\n\tlocal credPadding = Instance.new(\"UIPadding\")\n\tcredPadding.PaddingTop = UDim.new(0, 24)\n\tcredPadding.PaddingBottom = UDim.new(0, 24)\n\tcredPadding.PaddingLeft = UDim.new(0, 28)\n\tcredPadding.PaddingRight = UDim.new(0, 28)\n\tcredPadding.Parent = panelCredits\n\n\tlocal credHeader = Instance.new(\"TextLabel\")\n\tcredHeader.Name = \"Header\"\n\tcredHeader.Size = UDim2.new(1, 0, 0, 32)\n\tcredHeader.BackgroundTransparency = 1\n\tcredHeader.Text = \"CREDITS\"\n\tcredHeader.FontFace = FONT_MONT_BLACK\n\tcredHeader.TextColor3 = COLOR_GOLD\n\tcredHeader.TextSize = 24\n\tcredHeader.TextXAlignment = Enum.TextXAlignment.Center\n\tcredHeader.Parent = panelCredits\n\n\tlocal credBody = Instance.new(\"TextLabel\")\n\tcredBody.Name = \"CreditsBody\"\n\tcredBody.Size = UDim2.new(1, 0, 0, 200)\n\tcredBody.Position = UDim2.new(0, 0, 0, 50)\n\tcredBody.BackgroundTransparency = 1\n\tcredBody.Text = \"SKYBOUND ADVENTURE\\n\\nCreated with passion by the Skybound Team\\n\\nGame Design & Code: Senior UI Studio\\nEnvironment Artwork: High-Altitude Assets\\nAudio & Atmosphere: Skybound Sound Lab\\n\\nSpecial thanks to all Sky-Island Explorers!\"\n\tcredBody.FontFace = FONT_MONT_SEMI\n\tcredBody.TextColor3 = COLOR_IVORY\n\tcredBody.TextSize = 15\n\tcredBody.TextWrapped = true\n\tcredBody.TextYAlignment = Enum.TextYAlignment.Top\n\tcredBody.Parent = panelCredits\n\n\t-- Close Credits Button\n\tlocal btnCloseCredits = Instance.new(\"ImageButton\")\n\tbtnCloseCredits.Name = \"BtnCloseCredits\"\n\tbtnCloseCredits.AnchorPoint = Vector2.new(0.5, 1)\n\tbtnCloseCredits.Position = UDim2.new(0.5, 0, 1, 0)\n\tbtnCloseCredits.Size = UDim2.new(0, 140, 0, 44)\n\tbtnCloseCredits.BackgroundColor3 = COLOR_TEAL\n\tbtnCloseCredits.AutoButtonColor = false\n\tbtnCloseCredits.BorderSizePixel = 0\n\tbtnCloseCredits.Parent = panelCredits\n\n\tlocal closeCredCorner = Instance.new(\"UICorner\")\n\tcloseCredCorner.CornerRadius = UDim.new(0, 10)\n\tcloseCredCorner.Parent = btnCloseCredits\n\n\tlocal closeCredLayout = Instance.new(\"UIListLayout\")\n\tcloseCredLayout.FillDirection = Enum.FillDirection.Horizontal\n\tcloseCredLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center\n\tcloseCredLayout.VerticalAlignment = Enum.VerticalAlignment.Center\n\tcloseCredLayout.Padding = UDim.new(0, 8)\n\tcloseCredLayout.Parent = btnCloseCredits\n\n\tcreateNexusIcon(btnCloseCredits, \"close\", {\n\t\tname = \"BtnCloseCreditsIcon\",\n\t\tsize = 18,\n\t\tpadding = 4,\n\t\tcolor = COLOR_IVORY\n\t})\n\n\tlocal closeCredLabel = Instance.new(\"TextLabel\")\n\tcloseCredLabel.Name = \"Label\"\n\tcloseCredLabel.BackgroundTransparency = 1\n\tcloseCredLabel.Size = UDim2.new(0, 60, 1, 0)\n\tcloseCredLabel.Text = \"CLOSE\"\n\tcloseCredLabel.FontFace = FONT_MONT_BLACK\n\tcloseCredLabel.TextColor3 = COLOR_IVORY\n\tcloseCredLabel.TextSize = 15\n\tcloseCredLabel.Parent = btnCloseCredits\n\n\tfor _, node in screenGui:GetDescendants() do\n\t\tif (node:IsA(\"TextLabel\") or node:IsA(\"TextButton\") or node:IsA(\"TextBox\")) and node.Text == \"\" then\n\t\t\tnode.FontFace = FONT_MONT_SEMI\n\t\tend\n\tend\n\tfor _, node in screenGui:GetDescendants() do\n\t\tif (node:IsA(\"TextLabel\") or node:IsA(\"TextButton\") or node:IsA(\"TextBox\")) and node.Text == \"\" then node.FontFace = FONT_MONT_SEMI end\n\tend\n\treturn screenGui\nend\n\nreturn View"
+    },
+    {
+      "path": "Controller.client.luau",
+      "content": "local TweenService = game:GetService(\"TweenService\")\n\nlocal root = script.Parent\nlocal modulesFolder = root:FindFirstChild(\"_NexusSource\") or root\n\nlocal Responsive = require(modulesFolder:WaitForChild(\"Runtime\"):WaitForChild(\"Responsive\"))\nlocal ButtonEffects = require(modulesFolder:WaitForChild(\"Runtime\"):WaitForChild(\"ButtonEffects\"))\n\n-- Bind viewport responsiveness across _NexusDesktop / _NexusMobile\nResponsive.bind(root)\n\n-- Color definitions for state updates\nlocal COLOR_TEAL = Color3.fromRGB(0, 180, 216)\nlocal COLOR_MUTED_BG = Color3.fromRGB(40, 50, 75)\n\n-- State\nlocal musicEnabled = true\nlocal soundEnabled = true\n\n-- Modal References\nlocal modalLayer = root:FindFirstChild(\"ModalLayer\", true)\nlocal modalBackdrop = modalLayer and modalLayer:FindFirstChild(\"ModalBackdrop\")\nlocal panelSettings = modalLayer and modalLayer:FindFirstChild(\"PanelSettings\")\nlocal panelCredits = modalLayer and modalLayer:FindFirstChild(\"PanelCredits\")\n\nlocal function openModal(targetPanel)\n\tif not modalBackdrop or not targetPanel then return end\n\tmodalBackdrop.Visible = true\n\ttargetPanel.Visible = true\n\n\tlocal scale = targetPanel:FindFirstChildOfClass(\"UIScale\")\n\tif not scale then\n\t\tscale = Instance.new(\"UIScale\")\n\t\tscale.Parent = targetPanel\n\tend\n\tscale.Scale = 0.85\n\n\tmodalBackdrop.BackgroundTransparency = 1\n\tTweenService:Create(modalBackdrop, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {\n\t\tBackgroundTransparency = 0.5\n\t}):Play()\n\n\tTweenService:Create(scale, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {\n\t\tScale = 1\n\t}):Play()\nend\n\nlocal function closeModal()\n\tif not modalBackdrop then return end\n\n\tTweenService:Create(modalBackdrop, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {\n\t\tBackgroundTransparency = 1\n\t}):Play()\n\n\tfor _, panel in ipairs({panelSettings, panelCredits}) do\n\t\tif panel and panel.Visible then\n\t\t\tlocal scale = panel:FindFirstChildOfClass(\"UIScale\")\n\t\t\tif scale then\n\t\t\t\tlocal tw = TweenService:Create(scale, TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {\n\t\t\t\t\tScale = 0.85\n\t\t\t\t})\n\t\t\t\ttw:Play()\n\t\t\t\ttw.Completed:Connect(function()\n\t\t\t\t\tpanel.Visible = false\n\t\t\t\tend)\n\t\t\telse\n\t\t\t\tpanel.Visible = false\n\t\t\tend\n\t\tend\n\tend\n\n\ttask.delay(0.18, function()\n\t\tmodalBackdrop.Visible = false\n\tend)\nend\n\nif modalBackdrop then\n\tmodalBackdrop.Activated:Connect(closeModal)\nend\n\n-- Helper to update toggle switch visuals\nlocal function updateToggleVisual(toggleBtn, state)\n\tif not toggleBtn then return end\n\tlocal pill = toggleBtn:FindFirstChild(\"PillSwitch\")\n\tif not pill then return end\n\tlocal knob = pill:FindFirstChild(\"Knob\")\n\tif not knob then return end\n\n\tlocal targetPillColor = state and COLOR_TEAL or COLOR_MUTED_BG\n\tlocal targetKnobPos = state and UDim2.new(1, -25, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)\n\n\tTweenService:Create(pill, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {\n\t\tBackgroundColor3 = targetPillColor\n\t}):Play()\n\n\tTweenService:Create(knob, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {\n\t\tPosition = targetKnobPos\n\t}):Play()\nend\n\n-- Wire interactions to descendants\nfor _, node in ipairs(root:GetDescendants()) do\n\tif node:IsA(\"GuiButton\") and node.Name ~= \"ModalBackdrop\" then\n\t\tButtonEffects.bind(node, {\n\t\t\thoverScale = 1.04,\n\t\t\tpressScale = 0.96,\n\t\t\tduration = 0.12\n\t\t})\n\n\t\tif node.Name == \"BtnPlay\" then\n\t\t\tnode.Activated:Connect(function()\n\t\t\t\tprint(\"[SKYBOUND] Starting Game...\")\n\t\t\tend)\n\t\telseif node.Name == \"BtnSettings\" then\n\t\t\tnode.Activated:Connect(function()\n\t\t\t\topenModal(panelSettings)\n\t\t\tend)\n\t\telseif node.Name == \"BtnCredits\" then\n\t\t\tnode.Activated:Connect(function()\n\t\t\t\topenModal(panelCredits)\n\t\t\tend)\n\t\telseif node.Name == \"BtnCloseSettings\" or node.Name == \"BtnCloseCredits\" then\n\t\t\tnode.Activated:Connect(closeModal)\n\t\telseif node.Name == \"ToggleMusic\" then\n\t\t\tnode.Activated:Connect(function()\n\t\t\t\tmusicEnabled = not musicEnabled\n\t\t\t\tupdateToggleVisual(node, musicEnabled)\n\t\t\tend)\n\t\telseif node.Name == \"ToggleSound\" then\n\t\t\tnode.Activated:Connect(function()\n\t\t\t\tsoundEnabled = not soundEnabled\n\t\t\t\tupdateToggleVisual(node, soundEnabled)\n\t\t\tend)\n\t\tend\n\tend\nend"
+    },
+    {
+      "path": "Runtime/Responsive.luau",
+      "content": "local Responsive = {}\nfunction Responsive.bind(root)\n    local cameraConnection\n    local connections = {}\n    local function update()\n        local camera = workspace.CurrentCamera\n        if not camera then return end\n        local size = camera.ViewportSize\n        local mobile = math.min(size.X, size.Y) < 600\n        for _, node in root:GetDescendants() do\n            if node:IsA(\"GuiObject\") then\n                if node.Name == \"_NexusDesktop\" then node.Visible = not mobile end\n                if node.Name == \"_NexusMobile\" then node.Visible = mobile end\n            end\n        end\n    end\n    local function observeCamera()\n        if cameraConnection then cameraConnection:Disconnect() end\n        local camera = workspace.CurrentCamera\n        if camera then cameraConnection = camera:GetPropertyChangedSignal(\"ViewportSize\"):Connect(update) end\n        update()\n    end\n    table.insert(connections, workspace:GetPropertyChangedSignal(\"CurrentCamera\"):Connect(observeCamera))\n    local function cleanup()\n        if cameraConnection then cameraConnection:Disconnect() end\n        for _, connection in connections do connection:Disconnect() end\n        table.clear(connections)\n    end\n    table.insert(connections, root.Destroying:Connect(cleanup))\n    observeCamera()\n    return cleanup\nend\nreturn Responsive"
+    },
+    {
+      "path": "Runtime/ButtonEffects.luau",
+      "content": "-- Original reference implementation from 06-ui-motion-and-interaction.md\n-- Reviewed 2026-09-11. Not Roblox Studio runtime-verified.\n\nlocal TweenService = game:GetService(\"TweenService\")\nlocal GuiService = game:GetService(\"GuiService\")\nlocal UserInputService = game:GetService(\"UserInputService\")\nlocal ButtonFeedback = {}\nlocal bound = setmetatable({}, { __mode = \"k\" })\nlocal lastSoundAt = { hover = -math.huge, click = -math.huge }\n\n-- Backward compatible: bind(button, childVisual) or bind(button, options).\n-- Prefer options.visual = the stable button's child Visual frame.\nfunction ButtonFeedback.bind(button, visualOrOptions, options)\n    local visual\n    if typeof(visualOrOptions) == \"Instance\" then\n        visual = visualOrOptions\n        options = options or {}\n    else\n        options = visualOrOptions or {}\n        visual = options.visual or button:FindFirstChild(\"Visual\") or button\n    end\n    assert(button:IsA(\"GuiButton\"), \"expected a GuiButton\")\n    assert(visual:IsA(\"GuiObject\") and (visual == button or visual:IsDescendantOf(button)),\n        \"visual must be a child visual inside the button\")\n    assert(not bound[button], \"button already has a feedback binding\")\n    assert(not visual:FindFirstChildOfClass(\"UIScale\"),\n        \"visual UIScale already has an owner\")\n    local scale = Instance.new(\"UIScale\")\n    scale.Name = \"FeedbackScale\"\n    scale.Parent = visual\n    local alive, focused = true, GuiService.SelectedObject == button\n    local currentTween = nil\n    local shadowTween = nil\n    local connections = {}\n    local sounds = {}\n    local originalAutoColor = button.AutoButtonColor\n    button.AutoButtonColor = false\n    local controller = {}\n    bound[button] = controller\n    local previousState = nil\n    local hoverScale = math.clamp(tonumber(options.hoverScale) or 1.05, 1, 1.1)\n    local pressScale = math.clamp(tonumber(options.pressScale) or 0.95, 0.85, 1)\n    local duration = math.clamp(tonumber(options.duration) or 0.12, 0.06, 0.3)\n    local shadow = options.shadow\n    local shadowPosition = shadow and shadow.Position\n\n    local function soundFor(kind, soundId)\n        if type(soundId) ~= \"string\" or not soundId:match(\"^rbxassetid://%d+$\") then return end\n        local sound = Instance.new(\"Sound\")\n        sound.Name = \"Feedback_\" .. kind\n        sound.SoundId = soundId\n        sound.Volume = math.clamp(tonumber(options.volume) or 0.18, 0, 0.35)\n        sound.Parent = button\n        sounds[kind] = sound\n    end\n    soundFor(\"hover\", options.hoverSound)\n    soundFor(\"click\", options.clickSound)\n\n    local function playSound(kind)\n        if not alive or not button.Interactable or options.sounds == false then return end\n        local sound = sounds[kind]\n        local now = os.clock()\n        local delay = kind == \"hover\" and 0.12 or 0.08\n        if not sound or now - lastSoundAt[kind] < delay then return end\n        lastSoundAt[kind] = now\n        sound.TimePosition = 0\n        sound:Play()\n    end\n\n    local function pointerAvailable()\n        return UserInputService.MouseEnabled\n            and UserInputService:GetLastInputType() ~= Enum.UserInputType.Touch\n    end\n\n    local function refresh()\n        if not alive then return end\n        local state = button.GuiState\n        local target = 1\n        if button.Interactable then\n            if state == Enum.GuiState.Press then\n                target = pressScale\n            elseif (state == Enum.GuiState.Hover and pointerAvailable() and options.hoverEnabled ~= false) or focused then\n                target = hoverScale\n            end\n        end\n        if state == Enum.GuiState.Hover and previousState ~= state and pointerAvailable() and options.hoverEnabled ~= false then\n            playSound(\"hover\")\n        end\n        previousState = state\n        if currentTween then\n            currentTween:Cancel()\n            currentTween = nil\n        end\n        if shadowTween then shadowTween:Cancel() end\n        if GuiService.ReducedMotionEnabled or options.animations == false then\n            scale.Scale = 1\n            if shadow then shadow.Position = shadowPosition end\n            return\n        end\n        currentTween = TweenService:Create(scale,\n            TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),\n            { Scale = target })\n        currentTween:Play()\n        if shadow then\n            local offset = state == Enum.GuiState.Press and -2 or 0\n            shadowTween = TweenService:Create(shadow, TweenInfo.new(duration),\n                { Position = shadowPosition + UDim2.fromOffset(0, offset) })\n            shadowTween:Play()\n        end\n    end\n\n    connections[#connections + 1] = button\n        :GetPropertyChangedSignal(\"GuiState\"):Connect(refresh)\n    connections[#connections + 1] = button\n        :GetPropertyChangedSignal(\"Interactable\"):Connect(refresh)\n    connections[#connections + 1] = button.SelectionGained:Connect(function()\n        focused = true\n        refresh()\n    end)\n    connections[#connections + 1] = button.SelectionLost:Connect(function()\n        focused = false\n        refresh()\n    end)\n    connections[#connections + 1] = GuiService\n        :GetPropertyChangedSignal(\"ReducedMotionEnabled\"):Connect(refresh)\n    connections[#connections + 1] = button.Activated:Connect(function()\n        playSound(\"click\")\n    end)\n\n    function controller:Destroy()\n        if not alive then return end\n        alive = false\n        if currentTween then currentTween:Cancel() end\n        if shadowTween then shadowTween:Cancel() end\n        for _, connection in ipairs(connections) do connection:Disconnect() end\n        for _, sound in pairs(sounds) do sound:Destroy() end\n        bound[button] = nil\n        scale:Destroy()\n        pcall(function() button.AutoButtonColor = originalAutoColor end)\n        if shadow then pcall(function() shadow.Position = shadowPosition end) end\n    end\n    connections[#connections + 1] = button.Destroying:Connect(function()\n        controller:Destroy()\n    end)\n    refresh()\n    return controller\nend\n\nreturn ButtonFeedback\n"
+    }
+  ],
+  "sourceFormat": "luau-files-v1",
+  "designMemory": {
+    "version": 1,
+    "originalUserGoal": "Create a polished main menu for a Roblox adventure game called SKYBOUND. Use a cohesive sky-island adventure style with a deep navy background, warm ivory typography, teal accents, and restrained gold highlights. Include a strong game title, a primary Play button, and secondary Settings and Credits buttons. Add a small version label. Make the composition feel distinctive and premium, with clear visual hierarchy, generous spacing, consistent icons, subtle hover/press feedback, and smooth menu transitions. Settings should open a panel with music and sound toggles, and Credits should open a dismissible panel. Support desktop and mobile with readable text and comfortable touch targets. Generate the UI and preview so I can rate the result.",
+    "requirementSpec": {
+      "intent": "Create a polished main menu for a Roblox adventure game called SKYBOUND featuring main navigation (Play, Settings, Credits), a version indicator, a Settings modal with music and sound toggles, and a dismissible Credits modal in a deep navy, warm ivory, teal, and gold sky-island theme.",
+      "screenType": "main_menu",
+      "requiredElements": [
+        {
+          "id": "title_skybound",
+          "label": "SKYBOUND",
+          "semanticAction": "",
+          "category": "content",
+          "hierarchy": "primary",
+          "source": "explicit",
+          "evidence": "SKYBOUND"
+        },
+        {
+          "id": "btn_play",
+          "label": "Play",
+          "semanticAction": "start_game",
+          "category": "action",
+          "hierarchy": "primary",
+          "source": "explicit",
+          "evidence": "Play"
+        },
+        {
+          "id": "btn_settings",
+          "label": "Settings",
+          "semanticAction": "open_settings",
+          "category": "action",
+          "hierarchy": "secondary",
+          "source": "explicit",
+          "evidence": "Settings"
+        },
+        {
+          "id": "btn_credits",
+          "label": "Credits",
+          "semanticAction": "open_credits",
+          "category": "action",
+          "hierarchy": "secondary",
+          "source": "explicit",
+          "evidence": "Credits"
+        },
+        {
+          "id": "lbl_version",
+          "label": "v1.0.0",
+          "semanticAction": "",
+          "category": "content",
+          "hierarchy": "tertiary",
+          "source": "explicit",
+          "evidence": "v1.0.0"
+        },
+        {
+          "id": "panel_settings",
+          "label": "Settings Panel",
+          "semanticAction": "",
+          "category": "system",
+          "hierarchy": "secondary",
+          "source": "explicit",
+          "evidence": "Settings should open a panel"
+        },
+        {
+          "id": "toggle_music",
+          "label": "Music Toggle",
+          "semanticAction": "toggle_music",
+          "category": "action",
+          "hierarchy": "secondary",
+          "source": "explicit",
+          "evidence": "music"
+        },
+        {
+          "id": "toggle_sound",
+          "label": "Sound Toggle",
+          "semanticAction": "toggle_sound",
+          "category": "action",
+          "hierarchy": "secondary",
+          "source": "explicit",
+          "evidence": "sound toggles"
+        },
+        {
+          "id": "btn_close_settings",
+          "label": "Close Settings",
+          "semanticAction": "close_settings",
+          "category": "action",
+          "hierarchy": "tertiary",
+          "source": "inferred_core",
+          "evidence": ""
+        },
+        {
+          "id": "panel_credits",
+          "label": "Credits Panel",
+          "semanticAction": "",
+          "category": "system",
+          "hierarchy": "secondary",
+          "source": "explicit",
+          "evidence": "Credits should open a dismissible panel"
+        },
+        {
+          "id": "btn_close_credits",
+          "label": "Close Credits",
+          "semanticAction": "close_credits",
+          "category": "action",
+          "hierarchy": "tertiary",
+          "source": "explicit",
+          "evidence": "dismissible"
+        }
+      ],
+      "optionalElements": [
+        {
+          "id": "bg_sky_clouds",
+          "description": "Subtle sky-island cloud motif visual framing overlay",
+          "productStructure": false,
+          "approved": false
+        },
+        {
+          "id": "decor_divider",
+          "description": "Teal and gold visual separator below main title",
+          "productStructure": false,
+          "approved": false
+        }
+      ],
+      "prohibitedInventions": [
+        "Inventory / Items menu",
+        "Shop or microtransactions",
+        "Daily rewards or streak systems",
+        "Battle pass / Season pass",
+        "Player progression / Level / XP displays",
+        "Leaderboards",
+        "Quest / Mission log",
+        "Currencies (Gold, Gems, Coins)",
+        "Social media links",
+        "Server browser",
+        "Unrequested text overlays or watermarks"
+      ],
+      "style": {
+        "theme": "Sky-Island Adventure",
+        "adjectives": [
+          "polished",
+          "mystical",
+          "spacious",
+          "clean",
+          "adventurous"
+        ],
+        "targetAudience": "Roblox adventure and exploration players",
+        "genre": "Adventure / Fantasy",
+        "mood": "atmospheric and serene with exciting call-to-action"
+      },
+      "interactionRequirements": {
+        "hover": true,
+        "click": true,
+        "sounds": true,
+        "animations": true,
+        "requestedBehaviors": [
+          "Play button scales up slightly with active glow on hover",
+          "Secondary buttons shift right or brighten on hover",
+          "Settings panel slides or fades smoothly into view when triggered",
+          "Credits panel overlays screen with blur/fade and close trigger",
+          "Audio toggles state transition smoothly between ON/OFF"
+        ]
+      },
+      "responsiveRequirements": {
+        "desktop": true,
+        "mobile": true,
+        "tablet": true
+      },
+      "assetRequirements": [
+        {
+          "id": "icon_play",
+          "semanticRole": "button_icon",
+          "assetType": "icon",
+          "required": true,
+          "componentIds": [
+            "btn_play"
+          ],
+          "styleDescription": "Clean triangular play arrow in warm ivory"
+        },
+        {
+          "id": "icon_settings",
+          "semanticRole": "button_icon",
+          "assetType": "icon",
+          "required": true,
+          "componentIds": [
+            "btn_settings"
+          ],
+          "styleDescription": "Gear or cog icon in soft teal"
+        },
+        {
+          "id": "icon_credits",
+          "semanticRole": "button_icon",
+          "assetType": "icon",
+          "required": true,
+          "componentIds": [
+            "btn_credits"
+          ],
+          "styleDescription": "Information or star icon in soft teal"
+        },
+        {
+          "id": "icon_close",
+          "semanticRole": "button_icon",
+          "assetType": "icon",
+          "required": true,
+          "componentIds": [
+            "btn_close_settings",
+            "btn_close_credits"
+          ],
+          "styleDescription": "Cross icon in warm ivory"
+        },
+        {
+          "id": "snd_hover",
+          "semanticRole": "hover_feedback",
+          "assetType": "audio",
+          "required": true,
+          "componentIds": [
+            "btn_play",
+            "btn_settings",
+            "btn_credits",
+            "toggle_music",
+            "toggle_sound"
+          ],
+          "styleDescription": "Subtle chime sound on button hover"
+        },
+        {
+          "id": "snd_click",
+          "semanticRole": "click_feedback",
+          "assetType": "audio",
+          "required": true,
+          "componentIds": [
+            "btn_play",
+            "btn_settings",
+            "btn_credits",
+            "btn_close_settings",
+            "btn_close_credits"
+          ],
+          "styleDescription": "Crisp tactile press sound"
+        },
+        {
+          "id": "hover_audio",
+          "semanticRole": "hover_sound",
+          "assetType": "audio",
+          "required": true,
+          "componentIds": [],
+          "styleDescription": "Short, quiet hover sound matching the requested interface."
+        },
+        {
+          "id": "click_audio",
+          "semanticRole": "click_sound",
+          "assetType": "audio",
+          "required": true,
+          "componentIds": [],
+          "styleDescription": "Short, quiet click sound matching the requested interface."
+        }
+      ],
+      "constraints": [
+        "Must use deep navy (#0B132B / #1C2541) as background shade",
+        "Typography must use warm ivory (#FDF0D5 / #F4F1DE)",
+        "Accents must feature teal (#48CAE4 / #00B4D8) and restrained gold (#F77F00 / #FFD166)",
+        "Touch hitboxes on mobile must be at least 44x44 px",
+        "No invented gameplay systems (shop, inventory, currency, level)"
+      ]
+    },
+    "designPlan": {
+      "artDirection": "Atmospheric sky-island adventure interface featuring a deep midnight-navy canvas (#0B132B), warm ivory typography (#FDF0D5), radiant cyan-teal energy accents (#00B4D8 / #48CAE4), and luminous gold highlights (#FFD166). The visual structure balances serene open air with crisp tactile interaction frames. Hero branding sits grandly on the left-central axis while primary and secondary actions stack gracefully on the left-lower side, creating an unobstructed view of the sky realm. Modals emerge with crisp glass-like navy panels framed in thin golden-teal strokes.",
+      "composition": {
+        "focalPoint": "Hero Title 'SKYBOUND' and dominant glowing cyan-gold Primary CTA Play button in the primary left navigation column, complemented by reactive View-Controller bound Settings and Credits modal panels.",
+        "primaryRegion": "reg_main_navigation",
+        "secondaryRegions": [
+          "reg_hero_title",
+          "reg_version_footer",
+          "reg_modal_settings",
+          "reg_modal_credits"
+        ],
+        "alignmentSystem": "Left-aligned dominant vertical stack on desktop with anchored bottom-left version badge; centered modal windows with semi-transparent overlay backdrop managed by explicit View-Controller state transitions.",
+        "density": "spacious"
+      },
+      "visualSystem": {
+        "palette": {
+          "primary": "#00B4D8",
+          "secondary": "#FFD166",
+          "accent": "#48CAE4",
+          "success": "#2EC4B6",
+          "danger": "#E63946",
+          "neutralBackground": "#0B132B",
+          "neutralSurface": "#1C2541",
+          "textPrimary": "#FDF0D5",
+          "textSecondary": "#C0D6DF",
+          "outline": "#00B4D8",
+          "shadow": "#030712"
+        },
+        "colorRationale": "Deep Navy (#0B132B / #1C2541) provides high contrast backdrop evoking high-altitude starry skies. Warm Ivory (#FDF0D5) delivers high legibility without harsh white eye-strain. Cyan-Teal (#00B4D8 / #48CAE4) defines active interactive focal points and adventure energy, while Gold (#FFD166) anchors primary achievements and elegant dividers.",
+        "cornerRadiusScale": [
+          0,
+          4,
+          8,
+          12,
+          16,
+          24,
+          32
+        ],
+        "outlineStyle": "1px to 2px solid cyan-teal or subtle gold glow strokes with 0.15 alpha ambient inner gradient",
+        "shadowStyle": "Soft layered drop shadow (0px 8px 24px rgba(3,7,18,0.6)) with subtle radial cyan fill blur on active controls",
+        "typography": {
+          "display": {
+            "font": "rbxasset://fonts/families/Montserrat.json",
+            "weight": "900",
+            "desktopSize": 64,
+            "mobileSize": 40,
+            "treatment": "Uppercase bold tracking, subtle drop shadow with gold fill accent gradient"
+          },
+          "heading": {
+            "font": "rbxasset://fonts/families/Montserrat.json",
+            "weight": "700",
+            "desktopSize": 28,
+            "mobileSize": 22,
+            "treatment": "Semi-bold warm ivory text with subtle dark navy stroke shadow"
+          },
+          "button": {
+            "font": "rbxasset://fonts/families/Montserrat.json",
+            "weight": "800",
+            "desktopSize": 20,
+            "mobileSize": 18,
+            "treatment": "Uppercase high-contrast font with 1px letter spacing and subtle text shadow"
+          },
+          "body": {
+            "font": "rbxasset://fonts/families/Montserrat.json",
+            "weight": "500",
+            "desktopSize": 16,
+            "mobileSize": 14,
+            "treatment": "Clean readable ivory text with 1.4 line height"
+          },
+          "caption": {
+            "font": "rbxasset://fonts/families/Montserrat.json",
+            "weight": "400",
+            "desktopSize": 13,
+            "mobileSize": 11,
+            "treatment": "Cool teal-gray low-contrast text for non-critical metadata"
+          },
+          "numeric": {
+            "font": "rbxasset://fonts/families/Montserrat.json",
+            "weight": "700",
+            "desktopSize": 18,
+            "mobileSize": 16,
+            "treatment": "Monospaced clean numbers"
+          },
+          "badge": {
+            "font": "rbxasset://fonts/families/Montserrat.json",
+            "weight": "700",
+            "desktopSize": 12,
+            "mobileSize": 10,
+            "treatment": "Bold uppercase micro text"
+          }
+        }
+      },
+      "componentSystem": [
+        {
+          "id": "comp_bg_sky",
+          "primitive": "Decoration",
+          "requirementId": "bg_sky_clouds",
+          "label": "Background Atmosphere Overlay",
+          "semanticAction": "",
+          "hierarchy": "tertiary",
+          "groupId": "group_background",
+          "nodeName": "BackgroundSkyClouds",
+          "regionId": "reg_background",
+          "paletteRole": "neutralBackground",
+          "typographyRole": "body",
+          "visualTreatment": "background: high-altitude sky island clouds silhouette with deep navy midnight atmospheric radial gradient",
+          "size": {
+            "desktop": "Width 1.0, Height 1.0 normalized screen cover",
+            "mobile": "Width 1.0, Height 1.0 normalized screen cover",
+            "minTouchTarget": 0
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "",
+            "assetStrategy": "procedural",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "light",
+            "perspective": "flat",
+            "edgeTreatment": "none",
+            "shadowTreatment": "none",
+            "paletteMode": "monochrome"
+          },
+          "interaction": {
+            "hoverAnimation": "None",
+            "pressAnimation": "None",
+            "hoverSound": "",
+            "clickSound": "",
+            "sharedHelper": "BackgroundStatic",
+            "touchBehavior": "Pass through touch events to underlying scenery"
+          }
+        },
+        {
+          "id": "comp_title_skybound",
+          "primitive": "Title",
+          "requirementId": "title_skybound",
+          "label": "SKYBOUND Title",
+          "semanticAction": "",
+          "hierarchy": "primary",
+          "groupId": "group_hero",
+          "nodeName": "TitleSkybound",
+          "regionId": "reg_hero_title",
+          "paletteRole": "textPrimary",
+          "typographyRole": "display",
+          "visualTreatment": "ornament: bold chiselled sky adventure lettering with warm ivory body and subtle gold edge glow",
+          "size": {
+            "desktop": "Width 420px, Height 80px",
+            "mobile": "Width 280px, Height 54px",
+            "minTouchTarget": 0
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "",
+            "assetStrategy": "procedural",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "light",
+            "perspective": "flat",
+            "edgeTreatment": "none",
+            "shadowTreatment": "none",
+            "paletteMode": "monochrome"
+          },
+          "interaction": {
+            "hoverAnimation": "Subtle breathing opacity scale pulse 1.0 to 1.02 over 3s",
+            "pressAnimation": "None",
+            "hoverSound": "",
+            "clickSound": "",
+            "sharedHelper": "HeroTitleMotion",
+            "touchBehavior": "Static title visual"
+          }
+        },
+        {
+          "id": "comp_decor_divider",
+          "primitive": "Decoration",
+          "requirementId": "decor_divider",
+          "label": "Title Divider Bar",
+          "semanticAction": "",
+          "hierarchy": "tertiary",
+          "groupId": "group_hero",
+          "nodeName": "DecorDivider",
+          "regionId": "reg_hero_title",
+          "paletteRole": "accent",
+          "typographyRole": "caption",
+          "visualTreatment": "separator: horizontal teal gradient line tapering to transparent edges with central gold accent diamond",
+          "size": {
+            "desktop": "Width 320px, Height 4px",
+            "mobile": "Width 220px, Height 3px",
+            "minTouchTarget": 0
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "",
+            "assetStrategy": "procedural",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "light",
+            "perspective": "flat",
+            "edgeTreatment": "none",
+            "shadowTreatment": "none",
+            "paletteMode": "monochrome"
+          },
+          "interaction": {
+            "hoverAnimation": "None",
+            "pressAnimation": "None",
+            "hoverSound": "",
+            "clickSound": "",
+            "sharedHelper": "StaticDivider",
+            "touchBehavior": "Static visual"
+          }
+        },
+        {
+          "id": "comp_btn_play",
+          "primitive": "PrimaryGameCTA",
+          "requirementId": "btn_play",
+          "label": "PLAY GAME",
+          "semanticAction": "start_game",
+          "hierarchy": "primary",
+          "groupId": "group_main_nav",
+          "nodeName": "BtnPlay",
+          "regionId": "reg_main_navigation",
+          "paletteRole": "primary",
+          "typographyRole": "button",
+          "visualTreatment": "component_surface: vibrant cyan teal pill container (#00B4D8) with gold outline highlight (#FFD166) and energetic cyan drop shadow",
+          "size": {
+            "desktop": "Width 280px, Height 64px",
+            "mobile": "Width 240px, Height 54px",
+            "minTouchTarget": 54
+          },
+          "icon": {
+            "enabled": true,
+            "semanticRole": "play",
+            "family": "skybound_vector_slate",
+            "assetStrategy": "approved",
+            "size": 24,
+            "padding": 8,
+            "visualWeight": "bold",
+            "perspective": "flat",
+            "edgeTreatment": "sharp",
+            "shadowTreatment": "subtle_drop",
+            "paletteMode": "monochrome"
+          },
+          "interaction": {
+            "hoverAnimation": "Scale up to 1.05x, outer cyan halo glow brightens, border shifts to bright gold",
+            "pressAnimation": "Scale down to 0.96x with inset shadow compression",
+            "hoverSound": "snd_hover",
+            "clickSound": "snd_click",
+            "sharedHelper": "ButtonEffects",
+            "touchBehavior": "Immediate touch active highlight, triggers action on touch release inside bounds"
+          }
+        },
+        {
+          "id": "comp_btn_settings",
+          "primitive": "MenuButton",
+          "requirementId": "btn_settings",
+          "label": "SETTINGS",
+          "semanticAction": "open_settings",
+          "hierarchy": "secondary",
+          "groupId": "group_main_nav",
+          "nodeName": "BtnSettings",
+          "regionId": "reg_main_navigation",
+          "paletteRole": "neutralSurface",
+          "typographyRole": "button",
+          "visualTreatment": "component_surface: translucent navy panel (#1C2541) with 1px teal border stroke (#00B4D8) and warm ivory text",
+          "size": {
+            "desktop": "Width 280px, Height 50px",
+            "mobile": "Width 240px, Height 48px",
+            "minTouchTarget": 48
+          },
+          "icon": {
+            "enabled": true,
+            "semanticRole": "settings",
+            "family": "skybound_vector_slate",
+            "assetStrategy": "approved",
+            "size": 24,
+            "padding": 8,
+            "visualWeight": "bold",
+            "perspective": "flat",
+            "edgeTreatment": "sharp",
+            "shadowTreatment": "subtle_drop",
+            "paletteMode": "monochrome"
+          },
+          "interaction": {
+            "hoverAnimation": "Shift 6px right horizontally, background brightens 10%, stroke shifts to accent cyan",
+            "pressAnimation": "Shift back 2px left, darkens 5%",
+            "hoverSound": "snd_hover",
+            "clickSound": "snd_click",
+            "sharedHelper": "ButtonEffects",
+            "touchBehavior": "Touch active highlight with 0.1s brightness bounce"
+          }
+        },
+        {
+          "id": "comp_btn_credits",
+          "primitive": "MenuButton",
+          "requirementId": "btn_credits",
+          "label": "CREDITS",
+          "semanticAction": "open_credits",
+          "hierarchy": "secondary",
+          "groupId": "group_main_nav",
+          "nodeName": "BtnCredits",
+          "regionId": "reg_main_navigation",
+          "paletteRole": "neutralSurface",
+          "typographyRole": "button",
+          "visualTreatment": "component_surface: translucent navy panel (#1C2541) with 1px teal border stroke (#00B4D8) and warm ivory text",
+          "size": {
+            "desktop": "Width 280px, Height 50px",
+            "mobile": "Width 240px, Height 48px",
+            "minTouchTarget": 48
+          },
+          "icon": {
+            "enabled": true,
+            "semanticRole": "credits",
+            "family": "skybound_vector_slate",
+            "assetStrategy": "approved",
+            "size": 24,
+            "padding": 8,
+            "visualWeight": "bold",
+            "perspective": "flat",
+            "edgeTreatment": "sharp",
+            "shadowTreatment": "subtle_drop",
+            "paletteMode": "monochrome"
+          },
+          "interaction": {
+            "hoverAnimation": "Shift 6px right horizontally, background brightens 10%, stroke shifts to accent cyan",
+            "pressAnimation": "Shift back 2px left, darkens 5%",
+            "hoverSound": "snd_hover",
+            "clickSound": "snd_click",
+            "sharedHelper": "ButtonEffects",
+            "touchBehavior": "Touch active highlight with 0.1s brightness bounce"
+          }
+        },
+        {
+          "id": "comp_lbl_version",
+          "primitive": "Text",
+          "requirementId": "lbl_version",
+          "label": "v1.0.0",
+          "semanticAction": "",
+          "hierarchy": "tertiary",
+          "groupId": "group_footer",
+          "nodeName": "LblVersion",
+          "regionId": "reg_version_footer",
+          "paletteRole": "textSecondary",
+          "typographyRole": "caption",
+          "visualTreatment": "badge_decoration: subtle muted slate container with teal border tint and gold version tag text",
+          "size": {
+            "desktop": "Width 120px, Height 24px",
+            "mobile": "Width 100px, Height 24px",
+            "minTouchTarget": 0
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "skybound_vector_slate",
+            "assetStrategy": "procedural",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "light",
+            "perspective": "flat",
+            "edgeTreatment": "none",
+            "shadowTreatment": "none",
+            "paletteMode": "monochrome"
+          },
+          "interaction": {
+            "hoverAnimation": "None",
+            "pressAnimation": "None",
+            "hoverSound": "",
+            "clickSound": "",
+            "sharedHelper": "StaticLabel",
+            "touchBehavior": "Static visual label"
+          }
+        },
+        {
+          "id": "comp_panel_settings",
+          "primitive": "ModalWindow",
+          "requirementId": "panel_settings",
+          "label": "SETTINGS",
+          "semanticAction": "",
+          "hierarchy": "secondary",
+          "groupId": "group_modals",
+          "nodeName": "PanelSettings",
+          "regionId": "reg_modal_settings",
+          "paletteRole": "neutralSurface",
+          "typographyRole": "heading",
+          "visualTreatment": "panel_surface: deep navy window (#1C2541) with gold top border rim (#FFD166), cyan accents, rounded corners (16px), and shadow blur",
+          "size": {
+            "desktop": "Width 460px, Height 340px",
+            "mobile": "Width 320px, Height 320px",
+            "minTouchTarget": 0
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "",
+            "assetStrategy": "procedural",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "light",
+            "perspective": "flat",
+            "edgeTreatment": "none",
+            "shadowTreatment": "none",
+            "paletteMode": "monochrome"
+          },
+          "interaction": {
+            "hoverAnimation": "None",
+            "pressAnimation": "None",
+            "hoverSound": "",
+            "clickSound": "",
+            "sharedHelper": "ModalTransition",
+            "touchBehavior": "Captures touch within modal frame"
+          }
+        },
+        {
+          "id": "comp_toggle_music",
+          "primitive": "SettingsRow",
+          "requirementId": "toggle_music",
+          "label": "Music",
+          "semanticAction": "toggle_music",
+          "hierarchy": "secondary",
+          "groupId": "group_settings_content",
+          "nodeName": "ToggleMusic",
+          "regionId": "reg_modal_settings",
+          "paletteRole": "neutralBackground",
+          "typographyRole": "body",
+          "visualTreatment": "component_surface: rounded dark navy row with ivory label on left and cyan/gold ON-OFF pill switch on right",
+          "size": {
+            "desktop": "Width 390px, Height 52px",
+            "mobile": "Width 270px, Height 48px",
+            "minTouchTarget": 48
+          },
+          "icon": {
+            "enabled": true,
+            "semanticRole": "button_icon",
+            "family": "skybound_vector_slate",
+            "assetStrategy": "project",
+            "size": 18,
+            "padding": 4,
+            "visualWeight": "medium",
+            "perspective": "flat",
+            "edgeTreatment": "smooth",
+            "shadowTreatment": "none",
+            "paletteMode": "monochrome"
+          },
+          "interaction": {
+            "hoverAnimation": "Background shifts to soft teal tint, toggle handle expands slightly",
+            "pressAnimation": "Toggle knob slides horizontally with smooth spring damped transition",
+            "hoverSound": "snd_hover",
+            "clickSound": "snd_click",
+            "sharedHelper": "ToggleEffects",
+            "touchBehavior": "Tap anywhere on row to flip toggle state"
+          }
+        },
+        {
+          "id": "comp_toggle_sound",
+          "primitive": "SettingsRow",
+          "requirementId": "toggle_sound",
+          "label": "Sound Effects",
+          "semanticAction": "toggle_sound",
+          "hierarchy": "secondary",
+          "groupId": "group_settings_content",
+          "nodeName": "ToggleSound",
+          "regionId": "reg_modal_settings",
+          "paletteRole": "neutralBackground",
+          "typographyRole": "body",
+          "visualTreatment": "component_surface: rounded dark navy row with ivory label on left and cyan/gold ON-OFF pill switch on right",
+          "size": {
+            "desktop": "Width 390px, Height 52px",
+            "mobile": "Width 270px, Height 48px",
+            "minTouchTarget": 48
+          },
+          "icon": {
+            "enabled": true,
+            "semanticRole": "button_icon",
+            "family": "skybound_vector_slate",
+            "assetStrategy": "project",
+            "size": 18,
+            "padding": 4,
+            "visualWeight": "medium",
+            "perspective": "flat",
+            "edgeTreatment": "smooth",
+            "shadowTreatment": "none",
+            "paletteMode": "monochrome"
+          },
+          "interaction": {
+            "hoverAnimation": "Background shifts to soft teal tint, toggle handle expands slightly",
+            "pressAnimation": "Toggle knob slides horizontally with smooth spring damped transition",
+            "hoverSound": "snd_hover",
+            "clickSound": "snd_click",
+            "sharedHelper": "ToggleEffects",
+            "touchBehavior": "Tap anywhere on row to flip toggle state"
+          }
+        },
+        {
+          "id": "comp_btn_close_settings",
+          "primitive": "MenuButton",
+          "requirementId": "btn_close_settings",
+          "label": "CLOSE",
+          "semanticAction": "close_settings",
+          "hierarchy": "tertiary",
+          "groupId": "group_settings_content",
+          "nodeName": "BtnCloseSettings",
+          "regionId": "reg_modal_settings",
+          "paletteRole": "accent",
+          "typographyRole": "button",
+          "visualTreatment": "component_surface: circular or compact rectangular cyan button with close cross icon",
+          "size": {
+            "desktop": "Width 140px, Height 44px",
+            "mobile": "Width 120px, Height 44px",
+            "minTouchTarget": 44
+          },
+          "icon": {
+            "enabled": true,
+            "semanticRole": "close",
+            "family": "skybound_vector_slate",
+            "assetStrategy": "approved",
+            "size": 18,
+            "padding": 4,
+            "visualWeight": "medium",
+            "perspective": "flat",
+            "edgeTreatment": "smooth",
+            "shadowTreatment": "none",
+            "paletteMode": "monochrome"
+          },
+          "interaction": {
+            "hoverAnimation": "Icon rotates 90deg, button surface darkens slightly",
+            "pressAnimation": "Scale down to 0.92x",
+            "hoverSound": "snd_hover",
+            "clickSound": "snd_click",
+            "sharedHelper": "ButtonEffects",
+            "touchBehavior": "Touch release closes settings modal"
+          }
+        },
+        {
+          "id": "comp_panel_credits",
+          "primitive": "ModalWindow",
+          "requirementId": "panel_credits",
+          "label": "CREDITS",
+          "semanticAction": "",
+          "hierarchy": "secondary",
+          "groupId": "group_modals",
+          "nodeName": "PanelCredits",
+          "regionId": "reg_modal_credits",
+          "paletteRole": "neutralSurface",
+          "typographyRole": "heading",
+          "visualTreatment": "panel_surface: deep navy window (#1C2541) with cyan top border rim (#00B4D8), warm ivory credits text, rounded corners (16px), and shadow blur",
+          "size": {
+            "desktop": "Width 480px, Height 360px",
+            "mobile": "Width 320px, Height 340px",
+            "minTouchTarget": 0
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "",
+            "assetStrategy": "procedural",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "light",
+            "perspective": "flat",
+            "edgeTreatment": "none",
+            "shadowTreatment": "none",
+            "paletteMode": "monochrome"
+          },
+          "interaction": {
+            "hoverAnimation": "None",
+            "pressAnimation": "None",
+            "hoverSound": "",
+            "clickSound": "",
+            "sharedHelper": "ModalTransition",
+            "touchBehavior": "Dismisses when backdrop is tapped or close pressed"
+          }
+        },
+        {
+          "id": "comp_btn_close_credits",
+          "primitive": "MenuButton",
+          "requirementId": "btn_close_credits",
+          "label": "CLOSE",
+          "semanticAction": "close_credits",
+          "hierarchy": "tertiary",
+          "groupId": "group_credits_content",
+          "nodeName": "BtnCloseCredits",
+          "regionId": "reg_modal_credits",
+          "paletteRole": "accent",
+          "typographyRole": "button",
+          "visualTreatment": "component_surface: circular or compact rectangular cyan button with close cross icon",
+          "size": {
+            "desktop": "Width 140px, Height 44px",
+            "mobile": "Width 120px, Height 44px",
+            "minTouchTarget": 44
+          },
+          "icon": {
+            "enabled": true,
+            "semanticRole": "close",
+            "family": "skybound_vector_slate",
+            "assetStrategy": "approved",
+            "size": 18,
+            "padding": 4,
+            "visualWeight": "medium",
+            "perspective": "flat",
+            "edgeTreatment": "smooth",
+            "shadowTreatment": "none",
+            "paletteMode": "monochrome"
+          },
+          "interaction": {
+            "hoverAnimation": "Icon rotates 90deg, button surface darkens slightly",
+            "pressAnimation": "Scale down to 0.92x",
+            "hoverSound": "snd_hover",
+            "clickSound": "snd_click",
+            "sharedHelper": "ButtonEffects",
+            "touchBehavior": "Touch release closes credits modal"
+          }
+        }
+      ],
+      "iconSystem": {
+        "family": "skybound_vector_slate",
+        "styleDescription": "Clean geometric vector icons featuring sharp adventure-style edges, uniform line weights, high contrast ivory/cyan fills, and subtle outer drop shadow.",
+        "visualWeight": "bold",
+        "perspective": "flat",
+        "edgeTreatment": "sharp",
+        "shadowTreatment": "subtle_drop",
+        "paletteMode": "monochrome",
+        "padding": 6,
+        "iconToButtonRatio": 0.35
+      },
+      "motionSystem": {
+        "hover": "Smooth scale 1.0 to 1.04 with 180ms cubic-bezier transition, surface highlight fill alpha modulation",
+        "press": "Scale compress to 0.95 with 80ms quick response",
+        "entrance": "Main hero & buttons slide in from left (offset -40px) with fade-in over 350ms quad-out; modals scale up 0.9x to 1.0x with background dim transition over 250ms",
+        "release": "Return to hover or default resting state over 150ms",
+        "durations": {
+          "hover": 180,
+          "press": 80,
+          "entrance": 350,
+          "release": 150
+        },
+        "reducedMotion": "Disable spatial displacement animations; replace with simple 100ms fade/opacity state changes",
+        "touchBehavior": "Instant visual press feedback upon touch down; trigger action on TouchEnded inside boundary without synthetic hover stickiness"
+      },
+      "audioSystem": {
+        "enabled": true,
+        "hover": "snd_hover",
+        "click": "snd_click",
+        "volume": 0.2,
+        "debounceMs": 150,
+        "touchBehavior": "Suppress hover sounds on touch inputs; debounce click audio by 150ms to prevent rapid activation spam",
+        "fallbackBehavior": "Silent operation without throwing script execution errors if audio asset failed to preload"
+      },
+      "layoutPlan": {
+        "safeArea": {
+          "x": 0.04,
+          "y": 0.05,
+          "width": 0.92,
+          "height": 0.9
+        },
+        "regions": [
+          {
+            "id": "reg_background",
+            "purpose": "Full-screen underlying sky backdrop framing",
+            "componentIds": [
+              "comp_bg_sky"
+            ],
+            "desktop": {
+              "arrangement": "Absolute fill canvas frame",
+              "bounds": {
+                "x": 0,
+                "y": 0,
+                "width": 1,
+                "height": 1
+              },
+              "minTouchTarget": 0,
+              "safeZoneBehavior": "Ignore safe areas to cover full viewport",
+              "textScaling": "None",
+              "iconScaling": "None",
+              "spacing": 0,
+              "layoutConstructs": [
+                "Frame"
+              ]
+            },
+            "mobile": {
+              "arrangement": "Absolute fill canvas frame",
+              "bounds": {
+                "x": 0,
+                "y": 0,
+                "width": 1,
+                "height": 1
+              },
+              "minTouchTarget": 0,
+              "safeZoneBehavior": "Ignore safe areas to cover full viewport",
+              "textScaling": "None",
+              "iconScaling": "None",
+              "spacing": 0,
+              "layoutConstructs": [
+                "Frame"
+              ]
+            }
+          },
+          {
+            "id": "reg_hero_title",
+            "purpose": "Branding hero title and artistic divider anchor",
+            "componentIds": [
+              "comp_title_skybound",
+              "comp_decor_divider"
+            ],
+            "desktop": {
+              "arrangement": "Vertical top-left aligned stack with 12px gap",
+              "bounds": {
+                "x": 0.08,
+                "y": 0.18,
+                "width": 0.4,
+                "height": 0.18
+              },
+              "minTouchTarget": 0,
+              "safeZoneBehavior": "Respect left and top screen safe margins",
+              "textScaling": "UITextSizeConstraint max 64px min 32px",
+              "iconScaling": "None",
+              "spacing": 12,
+              "layoutConstructs": [
+                "UIListLayout",
+                "UIPadding"
+              ]
+            },
+            "mobile": {
+              "arrangement": "Vertical top-center aligned stack with 8px gap",
+              "bounds": {
+                "x": 0.05,
+                "y": 0.1,
+                "width": 0.9,
+                "height": 0.16
+              },
+              "minTouchTarget": 0,
+              "safeZoneBehavior": "Respect top notch safe area",
+              "textScaling": "UITextSizeConstraint max 40px min 26px",
+              "iconScaling": "None",
+              "spacing": 8,
+              "layoutConstructs": [
+                "UIListLayout",
+                "UIPadding"
+              ]
+            }
+          },
+          {
+            "id": "reg_main_navigation",
+            "purpose": "Primary player action dock containing Play, Settings, and Credits CTA buttons",
+            "componentIds": [
+              "comp_btn_play",
+              "comp_btn_settings",
+              "comp_btn_credits"
+            ],
+            "desktop": {
+              "arrangement": "Vertical left-aligned stack with 16px gap",
+              "bounds": {
+                "x": 0.08,
+                "y": 0.42,
+                "width": 0.3,
+                "height": 0.4
+              },
+              "minTouchTarget": 48,
+              "safeZoneBehavior": "Anchor to left side safe zone boundary",
+              "textScaling": "Fixed button typography size",
+              "iconScaling": "Fixed 24px size constraints",
+              "spacing": 16,
+              "layoutConstructs": [
+                "UIListLayout",
+                "UIPadding"
+              ]
+            },
+            "mobile": {
+              "arrangement": "Vertical center-aligned stack with 14px gap",
+              "bounds": {
+                "x": 0.15,
+                "y": 0.34,
+                "width": 0.7,
+                "height": 0.46
+              },
+              "minTouchTarget": 48,
+              "safeZoneBehavior": "Center horizontally inside screen safe zone",
+              "textScaling": "UITextSizeConstraint scaling",
+              "iconScaling": "Fixed 24px size constraints",
+              "spacing": 14,
+              "layoutConstructs": [
+                "UIListLayout",
+                "UIPadding"
+              ]
+            }
+          },
+          {
+            "id": "reg_version_footer",
+            "purpose": "Subtle lower-left version build metadata display",
+            "componentIds": [
+              "comp_lbl_version"
+            ],
+            "desktop": {
+              "arrangement": "Bottom-left corner absolute position",
+              "bounds": {
+                "x": 0.08,
+                "y": 0.92,
+                "width": 0.15,
+                "height": 0.04
+              },
+              "minTouchTarget": 0,
+              "safeZoneBehavior": "Respect bottom and left screen safe zones",
+              "textScaling": "Fixed caption size",
+              "iconScaling": "None",
+              "spacing": 0,
+              "layoutConstructs": [
+                "Frame"
+              ]
+            },
+            "mobile": {
+              "arrangement": "Bottom-center position",
+              "bounds": {
+                "x": 0.35,
+                "y": 0.92,
+                "width": 0.3,
+                "height": 0.04
+              },
+              "minTouchTarget": 0,
+              "safeZoneBehavior": "Respect bottom bar safe zone",
+              "textScaling": "Fixed caption size",
+              "iconScaling": "None",
+              "spacing": 0,
+              "layoutConstructs": [
+                "Frame"
+              ]
+            }
+          },
+          {
+            "id": "reg_modal_settings",
+            "purpose": "Centered pop-up panel for audio and game configuration options",
+            "componentIds": [
+              "comp_panel_settings",
+              "comp_toggle_music",
+              "comp_toggle_sound",
+              "comp_btn_close_settings"
+            ],
+            "desktop": {
+              "arrangement": "Center-anchored modal panel with vertical list layout inside",
+              "bounds": {
+                "x": 0.3,
+                "y": 0.25,
+                "width": 0.4,
+                "height": 0.5
+              },
+              "minTouchTarget": 44,
+              "safeZoneBehavior": "Centrally aligned above dim backdrop",
+              "textScaling": "Responsive heading & body bounds",
+              "iconScaling": "Fixed 18px",
+              "spacing": 16,
+              "layoutConstructs": [
+                "UIListLayout",
+                "UIPadding",
+                "UICorner",
+                "UIStroke"
+              ]
+            },
+            "mobile": {
+              "arrangement": "Center-anchored modal panel optimized for mobile screen ratio",
+              "bounds": {
+                "x": 0.08,
+                "y": 0.18,
+                "width": 0.84,
+                "height": 0.64
+              },
+              "minTouchTarget": 44,
+              "safeZoneBehavior": "Centrally aligned with full safe padding",
+              "textScaling": "Mobile scaled typography",
+              "iconScaling": "Fixed 18px",
+              "spacing": 12,
+              "layoutConstructs": [
+                "UIListLayout",
+                "UIPadding",
+                "UICorner",
+                "UIStroke"
+              ]
+            }
+          },
+          {
+            "id": "reg_modal_credits",
+            "purpose": "Centered dismissible pop-up panel showcasing attribution and development credits",
+            "componentIds": [
+              "comp_panel_credits",
+              "comp_btn_close_credits"
+            ],
+            "desktop": {
+              "arrangement": "Center-anchored modal window frame",
+              "bounds": {
+                "x": 0.28,
+                "y": 0.22,
+                "width": 0.44,
+                "height": 0.56
+              },
+              "minTouchTarget": 44,
+              "safeZoneBehavior": "Centrally aligned above dim backdrop",
+              "textScaling": "Standard body scaling",
+              "iconScaling": "Fixed 18px",
+              "spacing": 16,
+              "layoutConstructs": [
+                "UIListLayout",
+                "UIPadding",
+                "UICorner",
+                "UIStroke"
+              ]
+            },
+            "mobile": {
+              "arrangement": "Center-anchored modal frame optimized for touch scroll",
+              "bounds": {
+                "x": 0.08,
+                "y": 0.16,
+                "width": 0.84,
+                "height": 0.68
+              },
+              "minTouchTarget": 44,
+              "safeZoneBehavior": "Centrally aligned with full safe padding",
+              "textScaling": "Mobile scaled typography",
+              "iconScaling": "Fixed 18px",
+              "spacing": 12,
+              "layoutConstructs": [
+                "UIListLayout",
+                "UIPadding",
+                "UICorner",
+                "UIStroke"
+              ]
+            }
+          }
+        ],
+        "anchors": [
+          {
+            "regionId": "reg_hero_title",
+            "relativeTo": "Screen",
+            "alignment": "TopLeft"
+          },
+          {
+            "regionId": "reg_main_navigation",
+            "relativeTo": "reg_hero_title",
+            "alignment": "Below"
+          },
+          {
+            "regionId": "reg_version_footer",
+            "relativeTo": "Screen",
+            "alignment": "BottomLeft"
+          },
+          {
+            "regionId": "reg_modal_settings",
+            "relativeTo": "Screen",
+            "alignment": "Center"
+          },
+          {
+            "regionId": "reg_modal_credits",
+            "relativeTo": "Screen",
+            "alignment": "Center"
+          }
+        ],
+        "hierarchyOrder": [
+          "reg_background",
+          "reg_hero_title",
+          "reg_main_navigation",
+          "reg_version_footer",
+          "reg_modal_settings",
+          "reg_modal_credits"
+        ],
+        "spacingScale": [
+          0,
+          4,
+          8,
+          12,
+          16,
+          20,
+          24,
+          32,
+          48,
+          64
+        ]
+      },
+      "responsiveStrategy": {
+        "desktop": "Left-aligned spacious linear stack for title and main CTA buttons, preserving right screen area for dramatic 3D sky island view; modals open as centered crisp framed cards.",
+        "mobile": "Reflow title and navigation to center column with wider touch targets (minimum 48-54px height); modals consume up to 84% screen width with clear dismiss tap targets.",
+        "tablet": "Balanced left-central alignment with enlarged text scale, retaining full 3D viewport exposure.",
+        "breakpoints": [
+          {
+            "id": "desktop",
+            "width": 1920,
+            "height": 1080
+          },
+          {
+            "id": "tablet",
+            "width": 1024,
+            "height": 768
+          },
+          {
+            "id": "phone_portrait",
+            "width": 414,
+            "height": 896
+          }
+        ],
+        "preservePrimaryHierarchy": true
+      },
+      "implementationNotes": [
+        "Build main frame structure with `_NexusDesktop` and `_NexusMobile` canonical groups for layout preview switching.",
+        "Harmonized icon attributes (size 24px, bold weight, sharp edge, drop shadow) across all main navigation buttons in `group_main_nav`.",
+        "Harmonized icon attributes (size 18px, medium weight, smooth edge, no shadow) across all settings modal content elements in `group_settings_content`.",
+        "Reduced UI audio volume to 0.20 and increased debounce interval to 150ms to ensure feedback sounds remain subtle and non-intrusive.",
+        "Ensure Settings and Credits modals maintain `Visible = false` on initial view load, activating with background overlay dim (`Transparency = 0.4`) when triggered."
+      ]
+    },
+    "editIntent": {
+      "scope": "targeted_edit",
+      "targetIds": [
+        "lbl_version",
+        "btn_play",
+        "btn_settings",
+        "btn_credits",
+        "btn_close_settings",
+        "btn_close_credits"
+      ],
+      "permittedChanges": [
+        "content",
+        "icons",
+        "decoration"
+      ],
+      "changeInstructions": [
+        "Remove the unrequested 'Roblox' text overlay artifact overlapping the main menu and hero title.",
+        "Correct the version label text (lbl_version) to exact 'v1.0.0'.",
+        "Ensure icons for Play, Settings, Credits, and Close buttons use the specified skybound_vector_slate icon family and distinct symbols rather than generic placeholders."
+      ],
+      "preserve": [
+        "The overall color palette (deep navy, warm ivory, teal, gold).",
+        "The general layout and positioning of the SKYBOUND title and main navigation buttons.",
+        "The distinct visual treatment of the 'PLAY GAME' button.",
+        "The responsive reflow strategy for desktop and mobile layouts.",
+        "Original product requirements",
+        "Unchanged component identities and behavior",
+        "All design categories outside permittedChanges"
+      ],
+      "removeElementIds": []
+    },
+    "assetReferences": [
+      {
+        "refId": "asset_asset_991513550a8249a6a0109de63ddb4c5a",
+        "canonicalAssetId": "asset_991513550a8249a6a0109de63ddb4c5a",
+        "name": "UI panel_surface",
+        "kind": "image",
+        "robloxAssetId": null,
+        "status": "generated",
+        "iconMetadata": {
+          "semanticRole": "",
+          "styleFamily": "",
+          "visualWeight": "",
+          "strokeWeight": "",
+          "perspective": "",
+          "paletteMode": "",
+          "palette": [
+            "#00B4D8",
+            "#FFD166",
+            "#48CAE4",
+            "#2EC4B6",
+            "#E63946",
+            "#0B132B",
+            "#1C2541",
+            "#FDF0D5"
+          ],
+          "background": "transparent",
+          "edgeTreatment": "",
+          "shadowTreatment": "",
+          "padding": null,
+          "iconToButtonRatio": null,
+          "consistencyGroup": ""
+        },
+        "artworkMetadata": {
+          "schemaVersion": 1,
+          "processingVersion": 2,
+          "generationUse": "ui_artwork",
+          "role": "panel_surface",
+          "styleFingerprint": "366719dd2e181ce07e00b4df3c43714f7319a3903ffea3f5fe7d5a476cc46ed8",
+          "componentIds": [
+            "comp_panel_credits"
+          ],
+          "nodeNames": [
+            "PanelCredits"
+          ],
+          "requirementIds": [],
+          "required": false,
+          "width": 512,
+          "height": 512,
+          "renderStrategy": "image_9slice",
+          "scaleType": "Slice",
+          "tintable": true,
+          "sliceCenter": [
+            96,
+            96,
+            416,
+            416
+          ],
+          "sliceScale": 0.2
+        },
+        "provenance": null,
+        "previewUrl": null,
+        "semanticRole": "panel_surface",
+        "requirementId": null,
+        "required": false
+      },
+      {
+        "refId": "asset_asset_c1f2d36cdd3345d794b7484db0be0a35",
+        "canonicalAssetId": "asset_c1f2d36cdd3345d794b7484db0be0a35",
+        "name": "UI component_surface",
+        "kind": "image",
+        "robloxAssetId": null,
+        "status": "generated",
+        "iconMetadata": {
+          "semanticRole": "",
+          "styleFamily": "",
+          "visualWeight": "",
+          "strokeWeight": "",
+          "perspective": "",
+          "paletteMode": "",
+          "palette": [
+            "#00B4D8",
+            "#FFD166",
+            "#48CAE4",
+            "#2EC4B6",
+            "#E63946",
+            "#0B132B",
+            "#1C2541",
+            "#FDF0D5"
+          ],
+          "background": "transparent",
+          "edgeTreatment": "",
+          "shadowTreatment": "",
+          "padding": null,
+          "iconToButtonRatio": null,
+          "consistencyGroup": ""
+        },
+        "artworkMetadata": {
+          "schemaVersion": 1,
+          "processingVersion": 2,
+          "generationUse": "ui_artwork",
+          "role": "component_surface",
+          "styleFingerprint": "bbd8e2119c4125b1458043ea8dd4b7beca6dc21d1d41832b65b1cb3f51fa0b48",
+          "componentIds": [
+            "comp_btn_play"
+          ],
+          "nodeNames": [
+            "BtnPlay"
+          ],
+          "requirementIds": [],
+          "required": false,
+          "width": 512,
+          "height": 512,
+          "renderStrategy": "image_9slice",
+          "scaleType": "Slice",
+          "tintable": true,
+          "sliceCenter": [
+            96,
+            96,
+            416,
+            416
+          ],
+          "sliceScale": 0.2
+        },
+        "provenance": null,
+        "previewUrl": null,
+        "semanticRole": "component_surface",
+        "requirementId": null,
+        "required": false
+      },
+      {
+        "refId": "asset_asset_02d3c8eba7a4481db446147a12db63df",
+        "canonicalAssetId": "asset_02d3c8eba7a4481db446147a12db63df",
+        "name": "UI background",
+        "kind": "image",
+        "robloxAssetId": null,
+        "status": "generated",
+        "iconMetadata": {
+          "semanticRole": "",
+          "styleFamily": "",
+          "visualWeight": "",
+          "strokeWeight": "",
+          "perspective": "",
+          "paletteMode": "",
+          "palette": [
+            "#00B4D8",
+            "#FFD166",
+            "#48CAE4",
+            "#2EC4B6",
+            "#E63946",
+            "#0B132B",
+            "#1C2541",
+            "#FDF0D5"
+          ],
+          "background": "background_enabled",
+          "edgeTreatment": "",
+          "shadowTreatment": "",
+          "padding": null,
+          "iconToButtonRatio": null,
+          "consistencyGroup": ""
+        },
+        "artworkMetadata": {
+          "schemaVersion": 1,
+          "processingVersion": 2,
+          "generationUse": "ui_artwork",
+          "role": "background",
+          "styleFingerprint": "1fc2b5ef88ca24fcf0f69b739e64c590da4c4b7c9ec680fbef7262e7f02b8a71",
+          "componentIds": [
+            "comp_bg_sky"
+          ],
+          "nodeNames": [
+            "BackgroundSkyClouds"
+          ],
+          "requirementIds": [],
+          "required": false,
+          "width": 512,
+          "height": 512,
+          "renderStrategy": "image_crop",
+          "scaleType": "Crop",
+          "tintable": false
+        },
+        "provenance": null,
+        "previewUrl": null,
+        "semanticRole": "background",
+        "requirementId": null,
+        "required": false
+      },
+      {
+        "refId": "asset_asset_8c0b38b992904a039f01307911701d98",
+        "canonicalAssetId": "asset_8c0b38b992904a039f01307911701d98",
+        "name": "UI badge_decoration",
+        "kind": "image",
+        "robloxAssetId": null,
+        "status": "generated",
+        "iconMetadata": {
+          "semanticRole": "",
+          "styleFamily": "",
+          "visualWeight": "",
+          "strokeWeight": "",
+          "perspective": "",
+          "paletteMode": "",
+          "palette": [
+            "#00B4D8",
+            "#FFD166",
+            "#48CAE4",
+            "#2EC4B6",
+            "#E63946",
+            "#0B132B",
+            "#1C2541",
+            "#FDF0D5"
+          ],
+          "background": "transparent",
+          "edgeTreatment": "",
+          "shadowTreatment": "",
+          "padding": null,
+          "iconToButtonRatio": null,
+          "consistencyGroup": ""
+        },
+        "artworkMetadata": {
+          "schemaVersion": 1,
+          "processingVersion": 2,
+          "generationUse": "ui_artwork",
+          "role": "badge_decoration",
+          "styleFingerprint": "9c6996b98fabd857e1a2a0c6f8d34bd005092665e68239a7836ef47b7e139567",
+          "componentIds": [
+            "comp_lbl_version"
+          ],
+          "nodeNames": [
+            "LblVersion"
+          ],
+          "requirementIds": [],
+          "required": false,
+          "width": 512,
+          "height": 480,
+          "renderStrategy": "image_fit",
+          "scaleType": "Fit",
+          "tintable": false
+        },
+        "provenance": null,
+        "previewUrl": null,
+        "semanticRole": "badge_decoration",
+        "requirementId": null,
+        "required": false
+      },
+      {
+        "refId": "asset_asset_d563402d9d3f4755ae38eebb5b8a0470",
+        "canonicalAssetId": "asset_d563402d9d3f4755ae38eebb5b8a0470",
+        "name": "UI ornament",
+        "kind": "image",
+        "robloxAssetId": null,
+        "status": "generated",
+        "iconMetadata": {
+          "semanticRole": "",
+          "styleFamily": "",
+          "visualWeight": "",
+          "strokeWeight": "",
+          "perspective": "",
+          "paletteMode": "",
+          "palette": [
+            "#00B4D8",
+            "#FFD166",
+            "#48CAE4",
+            "#2EC4B6",
+            "#E63946",
+            "#0B132B",
+            "#1C2541",
+            "#FDF0D5"
+          ],
+          "background": "transparent",
+          "edgeTreatment": "",
+          "shadowTreatment": "",
+          "padding": null,
+          "iconToButtonRatio": null,
+          "consistencyGroup": ""
+        },
+        "artworkMetadata": {
+          "schemaVersion": 1,
+          "processingVersion": 2,
+          "generationUse": "ui_artwork",
+          "role": "ornament",
+          "styleFingerprint": "a5ed0bf8e77bc2221d066b7d1e46f21211d4d8bf5b75f15c3c9f1144e9477bc9",
+          "componentIds": [
+            "comp_title_skybound"
+          ],
+          "nodeNames": [
+            "TitleSkybound"
+          ],
+          "requirementIds": [],
+          "required": false,
+          "width": 512,
+          "height": 310,
+          "renderStrategy": "image_fit",
+          "scaleType": "Fit",
+          "tintable": false
+        },
+        "provenance": null,
+        "previewUrl": null,
+        "semanticRole": "ornament",
+        "requirementId": null,
+        "required": false
+      }
+    ],
+    "iconResolutions": [
+      {
+        "componentId": "comp_btn_play",
+        "nodeName": "BtnPlay",
+        "semanticRole": "play",
+        "groupId": "group_main_nav",
+        "assetRefId": null,
+        "source": "procedural",
+        "resolution": "procedural",
+        "status": "procedural",
+        "resolved": true,
+        "procedural": "play",
+        "uri": null,
+        "family": "nexus_procedural_solid_v1",
+        "styleFamily": "nexus_procedural_solid_v1",
+        "size": 24,
+        "padding": 8,
+        "metadata": {
+          "semanticRole": "play",
+          "styleFamily": "nexus_procedural_solid_v1",
+          "visualWeight": "heavy",
+          "strokeWeight": "solid",
+          "perspective": "front",
+          "paletteMode": "monochrome",
+          "palette": [],
+          "background": "transparent",
+          "edgeTreatment": "rounded",
+          "shadowTreatment": "none",
+          "padding": 8,
+          "iconToButtonRatio": 0.35,
+          "consistencyGroup": "group_main_nav"
+        }
+      },
+      {
+        "componentId": "comp_btn_settings",
+        "nodeName": "BtnSettings",
+        "semanticRole": "settings",
+        "groupId": "group_main_nav",
+        "assetRefId": null,
+        "source": "procedural",
+        "resolution": "procedural",
+        "status": "procedural",
+        "resolved": true,
+        "procedural": "settings",
+        "uri": null,
+        "family": "nexus_procedural_solid_v1",
+        "styleFamily": "nexus_procedural_solid_v1",
+        "size": 24,
+        "padding": 8,
+        "metadata": {
+          "semanticRole": "settings",
+          "styleFamily": "nexus_procedural_solid_v1",
+          "visualWeight": "heavy",
+          "strokeWeight": "solid",
+          "perspective": "front",
+          "paletteMode": "monochrome",
+          "palette": [],
+          "background": "transparent",
+          "edgeTreatment": "rounded",
+          "shadowTreatment": "none",
+          "padding": 8,
+          "iconToButtonRatio": 0.35,
+          "consistencyGroup": "group_main_nav"
+        }
+      },
+      {
+        "componentId": "comp_btn_credits",
+        "nodeName": "BtnCredits",
+        "semanticRole": "credits",
+        "groupId": "group_main_nav",
+        "assetRefId": null,
+        "source": "procedural",
+        "resolution": "procedural",
+        "status": "procedural",
+        "resolved": true,
+        "procedural": "info",
+        "uri": null,
+        "family": "nexus_procedural_solid_v1",
+        "styleFamily": "nexus_procedural_solid_v1",
+        "size": 24,
+        "padding": 8,
+        "metadata": {
+          "semanticRole": "credits",
+          "styleFamily": "nexus_procedural_solid_v1",
+          "visualWeight": "heavy",
+          "strokeWeight": "solid",
+          "perspective": "front",
+          "paletteMode": "monochrome",
+          "palette": [],
+          "background": "transparent",
+          "edgeTreatment": "rounded",
+          "shadowTreatment": "none",
+          "padding": 8,
+          "iconToButtonRatio": 0.35,
+          "consistencyGroup": "group_main_nav"
+        }
+      },
+      {
+        "componentId": "comp_toggle_music",
+        "nodeName": "ToggleMusic",
+        "semanticRole": "button",
+        "groupId": "group_settings_content",
+        "assetRefId": null,
+        "source": "procedural",
+        "resolution": "procedural",
+        "status": "procedural",
+        "resolved": true,
+        "procedural": "info",
+        "uri": null,
+        "family": "nexus_procedural_solid_v1",
+        "styleFamily": "nexus_procedural_solid_v1",
+        "size": 18,
+        "padding": 4,
+        "metadata": {
+          "semanticRole": "button",
+          "styleFamily": "nexus_procedural_solid_v1",
+          "visualWeight": "heavy",
+          "strokeWeight": "solid",
+          "perspective": "front",
+          "paletteMode": "monochrome",
+          "palette": [],
+          "background": "transparent",
+          "edgeTreatment": "rounded",
+          "shadowTreatment": "none",
+          "padding": 4,
+          "iconToButtonRatio": 0.35,
+          "consistencyGroup": "group_settings_content"
+        }
+      },
+      {
+        "componentId": "comp_toggle_sound",
+        "nodeName": "ToggleSound",
+        "semanticRole": "button",
+        "groupId": "group_settings_content",
+        "assetRefId": null,
+        "source": "procedural",
+        "resolution": "procedural",
+        "status": "procedural",
+        "resolved": true,
+        "procedural": "info",
+        "uri": null,
+        "family": "nexus_procedural_solid_v1",
+        "styleFamily": "nexus_procedural_solid_v1",
+        "size": 18,
+        "padding": 4,
+        "metadata": {
+          "semanticRole": "button",
+          "styleFamily": "nexus_procedural_solid_v1",
+          "visualWeight": "heavy",
+          "strokeWeight": "solid",
+          "perspective": "front",
+          "paletteMode": "monochrome",
+          "palette": [],
+          "background": "transparent",
+          "edgeTreatment": "rounded",
+          "shadowTreatment": "none",
+          "padding": 4,
+          "iconToButtonRatio": 0.35,
+          "consistencyGroup": "group_settings_content"
+        }
+      },
+      {
+        "componentId": "comp_btn_close_settings",
+        "nodeName": "BtnCloseSettings",
+        "semanticRole": "close",
+        "groupId": "group_settings_content",
+        "assetRefId": null,
+        "source": "procedural",
+        "resolution": "procedural",
+        "status": "procedural",
+        "resolved": true,
+        "procedural": "close",
+        "uri": null,
+        "family": "nexus_procedural_solid_v1",
+        "styleFamily": "nexus_procedural_solid_v1",
+        "size": 18,
+        "padding": 4,
+        "metadata": {
+          "semanticRole": "close",
+          "styleFamily": "nexus_procedural_solid_v1",
+          "visualWeight": "heavy",
+          "strokeWeight": "solid",
+          "perspective": "front",
+          "paletteMode": "monochrome",
+          "palette": [],
+          "background": "transparent",
+          "edgeTreatment": "rounded",
+          "shadowTreatment": "none",
+          "padding": 4,
+          "iconToButtonRatio": 0.35,
+          "consistencyGroup": "group_settings_content"
+        }
+      },
+      {
+        "componentId": "comp_btn_close_credits",
+        "nodeName": "BtnCloseCredits",
+        "semanticRole": "close",
+        "groupId": "group_credits_content",
+        "assetRefId": null,
+        "source": "procedural",
+        "resolution": "procedural",
+        "status": "procedural",
+        "resolved": true,
+        "procedural": "close",
+        "uri": null,
+        "family": "nexus_procedural_solid_v1",
+        "styleFamily": "nexus_procedural_solid_v1",
+        "size": 18,
+        "padding": 4,
+        "metadata": {
+          "semanticRole": "close",
+          "styleFamily": "nexus_procedural_solid_v1",
+          "visualWeight": "heavy",
+          "strokeWeight": "solid",
+          "perspective": "front",
+          "paletteMode": "monochrome",
+          "palette": [],
+          "background": "transparent",
+          "edgeTreatment": "rounded",
+          "shadowTreatment": "none",
+          "padding": 4,
+          "iconToButtonRatio": 0.35,
+          "consistencyGroup": "group_credits_content"
+        }
+      }
+    ],
+    "assetWarnings": [
+      {
+        "code": "ASSET_BACKGROUND_REMOVAL_REQUIRED",
+        "role": "component_surface",
+        "componentIds": [
+          "comp_btn_close_settings",
+          "comp_btn_close_credits"
+        ],
+        "requirementIds": [],
+        "required": false,
+        "message": "component_surface is unavailable. Use a native Roblox surface."
+      },
+      {
+        "code": "ASSET_BACKGROUND_REMOVAL_REQUIRED",
+        "role": "panel_surface",
+        "componentIds": [
+          "comp_panel_settings"
+        ],
+        "requirementIds": [],
+        "required": false,
+        "message": "panel_surface is unavailable. Use a native Roblox surface."
+      },
+      {
+        "code": "ASSET_BACKGROUND_REMOVAL_REQUIRED",
+        "role": "component_surface",
+        "componentIds": [
+          "comp_btn_settings",
+          "comp_btn_credits"
+        ],
+        "requirementIds": [],
+        "required": false,
+        "message": "component_surface is unavailable. Use a native Roblox surface."
+      },
+      {
+        "code": "ASSET_BACKGROUND_REMOVAL_REQUIRED",
+        "role": "component_surface",
+        "componentIds": [
+          "comp_toggle_music",
+          "comp_toggle_sound"
+        ],
+        "requirementIds": [],
+        "required": false,
+        "message": "component_surface is unavailable. Use a native Roblox surface."
+      },
+      {
+        "code": "ASSET_BACKGROUND_REMOVAL_REQUIRED",
+        "role": "separator",
+        "componentIds": [
+          "comp_decor_divider"
+        ],
+        "requirementIds": [],
+        "required": false,
+        "message": "separator is unavailable. Omit the unavailable decoration."
+      },
+      {
+        "code": "UI_AUDIO_UNAVAILABLE",
+        "message": "Requested sounds have no usable verified Roblox audio asset. Keep sound hooks and report this gap; never invent a SoundId."
+      },
+      {
+        "code": "UI_ICON_GENERIC_FALLBACK",
+        "componentId": "comp_btn_credits",
+        "message": "No procedural credits glyph exists; use the coherent info glyph beside its readable label."
+      },
+      {
+        "code": "UI_ICON_FAMILY_FALLBACK",
+        "groupId": "group_main_nav",
+        "message": "The complete group_main_nav icon group uses nexus_procedural_solid_v1; matching published artwork was unavailable or inconsistent."
+      },
+      {
+        "code": "UI_ICON_GENERIC_FALLBACK",
+        "componentId": "comp_toggle_music",
+        "message": "No procedural button glyph exists; use the coherent info glyph beside its readable label."
+      },
+      {
+        "code": "UI_ICON_GENERIC_FALLBACK",
+        "componentId": "comp_toggle_sound",
+        "message": "No procedural button glyph exists; use the coherent info glyph beside its readable label."
+      },
+      {
+        "code": "UI_ICON_FAMILY_FALLBACK",
+        "groupId": "group_settings_content",
+        "message": "The complete group_settings_content icon group uses nexus_procedural_solid_v1; matching published artwork was unavailable or inconsistent."
+      },
+      {
+        "code": "UI_ICON_FAMILY_FALLBACK",
+        "groupId": "group_credits_content",
+        "message": "The complete group_credits_content icon group uses nexus_procedural_solid_v1; matching published artwork was unavailable or inconsistent."
+      }
+    ],
+    "lastReview": {
+      "accepted": false,
+      "acceptable": false,
+      "scores": {
+        "promptCompliance": 9,
+        "composition": 2,
+        "hierarchy": 4,
+        "spacing": 1,
+        "alignment": 2,
+        "componentConsistency": 7,
+        "typography": 3,
+        "paletteDiscipline": 7,
+        "iconConsistency": 7,
+        "visualDensity": 1,
+        "polish": 0,
+        "responsiveness": 2,
+        "originality": 6,
+        "robloxSuitability": 0
+      },
+      "reviewedPreviewIds": [
+        "preview_e8f5553fc55a808f4da79a08a56432d53ef82c7b57e8edf233f9d1ea8b1a5421_1",
+        "preview_08251ff6a203d957e686f29b0c71d85731f8fed15c74a38c26c5eb1b8e05a8f4_1",
+        "preview_65ccfff6f6951c84559662044e5dca22f7b6449ac2808e255d1f73d5ffce1b15_1"
+      ],
+      "issues": [
+        {
+          "previewId": "preview_e8f5553fc55a808f4da79a08a56432d53ef82c7b57e8edf233f9d1ea8b1a5421_1",
+          "category": "layout",
+          "severity": "critical",
+          "description": "A large, semi-transparent 'ROBLOX' watermark severely overlaps the primary 'PLAY GAME' button, secondary navigation buttons ('SETTINGS', 'CREDITS'), and partially obscures the 'SKYBOUND' title. This artifact renders the UI unusable and completely breaks the intended composition, hierarchy, and readability.",
+          "nodeIds": [
+            "root.1.3.2.1",
+            "root.1.3.3.2",
+            "root.1.3.3.3",
+            "root.1.3.3.4"
+          ],
+          "rejectionRule": "overlap"
+        },
+        {
+          "previewId": "preview_08251ff6a203d957e686f29b0c71d85731f8fed15c74a38c26c5eb1b8e05a8f4_1",
+          "category": "layout",
+          "severity": "critical",
+          "description": "The 'ROBLOX' watermark persists on the mobile layout, overlapping critical interactive elements ('PLAY GAME', 'SETTINGS', 'CREDITS') and the main title. This makes the UI unreadable and unresponsive, failing to provide a functional mobile experience.",
+          "nodeIds": [
+            "root.1.4.2.1",
+            "root.1.4.3.2",
+            "root.1.4.3.3",
+            "root.1.4.3.4"
+          ],
+          "rejectionRule": "overlap"
+        },
+        {
+          "previewId": "preview_65ccfff6f6951c84559662044e5dca22f7b6449ac2808e255d1f73d5ffce1b15_1",
+          "category": "layout",
+          "severity": "critical",
+          "description": "The 'ROBLOX' watermark is also present and highly disruptive on the tablet viewport, obscuring the main navigation buttons and title. This issue is consistent across all device previews, indicating a fundamental problem with the UI capture or rendering.",
+          "nodeIds": [
+            "root.1.3.2.1",
+            "root.1.3.3.2",
+            "root.1.3.3.3",
+            "root.1.3.3.4"
+          ],
+          "rejectionRule": "overlap"
+        },
+        {
+          "previewId": "preview_e8f5553fc55a808f4da79a08a56432d53ef82c7b57e8edf233f9d1ea8b1a5421_1",
+          "category": "polish",
+          "severity": "critical",
+          "description": "The presence of the 'ROBLOX' watermark severely detracts from any polish or premium feel the UI might otherwise convey, making the entire interface appear unfinished and unprofessional.",
+          "nodeIds": [],
+          "rejectionRule": "none"
+        },
+        {
+          "previewId": "preview_e8f5553fc55a808f4da79a08a56432d53ef82c7b57e8edf233f9d1ea8b1a5421_1",
+          "category": "roblox_suitability",
+          "severity": "critical",
+          "description": "The watermark makes the UI unsuitable for a Roblox game, as it directly interferes with player interaction and readability of essential menu elements.",
+          "nodeIds": [],
+          "rejectionRule": "accidental_dead_zone"
+        }
+      ],
+      "criticalIssues": [
+        "The 'ROBLOX' watermark is present across all provided UI previews (desktop, phone, tablet), critically overlapping and obscuring the main title and all primary/secondary navigation buttons. This renders the UI unusable, unpolished, and completely unsuitable for a game. This is a fundamental issue that must be resolved before any further design evaluation can be meaningful."
+      ],
+      "repairInstructions": [
+        "Remove the 'ROBLOX' watermark from all UI previews. This artifact is critically damaging the presentation and functionality of the interface.",
+        "Ensure that UI captures or rendering processes do not introduce any unintended overlays or watermarks.",
+        "Re-render and resubmit the UI previews without the watermark for a proper design evaluation."
+      ],
+      "repairPlan": {
+        "preserve": [
+          "The overall layout structure of the main menu (title position, button stack, version label).",
+          "The chosen color palette (deep navy, warm ivory, teal, gold accents).",
+          "The distinct typography roles for title, buttons, and captions.",
+          "The general styling of the 'PLAY GAME' button as primary and 'SETTINGS'/'CREDITS' as secondary."
+        ],
+        "modify": [
+          "Adjust the UI rendering or capture settings to prevent the 'ROBLOX' watermark from appearing in any future previews.",
+          "Unplanned action in model: ModalBackdrop.",
+          "Requested hover implementation is unverified.",
+          "Requested sounds implementation is unverified.",
+          "Requested animations implementation is unverified.",
+          "Required asset unresolved: icon_play.",
+          "Required asset unresolved: icon_settings.",
+          "Required asset unresolved: icon_credits.",
+          "Required asset unresolved: icon_close.",
+          "Required asset unresolved: snd_hover.",
+          "Required asset unresolved: snd_click.",
+          "Required asset unresolved: hover_audio.",
+          "Required asset unresolved: click_audio."
+        ],
+        "remove": [
+          "The 'ROBLOX' watermark from all supplied preview images (preview_e8f5553fc55a808f4da79a08a56432d53ef82c7b57e8edf233f9d1ea8b1a5421_1, preview_08251ff6a203d957e686f29b0c71d85731f8fed15c74a38c26c5eb1b8e05a8f4_1, preview_65ccfff6f6951c84559662044e5dca22f7b6449ac2808e255d1f73d5ffce1b15_1)."
+        ],
+        "add": []
+      },
+      "acceptanceFailures": [
+        "composition: 2/10 is below 8/10",
+        "hierarchy: 4/10 is below 8/10",
+        "spacing: 1/10 is below 8/10",
+        "alignment: 2/10 is below 8/10",
+        "componentConsistency: 7/10 is below 8/10",
+        "typography: 3/10 is below 8/10",
+        "paletteDiscipline: 7/10 is below 8/10",
+        "iconConsistency: 7/10 is below 8/10",
+        "visualDensity: 1/10 is below 8/10",
+        "polish: 0/10 is below 8/10",
+        "responsiveness: 2/10 is below 8/10",
+        "originality: 6/10 is below 8/10",
+        "robloxSuitability: 0/10 is below 8/10",
+        "A large, semi-transparent 'ROBLOX' watermark severely overlaps the primary 'PLAY GAME' button, secondary navigation buttons ('SETTINGS', 'CREDITS'), and partially obscures the 'SKYBOUND' title. This artifact renders the UI unusable and completely breaks the intended composition, hierarchy, and readability.",
+        "The 'ROBLOX' watermark persists on the mobile layout, overlapping critical interactive elements ('PLAY GAME', 'SETTINGS', 'CREDITS') and the main title. This makes the UI unreadable and unresponsive, failing to provide a functional mobile experience.",
+        "The 'ROBLOX' watermark is also present and highly disruptive on the tablet viewport, obscuring the main navigation buttons and title. This issue is consistent across all device previews, indicating a fundamental problem with the UI capture or rendering.",
+        "The presence of the 'ROBLOX' watermark severely detracts from any polish or premium feel the UI might otherwise convey, making the entire interface appear unfinished and unprofessional.",
+        "The watermark makes the UI unsuitable for a Roblox game, as it directly interferes with player interaction and readability of essential menu elements.",
+        "The 'ROBLOX' watermark is present across all provided UI previews (desktop, phone, tablet), critically overlapping and obscuring the main title and all primary/secondary navigation buttons. This renders the UI unusable, unpolished, and completely unsuitable for a game. This is a fundamental issue that must be resolved before any further design evaluation can be meaningful.",
+        "The image critic rejected this revision."
+      ],
+      "sourceRevision": "cc8b933f310f9b95fca33652",
+      "previewIds": [
+        "preview_e8f5553fc55a808f4da79a08a56432d53ef82c7b57e8edf233f9d1ea8b1a5421_1",
+        "preview_08251ff6a203d957e686f29b0c71d85731f8fed15c74a38c26c5eb1b8e05a8f4_1",
+        "preview_65ccfff6f6951c84559662044e5dca22f7b6449ac2808e255d1f73d5ffce1b15_1"
+      ],
+      "reviewedAt": "2026-09-12T18:17:42.831Z",
+      "technicalCorrectness": {
+        "modelBuilt": true,
+        "runtimeVerified": false
+      },
+      "deterministicCompliance": {
+        "ok": false,
+        "valid": false,
+        "issues": [
+          "Unplanned action in model: ModalBackdrop.",
+          "Requested hover implementation is unverified.",
+          "Requested sounds implementation is unverified.",
+          "Requested animations implementation is unverified.",
+          "Required asset unresolved: icon_play.",
+          "Required asset unresolved: icon_settings.",
+          "Required asset unresolved: icon_credits.",
+          "Required asset unresolved: icon_close.",
+          "Required asset unresolved: snd_hover.",
+          "Required asset unresolved: snd_click.",
+          "Required asset unresolved: hover_audio.",
+          "Required asset unresolved: click_audio."
+        ],
+        "components": [
+          {
+            "id": "comp_bg_sky",
+            "requirementId": "bg_sky_clouds",
+            "semanticAction": "",
+            "hierarchy": "tertiary",
+            "groupId": "group_background",
+            "nodeIds": [
+              "root.1.1"
+            ],
+            "icon": {
+              "enabled": false,
+              "semanticRole": "",
+              "family": "",
+              "assetStrategy": "procedural",
+              "size": 16,
+              "padding": 0,
+              "visualWeight": "light",
+              "perspective": "flat",
+              "edgeTreatment": "none",
+              "shadowTreatment": "none",
+              "paletteMode": "monochrome"
+            }
+          },
+          {
+            "id": "comp_title_skybound",
+            "requirementId": "title_skybound",
+            "semanticAction": "",
+            "hierarchy": "primary",
+            "groupId": "group_hero",
+            "nodeIds": [
+              "root.1.3.2.1",
+              "root.1.4.2.1"
+            ],
+            "icon": {
+              "enabled": false,
+              "semanticRole": "",
+              "family": "",
+              "assetStrategy": "procedural",
+              "size": 16,
+              "padding": 0,
+              "visualWeight": "light",
+              "perspective": "flat",
+              "edgeTreatment": "none",
+              "shadowTreatment": "none",
+              "paletteMode": "monochrome"
+            }
+          },
+          {
+            "id": "comp_decor_divider",
+            "requirementId": "decor_divider",
+            "semanticAction": "",
+            "hierarchy": "tertiary",
+            "groupId": "group_hero",
+            "nodeIds": [
+              "root.1.3.2.2",
+              "root.1.4.2.2"
+            ],
+            "icon": {
+              "enabled": false,
+              "semanticRole": "",
+              "family": "",
+              "assetStrategy": "procedural",
+              "size": 16,
+              "padding": 0,
+              "visualWeight": "light",
+              "perspective": "flat",
+              "edgeTreatment": "none",
+              "shadowTreatment": "none",
+              "paletteMode": "monochrome"
+            }
+          },
+          {
+            "id": "comp_btn_play",
+            "requirementId": "btn_play",
+            "semanticAction": "start_game",
+            "hierarchy": "primary",
+            "groupId": "group_main_nav",
+            "nodeIds": [
+              "root.1.3.3.2",
+              "root.1.4.3.2"
+            ],
+            "icon": {
+              "enabled": true,
+              "semanticRole": "play",
+              "family": "skybound_vector_slate",
+              "assetStrategy": "approved",
+              "size": 24,
+              "padding": 8,
+              "visualWeight": "bold",
+              "perspective": "flat",
+              "edgeTreatment": "sharp",
+              "shadowTreatment": "subtle_drop",
+              "paletteMode": "monochrome"
+            }
+          },
+          {
+            "id": "comp_btn_settings",
+            "requirementId": "btn_settings",
+            "semanticAction": "open_settings",
+            "hierarchy": "secondary",
+            "groupId": "group_main_nav",
+            "nodeIds": [
+              "root.1.3.3.3",
+              "root.1.4.3.3"
+            ],
+            "icon": {
+              "enabled": true,
+              "semanticRole": "settings",
+              "family": "skybound_vector_slate",
+              "assetStrategy": "approved",
+              "size": 24,
+              "padding": 8,
+              "visualWeight": "bold",
+              "perspective": "flat",
+              "edgeTreatment": "sharp",
+              "shadowTreatment": "subtle_drop",
+              "paletteMode": "monochrome"
+            }
+          },
+          {
+            "id": "comp_btn_credits",
+            "requirementId": "btn_credits",
+            "semanticAction": "open_credits",
+            "hierarchy": "secondary",
+            "groupId": "group_main_nav",
+            "nodeIds": [
+              "root.1.3.3.4",
+              "root.1.4.3.4"
+            ],
+            "icon": {
+              "enabled": true,
+              "semanticRole": "credits",
+              "family": "skybound_vector_slate",
+              "assetStrategy": "approved",
+              "size": 24,
+              "padding": 8,
+              "visualWeight": "bold",
+              "perspective": "flat",
+              "edgeTreatment": "sharp",
+              "shadowTreatment": "subtle_drop",
+              "paletteMode": "monochrome"
+            }
+          },
+          {
+            "id": "comp_lbl_version",
+            "requirementId": "lbl_version",
+            "semanticAction": "",
+            "hierarchy": "tertiary",
+            "groupId": "group_footer",
+            "nodeIds": [
+              "root.1.3.4",
+              "root.1.4.4"
+            ],
+            "icon": {
+              "enabled": false,
+              "semanticRole": "",
+              "family": "skybound_vector_slate",
+              "assetStrategy": "procedural",
+              "size": 16,
+              "padding": 0,
+              "visualWeight": "light",
+              "perspective": "flat",
+              "edgeTreatment": "none",
+              "shadowTreatment": "none",
+              "paletteMode": "monochrome"
+            }
+          },
+          {
+            "id": "comp_panel_settings",
+            "requirementId": "panel_settings",
+            "semanticAction": "",
+            "hierarchy": "secondary",
+            "groupId": "group_modals",
+            "nodeIds": [
+              "root.2.2"
+            ],
+            "icon": {
+              "enabled": false,
+              "semanticRole": "",
+              "family": "",
+              "assetStrategy": "procedural",
+              "size": 16,
+              "padding": 0,
+              "visualWeight": "light",
+              "perspective": "flat",
+              "edgeTreatment": "none",
+              "shadowTreatment": "none",
+              "paletteMode": "monochrome"
+            }
+          },
+          {
+            "id": "comp_toggle_music",
+            "requirementId": "toggle_music",
+            "semanticAction": "toggle_music",
+            "hierarchy": "secondary",
+            "groupId": "group_settings_content",
+            "nodeIds": [
+              "root.2.2.5.2"
+            ],
+            "icon": {
+              "enabled": true,
+              "semanticRole": "button_icon",
+              "family": "skybound_vector_slate",
+              "assetStrategy": "project",
+              "size": 18,
+              "padding": 4,
+              "visualWeight": "medium",
+              "perspective": "flat",
+              "edgeTreatment": "smooth",
+              "shadowTreatment": "none",
+              "paletteMode": "monochrome"
+            }
+          },
+          {
+            "id": "comp_toggle_sound",
+            "requirementId": "toggle_sound",
+            "semanticAction": "toggle_sound",
+            "hierarchy": "secondary",
+            "groupId": "group_settings_content",
+            "nodeIds": [
+              "root.2.2.5.3"
+            ],
+            "icon": {
+              "enabled": true,
+              "semanticRole": "button_icon",
+              "family": "skybound_vector_slate",
+              "assetStrategy": "project",
+              "size": 18,
+              "padding": 4,
+              "visualWeight": "medium",
+              "perspective": "flat",
+              "edgeTreatment": "smooth",
+              "shadowTreatment": "none",
+              "paletteMode": "monochrome"
+            }
+          },
+          {
+            "id": "comp_btn_close_settings",
+            "requirementId": "btn_close_settings",
+            "semanticAction": "close_settings",
+            "hierarchy": "tertiary",
+            "groupId": "group_settings_content",
+            "nodeIds": [
+              "root.2.2.6"
+            ],
+            "icon": {
+              "enabled": true,
+              "semanticRole": "close",
+              "family": "skybound_vector_slate",
+              "assetStrategy": "approved",
+              "size": 18,
+              "padding": 4,
+              "visualWeight": "medium",
+              "perspective": "flat",
+              "edgeTreatment": "smooth",
+              "shadowTreatment": "none",
+              "paletteMode": "monochrome"
+            }
+          },
+          {
+            "id": "comp_panel_credits",
+            "requirementId": "panel_credits",
+            "semanticAction": "",
+            "hierarchy": "secondary",
+            "groupId": "group_modals",
+            "nodeIds": [
+              "root.2.3"
+            ],
+            "icon": {
+              "enabled": false,
+              "semanticRole": "",
+              "family": "",
+              "assetStrategy": "procedural",
+              "size": 16,
+              "padding": 0,
+              "visualWeight": "light",
+              "perspective": "flat",
+              "edgeTreatment": "none",
+              "shadowTreatment": "none",
+              "paletteMode": "monochrome"
+            }
+          },
+          {
+            "id": "comp_btn_close_credits",
+            "requirementId": "btn_close_credits",
+            "semanticAction": "close_credits",
+            "hierarchy": "tertiary",
+            "groupId": "group_credits_content",
+            "nodeIds": [
+              "root.2.3.4"
+            ],
+            "icon": {
+              "enabled": true,
+              "semanticRole": "close",
+              "family": "skybound_vector_slate",
+              "assetStrategy": "approved",
+              "size": 18,
+              "padding": 4,
+              "visualWeight": "medium",
+              "perspective": "flat",
+              "edgeTreatment": "smooth",
+              "shadowTreatment": "none",
+              "paletteMode": "monochrome"
+            }
+          }
+        ],
+        "icons": [
+          {
+            "componentId": "comp_btn_play",
+            "nodeName": "BtnPlay",
+            "semanticRole": "play",
+            "groupId": "group_main_nav",
+            "assetRefId": null,
+            "source": "procedural",
+            "resolution": "procedural",
+            "status": "procedural",
+            "resolved": true,
+            "procedural": "play",
+            "uri": null,
+            "family": "nexus_procedural_solid_v1",
+            "styleFamily": "nexus_procedural_solid_v1",
+            "size": 24,
+            "padding": 8,
+            "metadata": {
+              "semanticRole": "play",
+              "styleFamily": "nexus_procedural_solid_v1",
+              "visualWeight": "heavy",
+              "strokeWeight": "solid",
+              "perspective": "front",
+              "paletteMode": "monochrome",
+              "palette": [],
+              "background": "transparent",
+              "edgeTreatment": "rounded",
+              "shadowTreatment": "none",
+              "padding": 8,
+              "iconToButtonRatio": 0.35,
+              "consistencyGroup": "group_main_nav"
+            }
+          },
+          {
+            "componentId": "comp_btn_settings",
+            "nodeName": "BtnSettings",
+            "semanticRole": "settings",
+            "groupId": "group_main_nav",
+            "assetRefId": null,
+            "source": "procedural",
+            "resolution": "procedural",
+            "status": "procedural",
+            "resolved": true,
+            "procedural": "settings",
+            "uri": null,
+            "family": "nexus_procedural_solid_v1",
+            "styleFamily": "nexus_procedural_solid_v1",
+            "size": 24,
+            "padding": 8,
+            "metadata": {
+              "semanticRole": "settings",
+              "styleFamily": "nexus_procedural_solid_v1",
+              "visualWeight": "heavy",
+              "strokeWeight": "solid",
+              "perspective": "front",
+              "paletteMode": "monochrome",
+              "palette": [],
+              "background": "transparent",
+              "edgeTreatment": "rounded",
+              "shadowTreatment": "none",
+              "padding": 8,
+              "iconToButtonRatio": 0.35,
+              "consistencyGroup": "group_main_nav"
+            }
+          },
+          {
+            "componentId": "comp_btn_credits",
+            "nodeName": "BtnCredits",
+            "semanticRole": "credits",
+            "groupId": "group_main_nav",
+            "assetRefId": null,
+            "source": "procedural",
+            "resolution": "procedural",
+            "status": "procedural",
+            "resolved": true,
+            "procedural": "info",
+            "uri": null,
+            "family": "nexus_procedural_solid_v1",
+            "styleFamily": "nexus_procedural_solid_v1",
+            "size": 24,
+            "padding": 8,
+            "metadata": {
+              "semanticRole": "credits",
+              "styleFamily": "nexus_procedural_solid_v1",
+              "visualWeight": "heavy",
+              "strokeWeight": "solid",
+              "perspective": "front",
+              "paletteMode": "monochrome",
+              "palette": [],
+              "background": "transparent",
+              "edgeTreatment": "rounded",
+              "shadowTreatment": "none",
+              "padding": 8,
+              "iconToButtonRatio": 0.35,
+              "consistencyGroup": "group_main_nav"
+            }
+          },
+          {
+            "componentId": "comp_toggle_music",
+            "nodeName": "ToggleMusic",
+            "semanticRole": "button",
+            "groupId": "group_settings_content",
+            "assetRefId": null,
+            "source": "procedural",
+            "resolution": "procedural",
+            "status": "procedural",
+            "resolved": true,
+            "procedural": "info",
+            "uri": null,
+            "family": "nexus_procedural_solid_v1",
+            "styleFamily": "nexus_procedural_solid_v1",
+            "size": 18,
+            "padding": 4,
+            "metadata": {
+              "semanticRole": "button",
+              "styleFamily": "nexus_procedural_solid_v1",
+              "visualWeight": "heavy",
+              "strokeWeight": "solid",
+              "perspective": "front",
+              "paletteMode": "monochrome",
+              "palette": [],
+              "background": "transparent",
+              "edgeTreatment": "rounded",
+              "shadowTreatment": "none",
+              "padding": 4,
+              "iconToButtonRatio": 0.35,
+              "consistencyGroup": "group_settings_content"
+            }
+          },
+          {
+            "componentId": "comp_toggle_sound",
+            "nodeName": "ToggleSound",
+            "semanticRole": "button",
+            "groupId": "group_settings_content",
+            "assetRefId": null,
+            "source": "procedural",
+            "resolution": "procedural",
+            "status": "procedural",
+            "resolved": true,
+            "procedural": "info",
+            "uri": null,
+            "family": "nexus_procedural_solid_v1",
+            "styleFamily": "nexus_procedural_solid_v1",
+            "size": 18,
+            "padding": 4,
+            "metadata": {
+              "semanticRole": "button",
+              "styleFamily": "nexus_procedural_solid_v1",
+              "visualWeight": "heavy",
+              "strokeWeight": "solid",
+              "perspective": "front",
+              "paletteMode": "monochrome",
+              "palette": [],
+              "background": "transparent",
+              "edgeTreatment": "rounded",
+              "shadowTreatment": "none",
+              "padding": 4,
+              "iconToButtonRatio": 0.35,
+              "consistencyGroup": "group_settings_content"
+            }
+          },
+          {
+            "componentId": "comp_btn_close_settings",
+            "nodeName": "BtnCloseSettings",
+            "semanticRole": "close",
+            "groupId": "group_settings_content",
+            "assetRefId": null,
+            "source": "procedural",
+            "resolution": "procedural",
+            "status": "procedural",
+            "resolved": true,
+            "procedural": "close",
+            "uri": null,
+            "family": "nexus_procedural_solid_v1",
+            "styleFamily": "nexus_procedural_solid_v1",
+            "size": 18,
+            "padding": 4,
+            "metadata": {
+              "semanticRole": "close",
+              "styleFamily": "nexus_procedural_solid_v1",
+              "visualWeight": "heavy",
+              "strokeWeight": "solid",
+              "perspective": "front",
+              "paletteMode": "monochrome",
+              "palette": [],
+              "background": "transparent",
+              "edgeTreatment": "rounded",
+              "shadowTreatment": "none",
+              "padding": 4,
+              "iconToButtonRatio": 0.35,
+              "consistencyGroup": "group_settings_content"
+            }
+          },
+          {
+            "componentId": "comp_btn_close_credits",
+            "nodeName": "BtnCloseCredits",
+            "semanticRole": "close",
+            "groupId": "group_credits_content",
+            "assetRefId": null,
+            "source": "procedural",
+            "resolution": "procedural",
+            "status": "procedural",
+            "resolved": true,
+            "procedural": "close",
+            "uri": null,
+            "family": "nexus_procedural_solid_v1",
+            "styleFamily": "nexus_procedural_solid_v1",
+            "size": 18,
+            "padding": 4,
+            "metadata": {
+              "semanticRole": "close",
+              "styleFamily": "nexus_procedural_solid_v1",
+              "visualWeight": "heavy",
+              "strokeWeight": "solid",
+              "perspective": "front",
+              "paletteMode": "monochrome",
+              "palette": [],
+              "background": "transparent",
+              "edgeTreatment": "rounded",
+              "shadowTreatment": "none",
+              "padding": 4,
+              "iconToButtonRatio": 0.35,
+              "consistencyGroup": "group_credits_content"
+            }
+          }
+        ],
+        "interactions": {
+          "click": true,
+          "hover": false,
+          "animations": false,
+          "sounds": false
+        },
+        "responsive": {
+          "desktop": true,
+          "mobile": true,
+          "tablet": true
+        },
+        "evidenceKind": "compiled_model_and_static_source",
+        "runtimeVerified": false
+      }
+    }
+  }
+}

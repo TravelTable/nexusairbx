@@ -1,11 +1,15 @@
 #!/usr/bin/env node
 
 const path = require("node:path");
+const fs = require("node:fs");
 const net = require("node:net");
 const { spawn } = require("node:child_process");
 
 const root = path.resolve(__dirname, "..");
 const backendRoot = path.join(root, "backend");
+const localEnvironmentPath = path.join(backendRoot, ".env");
+const localEnvironment = fs.existsSync(localEnvironmentPath)
+  ? require("../backend/node_modules/dotenv").parse(fs.readFileSync(localEnvironmentPath)) : {};
 const publicFrontendRoot = path.join(root, "public-frontend");
 const reactStart = path.join(root, "node_modules", "react-scripts", "scripts", "start.js");
 const nextDev = path.join(root, "node_modules", "next", "dist", "bin", "next");
@@ -99,7 +103,9 @@ async function main() {
     ROBLOX_OAUTH_REDIRECT_URI: "http://localhost:5001/api/roblox/oauth/callback",
     RUN_JOB_WORKER: "true",
     LOCAL_DEV_JOB_WORKER_ONLY: "true",
-    JOB_WORKER_USER_ID: "nexusrbx-local-dev",
+    LOCAL_DEV_AUTH_EMAIL: process.env.LOCAL_DEV_AUTH_EMAIL || localEnvironment.LOCAL_DEV_AUTH_EMAIL || "local-dev@nexusrbx.test",
+    LOCAL_DEV_AUTH_UID: process.env.LOCAL_DEV_AUTH_UID || localEnvironment.LOCAL_DEV_AUTH_UID || "nexusrbx-local-dev",
+    JOB_WORKER_USER_ID: process.env.LOCAL_DEV_AUTH_UID || localEnvironment.LOCAL_DEV_AUTH_UID || "nexusrbx-local-dev",
     JOB_WORKER_DISABLE_GLOBAL_SWEEPS: "true",
     STUDIO_AGENT_MAX_RUNTIME_MS: "0",
     TASK_RUNTIME_WRITE_MODE: "canonical",

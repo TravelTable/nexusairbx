@@ -1,11 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { HelmetProvider } from "react-helmet-async";
-import "@fontsource-variable/sofia-sans-condensed/wght.css";
-import "@fontsource-variable/atkinson-hyperlegible-next/wght.css";
-import "@fontsource-variable/atkinson-hyperlegible-mono/wght.css";
-import "@fontsource-variable/instrument-sans/wght.css";
-import "@fontsource-variable/dm-sans/wght.css";
+import "@fontsource-variable/geist/wght.css";
+import "@fontsource-variable/geist-mono/wght.css";
 import App from "./App";
 import "./index.css";
 import "./design/nexus-foundation.css";

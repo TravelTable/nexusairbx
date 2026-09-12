@@ -19,11 +19,11 @@ import {
   Search,
   Settings,
   Shield,
-  Sparkles,
   PlugZap,
   Trash2,
   Users,
 } from "lib/icons";
+import { NexusIcons } from "../components/ui/NexusAnimatedIcon";
 import { auth } from "../firebase";
 import { useBilling } from "../context/BillingContext";
 import { useRobloxConnection } from "../context/RobloxConnectionContext";
@@ -105,33 +105,33 @@ const NAV_GROUPS = [
   {
     label: "Nexus Workspace",
     items: [
-      { id: "overview", label: "Overview", icon: Activity, searchTerms: "status usage readiness" },
-      { id: "ai", label: "Models and generation", icon: Bot, searchTerms: "model mode code creativity project context" },
+      { id: "overview", label: "Overview", icon: NexusIcons.Usage, searchTerms: "status usage readiness" },
+      { id: "ai", label: "Models and generation", icon: NexusIcons.Ai, searchTerms: "model mode code creativity project context" },
     ],
   },
   {
     label: "Connections",
     items: [
-      { id: "roblox", label: "Roblox and Studio", icon: PlugZap, searchTerms: "oauth publish creator handoff plugin connector" },
+      { id: "roblox", label: "Roblox and Studio", icon: NexusIcons.Link, searchTerms: "oauth publish creator handoff plugin connector" },
     ],
   },
   {
     label: "Account",
     items: [
-      { id: "billing", label: "Billing and usage", icon: CreditCard, searchTerms: "billing credits limits balance subscription" },
-      { id: "team", label: "Team access", icon: Users, searchTerms: "members workspace roles" },
-      { id: "account", label: "Privacy and data", icon: Database, searchTerms: "profile security session chats scripts delete" },
+      { id: "billing", label: "Billing and usage", icon: NexusIcons.Billing, searchTerms: "billing credits limits balance subscription" },
+      { id: "team", label: "Team access", icon: NexusIcons.Account, searchTerms: "members workspace roles" },
+      { id: "account", label: "Privacy and data", icon: NexusIcons.Security, searchTerms: "profile security session chats scripts delete" },
     ],
   },
   {
     label: "Help",
     items: [
-      { id: "help", label: "Support & diagnostics", icon: HelpCircle, searchTerms: "guide help onboarding diagnostics" },
+      { id: "help", label: "Support & diagnostics", icon: NexusIcons.Help, searchTerms: "guide help onboarding diagnostics" },
     ],
   },
 ];
 
-const ANONYMOUS_NAV_GROUPS = [{ label: "Interface", items: [{ id: "appearance", label: "Appearance", icon: Settings }] }];
+const ANONYMOUS_NAV_GROUPS = [{ label: "Interface", items: [{ id: "appearance", label: "Appearance", icon: NexusIcons.Settings }] }];
 
 const SECTION_META = {
   overview: {
@@ -172,9 +172,94 @@ const SECTION_META = {
   },
 };
 
-const ADMIN_GROUP = { label: "Administration", items: [{ id: "admin", label: "Admin tools", icon: Shield, searchTerms: "users tokens audit developer" }] };
+const ADMIN_GROUP = { label: "Administration", items: [{ id: "admin", label: "Admin tools", icon: NexusIcons.Security, searchTerms: "users tokens audit developer" }] };
 const RETRYABLE_ROBLOX_MESSAGE =
   "Roblox connection is temporarily unavailable while the database is busy. Existing connection data is preserved.";
+const ROBLOX_SETTINGS_SECTIONS = [
+  { id: "connection", label: "Connection" },
+  { id: "publishing", label: "Publishing" },
+  { id: "studio", label: "Studio" },
+  { id: "advanced", label: "Advanced" },
+];
+const SETTINGS_SEARCH_ENTRIES = [
+  {
+    section: "ai",
+    label: "Default model",
+    keywords: "model ai generation default provider",
+    anchor: "model-setting-label",
+  },
+  {
+    section: "ai",
+    label: "Conversation mode",
+    keywords: "chat conversation mode build",
+    anchor: "chat-mode",
+  },
+  {
+    section: "ai",
+    label: "Code style",
+    keywords: "code optimized safe verbose edits",
+    anchor: "code-style",
+  },
+  {
+    section: "ai",
+    label: "Response detail",
+    keywords: "verbosity concise balanced detailed response",
+    anchor: "response-detail",
+  },
+  {
+    section: "ai",
+    label: "Creativity",
+    keywords: "creativity variation deterministic generation",
+    anchor: "creativity",
+  },
+  {
+    section: "roblox",
+    label: "Auto Upload Assets",
+    keywords: "roblox upload publish assets automatic consent write",
+    anchor: "auto-upload-assets",
+    subSection: "publishing",
+  },
+  {
+    section: "roblox",
+    label: "Asset publishing preference",
+    keywords: "roblox upload publish assets automatic review",
+    anchor: "asset-publishing-preference",
+    subSection: "publishing",
+  },
+  {
+    section: "roblox",
+    label: "Creator target",
+    keywords: "roblox creator user group publishing target",
+    anchor: "roblox-creator-target",
+    subSection: "connection",
+  },
+  {
+    section: "roblox",
+    label: "Studio apply policy",
+    keywords: "studio handoff apply validation safety",
+    anchor: "studio-apply-policy",
+    subSection: "studio",
+  },
+  {
+    section: "roblox",
+    label: "Authorization details",
+    keywords: "scopes capabilities universes token health oauth operations",
+    anchor: "roblox-authorization-details",
+    subSection: "advanced",
+  },
+  {
+    section: "account",
+    label: "Profile and session",
+    keywords: "account email uid sign out session profile",
+    anchor: "profile-session",
+  },
+  {
+    section: "account",
+    label: "Clear chats and scripts",
+    keywords: "delete clear chats scripts history danger data",
+    anchor: "danger-zone",
+  },
+];
 const CODE_STYLE_OPTIONS = [
   { value: "optimized", label: "Optimized" },
   { value: "safe", label: "Safer edits" },
@@ -288,6 +373,23 @@ function FieldLabel({ htmlFor, children, tip }) {
 }
 
 function SaveStatus({ status, error, onRetry }) {
+  const [showSaved, setShowSaved] = useState(false);
+
+  useEffect(() => {
+    if (status !== "saved") {
+      setShowSaved(false);
+      return undefined;
+    }
+
+    setShowSaved(true);
+
+    const timeout = window.setTimeout(() => {
+      setShowSaved(false);
+    }, 1600);
+
+    return () => window.clearTimeout(timeout);
+  }, [status]);
+
   if (status === "saving") {
     return (
       <div role="status" aria-live="polite" aria-atomic="true">
@@ -298,81 +400,242 @@ function SaveStatus({ status, error, onRetry }) {
       </div>
     );
   }
+
   if (status === "error") {
     return (
-      <div className="flex flex-wrap items-center justify-end gap-2" role="alert" aria-live="assertive">
+      <div
+        className="flex flex-wrap items-center justify-end gap-2"
+        role="alert"
+        aria-live="assertive"
+      >
         <span className="settings-ledger-state" data-tone="danger">
           <AlertTriangle className="h-3 w-3" />
           Save failed
         </span>
-        {error && <span className="max-w-[20rem] text-xs text-muted-foreground">{error}</span>}
-        <Button type="button" size="sm" variant="outline" onClick={onRetry}>
+
+        {error && (
+          <span className="max-w-[20rem] text-xs text-muted-foreground">
+            {error}
+          </span>
+        )}
+
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={onRetry}
+        >
           <RefreshCcw className="h-4 w-4" />
           Reload settings
         </Button>
       </div>
     );
   }
-  if (status === "saved") {
-    return null;
+
+  if (status === "saved" && showSaved) {
+    return (
+      <div role="status" aria-live="polite">
+        <span className="settings-ledger-state" data-tone="success">
+          <Save className="h-3 w-3" />
+          Saved
+        </span>
+      </div>
+    );
   }
+
   return null;
 }
 
-function NavList({ groups, activeTab, onSelect, itemMeta = {} }) {
+function NavList({
+  groups,
+  activeTab,
+  onSelect,
+  onSelectSetting,
+  searchEntries = [],
+  itemMeta = {},
+}) {
   const [query, setQuery] = useState("");
   const normalizedQuery = query.trim().toLowerCase();
-  const filteredGroups = groups
-    .map((group) => ({
-      ...group,
-      items: group.items.filter((item) => !normalizedQuery
-        || `${item.label} ${item.searchTerms || ""}`.toLowerCase().includes(normalizedQuery)),
-    }))
-    .filter((group) => group.items.length > 0);
+
+  const allItems = useMemo(
+    () => groups.flatMap((group) => group.items),
+    [groups]
+  );
+
+  const directResults = normalizedQuery
+    ? searchEntries
+        .filter((entry) =>
+          `${entry.label} ${entry.keywords || ""}`
+            .toLowerCase()
+            .includes(normalizedQuery)
+        )
+        .slice(0, 8)
+    : [];
+
+  const sectionResults = normalizedQuery
+    ? allItems.filter((item) =>
+        `${item.label} ${item.searchTerms || ""}`
+          .toLowerCase()
+          .includes(normalizedQuery)
+      )
+    : [];
+
+  const hasResults = directResults.length > 0 || sectionResults.length > 0;
 
   return (
     <div className="settings-navigation">
       <label className="settings-navigation-search">
         <Search aria-hidden="true" />
-        <span className="sr-only">Search settings sections</span>
-        <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search settings" />
+        <span className="sr-only">Search settings</span>
+        <Input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search settings"
+        />
       </label>
-      <nav className="settings-tab-groups" aria-label="Settings sections">
-        {filteredGroups.map((group) => (
-          <div className="settings-tab-group" key={group.label}>
-            <p className="settings-sidebar-group-label">{group.label}</p>
-            <div className="settings-tab-list">
-              {group.items.map((item) => {
-                const Icon = item.icon;
-                const active = item.id === activeTab;
+
+      {normalizedQuery ? (
+        <div
+          className="settings-search-results"
+          role="list"
+          aria-label="Settings search results"
+        >
+          {!hasResults && (
+            <p className="settings-navigation-empty">
+              No matching settings
+            </p>
+          )}
+
+          {directResults.length > 0 && (
+            <div className="settings-search-group">
+              <p className="settings-sidebar-group-label">Settings</p>
+
+              {directResults.map((entry) => {
+                const section = allItems.find(
+                  (item) => item.id === entry.section
+                );
+                const Icon = section?.icon || Settings;
+
                 return (
                   <button
-                    key={item.id}
+                    key={`${entry.section}:${entry.anchor}`}
                     type="button"
-                    onClick={() => onSelect(item.id)}
-                    className={cn(
-                      "relative flex min-h-11 w-full items-center justify-between rounded-[8px] px-3 py-2 text-left text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ds-focus-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                      active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                    )}
-                    aria-current={active ? "page" : undefined}
-                    data-settings-tab={item.id}
+                    className="settings-search-result"
+                    onClick={() =>
+                      onSelectSetting?.(entry.section, entry.anchor, entry.subSection)
+                    }
                   >
-                    <span className="flex min-w-0 items-center gap-2">
-                      <Icon className="settings-tab-icon h-4 w-4 shrink-0" aria-hidden="true" />
-                      <span className="truncate">{item.label}</span>
+                    <Icon aria-hidden="true" />
+
+                    <span>
+                      <strong>{entry.label}</strong>
+                      <small>{section?.label || entry.section}</small>
                     </span>
-                    <span className="settings-tab-end" aria-hidden="true">
-                      {itemMeta[item.id] ? <span className="settings-nav-meta">{itemMeta[item.id]}</span> : null}
-                      {active && <ChevronRight className="settings-tab-chevron h-4 w-4" />}
-                    </span>
+
+                    <ChevronRight aria-hidden="true" />
                   </button>
                 );
               })}
             </div>
-          </div>
-        ))}
-        {filteredGroups.length === 0 ? <p className="settings-navigation-empty">No matching sections</p> : null}
-      </nav>
+          )}
+
+          {sectionResults.length > 0 && (
+            <div className="settings-search-group">
+              <p className="settings-sidebar-group-label">Sections</p>
+
+              {sectionResults.map((item) => {
+                const Icon = item.icon;
+
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="settings-search-result"
+                    onClick={() => onSelect(item.id)}
+                  >
+                    <Icon aria-hidden="true" />
+
+                    <span>
+                      <strong>{item.label}</strong>
+                      <small>Settings section</small>
+                    </span>
+
+                    <ChevronRight aria-hidden="true" />
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : (
+        <nav className="settings-tab-groups" aria-label="Settings sections">
+          {groups.map((group) => (
+            <div className="settings-tab-group" key={group.label}>
+              <p className="settings-sidebar-group-label">{group.label}</p>
+
+              <div className="settings-tab-list">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const active = item.id === activeTab;
+
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className="relative"
+                      onClick={() => onSelect(item.id)}
+                      aria-current={active ? "page" : undefined}
+                      data-settings-tab={item.id}
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <Icon
+                          className="settings-tab-icon h-4 w-4 shrink-0"
+                          aria-hidden="true"
+                        />
+                        <span className="truncate">{item.label}</span>
+                      </span>
+
+                      <span className="settings-tab-end" aria-hidden="true">
+                        {itemMeta[item.id] && (
+                          <span className="settings-nav-meta">
+                            {itemMeta[item.id]}
+                          </span>
+                        )}
+
+                        {active && (
+                          <ChevronRight className="settings-tab-chevron h-4 w-4" />
+                        )}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </nav>
+      )}
+    </div>
+  );
+}
+
+function SettingsSubnav({ items, value, onChange, label = "Section navigation" }) {
+  return (
+    <div
+      className="settings-subnav"
+      role="tablist"
+      aria-label={label}
+    >
+      {items.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          role="tab"
+          aria-selected={value === item.id}
+          onClick={() => onChange(item.id)}
+        >
+          {item.label}
+        </button>
+      ))}
     </div>
   );
 }
@@ -413,9 +676,24 @@ function SectionHeader({ section, icon: Icon = Settings, status, statusTone = "n
   );
 }
 
-function Panel({ title, description, actions, children, className, tone = "default" }) {
+function Panel({
+  id,
+  title,
+  description,
+  actions,
+  children,
+  className,
+  tone = "default",
+}) {
   return (
-    <section className={cn("settings-panel", tone === "danger" && "settings-panel--danger", className)}>
+    <section
+      id={id}
+      className={cn(
+        "settings-panel",
+        tone === "danger" && "settings-panel--danger",
+        className
+      )}
+    >
       <CardHeader
         className={cn(
           "settings-panel-header flex gap-4 px-0 pb-3 pt-7 sm:flex-row sm:items-start sm:justify-between sm:space-y-0 sm:pt-8",
@@ -597,6 +875,8 @@ export default function SettingsPage() {
   const isAdmin = Boolean(billing.isAdmin || billing.flags?.isAdmin);
   const [activeTab, setActiveTab] = useState(() => (user ? "overview" : "appearance"));
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [pendingSettingsAnchor, setPendingSettingsAnchor] = useState("");
+  const [robloxSettingsSection, setRobloxSettingsSection] = useState("connection");
   const [proNudgeReason, setProNudgeReason] = useState("");
   const [usageState, setUsageState] = useState({ status: "idle", logs: [], chartData: [], error: "" });
   const [teamState, setTeamState] = useState({ status: "idle", teams: [], error: "" });
@@ -730,6 +1010,49 @@ export default function SettingsPage() {
       { replace: true },
     );
   }, [activeTab, fallbackTab, location.pathname, location.search, navigate, navItems]);
+
+  const openSetting = useCallback(
+    (tab, anchor, subSection) => {
+      if (tab === "roblox" && subSection) {
+        setRobloxSettingsSection(subSection);
+      }
+      setPendingSettingsAnchor(anchor);
+      setTab(tab);
+    },
+    [setTab]
+  );
+
+  useEffect(() => {
+    if (!pendingSettingsAnchor) return undefined;
+
+    let cancelled = false;
+
+    const tryScroll = (attemptsLeft) => {
+      const element = document.getElementById(pendingSettingsAnchor);
+      if (element) {
+        element.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+        setPendingSettingsAnchor("");
+        return;
+      }
+      if (attemptsLeft <= 0) {
+        setPendingSettingsAnchor("");
+        return;
+      }
+      requestAnimationFrame(() => {
+        if (!cancelled) tryScroll(attemptsLeft - 1);
+      });
+    };
+
+    const frame = requestAnimationFrame(() => tryScroll(4));
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+    };
+  }, [activeTab, pendingSettingsAnchor, robloxSettingsSection]);
 
   const loadUsage = useCallback(async () => {
     if (!user) return;
@@ -912,91 +1235,224 @@ export default function SettingsPage() {
         value: settings.modelVersion || DEFAULT_SETTINGS.modelVersion,
         detail: `${formatChatModeLabel(settings.chatMode) || "Build"} mode`,
         state: "good",
-        action: <Button type="button" variant="outline" size="sm" onClick={() => setTab("ai")}>Manage</Button>,
+        action: (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setTab("ai")}
+          >
+            Manage
+          </Button>
+        ),
       },
       {
         icon: CreditCard,
         label: "Billing and usage",
         value: billing.loading ? "Loading" : billing.plan || "FREE",
-        detail: billing.error || `${formatNumber(billing.totalRemaining)} tokens available`,
+        detail:
+          billing.error ||
+          `${formatNumber(billing.totalRemaining)} tokens available`,
         state: billing.error ? "warn" : "good",
-        action: <Button type="button" variant="outline" size="sm" onClick={() => setTab("billing")}>Review</Button>,
+        action: (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setTab("billing")}
+          >
+            Review
+          </Button>
+        ),
       },
       {
         icon: PlugZap,
-        label: "Roblox OAuth",
-        value: robloxUpgradeRequired ? "Upgrade required" : robloxConnected ? "Connected" : "Not connected",
-        detail: selectedCreator ? `${selectedCreator.type} ${selectedCreator.id}` : "No creator target selected",
-        state: robloxConnected && !robloxUpgradeRequired ? "good" : "warn",
-        action: <Button type="button" variant="outline" size="sm" onClick={() => setTab("roblox")}>{robloxUpgradeRequired ? "Upgrade" : robloxConnected ? "Manage" : "Connect"}</Button>,
+        label: "Roblox connection",
+        value: robloxUpgradeRequired
+          ? "Upgrade required"
+          : robloxConnected
+            ? "Connected"
+            : "Not connected",
+        detail: selectedCreator
+          ? `${selectedCreator.type} ${selectedCreator.id}`
+          : "No creator target selected",
+        state:
+          robloxConnected && !robloxUpgradeRequired ? "good" : "warn",
+        action: (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setTab("roblox")}
+          >
+            {robloxUpgradeRequired
+              ? "Upgrade"
+              : robloxConnected
+                ? "Manage"
+                : "Connect"}
+          </Button>
+        ),
       },
       {
         icon: Save,
         label: "Studio handoff",
-        value: settings.studioAutoPushEnabled ? "Enabled" : "Manual review",
-        detail: settings.studioAutoPushEnabled ? "Approved changes can move toward Studio." : "You approve changes before handoff.",
-        state: settings.studioAutoPushEnabled ? "good" : "neutral",
-        action: <Button type="button" variant="outline" size="sm" onClick={() => setTab("roblox")}>Configure</Button>,
+        value: settings.studioAutoPushEnabled
+          ? "Enabled"
+          : "Manual review",
+        detail: settings.studioAutoPushEnabled
+          ? "Approved changes can move toward Studio."
+          : "You approve changes before handoff.",
+        state: "good",
+        action: (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setTab("roblox")}
+          >
+            Configure
+          </Button>
+        ),
       },
     ];
-    const readyCount = health.filter((item) => item.state !== "warn").length;
-    const readinessPercent = Math.round((readyCount / health.length) * 100);
-    const displayName = user?.displayName?.split(" ")[0] || user?.email?.split("@")[0] || "Creator";
+
+    const attentionItems = health.filter((item) => item.state === "warn");
+    const readyCount = health.length - attentionItems.length;
 
     return (
       <div className="space-y-6">
-        <section className="settings-overview-hero" aria-labelledby="settings-overview-title">
+        <section
+          className="settings-overview-hero settings-overview-hero--compact"
+          aria-labelledby="settings-overview-title"
+        >
           <div className="settings-overview-hero__copy">
-            <span className="settings-overview-kicker"><Sparkles aria-hidden="true" /> Control center</span>
-            <h3 id="settings-overview-title">{displayName}, your workspace is {readyCount === health.length ? "ready to build." : "almost ready."}</h3>
-            <p>{readyCount === health.length
-              ? "Your defaults, plan, Roblox connection, and Studio handoff are all in good shape."
-              : "Finish the recommended setup below, or jump straight back into your workspace."}</p>
+            <span className="settings-overview-kicker">
+              <NexusIcons.Ai size={14} />
+              Control center
+            </span>
+
+            <h3 id="settings-overview-title">
+              {attentionItems.length === 0
+                ? "Workspace ready."
+                : `${attentionItems.length} ${
+                    attentionItems.length === 1 ? "item needs" : "items need"
+                  } attention.`}
+            </h3>
+
+            <p>
+              {attentionItems.length === 0
+                ? "Your core workspace configuration is ready for new builds."
+                : `${readyCount} of ${health.length} workspace checks are ready. Resolve the items below when convenient.`}
+            </p>
+
             <div className="settings-overview-actions">
-              <Button asChild><Link to="/ai">Open Nexus Workspace <ArrowRight className="h-4 w-4" /></Link></Button>
-              <Button type="button" variant="outline" onClick={() => { loadUsage(); loadRoblox(); billing.refresh?.(); }}>
-                <RefreshCcw className="h-4 w-4" /> Refresh status
+              <Button asChild>
+                <Link to="/ai">
+                  Open Nexus Workspace
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  loadUsage();
+                  loadRoblox();
+                  billing.refresh?.();
+                }}
+              >
+                <RefreshCcw className="h-4 w-4" />
+                Refresh status
               </Button>
             </div>
           </div>
-          <div className="settings-readiness-score" style={{ "--settings-progress": `${readinessPercent * 3.6}deg` }} aria-label={`${readyCount} of ${health.length} workspace checks ready`}>
-            <div><strong>{readyCount}/{health.length}</strong><span>ready</span></div>
-          </div>
+
           <dl className="settings-overview-ledger">
-            <div><dt>Plan</dt><dd>{billing.loading ? "Loading…" : String(billing.plan || "FREE").toUpperCase()}</dd></div>
-            <div><dt>Available</dt><dd>{formatNumber(billing.totalRemaining)} tokens</dd></div>
-            <div><dt>Roblox</dt><dd>{robloxUpgradeRequired ? "Upgrade required" : robloxConnected ? "Connected" : "Setup needed"}</dd></div>
+            <div>
+              <dt>Plan</dt>
+              <dd>
+                {billing.loading
+                  ? "Loading…"
+                  : String(billing.plan || "FREE").toUpperCase()}
+              </dd>
+            </div>
+
+            <div>
+              <dt>Tokens available</dt>
+              <dd>{formatNumber(billing.totalRemaining)}</dd>
+            </div>
+
+            <div>
+              <dt>Roblox</dt>
+              <dd>
+                {robloxUpgradeRequired
+                  ? "Upgrade required"
+                  : robloxConnected
+                    ? "Connected"
+                    : "Setup needed"}
+              </dd>
+            </div>
           </dl>
         </section>
 
-        <Panel
-          title="Workspace readiness"
-          description="The four checks that determine whether NexusRBX can move cleanly from prompt to Studio."
-        >
-          <div className="settings-readiness-grid">
-            {health.map((item) => (
-              <HealthTile key={item.label} {...item} />
-            ))}
-          </div>
-        </Panel>
+        {attentionItems.length > 0 && (
+          <Panel
+            title="Needs attention"
+            description="Only settings currently blocking full workspace readiness are shown here."
+          >
+            <div className="settings-readiness-grid">
+              {attentionItems.map((item) => (
+                <HealthTile key={item.label} {...item} />
+              ))}
+            </div>
+          </Panel>
+        )}
 
         <Panel
           title="Usage & insights"
           description="Monitor token consumption, runway, workflows, and recent activity."
-          actions={<Button type="button" variant="outline" size="sm" onClick={loadUsage}><RefreshCcw className="h-4 w-4" />Refresh</Button>}
+          actions={
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={loadUsage}
+            >
+              <RefreshCcw className="h-4 w-4" />
+              Refresh
+            </Button>
+          }
         >
-          <DataStateAlert state={usageState} onRetry={loadUsage} label="Usage" />
-          {usageState.status === "ready" && usageState.chartData.length > 0 ? (
-            <UsageInsights data={usageState.chartData} logs={usageState.logs} billing={billing} compact />
-          ) : null}
-          {usageState.status === "ready" && usageState.chartData.length === 0 ? (
-            <EmptyState
-              icon={Activity}
-              title="No usage yet"
-              description="Your usage dashboard will populate after the first AI generation or Studio-assisted task."
-              action={<Button asChild><Link to="/ai">Start a build</Link></Button>}
-            />
-          ) : null}
+          <DataStateAlert
+            state={usageState}
+            onRetry={loadUsage}
+            label="Usage"
+          />
+
+          {usageState.status === "ready" &&
+            usageState.chartData.length > 0 && (
+              <UsageInsights
+                data={usageState.chartData}
+                logs={usageState.logs}
+                billing={billing}
+                compact
+              />
+            )}
+
+          {usageState.status === "ready" &&
+            usageState.chartData.length === 0 && (
+              <EmptyState
+                icon={Activity}
+                title="No usage yet"
+                description="Your usage dashboard will populate after the first AI generation or Studio-assisted task."
+                action={
+                  <Button asChild>
+                    <Link to="/ai">Start a build</Link>
+                  </Button>
+                }
+              />
+            )}
         </Panel>
       </div>
     );
@@ -1154,338 +1610,365 @@ export default function SettingsPage() {
     </div>
   );
 
-  const renderRoblox = () => (
-    <div className="space-y-6">
-      <Panel
-        title="Roblox write consent"
-        description="Auto Upload Assets is the master consent for every Roblox asset write. Your local NexusRBX assets remain available either way."
-      >
-        <div className="space-y-4 rounded-lg border border-border bg-muted/20 p-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <div className="settings-panel-title">
-                <h3 className="text-base font-semibold">Auto Upload Assets</h3>
-                <DevTip label="About automatic Roblox uploads" side="right">
-                {settings.robloxAssetUploadsEnabled
-                  ? "Generated assets may upload immediately through your connected Roblox OAuth account."
-                  : "No Roblox asset writes are allowed. Generation can continue and assets stay saved in NexusRBX."}
-                </DevTip>
-              </div>
+  const renderRobloxPublishing = () => (
+    <Panel
+      title="Roblox write consent"
+      description="Auto Upload Assets is the master consent for every Roblox asset write. Your local NexusRBX assets remain available either way."
+    >
+      <div className="space-y-4 rounded-lg border border-border bg-muted/20 p-4">
+        <div id="auto-upload-assets" className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="settings-panel-title">
+              <h3 className="text-base font-semibold">Auto Upload Assets</h3>
+              <DevTip label="About automatic Roblox uploads" side="right">
+              {settings.robloxAssetUploadsEnabled
+                ? "Generated assets may upload immediately through your connected Roblox OAuth account."
+                : "No Roblox asset writes are allowed. Generation can continue and assets stay saved in NexusRBX."}
+              </DevTip>
             </div>
-            <Switch
-              checked={settings.robloxAssetUploadsEnabled}
-              onCheckedChange={(robloxAssetUploadsEnabled) => updateSetting({ robloxAssetUploadsEnabled })}
-              aria-label="Auto Upload Assets"
-            />
           </div>
-          <Separator />
-          <div className="grid gap-2 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:items-start">
-            <div className="space-y-2">
-              <FieldLabel
-                htmlFor="asset-publishing-preference"
-                tip={settings.robloxAssetUploadsEnabled
-                  ? publishingPreferenceDetails.description
-                  : "Turn on Auto Upload Assets before choosing a publishing policy."}
-              >
-                Publishing preference
-              </FieldLabel>
-              <Select
-                value={publishingPreference}
-                onValueChange={(assetPublishingPreference) => updateSetting({ assetPublishingPreference })}
-                disabled={!settings.robloxAssetUploadsEnabled}
-              >
-                <SelectTrigger id="asset-publishing-preference" aria-describedby="asset-publishing-preference-help">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ASSET_PUBLISHING_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <span id="asset-publishing-preference-help" className="sr-only">
-              {settings.robloxAssetUploadsEnabled ? publishingPreferenceDetails.description : "Publishing is disabled."}
-            </span>
-          </div>
-        </div>
-      </Panel>
-
-      <Panel
-        title="Roblox account"
-        description="Manage your connected account and where your creations are published."
-        actions={
-          <Button type="button" variant="outline" size="sm" onClick={loadRoblox}>
-            <RefreshCcw className="h-4 w-4" />
-            Refresh
-          </Button>
-        }
-      >
-        <DataStateAlert state={robloxState} onRetry={loadRoblox} label="Roblox" />
-        {robloxConnected && robloxUpgradeRequired && (
-          <RobloxAuthorizationRequired
-            connected
-            upgradeRequired
-            capabilityIds={ROBLOX_PRODUCT_DEFAULT_CAPABILITIES}
-            onAuthorize={async () => {
-              try {
-                await ensureRobloxCapabilities({
-                  capabilities: ROBLOX_PRODUCT_DEFAULT_CAPABILITIES,
-                  returnPath: "/settings?tab=roblox",
-                });
-              } catch (error) {
-                setRobloxActionError(error, "Failed to start Roblox authorization.");
-              }
-            }}
-            className="border-[var(--ds-warning-border)] bg-[var(--ds-warning-soft)] text-[var(--ds-warning)]"
+          <Switch
+            checked={settings.robloxAssetUploadsEnabled}
+            onCheckedChange={(robloxAssetUploadsEnabled) => updateSetting({ robloxAssetUploadsEnabled })}
+            aria-label="Auto Upload Assets"
           />
-        )}
-        {robloxState.status !== "loading" && (
-          <div className="space-y-5">
-            <div className="settings-roblox-identity">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="settings-connection-status" data-tone={robloxConnected ? "success" : "neutral"}>
-                    {robloxConnected ? "Connected" : "Disconnected"}
-                  </span>
-                  {selectedCreator && <span className="settings-ledger-term">{selectedCreator.type} {selectedCreator.id}</span>}
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {robloxConnected
-                    ? `${robloxIdentity?.displayName || robloxIdentity?.name || robloxIdentity?.username || "Roblox account"}${robloxIdentity?.username ? ` (@${robloxIdentity.username})` : ""}${robloxIdentity?.userId || robloxIdentity?.id || robloxIdentity?.sub ? ` · User ${robloxIdentity.userId || robloxIdentity.id || robloxIdentity.sub}` : ""}`
-                    : "Connect Roblox to enable publishing and creator targeting."}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  onClick={async () => {
-                    setRobloxAction("connect");
-                    try {
-                      await beginRobloxOAuth({ returnPath: "/settings?tab=roblox" });
-                    } catch (error) {
-                      setRobloxActionError(error, "Could not start Roblox connection.");
-                    } finally {
-                      setRobloxAction("");
-                    }
-                  }}
-                  disabled={robloxAction === "connect"}
-                >
-                  {robloxAction === "connect" && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {robloxAction === "connect"
-                    ? (robloxConnected ? "Reconnecting…" : "Connecting…")
-                    : (robloxConnected ? "Reconnect" : "Connect")}
-                </Button>
-                {robloxConnected && (
-                  <>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={async () => {
-                        setRobloxAction("reauthorize");
-                        try {
-                          await beginRobloxReauthorization({ returnPath: "/settings?tab=roblox" });
-                        } catch (error) {
-                          setRobloxActionError(error, "Could not start Roblox reauthorization.");
-                        } finally {
-                          setRobloxAction("");
-                        }
-                      }}
-                      disabled={robloxAction === "reauthorize"}
-                    >
-                      {robloxAction === "reauthorize" && <Loader2 className="h-4 w-4 animate-spin" />}
-                      {robloxAction === "reauthorize" ? "Reauthorizing…" : "Reauthorize"}
-                    </Button>
-                    <ConfirmationAction
-                      trigger={<Button type="button" variant="destructive">Revoke access</Button>}
-                      title="Revoke Roblox access?"
-                      description="NexusRBX will lose its Roblox OAuth authorization. Studio-only work remains available, and you can reconnect later."
-                      actionLabel="Revoke access"
-                      onConfirm={async () => {
-                        try {
-                          await revokeRobloxOAuth();
-                          await loadRoblox();
-                        } catch (error) {
-                          setRobloxActionError(error, "Could not revoke Roblox access.");
-                          throw error;
-                        }
-                      }}
-                    />
-                  </>
-                )}
-              </div>
-            </div>
+        </div>
+        <Separator />
+        <div className="grid gap-2 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:items-start">
+          <div className="space-y-2">
+            <FieldLabel
+              htmlFor="asset-publishing-preference"
+              tip={settings.robloxAssetUploadsEnabled
+                ? publishingPreferenceDetails.description
+                : "Turn on Auto Upload Assets before choosing a publishing policy."}
+            >
+              Publishing preference
+            </FieldLabel>
+            <Select
+              value={publishingPreference}
+              onValueChange={(assetPublishingPreference) => updateSetting({ assetPublishingPreference })}
+              disabled={!settings.robloxAssetUploadsEnabled}
+            >
+              <SelectTrigger id="asset-publishing-preference" aria-describedby="asset-publishing-preference-help">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ASSET_PUBLISHING_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <span id="asset-publishing-preference-help" className="sr-only">
+            {settings.robloxAssetUploadsEnabled ? publishingPreferenceDetails.description : "Publishing is disabled."}
+          </span>
+        </div>
+      </div>
+    </Panel>
+  );
 
-            {robloxConnected && (
-              <div className="space-y-4">
-                {(missingScopes.length > 0 || missingPermissions.length > 0) && (
-                  <Alert variant="destructive">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>Roblox permission required</AlertTitle>
-                    <AlertDescription>
-                      Reauthorize Roblox to restore: {[...missingScopes, ...missingPermissions].join(", ")}.
-                    </AlertDescription>
-                  </Alert>
-                )}
-                <div className="grid gap-4 lg:grid-cols-2">
-                  <div className="space-y-2">
-                  <FieldLabel htmlFor="roblox-creator-target" tip="The Roblox user or group that receives approved published assets.">Creator target</FieldLabel>
-                  <Select
-                    value={selectedCreatorKey}
-                    onValueChange={async (value) => {
-                      if (value === "none") return;
-                      const [type, id] = value.split(":");
+  const renderRobloxConnection = () => (
+    <Panel
+      title="Roblox account"
+      description="Manage your connected account and where your creations are published."
+      actions={
+        <Button type="button" variant="outline" size="sm" onClick={loadRoblox}>
+          <RefreshCcw className="h-4 w-4" />
+          Refresh
+        </Button>
+      }
+    >
+      <DataStateAlert state={robloxState} onRetry={loadRoblox} label="Roblox" />
+      {robloxConnected && robloxUpgradeRequired && (
+        <RobloxAuthorizationRequired
+          connected
+          upgradeRequired
+          capabilityIds={ROBLOX_PRODUCT_DEFAULT_CAPABILITIES}
+          onAuthorize={async () => {
+            try {
+              await ensureRobloxCapabilities({
+                capabilities: ROBLOX_PRODUCT_DEFAULT_CAPABILITIES,
+                returnPath: "/settings?tab=roblox",
+              });
+            } catch (error) {
+              setRobloxActionError(error, "Failed to start Roblox authorization.");
+            }
+          }}
+          className="border-[var(--ds-warning-border)] bg-[var(--ds-warning-soft)] text-[var(--ds-warning)]"
+        />
+      )}
+      {robloxState.status !== "loading" && (
+        <div className="space-y-5">
+          <div className="settings-roblox-identity">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="settings-connection-status" data-tone={robloxConnected ? "success" : "neutral"}>
+                  {robloxConnected ? "Connected" : "Disconnected"}
+                </span>
+                {selectedCreator && <span className="settings-ledger-term">{selectedCreator.type} {selectedCreator.id}</span>}
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {robloxConnected
+                  ? `${robloxIdentity?.displayName || robloxIdentity?.name || robloxIdentity?.username || "Roblox account"}${robloxIdentity?.username ? ` (@${robloxIdentity.username})` : ""}${robloxIdentity?.userId || robloxIdentity?.id || robloxIdentity?.sub ? ` · User ${robloxIdentity.userId || robloxIdentity.id || robloxIdentity.sub}` : ""}`
+                  : "Connect Roblox to enable publishing and creator targeting."}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                onClick={async () => {
+                  setRobloxAction("connect");
+                  try {
+                    await beginRobloxOAuth({ returnPath: "/settings?tab=roblox" });
+                  } catch (error) {
+                    setRobloxActionError(error, "Could not start Roblox connection.");
+                  } finally {
+                    setRobloxAction("");
+                  }
+                }}
+                disabled={robloxAction === "connect"}
+              >
+                {robloxAction === "connect" && <Loader2 className="h-4 w-4 animate-spin" />}
+                {robloxAction === "connect"
+                  ? (robloxConnected ? "Reconnecting…" : "Connecting…")
+                  : (robloxConnected ? "Reconnect" : "Connect")}
+              </Button>
+              {robloxConnected && (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={async () => {
+                      setRobloxAction("reauthorize");
                       try {
-                        await setRobloxTargetCreator({ type, id });
-                        await loadRoblox();
+                        await beginRobloxReauthorization({ returnPath: "/settings?tab=roblox" });
                       } catch (error) {
-                        setRobloxActionError(error, "Failed to update Roblox creator target.");
+                        setRobloxActionError(error, "Could not start Roblox reauthorization.");
+                      } finally {
+                        setRobloxAction("");
                       }
                     }}
+                    disabled={robloxAction === "reauthorize"}
                   >
-                    <SelectTrigger id="roblox-creator-target"><SelectValue placeholder="Select creator" /></SelectTrigger>
-                    <SelectContent>
-                      {creators.length === 0 && <SelectItem value="none" disabled>No creators available</SelectItem>}
-                      {creators.map((creator) => (
-                        <SelectItem key={`${creator.type}:${creator.id}`} value={`${creator.type}:${creator.id}`}>
-                          {creator.label || `${creator.type} ${creator.id}`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="settings-field-label">
-                      <Label>Granted scopes</Label>
-                      <DevTip label="About granted Roblox scopes">Permissions currently available to NexusRBX through Roblox OAuth.</DevTip>
-                    </div>
-                    <div className="flex min-h-10 flex-wrap gap-2 rounded-md border border-border bg-muted/20 p-2">
-                      {grantedScopes.length > 0 ? (
-                        grantedScopes.slice(0, 10).map((scope) => (
-                          <span key={scope} className="settings-ledger-term">
-                            {scope}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-sm text-muted-foreground">No OAuth scopes reported.</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                    {robloxAction === "reauthorize" && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {robloxAction === "reauthorize" ? "Reauthorizing…" : "Reauthorize"}
+                  </Button>
+                  <ConfirmationAction
+                    trigger={<Button type="button" variant="destructive">Revoke access</Button>}
+                    title="Revoke Roblox access?"
+                    description="NexusRBX will lose its Roblox OAuth authorization. Studio-only work remains available, and you can reconnect later."
+                    actionLabel="Revoke access"
+                    onConfirm={async () => {
+                      try {
+                        await revokeRobloxOAuth();
+                        await loadRoblox();
+                      } catch (error) {
+                        setRobloxActionError(error, "Could not revoke Roblox access.");
+                        throw error;
+                      }
+                    }}
+                  />
+                </>
+              )}
+            </div>
+          </div>
 
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <HealthTile
-                    icon={Shield}
-                    label="Token health"
-                    value={tokenHealth?.status || "Unknown"}
-                    detail={tokenHealth?.accessTokenExpiresAt ? `Access expires ${formatDate(tokenHealth.accessTokenExpiresAt)}` : "Refresh is handled securely by the server."}
-                    state={tokenHealth?.status === "healthy" || tokenHealth?.status === "valid" ? "good" : "neutral"}
-                  />
-                  <HealthTile
-                    icon={Users}
-                    label="Creator targets"
-                    value={formatNumber(creators.length)}
-                    detail={`${formatNumber(creators.filter((creator) => creator.type === "Group").length)} authorized groups`}
-                    state={creators.length ? "good" : "warn"}
-                  />
-                  <HealthTile
-                    icon={Database}
-                    label="Universes"
-                    value={formatNumber(accessibleUniverses.length)}
-                    detail="Accessible resources reported by Roblox"
-                    state="neutral"
-                  />
-                  <HealthTile
-                    icon={Activity}
-                    label="Last operation"
-                    value={lastRobloxOperation?.type || "None recorded"}
-                    detail={lastRobloxOperation?.occurredAt ? formatDate(lastRobloxOperation.occurredAt) : "No successful operation reported yet"}
-                    state={lastRobloxOperation ? "good" : "neutral"}
-                  />
-                </div>
+          {robloxConnected && (
+            <div className="space-y-4">
+              {(missingScopes.length > 0 || missingPermissions.length > 0) && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Roblox permission required</AlertTitle>
+                  <AlertDescription>
+                    Reauthorize Roblox to restore: {[...missingScopes, ...missingPermissions].join(", ")}.
+                  </AlertDescription>
+                </Alert>
+              )}
+              <div className="space-y-2">
+                <FieldLabel htmlFor="roblox-creator-target" tip="The Roblox user or group that receives approved published assets.">Creator target</FieldLabel>
+                <Select
+                  value={selectedCreatorKey}
+                  onValueChange={async (value) => {
+                    if (value === "none") return;
+                    const [type, id] = value.split(":");
+                    try {
+                      await setRobloxTargetCreator({ type, id });
+                      await loadRoblox();
+                    } catch (error) {
+                      setRobloxActionError(error, "Failed to update Roblox creator target.");
+                    }
+                  }}
+                >
+                  <SelectTrigger id="roblox-creator-target"><SelectValue placeholder="Select creator" /></SelectTrigger>
+                  <SelectContent>
+                    {creators.length === 0 && <SelectItem value="none" disabled>No creators available</SelectItem>}
+                    {creators.map((creator) => (
+                      <SelectItem key={`${creator.type}:${creator.id}`} value={`${creator.type}:${creator.id}`}>
+                        {creator.label || `${creator.type} ${creator.id}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </Panel>
+  );
 
-                <details className="rounded-lg border border-border bg-muted/20 p-4">
-                  <summary className="cursor-pointer text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                    Authorized creators and universes
-                  </summary>
-                  <div className="mt-4 grid gap-5 lg:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label>Creator targets</Label>
-                      {creators.length ? (
-                        <ul className="space-y-2 text-sm text-muted-foreground">
-                          {creators.map((creator) => (
-                            <li key={`${creator.type}:${creator.id}`} className="rounded-md border border-border bg-background/40 p-3">
-                              <span className="font-medium text-foreground">{creator.name || `${creator.type} ${creator.id}`}</span>
-                              <span className="ml-2">{creator.type} {creator.id}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : <p className="text-sm text-muted-foreground">No authorized creators reported.</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Accessible universes</Label>
-                      {accessibleUniverses.length ? (
-                        <ul className="space-y-2 text-sm text-muted-foreground">
-                          {accessibleUniverses.map((universe) => (
-                            <li key={universe.id} className="rounded-md border border-border bg-background/40 p-3">
-                              <span className="font-medium text-foreground">{universe.name || `Universe ${universe.id}`}</span>
-                              <span className="ml-2">{universe.id}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : <p className="text-sm text-muted-foreground">No accessible universes were reported.</p>}
-                    </div>
-                  </div>
-                </details>
+  const renderStudioSettings = () => (
+    <Panel title="Studio handoff" description="Use one capability-routed policy for Studio validation, application, and safety.">
+      {(() => {
+        const studioPreferences = normalizeStudioPreferences(settings);
+        const updateStudioPreference = (patch) => updateSetting(studioPreferencePatch({
+          ...studioPreferences,
+          ...patch,
+        }));
+        const rows = [
+          { id: "studio-apply-policy", label: "Apply changes", value: studioPreferences.applyPolicy, key: "applyPolicy", options: STUDIO_APPLY_OPTIONS },
+          { id: "studio-validation-mode", label: "Validation", value: studioPreferences.validationMode, key: "validationMode", options: STUDIO_VALIDATION_OPTIONS },
+          { id: "studio-safety-mode", label: "Safety", value: studioPreferences.safetyMode, key: "safetyMode", options: STUDIO_SAFETY_OPTIONS },
+        ];
+        return (
+          <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-muted/20">
+            {rows.map((row) => (
+              <div key={row.id} className="grid gap-2 p-4 sm:grid-cols-[minmax(0,1fr)_minmax(14rem,0.8fr)] sm:items-center">
+                <Label htmlFor={row.id}>{row.label}</Label>
+                <Select value={row.value} onValueChange={(value) => updateStudioPreference({ [row.key]: value })}>
+                  <SelectTrigger id={row.id}><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {row.options.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
+    </Panel>
+  );
 
+  const renderRobloxAdvanced = () => (
+    <>
+      <Panel
+        id="roblox-authorization-details"
+        title="Authorization details"
+        description="Technical authorization and resource information used for diagnostics."
+      >
+        <DataStateAlert state={robloxState} onRetry={loadRoblox} label="Roblox" />
+        {!robloxConnected ? (
+          <EmptyState
+            icon={PlugZap}
+            title="Connect Roblox first"
+            description="Scopes, token health, creators, and universes appear after a successful Roblox connection."
+            action={
+              <Button type="button" variant="outline" onClick={() => setRobloxSettingsSection("connection")}>
+                Open Connection
+              </Button>
+            }
+          />
+        ) : (
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <div className="settings-field-label">
+                <Label>Granted scopes</Label>
+                <DevTip label="About granted Roblox scopes">Permissions currently available to NexusRBX through Roblox OAuth.</DevTip>
+              </div>
+              <div className="flex min-h-10 flex-wrap gap-2 rounded-md border border-border bg-muted/20 p-2">
+                {grantedScopes.length > 0 ? (
+                  grantedScopes.slice(0, 10).map((scope) => (
+                    <span key={scope} className="settings-ledger-term">
+                      {scope}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-sm text-muted-foreground">No OAuth scopes reported.</span>
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <HealthTile
+                icon={Shield}
+                label="Token health"
+                value={tokenHealth?.status || "Unknown"}
+                detail={tokenHealth?.accessTokenExpiresAt ? `Access expires ${formatDate(tokenHealth.accessTokenExpiresAt)}` : "Refresh is handled securely by the server."}
+                state={tokenHealth?.status === "healthy" || tokenHealth?.status === "valid" ? "good" : "neutral"}
+              />
+              <HealthTile
+                icon={Users}
+                label="Creator targets"
+                value={formatNumber(creators.length)}
+                detail={`${formatNumber(creators.filter((creator) => creator.type === "Group").length)} authorized groups`}
+                state={creators.length ? "good" : "warn"}
+              />
+              <HealthTile
+                icon={Database}
+                label="Universes"
+                value={formatNumber(accessibleUniverses.length)}
+                detail="Accessible resources reported by Roblox"
+                state="neutral"
+              />
+              <HealthTile
+                icon={Activity}
+                label="Last operation"
+                value={lastRobloxOperation?.type || "None recorded"}
+                detail={lastRobloxOperation?.occurredAt ? formatDate(lastRobloxOperation.occurredAt) : "No successful operation reported yet"}
+                state={lastRobloxOperation ? "good" : "neutral"}
+              />
+            </div>
+
+            <details className="rounded-lg border border-border bg-muted/20 p-4">
+              <summary className="cursor-pointer text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                Authorized creators and universes
+              </summary>
+              <div className="mt-4 grid gap-5 lg:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Granted capabilities</Label>
-                  <div className="flex min-h-10 flex-wrap gap-2 rounded-md border border-border bg-muted/20 p-2">
-                    {(robloxStatus?.capabilities?.granted || []).length > 0 ? (
-                      robloxStatus.capabilities.granted.slice(0, 8).map((capability) => (
-                        <span key={capability.id || capability.label || capability} className="settings-ledger-term">
-                          {capability.label || capability.id || capability}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-sm text-muted-foreground">No scoped capabilities found.</span>
-                    )}
-                  </div>
+                  <Label>Creator targets</Label>
+                  {creators.length ? (
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      {creators.map((creator) => (
+                        <li key={`${creator.type}:${creator.id}`} className="rounded-md border border-border bg-background/40 p-3">
+                          <span className="font-medium text-foreground">{creator.name || `${creator.type} ${creator.id}`}</span>
+                          <span className="ml-2">{creator.type} {creator.id}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : <p className="text-sm text-muted-foreground">No authorized creators reported.</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label>Accessible universes</Label>
+                  {accessibleUniverses.length ? (
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      {accessibleUniverses.map((universe) => (
+                        <li key={universe.id} className="rounded-md border border-border bg-background/40 p-3">
+                          <span className="font-medium text-foreground">{universe.name || `Universe ${universe.id}`}</span>
+                          <span className="ml-2">{universe.id}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : <p className="text-sm text-muted-foreground">No accessible universes were reported.</p>}
                 </div>
               </div>
-            )}
+            </details>
+
+            <div className="space-y-2">
+              <Label>Granted capabilities</Label>
+              <div className="flex min-h-10 flex-wrap gap-2 rounded-md border border-border bg-muted/20 p-2">
+                {(robloxStatus?.capabilities?.granted || []).length > 0 ? (
+                  robloxStatus.capabilities.granted.slice(0, 8).map((capability) => (
+                    <span key={capability.id || capability.label || capability} className="settings-ledger-term">
+                      {capability.label || capability.id || capability}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-sm text-muted-foreground">No scoped capabilities found.</span>
+                )}
+              </div>
+            </div>
           </div>
         )}
-      </Panel>
-
-      <Panel title="Studio handoff" description="Use one capability-routed policy for Studio validation, application, and safety.">
-        {(() => {
-          const studioPreferences = normalizeStudioPreferences(settings);
-          const updateStudioPreference = (patch) => updateSetting(studioPreferencePatch({
-            ...studioPreferences,
-            ...patch,
-          }));
-          const rows = [
-            { id: "studio-apply-policy", label: "Apply changes", value: studioPreferences.applyPolicy, key: "applyPolicy", options: STUDIO_APPLY_OPTIONS },
-            { id: "studio-validation-mode", label: "Validation", value: studioPreferences.validationMode, key: "validationMode", options: STUDIO_VALIDATION_OPTIONS },
-            { id: "studio-safety-mode", label: "Safety", value: studioPreferences.safetyMode, key: "safetyMode", options: STUDIO_SAFETY_OPTIONS },
-          ];
-          return (
-            <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-muted/20">
-              {rows.map((row) => (
-                <div key={row.id} className="grid gap-2 p-4 sm:grid-cols-[minmax(0,1fr)_minmax(14rem,0.8fr)] sm:items-center">
-                  <Label htmlFor={row.id}>{row.label}</Label>
-                  <Select value={row.value} onValueChange={(value) => updateStudioPreference({ [row.key]: value })}>
-                    <SelectTrigger id={row.id}><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {row.options.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ))}
-            </div>
-          );
-        })()}
       </Panel>
 
       <Panel title="Roblox operations" description="Recent Roblox upload and polling activity.">
@@ -1512,6 +1995,22 @@ export default function SettingsPage() {
           </Table>
         )}
       </Panel>
+    </>
+  );
+
+  const renderRoblox = () => (
+    <div className="space-y-6">
+      <SettingsSubnav
+        items={ROBLOX_SETTINGS_SECTIONS}
+        value={robloxSettingsSection}
+        onChange={setRobloxSettingsSection}
+        label="Roblox and Studio settings"
+      />
+
+      {robloxSettingsSection === "connection" && renderRobloxConnection()}
+      {robloxSettingsSection === "publishing" && renderRobloxPublishing()}
+      {robloxSettingsSection === "studio" && renderStudioSettings()}
+      {robloxSettingsSection === "advanced" && renderRobloxAdvanced()}
     </div>
   );
 
@@ -1617,7 +2116,11 @@ export default function SettingsPage() {
 
   const renderAccount = () => (
     <div className="space-y-6">
-      <Panel title="Profile and session" description="Signed-in identity and session controls.">
+      <Panel
+        id="profile-session"
+        title="Profile and session"
+        description="Signed-in identity and session controls."
+      >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="text-sm text-muted-foreground">Signed in as</div>
@@ -1632,6 +2135,7 @@ export default function SettingsPage() {
       </Panel>
 
       <Panel
+        id="danger-zone"
         title="Danger zone"
         description="These actions permanently remove account data. Each one requires typed confirmation."
         tone="danger"
@@ -1851,7 +2355,14 @@ export default function SettingsPage() {
                   <SheetDescription>Choose a settings section.</SheetDescription>
                 </SheetHeader>
                 <div className="mt-6">
-                  <NavList groups={navGroups} activeTab={activeTab} onSelect={setTab} itemMeta={navItemMeta} />
+                  <NavList
+                    groups={navGroups}
+                    activeTab={activeTab}
+                    onSelect={setTab}
+                    onSelectSetting={openSetting}
+                    searchEntries={SETTINGS_SEARCH_ENTRIES}
+                    itemMeta={navItemMeta}
+                  />
                 </div>
               </SheetContent>
             </Sheet>
@@ -1884,7 +2395,14 @@ export default function SettingsPage() {
                   <span className="settings-sidebar-brand__copy"><strong>Settings</strong><small>NexusRBX control center</small></span>
                 </div>
                 <SidebarIdentity user={user} plan={billing.plan} />
-                <NavList groups={navGroups} activeTab={activeTab} onSelect={setTab} itemMeta={navItemMeta} />
+                <NavList
+                  groups={navGroups}
+                  activeTab={activeTab}
+                  onSelect={setTab}
+                  onSelectSetting={openSetting}
+                  searchEntries={SETTINGS_SEARCH_ENTRIES}
+                  itemMeta={navItemMeta}
+                />
                 <div className="settings-sidebar-footer">
                   <Link to="/ai"><ArrowRight aria-hidden="true" /><span><strong>Back to workspace</strong><small>Continue building</small></span></Link>
                 </div>

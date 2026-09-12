@@ -1,0 +1,10 @@
+PASS src/pages/ai/ui/UiCreatorWorkspace.test.jsx (5.213 s)
+PASS src/pages/ai/ui/UiPreviewPane.test.jsx
+PASS src/pages/ai/ui/UiLiveFiles.test.jsx
+PASS src/lib/localDevelopmentAuth.test.js
+
+Test Suites: 4 passed, 4 total
+Tests:       37 passed, 37 total
+Snapshots:   0 total
+Time:        9.358 s, estimated 21 s
+Ran all test suites within paths "src/lib/localDevelopmentAuth.test.js", "src/pages/ai/ui/UiPreviewPane.test.jsx", "src/pages/ai/ui/UiLiveFiles.test.jsx", "src/pages/ai/ui/UiCreatorWorkspace.test.jsx".

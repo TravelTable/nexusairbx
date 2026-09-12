@@ -259,7 +259,11 @@
 }
 
 .settings-tab-list button {
+  display: flex;
+  width: 100%;
   min-height: 38px;
+  align-items: center;
+  justify-content: space-between;
   border: 1px solid transparent;
   border-radius: 9px !important;
   background: transparent !important;
@@ -267,6 +271,7 @@
   font-size: 0.8125rem;
   color: var(--nx-text-secondary);
   font-weight: 550;
+  text-align: left;
   transition: border-color var(--nx-motion-fast), background var(--nx-motion-fast), color var(--nx-motion-fast);
 }
 
@@ -1314,3 +1319,133 @@
 .settings-connection-status { display: inline-flex; align-items: center; gap: 7px; font-size: .8rem; color: var(--nx-text-secondary); }
 .settings-connection-status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--nx-text-muted); }
 .settings-connection-status[data-tone="success"]::before { background: var(--ds-success); }
+
+.settings-overview-hero--compact {
+  grid-template-columns: 1fr;
+}
+
+.settings-overview-hero--compact .settings-overview-ledger {
+  grid-column: 1;
+}
+
+.settings-search-results {
+  display: grid;
+  gap: var(--nx-space-5);
+}
+
+.settings-search-group {
+  display: grid;
+  gap: 3px;
+}
+
+.settings-search-result {
+  display: grid;
+  width: 100%;
+  min-height: 48px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 9px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--nx-text-secondary);
+  text-align: left;
+  transition:
+    border-color var(--nx-motion-fast),
+    background var(--nx-motion-fast),
+    color var(--nx-motion-fast);
+}
+
+.settings-search-result:hover {
+  border-color: var(--nx-rule-quiet);
+  background: var(--nx-muted-surface);
+  color: var(--nx-text);
+}
+
+.settings-search-result:focus-visible {
+  outline: none;
+  border-color: var(--nx-purple-border);
+  box-shadow:
+    0 0 0 3px
+    color-mix(in srgb, var(--nx-purple) 18%, transparent);
+}
+
+.settings-search-result > svg {
+  width: 16px;
+  height: 16px;
+  color: var(--nx-purple-strong);
+}
+
+.settings-search-result > span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.settings-search-result strong {
+  overflow: hidden;
+  color: var(--nx-text);
+  font-size: 0.75rem;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-search-result small {
+  color: var(--nx-text-muted);
+  font-size: 0.625rem;
+}
+
+.settings-ledger-page :is(
+  section,
+  input,
+  textarea,
+  label,
+  [role="combobox"]
+)[id],
+.settings-ledger-page #auto-upload-assets {
+  scroll-margin-top: calc(var(--nx-header-height) + 32px);
+}
+
+/* Roblox / Studio internal navigation */
+
+.settings-subnav {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 4px;
+  border: 1px solid var(--nx-rule);
+  border-radius: var(--nx-radius-panel);
+  background: var(--nx-depth);
+}
+
+.settings-subnav button {
+  min-height: 38px;
+  flex: 0 0 auto;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--nx-text-muted);
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.settings-subnav button:hover {
+  color: var(--nx-text);
+  background: var(--nx-muted-surface);
+}
+
+.settings-subnav button[aria-selected="true"] {
+  border-color: var(--nx-purple-border);
+  background: var(--nx-purple-soft);
+  color: var(--nx-text);
+}
+
+.settings-subnav button:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px
+    color-mix(in srgb, var(--nx-purple) 18%, transparent);
+}

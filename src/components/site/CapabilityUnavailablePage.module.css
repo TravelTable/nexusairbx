@@ -80,7 +80,7 @@
   margin: var(--nx-space-5) 0 0;
   padding: var(--nx-space-2) var(--nx-space-3);
   border: 1px solid var(--nx-rule);
-  border-radius: var(--nx-radius-pill);
+  border-radius: var(--nx-radius-control);
   background: var(--nx-muted-surface);
   color: var(--nx-text-muted);
   font-size: 0.75rem;

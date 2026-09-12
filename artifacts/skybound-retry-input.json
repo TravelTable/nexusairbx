@@ -1,0 +1,18 @@
+{
+  "message": "Create a polished main menu for a Roblox adventure game called SKYBOUND. Use a cohesive sky-island adventure style with a deep navy background, warm ivory typography, teal accents, and restrained gold highlights. Include a strong game title, a primary Play button, and secondary Settings and Credits buttons. Add a small version label. Make the composition feel distinctive and premium, with clear visual hierarchy, generous spacing, consistent icons, subtle hover/press feedback, and smooth menu transitions. Settings should open a panel with music and sound toggles, and Credits should open a dismissible panel. Support desktop and mobile with readable text and comfortable touch targets. Generate the UI and preview so I can rate the result.",
+  "mode": "agent",
+  "workspace": "ui_creator",
+  "designId": "sUlmbOLCMNIzjn8faG6E",
+  "baseRevision": "d9307b35f1148a3b279fbd9b",
+  "uiIntent": "create",
+  "projectId": "proj_e237b4d5b7634cf2a503723f3f8beff7",
+  "chatId": "sUlmbOLCMNIzjn8faG6E",
+  "attachments": [],
+  "executionInput": {
+    "settings": {
+      "modelVersion": "google/gemini-3.6-flash"
+    },
+    "applyMode": "manual_review",
+    "studioEnabled": false
+  }
+}

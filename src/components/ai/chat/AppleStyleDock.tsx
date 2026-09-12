@@ -117,7 +117,7 @@ function Dock({
         height: height,
         scrollbarWidth: 'none',
       }}
-      className='nexus-workspace-dock__viewport mx-2 flex max-w-full items-end overflow-x-auto'
+      className='nexus-workspace-dock__viewport mx-2 flex max-w-full items-end overflow-visible'
     >
       <motion.div
         onMouseMove={({ pageX }) => {
@@ -206,6 +206,8 @@ function DockLabel({ children, className, ...rest }: DockLabelProps) {
   const restProps = rest as Record<string, unknown>;
   const isHovered = restProps['isHovered'] as MotionValue<number>;
   const [isVisible, setIsVisible] = useState(false);
+  const [shiftX, setShiftX] = useState(0);
+  const labelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const unsubscribe = isHovered.on('change', (latest) => {
@@ -215,20 +217,41 @@ function DockLabel({ children, className, ...rest }: DockLabelProps) {
     return () => unsubscribe();
   }, [isHovered]);
 
+  useEffect(() => {
+    if (!isVisible) {
+      setShiftX(0);
+      return undefined;
+    }
+
+    const frame = requestAnimationFrame(() => {
+      const label = labelRef.current;
+      if (!label) return;
+      // Measure with the centered transform framer applies via `x`.
+      const rect = label.getBoundingClientRect();
+      const margin = 8;
+      const overflowLeft = Math.min(0, rect.left - margin);
+      const overflowRight = Math.max(0, rect.right - (window.innerWidth - margin));
+      setShiftX(-overflowLeft - overflowRight);
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [isVisible, children]);
+
   return (
     <AnimatePresence>
       {isVisible && (
         <motion.div
+          ref={labelRef}
           initial={{ opacity: 0, y: 0 }}
           animate={{ opacity: 1, y: -10 }}
           exit={{ opacity: 0, y: 0 }}
           transition={{ duration: 0.2 }}
           className={cn(
-            'absolute -top-6 left-1/2 z-10 w-fit whitespace-pre rounded-md border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs text-white',
+            'pointer-events-none absolute -top-6 left-1/2 z-50 w-fit whitespace-nowrap rounded-md border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs text-white shadow-lg',
             className
           )}
           role='tooltip'
-          style={{ x: '-50%' }}
+          style={{ x: `calc(-50% + ${shiftX}px)` }}
         >
           {children}
         </motion.div>

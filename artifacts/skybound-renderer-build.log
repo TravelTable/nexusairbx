@@ -1,0 +1,61 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.30kB 0.0s done
+#1 DONE 0.1s
+
+#2 [internal] load metadata for docker.io/library/python:3.11-slim@sha256:9534e5a8e315485d4061ed659af0fd78a284c015f9b73661b41d6bab25604534
+#2 DONE 1.8s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 90B 0.0s done
+#3 DONE 0.0s
+
+#4 [ 1/13] FROM docker.io/library/python:3.11-slim@sha256:9534e5a8e315485d4061ed659af0fd78a284c015f9b73661b41d6bab25604534
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 273B done
+#5 DONE 0.0s
+
+#6 [ 4/13] RUN git init /opt/pinevex && cd /opt/pinevex && git remote add origin https://github.com/whutdev/pinevex-renderer.git     && git fetch --depth 1 origin "db292aca2b319c7204f494175c59ed9bd9552930" && git checkout --detach FETCH_HEAD     && test "$(git rev-parse HEAD)" = "db292aca2b319c7204f494175c59ed9bd9552930"
+#6 CACHED
+
+#7 [12/13] COPY render_core.py server.py build_core.py build_ui.luau /app/
+#7 CACHED
+
+#8 [10/13] COPY install_lune.py /app/install_lune.py
+#8 CACHED
+
+#9 [ 3/13] RUN apt-get update && apt-get install -y --no-install-recommends $(tr -d '\r' < /tmp/apt-packages.lock)     && rm -rf /var/lib/apt/lists/*
+#9 CACHED
+
+#10 [ 8/13] COPY patch_grid.py /app/patch_grid.py
+#10 CACHED
+
+#11 [ 5/13] WORKDIR /app
+#11 CACHED
+
+#12 [ 7/13] RUN python -m pip install --no-cache-dir --require-hashes --only-binary=:all: -r /app/requirements.lock
+#12 CACHED
+
+#13 [11/13] RUN python /app/install_lune.py
+#13 CACHED
+
+#14 [ 9/13] RUN python /app/patch_grid.py /opt/pinevex/src/ui_engine/renderer.py
+#14 CACHED
+
+#15 [ 2/13] COPY apt-packages.lock /tmp/apt-packages.lock
+#15 CACHED
+
+#16 [ 6/13] COPY requirements.lock /app/requirements.lock
+#16 CACHED
+
+#17 [13/13] RUN useradd --uid 10001 --create-home renderer
+#17 CACHED
+
+#18 exporting to image
+#18 exporting layers done
+#18 writing image sha256:4fb6df06dfac4753ef8b51e1f2b2eb40e2dfb9309abd96b9f5133a9dd467a472 0.0s done
+#18 naming to docker.io/library/nexus-ui-renderer:files-v2 0.0s done
+#18 DONE 0.1s

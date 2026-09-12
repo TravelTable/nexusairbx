@@ -1,0 +1,135 @@
+TAP version 13
+# Subtest: manifest exposes the latest capture, server-owned viewports and honest capabilities
+ok 1 - manifest exposes the latest capture, server-owned viewports and honest capabilities
+  ---
+  duration_ms: 83.0304
+  ...
+# Subtest: a capture is validated before storage and rejects an incomplete traversal
+ok 2 - a capture is validated before storage and rejects an incomplete traversal
+  ---
+  duration_ms: 7.741
+  ...
+# Subtest: a stalled Studio probe cannot prevent loading an existing preview manifest
+ok 3 - a stalled Studio probe cannot prevent loading an existing preview manifest
+  ---
+  duration_ms: 18.9591
+  ...
+# Subtest: the capture tree hash is computed from the observed tree, not supplied
+ok 4 - the capture tree hash is computed from the observed tree, not supplied
+  ---
+  duration_ms: 8.7423
+  ...
+# Subtest: enqueue rejects a stale source revision instead of rendering the wrong thing
+ok 5 - enqueue rejects a stale source revision instead of rendering the wrong thing
+  ---
+  duration_ms: 6.0278
+  ...
+# Subtest: enqueue rejects an unknown viewport rather than coercing to a default
+ok 6 - enqueue rejects an unknown viewport rather than coercing to a default
+  ---
+  duration_ms: 8.8756
+  ...
+# Subtest: reconnecting with a new idempotency key deduplicates instead of launching a duplicate render
+ok 7 - reconnecting with a new idempotency key deduplicates instead of launching a duplicate render
+  ---
+  duration_ms: 9.1059
+  ...
+# Subtest: replaying the same idempotency key with different input is a conflict
+ok 8 - replaying the same idempotency key with different input is a conflict
+  ---
+  duration_ms: 9.4092
+  ...
+# Subtest: a newer request supersedes the older in-flight preview for the same slot
+ok 9 - a newer request supersedes the older in-flight preview for the same slot
+  ---
+  duration_ms: 9.6324
+  ...
+# Subtest: a slow superseded worker cannot overwrite the newer published preview
+ok 10 - a slow superseded worker cannot overwrite the newer published preview
+  ---
+  duration_ms: 13.5932
+  ...
+# Subtest: publication is refused once the design moved to a newer source revision
+ok 11 - publication is refused once the design moved to a newer source revision
+  ---
+  duration_ms: 9.1264
+  ...
+# Subtest: states are bound to the capture hash and the source revision
+ok 12 - states are bound to the capture hash and the source revision
+  ---
+  duration_ms: 5.4814
+  ...
+# Subtest: a state bound to an older capture cannot be enqueued
+ok 13 - a state bound to an older capture cannot be enqueued
+  ---
+  duration_ms: 6.9257
+  ...
+# Subtest: default is reserved for the captured baseline and cannot be saved as a state
+ok 14 - default is reserved for the captured baseline and cannot be saved as a state
+  ---
+  duration_ms: 5.8102
+  ...
+# Subtest: image reads verify the stored bytes against the published manifest hash
+ok 15 - image reads verify the stored bytes against the published manifest hash
+  ---
+  duration_ms: 12.179
+  ...
+# Subtest: another user cannot read a design, its previews or its images
+ok 16 - another user cannot read a design, its previews or its images
+  ---
+  duration_ms: 6.775
+  ...
+# Subtest: losing project access blocks preview reads even for the design owner
+ok 17 - losing project access blocks preview reads even for the design owner
+  ---
+  duration_ms: 5.0866
+  ...
+# Subtest: the daily render budget is separate from generation credits
+ok 18 - the daily render budget is separate from generation credits
+  ---
+  duration_ms: 7.4967
+  ...
+# Subtest: simultaneous preview admissions reserve one job and bind every request key
+ok 19 - simultaneous preview admissions reserve one job and bind every request key
+  ---
+  duration_ms: 6.2805
+  ...
+# Subtest: a cache hit is served without admitting a new render job
+ok 20 - a cache hit is served without admitting a new render job
+  ---
+  duration_ms: 11.8963
+  ...
+# Subtest: unset UI_PREVIEW_ENABLED still admits a render job
+ok 21 - unset UI_PREVIEW_ENABLED still admits a render job
+  ---
+  duration_ms: 4.9795
+  ...
+# Subtest: UI_PREVIEW_ENABLED=false still disables enqueue
+ok 22 - UI_PREVIEW_ENABLED=false still disables enqueue
+  ---
+  duration_ms: 6.9054
+  ...
+# Subtest: manifest reports rendererBackend and fallbackConfigured from the renderer descriptor
+ok 23 - manifest reports rendererBackend and fallbackConfigured from the renderer descriptor
+  ---
+  duration_ms: 4.6182
+  ...
+# Subtest: public renderer results cannot be published
+ok 24 - public renderer results cannot be published
+  ---
+  duration_ms: 5.904
+  ...
+# Subtest: saved designs get an immutable render source without touching Studio
+ok 25 - saved designs get an immutable render source without touching Studio
+  ---
+  duration_ms: 94.5742
+  ...
+1..25
+# tests 25
+# suites 0
+# pass 25
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 612.9368
