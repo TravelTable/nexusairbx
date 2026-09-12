@@ -36,6 +36,8 @@ const DOCK_HEIGHT = 48;
 const DEFAULT_MAGNIFICATION = 36;
 const DEFAULT_DISTANCE = 150;
 const DEFAULT_PANEL_HEIGHT = 42;
+/** Room above the panel so DockLabel tooltips are not clipped by the viewport. */
+const DOCK_LABEL_SPACE = 36;
 
 type DockProps = {
   children: React.ReactNode;
@@ -99,10 +101,14 @@ function Dock({
   const isHovered = useMotionValue(0);
 
   const maxHeight = useMemo(() => {
-    return Math.max(DOCK_HEIGHT, magnification + magnification / 2 + 4);
+    return Math.max(DOCK_HEIGHT, magnification + magnification / 2 + 4) + DOCK_LABEL_SPACE;
   }, [magnification]);
 
-  const heightRow = useTransform(isHovered, [0, 1], [panelHeight, maxHeight]);
+  const heightRow = useTransform(
+    isHovered,
+    [0, 1],
+    [panelHeight + DOCK_LABEL_SPACE, maxHeight]
+  );
   const height = useSpring(heightRow, spring);
 
   return (
@@ -123,7 +129,7 @@ function Dock({
           mouseX.set(Infinity);
         }}
         className={cn(
-          'nexus-workspace-dock__items mx-auto flex w-fit gap-3 rounded-2xl bg-gray-50 px-3 dark:bg-neutral-900',
+          'nexus-workspace-dock__items mx-auto flex w-fit gap-3 rounded-2xl bg-neutral-900 px-3',
           className
         )}
         style={{ height: panelHeight }}
@@ -218,7 +224,7 @@ function DockLabel({ children, className, ...rest }: DockLabelProps) {
           exit={{ opacity: 0, y: 0 }}
           transition={{ duration: 0.2 }}
           className={cn(
-            'absolute -top-6 left-1/2 w-fit whitespace-pre rounded-md border border-gray-200 bg-gray-100 px-2 py-0.5 text-xs text-neutral-700 dark:border-neutral-900 dark:bg-neutral-800 dark:text-white',
+            'absolute -top-6 left-1/2 z-10 w-fit whitespace-pre rounded-md border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs text-white',
             className
           )}
           role='tooltip'
@@ -260,56 +266,56 @@ const data: DockDataItem[] = [
   {
     title: 'New chat',
     icon: (
-      <Plus className='h-full w-full text-neutral-600 dark:text-neutral-300' />
+      <Plus className='h-full w-full text-neutral-300' />
     ),
     action: 'new-chat',
   },
   {
     title: 'Projects',
     icon: (
-      <Package className='h-full w-full text-neutral-600 dark:text-neutral-300' />
+      <Package className='h-full w-full text-neutral-300' />
     ),
     action: 'projects',
   },
   {
     title: 'Assets',
     icon: (
-      <Component className='h-full w-full text-neutral-600 dark:text-neutral-300' />
+      <Component className='h-full w-full text-neutral-300' />
     ),
     action: 'assets',
   },
   {
     title: 'Activity',
     icon: (
-      <Activity className='h-full w-full text-neutral-600 dark:text-neutral-300' />
+      <Activity className='h-full w-full text-neutral-300' />
     ),
     action: 'activity',
   },
   {
     title: 'Chats',
     icon: (
-      <ScrollText className='h-full w-full text-neutral-600 dark:text-neutral-300' />
+      <ScrollText className='h-full w-full text-neutral-300' />
     ),
     action: 'chats',
   },
   {
     title: 'Usage',
     icon: (
-      <LineChart className='h-full w-full text-neutral-600 dark:text-neutral-300' />
+      <LineChart className='h-full w-full text-neutral-300' />
     ),
     action: 'usage',
   },
   {
     title: 'Settings',
     icon: (
-      <Settings className='h-full w-full text-neutral-600 dark:text-neutral-300' />
+      <Settings className='h-full w-full text-neutral-300' />
     ),
     href: '/settings',
   },
   {
     title: 'Build options',
     icon: (
-      <SlidersHorizontal className='h-full w-full text-neutral-600 dark:text-neutral-300' />
+      <SlidersHorizontal className='h-full w-full text-neutral-300' />
     ),
     action: 'build-options',
   },
@@ -496,7 +502,7 @@ export function AppleStyleDock({
           <DockItem
             key={idx}
             className={cn(
-              'aspect-square rounded-full bg-gray-200 dark:bg-neutral-800',
+              'aspect-square rounded-full bg-neutral-800',
               popupView === item.action && 'ring-1 ring-white/25'
             )}
             onClick={() => runAction(item)}

@@ -871,7 +871,7 @@ export default function ChatComposer({
   return (
     <div className={`nexus-composer-region pc-page-gutter bg-[var(--ds-bg-workspace)] pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 ${regionClassName}`}>
       {showDock ? (
-        <div className="nexus-composer-frame relative mx-auto h-[54px]">
+        <div className="nexus-composer-frame relative mx-auto h-[54px] overflow-visible">
           <AppleStyleDock
             onNewChat={onDockNewChat}
             onOpenAssets={onDockOpenAssets}
