@@ -80,7 +80,12 @@ export function AssetDetailRouteContent({
 function App() {
   const localDevelopmentAuth = shouldUseLocalDevelopmentAuth();
   return (
-    <Router>
+    <Router
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
       <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-background text-foreground" role="status">Loading…</div>}>
         {localDevelopmentAuth ? null : <AuthRedirectHandler />}
         <Routes>

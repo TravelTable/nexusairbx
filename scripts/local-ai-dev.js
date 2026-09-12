@@ -9,6 +9,7 @@ const backendRoot = path.join(root, "backend");
 const publicFrontendRoot = path.join(root, "public-frontend");
 const reactStart = path.join(root, "node_modules", "react-scripts", "scripts", "start.js");
 const nextDev = path.join(root, "node_modules", "next", "dist", "bin", "next");
+const nodemonBin = path.join(backendRoot, "node_modules", "nodemon", "bin", "nodemon.js");
 const children = new Set();
 let shuttingDown = false;
 
@@ -74,9 +75,19 @@ async function main() {
   console.log("  Docs & pricing: http://localhost:4173");
   console.log("  Local API:      http://localhost:5001");
   console.log("  Roblox redirect http://localhost:5001/api/roblox/oauth/callback");
-  console.log("  AI worker:      enabled (real configured provider)\n");
+  console.log("  AI worker:      enabled (real configured provider)");
+  console.log("  Backend reload: nodemon (watches server.js + src)\n");
 
-  startProcess("backend", ["server.js"], backendRoot, {
+  // Frontend/Next already hot-reload. Backend must run under nodemon so edits
+  // to uiDesignIntelligence.js and related services restart without a manual kill.
+  startProcess("backend", [
+    nodemonBin,
+    "--watch", "server.js",
+    "--watch", "src",
+    "--ext", "js,json",
+    "--signal", "SIGTERM",
+    "server.js",
+  ], backendRoot, {
     NODE_ENV: "development",
     HOST: "127.0.0.1",
     PORT: "5001",
@@ -117,6 +128,8 @@ async function main() {
     REACT_APP_APP_CHECK_ENABLED: "false",
     REACT_APP_ASSET_PLATFORM_READS_ENABLED: "true",
     REACT_APP_ASSET_PLATFORM_WRITES_ENABLED: "true",
+    REACT_APP_AI_PAGE_V2: "true",
+    REACT_APP_UNIFIED_AGENT: "true",
     REACT_APP_GENERATION_WALL_TIMEOUT_MS: "0",
     REACT_APP_PENDING_RUN_RECOVERY_WALL_TIMEOUT_MS: "0",
   });

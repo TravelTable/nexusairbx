@@ -73,14 +73,37 @@ export default function useHeaderIdentity({
       setSupportUnreadCount(0);
       return undefined;
     }
+
     void refreshSupportUnreadCount();
-    const timer = window.setInterval(refreshSupportUnreadCount, 60_000);
-    window.addEventListener("nexusrbx:support-unread-changed", refreshSupportUnreadCount);
+
+    const timer = window.setInterval(
+      () => {
+        void refreshSupportUnreadCount();
+      },
+      60_000
+    );
+
+    const handleUnreadChanged = () => {
+      void refreshSupportUnreadCount();
+    };
+
+    window.addEventListener(
+      "nexusrbx:support-unread-changed",
+      handleUnreadChanged
+    );
+
     return () => {
       window.clearInterval(timer);
-      window.removeEventListener("nexusrbx:support-unread-changed", refreshSupportUnreadCount);
+
+      window.removeEventListener(
+        "nexusrbx:support-unread-changed",
+        handleUnreadChanged
+      );
     };
-  }, [location.pathname, refreshSupportUnreadCount, user]);
+  }, [
+    refreshSupportUnreadCount,
+    user,
+  ]);
 
   useEffect(() => {
     let active = true;
