@@ -76,7 +76,8 @@ async function main() {
   console.log("  Local API:      http://localhost:5001");
   console.log("  Roblox redirect http://localhost:5001/api/roblox/oauth/callback");
   console.log("  AI worker:      enabled (real configured provider)");
-  console.log("  Backend reload: nodemon (watches server.js + src)\n");
+  console.log("  Backend reload: nodemon (watches server.js + src)");
+  console.log("  UI renderer:    http://127.0.0.1:8099 (must already be running)\n");
 
   // Frontend/Next already hot-reload. Backend must run under nodemon so edits
   // to uiDesignIntelligence.js and related services restart without a manual kill.
@@ -114,6 +115,10 @@ async function main() {
     RUN_ASSET_PUBLISHING_RECONCILIATION_WORKER: "false",
     TRACK_PAGE_VIEWS: "false",
     JOB_WORKER_POLL_MS: "1000",
+    UI_PREVIEW_RENDERER_URL: process.env.UI_PREVIEW_RENDERER_URL || "http://127.0.0.1:8099",
+    UI_PREVIEW_RENDERER_API_KEY:
+      process.env.UI_PREVIEW_RENDERER_API_KEY
+      || "8e3f522d890dea41e7f741270daaeaaefc0f7089afd8ba2e912309065f744f18",
   });
 
   startProcess("public frontend", [nextDev, "dev", "-p", "4173"], publicFrontendRoot, {
