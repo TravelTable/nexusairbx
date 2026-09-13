@@ -1,0 +1,60 @@
+[
+  {
+    "slot": 0,
+    "candidateId": 2,
+    "box": [
+      164,
+      50,
+      338,
+      282
+    ],
+    "pixelRefined": true,
+    "reason": ""
+  },
+  {
+    "slot": 1,
+    "candidateId": 3,
+    "box": [
+      186,
+      361,
+      317,
+      643
+    ],
+    "pixelRefined": true,
+    "reason": ""
+  },
+  {
+    "slot": 2,
+    "candidateId": 1,
+    "box": [
+      164,
+      718,
+      338,
+      950
+    ],
+    "pixelRefined": true,
+    "reason": ""
+  },
+  {
+    "slot": 3,
+    "candidateId": 0,
+    "box": [
+      601,
+      29,
+      896,
+      305
+    ],
+    "pixelRefined": true,
+    "reason": ""
+  },
+  {
+    "slot": 4,
+    "box": null,
+    "reason": "No single candidate contains all the requested corner flourishes and divider accents. Candidates 5, 7, 8, 9, and 10 are only parts of the requested ornament."
+  },
+  {
+    "slot": 5,
+    "box": null,
+    "reason": "No candidate matches the description of a thin gold-cyan ornamental divider below the settings header. The provided candidates are either parts of ornaments or other UI elements."
+  }
+]

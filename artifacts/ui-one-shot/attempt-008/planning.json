@@ -1,0 +1,3674 @@
+{
+  "requirementSpec": {
+    "intent": "Build a polished Roblox main menu titled AURORA. Features: Play, Settings, Credits. Settings opens a panel with Music on/off toggle and Volume slider. Credits opens a small panel. Both panels have Close. Desktop and mobile. Rich glossy cyan/cobalt artwork with thick navy edges, warm gold highlights, ornamental corner details and a title plate. Use Gemini-generated matching skins and icons: button skins, panel skin, slider track and handle, toggle on/off pieces and distinct play/settings/credits/close icons. Keep text live and readable. Create only these features; no shop, rewards, currency, ranks or invented game systems. Play closes the menu and fires a clearly named local hook for game integration. Coherent hover and press animation. Native background layout with restrained decoration. Panels must open and close in the actual controller.",
+    "screenType": "main_menu",
+    "requiredElements": [
+      {
+        "id": "title_aurora",
+        "label": "AURORA",
+        "semanticAction": "",
+        "category": "content",
+        "hierarchy": "primary",
+        "source": "explicit",
+        "evidence": "AURORA"
+      },
+      {
+        "id": "action_play",
+        "label": "Play",
+        "semanticAction": "play_game",
+        "category": "action",
+        "hierarchy": "primary",
+        "source": "explicit",
+        "evidence": "Play"
+      },
+      {
+        "id": "action_settings",
+        "label": "Settings",
+        "semanticAction": "open_settings_panel",
+        "category": "action",
+        "hierarchy": "primary",
+        "source": "explicit",
+        "evidence": "Settings"
+      },
+      {
+        "id": "action_credits",
+        "label": "Credits",
+        "semanticAction": "open_credits_panel",
+        "category": "action",
+        "hierarchy": "primary",
+        "source": "explicit",
+        "evidence": "Credits"
+      },
+      {
+        "id": "panel_settings",
+        "label": "Settings panel",
+        "semanticAction": "",
+        "category": "content",
+        "hierarchy": "secondary",
+        "source": "explicit",
+        "evidence": "Settings opens a panel"
+      },
+      {
+        "id": "toggle_music",
+        "label": "Music on/off toggle",
+        "semanticAction": "toggle_music",
+        "category": "action",
+        "hierarchy": "secondary",
+        "source": "explicit",
+        "evidence": "Music on/off toggle"
+      },
+      {
+        "id": "slider_volume",
+        "label": "Volume slider",
+        "semanticAction": "adjust_volume",
+        "category": "action",
+        "hierarchy": "secondary",
+        "source": "explicit",
+        "evidence": "Volume slider"
+      },
+      {
+        "id": "panel_credits",
+        "label": "Credits panel",
+        "semanticAction": "",
+        "category": "content",
+        "hierarchy": "secondary",
+        "source": "explicit",
+        "evidence": "Credits opens a small panel"
+      },
+      {
+        "id": "action_close_settings",
+        "label": "Close",
+        "semanticAction": "close_settings_panel",
+        "category": "action",
+        "hierarchy": "secondary",
+        "source": "explicit",
+        "evidence": "Close"
+      },
+      {
+        "id": "action_close_credits",
+        "label": "Close",
+        "semanticAction": "close_credits_panel",
+        "category": "action",
+        "hierarchy": "secondary",
+        "source": "explicit",
+        "evidence": "Close"
+      },
+      {
+        "id": "system_play_hook",
+        "label": "Local play integration hook",
+        "semanticAction": "fire_local_play_hook",
+        "category": "system",
+        "hierarchy": "secondary",
+        "source": "explicit",
+        "evidence": "fires a clearly named local hook for game integration"
+      },
+      {
+        "id": "system_panel_controller",
+        "label": "Actual panel open/close controller behavior",
+        "semanticAction": "control_panel_visibility",
+        "category": "system",
+        "hierarchy": "secondary",
+        "source": "explicit",
+        "evidence": "Panels must open and close in the actual controller"
+      },
+      {
+        "id": "decoration_title_plate",
+        "label": "Title plate",
+        "semanticAction": "",
+        "category": "decoration",
+        "hierarchy": "secondary",
+        "source": "explicit",
+        "evidence": "a title plate"
+      },
+      {
+        "id": "decoration_corner_details",
+        "label": "Ornamental corner details",
+        "semanticAction": "",
+        "category": "decoration",
+        "hierarchy": "tertiary",
+        "source": "explicit",
+        "evidence": "ornamental corner details"
+      },
+      {
+        "id": "decoration_native_background",
+        "label": "Native background layout with restrained decoration",
+        "semanticAction": "",
+        "category": "decoration",
+        "hierarchy": "tertiary",
+        "source": "explicit",
+        "evidence": "Native background layout with restrained decoration"
+      }
+    ],
+    "optionalElements": [],
+    "prohibitedInventions": [
+      "Do not add shop features.",
+      "Do not add rewards features.",
+      "Do not add currency displays or systems.",
+      "Do not add ranks.",
+      "Do not add invented game systems.",
+      "Do not add extra navigation beyond Play, Settings, Credits.",
+      "Do not convert live text into image text.",
+      "Do not rely on decorative mock behavior; panels must function in the controller."
+    ],
+    "style": {
+      "theme": "Polished Roblox main menu with rich glossy cyan/cobalt artwork, thick navy edges, warm gold highlights, ornamental corner details, and a title plate.",
+      "adjectives": [
+        "polished",
+        "rich",
+        "glossy",
+        "cyan/cobalt",
+        "navy-edged",
+        "gold-highlighted",
+        "ornamental",
+        "restrained"
+      ],
+      "targetAudience": null,
+      "genre": null,
+      "mood": "coherent and readable"
+    },
+    "interactionRequirements": {
+      "hover": true,
+      "click": true,
+      "sounds": false,
+      "animations": true,
+      "requestedBehaviors": [
+        "Play closes the menu.",
+        "Play fires a clearly named local hook for game integration.",
+        "Settings opens a panel.",
+        "Credits opens a small panel.",
+        "Both panels have Close.",
+        "Panels must open and close in the actual controller.",
+        "Coherent hover and press animation.",
+        "Keep text live and readable."
+      ]
+    },
+    "responsiveRequirements": {
+      "desktop": true,
+      "mobile": true,
+      "tablet": true
+    },
+    "assetRequirements": [
+      {
+        "id": "art_button_skins",
+        "semanticRole": "component_surface",
+        "assetType": "image",
+        "required": true,
+        "componentIds": [
+          "action_play",
+          "action_settings",
+          "action_credits",
+          "action_close_settings",
+          "action_close_credits"
+        ],
+        "styleDescription": "Gemini-generated matching button skins in rich glossy cyan/cobalt with thick navy edges and warm gold highlights."
+      },
+      {
+        "id": "art_panel_skin",
+        "semanticRole": "panel_surface",
+        "assetType": "image",
+        "required": true,
+        "componentIds": [
+          "panel_settings",
+          "panel_credits"
+        ],
+        "styleDescription": "Gemini-generated matching panel skin using glossy cyan/cobalt surfaces, thick navy edging, and warm gold accents."
+      },
+      {
+        "id": "art_slider_track",
+        "semanticRole": "component_surface",
+        "assetType": "image",
+        "required": true,
+        "componentIds": [
+          "slider_volume"
+        ],
+        "styleDescription": "Gemini-generated matching slider track artwork consistent with the menu skin."
+      },
+      {
+        "id": "art_slider_handle",
+        "semanticRole": "component_surface",
+        "assetType": "image",
+        "required": true,
+        "componentIds": [
+          "slider_volume"
+        ],
+        "styleDescription": "Gemini-generated matching slider handle artwork consistent with the menu skin."
+      },
+      {
+        "id": "art_toggle_pieces",
+        "semanticRole": "component_surface",
+        "assetType": "image",
+        "required": true,
+        "componentIds": [
+          "toggle_music"
+        ],
+        "styleDescription": "Gemini-generated matching toggle on/off pieces for music state, consistent with the menu skin."
+      },
+      {
+        "id": "icon_play",
+        "semanticRole": "icon",
+        "assetType": "icon",
+        "required": true,
+        "componentIds": [
+          "action_play"
+        ],
+        "styleDescription": "Distinct play icon matching the Gemini-generated skin set."
+      },
+      {
+        "id": "icon_settings",
+        "semanticRole": "icon",
+        "assetType": "icon",
+        "required": true,
+        "componentIds": [
+          "action_settings"
+        ],
+        "styleDescription": "Distinct settings icon matching the Gemini-generated skin set."
+      },
+      {
+        "id": "icon_credits",
+        "semanticRole": "icon",
+        "assetType": "icon",
+        "required": true,
+        "componentIds": [
+          "action_credits"
+        ],
+        "styleDescription": "Distinct credits icon matching the Gemini-generated skin set."
+      },
+      {
+        "id": "icon_close",
+        "semanticRole": "icon",
+        "assetType": "icon",
+        "required": true,
+        "componentIds": [
+          "action_close_settings",
+          "action_close_credits"
+        ],
+        "styleDescription": "Distinct close icon matching the Gemini-generated skin set."
+      },
+      {
+        "id": "art_title_plate",
+        "semanticRole": "ornament",
+        "assetType": "image",
+        "required": true,
+        "componentIds": [
+          "title_aurora",
+          "decoration_title_plate"
+        ],
+        "styleDescription": "Gemini-generated title plate framing the live AURORA text in the same cyan/cobalt, navy, and gold style."
+      },
+      {
+        "id": "art_corner_details",
+        "semanticRole": "ornament",
+        "assetType": "image",
+        "required": true,
+        "componentIds": [
+          "decoration_corner_details"
+        ],
+        "styleDescription": "Gemini-generated ornamental corner details used sparingly to support restrained decoration."
+      }
+    ],
+    "constraints": [
+      "Create only these features.",
+      "Use live Roblox text for labels and title so text remains readable.",
+      "Desktop and mobile support are required.",
+      "Use native layout for the background and keep decoration restrained.",
+      "Use matching Gemini-generated skins and icons across all controls.",
+      "Do not fabricate unrelated product systems or progression.",
+      "No asset IDs are specified at this stage."
+    ]
+  },
+  "designPlan": {
+    "artDirection": "AURORA is framed as a premium fantasy-sci-fi lobby with glossy cyan and cobalt enamel surfaces, thick navy edging, and restrained warm gold trim used only for highlights, corner filigree, and emphasis around the title plate. The composition avoids a full outer menu panel so the native background can breathe; instead, the title plate crowns a centered vertical action dock, while modal panels float above with matching framed skins. Gemini-generated artwork should form a cohesive kit: one primary button skin for Play, one shared secondary button skin for Settings and Credits, one shared close-button skin, one shared panel skin for both modals, one title-plate ornament, one corner-ornament image reused sparingly, one slider track skin, one slider handle skin, and matching toggle on/off pieces. Surfaces should feel polished and layered through internal gradients, beveled edge lighting, and controlled specular streaks, but text remains live, clean, and high-contrast without heavy outlining. The mood is readable and heroic rather than noisy: restrained background decoration, balanced negative space, and obvious primary-action dominance for Play.",
+    "composition": {
+      "focalPoint": "The dominant focal point is the large Play button centered in the main vertical dock beneath the AURORA title plate. Settings and Credits sit directly below as coordinated primary menu actions in the same dock, but remain visually subordinate through smaller scale. When opened, the Settings or Credits modal becomes the temporary focal layer, centered above the dock with its close control aligned in the panel header so users always understand how to dismiss it.",
+      "primaryRegion": "main_dock",
+      "secondaryRegions": [
+        "title_band above main actions",
+        "subtle full-screen background ornament field",
+        "centered settings modal overlay",
+        "centered credits modal overlay",
+        "nonvisual integration systems for play hook and panel controller"
+      ],
+      "alignmentSystem": "Use a centered vertical axis for title and main actions on desktop and mobile, with all major controls snapping to a shared width rhythm. Modal content aligns to a simple single-column interior grid: header row, content rows, then close action. Ornament placement mirrors top-left and bottom-right corners of the safe area for balance without crowding actionable areas. Keep all comparable menu buttons in one dock with equal widths and consistent icon/text alignment.",
+      "density": "balanced"
+    },
+    "visualSystem": {
+      "palette": {
+        "primary": "#2FD6FF",
+        "secondary": "#3B63D1",
+        "accent": "#F4C96A",
+        "success": "#6DDBA8",
+        "danger": "#E26A7A",
+        "neutralBackground": "#08111F",
+        "neutralSurface": "#11213D",
+        "textPrimary": "#F4FBFF",
+        "textSecondary": "#B7CBE6",
+        "outline": "#0D1E3E",
+        "shadow": "#040913"
+      },
+      "colorRationale": "Cyan is the luminous lead for primary affordances and glossy fill highlights, cobalt supports secondary actions and panel body depth, navy provides the thick structural edge treatment, and warm gold is reserved for trim, corner filigree, title accents, and small emphasis strokes so it reads as premium rather than overwhelming. Background remains deep and restrained to keep bright controls forward. Text uses near-white and cool desaturated blue-gray for strong readability over saturated art.",
+      "cornerRadiusScale": [
+        8,
+        12,
+        16,
+        22,
+        30
+      ],
+      "outlineStyle": "Primary surfaces use thick navy outer strokes with a subtle inner gold or cyan highlight line baked into artwork where appropriate. Native text containers and rows use thin UIStroke only when needed for separation; avoid outlining all text. Rounded corners progress from small row elements to broader modal and title framing.",
+      "shadowStyle": "Use short, dense navy-black drop shadows for buttons and panels with modest vertical offset, plus a soft ambient shadow beneath modal windows. Buttons get tighter shadows than panels so the stack feels crisp and polished rather than floaty.",
+      "typography": {
+        "display": {
+          "font": "rbxasset://fonts/families/Montserrat.json",
+          "weight": "ExtraBold",
+          "desktopSize": 40,
+          "mobileSize": 30,
+          "treatment": "Used only for the live AURORA title centered on the title plate with slight tracking and no heavy outline; rely on contrast and plate framing."
+        },
+        "heading": {
+          "font": "rbxasset://fonts/families/Montserrat.json",
+          "weight": "Bold",
+          "desktopSize": 24,
+          "mobileSize": 20,
+          "treatment": "Panel titles and major section labels use confident bold weight with high contrast and restrained spacing."
+        },
+        "button": {
+          "font": "rbxasset://fonts/families/Montserrat.json",
+          "weight": "SemiBold",
+          "desktopSize": 22,
+          "mobileSize": 18,
+          "treatment": "Action labels are large, centered vertically, and paired with icons; maintain readability over glossy skins with clean fill and no image text."
+        },
+        "body": {
+          "font": "rbxasset://fonts/families/Montserrat.json",
+          "weight": "Medium",
+          "desktopSize": 18,
+          "mobileSize": 16,
+          "treatment": "Used for credits body and settings row labels with high contrast and simple line spacing."
+        },
+        "caption": {
+          "font": "rbxasset://fonts/families/Montserrat.json",
+          "weight": "Medium",
+          "desktopSize": 14,
+          "mobileSize": 13,
+          "treatment": "Used for compact supporting text and slider value text if shown live."
+        },
+        "numeric": {
+          "font": "rbxasset://fonts/families/Montserrat.json",
+          "weight": "SemiBold",
+          "desktopSize": 16,
+          "mobileSize": 15,
+          "treatment": "Used for live volume value text with tabular feel and strong legibility."
+        },
+        "badge": {
+          "font": "rbxasset://fonts/families/Montserrat.json",
+          "weight": "Bold",
+          "desktopSize": 14,
+          "mobileSize": 12,
+          "treatment": "Reserved but minimally used; if any micro-label treatment is needed, keep compact and crisp."
+        }
+      }
+    },
+    "componentSystem": [
+      {
+        "id": "cmp_background_root",
+        "primitive": "Container",
+        "requirementId": "decoration_native_background",
+        "label": "Background Root",
+        "semanticAction": "",
+        "hierarchy": "tertiary",
+        "groupId": "background_group",
+        "nodeName": "BackgroundRoot",
+        "regionId": "background_region",
+        "paletteRole": "neutralBackground",
+        "typographyRole": "body",
+        "visualTreatment": "background native deep-space gradient field with restrained vignettes and no overpowering illustration",
+        "size": {
+          "desktop": "Full-screen frame spanning the safe area with subtle gradient and room around centered menu.",
+          "mobile": "Full-screen frame spanning the safe area with simplified gradient treatment and less visible empty margin.",
+          "minTouchTarget": 0
+        },
+        "icon": {
+          "enabled": false,
+          "semanticRole": "",
+          "family": "aurora_gemini",
+          "assetStrategy": "procedural",
+          "size": 16,
+          "padding": 0,
+          "visualWeight": "none",
+          "perspective": "flat",
+          "edgeTreatment": "none",
+          "shadowTreatment": "none",
+          "paletteMode": "none"
+        },
+        "interaction": {
+          "hoverAnimation": "none",
+          "pressAnimation": "none",
+          "hoverSound": "none",
+          "clickSound": "none",
+          "sharedHelper": "None",
+          "touchBehavior": "Passive decorative background; no input handling."
+        }
+      },
+      {
+        "id": "cmp_background_ornaments",
+        "primitive": "Decoration",
+        "requirementId": "decoration_corner_details",
+        "label": "Ornamental Corner Details",
+        "semanticAction": "",
+        "hierarchy": "tertiary",
+        "groupId": "background_group",
+        "nodeName": "BackgroundOrnaments",
+        "regionId": "background_region",
+        "paletteRole": "accent",
+        "typographyRole": "caption",
+        "visualTreatment": "ornament Gemini-generated corner filigree reused sparingly in mirrored safe-area corners with cyan, cobalt, navy, and gold detailing",
+        "size": {
+          "desktop": "Two to four corner ornaments anchored near safe-area corners, each moderate scale and low visual dominance.",
+          "mobile": "Two smaller ornaments pinned to top-left and bottom-right safe-area corners with reduced opacity and detail density.",
+          "minTouchTarget": 0
+        },
+        "icon": {
+          "enabled": false,
+          "semanticRole": "",
+          "family": "aurora_gemini",
+          "assetStrategy": "generated",
+          "size": 16,
+          "padding": 0,
+          "visualWeight": "none",
+          "perspective": "flat",
+          "edgeTreatment": "none",
+          "shadowTreatment": "none",
+          "paletteMode": "none"
+        },
+        "interaction": {
+          "hoverAnimation": "none",
+          "pressAnimation": "none",
+          "hoverSound": "none",
+          "clickSound": "none",
+          "sharedHelper": "None",
+          "touchBehavior": "Passive decoration only."
+        }
+      },
+      {
+        "id": "cmp_menu_dock",
+        "primitive": "MenuDock",
+        "requirementId": null,
+        "label": "Main Menu Dock",
+        "semanticAction": "",
+        "hierarchy": "primary",
+        "groupId": "main_menu_group",
+        "nodeName": "MainMenuDock",
+        "regionId": "main_dock",
+        "paletteRole": "neutralSurface",
+        "typographyRole": "body",
+        "visualTreatment": "Transparent native dock container that vertically groups title plate and all main menu buttons without an outer panel.",
+        "size": {
+          "desktop": "Centered vertical stack occupying a narrow middle column with generous breathing room around buttons.",
+          "mobile": "Centered vertical stack occupying most of the width with tighter vertical spacing and larger touch emphasis.",
+          "minTouchTarget": 0
+        },
+        "icon": {
+          "enabled": false,
+          "semanticRole": "",
+          "family": "aurora_gemini",
+          "assetStrategy": "procedural",
+          "size": 16,
+          "padding": 0,
+          "visualWeight": "none",
+          "perspective": "flat",
+          "edgeTreatment": "none",
+          "shadowTreatment": "none",
+          "paletteMode": "none"
+        },
+        "interaction": {
+          "hoverAnimation": "none",
+          "pressAnimation": "none",
+          "hoverSound": "none",
+          "clickSound": "none",
+          "sharedHelper": "None",
+          "touchBehavior": "Container only; input passes to child controls."
+        }
+      },
+      {
+        "id": "cmp_title_plate",
+        "primitive": "Decoration",
+        "requirementId": "decoration_title_plate",
+        "label": "Title Plate",
+        "semanticAction": "",
+        "hierarchy": "secondary",
+        "groupId": "main_menu_group",
+        "nodeName": "TitlePlate",
+        "regionId": "title_region",
+        "paletteRole": "secondary",
+        "typographyRole": "display",
+        "visualTreatment": "ornament Gemini-generated title plate with glossy cyan/cobalt enamel, thick navy rim, and warm gold trim framing live title text",
+        "size": {
+          "desktop": "Wide horizontal title plate above the buttons, approximately 1.4x the width of the main buttons.",
+          "mobile": "Slightly narrower plate relative to screen width with preserved aspect ratio and reduced ornament overhang.",
+          "minTouchTarget": 0
+        },
+        "icon": {
+          "enabled": false,
+          "semanticRole": "",
+          "family": "aurora_gemini",
+          "assetStrategy": "generated",
+          "size": 16,
+          "padding": 0,
+          "visualWeight": "none",
+          "perspective": "flat",
+          "edgeTreatment": "none",
+          "shadowTreatment": "none",
+          "paletteMode": "none"
+        },
+        "interaction": {
+          "hoverAnimation": "none",
+          "pressAnimation": "none",
+          "hoverSound": "none",
+          "clickSound": "none",
+          "sharedHelper": "None",
+          "touchBehavior": "Passive ornament framing the title."
+        }
+      },
+      {
+        "id": "cmp_title_aurora",
+        "primitive": "Title",
+        "requirementId": "title_aurora",
+        "label": "AURORA",
+        "semanticAction": "",
+        "hierarchy": "primary",
+        "groupId": "main_menu_group",
+        "nodeName": "AuroraTitle",
+        "regionId": "title_region",
+        "paletteRole": "textPrimary",
+        "typographyRole": "display",
+        "visualTreatment": "Live title text centered over title plate with crisp high-contrast lettering",
+        "size": {
+          "desktop": "Single-line centered title filling most of the plate width with internal side margins.",
+          "mobile": "Single-line centered title scaled down to preserve readability without wrapping.",
+          "minTouchTarget": 0
+        },
+        "icon": {
+          "enabled": false,
+          "semanticRole": "",
+          "family": "aurora_gemini",
+          "assetStrategy": "procedural",
+          "size": 16,
+          "padding": 0,
+          "visualWeight": "none",
+          "perspective": "flat",
+          "edgeTreatment": "none",
+          "shadowTreatment": "none",
+          "paletteMode": "none"
+        },
+        "interaction": {
+          "hoverAnimation": "none",
+          "pressAnimation": "none",
+          "hoverSound": "none",
+          "clickSound": "none",
+          "sharedHelper": "None",
+          "touchBehavior": "Passive text element."
+        }
+      },
+      {
+        "id": "cmp_play_button",
+        "primitive": "PrimaryGameCTA",
+        "requirementId": "action_play",
+        "label": "Play",
+        "semanticAction": "play_game",
+        "hierarchy": "primary",
+        "groupId": "main_actions",
+        "nodeName": "PlayButton",
+        "regionId": "main_dock",
+        "paletteRole": "primary",
+        "typographyRole": "button",
+        "visualTreatment": "component_surface Gemini-generated primary button skin with glossy cyan lead, cobalt depth, thick navy edge, and subtle gold highlight accents",
+        "size": {
+          "desktop": "Largest button in the dock; wide horizontal CTA clearly bigger than the other actions.",
+          "mobile": "Large full-width CTA near the center stack with extra height for thumb comfort and unmistakable priority.",
+          "minTouchTarget": 56
+        },
+        "icon": {
+          "enabled": true,
+          "semanticRole": "play",
+          "family": "aurora_gemini",
+          "assetStrategy": "generated",
+          "size": 24,
+          "padding": 12,
+          "visualWeight": "bold",
+          "perspective": "front",
+          "edgeTreatment": "navy keyline with small gold glint",
+          "shadowTreatment": "tight navy drop shadow",
+          "paletteMode": "cyan-to-gold accent over dark edge"
+        },
+        "interaction": {
+          "hoverAnimation": "Gentle brighten, slight upward lift, and subtle scale-up with highlight sweep constrained to the skin.",
+          "pressAnimation": "Quick inward scale, tiny downward nudge, and highlight compression before springing back.",
+          "hoverSound": "none",
+          "clickSound": "none",
+          "sharedHelper": "ButtonEffects",
+          "touchBehavior": "Use Activated only on touch devices with immediate press feedback and no hover state; on activation close the menu then delegate hook firing through controller."
+        }
+      },
+      {
+        "id": "cmp_settings_button",
+        "primitive": "MenuButton",
+        "requirementId": "action_settings",
+        "label": "Settings",
+        "semanticAction": "open_settings_panel",
+        "hierarchy": "primary",
+        "groupId": "main_actions",
+        "nodeName": "SettingsButton",
+        "regionId": "main_dock",
+        "paletteRole": "secondary",
+        "typographyRole": "button",
+        "visualTreatment": "component_surface Gemini-generated secondary button skin matching the menu set with glossy cobalt body, cyan highlights, thick navy edge, and restrained gold trim",
+        "size": {
+          "desktop": "Medium-width action button matching Credits width and height beneath Play.",
+          "mobile": "Full-width secondary action button matching Credits with generous touch height.",
+          "minTouchTarget": 50
+        },
+        "icon": {
+          "enabled": true,
+          "semanticRole": "settings",
+          "family": "aurora_gemini",
+          "assetStrategy": "generated",
+          "size": 24,
+          "padding": 12,
+          "visualWeight": "bold",
+          "perspective": "front",
+          "edgeTreatment": "navy keyline with small gold glint",
+          "shadowTreatment": "tight navy drop shadow",
+          "paletteMode": "cyan-to-gold accent over dark edge"
+        },
+        "interaction": {
+          "hoverAnimation": "Gentle brighten, slight upward lift, and subtle scale-up with highlight sweep constrained to the skin.",
+          "pressAnimation": "Quick inward scale, tiny downward nudge, and highlight compression before springing back.",
+          "hoverSound": "none",
+          "clickSound": "none",
+          "sharedHelper": "ButtonEffects",
+          "touchBehavior": "Use Activated only on touch devices with immediate press feedback and no hover synthesis; opens Settings modal through controller."
+        }
+      },
+      {
+        "id": "cmp_credits_button",
+        "primitive": "MenuButton",
+        "requirementId": "action_credits",
+        "label": "Credits",
+        "semanticAction": "open_credits_panel",
+        "hierarchy": "primary",
+        "groupId": "main_actions",
+        "nodeName": "CreditsButton",
+        "regionId": "main_dock",
+        "paletteRole": "secondary",
+        "typographyRole": "button",
+        "visualTreatment": "component_surface Gemini-generated secondary button skin matching the menu set with glossy cobalt body, cyan highlights, thick navy edge, and restrained gold trim",
+        "size": {
+          "desktop": "Medium-width action button matching Settings width and height beneath it.",
+          "mobile": "Full-width secondary action button matching Settings with generous touch height.",
+          "minTouchTarget": 50
+        },
+        "icon": {
+          "enabled": true,
+          "semanticRole": "credits",
+          "family": "aurora_gemini",
+          "assetStrategy": "generated",
+          "size": 24,
+          "padding": 12,
+          "visualWeight": "bold",
+          "perspective": "front",
+          "edgeTreatment": "navy keyline with small gold glint",
+          "shadowTreatment": "tight navy drop shadow",
+          "paletteMode": "cyan-to-gold accent over dark edge"
+        },
+        "interaction": {
+          "hoverAnimation": "Gentle brighten, slight upward lift, and subtle scale-up with highlight sweep constrained to the skin.",
+          "pressAnimation": "Quick inward scale, tiny downward nudge, and highlight compression before springing back.",
+          "hoverSound": "none",
+          "clickSound": "none",
+          "sharedHelper": "ButtonEffects",
+          "touchBehavior": "Use Activated only on touch devices with immediate press feedback and no hover synthesis; opens Credits modal through controller."
+        }
+      },
+      {
+        "id": "cmp_settings_modal",
+        "primitive": "ModalWindow",
+        "requirementId": "panel_settings",
+        "label": "Settings Panel",
+        "semanticAction": "",
+        "hierarchy": "secondary",
+        "groupId": "settings_modal_group",
+        "nodeName": "SettingsModal",
+        "regionId": "settings_modal_region",
+        "paletteRole": "neutralSurface",
+        "typographyRole": "heading",
+        "visualTreatment": "panel_surface Gemini-generated modal skin with glossy cyan/cobalt framed surface, thick navy border, gold highlights, and soft inset depth",
+        "size": {
+          "desktop": "Centered medium modal sized for two settings rows and a compact header without dominating the full screen.",
+          "mobile": "Centered modal using most of the safe width with stacked content and preserved artwork corners.",
+          "minTouchTarget": 0
+        },
+        "icon": {
+          "enabled": false,
+          "semanticRole": "",
+          "family": "aurora_gemini",
+          "assetStrategy": "generated",
+          "size": 16,
+          "padding": 0,
+          "visualWeight": "none",
+          "perspective": "flat",
+          "edgeTreatment": "none",
+          "shadowTreatment": "none",
+          "paletteMode": "none"
+        },
+        "interaction": {
+          "hoverAnimation": "none",
+          "pressAnimation": "none",
+          "hoverSound": "none",
+          "clickSound": "none",
+          "sharedHelper": "None",
+          "touchBehavior": "Modal container intercepts background input while visible; visibility controlled by controller."
+        }
+      },
+      {
+        "id": "cmp_settings_title",
+        "primitive": "Title",
+        "requirementId": null,
+        "label": "Settings",
+        "semanticAction": "",
+        "hierarchy": "secondary",
+        "groupId": "settings_modal_group",
+        "nodeName": "SettingsTitle",
+        "regionId": "settings_modal_region",
+        "paletteRole": "textPrimary",
+        "typographyRole": "heading",
+        "visualTreatment": "Live panel title text aligned within the modal header",
+        "size": {
+          "desktop": "Single-line panel heading aligned left within header row with room for close button.",
+          "mobile": "Single-line panel heading aligned left with slightly reduced size and wider padding.",
+          "minTouchTarget": 0
+        },
+        "icon": {
+          "enabled": false,
+          "semanticRole": "",
+          "family": "aurora_gemini",
+          "assetStrategy": "procedural",
+          "size": 16,
+          "padding": 0,
+          "visualWeight": "none",
+          "perspective": "flat",
+          "edgeTreatment": "none",
+          "shadowTreatment": "none",
+          "paletteMode": "none"
+        },
+        "interaction": {
+          "hoverAnimation": "none",
+          "pressAnimation": "none",
+          "hoverSound": "none",
+          "clickSound": "none",
+          "sharedHelper": "None",
+          "touchBehavior": "Passive text element."
+        }
+      },
+      {
+        "id": "cmp_settings_close",
+        "primitive": "MenuButton",
+        "requirementId": "action_close_settings",
+        "label": "Close",
+        "semanticAction": "close_settings_panel",
+        "hierarchy": "secondary",
+        "groupId": "close_actions",
+        "nodeName": "SettingsCloseButton",
+        "regionId": "settings_modal_region",
+        "paletteRole": "secondary",
+        "typographyRole": "button",
+        "visualTreatment": "component_surface Gemini-generated compact close button skin matching panel framing with glossy cobalt face, thick navy edge, and gold highlight tip",
+        "size": {
+          "desktop": "Compact square-to-rounded close control anchored in the settings modal header.",
+          "mobile": "Compact but touch-safe close control anchored in header with padded hit area.",
+          "minTouchTarget": 44
+        },
+        "icon": {
+          "enabled": true,
+          "semanticRole": "close",
+          "family": "aurora_gemini",
+          "assetStrategy": "generated",
+          "size": 20,
+          "padding": 10,
+          "visualWeight": "bold",
+          "perspective": "front",
+          "edgeTreatment": "navy keyline with small gold glint",
+          "shadowTreatment": "tight navy drop shadow",
+          "paletteMode": "cyan-to-gold accent over dark edge"
+        },
+        "interaction": {
+          "hoverAnimation": "Gentle brighten and tiny lift to indicate dismiss action without overpowering content.",
+          "pressAnimation": "Fast inward scale and tiny downward nudge with quick recovery.",
+          "hoverSound": "none",
+          "clickSound": "none",
+          "sharedHelper": "ButtonEffects",
+          "touchBehavior": "Use Activated with immediate press feedback; closes settings modal through controller."
+        }
+      },
+      {
+        "id": "cmp_music_row",
+        "primitive": "SettingsRow",
+        "requirementId": null,
+        "label": "Music Row",
+        "semanticAction": "",
+        "hierarchy": "secondary",
+        "groupId": "settings_modal_group",
+        "nodeName": "MusicRow",
+        "regionId": "settings_modal_region",
+        "paletteRole": "neutralSurface",
+        "typographyRole": "body",
+        "visualTreatment": "Native row container with subtle internal padding and optional fine separator spacing only",
+        "size": {
+          "desktop": "Single row spanning modal content width with left label and right toggle.",
+          "mobile": "Stack-friendly row spanning modal width with larger vertical padding and right-aligned toggle.",
+          "minTouchTarget": 0
+        },
+        "icon": {
+          "enabled": false,
+          "semanticRole": "",
+          "family": "aurora_gemini",
+          "assetStrategy": "procedural",
+          "size": 16,
+          "padding": 0,
+          "visualWeight": "none",
+          "perspective": "flat",
+          "edgeTreatment": "none",
+          "shadowTreatment": "none",
+          "paletteMode": "none"
+        },
+        "interaction": {
+          "hoverAnimation": "none",
+          "pressAnimation": "none",
+          "hoverSound": "none",
+          "clickSound": "none",
+          "sharedHelper": "None",
+          "touchBehavior": "Container only."
+        }
+      },
+      {
+        "id": "cmp_music_label",
+        "primitive": "Text",
+        "requirementId": null,
+        "label": "Music",
+        "semanticAction": "",
+        "hierarchy": "secondary",
+        "groupId": "settings_modal_group",
+        "nodeName": "MusicLabel",
+        "regionId": "settings_modal_region",
+        "paletteRole": "textPrimary",
+        "typographyRole": "body",
+        "visualTreatment": "Live settings label text",
+        "size": {
+          "desktop": "Left-aligned label occupying flexible row width.",
+          "mobile": "Left-aligned label with slightly larger line box for touch-oriented row spacing.",
+          "minTouchTarget": 0
+        },
+        "icon": {
+          "enabled": false,
+          "semanticRole": "",
+          "family": "aurora_gemini",
+          "assetStrategy": "procedural",
+          "size": 16,
+          "padding": 0,
+          "visualWeight": "none",
+          "perspective": "flat",
+          "edgeTreatment": "none",
+          "shadowTreatment": "none",
+          "paletteMode": "none"
+        },
+        "interaction": {
+          "hoverAnimation": "none",
+          "pressAnimation": "none",
+          "hoverSound": "none",
+          "clickSound": "none",
+          "sharedHelper": "None",
+          "touchBehavior": "Passive label."
+        }
+      },
+      {
+        "id": "cmp_music_toggle",
+        "primitive": "SettingsRow",
+        "requirementId": "toggle_music",
+        "label": "Music On/Off Toggle",
+        "semanticAction": "toggle_music",
+        "hierarchy": "secondary",
+        "groupId": "settings_controls",
+        "nodeName": "MusicToggle",
+        "regionId": "settings_modal_region",
+        "paletteRole": "primary",
+        "typographyRole": "button",
+        "visualTreatment": "control_artwork Gemini-generated toggle control using matching on/off pieces with glossy cyan/cobalt surfaces, thick navy edge, and warm gold highlight detail",
+        "size": {
+          "desktop": "Compact horizontal toggle fitted to row end with clear state travel and visible on/off distinction.",
+          "mobile": "Slightly larger horizontal toggle for thumb use while preserving row balance.",
+          "minTouchTarget": 44
+        },
+        "icon": {
+          "enabled": false,
+          "semanticRole": "",
+          "family": "aurora_gemini",
+          "assetStrategy": "generated",
+          "size": 16,
+          "padding": 0,
+          "visualWeight": "none",
+          "perspective": "front",
+          "edgeTreatment": "navy framed artwork",
+          "shadowTreatment": "tight navy drop shadow",
+          "paletteMode": "state-colored artwork"
+        },
+        "interaction": {
+          "hoverAnimation": "Subtle brighten on the interactive hit area and tiny scale-up of the toggle shell.",
+          "pressAnimation": "Short depress-and-release response with handle compression feeling physical but controlled.",
+          "hoverSound": "none",
+          "clickSound": "none",
+          "sharedHelper": "ButtonEffects",
+          "touchBehavior": "Use Activated to flip boolean music state; no hover synthesis on touch; controller updates visual state and audio setting."
+        }
+      },
+      {
+        "id": "cmp_volume_row",
+        "primitive": "SettingsRow",
+        "requirementId": null,
+        "label": "Volume Row",
+        "semanticAction": "",
+        "hierarchy": "secondary",
+        "groupId": "settings_modal_group",
+        "nodeName": "VolumeRow",
+        "regionId": "settings_modal_region",
+        "paletteRole": "neutralSurface",
+        "typographyRole": "body",
+        "visualTreatment": "Native row container with generous padding for slider interaction",
+        "size": {
+          "desktop": "Stacked row beneath music row with label, slider, and live value.",
+          "mobile": "Vertically padded row beneath music row with label above or beside slider depending available width.",
+          "minTouchTarget": 0
+        },
+        "icon": {
+          "enabled": false,
+          "semanticRole": "",
+          "family": "aurora_gemini",
+          "assetStrategy": "procedural",
+          "size": 16,
+          "padding": 0,
+          "visualWeight": "none",
+          "perspective": "flat",
+          "edgeTreatment": "none",
+          "shadowTreatment": "none",
+          "paletteMode": "none"
+        },
+        "interaction": {
+          "hoverAnimation": "none",
+          "pressAnimation": "none",
+          "hoverSound": "none",
+          "clickSound": "none",
+          "sharedHelper": "None",
+          "touchBehavior": "Container only."
+        }
+      },
+      {
+        "id": "cmp_volume_label",
+        "primitive": "Text",
+        "requirementId": null,
+        "label": "Volume",
+        "semanticAction": "",
+        "hierarchy": "secondary",
+        "groupId": "settings_modal_group",
+        "nodeName": "VolumeLabel",
+        "regionId": "settings_modal_region",
+        "paletteRole": "textPrimary",
+        "typographyRole": "body",
+        "visualTreatment": "Live settings label text",
+        "size": {
+          "desktop": "Left-aligned compact label above or beside the slider track.",
+          "mobile": "Left-aligned label with spacing above slider for clarity.",
+          "minTouchTarget": 0
+        },
+        "icon": {
+          "enabled": false,
+          "semanticRole": "",
+          "family": "aurora_gemini",
+          "assetStrategy": "procedural",
+          "size": 16,
+          "padding": 0,
+          "visualWeight": "none",
+          "perspective": "flat",
+          "edgeTreatment": "none",
+          "shadowTreatment": "none",
+          "paletteMode": "none"
+        },
+        "interaction": {
+          "hoverAnimation": "none",
+          "pressAnimation": "none",
+          "hoverSound": "none",
+          "clickSound": "none",
+          "sharedHelper": "None",
+          "touchBehavior": "Passive label."
+        }
+      },
+      {
+        "id": "cmp_volume_slider",
+        "primitive": "ProgressBar",
+        "requirementId": "slider_volume",
+        "label": "Volume Slider",
+        "semanticAction": "adjust_volume",
+        "hierarchy": "secondary",
+        "groupId": "settings_controls",
+        "nodeName": "VolumeSlider",
+        "regionId": "settings_modal_region",
+        "paletteRole": "primary",
+        "typographyRole": "body",
+        "visualTreatment": "control_artwork Gemini-generated slider with matching glossy track and handle artwork, thick navy frame, cyan fill emphasis, and gold gleam accents",
+        "size": {
+          "desktop": "Wide horizontal slider occupying the main content width of the settings modal.",
+          "mobile": "Wide thumb-friendly horizontal slider spanning most of modal width with taller handle hit area.",
+          "minTouchTarget": 44
+        },
+        "icon": {
+          "enabled": false,
+          "semanticRole": "",
+          "family": "aurora_gemini",
+          "assetStrategy": "generated",
+          "size": 16,
+          "padding": 0,
+          "visualWeight": "none",
+          "perspective": "front",
+          "edgeTreatment": "navy framed artwork",
+          "shadowTreatment": "tight navy drop shadow",
+          "paletteMode": "cyan fill over cobalt track"
+        },
+        "interaction": {
+          "hoverAnimation": "Track and handle brighten subtly on pointer hover; handle lifts slightly.",
+          "pressAnimation": "Handle compresses slightly under drag/press and rebounds on release with bounded motion.",
+          "hoverSound": "none",
+          "clickSound": "none",
+          "sharedHelper": "ButtonEffects",
+          "touchBehavior": "Use direct drag and tap on touch; no hover synthesis; controller updates live value and audio volume continuously or on release based implementation."
+        }
+      },
+      {
+        "id": "cmp_volume_value",
+        "primitive": "Text",
+        "requirementId": null,
+        "label": "Volume Value",
+        "semanticAction": "",
+        "hierarchy": "tertiary",
+        "groupId": "settings_modal_group",
+        "nodeName": "VolumeValue",
+        "regionId": "settings_modal_region",
+        "paletteRole": "textSecondary",
+        "typographyRole": "numeric",
+        "visualTreatment": "Live numeric value text for current slider amount",
+        "size": {
+          "desktop": "Compact right-aligned value text adjacent to slider or at row end.",
+          "mobile": "Compact value text below or right of slider depending width; keep legible.",
+          "minTouchTarget": 0
+        },
+        "icon": {
+          "enabled": false,
+          "semanticRole": "",
+          "family": "aurora_gemini",
+          "assetStrategy": "procedural",
+          "size": 16,
+          "padding": 0,
+          "visualWeight": "none",
+          "perspective": "flat",
+          "edgeTreatment": "none",
+          "shadowTreatment": "none",
+          "paletteMode": "none"
+        },
+        "interaction": {
+          "hoverAnimation": "none",
+          "pressAnimation": "none",
+          "hoverSound": "none",
+          "clickSound": "none",
+          "sharedHelper": "None",
+          "touchBehavior": "Passive live text bound to slider state."
+        }
+      },
+      {
+        "id": "cmp_credits_modal",
+        "primitive": "ModalWindow",
+        "requirementId": "panel_credits",
+        "label": "Credits Panel",
+        "semanticAction": "",
+        "hierarchy": "secondary",
+        "groupId": "credits_modal_group",
+        "nodeName": "CreditsModal",
+        "regionId": "credits_modal_region",
+        "paletteRole": "neutralSurface",
+        "typographyRole": "heading",
+        "visualTreatment": "panel_surface Gemini-generated modal skin matching the settings panel, scaled to a smaller compact window",
+        "size": {
+          "desktop": "Small centered modal sized just for a title, body copy, and close control.",
+          "mobile": "Compact centered modal using most safe width but shorter height than settings panel.",
+          "minTouchTarget": 0
+        },
+        "icon": {
+          "enabled": false,
+          "semanticRole": "",
+          "family": "aurora_gemini",
+          "assetStrategy": "generated",
+          "size": 16,
+          "padding": 0,
+          "visualWeight": "none",
+          "perspective": "flat",
+          "edgeTreatment": "none",
+          "shadowTreatment": "none",
+          "paletteMode": "none"
+        },
+        "interaction": {
+          "hoverAnimation": "none",
+          "pressAnimation": "none",
+          "hoverSound": "none",
+          "clickSound": "none",
+          "sharedHelper": "None",
+          "touchBehavior": "Modal container intercepts background input while visible; visibility controlled by controller."
+        }
+      },
+      {
+        "id": "cmp_credits_title",
+        "primitive": "Title",
+        "requirementId": null,
+        "label": "Credits",
+        "semanticAction": "",
+        "hierarchy": "secondary",
+        "groupId": "credits_modal_group",
+        "nodeName": "CreditsTitle",
+        "regionId": "credits_modal_region",
+        "paletteRole": "textPrimary",
+        "typographyRole": "heading",
+        "visualTreatment": "Live panel title text aligned within compact modal header",
+        "size": {
+          "desktop": "Single-line title aligned left with room for close button.",
+          "mobile": "Single-line title with slightly reduced size and increased padding.",
+          "minTouchTarget": 0
+        },
+        "icon": {
+          "enabled": false,
+          "semanticRole": "",
+          "family": "aurora_gemini",
+          "assetStrategy": "procedural",
+          "size": 16,
+          "padding": 0,
+          "visualWeight": "none",
+          "perspective": "flat",
+          "edgeTreatment": "none",
+          "shadowTreatment": "none",
+          "paletteMode": "none"
+        },
+        "interaction": {
+          "hoverAnimation": "none",
+          "pressAnimation": "none",
+          "hoverSound": "none",
+          "clickSound": "none",
+          "sharedHelper": "None",
+          "touchBehavior": "Passive title text."
+        }
+      },
+      {
+        "id": "cmp_credits_body",
+        "primitive": "Text",
+        "requirementId": null,
+        "label": "Credits Body",
+        "semanticAction": "",
+        "hierarchy": "secondary",
+        "groupId": "credits_modal_group",
+        "nodeName": "CreditsBody",
+        "regionId": "credits_modal_region",
+        "paletteRole": "textSecondary",
+        "typographyRole": "body",
+        "visualTreatment": "Live multiline body text area for credits content",
+        "size": {
+          "desktop": "Compact wrapped text block beneath the header with comfortable line height.",
+          "mobile": "Wrapped text block with slightly tighter measure and generous internal padding.",
+          "minTouchTarget": 0
+        },
+        "icon": {
+          "enabled": false,
+          "semanticRole": "",
+          "family": "aurora_gemini",
+          "assetStrategy": "procedural",
+          "size": 16,
+          "padding": 0,
+          "visualWeight": "none",
+          "perspective": "flat",
+          "edgeTreatment": "none",
+          "shadowTreatment": "none",
+          "paletteMode": "none"
+        },
+        "interaction": {
+          "hoverAnimation": "none",
+          "pressAnimation": "none",
+          "hoverSound": "none",
+          "clickSound": "none",
+          "sharedHelper": "None",
+          "touchBehavior": "Passive text content."
+        }
+      },
+      {
+        "id": "cmp_credits_close",
+        "primitive": "MenuButton",
+        "requirementId": "action_close_credits",
+        "label": "Close",
+        "semanticAction": "close_credits_panel",
+        "hierarchy": "secondary",
+        "groupId": "close_actions",
+        "nodeName": "CreditsCloseButton",
+        "regionId": "credits_modal_region",
+        "paletteRole": "secondary",
+        "typographyRole": "button",
+        "visualTreatment": "component_surface Gemini-generated compact close button skin matching panel framing with glossy cobalt face, thick navy edge, and gold highlight tip",
+        "size": {
+          "desktop": "Compact square-to-rounded close control anchored in the credits modal header.",
+          "mobile": "Compact but touch-safe close control anchored in header with padded hit area.",
+          "minTouchTarget": 44
+        },
+        "icon": {
+          "enabled": true,
+          "semanticRole": "close",
+          "family": "aurora_gemini",
+          "assetStrategy": "generated",
+          "size": 20,
+          "padding": 10,
+          "visualWeight": "bold",
+          "perspective": "front",
+          "edgeTreatment": "navy keyline with small gold glint",
+          "shadowTreatment": "tight navy drop shadow",
+          "paletteMode": "cyan-to-gold accent over dark edge"
+        },
+        "interaction": {
+          "hoverAnimation": "Gentle brighten and tiny lift to indicate dismiss action without overpowering content.",
+          "pressAnimation": "Fast inward scale and tiny downward nudge with quick recovery.",
+          "hoverSound": "none",
+          "clickSound": "none",
+          "sharedHelper": "ButtonEffects",
+          "touchBehavior": "Use Activated with immediate press feedback; closes credits modal through controller."
+        }
+      },
+      {
+        "id": "cmp_play_hook",
+        "primitive": "Custom",
+        "requirementId": "system_play_hook",
+        "label": "Local play integration hook",
+        "semanticAction": "fire_local_play_hook",
+        "hierarchy": "secondary",
+        "groupId": "system_group",
+        "nodeName": "OnPlayRequestedHook",
+        "regionId": "system_region",
+        "paletteRole": "outline",
+        "typographyRole": "caption",
+        "visualTreatment": "Nonvisual local integration contract for a clearly named play request callback or BindableEvent bridge; not rendered as a button.",
+        "size": {
+          "desktop": "No visual footprint; instantiated as nonvisual system object or metadata contract.",
+          "mobile": "No visual footprint; instantiated as nonvisual system object or metadata contract.",
+          "minTouchTarget": 44
+        },
+        "icon": {
+          "enabled": false,
+          "semanticRole": "",
+          "family": "aurora_gemini",
+          "assetStrategy": "procedural",
+          "size": 16,
+          "padding": 0,
+          "visualWeight": "none",
+          "perspective": "flat",
+          "edgeTreatment": "none",
+          "shadowTreatment": "none",
+          "paletteMode": "none"
+        },
+        "interaction": {
+          "hoverAnimation": "none",
+          "pressAnimation": "none",
+          "hoverSound": "none",
+          "clickSound": "none",
+          "sharedHelper": "None",
+          "touchBehavior": "Triggered by Play action after menu close sequence; no direct user input surface."
+        }
+      },
+      {
+        "id": "cmp_panel_controller",
+        "primitive": "Custom",
+        "requirementId": "system_panel_controller",
+        "label": "Actual panel visibility controller",
+        "semanticAction": "control_panel_visibility",
+        "hierarchy": "secondary",
+        "groupId": "system_group",
+        "nodeName": "PanelControllerBehavior",
+        "regionId": "system_region",
+        "paletteRole": "outline",
+        "typographyRole": "caption",
+        "visualTreatment": "Nonvisual controller managing mutually exclusive modal visibility, close actions, and menu dismissal flow; not rendered.",
+        "size": {
+          "desktop": "No visual footprint; controller exists at build return and wires all panel open/close behavior.",
+          "mobile": "No visual footprint; controller exists at build return and wires all panel open/close behavior.",
+          "minTouchTarget": 44
+        },
+        "icon": {
+          "enabled": false,
+          "semanticRole": "",
+          "family": "aurora_gemini",
+          "assetStrategy": "procedural",
+          "size": 16,
+          "padding": 0,
+          "visualWeight": "none",
+          "perspective": "flat",
+          "edgeTreatment": "none",
+          "shadowTreatment": "none",
+          "paletteMode": "none"
+        },
+        "interaction": {
+          "hoverAnimation": "none",
+          "pressAnimation": "none",
+          "hoverSound": "none",
+          "clickSound": "none",
+          "sharedHelper": "None",
+          "touchBehavior": "Receives action events from buttons and controls modal visibility state on all device classes."
+        }
+      }
+    ],
+    "iconSystem": {
+      "family": "aurora_gemini",
+      "styleDescription": "Gemini-generated icon family with distinct play, settings, credits, and close symbols designed to sit inside the same glossy fantasy-sci-fi UI kit. Icons should read cleanly at small sizes, use bold silhouettes, and harmonize with thick navy edges and warm gold gleams.",
+      "visualWeight": "bold",
+      "perspective": "front",
+      "edgeTreatment": "navy keyline with restrained gold glint",
+      "shadowTreatment": "tight navy drop shadow",
+      "paletteMode": "cyan/cobalt cores with controlled gold highlight over dark framing",
+      "padding": 12,
+      "iconToButtonRatio": 0.34
+    },
+    "motionSystem": {
+      "hover": "Desktop hover uses a restrained premium response: 1.03 scale max, 2-4 px upward lift, slight brightening of glossy highlight, and a soft shadow increase. Only actionable controls receive hover feedback.",
+      "press": "Press uses a quick inward scale to about 0.97, tiny downward offset, and compressed highlight/shadow for a tactile enamel-button feel. Slider handle compresses subtly during drag.",
+      "entrance": "At screen load, title plate and button dock fade and rise in together with a small stagger from top to bottom. Modals fade/scale in from 0.96 to 1 with a soft upward settle; background ornaments remain mostly static.",
+      "release": "Controls rebound cleanly to rest with a brief eased return. Modal close uses a short fade and slight scale-down before visibility is removed.",
+      "durations": {
+        "hover": 140,
+        "press": 90,
+        "entrance": 260,
+        "release": 140
+      },
+      "reducedMotion": "When reduced motion is preferred, remove lift and stagger, keep only fast opacity changes and minimal scale deltas. Drag behavior remains functional with no extra animation beyond state updates.",
+      "touchBehavior": "Touch devices use Activated and drag interactions only, showing press feedback immediately on touch down and no synthetic hover. Maintain the same hierarchy but simplify motion to crisp scale and opacity responses."
+    },
+    "audioSystem": {
+      "enabled": false,
+      "hover": "none requested",
+      "click": "none requested",
+      "volume": 0,
+      "debounceMs": 80,
+      "touchBehavior": "No hover or click audio is played on touch or pointer devices because sounds were not requested.",
+      "fallbackBehavior": "If a downstream implementation wants optional UI sounds later, unresolved audio must remain silent rather than claiming fulfillment."
+    },
+    "layoutPlan": {
+      "safeArea": {
+        "x": 0.04,
+        "y": 0.04,
+        "width": 0.92,
+        "height": 0.92
+      },
+      "regions": [
+        {
+          "id": "background_region",
+          "purpose": "Full-screen native background and restrained corner ornament field behind all interactive layers.",
+          "componentIds": [
+            "cmp_background_root",
+            "cmp_background_ornaments"
+          ],
+          "desktop": {
+            "arrangement": "Single full-screen background frame with mirrored ornament anchors in opposite corners and center left empty for UI readability.",
+            "bounds": {
+              "x": 0.04,
+              "y": 0.04,
+              "width": 0.92,
+              "height": 0.92
+            },
+            "minTouchTarget": 0,
+            "safeZoneBehavior": "Respect safe area margins; ornaments stay inset from screen edges and never overlap primary buttons.",
+            "textScaling": "No text in this region.",
+            "iconScaling": "No icons in this region.",
+            "spacing": 12,
+            "layoutConstructs": [
+              "CanvasGroup",
+              "UIGradient",
+              "UIPadding"
+            ]
+          },
+          "mobile": {
+            "arrangement": "Single full-screen background frame with reduced ornament density and stronger central clarity.",
+            "bounds": {
+              "x": 0.02,
+              "y": 0.02,
+              "width": 0.96,
+              "height": 0.96
+            },
+            "minTouchTarget": 0,
+            "safeZoneBehavior": "Trim ornament footprint further from notches and gesture areas.",
+            "textScaling": "No text in this region.",
+            "iconScaling": "No icons in this region.",
+            "spacing": 8,
+            "layoutConstructs": [
+              "CanvasGroup",
+              "UIGradient",
+              "UIPadding"
+            ]
+          }
+        },
+        {
+          "id": "title_region",
+          "purpose": "Title plate and live AURORA title centered above the menu actions.",
+          "componentIds": [
+            "cmp_title_plate",
+            "cmp_title_aurora"
+          ],
+          "desktop": {
+            "arrangement": "Centered stacked overlay with title text centered over the plate.",
+            "bounds": {
+              "x": 0.28,
+              "y": 0.13,
+              "width": 0.44,
+              "height": 0.16
+            },
+            "minTouchTarget": 0,
+            "safeZoneBehavior": "Remain within upper-middle safe area, leaving margin above and below.",
+            "textScaling": "Use UITextSizeConstraint to preserve title hierarchy without clipping.",
+            "iconScaling": "No icons in this region.",
+            "spacing": 6,
+            "layoutConstructs": [
+              "UIAspectRatioConstraint",
+              "UIScale",
+              "UITextSizeConstraint"
+            ]
+          },
+          "mobile": {
+            "arrangement": "Centered stacked overlay with narrower plate and slightly taller reserved height.",
+            "bounds": {
+              "x": 0.1,
+              "y": 0.1,
+              "width": 0.8,
+              "height": 0.15
+            },
+            "minTouchTarget": 0,
+            "safeZoneBehavior": "Keep clear of top notches and status areas.",
+            "textScaling": "Use UITextSizeConstraint and UIScale to preserve one-line readability.",
+            "iconScaling": "No icons in this region.",
+            "spacing": 4,
+            "layoutConstructs": [
+              "UIAspectRatioConstraint",
+              "UIScale",
+              "UITextSizeConstraint"
+            ]
+          }
+        },
+        {
+          "id": "main_dock",
+          "purpose": "Primary action dock containing Play, Settings, and Credits.",
+          "componentIds": [
+            "cmp_menu_dock",
+            "cmp_play_button",
+            "cmp_settings_button",
+            "cmp_credits_button"
+          ],
+          "desktop": {
+            "arrangement": "Vertical UIListLayout centered under the title plate with Play first and extra spacing before secondary-sized menu actions.",
+            "bounds": {
+              "x": 0.34,
+              "y": 0.31,
+              "width": 0.32,
+              "height": 0.38
+            },
+            "minTouchTarget": 50,
+            "safeZoneBehavior": "Centered in safe area with ample side breathing room; never collide with modal edges.",
+            "textScaling": "Buttons use UITextSizeConstraint to keep labels single-line and dominant.",
+            "iconScaling": "Icons remain fixed family size and scale only modestly with UIScale on very large screens.",
+            "spacing": 14,
+            "layoutConstructs": [
+              "UIListLayout",
+              "UIPadding",
+              "UIScale",
+              "UITextSizeConstraint"
+            ]
+          },
+          "mobile": {
+            "arrangement": "Vertical UIListLayout filling more width with larger touch targets and tighter vertical gaps.",
+            "bounds": {
+              "x": 0.1,
+              "y": 0.28,
+              "width": 0.8,
+              "height": 0.34
+            },
+            "minTouchTarget": 50,
+            "safeZoneBehavior": "Keep centered and above bottom gesture area.",
+            "textScaling": "Slightly reduced text size with UITextSizeConstraint to preserve one-line labels.",
+            "iconScaling": "Keep equal icon sizes across all three buttons with no per-button deviations.",
+            "spacing": 12,
+            "layoutConstructs": [
+              "UIListLayout",
+              "UIPadding",
+              "UIScale",
+              "UITextSizeConstraint"
+            ]
+          }
+        },
+        {
+          "id": "settings_modal_region",
+          "purpose": "Centered modal overlay for settings with close button, music toggle, and volume slider.",
+          "componentIds": [
+            "cmp_settings_modal",
+            "cmp_settings_title",
+            "cmp_settings_close",
+            "cmp_music_row",
+            "cmp_music_label",
+            "cmp_music_toggle",
+            "cmp_volume_row",
+            "cmp_volume_label",
+            "cmp_volume_slider",
+            "cmp_volume_value"
+          ],
+          "desktop": {
+            "arrangement": "Centered single-column modal layout: header row, music row, then volume row, using internal UIListLayout and row subframes.",
+            "bounds": {
+              "x": 0.29,
+              "y": 0.22,
+              "width": 0.42,
+              "height": 0.42
+            },
+            "minTouchTarget": 44,
+            "safeZoneBehavior": "Modal remains fully within safe area and overlays dock without shifting background composition.",
+            "textScaling": "Panel title and row labels use UITextSizeConstraint to avoid wrapping; body scales one step below main actions.",
+            "iconScaling": "Close icon fixed; toggle and slider are artwork-driven and preserve aspect using constraints.",
+            "spacing": 12,
+            "layoutConstructs": [
+              "CanvasGroup",
+              "UIPadding",
+              "UIListLayout",
+              "UIAspectRatioConstraint",
+              "UITextSizeConstraint",
+              "UIScale"
+            ]
+          },
+          "mobile": {
+            "arrangement": "Centered modal using single-column stacked content with slightly taller rows and larger control hit areas.",
+            "bounds": {
+              "x": 0.07,
+              "y": 0.18,
+              "width": 0.86,
+              "height": 0.46
+            },
+            "minTouchTarget": 44,
+            "safeZoneBehavior": "Inset from top notch and bottom gesture zone; allow internal scrolling only if absolutely necessary, otherwise fit content natively.",
+            "textScaling": "Reduce title size modestly and keep labels readable with UITextSizeConstraint.",
+            "iconScaling": "Close icon remains consistent with credits close; slider and toggle artwork scale up for touch.",
+            "spacing": 10,
+            "layoutConstructs": [
+              "CanvasGroup",
+              "UIPadding",
+              "UIListLayout",
+              "UIAspectRatioConstraint",
+              "UITextSizeConstraint",
+              "UIScale"
+            ]
+          }
+        },
+        {
+          "id": "credits_modal_region",
+          "purpose": "Small centered modal overlay for credits with title, body text, and close button.",
+          "componentIds": [
+            "cmp_credits_modal",
+            "cmp_credits_title",
+            "cmp_credits_body",
+            "cmp_credits_close"
+          ],
+          "desktop": {
+            "arrangement": "Compact single-column modal with header row and wrapped body text beneath.",
+            "bounds": {
+              "x": 0.33,
+              "y": 0.28,
+              "width": 0.34,
+              "height": 0.26
+            },
+            "minTouchTarget": 44,
+            "safeZoneBehavior": "Centered and fully inset from safe area, leaving visible context around it.",
+            "textScaling": "Use UITextSizeConstraint for readable title and body measure.",
+            "iconScaling": "Close icon matches settings close exactly.",
+            "spacing": 10,
+            "layoutConstructs": [
+              "CanvasGroup",
+              "UIPadding",
+              "UIListLayout",
+              "UITextSizeConstraint",
+              "UIScale"
+            ]
+          },
+          "mobile": {
+            "arrangement": "Compact modal using most safe width and short content stack with wrapped credits text.",
+            "bounds": {
+              "x": 0.09,
+              "y": 0.24,
+              "width": 0.82,
+              "height": 0.24
+            },
+            "minTouchTarget": 44,
+            "safeZoneBehavior": "Inset from notch and bottom system gestures; preserve readable side padding.",
+            "textScaling": "Slightly reduced sizes with constraints to prevent overflow.",
+            "iconScaling": "Close icon matches settings close exactly.",
+            "spacing": 8,
+            "layoutConstructs": [
+              "CanvasGroup",
+              "UIPadding",
+              "UIListLayout",
+              "UITextSizeConstraint",
+              "UIScale"
+            ]
+          }
+        },
+        {
+          "id": "system_region",
+          "purpose": "Nonvisual system objects for local play hook and panel controller behavior.",
+          "componentIds": [
+            "cmp_play_hook",
+            "cmp_panel_controller"
+          ],
+          "desktop": {
+            "arrangement": "No visible layout; logical siblings under the root View.",
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 1,
+              "height": 1
+            },
+            "minTouchTarget": 44,
+            "safeZoneBehavior": "Not visual.",
+            "textScaling": "Not applicable.",
+            "iconScaling": "Not applicable.",
+            "spacing": 0,
+            "layoutConstructs": [
+              "UIPadding"
+            ]
+          },
+          "mobile": {
+            "arrangement": "No visible layout; logical siblings under the root View.",
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 1,
+              "height": 1
+            },
+            "minTouchTarget": 44,
+            "safeZoneBehavior": "Not visual.",
+            "textScaling": "Not applicable.",
+            "iconScaling": "Not applicable.",
+            "spacing": 0,
+            "layoutConstructs": [
+              "UIPadding"
+            ]
+          }
+        }
+      ],
+      "anchors": [
+        {
+          "regionId": "background_region",
+          "relativeTo": "safeArea",
+          "alignment": "fill"
+        },
+        {
+          "regionId": "title_region",
+          "relativeTo": "background_region",
+          "alignment": "top-center"
+        },
+        {
+          "regionId": "main_dock",
+          "relativeTo": "title_region",
+          "alignment": "center-below"
+        },
+        {
+          "regionId": "settings_modal_region",
+          "relativeTo": "background_region",
+          "alignment": "center"
+        },
+        {
+          "regionId": "credits_modal_region",
+          "relativeTo": "background_region",
+          "alignment": "center"
+        },
+        {
+          "regionId": "system_region",
+          "relativeTo": "background_region",
+          "alignment": "logical-root"
+        }
+      ],
+      "hierarchyOrder": [
+        "background_region",
+        "title_region",
+        "main_dock",
+        "settings_modal_region",
+        "credits_modal_region",
+        "system_region"
+      ],
+      "spacingScale": [
+        4,
+        8,
+        12,
+        16,
+        24,
+        32,
+        40
+      ]
+    },
+    "responsiveStrategy": {
+      "desktop": "Build _NexusDesktop with BackgroundRoot and BackgroundOrnaments filling the screen, TitlePlate and AuroraTitle centered near the upper third, and MainMenuDock centered below as a vertical stack. Keep modal windows centered overlays above the dock with fixed maximum widths so the composition feels premium and not stretched. Play remains visually dominant through larger button size, not by icon mismatch or arbitrary color changes.",
+      "mobile": "Build _NexusMobile separately with the same semantic node names under the mobile group. Use a narrower title plate, full-width stacked buttons, larger touch targets, reduced ornament scale, and modals that consume more width while keeping the same visual hierarchy. Do not simply scale down desktop; reflow the dock and increase vertical efficiency. Runtime selects mobile when min(viewport.X, viewport.Y) < 600.",
+      "tablet": "Use the desktop group when viewport minimum dimension is 600 or greater, but tighten widths slightly compared with wide desktop and allow modal panels to scale a bit larger relative to the screen. Maintain centered composition and preserve primary-action dominance without introducing new navigation patterns.",
+      "breakpoints": [
+        {
+          "id": "phone_portrait",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "id": "tablet",
+          "width": 768,
+          "height": 1024
+        },
+        {
+          "id": "desktop",
+          "width": 1440,
+          "height": 900
+        }
+      ],
+      "preservePrimaryHierarchy": true
+    },
+    "implementationNotes": [
+      "Use the exact supported node names from the library template and instantiate all initial instances by View.build() return under _NexusDesktop and _NexusMobile root groups.",
+      "Keep BackgroundRoot as a native full-screen background and MainMenuDock transparent; do not add an outer menu panel.",
+      "TitlePlate and BackgroundOrnaments should each map to one artwork image source, preserving restrained decoration.",
+      "PlayButton uses the primary Gemini skin; SettingsButton and CreditsButton share one secondary skin; SettingsCloseButton and CreditsCloseButton share one close skin and one close icon.",
+      "SettingsModal and CreditsModal share one Gemini panel skin, with CreditsModal sized smaller in layout rather than requiring a separate artwork family.",
+      "MusicToggle and VolumeSlider are the only planned controls; use control_artwork treatment and let resolver derive their moving artwork pieces from the planned components rather than adding extra component entries.",
+      "Keep all labels and titles as live Roblox text, including AURORA, Settings, Credits, Music, Volume, Close, and any volume value text.",
+      "PanelControllerBehavior must implement actual open/close state: open_settings_panel shows SettingsModal and hides CreditsModal, open_credits_panel shows CreditsModal and hides SettingsModal, close actions hide their respective modal.",
+      "PlayButton behavior must close the menu and then fire the clearly named local hook represented by OnPlayRequestedHook; do not invent remote systems.",
+      "Use local helper functions inside View for repeated UI construction; runtime interaction effects should call into a shared ButtonEffects module rather than duplicating per-button logic.",
+      "On touch devices, use Activated and direct drag for slider input; do not synthesize mouse hover.",
+      "Apply UIAspectRatioConstraint to ornamental artwork, title plate, close buttons if needed, and slider handle/track artwork pieces so skins preserve intended shape.",
+      "Use CanvasGroup for modal fade transitions and to simplify visible/input gating during open and close animations.",
+      "If credits text content is not otherwise specified, leave a clear live placeholder-style body string suitable for later replacement rather than inventing extra systems or lore.",
+      "No audio assets should be fabricated because sounds were not requested; leave interaction silent.",
+      "All icon-enabled menu actions in the main dock and both close buttons must use the same aurora_gemini family and identical icon sizing rules within their comparable groups."
+    ]
+  },
+  "editIntent": {
+    "scope": "create",
+    "targetIds": [],
+    "permittedChanges": [
+      "layout",
+      "palette",
+      "typography",
+      "icons",
+      "motion",
+      "content",
+      "responsive",
+      "features",
+      "decoration"
+    ],
+    "changeInstructions": [
+      "Create a main menu titled AURORA with Play, Settings, and Credits.",
+      "Add a Settings panel containing a Music on/off toggle and Volume slider.",
+      "Add a small Credits panel.",
+      "Include Close on both panels.",
+      "Ensure Play closes the menu and fires a clearly named local hook for game integration.",
+      "Implement coherent hover and press animation.",
+      "Use native background layout with restrained decoration.",
+      "Use Gemini-generated matching skins and icons for the specified components.",
+      "Ensure panels open and close through the actual controller logic."
+    ],
+    "preserve": [],
+    "removeElementIds": []
+  },
+  "model": "openai/gpt-5.4",
+  "planningEvidence": {
+    "requirementAttempts": 1,
+    "designAttempts": 2
+  },
+  "designMemory": {
+    "version": 1,
+    "originalUserGoal": "Build a polished Roblox main menu titled AURORA. Features: Play, Settings, Credits. Settings opens a panel with Music on/off toggle and Volume slider. Credits opens a small panel. Both panels have Close. Desktop and mobile. Rich glossy cyan/cobalt artwork with thick navy edges, warm gold highlights, ornamental corner details and a title plate. Use Gemini-generated matching skins and icons: button skins, panel skin, slider track and handle, toggle on/off pieces and distinct play/settings/credits/close icons. Keep text live and readable. Create only these features; no shop, rewards, currency, ranks or invented game systems. Play closes the menu and fires a clearly named local hook for game integration. Coherent hover and press animation. Native background layout with restrained decoration. Panels must open and close in the actual controller.",
+    "requirementSpec": {
+      "intent": "Build a polished Roblox main menu titled AURORA. Features: Play, Settings, Credits. Settings opens a panel with Music on/off toggle and Volume slider. Credits opens a small panel. Both panels have Close. Desktop and mobile. Rich glossy cyan/cobalt artwork with thick navy edges, warm gold highlights, ornamental corner details and a title plate. Use Gemini-generated matching skins and icons: button skins, panel skin, slider track and handle, toggle on/off pieces and distinct play/settings/credits/close icons. Keep text live and readable. Create only these features; no shop, rewards, currency, ranks or invented game systems. Play closes the menu and fires a clearly named local hook for game integration. Coherent hover and press animation. Native background layout with restrained decoration. Panels must open and close in the actual controller.",
+      "screenType": "main_menu",
+      "requiredElements": [
+        {
+          "id": "title_aurora",
+          "label": "AURORA",
+          "semanticAction": "",
+          "category": "content",
+          "hierarchy": "primary",
+          "source": "explicit",
+          "evidence": "AURORA"
+        },
+        {
+          "id": "action_play",
+          "label": "Play",
+          "semanticAction": "play_game",
+          "category": "action",
+          "hierarchy": "primary",
+          "source": "explicit",
+          "evidence": "Play"
+        },
+        {
+          "id": "action_settings",
+          "label": "Settings",
+          "semanticAction": "open_settings_panel",
+          "category": "action",
+          "hierarchy": "primary",
+          "source": "explicit",
+          "evidence": "Settings"
+        },
+        {
+          "id": "action_credits",
+          "label": "Credits",
+          "semanticAction": "open_credits_panel",
+          "category": "action",
+          "hierarchy": "primary",
+          "source": "explicit",
+          "evidence": "Credits"
+        },
+        {
+          "id": "panel_settings",
+          "label": "Settings panel",
+          "semanticAction": "",
+          "category": "content",
+          "hierarchy": "secondary",
+          "source": "explicit",
+          "evidence": "Settings opens a panel"
+        },
+        {
+          "id": "toggle_music",
+          "label": "Music on/off toggle",
+          "semanticAction": "toggle_music",
+          "category": "action",
+          "hierarchy": "secondary",
+          "source": "explicit",
+          "evidence": "Music on/off toggle"
+        },
+        {
+          "id": "slider_volume",
+          "label": "Volume slider",
+          "semanticAction": "adjust_volume",
+          "category": "action",
+          "hierarchy": "secondary",
+          "source": "explicit",
+          "evidence": "Volume slider"
+        },
+        {
+          "id": "panel_credits",
+          "label": "Credits panel",
+          "semanticAction": "",
+          "category": "content",
+          "hierarchy": "secondary",
+          "source": "explicit",
+          "evidence": "Credits opens a small panel"
+        },
+        {
+          "id": "action_close_settings",
+          "label": "Close",
+          "semanticAction": "close_settings_panel",
+          "category": "action",
+          "hierarchy": "secondary",
+          "source": "explicit",
+          "evidence": "Close"
+        },
+        {
+          "id": "action_close_credits",
+          "label": "Close",
+          "semanticAction": "close_credits_panel",
+          "category": "action",
+          "hierarchy": "secondary",
+          "source": "explicit",
+          "evidence": "Close"
+        },
+        {
+          "id": "system_play_hook",
+          "label": "Local play integration hook",
+          "semanticAction": "fire_local_play_hook",
+          "category": "system",
+          "hierarchy": "secondary",
+          "source": "explicit",
+          "evidence": "fires a clearly named local hook for game integration"
+        },
+        {
+          "id": "system_panel_controller",
+          "label": "Actual panel open/close controller behavior",
+          "semanticAction": "control_panel_visibility",
+          "category": "system",
+          "hierarchy": "secondary",
+          "source": "explicit",
+          "evidence": "Panels must open and close in the actual controller"
+        },
+        {
+          "id": "decoration_title_plate",
+          "label": "Title plate",
+          "semanticAction": "",
+          "category": "decoration",
+          "hierarchy": "secondary",
+          "source": "explicit",
+          "evidence": "a title plate"
+        },
+        {
+          "id": "decoration_corner_details",
+          "label": "Ornamental corner details",
+          "semanticAction": "",
+          "category": "decoration",
+          "hierarchy": "tertiary",
+          "source": "explicit",
+          "evidence": "ornamental corner details"
+        },
+        {
+          "id": "decoration_native_background",
+          "label": "Native background layout with restrained decoration",
+          "semanticAction": "",
+          "category": "decoration",
+          "hierarchy": "tertiary",
+          "source": "explicit",
+          "evidence": "Native background layout with restrained decoration"
+        }
+      ],
+      "optionalElements": [],
+      "prohibitedInventions": [
+        "Do not add shop features.",
+        "Do not add rewards features.",
+        "Do not add currency displays or systems.",
+        "Do not add ranks.",
+        "Do not add invented game systems.",
+        "Do not add extra navigation beyond Play, Settings, Credits.",
+        "Do not convert live text into image text.",
+        "Do not rely on decorative mock behavior; panels must function in the controller."
+      ],
+      "style": {
+        "theme": "Polished Roblox main menu with rich glossy cyan/cobalt artwork, thick navy edges, warm gold highlights, ornamental corner details, and a title plate.",
+        "adjectives": [
+          "polished",
+          "rich",
+          "glossy",
+          "cyan/cobalt",
+          "navy-edged",
+          "gold-highlighted",
+          "ornamental",
+          "restrained"
+        ],
+        "targetAudience": null,
+        "genre": null,
+        "mood": "coherent and readable"
+      },
+      "interactionRequirements": {
+        "hover": true,
+        "click": true,
+        "sounds": false,
+        "animations": true,
+        "requestedBehaviors": [
+          "Play closes the menu.",
+          "Play fires a clearly named local hook for game integration.",
+          "Settings opens a panel.",
+          "Credits opens a small panel.",
+          "Both panels have Close.",
+          "Panels must open and close in the actual controller.",
+          "Coherent hover and press animation.",
+          "Keep text live and readable."
+        ]
+      },
+      "responsiveRequirements": {
+        "desktop": true,
+        "mobile": true,
+        "tablet": true
+      },
+      "assetRequirements": [
+        {
+          "id": "art_button_skins",
+          "semanticRole": "component_surface",
+          "assetType": "image",
+          "required": true,
+          "componentIds": [
+            "action_play",
+            "action_settings",
+            "action_credits",
+            "action_close_settings",
+            "action_close_credits"
+          ],
+          "styleDescription": "Gemini-generated matching button skins in rich glossy cyan/cobalt with thick navy edges and warm gold highlights."
+        },
+        {
+          "id": "art_panel_skin",
+          "semanticRole": "panel_surface",
+          "assetType": "image",
+          "required": true,
+          "componentIds": [
+            "panel_settings",
+            "panel_credits"
+          ],
+          "styleDescription": "Gemini-generated matching panel skin using glossy cyan/cobalt surfaces, thick navy edging, and warm gold accents."
+        },
+        {
+          "id": "art_slider_track",
+          "semanticRole": "component_surface",
+          "assetType": "image",
+          "required": true,
+          "componentIds": [
+            "slider_volume"
+          ],
+          "styleDescription": "Gemini-generated matching slider track artwork consistent with the menu skin."
+        },
+        {
+          "id": "art_slider_handle",
+          "semanticRole": "component_surface",
+          "assetType": "image",
+          "required": true,
+          "componentIds": [
+            "slider_volume"
+          ],
+          "styleDescription": "Gemini-generated matching slider handle artwork consistent with the menu skin."
+        },
+        {
+          "id": "art_toggle_pieces",
+          "semanticRole": "component_surface",
+          "assetType": "image",
+          "required": true,
+          "componentIds": [
+            "toggle_music"
+          ],
+          "styleDescription": "Gemini-generated matching toggle on/off pieces for music state, consistent with the menu skin."
+        },
+        {
+          "id": "icon_play",
+          "semanticRole": "icon",
+          "assetType": "icon",
+          "required": true,
+          "componentIds": [
+            "action_play"
+          ],
+          "styleDescription": "Distinct play icon matching the Gemini-generated skin set."
+        },
+        {
+          "id": "icon_settings",
+          "semanticRole": "icon",
+          "assetType": "icon",
+          "required": true,
+          "componentIds": [
+            "action_settings"
+          ],
+          "styleDescription": "Distinct settings icon matching the Gemini-generated skin set."
+        },
+        {
+          "id": "icon_credits",
+          "semanticRole": "icon",
+          "assetType": "icon",
+          "required": true,
+          "componentIds": [
+            "action_credits"
+          ],
+          "styleDescription": "Distinct credits icon matching the Gemini-generated skin set."
+        },
+        {
+          "id": "icon_close",
+          "semanticRole": "icon",
+          "assetType": "icon",
+          "required": true,
+          "componentIds": [
+            "action_close_settings",
+            "action_close_credits"
+          ],
+          "styleDescription": "Distinct close icon matching the Gemini-generated skin set."
+        },
+        {
+          "id": "art_title_plate",
+          "semanticRole": "ornament",
+          "assetType": "image",
+          "required": true,
+          "componentIds": [
+            "title_aurora",
+            "decoration_title_plate"
+          ],
+          "styleDescription": "Gemini-generated title plate framing the live AURORA text in the same cyan/cobalt, navy, and gold style."
+        },
+        {
+          "id": "art_corner_details",
+          "semanticRole": "ornament",
+          "assetType": "image",
+          "required": true,
+          "componentIds": [
+            "decoration_corner_details"
+          ],
+          "styleDescription": "Gemini-generated ornamental corner details used sparingly to support restrained decoration."
+        }
+      ],
+      "constraints": [
+        "Create only these features.",
+        "Use live Roblox text for labels and title so text remains readable.",
+        "Desktop and mobile support are required.",
+        "Use native layout for the background and keep decoration restrained.",
+        "Use matching Gemini-generated skins and icons across all controls.",
+        "Do not fabricate unrelated product systems or progression.",
+        "No asset IDs are specified at this stage."
+      ]
+    },
+    "designPlan": {
+      "artDirection": "AURORA is framed as a premium fantasy-sci-fi lobby with glossy cyan and cobalt enamel surfaces, thick navy edging, and restrained warm gold trim used only for highlights, corner filigree, and emphasis around the title plate. The composition avoids a full outer menu panel so the native background can breathe; instead, the title plate crowns a centered vertical action dock, while modal panels float above with matching framed skins. Gemini-generated artwork should form a cohesive kit: one primary button skin for Play, one shared secondary button skin for Settings and Credits, one shared close-button skin, one shared panel skin for both modals, one title-plate ornament, one corner-ornament image reused sparingly, one slider track skin, one slider handle skin, and matching toggle on/off pieces. Surfaces should feel polished and layered through internal gradients, beveled edge lighting, and controlled specular streaks, but text remains live, clean, and high-contrast without heavy outlining. The mood is readable and heroic rather than noisy: restrained background decoration, balanced negative space, and obvious primary-action dominance for Play.",
+      "composition": {
+        "focalPoint": "The dominant focal point is the large Play button centered in the main vertical dock beneath the AURORA title plate. Settings and Credits sit directly below as coordinated primary menu actions in the same dock, but remain visually subordinate through smaller scale. When opened, the Settings or Credits modal becomes the temporary focal layer, centered above the dock with its close control aligned in the panel header so users always understand how to dismiss it.",
+        "primaryRegion": "main_dock",
+        "secondaryRegions": [
+          "title_band above main actions",
+          "subtle full-screen background ornament field",
+          "centered settings modal overlay",
+          "centered credits modal overlay",
+          "nonvisual integration systems for play hook and panel controller"
+        ],
+        "alignmentSystem": "Use a centered vertical axis for title and main actions on desktop and mobile, with all major controls snapping to a shared width rhythm. Modal content aligns to a simple single-column interior grid: header row, content rows, then close action. Ornament placement mirrors top-left and bottom-right corners of the safe area for balance without crowding actionable areas. Keep all comparable menu buttons in one dock with equal widths and consistent icon/text alignment.",
+        "density": "balanced"
+      },
+      "visualSystem": {
+        "palette": {
+          "primary": "#2FD6FF",
+          "secondary": "#3B63D1",
+          "accent": "#F4C96A",
+          "success": "#6DDBA8",
+          "danger": "#E26A7A",
+          "neutralBackground": "#08111F",
+          "neutralSurface": "#11213D",
+          "textPrimary": "#F4FBFF",
+          "textSecondary": "#B7CBE6",
+          "outline": "#0D1E3E",
+          "shadow": "#040913"
+        },
+        "colorRationale": "Cyan is the luminous lead for primary affordances and glossy fill highlights, cobalt supports secondary actions and panel body depth, navy provides the thick structural edge treatment, and warm gold is reserved for trim, corner filigree, title accents, and small emphasis strokes so it reads as premium rather than overwhelming. Background remains deep and restrained to keep bright controls forward. Text uses near-white and cool desaturated blue-gray for strong readability over saturated art.",
+        "cornerRadiusScale": [
+          8,
+          12,
+          16,
+          22,
+          30
+        ],
+        "outlineStyle": "Primary surfaces use thick navy outer strokes with a subtle inner gold or cyan highlight line baked into artwork where appropriate. Native text containers and rows use thin UIStroke only when needed for separation; avoid outlining all text. Rounded corners progress from small row elements to broader modal and title framing.",
+        "shadowStyle": "Use short, dense navy-black drop shadows for buttons and panels with modest vertical offset, plus a soft ambient shadow beneath modal windows. Buttons get tighter shadows than panels so the stack feels crisp and polished rather than floaty.",
+        "typography": {
+          "display": {
+            "font": "rbxasset://fonts/families/Montserrat.json",
+            "weight": "ExtraBold",
+            "desktopSize": 40,
+            "mobileSize": 30,
+            "treatment": "Used only for the live AURORA title centered on the title plate with slight tracking and no heavy outline; rely on contrast and plate framing."
+          },
+          "heading": {
+            "font": "rbxasset://fonts/families/Montserrat.json",
+            "weight": "Bold",
+            "desktopSize": 24,
+            "mobileSize": 20,
+            "treatment": "Panel titles and major section labels use confident bold weight with high contrast and restrained spacing."
+          },
+          "button": {
+            "font": "rbxasset://fonts/families/Montserrat.json",
+            "weight": "SemiBold",
+            "desktopSize": 22,
+            "mobileSize": 18,
+            "treatment": "Action labels are large, centered vertically, and paired with icons; maintain readability over glossy skins with clean fill and no image text."
+          },
+          "body": {
+            "font": "rbxasset://fonts/families/Montserrat.json",
+            "weight": "Medium",
+            "desktopSize": 18,
+            "mobileSize": 16,
+            "treatment": "Used for credits body and settings row labels with high contrast and simple line spacing."
+          },
+          "caption": {
+            "font": "rbxasset://fonts/families/Montserrat.json",
+            "weight": "Medium",
+            "desktopSize": 14,
+            "mobileSize": 13,
+            "treatment": "Used for compact supporting text and slider value text if shown live."
+          },
+          "numeric": {
+            "font": "rbxasset://fonts/families/Montserrat.json",
+            "weight": "SemiBold",
+            "desktopSize": 16,
+            "mobileSize": 15,
+            "treatment": "Used for live volume value text with tabular feel and strong legibility."
+          },
+          "badge": {
+            "font": "rbxasset://fonts/families/Montserrat.json",
+            "weight": "Bold",
+            "desktopSize": 14,
+            "mobileSize": 12,
+            "treatment": "Reserved but minimally used; if any micro-label treatment is needed, keep compact and crisp."
+          }
+        }
+      },
+      "componentSystem": [
+        {
+          "id": "cmp_background_root",
+          "primitive": "Container",
+          "requirementId": "decoration_native_background",
+          "label": "Background Root",
+          "semanticAction": "",
+          "hierarchy": "tertiary",
+          "groupId": "background_group",
+          "nodeName": "BackgroundRoot",
+          "regionId": "background_region",
+          "paletteRole": "neutralBackground",
+          "typographyRole": "body",
+          "visualTreatment": "background native deep-space gradient field with restrained vignettes and no overpowering illustration",
+          "size": {
+            "desktop": "Full-screen frame spanning the safe area with subtle gradient and room around centered menu.",
+            "mobile": "Full-screen frame spanning the safe area with simplified gradient treatment and less visible empty margin.",
+            "minTouchTarget": 0
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "aurora_gemini",
+            "assetStrategy": "procedural",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "none",
+            "perspective": "flat",
+            "edgeTreatment": "none",
+            "shadowTreatment": "none",
+            "paletteMode": "none"
+          },
+          "interaction": {
+            "hoverAnimation": "none",
+            "pressAnimation": "none",
+            "hoverSound": "none",
+            "clickSound": "none",
+            "sharedHelper": "None",
+            "touchBehavior": "Passive decorative background; no input handling."
+          }
+        },
+        {
+          "id": "cmp_background_ornaments",
+          "primitive": "Decoration",
+          "requirementId": "decoration_corner_details",
+          "label": "Ornamental Corner Details",
+          "semanticAction": "",
+          "hierarchy": "tertiary",
+          "groupId": "background_group",
+          "nodeName": "BackgroundOrnaments",
+          "regionId": "background_region",
+          "paletteRole": "accent",
+          "typographyRole": "caption",
+          "visualTreatment": "ornament Gemini-generated corner filigree reused sparingly in mirrored safe-area corners with cyan, cobalt, navy, and gold detailing",
+          "size": {
+            "desktop": "Two to four corner ornaments anchored near safe-area corners, each moderate scale and low visual dominance.",
+            "mobile": "Two smaller ornaments pinned to top-left and bottom-right safe-area corners with reduced opacity and detail density.",
+            "minTouchTarget": 0
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "aurora_gemini",
+            "assetStrategy": "generated",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "none",
+            "perspective": "flat",
+            "edgeTreatment": "none",
+            "shadowTreatment": "none",
+            "paletteMode": "none"
+          },
+          "interaction": {
+            "hoverAnimation": "none",
+            "pressAnimation": "none",
+            "hoverSound": "none",
+            "clickSound": "none",
+            "sharedHelper": "None",
+            "touchBehavior": "Passive decoration only."
+          }
+        },
+        {
+          "id": "cmp_menu_dock",
+          "primitive": "MenuDock",
+          "requirementId": null,
+          "label": "Main Menu Dock",
+          "semanticAction": "",
+          "hierarchy": "primary",
+          "groupId": "main_menu_group",
+          "nodeName": "MainMenuDock",
+          "regionId": "main_dock",
+          "paletteRole": "neutralSurface",
+          "typographyRole": "body",
+          "visualTreatment": "Transparent native dock container that vertically groups title plate and all main menu buttons without an outer panel.",
+          "size": {
+            "desktop": "Centered vertical stack occupying a narrow middle column with generous breathing room around buttons.",
+            "mobile": "Centered vertical stack occupying most of the width with tighter vertical spacing and larger touch emphasis.",
+            "minTouchTarget": 0
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "aurora_gemini",
+            "assetStrategy": "procedural",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "none",
+            "perspective": "flat",
+            "edgeTreatment": "none",
+            "shadowTreatment": "none",
+            "paletteMode": "none"
+          },
+          "interaction": {
+            "hoverAnimation": "none",
+            "pressAnimation": "none",
+            "hoverSound": "none",
+            "clickSound": "none",
+            "sharedHelper": "None",
+            "touchBehavior": "Container only; input passes to child controls."
+          }
+        },
+        {
+          "id": "cmp_title_plate",
+          "primitive": "Decoration",
+          "requirementId": "decoration_title_plate",
+          "label": "Title Plate",
+          "semanticAction": "",
+          "hierarchy": "secondary",
+          "groupId": "main_menu_group",
+          "nodeName": "TitlePlate",
+          "regionId": "title_region",
+          "paletteRole": "secondary",
+          "typographyRole": "display",
+          "visualTreatment": "ornament Gemini-generated title plate with glossy cyan/cobalt enamel, thick navy rim, and warm gold trim framing live title text",
+          "size": {
+            "desktop": "Wide horizontal title plate above the buttons, approximately 1.4x the width of the main buttons.",
+            "mobile": "Slightly narrower plate relative to screen width with preserved aspect ratio and reduced ornament overhang.",
+            "minTouchTarget": 0
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "aurora_gemini",
+            "assetStrategy": "generated",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "none",
+            "perspective": "flat",
+            "edgeTreatment": "none",
+            "shadowTreatment": "none",
+            "paletteMode": "none"
+          },
+          "interaction": {
+            "hoverAnimation": "none",
+            "pressAnimation": "none",
+            "hoverSound": "none",
+            "clickSound": "none",
+            "sharedHelper": "None",
+            "touchBehavior": "Passive ornament framing the title."
+          }
+        },
+        {
+          "id": "cmp_title_aurora",
+          "primitive": "Title",
+          "requirementId": "title_aurora",
+          "label": "AURORA",
+          "semanticAction": "",
+          "hierarchy": "primary",
+          "groupId": "main_menu_group",
+          "nodeName": "AuroraTitle",
+          "regionId": "title_region",
+          "paletteRole": "textPrimary",
+          "typographyRole": "display",
+          "visualTreatment": "Live title text centered over title plate with crisp high-contrast lettering",
+          "size": {
+            "desktop": "Single-line centered title filling most of the plate width with internal side margins.",
+            "mobile": "Single-line centered title scaled down to preserve readability without wrapping.",
+            "minTouchTarget": 0
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "aurora_gemini",
+            "assetStrategy": "procedural",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "none",
+            "perspective": "flat",
+            "edgeTreatment": "none",
+            "shadowTreatment": "none",
+            "paletteMode": "none"
+          },
+          "interaction": {
+            "hoverAnimation": "none",
+            "pressAnimation": "none",
+            "hoverSound": "none",
+            "clickSound": "none",
+            "sharedHelper": "None",
+            "touchBehavior": "Passive text element."
+          }
+        },
+        {
+          "id": "cmp_play_button",
+          "primitive": "PrimaryGameCTA",
+          "requirementId": "action_play",
+          "label": "Play",
+          "semanticAction": "play_game",
+          "hierarchy": "primary",
+          "groupId": "main_actions",
+          "nodeName": "PlayButton",
+          "regionId": "main_dock",
+          "paletteRole": "primary",
+          "typographyRole": "button",
+          "visualTreatment": "component_surface Gemini-generated primary button skin with glossy cyan lead, cobalt depth, thick navy edge, and subtle gold highlight accents",
+          "size": {
+            "desktop": "Largest button in the dock; wide horizontal CTA clearly bigger than the other actions.",
+            "mobile": "Large full-width CTA near the center stack with extra height for thumb comfort and unmistakable priority.",
+            "minTouchTarget": 56
+          },
+          "icon": {
+            "enabled": true,
+            "semanticRole": "play",
+            "family": "aurora_gemini",
+            "assetStrategy": "generated",
+            "size": 24,
+            "padding": 12,
+            "visualWeight": "bold",
+            "perspective": "front",
+            "edgeTreatment": "navy keyline with small gold glint",
+            "shadowTreatment": "tight navy drop shadow",
+            "paletteMode": "cyan-to-gold accent over dark edge"
+          },
+          "interaction": {
+            "hoverAnimation": "Gentle brighten, slight upward lift, and subtle scale-up with highlight sweep constrained to the skin.",
+            "pressAnimation": "Quick inward scale, tiny downward nudge, and highlight compression before springing back.",
+            "hoverSound": "none",
+            "clickSound": "none",
+            "sharedHelper": "ButtonEffects",
+            "touchBehavior": "Use Activated only on touch devices with immediate press feedback and no hover state; on activation close the menu then delegate hook firing through controller."
+          }
+        },
+        {
+          "id": "cmp_settings_button",
+          "primitive": "MenuButton",
+          "requirementId": "action_settings",
+          "label": "Settings",
+          "semanticAction": "open_settings_panel",
+          "hierarchy": "primary",
+          "groupId": "main_actions",
+          "nodeName": "SettingsButton",
+          "regionId": "main_dock",
+          "paletteRole": "secondary",
+          "typographyRole": "button",
+          "visualTreatment": "component_surface Gemini-generated secondary button skin matching the menu set with glossy cobalt body, cyan highlights, thick navy edge, and restrained gold trim",
+          "size": {
+            "desktop": "Medium-width action button matching Credits width and height beneath Play.",
+            "mobile": "Full-width secondary action button matching Credits with generous touch height.",
+            "minTouchTarget": 50
+          },
+          "icon": {
+            "enabled": true,
+            "semanticRole": "settings",
+            "family": "aurora_gemini",
+            "assetStrategy": "generated",
+            "size": 24,
+            "padding": 12,
+            "visualWeight": "bold",
+            "perspective": "front",
+            "edgeTreatment": "navy keyline with small gold glint",
+            "shadowTreatment": "tight navy drop shadow",
+            "paletteMode": "cyan-to-gold accent over dark edge"
+          },
+          "interaction": {
+            "hoverAnimation": "Gentle brighten, slight upward lift, and subtle scale-up with highlight sweep constrained to the skin.",
+            "pressAnimation": "Quick inward scale, tiny downward nudge, and highlight compression before springing back.",
+            "hoverSound": "none",
+            "clickSound": "none",
+            "sharedHelper": "ButtonEffects",
+            "touchBehavior": "Use Activated only on touch devices with immediate press feedback and no hover synthesis; opens Settings modal through controller."
+          }
+        },
+        {
+          "id": "cmp_credits_button",
+          "primitive": "MenuButton",
+          "requirementId": "action_credits",
+          "label": "Credits",
+          "semanticAction": "open_credits_panel",
+          "hierarchy": "primary",
+          "groupId": "main_actions",
+          "nodeName": "CreditsButton",
+          "regionId": "main_dock",
+          "paletteRole": "secondary",
+          "typographyRole": "button",
+          "visualTreatment": "component_surface Gemini-generated secondary button skin matching the menu set with glossy cobalt body, cyan highlights, thick navy edge, and restrained gold trim",
+          "size": {
+            "desktop": "Medium-width action button matching Settings width and height beneath it.",
+            "mobile": "Full-width secondary action button matching Settings with generous touch height.",
+            "minTouchTarget": 50
+          },
+          "icon": {
+            "enabled": true,
+            "semanticRole": "credits",
+            "family": "aurora_gemini",
+            "assetStrategy": "generated",
+            "size": 24,
+            "padding": 12,
+            "visualWeight": "bold",
+            "perspective": "front",
+            "edgeTreatment": "navy keyline with small gold glint",
+            "shadowTreatment": "tight navy drop shadow",
+            "paletteMode": "cyan-to-gold accent over dark edge"
+          },
+          "interaction": {
+            "hoverAnimation": "Gentle brighten, slight upward lift, and subtle scale-up with highlight sweep constrained to the skin.",
+            "pressAnimation": "Quick inward scale, tiny downward nudge, and highlight compression before springing back.",
+            "hoverSound": "none",
+            "clickSound": "none",
+            "sharedHelper": "ButtonEffects",
+            "touchBehavior": "Use Activated only on touch devices with immediate press feedback and no hover synthesis; opens Credits modal through controller."
+          }
+        },
+        {
+          "id": "cmp_settings_modal",
+          "primitive": "ModalWindow",
+          "requirementId": "panel_settings",
+          "label": "Settings Panel",
+          "semanticAction": "",
+          "hierarchy": "secondary",
+          "groupId": "settings_modal_group",
+          "nodeName": "SettingsModal",
+          "regionId": "settings_modal_region",
+          "paletteRole": "neutralSurface",
+          "typographyRole": "heading",
+          "visualTreatment": "panel_surface Gemini-generated modal skin with glossy cyan/cobalt framed surface, thick navy border, gold highlights, and soft inset depth",
+          "size": {
+            "desktop": "Centered medium modal sized for two settings rows and a compact header without dominating the full screen.",
+            "mobile": "Centered modal using most of the safe width with stacked content and preserved artwork corners.",
+            "minTouchTarget": 0
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "aurora_gemini",
+            "assetStrategy": "generated",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "none",
+            "perspective": "flat",
+            "edgeTreatment": "none",
+            "shadowTreatment": "none",
+            "paletteMode": "none"
+          },
+          "interaction": {
+            "hoverAnimation": "none",
+            "pressAnimation": "none",
+            "hoverSound": "none",
+            "clickSound": "none",
+            "sharedHelper": "None",
+            "touchBehavior": "Modal container intercepts background input while visible; visibility controlled by controller."
+          }
+        },
+        {
+          "id": "cmp_settings_title",
+          "primitive": "Title",
+          "requirementId": null,
+          "label": "Settings",
+          "semanticAction": "",
+          "hierarchy": "secondary",
+          "groupId": "settings_modal_group",
+          "nodeName": "SettingsTitle",
+          "regionId": "settings_modal_region",
+          "paletteRole": "textPrimary",
+          "typographyRole": "heading",
+          "visualTreatment": "Live panel title text aligned within the modal header",
+          "size": {
+            "desktop": "Single-line panel heading aligned left within header row with room for close button.",
+            "mobile": "Single-line panel heading aligned left with slightly reduced size and wider padding.",
+            "minTouchTarget": 0
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "aurora_gemini",
+            "assetStrategy": "procedural",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "none",
+            "perspective": "flat",
+            "edgeTreatment": "none",
+            "shadowTreatment": "none",
+            "paletteMode": "none"
+          },
+          "interaction": {
+            "hoverAnimation": "none",
+            "pressAnimation": "none",
+            "hoverSound": "none",
+            "clickSound": "none",
+            "sharedHelper": "None",
+            "touchBehavior": "Passive text element."
+          }
+        },
+        {
+          "id": "cmp_settings_close",
+          "primitive": "MenuButton",
+          "requirementId": "action_close_settings",
+          "label": "Close",
+          "semanticAction": "close_settings_panel",
+          "hierarchy": "secondary",
+          "groupId": "close_actions",
+          "nodeName": "SettingsCloseButton",
+          "regionId": "settings_modal_region",
+          "paletteRole": "secondary",
+          "typographyRole": "button",
+          "visualTreatment": "component_surface Gemini-generated compact close button skin matching panel framing with glossy cobalt face, thick navy edge, and gold highlight tip",
+          "size": {
+            "desktop": "Compact square-to-rounded close control anchored in the settings modal header.",
+            "mobile": "Compact but touch-safe close control anchored in header with padded hit area.",
+            "minTouchTarget": 44
+          },
+          "icon": {
+            "enabled": true,
+            "semanticRole": "close",
+            "family": "aurora_gemini",
+            "assetStrategy": "generated",
+            "size": 20,
+            "padding": 10,
+            "visualWeight": "bold",
+            "perspective": "front",
+            "edgeTreatment": "navy keyline with small gold glint",
+            "shadowTreatment": "tight navy drop shadow",
+            "paletteMode": "cyan-to-gold accent over dark edge"
+          },
+          "interaction": {
+            "hoverAnimation": "Gentle brighten and tiny lift to indicate dismiss action without overpowering content.",
+            "pressAnimation": "Fast inward scale and tiny downward nudge with quick recovery.",
+            "hoverSound": "none",
+            "clickSound": "none",
+            "sharedHelper": "ButtonEffects",
+            "touchBehavior": "Use Activated with immediate press feedback; closes settings modal through controller."
+          }
+        },
+        {
+          "id": "cmp_music_row",
+          "primitive": "SettingsRow",
+          "requirementId": null,
+          "label": "Music Row",
+          "semanticAction": "",
+          "hierarchy": "secondary",
+          "groupId": "settings_modal_group",
+          "nodeName": "MusicRow",
+          "regionId": "settings_modal_region",
+          "paletteRole": "neutralSurface",
+          "typographyRole": "body",
+          "visualTreatment": "Native row container with subtle internal padding and optional fine separator spacing only",
+          "size": {
+            "desktop": "Single row spanning modal content width with left label and right toggle.",
+            "mobile": "Stack-friendly row spanning modal width with larger vertical padding and right-aligned toggle.",
+            "minTouchTarget": 0
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "aurora_gemini",
+            "assetStrategy": "procedural",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "none",
+            "perspective": "flat",
+            "edgeTreatment": "none",
+            "shadowTreatment": "none",
+            "paletteMode": "none"
+          },
+          "interaction": {
+            "hoverAnimation": "none",
+            "pressAnimation": "none",
+            "hoverSound": "none",
+            "clickSound": "none",
+            "sharedHelper": "None",
+            "touchBehavior": "Container only."
+          }
+        },
+        {
+          "id": "cmp_music_label",
+          "primitive": "Text",
+          "requirementId": null,
+          "label": "Music",
+          "semanticAction": "",
+          "hierarchy": "secondary",
+          "groupId": "settings_modal_group",
+          "nodeName": "MusicLabel",
+          "regionId": "settings_modal_region",
+          "paletteRole": "textPrimary",
+          "typographyRole": "body",
+          "visualTreatment": "Live settings label text",
+          "size": {
+            "desktop": "Left-aligned label occupying flexible row width.",
+            "mobile": "Left-aligned label with slightly larger line box for touch-oriented row spacing.",
+            "minTouchTarget": 0
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "aurora_gemini",
+            "assetStrategy": "procedural",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "none",
+            "perspective": "flat",
+            "edgeTreatment": "none",
+            "shadowTreatment": "none",
+            "paletteMode": "none"
+          },
+          "interaction": {
+            "hoverAnimation": "none",
+            "pressAnimation": "none",
+            "hoverSound": "none",
+            "clickSound": "none",
+            "sharedHelper": "None",
+            "touchBehavior": "Passive label."
+          }
+        },
+        {
+          "id": "cmp_music_toggle",
+          "primitive": "SettingsRow",
+          "requirementId": "toggle_music",
+          "label": "Music On/Off Toggle",
+          "semanticAction": "toggle_music",
+          "hierarchy": "secondary",
+          "groupId": "settings_controls",
+          "nodeName": "MusicToggle",
+          "regionId": "settings_modal_region",
+          "paletteRole": "primary",
+          "typographyRole": "button",
+          "visualTreatment": "control_artwork Gemini-generated toggle control using matching on/off pieces with glossy cyan/cobalt surfaces, thick navy edge, and warm gold highlight detail",
+          "size": {
+            "desktop": "Compact horizontal toggle fitted to row end with clear state travel and visible on/off distinction.",
+            "mobile": "Slightly larger horizontal toggle for thumb use while preserving row balance.",
+            "minTouchTarget": 44
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "aurora_gemini",
+            "assetStrategy": "generated",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "none",
+            "perspective": "front",
+            "edgeTreatment": "navy framed artwork",
+            "shadowTreatment": "tight navy drop shadow",
+            "paletteMode": "state-colored artwork"
+          },
+          "interaction": {
+            "hoverAnimation": "Subtle brighten on the interactive hit area and tiny scale-up of the toggle shell.",
+            "pressAnimation": "Short depress-and-release response with handle compression feeling physical but controlled.",
+            "hoverSound": "none",
+            "clickSound": "none",
+            "sharedHelper": "ButtonEffects",
+            "touchBehavior": "Use Activated to flip boolean music state; no hover synthesis on touch; controller updates visual state and audio setting."
+          }
+        },
+        {
+          "id": "cmp_volume_row",
+          "primitive": "SettingsRow",
+          "requirementId": null,
+          "label": "Volume Row",
+          "semanticAction": "",
+          "hierarchy": "secondary",
+          "groupId": "settings_modal_group",
+          "nodeName": "VolumeRow",
+          "regionId": "settings_modal_region",
+          "paletteRole": "neutralSurface",
+          "typographyRole": "body",
+          "visualTreatment": "Native row container with generous padding for slider interaction",
+          "size": {
+            "desktop": "Stacked row beneath music row with label, slider, and live value.",
+            "mobile": "Vertically padded row beneath music row with label above or beside slider depending available width.",
+            "minTouchTarget": 0
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "aurora_gemini",
+            "assetStrategy": "procedural",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "none",
+            "perspective": "flat",
+            "edgeTreatment": "none",
+            "shadowTreatment": "none",
+            "paletteMode": "none"
+          },
+          "interaction": {
+            "hoverAnimation": "none",
+            "pressAnimation": "none",
+            "hoverSound": "none",
+            "clickSound": "none",
+            "sharedHelper": "None",
+            "touchBehavior": "Container only."
+          }
+        },
+        {
+          "id": "cmp_volume_label",
+          "primitive": "Text",
+          "requirementId": null,
+          "label": "Volume",
+          "semanticAction": "",
+          "hierarchy": "secondary",
+          "groupId": "settings_modal_group",
+          "nodeName": "VolumeLabel",
+          "regionId": "settings_modal_region",
+          "paletteRole": "textPrimary",
+          "typographyRole": "body",
+          "visualTreatment": "Live settings label text",
+          "size": {
+            "desktop": "Left-aligned compact label above or beside the slider track.",
+            "mobile": "Left-aligned label with spacing above slider for clarity.",
+            "minTouchTarget": 0
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "aurora_gemini",
+            "assetStrategy": "procedural",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "none",
+            "perspective": "flat",
+            "edgeTreatment": "none",
+            "shadowTreatment": "none",
+            "paletteMode": "none"
+          },
+          "interaction": {
+            "hoverAnimation": "none",
+            "pressAnimation": "none",
+            "hoverSound": "none",
+            "clickSound": "none",
+            "sharedHelper": "None",
+            "touchBehavior": "Passive label."
+          }
+        },
+        {
+          "id": "cmp_volume_slider",
+          "primitive": "ProgressBar",
+          "requirementId": "slider_volume",
+          "label": "Volume Slider",
+          "semanticAction": "adjust_volume",
+          "hierarchy": "secondary",
+          "groupId": "settings_controls",
+          "nodeName": "VolumeSlider",
+          "regionId": "settings_modal_region",
+          "paletteRole": "primary",
+          "typographyRole": "body",
+          "visualTreatment": "control_artwork Gemini-generated slider with matching glossy track and handle artwork, thick navy frame, cyan fill emphasis, and gold gleam accents",
+          "size": {
+            "desktop": "Wide horizontal slider occupying the main content width of the settings modal.",
+            "mobile": "Wide thumb-friendly horizontal slider spanning most of modal width with taller handle hit area.",
+            "minTouchTarget": 44
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "aurora_gemini",
+            "assetStrategy": "generated",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "none",
+            "perspective": "front",
+            "edgeTreatment": "navy framed artwork",
+            "shadowTreatment": "tight navy drop shadow",
+            "paletteMode": "cyan fill over cobalt track"
+          },
+          "interaction": {
+            "hoverAnimation": "Track and handle brighten subtly on pointer hover; handle lifts slightly.",
+            "pressAnimation": "Handle compresses slightly under drag/press and rebounds on release with bounded motion.",
+            "hoverSound": "none",
+            "clickSound": "none",
+            "sharedHelper": "ButtonEffects",
+            "touchBehavior": "Use direct drag and tap on touch; no hover synthesis; controller updates live value and audio volume continuously or on release based implementation."
+          }
+        },
+        {
+          "id": "cmp_volume_value",
+          "primitive": "Text",
+          "requirementId": null,
+          "label": "Volume Value",
+          "semanticAction": "",
+          "hierarchy": "tertiary",
+          "groupId": "settings_modal_group",
+          "nodeName": "VolumeValue",
+          "regionId": "settings_modal_region",
+          "paletteRole": "textSecondary",
+          "typographyRole": "numeric",
+          "visualTreatment": "Live numeric value text for current slider amount",
+          "size": {
+            "desktop": "Compact right-aligned value text adjacent to slider or at row end.",
+            "mobile": "Compact value text below or right of slider depending width; keep legible.",
+            "minTouchTarget": 0
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "aurora_gemini",
+            "assetStrategy": "procedural",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "none",
+            "perspective": "flat",
+            "edgeTreatment": "none",
+            "shadowTreatment": "none",
+            "paletteMode": "none"
+          },
+          "interaction": {
+            "hoverAnimation": "none",
+            "pressAnimation": "none",
+            "hoverSound": "none",
+            "clickSound": "none",
+            "sharedHelper": "None",
+            "touchBehavior": "Passive live text bound to slider state."
+          }
+        },
+        {
+          "id": "cmp_credits_modal",
+          "primitive": "ModalWindow",
+          "requirementId": "panel_credits",
+          "label": "Credits Panel",
+          "semanticAction": "",
+          "hierarchy": "secondary",
+          "groupId": "credits_modal_group",
+          "nodeName": "CreditsModal",
+          "regionId": "credits_modal_region",
+          "paletteRole": "neutralSurface",
+          "typographyRole": "heading",
+          "visualTreatment": "panel_surface Gemini-generated modal skin matching the settings panel, scaled to a smaller compact window",
+          "size": {
+            "desktop": "Small centered modal sized just for a title, body copy, and close control.",
+            "mobile": "Compact centered modal using most safe width but shorter height than settings panel.",
+            "minTouchTarget": 0
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "aurora_gemini",
+            "assetStrategy": "generated",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "none",
+            "perspective": "flat",
+            "edgeTreatment": "none",
+            "shadowTreatment": "none",
+            "paletteMode": "none"
+          },
+          "interaction": {
+            "hoverAnimation": "none",
+            "pressAnimation": "none",
+            "hoverSound": "none",
+            "clickSound": "none",
+            "sharedHelper": "None",
+            "touchBehavior": "Modal container intercepts background input while visible; visibility controlled by controller."
+          }
+        },
+        {
+          "id": "cmp_credits_title",
+          "primitive": "Title",
+          "requirementId": null,
+          "label": "Credits",
+          "semanticAction": "",
+          "hierarchy": "secondary",
+          "groupId": "credits_modal_group",
+          "nodeName": "CreditsTitle",
+          "regionId": "credits_modal_region",
+          "paletteRole": "textPrimary",
+          "typographyRole": "heading",
+          "visualTreatment": "Live panel title text aligned within compact modal header",
+          "size": {
+            "desktop": "Single-line title aligned left with room for close button.",
+            "mobile": "Single-line title with slightly reduced size and increased padding.",
+            "minTouchTarget": 0
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "aurora_gemini",
+            "assetStrategy": "procedural",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "none",
+            "perspective": "flat",
+            "edgeTreatment": "none",
+            "shadowTreatment": "none",
+            "paletteMode": "none"
+          },
+          "interaction": {
+            "hoverAnimation": "none",
+            "pressAnimation": "none",
+            "hoverSound": "none",
+            "clickSound": "none",
+            "sharedHelper": "None",
+            "touchBehavior": "Passive title text."
+          }
+        },
+        {
+          "id": "cmp_credits_body",
+          "primitive": "Text",
+          "requirementId": null,
+          "label": "Credits Body",
+          "semanticAction": "",
+          "hierarchy": "secondary",
+          "groupId": "credits_modal_group",
+          "nodeName": "CreditsBody",
+          "regionId": "credits_modal_region",
+          "paletteRole": "textSecondary",
+          "typographyRole": "body",
+          "visualTreatment": "Live multiline body text area for credits content",
+          "size": {
+            "desktop": "Compact wrapped text block beneath the header with comfortable line height.",
+            "mobile": "Wrapped text block with slightly tighter measure and generous internal padding.",
+            "minTouchTarget": 0
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "aurora_gemini",
+            "assetStrategy": "procedural",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "none",
+            "perspective": "flat",
+            "edgeTreatment": "none",
+            "shadowTreatment": "none",
+            "paletteMode": "none"
+          },
+          "interaction": {
+            "hoverAnimation": "none",
+            "pressAnimation": "none",
+            "hoverSound": "none",
+            "clickSound": "none",
+            "sharedHelper": "None",
+            "touchBehavior": "Passive text content."
+          }
+        },
+        {
+          "id": "cmp_credits_close",
+          "primitive": "MenuButton",
+          "requirementId": "action_close_credits",
+          "label": "Close",
+          "semanticAction": "close_credits_panel",
+          "hierarchy": "secondary",
+          "groupId": "close_actions",
+          "nodeName": "CreditsCloseButton",
+          "regionId": "credits_modal_region",
+          "paletteRole": "secondary",
+          "typographyRole": "button",
+          "visualTreatment": "component_surface Gemini-generated compact close button skin matching panel framing with glossy cobalt face, thick navy edge, and gold highlight tip",
+          "size": {
+            "desktop": "Compact square-to-rounded close control anchored in the credits modal header.",
+            "mobile": "Compact but touch-safe close control anchored in header with padded hit area.",
+            "minTouchTarget": 44
+          },
+          "icon": {
+            "enabled": true,
+            "semanticRole": "close",
+            "family": "aurora_gemini",
+            "assetStrategy": "generated",
+            "size": 20,
+            "padding": 10,
+            "visualWeight": "bold",
+            "perspective": "front",
+            "edgeTreatment": "navy keyline with small gold glint",
+            "shadowTreatment": "tight navy drop shadow",
+            "paletteMode": "cyan-to-gold accent over dark edge"
+          },
+          "interaction": {
+            "hoverAnimation": "Gentle brighten and tiny lift to indicate dismiss action without overpowering content.",
+            "pressAnimation": "Fast inward scale and tiny downward nudge with quick recovery.",
+            "hoverSound": "none",
+            "clickSound": "none",
+            "sharedHelper": "ButtonEffects",
+            "touchBehavior": "Use Activated with immediate press feedback; closes credits modal through controller."
+          }
+        },
+        {
+          "id": "cmp_play_hook",
+          "primitive": "Custom",
+          "requirementId": "system_play_hook",
+          "label": "Local play integration hook",
+          "semanticAction": "fire_local_play_hook",
+          "hierarchy": "secondary",
+          "groupId": "system_group",
+          "nodeName": "OnPlayRequestedHook",
+          "regionId": "system_region",
+          "paletteRole": "outline",
+          "typographyRole": "caption",
+          "visualTreatment": "Nonvisual local integration contract for a clearly named play request callback or BindableEvent bridge; not rendered as a button.",
+          "size": {
+            "desktop": "No visual footprint; instantiated as nonvisual system object or metadata contract.",
+            "mobile": "No visual footprint; instantiated as nonvisual system object or metadata contract.",
+            "minTouchTarget": 44
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "aurora_gemini",
+            "assetStrategy": "procedural",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "none",
+            "perspective": "flat",
+            "edgeTreatment": "none",
+            "shadowTreatment": "none",
+            "paletteMode": "none"
+          },
+          "interaction": {
+            "hoverAnimation": "none",
+            "pressAnimation": "none",
+            "hoverSound": "none",
+            "clickSound": "none",
+            "sharedHelper": "None",
+            "touchBehavior": "Triggered by Play action after menu close sequence; no direct user input surface."
+          }
+        },
+        {
+          "id": "cmp_panel_controller",
+          "primitive": "Custom",
+          "requirementId": "system_panel_controller",
+          "label": "Actual panel visibility controller",
+          "semanticAction": "control_panel_visibility",
+          "hierarchy": "secondary",
+          "groupId": "system_group",
+          "nodeName": "PanelControllerBehavior",
+          "regionId": "system_region",
+          "paletteRole": "outline",
+          "typographyRole": "caption",
+          "visualTreatment": "Nonvisual controller managing mutually exclusive modal visibility, close actions, and menu dismissal flow; not rendered.",
+          "size": {
+            "desktop": "No visual footprint; controller exists at build return and wires all panel open/close behavior.",
+            "mobile": "No visual footprint; controller exists at build return and wires all panel open/close behavior.",
+            "minTouchTarget": 44
+          },
+          "icon": {
+            "enabled": false,
+            "semanticRole": "",
+            "family": "aurora_gemini",
+            "assetStrategy": "procedural",
+            "size": 16,
+            "padding": 0,
+            "visualWeight": "none",
+            "perspective": "flat",
+            "edgeTreatment": "none",
+            "shadowTreatment": "none",
+            "paletteMode": "none"
+          },
+          "interaction": {
+            "hoverAnimation": "none",
+            "pressAnimation": "none",
+            "hoverSound": "none",
+            "clickSound": "none",
+            "sharedHelper": "None",
+            "touchBehavior": "Receives action events from buttons and controls modal visibility state on all device classes."
+          }
+        }
+      ],
+      "iconSystem": {
+        "family": "aurora_gemini",
+        "styleDescription": "Gemini-generated icon family with distinct play, settings, credits, and close symbols designed to sit inside the same glossy fantasy-sci-fi UI kit. Icons should read cleanly at small sizes, use bold silhouettes, and harmonize with thick navy edges and warm gold gleams.",
+        "visualWeight": "bold",
+        "perspective": "front",
+        "edgeTreatment": "navy keyline with restrained gold glint",
+        "shadowTreatment": "tight navy drop shadow",
+        "paletteMode": "cyan/cobalt cores with controlled gold highlight over dark framing",
+        "padding": 12,
+        "iconToButtonRatio": 0.34
+      },
+      "motionSystem": {
+        "hover": "Desktop hover uses a restrained premium response: 1.03 scale max, 2-4 px upward lift, slight brightening of glossy highlight, and a soft shadow increase. Only actionable controls receive hover feedback.",
+        "press": "Press uses a quick inward scale to about 0.97, tiny downward offset, and compressed highlight/shadow for a tactile enamel-button feel. Slider handle compresses subtly during drag.",
+        "entrance": "At screen load, title plate and button dock fade and rise in together with a small stagger from top to bottom. Modals fade/scale in from 0.96 to 1 with a soft upward settle; background ornaments remain mostly static.",
+        "release": "Controls rebound cleanly to rest with a brief eased return. Modal close uses a short fade and slight scale-down before visibility is removed.",
+        "durations": {
+          "hover": 140,
+          "press": 90,
+          "entrance": 260,
+          "release": 140
+        },
+        "reducedMotion": "When reduced motion is preferred, remove lift and stagger, keep only fast opacity changes and minimal scale deltas. Drag behavior remains functional with no extra animation beyond state updates.",
+        "touchBehavior": "Touch devices use Activated and drag interactions only, showing press feedback immediately on touch down and no synthetic hover. Maintain the same hierarchy but simplify motion to crisp scale and opacity responses."
+      },
+      "audioSystem": {
+        "enabled": false,
+        "hover": "none requested",
+        "click": "none requested",
+        "volume": 0,
+        "debounceMs": 80,
+        "touchBehavior": "No hover or click audio is played on touch or pointer devices because sounds were not requested.",
+        "fallbackBehavior": "If a downstream implementation wants optional UI sounds later, unresolved audio must remain silent rather than claiming fulfillment."
+      },
+      "layoutPlan": {
+        "safeArea": {
+          "x": 0.04,
+          "y": 0.04,
+          "width": 0.92,
+          "height": 0.92
+        },
+        "regions": [
+          {
+            "id": "background_region",
+            "purpose": "Full-screen native background and restrained corner ornament field behind all interactive layers.",
+            "componentIds": [
+              "cmp_background_root",
+              "cmp_background_ornaments"
+            ],
+            "desktop": {
+              "arrangement": "Single full-screen background frame with mirrored ornament anchors in opposite corners and center left empty for UI readability.",
+              "bounds": {
+                "x": 0.04,
+                "y": 0.04,
+                "width": 0.92,
+                "height": 0.92
+              },
+              "minTouchTarget": 0,
+              "safeZoneBehavior": "Respect safe area margins; ornaments stay inset from screen edges and never overlap primary buttons.",
+              "textScaling": "No text in this region.",
+              "iconScaling": "No icons in this region.",
+              "spacing": 12,
+              "layoutConstructs": [
+                "CanvasGroup",
+                "UIGradient",
+                "UIPadding"
+              ]
+            },
+            "mobile": {
+              "arrangement": "Single full-screen background frame with reduced ornament density and stronger central clarity.",
+              "bounds": {
+                "x": 0.02,
+                "y": 0.02,
+                "width": 0.96,
+                "height": 0.96
+              },
+              "minTouchTarget": 0,
+              "safeZoneBehavior": "Trim ornament footprint further from notches and gesture areas.",
+              "textScaling": "No text in this region.",
+              "iconScaling": "No icons in this region.",
+              "spacing": 8,
+              "layoutConstructs": [
+                "CanvasGroup",
+                "UIGradient",
+                "UIPadding"
+              ]
+            }
+          },
+          {
+            "id": "title_region",
+            "purpose": "Title plate and live AURORA title centered above the menu actions.",
+            "componentIds": [
+              "cmp_title_plate",
+              "cmp_title_aurora"
+            ],
+            "desktop": {
+              "arrangement": "Centered stacked overlay with title text centered over the plate.",
+              "bounds": {
+                "x": 0.28,
+                "y": 0.13,
+                "width": 0.44,
+                "height": 0.16
+              },
+              "minTouchTarget": 0,
+              "safeZoneBehavior": "Remain within upper-middle safe area, leaving margin above and below.",
+              "textScaling": "Use UITextSizeConstraint to preserve title hierarchy without clipping.",
+              "iconScaling": "No icons in this region.",
+              "spacing": 6,
+              "layoutConstructs": [
+                "UIAspectRatioConstraint",
+                "UIScale",
+                "UITextSizeConstraint"
+              ]
+            },
+            "mobile": {
+              "arrangement": "Centered stacked overlay with narrower plate and slightly taller reserved height.",
+              "bounds": {
+                "x": 0.1,
+                "y": 0.1,
+                "width": 0.8,
+                "height": 0.15
+              },
+              "minTouchTarget": 0,
+              "safeZoneBehavior": "Keep clear of top notches and status areas.",
+              "textScaling": "Use UITextSizeConstraint and UIScale to preserve one-line readability.",
+              "iconScaling": "No icons in this region.",
+              "spacing": 4,
+              "layoutConstructs": [
+                "UIAspectRatioConstraint",
+                "UIScale",
+                "UITextSizeConstraint"
+              ]
+            }
+          },
+          {
+            "id": "main_dock",
+            "purpose": "Primary action dock containing Play, Settings, and Credits.",
+            "componentIds": [
+              "cmp_menu_dock",
+              "cmp_play_button",
+              "cmp_settings_button",
+              "cmp_credits_button"
+            ],
+            "desktop": {
+              "arrangement": "Vertical UIListLayout centered under the title plate with Play first and extra spacing before secondary-sized menu actions.",
+              "bounds": {
+                "x": 0.34,
+                "y": 0.31,
+                "width": 0.32,
+                "height": 0.38
+              },
+              "minTouchTarget": 50,
+              "safeZoneBehavior": "Centered in safe area with ample side breathing room; never collide with modal edges.",
+              "textScaling": "Buttons use UITextSizeConstraint to keep labels single-line and dominant.",
+              "iconScaling": "Icons remain fixed family size and scale only modestly with UIScale on very large screens.",
+              "spacing": 14,
+              "layoutConstructs": [
+                "UIListLayout",
+                "UIPadding",
+                "UIScale",
+                "UITextSizeConstraint"
+              ]
+            },
+            "mobile": {
+              "arrangement": "Vertical UIListLayout filling more width with larger touch targets and tighter vertical gaps.",
+              "bounds": {
+                "x": 0.1,
+                "y": 0.28,
+                "width": 0.8,
+                "height": 0.34
+              },
+              "minTouchTarget": 50,
+              "safeZoneBehavior": "Keep centered and above bottom gesture area.",
+              "textScaling": "Slightly reduced text size with UITextSizeConstraint to preserve one-line labels.",
+              "iconScaling": "Keep equal icon sizes across all three buttons with no per-button deviations.",
+              "spacing": 12,
+              "layoutConstructs": [
+                "UIListLayout",
+                "UIPadding",
+                "UIScale",
+                "UITextSizeConstraint"
+              ]
+            }
+          },
+          {
+            "id": "settings_modal_region",
+            "purpose": "Centered modal overlay for settings with close button, music toggle, and volume slider.",
+            "componentIds": [
+              "cmp_settings_modal",
+              "cmp_settings_title",
+              "cmp_settings_close",
+              "cmp_music_row",
+              "cmp_music_label",
+              "cmp_music_toggle",
+              "cmp_volume_row",
+              "cmp_volume_label",
+              "cmp_volume_slider",
+              "cmp_volume_value"
+            ],
+            "desktop": {
+              "arrangement": "Centered single-column modal layout: header row, music row, then volume row, using internal UIListLayout and row subframes.",
+              "bounds": {
+                "x": 0.29,
+                "y": 0.22,
+                "width": 0.42,
+                "height": 0.42
+              },
+              "minTouchTarget": 44,
+              "safeZoneBehavior": "Modal remains fully within safe area and overlays dock without shifting background composition.",
+              "textScaling": "Panel title and row labels use UITextSizeConstraint to avoid wrapping; body scales one step below main actions.",
+              "iconScaling": "Close icon fixed; toggle and slider are artwork-driven and preserve aspect using constraints.",
+              "spacing": 12,
+              "layoutConstructs": [
+                "CanvasGroup",
+                "UIPadding",
+                "UIListLayout",
+                "UIAspectRatioConstraint",
+                "UITextSizeConstraint",
+                "UIScale"
+              ]
+            },
+            "mobile": {
+              "arrangement": "Centered modal using single-column stacked content with slightly taller rows and larger control hit areas.",
+              "bounds": {
+                "x": 0.07,
+                "y": 0.18,
+                "width": 0.86,
+                "height": 0.46
+              },
+              "minTouchTarget": 44,
+              "safeZoneBehavior": "Inset from top notch and bottom gesture zone; allow internal scrolling only if absolutely necessary, otherwise fit content natively.",
+              "textScaling": "Reduce title size modestly and keep labels readable with UITextSizeConstraint.",
+              "iconScaling": "Close icon remains consistent with credits close; slider and toggle artwork scale up for touch.",
+              "spacing": 10,
+              "layoutConstructs": [
+                "CanvasGroup",
+                "UIPadding",
+                "UIListLayout",
+                "UIAspectRatioConstraint",
+                "UITextSizeConstraint",
+                "UIScale"
+              ]
+            }
+          },
+          {
+            "id": "credits_modal_region",
+            "purpose": "Small centered modal overlay for credits with title, body text, and close button.",
+            "componentIds": [
+              "cmp_credits_modal",
+              "cmp_credits_title",
+              "cmp_credits_body",
+              "cmp_credits_close"
+            ],
+            "desktop": {
+              "arrangement": "Compact single-column modal with header row and wrapped body text beneath.",
+              "bounds": {
+                "x": 0.33,
+                "y": 0.28,
+                "width": 0.34,
+                "height": 0.26
+              },
+              "minTouchTarget": 44,
+              "safeZoneBehavior": "Centered and fully inset from safe area, leaving visible context around it.",
+              "textScaling": "Use UITextSizeConstraint for readable title and body measure.",
+              "iconScaling": "Close icon matches settings close exactly.",
+              "spacing": 10,
+              "layoutConstructs": [
+                "CanvasGroup",
+                "UIPadding",
+                "UIListLayout",
+                "UITextSizeConstraint",
+                "UIScale"
+              ]
+            },
+            "mobile": {
+              "arrangement": "Compact modal using most safe width and short content stack with wrapped credits text.",
+              "bounds": {
+                "x": 0.09,
+                "y": 0.24,
+                "width": 0.82,
+                "height": 0.24
+              },
+              "minTouchTarget": 44,
+              "safeZoneBehavior": "Inset from notch and bottom system gestures; preserve readable side padding.",
+              "textScaling": "Slightly reduced sizes with constraints to prevent overflow.",
+              "iconScaling": "Close icon matches settings close exactly.",
+              "spacing": 8,
+              "layoutConstructs": [
+                "CanvasGroup",
+                "UIPadding",
+                "UIListLayout",
+                "UITextSizeConstraint",
+                "UIScale"
+              ]
+            }
+          },
+          {
+            "id": "system_region",
+            "purpose": "Nonvisual system objects for local play hook and panel controller behavior.",
+            "componentIds": [
+              "cmp_play_hook",
+              "cmp_panel_controller"
+            ],
+            "desktop": {
+              "arrangement": "No visible layout; logical siblings under the root View.",
+              "bounds": {
+                "x": 0,
+                "y": 0,
+                "width": 1,
+                "height": 1
+              },
+              "minTouchTarget": 44,
+              "safeZoneBehavior": "Not visual.",
+              "textScaling": "Not applicable.",
+              "iconScaling": "Not applicable.",
+              "spacing": 0,
+              "layoutConstructs": [
+                "UIPadding"
+              ]
+            },
+            "mobile": {
+              "arrangement": "No visible layout; logical siblings under the root View.",
+              "bounds": {
+                "x": 0,
+                "y": 0,
+                "width": 1,
+                "height": 1
+              },
+              "minTouchTarget": 44,
+              "safeZoneBehavior": "Not visual.",
+              "textScaling": "Not applicable.",
+              "iconScaling": "Not applicable.",
+              "spacing": 0,
+              "layoutConstructs": [
+                "UIPadding"
+              ]
+            }
+          }
+        ],
+        "anchors": [
+          {
+            "regionId": "background_region",
+            "relativeTo": "safeArea",
+            "alignment": "fill"
+          },
+          {
+            "regionId": "title_region",
+            "relativeTo": "background_region",
+            "alignment": "top-center"
+          },
+          {
+            "regionId": "main_dock",
+            "relativeTo": "title_region",
+            "alignment": "center-below"
+          },
+          {
+            "regionId": "settings_modal_region",
+            "relativeTo": "background_region",
+            "alignment": "center"
+          },
+          {
+            "regionId": "credits_modal_region",
+            "relativeTo": "background_region",
+            "alignment": "center"
+          },
+          {
+            "regionId": "system_region",
+            "relativeTo": "background_region",
+            "alignment": "logical-root"
+          }
+        ],
+        "hierarchyOrder": [
+          "background_region",
+          "title_region",
+          "main_dock",
+          "settings_modal_region",
+          "credits_modal_region",
+          "system_region"
+        ],
+        "spacingScale": [
+          4,
+          8,
+          12,
+          16,
+          24,
+          32,
+          40
+        ]
+      },
+      "responsiveStrategy": {
+        "desktop": "Build _NexusDesktop with BackgroundRoot and BackgroundOrnaments filling the screen, TitlePlate and AuroraTitle centered near the upper third, and MainMenuDock centered below as a vertical stack. Keep modal windows centered overlays above the dock with fixed maximum widths so the composition feels premium and not stretched. Play remains visually dominant through larger button size, not by icon mismatch or arbitrary color changes.",
+        "mobile": "Build _NexusMobile separately with the same semantic node names under the mobile group. Use a narrower title plate, full-width stacked buttons, larger touch targets, reduced ornament scale, and modals that consume more width while keeping the same visual hierarchy. Do not simply scale down desktop; reflow the dock and increase vertical efficiency. Runtime selects mobile when min(viewport.X, viewport.Y) < 600.",
+        "tablet": "Use the desktop group when viewport minimum dimension is 600 or greater, but tighten widths slightly compared with wide desktop and allow modal panels to scale a bit larger relative to the screen. Maintain centered composition and preserve primary-action dominance without introducing new navigation patterns.",
+        "breakpoints": [
+          {
+            "id": "phone_portrait",
+            "width": 390,
+            "height": 844
+          },
+          {
+            "id": "tablet",
+            "width": 768,
+            "height": 1024
+          },
+          {
+            "id": "desktop",
+            "width": 1440,
+            "height": 900
+          }
+        ],
+        "preservePrimaryHierarchy": true
+      },
+      "implementationNotes": [
+        "Use the exact supported node names from the library template and instantiate all initial instances by View.build() return under _NexusDesktop and _NexusMobile root groups.",
+        "Keep BackgroundRoot as a native full-screen background and MainMenuDock transparent; do not add an outer menu panel.",
+        "TitlePlate and BackgroundOrnaments should each map to one artwork image source, preserving restrained decoration.",
+        "PlayButton uses the primary Gemini skin; SettingsButton and CreditsButton share one secondary skin; SettingsCloseButton and CreditsCloseButton share one close skin and one close icon.",
+        "SettingsModal and CreditsModal share one Gemini panel skin, with CreditsModal sized smaller in layout rather than requiring a separate artwork family.",
+        "MusicToggle and VolumeSlider are the only planned controls; use control_artwork treatment and let resolver derive their moving artwork pieces from the planned components rather than adding extra component entries.",
+        "Keep all labels and titles as live Roblox text, including AURORA, Settings, Credits, Music, Volume, Close, and any volume value text.",
+        "PanelControllerBehavior must implement actual open/close state: open_settings_panel shows SettingsModal and hides CreditsModal, open_credits_panel shows CreditsModal and hides SettingsModal, close actions hide their respective modal.",
+        "PlayButton behavior must close the menu and then fire the clearly named local hook represented by OnPlayRequestedHook; do not invent remote systems.",
+        "Use local helper functions inside View for repeated UI construction; runtime interaction effects should call into a shared ButtonEffects module rather than duplicating per-button logic.",
+        "On touch devices, use Activated and direct drag for slider input; do not synthesize mouse hover.",
+        "Apply UIAspectRatioConstraint to ornamental artwork, title plate, close buttons if needed, and slider handle/track artwork pieces so skins preserve intended shape.",
+        "Use CanvasGroup for modal fade transitions and to simplify visible/input gating during open and close animations.",
+        "If credits text content is not otherwise specified, leave a clear live placeholder-style body string suitable for later replacement rather than inventing extra systems or lore.",
+        "No audio assets should be fabricated because sounds were not requested; leave interaction silent.",
+        "All icon-enabled menu actions in the main dock and both close buttons must use the same aurora_gemini family and identical icon sizing rules within their comparable groups."
+      ]
+    },
+    "editIntent": {
+      "scope": "create",
+      "targetIds": [],
+      "permittedChanges": [
+        "layout",
+        "palette",
+        "typography",
+        "icons",
+        "motion",
+        "content",
+        "responsive",
+        "features",
+        "decoration"
+      ],
+      "changeInstructions": [
+        "Create a main menu titled AURORA with Play, Settings, and Credits.",
+        "Add a Settings panel containing a Music on/off toggle and Volume slider.",
+        "Add a small Credits panel.",
+        "Include Close on both panels.",
+        "Ensure Play closes the menu and fires a clearly named local hook for game integration.",
+        "Implement coherent hover and press animation.",
+        "Use native background layout with restrained decoration.",
+        "Use Gemini-generated matching skins and icons for the specified components.",
+        "Ensure panels open and close through the actual controller logic."
+      ],
+      "preserve": [],
+      "removeElementIds": []
+    },
+    "assetReferences": [],
+    "iconResolutions": [],
+    "assetWarnings": [],
+    "lastReview": null,
+    "libraryExamples": []
+  }
+}

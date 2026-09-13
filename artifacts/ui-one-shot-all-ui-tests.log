@@ -1,0 +1,2258 @@
+TAP version 13
+# Subtest: new users build automatically with standard checks and snapshots
+ok 1 - new users build automatically with standard checks and snapshots
+  ---
+  duration_ms: 2.7264
+  ...
+# Subtest: saved legacy policy is retained and review/manual cannot be overridden by developer mode
+ok 2 - saved legacy policy is retained and review/manual cannot be overridden by developer mode
+  ---
+  duration_ms: 0.6301
+  ...
+# Subtest: legacy UI Builder is explicitly isolated from canonical imports
+ok 3 - legacy UI Builder is explicitly isolated from canonical imports
+  ---
+  duration_ms: 2.3247
+  ...
+# Subtest: disabled legacy UI Builder fails with a typed response
+ok 4 - disabled legacy UI Builder fails with a typed response
+  ---
+  duration_ms: 0.5914
+  ...
+# Subtest: plugin release identity matches the backend release contract
+ok 5 - plugin release identity matches the backend release contract
+  ---
+  duration_ms: 7.7858
+  ...
+# Subtest: source and generated plugin advertise the backend command contract
+ok 6 - source and generated plugin advertise the backend command contract
+  ---
+  duration_ms: 15.5089
+  ...
+# Subtest: frontend expected release matches the backend release contract
+ok 7 - frontend expected release matches the backend release contract
+  ---
+  duration_ms: 2.3046
+  ...
+# Subtest: source and generated plugin omit only compatibility-error handlers from attestation
+ok 8 - source and generated plugin omit only compatibility-error handlers from attestation
+  ---
+  duration_ms: 12.8581
+  ...
+# Subtest: plugin capabilities match the backend compatibility contract
+ok 9 - plugin capabilities match the backend compatibility contract
+  ---
+  duration_ms: 20.8938
+  ...
+# Subtest: plugin gates command polling until a heartbeat is acknowledged and retries with bounded jitter
+ok 10 - plugin gates command polling until a heartbeat is acknowledged and retries with bounded jitter
+  ---
+  duration_ms: 2.9332
+  ...
+# Subtest: toolbox retries preserve one request identity in source and bundle
+ok 11 - toolbox retries preserve one request identity in source and bundle
+  ---
+  duration_ms: 25.0246
+  ...
+# Subtest: apply_artifact reports each validated Studio mutation over the durable command stream
+ok 12 - apply_artifact reports each validated Studio mutation over the durable command stream
+  ---
+  duration_ms: 26.7081
+  ...
+# Subtest: mutating acknowledgements carry command-bound Studio read-back evidence
+ok 13 - mutating acknowledgements carry command-bound Studio read-back evidence
+  ---
+  duration_ms: 10.4159
+  ...
+# Subtest: batch failures preserve child diagnostics separately from rollback status
+ok 14 - batch failures preserve child diagnostics separately from rollback status
+  ---
+  duration_ms: 9.6841
+  ...
+# Subtest: Studio attestation and in-plugin chat persist the server-resolved Nexus project
+ok 15 - Studio attestation and in-plugin chat persist the server-resolved Nexus project
+  ---
+  duration_ms: 44.5547
+  ...
+# Subtest: only marked visual treatments request images and matching peers share a skin
+ok 16 - only marked visual treatments request images and matching peers share a skin
+  ---
+  duration_ms: 6.577
+  ...
+# Subtest: all artwork roles use the right rendering strategy and required art sorts first
+ok 17 - all artwork roles use the right rendering strategy and required art sorts first
+  ---
+  duration_ms: 27.2394
+  ...
+# Subtest: size and tint edits preserve skins; material changes invalidate reuse
+ok 18 - size and tint edits preserve skins; material changes invalidate reuse
+  ---
+  duration_ms: 1.6725
+  ...
+# Subtest: decorative palette changes invalidate baked-color art
+ok 19 - decorative palette changes invalidate baked-color art
+  ---
+  duration_ms: 0.7648
+  ...
+# Subtest: rendering metadata survives document save/reload and invalid slices are rejected
+ok 20 - rendering metadata survives document save/reload and invalid slices are rejected
+  ---
+  duration_ms: 8.3098
+  ...
+# Subtest: new matting version survives reload while legacy metadata keeps its version
+ok 21 - new matting version survives reload while legacy metadata keeps its version
+  ---
+  duration_ms: 0.3692
+  ...
+# Subtest: transparent artwork prompts avoid exterior shadows and retain inner depth
+ok 22 - transparent artwork prompts avoid exterior shadows and retain inner depth
+  ---
+  duration_ms: 0.6943
+  ...
+# Subtest: shared skins and generated icons form separate bounded sheets with stable identities
+ok 23 - shared skins and generated icons form separate bounded sheets with stable identities
+  ---
+  duration_ms: 40.9738
+  ...
+# Subtest: requirement IDs bind required artwork to planned controls and split moving pieces
+ok 24 - requirement IDs bind required artwork to planned controls and split moving pieces
+  ---
+  duration_ms: 2.7718
+  ...
+# Subtest: explicit required icon is generated once with its semantic subject
+ok 25 - explicit required icon is generated once with its semantic subject
+  ---
+  duration_ms: 0.6542
+  ...
+# Subtest: icon asset requirements retain their requirement binding on the shared generated icon
+ok 26 - icon asset requirements retain their requirement binding on the shared generated icon
+  ---
+  duration_ms: 0.6496
+  ...
+# Subtest: compact control pieces share icon cells without shrinking large surfaces
+ok 27 - compact control pieces share icon cells without shrinking large surfaces
+  ---
+  duration_ms: 5.0311
+  ...
+# Subtest: extracts independent alpha assets, removes enclosed magenta, discards grid lines
+ok 28 - extracts independent alpha assets, removes enclosed magenta, discards grid lines
+  ---
+  duration_ms: 602.4808
+  ...
+# Subtest: clipped and empty cells fail independently without discarding good siblings
+ok 29 - clipped and empty cells fail independently without discarding good siblings
+  ---
+  duration_ms: 347.8996
+  ...
+# Subtest: shaded chroma is removed while cyan artwork survives
+ok 30 - shaded chroma is removed while cyan artwork survives
+  ---
+  duration_ms: 434.381
+  ...
+# Subtest: desaturated green backing does not become a clipped opaque rectangle
+ok 31 - desaturated green backing does not become a clipped opaque rectangle
+  ---
+  duration_ms: 334.9844
+  ...
+# Subtest: vision locator receives the actual sheet and rejects malformed coordinates
+ok 32 - vision locator receives the actual sheet and rejects malformed coordinates
+  ---
+  duration_ms: 393.1716
+  ...
+# Subtest: 4K gateway options are explicit and lower-resolution provider output is rejected
+ok 33 - 4K gateway options are explicit and lower-resolution provider output is rejected
+  ---
+  duration_ms: 9.577
+  ...
+# Subtest: colored wide skins retain aspect and valid dynamic nine-slice metadata through processing
+ok 34 - colored wide skins retain aspect and valid dynamic nine-slice metadata through processing
+  ---
+  duration_ms: 345.1843
+  ...
+# Subtest: JSON cannot grant the prepared artwork capability
+ok 35 - JSON cannot grant the prepared artwork capability
+  ---
+  duration_ms: 0.4478
+  ...
+# Subtest: oversized kits fail before any paid partial generation
+ok 36 - oversized kits fail before any paid partial generation
+  ---
+  duration_ms: 0.9598
+  ...
+# Subtest: independent sheets use two workers while sharing the same durable four-sheet budget
+ok 37 - independent sheets use two workers while sharing the same durable four-sheet budget
+  ---
+  duration_ms: 37.3141
+  ...
+# Subtest: matching icons share one asset even when their parent skins differ
+ok 38 - matching icons share one asset even when their parent skins differ
+  ---
+  duration_ms: 0.5626
+  ...
+# Subtest: large skins and decorations share roomy cells while eight compact subjects leave a repair slot
+ok 39 - large skins and decorations share roomy cells while eight compact subjects leave a repair slot
+  ---
+  duration_ms: 0.4552
+  ...
+# Subtest: one paid sheet creates separate assets and replay never generates again
+ok 40 - one paid sheet creates separate assets and replay never generates again
+  ---
+  duration_ms: 0.7485
+  ...
+# Subtest: confirmed bad cells get one bounded repair and replay never buys another sheet
+ok 41 - confirmed bad cells get one bounded repair and replay never buys another sheet
+  ---
+  duration_ms: 0.8196
+  ...
+# Subtest: ambiguous gateway outcomes are fenced across retries
+ok 42 - ambiguous gateway outcomes are fenced across retries
+  ---
+  duration_ms: 0.5649
+  ...
+# Subtest: a later extraction can reuse a saved raw sheet without another image generation
+ok 43 - a later extraction can reuse a saved raw sheet without another image generation
+  ---
+  duration_ms: 8.4236
+  ...
+# Subtest: brainrot regression requirements and design plan are complete, grounded, responsive and icon coherent
+ok 44 - brainrot regression requirements and design plan are complete, grounded, responsive and icon coherent
+  ---
+  duration_ms: 37.1943
+  ...
+# Subtest: grounding rejects invented product structure and plan validation rejects incomplete peer icons
+ok 45 - grounding rejects invented product structure and plan validation rejects incomplete peer icons
+  ---
+  duration_ms: 6.1656
+  ...
+# Subtest: requirements cannot claim sound support without distinct verified asset roles
+ok 46 - requirements cannot claim sound support without distinct verified asset roles
+  ---
+  duration_ms: 2.5282
+  ...
+# Subtest: implementation compliance requires actions, interactions, assets and a real mobile plan
+ok 47 - implementation compliance requires actions, interactions, assets and a real mobile plan
+  ---
+  duration_ms: 7.8355
+  ...
+# Subtest: targeted size edits preserve requirements, palette, peers, icons and behavior
+ok 48 - targeted size edits preserve requirements, palette, peers, icons and behavior
+  ---
+  duration_ms: 8.1008
+  ...
+# Subtest: icon consistency accepts a complete coherent procedural fallback family and rejects omissions
+ok 49 - icon consistency accepts a complete coherent procedural fallback family and rejects omissions
+  ---
+  duration_ms: 0.5274
+  ...
+# Subtest: bounded numeric Design Director output is normalized without weakening schema validation
+ok 50 - bounded numeric Design Director output is normalized without weakening schema validation
+  ---
+  duration_ms: 6.484
+  ...
+# Subtest: normalization does not hide structural Design Director errors
+ok 51 - normalization does not hide structural Design Director errors
+  ---
+  duration_ms: 2.6502
+  ...
+# Subtest: palette color validation accepts only six-digit hex
+ok 52 - palette color validation accepts only six-digit hex
+  ---
+  duration_ms: 0.7315
+  ...
+# Subtest: normalizes short hex palette colors before schema validation
+ok 53 - normalizes short hex palette colors before schema validation
+  ---
+  duration_ms: 3.6096
+  ...
+# Subtest: palette normalization expands short hex but rejects non-hex color forms
+ok 54 - palette normalization expands short hex but rejects non-hex color forms
+  ---
+  duration_ms: 1.6753
+  ...
+# Subtest: provider serving schema strips patterns and bounds while keeping structure
+ok 55 - provider serving schema strips patterns and bounds while keeping structure
+  ---
+  duration_ms: 6.38
+  ...
+# Subtest: provider schema complexity detector matches Gemini wording
+ok 56 - provider schema complexity detector matches Gemini wording
+  ---
+  duration_ms: 0.2708
+  ...
+# Subtest: canonicalizes paraphrased explicit UI evidence to real request text
+ok 57 - canonicalizes paraphrased explicit UI evidence to real request text
+  ---
+  duration_ms: 8.5699
+  ...
+# Subtest: does not manufacture evidence for an invented explicit UI feature
+ok 58 - does not manufacture evidence for an invented explicit UI feature
+  ---
+  duration_ms: 6.9676
+  ...
+# Subtest: canonicalizes requested hover and click sounds into distinct required audio roles
+ok 59 - canonicalizes requested hover and click sounds into distinct required audio roles
+  ---
+  duration_ms: 3.1956
+  ...
+# Subtest: a click-only sound request does not require a hover sound
+ok 60 - a click-only sound request does not require a hover sound
+  ---
+  duration_ms: 1.0014
+  ...
+# Subtest: audio canonicalization never fabricates a resolved Roblox asset
+ok 61 - audio canonicalization never fabricates a resolved Roblox asset
+  ---
+  duration_ms: 0.3848
+  ...
+# Subtest: design memory persists with the UI while review evidence keeps the source revision stable
+ok 62 - design memory persists with the UI while review evidence keeps the source revision stable
+  ---
+  duration_ms: 30.3847
+  ...
+# Subtest: corrupt design memory fails closed instead of disappearing during normalization
+ok 63 - corrupt design memory fails closed instead of disappearing during normalization
+  ---
+  duration_ms: 4.8741
+  ...
+# Subtest: a valid repaired UI document is accepted using validation.ok
+ok 64 - a valid repaired UI document is accepted using validation.ok
+  ---
+  duration_ms: 12.1744
+  ...
+# Subtest: an invalid repaired UI document is rejected
+ok 65 - an invalid repaired UI document is rejected
+  ---
+  duration_ms: 3.1631
+  ...
+# Subtest: complete rubric enforces each threshold independently, even when the model declares acceptance
+ok 66 - complete rubric enforces each threshold independently, even when the model declares acceptance
+  ---
+  duration_ms: 5.9183
+  ...
+# Subtest: every automatic rejection rule blocks high numeric scores and minor severity
+ok 67 - every automatic rejection rule blocks high numeric scores and minor severity
+  ---
+  duration_ms: 4.5434
+  ...
+# Subtest: critical issues and explicit critic rejection cannot be averaged away
+ok 68 - critical issues and explicit critic rejection cannot be averaged away
+  ---
+  duration_ms: 0.3485
+  ...
+# Subtest: malformed scores, image identities, instructions and old issues-only responses fail closed
+ok 69 - malformed scores, image identities, instructions and old issues-only responses fail closed
+  ---
+  duration_ms: 1.6368
+  ...
+# Subtest: low-quality brainrot menu receives targeted repair while retaining its successful design elements
+ok 70 - low-quality brainrot menu receives targeted repair while retaining its successful design elements
+  ---
+  duration_ms: 1.4631
+  ...
+# Subtest: batch aggregation takes each worst score and retains image-bound targeted repairs
+ok 71 - batch aggregation takes each worst score and retains image-bound targeted repairs
+  ---
+  duration_ms: 0.9971
+  ...
+# Subtest: strict JSON schema includes every score, bound images and targeted repair operations
+ok 72 - strict JSON schema includes every score, bound images and targeted repair operations
+  ---
+  duration_ms: 0.7634
+  ...
+# Subtest: normalization is deterministic and keeps one versioned ScreenGui
+ok 73 - normalization is deterministic and keeps one versioned ScreenGui
+  ---
+  duration_ms: 16.8029
+  ...
+# Subtest: screen states are a bounded flat JSON-compatible map
+ok 74 - screen states are a bounded flat JSON-compatible map
+  ---
+  duration_ms: 2.9504
+  ...
+# Subtest: typed operations reject stale revisions and preserve unrelated nodes
+ok 75 - typed operations reject stale revisions and preserve unrelated nodes
+  ---
+  duration_ms: 8.5344
+  ...
+# Subtest: partial nested node patches preserve sibling layout values across serialized edits
+ok 76 - partial nested node patches preserve sibling layout values across serialized edits
+  ---
+  duration_ms: 9.5235
+  ...
+# Subtest: typed operations keep stable ids, merge nested tokens and cascade deleted references
+ok 77 - typed operations keep stable ids, merge nested tokens and cascade deleted references
+  ---
+  duration_ms: 18.041
+  ...
+# Subtest: validation reports broken references and unresolved required assets
+ok 78 - validation reports broken references and unresolved required assets
+  ---
+  duration_ms: 5.7368
+  ...
+# Subtest: compilation is deterministic, dependency-free, and emits a v3 UI root
+ok 79 - compilation is deterministic, dependency-free, and emits a v3 UI root
+  ---
+  duration_ms: 9.2281
+  ...
+# Subtest: Luau compilation safely handles dashed ids, reuses locals, and exports constraints and tab actions
+ok 80 - Luau compilation safely handles dashed ids, reuses locals, and exports constraints and tab actions
+  ---
+  duration_ms: 5.5934
+  ...
+# Subtest: validation rejects actions and tweens that cannot run on their source class
+ok 81 - validation rejects actions and tweens that cannot run on their source class
+  ---
+  duration_ms: 4.0755
+  ...
+# Subtest: hook operations use stable ids, validate duplicate names, and remove emitted references
+ok 82 - hook operations use stable ids, validate duplicate names, and remove emitted references
+  ---
+  duration_ms: 10.5054
+  ...
+# Subtest: canonical assets can be attached without putting temporary URLs in Luau
+ok 83 - canonical assets can be attached without putting temporary URLs in Luau
+  ---
+  duration_ms: 6.9416
+  ...
+# Subtest: asset status updates preserve canonical identity and reject malformed Roblox ids
+ok 84 - asset status updates preserve canonical identity and reject malformed Roblox ids
+  ---
+  duration_ms: 6.3206
+  ...
+# Subtest: visual evaluation contact sheets render all four device presets without remote content
+ok 85 - visual evaluation contact sheets render all four device presets without remote content
+  ---
+  duration_ms: 3.3028
+  ...
+# Subtest: direct preview preserves compiler geometry, decorations, font and actual asset identity
+ok 86 - direct preview preserves compiler geometry, decorations, font and actual asset identity
+  ---
+  duration_ms: 35.5186
+  ...
+# Subtest: design snapshots are explicitly distinct from Studio and project straight to Pinevex
+ok 87 - design snapshots are explicitly distinct from Studio and project straight to Pinevex
+  ---
+  duration_ms: 9.0845
+  ...
+# Subtest: exact brainrot menu evidence requires all requested actions, coherent icons, audio, effects and both layouts
+ok 88 - exact brainrot menu evidence requires all requested actions, coherent icons, audio, effects and both layouts
+  ---
+  duration_ms: 15.7234
+  ...
+# Subtest: a native fallback does not silently satisfy a required missing artwork piece
+ok 89 - a native fallback does not silently satisfy a required missing artwork piece
+  ---
+  duration_ms: 14.4084
+  ...
+# Subtest: a planned slider may own an empty drag target, but unrelated actions remain errors
+ok 90 - a planned slider may own an empty drag target, but unrelated actions remain errors
+  ---
+  duration_ms: 7.312
+  ...
+# Subtest: runtime evidence rejects plugin-only calls even when the model compiles
+ok 91 - runtime evidence rejects plugin-only calls even when the model compiles
+  ---
+  duration_ms: 3.9364
+  ...
+# Subtest: a saved required image cannot pass as an empty named folder
+ok 92 - a saved required image cannot pass as an empty named folder
+  ---
+  duration_ms: 4.2862
+  ...
+# Subtest: compiled evidence rejects a missing mobile action, missing peer icon, and invented product feature
+ok 93 - compiled evidence rejects a missing mobile action, missing peer icon, and invented product feature
+  ---
+  duration_ms: 2.4551
+  ...
+# Subtest: local build and render stages cannot be consumed by hosted worker queues
+ok 94 - local build and render stages cannot be consumed by hosted worker queues
+  ---
+  duration_ms: 367.4406
+  ...
+# Subtest: only complete untouched accepted evidence passes; unknown cost is not zero
+ok 95 - only complete untouched accepted evidence passes; unknown cost is not zero
+  ---
+  duration_ms: 2.6494
+  ...
+# Subtest: a hand-repaired source never counts as a successful one-shot
+ok 96 - a hand-repaired source never counts as a successful one-shot
+  ---
+  duration_ms: 1.6093
+  ...
+# Subtest: missing visual evidence and partial costs remain explicit
+ok 97 - missing visual evidence and partial costs remain explicit
+  ---
+  duration_ms: 0.4432
+  ...
+# Subtest: palette conversion "\#aAbBcC"
+ok 98 - palette conversion "\#aAbBcC"
+  ---
+  duration_ms: 7.5228
+  ...
+# Subtest: palette conversion "\#abc"
+ok 99 - palette conversion "\#abc"
+  ---
+  duration_ms: 0.4019
+  ...
+# Subtest: palette conversion " \#abc "
+ok 100 - palette conversion " \#abc "
+  ---
+  duration_ms: 3.0705
+  ...
+# Subtest: palette conversion "rgb(1, 2, 255)"
+ok 101 - palette conversion "rgb(1, 2, 255)"
+  ---
+  duration_ms: 0.5274
+  ...
+# Subtest: palette conversion "\#AABBCCff"
+ok 102 - palette conversion "\#AABBCCff"
+  ---
+  duration_ms: 0.4383
+  ...
+# Subtest: palette conversion "\#AABBCC80"
+ok 103 - palette conversion "\#AABBCC80"
+  ---
+  duration_ms: 1.2727
+  ...
+# Subtest: palette conversion "rgb(999, 0, 0)"
+ok 104 - palette conversion "rgb(999, 0, 0)"
+  ---
+  duration_ms: 0.3745
+  ...
+# Subtest: palette conversion "var(--brand)"
+ok 105 - palette conversion "var(--brand)"
+  ---
+  duration_ms: 0.1582
+  ...
+# Subtest: palette conversion null
+ok 106 - palette conversion null
+  ---
+  duration_ms: 4.1843
+  ...
+# Subtest: palette conversion 42
+ok 107 - palette conversion 42
+  ---
+  duration_ms: 0.891
+  ...
+# Subtest: primitive conversion primary_game_cta
+ok 108 - primitive conversion primary_game_cta
+  ---
+  duration_ms: 2.1185
+  ...
+# Subtest: primitive conversion PRIMARYGAMECTA
+ok 109 - primitive conversion PRIMARYGAMECTA
+  ---
+  duration_ms: 0.4316
+  ...
+# Subtest: primitive conversion textbutton
+ok 110 - primitive conversion textbutton
+  ---
+  duration_ms: 0.3216
+  ...
+# Subtest: primitive conversion ImageButton
+ok 111 - primitive conversion ImageButton
+  ---
+  duration_ms: 0.2159
+  ...
+# Subtest: primitive conversion PrimaryButton
+ok 112 - primitive conversion PrimaryButton
+  ---
+  duration_ms: 0.1737
+  ...
+# Subtest: primitive conversion Frame
+ok 113 - primitive conversion Frame
+  ---
+  duration_ms: 0.3482
+  ...
+# Subtest: primitive conversion TextLabel
+ok 114 - primitive conversion TextLabel
+  ---
+  duration_ms: 0.1959
+  ...
+# Subtest: primitive conversion TitleLabel
+ok 115 - primitive conversion TitleLabel
+  ---
+  duration_ms: 0.1967
+  ...
+# Subtest: primitive conversion QuantumWidget
+ok 116 - primitive conversion QuantumWidget
+  ---
+  duration_ms: 0.2472
+  ...
+# Subtest: a secondary TextButton remains a MenuButton
+ok 117 - a secondary TextButton remains a MenuButton
+  ---
+  duration_ms: 0.4597
+  ...
+# Subtest: an unknown primitive is never replaced with Custom
+ok 118 - an unknown primitive is never replaced with Custom
+  ---
+  duration_ms: 3.2048
+  ...
+# Subtest: serving schema keeps nested enum values and field names; source remains unchanged
+ok 119 - serving schema keeps nested enum values and field names; source remains unchanged
+  ---
+  duration_ms: 1.6595
+  ...
+# Subtest: recognizes provider schema incompatibility: 400 The specified schema produces a constrain
+ok 120 - recognizes provider schema incompatibility: 400 The specified schema produces a constrain
+  ---
+  duration_ms: 1.483
+  ...
+# Subtest: recognizes provider schema incompatibility: The compiled grammar is too large, which woul
+ok 121 - recognizes provider schema incompatibility: The compiled grammar is too large, which woul
+  ---
+  duration_ms: 0.745
+  ...
+# Subtest: recognizes provider schema incompatibility: Schema is too complex for compilation.
+ok 122 - recognizes provider schema incompatibility: Schema is too complex for compilation.
+  ---
+  duration_ms: 0.2049
+  ...
+# Subtest: recognizes provider schema incompatibility: response_format is not supported for this mod
+ok 123 - recognizes provider schema incompatibility: response_format is not supported for this mod
+  ---
+  duration_ms: 0.2583
+  ...
+# Subtest: does not classify operational error 400 invalid input
+ok 124 - does not classify operational error 400 invalid input
+  ---
+  duration_ms: 5.4265
+  ...
+# Subtest: does not classify operational error 400 schema missing a required property
+ok 125 - does not classify operational error 400 schema missing a required property
+  ---
+  duration_ms: 0.1772
+  ...
+# Subtest: does not classify operational error 401 unauthorized
+ok 126 - does not classify operational error 401 unauthorized
+  ---
+  duration_ms: 0.4565
+  ...
+# Subtest: does not classify operational error 402 no credit
+ok 127 - does not classify operational error 402 no credit
+  ---
+  duration_ms: 0.1865
+  ...
+# Subtest: does not classify operational error 429 rate limit
+ok 128 - does not classify operational error 429 rate limit
+  ---
+  duration_ms: 0.2099
+  ...
+# Subtest: does not classify operational error 503 schema compiler unavailable
+ok 129 - does not classify operational error 503 schema compiler unavailable
+  ---
+  duration_ms: 0.1605
+  ...
+# Subtest: reads bounded nested SDK error envelopes
+ok 130 - reads bounded nested SDK error envelopes
+  ---
+  duration_ms: 0.2427
+  ...
+# Subtest: audio intent Add subtle hover and click sounds.
+ok 131 - audio intent Add subtle hover and click sounds.
+  ---
+  duration_ms: 1.4397
+  ...
+# Subtest: audio intent Add a sound when the button is clicked.
+ok 132 - audio intent Add a sound when the button is clicked.
+  ---
+  duration_ms: 0.7975
+  ...
+# Subtest: audio intent Use subtle click sounds.
+ok 133 - audio intent Use subtle click sounds.
+  ---
+  duration_ms: 0.2456
+  ...
+# Subtest: audio intent Use hover animations, with background music.
+ok 134 - audio intent Use hover animations, with background music.
+  ---
+  duration_ms: 0.5206
+  ...
+# Subtest: audio intent No hover or click sounds.
+ok 135 - audio intent No hover or click sounds.
+  ---
+  duration_ms: 0.1411
+  ...
+# Subtest: audio intent Make the layout smaller.
+ok 136 - audio intent Make the layout smaller.
+  ---
+  duration_ms: 0.2049
+  ...
+# Subtest: evidence is a real original prompt slice, not model-authored prose
+ok 137 - evidence is a real original prompt slice, not model-authored prose
+  ---
+  duration_ms: 8.5205
+  ...
+# Subtest: a negative mention never becomes positive requirement evidence
+ok 138 - a negative mention never becomes positive requirement evidence
+  ---
+  duration_ms: 11.9979
+  ...
+# Subtest: invented explicit feature is left for the grounding validator to reject
+ok 139 - invented explicit feature is left for the grounding validator to reject
+  ---
+  duration_ms: 7.3923
+  ...
+# Subtest: previous trusted requirements retain provenance on narrow edits
+ok 140 - previous trusted requirements retain provenance on narrow edits
+  ---
+  duration_ms: 0.2834
+  ...
+# Subtest: audio canonicalization is idempotent
+ok 141 - audio canonicalization is idempotent
+  ---
+  duration_ms: 3.6183
+  ...
+# Subtest: click-only audio passes without inventing a hover role
+ok 142 - click-only audio passes without inventing a hover role
+  ---
+  duration_ms: 0.9357
+  ...
+# Subtest: generic requested audio still needs an asset requirement
+ok 143 - generic requested audio still needs an asset requirement
+  ---
+  duration_ms: 0.6032
+  ...
+# Subtest: accepts bounded complete JSON: {}
+ok 144 - accepts bounded complete JSON: {}
+  ---
+  duration_ms: 0.7281
+  ...
+# Subtest: accepts bounded complete JSON: ```json\\n{}\\n`
+ok 145 - accepts bounded complete JSON: ```json\\n{}\\n`
+  ---
+  duration_ms: 0.3713
+  ...
+# Subtest: rejects invalid/dangerous JSON: Here is {}
+ok 146 - rejects invalid/dangerous JSON: Here is {}
+  ---
+  duration_ms: 0.5767
+  ...
+# Subtest: rejects invalid/dangerous JSON: []
+ok 147 - rejects invalid/dangerous JSON: []
+  ---
+  duration_ms: 0.1328
+  ...
+# Subtest: rejects invalid/dangerous JSON: null
+ok 148 - rejects invalid/dangerous JSON: null
+  ---
+  duration_ms: 0.1163
+  ...
+# Subtest: rejects invalid/dangerous JSON: {"a":1,}
+ok 149 - rejects invalid/dangerous JSON: {"a":1,}
+  ---
+  duration_ms: 0.1327
+  ...
+# Subtest: rejects invalid/dangerous JSON: {"__proto__":{}}
+ok 150 - rejects invalid/dangerous JSON: {"__proto__":{}}
+  ---
+  duration_ms: 0.1224
+  ...
+# Subtest: rejects invalid/dangerous JSON: {"constructor":{}}
+ok 151 - rejects invalid/dangerous JSON: {"constructor":{}}
+  ---
+  duration_ms: 0.1177
+  ...
+# Subtest: rejects oversized output before attempting JSON repair
+ok 152 - rejects oversized output before attempting JSON repair
+  ---
+  duration_ms: 0.7894
+  ...
+# Subtest: prompt-json mode sends exact contract as text and no response_format or tools
+ok 153 - prompt-json mode sends exact contract as text and no response_format or tools
+  ---
+  duration_ms: 2.7527
+  ...
+# Subtest: reduced-schema rejection changes the payload exactly once, keeping the model
+ok 154 - reduced-schema rejection changes the payload exactly once, keeping the model
+  ---
+  duration_ms: 1.5901
+  ...
+# Subtest: fallback request errors propagate instead of looping
+ok 155 - fallback request errors propagate instead of looping
+  ---
+  duration_ms: 1.4972
+  ...
+# Subtest: status 401 is not a local validation retry
+ok 156 - status 401 is not a local validation retry
+  ---
+  duration_ms: 1.0912
+  ...
+# Subtest: status 402 is not a local validation retry
+ok 157 - status 402 is not a local validation retry
+  ---
+  duration_ms: 0.7004
+  ...
+# Subtest: status 429 is not a local validation retry
+ok 158 - status 429 is not a local validation retry
+  ---
+  duration_ms: 0.4925
+  ...
+# Subtest: status 503 is not a local validation retry
+ok 159 - status 503 is not a local validation retry
+  ---
+  duration_ms: 0.477
+  ...
+# Subtest: primitive alias and short hex normalize before strict validation
+ok 160 - primitive alias and short hex normalize before strict validation
+  ---
+  duration_ms: 0.95
+  ...
+# Subtest: semantic rejection supplies prior candidate and exact defects for bounded repair
+ok 161 - semantic rejection supplies prior candidate and exact defects for bounded repair
+  ---
+  duration_ms: 3.3649
+  ...
+# Subtest: unknown primitive retries with allowed values and then fails honestly
+ok 162 - unknown primitive retries with allowed values and then fails honestly
+  ---
+  duration_ms: 2.0411
+  ...
+# Subtest: truncation never becomes success and gets one complete-object repair
+ok 163 - truncation never becomes success and gets one complete-object repair
+  ---
+  duration_ms: 1.5779
+  ...
+# Subtest: refusals do not cause automatic retry
+ok 164 - refusals do not cause automatic retry
+  ---
+  duration_ms: 0.6273
+  ...
+# Subtest: parent cancellation prevents calls
+ok 165 - parent cancellation prevents calls
+  ---
+  duration_ms: 0.6466
+  ...
+# Subtest: cancellation during an in-flight call does not reissue it
+ok 166 - cancellation during an in-flight call does not reissue it
+  ---
+  duration_ms: 99.7121
+  ...
+# Subtest: whole-stage timeout also settles when a faulty adapter ignores abort
+ok 167 - whole-stage timeout also settles when a faulty adapter ignores abort
+  ---
+  duration_ms: 45.4943
+  ...
+# Subtest: multimodal image parts are kept and a negative review remains negative
+ok 168 - multimodal image parts are kept and a negative review remains negative
+  ---
+  duration_ms: 0.6871
+  ...
+# Subtest: diagnostic logs contain no prompts, output, credentials or image bytes
+ok 169 - diagnostic logs contain no prompts, output, credentials or image bytes
+  ---
+  duration_ms: 0.8615
+  ...
+# Subtest: trusted review projection removes derived fields without changing provider verdict or evidence
+ok 170 - trusted review projection removes derived fields without changing provider verdict or evidence
+  ---
+  duration_ms: 0.2978
+  ...
+# Subtest: state capture follows planned names and never mutates the compiled artifact
+ok 171 - state capture follows planned names and never mutates the compiled artifact
+  ---
+  duration_ms: 3.0707
+  ...
+# Subtest: a scenario preserves ordered effects and final writes
+ok 172 - a scenario preserves ordered effects and final writes
+  ---
+  duration_ms: 4.9564
+  ...
+# Subtest: tab selection hides managed siblings, never unrelated objects
+ok 173 - tab selection hides managed siblings, never unrelated objects
+  ---
+  duration_ms: 0.8329
+  ...
+# Subtest: boolean state changes have no guessed visual binding
+ok 174 - boolean state changes have no guessed visual binding
+  ---
+  duration_ms: 0.516
+  ...
+# Subtest: conflicting identities cannot derive targeted scenarios
+ok 175 - conflicting identities cannot derive targeted scenarios
+  ---
+  duration_ms: 0.4807
+  ...
+# Subtest: an unobserved event source cannot derive a targeted scenario
+ok 176 - an unobserved event source cannot derive a targeted scenario
+  ---
+  duration_ms: 0.5251
+  ...
+# Subtest: sequence IDs survive renaming but distinguish events
+ok 177 - sequence IDs survive renaming but distinguish events
+  ---
+  duration_ms: 0.9036
+  ...
+# Subtest: openModal on a captured overlay becomes a shop-open Visible patch
+ok 178 - openModal on a captured overlay becomes a shop-open Visible patch
+  ---
+  duration_ms: 0.894
+  ...
+# Subtest: a patch for a node missing from the capture is dropped
+ok 179 - a patch for a node missing from the capture is dropped
+  ---
+  duration_ms: 0.3574
+  ...
+# Subtest: setText and a captured loading node produce restricted visual patches only
+ok 180 - setText and a captured loading node produce restricted visual patches only
+  ---
+  duration_ms: 1.0019
+  ...
+# Subtest: responsive projection selects authored desktop and phone groups without mutating the RBXM tree
+ok 181 - responsive projection selects authored desktop and phone groups without mutating the RBXM tree
+  ---
+  duration_ms: 2.4095
+  ...
+# Subtest: Pinevex projects design captures per viewport but preserves observed Studio visibility
+ok 182 - Pinevex projects design captures per viewport but preserves observed Studio visibility
+  ---
+  duration_ms: 3.0853
+  ...
+# Subtest: anonymous Quick Script allows three daily generations then blocks normal bypass
+ok 183 - anonymous Quick Script allows three daily generations then blocks normal bypass
+  ---
+  duration_ms: 12.1125
+  ...
+# Subtest: anonymous usage is stored in a daily bucket
+ok 184 - anonymous usage is stored in a daily bucket
+  ---
+  duration_ms: 1.768
+  ...
+# Subtest: failed anonymous provider attempt releases reservation
+ok 185 - failed anonymous provider attempt releases reservation
+  ---
+  duration_ms: 1.9265
+  ...
+# Subtest: anonymous Quick Script result can be claimed after signup
+ok 186 - anonymous Quick Script result can be claimed after signup
+  ---
+  duration_ms: 2.1679
+  ...
+# Subtest: anonymous Quick Script claim is idempotent for same account
+ok 187 - anonymous Quick Script claim is idempotent for same account
+  ---
+  duration_ms: 6.8373
+  ...
+# Subtest: anonymous Quick Script result cannot be claimed by two accounts
+ok 188 - anonymous Quick Script result cannot be claimed by two accounts
+  ---
+  duration_ms: 1.8051
+  ...
+# Subtest: enrollment is idempotent and scoped to the authenticated user
+ok 189 - enrollment is idempotent and scoped to the authenticated user
+  ---
+  duration_ms: 5.9826
+  ...
+# Subtest: progress survives redirects and stale writes cannot overwrite it
+ok 190 - progress survives redirects and stale writes cannot overwrite it
+  ---
+  duration_ms: 10.8967
+  ...
+# Subtest: simultaneous workspace opens create exactly one project and conversation
+ok 191 - simultaneous workspace opens create exactly one project and conversation
+  ---
+  duration_ms: 1.0913
+  ...
+# Subtest: restart preserves existing projects and conversations
+ok 192 - restart preserves existing projects and conversations
+  ---
+  duration_ms: 0.5786
+  ...
+# Subtest: rejects unsafe destinations, arbitrary fields, malformed input and oversized ideas
+ok 193 - rejects unsafe destinations, arbitrary fields, malformed input and oversized ideas
+  ---
+  duration_ms: 0.6544
+  ...
+# Subtest: cannot advance without an idea and workspace; pause keeps the idea
+ok 194 - cannot advance without an idea and workspace; pause keeps the idea
+  ---
+  duration_ms: 0.8196
+  ...
+# Subtest: accepts short but valid one-line Quick Script output
+ok 195 - accepts short but valid one-line Quick Script output
+  ---
+  duration_ms: 3.943
+  ...
+# Subtest: rejects empty or placeholder-only Quick Script output
+ok 196 - rejects empty or placeholder-only Quick Script output
+  ---
+  duration_ms: 0.3372
+  ...
+# Subtest: normalizes Quick Script output with required product fields
+ok 197 - normalizes Quick Script output with required product fields
+  ---
+  duration_ms: 1.9077
+  ...
+# Subtest: preserves explicit Quick script name and exact placement deterministically
+ok 198 - preserves explicit Quick script name and exact placement deterministically
+  ---
+  duration_ms: 2.8
+  ...
+# Subtest: canonical Quick Script messages treat optional example context as untrusted
+ok 199 - canonical Quick Script messages treat optional example context as untrusted
+  ---
+  duration_ms: 52.9187
+  ...
+# Subtest: normalizes Quick Script output when the model returns the full JSON blob in code
+ok 200 - normalizes Quick Script output when the model returns the full JSON blob in code
+  ---
+  duration_ms: 0.6228
+  ...
+# Subtest: normalizes Quick Script output when the provider returns unparsed JSON text
+ok 201 - normalizes Quick Script output when the provider returns unparsed JSON text
+  ---
+  duration_ms: 0.481
+  ...
+# Subtest: Quick Script update messages include prior result context
+ok 202 - Quick Script update messages include prior result context
+  ---
+  duration_ms: 17.5736
+  ...
+# Subtest: generates updated Quick Script result when prior result is provided
+ok 203 - generates updated Quick Script result when prior result is provided
+  ---
+  duration_ms: 16.8192
+  ...
+# Subtest: generates immediate Quick Script result without plan approval
+ok 204 - generates immediate Quick Script result without plan approval
+  ---
+  duration_ms: 16.5553
+  ...
+# Subtest: fly GUI Script is transparently adjusted to a pushable LocalScript
+ok 205 - fly GUI Script is transparently adjusted to a pushable LocalScript
+  ---
+  duration_ms: 13.1008
+  ...
+# Subtest: Quick Script makes one repair request then blocks a second mixed-runtime result
+ok 206 - Quick Script makes one repair request then blocks a second mixed-runtime result
+  ---
+  duration_ms: 4.1977
+  ...
+# Subtest: complex prompts receive upgrade recommendation instead of misleading output
+ok 207 - complex prompts receive upgrade recommendation instead of misleading output
+  ---
+  duration_ms: 1.0783
+  ...
+# Subtest: provider failures surface usable Quick Script errors
+ok 208 - provider failures surface usable Quick Script errors
+  ---
+  duration_ms: 1.8445
+  ...
+# Subtest: durable eight-image limit survives replay and repair passes
+ok 209 - durable eight-image limit survives replay and repair passes
+  ---
+  duration_ms: 83.852
+  ...
+# Subtest: approved previous references are reloaded and reused even when new generation is disabled
+ok 210 - approved previous references are reloaded and reused even when new generation is disabled
+  ---
+  duration_ms: 3.154
+  ...
+# Subtest: a scoped repaired document asset takes precedence over its older library twin
+ok 211 - a scoped repaired document asset takes precedence over its older library twin
+  ---
+  duration_ms: 2.2842
+  ...
+# Subtest: ambiguous generation is never automatically repeated
+ok 212 - ambiguous generation is never automatically repeated
+  ---
+  duration_ms: 1.0932
+  ...
+# Subtest: cancellation propagates and fences a potentially accepted image call
+ok 213 - cancellation propagates and fences a potentially accepted image call
+  ---
+  duration_ms: 1.5776
+  ...
+# Subtest: disabled generation reports required gaps without provider calls
+ok 214 - disabled generation reports required gaps without provider calls
+  ---
+  duration_ms: 0.4297
+  ...
+# Subtest: upload refresh preserves component bindings and pending canonical preview references
+ok 215 - upload refresh preserves component bindings and pending canonical preview references
+  ---
+  duration_ms: 6.4109
+  ...
+# [ops] {
+#   event: 'task.created',
+#   ts: '2026-09-13T07:02:43.263Z',
+#   telemetryVersion: 'task-runtime-observability-v1',
+#   taskId: 'task_81e1f53a3aab9a8516e3d0d617cc4fcfb264774e98b6f2835fe3a59b90b4dbce',
+#   requestId: 'request',
+#   traceId: 'trace',
+#   projectId: 'project',
+#   status: 'accepted',
+#   eventType: 'task_accepted',
+#   sequence: 1,
+#   eventId: 'e_0000000000000001'
+# }
+# Subtest: new builds resolve Auth billing identity and use the versioned worker queue
+ok 216 - new builds resolve Auth billing identity and use the versioned worker queue
+  ---
+  duration_ms: 15.085
+  ...
+# Subtest: canonical task storage preserves review counters, capture identity, and artifacts across restart and rejects a lost worker
+ok 217 - canonical task storage preserves review counters, capture identity, and artifacts across restart and rejects a lost worker
+  ---
+  duration_ms: 21.4164
+  ...
+# Subtest: acceptance matrix uses Default and at most three declared scenarios on both devices
+ok 218 - acceptance matrix uses Default and at most three declared scenarios on both devices
+  ---
+  duration_ms: 0.982
+  ...
+# Subtest: one successful PNG and same-revision images from another capture cannot finish a matrix
+ok 219 - one successful PNG and same-revision images from another capture cannot finish a matrix
+  ---
+  duration_ms: 1.0757
+  ...
+# Subtest: files are streamed and committed before the RBXM stage, with Studio disconnected
+ok 220 - files are streamed and committed before the RBXM stage, with Studio disconnected
+  ---
+  duration_ms: 16.3747
+  ...
+# Subtest: generation previews and reviews without applying until the explicit apply task
+ok 221 - generation previews and reviews without applying until the explicit apply task
+  ---
+  duration_ms: 1.2839
+  ...
+# Subtest: resuming capture uses the saved request and releases the worker for rendering
+ok 222 - resuming capture uses the saved request and releases the worker for rendering
+  ---
+  duration_ms: 0.7687
+  ...
+# Subtest: resuming rendering never reviews before every exact matrix slot is ready
+ok 223 - resuming rendering never reviews before every exact matrix slot is ready
+  ---
+  duration_ms: 1.0147
+  ...
+# Subtest: renderer limitations have a separate outcome and never become visual success
+ok 224 - renderer limitations have a separate outcome and never become visual success
+  ---
+  duration_ms: 1.2171
+  ...
+# Subtest: review batches contain at most four images and repair cycles stop at two
+ok 225 - review batches contain at most four images and repair cycles stop at two
+  ---
+  duration_ms: 4.3991
+  ...
+# Subtest: an incomplete reviewer response preserves finished previews for manual review
+ok 226 - an incomplete reviewer response preserves finished previews for manual review
+  ---
+  duration_ms: 1.1887
+  ...
+# Subtest: review fallback does not conceal authorization or provider failures
+ok 227 - review fallback does not conceal authorization or provider failures
+  ---
+  duration_ms: 1.1908
+  ...
+# Subtest: a low-quality first render of the exact brainrot request enters targeted repair
+ok 228 - a low-quality first render of the exact brainrot request enters targeted repair
+  ---
+  duration_ms: 1.655
+  ...
+# Subtest: disconnected Studio continues to design rendering with the saved artifact intact
+ok 229 - disconnected Studio continues to design rendering with the saved artifact intact
+  ---
+  duration_ms: 1.4946
+  ...
+# Subtest: failed render preserves the applied build and returns a separate preview outcome
+ok 230 - failed render preserves the applied build and returns a separate preview outcome
+  ---
+  duration_ms: 0.6813
+  ...
+# Subtest: generation runs before any Studio capability check and emits bounded public actions
+ok 231 - generation runs before any Studio capability check and emits bounded public actions
+  ---
+  duration_ms: 1.6926
+  ...
+# Subtest: assets come from the scoped library and actual market imports, preserving identity
+ok 232 - assets come from the scoped library and actual market imports, preserving identity
+  ---
+  duration_ms: 22.1662
+  ...
+# Subtest: unavailable assets never become invented IDs or block generation
+ok 233 - unavailable assets never become invented IDs or block generation
+  ---
+  duration_ms: 4.67
+  ...
+# Subtest: auto upload resolves a canonical image to the Roblox asset ID used by generated UI
+ok 234 - auto upload resolves a canonical image to the Roblox asset ID used by generated UI
+  ---
+  duration_ms: 2.9035
+  ...
+# Subtest: auto upload failures retain the Nexus image without inventing a Roblox ID
+ok 235 - auto upload failures retain the Nexus image without inventing a Roblox ID
+  ---
+  duration_ms: 1.222
+  ...
+# Subtest: Creator Store decal and audio search supplies only real public Roblox IDs to UI generation
+ok 236 - Creator Store decal and audio search supplies only real public Roblox IDs to UI generation
+  ---
+  duration_ms: 1.4377
+  ...
+# Subtest: design asset preparation returns a complete icon family and distinct requirement-bound audio references
+ok 237 - design asset preparation returns a complete icon family and distinct requirement-bound audio references
+  ---
+  duration_ms: 30.9856
+  ...
+# Subtest: private sheet icons are resolved for preview without claiming Roblox publication
+ok 238 - private sheet icons are resolved for preview without claiming Roblox publication
+  ---
+  duration_ms: 26.1706
+  ...
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'test/vision-model',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'test/vision-model',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'google/gemini-test',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'google/gemini-test',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'test-model',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 2,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'test-model',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'test-model',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'test-model',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'test-model',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'test-model',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 4
+# }
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'test/vision',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'test/vision',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# Subtest: director extracts requirements before creating a separately validated design plan
+ok 239 - director extracts requirements before creating a separately validated design plan
+  ---
+  duration_ms: 259.3342
+  ...
+# Subtest: director prompt_json path keeps local validation without provider response_format
+ok 240 - director prompt_json path keeps local validation without provider response_format
+  ---
+  duration_ms: 97.7318
+  ...
+# Subtest: director retries an invented requirement with deterministic correction evidence
+ok 241 - director retries an invented requirement with deterministic correction evidence
+  ---
+  duration_ms: 151.2834
+  ...
+# Subtest: ordinary follow-up edits are locked to the requested component and design category
+ok 242 - ordinary follow-up edits are locked to the requested component and design category
+  ---
+  duration_ms: 94.7443
+  ...
+# Subtest: director normalizes out-of-range icon sizes instead of failing planning
+ok 243 - director normalizes out-of-range icon sizes instead of failing planning
+  ---
+  duration_ms: 106.9335
+  ...
+# Subtest: enabled UI sounds are canonicalized to the existing runtime limits
+ok 244 - enabled UI sounds are canonicalized to the existing runtime limits
+  ---
+  duration_ms: 143.9672
+  ...
+# Subtest: different-sized text controls at the same origin still fail the layout gate
+ok 245 - different-sized text controls at the same origin still fail the layout gate
+  ---
+  duration_ms: 21.5178
+  ...
+# Subtest: major UI generation uses separate planning and evaluation roles with at most two repair passes
+ok 246 - major UI generation uses separate planning and evaluation roles with at most two repair passes
+  ---
+  duration_ms: 354.6456
+  ...
+# Subtest: small UI property edits remain a single immediate generation pass
+ok 247 - small UI property edits remain a single immediate generation pass
+  ---
+  duration_ms: 3.0748
+  ...
+# Subtest: generation repairs token expressions before normalization can hide invalid styling
+ok 248 - generation repairs token expressions before normalization can hide invalid styling
+  ---
+  duration_ms: 11.8973
+  ...
+# Subtest: a structurally invalid final repair does not discard an earlier valid candidate
+ok 249 - a structurally invalid final repair does not discard an earlier valid candidate
+  ---
+  duration_ms: 81.5152
+  ...
+# Subtest: major generation recovers from a truncated first document response
+ok 250 - major generation recovers from a truncated first document response
+  ---
+  duration_ms: 69.6323
+  ...
+# Subtest: an operator-configured JSON recovery model is used when it is not a mini alias
+ok 251 - an operator-configured JSON recovery model is used when it is not a mini alias
+  ---
+  duration_ms: 74.8173
+  ...
+# Subtest: small edits get one compact JSON recovery attempt without visual evaluation
+ok 252 - small edits get one compact JSON recovery attempt without visual evaluation
+  ---
+  duration_ms: 4.0685
+  ...
+# Subtest: generation quality gate rejects an overlapping empty interaction shell
+ok 253 - generation quality gate rejects an overlapping empty interaction shell
+  ---
+  duration_ms: 2.383
+  ...
+# Subtest: generated parent and action names reconcile to stable node ids
+ok 254 - generated parent and action names reconcile to stable node ids
+  ---
+  duration_ms: 8.3086
+  ...
+# Subtest: behavior-only quality gaps are repaired deterministically without rebuilding the visual document
+ok 255 - behavior-only quality gaps are repaired deterministically without rebuilding the visual document
+  ---
+  duration_ms: 74.1146
+  ...
+# Subtest: continuous UI generation defers visual review to verified Pinevex captures
+ok 256 - continuous UI generation defers visual review to verified Pinevex captures
+  ---
+  duration_ms: 4.4963
+  ...
+# Subtest: required artwork failure stops before any source model call
+ok 257 - required artwork failure stops before any source model call
+  ---
+  duration_ms: 256.8732
+  ...
+# Subtest: initial generation and truncated-file recovery share exact artwork rendering bindings
+ok 258 - initial generation and truncated-file recovery share exact artwork rendering bindings
+  ---
+  duration_ms: 90.2559
+  ...
+# Subtest: file boundaries survive arbitrary provider chunking and incomplete drafts are retained
+ok 259 - file boundaries survive arbitrary provider chunking and incomplete drafts are retained
+  ---
+  duration_ms: 2.2447
+  ...
+# Subtest: manifest permits bounded modular UI source and exposes pending files while streaming
+ok 260 - manifest permits bounded modular UI source and exposes pending files while streaming
+  ---
+  duration_ms: 2.461
+  ...
+# Subtest: generation accepts a model-selected modular file layout
+ok 261 - generation accepts a model-selected modular file layout
+  ---
+  duration_ms: 173.0399
+  ...
+# Subtest: generation streams real files and never asks for a JSON source document
+ok 262 - generation streams real files and never asks for a JSON source document
+  ---
+  duration_ms: 223.1623
+  ...
+# Subtest: a truncated file is regenerated without repeating the completed file
+ok 263 - a truncated file is regenerated without repeating the completed file
+  ---
+  duration_ms: 28.2341
+  ...
+# Subtest: an unfinished recovery remains a retained draft and fails safely
+ok 264 - an unfinished recovery remains a retained draft and fails safely
+  ---
+  duration_ms: 82.5345
+  ...
+# Subtest: a nominally stopped response that omitted a file also enters recovery
+ok 265 - a nominally stopped response that omitted a file also enters recovery
+  ---
+  duration_ms: 73.2124
+  ...
+# Subtest: generation automatically injects the matching bounded UI skills and returns their identities
+ok 266 - generation automatically injects the matching bounded UI skills and returns their identities
+  ---
+  duration_ms: 207.8369
+  ...
+# Subtest: generation exposes returned Roblox audio as sound URIs instead of image assets
+ok 267 - generation exposes returned Roblox audio as sound URIs instead of image assets
+  ---
+  duration_ms: 94.6056
+  ...
+# Subtest: exact brainrot request reaches Luau only with its locked plan, resolved icons, audio and trusted runtime helpers
+ok 268 - exact brainrot request reaches Luau only with its locked plan, resolved icons, audio and trusted runtime helpers
+  ---
+  duration_ms: 87.1906
+  ...
+# Subtest: Luau generation rejects malformed or missing structured planning before calling the code model
+ok 269 - Luau generation rejects malformed or missing structured planning before calling the code model
+  ---
+  duration_ms: 35.5708
+  ...
+# Subtest: approved project icons are reused only when the complete family metadata matches
+ok 270 - approved project icons are reused only when the complete family metadata matches
+  ---
+  duration_ms: 8.3773
+  ...
+# Subtest: one missing peer replaces the entire screen icon set with one procedural family
+ok 271 - one missing peer replaces the entire screen icon set with one procedural family
+  ---
+  duration_ms: 5.1509
+  ...
+# Subtest: generated artwork with mismatched family metadata cannot leak into the UI
+ok 272 - generated artwork with mismatched family metadata cannot leak into the UI
+  ---
+  duration_ms: 1.8111
+  ...
+# Subtest: consistency validator rejects padding, scale, family and perspective drift
+ok 273 - consistency validator rejects padding, scale, family and perspective drift
+  ---
+  duration_ms: 1.1821
+  ...
+# Subtest: complete menu assembly is deterministic and binds only supplied assets
+ok 274 - complete menu assembly is deterministic and binds only supplied assets
+  ---
+  duration_ms: 38.0703
+  ...
+# Subtest: title, palette and semantic node renaming adapt through the reusable template
+ok 275 - title, palette and semantic node renaming adapt through the reusable template
+  ---
+  duration_ms: 23.1902
+  ...
+# Subtest: incomplete kits, existing edits and unsupported features do not silently use the template
+ok 276 - incomplete kits, existing edits and unsupported features do not silently use the template
+  ---
+  duration_ms: 4.7456
+  ...
+# Subtest: per-button surfaces retain distinct authoritative peer bindings
+ok 277 - per-button surfaces retain distinct authoritative peer bindings
+  ---
+  duration_ms: 4.1117
+  ...
+# Subtest: template guidance is limited to supported menus and does not override other layouts or features
+ok 278 - template guidance is limited to supported menus and does not override other layouts or features
+  ---
+  duration_ms: 1.25
+  ...
+# Subtest: a familiar node name cannot silently substitute different behavior
+ok 279 - a familiar node name cannot silently substitute different behavior
+  ---
+  duration_ms: 6.517
+  ...
+# Subtest: closing on Play remains an interaction requirement instead of a synthetic extra component
+ok 280 - closing on Play remains an interaction requirement instead of a synthetic extra component
+  ---
+  duration_ms: 2.8158
+  ...
+# Subtest: resolved optional framing is actually wired into the reusable view
+ok 281 - resolved optional framing is actually wired into the reusable view
+  ---
+  duration_ms: 4.2709
+  ...
+# Subtest: files-first apply identities cover every relative source path
+ok 282 - files-first apply identities cover every relative source path
+  ---
+  duration_ms: 3.6575
+  ...
+# Subtest: files-first acknowledgement requires the whole source set and persists live tree identity
+ok 283 - files-first acknowledgement requires the whole source set and persists live tree identity
+  ---
+  duration_ms: 5.8193
+  ...
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'test/provider-model',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 6
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'test/provider-model',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 6
+# }
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'test/provider-model',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'test/provider-model',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 2,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'test/provider-model',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'test/provider-model',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'test/provider-model',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_visual_review',
+#   model: 'test/vision-model',
+#   schemaHash: '8fb842148c670354',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# Subtest: one request recovers quotation, audio roles, all four primitives and palette syntax together
+ok 284 - one request recovers quotation, audio roles, all four primitives and palette syntax together
+  ---
+  duration_ms: 316.3341
+  ...
+# Subtest: an unknown primitive gets a repair request containing its value and the permitted enum
+ok 285 - an unknown primitive gets a repair request containing its value and the permitted enum
+  ---
+  duration_ms: 159.0461
+  ...
+# Subtest: persistent malformed output is bounded and does not report a plan or runtime success
+ok 286 - persistent malformed output is bounded and does not report a plan or runtime success
+  ---
+  duration_ms: 222.0791
+  ...
+# Subtest: targeted edits still preserve unrelated buttons, palette, motion and requirements
+ok 287 - targeted edits still preserve unrelated buttons, palette, motion and requirements
+  ---
+  duration_ms: 122.6612
+  ...
+# Subtest: strict schema and semantic grounding still reject an invented currency system
+ok 288 - strict schema and semantic grounding still reject an invented currency system
+  ---
+  duration_ms: 9.4236
+  ...
+# Subtest: the actual reviewer is schema-free on the wire, retains PNGs, and remains image-bound
+ok 289 - the actual reviewer is schema-free on the wire, retains PNGs, and remains image-bound
+  ---
+  duration_ms: 5.6142
+  ...
+# Subtest: a fabricated preview identifier never becomes a visual success
+ok 290 - a fabricated preview identifier never becomes a visual success
+  ---
+  duration_ms: 1.4745
+  ...
+# Subtest: durable aggregation accepts normalized reviews without loosening raw review validation
+ok 291 - durable aggregation accepts normalized reviews without loosening raw review validation
+  ---
+  duration_ms: 2.1464
+  ...
+# Subtest: a normalized rejected review stays rejected during aggregation
+ok 292 - a normalized rejected review stays rejected during aggregation
+  ---
+  duration_ms: 1.6545
+  ...
+# Subtest: capture polling keeps the admission request ID across multiple responses
+ok 293 - capture polling keeps the admission request ID across multiple responses
+  ---
+  duration_ms: 94.3771
+  ...
+# Subtest: cancellation stops capture polling before another read
+ok 294 - cancellation stops capture polling before another read
+  ---
+  duration_ms: 9.1247
+  ...
+# Subtest: matrix completion waits for every exact state and viewport job
+ok 295 - matrix completion waits for every exact state and viewport job
+  ---
+  duration_ms: 31.2571
+  ...
+# Subtest: capture request is unavailable when Studio cannot read a UI snapshot
+ok 296 - capture request is unavailable when Studio cannot read a UI snapshot
+  ---
+  duration_ms: 43.5917
+  ...
+# Subtest: studio_runtime capture stays unavailable through the edit-mode bridge
+ok 297 - studio_runtime capture stays unavailable through the edit-mode bridge
+  ---
+  duration_ms: 16.3657
+  ...
+# Subtest: a verified Studio receipt becomes a server-owned capture, never client metadata
+ok 298 - a verified Studio receipt becomes a server-owned capture, never client metadata
+  ---
+  duration_ms: 39.6374
+  ...
+# Subtest: capture queues only the Studio session bound to the design project
+ok 299 - capture queues only the Studio session bound to the design project
+  ---
+  duration_ms: 39.6212
+  ...
+# Subtest: an ambiguous or unbound Studio target is unavailable instead of capturing the first session
+ok 300 - an ambiguous or unbound Studio target is unavailable instead of capturing the first session
+  ---
+  duration_ms: 9.0023
+  ...
+# Subtest: an incomplete Studio traversal cannot become a synced capture
+ok 301 - an incomplete Studio traversal cannot become a synced capture
+  ---
+  duration_ms: 11.2336
+  ...
+# Subtest: applied identity advances only after matching readback (true)
+ok 302 - applied identity advances only after matching readback (true)
+  ---
+  duration_ms: 15.726
+  ...
+# Subtest: applied identity advances only after matching readback (false)
+ok 303 - applied identity advances only after matching readback (false)
+  ---
+  duration_ms: 13.772
+  ...
+# Subtest: manifest exposes the latest capture, server-owned viewports and honest capabilities
+ok 304 - manifest exposes the latest capture, server-owned viewports and honest capabilities
+  ---
+  duration_ms: 77.2314
+  ...
+# Subtest: a capture is validated before storage and rejects an incomplete traversal
+ok 305 - a capture is validated before storage and rejects an incomplete traversal
+  ---
+  duration_ms: 19.6971
+  ...
+# Subtest: a stalled Studio probe cannot prevent loading an existing preview manifest
+ok 306 - a stalled Studio probe cannot prevent loading an existing preview manifest
+  ---
+  duration_ms: 39.0634
+  ...
+# Subtest: the capture tree hash is computed from the observed tree, not supplied
+ok 307 - the capture tree hash is computed from the observed tree, not supplied
+  ---
+  duration_ms: 8.0035
+  ...
+# Subtest: enqueue rejects a stale source revision instead of rendering the wrong thing
+ok 308 - enqueue rejects a stale source revision instead of rendering the wrong thing
+  ---
+  duration_ms: 7.534
+  ...
+# Subtest: enqueue rejects an unknown viewport rather than coercing to a default
+ok 309 - enqueue rejects an unknown viewport rather than coercing to a default
+  ---
+  duration_ms: 7.0679
+  ...
+# Subtest: reconnecting with a new idempotency key deduplicates instead of launching a duplicate render
+ok 310 - reconnecting with a new idempotency key deduplicates instead of launching a duplicate render
+  ---
+  duration_ms: 12.8633
+  ...
+# Subtest: replaying the same idempotency key with different input is a conflict
+ok 311 - replaying the same idempotency key with different input is a conflict
+  ---
+  duration_ms: 8.0637
+  ...
+# Subtest: a newer request supersedes the older in-flight preview for the same slot
+ok 312 - a newer request supersedes the older in-flight preview for the same slot
+  ---
+  duration_ms: 11.118
+  ...
+# Subtest: a slow superseded worker cannot overwrite the newer published preview
+ok 313 - a slow superseded worker cannot overwrite the newer published preview
+  ---
+  duration_ms: 15.0647
+  ...
+# Subtest: publication is refused once the design moved to a newer source revision
+ok 314 - publication is refused once the design moved to a newer source revision
+  ---
+  duration_ms: 9.4629
+  ...
+# Subtest: states are bound to the capture hash and the source revision
+ok 315 - states are bound to the capture hash and the source revision
+  ---
+  duration_ms: 5.2588
+  ...
+# Subtest: a state bound to an older capture cannot be enqueued
+ok 316 - a state bound to an older capture cannot be enqueued
+  ---
+  duration_ms: 11.3426
+  ...
+# Subtest: default is reserved for the captured baseline and cannot be saved as a state
+ok 317 - default is reserved for the captured baseline and cannot be saved as a state
+  ---
+  duration_ms: 4.3223
+  ...
+# Subtest: image reads verify the stored bytes against the published manifest hash
+ok 318 - image reads verify the stored bytes against the published manifest hash
+  ---
+  duration_ms: 15.921
+  ...
+# Subtest: another user cannot read a design, its previews or its images
+ok 319 - another user cannot read a design, its previews or its images
+  ---
+  duration_ms: 7.9584
+  ...
+# Subtest: losing project access blocks preview reads even for the design owner
+ok 320 - losing project access blocks preview reads even for the design owner
+  ---
+  duration_ms: 6.0649
+  ...
+# Subtest: the daily render budget is separate from generation credits
+ok 321 - the daily render budget is separate from generation credits
+  ---
+  duration_ms: 12.0519
+  ...
+# Subtest: simultaneous preview admissions reserve one job and bind every request key
+ok 322 - simultaneous preview admissions reserve one job and bind every request key
+  ---
+  duration_ms: 8.7166
+  ...
+# Subtest: a cache hit is served without admitting a new render job
+ok 323 - a cache hit is served without admitting a new render job
+  ---
+  duration_ms: 16.6191
+  ...
+# Subtest: unset UI_PREVIEW_ENABLED still admits a render job
+ok 324 - unset UI_PREVIEW_ENABLED still admits a render job
+  ---
+  duration_ms: 9.1896
+  ...
+# Subtest: UI_PREVIEW_ENABLED=false still disables enqueue
+ok 325 - UI_PREVIEW_ENABLED=false still disables enqueue
+  ---
+  duration_ms: 8.1038
+  ...
+# Subtest: manifest reports rendererBackend and fallbackConfigured from the renderer descriptor
+ok 326 - manifest reports rendererBackend and fallbackConfigured from the renderer descriptor
+  ---
+  duration_ms: 9.1072
+  ...
+# Subtest: public renderer results cannot be published
+ok 327 - public renderer results cannot be published
+  ---
+  duration_ms: 12.2934
+  ...
+# Subtest: saved designs get an immutable render source without touching Studio
+ok 328 - saved designs get an immutable render source without touching Studio
+  ---
+  duration_ms: 44.0068
+  ...
+# Subtest: licensed UI references retain provenance and only extracted design traits
+ok 329 - licensed UI references retain provenance and only extracted design traits
+  ---
+  duration_ms: 19.2188
+  ...
+# Subtest: unlicensed and insecure UI references fail closed
+ok 330 - unlicensed and insecure UI references fail closed
+  ---
+  duration_ms: 1.3166
+  ...
+# Subtest: retrieval terms are bounded and de-duplicated
+ok 331 - retrieval terms are bounded and de-duplicated
+  ---
+  duration_ms: 2.6077
+  ...
+# Subtest: routes UI requests to a bounded set of focused references
+ok 332 - routes UI requests to a bounded set of focused references
+  ---
+  duration_ms: 6.1871
+  ...
+# Subtest: repair work selects the audit skill before implementation guidance
+ok 333 - repair work selects the audit skill before implementation guidance
+  ---
+  duration_ms: 7.354
+  ...
+# Subtest: non-UI agent work receives no UI reference context
+ok 334 - non-UI agent work receives no UI reference context
+  ---
+  duration_ms: 1.5282
+  ...
+# Subtest: only fixed catalog entries can be loaded
+ok 335 - only fixed catalog entries can be loaded
+  ---
+  duration_ms: 0.6729
+  ...
+# Subtest: manual compilation and repair share verified tree and source preconditions and saved hooks
+ok 336 - manual compilation and repair share verified tree and source preconditions and saved hooks
+  ---
+  duration_ms: 18.3166
+  ...
+# Subtest: a concurrent edit stops application before Studio is queued
+ok 337 - a concurrent edit stops application before Studio is queued
+  ---
+  duration_ms: 5.181
+  ...
+# Subtest: verified script hashes wait for readback before replacing applied identity
+ok 338 - verified script hashes wait for readback before replacing applied identity
+  ---
+  duration_ms: 2.5091
+  ...
+# Subtest: hook source identity changes the revision without migrating legacy documents
+ok 339 - hook source identity changes the revision without migrating legacy documents
+  ---
+  duration_ms: 1.4358
+  ...
+# Subtest: cancelled tasks and newer drafts invalidate undelivered UI writes
+ok 340 - cancelled tasks and newer drafts invalidate undelivered UI writes
+  ---
+  duration_ms: 5.3286
+  ...
+# Subtest: offline compilation succeeds and Studio application returns a resumable reason
+ok 341 - offline compilation succeeds and Studio application returns a resumable reason
+  ---
+  duration_ms: 5.4861
+  ...
+# ui_contract_validated {
+#   name: 'ui_visual_review',
+#   model: 'google/gemini-2.5-flash',
+#   schemaHash: '8fb842148c670354',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_visual_review',
+#   model: 'test-model',
+#   schemaHash: '0454e21de41f27ec',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_visual_review',
+#   model: 'test-model',
+#   schemaHash: 'ac50a9cd35be8785',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_visual_review',
+#   model: 'vision',
+#   schemaHash: '3591243efed2c80f',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_visual_review',
+#   model: 'vision',
+#   schemaHash: '9b7f44f27587798d',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# Subtest: review requires a bounded image-bound schema and never passes truncated JSON
+ok 342 - review requires a bounded image-bound schema and never passes truncated JSON
+  ---
+  duration_ms: 25.4933
+  ...
+# Subtest: recapture waits until the new revision has rendered images before the next review
+ok 343 - recapture waits until the new revision has rendered images before the next review
+  ---
+  duration_ms: 12.2472
+  ...
+# Subtest: UiVisualReviewService recapture polls capture then waits for new-revision renders
+ok 344 - UiVisualReviewService recapture polls capture then waits for new-revision renders
+  ---
+  duration_ms: 15.854
+  ...
+# Subtest: a recapture that does not produce images stays awaiting_preview
+ok 345 - a recapture that does not produce images stays awaiting_preview
+  ---
+  duration_ms: 2.1978
+  ...
+# Subtest: a mediocre first render triggers bounded repair even without a major isolated issue
+ok 346 - a mediocre first render triggers bounded repair even without a major isolated issue
+  ---
+  duration_ms: 2.512
+  ...
+# Subtest: critic receives requirement lock, design plan, component metadata, icons and actual image bytes
+ok 347 - critic receives requirement lock, design plan, component metadata, icons and actual image bytes
+  ---
+  duration_ms: 3.1249
+  ...
+# Subtest: missing image bytes or a requested phone render cannot be treated as a visual pass
+ok 348 - missing image bytes or a requested phone render cannot be treated as a visual pass
+  ---
+  duration_ms: 0.9985
+  ...
+# Subtest: visual review can inspect device layouts and both panel states in one bounded request
+ok 349 - visual review can inspect device layouts and both panel states in one bounded request
+  ---
+  duration_ms: 3.8977
+  ...
+# Subtest: unsupported vision and unavailable capability metadata fail honestly
+ok 350 - unsupported vision and unavailable capability metadata fail honestly
+  ---
+  duration_ms: 1.586
+  ...
+# Subtest: renderer limitations and superseded revisions do not pass or request design repair
+ok 351 - renderer limitations and superseded revisions do not pass or request design repair
+  ---
+  duration_ms: 1.2054
+  ...
+# Subtest: Studio producer persists real source before references; endpoint reads exact UTF-8 revision
+ok 352 - Studio producer persists real source before references; endpoint reads exact UTF-8 revision
+  ---
+  duration_ms: 35.422
+  ...
+# Subtest: real HTTP workspace route checks ownership, run scope and exact artifact revision
+ok 353 - real HTTP workspace route checks ownership, run scope and exact artifact revision
+  ---
+  duration_ms: 159.61
+  ...
+# Subtest: a draft repair invalidates current verification without losing prior saved source
+ok 354 - a draft repair invalidates current verification without losing prior saved source
+  ---
+  duration_ms: 8.9173
+  ...
+# Subtest: wrong source readback and model-authored done do not verify a build
+ok 355 - wrong source readback and model-authored done do not verify a build
+  ---
+  duration_ms: 1.4471
+  ...
+# Subtest: full original request keeps late map, UI and asset requirements
+ok 356 - full original request keeps late map, UI and asset requirements
+  ---
+  duration_ms: 0.9374
+  ...
+# Subtest: parallel specialist publication merges saved files; replay cannot duplicate rows
+ok 357 - parallel specialist publication merges saved files; replay cannot duplicate rows
+  ---
+  duration_ms: 5.1046
+  ...
+# Subtest: cancelled task does not publish late artifacts or completion
+ok 358 - cancelled task does not publish late artifacts or completion
+  ---
+  duration_ms: 4.0492
+  ...
+# Subtest: canonical reference publication rejects stale amendments before publishing saved artifact references
+ok 359 - canonical reference publication rejects stale amendments before publishing saved artifact references
+  ---
+  duration_ms: 1.6279
+  ...
+# Subtest: sourceFiles preserves draft newline and Unicode without Markdown processing
+ok 360 - sourceFiles preserves draft newline and Unicode without Markdown processing
+  ---
+  duration_ms: 0.6666
+  ...
+# Subtest: pure map and asset requests require their outputs without invented script deliverables
+ok 361 - pure map and asset requests require their outputs without invented script deliverables
+  ---
+  duration_ms: 1.6232
+  ...
+# Subtest: repaired current source supersedes historical writes and uses only the latest read
+ok 362 - repaired current source supersedes historical writes and uses only the latest read
+  ---
+  duration_ms: 3.4002
+  ...
+# Subtest: readback for separate files follows each current write; a failed later observation invalidates proof
+ok 363 - readback for separate files follows each current write; a failed later observation invalidates proof
+  ---
+  duration_ms: 1.3697
+  ...
+# Subtest: rolled-back batch writes retain exact draft source but never applied or readback proof
+ok 364 - rolled-back batch writes retain exact draft source but never applied or readback proof
+  ---
+  duration_ms: 1.1502
+  ...
+# Subtest: actual sanitized asset binding and readback produce Assets rows and revision-scoped usable proof
+ok 365 - actual sanitized asset binding and readback produce Assets rows and revision-scoped usable proof
+  ---
+  duration_ms: 8.5508
+  ...
+# Subtest: catalog requests never create asset rows or usable proof; actual unverified binding stays Applied
+ok 366 - catalog requests never create asset rows or usable proof; actual unverified binding stays Applied
+  ---
+  duration_ms: 1.0095
+  ...
+# Subtest: asset proof rejects pre-bind reads, foreign scope, changed bindings, missing provider IDs and rollback
+ok 367 - asset proof rejects pre-bind reads, foreign scope, changed bindings, missing provider IDs and rollback
+  ---
+  duration_ms: 1.7465
+  ...
+# Subtest: asset-reference commands can satisfy the assets deliverable after an actual bound-target read
+ok 368 - asset-reference commands can satisfy the assets deliverable after an actual bound-target read
+  ---
+  duration_ms: 1.1007
+  ...
+# Subtest: native proof requires the exact nonempty command ID; absent parent IDs never match
+ok 369 - native proof requires the exact nonempty command ID; absent parent IDs never match
+  ---
+  duration_ms: 9.8379
+  ...
+# Subtest: native batch proof matches indexed child identity and cannot survive rollback
+ok 370 - native batch proof matches indexed child identity and cannot survive rollback
+  ---
+  duration_ms: 2.4481
+  ...
+# Subtest: native Studio rows are downgraded when a new map draft invalidates the accepted readback
+ok 371 - native Studio rows are downgraded when a new map draft invalidates the accepted readback
+  ---
+  duration_ms: 1.5024
+  ...
+# Subtest: Studio projection rejects an amendment racing after source persistence
+ok 372 - Studio projection rejects an amendment racing after source persistence
+  ---
+  duration_ms: 0.8885
+  ...
+# Subtest: real canonical transaction records operator observations and completes only fully proven current output
+ok 373 - real canonical transaction records operator observations and completes only fully proven current output
+  ---
+  duration_ms: 22.1482
+  ...
+# Subtest: stale revisions, wrong owners, unknown scope and browser-style pass booleans cannot become evidence
+ok 374 - stale revisions, wrong owners, unknown scope and browser-style pass booleans cannot become evidence
+  ---
+  duration_ms: 5.948
+  ...
+# Subtest: a failed observation invalidates an earlier pass and leaves verification pending
+ok 375 - a failed observation invalidates an earlier pass and leaves verification pending
+  ---
+  duration_ms: 5.9845
+  ...
+# Subtest: cancelled tasks and missing acceptance observations never complete
+ok 376 - cancelled tasks and missing acceptance observations never complete
+  ---
+  duration_ms: 5.0686
+  ...
+# Subtest: full-game artwork is required but does not block gameplay preparation
+ok 377 - full-game artwork is required but does not block gameplay preparation
+  ---
+  duration_ms: 15.3108
+  ...
+# Subtest: small changes and explicit artwork exclusions do not generate a launch package
+ok 378 - small changes and explicit artwork exclusions do not generate a launch package
+  ---
+  duration_ms: 0.9848
+  ...
+# Subtest: a full game binds an explicit paid offer and leaves unknown pricing outstanding
+ok 379 - a full game binds an explicit paid offer and leaves unknown pricing outstanding
+  ---
+  duration_ms: 14.2514
+  ...
+# Subtest: approved plans cannot acquire undeclared asset operations
+ok 380 - approved plans cannot acquire undeclared asset operations
+  ---
+  duration_ms: 0.6313
+  ...
+# Subtest: multiple bounded batches replay the same operation keys and bind returned asset IDs
+ok 381 - multiple bounded batches replay the same operation keys and bind returned asset IDs
+  ---
+  duration_ms: 8.2288
+  ...
+# Subtest: an unavailable artwork branch remains visible while independent branches run
+ok 382 - an unavailable artwork branch remains visible while independent branches run
+  ---
+  duration_ms: 4.6439
+  ...
+# Subtest: rich artwork preview compression keeps slice dimensions and canonical bytes unchanged
+ok 383 - rich artwork preview compression keeps slice dimensions and canonical bytes unchanged
+  ---
+  duration_ms: 3337.8656
+  ...
+# Subtest: BenchmarkStore stores run metadata separately from result payloads
+ok 384 - BenchmarkStore stores run metadata separately from result payloads
+  ---
+  duration_ms: 7.9523
+  ...
+# Subtest: prepareResultForFirestore truncates oversized Lua payloads
+ok 385 - prepareResultForFirestore truncates oversized Lua payloads
+  ---
+  duration_ms: 11.0723
+  ...
+# Subtest: UIBenchmarkGenerationService runs benchmark mode without billing or project side effects
+ok 386 - UIBenchmarkGenerationService runs benchmark mode without billing or project side effects
+  ---
+  duration_ms: 13.3928
+  ...
+# Subtest: UIBenchmarkRunner isolates individual generation failures
+ok 387 - UIBenchmarkRunner isolates individual generation failures
+  ---
+  duration_ms: 371.308
+  ...
+# Subtest: UI Creator release gate enforces every documented quality threshold
+ok 388 - UI Creator release gate enforces every documented quality threshold
+  ---
+  duration_ms: 4.6562
+  ...
+# Subtest: benchmark config applies defaults and safe limits
+ok 389 - benchmark config applies defaults and safe limits
+  ---
+  duration_ms: 337.0835
+  ...
+# Subtest: benchmark config rejects arbitrary provider URLs and API keys
+ok 390 - benchmark config rejects arbitrary provider URLs and API keys
+  ---
+  duration_ms: 0.4201
+  ...
+# Subtest: benchmark config enforces repetition and concurrency bounds
+ok 391 - benchmark config enforces repetition and concurrency bounds
+  ---
+  duration_ms: 2.801
+  ...
+# Subtest: benchmark prompt suite has stable version and at least 30 prompts
+ok 392 - benchmark prompt suite has stable version and at least 30 prompts
+  ---
+  duration_ms: 1.7244
+  ...
+# Subtest: exact brainrot regression locks required and prohibited product structure
+ok 393 - exact brainrot regression locks required and prohibited product structure
+  ---
+  duration_ms: 1.4194
+  ...
+# Subtest: benchmark prompt ids are unique and fields are complete
+ok 394 - benchmark prompt ids are unique and fields are complete
+  ---
+  duration_ms: 0.9683
+  ...
+# Subtest: animation evaluator rewards hover, press, cancellation, restoration, and easing
+ok 395 - animation evaluator rewards hover, press, cancellation, restoration, and easing
+  ---
+  duration_ms: 10.2744
+  ...
+# Subtest: animation evaluator reports unsafe animation patterns without throwing
+ok 396 - animation evaluator reports unsafe animation patterns without throwing
+  ---
+  duration_ms: 1.4677
+  ...
+# Subtest: design-system evaluator rewards consistent tokens and clear primary action
+ok 397 - design-system evaluator rewards consistent tokens and clear primary action
+  ---
+  duration_ms: 7.8824
+  ...
+# Subtest: design-system evaluator penalizes excessive decoration and random colors
+ok 398 - design-system evaluator penalizes excessive decoration and random colors
+  ---
+  duration_ms: 2.1204
+  ...
+# Subtest: prompt adherence evaluator detects required benchmark features
+ok 399 - prompt adherence evaluator detects required benchmark features
+  ---
+  duration_ms: 18.8417
+  ...
+# Subtest: prompt adherence evaluator scores unrelated output lower
+ok 400 - prompt adherence evaluator scores unrelated output lower
+  ---
+  duration_ms: 1.0501
+  ...
+# Subtest: brainrot regression penalizes invented product systems
+ok 401 - brainrot regression penalizes invented product systems
+  ---
+  duration_ms: 1.5032
+  ...
+# Subtest: responsiveness evaluator rewards scale layout and safe targets
+ok 402 - responsiveness evaluator rewards scale layout and safe targets
+  ---
+  duration_ms: 6.4428
+  ...
+# Subtest: responsiveness evaluator penalizes fixed full-screen mobile-broken layouts
+ok 403 - responsiveness evaluator penalizes fixed full-screen mobile-broken layouts
+  ---
+  duration_ms: 1.1976
+  ...
+# Subtest: structural evaluator scores a valid boardState highly
+ok 404 - structural evaluator scores a valid boardState highly
+  ---
+  duration_ms: 11.8146
+  ...
+# Subtest: structural evaluator detects invalid ids, types, bounds, and parents
+ok 405 - structural evaluator detects invalid ids, types, bounds, and parents
+  ---
+  duration_ms: 1.0356
+  ...
+# Subtest: aggregate scoring keeps final score null until manual visual review
+ok 406 - aggregate scoring keeps final score null until manual visual review
+  ---
+  duration_ms: 2.0144
+  ...
+# Subtest: manual visual score normalizes five 0-10 dimensions to 0-100
+ok 407 - manual visual score normalizes five 0-10 dimensions to 0-100
+  ---
+  duration_ms: 0.9096
+  ...
+1..407
+# tests 407
+# suites 0
+# pass 407
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5114.5443

@@ -1,0 +1,215 @@
+TAP version 13
+# Subtest: only marked visual treatments request images and matching peers share a skin
+ok 1 - only marked visual treatments request images and matching peers share a skin
+  ---
+  duration_ms: 6.5597
+  ...
+# Subtest: all artwork roles use the right rendering strategy and required art sorts first
+ok 2 - all artwork roles use the right rendering strategy and required art sorts first
+  ---
+  duration_ms: 18.3672
+  ...
+# Subtest: size and tint edits preserve skins; material changes invalidate reuse
+ok 3 - size and tint edits preserve skins; material changes invalidate reuse
+  ---
+  duration_ms: 0.7217
+  ...
+# Subtest: decorative palette changes invalidate baked-color art
+ok 4 - decorative palette changes invalidate baked-color art
+  ---
+  duration_ms: 0.358
+  ...
+# Subtest: rendering metadata survives document save/reload and invalid slices are rejected
+ok 5 - rendering metadata survives document save/reload and invalid slices are rejected
+  ---
+  duration_ms: 7.3223
+  ...
+# Subtest: new matting version survives reload while legacy metadata keeps its version
+ok 6 - new matting version survives reload while legacy metadata keeps its version
+  ---
+  duration_ms: 0.433
+  ...
+# Subtest: transparent artwork prompts avoid exterior shadows and retain inner depth
+ok 7 - transparent artwork prompts avoid exterior shadows and retain inner depth
+  ---
+  duration_ms: 0.6991
+  ...
+# Subtest: shared skins and generated icons form separate bounded sheets with stable identities
+ok 8 - shared skins and generated icons form separate bounded sheets with stable identities
+  ---
+  duration_ms: 28.3354
+  ...
+# Subtest: extracts independent alpha assets, removes enclosed magenta, discards grid lines
+ok 9 - extracts independent alpha assets, removes enclosed magenta, discards grid lines
+  ---
+  duration_ms: 173.9103
+  ...
+# Subtest: clipped and empty cells fail independently without discarding good siblings
+ok 10 - clipped and empty cells fail independently without discarding good siblings
+  ---
+  duration_ms: 91.4364
+  ...
+# Subtest: 4K gateway options are explicit and lower-resolution provider output is rejected
+ok 11 - 4K gateway options are explicit and lower-resolution provider output is rejected
+  ---
+  duration_ms: 9.6488
+  ...
+# Subtest: colored wide skins retain aspect and valid dynamic nine-slice metadata through processing
+ok 12 - colored wide skins retain aspect and valid dynamic nine-slice metadata through processing
+  ---
+  duration_ms: 379.8277
+  ...
+# Subtest: JSON cannot grant the prepared artwork capability
+ok 13 - JSON cannot grant the prepared artwork capability
+  ---
+  duration_ms: 1.0424
+  ...
+# Subtest: one paid sheet creates separate assets and replay never generates again
+ok 14 - one paid sheet creates separate assets and replay never generates again
+  ---
+  duration_ms: 3.165
+  ...
+# Subtest: repair of only a failed cell never buys a new sheet after siblings were reused
+ok 15 - repair of only a failed cell never buys a new sheet after siblings were reused
+  ---
+  duration_ms: 1.0911
+  ...
+# Subtest: ambiguous gateway outcomes are fenced across retries
+ok 16 - ambiguous gateway outcomes are fenced across retries
+  ---
+  duration_ms: 0.9591
+  ...
+# Subtest: durable eight-image limit survives replay and repair passes
+ok 17 - durable eight-image limit survives replay and repair passes
+  ---
+  duration_ms: 38.0564
+  ...
+# Subtest: approved previous references are reloaded and reused even when new generation is disabled
+ok 18 - approved previous references are reloaded and reused even when new generation is disabled
+  ---
+  duration_ms: 1.6104
+  ...
+# Subtest: ambiguous generation is never automatically repeated
+ok 19 - ambiguous generation is never automatically repeated
+  ---
+  duration_ms: 0.5977
+  ...
+# Subtest: cancellation propagates and fences a potentially accepted image call
+ok 20 - cancellation propagates and fences a potentially accepted image call
+  ---
+  duration_ms: 1.5722
+  ...
+# Subtest: disabled generation reports required gaps without provider calls
+ok 21 - disabled generation reports required gaps without provider calls
+  ---
+  duration_ms: 0.3281
+  ...
+# Subtest: upload refresh preserves component bindings and pending canonical preview references
+ok 22 - upload refresh preserves component bindings and pending canonical preview references
+  ---
+  duration_ms: 2.5411
+  ...
+# Subtest: initial generation and truncated-file recovery share exact artwork rendering bindings
+ok 23 - initial generation and truncated-file recovery share exact artwork rendering bindings
+  ---
+  duration_ms: 21.1905
+  ...
+# Subtest: file boundaries survive arbitrary provider chunking and incomplete drafts are retained
+ok 24 - file boundaries survive arbitrary provider chunking and incomplete drafts are retained
+  ---
+  duration_ms: 1.4126
+  ...
+# Subtest: manifest permits bounded modular UI source and exposes pending files while streaming
+ok 25 - manifest permits bounded modular UI source and exposes pending files while streaming
+  ---
+  duration_ms: 0.6131
+  ...
+# Subtest: generation accepts a model-selected modular file layout
+ok 26 - generation accepts a model-selected modular file layout
+  ---
+  duration_ms: 7.6528
+  ...
+# Subtest: generation streams real files and never asks for a JSON source document
+ok 27 - generation streams real files and never asks for a JSON source document
+  ---
+  duration_ms: 5.8571
+  ...
+# Subtest: a truncated file is regenerated without repeating the completed file
+ok 28 - a truncated file is regenerated without repeating the completed file
+  ---
+  duration_ms: 4.9036
+  ...
+# Subtest: an unfinished recovery remains a retained draft and fails safely
+ok 29 - an unfinished recovery remains a retained draft and fails safely
+  ---
+  duration_ms: 5.0261
+  ...
+# Subtest: a nominally stopped response that omitted a file also enters recovery
+ok 30 - a nominally stopped response that omitted a file also enters recovery
+  ---
+  duration_ms: 4.4539
+  ...
+# Subtest: generation automatically injects the matching bounded UI skills and returns their identities
+ok 31 - generation automatically injects the matching bounded UI skills and returns their identities
+  ---
+  duration_ms: 3.1027
+  ...
+# Subtest: generation exposes returned Roblox audio as sound URIs instead of image assets
+ok 32 - generation exposes returned Roblox audio as sound URIs instead of image assets
+  ---
+  duration_ms: 2.8228
+  ...
+# Subtest: exact brainrot request reaches Luau only with its locked plan, resolved icons, audio and trusted runtime helpers
+ok 33 - exact brainrot request reaches Luau only with its locked plan, resolved icons, audio and trusted runtime helpers
+  ---
+  duration_ms: 6.2604
+  ...
+# Subtest: Luau generation rejects malformed or missing structured planning before calling the code model
+ok 34 - Luau generation rejects malformed or missing structured planning before calling the code model
+  ---
+  duration_ms: 2.5984
+  ...
+# Subtest: tight 9-slice skin passes alpha checks without icon padding and exports correct dimensions
+ok 35 - tight 9-slice skin passes alpha checks without icon padding and exports correct dimensions
+  ---
+  duration_ms: 418.614
+  ...
+# Subtest: thin separator keeps its proportions and does not inherit icon legibility minimums
+ok 36 - thin separator keeps its proportions and does not inherit icon legibility minimums
+  ---
+  duration_ms: 214.8731
+  ...
+# Subtest: surface center holes fail validation and local removal preserves enclosed pale fills
+ok 37 - surface center holes fail validation and local removal preserves enclosed pale fills
+  ---
+  duration_ms: 626.2672
+  ...
+# Subtest: opaque background is cropped without stretching and decorative fit keeps alpha
+ok 38 - opaque background is cropped without stretching and decorative fit keeps alpha
+  ---
+  duration_ms: 768.5921
+  ...
+# Subtest: artwork rejects opaque transparent-role responses, empty pixels and corrupt bytes
+ok 39 - artwork rejects opaque transparent-role responses, empty pixels and corrupt bytes
+  ---
+  duration_ms: 110.6127
+  ...
+# Subtest: marketing thumbnails export 1920x1080 with landscape previews
+ok 40 - marketing thumbnails export 1920x1080 with landscape previews
+  ---
+  duration_ms: 131.8944
+  ...
+# Subtest: AssetQualityService returns non-empty file descriptors for canonical storage and validation
+ok 41 - AssetQualityService returns non-empty file descriptors for canonical storage and validation
+  ---
+  duration_ms: 345.6431
+  ...
+1..41
+# tests 41
+# suites 0
+# pass 41
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2858.0015

@@ -9,7 +9,7 @@ export default function UiLiveFiles({ files = [], stage, action, working = true 
   const writing = files.find(f => f.status === 'writing');
   const file = files.find(f => f.path === selected) || writing || files[0];
   const lastWriting = useRef('');
-  const label = ({ understanding_request: 'Understanding your request', planning_design: 'Planning the design', resolving_assets: 'Resolving icons and assets', generating_artwork: 'Generating artwork', validating_implementation: 'Checking UI implementation' })[action]
+  const label = ({ understanding_request: 'Understanding your request', planning_design: 'Planning the design', resolving_assets: 'Resolving icons and assets', generating_artwork: 'Generating matching artwork', extracting_artwork: 'Preparing individual components', validating_implementation: 'Checking UI implementation' })[action]
     || ({ preparing: 'Saving files', building_model: 'Building RBXM', repairing: 'Refining your UI' })[stage]
     || (['design_preview', 'applying', 'awaiting_studio', 'rendering', 'awaiting_renders', 'reviewing'].includes(stage) ? 'Preparing preview' : working ? 'Writing files' : 'Draft files');
   useEffect(() => {

@@ -1,0 +1,21 @@
+{
+  "model": "google/gemini-3.1-flash-image",
+  "output": "C:\\Users\\jackt\\Documents\\Codex\\2026-08-09\\can\\nexusairbx\\artifacts\\gemini-flash-4k\\icons-sheet-raw.png",
+  "width": 5504,
+  "height": 3072,
+  "elapsedSeconds": 45.002,
+  "usage": {
+    "inputTokens": 233,
+    "inputTokenDetails": {
+      "noCacheTokens": 233,
+      "cacheReadTokens": 0
+    },
+    "outputTokens": 2520,
+    "outputTokenDetails": {
+      "textTokens": 2520,
+      "reasoningTokens": 0
+    },
+    "totalTokens": 2753
+  },
+  "prompt": "Create a premium 4K Roblox game icon asset sheet. Landscape 16:9 canvas, exactly 4 columns by 2 rows, eight isolated icons centered in equal cells with generous empty gutters. Top row left to right: gold coin, blue gift box with gold ribbon, blue shopping bag, blue gear. Bottom row: blue house, gold star, blue shield, blue circular close button with white X. No printed names or other text. Unified professional cartoon game style: glossy cyan-to-cobalt blue gradients, thick crisp deep navy outlines, rounded friendly geometry, restrained dimensional bevels, bright clean upper-left highlights, compact attached navy extrusion. Gold uses warm yellow-to-orange gradients and the same navy outlines. Strong silhouettes readable at small sizes. One icon per cell with large margins. Every pixel outside icons including their holes must be perfectly flat vivid magenta #FF00FF. Never use magenta inside the artwork. No checkerboard, scene, floor, external cast shadows, glow, haze, texture, watermark, labels or guide lines. Narrow crisp antialiased edges. This will be cut into eight separate transparent game assets."
+}

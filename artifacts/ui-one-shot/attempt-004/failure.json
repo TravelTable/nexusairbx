@@ -1,0 +1,62 @@
+{
+  "code": "UI_REQUIRED_ARTWORK_UNRESOLVED",
+  "message": "Required artwork is unresolved; source generation was stopped before creating a misleading partial menu.",
+  "diagnostic": null,
+  "elapsedMs": 728756,
+  "usage": [
+    {
+      "model": "openai/gpt-5.4",
+      "usage": {
+        "prompt_tokens": 1955,
+        "completion_tokens": 1941,
+        "total_tokens": 3896,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0
+        }
+      },
+      "reportedCostMicros": null
+    },
+    {
+      "model": "openai/gpt-5.4",
+      "usage": {
+        "prompt_tokens": 10494,
+        "completion_tokens": 9942,
+        "total_tokens": 20436,
+        "prompt_tokens_details": {
+          "cached_tokens": 3840,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0
+        }
+      },
+      "reportedCostMicros": null
+    },
+    {
+      "model": "openai/gpt-5.4",
+      "usage": {
+        "prompt_tokens": 20553,
+        "completion_tokens": 9951,
+        "total_tokens": 30504,
+        "prompt_tokens_details": {
+          "cached_tokens": 9984,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0
+        }
+      },
+      "reportedCostMicros": null
+    }
+  ]
+}

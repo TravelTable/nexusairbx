@@ -1,0 +1,207 @@
+{
+  "schemaVersion": 1,
+  "input": {
+    "kind": "template_contract_test",
+    "prompt": "Reusable library contract check with existing assets; not a fresh one-shot."
+  },
+  "sourceHash": "0198b511bb2ef8419417e0979d0044059be0280e31028671bd9ea44e854f2e2c",
+  "originalSourceHash": "0198b511bb2ef8419417e0979d0044059be0280e31028671bd9ea44e854f2e2c",
+  "untouched": true,
+  "unattendedPass": false,
+  "failures": [
+    {
+      "gate": "visual",
+      "issues": [
+        {
+          "previewId": "desktop",
+          "category": "density",
+          "severity": "major",
+          "description": "The initial desktop menu occupies a narrow central strip and leaves a large amount of unused screen area above, below, and to both sides, making the interface feel underbuilt rather than intentionally framed.",
+          "nodeIds": [
+            "BackgroundRoot",
+            "MainMenuDock",
+            "TitlePlate",
+            "PlayButton",
+            "SettingsButton",
+            "CreditsButton"
+          ],
+          "rejectionRule": "accidental_dead_zone"
+        },
+        {
+          "previewId": "tablet",
+          "category": "density",
+          "severity": "major",
+          "description": "Tablet repeats the same overly small centered cluster as desktop, with excessive empty margins that weaken presence and make the menu feel like a mockup instead of a finished gameplay-scaled UI.",
+          "nodeIds": [
+            "BackgroundRoot",
+            "MainMenuDock",
+            "TitlePlate",
+            "PlayButton",
+            "SettingsButton",
+            "CreditsButton"
+          ],
+          "rejectionRule": "accidental_dead_zone"
+        },
+        {
+          "previewId": "phone",
+          "category": "hierarchy",
+          "severity": "major",
+          "description": "Play is taller than the secondary buttons, but the dominance is modest; Settings and Credits remain visually too similar in width, finish, and contrast, so the primary CTA is not unmistakable at first glance.",
+          "nodeIds": [
+            "PlayButton",
+            "SettingsButton",
+            "CreditsButton"
+          ],
+          "rejectionRule": "weak_primary_cta"
+        },
+        {
+          "previewId": "desktop",
+          "category": "layout",
+          "severity": "minor",
+          "description": "The menu stack sits a bit low relative to the full frame, creating more empty space beneath the buttons than the title-to-top spacing justifies and making the composition feel slightly adrift.",
+          "nodeIds": [
+            "MainMenuDock",
+            "TitlePlate",
+            "PlayButton",
+            "SettingsButton",
+            "CreditsButton"
+          ],
+          "rejectionRule": "none"
+        },
+        {
+          "previewId": "phone",
+          "category": "responsiveness",
+          "severity": "minor",
+          "description": "The mobile layout reads as a uniform shrink of the desktop composition with limited thumb-zone adaptation; the dock is still visually centered instead of more deliberately bottom-weighted for handheld use.",
+          "nodeIds": [
+            "MainMenuDock",
+            "TitlePlate",
+            "PlayButton",
+            "SettingsButton",
+            "CreditsButton"
+          ],
+          "rejectionRule": "none"
+        },
+        {
+          "previewId": "phone-settings",
+          "category": "alignment",
+          "severity": "minor",
+          "description": "Inside Settings, the right edge logic is inconsistent: the close button, toggle, and 70% value do not resolve to a clean shared inset, which makes the panel internals feel slightly hand-placed.",
+          "nodeIds": [
+            "SettingsModal",
+            "SettingsCloseButton",
+            "MusicToggle",
+            "VolumeValue",
+            "VolumeSlider"
+          ],
+          "rejectionRule": "none"
+        },
+        {
+          "previewId": "phone-settings",
+          "category": "layout",
+          "severity": "minor",
+          "description": "The volume row feels cramped vertically relative to the panel size; the label, value, and slider are packed together while there is still open panel area lower down.",
+          "nodeIds": [
+            "VolumeLabel",
+            "VolumeValue",
+            "VolumeSlider",
+            "SettingsModal"
+          ],
+          "rejectionRule": "none"
+        },
+        {
+          "previewId": "phone-credits",
+          "category": "contrast",
+          "severity": "major",
+          "description": "Credits body text is low-contrast against the bright panel surface and reads washed out, especially compared with the strong white title.",
+          "nodeIds": [
+            "CreditsBody",
+            "CreditsModal"
+          ],
+          "rejectionRule": "poor_contrast"
+        },
+        {
+          "previewId": "phone-credits",
+          "category": "layout",
+          "severity": "minor",
+          "description": "The Credits panel is appropriately smaller than Settings, but the body area is visually empty after the first line, making the panel feel oversized for its content.",
+          "nodeIds": [
+            "CreditsModal",
+            "CreditsBody"
+          ],
+          "rejectionRule": "none"
+        },
+        {
+          "previewId": "phone-settings",
+          "category": "roblox_suitability",
+          "severity": "minor",
+          "description": "The Settings panel is readable, but the close button and slider handle feel visually delicate against the ornate frame for fast in-game touch interaction.",
+          "nodeIds": [
+            "SettingsCloseButton",
+            "VolumeSlider"
+          ],
+          "rejectionRule": "none"
+        }
+      ]
+    }
+  ],
+  "elapsedMs": 106381,
+  "renderedViews": [
+    "desktop",
+    "tablet",
+    "phone",
+    "desktop-settings",
+    "phone-settings",
+    "phone-credits"
+  ],
+  "generationEvidence": {
+    "sourceMode": "library_template",
+    "templateId": "main-menu-v1",
+    "sourceRequests": 0,
+    "sourceRepairRequests": 0
+  },
+  "usage": {
+    "receipts": [
+      {
+        "model": "openai/gpt-5.4",
+        "usage": {
+          "prompt_tokens": 16505,
+          "completion_tokens": 1405,
+          "total_tokens": 17910,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0
+          }
+        },
+        "reportedCostMicros": null
+      },
+      {
+        "model": "openai/gpt-5.4",
+        "usage": {
+          "prompt_tokens": 18088,
+          "completion_tokens": 1404,
+          "total_tokens": 19492,
+          "prompt_tokens_details": {
+            "cached_tokens": 15488,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0
+          }
+        },
+        "reportedCostMicros": null
+      }
+    ],
+    "reportedCostMicros": null,
+    "allReceiptsHaveReportedCost": false,
+    "completeRunCost": false
+  },
+  "runtimeVerified": false
+}

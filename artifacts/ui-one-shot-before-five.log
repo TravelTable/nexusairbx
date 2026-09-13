@@ -1,0 +1,145 @@
+TAP version 13
+# Subtest: shared skins and generated icons form separate bounded sheets with stable identities
+ok 1 - shared skins and generated icons form separate bounded sheets with stable identities
+  ---
+  duration_ms: 16.8511
+  ...
+# Subtest: requirement IDs bind required artwork to planned controls and split moving pieces
+ok 2 - requirement IDs bind required artwork to planned controls and split moving pieces
+  ---
+  duration_ms: 1.7534
+  ...
+# Subtest: explicit required icon is generated once with its semantic subject
+ok 3 - explicit required icon is generated once with its semantic subject
+  ---
+  duration_ms: 0.4648
+  ...
+# Subtest: icon asset requirements retain their requirement binding on the shared generated icon
+ok 4 - icon asset requirements retain their requirement binding on the shared generated icon
+  ---
+  duration_ms: 0.3169
+  ...
+# Subtest: compact control pieces share icon cells without shrinking large surfaces
+ok 5 - compact control pieces share icon cells without shrinking large surfaces
+  ---
+  duration_ms: 0.8443
+  ...
+# Subtest: extracts independent alpha assets, removes enclosed magenta, discards grid lines
+ok 6 - extracts independent alpha assets, removes enclosed magenta, discards grid lines
+  ---
+  duration_ms: 228.5893
+  ...
+# Subtest: clipped and empty cells fail independently without discarding good siblings
+ok 7 - clipped and empty cells fail independently without discarding good siblings
+  ---
+  duration_ms: 173.5235
+  ...
+# Subtest: shaded chroma is removed while cyan artwork survives
+ok 8 - shaded chroma is removed while cyan artwork survives
+  ---
+  duration_ms: 212.0289
+  ...
+# Subtest: desaturated green backing does not become a clipped opaque rectangle
+ok 9 - desaturated green backing does not become a clipped opaque rectangle
+  ---
+  duration_ms: 140.4869
+  ...
+# Subtest: vision locator receives the actual sheet and rejects malformed coordinates
+ok 10 - vision locator receives the actual sheet and rejects malformed coordinates
+  ---
+  duration_ms: 322.8316
+  ...
+# Subtest: 4K gateway options are explicit and lower-resolution provider output is rejected
+ok 11 - 4K gateway options are explicit and lower-resolution provider output is rejected
+  ---
+  duration_ms: 8.2064
+  ...
+# Subtest: colored wide skins retain aspect and valid dynamic nine-slice metadata through processing
+ok 12 - colored wide skins retain aspect and valid dynamic nine-slice metadata through processing
+  ---
+  duration_ms: 264.2534
+  ...
+# Subtest: JSON cannot grant the prepared artwork capability
+ok 13 - JSON cannot grant the prepared artwork capability
+  ---
+  duration_ms: 0.4648
+  ...
+# Subtest: oversized kits fail before any paid partial generation
+ok 14 - oversized kits fail before any paid partial generation
+  ---
+  duration_ms: 0.9639
+  ...
+# Subtest: independent sheets use two workers while sharing the same durable four-sheet budget
+ok 15 - independent sheets use two workers while sharing the same durable four-sheet budget
+  ---
+  duration_ms: 25.8295
+  ...
+# Subtest: matching icons share one asset even when their parent skins differ
+ok 16 - matching icons share one asset even when their parent skins differ
+  ---
+  duration_ms: 0.626
+  ...
+# Subtest: large skins and decorations share roomy cells while compact subjects stay at four per sheet
+ok 17 - large skins and decorations share roomy cells while compact subjects stay at four per sheet
+  ---
+  duration_ms: 0.4595
+  ...
+# Subtest: one paid sheet creates separate assets and replay never generates again
+ok 18 - one paid sheet creates separate assets and replay never generates again
+  ---
+  duration_ms: 0.8657
+  ...
+# Subtest: repair of only a failed cell never buys a new sheet after siblings were reused
+ok 19 - repair of only a failed cell never buys a new sheet after siblings were reused
+  ---
+  duration_ms: 0.5677
+  ...
+# Subtest: ambiguous gateway outcomes are fenced across retries
+ok 20 - ambiguous gateway outcomes are fenced across retries
+  ---
+  duration_ms: 0.6378
+  ...
+# Subtest: a later extraction can reuse a saved raw sheet without another image generation
+ok 21 - a later extraction can reuse a saved raw sheet without another image generation
+  ---
+  duration_ms: 6.9647
+  ...
+# Subtest: complete menu assembly is deterministic and binds only supplied assets
+ok 22 - complete menu assembly is deterministic and binds only supplied assets
+  ---
+  duration_ms: 21.8046
+  ...
+# Subtest: title, palette and semantic node renaming adapt through the reusable template
+ok 23 - title, palette and semantic node renaming adapt through the reusable template
+  ---
+  duration_ms: 8.0297
+  ...
+# Subtest: incomplete kits, existing edits and unsupported features do not silently use the template
+ok 24 - incomplete kits, existing edits and unsupported features do not silently use the template
+  ---
+  duration_ms: 2.739
+  ...
+# Subtest: per-button surfaces retain distinct authoritative peer bindings
+ok 25 - per-button surfaces retain distinct authoritative peer bindings
+  ---
+  duration_ms: 2.7782
+  ...
+# Subtest: template guidance is limited to supported menus and does not override other layouts or features
+ok 26 - template guidance is limited to supported menus and does not override other layouts or features
+  ---
+  duration_ms: 1.4441
+  ...
+# Subtest: resolved optional framing is actually wired into the reusable view
+ok 27 - resolved optional framing is actually wired into the reusable view
+  ---
+  duration_ms: 4.2407
+  ...
+1..27
+# tests 27
+# suites 0
+# pass 27
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1599.1258

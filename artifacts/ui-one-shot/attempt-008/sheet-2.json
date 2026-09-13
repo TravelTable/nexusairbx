@@ -1,0 +1,114 @@
+{
+  "regions": [
+    {
+      "slot": 0,
+      "box": [
+        120,
+        57,
+        372,
+        192
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 1,
+      "box": [
+        117,
+        302,
+        377,
+        447
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 2,
+      "box": [
+        123,
+        555,
+        372,
+        694
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 3,
+      "box": [
+        111,
+        813,
+        383,
+        940
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 4,
+      "box": [
+        616,
+        68,
+        889,
+        182
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 5,
+      "box": null,
+      "reason": "No loose square gemstone cap with rounded beveled navy corners and a cyan face is present. The closest match is a square button, but it is not a loose cap."
+    },
+    {
+      "slot": 6,
+      "box": [
+        641,
+        561,
+        860,
+        685
+      ],
+      "reason": ""
+    }
+  ],
+  "reusedSource": false,
+  "usage": {},
+  "width": 5504,
+  "sheetId": "3636432d6a75b6cf456086541289d90e9bc9e81952cfee148623f1a56d9b906f",
+  "model": "google/gemini-3.1-flash-image",
+  "source": {
+    "sha256": "ef5c60e5fda7c025757ae8100b1906c47d6fa2baa82d5cc53401e93f233afcf1",
+    "bytes": 23558887,
+    "storagePath": "asset-platform/users/4b801b407b639dca73828adf869dbdc2/assets/ui_sheet_3636432d6a75b6cf456086541289d90e9bc9e81952cfee148623f1a56d9b906f/versions/source_v1/master.png",
+    "contentType": "image/png"
+  },
+  "items": [
+    {
+      "fingerprint": "f64bfc113d32e8a2e2194ca11c452a26bff4ea8025ec918ae07a7eb89c9260ee",
+      "assetId": "asset_2eb50c0afe8d4352a7d0b79cebf2827c"
+    },
+    {
+      "fingerprint": "4697e932c92c962461082f250c4d62efa4ebe89113d694cec95edead081f8000",
+      "assetId": "asset_27f55bd877194a8295b2657b3e866ba3"
+    },
+    {
+      "fingerprint": "8c38f5224baca51dd8a61bbf1a4d4507476feb93748acab62a30e07c3a3cb54b",
+      "assetId": "asset_a561ff50784c4faf94f7352d96bc89e8"
+    },
+    {
+      "fingerprint": "8c695e6d41aa048ab4975fb953924d718ea148bb18788c47e7cc97e1facd37f4",
+      "assetId": "asset_1f9ab3ffff51454d888e57faa25cb524"
+    },
+    {
+      "fingerprint": "b1656f3d3d651e0110f3a40f158fa8e718ae078932af834bde909efcccf27028",
+      "assetId": "asset_97e9fda43b784ad8816799964a06fb97"
+    },
+    {
+      "fingerprint": "dfe1c90a39b21f984db8025eafbdad7bd20efbbce93eed74f915de39c050da74",
+      "error": {
+        "code": "UI_SHEET_SUBJECT_MISSING",
+        "message": "No loose square gemstone cap with rounded beveled navy corners and a cyan face is present. The closest match is a square button, but it is not a loose cap."
+      }
+    },
+    {
+      "fingerprint": "e3cf6db7e3cb0e9d43fb9bc74a31e48fd97f75a2fd4603de4abcb8e97d1174af",
+      "assetId": "asset_b3591a2f9a6b481a9d3e03a0019c55f2"
+    }
+  ],
+  "height": 3072
+}

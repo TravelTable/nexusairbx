@@ -1,0 +1,50 @@
+[
+  {
+    "role": "coin",
+    "blocking": [],
+    "width": 1017,
+    "height": 1024
+  },
+  {
+    "role": "gift",
+    "blocking": [],
+    "width": 974,
+    "height": 1024
+  },
+  {
+    "role": "shop",
+    "blocking": [],
+    "width": 892,
+    "height": 1024
+  },
+  {
+    "role": "settings",
+    "blocking": [],
+    "width": 1005,
+    "height": 1024
+  },
+  {
+    "role": "home",
+    "blocking": [],
+    "width": 1024,
+    "height": 1009
+  },
+  {
+    "role": "star",
+    "blocking": [],
+    "width": 1024,
+    "height": 1013
+  },
+  {
+    "role": "shield",
+    "blocking": [],
+    "width": 854,
+    "height": 1024
+  },
+  {
+    "role": "close",
+    "blocking": [],
+    "width": 986,
+    "height": 1024
+  }
+]

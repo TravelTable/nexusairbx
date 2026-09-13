@@ -1,0 +1,1133 @@
+{
+  "assets": [
+    {
+      "refId": "asset_asset_ba81bd104c04413fa1c4e5729414428e",
+      "canonicalAssetId": "asset_ba81bd104c04413fa1c4e5729414428e",
+      "name": "UI component_surface",
+      "kind": "image",
+      "robloxAssetId": null,
+      "status": "generated",
+      "iconMetadata": {
+        "semanticRole": "",
+        "styleFamily": "",
+        "visualWeight": "",
+        "strokeWeight": "",
+        "perspective": "",
+        "paletteMode": "",
+        "palette": [],
+        "background": "not_applicable",
+        "edgeTreatment": "",
+        "shadowTreatment": "",
+        "padding": null,
+        "iconToButtonRatio": null,
+        "consistencyGroup": ""
+      },
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "component_surface",
+        "styleFingerprint": "3289c3407b731725432d37525516766f373280e6c3d2c32c26adb633704da91d",
+        "componentIds": [
+          "cmp_button_play"
+        ],
+        "nodeNames": [
+          "PlayButton"
+        ],
+        "requirementIds": [
+          "art_button_skins"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 492,
+        "renderStrategy": "image_9slice",
+        "scaleType": "Slice",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "221cd7598afdfb56179adbae9c3ceea20459aaec7c8e053ca9cd9e4425ac74de",
+        "slot": 0,
+        "sliceCenter": [
+          185,
+          89,
+          839,
+          403
+        ],
+        "sliceScale": 0.2
+      },
+      "provenance": null,
+      "previewUrl": null,
+      "semanticRole": "component_surface",
+      "requirementId": "art_button_skins",
+      "required": true
+    },
+    {
+      "refId": "asset_asset_8db5d1f006c74515ab972c252cacf0e2",
+      "canonicalAssetId": "asset_8db5d1f006c74515ab972c252cacf0e2",
+      "name": "UI component_surface",
+      "kind": "image",
+      "robloxAssetId": null,
+      "status": "generated",
+      "iconMetadata": {
+        "semanticRole": "",
+        "styleFamily": "",
+        "visualWeight": "",
+        "strokeWeight": "",
+        "perspective": "",
+        "paletteMode": "",
+        "palette": [],
+        "background": "not_applicable",
+        "edgeTreatment": "",
+        "shadowTreatment": "",
+        "padding": null,
+        "iconToButtonRatio": null,
+        "consistencyGroup": ""
+      },
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "component_surface",
+        "styleFingerprint": "60ad3409597bc9107fc10500d2e2fb7561f371c40b567b96d9aa272c7a0b9e3e",
+        "componentIds": [
+          "cmp_button_settings",
+          "cmp_button_credits"
+        ],
+        "nodeNames": [
+          "SettingsButton",
+          "CreditsButton"
+        ],
+        "requirementIds": [
+          "art_button_skins"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 351,
+        "renderStrategy": "image_9slice",
+        "scaleType": "Slice",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "221cd7598afdfb56179adbae9c3ceea20459aaec7c8e053ca9cd9e4425ac74de",
+        "slot": 1,
+        "sliceCenter": [
+          185,
+          64,
+          839,
+          287
+        ],
+        "sliceScale": 0.2
+      },
+      "provenance": null,
+      "previewUrl": null,
+      "semanticRole": "component_surface",
+      "requirementId": "art_button_skins",
+      "required": true
+    },
+    {
+      "refId": "asset_asset_c46f5bff5a3d4158adcb803c5cc3661a",
+      "canonicalAssetId": "asset_c46f5bff5a3d4158adcb803c5cc3661a",
+      "name": "UI panel_surface",
+      "kind": "image",
+      "robloxAssetId": null,
+      "status": "generated",
+      "iconMetadata": {
+        "semanticRole": "",
+        "styleFamily": "",
+        "visualWeight": "",
+        "strokeWeight": "",
+        "perspective": "",
+        "paletteMode": "",
+        "palette": [],
+        "background": "not_applicable",
+        "edgeTreatment": "",
+        "shadowTreatment": "",
+        "padding": null,
+        "iconToButtonRatio": null,
+        "consistencyGroup": ""
+      },
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "panel_surface",
+        "styleFingerprint": "65e4e4664be87de6e1aacd44beb80deb55eb041e9930e34b08ef8e9a797374ab",
+        "componentIds": [
+          "cmp_credits_modal"
+        ],
+        "nodeNames": [
+          "CreditsModal"
+        ],
+        "requirementIds": [
+          "art_panel_skin"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 688,
+        "renderStrategy": "image_9slice",
+        "scaleType": "Slice",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "221cd7598afdfb56179adbae9c3ceea20459aaec7c8e053ca9cd9e4425ac74de",
+        "slot": 2,
+        "sliceCenter": [
+          185,
+          124,
+          839,
+          564
+        ],
+        "sliceScale": 0.2
+      },
+      "provenance": null,
+      "previewUrl": null,
+      "semanticRole": "panel_surface",
+      "requirementId": "art_panel_skin",
+      "required": true
+    },
+    {
+      "refId": "asset_asset_e1cf723245834cbcadaeca083a47c684",
+      "canonicalAssetId": "asset_e1cf723245834cbcadaeca083a47c684",
+      "name": "UI panel_surface",
+      "kind": "image",
+      "robloxAssetId": null,
+      "status": "generated",
+      "iconMetadata": {
+        "semanticRole": "",
+        "styleFamily": "",
+        "visualWeight": "",
+        "strokeWeight": "",
+        "perspective": "",
+        "paletteMode": "",
+        "palette": [],
+        "background": "not_applicable",
+        "edgeTreatment": "",
+        "shadowTreatment": "",
+        "padding": null,
+        "iconToButtonRatio": null,
+        "consistencyGroup": ""
+      },
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "panel_surface",
+        "styleFingerprint": "e8f805a687e342e1532a066a0257650180c4a0010b2db435ed825e9e6ff20ec1",
+        "componentIds": [
+          "cmp_settings_modal"
+        ],
+        "nodeNames": [
+          "SettingsModal"
+        ],
+        "requirementIds": [
+          "art_panel_skin"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 521,
+        "renderStrategy": "image_9slice",
+        "scaleType": "Slice",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "221cd7598afdfb56179adbae9c3ceea20459aaec7c8e053ca9cd9e4425ac74de",
+        "slot": 3,
+        "sliceCenter": [
+          185,
+          94,
+          839,
+          427
+        ],
+        "sliceScale": 0.2
+      },
+      "provenance": null,
+      "previewUrl": null,
+      "semanticRole": "panel_surface",
+      "requirementId": "art_panel_skin",
+      "required": true
+    },
+    {
+      "refId": "asset_asset_32051086979346beabb6bef4d2e707b9",
+      "canonicalAssetId": "asset_32051086979346beabb6bef4d2e707b9",
+      "name": "UI component_surface",
+      "kind": "image",
+      "robloxAssetId": null,
+      "status": "generated",
+      "iconMetadata": {
+        "semanticRole": "",
+        "styleFamily": "",
+        "visualWeight": "",
+        "strokeWeight": "",
+        "perspective": "",
+        "paletteMode": "",
+        "palette": [],
+        "background": "not_applicable",
+        "edgeTreatment": "",
+        "shadowTreatment": "",
+        "padding": null,
+        "iconToButtonRatio": null,
+        "consistencyGroup": ""
+      },
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "component_surface",
+        "styleFingerprint": "fb5dd2c76930c884767d7d00ee5a6919e71d9b1c8b046c65415783e492ad5bb9",
+        "componentIds": [
+          "cmp_settings_close",
+          "cmp_credits_close"
+        ],
+        "nodeNames": [
+          "SettingsCloseButton",
+          "CreditsCloseButton"
+        ],
+        "requirementIds": [
+          "art_button_skins"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 512,
+        "renderStrategy": "image_9slice",
+        "scaleType": "Slice",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "96bc573bf097a927c4b16bdfa2f913e350a80b8edda5a68bad289ed4dc32ee8f",
+        "slot": 0,
+        "sliceCenter": [
+          185,
+          93,
+          839,
+          419
+        ],
+        "sliceScale": 0.2
+      },
+      "provenance": null,
+      "previewUrl": null,
+      "semanticRole": "component_surface",
+      "requirementId": "art_button_skins",
+      "required": true
+    },
+    {
+      "refId": "asset_asset_ac45bc394b054a618270476181bfdb8d",
+      "canonicalAssetId": "asset_ac45bc394b054a618270476181bfdb8d",
+      "name": "UI play",
+      "kind": "image",
+      "robloxAssetId": null,
+      "status": "generated",
+      "iconMetadata": {
+        "semanticRole": "",
+        "styleFamily": "",
+        "visualWeight": "",
+        "strokeWeight": "",
+        "perspective": "",
+        "paletteMode": "",
+        "palette": [],
+        "background": "not_applicable",
+        "edgeTreatment": "",
+        "shadowTreatment": "",
+        "padding": null,
+        "iconToButtonRatio": null,
+        "consistencyGroup": ""
+      },
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "icon",
+        "styleFingerprint": "25f1ee83df2bfae8fae395f12258b503c8b8ff7c53eea2d15b6f30de1b69a78b",
+        "componentIds": [
+          "cmp_button_play"
+        ],
+        "nodeNames": [
+          "PlayButton"
+        ],
+        "requirementIds": [],
+        "required": true,
+        "width": 817,
+        "height": 1024,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "play",
+        "sheetId": "6da45bb30c01ad6694ab6f8639a1a53d5ffe0c350d278d0c93cb8f87ca415141",
+        "slot": 0
+      },
+      "provenance": null,
+      "previewUrl": null,
+      "semanticRole": "play",
+      "requirementId": null,
+      "required": true
+    },
+    {
+      "refId": "asset_asset_8caafb851c964d6fbc78ad6158bcfdfb",
+      "canonicalAssetId": "asset_8caafb851c964d6fbc78ad6158bcfdfb",
+      "name": "UI control_artwork",
+      "kind": "image",
+      "robloxAssetId": null,
+      "status": "generated",
+      "iconMetadata": {
+        "semanticRole": "",
+        "styleFamily": "",
+        "visualWeight": "",
+        "strokeWeight": "",
+        "perspective": "",
+        "paletteMode": "",
+        "palette": [],
+        "background": "not_applicable",
+        "edgeTreatment": "",
+        "shadowTreatment": "",
+        "padding": null,
+        "iconToButtonRatio": null,
+        "consistencyGroup": ""
+      },
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "control_artwork",
+        "styleFingerprint": "26027b4159a8d2d6b708ec0994d146488a9738dec426b582cf6410f9f01cfd87",
+        "componentIds": [
+          "cmp_toggle_music"
+        ],
+        "nodeNames": [
+          "MusicToggleOn"
+        ],
+        "requirementIds": [
+          "art_toggle_pieces"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 469,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "8668c0be692f2a746f59c198d9ad748597675c39c93ff620170e417e81a8125e",
+        "slot": 0,
+        "controlPart": "toggle_on"
+      },
+      "provenance": null,
+      "previewUrl": null,
+      "semanticRole": "control_artwork",
+      "requirementId": "art_toggle_pieces",
+      "required": true
+    },
+    {
+      "refId": "asset_asset_9e994f8530f6453ab5638745ab063131",
+      "canonicalAssetId": "asset_9e994f8530f6453ab5638745ab063131",
+      "name": "UI control_artwork",
+      "kind": "image",
+      "robloxAssetId": null,
+      "status": "generated",
+      "iconMetadata": {
+        "semanticRole": "",
+        "styleFamily": "",
+        "visualWeight": "",
+        "strokeWeight": "",
+        "perspective": "",
+        "paletteMode": "",
+        "palette": [],
+        "background": "not_applicable",
+        "edgeTreatment": "",
+        "shadowTreatment": "",
+        "padding": null,
+        "iconToButtonRatio": null,
+        "consistencyGroup": ""
+      },
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "control_artwork",
+        "styleFingerprint": "4fb186ff30517d70a974782f9af49f343c5cdf6611ada3e1ef0d53b93d915c5b",
+        "componentIds": [
+          "cmp_volume_slider"
+        ],
+        "nodeNames": [
+          "VolumeSliderFill"
+        ],
+        "requirementIds": [
+          "art_slider_track_handle"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 117,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "83c7fd812b983584994a2b8846c6f0dec4a6401cb4d98128028b85852d403f33",
+        "slot": 0,
+        "controlPart": "slider_fill"
+      },
+      "provenance": null,
+      "previewUrl": null,
+      "semanticRole": "control_artwork",
+      "requirementId": "art_slider_track_handle",
+      "required": true
+    },
+    {
+      "refId": "asset_asset_7d47c147ba464845b545fa9466ac8cbe",
+      "canonicalAssetId": "asset_7d47c147ba464845b545fa9466ac8cbe",
+      "name": "UI credits",
+      "kind": "image",
+      "robloxAssetId": null,
+      "status": "generated",
+      "iconMetadata": {
+        "semanticRole": "",
+        "styleFamily": "",
+        "visualWeight": "",
+        "strokeWeight": "",
+        "perspective": "",
+        "paletteMode": "",
+        "palette": [],
+        "background": "not_applicable",
+        "edgeTreatment": "",
+        "shadowTreatment": "",
+        "padding": null,
+        "iconToButtonRatio": null,
+        "consistencyGroup": ""
+      },
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "icon",
+        "styleFingerprint": "57ec46e12dd1e91264e2a6f559e4a237aa75fc840d0b6fe26edc7ebec3c14476",
+        "componentIds": [
+          "cmp_button_credits"
+        ],
+        "nodeNames": [
+          "CreditsButton"
+        ],
+        "requirementIds": [],
+        "required": true,
+        "width": 1014,
+        "height": 1024,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "credits",
+        "sheetId": "6da45bb30c01ad6694ab6f8639a1a53d5ffe0c350d278d0c93cb8f87ca415141",
+        "slot": 3
+      },
+      "provenance": null,
+      "previewUrl": null,
+      "semanticRole": "credits",
+      "requirementId": null,
+      "required": true
+    },
+    {
+      "refId": "asset_asset_ad0b98fa96f84833aef436cb461d0ba8",
+      "canonicalAssetId": "asset_ad0b98fa96f84833aef436cb461d0ba8",
+      "name": "UI close",
+      "kind": "image",
+      "robloxAssetId": null,
+      "status": "generated",
+      "iconMetadata": {
+        "semanticRole": "",
+        "styleFamily": "",
+        "visualWeight": "",
+        "strokeWeight": "",
+        "perspective": "",
+        "paletteMode": "",
+        "palette": [],
+        "background": "not_applicable",
+        "edgeTreatment": "",
+        "shadowTreatment": "",
+        "padding": null,
+        "iconToButtonRatio": null,
+        "consistencyGroup": ""
+      },
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "icon",
+        "styleFingerprint": "73a39eb2da7e1379551204e1072fbb039ce2b496513e0d72c4a9ecfb80081044",
+        "componentIds": [
+          "cmp_settings_close",
+          "cmp_credits_close"
+        ],
+        "nodeNames": [
+          "SettingsCloseButton",
+          "CreditsCloseButton"
+        ],
+        "requirementIds": [],
+        "required": true,
+        "width": 1017,
+        "height": 1024,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "close",
+        "sheetId": "6da45bb30c01ad6694ab6f8639a1a53d5ffe0c350d278d0c93cb8f87ca415141",
+        "slot": 4
+      },
+      "provenance": null,
+      "previewUrl": null,
+      "semanticRole": "close",
+      "requirementId": null,
+      "required": true
+    },
+    {
+      "refId": "asset_asset_370c8b9fba7749a1975a5403c614f7eb",
+      "canonicalAssetId": "asset_370c8b9fba7749a1975a5403c614f7eb",
+      "name": "UI control_artwork",
+      "kind": "image",
+      "robloxAssetId": null,
+      "status": "generated",
+      "iconMetadata": {
+        "semanticRole": "",
+        "styleFamily": "",
+        "visualWeight": "",
+        "strokeWeight": "",
+        "perspective": "",
+        "paletteMode": "",
+        "palette": [],
+        "background": "not_applicable",
+        "edgeTreatment": "",
+        "shadowTreatment": "",
+        "padding": null,
+        "iconToButtonRatio": null,
+        "consistencyGroup": ""
+      },
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "control_artwork",
+        "styleFingerprint": "83f2805ef8c956c406146f7a13e5eed7366d683d7c38794dd2052238a38d5c6b",
+        "componentIds": [
+          "cmp_volume_slider"
+        ],
+        "nodeNames": [
+          "VolumeSliderHandle"
+        ],
+        "requirementIds": [
+          "art_slider_track_handle"
+        ],
+        "required": true,
+        "width": 942,
+        "height": 1024,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "7c4a365f70faedd8372efa725f7b76f36fb0e92ca91859a24c39062d26bcc9d3",
+        "slot": 0,
+        "controlPart": "slider_handle"
+      },
+      "provenance": null,
+      "previewUrl": null,
+      "semanticRole": "control_artwork",
+      "requirementId": "art_slider_track_handle",
+      "required": true
+    },
+    {
+      "refId": "asset_asset_2ad1403180e84b3b917f774a93de3693",
+      "canonicalAssetId": "asset_2ad1403180e84b3b917f774a93de3693",
+      "name": "UI settings",
+      "kind": "image",
+      "robloxAssetId": null,
+      "status": "generated",
+      "iconMetadata": {
+        "semanticRole": "",
+        "styleFamily": "",
+        "visualWeight": "",
+        "strokeWeight": "",
+        "perspective": "",
+        "paletteMode": "",
+        "palette": [],
+        "background": "not_applicable",
+        "edgeTreatment": "",
+        "shadowTreatment": "",
+        "padding": null,
+        "iconToButtonRatio": null,
+        "consistencyGroup": ""
+      },
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "icon",
+        "styleFingerprint": "9c5291ba5863877e81c8d59304a85c4754e7793814b5a1d3012df32adefed2c6",
+        "componentIds": [
+          "cmp_button_settings"
+        ],
+        "nodeNames": [
+          "SettingsButton"
+        ],
+        "requirementIds": [],
+        "required": true,
+        "width": 1024,
+        "height": 1024,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "settings",
+        "sheetId": "6da45bb30c01ad6694ab6f8639a1a53d5ffe0c350d278d0c93cb8f87ca415141",
+        "slot": 5
+      },
+      "provenance": null,
+      "previewUrl": null,
+      "semanticRole": "settings",
+      "requirementId": null,
+      "required": true
+    },
+    {
+      "refId": "asset_asset_26157c26ae7e4665b6824934f184b239",
+      "canonicalAssetId": "asset_26157c26ae7e4665b6824934f184b239",
+      "name": "UI control_artwork",
+      "kind": "image",
+      "robloxAssetId": null,
+      "status": "generated",
+      "iconMetadata": {
+        "semanticRole": "",
+        "styleFamily": "",
+        "visualWeight": "",
+        "strokeWeight": "",
+        "perspective": "",
+        "paletteMode": "",
+        "palette": [],
+        "background": "not_applicable",
+        "edgeTreatment": "",
+        "shadowTreatment": "",
+        "padding": null,
+        "iconToButtonRatio": null,
+        "consistencyGroup": ""
+      },
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "control_artwork",
+        "styleFingerprint": "a046ae48779f9d7c0a69a550287c7677d3c21c7c0c3d8c43bdee63997bd00955",
+        "componentIds": [
+          "cmp_toggle_music"
+        ],
+        "nodeNames": [
+          "MusicToggleThumb"
+        ],
+        "requirementIds": [
+          "art_toggle_pieces"
+        ],
+        "required": true,
+        "width": 985,
+        "height": 1024,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "7c4a365f70faedd8372efa725f7b76f36fb0e92ca91859a24c39062d26bcc9d3",
+        "slot": 1,
+        "controlPart": "toggle_thumb"
+      },
+      "provenance": null,
+      "previewUrl": null,
+      "semanticRole": "control_artwork",
+      "requirementId": "art_toggle_pieces",
+      "required": true
+    },
+    {
+      "refId": "asset_asset_8244b798b2d44615b075162e34dd78ba",
+      "canonicalAssetId": "asset_8244b798b2d44615b075162e34dd78ba",
+      "name": "UI control_artwork",
+      "kind": "image",
+      "robloxAssetId": null,
+      "status": "generated",
+      "iconMetadata": {
+        "semanticRole": "",
+        "styleFamily": "",
+        "visualWeight": "",
+        "strokeWeight": "",
+        "perspective": "",
+        "paletteMode": "",
+        "palette": [],
+        "background": "not_applicable",
+        "edgeTreatment": "",
+        "shadowTreatment": "",
+        "padding": null,
+        "iconToButtonRatio": null,
+        "consistencyGroup": ""
+      },
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "control_artwork",
+        "styleFingerprint": "c2422d15d01c39d34e9f1e2c5f4ec7c8934827dd05488a60fe32aa46b009a2aa",
+        "componentIds": [
+          "cmp_toggle_music"
+        ],
+        "nodeNames": [
+          "MusicToggleOff"
+        ],
+        "requirementIds": [
+          "art_toggle_pieces"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 455,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "8668c0be692f2a746f59c198d9ad748597675c39c93ff620170e417e81a8125e",
+        "slot": 2,
+        "controlPart": "toggle_off"
+      },
+      "provenance": null,
+      "previewUrl": null,
+      "semanticRole": "control_artwork",
+      "requirementId": "art_toggle_pieces",
+      "required": true
+    },
+    {
+      "refId": "asset_asset_6e85243962a64a119298e36898fbfeca",
+      "canonicalAssetId": "asset_6e85243962a64a119298e36898fbfeca",
+      "name": "UI ornament",
+      "kind": "image",
+      "robloxAssetId": null,
+      "status": "generated",
+      "iconMetadata": {
+        "semanticRole": "",
+        "styleFamily": "",
+        "visualWeight": "",
+        "strokeWeight": "",
+        "perspective": "",
+        "paletteMode": "",
+        "palette": [],
+        "background": "not_applicable",
+        "edgeTreatment": "",
+        "shadowTreatment": "",
+        "padding": null,
+        "iconToButtonRatio": null,
+        "consistencyGroup": ""
+      },
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "ornament",
+        "styleFingerprint": "c99ed7fd1b9d72433cc8a59ec80600dbbe5fca55a5e7416daab09e5329e2bab1",
+        "componentIds": [
+          "cmp_title_plate"
+        ],
+        "nodeNames": [
+          "TitlePlate"
+        ],
+        "requirementIds": [
+          "art_title_plate"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 346,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "8668c0be692f2a746f59c198d9ad748597675c39c93ff620170e417e81a8125e",
+        "slot": 3
+      },
+      "provenance": null,
+      "previewUrl": null,
+      "semanticRole": "ornament",
+      "requirementId": "art_title_plate",
+      "required": true
+    },
+    {
+      "refId": "asset_asset_79bb3b0df17842cea10bd7587e19e992",
+      "canonicalAssetId": "asset_79bb3b0df17842cea10bd7587e19e992",
+      "name": "UI control_artwork",
+      "kind": "image",
+      "robloxAssetId": null,
+      "status": "generated",
+      "iconMetadata": {
+        "semanticRole": "",
+        "styleFamily": "",
+        "visualWeight": "",
+        "strokeWeight": "",
+        "perspective": "",
+        "paletteMode": "",
+        "palette": [],
+        "background": "not_applicable",
+        "edgeTreatment": "",
+        "shadowTreatment": "",
+        "padding": null,
+        "iconToButtonRatio": null,
+        "consistencyGroup": ""
+      },
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "control_artwork",
+        "styleFingerprint": "f49671f11f2d28eef96e6eac6fca82bf3e52d925627ba583c49327d9f270f14b",
+        "componentIds": [
+          "cmp_volume_slider"
+        ],
+        "nodeNames": [
+          "VolumeSliderTrack"
+        ],
+        "requirementIds": [
+          "art_slider_track_handle"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 125,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "83c7fd812b983584994a2b8846c6f0dec4a6401cb4d98128028b85852d403f33",
+        "slot": 1,
+        "controlPart": "slider_track"
+      },
+      "provenance": null,
+      "previewUrl": null,
+      "semanticRole": "control_artwork",
+      "requirementId": "art_slider_track_handle",
+      "required": true
+    }
+  ],
+  "iconResolutions": [
+    {
+      "componentId": "cmp_button_play",
+      "nodeName": "PlayButton",
+      "semanticRole": "play",
+      "groupId": "menu_actions",
+      "assetRefId": "asset_asset_ac45bc394b054a618270476181bfdb8d",
+      "source": "generated_sheet",
+      "resolution": "image",
+      "status": "private_preview",
+      "resolved": true,
+      "uri": "nexusasset://asset_ac45bc394b054a618270476181bfdb8d",
+      "family": "aurora_gloss_icons",
+      "styleFamily": "aurora_gloss_icons",
+      "size": 28,
+      "padding": 10,
+      "metadata": {
+        "semanticRole": "play",
+        "styleFamily": "aurora_gloss_icons",
+        "visualWeight": "bold",
+        "strokeWeight": "uniform",
+        "perspective": "front",
+        "paletteMode": "cyan-cobalt body with gold spark accents",
+        "palette": [
+          "#3CCBFF",
+          "#2A67D8",
+          "#E7B95A",
+          "#53D6B3",
+          "#D96A6A",
+          "#091423",
+          "#12304D",
+          "#F4FBFF"
+        ],
+        "background": "transparent",
+        "edgeTreatment": "navy rim",
+        "shadowTreatment": "soft navy drop",
+        "padding": 10,
+        "iconToButtonRatio": 0.42,
+        "consistencyGroup": "menu_actions"
+      }
+    },
+    {
+      "componentId": "cmp_button_settings",
+      "nodeName": "SettingsButton",
+      "semanticRole": "settings",
+      "groupId": "menu_actions",
+      "assetRefId": "asset_asset_2ad1403180e84b3b917f774a93de3693",
+      "source": "generated_sheet",
+      "resolution": "image",
+      "status": "private_preview",
+      "resolved": true,
+      "uri": "nexusasset://asset_2ad1403180e84b3b917f774a93de3693",
+      "family": "aurora_gloss_icons",
+      "styleFamily": "aurora_gloss_icons",
+      "size": 28,
+      "padding": 10,
+      "metadata": {
+        "semanticRole": "settings",
+        "styleFamily": "aurora_gloss_icons",
+        "visualWeight": "bold",
+        "strokeWeight": "uniform",
+        "perspective": "front",
+        "paletteMode": "cyan-cobalt body with gold spark accents",
+        "palette": [
+          "#3CCBFF",
+          "#2A67D8",
+          "#E7B95A",
+          "#53D6B3",
+          "#D96A6A",
+          "#091423",
+          "#12304D",
+          "#F4FBFF"
+        ],
+        "background": "transparent",
+        "edgeTreatment": "navy rim",
+        "shadowTreatment": "soft navy drop",
+        "padding": 10,
+        "iconToButtonRatio": 0.42,
+        "consistencyGroup": "menu_actions"
+      }
+    },
+    {
+      "componentId": "cmp_button_credits",
+      "nodeName": "CreditsButton",
+      "semanticRole": "credits",
+      "groupId": "menu_actions",
+      "assetRefId": "asset_asset_7d47c147ba464845b545fa9466ac8cbe",
+      "source": "generated_sheet",
+      "resolution": "image",
+      "status": "private_preview",
+      "resolved": true,
+      "uri": "nexusasset://asset_7d47c147ba464845b545fa9466ac8cbe",
+      "family": "aurora_gloss_icons",
+      "styleFamily": "aurora_gloss_icons",
+      "size": 28,
+      "padding": 10,
+      "metadata": {
+        "semanticRole": "credits",
+        "styleFamily": "aurora_gloss_icons",
+        "visualWeight": "bold",
+        "strokeWeight": "uniform",
+        "perspective": "front",
+        "paletteMode": "cyan-cobalt body with gold spark accents",
+        "palette": [
+          "#3CCBFF",
+          "#2A67D8",
+          "#E7B95A",
+          "#53D6B3",
+          "#D96A6A",
+          "#091423",
+          "#12304D",
+          "#F4FBFF"
+        ],
+        "background": "transparent",
+        "edgeTreatment": "navy rim",
+        "shadowTreatment": "soft navy drop",
+        "padding": 10,
+        "iconToButtonRatio": 0.42,
+        "consistencyGroup": "menu_actions"
+      }
+    },
+    {
+      "componentId": "cmp_settings_close",
+      "nodeName": "SettingsCloseButton",
+      "semanticRole": "close",
+      "groupId": "close_buttons",
+      "assetRefId": "asset_asset_ad0b98fa96f84833aef436cb461d0ba8",
+      "source": "generated_sheet",
+      "resolution": "image",
+      "status": "private_preview",
+      "resolved": true,
+      "uri": "nexusasset://asset_ad0b98fa96f84833aef436cb461d0ba8",
+      "family": "aurora_gloss_icons",
+      "styleFamily": "aurora_gloss_icons",
+      "size": 24,
+      "padding": 8,
+      "metadata": {
+        "semanticRole": "close",
+        "styleFamily": "aurora_gloss_icons",
+        "visualWeight": "bold",
+        "strokeWeight": "uniform",
+        "perspective": "front",
+        "paletteMode": "cyan-cobalt body with gold spark accents",
+        "palette": [
+          "#3CCBFF",
+          "#2A67D8",
+          "#E7B95A",
+          "#53D6B3",
+          "#D96A6A",
+          "#091423",
+          "#12304D",
+          "#F4FBFF"
+        ],
+        "background": "transparent",
+        "edgeTreatment": "navy rim",
+        "shadowTreatment": "soft navy drop",
+        "padding": 8,
+        "iconToButtonRatio": 0.42,
+        "consistencyGroup": "close_buttons"
+      }
+    },
+    {
+      "componentId": "cmp_credits_close",
+      "nodeName": "CreditsCloseButton",
+      "semanticRole": "close",
+      "groupId": "close_buttons",
+      "assetRefId": "asset_asset_ad0b98fa96f84833aef436cb461d0ba8",
+      "source": "generated_sheet",
+      "resolution": "image",
+      "status": "private_preview",
+      "resolved": true,
+      "uri": "nexusasset://asset_ad0b98fa96f84833aef436cb461d0ba8",
+      "family": "aurora_gloss_icons",
+      "styleFamily": "aurora_gloss_icons",
+      "size": 24,
+      "padding": 8,
+      "metadata": {
+        "semanticRole": "close",
+        "styleFamily": "aurora_gloss_icons",
+        "visualWeight": "bold",
+        "strokeWeight": "uniform",
+        "perspective": "front",
+        "paletteMode": "cyan-cobalt body with gold spark accents",
+        "palette": [
+          "#3CCBFF",
+          "#2A67D8",
+          "#E7B95A",
+          "#53D6B3",
+          "#D96A6A",
+          "#091423",
+          "#12304D",
+          "#F4FBFF"
+        ],
+        "background": "transparent",
+        "edgeTreatment": "navy rim",
+        "shadowTreatment": "soft navy drop",
+        "padding": 8,
+        "iconToButtonRatio": 0.42,
+        "consistencyGroup": "close_buttons"
+      }
+    }
+  ],
+  "iconConsistency": {
+    "valid": true,
+    "issues": []
+  },
+  "warnings": [
+    {
+      "code": "UI_ARTWORK_DISABLED",
+      "role": "separator",
+      "componentIds": [
+        "cmp_settings_separator"
+      ],
+      "requirementIds": [],
+      "required": false,
+      "message": "separator is unavailable. Omit the unavailable decoration."
+    },
+    {
+      "code": "UI_ARTWORK_DISABLED",
+      "role": "ornament",
+      "componentIds": [
+        "cmp_background_ornaments"
+      ],
+      "requirementIds": [
+        "art_corner_ornaments"
+      ],
+      "required": false,
+      "message": "ornament is unavailable. Omit the unavailable decoration."
+    },
+    {
+      "code": "UI_ICON_FAMILY_FALLBACK",
+      "groupId": "menu_actions",
+      "message": "The complete menu_actions icon group uses nexus_procedural_solid_v1; matching published artwork was unavailable or inconsistent."
+    },
+    {
+      "code": "UI_ICON_FAMILY_FALLBACK",
+      "groupId": "close_buttons",
+      "message": "The complete close_buttons icon group uses nexus_procedural_solid_v1; matching published artwork was unavailable or inconsistent."
+    }
+  ],
+  "proceduralHelperSource": "-- Inline this pure helper before View.build; the trusted builder isolates View.\n-- Every glyph uses the same solid, front-facing, monochrome family. No assets.\n-- options = {size = 32, padding = 12, color = Color3, name = \"ShopIcon\"}\nlocal function createNexusIcon(parent, role, options)\n    options = options or {}\n    local holder = Instance.new(\"Frame\")\n    holder.Name = options.name or (role .. \"Icon\")\n    holder.BackgroundTransparency = 1\n    holder.BorderSizePixel = 0\n    holder.Size = UDim2.fromOffset(options.size or 32, options.size or 32)\n    holder.Parent = parent\n    local aspect = Instance.new(\"UIAspectRatioConstraint\")\n    aspect.AspectRatio = 1\n    aspect.Parent = holder\n    local padding = math.clamp(options.padding or 12, 0, 25) / 100\n    local canvas = Instance.new(\"Frame\")\n    canvas.Name = \"Glyph\"\n    canvas.BackgroundTransparency = 1\n    canvas.BorderSizePixel = 0\n    canvas.Position = UDim2.fromScale(padding, padding)\n    canvas.Size = UDim2.fromScale(1 - padding * 2, 1 - padding * 2)\n    canvas.Parent = holder\n    local color = options.color or Color3.fromRGB(255, 255, 255)\n    local function shape(x, y, w, h, rotation, round)\n        local part = Instance.new(\"Frame\")\n        part.Name = \"GlyphPart\"\n        part.AnchorPoint = Vector2.new(0.5, 0.5)\n        part.Position = UDim2.fromScale(x, y)\n        part.Size = UDim2.fromScale(w, h)\n        part.Rotation = rotation or 0\n        part.BackgroundColor3 = color\n        part.BorderSizePixel = 0\n        part.Parent = canvas\n        if round then\n            local corner = Instance.new(\"UICorner\")\n            corner.CornerRadius = UDim.new(round, 0)\n            corner.Parent = part\n        end\n        return part\n    end\n    local function bar(x1, y1, x2, y2, width)\n        local dx, dy = x2 - x1, y2 - y1\n        return shape((x1 + x2) / 2, (y1 + y2) / 2,\n            math.sqrt(dx * dx + dy * dy), width or 0.14,\n            math.deg(math.atan2(dy, dx)), 0.5)\n    end\n    local function ring(x, y, radius, width)\n        -- Segmented ring stays proportional at every size, without pixel strokes.\n        for index = 0, 11 do\n            local a, b = index * math.pi / 6, (index + 1) * math.pi / 6\n            bar(x + math.cos(a) * radius, y + math.sin(a) * radius,\n                x + math.cos(b) * radius, y + math.sin(b) * radius, width or 0.12)\n        end\n    end\n    local function ticket()\n        bar(0.18, 0.2, 0.82, 0.2)\n        bar(0.18, 0.8, 0.82, 0.8)\n        bar(0.18, 0.2, 0.18, 0.36)\n        bar(0.18, 0.64, 0.18, 0.8)\n        bar(0.82, 0.2, 0.82, 0.36)\n        bar(0.82, 0.64, 0.82, 0.8)\n        for index = 0, 2 do shape(0.62, 0.32 + index * 0.18, 0.07, 0.09, 0, 0.3) end\n        bar(0.29, 0.4, 0.41, 0.5, 0.09)\n        bar(0.41, 0.5, 0.29, 0.6, 0.09)\n    end\n    if role == \"play\" then\n        -- Sixteen narrow strips make a triangle without a glyph font dependency.\n        for index = 0, 15 do\n            local x = index / 16\n            shape(0.22 + x * 0.58, 0.5, 0.58 / 16 + 0.005, 0.76 * (1 - x), 0, nil)\n        end\n    elseif role == \"close\" or role == \"plus\" then\n        shape(0.5, 0.5, 0.88, 0.15, role == \"close\" and 45 or 0, 0.5)\n        shape(0.5, 0.5, 0.88, 0.15, role == \"close\" and -45 or 90, 0.5)\n    elseif role == \"minus\" then\n        shape(0.5, 0.5, 0.85, 0.15, 0, 0.5)\n    elseif role == \"back\" or role == \"chevron\" then\n        local edge, point = 0.68, 0.32\n        if role == \"chevron\" then edge, point = 0.32, 0.68 end\n        bar(edge, 0.16, point, 0.5)\n        bar(point, 0.5, edge, 0.84)\n    elseif role == \"settings\" then\n        ring(0.5, 0.5, 0.25, 0.16)\n        for index = 0, 7 do\n            local angle = index * math.pi / 4\n            shape(0.5 + math.cos(angle) * 0.33, 0.5 + math.sin(angle) * 0.33,\n                0.26, 0.16, math.deg(angle), 0.3)\n        end\n    elseif role == \"codes\" then\n        ticket()\n    elseif role == \"shop\" or role == \"inventory\" or role == \"lock\" then\n        ring(0.5, 0.32, 0.2, 0.12)\n        shape(0.5, 0.66, 0.72, 0.54, 0, 0.12)\n    elseif role == \"gift\" then\n        shape(0.5, 0.65, 0.76, 0.58, 0, 0.09)\n        shape(0.5, 0.32, 0.92, 0.16, 0, 0.2)\n        ring(0.35, 0.16, 0.1, 0.09)\n        ring(0.65, 0.16, 0.1, 0.09)\n    elseif role == \"home\" then\n        bar(0.1, 0.46, 0.5, 0.12)\n        bar(0.5, 0.12, 0.9, 0.46)\n        bar(0.24, 0.42, 0.24, 0.85)\n        bar(0.76, 0.42, 0.76, 0.85)\n        bar(0.24, 0.85, 0.76, 0.85)\n    elseif role == \"currency\" then\n        ring(0.5, 0.5, 0.38, 0.12)\n        shape(0.5, 0.5, 0.15, 0.43, 0, 0.4)\n    elseif role == \"profile\" then\n        shape(0.5, 0.25, 0.38, 0.38, 0, 0.5)\n        shape(0.5, 0.75, 0.8, 0.4, 0, 0.5)\n    elseif role == \"search\" then\n        ring(0.41, 0.4, 0.28, 0.13)\n        bar(0.63, 0.63, 0.89, 0.89, 0.15)\n    elseif role == \"quest\" then\n        bar(0.22, 0.54, 0.43, 0.75, 0.16)\n        bar(0.43, 0.75, 0.82, 0.23, 0.16)\n    else\n        ring(0.5, 0.5, 0.39, 0.11)\n        shape(0.5, 0.31, 0.14, 0.14, 0, 0.5)\n        shape(0.5, 0.62, 0.14, 0.3, 0, 0.4)\n    end\n    return holder\nend\n",
+  "buttonEffectsSource": "-- Original reference implementation from 06-ui-motion-and-interaction.md\n-- Reviewed 2026-09-11. Not Roblox Studio runtime-verified.\n\nlocal TweenService = game:GetService(\"TweenService\")\nlocal GuiService = game:GetService(\"GuiService\")\nlocal UserInputService = game:GetService(\"UserInputService\")\nlocal ButtonFeedback = {}\nlocal bound = setmetatable({}, { __mode = \"k\" })\nlocal lastSoundAt = { hover = -math.huge, click = -math.huge }\n\n-- Backward compatible: bind(button, childVisual) or bind(button, options).\n-- Prefer options.visual = the stable button's child Visual frame.\nfunction ButtonFeedback.bind(button, visualOrOptions, options)\n    local visual\n    if typeof(visualOrOptions) == \"Instance\" then\n        visual = visualOrOptions\n        options = options or {}\n    else\n        options = visualOrOptions or {}\n        visual = options.visual or button:FindFirstChild(\"Visual\") or button\n    end\n    assert(button:IsA(\"GuiButton\"), \"expected a GuiButton\")\n    assert(visual:IsA(\"GuiObject\") and (visual == button or visual:IsDescendantOf(button)),\n        \"visual must be a child visual inside the button\")\n    assert(not bound[button], \"button already has a feedback binding\")\n    assert(not visual:FindFirstChildOfClass(\"UIScale\"),\n        \"visual UIScale already has an owner\")\n    local scale = Instance.new(\"UIScale\")\n    scale.Name = \"FeedbackScale\"\n    scale.Parent = visual\n    local alive, focused = true, GuiService.SelectedObject == button\n    local currentTween = nil\n    local shadowTween = nil\n    local connections = {}\n    local sounds = {}\n    local originalAutoColor = button.AutoButtonColor\n    button.AutoButtonColor = false\n    local controller = {}\n    bound[button] = controller\n    local previousState = nil\n    local hoverScale = math.clamp(tonumber(options.hoverScale) or 1.05, 1, 1.1)\n    local pressScale = math.clamp(tonumber(options.pressScale) or 0.95, 0.85, 1)\n    local duration = math.clamp(tonumber(options.duration) or 0.12, 0.06, 0.3)\n    local shadow = options.shadow\n    local shadowPosition = shadow and shadow.Position\n\n    local function soundFor(kind, soundId)\n        if type(soundId) ~= \"string\" or not soundId:match(\"^rbxassetid://%d+$\") then return end\n        local sound = Instance.new(\"Sound\")\n        sound.Name = \"Feedback_\" .. kind\n        sound.SoundId = soundId\n        sound.Volume = math.clamp(tonumber(options.volume) or 0.18, 0, 0.35)\n        sound.Parent = button\n        sounds[kind] = sound\n    end\n    soundFor(\"hover\", options.hoverSound)\n    soundFor(\"click\", options.clickSound)\n\n    local function playSound(kind)\n        if not alive or not button.Interactable or options.sounds == false then return end\n        local sound = sounds[kind]\n        local now = os.clock()\n        local delay = kind == \"hover\" and 0.12 or 0.08\n        if not sound or now - lastSoundAt[kind] < delay then return end\n        lastSoundAt[kind] = now\n        sound.TimePosition = 0\n        sound:Play()\n    end\n\n    local function pointerAvailable()\n        return UserInputService.MouseEnabled\n            and UserInputService:GetLastInputType() ~= Enum.UserInputType.Touch\n    end\n\n    local function refresh()\n        if not alive then return end\n        local state = button.GuiState\n        local target = 1\n        if button.Interactable then\n            if state == Enum.GuiState.Press then\n                target = pressScale\n            elseif (state == Enum.GuiState.Hover and pointerAvailable() and options.hoverEnabled ~= false) or focused then\n                target = hoverScale\n            end\n        end\n        if state == Enum.GuiState.Hover and previousState ~= state and pointerAvailable() and options.hoverEnabled ~= false then\n            playSound(\"hover\")\n        end\n        previousState = state\n        if currentTween then\n            currentTween:Cancel()\n            currentTween = nil\n        end\n        if shadowTween then shadowTween:Cancel() end\n        if GuiService.ReducedMotionEnabled or options.animations == false then\n            scale.Scale = 1\n            if shadow then shadow.Position = shadowPosition end\n            return\n        end\n        currentTween = TweenService:Create(scale,\n            TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),\n            { Scale = target })\n        currentTween:Play()\n        if shadow then\n            local offset = state == Enum.GuiState.Press and -2 or 0\n            shadowTween = TweenService:Create(shadow, TweenInfo.new(duration),\n                { Position = shadowPosition + UDim2.fromOffset(0, offset) })\n            shadowTween:Play()\n        end\n    end\n\n    connections[#connections + 1] = button\n        :GetPropertyChangedSignal(\"GuiState\"):Connect(refresh)\n    connections[#connections + 1] = button\n        :GetPropertyChangedSignal(\"Interactable\"):Connect(refresh)\n    connections[#connections + 1] = button.SelectionGained:Connect(function()\n        focused = true\n        refresh()\n    end)\n    connections[#connections + 1] = button.SelectionLost:Connect(function()\n        focused = false\n        refresh()\n    end)\n    connections[#connections + 1] = GuiService\n        :GetPropertyChangedSignal(\"ReducedMotionEnabled\"):Connect(refresh)\n    connections[#connections + 1] = button.Activated:Connect(function()\n        playSound(\"click\")\n    end)\n\n    function controller:Destroy()\n        if not alive then return end\n        alive = false\n        if currentTween then currentTween:Cancel() end\n        if shadowTween then shadowTween:Cancel() end\n        for _, connection in ipairs(connections) do connection:Disconnect() end\n        for _, sound in pairs(sounds) do sound:Destroy() end\n        bound[button] = nil\n        scale:Destroy()\n        pcall(function() button.AutoButtonColor = originalAutoColor end)\n        if shadow then pcall(function() shadow.Position = shadowPosition end) end\n    end\n    connections[#connections + 1] = button.Destroying:Connect(function()\n        controller:Destroy()\n    end)\n    refresh()\n    return controller\nend\n\nreturn ButtonFeedback\n"
+}

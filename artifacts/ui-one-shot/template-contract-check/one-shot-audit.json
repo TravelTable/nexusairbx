@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "input": {
+    "kind": "template_contract_test",
+    "prompt": "Reuse verified assets to compile the new library template. This is not a fresh one-shot attempt."
+  },
+  "sourceHash": "50c05f2c66746db81b2238d5d1eb3a04d72eabea4fd481e6c1bf0958f3c15636",
+  "originalSourceHash": "50c05f2c66746db81b2238d5d1eb3a04d72eabea4fd481e6c1bf0958f3c15636",
+  "untouched": true,
+  "unattendedPass": false,
+  "failures": [
+    {
+      "gate": "visual",
+      "issues": [
+        "No accepted image-based review."
+      ]
+    }
+  ],
+  "elapsedMs": 82477,
+  "renderedViews": [
+    "desktop",
+    "tablet",
+    "phone",
+    "desktop-settings",
+    "phone-settings",
+    "phone-credits"
+  ],
+  "generationEvidence": {
+    "sourceMode": "library_template",
+    "templateId": "main-menu-v1",
+    "sourceRequests": 0,
+    "sourceRepairRequests": 0
+  },
+  "usage": {
+    "receipts": [],
+    "reportedCostMicros": null,
+    "completeReportedCost": false
+  },
+  "runtimeVerified": false
+}

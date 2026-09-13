@@ -1,0 +1,352 @@
+{
+  "schemaVersion": 1,
+  "input": {
+    "requestId": "sheet-smoke-1789281166088",
+    "prompt": "Build a polished Roblox main menu titled AURORA. Features: Play, Settings, Credits. Settings opens a panel with Music on/off toggle and Volume slider. Credits opens a small panel. Both panels have Close. Desktop and mobile. Rich glossy cyan/cobalt artwork with thick navy edges, warm gold highlights, ornamental corner details and a title plate. Use Gemini-generated matching skins and icons: button skins, panel skin, slider track and handle, toggle on/off pieces and distinct play/settings/credits/close icons. Keep text live and readable. Create only these features; no shop, rewards, currency, ranks or invented game systems. Play closes the menu and fires a clearly named local hook for game integration. Coherent hover and press animation. Native background layout with restrained decoration. Panels must open and close in the actual controller.",
+    "projectId": "proj_e237b4d5b7634cf2a503723f3f8beff7"
+  },
+  "sourceHash": "cb41964a515b80d68c0dd88568e1c5efa2af2b5001a9643697ae2dd1beae9c71",
+  "originalSourceHash": "cb41964a515b80d68c0dd88568e1c5efa2af2b5001a9643697ae2dd1beae9c71",
+  "untouched": true,
+  "unattendedPass": false,
+  "failures": [
+    {
+      "gate": "implementation",
+      "issues": [
+        "Runtime source calls plugin-only GetDebugId; use local instance identifiers.",
+        "Required artwork remains unmet: component_surface is unavailable. Use a native Roblox surface. Required artwork remains unmet..",
+        "Required artwork remains unmet: panel_surface is unavailable. Use a native Roblox surface. Required artwork remains unmet..",
+        "Required artwork remains unmet: icon is unavailable. Use the coherent fallback icon family. Required artwork remains unmet..",
+        "Required artwork remains unmet: toggle_thumb is unavailable. Keep the control functional using native pieces. Required artwork remains unmet..",
+        "Required artwork remains unmet: toggle_on is unavailable. Keep the control functional using native pieces. Required artwork remains unmet..",
+        "Required artwork remains unmet: slider_fill is unavailable. Keep the control functional using native pieces. Required artwork remains unmet..",
+        "Required artwork remains unmet: ornament is unavailable. Omit the unavailable decoration. Required artwork remains unmet..",
+        "Required artwork remains unmet: slider_track is unavailable. Keep the control functional using native pieces. Required artwork remains unmet..",
+        "Required artwork remains unmet: slider_handle is unavailable. Keep the control functional using native pieces. Required artwork remains unmet..",
+        "Required artwork remains unmet: toggle_off is unavailable. Keep the control functional using native pieces. Required artwork remains unmet..",
+        "Implementation missing required element: play_integration_hook.",
+        "Required asset unresolved: button_skin_art.",
+        "Required asset unresolved: panel_skin_art.",
+        "Required asset unresolved: slider_track_art.",
+        "Required asset unresolved: slider_handle_art.",
+        "Required asset unresolved: toggle_on_off_art.",
+        "Required asset unresolved: play_icon.",
+        "Required asset unresolved: settings_icon.",
+        "Required asset unresolved: credits_icon.",
+        "Required asset unresolved: close_icon.",
+        "Required asset unresolved: title_plate_art.",
+        "Required asset unresolved: corner_ornament_art."
+      ]
+    },
+    {
+      "gate": "visual",
+      "issues": [
+        {
+          "previewId": "desktop",
+          "category": "prompt_adherence",
+          "severity": "major",
+          "description": "The required Settings panel and Credits panel states are not shown on desktop or tablet, so the delivered previews do not cover all requested visible states for those form factors.",
+          "nodeIds": [
+            "SettingsPanel",
+            "CreditsPanel"
+          ],
+          "rejectionRule": "required_element_missing"
+        },
+        {
+          "previewId": "tablet",
+          "category": "prompt_adherence",
+          "severity": "major",
+          "description": "Tablet only shows the base menu. Required panel states are missing from the supplied tablet evidence despite tablet being a requested target.",
+          "nodeIds": [
+            "SettingsPanel",
+            "CreditsPanel"
+          ],
+          "rejectionRule": "required_element_missing"
+        },
+        {
+          "previewId": "phone-settings",
+          "category": "layout",
+          "severity": "critical",
+          "description": "The settings modal overhangs the menu frame and creates a cropped, intrusive dark slab across the top area instead of a clean centered panel. This reads as broken overlay composition.",
+          "nodeIds": [
+            "SettingsPanel",
+            "MainMenuRoot"
+          ],
+          "rejectionRule": "overlap"
+        },
+        {
+          "previewId": "phone-settings",
+          "category": "typography",
+          "severity": "critical",
+          "description": "The close button label is visibly clipped to 'los' beside the X, which is a direct text clipping defect on a required control.",
+          "nodeIds": [
+            "SettingsCloseButton"
+          ],
+          "rejectionRule": "text_clipping"
+        },
+        {
+          "previewId": "phone-credits",
+          "category": "typography",
+          "severity": "critical",
+          "description": "The close button label is clipped to 'los' in the credits state as well, repeating the same text clipping defect on a peer control.",
+          "nodeIds": [
+            "CreditsCloseButton"
+          ],
+          "rejectionRule": "text_clipping"
+        },
+        {
+          "previewId": "phone",
+          "category": "density",
+          "severity": "major",
+          "description": "The mobile root frame keeps a large empty block beneath the three buttons, making the screen feel unfinished and leaving accidental dead space inside the primary menu surface.",
+          "nodeIds": [
+            "MainMenuRoot",
+            "PlayButton",
+            "SettingsButton",
+            "CreditsButton"
+          ],
+          "rejectionRule": "accidental_dead_zone"
+        },
+        {
+          "previewId": "phone-settings",
+          "category": "responsiveness",
+          "severity": "major",
+          "description": "The mobile settings panel is not reflowed for phone: the title, close control, labels, toggle, and slider compete in cramped rows, and the panel width pushes awkwardly against the viewport.",
+          "nodeIds": [
+            "SettingsPanel",
+            "SettingsTitle",
+            "SettingsCloseButton",
+            "MusicRow",
+            "VolumeRow",
+            "VolumeSlider"
+          ],
+          "rejectionRule": "missing_mobile_layout"
+        },
+        {
+          "previewId": "phone-credits",
+          "category": "responsiveness",
+          "severity": "major",
+          "description": "The mobile credits panel does not reflow cleanly. The close control crowds the title and the body text sits in a cramped panel while the underlying menu remains partially visible in a distracting way.",
+          "nodeIds": [
+            "CreditsPanel",
+            "CreditsTitle",
+            "CreditsCloseButton",
+            "CreditsBody"
+          ],
+          "rejectionRule": "missing_mobile_layout"
+        },
+        {
+          "previewId": "phone-settings",
+          "category": "alignment",
+          "severity": "major",
+          "description": "The settings header is misaligned: title sits hard left while the oversized close button intrudes into the heading area, breaking the planned top-right pin and clean header geometry.",
+          "nodeIds": [
+            "SettingsTitle",
+            "SettingsCloseButton",
+            "SettingsPanel"
+          ],
+          "rejectionRule": "primary_misalignment"
+        },
+        {
+          "previewId": "phone-credits",
+          "category": "alignment",
+          "severity": "major",
+          "description": "The credits header repeats the same misalignment problem, with the close button crowding the title and not reading as a neatly pinned peer action.",
+          "nodeIds": [
+            "CreditsTitle",
+            "CreditsCloseButton",
+            "CreditsPanel"
+          ],
+          "rejectionRule": "primary_misalignment"
+        },
+        {
+          "previewId": "phone-settings",
+          "category": "components",
+          "severity": "major",
+          "description": "The settings close button is styled and sized like a large segmented tab rather than a compact peer close control, making it feel unrelated to the rest of the action kit.",
+          "nodeIds": [
+            "SettingsCloseButton"
+          ],
+          "rejectionRule": "unrelated_component_styling"
+        },
+        {
+          "previewId": "phone-credits",
+          "category": "components",
+          "severity": "major",
+          "description": "The credits close button has the same unrelated oversized tab treatment, inconsistent with the compact close action specified for both panels.",
+          "nodeIds": [
+            "CreditsCloseButton"
+          ],
+          "rejectionRule": "unrelated_component_styling"
+        },
+        {
+          "previewId": "desktop",
+          "category": "originality",
+          "severity": "minor",
+          "description": "The menu is functional but visually generic relative to the requested glossy ornamental Aurora treatment. It lacks the title plate character, corner detailing, and premium finish promised by the plan.",
+          "nodeIds": [
+            "TitlePlate",
+            "RootCornerOrnaments",
+            "BackgroundDecoration"
+          ],
+          "rejectionRule": "none"
+        },
+        {
+          "previewId": "desktop",
+          "category": "polish",
+          "severity": "major",
+          "description": "The foreground relies on plain rounded rectangles and a simple dark background, so the decorative language is underdeveloped. The requested ornament and title plate richness are absent rather than translated into a cohesive fallback kit.",
+          "nodeIds": [
+            "TitlePlate",
+            "MainMenuRoot",
+            "RootCornerOrnaments",
+            "BackgroundDecoration"
+          ],
+          "rejectionRule": "none"
+        },
+        {
+          "previewId": "phone-settings",
+          "category": "density",
+          "severity": "minor",
+          "description": "The modal body leaves a large empty lower section after the two setting rows, which weakens the compact premium feel and makes the panel seem unfinished.",
+          "nodeIds": [
+            "SettingsPanel",
+            "MusicRow",
+            "VolumeRow"
+          ],
+          "rejectionRule": "none"
+        }
+      ]
+    }
+  ],
+  "elapsedMs": 228443,
+  "renderedViews": [
+    "desktop",
+    "tablet",
+    "phone",
+    "desktop-settings",
+    "phone-settings",
+    "phone-credits"
+  ],
+  "generationEvidence": {
+    "sourceMode": "model",
+    "sourceRequests": 1,
+    "sourceRepairRequests": 0
+  },
+  "usage": {
+    "receipts": [
+      {
+        "model": "openai/gpt-5.4",
+        "usage": {
+          "prompt_tokens": 1955,
+          "completion_tokens": 1849,
+          "total_tokens": 3804,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0
+          }
+        },
+        "reportedCostMicros": null
+      },
+      {
+        "model": "openai/gpt-5.4",
+        "usage": {
+          "prompt_tokens": 9912,
+          "completion_tokens": 9625,
+          "total_tokens": 19537,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0
+          }
+        },
+        "reportedCostMicros": null
+      },
+      {
+        "model": "openai/gpt-5.4",
+        "usage": {
+          "prompt_tokens": 19625,
+          "completion_tokens": 9688,
+          "total_tokens": 29313,
+          "prompt_tokens_details": {
+            "cached_tokens": 8960,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0
+          }
+        },
+        "reportedCostMicros": null
+      },
+      {
+        "model": "openai/gpt-5.4",
+        "usage": {
+          "prompt_tokens": 28825,
+          "completion_tokens": 14545,
+          "total_tokens": 43370,
+          "prompt_tokens_details": {
+            "cached_tokens": 7936,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0
+          }
+        },
+        "reportedCostMicros": null
+      },
+      {
+        "model": "openai/gpt-5.4",
+        "usage": {
+          "prompt_tokens": 18073,
+          "completion_tokens": 1762,
+          "total_tokens": 19835,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0
+          }
+        },
+        "reportedCostMicros": null
+      },
+      {
+        "model": "openai/gpt-5.4",
+        "usage": {
+          "prompt_tokens": 19952,
+          "completion_tokens": 1761,
+          "total_tokens": 21713,
+          "prompt_tokens_details": {
+            "cached_tokens": 17664,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0
+          }
+        },
+        "reportedCostMicros": null
+      }
+    ],
+    "reportedCostMicros": null,
+    "allReceiptsHaveReportedCost": false,
+    "completeRunCost": false
+  },
+  "runtimeVerified": false
+}

@@ -1,0 +1,410 @@
+TAP version 13
+# Subtest: assets come from the scoped library and actual market imports, preserving identity
+ok 1 - assets come from the scoped library and actual market imports, preserving identity
+  ---
+  duration_ms: 17.484
+  ...
+# Subtest: unavailable assets never become invented IDs or block generation
+ok 2 - unavailable assets never become invented IDs or block generation
+  ---
+  duration_ms: 2.4664
+  ...
+# Subtest: auto upload resolves a canonical image to the Roblox asset ID used by generated UI
+ok 3 - auto upload resolves a canonical image to the Roblox asset ID used by generated UI
+  ---
+  duration_ms: 1.9587
+  ...
+# Subtest: auto upload failures retain the Nexus image without inventing a Roblox ID
+ok 4 - auto upload failures retain the Nexus image without inventing a Roblox ID
+  ---
+  duration_ms: 1.2877
+  ...
+# Subtest: Creator Store decal and audio search supplies only real public Roblox IDs to UI generation
+ok 5 - Creator Store decal and audio search supplies only real public Roblox IDs to UI generation
+  ---
+  duration_ms: 1.3736
+  ...
+# Subtest: design asset preparation returns a complete icon family and distinct requirement-bound audio references
+ok 6 - design asset preparation returns a complete icon family and distinct requirement-bound audio references
+  ---
+  duration_ms: 20.2421
+  ...
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'test/vision-model',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'test/vision-model',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'google/gemini-test',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'google/gemini-test',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'test-model',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 2,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'test-model',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'test-model',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'test-model',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'test-model',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'test-model',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 4
+# }
+# Subtest: director extracts requirements before creating a separately validated design plan
+ok 7 - director extracts requirements before creating a separately validated design plan
+  ---
+  duration_ms: 64.9358
+  ...
+# Subtest: director prompt_json path keeps local validation without provider response_format
+ok 8 - director prompt_json path keeps local validation without provider response_format
+  ---
+  duration_ms: 14.2285
+  ...
+# Subtest: director retries an invented requirement with deterministic correction evidence
+ok 9 - director retries an invented requirement with deterministic correction evidence
+  ---
+  duration_ms: 16.0434
+  ...
+# Subtest: ordinary follow-up edits are locked to the requested component and design category
+ok 10 - ordinary follow-up edits are locked to the requested component and design category
+  ---
+  duration_ms: 15.8834
+  ...
+# Subtest: director normalizes out-of-range icon sizes instead of failing planning
+ok 11 - director normalizes out-of-range icon sizes instead of failing planning
+  ---
+  duration_ms: 13.1951
+  ...
+# Subtest: approved project icons are reused only when the complete family metadata matches
+ok 12 - approved project icons are reused only when the complete family metadata matches
+  ---
+  duration_ms: 8.9962
+  ...
+# Subtest: one missing peer replaces the entire screen icon set with one procedural family
+ok 13 - one missing peer replaces the entire screen icon set with one procedural family
+  ---
+  duration_ms: 4.0655
+  ...
+# Subtest: generated artwork with mismatched family metadata cannot leak into the UI
+ok 14 - generated artwork with mismatched family metadata cannot leak into the UI
+  ---
+  duration_ms: 2.9984
+  ...
+# Subtest: consistency validator rejects padding, scale, family and perspective drift
+ok 15 - consistency validator rejects padding, scale, family and perspective drift
+  ---
+  duration_ms: 0.7126
+  ...
+# ui_contract_validated {
+#   name: 'ui_visual_review',
+#   model: 'google/gemini-2.5-flash',
+#   schemaHash: '8fb842148c670354',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_visual_review',
+#   model: 'test-model',
+#   schemaHash: '0454e21de41f27ec',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_visual_review',
+#   model: 'test-model',
+#   schemaHash: 'ac50a9cd35be8785',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_visual_review',
+#   model: 'vision',
+#   schemaHash: '3591243efed2c80f',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# Subtest: review requires a bounded image-bound schema and never passes truncated JSON
+ok 16 - review requires a bounded image-bound schema and never passes truncated JSON
+  ---
+  duration_ms: 53.5111
+  ...
+# Subtest: recapture waits until the new revision has rendered images before the next review
+ok 17 - recapture waits until the new revision has rendered images before the next review
+  ---
+  duration_ms: 3.4032
+  ...
+# Subtest: UiVisualReviewService recapture polls capture then waits for new-revision renders
+ok 18 - UiVisualReviewService recapture polls capture then waits for new-revision renders
+  ---
+  duration_ms: 10.3129
+  ...
+# Subtest: a recapture that does not produce images stays awaiting_preview
+ok 19 - a recapture that does not produce images stays awaiting_preview
+  ---
+  duration_ms: 4.7168
+  ...
+# Subtest: a mediocre first render triggers bounded repair even without a major isolated issue
+ok 20 - a mediocre first render triggers bounded repair even without a major isolated issue
+  ---
+  duration_ms: 2.0747
+  ...
+# Subtest: critic receives requirement lock, design plan, component metadata, icons and actual image bytes
+ok 21 - critic receives requirement lock, design plan, component metadata, icons and actual image bytes
+  ---
+  duration_ms: 3.0849
+  ...
+# Subtest: missing image bytes or a requested phone render cannot be treated as a visual pass
+ok 22 - missing image bytes or a requested phone render cannot be treated as a visual pass
+  ---
+  duration_ms: 8.8551
+  ...
+# Subtest: unsupported vision and unavailable capability metadata fail honestly
+ok 23 - unsupported vision and unavailable capability metadata fail honestly
+  ---
+  duration_ms: 0.8518
+  ...
+# Subtest: renderer limitations and superseded revisions do not pass or request design repair
+ok 24 - renderer limitations and superseded revisions do not pass or request design repair
+  ---
+  duration_ms: 2.3676
+  ...
+# Subtest: atomically grants only one lease for concurrent idempotent reservations
+ok 25 - atomically grants only one lease for concurrent idempotent reservations
+  ---
+  duration_ms: 5.5534
+  ...
+# Subtest: fences an expired executing lease as outcome unknown before any retry
+ok 26 - fences an expired executing lease as outcome unknown before any retry
+  ---
+  duration_ms: 3.185
+  ...
+# Subtest: settles the exact owner-scoped provider operation once when Roblox completes
+ok 27 - settles the exact owner-scoped provider operation once when Roblox completes
+  ---
+  duration_ms: 3.5884
+  ...
+# Subtest: rejects an exact provider operation linked to a different canonical asset
+ok 28 - rejects an exact provider operation linked to a different canonical asset
+  ---
+  duration_ms: 0.6189
+  ...
+# Subtest: rejects corrupt cross-owner operation data within the authenticated owner path
+ok 29 - rejects corrupt cross-owner operation data within the authenticated owner path
+  ---
+  duration_ms: 0.6153
+  ...
+# Subtest: does not steal settlement from an actively leased publish worker
+ok 30 - does not steal settlement from an actively leased publish worker
+  ---
+  duration_ms: 3.0715
+  ...
+# Subtest: never downgrades an already successful operation from a stale provider response
+ok 31 - never downgrades an already successful operation from a stale provider response
+  ---
+  duration_ms: 0.5658
+  ...
+# Subtest: only trusted UI artwork can bypass image retirement and gets the dedicated quality route
+ok 32 - only trusted UI artwork can bypass image retirement and gets the dedicated quality route
+  ---
+  duration_ms: 19.066
+  ...
+# Subtest: rejects an incompatible contract and caller authority conflicts before invoking services
+ok 33 - rejects an incompatible contract and caller authority conflicts before invoking services
+  ---
+  duration_ms: 3.8519
+  ...
+# Subtest: rejects audio and model generation before creating records or invoking the image provider
+    # Subtest: audio
+    ok 1 - audio
+      ---
+      duration_ms: 1.1586
+      ...
+    # Subtest: model
+    ok 2 - model
+      ---
+      duration_ms: 0.7417
+      ...
+    1..2
+ok 34 - rejects audio and model generation before creating records or invoking the image provider
+  ---
+  duration_ms: 2.6061
+  ...
+# Subtest: generate_asset persists the validated version and returns the exact durable identities
+ok 35 - generate_asset persists the validated version and returns the exact durable identities
+  ---
+  duration_ms: 1.5332
+  ...
+# Subtest: generate_asset records validation failures in the recoverable validation lifecycle
+ok 36 - generate_asset records validation failures in the recoverable validation lifecycle
+  ---
+  duration_ms: 5.1306
+  ...
+# Subtest: opaque and non-applicable generation modes do not request transparent output
+    # Subtest: solid
+    ok 1 - solid
+      ---
+      duration_ms: 2.2952
+      ...
+    # Subtest: gradient
+    ok 2 - gradient
+      ---
+      duration_ms: 1.8367
+      ...
+    # Subtest: not_applicable
+    ok 3 - not_applicable
+      ---
+      duration_ms: 1.1482
+      ...
+    1..3
+ok 37 - opaque and non-applicable generation modes do not request transparent output
+  ---
+  duration_ms: 7.4738
+  ...
+# Subtest: generate_asset_pack is retired in favor of Icons market imports
+ok 38 - generate_asset_pack is retired in favor of Icons market imports
+  ---
+  duration_ms: 0.465
+  ...
+# Subtest: generate_asset_pack extension path is retired
+ok 39 - generate_asset_pack extension path is retired
+  ---
+  duration_ms: 0.5803
+  ...
+# Subtest: generate_asset_pack rejects retired pack mutations
+ok 40 - generate_asset_pack rejects retired pack mutations
+  ---
+  duration_ms: 0.3302
+  ...
+# Subtest: publish keeps the task operation identity separate from the Roblox provider operation
+ok 41 - publish keeps the task operation identity separate from the Roblox provider operation
+  ---
+  duration_ms: 0.6826
+  ...
+# Subtest: upload status remains nonterminal while Roblox processes and becomes verified only with an exact ID
+ok 42 - upload status remains nonterminal while Roblox processes and becomes verified only with an exact ID
+  ---
+  duration_ms: 2.2135
+  ...
+# Subtest: Studio implementation and verification preserve the exact trusted Roblox asset reference
+ok 43 - Studio implementation and verification preserve the exact trusted Roblox asset reference
+  ---
+  duration_ms: 2.9373
+  ...
+# Subtest: pending Studio readback is persisted and not reported as verified
+ok 44 - pending Studio readback is persisted and not reported as verified
+  ---
+  duration_ms: 0.4363
+  ...
+# Subtest: Studio verification cannot attribute a trusted command receipt to another asset
+ok 45 - Studio verification cannot attribute a trusted command receipt to another asset
+  ---
+  duration_ms: 1.6757
+  ...
+# Subtest: Studio verification records usage against the asset in the trusted receipt
+ok 46 - Studio verification records usage against the asset in the trusted receipt
+  ---
+  duration_ms: 0.6659
+  ...
+# Subtest: monetization persistence propagates registry outages instead of creating duplicate records
+ok 47 - monetization persistence propagates registry outages instead of creating duplicate records
+  ---
+  duration_ms: 0.6723
+  ...
+# Subtest: monetization tools resolve creator authority and delegate the trusted icon bytes with readback
+    # Subtest: create_game_pass
+    ok 1 - create_game_pass
+      ---
+      duration_ms: 2.283
+      ...
+    # Subtest: create_developer_product
+    ok 2 - create_developer_product
+      ---
+      duration_ms: 0.7673
+      ...
+    # Subtest: update_game_pass
+    ok 3 - update_game_pass
+      ---
+      duration_ms: 0.9058
+      ...
+    # Subtest: update_developer_product
+    ok 4 - update_developer_product
+      ---
+      duration_ms: 0.754
+      ...
+    1..4
+ok 48 - monetization tools resolve creator authority and delegate the trusted icon bytes with readback
+  ---
+  duration_ms: 6.8332
+  ...
+1..48
+# tests 57
+# suites 0
+# pass 57
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 442.4424

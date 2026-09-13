@@ -1,0 +1,628 @@
+[
+  [
+    "4fb186ff30517d70a974782f9af49f343c5cdf6611ada3e1ef0d53b93d915c5b",
+    {
+      "asset": {
+        "id": "asset_9e994f8530f6453ab5638745ab063131",
+        "schemaVersion": 3,
+        "assetId": "asset_9e994f8530f6453ab5638745ab063131",
+        "projectId": "proj_e237b4d5b7634cf2a503723f3f8beff7",
+        "sourceProjectId": "proj_e237b4d5b7634cf2a503723f3f8beff7",
+        "universeId": null,
+        "placeId": null,
+        "placeIds": [],
+        "creatorId": null,
+        "creatorType": null,
+        "robloxOwner": null,
+        "robloxCreator": null,
+        "robloxCreatorId": null,
+        "robloxCreatorType": null,
+        "kind": "image",
+        "assetType": "image",
+        "artworkMode": "not_artwork",
+        "backgroundMode": "not_applicable",
+        "visibility": "project",
+        "name": "UI control_artwork",
+        "displayName": "UI control_artwork",
+        "description": "",
+        "originalUserRequest": "Build a polished Roblox main menu titled AURORA. Features: Play, Settings, Credits. Settings opens a panel with Music on/off toggle and Volume slider. Credits opens a small panel. Both panels have Close. Desktop and mobile. Rich glossy cyan/cobalt artwork with thick navy edges, warm gold highlights, ornamental corner details and a title plate. Use Gemini-generated matching skins and icons: button skins, panel skin, slider track and handle, toggle on/off pieces and distinct play/settings/credits/close icons. Keep text live and readable. Create only these features; no shop, rewards, currency, ranks or invented game systems. Play closes the menu and fires a clearly named local hook for game integration. Coherent hover and press animation. Native background layout with restrained decoration. Panels must open and close in the actual controller.",
+        "promptSummary": "Create a production-quality Roblox game UI asset sheet at 4K resolution. Art direction: Premium fantasy-tech main menu centered on a glossy title plate and a single dominant Play call-to-action, using a controlled cyan-to-cobalt palette with thick navy framing and restrained gold edge highlights. Artwork should feel polished and dimensional without clutter: Gemini-generated 9-slice skins for primary buttons and panels, matching ornamental corner pieces used sparingly, and a clean native darkened background field so the interface reads immediately. Text remains fully live, bright, and crisp over painted surfaces. The Settings panel uses the same ornate family but in a practical layout with a readable music toggle row and a distinct volume slider track/handle set. The Credits panel is smaller and quieter, visually subordinate to the main menu. Overall mood is premium, glossy, readable, and game-ready rather than overloaded..\nShared palette: {\"primary\":\"#3CCBFF\",\"secondary\":\"#2A67D8\",\"accent\":\"#E7B95A\",\"success\":\"#53D6B3\",\"danger\":\"#D96A6A\",\"neutralBackground\":\"#091423\",\"neutralSurface\":\"#12304D\",\"textPrimary\":\"#F4FBFF\",\"textSecondary\":\"#B8D4E8\",\"outline\":\"#0A2340\",\"shadow\":\"#06101C\"}. Outlines: Thick navy outer strokes on painted controls and panels, with selective inner gold highlight lines on title plate and primary button. Native text itself is not outlined heavily; emphasis comes from contrast, weight, and controlled shadow. Use UIStroke for native supporting frames where artwork is absent..\nExactly 2 columns and 2 rows, 4 separate assets, in reading order. Equal invisible cells. Every asset has equal visual importance: no hero item, merged cells, duplicate asset, extra variant or collage layout. Never draw grid lines, labels or slot numbers. Leave unused cells empty.\nCell 1: control_artwork, One horizontal illuminated slider fill strip only; no housing, thumb or handle.. Preserve natural proportions and all silhouette details.\nCell 2: control_artwork, One horizontal empty slider housing/track only; no fill, thumb or handle.. Preserve natural proportions and all silhouette details.\nCell 3: separator, separator slim ornamental divider matching gold-highlighted panel family. Preserve natural proportions and all silhouette details.\nCell 4: ornament, ornament Gemini-generated corner filigree in cyan/cobalt with gold ticks, placed faintly in screen corners only. Preserve natural proportions and all silhouette details.\nEvery asset centered in its cell with at least 8 percent empty margin on EVERY side. Everything outside each asset, including enclosed holes, must be perfectly uniform #00FF00. Never use that chroma color in the artwork. No checkerboard, background gradient, scenery, external cast shadows, ambient glow or haze. Narrow clean antialiased edges.\nConsistent lighting, material, outline weight and visual family. No text, letters, numbers, logos or watermarks. Do not invent extra objects. Separate controls and decorations must never touch.",
+        "generationPrompt": "Create a production-quality Roblox game UI asset sheet at 4K resolution. Art direction: Premium fantasy-tech main menu centered on a glossy title plate and a single dominant Play call-to-action, using a controlled cyan-to-cobalt palette with thick navy framing and restrained gold edge highlights. Artwork should feel polished and dimensional without clutter: Gemini-generated 9-slice skins for primary buttons and panels, matching ornamental corner pieces used sparingly, and a clean native darkened background field so the interface reads immediately. Text remains fully live, bright, and crisp over painted surfaces. The Settings panel uses the same ornate family but in a practical layout with a readable music toggle row and a distinct volume slider track/handle set. The Credits panel is smaller and quieter, visually subordinate to the main menu. Overall mood is premium, glossy, readable, and game-ready rather than overloaded..\nShared palette: {\"primary\":\"#3CCBFF\",\"secondary\":\"#2A67D8\",\"accent\":\"#E7B95A\",\"success\":\"#53D6B3\",\"danger\":\"#D96A6A\",\"neutralBackground\":\"#091423\",\"neutralSurface\":\"#12304D\",\"textPrimary\":\"#F4FBFF\",\"textSecondary\":\"#B8D4E8\",\"outline\":\"#0A2340\",\"shadow\":\"#06101C\"}. Outlines: Thick navy outer strokes on painted controls and panels, with selective inner gold highlight lines on title plate and primary button. Native text itself is not outlined heavily; emphasis comes from contrast, weight, and controlled shadow. Use UIStroke for native supporting frames where artwork is absent..\nExactly 2 columns and 2 rows, 4 separate assets, in reading order. Equal invisible cells. Every asset has equal visual importance: no hero item, merged cells, duplicate asset, extra variant or collage layout. Never draw grid lines, labels or slot numbers. Leave unused cells empty.\nCell 1: control_artwork, One horizontal illuminated slider fill strip only; no housing, thumb or handle.. Preserve natural proportions and all silhouette details.\nCell 2: control_artwork, One horizontal empty slider housing/track only; no fill, thumb or handle.. Preserve natural proportions and all silhouette details.\nCell 3: separator, separator slim ornamental divider matching gold-highlighted panel family. Preserve natural proportions and all silhouette details.\nCell 4: ornament, ornament Gemini-generated corner filigree in cyan/cobalt with gold ticks, placed faintly in screen corners only. Preserve natural proportions and all silhouette details.\nEvery asset centered in its cell with at least 8 percent empty margin on EVERY side. Everything outside each asset, including enclosed holes, must be perfectly uniform #00FF00. Never use that chroma color in the artwork. No checkerboard, background gradient, scenery, external cast shadows, ambient glow or haze. Narrow clean antialiased edges.\nConsistent lighting, material, outline weight and visual family. No text, letters, numbers, logos or watermarks. Do not invent extra objects. Separate controls and decorations must never touch.",
+        "generationProvider": "vercel-gemini-ui-sheet",
+        "generationModel": "google/gemini-3.1-flash-image",
+        "generationUse": "ui_artwork",
+        "negativePrompt": "",
+        "tags": [],
+        "colorPalette": [],
+        "semanticTerms": [
+          "UI control_artwork"
+        ],
+        "packId": null,
+        "relatedAssetPackId": null,
+        "parentAssetId": null,
+        "variationIndex": null,
+        "styleProfileId": null,
+        "approvedReferenceAssetIds": [],
+        "conversationId": null,
+        "upload": {
+          "status": "not_started",
+          "operationId": null
+        },
+        "uploadStatus": "not_started",
+        "robloxOperationId": null,
+        "moderation": {
+          "state": "not_submitted",
+          "checkedAt": null,
+          "responseCode": null
+        },
+        "moderationStatus": "not_submitted",
+        "replacement": {
+          "replacesAssetId": null,
+          "replacedByAssetId": null,
+          "verified": false
+        },
+        "sourceFile": null,
+        "processedFile": null,
+        "fileFormat": null,
+        "mimeType": null,
+        "width": null,
+        "height": null,
+        "hasTransparency": null,
+        "fileSize": null,
+        "robloxAssetId": null,
+        "robloxExternalObjectId": null,
+        "studioReference": null,
+        "usage": [],
+        "studioImplementationLocations": [],
+        "studioImplementationReceipts": [],
+        "projectAssociations": [
+          {
+            "projectId": "proj_e237b4d5b7634cf2a503723f3f8beff7",
+            "universeId": null,
+            "source": "created",
+            "attachedAt": 1789247854317
+          }
+        ],
+        "failure": null,
+        "lastUsedAt": null,
+        "createdAt": 1789247854317,
+        "generationOperationId": "op_943a1c64608134d9eec72bca71f37560",
+        "generationStartedAt": 1789247855508,
+        "generationCompletedAt": 1789247856875,
+        "style": {
+          "artworkMetadata": {
+            "componentIds": [
+              "cmp_volume_slider"
+            ],
+            "controlPart": "slider_fill",
+            "generationUse": "ui_artwork",
+            "nodeNames": [
+              "VolumeSliderFill"
+            ],
+            "processingVersion": 3,
+            "renderStrategy": "image_fit",
+            "required": true,
+            "requirementIds": [
+              "art_slider_track_handle"
+            ],
+            "role": "control_artwork",
+            "scaleType": "Fit",
+            "schemaVersion": 1,
+            "semanticRole": "",
+            "sheetId": "83c7fd812b983584994a2b8846c6f0dec4a6401cb4d98128028b85852d403f33",
+            "slot": 0,
+            "styleFingerprint": "4fb186ff30517d70a974782f9af49f343c5cdf6611ada3e1ef0d53b93d915c5b",
+            "tintable": false,
+            "width": 1024,
+            "height": 117
+          }
+        },
+        "validationStartedAt": 1789247858011,
+        "generation": {
+          "status": "not_started",
+          "attempts": 0,
+          "createdAt": 1789247861972,
+          "provider": "vercel-gemini-ui-sheet",
+          "model": "google/gemini-3.1-flash-image",
+          "revisedPrompt": "Create a production-quality Roblox game UI asset sheet at 4K resolution. Art direction: Premium fantasy-tech main menu centered on a glossy title plate and a single dominant Play call-to-action, using a controlled cyan-to-cobalt palette with thick navy framing and restrained gold edge highlights. Artwork should feel polished and dimensional without clutter: Gemini-generated 9-slice skins for primary buttons and panels, matching ornamental corner pieces used sparingly, and a clean native darkened background field so the interface reads immediately. Text remains fully live, bright, and crisp over painted surfaces. The Settings panel uses the same ornate family but in a practical layout with a readable music toggle row and a distinct volume slider track/handle set. The Credits panel is smaller and quieter, visually subordinate to the main menu. Overall mood is premium, glossy, readable, and game-ready rather than overloaded..\nShared palette: {\"primary\":\"#3CCBFF\",\"secondary\":\"#2A67D8\",\"accent\":\"#E7B95A\",\"success\":\"#53D6B3\",\"danger\":\"#D96A6A\",\"neutralBackground\":\"#091423\",\"neutralSurface\":\"#12304D\",\"textPrimary\":\"#F4FBFF\",\"textSecondary\":\"#B8D4E8\",\"outline\":\"#0A2340\",\"shadow\":\"#06101C\"}. Outlines: Thick navy outer strokes on painted controls and panels, with selective inner gold highlight lines on title plate and primary button. Native text itself is not outlined heavily; emphasis comes from contrast, weight, and controlled shadow. Use UIStroke for native supporting frames where artwork is absent..\nExactly 2 columns and 2 rows, 4 separate assets, in reading order. Equal invisible cells. Every asset has equal visual importance: no hero item, merged cells, duplicate asset, extra variant or collage layout. Never draw grid lines, labels or slot numbers. Leave unused cells empty.\nCell 1: control_artwork, One horizontal illuminated slider fill strip only; no housing, thumb or handle.. Preserve natural proportions and all silhouette details.\nCell 2: control_artwork, One horizontal empty slider housing/track only; no fill, thumb or handle.. Preserve natural proportions and all silhouette details.\nCell 3: separator, separator slim ornamental divider matching gold-highlighted panel family. Preserve natural proportions and all silhouette details.\nCell 4: ornament, ornament Gemini-generated corner filigree in cyan/cobalt with gold ticks, placed faintly in screen corners only. Preserve natural proportions and all silhouette details.\nEvery asset centered in its cell with at least 8 percent empty margin on EVERY side. Everything outside each asset, including enclosed holes, must be perfectly uniform #00FF00. Never use that chroma color in the artwork. No checkerboard, background gradient, scenery, external cast shadows, ambient glow or haze. Narrow clean antialiased edges.\nConsistent lighting, material, outline weight and visual family. No text, letters, numbers, logos or watermarks. Do not invent extra objects. Separate controls and decorations must never touch. Shared visual specification: artworkMetadata: [object Object].",
+          "prompt": "Create a production-quality Roblox game UI asset sheet at 4K resolution. Art direction: Premium fantasy-tech main menu centered on a glossy title plate and a single dominant Play call-to-action, using a controlled cyan-to-cobalt palette with thick navy framing and restrained gold edge highlights. Artwork should feel polished and dimensional without clutter: Gemini-generated 9-slice skins for primary buttons and panels, matching ornamental corner pieces used sparingly, and a clean native darkened background field so the interface reads immediately. Text remains fully live, bright, and crisp over painted surfaces. The Settings panel uses the same ornate family but in a practical layout with a readable music toggle row and a distinct volume slider track/handle set. The Credits panel is smaller and quieter, visually subordinate to the main menu. Overall mood is premium, glossy, readable, and game-ready rather than overloaded..\nShared palette: {\"primary\":\"#3CCBFF\",\"secondary\":\"#2A67D8\",\"accent\":\"#E7B95A\",\"success\":\"#53D6B3\",\"danger\":\"#D96A6A\",\"neutralBackground\":\"#091423\",\"neutralSurface\":\"#12304D\",\"textPrimary\":\"#F4FBFF\",\"textSecondary\":\"#B8D4E8\",\"outline\":\"#0A2340\",\"shadow\":\"#06101C\"}. Outlines: Thick navy outer strokes on painted controls and panels, with selective inner gold highlight lines on title plate and primary button. Native text itself is not outlined heavily; emphasis comes from contrast, weight, and controlled shadow. Use UIStroke for native supporting frames where artwork is absent..\nExactly 2 columns and 2 rows, 4 separate assets, in reading order. Equal invisible cells. Every asset has equal visual importance: no hero item, merged cells, duplicate asset, extra variant or collage layout. Never draw grid lines, labels or slot numbers. Leave unused cells empty.\nCell 1: control_artwork, One horizontal illuminated slider fill strip only; no housing, thumb or handle.. Preserve natural proportions and all silhouette details.\nCell 2: control_artwork, One horizontal empty slider housing/track only; no fill, thumb or handle.. Preserve natural proportions and all silhouette details.\nCell 3: separator, separator slim ornamental divider matching gold-highlighted panel family. Preserve natural proportions and all silhouette details.\nCell 4: ornament, ornament Gemini-generated corner filigree in cyan/cobalt with gold ticks, placed faintly in screen corners only. Preserve natural proportions and all silhouette details.\nEvery asset centered in its cell with at least 8 percent empty margin on EVERY side. Everything outside each asset, including enclosed holes, must be perfectly uniform #00FF00. Never use that chroma color in the artwork. No checkerboard, background gradient, scenery, external cast shadows, ambient glow or haze. Narrow clean antialiased edges.\nConsistent lighting, material, outline weight and visual family. No text, letters, numbers, logos or watermarks. Do not invent extra objects. Separate controls and decorations must never touch.",
+          "policy": {
+            "reusedSource": true,
+            "generationUse": "ui_artwork",
+            "sheetId": "83c7fd812b983584994a2b8846c6f0dec4a6401cb4d98128028b85852d403f33",
+            "slot": 0,
+            "source": {
+              "bytes": 35160158,
+              "contentType": "image/png"
+            },
+            "sheetUsage": {},
+            "crop": {
+              "top": 635,
+              "left": 183,
+              "width": 2385,
+              "height": 256
+            },
+            "elapsedMs": 0,
+            "sharedGeneration": true
+          }
+        },
+        "approval": {
+          "mode": "automatic_quality_gate",
+          "approvedAt": 1789247862246,
+          "status": "approved"
+        },
+        "currentVersionId": "version_802abd451345492ba5026d343cb9fb73",
+        "files": {
+          "preview": {
+            "hasTransparency": null,
+            "filename": "asset_9e994f8530f6453ab5638745ab063131.webp",
+            "role": "preview",
+            "size": 1638,
+            "format": "webp",
+            "width": 256,
+            "contentType": "image/webp",
+            "height": 29
+          },
+          "roblox_ready": {
+            "hasTransparency": null,
+            "filename": "asset_9e994f8530f6453ab5638745ab063131.png",
+            "role": "roblox_ready",
+            "size": 229522,
+            "format": "png",
+            "width": 1024,
+            "contentType": "image/png",
+            "height": 117
+          },
+          "master": {
+            "hasTransparency": null,
+            "filename": "asset_9e994f8530f6453ab5638745ab063131.png",
+            "role": "master",
+            "size": 229522,
+            "format": "png",
+            "width": 1024,
+            "contentType": "image/png",
+            "height": 117
+          }
+        },
+        "validation": {
+          "reportVersion": null,
+          "checkedAt": 1789247861972,
+          "report": {
+            "reviewPending": true,
+            "schemaVersion": 1,
+            "checks": {
+              "padding": {
+                "passed": true,
+                "value": "aspect_preserved"
+              },
+              "centerFill": {
+                "passed": true,
+                "value": 1
+              },
+              "slice": {
+                "passed": true,
+                "value": null
+              },
+              "alpha": {
+                "expectation": "actual_exterior_alpha",
+                "passed": true,
+                "value": {
+                  "partialRatio": 0.0235,
+                  "ratio": 0.1052
+                }
+              },
+              "concept": {
+                "note": "Concept adherence is not inferred from pixels by a deterministic validator.",
+                "passed": null,
+                "status": "review_required"
+              },
+              "text": {
+                "note": "Text detection requires model or human review; the generator prompt prohibits text.",
+                "passed": null,
+                "status": "not_claimed"
+              },
+              "centering": {
+                "passed": true,
+                "value": "trimmed_subject_centered"
+              },
+              "halo": {
+                "note": "Chroma fringe check; neutral antialiased edges are allowed.",
+                "passed": true,
+                "value": 0
+              },
+              "legibility": {
+                "note": "Nonempty geometry only; thin decorations are allowed. Visual legibility requires preview review.",
+                "passed": true,
+                "value": {
+                  "width": 1016,
+                  "x": 4,
+                  "y": 4,
+                  "height": 109
+                }
+              },
+              "corruption": {
+                "passed": true,
+                "value": "decoded"
+              },
+              "crop": {
+                "passed": true,
+                "value": "complete_subject_preserved"
+              },
+              "dimensions": {
+                "passed": true,
+                "value": "1024x117"
+              }
+            },
+            "fileValidation": {
+              "valid": true,
+              "checkedAt": 1789247859282,
+              "ruleVersion": 2,
+              "warnings": [],
+              "errorCode": null,
+              "detected": {
+                "hasTransparency": true,
+                "pixels": 119808,
+                "bytes": 229522,
+                "kind": "image",
+                "transparentPixelRatio": 0.1186771716101695,
+                "format": "png",
+                "width": 1024,
+                "transparentEdgeRatio": 1,
+                "declaredMimeType": "image/png",
+                "mimeType": "image/png",
+                "height": 117
+              },
+              "duplicate": null,
+              "issues": [],
+              "contentHash": "f0f46347bca42c69d249239d263dcb56554e00b5d57792a39c37c4f7a9ae2163"
+            },
+            "signature": {
+              "meanRgb": [
+                48,
+                116,
+                147
+              ],
+              "occupancy": 0.9077,
+              "contentAspect": 9.3211,
+              "centerOffset": 0.0089
+            },
+            "blocking": [],
+            "imageHash": "df5e752c24a446f0cfd5e6411dad30257ff38f7dabdfd0560bdac8ebbfa1c7db",
+            "passed": true,
+            "reviewRequired": [
+              "text",
+              "concept"
+            ]
+          },
+          "status": "passed"
+        },
+        "lifecycle": "ready_to_publish",
+        "validationCompletedAt": 1789247863784,
+        "updatedAt": 1789247864902,
+        "readyToPublishAt": 1789247864902
+      }
+    }
+  ],
+  [
+    "f49671f11f2d28eef96e6eac6fca82bf3e52d925627ba583c49327d9f270f14b",
+    {
+      "asset": {
+        "id": "asset_79bb3b0df17842cea10bd7587e19e992",
+        "schemaVersion": 3,
+        "assetId": "asset_79bb3b0df17842cea10bd7587e19e992",
+        "projectId": "proj_e237b4d5b7634cf2a503723f3f8beff7",
+        "sourceProjectId": "proj_e237b4d5b7634cf2a503723f3f8beff7",
+        "universeId": null,
+        "placeId": null,
+        "placeIds": [],
+        "creatorId": null,
+        "creatorType": null,
+        "robloxOwner": null,
+        "robloxCreator": null,
+        "robloxCreatorId": null,
+        "robloxCreatorType": null,
+        "kind": "image",
+        "assetType": "image",
+        "artworkMode": "not_artwork",
+        "backgroundMode": "not_applicable",
+        "visibility": "project",
+        "name": "UI control_artwork",
+        "displayName": "UI control_artwork",
+        "description": "",
+        "originalUserRequest": "Build a polished Roblox main menu titled AURORA. Features: Play, Settings, Credits. Settings opens a panel with Music on/off toggle and Volume slider. Credits opens a small panel. Both panels have Close. Desktop and mobile. Rich glossy cyan/cobalt artwork with thick navy edges, warm gold highlights, ornamental corner details and a title plate. Use Gemini-generated matching skins and icons: button skins, panel skin, slider track and handle, toggle on/off pieces and distinct play/settings/credits/close icons. Keep text live and readable. Create only these features; no shop, rewards, currency, ranks or invented game systems. Play closes the menu and fires a clearly named local hook for game integration. Coherent hover and press animation. Native background layout with restrained decoration. Panels must open and close in the actual controller.",
+        "promptSummary": "Create a production-quality Roblox game UI asset sheet at 4K resolution. Art direction: Premium fantasy-tech main menu centered on a glossy title plate and a single dominant Play call-to-action, using a controlled cyan-to-cobalt palette with thick navy framing and restrained gold edge highlights. Artwork should feel polished and dimensional without clutter: Gemini-generated 9-slice skins for primary buttons and panels, matching ornamental corner pieces used sparingly, and a clean native darkened background field so the interface reads immediately. Text remains fully live, bright, and crisp over painted surfaces. The Settings panel uses the same ornate family but in a practical layout with a readable music toggle row and a distinct volume slider track/handle set. The Credits panel is smaller and quieter, visually subordinate to the main menu. Overall mood is premium, glossy, readable, and game-ready rather than overloaded..\nShared palette: {\"primary\":\"#3CCBFF\",\"secondary\":\"#2A67D8\",\"accent\":\"#E7B95A\",\"success\":\"#53D6B3\",\"danger\":\"#D96A6A\",\"neutralBackground\":\"#091423\",\"neutralSurface\":\"#12304D\",\"textPrimary\":\"#F4FBFF\",\"textSecondary\":\"#B8D4E8\",\"outline\":\"#0A2340\",\"shadow\":\"#06101C\"}. Outlines: Thick navy outer strokes on painted controls and panels, with selective inner gold highlight lines on title plate and primary button. Native text itself is not outlined heavily; emphasis comes from contrast, weight, and controlled shadow. Use UIStroke for native supporting frames where artwork is absent..\nExactly 2 columns and 2 rows, 4 separate assets, in reading order. Equal invisible cells. Every asset has equal visual importance: no hero item, merged cells, duplicate asset, extra variant or collage layout. Never draw grid lines, labels or slot numbers. Leave unused cells empty.\nCell 1: control_artwork, One horizontal illuminated slider fill strip only; no housing, thumb or handle.. Preserve natural proportions and all silhouette details.\nCell 2: control_artwork, One horizontal empty slider housing/track only; no fill, thumb or handle.. Preserve natural proportions and all silhouette details.\nCell 3: separator, separator slim ornamental divider matching gold-highlighted panel family. Preserve natural proportions and all silhouette details.\nCell 4: ornament, ornament Gemini-generated corner filigree in cyan/cobalt with gold ticks, placed faintly in screen corners only. Preserve natural proportions and all silhouette details.\nEvery asset centered in its cell with at least 8 percent empty margin on EVERY side. Everything outside each asset, including enclosed holes, must be perfectly uniform #00FF00. Never use that chroma color in the artwork. No checkerboard, background gradient, scenery, external cast shadows, ambient glow or haze. Narrow clean antialiased edges.\nConsistent lighting, material, outline weight and visual family. No text, letters, numbers, logos or watermarks. Do not invent extra objects. Separate controls and decorations must never touch.",
+        "generationPrompt": "Create a production-quality Roblox game UI asset sheet at 4K resolution. Art direction: Premium fantasy-tech main menu centered on a glossy title plate and a single dominant Play call-to-action, using a controlled cyan-to-cobalt palette with thick navy framing and restrained gold edge highlights. Artwork should feel polished and dimensional without clutter: Gemini-generated 9-slice skins for primary buttons and panels, matching ornamental corner pieces used sparingly, and a clean native darkened background field so the interface reads immediately. Text remains fully live, bright, and crisp over painted surfaces. The Settings panel uses the same ornate family but in a practical layout with a readable music toggle row and a distinct volume slider track/handle set. The Credits panel is smaller and quieter, visually subordinate to the main menu. Overall mood is premium, glossy, readable, and game-ready rather than overloaded..\nShared palette: {\"primary\":\"#3CCBFF\",\"secondary\":\"#2A67D8\",\"accent\":\"#E7B95A\",\"success\":\"#53D6B3\",\"danger\":\"#D96A6A\",\"neutralBackground\":\"#091423\",\"neutralSurface\":\"#12304D\",\"textPrimary\":\"#F4FBFF\",\"textSecondary\":\"#B8D4E8\",\"outline\":\"#0A2340\",\"shadow\":\"#06101C\"}. Outlines: Thick navy outer strokes on painted controls and panels, with selective inner gold highlight lines on title plate and primary button. Native text itself is not outlined heavily; emphasis comes from contrast, weight, and controlled shadow. Use UIStroke for native supporting frames where artwork is absent..\nExactly 2 columns and 2 rows, 4 separate assets, in reading order. Equal invisible cells. Every asset has equal visual importance: no hero item, merged cells, duplicate asset, extra variant or collage layout. Never draw grid lines, labels or slot numbers. Leave unused cells empty.\nCell 1: control_artwork, One horizontal illuminated slider fill strip only; no housing, thumb or handle.. Preserve natural proportions and all silhouette details.\nCell 2: control_artwork, One horizontal empty slider housing/track only; no fill, thumb or handle.. Preserve natural proportions and all silhouette details.\nCell 3: separator, separator slim ornamental divider matching gold-highlighted panel family. Preserve natural proportions and all silhouette details.\nCell 4: ornament, ornament Gemini-generated corner filigree in cyan/cobalt with gold ticks, placed faintly in screen corners only. Preserve natural proportions and all silhouette details.\nEvery asset centered in its cell with at least 8 percent empty margin on EVERY side. Everything outside each asset, including enclosed holes, must be perfectly uniform #00FF00. Never use that chroma color in the artwork. No checkerboard, background gradient, scenery, external cast shadows, ambient glow or haze. Narrow clean antialiased edges.\nConsistent lighting, material, outline weight and visual family. No text, letters, numbers, logos or watermarks. Do not invent extra objects. Separate controls and decorations must never touch.",
+        "generationProvider": "vercel-gemini-ui-sheet",
+        "generationModel": "google/gemini-3.1-flash-image",
+        "generationUse": "ui_artwork",
+        "negativePrompt": "",
+        "tags": [],
+        "colorPalette": [],
+        "semanticTerms": [
+          "UI control_artwork"
+        ],
+        "packId": null,
+        "relatedAssetPackId": null,
+        "parentAssetId": null,
+        "variationIndex": null,
+        "styleProfileId": null,
+        "approvedReferenceAssetIds": [],
+        "conversationId": null,
+        "upload": {
+          "status": "not_started",
+          "operationId": null
+        },
+        "uploadStatus": "not_started",
+        "robloxOperationId": null,
+        "moderation": {
+          "state": "not_submitted",
+          "checkedAt": null,
+          "responseCode": null
+        },
+        "moderationStatus": "not_submitted",
+        "replacement": {
+          "replacesAssetId": null,
+          "replacedByAssetId": null,
+          "verified": false
+        },
+        "sourceFile": null,
+        "processedFile": null,
+        "fileFormat": null,
+        "mimeType": null,
+        "width": null,
+        "height": null,
+        "hasTransparency": null,
+        "fileSize": null,
+        "robloxAssetId": null,
+        "robloxExternalObjectId": null,
+        "studioReference": null,
+        "usage": [],
+        "studioImplementationLocations": [],
+        "studioImplementationReceipts": [],
+        "projectAssociations": [
+          {
+            "projectId": "proj_e237b4d5b7634cf2a503723f3f8beff7",
+            "universeId": null,
+            "source": "created",
+            "attachedAt": 1789247867242
+          }
+        ],
+        "failure": null,
+        "lastUsedAt": null,
+        "createdAt": 1789247867242,
+        "generationOperationId": "op_943a1c64608134d9eec72bca71f37560",
+        "generationStartedAt": 1789247868401,
+        "generationCompletedAt": 1789247869894,
+        "style": {
+          "artworkMetadata": {
+            "componentIds": [
+              "cmp_volume_slider"
+            ],
+            "controlPart": "slider_track",
+            "generationUse": "ui_artwork",
+            "nodeNames": [
+              "VolumeSliderTrack"
+            ],
+            "processingVersion": 3,
+            "renderStrategy": "image_fit",
+            "required": true,
+            "requirementIds": [
+              "art_slider_track_handle"
+            ],
+            "role": "control_artwork",
+            "scaleType": "Fit",
+            "schemaVersion": 1,
+            "semanticRole": "",
+            "sheetId": "83c7fd812b983584994a2b8846c6f0dec4a6401cb4d98128028b85852d403f33",
+            "slot": 1,
+            "styleFingerprint": "f49671f11f2d28eef96e6eac6fca82bf3e52d925627ba583c49327d9f270f14b",
+            "tintable": false,
+            "width": 1024,
+            "height": 125
+          }
+        },
+        "validationStartedAt": 1789247871032,
+        "generation": {
+          "status": "not_started",
+          "attempts": 0,
+          "createdAt": 1789247874709,
+          "provider": "vercel-gemini-ui-sheet",
+          "model": "google/gemini-3.1-flash-image",
+          "revisedPrompt": "Create a production-quality Roblox game UI asset sheet at 4K resolution. Art direction: Premium fantasy-tech main menu centered on a glossy title plate and a single dominant Play call-to-action, using a controlled cyan-to-cobalt palette with thick navy framing and restrained gold edge highlights. Artwork should feel polished and dimensional without clutter: Gemini-generated 9-slice skins for primary buttons and panels, matching ornamental corner pieces used sparingly, and a clean native darkened background field so the interface reads immediately. Text remains fully live, bright, and crisp over painted surfaces. The Settings panel uses the same ornate family but in a practical layout with a readable music toggle row and a distinct volume slider track/handle set. The Credits panel is smaller and quieter, visually subordinate to the main menu. Overall mood is premium, glossy, readable, and game-ready rather than overloaded..\nShared palette: {\"primary\":\"#3CCBFF\",\"secondary\":\"#2A67D8\",\"accent\":\"#E7B95A\",\"success\":\"#53D6B3\",\"danger\":\"#D96A6A\",\"neutralBackground\":\"#091423\",\"neutralSurface\":\"#12304D\",\"textPrimary\":\"#F4FBFF\",\"textSecondary\":\"#B8D4E8\",\"outline\":\"#0A2340\",\"shadow\":\"#06101C\"}. Outlines: Thick navy outer strokes on painted controls and panels, with selective inner gold highlight lines on title plate and primary button. Native text itself is not outlined heavily; emphasis comes from contrast, weight, and controlled shadow. Use UIStroke for native supporting frames where artwork is absent..\nExactly 2 columns and 2 rows, 4 separate assets, in reading order. Equal invisible cells. Every asset has equal visual importance: no hero item, merged cells, duplicate asset, extra variant or collage layout. Never draw grid lines, labels or slot numbers. Leave unused cells empty.\nCell 1: control_artwork, One horizontal illuminated slider fill strip only; no housing, thumb or handle.. Preserve natural proportions and all silhouette details.\nCell 2: control_artwork, One horizontal empty slider housing/track only; no fill, thumb or handle.. Preserve natural proportions and all silhouette details.\nCell 3: separator, separator slim ornamental divider matching gold-highlighted panel family. Preserve natural proportions and all silhouette details.\nCell 4: ornament, ornament Gemini-generated corner filigree in cyan/cobalt with gold ticks, placed faintly in screen corners only. Preserve natural proportions and all silhouette details.\nEvery asset centered in its cell with at least 8 percent empty margin on EVERY side. Everything outside each asset, including enclosed holes, must be perfectly uniform #00FF00. Never use that chroma color in the artwork. No checkerboard, background gradient, scenery, external cast shadows, ambient glow or haze. Narrow clean antialiased edges.\nConsistent lighting, material, outline weight and visual family. No text, letters, numbers, logos or watermarks. Do not invent extra objects. Separate controls and decorations must never touch. Shared visual specification: artworkMetadata: [object Object].",
+          "prompt": "Create a production-quality Roblox game UI asset sheet at 4K resolution. Art direction: Premium fantasy-tech main menu centered on a glossy title plate and a single dominant Play call-to-action, using a controlled cyan-to-cobalt palette with thick navy framing and restrained gold edge highlights. Artwork should feel polished and dimensional without clutter: Gemini-generated 9-slice skins for primary buttons and panels, matching ornamental corner pieces used sparingly, and a clean native darkened background field so the interface reads immediately. Text remains fully live, bright, and crisp over painted surfaces. The Settings panel uses the same ornate family but in a practical layout with a readable music toggle row and a distinct volume slider track/handle set. The Credits panel is smaller and quieter, visually subordinate to the main menu. Overall mood is premium, glossy, readable, and game-ready rather than overloaded..\nShared palette: {\"primary\":\"#3CCBFF\",\"secondary\":\"#2A67D8\",\"accent\":\"#E7B95A\",\"success\":\"#53D6B3\",\"danger\":\"#D96A6A\",\"neutralBackground\":\"#091423\",\"neutralSurface\":\"#12304D\",\"textPrimary\":\"#F4FBFF\",\"textSecondary\":\"#B8D4E8\",\"outline\":\"#0A2340\",\"shadow\":\"#06101C\"}. Outlines: Thick navy outer strokes on painted controls and panels, with selective inner gold highlight lines on title plate and primary button. Native text itself is not outlined heavily; emphasis comes from contrast, weight, and controlled shadow. Use UIStroke for native supporting frames where artwork is absent..\nExactly 2 columns and 2 rows, 4 separate assets, in reading order. Equal invisible cells. Every asset has equal visual importance: no hero item, merged cells, duplicate asset, extra variant or collage layout. Never draw grid lines, labels or slot numbers. Leave unused cells empty.\nCell 1: control_artwork, One horizontal illuminated slider fill strip only; no housing, thumb or handle.. Preserve natural proportions and all silhouette details.\nCell 2: control_artwork, One horizontal empty slider housing/track only; no fill, thumb or handle.. Preserve natural proportions and all silhouette details.\nCell 3: separator, separator slim ornamental divider matching gold-highlighted panel family. Preserve natural proportions and all silhouette details.\nCell 4: ornament, ornament Gemini-generated corner filigree in cyan/cobalt with gold ticks, placed faintly in screen corners only. Preserve natural proportions and all silhouette details.\nEvery asset centered in its cell with at least 8 percent empty margin on EVERY side. Everything outside each asset, including enclosed holes, must be perfectly uniform #00FF00. Never use that chroma color in the artwork. No checkerboard, background gradient, scenery, external cast shadows, ambient glow or haze. Narrow clean antialiased edges.\nConsistent lighting, material, outline weight and visual family. No text, letters, numbers, logos or watermarks. Do not invent extra objects. Separate controls and decorations must never touch.",
+          "policy": {
+            "reusedSource": true,
+            "generationUse": "ui_artwork",
+            "sheetId": "83c7fd812b983584994a2b8846c6f0dec4a6401cb4d98128028b85852d403f33",
+            "slot": 1,
+            "source": {
+              "bytes": 35160158,
+              "contentType": "image/png"
+            },
+            "sheetUsage": {},
+            "crop": {
+              "top": 630,
+              "left": 2936,
+              "width": 2384,
+              "height": 275
+            },
+            "elapsedMs": 0,
+            "sharedGeneration": true
+          }
+        },
+        "approval": {
+          "mode": "automatic_quality_gate",
+          "approvedAt": 1789247874962,
+          "status": "approved"
+        },
+        "currentVersionId": "version_3c5f445aec6a44a9b1558c8f40163891",
+        "files": {
+          "preview": {
+            "hasTransparency": null,
+            "filename": "asset_79bb3b0df17842cea10bd7587e19e992.webp",
+            "role": "preview",
+            "size": 1212,
+            "format": "webp",
+            "width": 256,
+            "contentType": "image/webp",
+            "height": 31
+          },
+          "roblox_ready": {
+            "hasTransparency": null,
+            "filename": "asset_79bb3b0df17842cea10bd7587e19e992.png",
+            "role": "roblox_ready",
+            "size": 170833,
+            "format": "png",
+            "width": 1024,
+            "contentType": "image/png",
+            "height": 125
+          },
+          "master": {
+            "hasTransparency": null,
+            "filename": "asset_79bb3b0df17842cea10bd7587e19e992.png",
+            "role": "master",
+            "size": 170833,
+            "format": "png",
+            "width": 1024,
+            "contentType": "image/png",
+            "height": 125
+          }
+        },
+        "validation": {
+          "reportVersion": null,
+          "checkedAt": 1789247874709,
+          "report": {
+            "reviewPending": true,
+            "schemaVersion": 1,
+            "checks": {
+              "padding": {
+                "passed": true,
+                "value": "aspect_preserved"
+              },
+              "centerFill": {
+                "passed": true,
+                "value": 1
+              },
+              "slice": {
+                "passed": true,
+                "value": null
+              },
+              "alpha": {
+                "expectation": "actual_exterior_alpha",
+                "passed": true,
+                "value": {
+                  "partialRatio": 0.0192,
+                  "ratio": 0.096
+                }
+              },
+              "concept": {
+                "note": "Concept adherence is not inferred from pixels by a deterministic validator.",
+                "passed": null,
+                "status": "review_required"
+              },
+              "text": {
+                "note": "Text detection requires model or human review; the generator prompt prohibits text.",
+                "passed": null,
+                "status": "not_claimed"
+              },
+              "centering": {
+                "passed": true,
+                "value": "trimmed_subject_centered"
+              },
+              "halo": {
+                "note": "Chroma fringe check; neutral antialiased edges are allowed.",
+                "passed": true,
+                "value": 0
+              },
+              "legibility": {
+                "note": "Nonempty geometry only; thin decorations are allowed. Visual legibility requires preview review.",
+                "passed": true,
+                "value": {
+                  "width": 1016,
+                  "x": 4,
+                  "y": 4,
+                  "height": 117
+                }
+              },
+              "corruption": {
+                "passed": true,
+                "value": "decoded"
+              },
+              "crop": {
+                "passed": true,
+                "value": "complete_subject_preserved"
+              },
+              "dimensions": {
+                "passed": true,
+                "value": "1024x125"
+              }
+            },
+            "fileValidation": {
+              "valid": true,
+              "checkedAt": 1789247872303,
+              "ruleVersion": 2,
+              "warnings": [],
+              "errorCode": null,
+              "detected": {
+                "hasTransparency": true,
+                "pixels": 128000,
+                "bytes": 170833,
+                "kind": "image",
+                "transparentPixelRatio": 0.11204117063492064,
+                "format": "png",
+                "width": 1024,
+                "transparentEdgeRatio": 1,
+                "declaredMimeType": "image/png",
+                "mimeType": "image/png",
+                "height": 125
+              },
+              "duplicate": null,
+              "issues": [],
+              "contentHash": "b0ebc2adaff83fe3c68591de181cf3e42c7dd57e19933568d74080ab33d8b3e3"
+            },
+            "signature": {
+              "meanRgb": [
+                24,
+                44,
+                63
+              ],
+              "occupancy": 0.9162,
+              "contentAspect": 8.6838,
+              "centerOffset": 0.0078
+            },
+            "blocking": [],
+            "imageHash": "6397afccbd2b762e066a4612831d4c220e9742d243da357200520169d0ccadb2",
+            "passed": true,
+            "reviewRequired": [
+              "text",
+              "concept"
+            ]
+          },
+          "status": "passed"
+        },
+        "lifecycle": "ready_to_publish",
+        "validationCompletedAt": 1789247876430,
+        "updatedAt": 1789247877671,
+        "readyToPublishAt": 1789247877671
+      }
+    }
+  ],
+  [
+    "420f3169a563ef4e39f7001c5eaf9a5457c12fdfb67862dbe654cabaa700c744",
+    {
+      "error": {
+        "code": "UI_SHEET_CHROMA_INVALID",
+        "message": "Cell is empty or lacks a removable chroma background."
+      }
+    }
+  ],
+  [
+    "7533abe5026c9ed31d71485a926c0716a4306fa987352561cb6df023a297adcd",
+    {
+      "error": {
+        "code": "UI_SHEET_CLIPPED",
+        "message": "Artwork crosses its cell boundary or contains a separator."
+      }
+    }
+  ]
+]

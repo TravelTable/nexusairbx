@@ -1,0 +1,29 @@
+{
+  "completedAt": "2026-09-12T21:47:10.630Z",
+  "model": "google/gemini-3.1-flash-image",
+  "provider": "Vercel AI Gateway",
+  "individuallySavedAssets": 16,
+  "sourceFiles": 4,
+  "implementationEvidence": true,
+  "testsPassed": 137,
+  "frontendBuild": "passed",
+  "syntaxCheck": "passed",
+  "viewports": [
+    "desktop",
+    "tablet",
+    "phone"
+  ],
+  "panelLayoutPreviews": [
+    "settings",
+    "credits"
+  ],
+  "runtimeVerified": false,
+  "studioApplied": false,
+  "robloxAssetsPublished": false,
+  "appDesign": "oaXLaAbGQK1EsYMPfgu8",
+  "appRevision": "a2f7b43b6189064fa79a24e0",
+  "visualReview": "Two automated critiques exposed defects; final spacing and background fixes were inspected locally. Automated visual acceptance remains unconfirmed.",
+  "inAppPreview": "ready",
+  "browserConsoleErrors": 0,
+  "inAppPreviewJobId": "preview_2d4f381433a76e904a6b0f2621f39cb3ca12816f2e634d56a001100201e36dff_2"
+}

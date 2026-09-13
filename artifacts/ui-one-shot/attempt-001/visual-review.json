@@ -1,0 +1,242 @@
+{
+  "accepted": false,
+  "acceptable": false,
+  "scores": {
+    "promptCompliance": 2,
+    "composition": 4,
+    "hierarchy": 3,
+    "spacing": 5,
+    "alignment": 6,
+    "componentConsistency": 6,
+    "typography": 1,
+    "paletteDiscipline": 7,
+    "iconConsistency": 5,
+    "visualDensity": 4,
+    "polish": 4,
+    "responsiveness": 2,
+    "originality": 5,
+    "robloxSuitability": 3
+  },
+  "reviewedPreviewIds": [
+    "desktop",
+    "phone",
+    "tablet",
+    "phone-settings",
+    "phone-credits"
+  ],
+  "issues": [
+    {
+      "previewId": "desktop",
+      "category": "typography",
+      "severity": "critical",
+      "description": "Primary button labels are unreadable/truncated; Play, Settings, and Credits do not present live readable text as required.",
+      "nodeIds": [
+        "cmp_action_play",
+        "cmp_action_settings",
+        "cmp_action_credits"
+      ],
+      "rejectionRule": "unreadable_typography"
+    },
+    {
+      "previewId": "phone",
+      "category": "typography",
+      "severity": "critical",
+      "description": "Mobile button labels are also unreadable/truncated, with only fragments visible beside icons; this breaks the required readable live text on touch layouts.",
+      "nodeIds": [
+        "cmp_action_play",
+        "cmp_action_settings",
+        "cmp_action_credits"
+      ],
+      "rejectionRule": "unreadable_typography"
+    },
+    {
+      "previewId": "phone-settings",
+      "category": "prompt_adherence",
+      "severity": "critical",
+      "description": "The required Settings panel is not visible in the settings-state preview. Music toggle, volume slider, and close control are all missing from the shown state.",
+      "nodeIds": [
+        "cmp_settings_modal",
+        "cmp_toggle_music",
+        "cmp_slider_volume",
+        "cmp_action_close_settings"
+      ],
+      "rejectionRule": "required_element_missing"
+    },
+    {
+      "previewId": "phone-credits",
+      "category": "prompt_adherence",
+      "severity": "critical",
+      "description": "The required Credits panel is not visible in the credits-state preview. The small credits panel and its close control are missing from the shown state.",
+      "nodeIds": [
+        "cmp_credits_modal",
+        "cmp_action_close_credits"
+      ],
+      "rejectionRule": "required_element_missing"
+    },
+    {
+      "previewId": "desktop",
+      "category": "density",
+      "severity": "major",
+      "description": "A large dark central slab sits behind the menu stack and reads as an accidental empty zone rather than a purposeful grouped surface.",
+      "nodeIds": [
+        "cmp_menu_dock"
+      ],
+      "rejectionRule": "accidental_dead_zone"
+    },
+    {
+      "previewId": "tablet",
+      "category": "density",
+      "severity": "major",
+      "description": "Tablet preserves the same oversized empty background block behind a tiny control cluster, leaving too much dead space in the focal region.",
+      "nodeIds": [
+        "cmp_menu_dock"
+      ],
+      "rejectionRule": "accidental_dead_zone"
+    },
+    {
+      "previewId": "desktop",
+      "category": "hierarchy",
+      "severity": "major",
+      "description": "The Play CTA is only slightly larger than secondary actions and loses dominance because the text is broken and the decorative title plate carries more visual weight.",
+      "nodeIds": [
+        "cmp_action_play",
+        "cmp_action_settings",
+        "cmp_action_credits",
+        "cmp_title_plate"
+      ],
+      "rejectionRule": "weak_primary_cta"
+    },
+    {
+      "previewId": "phone",
+      "category": "responsiveness",
+      "severity": "critical",
+      "description": "The mobile layout behaves like a narrow shrink of desktop rather than a deliberate touch-first reflow; hierarchy, readable labels, and panel states are not maintained.",
+      "nodeIds": [
+        "cmp_title_plate",
+        "cmp_menu_dock",
+        "cmp_action_play",
+        "cmp_action_settings",
+        "cmp_action_credits"
+      ],
+      "rejectionRule": "missing_mobile_layout"
+    },
+    {
+      "previewId": "desktop",
+      "category": "icons",
+      "severity": "major",
+      "description": "Icon treatment is not resolved consistently across peers: the generic info-style credits icon and mismatched line weights weaken the promised matching family.",
+      "nodeIds": [
+        "cmp_action_play",
+        "cmp_action_settings",
+        "cmp_action_credits"
+      ],
+      "rejectionRule": "inconsistent_icon_family"
+    },
+    {
+      "previewId": "desktop",
+      "category": "polish",
+      "severity": "minor",
+      "description": "The title plate side blocks look like blunt dark cutouts rather than ornamental endcaps, which makes the premium plate feel unfinished.",
+      "nodeIds": [
+        "cmp_title_plate"
+      ],
+      "rejectionRule": "none"
+    },
+    {
+      "previewId": "phone",
+      "category": "layout",
+      "severity": "minor",
+      "description": "The title plate sits very close to the top ornament area and leaves cramped headroom compared with the unused lower half of the screen.",
+      "nodeIds": [
+        "cmp_title_plate",
+        "cmp_corner_ornaments"
+      ],
+      "rejectionRule": "none"
+    },
+    {
+      "previewId": "desktop",
+      "category": "roblox_suitability",
+      "severity": "major",
+      "description": "At gameplay scale the small fragmented labels and thin interior icon/text area would be hard to parse quickly, especially for younger players.",
+      "nodeIds": [
+        "cmp_action_play",
+        "cmp_action_settings",
+        "cmp_action_credits"
+      ],
+      "rejectionRule": "unreadable_typography"
+    }
+  ],
+  "criticalIssues": [
+    "Unreadable button typography on desktop and phone breaks the core menu interaction.",
+    "Settings-state preview does not show the required settings panel, toggle, slider, or close button.",
+    "Credits-state preview does not show the required credits panel and close button.",
+    "Mobile responsiveness is not successfully demonstrated; the touch layout does not preserve readable hierarchy or requested modal states."
+  ],
+  "repairInstructions": [
+    "Restore fully readable live labels for Play, Settings, and Credits on every breakpoint; increase text area, reduce icon intrusion, and ensure no truncation or clipping.",
+    "Show the actual Settings modal in phone-settings with visible heading, music toggle, volume slider, and a touch-safe close button.",
+    "Show the actual Credits modal in phone-credits with visible compact body text and a touch-safe close button.",
+    "Strengthen the Play CTA so it is unmistakably primary through larger size, stronger contrast, and clearer separation from secondary buttons.",
+    "Replace the oversized empty dark dock slab with either a tighter content-bound grouping surface or remove it entirely so the center does not read as dead space.",
+    "Refine the mobile layout instead of uniformly shrinking desktop: rebalance top spacing, preserve larger readable labels, and keep controls thumb-friendly.",
+    "Unify the icon family across play, settings, credits, and close with matched weight, padding, and silhouette logic.",
+    "Keep the successful cyan/cobalt palette, restrained corners, and centered menu concept while repairing typography, hierarchy, and modal visibility."
+  ],
+  "repairPlan": {
+    "preserve": [
+      "Preserve the overall cyan/cobalt/navy palette with gold accents.",
+      "Preserve the centered title-plus-action-stack composition concept.",
+      "Preserve the restrained corner ornament placement and dark native background approach.",
+      "Preserve the same three requested main actions only: Play, Settings, Credits."
+    ],
+    "modify": [
+      "Modify cmp_action_play, cmp_action_settings, and cmp_action_credits to enlarge label bounds, rebalance icon-to-text ratio, and guarantee readable live text on desktop, tablet, and phone.",
+      "Modify cmp_action_play to be visibly larger and more prominent than secondary peers.",
+      "Modify cmp_menu_dock so the background surface hugs the button group or becomes subtler, eliminating the dead central slab.",
+      "Modify cmp_title_plate end treatments to feel like intentional framed caps instead of flat dark blocks.",
+      "Modify mobile spacing for cmp_title_plate and cmp_menu_dock to create safer top breathing room and stronger touch-first hierarchy.",
+      "Modify the fallback icons in cmp_action_play, cmp_action_settings, cmp_action_credits, cmp_action_close_settings, and cmp_action_close_credits to share one coherent weight and style."
+    ],
+    "remove": [
+      "Remove or substantially reduce the oversized empty rectangular backdrop behind the main buttons if it cannot be integrated into the grouping.",
+      "Remove any label clipping/truncation inside the three main buttons."
+    ],
+    "add": [
+      "Add the visible cmp_settings_modal contents to the phone-settings state: heading, music toggle, volume slider, and close button.",
+      "Add the visible cmp_credits_modal contents to the phone-credits state: heading/body text and close button.",
+      "Add stronger spacing and width allocation for button text so labels remain fully readable at gameplay scale.",
+      "Add a clearer modal overlay presentation that visually supersedes the dimmed main menu when a panel state is active."
+    ]
+  },
+  "acceptanceFailures": [
+    "promptCompliance: 2/10 is below 9/10",
+    "composition: 4/10 is below 8/10",
+    "hierarchy: 3/10 is below 8/10",
+    "spacing: 5/10 is below 8/10",
+    "alignment: 6/10 is below 8/10",
+    "componentConsistency: 6/10 is below 8/10",
+    "typography: 1/10 is below 8/10",
+    "paletteDiscipline: 7/10 is below 8/10",
+    "iconConsistency: 5/10 is below 8/10",
+    "visualDensity: 4/10 is below 8/10",
+    "polish: 4/10 is below 8/10",
+    "responsiveness: 2/10 is below 8/10",
+    "originality: 5/10 is below 8/10",
+    "robloxSuitability: 3/10 is below 8/10",
+    "Primary button labels are unreadable/truncated; Play, Settings, and Credits do not present live readable text as required.",
+    "Mobile button labels are also unreadable/truncated, with only fragments visible beside icons; this breaks the required readable live text on touch layouts.",
+    "The required Settings panel is not visible in the settings-state preview. Music toggle, volume slider, and close control are all missing from the shown state.",
+    "The required Credits panel is not visible in the credits-state preview. The small credits panel and its close control are missing from the shown state.",
+    "A large dark central slab sits behind the menu stack and reads as an accidental empty zone rather than a purposeful grouped surface.",
+    "Tablet preserves the same oversized empty background block behind a tiny control cluster, leaving too much dead space in the focal region.",
+    "The Play CTA is only slightly larger than secondary actions and loses dominance because the text is broken and the decorative title plate carries more visual weight.",
+    "The mobile layout behaves like a narrow shrink of desktop rather than a deliberate touch-first reflow; hierarchy, readable labels, and panel states are not maintained.",
+    "Icon treatment is not resolved consistently across peers: the generic info-style credits icon and mismatched line weights weaken the promised matching family.",
+    "At gameplay scale the small fragmented labels and thin interior icon/text area would be hard to parse quickly, especially for younger players.",
+    "Unreadable button typography on desktop and phone breaks the core menu interaction.",
+    "Settings-state preview does not show the required settings panel, toggle, slider, or close button.",
+    "Credits-state preview does not show the required credits panel and close button.",
+    "Mobile responsiveness is not successfully demonstrated; the touch layout does not preserve readable hierarchy or requested modal states.",
+    "The image critic rejected this revision."
+  ]
+}

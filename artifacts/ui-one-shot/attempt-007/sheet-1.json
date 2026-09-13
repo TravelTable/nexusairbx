@@ -1,0 +1,103 @@
+{
+  "regions": [
+    {
+      "slot": 0,
+      "box": [
+        60,
+        100,
+        320,
+        300
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 1,
+      "box": [
+        60,
+        350,
+        320,
+        650
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 2,
+      "box": [
+        60,
+        700,
+        320,
+        900
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 3,
+      "box": [
+        450,
+        100,
+        790,
+        300
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 4,
+      "box": [
+        450,
+        350,
+        790,
+        650
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 5,
+      "box": null,
+      "reason": "No separator found in the image."
+    }
+  ],
+  "reusedSource": false,
+  "usage": {},
+  "width": 5504,
+  "sheetId": "3a47fec6995c8fff6a19ae9a91b3ddf127492aa39eb93f990ecfbddc54cc994d",
+  "model": "google/gemini-3.1-flash-image",
+  "source": {
+    "sha256": "711690183a77b4b6fe76e2b3bda7042504c9c3171cf81f4dc51d29fbbdc005e8",
+    "bytes": 32672102,
+    "storagePath": "asset-platform/users/4b801b407b639dca73828adf869dbdc2/assets/ui_sheet_3a47fec6995c8fff6a19ae9a91b3ddf127492aa39eb93f990ecfbddc54cc994d/versions/source_v1/master.png",
+    "contentType": "image/png"
+  },
+  "items": [
+    {
+      "fingerprint": "5bde4aff18ef19836760849312e3f69baa79cd54880fd75198f746168dcbaa64",
+      "assetId": "asset_db0225aae4654ec4989782eb0471f912"
+    },
+    {
+      "fingerprint": "a990f1798198a8eb02a35bed1380759d2a0a809d8affa0d2420533395b384d19",
+      "assetId": "asset_0c5e3431c2144d1c956a1e6cdad9b639"
+    },
+    {
+      "fingerprint": "c2c3494394d3f865b0e580a31fafb0a7f725daf5bdb64cca17025b889d358102",
+      "assetId": "asset_c94fff76e62b4fb2a151a2dc6f4d8da2"
+    },
+    {
+      "fingerprint": "c5ee608b0077be8cb2865d7feac2d4079921da9b96e19030e5f497abdc2f1f94",
+      "assetId": "asset_dc311447dfa74cd7b7e14af9542d26b2"
+    },
+    {
+      "fingerprint": "5792e071734de18403606ed6998dbbf763edb039c9c0c58953b00f0ef48e524d",
+      "error": {
+        "code": "UI_SHEET_CLIPPED",
+        "message": "Artwork crosses its cell boundary or contains a separator."
+      }
+    },
+    {
+      "fingerprint": "ce54ce61e18c5eca224d7995701636c70a4c5c817b687aa5d33fc43c099a8230",
+      "error": {
+        "code": "UI_SHEET_SUBJECT_MISSING",
+        "message": "No separator found in the image."
+      }
+    }
+  ],
+  "height": 3072
+}

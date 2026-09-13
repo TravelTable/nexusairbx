@@ -1,0 +1,20 @@
+[
+  {
+    sheet: 'sheet-0.json',
+    originalFailures: 3,
+    currentFailures: 0,
+    errors: []
+  },
+  {
+    sheet: 'sheet-1.json',
+    originalFailures: 2,
+    currentFailures: 2,
+    errors: [ [Object], [Object] ]
+  },
+  {
+    sheet: 'sheet-2.json',
+    originalFailures: 6,
+    currentFailures: 0,
+    errors: []
+  }
+]

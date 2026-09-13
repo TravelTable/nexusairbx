@@ -1,0 +1,4 @@
+{
+  "kind": "template_contract_test",
+  "prompt": "Reusable library contract check with existing assets; not a fresh one-shot."
+}

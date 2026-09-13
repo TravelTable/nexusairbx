@@ -1,0 +1,88 @@
+[
+  {
+    "regions": [
+      {
+        "slot": 0,
+        "box": [
+          190,
+          100,
+          300,
+          348
+        ],
+        "reason": ""
+      },
+      {
+        "slot": 1,
+        "box": [
+          190,
+          533,
+          300,
+          899
+        ],
+        "reason": ""
+      },
+      {
+        "slot": 2,
+        "box": [
+          608,
+          100,
+          649,
+          466
+        ],
+        "reason": ""
+      },
+      {
+        "slot": 3,
+        "box": [
+          608,
+          740,
+          899,
+          900
+        ],
+        "reason": "The ornament is only in one corner, not both as requested."
+      }
+    ],
+    "reusedSource": false,
+    "usage": {},
+    "width": 5504,
+    "sheetId": "83c7fd812b983584994a2b8846c6f0dec4a6401cb4d98128028b85852d403f33",
+    "model": "google/gemini-3.1-flash-image",
+    "source": {
+      "sha256": "3abf854acc3791815b275e207299a4e4070fa24c81248057262cace840e097bf",
+      "bytes": 35160158,
+      "storagePath": "asset-platform/users/4b801b407b639dca73828adf869dbdc2/assets/ui_sheet_83c7fd812b983584994a2b8846c6f0dec4a6401cb4d98128028b85852d403f33/versions/source_v1/master.png",
+      "contentType": "image/png"
+    },
+    "items": [
+      {
+        "fingerprint": "4fb186ff30517d70a974782f9af49f343c5cdf6611ada3e1ef0d53b93d915c5b",
+        "error": {
+          "code": "UI_SHEET_CLIPPED",
+          "message": "Artwork crosses its cell boundary or contains a separator."
+        }
+      },
+      {
+        "fingerprint": "f49671f11f2d28eef96e6eac6fca82bf3e52d925627ba583c49327d9f270f14b",
+        "error": {
+          "code": "UI_SHEET_CLIPPED",
+          "message": "Artwork crosses its cell boundary or contains a separator."
+        }
+      },
+      {
+        "fingerprint": "420f3169a563ef4e39f7001c5eaf9a5457c12fdfb67862dbe654cabaa700c744",
+        "error": {
+          "code": "UI_SHEET_CHROMA_INVALID",
+          "message": "Cell is empty or lacks a removable chroma background."
+        }
+      },
+      {
+        "fingerprint": "7533abe5026c9ed31d71485a926c0716a4306fa987352561cb6df023a297adcd",
+        "error": {
+          "code": "UI_SHEET_CLIPPED",
+          "message": "Artwork crosses its cell boundary or contains a separator."
+        }
+      }
+    ],
+    "height": 3072
+  }
+]

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "input": {
+    "kind": "template_contract_test",
+    "prompt": "Reusable library contract check with existing assets; not a fresh one-shot."
+  },
+  "sourceHash": "d16e2f1c819de86f1bef73d602425f366fe83018b35ac9425f6c9d58ffb61f31",
+  "originalSourceHash": "d16e2f1c819de86f1bef73d602425f366fe83018b35ac9425f6c9d58ffb61f31",
+  "untouched": true,
+  "unattendedPass": false,
+  "failures": [
+    {
+      "gate": "scope",
+      "message": "A library contract test with reused inputs is not a fresh one-shot attempt."
+    },
+    {
+      "gate": "visual",
+      "issues": [
+        "No accepted image-based review."
+      ]
+    }
+  ],
+  "elapsedMs": 77241,
+  "renderedViews": [
+    "desktop",
+    "tablet",
+    "phone",
+    "desktop-settings",
+    "phone-settings",
+    "phone-credits"
+  ],
+  "generationEvidence": {
+    "sourceMode": "library_template",
+    "templateId": "main-menu-v1",
+    "sourceRequests": 0,
+    "sourceRepairRequests": 0
+  },
+  "usage": {
+    "receipts": [],
+    "reportedCostMicros": null,
+    "allReceiptsHaveReportedCost": false,
+    "completeRunCost": false
+  },
+  "runtimeVerified": false
+}

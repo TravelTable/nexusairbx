@@ -1,0 +1,166 @@
+TAP version 13
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'test/vision-model',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'test/vision-model',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'google/gemini-test',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'google/gemini-test',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'test-model',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 2,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'test-model',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'test-model',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'test-model',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'test-model',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'test-model',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 4
+# }
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'test/vision',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'test/vision',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# Subtest: director extracts requirements before creating a separately validated design plan
+ok 1 - director extracts requirements before creating a separately validated design plan
+  ---
+  duration_ms: 100.6489
+  ...
+# Subtest: director prompt_json path keeps local validation without provider response_format
+ok 2 - director prompt_json path keeps local validation without provider response_format
+  ---
+  duration_ms: 41.116
+  ...
+# Subtest: director retries an invented requirement with deterministic correction evidence
+ok 3 - director retries an invented requirement with deterministic correction evidence
+  ---
+  duration_ms: 44.6806
+  ...
+# Subtest: ordinary follow-up edits are locked to the requested component and design category
+ok 4 - ordinary follow-up edits are locked to the requested component and design category
+  ---
+  duration_ms: 26.2736
+  ...
+# Subtest: director normalizes out-of-range icon sizes instead of failing planning
+ok 5 - director normalizes out-of-range icon sizes instead of failing planning
+  ---
+  duration_ms: 42.9918
+  ...
+# Subtest: enabled UI sounds are canonicalized to the existing runtime limits
+ok 6 - enabled UI sounds are canonicalized to the existing runtime limits
+  ---
+  duration_ms: 42.9415
+  ...
+# Subtest: complete menu assembly is deterministic and binds only supplied assets
+ok 7 - complete menu assembly is deterministic and binds only supplied assets
+  ---
+  duration_ms: 17.636
+  ...
+# Subtest: title, palette and semantic node renaming adapt through the reusable template
+ok 8 - title, palette and semantic node renaming adapt through the reusable template
+  ---
+  duration_ms: 7.5702
+  ...
+# Subtest: incomplete kits, existing edits and unsupported features do not silently use the template
+ok 9 - incomplete kits, existing edits and unsupported features do not silently use the template
+  ---
+  duration_ms: 3.4439
+  ...
+# Subtest: per-button surfaces retain distinct authoritative peer bindings
+ok 10 - per-button surfaces retain distinct authoritative peer bindings
+  ---
+  duration_ms: 2.2379
+  ...
+# Subtest: template guidance is limited to supported menus and does not override other layouts or features
+ok 11 - template guidance is limited to supported menus and does not override other layouts or features
+  ---
+  duration_ms: 0.9368
+  ...
+# Subtest: resolved optional framing is actually wired into the reusable view
+ok 12 - resolved optional framing is actually wired into the reusable view
+  ---
+  duration_ms: 2.5758
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 415.4848

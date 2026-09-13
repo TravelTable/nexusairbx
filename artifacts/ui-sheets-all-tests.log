@@ -1,0 +1,834 @@
+TAP version 13
+# Subtest: only marked visual treatments request images and matching peers share a skin
+ok 1 - only marked visual treatments request images and matching peers share a skin
+  ---
+  duration_ms: 5.7711
+  ...
+# Subtest: all artwork roles use the right rendering strategy and required art sorts first
+ok 2 - all artwork roles use the right rendering strategy and required art sorts first
+  ---
+  duration_ms: 30.994
+  ...
+# Subtest: size and tint edits preserve skins; material changes invalidate reuse
+ok 3 - size and tint edits preserve skins; material changes invalidate reuse
+  ---
+  duration_ms: 2.1618
+  ...
+# Subtest: decorative palette changes invalidate baked-color art
+ok 4 - decorative palette changes invalidate baked-color art
+  ---
+  duration_ms: 0.4059
+  ...
+# Subtest: rendering metadata survives document save/reload and invalid slices are rejected
+ok 5 - rendering metadata survives document save/reload and invalid slices are rejected
+  ---
+  duration_ms: 8.4525
+  ...
+# Subtest: new matting version survives reload while legacy metadata keeps its version
+ok 6 - new matting version survives reload while legacy metadata keeps its version
+  ---
+  duration_ms: 0.3773
+  ...
+# Subtest: transparent artwork prompts avoid exterior shadows and retain inner depth
+ok 7 - transparent artwork prompts avoid exterior shadows and retain inner depth
+  ---
+  duration_ms: 0.6917
+  ...
+# Subtest: shared skins and generated icons form separate bounded sheets with stable identities
+ok 8 - shared skins and generated icons form separate bounded sheets with stable identities
+  ---
+  duration_ms: 33.5821
+  ...
+# Subtest: requirement IDs bind required artwork to planned controls and split moving pieces
+ok 9 - requirement IDs bind required artwork to planned controls and split moving pieces
+  ---
+  duration_ms: 3.2943
+  ...
+# Subtest: explicit required icon is generated once with its semantic subject
+ok 10 - explicit required icon is generated once with its semantic subject
+  ---
+  duration_ms: 1.5999
+  ...
+# Subtest: icon asset requirements retain their requirement binding on the shared generated icon
+ok 11 - icon asset requirements retain their requirement binding on the shared generated icon
+  ---
+  duration_ms: 1.1581
+  ...
+# Subtest: compact control pieces share icon cells without shrinking large surfaces
+ok 12 - compact control pieces share icon cells without shrinking large surfaces
+  ---
+  duration_ms: 3.2865
+  ...
+# Subtest: extracts independent alpha assets, removes enclosed magenta, discards grid lines
+ok 13 - extracts independent alpha assets, removes enclosed magenta, discards grid lines
+  ---
+  duration_ms: 407.4327
+  ...
+# Subtest: clipped and empty cells fail independently without discarding good siblings
+ok 14 - clipped and empty cells fail independently without discarding good siblings
+  ---
+  duration_ms: 162.707
+  ...
+# Subtest: shaded chroma is removed while cyan artwork survives
+ok 15 - shaded chroma is removed while cyan artwork survives
+  ---
+  duration_ms: 300.8876
+  ...
+# Subtest: vision locator receives the actual sheet and rejects malformed coordinates
+ok 16 - vision locator receives the actual sheet and rejects malformed coordinates
+  ---
+  duration_ms: 314.9351
+  ...
+# Subtest: 4K gateway options are explicit and lower-resolution provider output is rejected
+ok 17 - 4K gateway options are explicit and lower-resolution provider output is rejected
+  ---
+  duration_ms: 12.1018
+  ...
+# Subtest: colored wide skins retain aspect and valid dynamic nine-slice metadata through processing
+ok 18 - colored wide skins retain aspect and valid dynamic nine-slice metadata through processing
+  ---
+  duration_ms: 389.3629
+  ...
+# Subtest: JSON cannot grant the prepared artwork capability
+ok 19 - JSON cannot grant the prepared artwork capability
+  ---
+  duration_ms: 0.7988
+  ...
+# Subtest: one paid sheet creates separate assets and replay never generates again
+ok 20 - one paid sheet creates separate assets and replay never generates again
+  ---
+  duration_ms: 4.4327
+  ...
+# Subtest: repair of only a failed cell never buys a new sheet after siblings were reused
+ok 21 - repair of only a failed cell never buys a new sheet after siblings were reused
+  ---
+  duration_ms: 1.764
+  ...
+# Subtest: ambiguous gateway outcomes are fenced across retries
+ok 22 - ambiguous gateway outcomes are fenced across retries
+  ---
+  duration_ms: 1.3566
+  ...
+# Subtest: a later extraction can reuse a saved raw sheet without another image generation
+ok 23 - a later extraction can reuse a saved raw sheet without another image generation
+  ---
+  duration_ms: 10.5597
+  ...
+# Subtest: brainrot regression requirements and design plan are complete, grounded, responsive and icon coherent
+ok 24 - brainrot regression requirements and design plan are complete, grounded, responsive and icon coherent
+  ---
+  duration_ms: 34.4954
+  ...
+# Subtest: grounding rejects invented product structure and plan validation rejects incomplete peer icons
+ok 25 - grounding rejects invented product structure and plan validation rejects incomplete peer icons
+  ---
+  duration_ms: 5.1964
+  ...
+# Subtest: requirements cannot claim sound support without distinct verified asset roles
+ok 26 - requirements cannot claim sound support without distinct verified asset roles
+  ---
+  duration_ms: 0.9773
+  ...
+# Subtest: implementation compliance requires actions, interactions, assets and a real mobile plan
+ok 27 - implementation compliance requires actions, interactions, assets and a real mobile plan
+  ---
+  duration_ms: 6.571
+  ...
+# Subtest: targeted size edits preserve requirements, palette, peers, icons and behavior
+ok 28 - targeted size edits preserve requirements, palette, peers, icons and behavior
+  ---
+  duration_ms: 4.2452
+  ...
+# Subtest: icon consistency accepts a complete coherent procedural fallback family and rejects omissions
+ok 29 - icon consistency accepts a complete coherent procedural fallback family and rejects omissions
+  ---
+  duration_ms: 0.5354
+  ...
+# Subtest: bounded numeric Design Director output is normalized without weakening schema validation
+ok 30 - bounded numeric Design Director output is normalized without weakening schema validation
+  ---
+  duration_ms: 3.8051
+  ...
+# Subtest: normalization does not hide structural Design Director errors
+ok 31 - normalization does not hide structural Design Director errors
+  ---
+  duration_ms: 2.3189
+  ...
+# Subtest: palette color validation accepts only six-digit hex
+ok 32 - palette color validation accepts only six-digit hex
+  ---
+  duration_ms: 1.0411
+  ...
+# Subtest: normalizes short hex palette colors before schema validation
+ok 33 - normalizes short hex palette colors before schema validation
+  ---
+  duration_ms: 3.3111
+  ...
+# Subtest: palette normalization expands short hex but rejects non-hex color forms
+ok 34 - palette normalization expands short hex but rejects non-hex color forms
+  ---
+  duration_ms: 3.3002
+  ...
+# Subtest: provider serving schema strips patterns and bounds while keeping structure
+ok 35 - provider serving schema strips patterns and bounds while keeping structure
+  ---
+  duration_ms: 2.4067
+  ...
+# Subtest: provider schema complexity detector matches Gemini wording
+ok 36 - provider schema complexity detector matches Gemini wording
+  ---
+  duration_ms: 0.246
+  ...
+# Subtest: canonicalizes paraphrased explicit UI evidence to real request text
+ok 37 - canonicalizes paraphrased explicit UI evidence to real request text
+  ---
+  duration_ms: 9.3891
+  ...
+# Subtest: does not manufacture evidence for an invented explicit UI feature
+ok 38 - does not manufacture evidence for an invented explicit UI feature
+  ---
+  duration_ms: 8.3701
+  ...
+# Subtest: canonicalizes requested hover and click sounds into distinct required audio roles
+ok 39 - canonicalizes requested hover and click sounds into distinct required audio roles
+  ---
+  duration_ms: 2.6097
+  ...
+# Subtest: a click-only sound request does not require a hover sound
+ok 40 - a click-only sound request does not require a hover sound
+  ---
+  duration_ms: 1.0673
+  ...
+# Subtest: audio canonicalization never fabricates a resolved Roblox asset
+ok 41 - audio canonicalization never fabricates a resolved Roblox asset
+  ---
+  duration_ms: 0.4909
+  ...
+# Subtest: exact brainrot menu evidence requires all requested actions, coherent icons, audio, effects and both layouts
+ok 42 - exact brainrot menu evidence requires all requested actions, coherent icons, audio, effects and both layouts
+  ---
+  duration_ms: 15.5272
+  ...
+# Subtest: a native fallback does not silently satisfy a required missing artwork piece
+ok 43 - a native fallback does not silently satisfy a required missing artwork piece
+  ---
+  duration_ms: 2.7231
+  ...
+# Subtest: a planned slider may own an empty drag target, but unrelated actions remain errors
+ok 44 - a planned slider may own an empty drag target, but unrelated actions remain errors
+  ---
+  duration_ms: 3.9726
+  ...
+# Subtest: runtime evidence rejects plugin-only calls even when the model compiles
+ok 45 - runtime evidence rejects plugin-only calls even when the model compiles
+  ---
+  duration_ms: 2.0901
+  ...
+# Subtest: compiled evidence rejects a missing mobile action, missing peer icon, and invented product feature
+ok 46 - compiled evidence rejects a missing mobile action, missing peer icon, and invented product feature
+  ---
+  duration_ms: 2.0989
+  ...
+# Subtest: durable eight-image limit survives replay and repair passes
+ok 47 - durable eight-image limit survives replay and repair passes
+  ---
+  duration_ms: 45.8048
+  ...
+# Subtest: approved previous references are reloaded and reused even when new generation is disabled
+ok 48 - approved previous references are reloaded and reused even when new generation is disabled
+  ---
+  duration_ms: 1.8017
+  ...
+# Subtest: a scoped repaired document asset takes precedence over its older library twin
+ok 49 - a scoped repaired document asset takes precedence over its older library twin
+  ---
+  duration_ms: 4.3528
+  ...
+# Subtest: ambiguous generation is never automatically repeated
+ok 50 - ambiguous generation is never automatically repeated
+  ---
+  duration_ms: 0.9634
+  ...
+# Subtest: cancellation propagates and fences a potentially accepted image call
+ok 51 - cancellation propagates and fences a potentially accepted image call
+  ---
+  duration_ms: 1.8326
+  ...
+# Subtest: disabled generation reports required gaps without provider calls
+ok 52 - disabled generation reports required gaps without provider calls
+  ---
+  duration_ms: 0.751
+  ...
+# Subtest: upload refresh preserves component bindings and pending canonical preview references
+ok 53 - upload refresh preserves component bindings and pending canonical preview references
+  ---
+  duration_ms: 4.0656
+  ...
+# Subtest: assets come from the scoped library and actual market imports, preserving identity
+ok 54 - assets come from the scoped library and actual market imports, preserving identity
+  ---
+  duration_ms: 21.4639
+  ...
+# Subtest: unavailable assets never become invented IDs or block generation
+ok 55 - unavailable assets never become invented IDs or block generation
+  ---
+  duration_ms: 3.1178
+  ...
+# Subtest: auto upload resolves a canonical image to the Roblox asset ID used by generated UI
+ok 56 - auto upload resolves a canonical image to the Roblox asset ID used by generated UI
+  ---
+  duration_ms: 1.7012
+  ...
+# Subtest: auto upload failures retain the Nexus image without inventing a Roblox ID
+ok 57 - auto upload failures retain the Nexus image without inventing a Roblox ID
+  ---
+  duration_ms: 1.1975
+  ...
+# Subtest: Creator Store decal and audio search supplies only real public Roblox IDs to UI generation
+ok 58 - Creator Store decal and audio search supplies only real public Roblox IDs to UI generation
+  ---
+  duration_ms: 0.9569
+  ...
+# Subtest: design asset preparation returns a complete icon family and distinct requirement-bound audio references
+ok 59 - design asset preparation returns a complete icon family and distinct requirement-bound audio references
+  ---
+  duration_ms: 15.833
+  ...
+# Subtest: private sheet icons are resolved for preview without claiming Roblox publication
+ok 60 - private sheet icons are resolved for preview without claiming Roblox publication
+  ---
+  duration_ms: 27.0225
+  ...
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'test/vision-model',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'test/vision-model',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'google/gemini-test',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'google/gemini-test',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'test-model',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 2,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'test-model',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'test-model',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'test-model',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'test-model',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'test-model',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 4
+# }
+# ui_contract_validated {
+#   name: 'ui_requirements',
+#   model: 'test/vision',
+#   schemaHash: 'a7da02466710c589',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_design_plan',
+#   model: 'test/vision',
+#   schemaHash: '6491bf5227f3705a',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# Subtest: director extracts requirements before creating a separately validated design plan
+ok 61 - director extracts requirements before creating a separately validated design plan
+  ---
+  duration_ms: 165.9934
+  ...
+# Subtest: director prompt_json path keeps local validation without provider response_format
+ok 62 - director prompt_json path keeps local validation without provider response_format
+  ---
+  duration_ms: 51.2975
+  ...
+# Subtest: director retries an invented requirement with deterministic correction evidence
+ok 63 - director retries an invented requirement with deterministic correction evidence
+  ---
+  duration_ms: 62.4258
+  ...
+# Subtest: ordinary follow-up edits are locked to the requested component and design category
+ok 64 - ordinary follow-up edits are locked to the requested component and design category
+  ---
+  duration_ms: 33.4442
+  ...
+# Subtest: director normalizes out-of-range icon sizes instead of failing planning
+ok 65 - director normalizes out-of-range icon sizes instead of failing planning
+  ---
+  duration_ms: 54.0235
+  ...
+# Subtest: enabled UI sounds are canonicalized to the existing runtime limits
+ok 66 - enabled UI sounds are canonicalized to the existing runtime limits
+  ---
+  duration_ms: 73.3402
+  ...
+# Subtest: initial generation and truncated-file recovery share exact artwork rendering bindings
+ok 67 - initial generation and truncated-file recovery share exact artwork rendering bindings
+  ---
+  duration_ms: 68.3188
+  ...
+# Subtest: file boundaries survive arbitrary provider chunking and incomplete drafts are retained
+ok 68 - file boundaries survive arbitrary provider chunking and incomplete drafts are retained
+  ---
+  duration_ms: 3.4973
+  ...
+# Subtest: manifest permits bounded modular UI source and exposes pending files while streaming
+ok 69 - manifest permits bounded modular UI source and exposes pending files while streaming
+  ---
+  duration_ms: 1.0444
+  ...
+# Subtest: generation accepts a model-selected modular file layout
+ok 70 - generation accepts a model-selected modular file layout
+  ---
+  duration_ms: 58.9242
+  ...
+# Subtest: generation streams real files and never asks for a JSON source document
+ok 71 - generation streams real files and never asks for a JSON source document
+  ---
+  duration_ms: 26.5725
+  ...
+# Subtest: a truncated file is regenerated without repeating the completed file
+ok 72 - a truncated file is regenerated without repeating the completed file
+  ---
+  duration_ms: 6.992
+  ...
+# Subtest: an unfinished recovery remains a retained draft and fails safely
+ok 73 - an unfinished recovery remains a retained draft and fails safely
+  ---
+  duration_ms: 6.0431
+  ...
+# Subtest: a nominally stopped response that omitted a file also enters recovery
+ok 74 - a nominally stopped response that omitted a file also enters recovery
+  ---
+  duration_ms: 7.5072
+  ...
+# Subtest: generation automatically injects the matching bounded UI skills and returns their identities
+ok 75 - generation automatically injects the matching bounded UI skills and returns their identities
+  ---
+  duration_ms: 52.9732
+  ...
+# Subtest: generation exposes returned Roblox audio as sound URIs instead of image assets
+ok 76 - generation exposes returned Roblox audio as sound URIs instead of image assets
+  ---
+  duration_ms: 27.2911
+  ...
+# Subtest: exact brainrot request reaches Luau only with its locked plan, resolved icons, audio and trusted runtime helpers
+ok 77 - exact brainrot request reaches Luau only with its locked plan, resolved icons, audio and trusted runtime helpers
+  ---
+  duration_ms: 46.8433
+  ...
+# Subtest: Luau generation rejects malformed or missing structured planning before calling the code model
+ok 78 - Luau generation rejects malformed or missing structured planning before calling the code model
+  ---
+  duration_ms: 21.6636
+  ...
+# Subtest: approved project icons are reused only when the complete family metadata matches
+ok 79 - approved project icons are reused only when the complete family metadata matches
+  ---
+  duration_ms: 7.9547
+  ...
+# Subtest: one missing peer replaces the entire screen icon set with one procedural family
+ok 80 - one missing peer replaces the entire screen icon set with one procedural family
+  ---
+  duration_ms: 2.9809
+  ...
+# Subtest: generated artwork with mismatched family metadata cannot leak into the UI
+ok 81 - generated artwork with mismatched family metadata cannot leak into the UI
+  ---
+  duration_ms: 1.5232
+  ...
+# Subtest: consistency validator rejects padding, scale, family and perspective drift
+ok 82 - consistency validator rejects padding, scale, family and perspective drift
+  ---
+  duration_ms: 0.6629
+  ...
+# Subtest: routes UI requests to a bounded set of focused references
+ok 83 - routes UI requests to a bounded set of focused references
+  ---
+  duration_ms: 8.7494
+  ...
+# Subtest: repair work selects the audit skill before implementation guidance
+ok 84 - repair work selects the audit skill before implementation guidance
+  ---
+  duration_ms: 4.9741
+  ...
+# Subtest: non-UI agent work receives no UI reference context
+ok 85 - non-UI agent work receives no UI reference context
+  ---
+  duration_ms: 1.3086
+  ...
+# Subtest: only fixed catalog entries can be loaded
+ok 86 - only fixed catalog entries can be loaded
+  ---
+  duration_ms: 0.6785
+  ...
+# ui_contract_validated {
+#   name: 'ui_visual_review',
+#   model: 'google/gemini-2.5-flash',
+#   schemaHash: '8fb842148c670354',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_visual_review',
+#   model: 'test-model',
+#   schemaHash: '0454e21de41f27ec',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_visual_review',
+#   model: 'test-model',
+#   schemaHash: 'ac50a9cd35be8785',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_visual_review',
+#   model: 'vision',
+#   schemaHash: '3591243efed2c80f',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# ui_contract_validated {
+#   name: 'ui_visual_review',
+#   model: 'vision',
+#   schemaHash: '9b7f44f27587798d',
+#   mode: 'prompt_json',
+#   attempt: 1,
+#   normalizationCount: 0
+# }
+# Subtest: review requires a bounded image-bound schema and never passes truncated JSON
+ok 87 - review requires a bounded image-bound schema and never passes truncated JSON
+  ---
+  duration_ms: 24.9551
+  ...
+# Subtest: recapture waits until the new revision has rendered images before the next review
+ok 88 - recapture waits until the new revision has rendered images before the next review
+  ---
+  duration_ms: 2.1311
+  ...
+# Subtest: UiVisualReviewService recapture polls capture then waits for new-revision renders
+ok 89 - UiVisualReviewService recapture polls capture then waits for new-revision renders
+  ---
+  duration_ms: 10.8257
+  ...
+# Subtest: a recapture that does not produce images stays awaiting_preview
+ok 90 - a recapture that does not produce images stays awaiting_preview
+  ---
+  duration_ms: 1.1724
+  ...
+# Subtest: a mediocre first render triggers bounded repair even without a major isolated issue
+ok 91 - a mediocre first render triggers bounded repair even without a major isolated issue
+  ---
+  duration_ms: 2.9414
+  ...
+# Subtest: critic receives requirement lock, design plan, component metadata, icons and actual image bytes
+ok 92 - critic receives requirement lock, design plan, component metadata, icons and actual image bytes
+  ---
+  duration_ms: 1.8582
+  ...
+# Subtest: missing image bytes or a requested phone render cannot be treated as a visual pass
+ok 93 - missing image bytes or a requested phone render cannot be treated as a visual pass
+  ---
+  duration_ms: 0.6251
+  ...
+# Subtest: visual review can inspect device layouts and both panel states in one bounded request
+ok 94 - visual review can inspect device layouts and both panel states in one bounded request
+  ---
+  duration_ms: 2.3692
+  ...
+# Subtest: unsupported vision and unavailable capability metadata fail honestly
+ok 95 - unsupported vision and unavailable capability metadata fail honestly
+  ---
+  duration_ms: 0.9405
+  ...
+# Subtest: renderer limitations and superseded revisions do not pass or request design repair
+ok 96 - renderer limitations and superseded revisions do not pass or request design repair
+  ---
+  duration_ms: 1.1349
+  ...
+# Subtest: atomically grants only one lease for concurrent idempotent reservations
+ok 97 - atomically grants only one lease for concurrent idempotent reservations
+  ---
+  duration_ms: 6.782
+  ...
+# Subtest: fences an expired executing lease as outcome unknown before any retry
+ok 98 - fences an expired executing lease as outcome unknown before any retry
+  ---
+  duration_ms: 4.1811
+  ...
+# Subtest: settles the exact owner-scoped provider operation once when Roblox completes
+ok 99 - settles the exact owner-scoped provider operation once when Roblox completes
+  ---
+  duration_ms: 11.0037
+  ...
+# Subtest: rejects an exact provider operation linked to a different canonical asset
+ok 100 - rejects an exact provider operation linked to a different canonical asset
+  ---
+  duration_ms: 0.7247
+  ...
+# Subtest: rejects corrupt cross-owner operation data within the authenticated owner path
+ok 101 - rejects corrupt cross-owner operation data within the authenticated owner path
+  ---
+  duration_ms: 0.668
+  ...
+# Subtest: does not steal settlement from an actively leased publish worker
+ok 102 - does not steal settlement from an actively leased publish worker
+  ---
+  duration_ms: 2.1592
+  ...
+# Subtest: never downgrades an already successful operation from a stale provider response
+ok 103 - never downgrades an already successful operation from a stale provider response
+  ---
+  duration_ms: 0.892
+  ...
+# Subtest: tight 9-slice skin passes alpha checks without icon padding and exports correct dimensions
+ok 104 - tight 9-slice skin passes alpha checks without icon padding and exports correct dimensions
+  ---
+  duration_ms: 415.9752
+  ...
+# Subtest: thin separator keeps its proportions and does not inherit icon legibility minimums
+ok 105 - thin separator keeps its proportions and does not inherit icon legibility minimums
+  ---
+  duration_ms: 175.5993
+  ...
+# Subtest: surface center holes fail validation and local removal preserves enclosed pale fills
+ok 106 - surface center holes fail validation and local removal preserves enclosed pale fills
+  ---
+  duration_ms: 664.7923
+  ...
+# Subtest: opaque background is cropped without stretching and decorative fit keeps alpha
+ok 107 - opaque background is cropped without stretching and decorative fit keeps alpha
+  ---
+  duration_ms: 960.7671
+  ...
+# Subtest: artwork rejects opaque transparent-role responses, empty pixels and corrupt bytes
+ok 108 - artwork rejects opaque transparent-role responses, empty pixels and corrupt bytes
+  ---
+  duration_ms: 75.7396
+  ...
+# Subtest: marketing thumbnails export 1920x1080 with landscape previews
+ok 109 - marketing thumbnails export 1920x1080 with landscape previews
+  ---
+  duration_ms: 168.6671
+  ...
+# Subtest: AssetQualityService returns non-empty file descriptors for canonical storage and validation
+ok 110 - AssetQualityService returns non-empty file descriptors for canonical storage and validation
+  ---
+  duration_ms: 405.2802
+  ...
+# Subtest: only trusted UI artwork can bypass image retirement and gets the dedicated quality route
+ok 111 - only trusted UI artwork can bypass image retirement and gets the dedicated quality route
+  ---
+  duration_ms: 10.1329
+  ...
+# Subtest: rejects an incompatible contract and caller authority conflicts before invoking services
+ok 112 - rejects an incompatible contract and caller authority conflicts before invoking services
+  ---
+  duration_ms: 1.6972
+  ...
+# Subtest: rejects audio and model generation before creating records or invoking the image provider
+    # Subtest: audio
+    ok 1 - audio
+      ---
+      duration_ms: 0.5642
+      ...
+    # Subtest: model
+    ok 2 - model
+      ---
+      duration_ms: 0.3453
+      ...
+    1..2
+ok 113 - rejects audio and model generation before creating records or invoking the image provider
+  ---
+  duration_ms: 1.2888
+  ...
+# Subtest: generate_asset persists the validated version and returns the exact durable identities
+ok 114 - generate_asset persists the validated version and returns the exact durable identities
+  ---
+  duration_ms: 1.0033
+  ...
+# Subtest: generate_asset records validation failures in the recoverable validation lifecycle
+ok 115 - generate_asset records validation failures in the recoverable validation lifecycle
+  ---
+  duration_ms: 1.0823
+  ...
+# Subtest: opaque and non-applicable generation modes do not request transparent output
+    # Subtest: solid
+    ok 1 - solid
+      ---
+      duration_ms: 2.2139
+      ...
+    # Subtest: gradient
+    ok 2 - gradient
+      ---
+      duration_ms: 1.1727
+      ...
+    # Subtest: not_applicable
+    ok 3 - not_applicable
+      ---
+      duration_ms: 0.793
+      ...
+    1..3
+ok 116 - opaque and non-applicable generation modes do not request transparent output
+  ---
+  duration_ms: 5.2757
+  ...
+# Subtest: generate_asset_pack is retired in favor of Icons market imports
+ok 117 - generate_asset_pack is retired in favor of Icons market imports
+  ---
+  duration_ms: 0.5568
+  ...
+# Subtest: generate_asset_pack extension path is retired
+ok 118 - generate_asset_pack extension path is retired
+  ---
+  duration_ms: 0.5272
+  ...
+# Subtest: generate_asset_pack rejects retired pack mutations
+ok 119 - generate_asset_pack rejects retired pack mutations
+  ---
+  duration_ms: 0.3498
+  ...
+# Subtest: publish keeps the task operation identity separate from the Roblox provider operation
+ok 120 - publish keeps the task operation identity separate from the Roblox provider operation
+  ---
+  duration_ms: 0.6887
+  ...
+# Subtest: upload status remains nonterminal while Roblox processes and becomes verified only with an exact ID
+ok 121 - upload status remains nonterminal while Roblox processes and becomes verified only with an exact ID
+  ---
+  duration_ms: 0.6352
+  ...
+# Subtest: Studio implementation and verification preserve the exact trusted Roblox asset reference
+ok 122 - Studio implementation and verification preserve the exact trusted Roblox asset reference
+  ---
+  duration_ms: 1.7561
+  ...
+# Subtest: pending Studio readback is persisted and not reported as verified
+ok 123 - pending Studio readback is persisted and not reported as verified
+  ---
+  duration_ms: 0.2919
+  ...
+# Subtest: Studio verification cannot attribute a trusted command receipt to another asset
+ok 124 - Studio verification cannot attribute a trusted command receipt to another asset
+  ---
+  duration_ms: 1.0298
+  ...
+# Subtest: Studio verification records usage against the asset in the trusted receipt
+ok 125 - Studio verification records usage against the asset in the trusted receipt
+  ---
+  duration_ms: 0.6911
+  ...
+# Subtest: monetization persistence propagates registry outages instead of creating duplicate records
+ok 126 - monetization persistence propagates registry outages instead of creating duplicate records
+  ---
+  duration_ms: 0.6801
+  ...
+# Subtest: monetization tools resolve creator authority and delegate the trusted icon bytes with readback
+    # Subtest: create_game_pass
+    ok 1 - create_game_pass
+      ---
+      duration_ms: 1.2935
+      ...
+    # Subtest: create_developer_product
+    ok 2 - create_developer_product
+      ---
+      duration_ms: 0.6393
+      ...
+    # Subtest: update_game_pass
+    ok 3 - update_game_pass
+      ---
+      duration_ms: 1.459
+      ...
+    # Subtest: update_developer_product
+    ok 4 - update_developer_product
+      ---
+      duration_ms: 0.9658
+      ...
+    1..4
+ok 127 - monetization tools resolve creator authority and delegate the trusted icon bytes with readback
+  ---
+  duration_ms: 5.1933
+  ...
+# Subtest: rich artwork preview compression keeps slice dimensions and canonical bytes unchanged
+ok 128 - rich artwork preview compression keeps slice dimensions and canonical bytes unchanged
+  ---
+  duration_ms: 4446.5696
+  ...
+1..128
+# tests 137
+# suites 0
+# pass 137
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4972.8611

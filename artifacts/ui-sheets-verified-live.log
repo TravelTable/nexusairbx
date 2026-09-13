@@ -1,0 +1,74 @@
+resolving_assets
+generating_artwork
+extracting_artwork
+generating_artwork
+extracting_artwork
+[ops] {
+  event: 'asset.generation_started',
+  ts: '2026-09-12T20:55:03.581Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_8caafb851c964d6fbc78ad6158bcfdfb',
+  assetType: 'image'
+}
+[ops] {
+  event: 'asset.generation_completed',
+  ts: '2026-09-12T20:55:14.553Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_8caafb851c964d6fbc78ad6158bcfdfb',
+  assetType: 'image',
+  provider: 'vercel-gemini-ui-sheet'
+}
+[ops] {
+  event: 'asset.generation_started',
+  ts: '2026-09-12T20:55:18.291Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_8244b798b2d44615b075162e34dd78ba',
+  assetType: 'image'
+}
+[ops] {
+  event: 'asset.generation_completed',
+  ts: '2026-09-12T20:55:25.331Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_8244b798b2d44615b075162e34dd78ba',
+  assetType: 'image',
+  provider: 'vercel-gemini-ui-sheet'
+}
+[ops] {
+  event: 'asset.generation_started',
+  ts: '2026-09-12T20:55:27.061Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_6e85243962a64a119298e36898fbfeca',
+  assetType: 'image'
+}
+[ops] {
+  event: 'asset.generation_completed',
+  ts: '2026-09-12T20:55:35.463Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_6e85243962a64a119298e36898fbfeca',
+  assetType: 'image',
+  provider: 'vercel-gemini-ui-sheet'
+}
+generating_artwork
+extracting_artwork
+generating_artwork
+generating_artwork
+generating_artwork
+generating_artwork
+generating_artwork
+generating_artwork
+generating_artwork
+generating_artwork
+generating_artwork
+generating_artwork
+generating_artwork
+generating_artwork
+generating_artwork
+writing_ui
+validating_implementation
+UI_MODEL_BUILD_FAILED Files saved, but the RBXM could not be built.

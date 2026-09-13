@@ -1,0 +1,30 @@
+{
+  "regions": [
+    {
+      "slot": 0,
+      "box": null,
+      "reason": "The requested part is a 'slider_handle', but the image contains a complete button, not a handle."
+    }
+  ],
+  "reusedSource": false,
+  "usage": {},
+  "width": 5504,
+  "sheetId": "4d403c26ceb75dc889e620583731b97a44559bde27f7da050c4ea147b6c1e13d",
+  "model": "google/gemini-3.1-flash-image",
+  "source": {
+    "sha256": "945e9e18479fe5fa1a4dd3f3b67b69dae928fac2fe2dc7444ff94d997e8e95ed",
+    "bytes": 25409343,
+    "storagePath": "asset-platform/users/4b801b407b639dca73828adf869dbdc2/assets/ui_sheet_4d403c26ceb75dc889e620583731b97a44559bde27f7da050c4ea147b6c1e13d/versions/source_v1/master.png",
+    "contentType": "image/png"
+  },
+  "items": [
+    {
+      "fingerprint": "dfe1c90a39b21f984db8025eafbdad7bd20efbbce93eed74f915de39c050da74",
+      "error": {
+        "code": "UI_SHEET_SUBJECT_MISSING",
+        "message": "The requested part is a 'slider_handle', but the image contains a complete button, not a handle."
+      }
+    }
+  ],
+  "height": 3072
+}

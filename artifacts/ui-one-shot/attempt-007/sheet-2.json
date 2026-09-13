@@ -1,0 +1,148 @@
+{
+  "regions": [
+    {
+      "slot": 0,
+      "box": [
+        90,
+        40,
+        398,
+        475
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 1,
+      "box": [
+        90,
+        40,
+        398,
+        475
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 2,
+      "box": [
+        90,
+        500,
+        398,
+        719
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 3,
+      "box": [
+        90,
+        760,
+        398,
+        979
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 4,
+      "box": [
+        450,
+        60,
+        690,
+        239
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 5,
+      "box": [
+        450,
+        299,
+        690,
+        479
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 6,
+      "box": [
+        450,
+        500,
+        690,
+        719
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 7,
+      "box": [
+        450,
+        760,
+        690,
+        979
+      ],
+      "reason": ""
+    }
+  ],
+  "reusedSource": false,
+  "usage": {},
+  "width": 5504,
+  "sheetId": "1f412db7e6f42e85c84036e4efcfa3980245c818fabdfc507ab22978e105a5d3",
+  "model": "google/gemini-3.1-flash-image",
+  "source": {
+    "sha256": "1d195b2ff0eaed8842a6b069a8b549ec816de37b4440982aa0cd2ab247074b13",
+    "bytes": 21950130,
+    "storagePath": "asset-platform/users/4b801b407b639dca73828adf869dbdc2/assets/ui_sheet_1f412db7e6f42e85c84036e4efcfa3980245c818fabdfc507ab22978e105a5d3/versions/source_v1/master.png",
+    "contentType": "image/png"
+  },
+  "items": [
+    {
+      "fingerprint": "8be0027e3bf845c7246064b5bcf1ffb5b2ef96050af55d33506e78c4b789b3e7",
+      "error": {
+        "code": "UI_SHEET_CLIPPED",
+        "message": "Artwork crosses its cell boundary or contains a separator."
+      }
+    },
+    {
+      "fingerprint": "9b22fd0f43705cdec72b43969fa4b3e7b7c53f1c0d9da12fdccd62ed7ffc5ec7",
+      "error": {
+        "code": "UI_SHEET_CLIPPED",
+        "message": "Artwork crosses its cell boundary or contains a separator."
+      }
+    },
+    {
+      "fingerprint": "660406c4ef5cdd47cacf28ed92545f1ab0da6b4c7786156ad50a2aa57036615f",
+      "assetId": "asset_cec5c495650648e79d7a55138f5b397f"
+    },
+    {
+      "fingerprint": "6f22ef2f99d54db9206aa945dcc6a4ac33f2a8350ad3375198005c40edc56b26",
+      "assetId": "asset_931c90e0fe904750bcea46782e00d956"
+    },
+    {
+      "fingerprint": "7f6b9bdad918cdaac0115aa8702cc4405b1eeba593d21ef18c4db5541bd86ac6",
+      "error": {
+        "code": "UI_SHEET_CLIPPED",
+        "message": "Artwork crosses its cell boundary or contains a separator."
+      }
+    },
+    {
+      "fingerprint": "a0894ea0e0a3e4b5b40448d1d1744f0b74e485543d9f72c1052ab9f87edccaee",
+      "error": {
+        "code": "UI_SHEET_CLIPPED",
+        "message": "Artwork crosses its cell boundary or contains a separator."
+      }
+    },
+    {
+      "fingerprint": "a5ce17122eb56d0a6c01bd958ebf28d8a405e48abad3f5ef05a1ad897d63ea5b",
+      "error": {
+        "code": "UI_SHEET_CLIPPED",
+        "message": "Artwork crosses its cell boundary or contains a separator."
+      }
+    },
+    {
+      "fingerprint": "b9355633e8d336bee8f7cad9ff4c5bf6548980e349728d39835d61631344ce6d",
+      "error": {
+        "code": "UI_SHEET_CLIPPED",
+        "message": "Artwork crosses its cell boundary or contains a separator."
+      }
+    }
+  ],
+  "height": 3072
+}

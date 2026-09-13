@@ -1,0 +1,62 @@
+{
+  "code": "UI_DESIGN_SPEC_INVALID",
+  "message": "The design plan could not pass validation after 2 bounded attempts: Missing icon in close_buttons: cmp_close_affordance_contract.",
+  "diagnostic": null,
+  "elapsedMs": 129574,
+  "usage": [
+    {
+      "model": "openai/gpt-5.4",
+      "usage": {
+        "prompt_tokens": 1873,
+        "completion_tokens": 1964,
+        "total_tokens": 3837,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0
+        }
+      },
+      "reportedCostMicros": null
+    },
+    {
+      "model": "openai/gpt-5.4",
+      "usage": {
+        "prompt_tokens": 9985,
+        "completion_tokens": 10353,
+        "total_tokens": 20338,
+        "prompt_tokens_details": {
+          "cached_tokens": 3840,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0
+        }
+      },
+      "reportedCostMicros": null
+    },
+    {
+      "model": "openai/gpt-5.4",
+      "usage": {
+        "prompt_tokens": 20438,
+        "completion_tokens": 10898,
+        "total_tokens": 31336,
+        "prompt_tokens_details": {
+          "cached_tokens": 8960,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0
+        }
+      },
+      "reportedCostMicros": null
+    }
+  ]
+}

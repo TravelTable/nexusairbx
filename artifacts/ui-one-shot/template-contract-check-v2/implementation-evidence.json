@@ -1,0 +1,808 @@
+{
+  "ok": true,
+  "valid": true,
+  "issues": [],
+  "components": [
+    {
+      "id": "cmp_background_root",
+      "requirementId": "menu_background_layout",
+      "semanticAction": "",
+      "hierarchy": "tertiary",
+      "groupId": "background_group",
+      "nodeIds": [
+        "root.1"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gloss_icons",
+        "assetStrategy": "procedural",
+        "size": 12,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_background_ornaments",
+      "requirementId": "menu_background_layout",
+      "semanticAction": "",
+      "hierarchy": "tertiary",
+      "groupId": "background_group",
+      "nodeIds": [
+        "root.1.7"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gloss_icons",
+        "assetStrategy": "generated",
+        "size": 12,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "baked artwork"
+      }
+    },
+    {
+      "id": "cmp_menu_dock",
+      "requirementId": null,
+      "semanticAction": "",
+      "hierarchy": "primary",
+      "groupId": "main_menu_group",
+      "nodeIds": [
+        "root.2.1",
+        "root.3.1"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gloss_icons",
+        "assetStrategy": "procedural",
+        "size": 12,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_title_plate",
+      "requirementId": "title_aurora",
+      "semanticAction": "",
+      "hierarchy": "primary",
+      "groupId": "title_group",
+      "nodeIds": [
+        "root.2.1.1.2",
+        "root.3.1.1.2"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gloss_icons",
+        "assetStrategy": "generated",
+        "size": 12,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "baked artwork"
+      }
+    },
+    {
+      "id": "cmp_title_text",
+      "requirementId": "title_aurora",
+      "semanticAction": "",
+      "hierarchy": "primary",
+      "groupId": "title_group",
+      "nodeIds": [
+        "root.2.1.1.3",
+        "root.3.1.1.3"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gloss_icons",
+        "assetStrategy": "procedural",
+        "size": 12,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_button_play",
+      "requirementId": "button_play",
+      "semanticAction": "close_menu_and_fire_local_hook",
+      "hierarchy": "primary",
+      "groupId": "menu_actions",
+      "nodeIds": [
+        "root.2.1.2.2",
+        "root.3.1.2.2"
+      ],
+      "icon": {
+        "enabled": true,
+        "semanticRole": "play",
+        "family": "aurora_gloss_icons",
+        "assetStrategy": "generated",
+        "size": 28,
+        "padding": 10,
+        "visualWeight": "bold",
+        "perspective": "front",
+        "edgeTreatment": "navy rim",
+        "shadowTreatment": "soft navy drop",
+        "paletteMode": "cyan-cobalt body with gold spark accents"
+      }
+    },
+    {
+      "id": "cmp_button_settings",
+      "requirementId": "button_settings",
+      "semanticAction": "open_settings_panel",
+      "hierarchy": "primary",
+      "groupId": "menu_actions",
+      "nodeIds": [
+        "root.2.1.2.3",
+        "root.3.1.2.3"
+      ],
+      "icon": {
+        "enabled": true,
+        "semanticRole": "settings",
+        "family": "aurora_gloss_icons",
+        "assetStrategy": "generated",
+        "size": 28,
+        "padding": 10,
+        "visualWeight": "bold",
+        "perspective": "front",
+        "edgeTreatment": "navy rim",
+        "shadowTreatment": "soft navy drop",
+        "paletteMode": "cyan-cobalt body with gold spark accents"
+      }
+    },
+    {
+      "id": "cmp_button_credits",
+      "requirementId": "button_credits",
+      "semanticAction": "open_credits_panel",
+      "hierarchy": "primary",
+      "groupId": "menu_actions",
+      "nodeIds": [
+        "root.2.1.2.4",
+        "root.3.1.2.4"
+      ],
+      "icon": {
+        "enabled": true,
+        "semanticRole": "credits",
+        "family": "aurora_gloss_icons",
+        "assetStrategy": "generated",
+        "size": 28,
+        "padding": 10,
+        "visualWeight": "bold",
+        "perspective": "front",
+        "edgeTreatment": "navy rim",
+        "shadowTreatment": "soft navy drop",
+        "paletteMode": "cyan-cobalt body with gold spark accents"
+      }
+    },
+    {
+      "id": "cmp_settings_modal",
+      "requirementId": "panel_settings",
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "settings_modal_group",
+      "nodeIds": [
+        "root.2.4.3",
+        "root.3.4.3"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gloss_icons",
+        "assetStrategy": "generated",
+        "size": 12,
+        "padding": 0,
+        "visualWeight": "bold",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "baked artwork"
+      }
+    },
+    {
+      "id": "cmp_settings_title",
+      "requirementId": "panel_settings",
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "settings_modal_group",
+      "nodeIds": [
+        "root.2.4.3.1.1",
+        "root.3.4.3.1.1"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gloss_icons",
+        "assetStrategy": "procedural",
+        "size": 12,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_settings_close",
+      "requirementId": "button_close_settings",
+      "semanticAction": "close_settings_panel",
+      "hierarchy": "secondary",
+      "groupId": "close_buttons",
+      "nodeIds": [
+        "root.2.4.3.1.3",
+        "root.3.4.3.1.3"
+      ],
+      "icon": {
+        "enabled": true,
+        "semanticRole": "close",
+        "family": "aurora_gloss_icons",
+        "assetStrategy": "generated",
+        "size": 24,
+        "padding": 8,
+        "visualWeight": "bold",
+        "perspective": "front",
+        "edgeTreatment": "navy rim",
+        "shadowTreatment": "soft navy drop",
+        "paletteMode": "cyan-cobalt body with gold spark accents"
+      }
+    },
+    {
+      "id": "cmp_music_row",
+      "requirementId": "toggle_music",
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "settings_controls",
+      "nodeIds": [
+        "root.2.4.3.1.4",
+        "root.3.4.3.1.4"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gloss_icons",
+        "assetStrategy": "procedural",
+        "size": 12,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_music_label",
+      "requirementId": "toggle_music",
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "settings_controls",
+      "nodeIds": [
+        "root.2.4.3.1.4.1",
+        "root.3.4.3.1.4.1"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gloss_icons",
+        "assetStrategy": "procedural",
+        "size": 12,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_toggle_music",
+      "requirementId": "toggle_music",
+      "semanticAction": "toggle_music",
+      "hierarchy": "secondary",
+      "groupId": "settings_controls",
+      "nodeIds": [
+        "root.2.4.3.1.4.3",
+        "root.3.4.3.1.4.3"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gloss_icons",
+        "assetStrategy": "generated",
+        "size": 12,
+        "padding": 0,
+        "visualWeight": "bold",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "baked artwork"
+      }
+    },
+    {
+      "id": "cmp_volume_row",
+      "requirementId": "slider_volume",
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "settings_controls",
+      "nodeIds": [
+        "root.2.4.3.1.5",
+        "root.3.4.3.1.5"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gloss_icons",
+        "assetStrategy": "procedural",
+        "size": 12,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_volume_label",
+      "requirementId": "slider_volume",
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "settings_controls",
+      "nodeIds": [
+        "root.2.4.3.1.5.1",
+        "root.3.4.3.1.5.1"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gloss_icons",
+        "assetStrategy": "procedural",
+        "size": 12,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_volume_slider",
+      "requirementId": "slider_volume",
+      "semanticAction": "adjust_volume",
+      "hierarchy": "secondary",
+      "groupId": "settings_controls",
+      "nodeIds": [
+        "root.2.4.3.1.5.5",
+        "root.3.4.3.1.5.5"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gloss_icons",
+        "assetStrategy": "generated",
+        "size": 12,
+        "padding": 0,
+        "visualWeight": "bold",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "baked artwork"
+      }
+    },
+    {
+      "id": "cmp_volume_value",
+      "requirementId": "slider_volume",
+      "semanticAction": "",
+      "hierarchy": "tertiary",
+      "groupId": "settings_controls",
+      "nodeIds": [
+        "root.2.4.3.1.5.3",
+        "root.3.4.3.1.5.3"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gloss_icons",
+        "assetStrategy": "procedural",
+        "size": 12,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_credits_modal",
+      "requirementId": "panel_credits",
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "credits_modal_group",
+      "nodeIds": [
+        "root.2.5.3",
+        "root.3.5.3"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gloss_icons",
+        "assetStrategy": "generated",
+        "size": 12,
+        "padding": 0,
+        "visualWeight": "bold",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "baked artwork"
+      }
+    },
+    {
+      "id": "cmp_credits_title",
+      "requirementId": "panel_credits",
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "credits_modal_group",
+      "nodeIds": [
+        "root.2.5.3.1.1",
+        "root.3.5.3.1.1"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gloss_icons",
+        "assetStrategy": "procedural",
+        "size": 12,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_credits_body",
+      "requirementId": "panel_credits",
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "credits_modal_group",
+      "nodeIds": [
+        "root.2.5.3.1.4",
+        "root.3.5.3.1.4"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gloss_icons",
+        "assetStrategy": "procedural",
+        "size": 12,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_credits_close",
+      "requirementId": "button_close_credits",
+      "semanticAction": "close_credits_panel",
+      "hierarchy": "secondary",
+      "groupId": "close_buttons",
+      "nodeIds": [
+        "root.2.5.3.1.3",
+        "root.3.5.3.1.3"
+      ],
+      "icon": {
+        "enabled": true,
+        "semanticRole": "close",
+        "family": "aurora_gloss_icons",
+        "assetStrategy": "generated",
+        "size": 24,
+        "padding": 8,
+        "visualWeight": "bold",
+        "perspective": "front",
+        "edgeTreatment": "navy rim",
+        "shadowTreatment": "soft navy drop",
+        "paletteMode": "cyan-cobalt body with gold spark accents"
+      }
+    },
+    {
+      "id": "cmp_play_integration_hook",
+      "requirementId": "local_play_integration_hook",
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "system_behavior",
+      "nodeIds": [
+        "root.2.2",
+        "root.3.2"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gloss_icons",
+        "assetStrategy": "procedural",
+        "size": 12,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_panel_controller_behavior",
+      "requirementId": "panel_controller_behavior",
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "system_behavior",
+      "nodeIds": [
+        "root.2.3",
+        "root.2.4.4",
+        "root.3.3",
+        "root.3.4.4"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gloss_icons",
+        "assetStrategy": "procedural",
+        "size": 12,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    }
+  ],
+  "icons": [
+    {
+      "componentId": "cmp_button_play",
+      "nodeName": "PlayButton",
+      "semanticRole": "play",
+      "groupId": "menu_actions",
+      "assetRefId": "asset_asset_a69de95d0ba34ef0b26094f27fc35fca",
+      "canonicalAssetId": "asset_a69de95d0ba34ef0b26094f27fc35fca",
+      "source": "generated_sheet",
+      "resolution": "image",
+      "status": "resolved",
+      "previewOnly": true,
+      "resolved": true,
+      "uri": "nexusasset://asset_a69de95d0ba34ef0b26094f27fc35fca",
+      "family": "aurora_gloss_icons",
+      "styleFamily": "aurora_gloss_icons",
+      "size": 28,
+      "padding": 10,
+      "metadata": {
+        "semanticRole": "play",
+        "styleFamily": "aurora_gloss_icons",
+        "visualWeight": "bold",
+        "strokeWeight": "uniform",
+        "perspective": "front",
+        "paletteMode": "cyan-cobalt body with gold spark accents",
+        "palette": [
+          "#3CCBFF",
+          "#2A67D8",
+          "#E7B95A",
+          "#53D6B3",
+          "#D96A6A",
+          "#091423",
+          "#12304D",
+          "#F4FBFF"
+        ],
+        "background": "transparent",
+        "edgeTreatment": "navy rim",
+        "shadowTreatment": "soft navy drop",
+        "padding": 10,
+        "iconToButtonRatio": 0.42,
+        "consistencyGroup": "menu_actions"
+      }
+    },
+    {
+      "componentId": "cmp_button_settings",
+      "nodeName": "SettingsButton",
+      "semanticRole": "settings",
+      "groupId": "menu_actions",
+      "assetRefId": "asset_asset_f9f9f82e620d4e7e9a542ffee8a9db7f",
+      "canonicalAssetId": "asset_f9f9f82e620d4e7e9a542ffee8a9db7f",
+      "source": "generated_sheet",
+      "resolution": "image",
+      "status": "resolved",
+      "previewOnly": true,
+      "resolved": true,
+      "uri": "nexusasset://asset_f9f9f82e620d4e7e9a542ffee8a9db7f",
+      "family": "aurora_gloss_icons",
+      "styleFamily": "aurora_gloss_icons",
+      "size": 28,
+      "padding": 10,
+      "metadata": {
+        "semanticRole": "settings",
+        "styleFamily": "aurora_gloss_icons",
+        "visualWeight": "bold",
+        "strokeWeight": "uniform",
+        "perspective": "front",
+        "paletteMode": "cyan-cobalt body with gold spark accents",
+        "palette": [
+          "#3CCBFF",
+          "#2A67D8",
+          "#E7B95A",
+          "#53D6B3",
+          "#D96A6A",
+          "#091423",
+          "#12304D",
+          "#F4FBFF"
+        ],
+        "background": "transparent",
+        "edgeTreatment": "navy rim",
+        "shadowTreatment": "soft navy drop",
+        "padding": 10,
+        "iconToButtonRatio": 0.42,
+        "consistencyGroup": "menu_actions"
+      }
+    },
+    {
+      "componentId": "cmp_button_credits",
+      "nodeName": "CreditsButton",
+      "semanticRole": "credits",
+      "groupId": "menu_actions",
+      "assetRefId": "asset_asset_aeefed7d427d4463857288baa1ef6c26",
+      "canonicalAssetId": "asset_aeefed7d427d4463857288baa1ef6c26",
+      "source": "generated_sheet",
+      "resolution": "image",
+      "status": "resolved",
+      "previewOnly": true,
+      "resolved": true,
+      "uri": "nexusasset://asset_aeefed7d427d4463857288baa1ef6c26",
+      "family": "aurora_gloss_icons",
+      "styleFamily": "aurora_gloss_icons",
+      "size": 28,
+      "padding": 10,
+      "metadata": {
+        "semanticRole": "credits",
+        "styleFamily": "aurora_gloss_icons",
+        "visualWeight": "bold",
+        "strokeWeight": "uniform",
+        "perspective": "front",
+        "paletteMode": "cyan-cobalt body with gold spark accents",
+        "palette": [
+          "#3CCBFF",
+          "#2A67D8",
+          "#E7B95A",
+          "#53D6B3",
+          "#D96A6A",
+          "#091423",
+          "#12304D",
+          "#F4FBFF"
+        ],
+        "background": "transparent",
+        "edgeTreatment": "navy rim",
+        "shadowTreatment": "soft navy drop",
+        "padding": 10,
+        "iconToButtonRatio": 0.42,
+        "consistencyGroup": "menu_actions"
+      }
+    },
+    {
+      "componentId": "cmp_settings_close",
+      "nodeName": "SettingsCloseButton",
+      "semanticRole": "close",
+      "groupId": "close_buttons",
+      "assetRefId": "asset_asset_59c2540e8e1e45caa7a8741177d3629b",
+      "canonicalAssetId": "asset_59c2540e8e1e45caa7a8741177d3629b",
+      "source": "generated_sheet",
+      "resolution": "image",
+      "status": "resolved",
+      "previewOnly": true,
+      "resolved": true,
+      "uri": "nexusasset://asset_59c2540e8e1e45caa7a8741177d3629b",
+      "family": "aurora_gloss_icons",
+      "styleFamily": "aurora_gloss_icons",
+      "size": 24,
+      "padding": 8,
+      "metadata": {
+        "semanticRole": "close",
+        "styleFamily": "aurora_gloss_icons",
+        "visualWeight": "bold",
+        "strokeWeight": "uniform",
+        "perspective": "front",
+        "paletteMode": "cyan-cobalt body with gold spark accents",
+        "palette": [
+          "#3CCBFF",
+          "#2A67D8",
+          "#E7B95A",
+          "#53D6B3",
+          "#D96A6A",
+          "#091423",
+          "#12304D",
+          "#F4FBFF"
+        ],
+        "background": "transparent",
+        "edgeTreatment": "navy rim",
+        "shadowTreatment": "soft navy drop",
+        "padding": 8,
+        "iconToButtonRatio": 0.42,
+        "consistencyGroup": "close_buttons"
+      }
+    },
+    {
+      "componentId": "cmp_credits_close",
+      "nodeName": "CreditsCloseButton",
+      "semanticRole": "close",
+      "groupId": "close_buttons",
+      "assetRefId": "asset_asset_59c2540e8e1e45caa7a8741177d3629b",
+      "canonicalAssetId": "asset_59c2540e8e1e45caa7a8741177d3629b",
+      "source": "generated_sheet",
+      "resolution": "image",
+      "status": "resolved",
+      "previewOnly": true,
+      "resolved": true,
+      "uri": "nexusasset://asset_59c2540e8e1e45caa7a8741177d3629b",
+      "family": "aurora_gloss_icons",
+      "styleFamily": "aurora_gloss_icons",
+      "size": 24,
+      "padding": 8,
+      "metadata": {
+        "semanticRole": "close",
+        "styleFamily": "aurora_gloss_icons",
+        "visualWeight": "bold",
+        "strokeWeight": "uniform",
+        "perspective": "front",
+        "paletteMode": "cyan-cobalt body with gold spark accents",
+        "palette": [
+          "#3CCBFF",
+          "#2A67D8",
+          "#E7B95A",
+          "#53D6B3",
+          "#D96A6A",
+          "#091423",
+          "#12304D",
+          "#F4FBFF"
+        ],
+        "background": "transparent",
+        "edgeTreatment": "navy rim",
+        "shadowTreatment": "soft navy drop",
+        "padding": 8,
+        "iconToButtonRatio": 0.42,
+        "consistencyGroup": "close_buttons"
+      }
+    }
+  ],
+  "interactions": {
+    "click": true,
+    "hover": true,
+    "animations": true,
+    "sounds": false
+  },
+  "responsive": {
+    "desktop": true,
+    "mobile": true,
+    "tablet": true
+  },
+  "evidenceKind": "compiled_model_and_static_source",
+  "runtimeVerified": false
+}

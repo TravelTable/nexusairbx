@@ -1,0 +1,249 @@
+{
+  "accepted": false,
+  "acceptable": false,
+  "scores": {
+    "promptCompliance": 9,
+    "composition": 6,
+    "hierarchy": 7,
+    "spacing": 5,
+    "alignment": 6,
+    "componentConsistency": 7,
+    "typography": 6,
+    "paletteDiscipline": 8,
+    "iconConsistency": 7,
+    "visualDensity": 6,
+    "polish": 6,
+    "responsiveness": 6,
+    "originality": 7,
+    "robloxSuitability": 7
+  },
+  "reviewedPreviewIds": [
+    "desktop",
+    "phone",
+    "tablet",
+    "phone-settings",
+    "phone-credits"
+  ],
+  "issues": [
+    {
+      "previewId": "desktop",
+      "category": "layout",
+      "severity": "major",
+      "description": "Large empty decorative blocks on the left and lower-right outweigh the actual menu and make the background feel more dominant than supportive, reducing focus on the central actions.",
+      "nodeIds": [
+        "BackgroundRoot",
+        "MainMenuDock"
+      ],
+      "rejectionRule": "background_dominates"
+    },
+    {
+      "previewId": "phone",
+      "category": "layout",
+      "severity": "major",
+      "description": "The mobile menu is not reflowed to a bottom-weighted thumb-friendly stack as planned; it appears like a reduced desktop composition floating mid-screen.",
+      "nodeIds": [
+        "MainMenuDock",
+        "TitlePlate",
+        "PlayButton",
+        "SettingsButton",
+        "CreditsButton"
+      ],
+      "rejectionRule": "missing_mobile_layout"
+    },
+    {
+      "previewId": "desktop",
+      "category": "hierarchy",
+      "severity": "major",
+      "description": "Play is only slightly taller than Settings and Credits, so the primary CTA is not unmistakably dominant at first glance.",
+      "nodeIds": [
+        "PlayButton",
+        "SettingsButton",
+        "CreditsButton"
+      ],
+      "rejectionRule": "weak_primary_cta"
+    },
+    {
+      "previewId": "tablet",
+      "category": "hierarchy",
+      "severity": "major",
+      "description": "The tablet layout keeps all three actions too similar in emphasis; Play does not separate itself enough from the secondary actions.",
+      "nodeIds": [
+        "PlayButton",
+        "SettingsButton",
+        "CreditsButton"
+      ],
+      "rejectionRule": "weak_primary_cta"
+    },
+    {
+      "previewId": "phone-settings",
+      "category": "layout",
+      "severity": "major",
+      "description": "The settings panel has excessive unused lower space while the active controls are compressed into the top half, creating an accidental dead zone inside the modal.",
+      "nodeIds": [
+        "SettingsModal",
+        "MusicRow",
+        "VolumeRow",
+        "VolumeSlider"
+      ],
+      "rejectionRule": "accidental_dead_zone"
+    },
+    {
+      "previewId": "phone-credits",
+      "category": "layout",
+      "severity": "major",
+      "description": "Credits content is crowded into the upper-left while a large portion of the panel remains unused, making the panel feel unfinished and poorly balanced.",
+      "nodeIds": [
+        "CreditsModal",
+        "CreditsTitle",
+        "CreditsBody",
+        "CreditsCloseButton"
+      ],
+      "rejectionRule": "accidental_dead_zone"
+    },
+    {
+      "previewId": "phone-credits",
+      "category": "typography",
+      "severity": "major",
+      "description": "The Credits title overlaps the body copy region and the body starts too close to the header, hurting readability and panel structure.",
+      "nodeIds": [
+        "CreditsTitle",
+        "CreditsBody"
+      ],
+      "rejectionRule": "overlap"
+    },
+    {
+      "previewId": "phone-settings",
+      "category": "alignment",
+      "severity": "minor",
+      "description": "Header title, close button, labels, value text, and slider do not resolve to a strong shared grid; row geometry feels loosely placed rather than intentionally aligned.",
+      "nodeIds": [
+        "SettingsTitle",
+        "SettingsCloseButton",
+        "MusicLabel",
+        "VolumeLabel",
+        "VolumeValue",
+        "VolumeSlider"
+      ],
+      "rejectionRule": "none"
+    },
+    {
+      "previewId": "phone-credits",
+      "category": "alignment",
+      "severity": "minor",
+      "description": "The credits panel header and body are not aligned to a clear inset system; the close button, title, and text block feel independently positioned.",
+      "nodeIds": [
+        "CreditsTitle",
+        "CreditsBody",
+        "CreditsCloseButton"
+      ],
+      "rejectionRule": "none"
+    },
+    {
+      "previewId": "desktop",
+      "category": "density",
+      "severity": "minor",
+      "description": "Main buttons are grouped coherently, but the overall screen still feels sparse because the composition occupies too little of the safe area relative to the background masses.",
+      "nodeIds": [
+        "MainMenuDock",
+        "BackgroundRoot"
+      ],
+      "rejectionRule": "none"
+    },
+    {
+      "previewId": "phone",
+      "category": "responsiveness",
+      "severity": "major",
+      "description": "Mobile decoration and container sizing remain too similar to desktop proportions, indicating uniform shrink rather than a deliberate mobile simplification and re-balance.",
+      "nodeIds": [
+        "BackgroundRoot",
+        "MainMenuDock",
+        "TitlePlate"
+      ],
+      "rejectionRule": "missing_mobile_layout"
+    },
+    {
+      "previewId": "phone-credits",
+      "category": "polish",
+      "severity": "minor",
+      "description": "The credits panel looks like a scaled container with weak finishing detail in the content area; the ornate skin is stronger than the internal layout and copy treatment.",
+      "nodeIds": [
+        "CreditsModal",
+        "CreditsBody"
+      ],
+      "rejectionRule": "none"
+    },
+    {
+      "previewId": "desktop",
+      "category": "icons",
+      "severity": "minor",
+      "description": "The play, settings, and credits icons are distinct, but their internal detail and apparent weight are not fully harmonized; the credits icon reads denser and noisier than the others.",
+      "nodeIds": [
+        "PlayButton",
+        "SettingsButton",
+        "CreditsButton"
+      ],
+      "rejectionRule": "none"
+    }
+  ],
+  "criticalIssues": [],
+  "repairInstructions": [
+    "Reduce or reposition the large background rectangles so the menu remains the focal point; keep the dark native backdrop and thin horizon lines, but make decoration quieter than the action dock.",
+    "Rebuild the phone layout as an actual mobile composition: move the dock lower for thumb reach, tighten vertical spacing slightly, and resize decorative background shapes independently instead of uniformly shrinking desktop.",
+    "Increase Play prominence through a clearly taller button, stronger gold highlight treatment, or extra vertical separation above the secondary buttons while preserving the existing icon family and label.",
+    "Redistribute content inside SettingsModal so the lower half is used intentionally: expand row spacing, move the slider/value block lower, or shorten the panel height.",
+    "Rework CreditsModal internal layout with a defined header band and body block; separate title from body text and use the panel space more evenly.",
+    "Add a consistent inset grid to both modals so titles, close buttons, labels, values, and body copy share common left/right edges.",
+    "Preserve the glossy cyan/cobalt skins, live text, and existing close icon treatment, but improve internal padding and hierarchy rather than regenerating all artwork.",
+    "On tablet, give Play the same dominance fix as desktop and confirm the menu scale sits intentionally between phone and desktop rather than matching desktop too closely."
+  ],
+  "repairPlan": {
+    "preserve": [
+      "Glossy cyan/cobalt button and panel skin family.",
+      "Live readable text approach instead of baked lettering.",
+      "Distinct required actions only: Play, Settings, Credits, and Close.",
+      "Consistent close-button visual family across both panels.",
+      "Dark restrained backdrop direction with minimal line accents."
+    ],
+    "modify": [
+      "BackgroundRoot decoration sizing and opacity in desktop, phone, and tablet to stop it overpowering the menu.",
+      "MainMenuDock positioning on phone so it becomes lower-centered and thumb-friendly.",
+      "PlayButton scale and highlight treatment to create unmistakable CTA hierarchy over SettingsButton and CreditsButton.",
+      "SettingsModal height or internal row distribution to eliminate the large unused lower region.",
+      "CreditsModal header/body spacing so CreditsTitle and CreditsBody no longer collide and the panel feels intentionally filled.",
+      "Inset and alignment grid for SettingsTitle, SettingsCloseButton, MusicLabel, VolumeLabel, VolumeValue, VolumeSlider, CreditsTitle, CreditsBody, and CreditsCloseButton.",
+      "CreditsButton icon sizing/detail balance to better match PlayButton and SettingsButton icon weight."
+    ],
+    "remove": [
+      "Excessively large empty decorative background blocks that visually compete with the menu.",
+      "The current crowded top-left credits text placement inside CreditsModal."
+    ],
+    "add": [
+      "A clearer internal header band structure in CreditsModal with dedicated spacing below the title.",
+      "More intentional vertical distribution within SettingsModal, using either larger row gaps or a lower slider block.",
+      "A stronger desktop/tablet-to-phone responsive reflow rather than proportional downscaling."
+    ]
+  },
+  "acceptanceFailures": [
+    "composition: 6/10 is below 8/10",
+    "hierarchy: 7/10 is below 8/10",
+    "spacing: 5/10 is below 8/10",
+    "alignment: 6/10 is below 8/10",
+    "componentConsistency: 7/10 is below 8/10",
+    "typography: 6/10 is below 8/10",
+    "iconConsistency: 7/10 is below 8/10",
+    "visualDensity: 6/10 is below 8/10",
+    "polish: 6/10 is below 8/10",
+    "responsiveness: 6/10 is below 8/10",
+    "originality: 7/10 is below 8/10",
+    "robloxSuitability: 7/10 is below 8/10",
+    "Large empty decorative blocks on the left and lower-right outweigh the actual menu and make the background feel more dominant than supportive, reducing focus on the central actions.",
+    "The mobile menu is not reflowed to a bottom-weighted thumb-friendly stack as planned; it appears like a reduced desktop composition floating mid-screen.",
+    "Play is only slightly taller than Settings and Credits, so the primary CTA is not unmistakably dominant at first glance.",
+    "The tablet layout keeps all three actions too similar in emphasis; Play does not separate itself enough from the secondary actions.",
+    "The settings panel has excessive unused lower space while the active controls are compressed into the top half, creating an accidental dead zone inside the modal.",
+    "Credits content is crowded into the upper-left while a large portion of the panel remains unused, making the panel feel unfinished and poorly balanced.",
+    "The Credits title overlaps the body copy region and the body starts too close to the header, hurting readability and panel structure.",
+    "Mobile decoration and container sizing remain too similar to desktop proportions, indicating uniform shrink rather than a deliberate mobile simplification and re-balance.",
+    "The image critic rejected this revision."
+  ]
+}

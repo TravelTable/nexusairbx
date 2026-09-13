@@ -1,0 +1,703 @@
+{
+  "ok": false,
+  "valid": false,
+  "issues": [
+    "Required artwork remains unmet: component_surface is unavailable. Use a native Roblox surface. Required artwork remains unmet..",
+    "Required artwork remains unmet: ornament is unavailable. Omit the unavailable decoration. Required artwork remains unmet..",
+    "Required artwork remains unmet: toggle_off is unavailable. Keep the control functional using native pieces. Required artwork remains unmet..",
+    "Required artwork remains unmet: icon is unavailable. Use the coherent fallback icon family. Required artwork remains unmet..",
+    "Required artwork remains unmet: slider_track is unavailable. Keep the control functional using native pieces. Required artwork remains unmet..",
+    "Required artwork remains unmet: slider_fill is unavailable. Keep the control functional using native pieces. Required artwork remains unmet..",
+    "Required artwork remains unmet: toggle_thumb is unavailable. Keep the control functional using native pieces. Required artwork remains unmet..",
+    "Required artwork remains unmet: slider_handle is unavailable. Keep the control functional using native pieces. Required artwork remains unmet..",
+    "Required artwork remains unmet: toggle_on is unavailable. Keep the control functional using native pieces. Required artwork remains unmet..",
+    "Unplanned action in model: TrackButton.",
+    "Implementation missing required element: system_play_hook.",
+    "Implementation missing required element: system_panel_controller.",
+    "Required asset unresolved: icon_play.",
+    "Required asset unresolved: icon_credits.",
+    "Required asset unresolved: art_title_plate.",
+    "Required asset unresolved: art_corner_ornaments."
+  ],
+  "components": [
+    {
+      "id": "cmp_background_root",
+      "requirementId": "background_layout",
+      "semanticAction": "",
+      "hierarchy": "tertiary",
+      "groupId": "background_group",
+      "nodeIds": [
+        "root.1.1",
+        "root.2.1"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini_icons",
+        "assetStrategy": "generated",
+        "size": 24,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_corner_ornaments",
+      "requirementId": "corner_ornaments",
+      "semanticAction": "",
+      "hierarchy": "tertiary",
+      "groupId": "background_group",
+      "nodeIds": [
+        "root.1.1.5",
+        "root.2.1.5"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini_icons",
+        "assetStrategy": "generated",
+        "size": 24,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_title_plate",
+      "requirementId": "title_plate",
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "title_group",
+      "nodeIds": [
+        "root.1.2",
+        "root.2.2"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini_icons",
+        "assetStrategy": "generated",
+        "size": 24,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_title_aurora",
+      "requirementId": "title_aurora",
+      "semanticAction": "",
+      "hierarchy": "primary",
+      "groupId": "title_group",
+      "nodeIds": [
+        "root.1.2.3",
+        "root.2.2.3"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini_icons",
+        "assetStrategy": "generated",
+        "size": 24,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_menu_dock",
+      "requirementId": null,
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "menu_group",
+      "nodeIds": [
+        "root.1.3",
+        "root.2.3"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini_icons",
+        "assetStrategy": "generated",
+        "size": 24,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_action_play",
+      "requirementId": "action_play",
+      "semanticAction": "start_game",
+      "hierarchy": "primary",
+      "groupId": "menu_group",
+      "nodeIds": [
+        "root.1.3.2",
+        "root.2.3.2"
+      ],
+      "icon": {
+        "enabled": true,
+        "semanticRole": "play",
+        "family": "aurora_gemini_icons",
+        "assetStrategy": "generated",
+        "size": 26,
+        "padding": 12,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "navy outline",
+        "shadowTreatment": "soft cool shadow",
+        "paletteMode": "cobalt-cyan base with warm gold accent"
+      }
+    },
+    {
+      "id": "cmp_action_settings",
+      "requirementId": "action_settings",
+      "semanticAction": "open_settings_panel",
+      "hierarchy": "primary",
+      "groupId": "menu_group",
+      "nodeIds": [
+        "root.1.3.3",
+        "root.2.3.3"
+      ],
+      "icon": {
+        "enabled": true,
+        "semanticRole": "settings",
+        "family": "aurora_gemini_icons",
+        "assetStrategy": "generated",
+        "size": 26,
+        "padding": 12,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "navy outline",
+        "shadowTreatment": "soft cool shadow",
+        "paletteMode": "cobalt-cyan base with warm gold accent"
+      }
+    },
+    {
+      "id": "cmp_action_credits",
+      "requirementId": "action_credits",
+      "semanticAction": "open_credits_panel",
+      "hierarchy": "primary",
+      "groupId": "menu_group",
+      "nodeIds": [
+        "root.1.3.4",
+        "root.2.3.4"
+      ],
+      "icon": {
+        "enabled": true,
+        "semanticRole": "credits",
+        "family": "aurora_gemini_icons",
+        "assetStrategy": "generated",
+        "size": 26,
+        "padding": 12,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "navy outline",
+        "shadowTreatment": "soft cool shadow",
+        "paletteMode": "cobalt-cyan base with warm gold accent"
+      }
+    },
+    {
+      "id": "cmp_settings_modal",
+      "requirementId": "panel_settings",
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "settings_modal_group",
+      "nodeIds": [
+        "root.1.5.1.2",
+        "root.2.5.1.2"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini_icons",
+        "assetStrategy": "generated",
+        "size": 24,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_settings_title",
+      "requirementId": null,
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "settings_modal_group",
+      "nodeIds": [
+        "root.1.5.1.2.1.1",
+        "root.2.5.1.2.1.1"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini_icons",
+        "assetStrategy": "generated",
+        "size": 24,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_music_row",
+      "requirementId": null,
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "settings_modal_group",
+      "nodeIds": [
+        "root.1.5.1.2.1.3.2",
+        "root.2.5.1.2.1.3.2"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini_icons",
+        "assetStrategy": "generated",
+        "size": 24,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_music_label",
+      "requirementId": null,
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "settings_modal_group",
+      "nodeIds": [
+        "root.1.5.1.2.1.3.2.5",
+        "root.2.5.1.2.1.3.2.5"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini_icons",
+        "assetStrategy": "generated",
+        "size": 24,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_toggle_music",
+      "requirementId": "toggle_music",
+      "semanticAction": "toggle_music",
+      "hierarchy": "secondary",
+      "groupId": "settings_controls",
+      "nodeIds": [
+        "root.1.5.1.2.1.3.2.6",
+        "root.2.5.1.2.1.3.2.6"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini_icons",
+        "assetStrategy": "generated",
+        "size": 24,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_volume_row",
+      "requirementId": null,
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "settings_modal_group",
+      "nodeIds": [
+        "root.1.5.1.2.1.3.3",
+        "root.2.5.1.2.1.3.3"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini_icons",
+        "assetStrategy": "generated",
+        "size": 24,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_volume_label",
+      "requirementId": null,
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "settings_modal_group",
+      "nodeIds": [
+        "root.1.5.1.2.1.3.3.5",
+        "root.2.5.1.2.1.3.3.5"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini_icons",
+        "assetStrategy": "generated",
+        "size": 24,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_slider_volume",
+      "requirementId": "slider_volume",
+      "semanticAction": "adjust_volume",
+      "hierarchy": "secondary",
+      "groupId": "settings_controls",
+      "nodeIds": [
+        "root.1.5.1.2.1.3.3.6",
+        "root.2.5.1.2.1.3.3.6"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini_icons",
+        "assetStrategy": "generated",
+        "size": 24,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_action_close_settings",
+      "requirementId": "action_close_settings",
+      "semanticAction": "close_settings_panel",
+      "hierarchy": "secondary",
+      "groupId": "close_group",
+      "nodeIds": [
+        "root.1.5.1.2.1.2.1",
+        "root.2.5.1.2.1.2.1"
+      ],
+      "icon": {
+        "enabled": true,
+        "semanticRole": "close",
+        "family": "aurora_gemini_icons",
+        "assetStrategy": "generated",
+        "size": 22,
+        "padding": 10,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "navy outline",
+        "shadowTreatment": "soft cool shadow",
+        "paletteMode": "cobalt-cyan base with warm gold accent"
+      }
+    },
+    {
+      "id": "cmp_credits_modal",
+      "requirementId": "panel_credits",
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "credits_modal_group",
+      "nodeIds": [
+        "root.1.6.1.2",
+        "root.2.6.1.2"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini_icons",
+        "assetStrategy": "generated",
+        "size": 24,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_credits_title",
+      "requirementId": null,
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "credits_modal_group",
+      "nodeIds": [
+        "root.1.6.1.2.1.1",
+        "root.2.6.1.2.1.1"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini_icons",
+        "assetStrategy": "generated",
+        "size": 24,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_credits_body",
+      "requirementId": null,
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "credits_modal_group",
+      "nodeIds": [
+        "root.1.6.1.2.1.3",
+        "root.2.6.1.2.1.3"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini_icons",
+        "assetStrategy": "generated",
+        "size": 24,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_action_close_credits",
+      "requirementId": "action_close_credits",
+      "semanticAction": "close_credits_panel",
+      "hierarchy": "secondary",
+      "groupId": "close_group",
+      "nodeIds": [
+        "root.1.6.1.2.1.2",
+        "root.2.6.1.2.1.2"
+      ],
+      "icon": {
+        "enabled": true,
+        "semanticRole": "close",
+        "family": "aurora_gemini_icons",
+        "assetStrategy": "generated",
+        "size": 22,
+        "padding": 10,
+        "visualWeight": "medium",
+        "perspective": "front",
+        "edgeTreatment": "navy outline",
+        "shadowTreatment": "soft cool shadow",
+        "paletteMode": "cobalt-cyan base with warm gold accent"
+      }
+    }
+  ],
+  "icons": [
+    {
+      "componentId": "cmp_action_play",
+      "nodeName": "PlayButton",
+      "semanticRole": "play",
+      "groupId": "menu_group",
+      "assetRefId": null,
+      "source": "procedural",
+      "resolution": "procedural",
+      "status": "procedural",
+      "resolved": true,
+      "procedural": "play",
+      "uri": null,
+      "family": "nexus_procedural_solid_v1",
+      "styleFamily": "nexus_procedural_solid_v1",
+      "size": 26,
+      "padding": 12,
+      "metadata": {
+        "semanticRole": "play",
+        "styleFamily": "nexus_procedural_solid_v1",
+        "visualWeight": "heavy",
+        "strokeWeight": "solid",
+        "perspective": "front",
+        "paletteMode": "monochrome",
+        "palette": [],
+        "background": "transparent",
+        "edgeTreatment": "rounded",
+        "shadowTreatment": "none",
+        "padding": 12,
+        "iconToButtonRatio": 0.34,
+        "consistencyGroup": "menu_group"
+      }
+    },
+    {
+      "componentId": "cmp_action_settings",
+      "nodeName": "SettingsButton",
+      "semanticRole": "settings",
+      "groupId": "menu_group",
+      "assetRefId": null,
+      "source": "procedural",
+      "resolution": "procedural",
+      "status": "procedural",
+      "resolved": true,
+      "procedural": "settings",
+      "uri": null,
+      "family": "nexus_procedural_solid_v1",
+      "styleFamily": "nexus_procedural_solid_v1",
+      "size": 26,
+      "padding": 12,
+      "metadata": {
+        "semanticRole": "settings",
+        "styleFamily": "nexus_procedural_solid_v1",
+        "visualWeight": "heavy",
+        "strokeWeight": "solid",
+        "perspective": "front",
+        "paletteMode": "monochrome",
+        "palette": [],
+        "background": "transparent",
+        "edgeTreatment": "rounded",
+        "shadowTreatment": "none",
+        "padding": 12,
+        "iconToButtonRatio": 0.34,
+        "consistencyGroup": "menu_group"
+      }
+    },
+    {
+      "componentId": "cmp_action_credits",
+      "nodeName": "CreditsButton",
+      "semanticRole": "credits",
+      "groupId": "menu_group",
+      "assetRefId": null,
+      "source": "procedural",
+      "resolution": "procedural",
+      "status": "procedural",
+      "resolved": true,
+      "procedural": "info",
+      "uri": null,
+      "family": "nexus_procedural_solid_v1",
+      "styleFamily": "nexus_procedural_solid_v1",
+      "size": 26,
+      "padding": 12,
+      "metadata": {
+        "semanticRole": "credits",
+        "styleFamily": "nexus_procedural_solid_v1",
+        "visualWeight": "heavy",
+        "strokeWeight": "solid",
+        "perspective": "front",
+        "paletteMode": "monochrome",
+        "palette": [],
+        "background": "transparent",
+        "edgeTreatment": "rounded",
+        "shadowTreatment": "none",
+        "padding": 12,
+        "iconToButtonRatio": 0.34,
+        "consistencyGroup": "menu_group"
+      }
+    },
+    {
+      "componentId": "cmp_action_close_settings",
+      "nodeName": "SettingsCloseButton",
+      "semanticRole": "close",
+      "groupId": "close_group",
+      "assetRefId": null,
+      "source": "procedural",
+      "resolution": "procedural",
+      "status": "procedural",
+      "resolved": true,
+      "procedural": "close",
+      "uri": null,
+      "family": "nexus_procedural_solid_v1",
+      "styleFamily": "nexus_procedural_solid_v1",
+      "size": 22,
+      "padding": 10,
+      "metadata": {
+        "semanticRole": "close",
+        "styleFamily": "nexus_procedural_solid_v1",
+        "visualWeight": "heavy",
+        "strokeWeight": "solid",
+        "perspective": "front",
+        "paletteMode": "monochrome",
+        "palette": [],
+        "background": "transparent",
+        "edgeTreatment": "rounded",
+        "shadowTreatment": "none",
+        "padding": 10,
+        "iconToButtonRatio": 0.34,
+        "consistencyGroup": "close_group"
+      }
+    },
+    {
+      "componentId": "cmp_action_close_credits",
+      "nodeName": "CreditsCloseButton",
+      "semanticRole": "close",
+      "groupId": "close_group",
+      "assetRefId": null,
+      "source": "procedural",
+      "resolution": "procedural",
+      "status": "procedural",
+      "resolved": true,
+      "procedural": "close",
+      "uri": null,
+      "family": "nexus_procedural_solid_v1",
+      "styleFamily": "nexus_procedural_solid_v1",
+      "size": 22,
+      "padding": 10,
+      "metadata": {
+        "semanticRole": "close",
+        "styleFamily": "nexus_procedural_solid_v1",
+        "visualWeight": "heavy",
+        "strokeWeight": "solid",
+        "perspective": "front",
+        "paletteMode": "monochrome",
+        "palette": [],
+        "background": "transparent",
+        "edgeTreatment": "rounded",
+        "shadowTreatment": "none",
+        "padding": 10,
+        "iconToButtonRatio": 0.34,
+        "consistencyGroup": "close_group"
+      }
+    }
+  ],
+  "interactions": {
+    "click": true,
+    "hover": true,
+    "animations": true,
+    "sounds": false
+  },
+  "responsive": {
+    "desktop": true,
+    "mobile": true,
+    "tablet": true
+  },
+  "evidenceKind": "compiled_model_and_static_source",
+  "runtimeVerified": false
+}

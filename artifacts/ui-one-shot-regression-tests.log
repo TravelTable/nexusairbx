@@ -1,0 +1,130 @@
+TAP version 13
+# Subtest: shared skins and generated icons form separate bounded sheets with stable identities
+ok 1 - shared skins and generated icons form separate bounded sheets with stable identities
+  ---
+  duration_ms: 18.2288
+  ...
+# Subtest: requirement IDs bind required artwork to planned controls and split moving pieces
+ok 2 - requirement IDs bind required artwork to planned controls and split moving pieces
+  ---
+  duration_ms: 1.7684
+  ...
+# Subtest: explicit required icon is generated once with its semantic subject
+ok 3 - explicit required icon is generated once with its semantic subject
+  ---
+  duration_ms: 0.8901
+  ...
+# Subtest: icon asset requirements retain their requirement binding on the shared generated icon
+ok 4 - icon asset requirements retain their requirement binding on the shared generated icon
+  ---
+  duration_ms: 0.5429
+  ...
+# Subtest: compact control pieces share icon cells without shrinking large surfaces
+ok 5 - compact control pieces share icon cells without shrinking large surfaces
+  ---
+  duration_ms: 3.1336
+  ...
+# Subtest: extracts independent alpha assets, removes enclosed magenta, discards grid lines
+ok 6 - extracts independent alpha assets, removes enclosed magenta, discards grid lines
+  ---
+  duration_ms: 226.906
+  ...
+# Subtest: clipped and empty cells fail independently without discarding good siblings
+ok 7 - clipped and empty cells fail independently without discarding good siblings
+  ---
+  duration_ms: 177.2989
+  ...
+# Subtest: shaded chroma is removed while cyan artwork survives
+ok 8 - shaded chroma is removed while cyan artwork survives
+  ---
+  duration_ms: 210.6932
+  ...
+# Subtest: vision locator receives the actual sheet and rejects malformed coordinates
+ok 9 - vision locator receives the actual sheet and rejects malformed coordinates
+  ---
+  duration_ms: 247.1766
+  ...
+# Subtest: 4K gateway options are explicit and lower-resolution provider output is rejected
+ok 10 - 4K gateway options are explicit and lower-resolution provider output is rejected
+  ---
+  duration_ms: 7.7769
+  ...
+# Subtest: colored wide skins retain aspect and valid dynamic nine-slice metadata through processing
+ok 11 - colored wide skins retain aspect and valid dynamic nine-slice metadata through processing
+  ---
+  duration_ms: 291.0495
+  ...
+# Subtest: JSON cannot grant the prepared artwork capability
+ok 12 - JSON cannot grant the prepared artwork capability
+  ---
+  duration_ms: 0.4844
+  ...
+# Subtest: oversized kits fail before any paid partial generation
+ok 13 - oversized kits fail before any paid partial generation
+  ---
+  duration_ms: 2.618
+  ...
+# Subtest: matching icons share one asset even when their parent skins differ
+ok 14 - matching icons share one asset even when their parent skins differ
+  ---
+  duration_ms: 1.2027
+  ...
+# Subtest: large skins and decorations share roomy cells while compact subjects stay at four per sheet
+ok 15 - large skins and decorations share roomy cells while compact subjects stay at four per sheet
+  ---
+  duration_ms: 0.7791
+  ...
+# Subtest: one paid sheet creates separate assets and replay never generates again
+ok 16 - one paid sheet creates separate assets and replay never generates again
+  ---
+  duration_ms: 3.2671
+  ...
+# Subtest: repair of only a failed cell never buys a new sheet after siblings were reused
+ok 17 - repair of only a failed cell never buys a new sheet after siblings were reused
+  ---
+  duration_ms: 1.9502
+  ...
+# Subtest: ambiguous gateway outcomes are fenced across retries
+ok 18 - ambiguous gateway outcomes are fenced across retries
+  ---
+  duration_ms: 0.8198
+  ...
+# Subtest: a later extraction can reuse a saved raw sheet without another image generation
+ok 19 - a later extraction can reuse a saved raw sheet without another image generation
+  ---
+  duration_ms: 10.8893
+  ...
+# Subtest: exact brainrot menu evidence requires all requested actions, coherent icons, audio, effects and both layouts
+ok 20 - exact brainrot menu evidence requires all requested actions, coherent icons, audio, effects and both layouts
+  ---
+  duration_ms: 7.6383
+  ...
+# Subtest: a native fallback does not silently satisfy a required missing artwork piece
+ok 21 - a native fallback does not silently satisfy a required missing artwork piece
+  ---
+  duration_ms: 1.8924
+  ...
+# Subtest: a planned slider may own an empty drag target, but unrelated actions remain errors
+ok 22 - a planned slider may own an empty drag target, but unrelated actions remain errors
+  ---
+  duration_ms: 2.8485
+  ...
+# Subtest: runtime evidence rejects plugin-only calls even when the model compiles
+ok 23 - runtime evidence rejects plugin-only calls even when the model compiles
+  ---
+  duration_ms: 1.4013
+  ...
+# Subtest: compiled evidence rejects a missing mobile action, missing peer icon, and invented product feature
+ok 24 - compiled evidence rejects a missing mobile action, missing peer icon, and invented product feature
+  ---
+  duration_ms: 2.7635
+  ...
+1..24
+# tests 24
+# suites 0
+# pass 24
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1388.2379

@@ -1,0 +1,98 @@
+[
+  {
+    "slot": 0,
+    "candidateId": 0,
+    "box": [
+      74,
+      277,
+      423,
+      473
+    ],
+    "pixelRefined": true,
+    "reason": ""
+  },
+  {
+    "slot": 1,
+    "candidateId": 1,
+    "box": [
+      76,
+      27,
+      421,
+      223
+    ],
+    "pixelRefined": true,
+    "reason": ""
+  },
+  {
+    "slot": 2,
+    "candidateId": 2,
+    "box": [
+      76,
+      779,
+      421,
+      973
+    ],
+    "pixelRefined": true,
+    "reason": ""
+  },
+  {
+    "slot": 3,
+    "candidateId": 3,
+    "box": [
+      76,
+      529,
+      421,
+      722
+    ],
+    "pixelRefined": true,
+    "reason": ""
+  },
+  {
+    "slot": 4,
+    "candidateId": 7,
+    "box": [
+      600,
+      41,
+      900,
+      209
+    ],
+    "pixelRefined": true,
+    "reason": ""
+  },
+  {
+    "slot": 5,
+    "candidateId": 6,
+    "box": [
+      611,
+      298,
+      887,
+      452
+    ],
+    "pixelRefined": true,
+    "reason": ""
+  },
+  {
+    "slot": 6,
+    "candidateId": 5,
+    "box": [
+      580,
+      532,
+      918,
+      719
+    ],
+    "pixelRefined": true,
+    "reason": ""
+  },
+  {
+    "slot": 7,
+    "candidateId": 4,
+    "box": [
+      580,
+      782,
+      918,
+      969
+    ],
+    "pixelRefined": true,
+    "reason": ""
+  }
+]

@@ -1,0 +1,48 @@
+resolving_assets
+generating_artwork
+extracting_artwork
+generating_artwork
+extracting_artwork
+[ops] {
+  event: 'asset.generation_started',
+  ts: '2026-09-12T21:13:57.501Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_370c8b9fba7749a1975a5403c614f7eb',
+  assetType: 'image'
+}
+[ops] {
+  event: 'asset.generation_completed',
+  ts: '2026-09-12T21:14:07.845Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_370c8b9fba7749a1975a5403c614f7eb',
+  assetType: 'image',
+  provider: 'vercel-gemini-ui-sheet'
+}
+[ops] {
+  event: 'asset.generation_started',
+  ts: '2026-09-12T21:14:09.799Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_26157c26ae7e4665b6824934f184b239',
+  assetType: 'image'
+}
+[ops] {
+  event: 'asset.generation_completed',
+  ts: '2026-09-12T21:14:20.424Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_26157c26ae7e4665b6824934f184b239',
+  assetType: 'image',
+  provider: 'vercel-gemini-ui-sheet'
+}
+writing_ui
+validating_implementation
+UI_MODEL_BUILD_FAILED Files saved, but the RBXM could not be built. Luau build failed: /app/build_ui:48: View reserves _NexusSource for generated modules
+[Stack Begin]
+    Script '[C]' - function 'assert'
+    Script '/app/build_ui', Line 48
+[Stack End]
+
+

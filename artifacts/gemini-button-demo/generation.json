@@ -1,0 +1,23 @@
+{
+  "model": "google/gemini-3.1-flash-lite-image",
+  "output": "C:\\Users\\jackt\\Documents\\Codex\\2026-08-09\\can\\nexusairbx\\artifacts\\gemini-button-demo\\start-button-raw.jpg",
+  "elapsedSeconds": 7.677,
+  "width": 1408,
+  "height": 768,
+  "hasAlpha": false,
+  "isOpaque": true,
+  "usage": {
+    "inputTokens": 172,
+    "inputTokenDetails": {
+      "noCacheTokens": 172,
+      "cacheReadTokens": 0
+    },
+    "outputTokens": 1120,
+    "outputTokenDetails": {
+      "textTokens": 1120,
+      "reasoningTokens": 0
+    },
+    "totalTokens": 1292
+  },
+  "prompt": "Create one production-quality Roblox game UI START button asset. Center a wide horizontal button on the canvas. A rounded triangular play symbol sits on the left, followed by the exact word START in large, bold, rounded block lettering. Use a coordinated cyan-to-cobalt blue gradient, crisp deep navy outlines, subtle dimensional bevels, bright upper-edge highlights, and a compact dark-blue depth shadow. The silhouette should feel playful, polished, and readable at small sizes. Keep consistent lighting and outline thickness. Straight-on front view, no perspective tilt. Leave clean margins around the complete asset. Output a single finished image, with no mockup, phone, scenery, interface, annotations, or watermark. Prefer real transparent alpha outside the asset. If transparent output is unsupported, use a uniform pure white background. Never draw a checkerboard transparency pattern."
+}

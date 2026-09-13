@@ -1,0 +1,126 @@
+[
+  {
+    "sheet": "sheet-0.json",
+    "originalFailures": 3,
+    "crops": [
+      {
+        "slot": 0,
+        "part": "component_surface",
+        "error": null
+      },
+      {
+        "slot": 1,
+        "part": "component_surface",
+        "error": null
+      },
+      {
+        "slot": 2,
+        "part": "component_surface",
+        "error": null
+      },
+      {
+        "slot": 3,
+        "part": "panel_surface",
+        "error": null
+      },
+      {
+        "slot": 4,
+        "part": "panel_surface",
+        "error": null
+      },
+      {
+        "slot": 5,
+        "part": "slider_fill",
+        "error": null
+      }
+    ]
+  },
+  {
+    "sheet": "sheet-1.json",
+    "originalFailures": 2,
+    "crops": [
+      {
+        "slot": 0,
+        "part": "toggle_off",
+        "error": null
+      },
+      {
+        "slot": 1,
+        "part": "slider_track",
+        "error": null
+      },
+      {
+        "slot": 2,
+        "part": "toggle_on",
+        "error": null
+      },
+      {
+        "slot": 3,
+        "part": "ornament",
+        "error": null
+      },
+      {
+        "slot": 4,
+        "part": "ornament",
+        "error": {
+          "code": "UI_SHEET_SUBJECT_MISSING",
+          "message": "No single candidate contains all the requested corner flourishes and divider accents. Candidates 5, 7, 8, 9, and 10 are only parts of the requested ornament."
+        }
+      },
+      {
+        "slot": 5,
+        "part": "separator",
+        "error": {
+          "code": "UI_SHEET_SUBJECT_MISSING",
+          "message": "No candidate matches the description of a thin gold-cyan ornamental divider below the settings header. The provided candidates are either parts of ornaments or other UI elements."
+        }
+      }
+    ]
+  },
+  {
+    "sheet": "sheet-2.json",
+    "originalFailures": 6,
+    "crops": [
+      {
+        "slot": 0,
+        "part": "component_surface",
+        "error": null
+      },
+      {
+        "slot": 1,
+        "part": "component_surface",
+        "error": null
+      },
+      {
+        "slot": 2,
+        "part": "icon",
+        "error": null
+      },
+      {
+        "slot": 3,
+        "part": "icon",
+        "error": null
+      },
+      {
+        "slot": 4,
+        "part": "toggle_thumb",
+        "error": null
+      },
+      {
+        "slot": 5,
+        "part": "slider_handle",
+        "error": null
+      },
+      {
+        "slot": 6,
+        "part": "icon",
+        "error": null
+      },
+      {
+        "slot": 7,
+        "part": "icon",
+        "error": null
+      }
+    ]
+  }
+]

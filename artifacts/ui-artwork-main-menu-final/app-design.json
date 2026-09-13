@@ -1,0 +1,16 @@
+{
+  "designId": "oaXLaAbGQK1EsYMPfgu8",
+  "revision": "a2f7b43b6189064fa79a24e0",
+  "projectId": "proj_e237b4d5b7634cf2a503723f3f8beff7",
+  "snapshotId": "cap_91ebadd68c52526d9448f46e429a5345ff23c0548351ee84ca357532c538d020",
+  "jobs": [
+    {
+      "jobId": "preview_2d4f381433a76e904a6b0f2621f39cb3ca12816f2e634d56a001100201e36dff_1",
+      "status": "failed"
+    },
+    {
+      "jobId": "preview_7ec8abbfef1287d8682b73121e7c039b222f935f869fa42e727736d060809dd8_1",
+      "status": "failed"
+    }
+  ]
+}

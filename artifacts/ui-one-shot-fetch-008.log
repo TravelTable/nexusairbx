@@ -1,0 +1,106 @@
+{
+  slot: 0,
+  failures: [],
+  regions: [
+    {
+      slot: 0,
+      candidateId: 0,
+      box: [Array],
+      pixelRefined: true,
+      reason: ''
+    },
+    {
+      slot: 1,
+      candidateId: 2,
+      box: [Array],
+      pixelRefined: true,
+      reason: ''
+    },
+    {
+      slot: 2,
+      candidateId: 3,
+      box: [Array],
+      pixelRefined: true,
+      reason: ''
+    },
+    {
+      slot: 3,
+      candidateId: 1,
+      box: [Array],
+      pixelRefined: true,
+      reason: ''
+    },
+    {
+      slot: 4,
+      box: [Array],
+      reason: 'The requested part is a toggle housing in its enabled state only, without the thumb. Candidate 5 is a toggle housing with a thumb. Therefore, a custom box is provided to exclude the thumb.'
+    },
+    {
+      slot: 5,
+      candidateId: 4,
+      box: [Array],
+      pixelRefined: true,
+      reason: ''
+    }
+  ]
+}
+{
+  slot: 1,
+  failures: [
+    {
+      fingerprint: '99cb8e513e41489a8a0a65065e5513b8fafd7d42cc6faa0bc27f8a04d19f72ab',
+      error: [Object]
+    },
+    {
+      fingerprint: 'c609f3e22c0ac5fe219520453a0e9e45f7227ca0f61a1ef9cb120973a36215f6',
+      error: [Object]
+    },
+    {
+      fingerprint: 'd12a8700a4a98444084349129da1f324e89b754bc17fb98d7284a3275f9a0c47',
+      error: [Object]
+    },
+    {
+      fingerprint: 'e9568243be834c5d36830da10138eecf376d4952954758d6feefd623a2a8e3bc',
+      error: [Object]
+    }
+  ],
+  regions: null
+}
+{
+  slot: 2,
+  failures: [
+    {
+      fingerprint: 'dfe1c90a39b21f984db8025eafbdad7bd20efbbce93eed74f915de39c050da74',
+      error: [Object]
+    }
+  ],
+  regions: [
+    { slot: 0, box: [Array], reason: '' },
+    { slot: 1, box: [Array], reason: '' },
+    { slot: 2, box: [Array], reason: '' },
+    { slot: 3, box: [Array], reason: '' },
+    { slot: 4, box: [Array], reason: '' },
+    {
+      slot: 5,
+      box: null,
+      reason: 'No loose square gemstone cap with rounded beveled navy corners and a cyan face is present. The closest match is a square button, but it is not a loose cap.'
+    },
+    { slot: 6, box: [Array], reason: '' }
+  ]
+}
+{
+  slot: 3,
+  failures: [
+    {
+      fingerprint: 'dfe1c90a39b21f984db8025eafbdad7bd20efbbce93eed74f915de39c050da74',
+      error: [Object]
+    }
+  ],
+  regions: [
+    {
+      slot: 0,
+      box: null,
+      reason: "The requested part is a 'slider_handle', but the image contains a complete button, not a handle."
+    }
+  ]
+}

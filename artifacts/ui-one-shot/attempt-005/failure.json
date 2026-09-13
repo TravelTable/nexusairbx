@@ -1,0 +1,65 @@
+{
+  "code": "UI_DESIGN_SPEC_INVALID",
+  "message": "The design plan could not pass validation after 2 bounded attempts: Use only the supplied libraryTemplate node names; merge requirements into real controls instead of inventing extra containers/contracts: BackgroundLayout",
+  "issues": [
+    "Use only the supplied libraryTemplate node names; merge requirements into real controls instead of inventing extra containers/contracts: BackgroundLayout"
+  ],
+  "diagnostic": null,
+  "elapsedMs": 122555,
+  "usage": [
+    {
+      "model": "openai/gpt-5.4",
+      "usage": {
+        "prompt_tokens": 1955,
+        "completion_tokens": 1837,
+        "total_tokens": 3792,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0
+        }
+      },
+      "reportedCostMicros": null
+    },
+    {
+      "model": "openai/gpt-5.4",
+      "usage": {
+        "prompt_tokens": 10390,
+        "completion_tokens": 9653,
+        "total_tokens": 20043,
+        "prompt_tokens_details": {
+          "cached_tokens": 3840,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0
+        }
+      },
+      "reportedCostMicros": null
+    },
+    {
+      "model": "openai/gpt-5.4",
+      "usage": {
+        "prompt_tokens": 20189,
+        "completion_tokens": 10027,
+        "total_tokens": 30216,
+        "prompt_tokens_details": {
+          "cached_tokens": 9984,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0
+        }
+      },
+      "reportedCostMicros": null
+    }
+  ]
+}

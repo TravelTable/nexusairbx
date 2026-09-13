@@ -1,0 +1,112 @@
+{
+  "regions": [
+    {
+      "slot": 0,
+      "candidateId": 0,
+      "box": [
+        52,
+        30,
+        442,
+        304
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    },
+    {
+      "slot": 1,
+      "candidateId": 2,
+      "box": [
+        177,
+        365,
+        330,
+        634
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    },
+    {
+      "slot": 2,
+      "candidateId": 3,
+      "box": [
+        177,
+        699,
+        330,
+        967
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    },
+    {
+      "slot": 3,
+      "candidateId": 1,
+      "box": [
+        577,
+        47,
+        929,
+        286
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    },
+    {
+      "slot": 4,
+      "box": [
+        683,
+        388,
+        827,
+        612
+      ],
+      "reason": "The requested part is a toggle housing in its enabled state only, without the thumb. Candidate 5 is a toggle housing with a thumb. Therefore, a custom box is provided to exclude the thumb."
+    },
+    {
+      "slot": 5,
+      "candidateId": 4,
+      "box": [
+        682,
+        692,
+        818,
+        975
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    }
+  ],
+  "reusedSource": false,
+  "usage": {},
+  "width": 5504,
+  "sheetId": "73c73ff857ec70fca4d9d9023f2270a92fb1031ddd3dd3482060e10eb6e4bee6",
+  "model": "google/gemini-3.1-flash-image",
+  "source": {
+    "sha256": "643ddbe3f7d4b1939c745ae921ea56e815461e49ffe1e03f02f4b2f25e030ace",
+    "bytes": 24202943,
+    "storagePath": "asset-platform/users/4b801b407b639dca73828adf869dbdc2/assets/ui_sheet_73c73ff857ec70fca4d9d9023f2270a92fb1031ddd3dd3482060e10eb6e4bee6/versions/source_v1/master.png",
+    "contentType": "image/png"
+  },
+  "items": [
+    {
+      "fingerprint": "6a5ff826ed336873a6a5d969373768a069f6f0dd8801ab6f3357e3b98c4dc49d",
+      "assetId": "asset_920c29b8c301490b8102955ee1b0d2ff"
+    },
+    {
+      "fingerprint": "8455e216499b4339fcd44e031e7e474832697fc693a50558faf377bb3a41f4bd",
+      "assetId": "asset_3c789c6537244ebebb784d20e9f08d5d"
+    },
+    {
+      "fingerprint": "d3db140059557a1840ce0e5c3cd516db3a671ae1cdf30f0ad2e9b976803cad18",
+      "assetId": "asset_cc4fa623a2074ff582ae79aa3aa0a4b0"
+    },
+    {
+      "fingerprint": "f116da1459a296fbbe155562542b0b6e06104b13e3ef2ea5c992b1cccc395782",
+      "assetId": "asset_361fbcc1b67947fc9c92fd31f19288cf"
+    },
+    {
+      "fingerprint": "1584e8a79850ea998e9d3ec85ae200df2e34aee44a0bd3ef71356dc78323fa39",
+      "assetId": "asset_f2ea312092a94a6391db6f7fdcc2a0f0"
+    },
+    {
+      "fingerprint": "7a00f9190d87dc3504f6c7fade5620fef5cebb886f31d0461176fc25c00c2814",
+      "assetId": "asset_3dbc008dd9d545a89bdaa462a7409b5b"
+    }
+  ],
+  "height": 3072
+}

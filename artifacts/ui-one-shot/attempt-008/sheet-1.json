@@ -1,0 +1,45 @@
+{
+  "regions": null,
+  "reusedSource": false,
+  "usage": {},
+  "width": 5504,
+  "sheetId": "7614c4a020f101f758db9dfd72f2ffbd2d6158bf9ab75fd0ff665d0ae8dee313",
+  "model": "google/gemini-3.1-flash-image",
+  "source": {
+    "sha256": "a7a9be5814df64ac35606b6466067615af142c0b0142e1f2fe8f1bfaa8f115df",
+    "bytes": 25401263,
+    "storagePath": "asset-platform/users/4b801b407b639dca73828adf869dbdc2/assets/ui_sheet_7614c4a020f101f758db9dfd72f2ffbd2d6158bf9ab75fd0ff665d0ae8dee313/versions/source_v1/master.png",
+    "contentType": "image/png"
+  },
+  "items": [
+    {
+      "fingerprint": "99cb8e513e41489a8a0a65065e5513b8fafd7d42cc6faa0bc27f8a04d19f72ab",
+      "error": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "Artwork subject could not be visually verified."
+      }
+    },
+    {
+      "fingerprint": "c609f3e22c0ac5fe219520453a0e9e45f7227ca0f61a1ef9cb120973a36215f6",
+      "error": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "Artwork subject could not be visually verified."
+      }
+    },
+    {
+      "fingerprint": "d12a8700a4a98444084349129da1f324e89b754bc17fb98d7284a3275f9a0c47",
+      "error": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "Artwork subject could not be visually verified."
+      }
+    },
+    {
+      "fingerprint": "e9568243be834c5d36830da10138eecf376d4952954758d6feefd623a2a8e3bc",
+      "error": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "Artwork subject could not be visually verified."
+      }
+    }
+  ],
+  "height": 3072
+}

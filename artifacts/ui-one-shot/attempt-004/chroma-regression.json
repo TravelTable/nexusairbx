@@ -1,0 +1,92 @@
+[
+  {
+    "sheet": 0,
+    "crops": [
+      {
+        "slot": 0,
+        "part": "component_surface",
+        "error": null
+      },
+      {
+        "slot": 1,
+        "part": "panel_surface",
+        "error": null
+      },
+      {
+        "slot": 2,
+        "part": "component_surface",
+        "error": null
+      },
+      {
+        "slot": 3,
+        "part": "panel_surface",
+        "error": null
+      },
+      {
+        "slot": 4,
+        "part": "toggle_off",
+        "error": null
+      },
+      {
+        "slot": 5,
+        "part": "ornament",
+        "error": null
+      }
+    ]
+  },
+  {
+    "sheet": 1,
+    "crops": [
+      {
+        "slot": 0,
+        "part": "slider_track",
+        "error": null
+      },
+      {
+        "slot": 1,
+        "part": "slider_fill",
+        "error": null
+      },
+      {
+        "slot": 2,
+        "part": "ornament",
+        "error": null
+      },
+      {
+        "slot": 3,
+        "part": "toggle_on",
+        "error": null
+      },
+      {
+        "slot": 4,
+        "part": "separator",
+        "error": null
+      }
+    ]
+  },
+  {
+    "sheet": 2,
+    "crops": [
+      {
+        "slot": 0,
+        "part": "component_surface",
+        "error": null
+      },
+      {
+        "slot": 1,
+        "part": "component_surface",
+        "error": null
+      },
+      {
+        "slot": 2,
+        "part": "slider_handle",
+        "error": null
+      },
+      {
+        "slot": 3,
+        "part": "icon",
+        "error": null
+      }
+    ]
+  }
+]

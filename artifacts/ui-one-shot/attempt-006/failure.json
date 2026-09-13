@@ -1,0 +1,66 @@
+{
+  "code": "UI_DESIGN_SPEC_INVALID",
+  "message": "The design plan could not pass validation after 2 bounded attempts: Required element missing: system_menu_close_on_play. Use the supplied libraryTemplate component roles; merge requirements into real controls instead of inventing duplicate containers/contracts: BackgroundField, MusicToggle, VolumeSlider",
+  "issues": [
+    "Required element missing: system_menu_close_on_play.",
+    "Use the supplied libraryTemplate component roles; merge requirements into real controls instead of inventing duplicate containers/contracts: BackgroundField, MusicToggle, VolumeSlider"
+  ],
+  "diagnostic": null,
+  "elapsedMs": 134662,
+  "usage": [
+    {
+      "model": "openai/gpt-5.4",
+      "usage": {
+        "prompt_tokens": 1955,
+        "completion_tokens": 2046,
+        "total_tokens": 4001,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0
+        }
+      },
+      "reportedCostMicros": null
+    },
+    {
+      "model": "openai/gpt-5.4",
+      "usage": {
+        "prompt_tokens": 10599,
+        "completion_tokens": 10421,
+        "total_tokens": 21020,
+        "prompt_tokens_details": {
+          "cached_tokens": 3840,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0
+        }
+      },
+      "reportedCostMicros": null
+    },
+    {
+      "model": "openai/gpt-5.4",
+      "usage": {
+        "prompt_tokens": 21151,
+        "completion_tokens": 10400,
+        "total_tokens": 31551,
+        "prompt_tokens_details": {
+          "cached_tokens": 9984,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0
+        }
+      },
+      "reportedCostMicros": null
+    }
+  ]
+}

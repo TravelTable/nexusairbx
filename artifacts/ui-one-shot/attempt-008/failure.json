@@ -1,0 +1,69 @@
+{
+  "code": "UI_REQUIRED_ARTWORK_UNRESOLVED",
+  "message": "Required artwork is unresolved; source generation was stopped before creating a misleading partial menu.",
+  "issues": [
+    "toggle_off is unavailable. Keep the control functional using native pieces. Required artwork remains unmet.",
+    "slider_track is unavailable. Keep the control functional using native pieces. Required artwork remains unmet.",
+    "slider_fill is unavailable. Keep the control functional using native pieces. Required artwork remains unmet.",
+    "slider_handle is unavailable. Keep the control functional using native pieces. Required artwork remains unmet.",
+    "ornament is unavailable. Omit the unavailable decoration. Required artwork remains unmet."
+  ],
+  "diagnostic": null,
+  "elapsedMs": 661375,
+  "usage": [
+    {
+      "model": "openai/gpt-5.4",
+      "usage": {
+        "prompt_tokens": 1955,
+        "completion_tokens": 1788,
+        "total_tokens": 3743,
+        "prompt_tokens_details": {
+          "cached_tokens": 1792,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0
+        }
+      },
+      "reportedCostMicros": null
+    },
+    {
+      "model": "openai/gpt-5.4",
+      "usage": {
+        "prompt_tokens": 10352,
+        "completion_tokens": 9936,
+        "total_tokens": 20288,
+        "prompt_tokens_details": {
+          "cached_tokens": 3840,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0
+        }
+      },
+      "reportedCostMicros": null
+    },
+    {
+      "model": "openai/gpt-5.4",
+      "usage": {
+        "prompt_tokens": 20406,
+        "completion_tokens": 9953,
+        "total_tokens": 30359,
+        "prompt_tokens_details": {
+          "cached_tokens": 9984,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0
+        }
+      },
+      "reportedCostMicros": null
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+generating_artwork
+extracting_artwork
+(node:49940) Warning: AI SDK Warning System: To turn off warning logging, set the AI_SDK_LOG_WARNINGS global to false.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:49940) DeprecationWarning: AI SDK Warning: Deprecated: ""image" content part". The "image" content part type is deprecated. Use a "file" part with mediaType: 'image' (or a more specific image/* subtype) instead.
+[
+  {
+    asset: undefined,
+    error: {
+      code: 'UI_SHEET_CLIPPED',
+      message: 'Artwork crosses its cell boundary or contains a separator.'
+    }
+  },
+  {
+    asset: undefined,
+    error: {
+      code: 'UI_SHEET_SUBJECT_MISSING',
+      message: 'The requested part is a toggle thumb, but the image only contains a complete toggle control.'
+    }
+  },
+  {
+    asset: undefined,
+    error: {
+      code: 'UI_SHEET_SUBJECT_MISSING',
+      message: 'The requested part is a slider handle, but the image only contains a complete slider control.'
+    }
+  },
+  {
+    asset: undefined,
+    error: {
+      code: 'UI_SHEET_CLIPPED',
+      message: 'Artwork crosses its cell boundary or contains a separator.'
+    }
+  },
+  {
+    asset: undefined,
+    error: {
+      code: 'UI_SHEET_CLIPPED',
+      message: 'Artwork crosses its cell boundary or contains a separator.'
+    }
+  },
+  {
+    asset: undefined,
+    error: {
+      code: 'UI_SHEET_CLIPPED',
+      message: 'Artwork crosses its cell boundary or contains a separator.'
+    }
+  }
+]

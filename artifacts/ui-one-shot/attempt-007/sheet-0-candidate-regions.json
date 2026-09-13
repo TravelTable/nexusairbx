@@ -1,0 +1,74 @@
+[
+  {
+    "slot": 0,
+    "candidateId": 2,
+    "box": [
+      137,
+      33,
+      369,
+      300
+    ],
+    "pixelRefined": true,
+    "reason": ""
+  },
+  {
+    "slot": 1,
+    "candidateId": 3,
+    "box": [
+      137,
+      366,
+      369,
+      634
+    ],
+    "pixelRefined": true,
+    "reason": ""
+  },
+  {
+    "slot": 2,
+    "candidateId": 4,
+    "box": [
+      137,
+      700,
+      369,
+      967
+    ],
+    "pixelRefined": true,
+    "reason": ""
+  },
+  {
+    "slot": 3,
+    "candidateId": 0,
+    "box": [
+      553,
+      34,
+      951,
+      300
+    ],
+    "pixelRefined": true,
+    "reason": ""
+  },
+  {
+    "slot": 4,
+    "candidateId": 1,
+    "box": [
+      559,
+      392,
+      939,
+      608
+    ],
+    "pixelRefined": true,
+    "reason": ""
+  },
+  {
+    "slot": 5,
+    "candidateId": 5,
+    "box": [
+      728,
+      700,
+      774,
+      960
+    ],
+    "pixelRefined": true,
+    "reason": ""
+  }
+]

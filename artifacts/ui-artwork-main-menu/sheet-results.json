@@ -1,0 +1,95 @@
+[
+  {
+    "usage": {},
+    "width": 5504,
+    "sheetId": "221cd7598afdfb56179adbae9c3ceea20459aaec7c8e053ca9cd9e4425ac74de",
+    "model": "google/gemini-3.1-flash-image",
+    "source": {
+      "sha256": "db87e609c1286a8889e3e55a2b31ee2e91da3d5c80807b90833aedd7e6459e8f",
+      "bytes": 23533148,
+      "storagePath": "asset-platform/users/4b801b407b639dca73828adf869dbdc2/assets/ui_sheet_221cd7598afdfb56179adbae9c3ceea20459aaec7c8e053ca9cd9e4425ac74de/versions/source_v1/master.png",
+      "contentType": "image/png"
+    },
+    "items": [
+      {
+        "fingerprint": "3289c3407b731725432d37525516766f373280e6c3d2c32c26adb633704da91d",
+        "assetId": "asset_ba81bd104c04413fa1c4e5729414428e"
+      },
+      {
+        "fingerprint": "60ad3409597bc9107fc10500d2e2fb7561f371c40b567b96d9aa272c7a0b9e3e",
+        "assetId": "asset_8db5d1f006c74515ab972c252cacf0e2"
+      },
+      {
+        "fingerprint": "65e4e4664be87de6e1aacd44beb80deb55eb041e9930e34b08ef8e9a797374ab",
+        "assetId": "asset_c46f5bff5a3d4158adcb803c5cc3661a"
+      },
+      {
+        "fingerprint": "e8f805a687e342e1532a066a0257650180c4a0010b2db435ed825e9e6ff20ec1",
+        "assetId": "asset_e1cf723245834cbcadaeca083a47c684"
+      }
+    ],
+    "height": 3072
+  },
+  {
+    "usage": {},
+    "width": 5504,
+    "sheetId": "96bc573bf097a927c4b16bdfa2f913e350a80b8edda5a68bad289ed4dc32ee8f",
+    "model": "google/gemini-3.1-flash-image",
+    "source": {
+      "sha256": "6a2085f90b6f949c2627062e0b37df2191856db33aa1a53ef4994c6697c541a3",
+      "bytes": 23019503,
+      "storagePath": "asset-platform/users/4b801b407b639dca73828adf869dbdc2/assets/ui_sheet_96bc573bf097a927c4b16bdfa2f913e350a80b8edda5a68bad289ed4dc32ee8f/versions/source_v1/master.png",
+      "contentType": "image/png"
+    },
+    "items": [
+      {
+        "fingerprint": "fb5dd2c76930c884767d7d00ee5a6919e71d9b1c8b046c65415783e492ad5bb9",
+        "assetId": "asset_32051086979346beabb6bef4d2e707b9"
+      }
+    ],
+    "height": 3072
+  },
+  {
+    "usage": {},
+    "width": 5504,
+    "sheetId": "a05f15bb0cdc4f5d74fb183f4e7a4bf0ecaf351cdc56b26dcfa9ac743ba4d64a",
+    "model": "google/gemini-3.1-flash-image",
+    "source": {
+      "sha256": "dde032532850ccb0b5aec0d9c490fd2588c771aba350b32f19ca1ff68cd23a1e",
+      "bytes": 30728345,
+      "storagePath": "asset-platform/users/4b801b407b639dca73828adf869dbdc2/assets/ui_sheet_a05f15bb0cdc4f5d74fb183f4e7a4bf0ecaf351cdc56b26dcfa9ac743ba4d64a/versions/source_v1/master.png",
+      "contentType": "image/png"
+    },
+    "items": [
+      {
+        "fingerprint": "25f1ee83df2bfae8fae395f12258b503c8b8ff7c53eea2d15b6f30de1b69a78b",
+        "error": {
+          "code": "UI_SHEET_CLIPPED",
+          "message": "Artwork crosses its cell boundary or contains a separator."
+        }
+      },
+      {
+        "fingerprint": "57ec46e12dd1e91264e2a6f559e4a237aa75fc840d0b6fe26edc7ebec3c14476",
+        "error": {
+          "code": "UI_SHEET_CLIPPED",
+          "message": "Artwork crosses its cell boundary or contains a separator."
+        }
+      },
+      {
+        "fingerprint": "73a39eb2da7e1379551204e1072fbb039ce2b496513e0d72c4a9ecfb80081044",
+        "error": {
+          "code": "UI_SHEET_CLIPPED",
+          "message": "Artwork crosses its cell boundary or contains a separator."
+        }
+      },
+      {
+        "fingerprint": "9c5291ba5863877e81c8d59304a85c4754e7793814b5a1d3012df32adefed2c6",
+        "error": {
+          "code": "UI_SHEET_CLIPPED",
+          "message": "Artwork crosses its cell boundary or contains a separator."
+        }
+      }
+    ],
+    "height": 3072
+  }
+]

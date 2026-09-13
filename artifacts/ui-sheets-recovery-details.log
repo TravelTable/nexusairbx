@@ -1,0 +1,52 @@
+[ops] {
+  event: 'asset.generation_started',
+  ts: '2026-09-12T21:17:36.640Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_9e994f8530f6453ab5638745ab063131',
+  assetType: 'image'
+}
+[ops] {
+  event: 'asset.generation_completed',
+  ts: '2026-09-12T21:17:46.166Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_9e994f8530f6453ab5638745ab063131',
+  assetType: 'image',
+  provider: 'vercel-gemini-ui-sheet'
+}
+[ops] {
+  event: 'asset.generation_started',
+  ts: '2026-09-12T21:17:49.657Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_79bb3b0df17842cea10bd7587e19e992',
+  assetType: 'image'
+}
+[ops] {
+  event: 'asset.generation_completed',
+  ts: '2026-09-12T21:17:58.931Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_79bb3b0df17842cea10bd7587e19e992',
+  assetType: 'image',
+  provider: 'vercel-gemini-ui-sheet'
+}
+[
+  { asset: 'asset_9e994f8530f6453ab5638745ab063131', error: undefined },
+  { asset: 'asset_79bb3b0df17842cea10bd7587e19e992', error: undefined },
+  {
+    asset: undefined,
+    error: {
+      code: 'UI_SHEET_CHROMA_INVALID',
+      message: 'Cell is empty or lacks a removable chroma background.'
+    }
+  },
+  {
+    asset: undefined,
+    error: {
+      code: 'UI_SHEET_CLIPPED',
+      message: 'Artwork crosses its cell boundary or contains a separator.'
+    }
+  }
+]

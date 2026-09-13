@@ -1,0 +1,59 @@
+[
+  {
+    "usage": {},
+    "width": 5504,
+    "sheetId": "6da45bb30c01ad6694ab6f8639a1a53d5ffe0c350d278d0c93cb8f87ca415141",
+    "model": "google/gemini-3.1-flash-image",
+    "source": {
+      "sha256": "d36bc3529160e8c6dd41e67aee5bb40a01d8f81730962bda29067f2fd84a9e64",
+      "bytes": 26540136,
+      "storagePath": "asset-platform/users/4b801b407b639dca73828adf869dbdc2/assets/ui_sheet_6da45bb30c01ad6694ab6f8639a1a53d5ffe0c350d278d0c93cb8f87ca415141/versions/source_v1/master.png",
+      "contentType": "image/png"
+    },
+    "items": [
+      {
+        "fingerprint": "25f1ee83df2bfae8fae395f12258b503c8b8ff7c53eea2d15b6f30de1b69a78b",
+        "error": {
+          "code": "UI_SHEET_CHROMA_INVALID",
+          "message": "Cell is empty or lacks a removable chroma background."
+        }
+      },
+      {
+        "fingerprint": "2cf275e4e2ef880c263f9ea3c72893c2ea6b55202d9124fb0b0c8dac24eea71e",
+        "error": {
+          "code": "UI_SHEET_CHROMA_INVALID",
+          "message": "Cell is empty or lacks a removable chroma background."
+        }
+      },
+      {
+        "fingerprint": "31daea4cff1af420a06f2c0fe6bac25e8ffcb40d9608574098dc3939e621da51",
+        "error": {
+          "code": "UI_SHEET_CHROMA_INVALID",
+          "message": "Cell is empty or lacks a removable chroma background."
+        }
+      },
+      {
+        "fingerprint": "57ec46e12dd1e91264e2a6f559e4a237aa75fc840d0b6fe26edc7ebec3c14476",
+        "error": {
+          "code": "UI_SHEET_CHROMA_INVALID",
+          "message": "Cell is empty or lacks a removable chroma background."
+        }
+      },
+      {
+        "fingerprint": "73a39eb2da7e1379551204e1072fbb039ce2b496513e0d72c4a9ecfb80081044",
+        "error": {
+          "code": "UI_SHEET_CHROMA_INVALID",
+          "message": "Cell is empty or lacks a removable chroma background."
+        }
+      },
+      {
+        "fingerprint": "9c5291ba5863877e81c8d59304a85c4754e7793814b5a1d3012df32adefed2c6",
+        "error": {
+          "code": "UI_SHEET_CHROMA_INVALID",
+          "message": "Cell is empty or lacks a removable chroma background."
+        }
+      }
+    ],
+    "height": 3072
+  }
+]

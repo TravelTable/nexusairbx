@@ -1,0 +1,135 @@
+TAP version 13
+# Subtest: shared skins and generated icons form separate bounded sheets with stable identities
+ok 1 - shared skins and generated icons form separate bounded sheets with stable identities
+  ---
+  duration_ms: 32.7208
+  ...
+# Subtest: requirement IDs bind required artwork to planned controls and split moving pieces
+ok 2 - requirement IDs bind required artwork to planned controls and split moving pieces
+  ---
+  duration_ms: 1.7921
+  ...
+# Subtest: explicit required icon is generated once with its semantic subject
+ok 3 - explicit required icon is generated once with its semantic subject
+  ---
+  duration_ms: 0.4391
+  ...
+# Subtest: icon asset requirements retain their requirement binding on the shared generated icon
+ok 4 - icon asset requirements retain their requirement binding on the shared generated icon
+  ---
+  duration_ms: 0.2872
+  ...
+# Subtest: compact control pieces share icon cells without shrinking large surfaces
+ok 5 - compact control pieces share icon cells without shrinking large surfaces
+  ---
+  duration_ms: 1.3103
+  ...
+# Subtest: extracts independent alpha assets, removes enclosed magenta, discards grid lines
+ok 6 - extracts independent alpha assets, removes enclosed magenta, discards grid lines
+  ---
+  duration_ms: 282.1959
+  ...
+# Subtest: clipped and empty cells fail independently without discarding good siblings
+ok 7 - clipped and empty cells fail independently without discarding good siblings
+  ---
+  duration_ms: 205.4209
+  ...
+# Subtest: shaded chroma is removed while cyan artwork survives
+ok 8 - shaded chroma is removed while cyan artwork survives
+  ---
+  duration_ms: 299.0441
+  ...
+# Subtest: desaturated green backing does not become a clipped opaque rectangle
+ok 9 - desaturated green backing does not become a clipped opaque rectangle
+  ---
+  duration_ms: 260.1292
+  ...
+# Subtest: vision locator receives the actual sheet and rejects malformed coordinates
+ok 10 - vision locator receives the actual sheet and rejects malformed coordinates
+  ---
+  duration_ms: 503.2715
+  ...
+# Subtest: vision can select a numbered silhouette without estimating crop coordinates
+ok 11 - vision can select a numbered silhouette without estimating crop coordinates
+  ---
+  duration_ms: 292.1774
+  ...
+# Subtest: a neighboring silhouette inside crop padding cannot create a false clipping failure
+ok 12 - a neighboring silhouette inside crop padding cannot create a false clipping failure
+  ---
+  duration_ms: 161.0656
+  ...
+# Subtest: 4K gateway options are explicit and lower-resolution provider output is rejected
+ok 13 - 4K gateway options are explicit and lower-resolution provider output is rejected
+  ---
+  duration_ms: 9.1338
+  ...
+# Subtest: colored wide skins retain aspect and valid dynamic nine-slice metadata through processing
+ok 14 - colored wide skins retain aspect and valid dynamic nine-slice metadata through processing
+  ---
+  duration_ms: 407.7596
+  ...
+# Subtest: JSON cannot grant the prepared artwork capability
+ok 15 - JSON cannot grant the prepared artwork capability
+  ---
+  duration_ms: 0.488
+  ...
+# Subtest: oversized kits fail before any paid partial generation
+ok 16 - oversized kits fail before any paid partial generation
+  ---
+  duration_ms: 0.9755
+  ...
+# Subtest: independent sheets use two workers while sharing the same durable four-sheet budget
+ok 17 - independent sheets use two workers while sharing the same durable four-sheet budget
+  ---
+  duration_ms: 41.2912
+  ...
+# Subtest: matching icons share one asset even when their parent skins differ
+ok 18 - matching icons share one asset even when their parent skins differ
+  ---
+  duration_ms: 0.8783
+  ...
+# Subtest: large skins and decorations share roomy cells while eight compact subjects leave a repair slot
+ok 19 - large skins and decorations share roomy cells while eight compact subjects leave a repair slot
+  ---
+  duration_ms: 0.6983
+  ...
+# Subtest: one paid sheet creates separate assets and replay never generates again
+ok 20 - one paid sheet creates separate assets and replay never generates again
+  ---
+  duration_ms: 1.0707
+  ...
+# Subtest: confirmed bad cells get one bounded repair and replay never buys another sheet
+ok 21 - confirmed bad cells get one bounded repair and replay never buys another sheet
+  ---
+  duration_ms: 1.1941
+  ...
+# Subtest: a confirmed bad crop can recover once without regenerating its successful siblings
+ok 22 - a confirmed bad crop can recover once without regenerating its successful siblings
+  ---
+  duration_ms: 1.4223
+  ...
+# Subtest: an unavailable image checker never accepts unchecked icons or buys replacement images
+ok 23 - an unavailable image checker never accepts unchecked icons or buys replacement images
+  ---
+  duration_ms: 0.5715
+  ...
+# Subtest: ambiguous gateway outcomes are fenced across retries
+ok 24 - ambiguous gateway outcomes are fenced across retries
+  ---
+  duration_ms: 0.5458
+  ...
+# Subtest: a later extraction can reuse a saved raw sheet without another image generation
+ok 25 - a later extraction can reuse a saved raw sheet without another image generation
+  ---
+  duration_ms: 11.8873
+  ...
+1..25
+# tests 25
+# suites 0
+# pass 25
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2750.297

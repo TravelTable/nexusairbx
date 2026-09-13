@@ -1,0 +1,111 @@
+{
+  "regions": [
+    {
+      "slot": 0,
+      "box": [
+        60,
+        100,
+        299,
+        300
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 1,
+      "box": [
+        60,
+        350,
+        299,
+        550
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 2,
+      "box": [
+        60,
+        600,
+        299,
+        800
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 3,
+      "box": [
+        440,
+        100,
+        679,
+        300
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 4,
+      "box": [
+        440,
+        350,
+        679,
+        550
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 5,
+      "box": [
+        490,
+        600,
+        629,
+        800
+      ],
+      "reason": ""
+    }
+  ],
+  "reusedSource": false,
+  "usage": {},
+  "width": 5504,
+  "sheetId": "4746219269652904aa5184e5bf887954ad6cccb5a83a80e84c675542cd72bd76",
+  "model": "google/gemini-3.1-flash-image",
+  "source": {
+    "sha256": "8cea453fb7fffc2287530bbf5c455d093422404f3d6ebac56dcb8e615276da41",
+    "bytes": 26207988,
+    "storagePath": "asset-platform/users/4b801b407b639dca73828adf869dbdc2/assets/ui_sheet_4746219269652904aa5184e5bf887954ad6cccb5a83a80e84c675542cd72bd76/versions/source_v1/master.png",
+    "contentType": "image/png"
+  },
+  "items": [
+    {
+      "fingerprint": "75f707fa40c8bd3fd7267f62cc77ae039b48171e49aebb417dc6122ba4764a9a",
+      "assetId": "asset_0102f1602bf64fd2b5c2de433cbb7a41"
+    },
+    {
+      "fingerprint": "773bd429e732169f3eae0eb5a446a1901e7714495afbd540b32e74038f9e71bd",
+      "assetId": "asset_06e79741a5674fe3b62f491ff4b519a5"
+    },
+    {
+      "fingerprint": "81b5076042b9be5f419c1236bf6dbac24151beaa34677732533ea1b0f4183ec9",
+      "error": {
+        "code": "UI_SHEET_CLIPPED",
+        "message": "Artwork crosses its cell boundary or contains a separator."
+      }
+    },
+    {
+      "fingerprint": "8a0b9e813a42d3ae711f12c45626c4c89b0c3428867ff3ab29c13d40dafd2f62",
+      "assetId": "asset_c2a6b6ce20854993b9e8c7dc22fd6da2"
+    },
+    {
+      "fingerprint": "d07c6611a5eef475ff4e0dbcbc95345a0daf2c3da357978b640b9b075313fb97",
+      "error": {
+        "code": "UI_SHEET_CLIPPED",
+        "message": "Artwork crosses its cell boundary or contains a separator."
+      }
+    },
+    {
+      "fingerprint": "2f8101d723e0cf73bd9bea180685b33a3e863d04305e52370d0f0be6dcae8848",
+      "error": {
+        "code": "UI_SHEET_CLIPPED",
+        "message": "Artwork crosses its cell boundary or contains a separator."
+      }
+    }
+  ],
+  "height": 3072
+}

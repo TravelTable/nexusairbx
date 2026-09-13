@@ -1,0 +1,11 @@
+UI_MODEL_BUILD_FAILED Files saved, but the RBXM could not be built. Luau build failed: Failed to convert from 'nil' into 'Ref'
+[Stack Begin]
+    Script '[C]'
+    Script 'View.luau', Line 179
+    Script 'View.luau', Line 467
+    Script 'View.luau', Line 960
+    Script 'View.luau', Line 990
+    Script '/app/build_ui', Line 25
+[Stack End]
+
+

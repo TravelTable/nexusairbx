@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "input": {
+    "requestId": "sheet-smoke-1789284443358",
+    "prompt": "Build a polished Roblox main menu titled AURORA. Features: Play, Settings, Credits. Settings opens a panel with Music on/off toggle and Volume slider. Credits opens a small panel. Both panels have Close. Desktop and mobile. Rich glossy cyan/cobalt artwork with thick navy edges, warm gold highlights, ornamental corner details and a title plate. Use Gemini-generated matching skins and icons: button skins, panel skin, slider track and handle, toggle on/off pieces and distinct play/settings/credits/close icons. Keep text live and readable. Create only these features; no shop, rewards, currency, ranks or invented game systems. Play closes the menu and fires a clearly named local hook for game integration. Coherent hover and press animation. Native background layout with restrained decoration. Panels must open and close in the actual controller.",
+    "projectId": "proj_e237b4d5b7634cf2a503723f3f8beff7"
+  },
+  "sourceHash": null,
+  "untouched": false,
+  "unattendedPass": false,
+  "failures": [
+    {
+      "gate": "execution",
+      "code": "UI_REQUIRED_ARTWORK_UNRESOLVED",
+      "message": "Required artwork is unresolved; source generation was stopped before creating a misleading partial menu."
+    },
+    {
+      "gate": "source",
+      "message": "No complete source files were produced."
+    },
+    {
+      "gate": "implementation",
+      "issues": [
+        "Compiled implementation evidence is missing."
+      ]
+    },
+    {
+      "gate": "renders",
+      "message": "Required device renders are missing."
+    },
+    {
+      "gate": "visual",
+      "issues": [
+        "No accepted image-based review."
+      ]
+    }
+  ],
+  "elapsedMs": 661375,
+  "renderedViews": [],
+  "generationEvidence": null,
+  "usage": {
+    "receipts": [
+      {
+        "model": "openai/gpt-5.4",
+        "usage": {
+          "prompt_tokens": 1955,
+          "completion_tokens": 1788,
+          "total_tokens": 3743,
+          "prompt_tokens_details": {
+            "cached_tokens": 1792,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0
+          }
+        },
+        "reportedCostMicros": null
+      },
+      {
+        "model": "openai/gpt-5.4",
+        "usage": {
+          "prompt_tokens": 10352,
+          "completion_tokens": 9936,
+          "total_tokens": 20288,
+          "prompt_tokens_details": {
+            "cached_tokens": 3840,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0
+          }
+        },
+        "reportedCostMicros": null
+      },
+      {
+        "model": "openai/gpt-5.4",
+        "usage": {
+          "prompt_tokens": 20406,
+          "completion_tokens": 9953,
+          "total_tokens": 30359,
+          "prompt_tokens_details": {
+            "cached_tokens": 9984,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0
+          }
+        },
+        "reportedCostMicros": null
+      }
+    ],
+    "reportedCostMicros": null,
+    "allReceiptsHaveReportedCost": false,
+    "completeRunCost": false
+  },
+  "runtimeVerified": false
+}
