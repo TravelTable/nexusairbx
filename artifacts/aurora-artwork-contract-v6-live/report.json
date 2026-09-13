@@ -1,0 +1,589 @@
+{
+  "artworkOnly": true,
+  "success": false,
+  "elapsedMs": 449685,
+  "sourceSheets": [
+    "sheet-0.png",
+    "sheet-1.png",
+    "sheet-2.png",
+    "sheet-3.png"
+  ],
+  "items": [
+    {
+      "fingerprint": "48d2348ee3ceb7dc1fe5e04c267121a78ec25443669b5bfd53c9f9fcdc71a2c9",
+      "part": "panel_surface",
+      "nodes": [
+        "SettingsPanel",
+        "CreditsPanel"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-0.png",
+      "extractedPng": "sheet-0-part-0-extracted.png",
+      "pass": true,
+      "canonicalAssetId": "asset_977b073d9e67495786266e5f7b4e7bb3",
+      "png": "asset-1-panel_surface.png",
+      "width": 1024,
+      "height": 824,
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "panel_surface",
+        "styleFingerprint": "48d2348ee3ceb7dc1fe5e04c267121a78ec25443669b5bfd53c9f9fcdc71a2c9",
+        "componentIds": [
+          "settings_panel",
+          "credits_panel"
+        ],
+        "nodeNames": [
+          "SettingsPanel",
+          "CreditsPanel"
+        ],
+        "requirementIds": [
+          "art_settings_panel",
+          "art_credits_panel"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 824,
+        "renderStrategy": "image_9slice",
+        "scaleType": "Slice",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "a1c0e6aeee6209c02a5a578e4066a70de3fa1e39bf4914566cb257f1acd55af4",
+        "slot": 0,
+        "sliceCenter": [
+          185,
+          149,
+          839,
+          675
+        ],
+        "sliceScale": 0.2
+      }
+    },
+    {
+      "fingerprint": "77370d3e10452c298e6ae2b80e5c4afa458527a18e393a9dc964dc6148043529",
+      "part": "component_surface",
+      "nodes": [
+        "PlayButton"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-0.png",
+      "extractedPng": "sheet-0-part-1-extracted.png",
+      "pass": true,
+      "canonicalAssetId": "asset_c5cb2622ddaf4cbd99ea31480171d978",
+      "png": "asset-2-component_surface.png",
+      "width": 1024,
+      "height": 713,
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "component_surface",
+        "styleFingerprint": "77370d3e10452c298e6ae2b80e5c4afa458527a18e393a9dc964dc6148043529",
+        "componentIds": [
+          "play"
+        ],
+        "nodeNames": [
+          "PlayButton"
+        ],
+        "requirementIds": [
+          "art_play"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 713,
+        "renderStrategy": "image_9slice",
+        "scaleType": "Slice",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "a1c0e6aeee6209c02a5a578e4066a70de3fa1e39bf4914566cb257f1acd55af4",
+        "slot": 1,
+        "sliceCenter": [
+          185,
+          129,
+          839,
+          584
+        ],
+        "sliceScale": 0.2
+      }
+    },
+    {
+      "fingerprint": "7f24936eaecb497afa0192603ba7438290ea04d2f18c8583c7a870d4fbf5def2",
+      "part": "component_surface",
+      "nodes": [
+        "SettingsCloseButton",
+        "CreditsCloseButton"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-0.png",
+      "extractedPng": "sheet-0-part-2-extracted.png",
+      "pass": true,
+      "canonicalAssetId": "asset_30e94ee326274b628c470b49cf44d3ac",
+      "png": "asset-3-component_surface.png",
+      "width": 1000,
+      "height": 1024,
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "component_surface",
+        "styleFingerprint": "7f24936eaecb497afa0192603ba7438290ea04d2f18c8583c7a870d4fbf5def2",
+        "componentIds": [
+          "settings_close",
+          "credits_close"
+        ],
+        "nodeNames": [
+          "SettingsCloseButton",
+          "CreditsCloseButton"
+        ],
+        "requirementIds": [
+          "art_settings_close",
+          "art_credits_close"
+        ],
+        "required": true,
+        "width": 1000,
+        "height": 1024,
+        "renderStrategy": "image_9slice",
+        "scaleType": "Slice",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "a1c0e6aeee6209c02a5a578e4066a70de3fa1e39bf4914566cb257f1acd55af4",
+        "slot": 2,
+        "sliceCenter": [
+          180,
+          185,
+          820,
+          839
+        ],
+        "sliceScale": 0.2
+      }
+    },
+    {
+      "fingerprint": "fded688fe58a972bc73aac5e4e5e3e5e43ff108eeb5246d379894ed9ed3e7f4a",
+      "part": "component_surface",
+      "nodes": [
+        "SettingsButton",
+        "CreditsButton"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-0.png",
+      "extractedPng": "sheet-0-part-3-extracted.png",
+      "pass": true,
+      "canonicalAssetId": "asset_0530856337194fa3933f80021648dd5d",
+      "png": "asset-4-component_surface.png",
+      "width": 1024,
+      "height": 365,
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "component_surface",
+        "styleFingerprint": "fded688fe58a972bc73aac5e4e5e3e5e43ff108eeb5246d379894ed9ed3e7f4a",
+        "componentIds": [
+          "settings",
+          "credits"
+        ],
+        "nodeNames": [
+          "SettingsButton",
+          "CreditsButton"
+        ],
+        "requirementIds": [
+          "art_settings",
+          "art_credits"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 365,
+        "renderStrategy": "image_9slice",
+        "scaleType": "Slice",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "a1c0e6aeee6209c02a5a578e4066a70de3fa1e39bf4914566cb257f1acd55af4",
+        "slot": 3,
+        "sliceCenter": [
+          185,
+          66,
+          839,
+          299
+        ],
+        "sliceScale": 0.2
+      }
+    },
+    {
+      "fingerprint": "0040168517fd26871a208d61983e4fe5586c9bd6ffebe59839a270f238e2626d",
+      "part": "play",
+      "nodes": [
+        "PlayButton"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-1.png",
+      "extractedPng": "sheet-1-part-0-extracted.png",
+      "pass": true,
+      "canonicalAssetId": "asset_926cfeb5785c45b781e5f5d8bee5ecef",
+      "png": "asset-5-play.png",
+      "width": 830,
+      "height": 1024,
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "icon",
+        "styleFingerprint": "0040168517fd26871a208d61983e4fe5586c9bd6ffebe59839a270f238e2626d",
+        "componentIds": [
+          "play"
+        ],
+        "nodeNames": [
+          "PlayButton"
+        ],
+        "requirementIds": [],
+        "required": true,
+        "width": 830,
+        "height": 1024,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "play",
+        "sheetId": "1ab9f810208a447b6386ef9917bf4f7b7803d4f2db885e585b2606ad99939893",
+        "slot": 0
+      }
+    },
+    {
+      "fingerprint": "13210c80df39c9cc0cdd2e3f047f5a3c6a1209b46bf02df3a9f0e4d539439551",
+      "part": "toggle_on",
+      "nodes": [
+        "MusicToggleOn"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-3.png",
+      "pass": false,
+      "failure": {
+        "code": "UI_SHEET_SUBJECT_MISSING",
+        "message": "No empty horizontal pill-shaped housing in the ON color treatment without a circular thumb or other elements. Candidate 0 has a circular thumb and is not empty."
+      }
+    },
+    {
+      "fingerprint": "30a9bffeff695ed11848f4f7a11c467b300a5874af8b04f9a85dc9ed385b3586",
+      "part": "ornament",
+      "nodes": [
+        "TitlePlate"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-0.png",
+      "extractedPng": "sheet-0-part-4-extracted.png",
+      "pass": true,
+      "canonicalAssetId": "asset_673b5cb39af24c928fc7972a7021dcd0",
+      "png": "asset-7-ornament.png",
+      "width": 1024,
+      "height": 282,
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "ornament",
+        "styleFingerprint": "30a9bffeff695ed11848f4f7a11c467b300a5874af8b04f9a85dc9ed385b3586",
+        "componentIds": [
+          "title"
+        ],
+        "nodeNames": [
+          "TitlePlate"
+        ],
+        "requirementIds": [
+          "art_title"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 282,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "a1c0e6aeee6209c02a5a578e4066a70de3fa1e39bf4914566cb257f1acd55af4",
+        "slot": 4
+      }
+    },
+    {
+      "fingerprint": "3c69090924f53d62f2a6e9a38ae1a35e0a8e3006d574410ffd792a79851615e1",
+      "part": "close",
+      "nodes": [
+        "SettingsCloseButton",
+        "CreditsCloseButton"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-1.png",
+      "extractedPng": "sheet-1-part-1-extracted.png",
+      "pass": true,
+      "canonicalAssetId": "asset_8d2930c9697448038ab04431f2206328",
+      "png": "asset-8-close.png",
+      "width": 1019,
+      "height": 1024,
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "icon",
+        "styleFingerprint": "3c69090924f53d62f2a6e9a38ae1a35e0a8e3006d574410ffd792a79851615e1",
+        "componentIds": [
+          "settings_close",
+          "credits_close"
+        ],
+        "nodeNames": [
+          "SettingsCloseButton",
+          "CreditsCloseButton"
+        ],
+        "requirementIds": [],
+        "required": true,
+        "width": 1019,
+        "height": 1024,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "close",
+        "sheetId": "1ab9f810208a447b6386ef9917bf4f7b7803d4f2db885e585b2606ad99939893",
+        "slot": 1
+      }
+    },
+    {
+      "fingerprint": "40b4eb24e550559e17c5444bc43127f2c50e7ffb2555895f70417950e20c3a3c",
+      "part": "toggle_thumb",
+      "nodes": [
+        "MusicToggleThumb"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-3.png",
+      "extractedPng": "sheet-3-part-1-extracted.png",
+      "pass": true,
+      "canonicalAssetId": "asset_e5e36c5129ec40ed820d581602a7f9d5",
+      "png": "asset-9-toggle_thumb.png",
+      "width": 1023,
+      "height": 1024,
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "control_artwork",
+        "styleFingerprint": "40b4eb24e550559e17c5444bc43127f2c50e7ffb2555895f70417950e20c3a3c",
+        "componentIds": [
+          "music"
+        ],
+        "nodeNames": [
+          "MusicToggleThumb"
+        ],
+        "requirementIds": [
+          "art_music"
+        ],
+        "required": true,
+        "width": 1023,
+        "height": 1024,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "97a8e03dda35c203d9244fcc066390c684d61d18a5e25124dc83cd79f9c9f32f",
+        "slot": 1,
+        "controlPart": "toggle_thumb"
+      }
+    },
+    {
+      "fingerprint": "47d636f30b63172243391b567be5c4114d9b997208864e0ec6a9ca419b1c4d67",
+      "part": "slider_handle",
+      "nodes": [
+        "VolumeSliderHandle"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-2.png",
+      "pass": false,
+      "failure": {
+        "code": "UI_SHEET_SUBJECT_MISSING",
+        "message": "No compact loose beveled cap found. Candidate 2 is a button, not a slider handle."
+      }
+    },
+    {
+      "fingerprint": "481f4b7bfa7298d5a8bc31afc0a49bfcdd5d41b982a65aa6eabd8b28e227aac4",
+      "part": "slider_fill",
+      "nodes": [
+        "VolumeSliderFill"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-2.png",
+      "extractedPng": "sheet-2-part-1-extracted.png",
+      "pass": true,
+      "canonicalAssetId": "asset_1c3a3c68edee4811981f1b08c17d0c20",
+      "png": "asset-11-slider_fill.png",
+      "width": 1024,
+      "height": 127,
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "control_artwork",
+        "styleFingerprint": "481f4b7bfa7298d5a8bc31afc0a49bfcdd5d41b982a65aa6eabd8b28e227aac4",
+        "componentIds": [
+          "volume"
+        ],
+        "nodeNames": [
+          "VolumeSliderFill"
+        ],
+        "requirementIds": [
+          "art_volume"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 127,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "89e49e089851a8db168faba28808f03a2aa20ce27c18a99f23f496e0d49f5e67",
+        "slot": 1,
+        "controlPart": "slider_fill"
+      }
+    },
+    {
+      "fingerprint": "6c3e592575e2fa0ff30c4c4d09638717c5852bb11262140dad55fb3d3dac873c",
+      "part": "slider_track",
+      "nodes": [
+        "VolumeSliderTrack"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-2.png",
+      "extractedPng": "sheet-2-part-2-extracted.png",
+      "pass": true,
+      "canonicalAssetId": "asset_f873205e0ebd41abab429b8a7fb2c4f5",
+      "png": "asset-12-slider_track.png",
+      "width": 1024,
+      "height": 173,
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "control_artwork",
+        "styleFingerprint": "6c3e592575e2fa0ff30c4c4d09638717c5852bb11262140dad55fb3d3dac873c",
+        "componentIds": [
+          "volume"
+        ],
+        "nodeNames": [
+          "VolumeSliderTrack"
+        ],
+        "requirementIds": [
+          "art_volume"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 173,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "89e49e089851a8db168faba28808f03a2aa20ce27c18a99f23f496e0d49f5e67",
+        "slot": 2,
+        "controlPart": "slider_track"
+      }
+    },
+    {
+      "fingerprint": "b4ee9506e1d02e54555f227cc12b6e0aa44455e37126acf8e8cb5d0229cb1cce",
+      "part": "credits",
+      "nodes": [
+        "CreditsButton"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-1.png",
+      "extractedPng": "sheet-1-part-2-extracted.png",
+      "pass": true,
+      "canonicalAssetId": "asset_c9d9d60c64fe419c98d232730d9636f6",
+      "png": "asset-13-credits.png",
+      "width": 1024,
+      "height": 730,
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "icon",
+        "styleFingerprint": "b4ee9506e1d02e54555f227cc12b6e0aa44455e37126acf8e8cb5d0229cb1cce",
+        "componentIds": [
+          "credits"
+        ],
+        "nodeNames": [
+          "CreditsButton"
+        ],
+        "requirementIds": [],
+        "required": true,
+        "width": 1024,
+        "height": 730,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "credits",
+        "sheetId": "1ab9f810208a447b6386ef9917bf4f7b7803d4f2db885e585b2606ad99939893",
+        "slot": 2
+      }
+    },
+    {
+      "fingerprint": "cbfebf9aaefe5f49f7f1f384fd1976e595821a425f90896b02feb737ad3d2991",
+      "part": "ornament",
+      "nodes": [
+        "CornerOrnament"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-0.png",
+      "pass": false,
+      "failure": {
+        "code": "UI_SHEET_CLIPPED",
+        "message": "Artwork crosses its cell boundary or contains a separator."
+      }
+    },
+    {
+      "fingerprint": "df02c63ff0f60bc8ea0dc17a5f4f23c52d440470468c2bea2a938598d3e094f6",
+      "part": "toggle_off",
+      "nodes": [
+        "MusicToggleOff"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-3.png",
+      "pass": false,
+      "failure": {
+        "code": "UI_SHEET_SUBJECT_MISSING",
+        "message": "No empty horizontal pill-shaped housing in the OFF color treatment without a circular thumb or other elements. Candidate 1 has a circular thumb and is not empty."
+      }
+    },
+    {
+      "fingerprint": "fbb4d748d9caf1cb83809e8a45560a243828fa0fb5088eba2f666278c62d63f3",
+      "part": "settings",
+      "nodes": [
+        "SettingsButton"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-1.png",
+      "extractedPng": "sheet-1-part-3-extracted.png",
+      "pass": true,
+      "canonicalAssetId": "asset_f6ccf6a2546942038cdaf9f808cdad3e",
+      "png": "asset-16-settings.png",
+      "width": 1024,
+      "height": 1022,
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "icon",
+        "styleFingerprint": "fbb4d748d9caf1cb83809e8a45560a243828fa0fb5088eba2f666278c62d63f3",
+        "componentIds": [
+          "settings"
+        ],
+        "nodeNames": [
+          "SettingsButton"
+        ],
+        "requirementIds": [],
+        "required": true,
+        "width": 1024,
+        "height": 1022,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "settings",
+        "sheetId": "1ab9f810208a447b6386ef9917bf4f7b7803d4f2db885e585b2606ad99939893",
+        "slot": 3
+      }
+    }
+  ],
+  "sourceGenerated": false,
+  "published": false
+}

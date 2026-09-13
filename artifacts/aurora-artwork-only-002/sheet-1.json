@@ -1,0 +1,66 @@
+{
+  "regions": [
+    {
+      "slot": 0,
+      "candidateId": 1,
+      "box": [
+        59,
+        20,
+        441,
+        480
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    },
+    {
+      "slot": 1,
+      "candidateId": 2,
+      "box": [
+        208,
+        520,
+        292,
+        980
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    },
+    {
+      "slot": 2,
+      "candidateId": 0,
+      "box": [
+        559,
+        20,
+        942,
+        480
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    }
+  ],
+  "reusedSource": false,
+  "usage": {},
+  "width": 5504,
+  "sheetId": "f22ebc21d35c099dd5abbc467a173cf415407ad8d2de27ca5dac2633802502f3",
+  "model": "google/gemini-3.1-flash-image",
+  "source": {
+    "sha256": "1c9d0a4a2753df071b6ed15d5bf23e5d3c55472c258bed1145c289b3bd74b9f4",
+    "bytes": 17837175,
+    "storagePath": "asset-platform/users/4b801b407b639dca73828adf869dbdc2/assets/ui_sheet_f22ebc21d35c099dd5abbc467a173cf415407ad8d2de27ca5dac2633802502f3/versions/source_v1/master.png",
+    "contentType": "image/png"
+  },
+  "items": [
+    {
+      "fingerprint": "6495be725cace232f02937ce4fe54ae0bc710154a2f21de71eb6544122bc0462",
+      "assetId": "asset_2177be617b45470697cbc1713ee76bf0"
+    },
+    {
+      "fingerprint": "7a9fa116596cb9c93a3401223c14c72f47f061fd6532db020f9e4fafac8b377f",
+      "assetId": "asset_4fea175b3c1c46f5b54fa142ecc1244a"
+    },
+    {
+      "fingerprint": "d26d350830a44fc4223683b7add243b86366024892a7568471af4fe2471fec7a",
+      "assetId": "asset_9fd4e737bf46417c9a8d4c382d8cb89f"
+    }
+  ],
+  "height": 3072
+}

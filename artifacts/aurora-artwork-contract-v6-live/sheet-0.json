@@ -1,0 +1,117 @@
+{
+  "regions": [
+    {
+      "slot": 0,
+      "candidateId": 0,
+      "box": [
+        43,
+        25,
+        451,
+        310
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    },
+    {
+      "slot": 1,
+      "candidateId": 1,
+      "box": [
+        550,
+        25,
+        902,
+        310
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    },
+    {
+      "slot": 2,
+      "candidateId": 4,
+      "box": [
+        43,
+        775,
+        408,
+        975
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    },
+    {
+      "slot": 3,
+      "candidateId": 3,
+      "box": [
+        362,
+        360,
+        593,
+        725
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    },
+    {
+      "slot": 4,
+      "candidateId": 5,
+      "box": [
+        682,
+        359,
+        860,
+        727
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    },
+    {
+      "slot": 5,
+      "candidateId": 6,
+      "box": [
+        550,
+        775,
+        841,
+        935
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    }
+  ],
+  "reusedSource": false,
+  "usage": {},
+  "width": 5504,
+  "sheetId": "a1c0e6aeee6209c02a5a578e4066a70de3fa1e39bf4914566cb257f1acd55af4",
+  "model": "google/gemini-3.1-flash-image",
+  "source": {
+    "sha256": "de56b2bb533459fdef0843e00bcb8d8ee2e57469fd068b78e8d21c3e45d624bc",
+    "bytes": 21881743,
+    "storagePath": "asset-platform/users/4b801b407b639dca73828adf869dbdc2/assets/ui_sheet_a1c0e6aeee6209c02a5a578e4066a70de3fa1e39bf4914566cb257f1acd55af4/versions/source_v1/master.png",
+    "contentType": "image/png"
+  },
+  "items": [
+    {
+      "fingerprint": "48d2348ee3ceb7dc1fe5e04c267121a78ec25443669b5bfd53c9f9fcdc71a2c9",
+      "assetId": "asset_977b073d9e67495786266e5f7b4e7bb3"
+    },
+    {
+      "fingerprint": "77370d3e10452c298e6ae2b80e5c4afa458527a18e393a9dc964dc6148043529",
+      "assetId": "asset_c5cb2622ddaf4cbd99ea31480171d978"
+    },
+    {
+      "fingerprint": "7f24936eaecb497afa0192603ba7438290ea04d2f18c8583c7a870d4fbf5def2",
+      "assetId": "asset_30e94ee326274b628c470b49cf44d3ac"
+    },
+    {
+      "fingerprint": "fded688fe58a972bc73aac5e4e5e3e5e43ff108eeb5246d379894ed9ed3e7f4a",
+      "assetId": "asset_0530856337194fa3933f80021648dd5d"
+    },
+    {
+      "fingerprint": "30a9bffeff695ed11848f4f7a11c467b300a5874af8b04f9a85dc9ed385b3586",
+      "assetId": "asset_673b5cb39af24c928fc7972a7021dcd0"
+    },
+    {
+      "fingerprint": "cbfebf9aaefe5f49f7f1f384fd1976e595821a425f90896b02feb737ad3d2991",
+      "error": {
+        "code": "UI_SHEET_CLIPPED",
+        "message": "Artwork crosses its cell boundary or contains a separator."
+      }
+    }
+  ],
+  "height": 3072
+}

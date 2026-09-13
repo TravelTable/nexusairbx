@@ -1,0 +1,246 @@
+[
+  {
+    "attempt": "attempt-007",
+    "sheet": "sheet-0.json",
+    "originalFailures": 3,
+    "failures": 5,
+    "total": 6,
+    "items": [
+      {
+        "slot": 0,
+        "blocking": []
+      },
+      {
+        "slot": 1,
+        "error": {
+          "code": "UI_SHEET_PART_UNVERIFIED",
+          "message": "No complete standalone silhouette matches the supplied box."
+        }
+      },
+      {
+        "slot": 2,
+        "error": {
+          "code": "UI_SHEET_PART_UNVERIFIED",
+          "message": "No complete standalone silhouette matches the supplied box."
+        }
+      },
+      {
+        "slot": 3,
+        "error": {
+          "code": "UI_SHEET_PART_UNVERIFIED",
+          "message": "No complete standalone silhouette matches the supplied box."
+        }
+      },
+      {
+        "slot": 4,
+        "error": {
+          "code": "UI_SHEET_PART_UNVERIFIED",
+          "message": "No complete standalone silhouette matches the supplied box."
+        }
+      },
+      {
+        "slot": 5,
+        "error": {
+          "code": "UI_SHEET_PART_UNVERIFIED",
+          "message": "No complete standalone silhouette matches the supplied box."
+        }
+      }
+    ]
+  },
+  {
+    "attempt": "attempt-007",
+    "sheet": "sheet-1.json",
+    "originalFailures": 2,
+    "failures": 3,
+    "total": 6,
+    "items": [
+      {
+        "slot": 0,
+        "blocking": []
+      },
+      {
+        "slot": 1,
+        "blocking": []
+      },
+      {
+        "slot": 2,
+        "blocking": []
+      },
+      {
+        "slot": 3,
+        "error": {
+          "code": "UI_SHEET_PART_UNVERIFIED",
+          "message": "No complete standalone silhouette matches the supplied box."
+        }
+      },
+      {
+        "slot": 4,
+        "error": {
+          "code": "UI_SHEET_PART_UNVERIFIED",
+          "message": "No complete standalone silhouette matches the supplied box."
+        }
+      },
+      {
+        "slot": 5,
+        "error": {
+          "code": "UI_SHEET_SUBJECT_MISSING",
+          "message": "No separator found in the image."
+        }
+      }
+    ]
+  },
+  {
+    "attempt": "attempt-007",
+    "sheet": "sheet-2.json",
+    "originalFailures": 6,
+    "failures": 6,
+    "total": 8,
+    "items": [
+      {
+        "slot": 0,
+        "error": {
+          "code": "UI_SHEET_PART_UNVERIFIED",
+          "message": "The supplied box ambiguously matches multiple silhouettes."
+        }
+      },
+      {
+        "slot": 1,
+        "error": {
+          "code": "UI_SHEET_PART_UNVERIFIED",
+          "message": "The supplied box ambiguously matches multiple silhouettes."
+        }
+      },
+      {
+        "slot": 2,
+        "blocking": []
+      },
+      {
+        "slot": 3,
+        "blocking": []
+      },
+      {
+        "slot": 4,
+        "error": {
+          "code": "UI_SHEET_PART_UNVERIFIED",
+          "message": "No complete standalone silhouette matches the supplied box."
+        }
+      },
+      {
+        "slot": 5,
+        "error": {
+          "code": "UI_SHEET_PART_UNVERIFIED",
+          "message": "No complete standalone silhouette matches the supplied box."
+        }
+      },
+      {
+        "slot": 6,
+        "error": {
+          "code": "UI_SHEET_PART_UNVERIFIED",
+          "message": "No complete standalone silhouette matches the supplied box."
+        }
+      },
+      {
+        "slot": 7,
+        "error": {
+          "code": "UI_SHEET_PART_UNVERIFIED",
+          "message": "No complete standalone silhouette matches the supplied box."
+        }
+      }
+    ]
+  },
+  {
+    "attempt": "attempt-008",
+    "sheet": "sheet-0.json",
+    "originalFailures": 0,
+    "failures": 0,
+    "total": 6,
+    "items": [
+      {
+        "slot": 0,
+        "blocking": []
+      },
+      {
+        "slot": 1,
+        "blocking": []
+      },
+      {
+        "slot": 2,
+        "blocking": []
+      },
+      {
+        "slot": 3,
+        "blocking": []
+      },
+      {
+        "slot": 4,
+        "blocking": []
+      },
+      {
+        "slot": 5,
+        "blocking": []
+      }
+    ]
+  },
+  {
+    "attempt": "attempt-008",
+    "sheet": "sheet-1.json",
+    "skipped": "No saved locator regions",
+    "originalFailures": 4
+  },
+  {
+    "attempt": "attempt-008",
+    "sheet": "sheet-2.json",
+    "originalFailures": 1,
+    "failures": 1,
+    "total": 7,
+    "items": [
+      {
+        "slot": 0,
+        "blocking": []
+      },
+      {
+        "slot": 1,
+        "blocking": []
+      },
+      {
+        "slot": 2,
+        "blocking": []
+      },
+      {
+        "slot": 3,
+        "blocking": []
+      },
+      {
+        "slot": 4,
+        "blocking": []
+      },
+      {
+        "slot": 5,
+        "error": {
+          "code": "UI_SHEET_SUBJECT_MISSING",
+          "message": "No loose square gemstone cap with rounded beveled navy corners and a cyan face is present. The closest match is a square button, but it is not a loose cap."
+        }
+      },
+      {
+        "slot": 6,
+        "blocking": []
+      }
+    ]
+  },
+  {
+    "attempt": "attempt-008",
+    "sheet": "sheet-3.json",
+    "originalFailures": 1,
+    "failures": 1,
+    "total": 1,
+    "items": [
+      {
+        "slot": 0,
+        "error": {
+          "code": "UI_SHEET_SUBJECT_MISSING",
+          "message": "The requested part is a 'slider_handle', but the image contains a complete button, not a handle."
+        }
+      }
+    ]
+  }
+]

@@ -1,0 +1,295 @@
+TAP version 13
+# Subtest: refinement chooses the best overlap, not a larger surrounding silhouette
+ok 1 - refinement chooses the best overlap, not a larger surrounding silhouette
+  ---
+  duration_ms: 184.8807
+  ...
+# Subtest: the same candidate cannot satisfy two different slots
+ok 2 - the same candidate cannot satisfy two different slots
+  ---
+  duration_ms: 216.8126
+  ...
+# Subtest: a candidate selection and a coordinate selection cannot claim the same subject
+ok 3 - a candidate selection and a coordinate selection cannot claim the same subject
+  ---
+  duration_ms: 216.3106
+  ...
+# Subtest: pixelRefined does not bypass candidate identity validation
+ok 4 - pixelRefined does not bypass candidate identity validation
+  ---
+  duration_ms: 174.0349
+  ...
+# Subtest: an approximate box inside a fused control cannot become an isolated part
+ok 5 - an approximate box inside a fused control cannot become an isolated part
+  ---
+  duration_ms: 139.7875
+  ...
+# Subtest: a full elongated rail cannot pass the compact loose-cap contract
+ok 6 - a full elongated rail cannot pass the compact loose-cap contract
+  ---
+  duration_ms: 425.0935
+  ...
+# Subtest: disconnected contamination fully inside the padding is removed
+ok 7 - disconnected contamination fully inside the padding is removed
+  ---
+  duration_ms: 309.4626
+  ...
+# Subtest: neighbor inside padding does not produce false clipping
+ok 8 - neighbor inside padding does not produce false clipping
+  ---
+  duration_ms: 220.8247
+  ...
+# Subtest: the main silhouette touching the source edge still fails
+ok 9 - the main silhouette touching the source edge still fails
+  ---
+  duration_ms: 206.7598
+  ...
+# Subtest: native 64 by 32 bounds are counted inclusively
+ok 10 - native 64 by 32 bounds are counted inclusively
+  ---
+  duration_ms: 177.4146
+  ...
+# Subtest: a thin horizontal fill is not rejected by an icon minimum height
+ok 11 - a thin horizontal fill is not rejected by an icon minimum height
+  ---
+  duration_ms: 181.5035
+  ...
+# Subtest: a vertical separator preserves its orientation and narrow width
+ok 12 - a vertical separator preserves its orientation and narrow width
+  ---
+  duration_ms: 171.9239
+  ...
+# Subtest: more than 98 percent background does not imply a valid thin fill is empty
+ok 13 - more than 98 percent background does not imply a valid thin fill is empty
+  ---
+  duration_ms: 351.0402
+  ...
+# Subtest: an empty cell fails after actual foreground measurement
+ok 14 - an empty cell fails after actual foreground measurement
+  ---
+  duration_ms: 307.8945
+  ...
+# Subtest: a tiny low-resolution asset still fails
+ok 15 - a tiny low-resolution asset still fails
+  ---
+  duration_ms: 192.213
+  ...
+# Subtest: genuine alpha is accepted without requiring matching RGB in transparent pixels
+ok 16 - genuine alpha is accepted without requiring matching RGB in transparent pixels
+  ---
+  duration_ms: 96.3918
+  ...
+# Subtest: desaturated green backing remains removable and cyan art survives
+ok 17 - desaturated green backing remains removable and cyan art survives
+  ---
+  duration_ms: 298.9674
+  ...
+# Subtest: bad locator JSON is a stable validation error, not a TypeError
+ok 18 - bad locator JSON is a stable validation error, not a TypeError
+  ---
+  duration_ms: 923.1562
+  ...
+# Subtest: out-of-range coordinates are rejected before extraction
+ok 19 - out-of-range coordinates are rejected before extraction
+  ---
+  duration_ms: 196.2837
+  ...
+# Subtest: a missing subject remains missing and is never replaced by assumed cell position
+ok 20 - a missing subject remains missing and is never replaced by assumed cell position
+  ---
+  duration_ms: 337.8652
+  ...
+# Subtest: controlPart overrides an inherited description of the assembled slider
+ok 21 - controlPart overrides an inherited description of the assembled slider
+  ---
+  duration_ms: 0.6165
+  ...
+# Subtest: a corner ornament uses one-piece instructions regardless of node naming
+ok 22 - a corner ornament uses one-piece instructions regardless of node naming
+  ---
+  duration_ms: 0.5175
+  ...
+# Subtest: sheet cache contract changes without changing rendering metadata version
+ok 23 - sheet cache contract changes without changing rendering metadata version
+  ---
+  duration_ms: 17.1533
+  ...
+# Subtest: generation retains one request, zero SDK retries and the 4K tier check
+ok 24 - generation retains one request, zero SDK retries and the 4K tier check
+  ---
+  duration_ms: 10.9231
+  ...
+# Subtest: a pre-aborted extraction is not swallowed as a per-slot error
+ok 25 - a pre-aborted extraction is not swallowed as a per-slot error
+  ---
+  duration_ms: 5.0216
+  ...
+# Subtest: thin slider fill survives extraction AND canonical quality processing
+ok 26 - thin slider fill survives extraction AND canonical quality processing
+  ---
+  duration_ms: 267.2958
+  ...
+# Subtest: vertical separator survives extraction AND canonical quality processing
+ok 27 - vertical separator survives extraction AND canonical quality processing
+  ---
+  duration_ms: 219.0465
+  ...
+# Subtest: generic images and legacy artwork keep the 64 by 64 source minimum
+ok 28 - generic images and legacy artwork keep the 64 by 64 source minimum
+  ---
+  duration_ms: 6.7496
+  ...
+# Subtest: transparent padding cannot disguise a too-small native foreground
+ok 29 - transparent padding cannot disguise a too-small native foreground
+  ---
+  duration_ms: 17.4405
+  ...
+# Subtest: a one-pixel fill remains too small even on a large padded canvas
+ok 30 - a one-pixel fill remains too small even on a large padded canvas
+  ---
+  duration_ms: 15.9779
+  ...
+# Subtest: offline replay processes a saved sheet without provider calls or overwriting prior output
+ok 31 - offline replay processes a saved sheet without provider calls or overwriting prior output
+  ---
+  duration_ms: 223.2555
+  ...
+# Subtest: an explicitly unverified coordinate box cannot be promoted by pixel refinement
+ok 32 - an explicitly unverified coordinate box cannot be promoted by pixel refinement
+  ---
+  duration_ms: 148.6783
+  ...
+# Subtest: shared skins and generated icons form separate bounded sheets with stable identities
+ok 33 - shared skins and generated icons form separate bounded sheets with stable identities
+  ---
+  duration_ms: 25.8886
+  ...
+# Subtest: requirement IDs bind required artwork to planned controls and split moving pieces
+ok 34 - requirement IDs bind required artwork to planned controls and split moving pieces
+  ---
+  duration_ms: 1.704
+  ...
+# Subtest: explicit required icon is generated once with its semantic subject
+ok 35 - explicit required icon is generated once with its semantic subject
+  ---
+  duration_ms: 0.4373
+  ...
+# Subtest: icon asset requirements retain their requirement binding on the shared generated icon
+ok 36 - icon asset requirements retain their requirement binding on the shared generated icon
+  ---
+  duration_ms: 0.9737
+  ...
+# Subtest: compact control pieces share icon cells without shrinking large surfaces
+ok 37 - compact control pieces share icon cells without shrinking large surfaces
+  ---
+  duration_ms: 0.6705
+  ...
+# Subtest: extracts independent alpha assets, removes enclosed magenta, discards grid lines
+ok 38 - extracts independent alpha assets, removes enclosed magenta, discards grid lines
+  ---
+  duration_ms: 300.075
+  ...
+# Subtest: clipped and empty cells fail independently without discarding good siblings
+ok 39 - clipped and empty cells fail independently without discarding good siblings
+  ---
+  duration_ms: 230.0207
+  ...
+# Subtest: shaded chroma is removed while cyan artwork survives
+ok 40 - shaded chroma is removed while cyan artwork survives
+  ---
+  duration_ms: 263.7547
+  ...
+# Subtest: desaturated green backing does not become a clipped opaque rectangle
+ok 41 - desaturated green backing does not become a clipped opaque rectangle
+  ---
+  duration_ms: 176.1666
+  ...
+# Subtest: vision locator receives the actual sheet and rejects malformed coordinates
+ok 42 - vision locator receives the actual sheet and rejects malformed coordinates
+  ---
+  duration_ms: 733.3721
+  ...
+# Subtest: vision can select a numbered silhouette without estimating crop coordinates
+ok 43 - vision can select a numbered silhouette without estimating crop coordinates
+  ---
+  duration_ms: 424.673
+  ...
+# Subtest: a neighboring silhouette inside crop padding cannot create a false clipping failure
+ok 44 - a neighboring silhouette inside crop padding cannot create a false clipping failure
+  ---
+  duration_ms: 211.3341
+  ...
+# Subtest: 4K gateway options are explicit and lower-resolution provider output is rejected
+ok 45 - 4K gateway options are explicit and lower-resolution provider output is rejected
+  ---
+  duration_ms: 10.3383
+  ...
+# Subtest: colored wide skins retain aspect and valid dynamic nine-slice metadata through processing
+ok 46 - colored wide skins retain aspect and valid dynamic nine-slice metadata through processing
+  ---
+  duration_ms: 498.9948
+  ...
+# Subtest: JSON cannot grant the prepared artwork capability
+ok 47 - JSON cannot grant the prepared artwork capability
+  ---
+  duration_ms: 1.065
+  ...
+# Subtest: oversized kits fail before any paid partial generation
+ok 48 - oversized kits fail before any paid partial generation
+  ---
+  duration_ms: 2.1543
+  ...
+# Subtest: independent sheets use two workers while sharing the same durable four-sheet budget
+ok 49 - independent sheets use two workers while sharing the same durable four-sheet budget
+  ---
+  duration_ms: 37.5357
+  ...
+# Subtest: matching icons share one asset even when their parent skins differ
+ok 50 - matching icons share one asset even when their parent skins differ
+  ---
+  duration_ms: 0.6922
+  ...
+# Subtest: large skins and decorations share roomy cells while eight compact subjects leave a repair slot
+ok 51 - large skins and decorations share roomy cells while eight compact subjects leave a repair slot
+  ---
+  duration_ms: 3.6935
+  ...
+# Subtest: one paid sheet creates separate assets and replay never generates again
+ok 52 - one paid sheet creates separate assets and replay never generates again
+  ---
+  duration_ms: 2.4312
+  ...
+# Subtest: confirmed bad cells get one bounded repair and replay never buys another sheet
+ok 53 - confirmed bad cells get one bounded repair and replay never buys another sheet
+  ---
+  duration_ms: 2.023
+  ...
+# Subtest: a confirmed bad crop can recover once without regenerating its successful siblings
+ok 54 - a confirmed bad crop can recover once without regenerating its successful siblings
+  ---
+  duration_ms: 1.228
+  ...
+# Subtest: an unavailable image checker never accepts unchecked icons or buys replacement images
+ok 55 - an unavailable image checker never accepts unchecked icons or buys replacement images
+  ---
+  duration_ms: 0.7325
+  ...
+# Subtest: ambiguous gateway outcomes are fenced across retries
+ok 56 - ambiguous gateway outcomes are fenced across retries
+  ---
+  duration_ms: 1.0103
+  ...
+# Subtest: a later extraction can reuse a saved raw sheet without another image generation
+ok 57 - a later extraction can reuse a saved raw sheet without another image generation
+  ---
+  duration_ms: 14.8647
+  ...
+1..57
+# tests 57
+# suites 0
+# pass 57
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6471.3971

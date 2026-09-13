@@ -1,0 +1,351 @@
+{
+  "artworkOnly": true,
+  "success": false,
+  "elapsedMs": 26580,
+  "sourceSheets": [
+    "sheet-0.png",
+    "sheet-1.png",
+    "sheet-2.png",
+    "sheet-3.png"
+  ],
+  "items": [
+    {
+      "fingerprint": "54ec151fda423f0d3f0dd77917248300ac243ac07d8a3e5110e896ff0998ca40",
+      "part": "panel_surface",
+      "nodes": [
+        "SettingsPanel",
+        "CreditsPanel"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-0.png",
+      "pass": false,
+      "failure": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "fingerprint": "5f445da8b98588c90c407e2b7e14bac2d8fd5086f5831d97a5c4761b948150d3",
+      "part": "component_surface",
+      "nodes": [
+        "PlayButton"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-0.png",
+      "pass": false,
+      "failure": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "fingerprint": "632f0ec3bf326823d5c01836024f2110648f471f7fc5cfaef88bbf44dc0db435",
+      "part": "component_surface",
+      "nodes": [
+        "SettingsCloseButton",
+        "CreditsCloseButton"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-2.png",
+      "pass": false,
+      "failure": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "fingerprint": "ccaf2c88af1d011b07fea507f44d892aa5d2c5ba572244e77c1320e863027825",
+      "part": "component_surface",
+      "nodes": [
+        "SettingsButton",
+        "CreditsButton"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-0.png",
+      "pass": false,
+      "failure": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "fingerprint": "0b1b07002d5c6e62cef8c6cd646c18fab8dfef645a59fc475dd596686d04e64e",
+      "part": "slider_track",
+      "nodes": [
+        "VolumeSliderTrack"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-0.png",
+      "pass": false,
+      "failure": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "fingerprint": "18d80685743559ea034153ec9556713093764cb54e70ecfe926587010c1c2318",
+      "part": "ornament",
+      "nodes": [
+        "TitlePlate"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-0.png",
+      "pass": false,
+      "failure": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "fingerprint": "20efc7a39a4c797c9ea86850a6d7dd3d4174296c93854833180001f8c6154df9",
+      "part": "ornament",
+      "nodes": [
+        "CornerOrnament"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-0.png",
+      "pass": false,
+      "failure": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "fingerprint": "3d7805dd520da58dd40688403046d7bf17d822420a71b97c80fbb215382e7240",
+      "part": "credits",
+      "nodes": [
+        "CreditsButton"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-2.png",
+      "pass": false,
+      "failure": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "fingerprint": "5abfae11096db8f5d58b7a070a366faaf08bc937c2e479dcf9bc828bb4811078",
+      "part": "settings",
+      "nodes": [
+        "SettingsButton"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-2.png",
+      "pass": false,
+      "failure": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "fingerprint": "6495be725cace232f02937ce4fe54ae0bc710154a2f21de71eb6544122bc0462",
+      "part": "toggle_on",
+      "nodes": [
+        "MusicToggleOn"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-1.png",
+      "extractedPng": "sheet-1-part-0-extracted.png",
+      "pass": true,
+      "canonicalAssetId": "asset_2177be617b45470697cbc1713ee76bf0",
+      "png": "asset-10-toggle_on.png",
+      "width": 1024,
+      "height": 478,
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "control_artwork",
+        "styleFingerprint": "6495be725cace232f02937ce4fe54ae0bc710154a2f21de71eb6544122bc0462",
+        "componentIds": [
+          "music"
+        ],
+        "nodeNames": [
+          "MusicToggleOn"
+        ],
+        "requirementIds": [
+          "art_music"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 478,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "f22ebc21d35c099dd5abbc467a173cf415407ad8d2de27ca5dac2633802502f3",
+        "slot": 0,
+        "controlPart": "toggle_on"
+      }
+    },
+    {
+      "fingerprint": "66b9dc6c66b2898874bc050826f8d2008a926e56cace82fb309e2bdc36b7e93a",
+      "part": "slider_handle",
+      "nodes": [
+        "VolumeSliderHandle"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-3.png",
+      "extractedPng": "sheet-3-part-0-extracted.png",
+      "pass": true,
+      "canonicalAssetId": "asset_ba01928133b84dcfa256e8d481ff57b1",
+      "png": "asset-11-slider_handle.png",
+      "width": 737,
+      "height": 1024,
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "control_artwork",
+        "styleFingerprint": "66b9dc6c66b2898874bc050826f8d2008a926e56cace82fb309e2bdc36b7e93a",
+        "componentIds": [
+          "volume"
+        ],
+        "nodeNames": [
+          "VolumeSliderHandle"
+        ],
+        "requirementIds": [
+          "art_volume"
+        ],
+        "required": true,
+        "width": 737,
+        "height": 1024,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "e78b517882a64176234ecedf5bedfa1f50851278c16e7b15d144f14bd2a2cc8b",
+        "slot": 0,
+        "controlPart": "slider_handle"
+      }
+    },
+    {
+      "fingerprint": "7a9fa116596cb9c93a3401223c14c72f47f061fd6532db020f9e4fafac8b377f",
+      "part": "slider_fill",
+      "nodes": [
+        "VolumeSliderFill"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-1.png",
+      "extractedPng": "sheet-1-part-1-extracted.png",
+      "pass": true,
+      "canonicalAssetId": "asset_4fea175b3c1c46f5b54fa142ecc1244a",
+      "png": "asset-12-slider_fill.png",
+      "width": 1024,
+      "height": 110,
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "control_artwork",
+        "styleFingerprint": "7a9fa116596cb9c93a3401223c14c72f47f061fd6532db020f9e4fafac8b377f",
+        "componentIds": [
+          "volume"
+        ],
+        "nodeNames": [
+          "VolumeSliderFill"
+        ],
+        "requirementIds": [
+          "art_volume"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 110,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "f22ebc21d35c099dd5abbc467a173cf415407ad8d2de27ca5dac2633802502f3",
+        "slot": 1,
+        "controlPart": "slider_fill"
+      }
+    },
+    {
+      "fingerprint": "829ba6f25360f704e782681dc26c296e7e198d3e3b80217803dcbf478b39c693",
+      "part": "toggle_thumb",
+      "nodes": [
+        "MusicToggleThumb"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-2.png",
+      "pass": false,
+      "failure": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "fingerprint": "892d4f03575a7c5cd19371ffbd39d4b3af0331685749040fbe23d65530bd998c",
+      "part": "close",
+      "nodes": [
+        "SettingsCloseButton",
+        "CreditsCloseButton"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-2.png",
+      "pass": false,
+      "failure": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "fingerprint": "a4b5de4c3a6d645a4f512a2984e377c09971bbec8715fcc0138d1a3e57d76106",
+      "part": "play",
+      "nodes": [
+        "PlayButton"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-2.png",
+      "pass": false,
+      "failure": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "fingerprint": "d26d350830a44fc4223683b7add243b86366024892a7568471af4fe2471fec7a",
+      "part": "toggle_off",
+      "nodes": [
+        "MusicToggleOff"
+      ],
+      "required": true,
+      "sourceSheet": "sheet-1.png",
+      "extractedPng": "sheet-1-part-2-extracted.png",
+      "pass": true,
+      "canonicalAssetId": "asset_9fd4e737bf46417c9a8d4c382d8cb89f",
+      "png": "asset-16-toggle_off.png",
+      "width": 1024,
+      "height": 478,
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "control_artwork",
+        "styleFingerprint": "d26d350830a44fc4223683b7add243b86366024892a7568471af4fe2471fec7a",
+        "componentIds": [
+          "music"
+        ],
+        "nodeNames": [
+          "MusicToggleOff"
+        ],
+        "requirementIds": [
+          "art_music"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 478,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "f22ebc21d35c099dd5abbc467a173cf415407ad8d2de27ca5dac2633802502f3",
+        "slot": 2,
+        "controlPart": "toggle_off"
+      }
+    }
+  ],
+  "sourceGenerated": false,
+  "published": false
+}

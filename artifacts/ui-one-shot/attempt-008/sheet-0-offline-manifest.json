@@ -1,0 +1,841 @@
+{
+  "sheet": {
+    "id": "73c73ff857ec70fca4d9d9023f2270a92fb1031ddd3dd3482060e10eb6e4bee6",
+    "kind": "skins",
+    "columns": 3,
+    "rows": 2,
+    "background": "#00FF00",
+    "slots": [
+      {
+        "role": "panel_surface",
+        "components": [
+          {
+            "id": "cmp_settings_modal",
+            "primitive": "ModalWindow",
+            "requirementId": "panel_settings",
+            "label": "Settings Panel",
+            "semanticAction": "",
+            "hierarchy": "secondary",
+            "groupId": "settings_modal_group",
+            "nodeName": "SettingsModal",
+            "regionId": "settings_modal_region",
+            "paletteRole": "neutralSurface",
+            "typographyRole": "heading",
+            "visualTreatment": "panel_surface Gemini-generated modal skin with glossy cyan/cobalt framed surface, thick navy border, gold highlights, and soft inset depth",
+            "size": {
+              "desktop": "Centered medium modal sized for two settings rows and a compact header without dominating the full screen.",
+              "mobile": "Centered modal using most of the safe width with stacked content and preserved artwork corners.",
+              "minTouchTarget": 0
+            },
+            "icon": {
+              "enabled": false,
+              "semanticRole": "",
+              "family": "aurora_gemini",
+              "assetStrategy": "generated",
+              "size": 16,
+              "padding": 0,
+              "visualWeight": "none",
+              "perspective": "flat",
+              "edgeTreatment": "none",
+              "shadowTreatment": "none",
+              "paletteMode": "none"
+            },
+            "interaction": {
+              "hoverAnimation": "none",
+              "pressAnimation": "none",
+              "hoverSound": "none",
+              "clickSound": "none",
+              "sharedHelper": "None",
+              "touchBehavior": "Modal container intercepts background input while visible; visibility controlled by controller."
+            }
+          }
+        ],
+        "description": "panel_surface Gemini-generated modal skin with glossy cyan/cobalt framed surface, thick navy border, gold highlights, and soft inset depth",
+        "requirementIds": [
+          "art_panel_skin"
+        ],
+        "required": true,
+        "signature": {
+          "role": "panel_surface",
+          "description": "panel_surface Gemini-generated modal skin with glossy cyan/cobalt framed surface, thick navy border, gold highlights, and soft inset depth",
+          "treatments": [
+            "panel_surface Gemini-generated modal skin with glossy cyan/cobalt framed surface, thick navy border, gold highlights, and soft inset depth"
+          ],
+          "artDirection": "AURORA is framed as a premium fantasy-sci-fi lobby with glossy cyan and cobalt enamel surfaces, thick navy edging, and restrained warm gold trim used only for highlights, corner filigree, and emphasis around the title plate. The composition avoids a full outer menu panel so the native background can breathe; instead, the title plate crowns a centered vertical action dock, while modal panels float above with matching framed skins. Gemini-generated artwork should form a cohesive kit: one primary button skin for Play, one shared secondary button skin for Settings and Credits, one shared close-button skin, one shared panel skin for both modals, one title-plate ornament, one corner-ornament image reused sparingly, one slider track skin, one slider handle skin, and matching toggle on/off pieces. Surfaces should feel polished and layered through internal gradients, beveled edge lighting, and controlled specular streaks, but text remains live, clean, and high-contrast without heavy outlining. The mood is readable and heroic rather than noisy: restrained background decoration, balanced negative space, and obvious primary-action dominance for Play.",
+          "outline": "Primary surfaces use thick navy outer strokes with a subtle inner gold or cyan highlight line baked into artwork where appropriate. Native text containers and rows use thin UIStroke only when needed for separation; avoid outlining all text. Rounded corners progress from small row elements to broader modal and title framing.",
+          "shadow": "Use short, dense navy-black drop shadows for buttons and panels with modest vertical offset, plus a soft ambient shadow beneath modal windows. Buttons get tighter shadows than panels so the stack feels crisp and polished rather than floaty.",
+          "corners": [
+            8,
+            12,
+            16,
+            22,
+            30
+          ],
+          "palette": {
+            "primary": "#2FD6FF",
+            "secondary": "#3B63D1",
+            "accent": "#F4C96A",
+            "success": "#6DDBA8",
+            "danger": "#E26A7A",
+            "neutralBackground": "#08111F",
+            "neutralSurface": "#11213D",
+            "textPrimary": "#F4FBFF",
+            "textSecondary": "#B7CBE6",
+            "outline": "#0D1E3E",
+            "shadow": "#040913"
+          },
+          "paletteRoles": [
+            "neutralSurface"
+          ],
+          "dimensions": [
+            512,
+            512
+          ],
+          "model": "google/gemini-3.1-flash-image",
+          "processingVersion": 3
+        },
+        "fingerprint": "6a5ff826ed336873a6a5d969373768a069f6f0dd8801ab6f3357e3b98c4dc49d",
+        "metadata": {
+          "schemaVersion": 1,
+          "processingVersion": 3,
+          "generationUse": "ui_artwork",
+          "role": "panel_surface",
+          "styleFingerprint": "6a5ff826ed336873a6a5d969373768a069f6f0dd8801ab6f3357e3b98c4dc49d",
+          "componentIds": [
+            "cmp_settings_modal"
+          ],
+          "nodeNames": [
+            "SettingsModal"
+          ],
+          "requirementIds": [
+            "art_panel_skin"
+          ],
+          "required": true,
+          "width": 512,
+          "height": 512,
+          "renderStrategy": "image_9slice",
+          "scaleType": "Slice",
+          "tintable": false,
+          "semanticRole": "",
+          "sheetId": "",
+          "slot": null,
+          "sliceCenter": [
+            96,
+            96,
+            416,
+            416
+          ],
+          "sliceScale": 0.2
+        }
+      },
+      {
+        "role": "component_surface",
+        "components": [
+          {
+            "id": "cmp_play_button",
+            "primitive": "PrimaryGameCTA",
+            "requirementId": "action_play",
+            "label": "Play",
+            "semanticAction": "play_game",
+            "hierarchy": "primary",
+            "groupId": "main_actions",
+            "nodeName": "PlayButton",
+            "regionId": "main_dock",
+            "paletteRole": "primary",
+            "typographyRole": "button",
+            "visualTreatment": "component_surface Gemini-generated primary button skin with glossy cyan lead, cobalt depth, thick navy edge, and subtle gold highlight accents",
+            "size": {
+              "desktop": "Largest button in the dock; wide horizontal CTA clearly bigger than the other actions.",
+              "mobile": "Large full-width CTA near the center stack with extra height for thumb comfort and unmistakable priority.",
+              "minTouchTarget": 56
+            },
+            "icon": {
+              "enabled": true,
+              "semanticRole": "play",
+              "family": "aurora_gemini",
+              "assetStrategy": "generated",
+              "size": 24,
+              "padding": 12,
+              "visualWeight": "bold",
+              "perspective": "front",
+              "edgeTreatment": "navy keyline with small gold glint",
+              "shadowTreatment": "tight navy drop shadow",
+              "paletteMode": "cyan-to-gold accent over dark edge"
+            },
+            "interaction": {
+              "hoverAnimation": "Gentle brighten, slight upward lift, and subtle scale-up with highlight sweep constrained to the skin.",
+              "pressAnimation": "Quick inward scale, tiny downward nudge, and highlight compression before springing back.",
+              "hoverSound": "none",
+              "clickSound": "none",
+              "sharedHelper": "ButtonEffects",
+              "touchBehavior": "Use Activated only on touch devices with immediate press feedback and no hover state; on activation close the menu then delegate hook firing through controller."
+            }
+          }
+        ],
+        "description": "component_surface Gemini-generated primary button skin with glossy cyan lead, cobalt depth, thick navy edge, and subtle gold highlight accents",
+        "requirementIds": [
+          "art_button_skins"
+        ],
+        "required": true,
+        "signature": {
+          "role": "component_surface",
+          "description": "component_surface Gemini-generated primary button skin with glossy cyan lead, cobalt depth, thick navy edge, and subtle gold highlight accents",
+          "treatments": [
+            "component_surface Gemini-generated primary button skin with glossy cyan lead, cobalt depth, thick navy edge, and subtle gold highlight accents"
+          ],
+          "artDirection": "AURORA is framed as a premium fantasy-sci-fi lobby with glossy cyan and cobalt enamel surfaces, thick navy edging, and restrained warm gold trim used only for highlights, corner filigree, and emphasis around the title plate. The composition avoids a full outer menu panel so the native background can breathe; instead, the title plate crowns a centered vertical action dock, while modal panels float above with matching framed skins. Gemini-generated artwork should form a cohesive kit: one primary button skin for Play, one shared secondary button skin for Settings and Credits, one shared close-button skin, one shared panel skin for both modals, one title-plate ornament, one corner-ornament image reused sparingly, one slider track skin, one slider handle skin, and matching toggle on/off pieces. Surfaces should feel polished and layered through internal gradients, beveled edge lighting, and controlled specular streaks, but text remains live, clean, and high-contrast without heavy outlining. The mood is readable and heroic rather than noisy: restrained background decoration, balanced negative space, and obvious primary-action dominance for Play.",
+          "outline": "Primary surfaces use thick navy outer strokes with a subtle inner gold or cyan highlight line baked into artwork where appropriate. Native text containers and rows use thin UIStroke only when needed for separation; avoid outlining all text. Rounded corners progress from small row elements to broader modal and title framing.",
+          "shadow": "Use short, dense navy-black drop shadows for buttons and panels with modest vertical offset, plus a soft ambient shadow beneath modal windows. Buttons get tighter shadows than panels so the stack feels crisp and polished rather than floaty.",
+          "corners": [
+            8,
+            12,
+            16,
+            22,
+            30
+          ],
+          "palette": {
+            "primary": "#2FD6FF",
+            "secondary": "#3B63D1",
+            "accent": "#F4C96A",
+            "success": "#6DDBA8",
+            "danger": "#E26A7A",
+            "neutralBackground": "#08111F",
+            "neutralSurface": "#11213D",
+            "textPrimary": "#F4FBFF",
+            "textSecondary": "#B7CBE6",
+            "outline": "#0D1E3E",
+            "shadow": "#040913"
+          },
+          "paletteRoles": [
+            "primary"
+          ],
+          "dimensions": [
+            512,
+            512
+          ],
+          "model": "google/gemini-3.1-flash-image",
+          "processingVersion": 3
+        },
+        "fingerprint": "8455e216499b4339fcd44e031e7e474832697fc693a50558faf377bb3a41f4bd",
+        "metadata": {
+          "schemaVersion": 1,
+          "processingVersion": 3,
+          "generationUse": "ui_artwork",
+          "role": "component_surface",
+          "styleFingerprint": "8455e216499b4339fcd44e031e7e474832697fc693a50558faf377bb3a41f4bd",
+          "componentIds": [
+            "cmp_play_button"
+          ],
+          "nodeNames": [
+            "PlayButton"
+          ],
+          "requirementIds": [
+            "art_button_skins"
+          ],
+          "required": true,
+          "width": 512,
+          "height": 512,
+          "renderStrategy": "image_9slice",
+          "scaleType": "Slice",
+          "tintable": false,
+          "semanticRole": "",
+          "sheetId": "",
+          "slot": null,
+          "sliceCenter": [
+            96,
+            96,
+            416,
+            416
+          ],
+          "sliceScale": 0.2
+        }
+      },
+      {
+        "role": "component_surface",
+        "components": [
+          {
+            "id": "cmp_settings_button",
+            "primitive": "MenuButton",
+            "requirementId": "action_settings",
+            "label": "Settings",
+            "semanticAction": "open_settings_panel",
+            "hierarchy": "primary",
+            "groupId": "main_actions",
+            "nodeName": "SettingsButton",
+            "regionId": "main_dock",
+            "paletteRole": "secondary",
+            "typographyRole": "button",
+            "visualTreatment": "component_surface Gemini-generated secondary button skin matching the menu set with glossy cobalt body, cyan highlights, thick navy edge, and restrained gold trim",
+            "size": {
+              "desktop": "Medium-width action button matching Credits width and height beneath Play.",
+              "mobile": "Full-width secondary action button matching Credits with generous touch height.",
+              "minTouchTarget": 50
+            },
+            "icon": {
+              "enabled": true,
+              "semanticRole": "settings",
+              "family": "aurora_gemini",
+              "assetStrategy": "generated",
+              "size": 24,
+              "padding": 12,
+              "visualWeight": "bold",
+              "perspective": "front",
+              "edgeTreatment": "navy keyline with small gold glint",
+              "shadowTreatment": "tight navy drop shadow",
+              "paletteMode": "cyan-to-gold accent over dark edge"
+            },
+            "interaction": {
+              "hoverAnimation": "Gentle brighten, slight upward lift, and subtle scale-up with highlight sweep constrained to the skin.",
+              "pressAnimation": "Quick inward scale, tiny downward nudge, and highlight compression before springing back.",
+              "hoverSound": "none",
+              "clickSound": "none",
+              "sharedHelper": "ButtonEffects",
+              "touchBehavior": "Use Activated only on touch devices with immediate press feedback and no hover synthesis; opens Settings modal through controller."
+            }
+          },
+          {
+            "id": "cmp_credits_button",
+            "primitive": "MenuButton",
+            "requirementId": "action_credits",
+            "label": "Credits",
+            "semanticAction": "open_credits_panel",
+            "hierarchy": "primary",
+            "groupId": "main_actions",
+            "nodeName": "CreditsButton",
+            "regionId": "main_dock",
+            "paletteRole": "secondary",
+            "typographyRole": "button",
+            "visualTreatment": "component_surface Gemini-generated secondary button skin matching the menu set with glossy cobalt body, cyan highlights, thick navy edge, and restrained gold trim",
+            "size": {
+              "desktop": "Medium-width action button matching Settings width and height beneath it.",
+              "mobile": "Full-width secondary action button matching Settings with generous touch height.",
+              "minTouchTarget": 50
+            },
+            "icon": {
+              "enabled": true,
+              "semanticRole": "credits",
+              "family": "aurora_gemini",
+              "assetStrategy": "generated",
+              "size": 24,
+              "padding": 12,
+              "visualWeight": "bold",
+              "perspective": "front",
+              "edgeTreatment": "navy keyline with small gold glint",
+              "shadowTreatment": "tight navy drop shadow",
+              "paletteMode": "cyan-to-gold accent over dark edge"
+            },
+            "interaction": {
+              "hoverAnimation": "Gentle brighten, slight upward lift, and subtle scale-up with highlight sweep constrained to the skin.",
+              "pressAnimation": "Quick inward scale, tiny downward nudge, and highlight compression before springing back.",
+              "hoverSound": "none",
+              "clickSound": "none",
+              "sharedHelper": "ButtonEffects",
+              "touchBehavior": "Use Activated only on touch devices with immediate press feedback and no hover synthesis; opens Credits modal through controller."
+            }
+          }
+        ],
+        "description": "component_surface Gemini-generated secondary button skin matching the menu set with glossy cobalt body, cyan highlights, thick navy edge, and restrained gold trim",
+        "requirementIds": [
+          "art_button_skins",
+          "art_button_skins"
+        ],
+        "required": true,
+        "signature": {
+          "role": "component_surface",
+          "description": "component_surface Gemini-generated secondary button skin matching the menu set with glossy cobalt body, cyan highlights, thick navy edge, and restrained gold trim",
+          "treatments": [
+            "component_surface Gemini-generated secondary button skin matching the menu set with glossy cobalt body, cyan highlights, thick navy edge, and restrained gold trim"
+          ],
+          "artDirection": "AURORA is framed as a premium fantasy-sci-fi lobby with glossy cyan and cobalt enamel surfaces, thick navy edging, and restrained warm gold trim used only for highlights, corner filigree, and emphasis around the title plate. The composition avoids a full outer menu panel so the native background can breathe; instead, the title plate crowns a centered vertical action dock, while modal panels float above with matching framed skins. Gemini-generated artwork should form a cohesive kit: one primary button skin for Play, one shared secondary button skin for Settings and Credits, one shared close-button skin, one shared panel skin for both modals, one title-plate ornament, one corner-ornament image reused sparingly, one slider track skin, one slider handle skin, and matching toggle on/off pieces. Surfaces should feel polished and layered through internal gradients, beveled edge lighting, and controlled specular streaks, but text remains live, clean, and high-contrast without heavy outlining. The mood is readable and heroic rather than noisy: restrained background decoration, balanced negative space, and obvious primary-action dominance for Play.",
+          "outline": "Primary surfaces use thick navy outer strokes with a subtle inner gold or cyan highlight line baked into artwork where appropriate. Native text containers and rows use thin UIStroke only when needed for separation; avoid outlining all text. Rounded corners progress from small row elements to broader modal and title framing.",
+          "shadow": "Use short, dense navy-black drop shadows for buttons and panels with modest vertical offset, plus a soft ambient shadow beneath modal windows. Buttons get tighter shadows than panels so the stack feels crisp and polished rather than floaty.",
+          "corners": [
+            8,
+            12,
+            16,
+            22,
+            30
+          ],
+          "palette": {
+            "primary": "#2FD6FF",
+            "secondary": "#3B63D1",
+            "accent": "#F4C96A",
+            "success": "#6DDBA8",
+            "danger": "#E26A7A",
+            "neutralBackground": "#08111F",
+            "neutralSurface": "#11213D",
+            "textPrimary": "#F4FBFF",
+            "textSecondary": "#B7CBE6",
+            "outline": "#0D1E3E",
+            "shadow": "#040913"
+          },
+          "paletteRoles": [
+            "secondary"
+          ],
+          "dimensions": [
+            512,
+            512
+          ],
+          "model": "google/gemini-3.1-flash-image",
+          "processingVersion": 3
+        },
+        "fingerprint": "d3db140059557a1840ce0e5c3cd516db3a671ae1cdf30f0ad2e9b976803cad18",
+        "metadata": {
+          "schemaVersion": 1,
+          "processingVersion": 3,
+          "generationUse": "ui_artwork",
+          "role": "component_surface",
+          "styleFingerprint": "d3db140059557a1840ce0e5c3cd516db3a671ae1cdf30f0ad2e9b976803cad18",
+          "componentIds": [
+            "cmp_settings_button",
+            "cmp_credits_button"
+          ],
+          "nodeNames": [
+            "SettingsButton",
+            "CreditsButton"
+          ],
+          "requirementIds": [
+            "art_button_skins"
+          ],
+          "required": true,
+          "width": 512,
+          "height": 512,
+          "renderStrategy": "image_9slice",
+          "scaleType": "Slice",
+          "tintable": false,
+          "semanticRole": "",
+          "sheetId": "",
+          "slot": null,
+          "sliceCenter": [
+            96,
+            96,
+            416,
+            416
+          ],
+          "sliceScale": 0.2
+        }
+      },
+      {
+        "role": "panel_surface",
+        "components": [
+          {
+            "id": "cmp_credits_modal",
+            "primitive": "ModalWindow",
+            "requirementId": "panel_credits",
+            "label": "Credits Panel",
+            "semanticAction": "",
+            "hierarchy": "secondary",
+            "groupId": "credits_modal_group",
+            "nodeName": "CreditsModal",
+            "regionId": "credits_modal_region",
+            "paletteRole": "neutralSurface",
+            "typographyRole": "heading",
+            "visualTreatment": "panel_surface Gemini-generated modal skin matching the settings panel, scaled to a smaller compact window",
+            "size": {
+              "desktop": "Small centered modal sized just for a title, body copy, and close control.",
+              "mobile": "Compact centered modal using most safe width but shorter height than settings panel.",
+              "minTouchTarget": 0
+            },
+            "icon": {
+              "enabled": false,
+              "semanticRole": "",
+              "family": "aurora_gemini",
+              "assetStrategy": "generated",
+              "size": 16,
+              "padding": 0,
+              "visualWeight": "none",
+              "perspective": "flat",
+              "edgeTreatment": "none",
+              "shadowTreatment": "none",
+              "paletteMode": "none"
+            },
+            "interaction": {
+              "hoverAnimation": "none",
+              "pressAnimation": "none",
+              "hoverSound": "none",
+              "clickSound": "none",
+              "sharedHelper": "None",
+              "touchBehavior": "Modal container intercepts background input while visible; visibility controlled by controller."
+            }
+          }
+        ],
+        "description": "panel_surface Gemini-generated modal skin matching the settings panel, scaled to a smaller compact window",
+        "requirementIds": [
+          "art_panel_skin"
+        ],
+        "required": true,
+        "signature": {
+          "role": "panel_surface",
+          "description": "panel_surface Gemini-generated modal skin matching the settings panel, scaled to a smaller compact window",
+          "treatments": [
+            "panel_surface Gemini-generated modal skin matching the settings panel, scaled to a smaller compact window"
+          ],
+          "artDirection": "AURORA is framed as a premium fantasy-sci-fi lobby with glossy cyan and cobalt enamel surfaces, thick navy edging, and restrained warm gold trim used only for highlights, corner filigree, and emphasis around the title plate. The composition avoids a full outer menu panel so the native background can breathe; instead, the title plate crowns a centered vertical action dock, while modal panels float above with matching framed skins. Gemini-generated artwork should form a cohesive kit: one primary button skin for Play, one shared secondary button skin for Settings and Credits, one shared close-button skin, one shared panel skin for both modals, one title-plate ornament, one corner-ornament image reused sparingly, one slider track skin, one slider handle skin, and matching toggle on/off pieces. Surfaces should feel polished and layered through internal gradients, beveled edge lighting, and controlled specular streaks, but text remains live, clean, and high-contrast without heavy outlining. The mood is readable and heroic rather than noisy: restrained background decoration, balanced negative space, and obvious primary-action dominance for Play.",
+          "outline": "Primary surfaces use thick navy outer strokes with a subtle inner gold or cyan highlight line baked into artwork where appropriate. Native text containers and rows use thin UIStroke only when needed for separation; avoid outlining all text. Rounded corners progress from small row elements to broader modal and title framing.",
+          "shadow": "Use short, dense navy-black drop shadows for buttons and panels with modest vertical offset, plus a soft ambient shadow beneath modal windows. Buttons get tighter shadows than panels so the stack feels crisp and polished rather than floaty.",
+          "corners": [
+            8,
+            12,
+            16,
+            22,
+            30
+          ],
+          "palette": {
+            "primary": "#2FD6FF",
+            "secondary": "#3B63D1",
+            "accent": "#F4C96A",
+            "success": "#6DDBA8",
+            "danger": "#E26A7A",
+            "neutralBackground": "#08111F",
+            "neutralSurface": "#11213D",
+            "textPrimary": "#F4FBFF",
+            "textSecondary": "#B7CBE6",
+            "outline": "#0D1E3E",
+            "shadow": "#040913"
+          },
+          "paletteRoles": [
+            "neutralSurface"
+          ],
+          "dimensions": [
+            512,
+            512
+          ],
+          "model": "google/gemini-3.1-flash-image",
+          "processingVersion": 3
+        },
+        "fingerprint": "f116da1459a296fbbe155562542b0b6e06104b13e3ef2ea5c992b1cccc395782",
+        "metadata": {
+          "schemaVersion": 1,
+          "processingVersion": 3,
+          "generationUse": "ui_artwork",
+          "role": "panel_surface",
+          "styleFingerprint": "f116da1459a296fbbe155562542b0b6e06104b13e3ef2ea5c992b1cccc395782",
+          "componentIds": [
+            "cmp_credits_modal"
+          ],
+          "nodeNames": [
+            "CreditsModal"
+          ],
+          "requirementIds": [
+            "art_panel_skin"
+          ],
+          "required": true,
+          "width": 512,
+          "height": 512,
+          "renderStrategy": "image_9slice",
+          "scaleType": "Slice",
+          "tintable": false,
+          "semanticRole": "",
+          "sheetId": "",
+          "slot": null,
+          "sliceCenter": [
+            96,
+            96,
+            416,
+            416
+          ],
+          "sliceScale": 0.2
+        }
+      },
+      {
+        "role": "control_artwork",
+        "components": [
+          {
+            "id": "cmp_music_toggle",
+            "primitive": "SettingsRow",
+            "requirementId": "toggle_music",
+            "label": "Music On/Off Toggle",
+            "semanticAction": "toggle_music",
+            "hierarchy": "secondary",
+            "groupId": "settings_controls",
+            "nodeName": "MusicToggleOn",
+            "regionId": "settings_modal_region",
+            "paletteRole": "primary",
+            "typographyRole": "button",
+            "visualTreatment": "control_artwork Gemini-generated toggle control using matching on/off pieces with glossy cyan/cobalt surfaces, thick navy edge, and warm gold highlight detail",
+            "size": {
+              "desktop": "Compact horizontal toggle fitted to row end with clear state travel and visible on/off distinction.",
+              "mobile": "Slightly larger horizontal toggle for thumb use while preserving row balance.",
+              "minTouchTarget": 44
+            },
+            "icon": {
+              "enabled": false,
+              "semanticRole": "",
+              "family": "aurora_gemini",
+              "assetStrategy": "generated",
+              "size": 16,
+              "padding": 0,
+              "visualWeight": "none",
+              "perspective": "front",
+              "edgeTreatment": "navy framed artwork",
+              "shadowTreatment": "tight navy drop shadow",
+              "paletteMode": "state-colored artwork"
+            },
+            "interaction": {
+              "hoverAnimation": "Subtle brighten on the interactive hit area and tiny scale-up of the toggle shell.",
+              "pressAnimation": "Short depress-and-release response with handle compression feeling physical but controlled.",
+              "hoverSound": "none",
+              "clickSound": "none",
+              "sharedHelper": "ButtonEffects",
+              "touchBehavior": "Use Activated to flip boolean music state; no hover synthesis on touch; controller updates visual state and audio setting."
+            }
+          }
+        ],
+        "description": "One horizontal toggle housing in its enabled state only; no thumb, knob, text or adjacent state.",
+        "requirementIds": [
+          "art_toggle_pieces"
+        ],
+        "required": true,
+        "controlPart": "toggle_on",
+        "signature": {
+          "role": "control_artwork",
+          "description": "One horizontal toggle housing in its enabled state only; no thumb, knob, text or adjacent state.",
+          "treatments": [
+            "control_artwork Gemini-generated toggle control using matching on/off pieces with glossy cyan/cobalt surfaces, thick navy edge, and warm gold highlight detail"
+          ],
+          "controlPart": "toggle_on",
+          "artDirection": "AURORA is framed as a premium fantasy-sci-fi lobby with glossy cyan and cobalt enamel surfaces, thick navy edging, and restrained warm gold trim used only for highlights, corner filigree, and emphasis around the title plate. The composition avoids a full outer menu panel so the native background can breathe; instead, the title plate crowns a centered vertical action dock, while modal panels float above with matching framed skins. Gemini-generated artwork should form a cohesive kit: one primary button skin for Play, one shared secondary button skin for Settings and Credits, one shared close-button skin, one shared panel skin for both modals, one title-plate ornament, one corner-ornament image reused sparingly, one slider track skin, one slider handle skin, and matching toggle on/off pieces. Surfaces should feel polished and layered through internal gradients, beveled edge lighting, and controlled specular streaks, but text remains live, clean, and high-contrast without heavy outlining. The mood is readable and heroic rather than noisy: restrained background decoration, balanced negative space, and obvious primary-action dominance for Play.",
+          "outline": "Primary surfaces use thick navy outer strokes with a subtle inner gold or cyan highlight line baked into artwork where appropriate. Native text containers and rows use thin UIStroke only when needed for separation; avoid outlining all text. Rounded corners progress from small row elements to broader modal and title framing.",
+          "shadow": "Use short, dense navy-black drop shadows for buttons and panels with modest vertical offset, plus a soft ambient shadow beneath modal windows. Buttons get tighter shadows than panels so the stack feels crisp and polished rather than floaty.",
+          "corners": [
+            8,
+            12,
+            16,
+            22,
+            30
+          ],
+          "palette": {
+            "primary": "#2FD6FF",
+            "secondary": "#3B63D1",
+            "accent": "#F4C96A",
+            "success": "#6DDBA8",
+            "danger": "#E26A7A",
+            "neutralBackground": "#08111F",
+            "neutralSurface": "#11213D",
+            "textPrimary": "#F4FBFF",
+            "textSecondary": "#B7CBE6",
+            "outline": "#0D1E3E",
+            "shadow": "#040913"
+          },
+          "dimensions": [
+            512,
+            512
+          ],
+          "model": "google/gemini-3.1-flash-image",
+          "processingVersion": 3
+        },
+        "fingerprint": "1584e8a79850ea998e9d3ec85ae200df2e34aee44a0bd3ef71356dc78323fa39",
+        "metadata": {
+          "schemaVersion": 1,
+          "processingVersion": 3,
+          "generationUse": "ui_artwork",
+          "role": "control_artwork",
+          "styleFingerprint": "1584e8a79850ea998e9d3ec85ae200df2e34aee44a0bd3ef71356dc78323fa39",
+          "componentIds": [
+            "cmp_music_toggle"
+          ],
+          "nodeNames": [
+            "MusicToggleOn"
+          ],
+          "requirementIds": [
+            "art_toggle_pieces"
+          ],
+          "required": true,
+          "width": 512,
+          "height": 512,
+          "renderStrategy": "image_fit",
+          "scaleType": "Fit",
+          "tintable": false,
+          "semanticRole": "",
+          "sheetId": "",
+          "slot": null,
+          "controlPart": "toggle_on"
+        }
+      },
+      {
+        "role": "ornament",
+        "components": [
+          {
+            "id": "cmp_title_plate",
+            "primitive": "Decoration",
+            "requirementId": "decoration_title_plate",
+            "label": "Title Plate",
+            "semanticAction": "",
+            "hierarchy": "secondary",
+            "groupId": "main_menu_group",
+            "nodeName": "TitlePlate",
+            "regionId": "title_region",
+            "paletteRole": "secondary",
+            "typographyRole": "display",
+            "visualTreatment": "ornament Gemini-generated title plate with glossy cyan/cobalt enamel, thick navy rim, and warm gold trim framing live title text",
+            "size": {
+              "desktop": "Wide horizontal title plate above the buttons, approximately 1.4x the width of the main buttons.",
+              "mobile": "Slightly narrower plate relative to screen width with preserved aspect ratio and reduced ornament overhang.",
+              "minTouchTarget": 0
+            },
+            "icon": {
+              "enabled": false,
+              "semanticRole": "",
+              "family": "aurora_gemini",
+              "assetStrategy": "generated",
+              "size": 16,
+              "padding": 0,
+              "visualWeight": "none",
+              "perspective": "flat",
+              "edgeTreatment": "none",
+              "shadowTreatment": "none",
+              "paletteMode": "none"
+            },
+            "interaction": {
+              "hoverAnimation": "none",
+              "pressAnimation": "none",
+              "hoverSound": "none",
+              "clickSound": "none",
+              "sharedHelper": "None",
+              "touchBehavior": "Passive ornament framing the title."
+            }
+          }
+        ],
+        "description": "ornament Gemini-generated title plate with glossy cyan/cobalt enamel, thick navy rim, and warm gold trim framing live title text",
+        "requirementIds": [
+          "art_title_plate"
+        ],
+        "required": true,
+        "signature": {
+          "role": "ornament",
+          "description": "ornament Gemini-generated title plate with glossy cyan/cobalt enamel, thick navy rim, and warm gold trim framing live title text",
+          "treatments": [
+            "ornament Gemini-generated title plate with glossy cyan/cobalt enamel, thick navy rim, and warm gold trim framing live title text"
+          ],
+          "artDirection": "AURORA is framed as a premium fantasy-sci-fi lobby with glossy cyan and cobalt enamel surfaces, thick navy edging, and restrained warm gold trim used only for highlights, corner filigree, and emphasis around the title plate. The composition avoids a full outer menu panel so the native background can breathe; instead, the title plate crowns a centered vertical action dock, while modal panels float above with matching framed skins. Gemini-generated artwork should form a cohesive kit: one primary button skin for Play, one shared secondary button skin for Settings and Credits, one shared close-button skin, one shared panel skin for both modals, one title-plate ornament, one corner-ornament image reused sparingly, one slider track skin, one slider handle skin, and matching toggle on/off pieces. Surfaces should feel polished and layered through internal gradients, beveled edge lighting, and controlled specular streaks, but text remains live, clean, and high-contrast without heavy outlining. The mood is readable and heroic rather than noisy: restrained background decoration, balanced negative space, and obvious primary-action dominance for Play.",
+          "outline": "Primary surfaces use thick navy outer strokes with a subtle inner gold or cyan highlight line baked into artwork where appropriate. Native text containers and rows use thin UIStroke only when needed for separation; avoid outlining all text. Rounded corners progress from small row elements to broader modal and title framing.",
+          "shadow": "Use short, dense navy-black drop shadows for buttons and panels with modest vertical offset, plus a soft ambient shadow beneath modal windows. Buttons get tighter shadows than panels so the stack feels crisp and polished rather than floaty.",
+          "corners": [
+            8,
+            12,
+            16,
+            22,
+            30
+          ],
+          "palette": {
+            "primary": "#2FD6FF",
+            "secondary": "#3B63D1",
+            "accent": "#F4C96A",
+            "success": "#6DDBA8",
+            "danger": "#E26A7A",
+            "neutralBackground": "#08111F",
+            "neutralSurface": "#11213D",
+            "textPrimary": "#F4FBFF",
+            "textSecondary": "#B7CBE6",
+            "outline": "#0D1E3E",
+            "shadow": "#040913"
+          },
+          "dimensions": [
+            512,
+            512
+          ],
+          "model": "google/gemini-3.1-flash-image",
+          "processingVersion": 3
+        },
+        "fingerprint": "7a00f9190d87dc3504f6c7fade5620fef5cebb886f31d0461176fc25c00c2814",
+        "metadata": {
+          "schemaVersion": 1,
+          "processingVersion": 3,
+          "generationUse": "ui_artwork",
+          "role": "ornament",
+          "styleFingerprint": "7a00f9190d87dc3504f6c7fade5620fef5cebb886f31d0461176fc25c00c2814",
+          "componentIds": [
+            "cmp_title_plate"
+          ],
+          "nodeNames": [
+            "TitlePlate"
+          ],
+          "requirementIds": [
+            "art_title_plate"
+          ],
+          "required": true,
+          "width": 512,
+          "height": 512,
+          "renderStrategy": "image_fit",
+          "scaleType": "Fit",
+          "tintable": false,
+          "semanticRole": "",
+          "sheetId": "",
+          "slot": null
+        }
+      }
+    ]
+  },
+  "regions": [
+    {
+      "slot": 0,
+      "candidateId": 0,
+      "box": [
+        52,
+        30,
+        442,
+        304
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    },
+    {
+      "slot": 1,
+      "candidateId": 2,
+      "box": [
+        177,
+        365,
+        330,
+        634
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    },
+    {
+      "slot": 2,
+      "candidateId": 3,
+      "box": [
+        177,
+        699,
+        330,
+        967
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    },
+    {
+      "slot": 3,
+      "candidateId": 1,
+      "box": [
+        577,
+        47,
+        929,
+        286
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    },
+    {
+      "slot": 4,
+      "box": [
+        683,
+        388,
+        827,
+        612
+      ],
+      "reason": "The requested part is a toggle housing in its enabled state only, without the thumb. Candidate 5 is a toggle housing with a thumb. Therefore, a custom box is provided to exclude the thumb."
+    },
+    {
+      "slot": 5,
+      "candidateId": 4,
+      "box": [
+        682,
+        692,
+        818,
+        975
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    }
+  ]
+}

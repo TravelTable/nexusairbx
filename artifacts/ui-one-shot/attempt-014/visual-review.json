@@ -1,0 +1,222 @@
+{
+  "accepted": false,
+  "acceptable": false,
+  "scores": {
+    "promptCompliance": 7,
+    "composition": 4,
+    "hierarchy": 7,
+    "spacing": 6,
+    "alignment": 6,
+    "componentConsistency": 7,
+    "typography": 7,
+    "paletteDiscipline": 7,
+    "iconConsistency": 8,
+    "visualDensity": 4,
+    "polish": 6,
+    "responsiveness": 6,
+    "originality": 5,
+    "robloxSuitability": 7
+  },
+  "reviewedPreviewIds": [
+    "desktop",
+    "phone",
+    "tablet",
+    "phone-settings",
+    "phone-credits"
+  ],
+  "issues": [
+    {
+      "previewId": "desktop",
+      "category": "density",
+      "severity": "major",
+      "description": "Large empty lower half and detached side blocks make the menu feel unfinished rather than intentionally framed. The primary stack occupies too little of the stage for the requested polished main menu composition.",
+      "nodeIds": [
+        "BackgroundRoot",
+        "BackgroundLayer",
+        "MainMenuDock",
+        "TitlePlate",
+        "PlayButton",
+        "SettingsButton",
+        "CreditsButton"
+      ],
+      "rejectionRule": "accidental_dead_zone"
+    },
+    {
+      "previewId": "phone",
+      "category": "layout",
+      "severity": "major",
+      "description": "The phone layout is effectively the same centered desktop stack scaled down, leaving excessive unused space below and weak mobile reflow. This does not feel purpose-built for mobile.",
+      "nodeIds": [
+        "MainMenuDock",
+        "TitlePlate",
+        "PlayButton",
+        "SettingsButton",
+        "CreditsButton"
+      ],
+      "rejectionRule": "missing_mobile_layout"
+    },
+    {
+      "previewId": "desktop",
+      "category": "layout",
+      "severity": "major",
+      "description": "Decorative side rectangles compete with the menu and read like unrelated panels or missing content areas. They dominate more area than the requested restrained background treatment supports.",
+      "nodeIds": [
+        "BackgroundLayer",
+        "BackgroundRoot"
+      ],
+      "rejectionRule": "background_dominates"
+    },
+    {
+      "previewId": "tablet",
+      "category": "layout",
+      "severity": "minor",
+      "description": "The same detached side blocks remain on tablet and still feel structurally unrelated to the centered menu rather than supportive background ornament.",
+      "nodeIds": [
+        "BackgroundLayer",
+        "BackgroundRoot"
+      ],
+      "rejectionRule": "none"
+    },
+    {
+      "previewId": "desktop",
+      "category": "hierarchy",
+      "severity": "major",
+      "description": "Play is only slightly more prominent than Settings and Credits. The requested primary CTA dominance is underplayed, so the action hierarchy feels flatter than intended.",
+      "nodeIds": [
+        "PlayButton",
+        "SettingsButton",
+        "CreditsButton"
+      ],
+      "rejectionRule": "weak_primary_cta"
+    },
+    {
+      "previewId": "phone-settings",
+      "category": "components",
+      "severity": "minor",
+      "description": "The settings rows use very plain dark rounded containers compared with the ornate outer panel and glossy buttons, reducing cohesion inside the modal.",
+      "nodeIds": [
+        "SettingsModal",
+        "MusicRow",
+        "VolumeRow",
+        "MusicToggle",
+        "VolumeSlider"
+      ],
+      "rejectionRule": "none"
+    },
+    {
+      "previewId": "phone-credits",
+      "category": "typography",
+      "severity": "minor",
+      "description": "Credits body text is readable but visually heavy and blocky for a small compact panel, with line breaks creating a cramped text block.",
+      "nodeIds": [
+        "CreditsModal",
+        "CreditsBody"
+      ],
+      "rejectionRule": "none"
+    },
+    {
+      "previewId": "phone-settings",
+      "category": "responsiveness",
+      "severity": "major",
+      "description": "The close button, toggle, and slider fit, but the modal consumes substantial vertical space while leaving the rest of the screen mostly empty. Mobile composition is safe but not efficiently arranged.",
+      "nodeIds": [
+        "SettingsModal",
+        "SettingsCloseButton",
+        "MusicToggle",
+        "VolumeSlider"
+      ],
+      "rejectionRule": "missing_mobile_layout"
+    },
+    {
+      "previewId": "desktop",
+      "category": "originality",
+      "severity": "minor",
+      "description": "The menu relies on a generic vertical stack with glossy sci-fi skins but little bespoke compositional character beyond the title plate.",
+      "nodeIds": [
+        "MainMenuDock",
+        "TitlePlate",
+        "PlayButton",
+        "SettingsButton",
+        "CreditsButton"
+      ],
+      "rejectionRule": "none"
+    },
+    {
+      "previewId": "phone-credits",
+      "category": "prompt_adherence",
+      "severity": "major",
+      "description": "Credits content appears as implementation filler copy rather than a deliberate small credits presentation. The requirement called for a credits panel, and this reads more like placeholder integration messaging.",
+      "nodeIds": [
+        "CreditsModal",
+        "CreditsBody"
+      ],
+      "rejectionRule": "required_element_missing"
+    }
+  ],
+  "criticalIssues": [
+    "Desktop and phone both suffer from accidental dead-zone composition that makes the interface feel incomplete rather than polished.",
+    "The phone branch does not demonstrate strong enough mobile-specific reflow to satisfy the requested desktop-and-mobile support standard."
+  ],
+  "repairInstructions": [
+    "Keep the glossy cyan/cobalt button skins, title plate, and matching icon family; they are the strongest assets already working.",
+    "Remove the large detached side background rectangles and rebuild the backdrop as restrained native gradients, vignette, and subtle corner framing so the menu remains the focal point.",
+    "Increase Play prominence clearly over Settings and Credits through width, height, glow, or spacing, not just a small size bump.",
+    "Recompose the desktop screen so the main menu occupies more of the intentional stage and the lower half no longer reads as empty leftover canvas.",
+    "Create a clearer mobile-specific arrangement: tighten vertical gaps, rebalance top and bottom margins, and scale the stack for phone instead of presenting a near-uniform shrink of desktop.",
+    "Restyle the settings row containers, slider track, and toggle housing to better match the richness of the outer panel without changing their native functional structure.",
+    "Refine the credits panel body into concise actual credits text formatting with better line length and spacing; keep it live text.",
+    "Preserve the close icon family and button treatment, but slightly integrate the close buttons into the modal header so they feel less sticker-like.",
+    "Use background ornament only at safe corners or as faint framing accents; do not place large opaque blocks that imply missing systems or side panels."
+  ],
+  "repairPlan": {
+    "preserve": [
+      "Glossy cyan/cobalt button skins for Play, Settings, and Credits.",
+      "The live AURORA title inside the title plate.",
+      "The shared icon family across play, settings, credits, and close.",
+      "The settings modal overall frame and readable text contrast.",
+      "The native toggle and slider approach instead of baking behavior into images."
+    ],
+    "modify": [
+      "MainMenuDock layout to reduce unused lower-screen space and create a more intentional centered composition on desktop.",
+      "PlayButton scale and emphasis so it is unmistakably the primary CTA.",
+      "BackgroundLayer to replace the left and right rectangular masses with restrained native lighting and framing.",
+      "Phone-specific menu spacing, bounds, and margins so the mobile branch feels purpose-built.",
+      "SettingsModal interior row styling so row surfaces and controls match the panel's premium finish.",
+      "CreditsBody copy layout, line breaks, and spacing for a cleaner compact credits panel."
+    ],
+    "remove": [
+      "Large detached left and right background blocks visible behind the menu on desktop, phone, and tablet.",
+      "Placeholder-style credits messaging that reads like implementation copy rather than a true credits presentation."
+    ],
+    "add": [
+      "Subtle native vignette or soft cyan ambient rays behind the central menu instead of opaque side slabs.",
+      "A stronger visual separation between Play and the two secondary buttons using size and spacing.",
+      "More cohesive inner panel detailing such as lighter row edging or subtle gloss trims on settings controls.",
+      "Actual concise credits entries or roles in live text, still within the small requested panel."
+    ]
+  },
+  "acceptanceFailures": [
+    "promptCompliance: 7/10 is below 9/10",
+    "composition: 4/10 is below 8/10",
+    "hierarchy: 7/10 is below 8/10",
+    "spacing: 6/10 is below 8/10",
+    "alignment: 6/10 is below 8/10",
+    "componentConsistency: 7/10 is below 8/10",
+    "typography: 7/10 is below 8/10",
+    "paletteDiscipline: 7/10 is below 8/10",
+    "visualDensity: 4/10 is below 8/10",
+    "polish: 6/10 is below 8/10",
+    "responsiveness: 6/10 is below 8/10",
+    "originality: 5/10 is below 8/10",
+    "robloxSuitability: 7/10 is below 8/10",
+    "Large empty lower half and detached side blocks make the menu feel unfinished rather than intentionally framed. The primary stack occupies too little of the stage for the requested polished main menu composition.",
+    "The phone layout is effectively the same centered desktop stack scaled down, leaving excessive unused space below and weak mobile reflow. This does not feel purpose-built for mobile.",
+    "Decorative side rectangles compete with the menu and read like unrelated panels or missing content areas. They dominate more area than the requested restrained background treatment supports.",
+    "Play is only slightly more prominent than Settings and Credits. The requested primary CTA dominance is underplayed, so the action hierarchy feels flatter than intended.",
+    "The close button, toggle, and slider fit, but the modal consumes substantial vertical space while leaving the rest of the screen mostly empty. Mobile composition is safe but not efficiently arranged.",
+    "Credits content appears as implementation filler copy rather than a deliberate small credits presentation. The requirement called for a credits panel, and this reads more like placeholder integration messaging.",
+    "Desktop and phone both suffer from accidental dead-zone composition that makes the interface feel incomplete rather than polished.",
+    "The phone branch does not demonstrate strong enough mobile-specific reflow to satisfy the requested desktop-and-mobile support standard.",
+    "The image critic rejected this revision."
+  ]
+}

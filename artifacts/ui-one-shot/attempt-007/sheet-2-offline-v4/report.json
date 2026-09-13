@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "offline": true,
+  "providerCalls": 0,
+  "canonicalWrites": 0,
+  "sourceSha256": "66a3a8f4f4cc61ca1354c80d820518d18876647f34d23fb006cb616e0b5c0b92",
+  "sourceWidth": 5504,
+  "sourceHeight": 3072,
+  "semanticReviewPerformed": false,
+  "note": "Only geometry and pixel processing were rerun. Saved subject assignments still require visual review; this is not build completion evidence.",
+  "failures": 6,
+  "items": [
+    {
+      "slot": 0,
+      "fingerprint": "8be0027e3bf845c7246064b5bcf1ffb5b2ef96050af55d33506e78c4b789b3e7",
+      "required": true,
+      "error": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "The supplied box ambiguously matches multiple silhouettes."
+      }
+    },
+    {
+      "slot": 1,
+      "fingerprint": "9b22fd0f43705cdec72b43969fa4b3e7b7c53f1c0d9da12fdccd62ed7ffc5ec7",
+      "required": true,
+      "error": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "The supplied box ambiguously matches multiple silhouettes."
+      }
+    },
+    {
+      "slot": 2,
+      "fingerprint": "660406c4ef5cdd47cacf28ed92545f1ab0da6b4c7786156ad50a2aa57036615f",
+      "required": true,
+      "crop": {
+        "left": 2911,
+        "top": 232,
+        "width": 1062,
+        "height": 1060
+      },
+      "cropFile": "slot-02-crop.png",
+      "readyFile": "slot-02-ready.png",
+      "width": 1024,
+      "height": 1022,
+      "pixelChecksPassed": true,
+      "blocking": [],
+      "reviewRequired": [
+        "text",
+        "concept"
+      ],
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "icon",
+        "styleFingerprint": "660406c4ef5cdd47cacf28ed92545f1ab0da6b4c7786156ad50a2aa57036615f",
+        "componentIds": [
+          "cmp_settings_close",
+          "cmp_credits_close"
+        ],
+        "nodeNames": [
+          "SettingsCloseButton",
+          "CreditsCloseButton"
+        ],
+        "requirementIds": [
+          "close_icon"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 1022,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "close",
+        "sheetId": "",
+        "slot": null
+      }
+    },
+    {
+      "slot": 3,
+      "fingerprint": "6f22ef2f99d54db9206aa945dcc6a4ac33f2a8350ad3375198005c40edc56b26",
+      "required": true,
+      "crop": {
+        "left": 4288,
+        "top": 232,
+        "width": 1062,
+        "height": 1060
+      },
+      "cropFile": "slot-03-crop.png",
+      "readyFile": "slot-03-ready.png",
+      "width": 1024,
+      "height": 1022,
+      "pixelChecksPassed": true,
+      "blocking": [],
+      "reviewRequired": [
+        "text",
+        "concept"
+      ],
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "icon",
+        "styleFingerprint": "6f22ef2f99d54db9206aa945dcc6a4ac33f2a8350ad3375198005c40edc56b26",
+        "componentIds": [
+          "cmp_credits_button"
+        ],
+        "nodeNames": [
+          "CreditsButton"
+        ],
+        "requirementIds": [
+          "credits_icon"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 1022,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "credits",
+        "sheetId": "",
+        "slot": null
+      }
+    },
+    {
+      "slot": 4,
+      "fingerprint": "7f6b9bdad918cdaac0115aa8702cc4405b1eeba593d21ef18c4db5541bd86ac6",
+      "required": true,
+      "error": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "slot": 5,
+      "fingerprint": "a0894ea0e0a3e4b5b40448d1d1744f0b74e485543d9f72c1052ab9f87edccaee",
+      "required": true,
+      "error": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "slot": 6,
+      "fingerprint": "a5ce17122eb56d0a6c01bd958ebf28d8a405e48abad3f5ef05a1ad897d63ea5b",
+      "required": true,
+      "error": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "slot": 7,
+      "fingerprint": "b9355633e8d336bee8f7cad9ff4c5bf6548980e349728d39835d61631344ce6d",
+      "required": true,
+      "error": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    }
+  ]
+}

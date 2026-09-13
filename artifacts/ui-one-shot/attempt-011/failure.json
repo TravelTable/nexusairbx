@@ -1,0 +1,65 @@
+{
+  "code": "UI_DESIGN_SPEC_INVALID",
+  "message": "The design plan could not pass validation after 2 bounded attempts: Required element missing: settings_controller_behavior.",
+  "issues": [
+    "Required element missing: settings_controller_behavior."
+  ],
+  "diagnostic": null,
+  "elapsedMs": 129415,
+  "usage": [
+    {
+      "model": "openai/gpt-5.4",
+      "usage": {
+        "prompt_tokens": 1991,
+        "completion_tokens": 1839,
+        "total_tokens": 3830,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0
+        }
+      },
+      "reportedCostMicros": null
+    },
+    {
+      "model": "openai/gpt-5.4",
+      "usage": {
+        "prompt_tokens": 10377,
+        "completion_tokens": 9933,
+        "total_tokens": 20310,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0
+        }
+      },
+      "reportedCostMicros": null
+    },
+    {
+      "model": "openai/gpt-5.4",
+      "usage": {
+        "prompt_tokens": 20381,
+        "completion_tokens": 9712,
+        "total_tokens": 30093,
+        "prompt_tokens_details": {
+          "cached_tokens": 9984,
+          "audio_tokens": 0,
+          "video_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 0,
+          "image_tokens": 0
+        }
+      },
+      "reportedCostMicros": null
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "regions": [
+    {
+      "slot": 0,
+      "candidateId": 30,
+      "box": [
+        788,
+        777,
+        965,
+        848
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    }
+  ],
+  "reusedSource": false,
+  "usage": {},
+  "width": 5504,
+  "sheetId": "e78b517882a64176234ecedf5bedfa1f50851278c16e7b15d144f14bd2a2cc8b",
+  "model": "google/gemini-3.1-flash-image",
+  "source": {
+    "sha256": "aac725a3e338dda144c541a4a1b0aff859767d15f42c9da10f04195fa6128b22",
+    "bytes": 30693327,
+    "storagePath": "asset-platform/users/4b801b407b639dca73828adf869dbdc2/assets/ui_sheet_e78b517882a64176234ecedf5bedfa1f50851278c16e7b15d144f14bd2a2cc8b/versions/source_v1/master.png",
+    "contentType": "image/png"
+  },
+  "items": [
+    {
+      "fingerprint": "66b9dc6c66b2898874bc050826f8d2008a926e56cace82fb309e2bdc36b7e93a",
+      "assetId": "asset_ba01928133b84dcfa256e8d481ff57b1"
+    }
+  ],
+  "height": 3072
+}

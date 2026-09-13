@@ -1,0 +1,45 @@
+TAP version 13
+# Subtest: tight 9-slice skin passes alpha checks without icon padding and exports correct dimensions
+ok 1 - tight 9-slice skin passes alpha checks without icon padding and exports correct dimensions
+  ---
+  duration_ms: 342.0906
+  ...
+# Subtest: thin separator keeps its proportions and does not inherit icon legibility minimums
+ok 2 - thin separator keeps its proportions and does not inherit icon legibility minimums
+  ---
+  duration_ms: 164.2166
+  ...
+# Subtest: surface center holes fail validation and local removal preserves enclosed pale fills
+ok 3 - surface center holes fail validation and local removal preserves enclosed pale fills
+  ---
+  duration_ms: 623.6604
+  ...
+# Subtest: opaque background is cropped without stretching and decorative fit keeps alpha
+ok 4 - opaque background is cropped without stretching and decorative fit keeps alpha
+  ---
+  duration_ms: 860.905
+  ...
+# Subtest: artwork rejects opaque transparent-role responses, empty pixels and corrupt bytes
+ok 5 - artwork rejects opaque transparent-role responses, empty pixels and corrupt bytes
+  ---
+  duration_ms: 89.2227
+  ...
+# Subtest: marketing thumbnails export 1920x1080 with landscape previews
+ok 6 - marketing thumbnails export 1920x1080 with landscape previews
+  ---
+  duration_ms: 139.0197
+  ...
+# Subtest: AssetQualityService returns non-empty file descriptors for canonical storage and validation
+ok 7 - AssetQualityService returns non-empty file descriptors for canonical storage and validation
+  ---
+  duration_ms: 365.0142
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2754.9774

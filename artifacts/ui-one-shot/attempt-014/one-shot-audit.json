@@ -1,0 +1,267 @@
+{
+  "schemaVersion": 1,
+  "input": {
+    "requestId": "sheet-smoke-1789302675365",
+    "prompt": "Build a polished Roblox main menu titled AURORA. Features: Play, Settings, Credits. Settings opens a panel with Music on/off toggle and Volume slider. Credits opens a small panel. Both panels have Close. Desktop and mobile. Rich glossy cyan/cobalt artwork with thick navy edges, warm gold highlights, ornamental corner details and a title plate. Use Gemini-generated matching skins and icons: button skins, panel skin, slider track and handle, toggle on/off pieces and distinct play/settings/credits/close icons. Keep text live and readable. Create only these features; no shop, rewards, currency, ranks or invented game systems. Play closes the menu and fires a clearly named local hook for game integration. Coherent hover and press animation. Native background layout with restrained decoration. Panels must open and close in the actual controller.",
+    "projectId": "proj_e237b4d5b7634cf2a503723f3f8beff7"
+  },
+  "sourceHash": "74a104f714f159159b96b31756cbb0292184d9fb30c1bf0a40040b08503fd984",
+  "originalSourceHash": "74a104f714f159159b96b31756cbb0292184d9fb30c1bf0a40040b08503fd984",
+  "untouched": true,
+  "unattendedPass": false,
+  "failures": [
+    {
+      "gate": "implementation",
+      "issues": [
+        "Required asset unresolved: asset_icons_menu.",
+        "Required asset unresolved: asset_title_plate."
+      ]
+    },
+    {
+      "gate": "visual",
+      "issues": [
+        {
+          "previewId": "desktop",
+          "category": "density",
+          "severity": "major",
+          "description": "Large empty lower half and detached side blocks make the menu feel unfinished rather than intentionally framed. The primary stack occupies too little of the stage for the requested polished main menu composition.",
+          "nodeIds": [
+            "BackgroundRoot",
+            "BackgroundLayer",
+            "MainMenuDock",
+            "TitlePlate",
+            "PlayButton",
+            "SettingsButton",
+            "CreditsButton"
+          ],
+          "rejectionRule": "accidental_dead_zone"
+        },
+        {
+          "previewId": "phone",
+          "category": "layout",
+          "severity": "major",
+          "description": "The phone layout is effectively the same centered desktop stack scaled down, leaving excessive unused space below and weak mobile reflow. This does not feel purpose-built for mobile.",
+          "nodeIds": [
+            "MainMenuDock",
+            "TitlePlate",
+            "PlayButton",
+            "SettingsButton",
+            "CreditsButton"
+          ],
+          "rejectionRule": "missing_mobile_layout"
+        },
+        {
+          "previewId": "desktop",
+          "category": "layout",
+          "severity": "major",
+          "description": "Decorative side rectangles compete with the menu and read like unrelated panels or missing content areas. They dominate more area than the requested restrained background treatment supports.",
+          "nodeIds": [
+            "BackgroundLayer",
+            "BackgroundRoot"
+          ],
+          "rejectionRule": "background_dominates"
+        },
+        {
+          "previewId": "tablet",
+          "category": "layout",
+          "severity": "minor",
+          "description": "The same detached side blocks remain on tablet and still feel structurally unrelated to the centered menu rather than supportive background ornament.",
+          "nodeIds": [
+            "BackgroundLayer",
+            "BackgroundRoot"
+          ],
+          "rejectionRule": "none"
+        },
+        {
+          "previewId": "desktop",
+          "category": "hierarchy",
+          "severity": "major",
+          "description": "Play is only slightly more prominent than Settings and Credits. The requested primary CTA dominance is underplayed, so the action hierarchy feels flatter than intended.",
+          "nodeIds": [
+            "PlayButton",
+            "SettingsButton",
+            "CreditsButton"
+          ],
+          "rejectionRule": "weak_primary_cta"
+        },
+        {
+          "previewId": "phone-settings",
+          "category": "components",
+          "severity": "minor",
+          "description": "The settings rows use very plain dark rounded containers compared with the ornate outer panel and glossy buttons, reducing cohesion inside the modal.",
+          "nodeIds": [
+            "SettingsModal",
+            "MusicRow",
+            "VolumeRow",
+            "MusicToggle",
+            "VolumeSlider"
+          ],
+          "rejectionRule": "none"
+        },
+        {
+          "previewId": "phone-credits",
+          "category": "typography",
+          "severity": "minor",
+          "description": "Credits body text is readable but visually heavy and blocky for a small compact panel, with line breaks creating a cramped text block.",
+          "nodeIds": [
+            "CreditsModal",
+            "CreditsBody"
+          ],
+          "rejectionRule": "none"
+        },
+        {
+          "previewId": "phone-settings",
+          "category": "responsiveness",
+          "severity": "major",
+          "description": "The close button, toggle, and slider fit, but the modal consumes substantial vertical space while leaving the rest of the screen mostly empty. Mobile composition is safe but not efficiently arranged.",
+          "nodeIds": [
+            "SettingsModal",
+            "SettingsCloseButton",
+            "MusicToggle",
+            "VolumeSlider"
+          ],
+          "rejectionRule": "missing_mobile_layout"
+        },
+        {
+          "previewId": "desktop",
+          "category": "originality",
+          "severity": "minor",
+          "description": "The menu relies on a generic vertical stack with glossy sci-fi skins but little bespoke compositional character beyond the title plate.",
+          "nodeIds": [
+            "MainMenuDock",
+            "TitlePlate",
+            "PlayButton",
+            "SettingsButton",
+            "CreditsButton"
+          ],
+          "rejectionRule": "none"
+        },
+        {
+          "previewId": "phone-credits",
+          "category": "prompt_adherence",
+          "severity": "major",
+          "description": "Credits content appears as implementation filler copy rather than a deliberate small credits presentation. The requirement called for a credits panel, and this reads more like placeholder integration messaging.",
+          "nodeIds": [
+            "CreditsModal",
+            "CreditsBody"
+          ],
+          "rejectionRule": "required_element_missing"
+        }
+      ]
+    }
+  ],
+  "elapsedMs": 635455,
+  "renderedViews": [
+    "desktop",
+    "tablet",
+    "phone",
+    "desktop-settings",
+    "phone-settings",
+    "phone-credits"
+  ],
+  "generationEvidence": {
+    "requirementAttempts": 1,
+    "designAttempts": 2,
+    "sourceMode": "model",
+    "sourceRequests": 1,
+    "sourceRepairRequests": 0
+  },
+  "usage": {
+    "receipts": [
+      {
+        "model": "openai/gpt-5.4",
+        "usage": {
+          "prompt_tokens": 1991,
+          "completion_tokens": 1922,
+          "total_tokens": 3913,
+          "prompt_tokens_details": {
+            "cached_tokens": 1792,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0
+          }
+        },
+        "reportedCostMicros": null
+      },
+      {
+        "model": "openai/gpt-5.4",
+        "usage": {
+          "prompt_tokens": 10418,
+          "completion_tokens": 10170,
+          "total_tokens": 20588,
+          "prompt_tokens_details": {
+            "cached_tokens": 3840,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0
+          }
+        },
+        "reportedCostMicros": null
+      },
+      {
+        "model": "openai/gpt-5.4",
+        "usage": {
+          "prompt_tokens": 20695,
+          "completion_tokens": 10178,
+          "total_tokens": 30873,
+          "prompt_tokens_details": {
+            "cached_tokens": 9984,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0
+          }
+        },
+        "reportedCostMicros": null
+      },
+      {
+        "model": "openai/gpt-5.4",
+        "usage": {
+          "prompt_tokens": 40065,
+          "completion_tokens": 15037,
+          "total_tokens": 55102,
+          "prompt_tokens_details": {
+            "cached_tokens": 7936,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0
+          }
+        },
+        "reportedCostMicros": null
+      },
+      {
+        "model": "openai/gpt-5.4",
+        "usage": {
+          "prompt_tokens": 17455,
+          "completion_tokens": 1378,
+          "total_tokens": 18833,
+          "prompt_tokens_details": {
+            "cached_tokens": 1792,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0
+          }
+        },
+        "reportedCostMicros": null
+      }
+    ],
+    "reportedCostMicros": null,
+    "allReceiptsHaveReportedCost": false,
+    "completeRunCost": false
+  },
+  "runtimeVerified": false
+}

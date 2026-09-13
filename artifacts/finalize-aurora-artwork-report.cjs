@@ -1,0 +1,21 @@
+const fs=require('fs'),path=require('path');
+const base=path.resolve('artifacts/aurora-artwork-only-002'),raw=JSON.parse(fs.readFileSync(path.join(base,'report.json')));
+const report=structuredClone(raw);
+report.automatedPassCount=raw.items.filter(i=>i.pass).length;
+report.reviewType='Assistant visual inspection of saved sheets and exported PNGs';
+report.sheetObservations=[{sheets:['sheet-0.png','sheet-2.png'],issue:'Requested #FF00FF magenta, received green. The unchanged extractor used the requested key and could not verify foreground bounds. Background also shows nonuniform regions.'},{sheets:['sheet-1.png'],issue:'Several objects approach their cell edges more closely than the requested 10% clear margin; the automatic pipeline does not measure this constraint.'}];
+for(const item of report.items){
+ item.automatedPass=item.pass;item.width??=null;item.height??=null;
+ if(item.part==='slider_handle'){item.pass=false;item.failure={code:'VISUAL_WRONG_CONTROL_SHAPE',message:'Export is a tall cylindrical knob with visible sidewall, not the requested compact front-facing beveled square cap.'};}
+ if(item.part==='slider_fill'){item.pass=false;item.failure={code:'VISUAL_WRONG_CONTROL_PART',message:'Export has a dark recessed center inside a surrounding frame; it resembles an empty rail rather than an illuminated fill strip without housing.'};}
+ if(!item.pass&&!item.png)item.dimensionsNote='No verified transparent crop was produced; source sheet dimensions are available separately.';
+}
+report.success=false;report.acceptedAssets=report.items.filter(i=>i.pass).length;
+report.sourceGenerated=false;report.published=false;report.totalSheets=4;
+fs.writeFileSync(path.join(base,'reviewed-report.json'),JSON.stringify(report,null,2));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rows=report.items.map(i=>`<tr><td>${esc(i.part)}<br><small>${esc(i.nodes.join(', '))}</small></td><td>${i.pass?'PASS':'FAIL'}</td><td>${i.width?i.width+' × '+i.height:'—'}</td><td>${esc(i.failure?.message||'Extraction and canonical processing passed; correct standalone housing.')} ${i.png?`<a href="${esc(i.png)}">PNG</a>`:''}</td></tr>`).join('');
+const cards=report.items.filter(i=>i.png).map(i=>`<figure><a href="${esc(i.png)}"><img src="${esc(i.png)}"></a><figcaption>${esc(i.part)} · ${i.pass?'accepted':'rejected after visual inspection'} · ${i.width} × ${i.height}</figcaption></figure>`).join('');
+const sheets=report.sourceSheets.map(s=>`<figure><a href="${s}"><img src="${s}"></a><figcaption>${s} · original 5504 × 3072</figcaption></figure>`).join('');
+fs.writeFileSync(path.join(base,'index.html'),`<!doctype html><meta charset="utf-8"><title>AURORA artwork-only report</title><style>body{margin:40px auto;max-width:1200px;padding:20px;background:#081526;color:#e9f5ff;font:16px system-ui}a{color:#52deff}small{color:#a0b6cc}table{border-collapse:collapse;width:100%}td,th{padding:12px;border-bottom:1px solid #31455d;text-align:left}img{max-width:100%;max-height:600px;object-fit:contain}figure{margin:24px 0;padding:20px;background:#14243a;border-radius:12px}figcaption{margin-top:10px}.cards{display:grid;grid-template-columns:1fr 1fr;gap:20px}</style><h1>AURORA · artwork-only test</h1><p><b>Kit failed.</b> 4/16 assets passed automated processing; visual inspection rejected two of those. 2/16 accepted. Four sheets used, including one corrective sheet. No source generation or publishing.</p><p>Green was returned instead of requested magenta on two sheets. Missing crops remain failures; no locations or layers were invented. The automated check also missed the wrong slider shapes and does not enforce the requested margin.</p><p><a href="report.json">Original automated report</a> · <a href="reviewed-report.json">Reviewed report</a> · <a href="request.json">Request</a></p><h2>Per-asset results</h2><table><thead><tr><th>Asset / binding</th><th>Status</th><th>PNG dimensions</th><th>Reason / output</th></tr></thead><tbody>${rows}</tbody></table><h2>Exported transparent PNGs</h2><div class="cards">${cards}</div><h2>Original source sheets</h2>${sheets}`);
+console.log(JSON.stringify({accepted:report.acceptedAssets,total:report.items.length,report:path.join(base,'index.html')}));

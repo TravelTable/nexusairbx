@@ -1,0 +1,308 @@
+{
+  "schemaVersion": 1,
+  "input": {
+    "requestId": "sheet-smoke-1789300966336",
+    "prompt": "Build a polished Roblox main menu titled AURORA. Features: Play, Settings, Credits. Settings opens a panel with Music on/off toggle and Volume slider. Credits opens a small panel. Both panels have Close. Desktop and mobile. Rich glossy cyan/cobalt artwork with thick navy edges, warm gold highlights, ornamental corner details and a title plate. Use Gemini-generated matching skins and icons: button skins, panel skin, slider track and handle, toggle on/off pieces and distinct play/settings/credits/close icons. Keep text live and readable. Create only these features; no shop, rewards, currency, ranks or invented game systems. Play closes the menu and fires a clearly named local hook for game integration. Coherent hover and press animation. Native background layout with restrained decoration. Panels must open and close in the actual controller.",
+    "projectId": "proj_e237b4d5b7634cf2a503723f3f8beff7"
+  },
+  "sourceHash": "9d8514c8bba06bf55cf1e51b4aef8a84d3e6f5818fa43f8bf69d13b38c8175ed",
+  "originalSourceHash": "9d8514c8bba06bf55cf1e51b4aef8a84d3e6f5818fa43f8bf69d13b38c8175ed",
+  "untouched": true,
+  "unattendedPass": false,
+  "failures": [
+    {
+      "gate": "implementation",
+      "issues": [
+        "Unplanned action in model: Blocker.",
+        "Unplanned action in model: DragHitTarget.",
+        "Implementation missing required element: close_affordance_panels.",
+        "Required asset unresolved: icon_play.",
+        "Required asset unresolved: icon_settings.",
+        "Required asset unresolved: icon_credits.",
+        "Required asset unresolved: icon_close."
+      ]
+    },
+    {
+      "gate": "visual",
+      "issues": [
+        {
+          "previewId": "phone",
+          "category": "typography",
+          "severity": "critical",
+          "description": "The title text is cropped to 'UROR', so the required AURORA title is not fully readable on mobile.",
+          "nodeIds": [
+            "AuroraTitle",
+            "TitlePlate"
+          ],
+          "rejectionRule": "text_clipping"
+        },
+        {
+          "previewId": "desktop",
+          "category": "density",
+          "severity": "major",
+          "description": "A large dark decorative slab sits behind the menu stack and creates an accidental empty region that does not support grouping or content.",
+          "nodeIds": [
+            "BackgroundRoot",
+            "BackgroundOrnaments",
+            "MainMenuDock"
+          ],
+          "rejectionRule": "accidental_dead_zone"
+        },
+        {
+          "previewId": "tablet",
+          "category": "density",
+          "severity": "major",
+          "description": "The same oversized dark slab behind the centered menu creates a disconnected dead zone and weakens the intended open composition.",
+          "nodeIds": [
+            "BackgroundRoot",
+            "BackgroundOrnaments",
+            "MainMenuDock"
+          ],
+          "rejectionRule": "accidental_dead_zone"
+        },
+        {
+          "previewId": "phone",
+          "category": "density",
+          "severity": "major",
+          "description": "The background slab behind the buttons forms an accidental dead zone and makes the compact mobile menu feel visually stranded rather than intentionally framed.",
+          "nodeIds": [
+            "BackgroundRoot",
+            "BackgroundOrnaments",
+            "MainMenuDock"
+          ],
+          "rejectionRule": "accidental_dead_zone"
+        },
+        {
+          "previewId": "desktop",
+          "category": "hierarchy",
+          "severity": "major",
+          "description": "Play is only slightly larger than the secondary buttons and does not read as an unmistakably dominant primary CTA.",
+          "nodeIds": [
+            "PlayButton",
+            "SettingsButton",
+            "CreditsButton"
+          ],
+          "rejectionRule": "weak_primary_cta"
+        },
+        {
+          "previewId": "phone",
+          "category": "responsiveness",
+          "severity": "major",
+          "description": "The mobile title plate and title text do not reflow safely; the heading clips instead of adapting its size and padding for the narrow viewport.",
+          "nodeIds": [
+            "TitlePlate",
+            "AuroraTitle"
+          ],
+          "rejectionRule": "missing_mobile_layout"
+        },
+        {
+          "previewId": "phone-settings",
+          "category": "components",
+          "severity": "minor",
+          "description": "The close button styling feels heavier and more saturated than the modal body and rows, making it look like a different component tier rather than a compact peer control.",
+          "nodeIds": [
+            "SettingsCloseButton",
+            "SettingsModal"
+          ],
+          "rejectionRule": "none"
+        },
+        {
+          "previewId": "phone-settings",
+          "category": "alignment",
+          "severity": "minor",
+          "description": "The music row and volume row use different internal inset logic, so labels, control edges, and top padding do not align cleanly across settings peers.",
+          "nodeIds": [
+            "MusicRow",
+            "MusicLabel",
+            "MusicToggle",
+            "VolumeRow",
+            "VolumeLabel",
+            "VolumeSlider",
+            "VolumeValue"
+          ],
+          "rejectionRule": "none"
+        },
+        {
+          "previewId": "phone-credits",
+          "category": "typography",
+          "severity": "minor",
+          "description": "Credits body copy is readable but the line breaks are awkward and create a choppy narrow text block with inconsistent rhythm.",
+          "nodeIds": [
+            "CreditsBody"
+          ],
+          "rejectionRule": "none"
+        },
+        {
+          "previewId": "desktop",
+          "category": "layout",
+          "severity": "minor",
+          "description": "The title plate and menu stack are centered, but the left-leaning background mass competes with that axis and makes the screen feel off-balance.",
+          "nodeIds": [
+            "BackgroundRoot",
+            "TitlePlate",
+            "MainMenuDock"
+          ],
+          "rejectionRule": "none"
+        },
+        {
+          "previewId": "tablet",
+          "category": "layout",
+          "severity": "minor",
+          "description": "The composition preserves the central stack, but the decorative left-side mass still outweighs the rest of the screen and dilutes the premium framing.",
+          "nodeIds": [
+            "BackgroundRoot",
+            "TitlePlate",
+            "MainMenuDock"
+          ],
+          "rejectionRule": "none"
+        },
+        {
+          "previewId": "phone",
+          "category": "layout",
+          "severity": "minor",
+          "description": "The gap between title plate and buttons is tight relative to the large empty lower screen, so the mobile stack feels top-heavy rather than evenly paced.",
+          "nodeIds": [
+            "TitlePlate",
+            "MainMenuDock",
+            "PlayButton",
+            "SettingsButton",
+            "CreditsButton"
+          ],
+          "rejectionRule": "none"
+        }
+      ]
+    }
+  ],
+  "elapsedMs": 581838,
+  "renderedViews": [
+    "desktop",
+    "tablet",
+    "phone",
+    "desktop-settings",
+    "phone-settings",
+    "phone-credits"
+  ],
+  "generationEvidence": {
+    "requirementAttempts": 1,
+    "designAttempts": 2,
+    "sourceMode": "model",
+    "sourceRequests": 1,
+    "sourceRepairRequests": 0
+  },
+  "usage": {
+    "receipts": [
+      {
+        "model": "openai/gpt-5.4",
+        "usage": {
+          "prompt_tokens": 1991,
+          "completion_tokens": 1896,
+          "total_tokens": 3887,
+          "prompt_tokens_details": {
+            "cached_tokens": 1792,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0
+          }
+        },
+        "reportedCostMicros": null
+      },
+      {
+        "model": "openai/gpt-5.4",
+        "usage": {
+          "prompt_tokens": 10397,
+          "completion_tokens": 9820,
+          "total_tokens": 20217,
+          "prompt_tokens_details": {
+            "cached_tokens": 3840,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0
+          }
+        },
+        "reportedCostMicros": null
+      },
+      {
+        "model": "openai/gpt-5.4",
+        "usage": {
+          "prompt_tokens": 20309,
+          "completion_tokens": 9812,
+          "total_tokens": 30121,
+          "prompt_tokens_details": {
+            "cached_tokens": 9984,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0
+          }
+        },
+        "reportedCostMicros": null
+      },
+      {
+        "model": "openai/gpt-5.4",
+        "usage": {
+          "prompt_tokens": 37552,
+          "completion_tokens": 14047,
+          "total_tokens": 51599,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0
+          }
+        },
+        "reportedCostMicros": null
+      },
+      {
+        "model": "openai/gpt-5.4",
+        "usage": {
+          "prompt_tokens": 17258,
+          "completion_tokens": 1503,
+          "total_tokens": 18761,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0
+          }
+        },
+        "reportedCostMicros": null
+      },
+      {
+        "model": "openai/gpt-5.4",
+        "usage": {
+          "prompt_tokens": 19001,
+          "completion_tokens": 1503,
+          "total_tokens": 20504,
+          "prompt_tokens_details": {
+            "cached_tokens": 16512,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "image_tokens": 0
+          }
+        },
+        "reportedCostMicros": null
+      }
+    ],
+    "reportedCostMicros": null,
+    "allReceiptsHaveReportedCost": false,
+    "completeRunCost": false
+  },
+  "runtimeVerified": false
+}

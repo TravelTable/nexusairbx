@@ -1,0 +1,62 @@
+{
+  "regions": [
+    {
+      "slot": 0,
+      "box": null,
+      "reason": "No compact loose beveled cap found. Candidate 2 is a button, not a slider handle."
+    },
+    {
+      "slot": 1,
+      "candidateId": 1,
+      "box": [
+        458,
+        72,
+        542,
+        476
+      ],
+      "pixelRefined": true,
+      "reason": "Candidate 1 is a thin horizontal filled strip."
+    },
+    {
+      "slot": 2,
+      "candidateId": 0,
+      "box": [
+        440,
+        532,
+        560,
+        940
+      ],
+      "pixelRefined": true,
+      "reason": "Candidate 0 is an empty horizontal recessed track."
+    }
+  ],
+  "reusedSource": false,
+  "usage": {},
+  "width": 5504,
+  "sheetId": "89e49e089851a8db168faba28808f03a2aa20ce27c18a99f23f496e0d49f5e67",
+  "model": "google/gemini-3.1-flash-image",
+  "source": {
+    "sha256": "c5044f78051b8b29e33268b59c481bf0765740dfb880873b0fc09baa42b4e97e",
+    "bytes": 16380887,
+    "storagePath": "asset-platform/users/4b801b407b639dca73828adf869dbdc2/assets/ui_sheet_89e49e089851a8db168faba28808f03a2aa20ce27c18a99f23f496e0d49f5e67/versions/source_v1/master.png",
+    "contentType": "image/png"
+  },
+  "items": [
+    {
+      "fingerprint": "47d636f30b63172243391b567be5c4114d9b997208864e0ec6a9ca419b1c4d67",
+      "error": {
+        "code": "UI_SHEET_SUBJECT_MISSING",
+        "message": "No compact loose beveled cap found. Candidate 2 is a button, not a slider handle."
+      }
+    },
+    {
+      "fingerprint": "481f4b7bfa7298d5a8bc31afc0a49bfcdd5d41b982a65aa6eabd8b28e227aac4",
+      "assetId": "asset_1c3a3c68edee4811981f1b08c17d0c20"
+    },
+    {
+      "fingerprint": "6c3e592575e2fa0ff30c4c4d09638717c5852bb11262140dad55fb3d3dac873c",
+      "assetId": "asset_f873205e0ebd41abab429b8a7fb2c4f5"
+    }
+  ],
+  "height": 3072
+}

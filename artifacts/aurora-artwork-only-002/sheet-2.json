@@ -1,0 +1,132 @@
+{
+  "regions": [
+    {
+      "slot": 0,
+      "box": [
+        19,
+        26,
+        459,
+        237
+      ],
+      "reason": "The requested button face is a blank square with rounded corners, matching the provided image. It is a single, uninterrupted empty face inside the rim, with no attached header, caption, emblem, or additional button."
+    },
+    {
+      "slot": 1,
+      "box": [
+        20,
+        258,
+        400,
+        491
+      ],
+      "reason": "The requested credits icon is an open book with two blank pages joined at a central spine, matching the provided image. It is an isolated connected silhouette, front view, with no square tile, badge, button, panel, or frame behind it."
+    },
+    {
+      "slot": 2,
+      "box": [
+        19,
+        508,
+        427,
+        734
+      ],
+      "reason": "The requested settings icon is a toothed cogwheel with a central hole, matching the provided image. It is an isolated connected silhouette, front view, with no square tile, badge, button, panel, or frame behind it."
+    },
+    {
+      "slot": 3,
+      "box": null,
+      "reason": "No compact loose beveled cap is present. The small rectangular button is a complete button, not a handle."
+    },
+    {
+      "slot": 4,
+      "box": [
+        459,
+        26,
+        900,
+        226
+      ],
+      "reason": "The requested toggle thumb is a loose circular cap, matching the provided image. It is viewed from the front, with nothing behind it or extending to either side, and no pill housing, switch, track, or second state."
+    },
+    {
+      "slot": 5,
+      "box": [
+        459,
+        258,
+        900,
+        480
+      ],
+      "reason": "The requested close icon is a diagonal X-shaped cross, matching the provided image. It is an isolated connected silhouette, front view, with no square tile, badge, button, panel, or frame behind it."
+    },
+    {
+      "slot": 6,
+      "box": [
+        459,
+        539,
+        900,
+        720
+      ],
+      "reason": "The requested play icon is a right-pointing triangular arrow, matching the provided image. It is an isolated connected silhouette, front view, with no square tile, badge, button, panel, or frame behind it."
+    }
+  ],
+  "reusedSource": false,
+  "usage": {},
+  "width": 5504,
+  "sheetId": "7199ec2599baafd22e06e9e17f09cc81258c09b95dc7d097cfd6c26dd498adcf",
+  "model": "google/gemini-3.1-flash-image",
+  "source": {
+    "sha256": "047d2801011bf4802a5e7ef24f2cb5fcc9f5525a7b7bb2314946d0a505e8ef72",
+    "bytes": 27344960,
+    "storagePath": "asset-platform/users/4b801b407b639dca73828adf869dbdc2/assets/ui_sheet_7199ec2599baafd22e06e9e17f09cc81258c09b95dc7d097cfd6c26dd498adcf/versions/source_v1/master.png",
+    "contentType": "image/png"
+  },
+  "items": [
+    {
+      "fingerprint": "632f0ec3bf326823d5c01836024f2110648f471f7fc5cfaef88bbf44dc0db435",
+      "error": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "fingerprint": "3d7805dd520da58dd40688403046d7bf17d822420a71b97c80fbb215382e7240",
+      "error": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "fingerprint": "5abfae11096db8f5d58b7a070a366faaf08bc937c2e479dcf9bc828bb4811078",
+      "error": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "fingerprint": "66b9dc6c66b2898874bc050826f8d2008a926e56cace82fb309e2bdc36b7e93a",
+      "error": {
+        "code": "UI_SHEET_SUBJECT_MISSING",
+        "message": "No compact loose beveled cap is present. The small rectangular button is a complete button, not a handle."
+      }
+    },
+    {
+      "fingerprint": "829ba6f25360f704e782681dc26c296e7e198d3e3b80217803dcbf478b39c693",
+      "error": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "fingerprint": "892d4f03575a7c5cd19371ffbd39d4b3af0331685749040fbe23d65530bd998c",
+      "error": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "fingerprint": "a4b5de4c3a6d645a4f512a2984e377c09971bbec8715fcc0138d1a3e57d76106",
+      "error": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    }
+  ],
+  "height": 3072
+}

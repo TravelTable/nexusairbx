@@ -1,0 +1,126 @@
+{
+  slot: 0,
+  failures: [
+    {
+      fingerprint: '1b88022e1997fb2b7e377c1f08d040070f511e603561600ea58ffdb50d3d8b46',
+      error: [Object]
+    },
+    {
+      fingerprint: '4fbf9394ac488d1cbd37f6c21b928cae37a8945cc722943063530db824bab0b7',
+      error: [Object]
+    },
+    {
+      fingerprint: '944f2358f94a6f3734a20dfb09a559a1b4b8b4b74ad65c21f7822b24adda3936',
+      error: [Object]
+    },
+    {
+      fingerprint: 'd928c3e99549d7f1ada17d3a649b91df08ac214d6b99dc3c1aaa8d20c9d364a9',
+      error: [Object]
+    }
+  ],
+  regions: [
+    {
+      slot: 0,
+      box: null,
+      reason: 'No close button skin matching the menu button family with gold trim and thicker navy edge emphasis was found.'
+    },
+    {
+      slot: 1,
+      box: null,
+      reason: 'No close button skin matching Settings close exactly was found.'
+    },
+    {
+      slot: 2,
+      candidateId: 2,
+      box: [Array],
+      pixelRefined: true,
+      reason: ''
+    },
+    {
+      slot: 3,
+      candidateId: 6,
+      box: [Array],
+      pixelRefined: true,
+      reason: ''
+    },
+    { slot: 4, box: null, reason: 'No credits symbol was found.' },
+    {
+      slot: 5,
+      candidateId: 7,
+      box: [Array],
+      pixelRefined: true,
+      reason: ''
+    },
+    {
+      slot: 6,
+      candidateId: 5,
+      box: [Array],
+      pixelRefined: true,
+      reason: ''
+    },
+    {
+      slot: 7,
+      box: null,
+      reason: 'No compact loose beveled cap was found.'
+    }
+  ]
+}
+{
+  slot: 1,
+  failures: [
+    {
+      fingerprint: '26e45e83fa0e442a81ead1ce07848225a707499bbca8e29b6c6fba8d1b3cdc7d',
+      error: [Object]
+    },
+    {
+      fingerprint: '2ab75b5ce0ee9c794aceff034e0e869f5b98d5318b76c586feb8f61dbc4fc03c',
+      error: [Object]
+    },
+    {
+      fingerprint: '77492e1c5c75dbec6d68691c10a61b417702a5c327ea157e1c3a20a821b57c01',
+      error: [Object]
+    },
+    {
+      fingerprint: '795595bef2f7ffb6446140332c00892980cdc962a8d20be3e7731384dbfdc695',
+      error: [Object]
+    }
+  ],
+  regions: [
+    {
+      slot: 0,
+      box: null,
+      reason: "No exact match for the description. Candidate 2 is close but lacks the 'gold highlight trim' and 'brighter central sheen'."
+    },
+    {
+      slot: 1,
+      candidateId: 2,
+      box: [Array],
+      pixelRefined: true,
+      reason: ''
+    },
+    {
+      slot: 2,
+      box: null,
+      reason: 'No exact match for the description. Candidate 2 is the hero button, not a secondary button. The button in the top right is a secondary button but does not match the hero family.'
+    },
+    {
+      slot: 3,
+      box: null,
+      reason: "No exact match for the description. Candidate 0 is a modal skin but does not match the 'compact' and 'restrained gold trim' aspects of the description."
+    },
+    {
+      slot: 4,
+      candidateId: 0,
+      box: [Array],
+      pixelRefined: true,
+      reason: ''
+    },
+    {
+      slot: 5,
+      candidateId: 3,
+      box: [Array],
+      pixelRefined: true,
+      reason: ''
+    }
+  ]
+}

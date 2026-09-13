@@ -1,0 +1,105 @@
+{
+  "regions": [
+    {
+      "slot": 0,
+      "box": null,
+      "reason": "No exact match for the description. Candidate 2 is close but lacks the 'gold highlight trim' and 'brighter central sheen'."
+    },
+    {
+      "slot": 1,
+      "candidateId": 2,
+      "box": [
+        85,
+        26,
+        348,
+        308
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    },
+    {
+      "slot": 2,
+      "box": null,
+      "reason": "No exact match for the description. Candidate 2 is the hero button, not a secondary button. The button in the top right is a secondary button but does not match the hero family."
+    },
+    {
+      "slot": 3,
+      "box": null,
+      "reason": "No exact match for the description. Candidate 0 is a modal skin but does not match the 'compact' and 'restrained gold trim' aspects of the description."
+    },
+    {
+      "slot": 4,
+      "candidateId": 0,
+      "box": [
+        564,
+        375,
+        923,
+        625
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    },
+    {
+      "slot": 5,
+      "candidateId": 3,
+      "box": [
+        653,
+        692,
+        830,
+        970
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    }
+  ],
+  "reusedSource": false,
+  "usage": {},
+  "width": 5504,
+  "sheetId": "ce4b92a060eb87b9deb3c35ba44b4fc8becda11d00ab2471bc5dbd9c4423d4e8",
+  "model": "google/gemini-3.1-flash-image",
+  "source": {
+    "sha256": "cdb522450912d0c0bf294e71cc80bca668c963c52e2263dfdff5a3d079f6f3f6",
+    "bytes": 25088618,
+    "storagePath": "asset-platform/users/4b801b407b639dca73828adf869dbdc2/assets/ui_sheet_ce4b92a060eb87b9deb3c35ba44b4fc8becda11d00ab2471bc5dbd9c4423d4e8/versions/source_v1/master.png",
+    "contentType": "image/png"
+  },
+  "items": [
+    {
+      "fingerprint": "26e45e83fa0e442a81ead1ce07848225a707499bbca8e29b6c6fba8d1b3cdc7d",
+      "error": {
+        "code": "UI_SHEET_SUBJECT_MISSING",
+        "message": "No exact match for the description. Candidate 2 is close but lacks the 'gold highlight trim' and 'brighter central sheen'."
+      }
+    },
+    {
+      "fingerprint": "2ab75b5ce0ee9c794aceff034e0e869f5b98d5318b76c586feb8f61dbc4fc03c",
+      "error": {
+        "code": "ASSET_VALIDATION_FAILED",
+        "message": "The generated asset did not pass Roblox validation."
+      }
+    },
+    {
+      "fingerprint": "77492e1c5c75dbec6d68691c10a61b417702a5c327ea157e1c3a20a821b57c01",
+      "error": {
+        "code": "UI_SHEET_SUBJECT_MISSING",
+        "message": "No exact match for the description. Candidate 2 is the hero button, not a secondary button. The button in the top right is a secondary button but does not match the hero family."
+      }
+    },
+    {
+      "fingerprint": "795595bef2f7ffb6446140332c00892980cdc962a8d20be3e7731384dbfdc695",
+      "error": {
+        "code": "UI_SHEET_SUBJECT_MISSING",
+        "message": "No exact match for the description. Candidate 0 is a modal skin but does not match the 'compact' and 'restrained gold trim' aspects of the description."
+      }
+    },
+    {
+      "fingerprint": "7d78cc31498178fc9b674479af1393effee12d88253c30e8745fe200bb5a1464",
+      "assetId": "asset_cdbd7c6664874d53afa794a44c485e90"
+    },
+    {
+      "fingerprint": "07ec8536a609a2abceab15f7ad0605351235f9ab6fc4af1e3bb65f520c3a86de",
+      "assetId": "asset_ddbfd6d0cbdd4a98934cf7d9dd710c85"
+    }
+  ],
+  "height": 3072
+}

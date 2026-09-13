@@ -1,0 +1,321 @@
+{
+  "schemaVersion": 1,
+  "offline": true,
+  "providerCalls": 0,
+  "canonicalWrites": 0,
+  "sourceSha256": "96a1b13df6b4bebf79a4eb9eeba1bc913002d914a38fbf3c1db3291667d92d58",
+  "sourceWidth": 5504,
+  "sourceHeight": 3072,
+  "semanticReviewPerformed": false,
+  "note": "Only geometry and pixel processing were rerun. Saved subject assignments still require visual review; this is not build completion evidence.",
+  "failures": 0,
+  "items": [
+    {
+      "slot": 0,
+      "fingerprint": "6a5ff826ed336873a6a5d969373768a069f6f0dd8801ab6f3357e3b98c4dc49d",
+      "required": true,
+      "crop": {
+        "left": 164,
+        "top": 160,
+        "width": 1507,
+        "height": 1200
+      },
+      "cropFile": "slot-00-crop.png",
+      "readyFile": "slot-00-ready.png",
+      "width": 1024,
+      "height": 817,
+      "pixelChecksPassed": true,
+      "blocking": [],
+      "reviewRequired": [
+        "text",
+        "concept"
+      ],
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "panel_surface",
+        "styleFingerprint": "6a5ff826ed336873a6a5d969373768a069f6f0dd8801ab6f3357e3b98c4dc49d",
+        "componentIds": [
+          "cmp_settings_modal"
+        ],
+        "nodeNames": [
+          "SettingsModal"
+        ],
+        "requirementIds": [
+          "art_panel_skin"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 817,
+        "renderStrategy": "image_9slice",
+        "scaleType": "Slice",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "",
+        "slot": null,
+        "sliceCenter": [
+          185,
+          148,
+          839,
+          669
+        ],
+        "sliceScale": 0.2
+      }
+    },
+    {
+      "slot": 1,
+      "fingerprint": "8455e216499b4339fcd44e031e7e474832697fc693a50558faf377bb3a41f4bd",
+      "required": true,
+      "crop": {
+        "left": 2011,
+        "top": 543,
+        "width": 1478,
+        "height": 470
+      },
+      "cropFile": "slot-01-crop.png",
+      "readyFile": "slot-01-ready.png",
+      "width": 1024,
+      "height": 331,
+      "pixelChecksPassed": true,
+      "blocking": [],
+      "reviewRequired": [
+        "text",
+        "concept"
+      ],
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "component_surface",
+        "styleFingerprint": "8455e216499b4339fcd44e031e7e474832697fc693a50558faf377bb3a41f4bd",
+        "componentIds": [
+          "cmp_play_button"
+        ],
+        "nodeNames": [
+          "PlayButton"
+        ],
+        "requirementIds": [
+          "art_button_skins"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 331,
+        "renderStrategy": "image_9slice",
+        "scaleType": "Slice",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "",
+        "slot": null,
+        "sliceCenter": [
+          185,
+          60,
+          839,
+          271
+        ],
+        "sliceScale": 0.2
+      }
+    },
+    {
+      "slot": 2,
+      "fingerprint": "d3db140059557a1840ce0e5c3cd516db3a671ae1cdf30f0ad2e9b976803cad18",
+      "required": true,
+      "crop": {
+        "left": 3848,
+        "top": 543,
+        "width": 1475,
+        "height": 470
+      },
+      "cropFile": "slot-02-crop.png",
+      "readyFile": "slot-02-ready.png",
+      "width": 1024,
+      "height": 332,
+      "pixelChecksPassed": true,
+      "blocking": [],
+      "reviewRequired": [
+        "text",
+        "concept"
+      ],
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "component_surface",
+        "styleFingerprint": "d3db140059557a1840ce0e5c3cd516db3a671ae1cdf30f0ad2e9b976803cad18",
+        "componentIds": [
+          "cmp_settings_button",
+          "cmp_credits_button"
+        ],
+        "nodeNames": [
+          "SettingsButton",
+          "CreditsButton"
+        ],
+        "requirementIds": [
+          "art_button_skins"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 332,
+        "renderStrategy": "image_9slice",
+        "scaleType": "Slice",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "",
+        "slot": null,
+        "sliceCenter": [
+          185,
+          60,
+          839,
+          272
+        ],
+        "sliceScale": 0.2
+      }
+    },
+    {
+      "slot": 3,
+      "fingerprint": "f116da1459a296fbbe155562542b0b6e06104b13e3ef2ea5c992b1cccc395782",
+      "required": true,
+      "crop": {
+        "left": 260,
+        "top": 1774,
+        "width": 1314,
+        "height": 1078
+      },
+      "cropFile": "slot-03-crop.png",
+      "readyFile": "slot-03-ready.png",
+      "width": 1024,
+      "height": 842,
+      "pixelChecksPassed": true,
+      "blocking": [],
+      "reviewRequired": [
+        "text",
+        "concept"
+      ],
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "panel_surface",
+        "styleFingerprint": "f116da1459a296fbbe155562542b0b6e06104b13e3ef2ea5c992b1cccc395782",
+        "componentIds": [
+          "cmp_credits_modal"
+        ],
+        "nodeNames": [
+          "CreditsModal"
+        ],
+        "requirementIds": [
+          "art_panel_skin"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 842,
+        "renderStrategy": "image_9slice",
+        "scaleType": "Slice",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "",
+        "slot": null,
+        "sliceCenter": [
+          185,
+          152,
+          839,
+          690
+        ],
+        "sliceScale": 0.2
+      }
+    },
+    {
+      "slot": 4,
+      "fingerprint": "1584e8a79850ea998e9d3ec85ae200df2e34aee44a0bd3ef71356dc78323fa39",
+      "required": true,
+      "crop": {
+        "left": 2137,
+        "top": 2098,
+        "width": 1230,
+        "height": 442
+      },
+      "cropFile": "slot-04-crop.png",
+      "readyFile": "slot-04-ready.png",
+      "width": 1024,
+      "height": 373,
+      "pixelChecksPassed": true,
+      "blocking": [],
+      "reviewRequired": [
+        "text",
+        "concept"
+      ],
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "control_artwork",
+        "styleFingerprint": "1584e8a79850ea998e9d3ec85ae200df2e34aee44a0bd3ef71356dc78323fa39",
+        "componentIds": [
+          "cmp_music_toggle"
+        ],
+        "nodeNames": [
+          "MusicToggleOn"
+        ],
+        "requirementIds": [
+          "art_toggle_pieces"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 373,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "",
+        "slot": null,
+        "controlPart": "toggle_on"
+      }
+    },
+    {
+      "slot": 5,
+      "fingerprint": "7a00f9190d87dc3504f6c7fade5620fef5cebb886f31d0461176fc25c00c2814",
+      "required": true,
+      "crop": {
+        "left": 3810,
+        "top": 2093,
+        "width": 1552,
+        "height": 423
+      },
+      "cropFile": "slot-05-crop.png",
+      "readyFile": "slot-05-ready.png",
+      "width": 1024,
+      "height": 285,
+      "pixelChecksPassed": true,
+      "blocking": [],
+      "reviewRequired": [
+        "text",
+        "concept"
+      ],
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "ornament",
+        "styleFingerprint": "7a00f9190d87dc3504f6c7fade5620fef5cebb886f31d0461176fc25c00c2814",
+        "componentIds": [
+          "cmp_title_plate"
+        ],
+        "nodeNames": [
+          "TitlePlate"
+        ],
+        "requirementIds": [
+          "art_title_plate"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 285,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "",
+        "slot": null
+      }
+    }
+  ]
+}

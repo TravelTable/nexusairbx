@@ -1,0 +1,787 @@
+{
+  "ok": false,
+  "valid": false,
+  "issues": [
+    "Required asset unresolved: asset_icons_menu.",
+    "Required asset unresolved: asset_title_plate."
+  ],
+  "components": [
+    {
+      "id": "cmp_background_root",
+      "requirementId": "main_menu_root",
+      "semanticAction": "",
+      "hierarchy": "primary",
+      "groupId": "menu_structure",
+      "nodeIds": [
+        "root.1.1",
+        "root.2.1"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini",
+        "assetStrategy": "procedural",
+        "size": 16,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "flat",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_background_layer",
+      "requirementId": "background_frame",
+      "semanticAction": "",
+      "hierarchy": "tertiary",
+      "groupId": "menu_structure",
+      "nodeIds": [
+        "root.1.1.2",
+        "root.2.1.2"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini",
+        "assetStrategy": "procedural",
+        "size": 16,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "flat",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_corner_ornaments",
+      "requirementId": "ornamental_corner_details",
+      "semanticAction": "",
+      "hierarchy": "tertiary",
+      "groupId": "ornamentation",
+      "nodeIds": [
+        "root.1.2",
+        "root.2.2"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini",
+        "assetStrategy": "generated",
+        "size": 16,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "ornamental",
+        "edgeTreatment": "navy framed",
+        "shadowTreatment": "soft ambient",
+        "paletteMode": "baked cyan-cobalt-gold"
+      }
+    },
+    {
+      "id": "cmp_menu_dock",
+      "requirementId": null,
+      "semanticAction": "",
+      "hierarchy": "primary",
+      "groupId": "main_menu_actions",
+      "nodeIds": [
+        "root.1.3",
+        "root.2.3"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini",
+        "assetStrategy": "procedural",
+        "size": 16,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "flat",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_title_plate",
+      "requirementId": "title_plate",
+      "semanticAction": "",
+      "hierarchy": "primary",
+      "groupId": "title_group",
+      "nodeIds": [
+        "root.1.3.2",
+        "root.2.3.2"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini",
+        "assetStrategy": "generated",
+        "size": 16,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "slight relief",
+        "edgeTreatment": "thick navy frame",
+        "shadowTreatment": "soft plate shadow",
+        "paletteMode": "baked cyan-cobalt-gold"
+      }
+    },
+    {
+      "id": "cmp_title_aurora",
+      "requirementId": "title_aurora",
+      "semanticAction": "",
+      "hierarchy": "primary",
+      "groupId": "title_group",
+      "nodeIds": [
+        "root.1.3.2.2.1",
+        "root.2.3.2.2.1"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini",
+        "assetStrategy": "procedural",
+        "size": 16,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "flat",
+        "edgeTreatment": "none",
+        "shadowTreatment": "subtle text shadow",
+        "paletteMode": "textPrimary"
+      }
+    },
+    {
+      "id": "cmp_play_button",
+      "requirementId": "action_play",
+      "semanticAction": "play",
+      "hierarchy": "primary",
+      "groupId": "main_menu_actions",
+      "nodeIds": [
+        "root.1.3.3",
+        "root.2.3.3"
+      ],
+      "icon": {
+        "enabled": true,
+        "semanticRole": "play",
+        "family": "aurora_gemini",
+        "assetStrategy": "generated",
+        "size": 28,
+        "padding": 12,
+        "visualWeight": "bold",
+        "perspective": "slight relief",
+        "edgeTreatment": "clean navy edge",
+        "shadowTreatment": "subtle icon shadow",
+        "paletteMode": "light glyph with gold accent detail"
+      }
+    },
+    {
+      "id": "cmp_settings_button",
+      "requirementId": "action_settings",
+      "semanticAction": "open_settings_panel",
+      "hierarchy": "primary",
+      "groupId": "main_menu_actions",
+      "nodeIds": [
+        "root.1.3.4",
+        "root.2.3.4"
+      ],
+      "icon": {
+        "enabled": true,
+        "semanticRole": "settings",
+        "family": "aurora_gemini",
+        "assetStrategy": "generated",
+        "size": 28,
+        "padding": 12,
+        "visualWeight": "bold",
+        "perspective": "slight relief",
+        "edgeTreatment": "clean navy edge",
+        "shadowTreatment": "subtle icon shadow",
+        "paletteMode": "light glyph with gold accent detail"
+      }
+    },
+    {
+      "id": "cmp_credits_button",
+      "requirementId": "action_credits",
+      "semanticAction": "open_credits_panel",
+      "hierarchy": "primary",
+      "groupId": "main_menu_actions",
+      "nodeIds": [
+        "root.1.3.5",
+        "root.2.3.5"
+      ],
+      "icon": {
+        "enabled": true,
+        "semanticRole": "credits",
+        "family": "aurora_gemini",
+        "assetStrategy": "generated",
+        "size": 28,
+        "padding": 12,
+        "visualWeight": "bold",
+        "perspective": "slight relief",
+        "edgeTreatment": "clean navy edge",
+        "shadowTreatment": "subtle icon shadow",
+        "paletteMode": "light glyph with gold accent detail"
+      }
+    },
+    {
+      "id": "cmp_settings_modal",
+      "requirementId": "panel_settings",
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "settings_panel_group",
+      "nodeIds": [
+        "root.1.4.2",
+        "root.2.4.2"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini",
+        "assetStrategy": "generated",
+        "size": 16,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "slight relief",
+        "edgeTreatment": "thick navy frame",
+        "shadowTreatment": "modal ambient shadow",
+        "paletteMode": "baked cyan-cobalt-gold"
+      }
+    },
+    {
+      "id": "cmp_settings_title",
+      "requirementId": null,
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "settings_panel_group",
+      "nodeIds": [
+        "root.1.4.2.3.2.1",
+        "root.2.4.2.3.2.1"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini",
+        "assetStrategy": "procedural",
+        "size": 16,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "flat",
+        "edgeTreatment": "none",
+        "shadowTreatment": "subtle text shadow",
+        "paletteMode": "textPrimary"
+      }
+    },
+    {
+      "id": "cmp_settings_close",
+      "requirementId": "action_close_settings",
+      "semanticAction": "close_settings_panel",
+      "hierarchy": "secondary",
+      "groupId": "panel_close_actions",
+      "nodeIds": [
+        "root.1.4.2.3.2.2",
+        "root.2.4.2.3.2.2"
+      ],
+      "icon": {
+        "enabled": true,
+        "semanticRole": "close",
+        "family": "aurora_gemini",
+        "assetStrategy": "generated",
+        "size": 22,
+        "padding": 10,
+        "visualWeight": "bold",
+        "perspective": "slight relief",
+        "edgeTreatment": "clean navy edge",
+        "shadowTreatment": "subtle icon shadow",
+        "paletteMode": "light glyph with gold accent detail"
+      }
+    },
+    {
+      "id": "cmp_music_label",
+      "requirementId": null,
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "settings_rows",
+      "nodeIds": [
+        "root.1.4.2.3.3.2.5",
+        "root.2.4.2.3.3.2.5"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini",
+        "assetStrategy": "procedural",
+        "size": 16,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "flat",
+        "edgeTreatment": "none",
+        "shadowTreatment": "subtle text shadow",
+        "paletteMode": "textPrimary"
+      }
+    },
+    {
+      "id": "cmp_music_toggle",
+      "requirementId": "toggle_music",
+      "semanticAction": "toggle_music",
+      "hierarchy": "secondary",
+      "groupId": "settings_controls",
+      "nodeIds": [
+        "root.1.4.2.3.3.2.6.1",
+        "root.2.4.2.3.3.2.6.1"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini",
+        "assetStrategy": "procedural",
+        "size": 16,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "flat",
+        "edgeTreatment": "navy stroked housing",
+        "shadowTreatment": "subtle control shadow",
+        "paletteMode": "theme-based native colors"
+      }
+    },
+    {
+      "id": "cmp_volume_label",
+      "requirementId": null,
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "settings_rows",
+      "nodeIds": [
+        "root.1.4.2.3.3.3.5",
+        "root.2.4.2.3.3.3.5"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini",
+        "assetStrategy": "procedural",
+        "size": 16,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "flat",
+        "edgeTreatment": "none",
+        "shadowTreatment": "subtle text shadow",
+        "paletteMode": "textPrimary"
+      }
+    },
+    {
+      "id": "cmp_volume_slider",
+      "requirementId": "slider_volume",
+      "semanticAction": "adjust_volume",
+      "hierarchy": "secondary",
+      "groupId": "settings_controls",
+      "nodeIds": [
+        "root.1.4.2.3.3.3.7.1",
+        "root.2.4.2.3.3.3.7.1"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini",
+        "assetStrategy": "procedural",
+        "size": 16,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "flat",
+        "edgeTreatment": "navy framed track",
+        "shadowTreatment": "subtle handle shadow",
+        "paletteMode": "theme-based native colors"
+      }
+    },
+    {
+      "id": "cmp_volume_value",
+      "requirementId": null,
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "settings_rows",
+      "nodeIds": [
+        "root.1.4.2.3.3.3.6",
+        "root.2.4.2.3.3.3.6"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini",
+        "assetStrategy": "procedural",
+        "size": 16,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "flat",
+        "edgeTreatment": "none",
+        "shadowTreatment": "subtle text shadow",
+        "paletteMode": "textSecondary"
+      }
+    },
+    {
+      "id": "cmp_credits_modal",
+      "requirementId": "panel_credits",
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "credits_panel_group",
+      "nodeIds": [
+        "root.1.5.2",
+        "root.2.5.2"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini",
+        "assetStrategy": "generated",
+        "size": 16,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "slight relief",
+        "edgeTreatment": "thick navy frame",
+        "shadowTreatment": "modal ambient shadow",
+        "paletteMode": "baked cyan-cobalt-gold"
+      }
+    },
+    {
+      "id": "cmp_credits_title",
+      "requirementId": null,
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "credits_panel_group",
+      "nodeIds": [
+        "root.1.5.2.3.1.1",
+        "root.2.5.2.3.1.1"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini",
+        "assetStrategy": "procedural",
+        "size": 16,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "flat",
+        "edgeTreatment": "none",
+        "shadowTreatment": "subtle text shadow",
+        "paletteMode": "textPrimary"
+      }
+    },
+    {
+      "id": "cmp_credits_body",
+      "requirementId": null,
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "credits_panel_group",
+      "nodeIds": [
+        "root.1.5.2.3.2",
+        "root.2.5.2.3.2"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini",
+        "assetStrategy": "procedural",
+        "size": 16,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "flat",
+        "edgeTreatment": "none",
+        "shadowTreatment": "subtle text shadow",
+        "paletteMode": "textSecondary"
+      }
+    },
+    {
+      "id": "cmp_credits_close",
+      "requirementId": "action_close_credits",
+      "semanticAction": "close_credits_panel",
+      "hierarchy": "secondary",
+      "groupId": "panel_close_actions",
+      "nodeIds": [
+        "root.1.5.2.3.1.2",
+        "root.2.5.2.3.1.2"
+      ],
+      "icon": {
+        "enabled": true,
+        "semanticRole": "close",
+        "family": "aurora_gemini",
+        "assetStrategy": "generated",
+        "size": 22,
+        "padding": 10,
+        "visualWeight": "bold",
+        "perspective": "slight relief",
+        "edgeTreatment": "clean navy edge",
+        "shadowTreatment": "subtle icon shadow",
+        "paletteMode": "light glyph with gold accent detail"
+      }
+    },
+    {
+      "id": "cmp_play_hook",
+      "requirementId": "system_play_hook",
+      "semanticAction": "fire_local_play_hook",
+      "hierarchy": "secondary",
+      "groupId": "system_hooks",
+      "nodeIds": [
+        "root.1.6.1",
+        "root.2.6.1"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini",
+        "assetStrategy": "procedural",
+        "size": 16,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "flat",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    },
+    {
+      "id": "cmp_panel_controller",
+      "requirementId": null,
+      "semanticAction": "",
+      "hierarchy": "secondary",
+      "groupId": "system_hooks",
+      "nodeIds": [
+        "root.1.6.2",
+        "root.2.6.2"
+      ],
+      "icon": {
+        "enabled": false,
+        "semanticRole": "",
+        "family": "aurora_gemini",
+        "assetStrategy": "procedural",
+        "size": 16,
+        "padding": 0,
+        "visualWeight": "medium",
+        "perspective": "flat",
+        "edgeTreatment": "none",
+        "shadowTreatment": "none",
+        "paletteMode": "none"
+      }
+    }
+  ],
+  "icons": [
+    {
+      "componentId": "cmp_play_button",
+      "nodeName": "PlayButton",
+      "semanticRole": "play",
+      "groupId": "main_menu_actions",
+      "assetRefId": "asset_asset_4cfc6b35a4414469942275d539c51603",
+      "canonicalAssetId": "asset_4cfc6b35a4414469942275d539c51603",
+      "source": "generated_sheet",
+      "resolution": "image",
+      "status": "resolved",
+      "previewOnly": true,
+      "resolved": true,
+      "uri": "nexusasset://asset_4cfc6b35a4414469942275d539c51603",
+      "family": "aurora_gemini",
+      "styleFamily": "aurora_gemini",
+      "size": 28,
+      "padding": 12,
+      "metadata": {
+        "semanticRole": "play",
+        "styleFamily": "aurora_gemini",
+        "visualWeight": "bold",
+        "strokeWeight": "uniform",
+        "perspective": "slight relief",
+        "paletteMode": "light glyph with gold accent detail",
+        "palette": [
+          "#33CFFF",
+          "#2D5BFF",
+          "#F3C86A",
+          "#59D9A5",
+          "#FF6B7A",
+          "#081427",
+          "#123154",
+          "#F4FBFF"
+        ],
+        "background": "transparent",
+        "edgeTreatment": "clean navy edge",
+        "shadowTreatment": "subtle icon shadow",
+        "padding": 12,
+        "iconToButtonRatio": 0.42,
+        "consistencyGroup": "main_menu_actions"
+      }
+    },
+    {
+      "componentId": "cmp_settings_button",
+      "nodeName": "SettingsButton",
+      "semanticRole": "settings",
+      "groupId": "main_menu_actions",
+      "assetRefId": "asset_asset_a369c2baea304703945bb565c6f16e9c",
+      "canonicalAssetId": "asset_a369c2baea304703945bb565c6f16e9c",
+      "source": "generated_sheet",
+      "resolution": "image",
+      "status": "resolved",
+      "previewOnly": true,
+      "resolved": true,
+      "uri": "nexusasset://asset_a369c2baea304703945bb565c6f16e9c",
+      "family": "aurora_gemini",
+      "styleFamily": "aurora_gemini",
+      "size": 28,
+      "padding": 12,
+      "metadata": {
+        "semanticRole": "settings",
+        "styleFamily": "aurora_gemini",
+        "visualWeight": "bold",
+        "strokeWeight": "uniform",
+        "perspective": "slight relief",
+        "paletteMode": "light glyph with gold accent detail",
+        "palette": [
+          "#33CFFF",
+          "#2D5BFF",
+          "#F3C86A",
+          "#59D9A5",
+          "#FF6B7A",
+          "#081427",
+          "#123154",
+          "#F4FBFF"
+        ],
+        "background": "transparent",
+        "edgeTreatment": "clean navy edge",
+        "shadowTreatment": "subtle icon shadow",
+        "padding": 12,
+        "iconToButtonRatio": 0.42,
+        "consistencyGroup": "main_menu_actions"
+      }
+    },
+    {
+      "componentId": "cmp_credits_button",
+      "nodeName": "CreditsButton",
+      "semanticRole": "credits",
+      "groupId": "main_menu_actions",
+      "assetRefId": "asset_asset_a24cf9b505324f4da7794f0dd35f746d",
+      "canonicalAssetId": "asset_a24cf9b505324f4da7794f0dd35f746d",
+      "source": "generated_sheet",
+      "resolution": "image",
+      "status": "resolved",
+      "previewOnly": true,
+      "resolved": true,
+      "uri": "nexusasset://asset_a24cf9b505324f4da7794f0dd35f746d",
+      "family": "aurora_gemini",
+      "styleFamily": "aurora_gemini",
+      "size": 28,
+      "padding": 12,
+      "metadata": {
+        "semanticRole": "credits",
+        "styleFamily": "aurora_gemini",
+        "visualWeight": "bold",
+        "strokeWeight": "uniform",
+        "perspective": "slight relief",
+        "paletteMode": "light glyph with gold accent detail",
+        "palette": [
+          "#33CFFF",
+          "#2D5BFF",
+          "#F3C86A",
+          "#59D9A5",
+          "#FF6B7A",
+          "#081427",
+          "#123154",
+          "#F4FBFF"
+        ],
+        "background": "transparent",
+        "edgeTreatment": "clean navy edge",
+        "shadowTreatment": "subtle icon shadow",
+        "padding": 12,
+        "iconToButtonRatio": 0.42,
+        "consistencyGroup": "main_menu_actions"
+      }
+    },
+    {
+      "componentId": "cmp_settings_close",
+      "nodeName": "SettingsCloseButton",
+      "semanticRole": "close",
+      "groupId": "panel_close_actions",
+      "assetRefId": "asset_asset_e988ccfe8beb43e5986b5b8749257705",
+      "canonicalAssetId": "asset_e988ccfe8beb43e5986b5b8749257705",
+      "source": "generated_sheet",
+      "resolution": "image",
+      "status": "resolved",
+      "previewOnly": true,
+      "resolved": true,
+      "uri": "nexusasset://asset_e988ccfe8beb43e5986b5b8749257705",
+      "family": "aurora_gemini",
+      "styleFamily": "aurora_gemini",
+      "size": 22,
+      "padding": 10,
+      "metadata": {
+        "semanticRole": "close",
+        "styleFamily": "aurora_gemini",
+        "visualWeight": "bold",
+        "strokeWeight": "uniform",
+        "perspective": "slight relief",
+        "paletteMode": "light glyph with gold accent detail",
+        "palette": [
+          "#33CFFF",
+          "#2D5BFF",
+          "#F3C86A",
+          "#59D9A5",
+          "#FF6B7A",
+          "#081427",
+          "#123154",
+          "#F4FBFF"
+        ],
+        "background": "transparent",
+        "edgeTreatment": "clean navy edge",
+        "shadowTreatment": "subtle icon shadow",
+        "padding": 10,
+        "iconToButtonRatio": 0.42,
+        "consistencyGroup": "panel_close_actions"
+      }
+    },
+    {
+      "componentId": "cmp_credits_close",
+      "nodeName": "CreditsCloseButton",
+      "semanticRole": "close",
+      "groupId": "panel_close_actions",
+      "assetRefId": "asset_asset_e988ccfe8beb43e5986b5b8749257705",
+      "canonicalAssetId": "asset_e988ccfe8beb43e5986b5b8749257705",
+      "source": "generated_sheet",
+      "resolution": "image",
+      "status": "resolved",
+      "previewOnly": true,
+      "resolved": true,
+      "uri": "nexusasset://asset_e988ccfe8beb43e5986b5b8749257705",
+      "family": "aurora_gemini",
+      "styleFamily": "aurora_gemini",
+      "size": 22,
+      "padding": 10,
+      "metadata": {
+        "semanticRole": "close",
+        "styleFamily": "aurora_gemini",
+        "visualWeight": "bold",
+        "strokeWeight": "uniform",
+        "perspective": "slight relief",
+        "paletteMode": "light glyph with gold accent detail",
+        "palette": [
+          "#33CFFF",
+          "#2D5BFF",
+          "#F3C86A",
+          "#59D9A5",
+          "#FF6B7A",
+          "#081427",
+          "#123154",
+          "#F4FBFF"
+        ],
+        "background": "transparent",
+        "edgeTreatment": "clean navy edge",
+        "shadowTreatment": "subtle icon shadow",
+        "padding": 10,
+        "iconToButtonRatio": 0.42,
+        "consistencyGroup": "panel_close_actions"
+      }
+    }
+  ],
+  "interactions": {
+    "click": true,
+    "hover": true,
+    "animations": true,
+    "sounds": false
+  },
+  "responsive": {
+    "desktop": true,
+    "mobile": true,
+    "tablet": true
+  },
+  "evidenceKind": "compiled_model_and_static_source",
+  "runtimeVerified": false
+}

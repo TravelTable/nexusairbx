@@ -1,0 +1,38 @@
+Run an artwork-only test for a Roblox main menu titled AURORA.
+Generate and validate the image assets. Stop before Luau/source generation, deployment, or Roblox publishing.
+
+VISUAL DIRECTION
+Premium fantasy-tech game UI: deep navy surfaces, bright cyan accents, restrained gold trim, rounded bevels, crisp outlines, and subtle lighting contained inside each object. Keep the entire kit visually consistent. No photorealism, distressed textures, external shadows, bloom, haze, or floating particles.
+
+INTENDED SCREEN
+A centered main menu with Play, Settings, and Credits buttons. Settings contains a Music toggle and Volume slider. Settings and Credits each have a close button.
+The title, button labels, settings labels, and volume number will be editable native text. Do not bake any text into images. The full-screen background will be a native dark gradient, not a generated image.
+
+REQUIRED ARTWORK
+Generate a text-free title plate, one primary button skin, one secondary button skin shared by Settings and Credits, one panel skin shared by both panels, and one close-button skin shared by both close buttons.
+Generate standalone Play, Settings, Credits, and Close icons. These must be symbols only, without tiles, button backgrounds, or surrounding frames.
+Generate ONE complete L-shaped corner ornament, reusable by rotation. Do not generate four corners, a border frame, a divider, or a collection of decorations.
+
+CONTROL PARTS — STRICT SEPARATION
+Plan VolumeSlider and MusicToggle as the parent controls and let the existing resolver derive their separate artwork bindings. Do not also plan duplicate child components.
+VolumeSlider requires three separate images:
+- slider_track: one empty horizontal rail, with no fill or handle.
+- slider_fill: one narrow horizontal illuminated strip, with no housing or handle.
+- slider_handle: one compact, loose beveled square cap. Nothing may extend behind it or to either side.
+MusicToggle requires three separate images:
+- toggle_off: one empty inactive pill-shaped housing, without a thumb.
+- toggle_on: one empty active pill-shaped housing, without a thumb.
+- toggle_thumb: one loose circular cap, without a housing or any other object.
+Never accept an assembled slider or toggle as a replacement for one of these parts. Never crop a knob out of an opaque assembled control.
+
+SHEET REQUIREMENTS
+Use the existing bounded sheet planner and request 4K output through the provider settings. Keep the total within the existing four-sheet build budget, including any corrective sheet.
+Each planned cell contains exactly one requested asset, with at least 10% clear margin on every side. Leave unused cells empty. No visible grid lines, labels, numbers, duplicates, alternate views, or extra decorations.
+Outside the artwork, use one perfectly uniform chroma color absent from the artwork palette. Use that same background color inside intentional holes. No gradients or checkerboards in the chroma background.
+Button and panel skins must have filled, opaque, low-detail centers suitable for nine-slice rendering. Icons, control parts, and the corner ornament must retain their natural proportions.
+
+VALIDATION AND OUTPUT
+Save each original sheet before processing. Extract individual transparent PNGs and run both extraction checks and canonical artwork processing.
+Verify that each asset matches its requested subject and that no detected silhouette is assigned to two different parts. Reject fused controls, missing pieces, clipped silhouettes, unwanted lettering, or uncertain subject matches.
+Preserve successful assets when another part fails. Do not repeatedly regenerate the whole kit, bypass operation fencing, or relax required-artwork checks.
+Return the source sheets, extracted PNGs, and a per-asset report showing pass/fail, dimensions, and any failure reason. Declare success only when every required asset has passed; otherwise report exactly what remains unresolved.

@@ -1,0 +1,82 @@
+{
+  "regions": [
+    {
+      "slot": 0,
+      "candidateId": 3,
+      "box": [
+        73,
+        175,
+        427,
+        336
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    },
+    {
+      "slot": 1,
+      "candidateId": 2,
+      "box": [
+        71,
+        643,
+        430,
+        843
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    },
+    {
+      "slot": 2,
+      "candidateId": 0,
+      "box": [
+        577,
+        114,
+        923,
+        386
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    },
+    {
+      "slot": 3,
+      "candidateId": 1,
+      "box": [
+        556,
+        637,
+        944,
+        855
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    }
+  ],
+  "reusedSource": false,
+  "usage": {},
+  "width": 5504,
+  "sheetId": "1ab9f810208a447b6386ef9917bf4f7b7803d4f2db885e585b2606ad99939893",
+  "model": "google/gemini-3.1-flash-image",
+  "source": {
+    "sha256": "b8c9e554b56983e96adee8122d1dfe6760a5f0d0319f535a6b8e7ed8a429c97b",
+    "bytes": 19319400,
+    "storagePath": "asset-platform/users/4b801b407b639dca73828adf869dbdc2/assets/ui_sheet_1ab9f810208a447b6386ef9917bf4f7b7803d4f2db885e585b2606ad99939893/versions/source_v1/master.png",
+    "contentType": "image/png"
+  },
+  "items": [
+    {
+      "fingerprint": "0040168517fd26871a208d61983e4fe5586c9bd6ffebe59839a270f238e2626d",
+      "assetId": "asset_926cfeb5785c45b781e5f5d8bee5ecef"
+    },
+    {
+      "fingerprint": "3c69090924f53d62f2a6e9a38ae1a35e0a8e3006d574410ffd792a79851615e1",
+      "assetId": "asset_8d2930c9697448038ab04431f2206328"
+    },
+    {
+      "fingerprint": "b4ee9506e1d02e54555f227cc12b6e0aa44455e37126acf8e8cb5d0229cb1cce",
+      "assetId": "asset_c9d9d60c64fe419c98d232730d9636f6"
+    },
+    {
+      "fingerprint": "fbb4d748d9caf1cb83809e8a45560a243828fa0fb5088eba2f666278c62d63f3",
+      "assetId": "asset_f6ccf6a2546942038cdaf9f808cdad3e"
+    }
+  ],
+  "height": 3072
+}

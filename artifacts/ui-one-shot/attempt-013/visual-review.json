@@ -1,0 +1,238 @@
+{
+  "accepted": false,
+  "acceptable": false,
+  "scores": {
+    "promptCompliance": 8,
+    "composition": 5,
+    "hierarchy": 6,
+    "spacing": 6,
+    "alignment": 6,
+    "componentConsistency": 7,
+    "typography": 5,
+    "paletteDiscipline": 7,
+    "iconConsistency": 8,
+    "visualDensity": 5,
+    "polish": 6,
+    "responsiveness": 5,
+    "originality": 6,
+    "robloxSuitability": 6
+  },
+  "reviewedPreviewIds": [
+    "desktop",
+    "phone",
+    "tablet",
+    "phone-settings",
+    "phone-credits"
+  ],
+  "issues": [
+    {
+      "previewId": "phone",
+      "category": "typography",
+      "severity": "critical",
+      "description": "The title text is cropped to 'UROR', so the required AURORA title is not fully readable on mobile.",
+      "nodeIds": [
+        "AuroraTitle",
+        "TitlePlate"
+      ],
+      "rejectionRule": "text_clipping"
+    },
+    {
+      "previewId": "desktop",
+      "category": "density",
+      "severity": "major",
+      "description": "A large dark decorative slab sits behind the menu stack and creates an accidental empty region that does not support grouping or content.",
+      "nodeIds": [
+        "BackgroundRoot",
+        "BackgroundOrnaments",
+        "MainMenuDock"
+      ],
+      "rejectionRule": "accidental_dead_zone"
+    },
+    {
+      "previewId": "tablet",
+      "category": "density",
+      "severity": "major",
+      "description": "The same oversized dark slab behind the centered menu creates a disconnected dead zone and weakens the intended open composition.",
+      "nodeIds": [
+        "BackgroundRoot",
+        "BackgroundOrnaments",
+        "MainMenuDock"
+      ],
+      "rejectionRule": "accidental_dead_zone"
+    },
+    {
+      "previewId": "phone",
+      "category": "density",
+      "severity": "major",
+      "description": "The background slab behind the buttons forms an accidental dead zone and makes the compact mobile menu feel visually stranded rather than intentionally framed.",
+      "nodeIds": [
+        "BackgroundRoot",
+        "BackgroundOrnaments",
+        "MainMenuDock"
+      ],
+      "rejectionRule": "accidental_dead_zone"
+    },
+    {
+      "previewId": "desktop",
+      "category": "hierarchy",
+      "severity": "major",
+      "description": "Play is only slightly larger than the secondary buttons and does not read as an unmistakably dominant primary CTA.",
+      "nodeIds": [
+        "PlayButton",
+        "SettingsButton",
+        "CreditsButton"
+      ],
+      "rejectionRule": "weak_primary_cta"
+    },
+    {
+      "previewId": "phone",
+      "category": "responsiveness",
+      "severity": "major",
+      "description": "The mobile title plate and title text do not reflow safely; the heading clips instead of adapting its size and padding for the narrow viewport.",
+      "nodeIds": [
+        "TitlePlate",
+        "AuroraTitle"
+      ],
+      "rejectionRule": "missing_mobile_layout"
+    },
+    {
+      "previewId": "phone-settings",
+      "category": "components",
+      "severity": "minor",
+      "description": "The close button styling feels heavier and more saturated than the modal body and rows, making it look like a different component tier rather than a compact peer control.",
+      "nodeIds": [
+        "SettingsCloseButton",
+        "SettingsModal"
+      ],
+      "rejectionRule": "none"
+    },
+    {
+      "previewId": "phone-settings",
+      "category": "alignment",
+      "severity": "minor",
+      "description": "The music row and volume row use different internal inset logic, so labels, control edges, and top padding do not align cleanly across settings peers.",
+      "nodeIds": [
+        "MusicRow",
+        "MusicLabel",
+        "MusicToggle",
+        "VolumeRow",
+        "VolumeLabel",
+        "VolumeSlider",
+        "VolumeValue"
+      ],
+      "rejectionRule": "none"
+    },
+    {
+      "previewId": "phone-credits",
+      "category": "typography",
+      "severity": "minor",
+      "description": "Credits body copy is readable but the line breaks are awkward and create a choppy narrow text block with inconsistent rhythm.",
+      "nodeIds": [
+        "CreditsBody"
+      ],
+      "rejectionRule": "none"
+    },
+    {
+      "previewId": "desktop",
+      "category": "layout",
+      "severity": "minor",
+      "description": "The title plate and menu stack are centered, but the left-leaning background mass competes with that axis and makes the screen feel off-balance.",
+      "nodeIds": [
+        "BackgroundRoot",
+        "TitlePlate",
+        "MainMenuDock"
+      ],
+      "rejectionRule": "none"
+    },
+    {
+      "previewId": "tablet",
+      "category": "layout",
+      "severity": "minor",
+      "description": "The composition preserves the central stack, but the decorative left-side mass still outweighs the rest of the screen and dilutes the premium framing.",
+      "nodeIds": [
+        "BackgroundRoot",
+        "TitlePlate",
+        "MainMenuDock"
+      ],
+      "rejectionRule": "none"
+    },
+    {
+      "previewId": "phone",
+      "category": "layout",
+      "severity": "minor",
+      "description": "The gap between title plate and buttons is tight relative to the large empty lower screen, so the mobile stack feels top-heavy rather than evenly paced.",
+      "nodeIds": [
+        "TitlePlate",
+        "MainMenuDock",
+        "PlayButton",
+        "SettingsButton",
+        "CreditsButton"
+      ],
+      "rejectionRule": "none"
+    }
+  ],
+  "criticalIssues": [
+    "On phone, the required AURORA title is visibly clipped to 'UROR', which is an immediate readability and prompt-compliance failure.",
+    "Desktop, tablet, and phone all show a dominant dark background slab that creates an accidental dead zone instead of restrained supportive decoration.",
+    "The Play button is not visually dominant enough to satisfy the requested primary hierarchy."
+  ],
+  "repairInstructions": [
+    "Fix mobile title clipping first: reduce AuroraTitle size on phone, increase inner title plate padding, and ensure the full word AURORA fits without truncation.",
+    "Remove or drastically reduce the oversized dark background slab behind the menu stack on desktop, tablet, and phone; keep the native dark field and corner ornaments but do not let a decorative block become a false panel.",
+    "Strengthen Play as the primary CTA by increasing its height, brightness, and separation from Settings and Credits while keeping the same icon family and button skin language.",
+    "Rebalance the mobile vertical rhythm so the title, action stack, and safe-area margins feel intentionally spaced rather than compressed at the top with unused space below.",
+    "Normalize settings panel row geometry: align row insets, label baselines, and control anchoring between MusicRow and VolumeRow.",
+    "Keep the working cyan/cobalt/navy/gold palette, icon family, panel presence, and readable body text in the credits panel; only refine the failing layout and hierarchy pieces.",
+    "Rewrap the credits placeholder copy into fewer, cleaner lines so the compact modal reads as polished rather than mechanically broken by narrow line lengths."
+  ],
+  "repairPlan": {
+    "preserve": [
+      "Preserve the requested feature scope: Play, Settings, Credits, settings controls, credits panel, and close controls only.",
+      "Preserve the cyan/cobalt surfaces, navy edging, gold accents, and shared icon family across main buttons and panel close buttons.",
+      "Preserve the centered overall stack concept and the compact modal approach on phone-settings and phone-credits.",
+      "Preserve the native-looking slider and toggle approach rather than replacing them with decorative fake controls."
+    ],
+    "modify": [
+      "Modify AuroraTitle and TitlePlate on phone so the full title fits at mobile size with consistent side padding.",
+      "Modify BackgroundRoot decoration on desktop, tablet, and phone to remove the large left-side dark slab and replace it with subtler framing that does not create a dead zone.",
+      "Modify PlayButton scale, glow emphasis, and spacing relative to SettingsButton and CreditsButton so primary hierarchy is unmistakable.",
+      "Modify MainMenuDock vertical spacing on phone so the stack sits more intentionally within the viewport.",
+      "Modify MusicRow and VolumeRow internal layout to share the same left and right insets, header spacing, and control alignment.",
+      "Modify CreditsBody wrapping and text box width to improve line rhythm in the compact credits modal."
+    ],
+    "remove": [
+      "Remove the oversized dark background block behind the menu stack in desktop, tablet, and phone previews.",
+      "Remove any mobile title sizing or constraint setup that truncates the AURORA heading."
+    ],
+    "add": [
+      "Add stronger size contrast and possibly a brighter inner highlight to PlayButton while keeping the same skin family.",
+      "Add stricter UITextSizeConstraint or responsive padding rules for AuroraTitle on narrow screens.",
+      "Add consistent row guides/inset rules for settings content so labels and controls align across rows."
+    ]
+  },
+  "acceptanceFailures": [
+    "promptCompliance: 8/10 is below 9/10",
+    "composition: 5/10 is below 8/10",
+    "hierarchy: 6/10 is below 8/10",
+    "spacing: 6/10 is below 8/10",
+    "alignment: 6/10 is below 8/10",
+    "componentConsistency: 7/10 is below 8/10",
+    "typography: 5/10 is below 8/10",
+    "paletteDiscipline: 7/10 is below 8/10",
+    "visualDensity: 5/10 is below 8/10",
+    "polish: 6/10 is below 8/10",
+    "responsiveness: 5/10 is below 8/10",
+    "originality: 6/10 is below 8/10",
+    "robloxSuitability: 6/10 is below 8/10",
+    "The title text is cropped to 'UROR', so the required AURORA title is not fully readable on mobile.",
+    "A large dark decorative slab sits behind the menu stack and creates an accidental empty region that does not support grouping or content.",
+    "The same oversized dark slab behind the centered menu creates a disconnected dead zone and weakens the intended open composition.",
+    "The background slab behind the buttons forms an accidental dead zone and makes the compact mobile menu feel visually stranded rather than intentionally framed.",
+    "Play is only slightly larger than the secondary buttons and does not read as an unmistakably dominant primary CTA.",
+    "The mobile title plate and title text do not reflow safely; the heading clips instead of adapting its size and padding for the narrow viewport.",
+    "On phone, the required AURORA title is visibly clipped to 'UROR', which is an immediate readability and prompt-compliance failure.",
+    "Desktop, tablet, and phone all show a dominant dark background slab that creates an accidental dead zone instead of restrained supportive decoration.",
+    "The Play button is not visually dominant enough to satisfy the requested primary hierarchy.",
+    "The image critic rejected this revision."
+  ]
+}

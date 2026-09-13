@@ -1,0 +1,37 @@
+{
+  slot: 0,
+  failures: [
+    {
+      fingerprint: '54ec151fda423f0d3f0dd77917248300ac243ac07d8a3e5110e896ff0998ca40',
+      error: [Object]
+    },
+    {
+      fingerprint: '5f445da8b98588c90c407e2b7e14bac2d8fd5086f5831d97a5c4761b948150d3',
+      error: [Object]
+    },
+    {
+      fingerprint: 'ccaf2c88af1d011b07fea507f44d892aa5d2c5ba572244e77c1320e863027825',
+      error: [Object]
+    },
+    {
+      fingerprint: '0b1b07002d5c6e62cef8c6cd646c18fab8dfef645a59fc475dd596686d04e64e',
+      error: [Object]
+    },
+    {
+      fingerprint: '18d80685743559ea034153ec9556713093764cb54e70ecfe926587010c1c2318',
+      error: [Object]
+    },
+    {
+      fingerprint: '20efc7a39a4c797c9ea86850a6d7dd3d4174296c93854833180001f8c6154df9',
+      error: [Object]
+    }
+  ],
+  regions: [
+    { slot: 0, box: [Array], reason: '' },
+    { slot: 1, box: [Array], reason: '' },
+    { slot: 2, box: [Array], reason: '' },
+    { slot: 3, box: [Array], reason: '' },
+    { slot: 4, box: [Array], reason: '' },
+    { slot: 5, box: [Array], reason: '' }
+  ]
+}

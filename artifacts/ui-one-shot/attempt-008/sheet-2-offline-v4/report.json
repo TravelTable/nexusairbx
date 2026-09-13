@@ -1,0 +1,311 @@
+{
+  "schemaVersion": 1,
+  "offline": true,
+  "providerCalls": 0,
+  "canonicalWrites": 0,
+  "sourceSha256": "d2dbbaa8ba0b8e1c68eb9fdec1e0548a6a69ac286d8fc130d97c5c052d6506a9",
+  "sourceWidth": 5504,
+  "sourceHeight": 3072,
+  "semanticReviewPerformed": false,
+  "note": "Only geometry and pixel processing were rerun. Saved subject assignments still require visual review; this is not build completion evidence.",
+  "failures": 1,
+  "items": [
+    {
+      "slot": 0,
+      "fingerprint": "f64bfc113d32e8a2e2194ca11c452a26bff4ea8025ec918ae07a7eb89c9260ee",
+      "required": true,
+      "crop": {
+        "left": 314,
+        "top": 370,
+        "width": 744,
+        "height": 772
+      },
+      "cropFile": "slot-00-crop.png",
+      "readyFile": "slot-00-ready.png",
+      "width": 986,
+      "height": 1024,
+      "pixelChecksPassed": true,
+      "blocking": [],
+      "reviewRequired": [
+        "text",
+        "concept"
+      ],
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "component_surface",
+        "styleFingerprint": "f64bfc113d32e8a2e2194ca11c452a26bff4ea8025ec918ae07a7eb89c9260ee",
+        "componentIds": [
+          "cmp_settings_close",
+          "cmp_credits_close"
+        ],
+        "nodeNames": [
+          "SettingsCloseButton",
+          "CreditsCloseButton"
+        ],
+        "requirementIds": [
+          "art_button_skins"
+        ],
+        "required": true,
+        "width": 986,
+        "height": 1024,
+        "renderStrategy": "image_9slice",
+        "scaleType": "Slice",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "",
+        "slot": null,
+        "sliceCenter": [
+          178,
+          185,
+          808,
+          839
+        ],
+        "sliceScale": 0.2
+      }
+    },
+    {
+      "slot": 1,
+      "fingerprint": "4697e932c92c962461082f250c4d62efa4ebe89113d694cec95edead081f8000",
+      "required": true,
+      "crop": {
+        "left": 1663,
+        "top": 360,
+        "width": 797,
+        "height": 798
+      },
+      "cropFile": "slot-01-crop.png",
+      "readyFile": "slot-01-ready.png",
+      "width": 1023,
+      "height": 1024,
+      "pixelChecksPassed": true,
+      "blocking": [],
+      "reviewRequired": [
+        "text",
+        "concept"
+      ],
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "control_artwork",
+        "styleFingerprint": "4697e932c92c962461082f250c4d62efa4ebe89113d694cec95edead081f8000",
+        "componentIds": [
+          "cmp_music_toggle"
+        ],
+        "nodeNames": [
+          "MusicToggleThumb"
+        ],
+        "requirementIds": [
+          "art_toggle_pieces"
+        ],
+        "required": true,
+        "width": 1023,
+        "height": 1024,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "",
+        "slot": null,
+        "controlPart": "toggle_thumb"
+      }
+    },
+    {
+      "slot": 2,
+      "fingerprint": "8c38f5224baca51dd8a61bbf1a4d4507476feb93748acab62a30e07c3a3cb54b",
+      "required": true,
+      "crop": {
+        "left": 3055,
+        "top": 378,
+        "width": 763,
+        "height": 766
+      },
+      "cropFile": "slot-02-crop.png",
+      "readyFile": "slot-02-ready.png",
+      "width": 1020,
+      "height": 1024,
+      "pixelChecksPassed": true,
+      "blocking": [],
+      "reviewRequired": [
+        "text",
+        "concept"
+      ],
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "icon",
+        "styleFingerprint": "8c38f5224baca51dd8a61bbf1a4d4507476feb93748acab62a30e07c3a3cb54b",
+        "componentIds": [
+          "cmp_settings_close",
+          "cmp_credits_close"
+        ],
+        "nodeNames": [
+          "SettingsCloseButton",
+          "CreditsCloseButton"
+        ],
+        "requirementIds": [
+          "icon_close"
+        ],
+        "required": true,
+        "width": 1020,
+        "height": 1024,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "close",
+        "sheetId": "",
+        "slot": null
+      }
+    },
+    {
+      "slot": 3,
+      "fingerprint": "8c695e6d41aa048ab4975fb953924d718ea148bb18788c47e7cc97e1facd37f4",
+      "required": true,
+      "crop": {
+        "left": 4477,
+        "top": 345,
+        "width": 693,
+        "height": 828
+      },
+      "cropFile": "slot-03-crop.png",
+      "readyFile": "slot-03-ready.png",
+      "width": 858,
+      "height": 1024,
+      "pixelChecksPassed": true,
+      "blocking": [],
+      "reviewRequired": [
+        "text",
+        "concept"
+      ],
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "icon",
+        "styleFingerprint": "8c695e6d41aa048ab4975fb953924d718ea148bb18788c47e7cc97e1facd37f4",
+        "componentIds": [
+          "cmp_play_button"
+        ],
+        "nodeNames": [
+          "PlayButton"
+        ],
+        "requirementIds": [
+          "icon_play"
+        ],
+        "required": true,
+        "width": 858,
+        "height": 1024,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "play",
+        "sheetId": "",
+        "slot": null
+      }
+    },
+    {
+      "slot": 4,
+      "fingerprint": "b1656f3d3d651e0110f3a40f158fa8e718ae078932af834bde909efcccf27028",
+      "required": true,
+      "crop": {
+        "left": 377,
+        "top": 1892,
+        "width": 624,
+        "height": 839
+      },
+      "cropFile": "slot-04-crop.png",
+      "readyFile": "slot-04-ready.png",
+      "width": 765,
+      "height": 1024,
+      "pixelChecksPassed": true,
+      "blocking": [],
+      "reviewRequired": [
+        "text",
+        "concept"
+      ],
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "icon",
+        "styleFingerprint": "b1656f3d3d651e0110f3a40f158fa8e718ae078932af834bde909efcccf27028",
+        "componentIds": [
+          "cmp_credits_button"
+        ],
+        "nodeNames": [
+          "CreditsButton"
+        ],
+        "requirementIds": [
+          "icon_credits"
+        ],
+        "required": true,
+        "width": 765,
+        "height": 1024,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "credits",
+        "sheetId": "",
+        "slot": null
+      }
+    },
+    {
+      "slot": 5,
+      "fingerprint": "dfe1c90a39b21f984db8025eafbdad7bd20efbbce93eed74f915de39c050da74",
+      "required": true,
+      "error": {
+        "code": "UI_SHEET_SUBJECT_MISSING",
+        "message": "No loose square gemstone cap with rounded beveled navy corners and a cyan face is present. The closest match is a square button, but it is not a loose cap."
+      }
+    },
+    {
+      "slot": 6,
+      "fingerprint": "e3cf6db7e3cb0e9d43fb9bc74a31e48fd97f75a2fd4603de4abcb8e97d1174af",
+      "required": true,
+      "crop": {
+        "left": 3091,
+        "top": 1972,
+        "width": 673,
+        "height": 672
+      },
+      "cropFile": "slot-06-crop.png",
+      "readyFile": "slot-06-ready.png",
+      "width": 1024,
+      "height": 1022,
+      "pixelChecksPassed": true,
+      "blocking": [],
+      "reviewRequired": [
+        "text",
+        "concept"
+      ],
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "icon",
+        "styleFingerprint": "e3cf6db7e3cb0e9d43fb9bc74a31e48fd97f75a2fd4603de4abcb8e97d1174af",
+        "componentIds": [
+          "cmp_settings_button"
+        ],
+        "nodeNames": [
+          "SettingsButton"
+        ],
+        "requirementIds": [
+          "icon_settings"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 1022,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "settings",
+        "sheetId": "",
+        "slot": null
+      }
+    }
+  ]
+}

@@ -1,0 +1,130 @@
+{
+  "regions": [
+    {
+      "slot": 0,
+      "box": null,
+      "reason": "No close button skin matching the menu button family with gold trim and thicker navy edge emphasis was found."
+    },
+    {
+      "slot": 1,
+      "box": null,
+      "reason": "No close button skin matching Settings close exactly was found."
+    },
+    {
+      "slot": 2,
+      "candidateId": 2,
+      "box": [
+        68,
+        777,
+        423,
+        972
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    },
+    {
+      "slot": 3,
+      "candidateId": 6,
+      "box": [
+        619,
+        795,
+        886,
+        954
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    },
+    {
+      "slot": 4,
+      "box": null,
+      "reason": "No credits symbol was found."
+    },
+    {
+      "slot": 5,
+      "candidateId": 7,
+      "box": [
+        592,
+        315,
+        884,
+        447
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    },
+    {
+      "slot": 6,
+      "candidateId": 5,
+      "box": [
+        583,
+        539,
+        898,
+        711
+      ],
+      "pixelRefined": true,
+      "reason": ""
+    },
+    {
+      "slot": 7,
+      "box": null,
+      "reason": "No compact loose beveled cap was found."
+    }
+  ],
+  "reusedSource": false,
+  "usage": {},
+  "width": 5504,
+  "sheetId": "20cd8e5b95c435314153e5cec95ddb65934e3c2c34202d43983588867c5aca58",
+  "model": "google/gemini-3.1-flash-image",
+  "source": {
+    "sha256": "955e36f0a1fc0dc7b5be3fc2281c960f61a476c6c1b7973990eb96e338d5f67b",
+    "bytes": 27502015,
+    "storagePath": "asset-platform/users/4b801b407b639dca73828adf869dbdc2/assets/ui_sheet_20cd8e5b95c435314153e5cec95ddb65934e3c2c34202d43983588867c5aca58/versions/source_v1/master.png",
+    "contentType": "image/png"
+  },
+  "items": [
+    {
+      "fingerprint": "1b88022e1997fb2b7e377c1f08d040070f511e603561600ea58ffdb50d3d8b46",
+      "error": {
+        "code": "UI_SHEET_SUBJECT_MISSING",
+        "message": "No close button skin matching the menu button family with gold trim and thicker navy edge emphasis was found."
+      }
+    },
+    {
+      "fingerprint": "4fbf9394ac488d1cbd37f6c21b928cae37a8945cc722943063530db824bab0b7",
+      "error": {
+        "code": "UI_SHEET_SUBJECT_MISSING",
+        "message": "No close button skin matching Settings close exactly was found."
+      }
+    },
+    {
+      "fingerprint": "7bb80bd7a1f6577e31d0f0723b51d4264cb51c69622d6c18f9628c877a5065f8",
+      "assetId": "asset_2c75c693538a4e4392b5b8412d87cd6e"
+    },
+    {
+      "fingerprint": "8f12b1bea742cf811dfb474b38f3429b1a1dc1a3a77db898e33fd23b1057efa3",
+      "assetId": "asset_8ce98b8e7c6a40ffbd17d28ba1912f82"
+    },
+    {
+      "fingerprint": "944f2358f94a6f3734a20dfb09a559a1b4b8b4b74ad65c21f7822b24adda3936",
+      "error": {
+        "code": "UI_SHEET_SUBJECT_MISSING",
+        "message": "No credits symbol was found."
+      }
+    },
+    {
+      "fingerprint": "a2f1c60ca6da9516175a0929c402e7c9947ce3539ca46706e848027f32c7c9ec",
+      "assetId": "asset_5480406bf3d6414bbe46e09f201025bc"
+    },
+    {
+      "fingerprint": "aac89656369e19587095746e602ce1bd6da3b5866926319fd880e1239d515b47",
+      "assetId": "asset_377fc67cbdc94120b76e20242afce954"
+    },
+    {
+      "fingerprint": "d928c3e99549d7f1ada17d3a649b91df08ac214d6b99dc3c1aaa8d20c9d364a9",
+      "error": {
+        "code": "UI_SHEET_SUBJECT_MISSING",
+        "message": "No compact loose beveled cap was found."
+      }
+    }
+  ],
+  "height": 3072
+}

@@ -1,0 +1,230 @@
+understanding_request
+ui_contract_validated {
+  name: 'ui_requirements',
+  model: 'openai/gpt-5.4',
+  schemaHash: 'a7da02466710c589',
+  mode: 'prompt_json',
+  attempt: 1,
+  normalizationCount: 0
+}
+planning_design
+ui_contract_validated {
+  name: 'ui_design_plan',
+  model: 'openai/gpt-5.4',
+  schemaHash: '6491bf5227f3705a',
+  mode: 'prompt_json',
+  attempt: 2,
+  normalizationCount: 0
+}
+resolving_assets
+generating_artwork
+generating_artwork
+extracting_artwork
+[ops] {
+  event: 'asset.generation_started',
+  ts: '2026-09-13T09:06:11.069Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_e3fe45d67f954bff93aa5ab9cb6cb678',
+  assetType: 'image'
+}
+extracting_artwork
+[ops] {
+  event: 'asset.validation_failed',
+  ts: '2026-09-13T09:06:21.477Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_e3fe45d67f954bff93aa5ab9cb6cb678',
+  assetType: 'image',
+  errorCode: 'ASSET_VALIDATION_FAILED'
+}
+[ops] {
+  event: 'asset.generation_started',
+  ts: '2026-09-13T09:06:25.014Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_cdbd7c6664874d53afa794a44c485e90',
+  assetType: 'image'
+}
+[ops] {
+  event: 'asset.generation_started',
+  ts: '2026-09-13T09:06:32.623Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_2c75c693538a4e4392b5b8412d87cd6e',
+  assetType: 'image'
+}
+[ops] {
+  event: 'asset.generation_completed',
+  ts: '2026-09-13T09:06:39.781Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_cdbd7c6664874d53afa794a44c485e90',
+  assetType: 'image',
+  provider: 'vercel-gemini-ui-sheet'
+}
+[ops] {
+  event: 'asset.generation_started',
+  ts: '2026-09-13T09:06:44.626Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_ddbfd6d0cbdd4a98934cf7d9dd710c85',
+  assetType: 'image'
+}
+[ops] {
+  event: 'asset.generation_completed',
+  ts: '2026-09-13T09:06:48.627Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_2c75c693538a4e4392b5b8412d87cd6e',
+  assetType: 'image',
+  provider: 'vercel-gemini-ui-sheet'
+}
+[ops] {
+  event: 'asset.generation_started',
+  ts: '2026-09-13T09:06:53.129Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_8ce98b8e7c6a40ffbd17d28ba1912f82',
+  assetType: 'image'
+}
+[ops] {
+  event: 'asset.generation_completed',
+  ts: '2026-09-13T09:06:57.145Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_ddbfd6d0cbdd4a98934cf7d9dd710c85',
+  assetType: 'image',
+  provider: 'vercel-gemini-ui-sheet'
+}
+generating_artwork
+[ops] {
+  event: 'asset.generation_completed',
+  ts: '2026-09-13T09:07:06.921Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_8ce98b8e7c6a40ffbd17d28ba1912f82',
+  assetType: 'image',
+  provider: 'vercel-gemini-ui-sheet'
+}
+[ops] {
+  event: 'asset.generation_started',
+  ts: '2026-09-13T09:07:10.935Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_5480406bf3d6414bbe46e09f201025bc',
+  assetType: 'image'
+}
+[ops] {
+  event: 'asset.generation_completed',
+  ts: '2026-09-13T09:07:20.461Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_5480406bf3d6414bbe46e09f201025bc',
+  assetType: 'image',
+  provider: 'vercel-gemini-ui-sheet'
+}
+[ops] {
+  event: 'asset.generation_started',
+  ts: '2026-09-13T09:07:22.171Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_377fc67cbdc94120b76e20242afce954',
+  assetType: 'image'
+}
+[ops] {
+  event: 'asset.generation_completed',
+  ts: '2026-09-13T09:07:32.581Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_377fc67cbdc94120b76e20242afce954',
+  assetType: 'image',
+  provider: 'vercel-gemini-ui-sheet'
+}
+extracting_artwork
+[ops] {
+  event: 'asset.generation_started',
+  ts: '2026-09-13T09:09:11.577Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_982f3e1f11004d5eb4eb4515c29f0161',
+  assetType: 'image'
+}
+[ops] {
+  event: 'asset.generation_completed',
+  ts: '2026-09-13T09:09:19.248Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_982f3e1f11004d5eb4eb4515c29f0161',
+  assetType: 'image',
+  provider: 'vercel-gemini-ui-sheet'
+}
+[ops] {
+  event: 'asset.generation_started',
+  ts: '2026-09-13T09:09:20.840Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_402add40d7f341eeb921c5e957bb1678',
+  assetType: 'image'
+}
+[ops] {
+  event: 'asset.generation_completed',
+  ts: '2026-09-13T09:09:28.126Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_402add40d7f341eeb921c5e957bb1678',
+  assetType: 'image',
+  provider: 'vercel-gemini-ui-sheet'
+}
+[ops] {
+  event: 'asset.generation_started',
+  ts: '2026-09-13T09:09:29.860Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_3cd27781158545238f9586eb989cded0',
+  assetType: 'image'
+}
+[ops] {
+  event: 'asset.generation_completed',
+  ts: '2026-09-13T09:09:37.940Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_3cd27781158545238f9586eb989cded0',
+  assetType: 'image',
+  provider: 'vercel-gemini-ui-sheet'
+}
+[ops] {
+  event: 'asset.generation_started',
+  ts: '2026-09-13T09:09:39.958Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_529e373910aa44678bef6fb7ba75e2ae',
+  assetType: 'image'
+}
+[ops] {
+  event: 'asset.generation_completed',
+  ts: '2026-09-13T09:09:48.044Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_529e373910aa44678bef6fb7ba75e2ae',
+  assetType: 'image',
+  provider: 'vercel-gemini-ui-sheet'
+}
+[ops] {
+  event: 'asset.generation_started',
+  ts: '2026-09-13T09:09:49.845Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_f1cce0fddf484c5fa080871a16a062c0',
+  assetType: 'image'
+}
+[ops] {
+  event: 'asset.generation_completed',
+  ts: '2026-09-13T09:09:56.562Z',
+  telemetryVersion: 'asset-pipeline-observability-v1',
+  projectId: 'proj_e237b4d5b7634cf2a503723f3f8beff7',
+  assetId: 'asset_f1cce0fddf484c5fa080871a16a062c0',
+  assetType: 'image',
+  provider: 'vercel-gemini-ui-sheet'
+}
+UI_REQUIRED_ARTWORK_UNRESOLVED Required artwork is unresolved; source generation was stopped before creating a misleading partial menu. 

@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "offline": true,
+  "providerCalls": 0,
+  "canonicalWrites": 0,
+  "sourceSha256": "5138b91ddb374cf559452f3b4eb8d97b1a89a610197bff205ed65ee2e55438e6",
+  "sourceWidth": 5504,
+  "sourceHeight": 3072,
+  "semanticReviewPerformed": false,
+  "note": "Only geometry and pixel processing were rerun. Saved subject assignments still require visual review; this is not build completion evidence.",
+  "failures": 3,
+  "items": [
+    {
+      "slot": 0,
+      "fingerprint": "5bde4aff18ef19836760849312e3f69baa79cd54880fd75198f746168dcbaa64",
+      "required": true,
+      "crop": {
+        "left": 277,
+        "top": 501,
+        "width": 1276,
+        "height": 535
+      },
+      "cropFile": "slot-00-crop.png",
+      "readyFile": "slot-00-ready.png",
+      "width": 1024,
+      "height": 434,
+      "pixelChecksPassed": true,
+      "blocking": [],
+      "reviewRequired": [
+        "text",
+        "concept"
+      ],
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "control_artwork",
+        "styleFingerprint": "5bde4aff18ef19836760849312e3f69baa79cd54880fd75198f746168dcbaa64",
+        "componentIds": [
+          "cmp_music_toggle"
+        ],
+        "nodeNames": [
+          "MusicToggleOff"
+        ],
+        "requirementIds": [
+          "toggle_on_off_art"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 434,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "",
+        "slot": null,
+        "controlPart": "toggle_off"
+      }
+    },
+    {
+      "slot": 1,
+      "fingerprint": "a990f1798198a8eb02a35bed1380759d2a0a809d8affa0d2420533395b384d19",
+      "required": true,
+      "crop": {
+        "left": 1990,
+        "top": 574,
+        "width": 1547,
+        "height": 401
+      },
+      "cropFile": "slot-01-crop.png",
+      "readyFile": "slot-01-ready.png",
+      "width": 1024,
+      "height": 271,
+      "pixelChecksPassed": true,
+      "blocking": [],
+      "reviewRequired": [
+        "text",
+        "concept"
+      ],
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "control_artwork",
+        "styleFingerprint": "a990f1798198a8eb02a35bed1380759d2a0a809d8affa0d2420533395b384d19",
+        "componentIds": [
+          "cmp_volume_slider"
+        ],
+        "nodeNames": [
+          "VolumeSliderTrack"
+        ],
+        "requirementIds": [
+          "slider_track_art",
+          "slider_handle_art"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 271,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "",
+        "slot": null,
+        "controlPart": "slider_track"
+      }
+    },
+    {
+      "slot": 2,
+      "fingerprint": "c2c3494394d3f865b0e580a31fafb0a7f725daf5bdb64cca17025b889d358102",
+      "required": true,
+      "crop": {
+        "left": 3952,
+        "top": 502,
+        "width": 1275,
+        "height": 534
+      },
+      "cropFile": "slot-02-crop.png",
+      "readyFile": "slot-02-ready.png",
+      "width": 1024,
+      "height": 434,
+      "pixelChecksPassed": true,
+      "blocking": [],
+      "reviewRequired": [
+        "text",
+        "concept"
+      ],
+      "artworkMetadata": {
+        "schemaVersion": 1,
+        "processingVersion": 3,
+        "generationUse": "ui_artwork",
+        "role": "control_artwork",
+        "styleFingerprint": "c2c3494394d3f865b0e580a31fafb0a7f725daf5bdb64cca17025b889d358102",
+        "componentIds": [
+          "cmp_music_toggle"
+        ],
+        "nodeNames": [
+          "MusicToggleOn"
+        ],
+        "requirementIds": [
+          "toggle_on_off_art"
+        ],
+        "required": true,
+        "width": 1024,
+        "height": 434,
+        "renderStrategy": "image_fit",
+        "scaleType": "Fit",
+        "tintable": false,
+        "semanticRole": "",
+        "sheetId": "",
+        "slot": null,
+        "controlPart": "toggle_on"
+      }
+    },
+    {
+      "slot": 3,
+      "fingerprint": "c5ee608b0077be8cb2865d7feac2d4079921da9b96e19030e5f497abdc2f1f94",
+      "required": true,
+      "error": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "slot": 4,
+      "fingerprint": "5792e071734de18403606ed6998dbbf763edb039c9c0c58953b00f0ef48e524d",
+      "required": false,
+      "error": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "slot": 5,
+      "fingerprint": "ce54ce61e18c5eca224d7995701636c70a4c5c817b687aa5d33fc43c099a8230",
+      "required": false,
+      "error": {
+        "code": "UI_SHEET_SUBJECT_MISSING",
+        "message": "No separator found in the image."
+      }
+    }
+  ]
+}

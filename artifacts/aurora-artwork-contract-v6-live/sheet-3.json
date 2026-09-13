@@ -1,0 +1,58 @@
+{
+  "regions": [
+    {
+      "slot": 0,
+      "box": null,
+      "reason": "No empty horizontal pill-shaped housing in the ON color treatment without a circular thumb or other elements. Candidate 0 has a circular thumb and is not empty."
+    },
+    {
+      "slot": 1,
+      "candidateId": 2,
+      "box": [
+        316,
+        397,
+        684,
+        603
+      ],
+      "pixelRefined": true,
+      "reason": "The candidate is a loose circular cap, viewed from the front. Nothing behind it or extending to either side. No pill housing, switch, track or second state."
+    },
+    {
+      "slot": 2,
+      "box": null,
+      "reason": "No empty horizontal pill-shaped housing in the OFF color treatment without a circular thumb or other elements. Candidate 1 has a circular thumb and is not empty."
+    }
+  ],
+  "reusedSource": false,
+  "usage": {},
+  "width": 5504,
+  "sheetId": "97a8e03dda35c203d9244fcc066390c684d61d18a5e25124dc83cd79f9c9f32f",
+  "model": "google/gemini-3.1-flash-image",
+  "source": {
+    "sha256": "f5e67078e5cf1d833e984be95e9eaba2ad143597c6072ec5550708223d4a785e",
+    "bytes": 18829356,
+    "storagePath": "asset-platform/users/4b801b407b639dca73828adf869dbdc2/assets/ui_sheet_97a8e03dda35c203d9244fcc066390c684d61d18a5e25124dc83cd79f9c9f32f/versions/source_v1/master.png",
+    "contentType": "image/png"
+  },
+  "items": [
+    {
+      "fingerprint": "13210c80df39c9cc0cdd2e3f047f5a3c6a1209b46bf02df3a9f0e4d539439551",
+      "error": {
+        "code": "UI_SHEET_SUBJECT_MISSING",
+        "message": "No empty horizontal pill-shaped housing in the ON color treatment without a circular thumb or other elements. Candidate 0 has a circular thumb and is not empty."
+      }
+    },
+    {
+      "fingerprint": "40b4eb24e550559e17c5444bc43127f2c50e7ffb2555895f70417950e20c3a3c",
+      "assetId": "asset_e5e36c5129ec40ed820d581602a7f9d5"
+    },
+    {
+      "fingerprint": "df02c63ff0f60bc8ea0dc17a5f4f23c52d440470468c2bea2a938598d3e094f6",
+      "error": {
+        "code": "UI_SHEET_SUBJECT_MISSING",
+        "message": "No empty horizontal pill-shaped housing in the OFF color treatment without a circular thumb or other elements. Candidate 1 has a circular thumb and is not empty."
+      }
+    }
+  ],
+  "height": 3072
+}

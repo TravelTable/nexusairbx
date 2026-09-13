@@ -1,0 +1,177 @@
+{
+  "sheet": {
+    "id": "4d403c26ceb75dc889e620583731b97a44559bde27f7da050c4ea147b6c1e13d",
+    "kind": "skins",
+    "columns": 1,
+    "rows": 1,
+    "background": "#00FF00",
+    "slots": [
+      {
+        "role": "control_artwork",
+        "components": [
+          {
+            "id": "cmp_volume_slider",
+            "primitive": "ProgressBar",
+            "requirementId": "slider_volume",
+            "label": "Volume Slider",
+            "semanticAction": "adjust_volume",
+            "hierarchy": "secondary",
+            "groupId": "settings_controls",
+            "nodeName": "VolumeSliderHandle",
+            "regionId": "settings_modal_region",
+            "paletteRole": "primary",
+            "typographyRole": "body",
+            "visualTreatment": "control_artwork Gemini-generated slider with matching glossy track and handle artwork, thick navy frame, cyan fill emphasis, and gold gleam accents",
+            "size": {
+              "desktop": "Wide horizontal slider occupying the main content width of the settings modal.",
+              "mobile": "Wide thumb-friendly horizontal slider spanning most of modal width with taller handle hit area.",
+              "minTouchTarget": 44
+            },
+            "icon": {
+              "enabled": false,
+              "semanticRole": "",
+              "family": "aurora_gemini",
+              "assetStrategy": "generated",
+              "size": 16,
+              "padding": 0,
+              "visualWeight": "none",
+              "perspective": "front",
+              "edgeTreatment": "navy framed artwork",
+              "shadowTreatment": "tight navy drop shadow",
+              "paletteMode": "cyan fill over cobalt track"
+            },
+            "interaction": {
+              "hoverAnimation": "Track and handle brighten subtly on pointer hover; handle lifts slightly.",
+              "pressAnimation": "Handle compresses slightly under drag/press and rebounds on release with bounded motion.",
+              "hoverSound": "none",
+              "clickSound": "none",
+              "sharedHelper": "ButtonEffects",
+              "touchBehavior": "Use direct drag and tap on touch; no hover synthesis; controller updates live value and audio volume continuously or on release based implementation."
+            }
+          },
+          {
+            "id": "cmp_volume_slider",
+            "primitive": "ProgressBar",
+            "requirementId": "slider_volume",
+            "label": "Volume Slider",
+            "semanticAction": "adjust_volume",
+            "hierarchy": "secondary",
+            "groupId": "settings_controls",
+            "nodeName": "VolumeSliderHandle",
+            "regionId": "settings_modal_region",
+            "paletteRole": "primary",
+            "typographyRole": "body",
+            "visualTreatment": "control_artwork Gemini-generated slider with matching glossy track and handle artwork, thick navy frame, cyan fill emphasis, and gold gleam accents",
+            "size": {
+              "desktop": "Wide horizontal slider occupying the main content width of the settings modal.",
+              "mobile": "Wide thumb-friendly horizontal slider spanning most of modal width with taller handle hit area.",
+              "minTouchTarget": 44
+            },
+            "icon": {
+              "enabled": false,
+              "semanticRole": "",
+              "family": "aurora_gemini",
+              "assetStrategy": "generated",
+              "size": 16,
+              "padding": 0,
+              "visualWeight": "none",
+              "perspective": "front",
+              "edgeTreatment": "navy framed artwork",
+              "shadowTreatment": "tight navy drop shadow",
+              "paletteMode": "cyan fill over cobalt track"
+            },
+            "interaction": {
+              "hoverAnimation": "Track and handle brighten subtly on pointer hover; handle lifts slightly.",
+              "pressAnimation": "Handle compresses slightly under drag/press and rebounds on release with bounded motion.",
+              "hoverSound": "none",
+              "clickSound": "none",
+              "sharedHelper": "ButtonEffects",
+              "touchBehavior": "Use direct drag and tap on touch; no hover synthesis; controller updates live value and audio volume continuously or on release based implementation."
+            }
+          }
+        ],
+        "description": "ONE loose square gemstone cap with rounded beveled navy corners and a cyan face, floating alone on chroma. A small standalone jewel button. Absolutely nothing extends to either side or behind it.",
+        "requirementIds": [
+          "art_slider_track",
+          "art_slider_handle",
+          "art_slider_handle",
+          "art_slider_handle"
+        ],
+        "required": true,
+        "controlPart": "slider_handle",
+        "signature": {
+          "role": "control_artwork",
+          "description": "ONE loose square gemstone cap with rounded beveled navy corners and a cyan face, floating alone on chroma. A small standalone jewel button. Absolutely nothing extends to either side or behind it.",
+          "treatments": [
+            "control_artwork Gemini-generated slider with matching glossy track and handle artwork, thick navy frame, cyan fill emphasis, and gold gleam accents"
+          ],
+          "controlPart": "slider_handle",
+          "artDirection": "AURORA is framed as a premium fantasy-sci-fi lobby with glossy cyan and cobalt enamel surfaces, thick navy edging, and restrained warm gold trim used only for highlights, corner filigree, and emphasis around the title plate. The composition avoids a full outer menu panel so the native background can breathe; instead, the title plate crowns a centered vertical action dock, while modal panels float above with matching framed skins. Gemini-generated artwork should form a cohesive kit: one primary button skin for Play, one shared secondary button skin for Settings and Credits, one shared close-button skin, one shared panel skin for both modals, one title-plate ornament, one corner-ornament image reused sparingly, one slider track skin, one slider handle skin, and matching toggle on/off pieces. Surfaces should feel polished and layered through internal gradients, beveled edge lighting, and controlled specular streaks, but text remains live, clean, and high-contrast without heavy outlining. The mood is readable and heroic rather than noisy: restrained background decoration, balanced negative space, and obvious primary-action dominance for Play.",
+          "outline": "Primary surfaces use thick navy outer strokes with a subtle inner gold or cyan highlight line baked into artwork where appropriate. Native text containers and rows use thin UIStroke only when needed for separation; avoid outlining all text. Rounded corners progress from small row elements to broader modal and title framing.",
+          "shadow": "Use short, dense navy-black drop shadows for buttons and panels with modest vertical offset, plus a soft ambient shadow beneath modal windows. Buttons get tighter shadows than panels so the stack feels crisp and polished rather than floaty.",
+          "corners": [
+            8,
+            12,
+            16,
+            22,
+            30
+          ],
+          "palette": {
+            "primary": "#2FD6FF",
+            "secondary": "#3B63D1",
+            "accent": "#F4C96A",
+            "success": "#6DDBA8",
+            "danger": "#E26A7A",
+            "neutralBackground": "#08111F",
+            "neutralSurface": "#11213D",
+            "textPrimary": "#F4FBFF",
+            "textSecondary": "#B7CBE6",
+            "outline": "#0D1E3E",
+            "shadow": "#040913"
+          },
+          "dimensions": [
+            512,
+            512
+          ],
+          "model": "google/gemini-3.1-flash-image",
+          "processingVersion": 3
+        },
+        "fingerprint": "dfe1c90a39b21f984db8025eafbdad7bd20efbbce93eed74f915de39c050da74",
+        "metadata": {
+          "schemaVersion": 1,
+          "processingVersion": 3,
+          "generationUse": "ui_artwork",
+          "role": "control_artwork",
+          "styleFingerprint": "dfe1c90a39b21f984db8025eafbdad7bd20efbbce93eed74f915de39c050da74",
+          "componentIds": [
+            "cmp_volume_slider"
+          ],
+          "nodeNames": [
+            "VolumeSliderHandle"
+          ],
+          "requirementIds": [
+            "art_slider_track",
+            "art_slider_handle"
+          ],
+          "required": true,
+          "width": 512,
+          "height": 512,
+          "renderStrategy": "image_fit",
+          "scaleType": "Fit",
+          "tintable": false,
+          "semanticRole": "",
+          "sheetId": "",
+          "slot": null,
+          "controlPart": "slider_handle"
+        }
+      }
+    ]
+  },
+  "regions": [
+    {
+      "slot": 0,
+      "box": null,
+      "reason": "The requested part is a 'slider_handle', but the image contains a complete button, not a handle."
+    }
+  ]
+}

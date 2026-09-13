@@ -1,0 +1,276 @@
+{
+  "origin": "Explicit user artwork manifest; not an AI layout plan",
+  "requirementSpec": {
+    "assetRequirements": [
+      {
+        "id": "art_title",
+        "assetType": "image",
+        "semanticRole": "ornament",
+        "required": true,
+        "componentIds": [
+          "title"
+        ],
+        "styleDescription": "ornament blank ornamental title plate"
+      },
+      {
+        "id": "art_play",
+        "assetType": "image",
+        "semanticRole": "component_surface",
+        "required": true,
+        "componentIds": [
+          "play"
+        ],
+        "styleDescription": "component_surface primary broad bevel navy cyan bright inner rim"
+      },
+      {
+        "id": "art_settings",
+        "assetType": "image",
+        "semanticRole": "component_surface",
+        "required": true,
+        "componentIds": [
+          "settings"
+        ],
+        "styleDescription": "component_surface secondary navy cyan subdued bevel gold trim"
+      },
+      {
+        "id": "art_credits",
+        "assetType": "image",
+        "semanticRole": "component_surface",
+        "required": true,
+        "componentIds": [
+          "credits"
+        ],
+        "styleDescription": "component_surface secondary navy cyan subdued bevel gold trim"
+      },
+      {
+        "id": "art_settings_panel",
+        "assetType": "image",
+        "semanticRole": "panel_surface",
+        "required": true,
+        "componentIds": [
+          "settings_panel"
+        ],
+        "styleDescription": "panel_surface shared navy panel cyan edge restrained gold trim opaque dark interior"
+      },
+      {
+        "id": "art_credits_panel",
+        "assetType": "image",
+        "semanticRole": "panel_surface",
+        "required": true,
+        "componentIds": [
+          "credits_panel"
+        ],
+        "styleDescription": "panel_surface shared navy panel cyan edge restrained gold trim opaque dark interior"
+      },
+      {
+        "id": "art_settings_close",
+        "assetType": "image",
+        "semanticRole": "component_surface",
+        "required": true,
+        "componentIds": [
+          "settings_close"
+        ],
+        "styleDescription": "component_surface shared blank square close skin navy cyan gold rim"
+      },
+      {
+        "id": "art_credits_close",
+        "assetType": "image",
+        "semanticRole": "component_surface",
+        "required": true,
+        "componentIds": [
+          "credits_close"
+        ],
+        "styleDescription": "component_surface shared blank square close skin navy cyan gold rim"
+      },
+      {
+        "id": "art_corner",
+        "assetType": "image",
+        "semanticRole": "ornament",
+        "required": true,
+        "componentIds": [
+          "corner"
+        ],
+        "styleDescription": "ornament ONE L-shaped corner flourish navy cyan restrained gold"
+      },
+      {
+        "id": "art_volume",
+        "assetType": "image",
+        "semanticRole": "control_artwork",
+        "required": true,
+        "componentIds": [
+          "volume"
+        ],
+        "styleDescription": "control_artwork slider separate track fill and handle"
+      },
+      {
+        "id": "art_music",
+        "assetType": "image",
+        "semanticRole": "control_artwork",
+        "required": true,
+        "componentIds": [
+          "music"
+        ],
+        "styleDescription": "control_artwork toggle separate on off housings and thumb"
+      }
+    ]
+  },
+  "designPlan": {
+    "artDirection": "Premium fantasy-tech enamel. Deep navy surfaces, bright cyan accents, restrained gold trim, rounded bevels and crisp outlines. Subtle lighting contained inside each object.",
+    "visualSystem": {
+      "palette": {
+        "primary": "#0B1830",
+        "secondary": "#123754",
+        "accent": "#22D9F3",
+        "neutralSurface": "#091325",
+        "outline": "#030A16",
+        "shadow": "#030A16",
+        "textPrimary": "#EAF9FF",
+        "gold": "#CFA95B"
+      },
+      "outlineStyle": "crisp deep navy contours with narrow cyan highlights and restrained warm gold trim"
+    },
+    "iconSystem": {
+      "family": "aurora_fantasy_tech",
+      "styleDescription": "Front-facing navy and cyan symbols with restrained gold edging",
+      "consistencyGroup": "aurora_symbols"
+    },
+    "componentSystem": [
+      {
+        "id": "title",
+        "requirementId": "title",
+        "nodeName": "TitlePlate",
+        "primitive": "ImageLabel",
+        "visualTreatment": "ornament blank ornamental title plate",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": false
+        }
+      },
+      {
+        "id": "play",
+        "requirementId": "play",
+        "nodeName": "PlayButton",
+        "primitive": "ImageButton",
+        "visualTreatment": "component_surface primary broad bevel navy cyan bright inner rim",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": true,
+          "assetStrategy": "generated",
+          "semanticRole": "play",
+          "consistencyGroup": "aurora_symbols"
+        }
+      },
+      {
+        "id": "settings",
+        "requirementId": "settings",
+        "nodeName": "SettingsButton",
+        "primitive": "ImageButton",
+        "visualTreatment": "component_surface secondary navy cyan subdued bevel gold trim",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": true,
+          "assetStrategy": "generated",
+          "semanticRole": "settings",
+          "consistencyGroup": "aurora_symbols"
+        }
+      },
+      {
+        "id": "credits",
+        "requirementId": "credits",
+        "nodeName": "CreditsButton",
+        "primitive": "ImageButton",
+        "visualTreatment": "component_surface secondary navy cyan subdued bevel gold trim",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": true,
+          "assetStrategy": "generated",
+          "semanticRole": "credits",
+          "consistencyGroup": "aurora_symbols"
+        }
+      },
+      {
+        "id": "settings_panel",
+        "requirementId": "settings_panel",
+        "nodeName": "SettingsPanel",
+        "primitive": "Frame",
+        "visualTreatment": "panel_surface shared navy panel cyan edge restrained gold trim opaque dark interior",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": false
+        }
+      },
+      {
+        "id": "credits_panel",
+        "requirementId": "credits_panel",
+        "nodeName": "CreditsPanel",
+        "primitive": "Frame",
+        "visualTreatment": "panel_surface shared navy panel cyan edge restrained gold trim opaque dark interior",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": false
+        }
+      },
+      {
+        "id": "settings_close",
+        "requirementId": "settings_close",
+        "nodeName": "SettingsCloseButton",
+        "primitive": "ImageButton",
+        "visualTreatment": "component_surface shared blank square close skin navy cyan gold rim",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": true,
+          "assetStrategy": "generated",
+          "semanticRole": "close",
+          "consistencyGroup": "aurora_symbols"
+        }
+      },
+      {
+        "id": "credits_close",
+        "requirementId": "credits_close",
+        "nodeName": "CreditsCloseButton",
+        "primitive": "ImageButton",
+        "visualTreatment": "component_surface shared blank square close skin navy cyan gold rim",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": true,
+          "assetStrategy": "generated",
+          "semanticRole": "close",
+          "consistencyGroup": "aurora_symbols"
+        }
+      },
+      {
+        "id": "corner",
+        "requirementId": "corner",
+        "nodeName": "CornerOrnament",
+        "primitive": "ImageLabel",
+        "visualTreatment": "ornament ONE L-shaped corner flourish navy cyan restrained gold",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": false
+        }
+      },
+      {
+        "id": "volume",
+        "requirementId": "volume",
+        "nodeName": "VolumeSlider",
+        "primitive": "Slider",
+        "visualTreatment": "control_artwork slider separate track fill and handle",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": false
+        }
+      },
+      {
+        "id": "music",
+        "requirementId": "music",
+        "nodeName": "MusicToggle",
+        "primitive": "Toggle",
+        "visualTreatment": "control_artwork toggle separate on off housings and thumb",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": false
+        }
+      }
+    ]
+  }
+}

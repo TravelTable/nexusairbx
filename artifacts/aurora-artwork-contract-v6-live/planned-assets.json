@@ -1,0 +1,1328 @@
+[
+  {
+    "role": "panel_surface",
+    "components": [
+      {
+        "id": "settings_panel",
+        "requirementId": "settings_panel",
+        "nodeName": "SettingsPanel",
+        "primitive": "Frame",
+        "visualTreatment": "panel_surface shared navy panel cyan edge restrained gold trim opaque dark interior",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": false
+        }
+      },
+      {
+        "id": "credits_panel",
+        "requirementId": "credits_panel",
+        "nodeName": "CreditsPanel",
+        "primitive": "Frame",
+        "visualTreatment": "panel_surface shared navy panel cyan edge restrained gold trim opaque dark interior",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": false
+        }
+      }
+    ],
+    "description": "panel_surface shared navy panel cyan edge restrained gold trim opaque dark interior",
+    "requirementIds": [
+      "art_settings_panel",
+      "art_credits_panel"
+    ],
+    "required": true,
+    "signature": {
+      "role": "panel_surface",
+      "description": "panel_surface shared navy panel cyan edge restrained gold trim opaque dark interior",
+      "treatments": [
+        "panel_surface shared navy panel cyan edge restrained gold trim opaque dark interior"
+      ],
+      "sheetContractVersion": 6,
+      "artDirection": "Premium fantasy-tech enamel. Deep navy surfaces, bright cyan accents, restrained gold trim, rounded bevels and crisp outlines. Subtle lighting contained inside each object.",
+      "outline": "crisp deep navy contours with narrow cyan highlights and restrained warm gold trim",
+      "shadow": "",
+      "corners": [],
+      "palette": {
+        "primary": "#0B1830",
+        "secondary": "#123754",
+        "accent": "#22D9F3",
+        "neutralSurface": "#091325",
+        "outline": "#030A16",
+        "shadow": "#030A16",
+        "textPrimary": "#EAF9FF",
+        "gold": "#CFA95B"
+      },
+      "paletteRoles": [
+        "primary"
+      ],
+      "dimensions": [
+        512,
+        512
+      ],
+      "model": "google/gemini-3.1-flash-image",
+      "processingVersion": 3
+    },
+    "fingerprint": "48d2348ee3ceb7dc1fe5e04c267121a78ec25443669b5bfd53c9f9fcdc71a2c9",
+    "metadata": {
+      "schemaVersion": 1,
+      "processingVersion": 3,
+      "generationUse": "ui_artwork",
+      "role": "panel_surface",
+      "styleFingerprint": "48d2348ee3ceb7dc1fe5e04c267121a78ec25443669b5bfd53c9f9fcdc71a2c9",
+      "componentIds": [
+        "settings_panel",
+        "credits_panel"
+      ],
+      "nodeNames": [
+        "SettingsPanel",
+        "CreditsPanel"
+      ],
+      "requirementIds": [
+        "art_settings_panel",
+        "art_credits_panel"
+      ],
+      "required": true,
+      "width": 512,
+      "height": 512,
+      "renderStrategy": "image_9slice",
+      "scaleType": "Slice",
+      "tintable": false,
+      "semanticRole": "",
+      "sheetId": "",
+      "slot": null,
+      "sliceCenter": [
+        96,
+        96,
+        416,
+        416
+      ],
+      "sliceScale": 0.2
+    }
+  },
+  {
+    "role": "component_surface",
+    "components": [
+      {
+        "id": "play",
+        "requirementId": "play",
+        "nodeName": "PlayButton",
+        "primitive": "ImageButton",
+        "visualTreatment": "component_surface primary broad bevel navy cyan bright inner rim",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": true,
+          "assetStrategy": "generated",
+          "semanticRole": "play",
+          "consistencyGroup": "aurora_symbols"
+        }
+      }
+    ],
+    "description": "component_surface primary broad bevel navy cyan bright inner rim",
+    "requirementIds": [
+      "art_play"
+    ],
+    "required": true,
+    "signature": {
+      "role": "component_surface",
+      "description": "component_surface primary broad bevel navy cyan bright inner rim",
+      "treatments": [
+        "component_surface primary broad bevel navy cyan bright inner rim"
+      ],
+      "sheetContractVersion": 6,
+      "artDirection": "Premium fantasy-tech enamel. Deep navy surfaces, bright cyan accents, restrained gold trim, rounded bevels and crisp outlines. Subtle lighting contained inside each object.",
+      "outline": "crisp deep navy contours with narrow cyan highlights and restrained warm gold trim",
+      "shadow": "",
+      "corners": [],
+      "palette": {
+        "primary": "#0B1830",
+        "secondary": "#123754",
+        "accent": "#22D9F3",
+        "neutralSurface": "#091325",
+        "outline": "#030A16",
+        "shadow": "#030A16",
+        "textPrimary": "#EAF9FF",
+        "gold": "#CFA95B"
+      },
+      "paletteRoles": [
+        "primary"
+      ],
+      "dimensions": [
+        512,
+        512
+      ],
+      "model": "google/gemini-3.1-flash-image",
+      "processingVersion": 3
+    },
+    "fingerprint": "77370d3e10452c298e6ae2b80e5c4afa458527a18e393a9dc964dc6148043529",
+    "metadata": {
+      "schemaVersion": 1,
+      "processingVersion": 3,
+      "generationUse": "ui_artwork",
+      "role": "component_surface",
+      "styleFingerprint": "77370d3e10452c298e6ae2b80e5c4afa458527a18e393a9dc964dc6148043529",
+      "componentIds": [
+        "play"
+      ],
+      "nodeNames": [
+        "PlayButton"
+      ],
+      "requirementIds": [
+        "art_play"
+      ],
+      "required": true,
+      "width": 512,
+      "height": 512,
+      "renderStrategy": "image_9slice",
+      "scaleType": "Slice",
+      "tintable": false,
+      "semanticRole": "",
+      "sheetId": "",
+      "slot": null,
+      "sliceCenter": [
+        96,
+        96,
+        416,
+        416
+      ],
+      "sliceScale": 0.2
+    }
+  },
+  {
+    "role": "component_surface",
+    "components": [
+      {
+        "id": "settings_close",
+        "requirementId": "settings_close",
+        "nodeName": "SettingsCloseButton",
+        "primitive": "ImageButton",
+        "visualTreatment": "component_surface shared blank square close skin navy cyan gold rim",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": true,
+          "assetStrategy": "generated",
+          "semanticRole": "close",
+          "consistencyGroup": "aurora_symbols"
+        }
+      },
+      {
+        "id": "credits_close",
+        "requirementId": "credits_close",
+        "nodeName": "CreditsCloseButton",
+        "primitive": "ImageButton",
+        "visualTreatment": "component_surface shared blank square close skin navy cyan gold rim",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": true,
+          "assetStrategy": "generated",
+          "semanticRole": "close",
+          "consistencyGroup": "aurora_symbols"
+        }
+      }
+    ],
+    "description": "component_surface shared blank square close skin navy cyan gold rim",
+    "requirementIds": [
+      "art_settings_close",
+      "art_credits_close"
+    ],
+    "required": true,
+    "signature": {
+      "role": "component_surface",
+      "description": "component_surface shared blank square close skin navy cyan gold rim",
+      "treatments": [
+        "component_surface shared blank square close skin navy cyan gold rim"
+      ],
+      "sheetContractVersion": 6,
+      "artDirection": "Premium fantasy-tech enamel. Deep navy surfaces, bright cyan accents, restrained gold trim, rounded bevels and crisp outlines. Subtle lighting contained inside each object.",
+      "outline": "crisp deep navy contours with narrow cyan highlights and restrained warm gold trim",
+      "shadow": "",
+      "corners": [],
+      "palette": {
+        "primary": "#0B1830",
+        "secondary": "#123754",
+        "accent": "#22D9F3",
+        "neutralSurface": "#091325",
+        "outline": "#030A16",
+        "shadow": "#030A16",
+        "textPrimary": "#EAF9FF",
+        "gold": "#CFA95B"
+      },
+      "paletteRoles": [
+        "primary"
+      ],
+      "dimensions": [
+        512,
+        512
+      ],
+      "model": "google/gemini-3.1-flash-image",
+      "processingVersion": 3
+    },
+    "fingerprint": "7f24936eaecb497afa0192603ba7438290ea04d2f18c8583c7a870d4fbf5def2",
+    "metadata": {
+      "schemaVersion": 1,
+      "processingVersion": 3,
+      "generationUse": "ui_artwork",
+      "role": "component_surface",
+      "styleFingerprint": "7f24936eaecb497afa0192603ba7438290ea04d2f18c8583c7a870d4fbf5def2",
+      "componentIds": [
+        "settings_close",
+        "credits_close"
+      ],
+      "nodeNames": [
+        "SettingsCloseButton",
+        "CreditsCloseButton"
+      ],
+      "requirementIds": [
+        "art_settings_close",
+        "art_credits_close"
+      ],
+      "required": true,
+      "width": 512,
+      "height": 512,
+      "renderStrategy": "image_9slice",
+      "scaleType": "Slice",
+      "tintable": false,
+      "semanticRole": "",
+      "sheetId": "",
+      "slot": null,
+      "sliceCenter": [
+        96,
+        96,
+        416,
+        416
+      ],
+      "sliceScale": 0.2
+    }
+  },
+  {
+    "role": "component_surface",
+    "components": [
+      {
+        "id": "settings",
+        "requirementId": "settings",
+        "nodeName": "SettingsButton",
+        "primitive": "ImageButton",
+        "visualTreatment": "component_surface secondary navy cyan subdued bevel gold trim",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": true,
+          "assetStrategy": "generated",
+          "semanticRole": "settings",
+          "consistencyGroup": "aurora_symbols"
+        }
+      },
+      {
+        "id": "credits",
+        "requirementId": "credits",
+        "nodeName": "CreditsButton",
+        "primitive": "ImageButton",
+        "visualTreatment": "component_surface secondary navy cyan subdued bevel gold trim",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": true,
+          "assetStrategy": "generated",
+          "semanticRole": "credits",
+          "consistencyGroup": "aurora_symbols"
+        }
+      }
+    ],
+    "description": "component_surface secondary navy cyan subdued bevel gold trim",
+    "requirementIds": [
+      "art_settings",
+      "art_credits"
+    ],
+    "required": true,
+    "signature": {
+      "role": "component_surface",
+      "description": "component_surface secondary navy cyan subdued bevel gold trim",
+      "treatments": [
+        "component_surface secondary navy cyan subdued bevel gold trim"
+      ],
+      "sheetContractVersion": 6,
+      "artDirection": "Premium fantasy-tech enamel. Deep navy surfaces, bright cyan accents, restrained gold trim, rounded bevels and crisp outlines. Subtle lighting contained inside each object.",
+      "outline": "crisp deep navy contours with narrow cyan highlights and restrained warm gold trim",
+      "shadow": "",
+      "corners": [],
+      "palette": {
+        "primary": "#0B1830",
+        "secondary": "#123754",
+        "accent": "#22D9F3",
+        "neutralSurface": "#091325",
+        "outline": "#030A16",
+        "shadow": "#030A16",
+        "textPrimary": "#EAF9FF",
+        "gold": "#CFA95B"
+      },
+      "paletteRoles": [
+        "primary"
+      ],
+      "dimensions": [
+        512,
+        512
+      ],
+      "model": "google/gemini-3.1-flash-image",
+      "processingVersion": 3
+    },
+    "fingerprint": "fded688fe58a972bc73aac5e4e5e3e5e43ff108eeb5246d379894ed9ed3e7f4a",
+    "metadata": {
+      "schemaVersion": 1,
+      "processingVersion": 3,
+      "generationUse": "ui_artwork",
+      "role": "component_surface",
+      "styleFingerprint": "fded688fe58a972bc73aac5e4e5e3e5e43ff108eeb5246d379894ed9ed3e7f4a",
+      "componentIds": [
+        "settings",
+        "credits"
+      ],
+      "nodeNames": [
+        "SettingsButton",
+        "CreditsButton"
+      ],
+      "requirementIds": [
+        "art_settings",
+        "art_credits"
+      ],
+      "required": true,
+      "width": 512,
+      "height": 512,
+      "renderStrategy": "image_9slice",
+      "scaleType": "Slice",
+      "tintable": false,
+      "semanticRole": "",
+      "sheetId": "",
+      "slot": null,
+      "sliceCenter": [
+        96,
+        96,
+        416,
+        416
+      ],
+      "sliceScale": 0.2
+    }
+  },
+  {
+    "role": "icon",
+    "components": [
+      {
+        "id": "play",
+        "requirementId": "play",
+        "nodeName": "PlayButton",
+        "primitive": "ImageButton",
+        "visualTreatment": "component_surface primary broad bevel navy cyan bright inner rim",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": true,
+          "assetStrategy": "generated",
+          "semanticRole": "play",
+          "consistencyGroup": "aurora_symbols"
+        }
+      }
+    ],
+    "description": "play icon. Front-facing navy and cyan symbols with restrained gold edging",
+    "semanticRole": "play",
+    "requirementIds": [],
+    "required": true,
+    "signature": {
+      "role": "icon",
+      "description": "play icon. Front-facing navy and cyan symbols with restrained gold edging",
+      "treatments": [],
+      "sheetContractVersion": 6,
+      "artDirection": "Premium fantasy-tech enamel. Deep navy surfaces, bright cyan accents, restrained gold trim, rounded bevels and crisp outlines. Subtle lighting contained inside each object.",
+      "outline": "crisp deep navy contours with narrow cyan highlights and restrained warm gold trim",
+      "shadow": "",
+      "corners": [],
+      "palette": {
+        "primary": "#0B1830",
+        "secondary": "#123754",
+        "accent": "#22D9F3",
+        "neutralSurface": "#091325",
+        "outline": "#030A16",
+        "shadow": "#030A16",
+        "textPrimary": "#EAF9FF",
+        "gold": "#CFA95B"
+      },
+      "dimensions": [
+        512,
+        512
+      ],
+      "model": "google/gemini-3.1-flash-image",
+      "processingVersion": 3
+    },
+    "fingerprint": "0040168517fd26871a208d61983e4fe5586c9bd6ffebe59839a270f238e2626d",
+    "metadata": {
+      "schemaVersion": 1,
+      "processingVersion": 3,
+      "generationUse": "ui_artwork",
+      "role": "icon",
+      "styleFingerprint": "0040168517fd26871a208d61983e4fe5586c9bd6ffebe59839a270f238e2626d",
+      "componentIds": [
+        "play"
+      ],
+      "nodeNames": [
+        "PlayButton"
+      ],
+      "requirementIds": [],
+      "required": true,
+      "width": 512,
+      "height": 512,
+      "renderStrategy": "image_fit",
+      "scaleType": "Fit",
+      "tintable": false,
+      "semanticRole": "play",
+      "sheetId": "",
+      "slot": null
+    }
+  },
+  {
+    "role": "control_artwork",
+    "components": [
+      {
+        "id": "music",
+        "requirementId": "music",
+        "nodeName": "MusicToggleOn",
+        "primitive": "Toggle",
+        "visualTreatment": "control_artwork toggle separate on off housings and thumb",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": false
+        }
+      }
+    ],
+    "description": "One horizontal toggle housing in its enabled state only; no thumb, knob, text or adjacent state.",
+    "requirementIds": [
+      "art_music"
+    ],
+    "required": true,
+    "controlPart": "toggle_on",
+    "signature": {
+      "role": "control_artwork",
+      "description": "One horizontal toggle housing in its enabled state only; no thumb, knob, text or adjacent state.",
+      "treatments": [
+        "control_artwork toggle separate on off housings and thumb"
+      ],
+      "sheetContractVersion": 6,
+      "controlPart": "toggle_on",
+      "artDirection": "Premium fantasy-tech enamel. Deep navy surfaces, bright cyan accents, restrained gold trim, rounded bevels and crisp outlines. Subtle lighting contained inside each object.",
+      "outline": "crisp deep navy contours with narrow cyan highlights and restrained warm gold trim",
+      "shadow": "",
+      "corners": [],
+      "palette": {
+        "primary": "#0B1830",
+        "secondary": "#123754",
+        "accent": "#22D9F3",
+        "neutralSurface": "#091325",
+        "outline": "#030A16",
+        "shadow": "#030A16",
+        "textPrimary": "#EAF9FF",
+        "gold": "#CFA95B"
+      },
+      "dimensions": [
+        512,
+        512
+      ],
+      "model": "google/gemini-3.1-flash-image",
+      "processingVersion": 3
+    },
+    "fingerprint": "13210c80df39c9cc0cdd2e3f047f5a3c6a1209b46bf02df3a9f0e4d539439551",
+    "metadata": {
+      "schemaVersion": 1,
+      "processingVersion": 3,
+      "generationUse": "ui_artwork",
+      "role": "control_artwork",
+      "styleFingerprint": "13210c80df39c9cc0cdd2e3f047f5a3c6a1209b46bf02df3a9f0e4d539439551",
+      "componentIds": [
+        "music"
+      ],
+      "nodeNames": [
+        "MusicToggleOn"
+      ],
+      "requirementIds": [
+        "art_music"
+      ],
+      "required": true,
+      "width": 512,
+      "height": 512,
+      "renderStrategy": "image_fit",
+      "scaleType": "Fit",
+      "tintable": false,
+      "semanticRole": "",
+      "sheetId": "",
+      "slot": null,
+      "controlPart": "toggle_on"
+    }
+  },
+  {
+    "role": "ornament",
+    "components": [
+      {
+        "id": "title",
+        "requirementId": "title",
+        "nodeName": "TitlePlate",
+        "primitive": "ImageLabel",
+        "visualTreatment": "ornament blank ornamental title plate",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": false
+        }
+      }
+    ],
+    "description": "ornament blank ornamental title plate",
+    "requirementIds": [
+      "art_title"
+    ],
+    "required": true,
+    "signature": {
+      "role": "ornament",
+      "description": "ornament blank ornamental title plate",
+      "treatments": [
+        "ornament blank ornamental title plate"
+      ],
+      "sheetContractVersion": 6,
+      "artDirection": "Premium fantasy-tech enamel. Deep navy surfaces, bright cyan accents, restrained gold trim, rounded bevels and crisp outlines. Subtle lighting contained inside each object.",
+      "outline": "crisp deep navy contours with narrow cyan highlights and restrained warm gold trim",
+      "shadow": "",
+      "corners": [],
+      "palette": {
+        "primary": "#0B1830",
+        "secondary": "#123754",
+        "accent": "#22D9F3",
+        "neutralSurface": "#091325",
+        "outline": "#030A16",
+        "shadow": "#030A16",
+        "textPrimary": "#EAF9FF",
+        "gold": "#CFA95B"
+      },
+      "dimensions": [
+        512,
+        512
+      ],
+      "model": "google/gemini-3.1-flash-image",
+      "processingVersion": 3
+    },
+    "fingerprint": "30a9bffeff695ed11848f4f7a11c467b300a5874af8b04f9a85dc9ed385b3586",
+    "metadata": {
+      "schemaVersion": 1,
+      "processingVersion": 3,
+      "generationUse": "ui_artwork",
+      "role": "ornament",
+      "styleFingerprint": "30a9bffeff695ed11848f4f7a11c467b300a5874af8b04f9a85dc9ed385b3586",
+      "componentIds": [
+        "title"
+      ],
+      "nodeNames": [
+        "TitlePlate"
+      ],
+      "requirementIds": [
+        "art_title"
+      ],
+      "required": true,
+      "width": 512,
+      "height": 512,
+      "renderStrategy": "image_fit",
+      "scaleType": "Fit",
+      "tintable": false,
+      "semanticRole": "",
+      "sheetId": "",
+      "slot": null
+    }
+  },
+  {
+    "role": "icon",
+    "components": [
+      {
+        "id": "settings_close",
+        "requirementId": "settings_close",
+        "nodeName": "SettingsCloseButton",
+        "primitive": "ImageButton",
+        "visualTreatment": "component_surface shared blank square close skin navy cyan gold rim",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": true,
+          "assetStrategy": "generated",
+          "semanticRole": "close",
+          "consistencyGroup": "aurora_symbols"
+        }
+      },
+      {
+        "id": "credits_close",
+        "requirementId": "credits_close",
+        "nodeName": "CreditsCloseButton",
+        "primitive": "ImageButton",
+        "visualTreatment": "component_surface shared blank square close skin navy cyan gold rim",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": true,
+          "assetStrategy": "generated",
+          "semanticRole": "close",
+          "consistencyGroup": "aurora_symbols"
+        }
+      }
+    ],
+    "description": "close icon. Front-facing navy and cyan symbols with restrained gold edging",
+    "semanticRole": "close",
+    "requirementIds": [],
+    "required": true,
+    "signature": {
+      "role": "icon",
+      "description": "close icon. Front-facing navy and cyan symbols with restrained gold edging",
+      "treatments": [],
+      "sheetContractVersion": 6,
+      "artDirection": "Premium fantasy-tech enamel. Deep navy surfaces, bright cyan accents, restrained gold trim, rounded bevels and crisp outlines. Subtle lighting contained inside each object.",
+      "outline": "crisp deep navy contours with narrow cyan highlights and restrained warm gold trim",
+      "shadow": "",
+      "corners": [],
+      "palette": {
+        "primary": "#0B1830",
+        "secondary": "#123754",
+        "accent": "#22D9F3",
+        "neutralSurface": "#091325",
+        "outline": "#030A16",
+        "shadow": "#030A16",
+        "textPrimary": "#EAF9FF",
+        "gold": "#CFA95B"
+      },
+      "dimensions": [
+        512,
+        512
+      ],
+      "model": "google/gemini-3.1-flash-image",
+      "processingVersion": 3
+    },
+    "fingerprint": "3c69090924f53d62f2a6e9a38ae1a35e0a8e3006d574410ffd792a79851615e1",
+    "metadata": {
+      "schemaVersion": 1,
+      "processingVersion": 3,
+      "generationUse": "ui_artwork",
+      "role": "icon",
+      "styleFingerprint": "3c69090924f53d62f2a6e9a38ae1a35e0a8e3006d574410ffd792a79851615e1",
+      "componentIds": [
+        "settings_close",
+        "credits_close"
+      ],
+      "nodeNames": [
+        "SettingsCloseButton",
+        "CreditsCloseButton"
+      ],
+      "requirementIds": [],
+      "required": true,
+      "width": 512,
+      "height": 512,
+      "renderStrategy": "image_fit",
+      "scaleType": "Fit",
+      "tintable": false,
+      "semanticRole": "close",
+      "sheetId": "",
+      "slot": null
+    }
+  },
+  {
+    "role": "control_artwork",
+    "components": [
+      {
+        "id": "music",
+        "requirementId": "music",
+        "nodeName": "MusicToggleThumb",
+        "primitive": "Toggle",
+        "visualTreatment": "control_artwork toggle separate on off housings and thumb",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": false
+        }
+      }
+    ],
+    "description": "ONE loose circular glossy cyan jewel with a gold rim, floating alone on chroma. A single round knob viewed from the front. Absolutely nothing extends to either side or behind it.",
+    "requirementIds": [
+      "art_music"
+    ],
+    "required": true,
+    "controlPart": "toggle_thumb",
+    "signature": {
+      "role": "control_artwork",
+      "description": "ONE loose circular glossy cyan jewel with a gold rim, floating alone on chroma. A single round knob viewed from the front. Absolutely nothing extends to either side or behind it.",
+      "treatments": [
+        "control_artwork toggle separate on off housings and thumb"
+      ],
+      "sheetContractVersion": 6,
+      "controlPart": "toggle_thumb",
+      "artDirection": "Premium fantasy-tech enamel. Deep navy surfaces, bright cyan accents, restrained gold trim, rounded bevels and crisp outlines. Subtle lighting contained inside each object.",
+      "outline": "crisp deep navy contours with narrow cyan highlights and restrained warm gold trim",
+      "shadow": "",
+      "corners": [],
+      "palette": {
+        "primary": "#0B1830",
+        "secondary": "#123754",
+        "accent": "#22D9F3",
+        "neutralSurface": "#091325",
+        "outline": "#030A16",
+        "shadow": "#030A16",
+        "textPrimary": "#EAF9FF",
+        "gold": "#CFA95B"
+      },
+      "dimensions": [
+        512,
+        512
+      ],
+      "model": "google/gemini-3.1-flash-image",
+      "processingVersion": 3
+    },
+    "fingerprint": "40b4eb24e550559e17c5444bc43127f2c50e7ffb2555895f70417950e20c3a3c",
+    "metadata": {
+      "schemaVersion": 1,
+      "processingVersion": 3,
+      "generationUse": "ui_artwork",
+      "role": "control_artwork",
+      "styleFingerprint": "40b4eb24e550559e17c5444bc43127f2c50e7ffb2555895f70417950e20c3a3c",
+      "componentIds": [
+        "music"
+      ],
+      "nodeNames": [
+        "MusicToggleThumb"
+      ],
+      "requirementIds": [
+        "art_music"
+      ],
+      "required": true,
+      "width": 512,
+      "height": 512,
+      "renderStrategy": "image_fit",
+      "scaleType": "Fit",
+      "tintable": false,
+      "semanticRole": "",
+      "sheetId": "",
+      "slot": null,
+      "controlPart": "toggle_thumb"
+    }
+  },
+  {
+    "role": "control_artwork",
+    "components": [
+      {
+        "id": "volume",
+        "requirementId": "volume",
+        "nodeName": "VolumeSliderHandle",
+        "primitive": "Slider",
+        "visualTreatment": "control_artwork slider separate track fill and handle",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": false
+        }
+      }
+    ],
+    "description": "ONE loose square gemstone cap with rounded beveled navy corners and a cyan face, floating alone on chroma. A small standalone jewel button. Absolutely nothing extends to either side or behind it.",
+    "requirementIds": [
+      "art_volume"
+    ],
+    "required": true,
+    "controlPart": "slider_handle",
+    "signature": {
+      "role": "control_artwork",
+      "description": "ONE loose square gemstone cap with rounded beveled navy corners and a cyan face, floating alone on chroma. A small standalone jewel button. Absolutely nothing extends to either side or behind it.",
+      "treatments": [
+        "control_artwork slider separate track fill and handle"
+      ],
+      "sheetContractVersion": 6,
+      "controlPart": "slider_handle",
+      "artDirection": "Premium fantasy-tech enamel. Deep navy surfaces, bright cyan accents, restrained gold trim, rounded bevels and crisp outlines. Subtle lighting contained inside each object.",
+      "outline": "crisp deep navy contours with narrow cyan highlights and restrained warm gold trim",
+      "shadow": "",
+      "corners": [],
+      "palette": {
+        "primary": "#0B1830",
+        "secondary": "#123754",
+        "accent": "#22D9F3",
+        "neutralSurface": "#091325",
+        "outline": "#030A16",
+        "shadow": "#030A16",
+        "textPrimary": "#EAF9FF",
+        "gold": "#CFA95B"
+      },
+      "dimensions": [
+        512,
+        512
+      ],
+      "model": "google/gemini-3.1-flash-image",
+      "processingVersion": 3
+    },
+    "fingerprint": "47d636f30b63172243391b567be5c4114d9b997208864e0ec6a9ca419b1c4d67",
+    "metadata": {
+      "schemaVersion": 1,
+      "processingVersion": 3,
+      "generationUse": "ui_artwork",
+      "role": "control_artwork",
+      "styleFingerprint": "47d636f30b63172243391b567be5c4114d9b997208864e0ec6a9ca419b1c4d67",
+      "componentIds": [
+        "volume"
+      ],
+      "nodeNames": [
+        "VolumeSliderHandle"
+      ],
+      "requirementIds": [
+        "art_volume"
+      ],
+      "required": true,
+      "width": 512,
+      "height": 512,
+      "renderStrategy": "image_fit",
+      "scaleType": "Fit",
+      "tintable": false,
+      "semanticRole": "",
+      "sheetId": "",
+      "slot": null,
+      "controlPart": "slider_handle"
+    }
+  },
+  {
+    "role": "control_artwork",
+    "components": [
+      {
+        "id": "volume",
+        "requirementId": "volume",
+        "nodeName": "VolumeSliderFill",
+        "primitive": "Slider",
+        "visualTreatment": "control_artwork slider separate track fill and handle",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": false
+        }
+      }
+    ],
+    "description": "One horizontal illuminated slider fill strip only; no housing, thumb or handle.",
+    "requirementIds": [
+      "art_volume"
+    ],
+    "required": true,
+    "controlPart": "slider_fill",
+    "signature": {
+      "role": "control_artwork",
+      "description": "One horizontal illuminated slider fill strip only; no housing, thumb or handle.",
+      "treatments": [
+        "control_artwork slider separate track fill and handle"
+      ],
+      "sheetContractVersion": 6,
+      "controlPart": "slider_fill",
+      "artDirection": "Premium fantasy-tech enamel. Deep navy surfaces, bright cyan accents, restrained gold trim, rounded bevels and crisp outlines. Subtle lighting contained inside each object.",
+      "outline": "crisp deep navy contours with narrow cyan highlights and restrained warm gold trim",
+      "shadow": "",
+      "corners": [],
+      "palette": {
+        "primary": "#0B1830",
+        "secondary": "#123754",
+        "accent": "#22D9F3",
+        "neutralSurface": "#091325",
+        "outline": "#030A16",
+        "shadow": "#030A16",
+        "textPrimary": "#EAF9FF",
+        "gold": "#CFA95B"
+      },
+      "dimensions": [
+        512,
+        512
+      ],
+      "model": "google/gemini-3.1-flash-image",
+      "processingVersion": 3
+    },
+    "fingerprint": "481f4b7bfa7298d5a8bc31afc0a49bfcdd5d41b982a65aa6eabd8b28e227aac4",
+    "metadata": {
+      "schemaVersion": 1,
+      "processingVersion": 3,
+      "generationUse": "ui_artwork",
+      "role": "control_artwork",
+      "styleFingerprint": "481f4b7bfa7298d5a8bc31afc0a49bfcdd5d41b982a65aa6eabd8b28e227aac4",
+      "componentIds": [
+        "volume"
+      ],
+      "nodeNames": [
+        "VolumeSliderFill"
+      ],
+      "requirementIds": [
+        "art_volume"
+      ],
+      "required": true,
+      "width": 512,
+      "height": 512,
+      "renderStrategy": "image_fit",
+      "scaleType": "Fit",
+      "tintable": false,
+      "semanticRole": "",
+      "sheetId": "",
+      "slot": null,
+      "controlPart": "slider_fill"
+    }
+  },
+  {
+    "role": "control_artwork",
+    "components": [
+      {
+        "id": "volume",
+        "requirementId": "volume",
+        "nodeName": "VolumeSliderTrack",
+        "primitive": "Slider",
+        "visualTreatment": "control_artwork slider separate track fill and handle",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": false
+        }
+      }
+    ],
+    "description": "One horizontal empty slider housing/track only; no fill, thumb or handle.",
+    "requirementIds": [
+      "art_volume"
+    ],
+    "required": true,
+    "controlPart": "slider_track",
+    "signature": {
+      "role": "control_artwork",
+      "description": "One horizontal empty slider housing/track only; no fill, thumb or handle.",
+      "treatments": [
+        "control_artwork slider separate track fill and handle"
+      ],
+      "sheetContractVersion": 6,
+      "controlPart": "slider_track",
+      "artDirection": "Premium fantasy-tech enamel. Deep navy surfaces, bright cyan accents, restrained gold trim, rounded bevels and crisp outlines. Subtle lighting contained inside each object.",
+      "outline": "crisp deep navy contours with narrow cyan highlights and restrained warm gold trim",
+      "shadow": "",
+      "corners": [],
+      "palette": {
+        "primary": "#0B1830",
+        "secondary": "#123754",
+        "accent": "#22D9F3",
+        "neutralSurface": "#091325",
+        "outline": "#030A16",
+        "shadow": "#030A16",
+        "textPrimary": "#EAF9FF",
+        "gold": "#CFA95B"
+      },
+      "dimensions": [
+        512,
+        512
+      ],
+      "model": "google/gemini-3.1-flash-image",
+      "processingVersion": 3
+    },
+    "fingerprint": "6c3e592575e2fa0ff30c4c4d09638717c5852bb11262140dad55fb3d3dac873c",
+    "metadata": {
+      "schemaVersion": 1,
+      "processingVersion": 3,
+      "generationUse": "ui_artwork",
+      "role": "control_artwork",
+      "styleFingerprint": "6c3e592575e2fa0ff30c4c4d09638717c5852bb11262140dad55fb3d3dac873c",
+      "componentIds": [
+        "volume"
+      ],
+      "nodeNames": [
+        "VolumeSliderTrack"
+      ],
+      "requirementIds": [
+        "art_volume"
+      ],
+      "required": true,
+      "width": 512,
+      "height": 512,
+      "renderStrategy": "image_fit",
+      "scaleType": "Fit",
+      "tintable": false,
+      "semanticRole": "",
+      "sheetId": "",
+      "slot": null,
+      "controlPart": "slider_track"
+    }
+  },
+  {
+    "role": "icon",
+    "components": [
+      {
+        "id": "credits",
+        "requirementId": "credits",
+        "nodeName": "CreditsButton",
+        "primitive": "ImageButton",
+        "visualTreatment": "component_surface secondary navy cyan subdued bevel gold trim",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": true,
+          "assetStrategy": "generated",
+          "semanticRole": "credits",
+          "consistencyGroup": "aurora_symbols"
+        }
+      }
+    ],
+    "description": "credits icon. Front-facing navy and cyan symbols with restrained gold edging",
+    "semanticRole": "credits",
+    "requirementIds": [],
+    "required": true,
+    "signature": {
+      "role": "icon",
+      "description": "credits icon. Front-facing navy and cyan symbols with restrained gold edging",
+      "treatments": [],
+      "sheetContractVersion": 6,
+      "artDirection": "Premium fantasy-tech enamel. Deep navy surfaces, bright cyan accents, restrained gold trim, rounded bevels and crisp outlines. Subtle lighting contained inside each object.",
+      "outline": "crisp deep navy contours with narrow cyan highlights and restrained warm gold trim",
+      "shadow": "",
+      "corners": [],
+      "palette": {
+        "primary": "#0B1830",
+        "secondary": "#123754",
+        "accent": "#22D9F3",
+        "neutralSurface": "#091325",
+        "outline": "#030A16",
+        "shadow": "#030A16",
+        "textPrimary": "#EAF9FF",
+        "gold": "#CFA95B"
+      },
+      "dimensions": [
+        512,
+        512
+      ],
+      "model": "google/gemini-3.1-flash-image",
+      "processingVersion": 3
+    },
+    "fingerprint": "b4ee9506e1d02e54555f227cc12b6e0aa44455e37126acf8e8cb5d0229cb1cce",
+    "metadata": {
+      "schemaVersion": 1,
+      "processingVersion": 3,
+      "generationUse": "ui_artwork",
+      "role": "icon",
+      "styleFingerprint": "b4ee9506e1d02e54555f227cc12b6e0aa44455e37126acf8e8cb5d0229cb1cce",
+      "componentIds": [
+        "credits"
+      ],
+      "nodeNames": [
+        "CreditsButton"
+      ],
+      "requirementIds": [],
+      "required": true,
+      "width": 512,
+      "height": 512,
+      "renderStrategy": "image_fit",
+      "scaleType": "Fit",
+      "tintable": false,
+      "semanticRole": "credits",
+      "sheetId": "",
+      "slot": null
+    }
+  },
+  {
+    "role": "ornament",
+    "components": [
+      {
+        "id": "corner",
+        "requirementId": "corner",
+        "nodeName": "CornerOrnament",
+        "primitive": "ImageLabel",
+        "visualTreatment": "ornament ONE L-shaped corner flourish navy cyan restrained gold",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": false
+        }
+      }
+    ],
+    "description": "ornament ONE L-shaped corner flourish navy cyan restrained gold",
+    "requirementIds": [
+      "art_corner"
+    ],
+    "required": true,
+    "signature": {
+      "role": "ornament",
+      "description": "ornament ONE L-shaped corner flourish navy cyan restrained gold",
+      "treatments": [
+        "ornament ONE L-shaped corner flourish navy cyan restrained gold"
+      ],
+      "sheetContractVersion": 6,
+      "artDirection": "Premium fantasy-tech enamel. Deep navy surfaces, bright cyan accents, restrained gold trim, rounded bevels and crisp outlines. Subtle lighting contained inside each object.",
+      "outline": "crisp deep navy contours with narrow cyan highlights and restrained warm gold trim",
+      "shadow": "",
+      "corners": [],
+      "palette": {
+        "primary": "#0B1830",
+        "secondary": "#123754",
+        "accent": "#22D9F3",
+        "neutralSurface": "#091325",
+        "outline": "#030A16",
+        "shadow": "#030A16",
+        "textPrimary": "#EAF9FF",
+        "gold": "#CFA95B"
+      },
+      "dimensions": [
+        512,
+        512
+      ],
+      "model": "google/gemini-3.1-flash-image",
+      "processingVersion": 3
+    },
+    "fingerprint": "cbfebf9aaefe5f49f7f1f384fd1976e595821a425f90896b02feb737ad3d2991",
+    "metadata": {
+      "schemaVersion": 1,
+      "processingVersion": 3,
+      "generationUse": "ui_artwork",
+      "role": "ornament",
+      "styleFingerprint": "cbfebf9aaefe5f49f7f1f384fd1976e595821a425f90896b02feb737ad3d2991",
+      "componentIds": [
+        "corner"
+      ],
+      "nodeNames": [
+        "CornerOrnament"
+      ],
+      "requirementIds": [
+        "art_corner"
+      ],
+      "required": true,
+      "width": 512,
+      "height": 512,
+      "renderStrategy": "image_fit",
+      "scaleType": "Fit",
+      "tintable": false,
+      "semanticRole": "",
+      "sheetId": "",
+      "slot": null
+    }
+  },
+  {
+    "role": "control_artwork",
+    "components": [
+      {
+        "id": "music",
+        "requirementId": "music",
+        "nodeName": "MusicToggleOff",
+        "primitive": "Toggle",
+        "visualTreatment": "control_artwork toggle separate on off housings and thumb",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": false
+        }
+      }
+    ],
+    "description": "One horizontal toggle housing in its disabled state only; no thumb, knob, text or adjacent state.",
+    "requirementIds": [
+      "art_music"
+    ],
+    "required": true,
+    "controlPart": "toggle_off",
+    "signature": {
+      "role": "control_artwork",
+      "description": "One horizontal toggle housing in its disabled state only; no thumb, knob, text or adjacent state.",
+      "treatments": [
+        "control_artwork toggle separate on off housings and thumb"
+      ],
+      "sheetContractVersion": 6,
+      "controlPart": "toggle_off",
+      "artDirection": "Premium fantasy-tech enamel. Deep navy surfaces, bright cyan accents, restrained gold trim, rounded bevels and crisp outlines. Subtle lighting contained inside each object.",
+      "outline": "crisp deep navy contours with narrow cyan highlights and restrained warm gold trim",
+      "shadow": "",
+      "corners": [],
+      "palette": {
+        "primary": "#0B1830",
+        "secondary": "#123754",
+        "accent": "#22D9F3",
+        "neutralSurface": "#091325",
+        "outline": "#030A16",
+        "shadow": "#030A16",
+        "textPrimary": "#EAF9FF",
+        "gold": "#CFA95B"
+      },
+      "dimensions": [
+        512,
+        512
+      ],
+      "model": "google/gemini-3.1-flash-image",
+      "processingVersion": 3
+    },
+    "fingerprint": "df02c63ff0f60bc8ea0dc17a5f4f23c52d440470468c2bea2a938598d3e094f6",
+    "metadata": {
+      "schemaVersion": 1,
+      "processingVersion": 3,
+      "generationUse": "ui_artwork",
+      "role": "control_artwork",
+      "styleFingerprint": "df02c63ff0f60bc8ea0dc17a5f4f23c52d440470468c2bea2a938598d3e094f6",
+      "componentIds": [
+        "music"
+      ],
+      "nodeNames": [
+        "MusicToggleOff"
+      ],
+      "requirementIds": [
+        "art_music"
+      ],
+      "required": true,
+      "width": 512,
+      "height": 512,
+      "renderStrategy": "image_fit",
+      "scaleType": "Fit",
+      "tintable": false,
+      "semanticRole": "",
+      "sheetId": "",
+      "slot": null,
+      "controlPart": "toggle_off"
+    }
+  },
+  {
+    "role": "icon",
+    "components": [
+      {
+        "id": "settings",
+        "requirementId": "settings",
+        "nodeName": "SettingsButton",
+        "primitive": "ImageButton",
+        "visualTreatment": "component_surface secondary navy cyan subdued bevel gold trim",
+        "paletteRole": "primary",
+        "icon": {
+          "enabled": true,
+          "assetStrategy": "generated",
+          "semanticRole": "settings",
+          "consistencyGroup": "aurora_symbols"
+        }
+      }
+    ],
+    "description": "settings icon. Front-facing navy and cyan symbols with restrained gold edging",
+    "semanticRole": "settings",
+    "requirementIds": [],
+    "required": true,
+    "signature": {
+      "role": "icon",
+      "description": "settings icon. Front-facing navy and cyan symbols with restrained gold edging",
+      "treatments": [],
+      "sheetContractVersion": 6,
+      "artDirection": "Premium fantasy-tech enamel. Deep navy surfaces, bright cyan accents, restrained gold trim, rounded bevels and crisp outlines. Subtle lighting contained inside each object.",
+      "outline": "crisp deep navy contours with narrow cyan highlights and restrained warm gold trim",
+      "shadow": "",
+      "corners": [],
+      "palette": {
+        "primary": "#0B1830",
+        "secondary": "#123754",
+        "accent": "#22D9F3",
+        "neutralSurface": "#091325",
+        "outline": "#030A16",
+        "shadow": "#030A16",
+        "textPrimary": "#EAF9FF",
+        "gold": "#CFA95B"
+      },
+      "dimensions": [
+        512,
+        512
+      ],
+      "model": "google/gemini-3.1-flash-image",
+      "processingVersion": 3
+    },
+    "fingerprint": "fbb4d748d9caf1cb83809e8a45560a243828fa0fb5088eba2f666278c62d63f3",
+    "metadata": {
+      "schemaVersion": 1,
+      "processingVersion": 3,
+      "generationUse": "ui_artwork",
+      "role": "icon",
+      "styleFingerprint": "fbb4d748d9caf1cb83809e8a45560a243828fa0fb5088eba2f666278c62d63f3",
+      "componentIds": [
+        "settings"
+      ],
+      "nodeNames": [
+        "SettingsButton"
+      ],
+      "requirementIds": [],
+      "required": true,
+      "width": 512,
+      "height": 512,
+      "renderStrategy": "image_fit",
+      "scaleType": "Fit",
+      "tintable": false,
+      "semanticRole": "settings",
+      "sheetId": "",
+      "slot": null
+    }
+  }
+]

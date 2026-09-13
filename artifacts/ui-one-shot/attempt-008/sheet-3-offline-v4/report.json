@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "offline": true,
+  "providerCalls": 0,
+  "canonicalWrites": 0,
+  "sourceSha256": "76f2551409d5a500c9f3d09630ab440b13c26ddc34acad2148026138b64d4d75",
+  "sourceWidth": 5504,
+  "sourceHeight": 3072,
+  "semanticReviewPerformed": false,
+  "note": "Only geometry and pixel processing were rerun. Saved subject assignments still require visual review; this is not build completion evidence.",
+  "failures": 1,
+  "items": [
+    {
+      "slot": 0,
+      "fingerprint": "dfe1c90a39b21f984db8025eafbdad7bd20efbbce93eed74f915de39c050da74",
+      "required": true,
+      "error": {
+        "code": "UI_SHEET_SUBJECT_MISSING",
+        "message": "The requested part is a 'slider_handle', but the image contains a complete button, not a handle."
+      }
+    }
+  ]
+}

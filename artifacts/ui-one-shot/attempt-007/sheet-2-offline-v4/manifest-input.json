@@ -1,0 +1,1106 @@
+{
+  "sheet": {
+    "id": "1f412db7e6f42e85c84036e4efcfa3980245c818fabdfc507ab22978e105a5d3",
+    "kind": "skins",
+    "columns": 3,
+    "rows": 3,
+    "background": "#00FF00",
+    "slots": [
+      {
+        "role": "component_surface",
+        "components": [
+          {
+            "id": "cmp_settings_close",
+            "primitive": "MenuButton",
+            "requirementId": "settings_close_button",
+            "label": "Close",
+            "semanticAction": "close_settings_panel",
+            "hierarchy": "secondary",
+            "groupId": "modal_close_actions",
+            "nodeName": "SettingsCloseButton",
+            "regionId": "settings_modal_region",
+            "paletteRole": "secondary",
+            "typographyRole": "button",
+            "visualTreatment": "component_surface Gemini-generated compact close button skin shared with Credits close, using the same navy-framed cobalt treatment and gold trim",
+            "size": {
+              "desktop": "Compact square-ish header button aligned top-right inside modal with strong icon clarity.",
+              "mobile": "Compact but thumb-legal close button in header top-right with preserved safe padding.",
+              "minTouchTarget": 44
+            },
+            "icon": {
+              "enabled": true,
+              "semanticRole": "close",
+              "family": "aurora_gemini",
+              "assetStrategy": "generated",
+              "size": 20,
+              "padding": 10,
+              "visualWeight": "bold",
+              "perspective": "front",
+              "edgeTreatment": "navy keyline",
+              "shadowTreatment": "soft navy drop",
+              "paletteMode": "cyan-gold on dark"
+            },
+            "interaction": {
+              "hoverAnimation": "Scale to 1.02 with brighter edge gleam.",
+              "pressAnimation": "Compress to 0.96 with quick inward settle and shadow reduction.",
+              "hoverSound": "none",
+              "clickSound": "none",
+              "sharedHelper": "ButtonEffects",
+              "touchBehavior": "Use Activated only on touch; closes Settings panel through controller."
+            }
+          }
+        ],
+        "description": "component_surface Gemini-generated compact close button skin shared with Credits close, using the same navy-framed cobalt treatment and gold trim",
+        "requirementIds": [
+          "button_skins_art"
+        ],
+        "required": true,
+        "signature": {
+          "role": "component_surface",
+          "description": "component_surface Gemini-generated compact close button skin shared with Credits close, using the same navy-framed cobalt treatment and gold trim",
+          "treatments": [
+            "component_surface Gemini-generated compact close button skin shared with Credits close, using the same navy-framed cobalt treatment and gold trim"
+          ],
+          "artDirection": "Premium fantasy-tech menu presentation built around a glossy cyan-to-cobalt material language with thick navy framing and restrained warm gold filigree. The screen stays mostly native and breathable, using a transparent menu dock instead of an outer menu panel so the title plate and three main actions carry the composition. Gemini-generated artwork should form one coherent kit: shared button skins for primary and secondary buttons, one shared modal panel skin, one title plate ornament, one restrained background ornament layer, matching slider track/handle artwork, matching toggle on/off pieces, and a distinct but stylistically unified icon family for play, settings, credits, and close. Live text remains crisp and high-contrast over artwork, with gold used only as highlight trim and not as the main text color. Corners and title plate receive the ornamental emphasis; the rest of the interface stays clean and readable.",
+          "outline": "Thick navy outer stroke language with selective inner gold highlight lines on artwork-bearing components. Native text is not heavily outlined; instead use contrast, subtle shadow, and clean panel separation. Button and panel skins should visually imply a 9-slice frame with a sturdy border and glossy top sheen.",
+          "shadow": "Soft deep navy drop shadow below major controls and modals, with short glossy contact shadows for buttons. Shadows are layered but restrained so the interface feels premium rather than floating excessively.",
+          "corners": [
+            8,
+            12,
+            16,
+            22,
+            28,
+            36
+          ],
+          "palette": {
+            "primary": "#39C8FF",
+            "secondary": "#2F66D0",
+            "accent": "#F2C86B",
+            "success": "#62D7A2",
+            "danger": "#E46A6A",
+            "neutralBackground": "#081425",
+            "neutralSurface": "#0F2340",
+            "textPrimary": "#F4FBFF",
+            "textSecondary": "#B7D3EA",
+            "outline": "#0A1B34",
+            "shadow": "#040B16"
+          },
+          "paletteRoles": [
+            "secondary"
+          ],
+          "dimensions": [
+            512,
+            512
+          ],
+          "model": "google/gemini-3.1-flash-image",
+          "processingVersion": 3
+        },
+        "fingerprint": "8be0027e3bf845c7246064b5bcf1ffb5b2ef96050af55d33506e78c4b789b3e7",
+        "metadata": {
+          "schemaVersion": 1,
+          "processingVersion": 3,
+          "generationUse": "ui_artwork",
+          "role": "component_surface",
+          "styleFingerprint": "8be0027e3bf845c7246064b5bcf1ffb5b2ef96050af55d33506e78c4b789b3e7",
+          "componentIds": [
+            "cmp_settings_close"
+          ],
+          "nodeNames": [
+            "SettingsCloseButton"
+          ],
+          "requirementIds": [
+            "button_skins_art"
+          ],
+          "required": true,
+          "width": 512,
+          "height": 512,
+          "renderStrategy": "image_9slice",
+          "scaleType": "Slice",
+          "tintable": false,
+          "semanticRole": "",
+          "sheetId": "",
+          "slot": null,
+          "sliceCenter": [
+            96,
+            96,
+            416,
+            416
+          ],
+          "sliceScale": 0.2
+        }
+      },
+      {
+        "role": "component_surface",
+        "components": [
+          {
+            "id": "cmp_credits_close",
+            "primitive": "MenuButton",
+            "requirementId": "credits_close_button",
+            "label": "Close",
+            "semanticAction": "close_credits_panel",
+            "hierarchy": "secondary",
+            "groupId": "modal_close_actions",
+            "nodeName": "CreditsCloseButton",
+            "regionId": "credits_modal_region",
+            "paletteRole": "secondary",
+            "typographyRole": "button",
+            "visualTreatment": "component_surface Gemini-generated compact close button skin shared with Settings close, using the same navy-framed cobalt treatment and gold trim",
+            "size": {
+              "desktop": "Compact header close button aligned top-right inside modal.",
+              "mobile": "Compact but thumb-legal close button with safe top-right inset.",
+              "minTouchTarget": 44
+            },
+            "icon": {
+              "enabled": true,
+              "semanticRole": "close",
+              "family": "aurora_gemini",
+              "assetStrategy": "generated",
+              "size": 20,
+              "padding": 10,
+              "visualWeight": "bold",
+              "perspective": "front",
+              "edgeTreatment": "navy keyline",
+              "shadowTreatment": "soft navy drop",
+              "paletteMode": "cyan-gold on dark"
+            },
+            "interaction": {
+              "hoverAnimation": "Scale to 1.02 with brighter edge gleam.",
+              "pressAnimation": "Compress to 0.96 with quick inward settle and shadow reduction.",
+              "hoverSound": "none",
+              "clickSound": "none",
+              "sharedHelper": "ButtonEffects",
+              "touchBehavior": "Use Activated only on touch; closes Credits panel through controller."
+            }
+          }
+        ],
+        "description": "component_surface Gemini-generated compact close button skin shared with Settings close, using the same navy-framed cobalt treatment and gold trim",
+        "requirementIds": [
+          "button_skins_art"
+        ],
+        "required": true,
+        "signature": {
+          "role": "component_surface",
+          "description": "component_surface Gemini-generated compact close button skin shared with Settings close, using the same navy-framed cobalt treatment and gold trim",
+          "treatments": [
+            "component_surface Gemini-generated compact close button skin shared with Settings close, using the same navy-framed cobalt treatment and gold trim"
+          ],
+          "artDirection": "Premium fantasy-tech menu presentation built around a glossy cyan-to-cobalt material language with thick navy framing and restrained warm gold filigree. The screen stays mostly native and breathable, using a transparent menu dock instead of an outer menu panel so the title plate and three main actions carry the composition. Gemini-generated artwork should form one coherent kit: shared button skins for primary and secondary buttons, one shared modal panel skin, one title plate ornament, one restrained background ornament layer, matching slider track/handle artwork, matching toggle on/off pieces, and a distinct but stylistically unified icon family for play, settings, credits, and close. Live text remains crisp and high-contrast over artwork, with gold used only as highlight trim and not as the main text color. Corners and title plate receive the ornamental emphasis; the rest of the interface stays clean and readable.",
+          "outline": "Thick navy outer stroke language with selective inner gold highlight lines on artwork-bearing components. Native text is not heavily outlined; instead use contrast, subtle shadow, and clean panel separation. Button and panel skins should visually imply a 9-slice frame with a sturdy border and glossy top sheen.",
+          "shadow": "Soft deep navy drop shadow below major controls and modals, with short glossy contact shadows for buttons. Shadows are layered but restrained so the interface feels premium rather than floating excessively.",
+          "corners": [
+            8,
+            12,
+            16,
+            22,
+            28,
+            36
+          ],
+          "palette": {
+            "primary": "#39C8FF",
+            "secondary": "#2F66D0",
+            "accent": "#F2C86B",
+            "success": "#62D7A2",
+            "danger": "#E46A6A",
+            "neutralBackground": "#081425",
+            "neutralSurface": "#0F2340",
+            "textPrimary": "#F4FBFF",
+            "textSecondary": "#B7D3EA",
+            "outline": "#0A1B34",
+            "shadow": "#040B16"
+          },
+          "paletteRoles": [
+            "secondary"
+          ],
+          "dimensions": [
+            512,
+            512
+          ],
+          "model": "google/gemini-3.1-flash-image",
+          "processingVersion": 3
+        },
+        "fingerprint": "9b22fd0f43705cdec72b43969fa4b3e7b7c53f1c0d9da12fdccd62ed7ffc5ec7",
+        "metadata": {
+          "schemaVersion": 1,
+          "processingVersion": 3,
+          "generationUse": "ui_artwork",
+          "role": "component_surface",
+          "styleFingerprint": "9b22fd0f43705cdec72b43969fa4b3e7b7c53f1c0d9da12fdccd62ed7ffc5ec7",
+          "componentIds": [
+            "cmp_credits_close"
+          ],
+          "nodeNames": [
+            "CreditsCloseButton"
+          ],
+          "requirementIds": [
+            "button_skins_art"
+          ],
+          "required": true,
+          "width": 512,
+          "height": 512,
+          "renderStrategy": "image_9slice",
+          "scaleType": "Slice",
+          "tintable": false,
+          "semanticRole": "",
+          "sheetId": "",
+          "slot": null,
+          "sliceCenter": [
+            96,
+            96,
+            416,
+            416
+          ],
+          "sliceScale": 0.2
+        }
+      },
+      {
+        "role": "icon",
+        "components": [
+          {
+            "id": "cmp_settings_close",
+            "primitive": "MenuButton",
+            "requirementId": "settings_close_button",
+            "label": "Close",
+            "semanticAction": "close_settings_panel",
+            "hierarchy": "secondary",
+            "groupId": "modal_close_actions",
+            "nodeName": "SettingsCloseButton",
+            "regionId": "settings_modal_region",
+            "paletteRole": "secondary",
+            "typographyRole": "button",
+            "visualTreatment": "component_surface Gemini-generated compact close button skin shared with Credits close, using the same navy-framed cobalt treatment and gold trim",
+            "size": {
+              "desktop": "Compact square-ish header button aligned top-right inside modal with strong icon clarity.",
+              "mobile": "Compact but thumb-legal close button in header top-right with preserved safe padding.",
+              "minTouchTarget": 44
+            },
+            "icon": {
+              "enabled": true,
+              "semanticRole": "close",
+              "family": "aurora_gemini",
+              "assetStrategy": "generated",
+              "size": 20,
+              "padding": 10,
+              "visualWeight": "bold",
+              "perspective": "front",
+              "edgeTreatment": "navy keyline",
+              "shadowTreatment": "soft navy drop",
+              "paletteMode": "cyan-gold on dark"
+            },
+            "interaction": {
+              "hoverAnimation": "Scale to 1.02 with brighter edge gleam.",
+              "pressAnimation": "Compress to 0.96 with quick inward settle and shadow reduction.",
+              "hoverSound": "none",
+              "clickSound": "none",
+              "sharedHelper": "ButtonEffects",
+              "touchBehavior": "Use Activated only on touch; closes Settings panel through controller."
+            }
+          },
+          {
+            "id": "cmp_credits_close",
+            "primitive": "MenuButton",
+            "requirementId": "credits_close_button",
+            "label": "Close",
+            "semanticAction": "close_credits_panel",
+            "hierarchy": "secondary",
+            "groupId": "modal_close_actions",
+            "nodeName": "CreditsCloseButton",
+            "regionId": "credits_modal_region",
+            "paletteRole": "secondary",
+            "typographyRole": "button",
+            "visualTreatment": "component_surface Gemini-generated compact close button skin shared with Settings close, using the same navy-framed cobalt treatment and gold trim",
+            "size": {
+              "desktop": "Compact header close button aligned top-right inside modal.",
+              "mobile": "Compact but thumb-legal close button with safe top-right inset.",
+              "minTouchTarget": 44
+            },
+            "icon": {
+              "enabled": true,
+              "semanticRole": "close",
+              "family": "aurora_gemini",
+              "assetStrategy": "generated",
+              "size": 20,
+              "padding": 10,
+              "visualWeight": "bold",
+              "perspective": "front",
+              "edgeTreatment": "navy keyline",
+              "shadowTreatment": "soft navy drop",
+              "paletteMode": "cyan-gold on dark"
+            },
+            "interaction": {
+              "hoverAnimation": "Scale to 1.02 with brighter edge gleam.",
+              "pressAnimation": "Compress to 0.96 with quick inward settle and shadow reduction.",
+              "hoverSound": "none",
+              "clickSound": "none",
+              "sharedHelper": "ButtonEffects",
+              "touchBehavior": "Use Activated only on touch; closes Credits panel through controller."
+            }
+          }
+        ],
+        "description": "close icon. Distinct generated icon family matching the glossy fantasy-tech kit: bold simple silhouettes seated inside the same cyan/cobalt/gold lighting logic, readable at small sizes, with play triangle, gear, scroll/credits mark, and close X designed as peers.",
+        "semanticRole": "close",
+        "requirementIds": [
+          "close_icon",
+          "close_icon"
+        ],
+        "required": true,
+        "signature": {
+          "role": "icon",
+          "description": "close icon. Distinct generated icon family matching the glossy fantasy-tech kit: bold simple silhouettes seated inside the same cyan/cobalt/gold lighting logic, readable at small sizes, with play triangle, gear, scroll/credits mark, and close X designed as peers.",
+          "treatments": [],
+          "artDirection": "Premium fantasy-tech menu presentation built around a glossy cyan-to-cobalt material language with thick navy framing and restrained warm gold filigree. The screen stays mostly native and breathable, using a transparent menu dock instead of an outer menu panel so the title plate and three main actions carry the composition. Gemini-generated artwork should form one coherent kit: shared button skins for primary and secondary buttons, one shared modal panel skin, one title plate ornament, one restrained background ornament layer, matching slider track/handle artwork, matching toggle on/off pieces, and a distinct but stylistically unified icon family for play, settings, credits, and close. Live text remains crisp and high-contrast over artwork, with gold used only as highlight trim and not as the main text color. Corners and title plate receive the ornamental emphasis; the rest of the interface stays clean and readable.",
+          "outline": "Thick navy outer stroke language with selective inner gold highlight lines on artwork-bearing components. Native text is not heavily outlined; instead use contrast, subtle shadow, and clean panel separation. Button and panel skins should visually imply a 9-slice frame with a sturdy border and glossy top sheen.",
+          "shadow": "Soft deep navy drop shadow below major controls and modals, with short glossy contact shadows for buttons. Shadows are layered but restrained so the interface feels premium rather than floating excessively.",
+          "corners": [
+            8,
+            12,
+            16,
+            22,
+            28,
+            36
+          ],
+          "palette": {
+            "primary": "#39C8FF",
+            "secondary": "#2F66D0",
+            "accent": "#F2C86B",
+            "success": "#62D7A2",
+            "danger": "#E46A6A",
+            "neutralBackground": "#081425",
+            "neutralSurface": "#0F2340",
+            "textPrimary": "#F4FBFF",
+            "textSecondary": "#B7D3EA",
+            "outline": "#0A1B34",
+            "shadow": "#040B16"
+          },
+          "dimensions": [
+            512,
+            512
+          ],
+          "model": "google/gemini-3.1-flash-image",
+          "processingVersion": 3
+        },
+        "fingerprint": "660406c4ef5cdd47cacf28ed92545f1ab0da6b4c7786156ad50a2aa57036615f",
+        "metadata": {
+          "schemaVersion": 1,
+          "processingVersion": 3,
+          "generationUse": "ui_artwork",
+          "role": "icon",
+          "styleFingerprint": "660406c4ef5cdd47cacf28ed92545f1ab0da6b4c7786156ad50a2aa57036615f",
+          "componentIds": [
+            "cmp_settings_close",
+            "cmp_credits_close"
+          ],
+          "nodeNames": [
+            "SettingsCloseButton",
+            "CreditsCloseButton"
+          ],
+          "requirementIds": [
+            "close_icon"
+          ],
+          "required": true,
+          "width": 512,
+          "height": 512,
+          "renderStrategy": "image_fit",
+          "scaleType": "Fit",
+          "tintable": false,
+          "semanticRole": "close",
+          "sheetId": "",
+          "slot": null
+        }
+      },
+      {
+        "role": "icon",
+        "components": [
+          {
+            "id": "cmp_credits_button",
+            "primitive": "MenuButton",
+            "requirementId": "credits_button",
+            "label": "Credits",
+            "semanticAction": "open_credits_panel",
+            "hierarchy": "primary",
+            "groupId": "main_menu_actions",
+            "nodeName": "CreditsButton",
+            "regionId": "main_dock",
+            "paletteRole": "secondary",
+            "typographyRole": "button",
+            "visualTreatment": "component_surface Gemini-generated secondary button skin sharing the same kit as Settings with glossy cobalt body, cyan highlights, thick navy edge, and warm gold trim",
+            "size": {
+              "desktop": "Shared width with Settings; aligned directly beneath with consistent spacing.",
+              "mobile": "Full-width stacked button beneath Settings with equal size and spacing.",
+              "minTouchTarget": 52
+            },
+            "icon": {
+              "enabled": true,
+              "semanticRole": "credits",
+              "family": "aurora_gemini",
+              "assetStrategy": "generated",
+              "size": 24,
+              "padding": 12,
+              "visualWeight": "bold",
+              "perspective": "front",
+              "edgeTreatment": "navy keyline",
+              "shadowTreatment": "soft navy drop",
+              "paletteMode": "cyan-gold on dark"
+            },
+            "interaction": {
+              "hoverAnimation": "Scale to 1.02 with soft sheen increase and subtle lift.",
+              "pressAnimation": "Compress to 0.97 with quick settle and reduced highlight intensity, then rebound.",
+              "hoverSound": "none",
+              "clickSound": "none",
+              "sharedHelper": "ButtonEffects",
+              "touchBehavior": "Use Activated only on touch; opens Credits panel through controller with the same press feedback."
+            }
+          }
+        ],
+        "description": "credits icon. Distinct generated icon family matching the glossy fantasy-tech kit: bold simple silhouettes seated inside the same cyan/cobalt/gold lighting logic, readable at small sizes, with play triangle, gear, scroll/credits mark, and close X designed as peers.",
+        "semanticRole": "credits",
+        "requirementIds": [
+          "credits_icon"
+        ],
+        "required": true,
+        "signature": {
+          "role": "icon",
+          "description": "credits icon. Distinct generated icon family matching the glossy fantasy-tech kit: bold simple silhouettes seated inside the same cyan/cobalt/gold lighting logic, readable at small sizes, with play triangle, gear, scroll/credits mark, and close X designed as peers.",
+          "treatments": [],
+          "artDirection": "Premium fantasy-tech menu presentation built around a glossy cyan-to-cobalt material language with thick navy framing and restrained warm gold filigree. The screen stays mostly native and breathable, using a transparent menu dock instead of an outer menu panel so the title plate and three main actions carry the composition. Gemini-generated artwork should form one coherent kit: shared button skins for primary and secondary buttons, one shared modal panel skin, one title plate ornament, one restrained background ornament layer, matching slider track/handle artwork, matching toggle on/off pieces, and a distinct but stylistically unified icon family for play, settings, credits, and close. Live text remains crisp and high-contrast over artwork, with gold used only as highlight trim and not as the main text color. Corners and title plate receive the ornamental emphasis; the rest of the interface stays clean and readable.",
+          "outline": "Thick navy outer stroke language with selective inner gold highlight lines on artwork-bearing components. Native text is not heavily outlined; instead use contrast, subtle shadow, and clean panel separation. Button and panel skins should visually imply a 9-slice frame with a sturdy border and glossy top sheen.",
+          "shadow": "Soft deep navy drop shadow below major controls and modals, with short glossy contact shadows for buttons. Shadows are layered but restrained so the interface feels premium rather than floating excessively.",
+          "corners": [
+            8,
+            12,
+            16,
+            22,
+            28,
+            36
+          ],
+          "palette": {
+            "primary": "#39C8FF",
+            "secondary": "#2F66D0",
+            "accent": "#F2C86B",
+            "success": "#62D7A2",
+            "danger": "#E46A6A",
+            "neutralBackground": "#081425",
+            "neutralSurface": "#0F2340",
+            "textPrimary": "#F4FBFF",
+            "textSecondary": "#B7D3EA",
+            "outline": "#0A1B34",
+            "shadow": "#040B16"
+          },
+          "dimensions": [
+            512,
+            512
+          ],
+          "model": "google/gemini-3.1-flash-image",
+          "processingVersion": 3
+        },
+        "fingerprint": "6f22ef2f99d54db9206aa945dcc6a4ac33f2a8350ad3375198005c40edc56b26",
+        "metadata": {
+          "schemaVersion": 1,
+          "processingVersion": 3,
+          "generationUse": "ui_artwork",
+          "role": "icon",
+          "styleFingerprint": "6f22ef2f99d54db9206aa945dcc6a4ac33f2a8350ad3375198005c40edc56b26",
+          "componentIds": [
+            "cmp_credits_button"
+          ],
+          "nodeNames": [
+            "CreditsButton"
+          ],
+          "requirementIds": [
+            "credits_icon"
+          ],
+          "required": true,
+          "width": 512,
+          "height": 512,
+          "renderStrategy": "image_fit",
+          "scaleType": "Fit",
+          "tintable": false,
+          "semanticRole": "credits",
+          "sheetId": "",
+          "slot": null
+        }
+      },
+      {
+        "role": "control_artwork",
+        "components": [
+          {
+            "id": "cmp_music_toggle",
+            "primitive": "SettingsRow",
+            "requirementId": "music_toggle",
+            "label": "Music toggle",
+            "semanticAction": "toggle_music",
+            "hierarchy": "secondary",
+            "groupId": "settings_controls",
+            "nodeName": "MusicToggleThumb",
+            "regionId": "settings_modal_region",
+            "paletteRole": "primary",
+            "typographyRole": "caption",
+            "visualTreatment": "control_artwork Gemini-generated toggle on/off pieces with glossy cyan active state, deeper cobalt inactive state, thick navy frame, and gold accent pin details",
+            "size": {
+              "desktop": "Right-aligned pill toggle with clear state travel and large thumb piece.",
+              "mobile": "Enlarged right-aligned toggle for thumb use with extra hit zone.",
+              "minTouchTarget": 44
+            },
+            "icon": {
+              "enabled": false,
+              "semanticRole": "",
+              "family": "aurora_gemini",
+              "assetStrategy": "generated",
+              "size": 16,
+              "padding": 0,
+              "visualWeight": "none",
+              "perspective": "front",
+              "edgeTreatment": "navy keyline",
+              "shadowTreatment": "soft navy drop",
+              "paletteMode": "baked"
+            },
+            "interaction": {
+              "hoverAnimation": "Subtle glow and specular increase on desktop hover only.",
+              "pressAnimation": "Quick toggle thumb depress and 0.96 scale pulse before state transition settle.",
+              "hoverSound": "none",
+              "clickSound": "none",
+              "sharedHelper": "ButtonEffects",
+              "touchBehavior": "Use Activated only on touch; toggles state in controller without hover synthesis."
+            }
+          }
+        ],
+        "description": "ONE loose circular glossy cyan jewel with a gold rim, floating alone on chroma. A single round knob viewed from the front. Absolutely nothing extends to either side or behind it.",
+        "requirementIds": [
+          "toggle_on_off_art"
+        ],
+        "required": true,
+        "controlPart": "toggle_thumb",
+        "signature": {
+          "role": "control_artwork",
+          "description": "ONE loose circular glossy cyan jewel with a gold rim, floating alone on chroma. A single round knob viewed from the front. Absolutely nothing extends to either side or behind it.",
+          "treatments": [
+            "control_artwork Gemini-generated toggle on/off pieces with glossy cyan active state, deeper cobalt inactive state, thick navy frame, and gold accent pin details"
+          ],
+          "controlPart": "toggle_thumb",
+          "artDirection": "Premium fantasy-tech menu presentation built around a glossy cyan-to-cobalt material language with thick navy framing and restrained warm gold filigree. The screen stays mostly native and breathable, using a transparent menu dock instead of an outer menu panel so the title plate and three main actions carry the composition. Gemini-generated artwork should form one coherent kit: shared button skins for primary and secondary buttons, one shared modal panel skin, one title plate ornament, one restrained background ornament layer, matching slider track/handle artwork, matching toggle on/off pieces, and a distinct but stylistically unified icon family for play, settings, credits, and close. Live text remains crisp and high-contrast over artwork, with gold used only as highlight trim and not as the main text color. Corners and title plate receive the ornamental emphasis; the rest of the interface stays clean and readable.",
+          "outline": "Thick navy outer stroke language with selective inner gold highlight lines on artwork-bearing components. Native text is not heavily outlined; instead use contrast, subtle shadow, and clean panel separation. Button and panel skins should visually imply a 9-slice frame with a sturdy border and glossy top sheen.",
+          "shadow": "Soft deep navy drop shadow below major controls and modals, with short glossy contact shadows for buttons. Shadows are layered but restrained so the interface feels premium rather than floating excessively.",
+          "corners": [
+            8,
+            12,
+            16,
+            22,
+            28,
+            36
+          ],
+          "palette": {
+            "primary": "#39C8FF",
+            "secondary": "#2F66D0",
+            "accent": "#F2C86B",
+            "success": "#62D7A2",
+            "danger": "#E46A6A",
+            "neutralBackground": "#081425",
+            "neutralSurface": "#0F2340",
+            "textPrimary": "#F4FBFF",
+            "textSecondary": "#B7D3EA",
+            "outline": "#0A1B34",
+            "shadow": "#040B16"
+          },
+          "dimensions": [
+            512,
+            512
+          ],
+          "model": "google/gemini-3.1-flash-image",
+          "processingVersion": 3
+        },
+        "fingerprint": "7f6b9bdad918cdaac0115aa8702cc4405b1eeba593d21ef18c4db5541bd86ac6",
+        "metadata": {
+          "schemaVersion": 1,
+          "processingVersion": 3,
+          "generationUse": "ui_artwork",
+          "role": "control_artwork",
+          "styleFingerprint": "7f6b9bdad918cdaac0115aa8702cc4405b1eeba593d21ef18c4db5541bd86ac6",
+          "componentIds": [
+            "cmp_music_toggle"
+          ],
+          "nodeNames": [
+            "MusicToggleThumb"
+          ],
+          "requirementIds": [
+            "toggle_on_off_art"
+          ],
+          "required": true,
+          "width": 512,
+          "height": 512,
+          "renderStrategy": "image_fit",
+          "scaleType": "Fit",
+          "tintable": false,
+          "semanticRole": "",
+          "sheetId": "",
+          "slot": null,
+          "controlPart": "toggle_thumb"
+        }
+      },
+      {
+        "role": "control_artwork",
+        "components": [
+          {
+            "id": "cmp_volume_slider",
+            "primitive": "ProgressBar",
+            "requirementId": "volume_slider",
+            "label": "Volume slider",
+            "semanticAction": "adjust_volume",
+            "hierarchy": "secondary",
+            "groupId": "settings_controls",
+            "nodeName": "VolumeSliderHandle",
+            "regionId": "settings_modal_region",
+            "paletteRole": "primary",
+            "typographyRole": "caption",
+            "visualTreatment": "control_artwork Gemini-generated slider track and handle artwork in the same glossy cyan/cobalt kit with navy frame and gold focus accents",
+            "size": {
+              "desktop": "Wide horizontal slider occupying the main body of the row with comfortable drag handle.",
+              "mobile": "Near-full-width slider with enlarged handle and taller effective hit area for dragging.",
+              "minTouchTarget": 44
+            },
+            "icon": {
+              "enabled": false,
+              "semanticRole": "",
+              "family": "aurora_gemini",
+              "assetStrategy": "generated",
+              "size": 16,
+              "padding": 0,
+              "visualWeight": "none",
+              "perspective": "front",
+              "edgeTreatment": "navy keyline",
+              "shadowTreatment": "soft navy drop",
+              "paletteMode": "baked"
+            },
+            "interaction": {
+              "hoverAnimation": "Desktop hover brightens handle rim and slightly raises gloss on the track.",
+              "pressAnimation": "Handle compresses slightly on drag start and regains full size on release.",
+              "hoverSound": "none",
+              "clickSound": "none",
+              "sharedHelper": "ButtonEffects",
+              "touchBehavior": "Supports Activated-to-jump and drag input on touch; no hover behavior on touch devices."
+            }
+          },
+          {
+            "id": "cmp_volume_slider",
+            "primitive": "ProgressBar",
+            "requirementId": "volume_slider",
+            "label": "Volume slider",
+            "semanticAction": "adjust_volume",
+            "hierarchy": "secondary",
+            "groupId": "settings_controls",
+            "nodeName": "VolumeSliderHandle",
+            "regionId": "settings_modal_region",
+            "paletteRole": "primary",
+            "typographyRole": "caption",
+            "visualTreatment": "control_artwork Gemini-generated slider track and handle artwork in the same glossy cyan/cobalt kit with navy frame and gold focus accents",
+            "size": {
+              "desktop": "Wide horizontal slider occupying the main body of the row with comfortable drag handle.",
+              "mobile": "Near-full-width slider with enlarged handle and taller effective hit area for dragging.",
+              "minTouchTarget": 44
+            },
+            "icon": {
+              "enabled": false,
+              "semanticRole": "",
+              "family": "aurora_gemini",
+              "assetStrategy": "generated",
+              "size": 16,
+              "padding": 0,
+              "visualWeight": "none",
+              "perspective": "front",
+              "edgeTreatment": "navy keyline",
+              "shadowTreatment": "soft navy drop",
+              "paletteMode": "baked"
+            },
+            "interaction": {
+              "hoverAnimation": "Desktop hover brightens handle rim and slightly raises gloss on the track.",
+              "pressAnimation": "Handle compresses slightly on drag start and regains full size on release.",
+              "hoverSound": "none",
+              "clickSound": "none",
+              "sharedHelper": "ButtonEffects",
+              "touchBehavior": "Supports Activated-to-jump and drag input on touch; no hover behavior on touch devices."
+            }
+          }
+        ],
+        "description": "ONE loose square gemstone cap with rounded beveled navy corners and a cyan face, floating alone on chroma. A small standalone jewel button. Absolutely nothing extends to either side or behind it.",
+        "requirementIds": [
+          "slider_track_art",
+          "slider_handle_art",
+          "slider_handle_art",
+          "slider_handle_art"
+        ],
+        "required": true,
+        "controlPart": "slider_handle",
+        "signature": {
+          "role": "control_artwork",
+          "description": "ONE loose square gemstone cap with rounded beveled navy corners and a cyan face, floating alone on chroma. A small standalone jewel button. Absolutely nothing extends to either side or behind it.",
+          "treatments": [
+            "control_artwork Gemini-generated slider track and handle artwork in the same glossy cyan/cobalt kit with navy frame and gold focus accents"
+          ],
+          "controlPart": "slider_handle",
+          "artDirection": "Premium fantasy-tech menu presentation built around a glossy cyan-to-cobalt material language with thick navy framing and restrained warm gold filigree. The screen stays mostly native and breathable, using a transparent menu dock instead of an outer menu panel so the title plate and three main actions carry the composition. Gemini-generated artwork should form one coherent kit: shared button skins for primary and secondary buttons, one shared modal panel skin, one title plate ornament, one restrained background ornament layer, matching slider track/handle artwork, matching toggle on/off pieces, and a distinct but stylistically unified icon family for play, settings, credits, and close. Live text remains crisp and high-contrast over artwork, with gold used only as highlight trim and not as the main text color. Corners and title plate receive the ornamental emphasis; the rest of the interface stays clean and readable.",
+          "outline": "Thick navy outer stroke language with selective inner gold highlight lines on artwork-bearing components. Native text is not heavily outlined; instead use contrast, subtle shadow, and clean panel separation. Button and panel skins should visually imply a 9-slice frame with a sturdy border and glossy top sheen.",
+          "shadow": "Soft deep navy drop shadow below major controls and modals, with short glossy contact shadows for buttons. Shadows are layered but restrained so the interface feels premium rather than floating excessively.",
+          "corners": [
+            8,
+            12,
+            16,
+            22,
+            28,
+            36
+          ],
+          "palette": {
+            "primary": "#39C8FF",
+            "secondary": "#2F66D0",
+            "accent": "#F2C86B",
+            "success": "#62D7A2",
+            "danger": "#E46A6A",
+            "neutralBackground": "#081425",
+            "neutralSurface": "#0F2340",
+            "textPrimary": "#F4FBFF",
+            "textSecondary": "#B7D3EA",
+            "outline": "#0A1B34",
+            "shadow": "#040B16"
+          },
+          "dimensions": [
+            512,
+            512
+          ],
+          "model": "google/gemini-3.1-flash-image",
+          "processingVersion": 3
+        },
+        "fingerprint": "a0894ea0e0a3e4b5b40448d1d1744f0b74e485543d9f72c1052ab9f87edccaee",
+        "metadata": {
+          "schemaVersion": 1,
+          "processingVersion": 3,
+          "generationUse": "ui_artwork",
+          "role": "control_artwork",
+          "styleFingerprint": "a0894ea0e0a3e4b5b40448d1d1744f0b74e485543d9f72c1052ab9f87edccaee",
+          "componentIds": [
+            "cmp_volume_slider"
+          ],
+          "nodeNames": [
+            "VolumeSliderHandle"
+          ],
+          "requirementIds": [
+            "slider_track_art",
+            "slider_handle_art"
+          ],
+          "required": true,
+          "width": 512,
+          "height": 512,
+          "renderStrategy": "image_fit",
+          "scaleType": "Fit",
+          "tintable": false,
+          "semanticRole": "",
+          "sheetId": "",
+          "slot": null,
+          "controlPart": "slider_handle"
+        }
+      },
+      {
+        "role": "icon",
+        "components": [
+          {
+            "id": "cmp_settings_button",
+            "primitive": "MenuButton",
+            "requirementId": "settings_button",
+            "label": "Settings",
+            "semanticAction": "open_settings_panel",
+            "hierarchy": "primary",
+            "groupId": "main_menu_actions",
+            "nodeName": "SettingsButton",
+            "regionId": "main_dock",
+            "paletteRole": "secondary",
+            "typographyRole": "button",
+            "visualTreatment": "component_surface Gemini-generated secondary button skin sharing the same kit as Credits with glossy cobalt body, cyan highlights, thick navy edge, and warm gold trim",
+            "size": {
+              "desktop": "Shared width with Credits; slightly shorter than Play while maintaining strong readability.",
+              "mobile": "Full-width stacked button below Play with thumb-friendly height and equal size to Credits.",
+              "minTouchTarget": 52
+            },
+            "icon": {
+              "enabled": true,
+              "semanticRole": "settings",
+              "family": "aurora_gemini",
+              "assetStrategy": "generated",
+              "size": 24,
+              "padding": 12,
+              "visualWeight": "bold",
+              "perspective": "front",
+              "edgeTreatment": "navy keyline",
+              "shadowTreatment": "soft navy drop",
+              "paletteMode": "cyan-gold on dark"
+            },
+            "interaction": {
+              "hoverAnimation": "Scale to 1.02 with soft sheen increase and subtle lift.",
+              "pressAnimation": "Compress to 0.97 with quick settle and reduced highlight intensity, then rebound.",
+              "hoverSound": "none",
+              "clickSound": "none",
+              "sharedHelper": "ButtonEffects",
+              "touchBehavior": "Use Activated only on touch; opens Settings panel through controller with the same press feedback."
+            }
+          }
+        ],
+        "description": "settings icon. Distinct generated icon family matching the glossy fantasy-tech kit: bold simple silhouettes seated inside the same cyan/cobalt/gold lighting logic, readable at small sizes, with play triangle, gear, scroll/credits mark, and close X designed as peers.",
+        "semanticRole": "settings",
+        "requirementIds": [
+          "settings_icon"
+        ],
+        "required": true,
+        "signature": {
+          "role": "icon",
+          "description": "settings icon. Distinct generated icon family matching the glossy fantasy-tech kit: bold simple silhouettes seated inside the same cyan/cobalt/gold lighting logic, readable at small sizes, with play triangle, gear, scroll/credits mark, and close X designed as peers.",
+          "treatments": [],
+          "artDirection": "Premium fantasy-tech menu presentation built around a glossy cyan-to-cobalt material language with thick navy framing and restrained warm gold filigree. The screen stays mostly native and breathable, using a transparent menu dock instead of an outer menu panel so the title plate and three main actions carry the composition. Gemini-generated artwork should form one coherent kit: shared button skins for primary and secondary buttons, one shared modal panel skin, one title plate ornament, one restrained background ornament layer, matching slider track/handle artwork, matching toggle on/off pieces, and a distinct but stylistically unified icon family for play, settings, credits, and close. Live text remains crisp and high-contrast over artwork, with gold used only as highlight trim and not as the main text color. Corners and title plate receive the ornamental emphasis; the rest of the interface stays clean and readable.",
+          "outline": "Thick navy outer stroke language with selective inner gold highlight lines on artwork-bearing components. Native text is not heavily outlined; instead use contrast, subtle shadow, and clean panel separation. Button and panel skins should visually imply a 9-slice frame with a sturdy border and glossy top sheen.",
+          "shadow": "Soft deep navy drop shadow below major controls and modals, with short glossy contact shadows for buttons. Shadows are layered but restrained so the interface feels premium rather than floating excessively.",
+          "corners": [
+            8,
+            12,
+            16,
+            22,
+            28,
+            36
+          ],
+          "palette": {
+            "primary": "#39C8FF",
+            "secondary": "#2F66D0",
+            "accent": "#F2C86B",
+            "success": "#62D7A2",
+            "danger": "#E46A6A",
+            "neutralBackground": "#081425",
+            "neutralSurface": "#0F2340",
+            "textPrimary": "#F4FBFF",
+            "textSecondary": "#B7D3EA",
+            "outline": "#0A1B34",
+            "shadow": "#040B16"
+          },
+          "dimensions": [
+            512,
+            512
+          ],
+          "model": "google/gemini-3.1-flash-image",
+          "processingVersion": 3
+        },
+        "fingerprint": "a5ce17122eb56d0a6c01bd958ebf28d8a405e48abad3f5ef05a1ad897d63ea5b",
+        "metadata": {
+          "schemaVersion": 1,
+          "processingVersion": 3,
+          "generationUse": "ui_artwork",
+          "role": "icon",
+          "styleFingerprint": "a5ce17122eb56d0a6c01bd958ebf28d8a405e48abad3f5ef05a1ad897d63ea5b",
+          "componentIds": [
+            "cmp_settings_button"
+          ],
+          "nodeNames": [
+            "SettingsButton"
+          ],
+          "requirementIds": [
+            "settings_icon"
+          ],
+          "required": true,
+          "width": 512,
+          "height": 512,
+          "renderStrategy": "image_fit",
+          "scaleType": "Fit",
+          "tintable": false,
+          "semanticRole": "settings",
+          "sheetId": "",
+          "slot": null
+        }
+      },
+      {
+        "role": "icon",
+        "components": [
+          {
+            "id": "cmp_play_button",
+            "primitive": "PrimaryGameCTA",
+            "requirementId": "play_button",
+            "label": "Play",
+            "semanticAction": "start_play",
+            "hierarchy": "primary",
+            "groupId": "main_menu_actions",
+            "nodeName": "PlayButton",
+            "regionId": "main_dock",
+            "paletteRole": "primary",
+            "typographyRole": "button",
+            "visualTreatment": "component_surface Gemini-generated primary button skin with glossy cyan face, cobalt gradient body, thick navy rim, warm gold accent cuts, and readable live label space",
+            "size": {
+              "desktop": "Largest menu button; full dock width, tall profile, visually 20-25% larger than Settings and Credits.",
+              "mobile": "Dominant full-width thumb-sized button at top of action stack with extra height and generous inner padding.",
+              "minTouchTarget": 56
+            },
+            "icon": {
+              "enabled": true,
+              "semanticRole": "play",
+              "family": "aurora_gemini",
+              "assetStrategy": "generated",
+              "size": 24,
+              "padding": 12,
+              "visualWeight": "bold",
+              "perspective": "front",
+              "edgeTreatment": "navy keyline",
+              "shadowTreatment": "soft navy drop",
+              "paletteMode": "cyan-gold on dark"
+            },
+            "interaction": {
+              "hoverAnimation": "Scale to 1.03 with a gentle upward nudge and brighter cyan gloss sweep; icon and label move together.",
+              "pressAnimation": "Compress to 0.97 with quick downward settle and shadow tightening, then release back with soft rebound.",
+              "hoverSound": "none",
+              "clickSound": "none",
+              "sharedHelper": "ButtonEffects",
+              "touchBehavior": "Use Activated only on touch; show press feedback without hover. On activation close menu and hand off to local play hook."
+            }
+          }
+        ],
+        "description": "play icon. Distinct generated icon family matching the glossy fantasy-tech kit: bold simple silhouettes seated inside the same cyan/cobalt/gold lighting logic, readable at small sizes, with play triangle, gear, scroll/credits mark, and close X designed as peers.",
+        "semanticRole": "play",
+        "requirementIds": [
+          "play_icon"
+        ],
+        "required": true,
+        "signature": {
+          "role": "icon",
+          "description": "play icon. Distinct generated icon family matching the glossy fantasy-tech kit: bold simple silhouettes seated inside the same cyan/cobalt/gold lighting logic, readable at small sizes, with play triangle, gear, scroll/credits mark, and close X designed as peers.",
+          "treatments": [],
+          "artDirection": "Premium fantasy-tech menu presentation built around a glossy cyan-to-cobalt material language with thick navy framing and restrained warm gold filigree. The screen stays mostly native and breathable, using a transparent menu dock instead of an outer menu panel so the title plate and three main actions carry the composition. Gemini-generated artwork should form one coherent kit: shared button skins for primary and secondary buttons, one shared modal panel skin, one title plate ornament, one restrained background ornament layer, matching slider track/handle artwork, matching toggle on/off pieces, and a distinct but stylistically unified icon family for play, settings, credits, and close. Live text remains crisp and high-contrast over artwork, with gold used only as highlight trim and not as the main text color. Corners and title plate receive the ornamental emphasis; the rest of the interface stays clean and readable.",
+          "outline": "Thick navy outer stroke language with selective inner gold highlight lines on artwork-bearing components. Native text is not heavily outlined; instead use contrast, subtle shadow, and clean panel separation. Button and panel skins should visually imply a 9-slice frame with a sturdy border and glossy top sheen.",
+          "shadow": "Soft deep navy drop shadow below major controls and modals, with short glossy contact shadows for buttons. Shadows are layered but restrained so the interface feels premium rather than floating excessively.",
+          "corners": [
+            8,
+            12,
+            16,
+            22,
+            28,
+            36
+          ],
+          "palette": {
+            "primary": "#39C8FF",
+            "secondary": "#2F66D0",
+            "accent": "#F2C86B",
+            "success": "#62D7A2",
+            "danger": "#E46A6A",
+            "neutralBackground": "#081425",
+            "neutralSurface": "#0F2340",
+            "textPrimary": "#F4FBFF",
+            "textSecondary": "#B7D3EA",
+            "outline": "#0A1B34",
+            "shadow": "#040B16"
+          },
+          "dimensions": [
+            512,
+            512
+          ],
+          "model": "google/gemini-3.1-flash-image",
+          "processingVersion": 3
+        },
+        "fingerprint": "b9355633e8d336bee8f7cad9ff4c5bf6548980e349728d39835d61631344ce6d",
+        "metadata": {
+          "schemaVersion": 1,
+          "processingVersion": 3,
+          "generationUse": "ui_artwork",
+          "role": "icon",
+          "styleFingerprint": "b9355633e8d336bee8f7cad9ff4c5bf6548980e349728d39835d61631344ce6d",
+          "componentIds": [
+            "cmp_play_button"
+          ],
+          "nodeNames": [
+            "PlayButton"
+          ],
+          "requirementIds": [
+            "play_icon"
+          ],
+          "required": true,
+          "width": 512,
+          "height": 512,
+          "renderStrategy": "image_fit",
+          "scaleType": "Fit",
+          "tintable": false,
+          "semanticRole": "play",
+          "sheetId": "",
+          "slot": null
+        }
+      }
+    ]
+  },
+  "regions": [
+    {
+      "slot": 0,
+      "box": [
+        90,
+        40,
+        398,
+        475
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 1,
+      "box": [
+        90,
+        40,
+        398,
+        475
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 2,
+      "box": [
+        90,
+        500,
+        398,
+        719
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 3,
+      "box": [
+        90,
+        760,
+        398,
+        979
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 4,
+      "box": [
+        450,
+        60,
+        690,
+        239
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 5,
+      "box": [
+        450,
+        299,
+        690,
+        479
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 6,
+      "box": [
+        450,
+        500,
+        690,
+        719
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 7,
+      "box": [
+        450,
+        760,
+        690,
+        979
+      ],
+      "reason": ""
+    }
+  ]
+}

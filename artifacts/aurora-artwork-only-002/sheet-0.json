@@ -1,0 +1,120 @@
+{
+  "regions": [
+    {
+      "slot": 0,
+      "box": [
+        100,
+        39,
+        489,
+        310
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 1,
+      "box": [
+        240,
+        369,
+        394,
+        639
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 2,
+      "box": [
+        240,
+        682,
+        394,
+        960
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 3,
+      "box": [
+        640,
+        100,
+        784,
+        317
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 4,
+      "box": [
+        640,
+        350,
+        814,
+        682
+      ],
+      "reason": ""
+    },
+    {
+      "slot": 5,
+      "box": [
+        500,
+        753,
+        799,
+        940
+      ],
+      "reason": ""
+    }
+  ],
+  "reusedSource": false,
+  "usage": {},
+  "width": 5504,
+  "sheetId": "1166ba61242764176cfaa717be3e8a2096744e138d591a5c5b633a216e311730",
+  "model": "google/gemini-3.1-flash-image",
+  "source": {
+    "sha256": "289692c2f80ed4e2a227147766fd927244d7962838ff4baeaf8214f221432b22",
+    "bytes": 16482124,
+    "storagePath": "asset-platform/users/4b801b407b639dca73828adf869dbdc2/assets/ui_sheet_1166ba61242764176cfaa717be3e8a2096744e138d591a5c5b633a216e311730/versions/source_v1/master.png",
+    "contentType": "image/png"
+  },
+  "items": [
+    {
+      "fingerprint": "54ec151fda423f0d3f0dd77917248300ac243ac07d8a3e5110e896ff0998ca40",
+      "error": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "fingerprint": "5f445da8b98588c90c407e2b7e14bac2d8fd5086f5831d97a5c4761b948150d3",
+      "error": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "fingerprint": "ccaf2c88af1d011b07fea507f44d892aa5d2c5ba572244e77c1320e863027825",
+      "error": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "fingerprint": "0b1b07002d5c6e62cef8c6cd646c18fab8dfef645a59fc475dd596686d04e64e",
+      "error": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "fingerprint": "18d80685743559ea034153ec9556713093764cb54e70ecfe926587010c1c2318",
+      "error": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    },
+    {
+      "fingerprint": "20efc7a39a4c797c9ea86850a6d7dd3d4174296c93854833180001f8c6154df9",
+      "error": {
+        "code": "UI_SHEET_PART_UNVERIFIED",
+        "message": "No complete standalone silhouette matches the supplied box."
+      }
+    }
+  ],
+  "height": 3072
+}
