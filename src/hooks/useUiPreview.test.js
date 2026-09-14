@@ -221,7 +221,7 @@ test("a failed job surfaces an error message and a callable retry", async () => 
   expect(requestUiPreview).toHaveBeenCalled();
 });
 
-test("switching identity revokes the previous object URL", async () => {
+test("retains one previous URL for crossfade and revokes it on the next replacement", async () => {
   URL.revokeObjectURL.mockImplementation(url => {
     expect(screen.queryAllByRole('img').some(img => img.getAttribute('src') === url)).toBe(false);
   });
@@ -239,7 +239,13 @@ test("switching identity revokes the previous object URL", async () => {
   view.rerender(<Probe {...baseOptions} viewportId="phone" />);
   await flush();
   await waitFor(() => expect(latest.current.imageUrl).toBe("blob:preview-2"));
-  expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:preview-1");
+  expect(latest.current.previousImageUrl).toBe('blob:preview-1');
+  expect(URL.revokeObjectURL).not.toHaveBeenCalledWith('blob:preview-1');
+  view.rerender(<Probe {...baseOptions} viewportId="desktop" />);
+  await flush();
+  await waitFor(() => expect(latest.current.imageUrl).toBe('blob:preview-3'));
+  expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:preview-1');
+  expect(latest.current.previousImageUrl).toBe('blob:preview-2');
 });
 
 test("the previous image remains visible through a new revision and a failed replacement", async () => {

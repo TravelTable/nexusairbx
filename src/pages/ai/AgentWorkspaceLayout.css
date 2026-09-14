@@ -6,12 +6,6 @@
   min-height: 0;
 }
 
-.nexus-studio-root {
-  background:
-    radial-gradient(circle at 72% 92%, rgb(var(--nx-purple-rgb) / 10%), transparent 38%),
-    var(--nx-depth);
-}
-
 .nexus-studio-page,
 .nexus-studio-layout,
 .nexus-studio-main {
@@ -32,14 +26,12 @@
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  border-color: var(--nx-rule) !important;
+  border-color: var(--nx-rule);
   border-radius: 0;
-  background: color-mix(in srgb, var(--nx-work) 94%, black 6%) !important;
-  box-shadow: none;
 }
 
 .nexus-project-sidebar .nexus-project-tree {
-  background: var(--nx-work) !important;
+  background: transparent;
 }
 
 .nexus-studio-main {
@@ -61,20 +53,6 @@
 
 .nexus-studio-root .rounded-full {
   border-radius: var(--nx-radius-pill) !important;
-}
-
-.nexus-studio-root
-  :where(.shadow, .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl) {
-  box-shadow: none !important;
-}
-
-.nexus-studio-root [class*="bg-gradient"] {
-  /* design-guard-allow: removes legacy gradient utilities */
-  background-image: none !important;
-}
-
-.nexus-studio-root :where(button, a) {
-  box-shadow: none !important;
 }
 
 .nexus-studio-root :where(input, textarea, select) {

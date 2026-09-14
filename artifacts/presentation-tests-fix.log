@@ -1,0 +1,552 @@
+
+> nexusrbx-react@0.1.0 test
+> react-scripts test --watchAll=false --runInBand --runTestsByPath src/components/ai/chat/ChatComposer.test.jsx src/components/ai/chat/AnimatedStatusText.test.jsx src/pages/ai/ui/UiCreatorWorkspace.test.jsx src/pages/ai/ui/UiPreviewPane.test.jsx src/pages/ai/ui/UiLiveFiles.test.jsx src/hooks/useUiPreview.test.js
+
+PASS src/components/ai/chat/ChatComposer.test.jsx (6.553 s)
+FAIL src/pages/ai/ui/UiCreatorWorkspace.test.jsx
+  ● live actions use readable labels, never raw backend payloads
+
+    TestingLibraryElementError: Unable to find a label with the text of: Build actions
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="uc-app "
+          data-agent-active="true"
+          data-agent-flow="true"
+          data-agent-glow="true"
+          data-agent-motion="working"
+          data-agent-pulse="true"
+          data-agent-state="generating"
+          data-agent-tone="active"
+        >
+          <header
+            class="workspace-header"
+            data-workspace-ribbon="true"
+          >
+            <div
+              class="workspace-header__identity"
+            >
+              <a
+                aria-label="NexusRBX home"
+                class="brand"
+                href="/"
+              >
+                <img
+                  alt=""
+                  aria-hidden="true"
+                  class="brandIcon"
+                  src="/favicon.png"
+                />
+              </a>
+              <button
+                aria-label="Change game. Current game: Game"
+                class="workspace-header__project"
+                title="Game"
+              >
+                <span>
+                  Game
+                </span>
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-chevron-down"
+                  fill="none"
+                  height="13"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="13"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="m6 9 6 6 6-6"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div
+              aria-label="Workspace mode"
+              class="workspace-header__tabs"
+              data-tour="mode-switcher"
+              role="group"
+            >
+              <button
+                aria-pressed="false"
+                type="button"
+              >
+                Agent
+              </button>
+              <button
+                aria-pressed="true"
+                type="button"
+              >
+                UI
+              </button>
+              <button
+                aria-pressed="false"
+                type="button"
+              >
+                Assets
+              </button>
+            </div>
+            <div
+              class="workspace-header__right"
+            >
+              <div
+                class="workspace-header__tools"
+              >
+                <button
+                  aria-controls="workspace-page-actions"
+                  aria-expanded="false"
+                  aria-label="Page actions"
+                  class="workspace-header__more"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="lucide lucide-ellipsis"
+                    fill="none"
+                    height="18"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="18"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="1"
+                    />
+                    <circle
+                      cx="19"
+                      cy="12"
+                      r="1"
+                    />
+                    <circle
+                      cx="5"
+                      cy="12"
+                      r="1"
+                    />
+                  </svg>
+                </button>
+                <div
+                  class="workspace-header__actions"
+                  data-open="false"
+                  id="workspace-page-actions"
+                >
+                  <div
+                    class="workspace-header__model"
+                  />
+                  <div
+                    class="workspace-header__page-slot"
+                  />
+                </div>
+              </div>
+              <div
+                class="workspace-header__studio"
+                data-tour="studio-pair"
+              />
+              <div
+                class="workspace-header__account"
+              />
+            </div>
+          </header>
+          <section
+            aria-label="UI Creator"
+            class="uc-main"
+          >
+            <header
+              class="uc-local-toolbar"
+            >
+              <div
+                aria-label="UI workspace view"
+                class="uc-view-tabs"
+                role="tablist"
+              >
+                <button
+                  aria-selected="true"
+                  role="tab"
+                  type="button"
+                >
+                  Chat
+                </button>
+                <button
+                  aria-selected="false"
+                  role="tab"
+                  type="button"
+                >
+                  Preview
+                </button>
+              </div>
+              <div
+                class="uc-workspace-actions"
+              >
+                <button
+                  aria-controls="ui-design-picker"
+                  aria-expanded="false"
+                  data-ui-picker-trigger="true"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="lucide lucide-plus"
+                    fill="none"
+                    height="15"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="15"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M5 12h14"
+                    />
+                    <path
+                      d="M12 5v14"
+                    />
+                  </svg>
+                  New UI
+                </button>
+                <button
+                  aria-controls="ui-build-drawer"
+                  aria-expanded="false"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="lucide lucide-code-xml"
+                    fill="none"
+                    height="15"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="15"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="m18 16 4-4-4-4"
+                    />
+                    <path
+                      d="m6 8-4 4 4 4"
+                    />
+                    <path
+                      d="m14.5 4-5 16"
+                    />
+                  </svg>
+                  Inspect
+                </button>
+                <button
+                  aria-controls="ui-build-drawer"
+                  aria-expanded="false"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="lucide lucide-rotate-ccw-clock"
+                    fill="none"
+                    height="15"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="15"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"
+                    />
+                    <path
+                      d="M3 3v5h5"
+                    />
+                    <path
+                      d="M12 7v5l4 2"
+                    />
+                  </svg>
+                  History
+                </button>
+                <button
+                  class="uc-action-primary"
+                  disabled=""
+                  type="button"
+                >
+                  Apply to Studio
+                </button>
+              </div>
+            </header>
+            <div
+              class="uc-session"
+              data-mobile-view="chat"
+              style="--uc-chat-width: 280px;"
+            >
+              <section
+                aria-label="AI build conversation"
+                class="uc-conversation"
+              >
+                <header
+                  class="uc-pane-header"
+                >
+                  <span>
+                    Assistant
+                  </span>
+                </header>
+                <div>
+                  <div>
+                    <div
+                      class="uc-session-message"
+                    >
+                      Build a shop
+                    </div>
+                  </div>
+                </div>
+                <div
+                  class="uc-conversation-footer"
+                >
+                  <button>
+                    Stop 
+                    build
+                  </button>
+                </div>
+                <div
+                  class="nexus-run-bar mx-auto flex w-full max-w-[840px] items-center gap-2 px-5 py-1.5 text-xs text-[var(--ds-text-secondary)]"
+                  data-agent-active="true"
+                  data-agent-flow="true"
+                  data-agent-glow="true"
+                  data-agent-motion="working"
+                  data-agent-pulse="true"
+                  data-agent-state="generating"
+                  data-agent-tone="active"
+                  data-testid="compact-agent-run-bar"
+                >
+                  <span
+                    aria-hidden="true"
+                    class="agent-status-dot nx-state-mark"
+                  />
+                  <span
+                    aria-atomic="true"
+                    aria-live="polite"
+                    class="min-w-0 flex-1 truncate"
+                    role="status"
+                  >
+                    <span
+                      aria-atomic="true"
+                      class="nexus-status-text"
+                    >
+                      <span
+                        aria-hidden="true"
+                        class="nexus-status-text-out"
+                      >
+                        Writing UI files
+                      </span>
+                      <span
+                        class="nexus-status-text-in"
+                      >
+                        Saving files
+                      </span>
+                    </span>
+                  </span>
+                  <button
+                    aria-label="Open build activity"
+                    class="min-h-[44px] rounded px-2 py-1 underline-offset-4 md:min-h-0 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                    type="button"
+                  >
+                    View
+                  </button>
+                </div>
+                <div
+                  class="uc-composer"
+                >
+                  <form>
+                    <textarea
+                      aria-label="UI prompt"
+                    />
+                    <button
+                      disabled=""
+                    >
+                      Send prompt
+                    </button>
+                  </form>
+                </div>
+              </section>
+              <div
+                aria-label="Resize conversation"
+                aria-orientation="vertical"
+                aria-valuemax="520"
+                aria-valuemin="280"
+                aria-valuenow="280"
+                class="uc-resize"
+                role="separator"
+                tabindex="0"
+              />
+              <section
+                aria-label="UI preview"
+                class="uc-preview-pane"
+              >
+                <header
+                  class="uc-preview-header"
+                >
+                  <div
+                    class="uc-preview-heading"
+                  >
+                    <span>
+                      UI Preview
+                    </span>
+                    <div
+                      class="uc-design-title"
+                    >
+                      <button
+                        aria-controls="ui-design-picker"
+                        aria-expanded="false"
+                        aria-label="Choose UI. Current: Shop"
+                        data-ui-picker-trigger="true"
+                        type="button"
+                      >
+                        <strong>
+                          Shop
+                        </strong>
+                        <svg
+                          aria-hidden="true"
+                          class="lucide lucide-chevron-down"
+                          fill="none"
+                          height="15"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          viewBox="0 0 24 24"
+                          width="15"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="m6 9 6 6 6-6"
+                          />
+                        </svg>
+                      </button>
+                      <button
+                        class="uc-rename"
+                        disabled=""
+                        type="button"
+                      >
+                        Rename
+                      </button>
+                    </div>
+                  </div>
+                  <div
+                    aria-label="UI status"
+                    class="uc-status-row"
+                  >
+                    <span
+                      class="uc-status-chip uc-status-chip--working"
+                    >
+                      Building
+                    </span>
+                    <span
+                      class="uc-status-chip uc-status-chip--neutral"
+                    >
+                      Not applied
+                    </span>
+                    <span
+                      class="uc-status-chip uc-status-chip--warning"
+                    >
+                      Runtime untested
+                    </span>
+                  </div>
+                </header>
+                <div
+                  class="uc-preview-stage"
+                >
+                  <div
+                    hidden=""
+                    style="height: 100%;"
+                  >
+                    <div
+                      data-testid="preview"
+                    >
+                      design-1
+                    </div>
+                  </div>
+                  <section
+                    aria-label="Generated UI files"
+                    class="uc-live-files"
+                  >
+                    <div
+                      class="uc-live-files__header"
+                    >
+                      <span>
+                        Saving files
+                        <span
+                          aria-hidden="true"
+                          class="nx-working-dots"
+                        >
+                          <i />
+                          <i />
+                          <i />
+                        </span>
+                      </span>
+                      <small />
+                    </div>
+                    <div
+                      aria-label="Source files"
+                      class="uc-live-files__tabs"
+                      role="tablist"
+                    />
+                    <div
+                      class="uc-live-files__editor"
+                    >
+                      <div
+                        class="uc-live-files__empty"
+                      >
+                        Your files will appear here as they’re written.
+                        <span
+                          aria-hidden="true"
+                          class="nx-working-dots"
+                        >
+                          <i />
+                          <i />
+                          <i />
+                        </span>
+                      </div>
+                    </div>
+                  </section>
+                </div>
+              </section>
+            </div>
+          </section>
+        </div>
+      </div>
+    </body>
+
+      184 |   const {act}=require("@testing-library/react");
+      185 |   await act(async()=>deliver({eventId:"stream-1",sequence:1,eventType:"ui_build_progress",payload:{designId:"design-1",stage:"preparing",message:'RAW_BACKEND_PAYLOAD',sourceRevision:"rev-1"}}));
+    > 186 |   expect(screen.getByLabelText("Build actions")).toHaveTextContent("Saving files");
+          |                 ^
+      187 |   expect(screen.queryByText("RAW_BACKEND_PAYLOAD")).not.toBeInTheDocument();
+      188 | });
+      189 |
+
+      at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+      at getAllByLabelText (node_modules/@testing-library/dom/dist/queries/label-text.js:111:38)
+      at node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at getByLabelText (node_modules/@testing-library/dom/dist/query-helpers.js:95:19)
+      at Object.<anonymous> (src/pages/ai/ui/UiCreatorWorkspace.test.jsx:186:17)
+
+PASS src/pages/ai/ui/UiPreviewPane.test.jsx
+PASS src/pages/ai/ui/UiLiveFiles.test.jsx
+PASS src/hooks/useUiPreview.test.js
+PASS src/components/ai/chat/AnimatedStatusText.test.jsx
+
+Test Suites: 1 failed, 5 passed, 6 total
+Tests:       1 failed, 69 passed, 70 total
+Snapshots:   0 total
+Time:        14.69 s
+Ran all test suites within paths "src/components/ai/chat/ChatComposer.test.jsx", "src/components/ai/chat/AnimatedStatusText.test.jsx", "src/pages/ai/ui/UiCreatorWorkspace.test.jsx", "src/pages/ai/ui/UiPreviewPane.test.jsx", "src/pages/ai/ui/UiLiveFiles.test.jsx", "src/hooks/useUiPreview.test.js".

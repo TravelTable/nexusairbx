@@ -154,7 +154,7 @@ export default function AssistantBubble({
       </div>
 
       {hasArtifact && (
-        <div className="mt-5 w-full max-w-[1080px] space-y-4">
+        <div className="nx-generated-artifact mt-5 w-full max-w-[1080px] space-y-4">
           {qaReport && Number.isFinite(Number(qaReport.score)) && (
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <span className="text-[10px] font-black text-[var(--ds-text-muted)] uppercase tracking-widest">Quality &amp; Trust</span>

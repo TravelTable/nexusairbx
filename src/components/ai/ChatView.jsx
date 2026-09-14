@@ -59,6 +59,7 @@ export default function ChatView({
   navigationControls,
   navigationButtonRef,
   showHeader = true,
+  compactStatus = false,
 }) {
   const showEmpty = messages.length === 0 && !pendingMessage;
   const rootRef = useRef(null);
@@ -107,6 +108,7 @@ export default function ChatView({
               />
             ) : (
               <MessageList
+                compactStatus={compactStatus}
                 onPublishAttachment={onPublishAttachment} studioSessionId={studioSessionId} studioConnected={studioConnected}
                 messages={messages}
                 pendingMessage={pendingMessage}

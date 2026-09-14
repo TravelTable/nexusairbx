@@ -166,6 +166,7 @@ function SingleMessageList({
   onRestoreRun,
   hideMessages = false,
   arrivalMessageId = null,
+  compactStatus = false,
 }) {
   // Firestore can publish the completed assistant message one render before the
   // orchestration cleanup runs. This remains a local guard for call sites that
@@ -329,6 +330,7 @@ function SingleMessageList({
                   </div>
                   {hasRawReasoning ? <Separator className="bg-[var(--ds-fill-hover)]" /> : null}
                   <LiveWorkStream
+                    meaningfulOnly={compactStatus}
                     pendingMessage={pendingMessage}
                     generationStage={generationStage}
                     onApproveStep={onApproveStep}
@@ -343,11 +345,11 @@ function SingleMessageList({
                     isStreaming={reasoningStreaming}
                     requireRawReasoningFlag
                   />
-                  <LiveActivityHeader
+                  {!compactStatus ? <LiveActivityHeader
                     pendingMessage={pendingMessage}
                     generationStage={generationStage}
                     parsed={pendingParsed}
-                  />
+                  /> : null}
                 </>
               )}
 

@@ -153,13 +153,19 @@ export default function LiveWorkStream({
   onApproveStep,
   approvingStepId,
   hideThinkingRows = false,
+  meaningfulOnly = false,
 }) {
   const streamState = pendingMessage?.streamState;
   const activity = useMemo(() => {
     const raw = synthesizeActivity(streamState || {}, pendingMessage);
-    if (!hideThinkingRows) return raw;
-    return raw.filter((item) => item?.type !== "thinking");
-  }, [streamState, pendingMessage, hideThinkingRows]);
+    return raw.filter(item => {
+      if (meaningfulOnly) {
+        const step = (pendingMessage?.steps || []).find(s => `tool-${s.id}` === item.id || s.id === item.id);
+        return item.type === "file_ready" || item.type === "plan" || activityMotionStatus(item) === "error" || step?.status === "awaiting_approval";
+      }
+      return !hideThinkingRows || item?.type !== "thinking";
+    });
+  }, [streamState, pendingMessage, hideThinkingRows, meaningfulOnly]);
   const previousActivityStatusesRef = useRef(new Map());
   const motionEvents = new Map();
 
@@ -197,7 +203,7 @@ export default function LiveWorkStream({
 
   return (
     <div className="w-full py-1" data-testid="live-work-stream">
-      <div
+      {!meaningfulOnly || reconnecting ? <div
         className="min-h-6 text-sm font-medium text-[var(--ds-text-secondary)]"
         role="status"
         aria-live="polite"
@@ -206,7 +212,7 @@ export default function LiveWorkStream({
         <Shimmer as="span" duration={1.8} spread={1.5}>
           {headerLabel}
         </Shimmer>
-      </div>
+      </div> : null}
       <ChainOfThought open className="mt-3 w-full space-y-0">
         <ChainOfThoughtContent className="mt-0 space-y-3">
           <StudioRunBlockNotice value={pendingMessage} className="mb-2" />

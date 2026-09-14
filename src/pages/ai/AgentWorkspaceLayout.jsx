@@ -16,6 +16,7 @@ import {
 import CodeFileTree from "../../components/ai/workspace/CodeFileTree";
 import CodeWorkspace from "../../components/ai/workspace/CodeWorkspace";
 import AgentChatPanel from "../../components/ai/workspace/AgentChatPanel";
+import LiveWorkStream from "../../components/ai/chat/LiveWorkStream";
 import TaskProgressPanel from "../../components/ai/workspace/TaskProgressPanel";
 import BuildWorkspace from "../../components/ai/workspace/BuildWorkspace";
 import useBuildWorkspace from "../../hooks/useBuildWorkspace";
@@ -52,7 +53,9 @@ import GuidedLaunchChecklist from "../../components/onboarding/GuidedLaunchCheck
 import { useGuidedLaunch } from "../../components/onboarding/useGuidedLaunch";
 import useAiPageZoom from "../../hooks/useAiPageZoom";
 import "./AgentWorkspaceLayout.css";
-import { Hero } from "../../components/ui/tailwind-css-background-snippet";
+import "../../design/nexus-workspace.css";
+import { getWorkspacePresentation, workspacePresentationAttributes } from "../../lib/runPresentation";
+import { WorkspacePresentationContext } from "../../components/ai/workspace/WorkspacePresentationContext";
 
 const WORKSPACE_DRAWER_WIDTH_KEY = "nexusrbx:workspace-drawer-width";
 const PROJECT_SIDEBAR_MODAL_QUERY = "(max-width: 1199px)";
@@ -534,6 +537,17 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
   const taskScopeMatches = taskRuntime.task
     && (!taskRuntime.task.chatId || taskRuntime.task.chatId === chat.currentChatId)
     && (!taskRuntime.task.projectId || taskRuntime.task.projectId === currentProjectId);
+  const [uiPresentation, setUiPresentation] = useState(null);
+  const [stoppingWork, setStoppingWork] = useState(false);
+  const agentPresentation = getWorkspacePresentation({
+    task: taskScopeMatches ? { ...taskRuntime.task, connectionState: taskRuntime.connectionState } : null,
+    run: workspace.agentRun,
+    scope: { chatId: chat.currentChatId, projectId: currentProjectId },
+    busy: Boolean(chatOperationState?.isBusy || unified.isGenerating), stage: unified.generationStage,
+    operationState: chatOperationState, stopping: stoppingWork,
+  });
+  const presentation = creationMode === "agent" ? agentPresentation
+    : creationMode === "ui" && uiPresentation?.projectId === currentProjectId ? uiPresentation : getWorkspacePresentation();
   const buildWorkspace = useBuildWorkspace({
     taskId: taskScopeMatches ? taskRuntime.task?.taskId : null,
     chatId: chat.currentChatId,
@@ -1268,7 +1282,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     [onClarifySubmit, taskSubmissionOptions]
   );
 
-  const handleStopActiveWork = useCallback(async () => {
+  const stopActiveWork = useCallback(async () => {
     // Canonical plan execution owns its downstream work. Stop it through the
     // task API even after the short browser startup operation has finished.
     if (canonicalTaskActive) {
@@ -1322,7 +1336,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
       return;
     }
 
-    Promise.resolve(activeAgentRuntime.cancelRun(runId))
+    await Promise.resolve(activeAgentRuntime.cancelRun(runId))
       .then(() => chat.reconcileCancelledRun?.(runId, { chatId: chat.currentChatId }))
       .catch((error) => {
         notify?.({
@@ -1331,6 +1345,11 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         });
       });
   }, [activeAgentRuntime, canonicalTaskActive, chat, notify, stopChatOperation, taskRuntime, unified]);
+
+  const handleStopActiveWork = useCallback(async () => {
+    setStoppingWork(true);
+    try { await stopActiveWork(); } finally { setStoppingWork(false); }
+  }, [stopActiveWork]);
 
   const openArtifactOnStage = (message) => {
     setOpenedCodeRequest(null);
@@ -1750,11 +1769,15 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     && (!agent.projectId || agent.projectId === currentProjectId));
   const activityPanel = (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      {unified.pendingMessage ? <div className="max-h-[45%] shrink-0 overflow-y-auto border-b border-[var(--nx-rule)] p-3" aria-label="Live execution timeline">
+        <LiveWorkStream pendingMessage={unified.pendingMessage} generationStage={unified.generationStage}
+          onApproveStep={handleApproveStep} approvingStepId={studio?.approvingStepId} />
+      </div> : null}
       {scopedActiveAgents.length ? <ActiveAgentsTray
         agents={scopedActiveAgents}
         onOpenChat={chat.openChatById}
-        onCancelRun={(runId) => {
-          Promise.resolve(activeAgentRuntime.cancelRun(runId))
+        onCancelRun={async (runId) => {
+          await Promise.resolve(activeAgentRuntime.cancelRun(runId))
             .then(() =>
               chat.reconcileCancelledRun?.(runId, {
                 chatId: chat.currentChatId,
@@ -1783,7 +1806,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
             onStudioApproved={taskRuntime.refresh}
           />
           <div className="mt-3">
-            <RunEventLog events={taskRuntime.events} agents={scopedActiveAgents} />
+            <details><summary className="cursor-pointer text-xs text-[var(--nx-text-muted)]">Technical history</summary><RunEventLog events={taskRuntime.events} agents={scopedActiveAgents} /></details>
           </div>
         </div>
       ) : scopedActiveAgents.length ? (
@@ -1957,8 +1980,8 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
   };
 
   return (
-    <div className="nexus-studio-root fixed inset-0 overflow-hidden">
-      <Hero />
+    <WorkspacePresentationContext.Provider value={presentation}>
+    <div className="nexus-studio-root fixed inset-0 overflow-hidden" {...workspacePresentationAttributes(presentation)}>
       <div ref={aiPageRef} className="ai-page nexus-studio-page relative flex flex-col overflow-hidden font-sans">
         <SkipToMainContent targetId="ai-workspace-main" />
       <WorkspaceRibbon
@@ -1974,7 +1997,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         actionSlotRef={setHeaderActionTarget}
         inert={headerInert}
         assetControls={<WorkspaceAssetControls navigateTo={navigateTo} user={user} planKey={planKey} devOverride={devOverride} roblox={roblox} projectId={currentProjectId} onAuthRequired={handleAuthRequired} notify={notify}/>}
-        isBusy={Boolean(chatOperationState?.isBusy || unified.isGenerating)}
+        isBusy={presentation.active}
         onRenameChat={
           creationMode === "agent" ? (title) => chat.handleRenameChat(chat.currentChatId, title) : undefined
         }
@@ -1997,6 +2020,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
           >
             {creationMode === "ui" ? (
               <UiCreatorWorkspace
+                onPresentationChange={setUiPresentation}
                 sharedHeader headerActionTarget={headerActionTarget} onHeaderModalChange={setHeaderInert}
                 modelControl={modelControl}
                 studioControl={studioControl}
@@ -2061,5 +2085,6 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
 
       </div>
     </div>
+    </WorkspacePresentationContext.Provider>
   );
 }

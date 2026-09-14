@@ -881,3 +881,8 @@
     display: none;
   }
 }
+
+/* The retained preview and live files occupy the same flexible canvas slot. */
+.uc-preview-content { flex: 1; width: 100%; height: 100%; min-width: 0; min-height: 0; }
+.uc-preview-content > .nx-ui-preview { width: 100%; height: 100%; }
+.uc-preview-stage > .uc-live-files { flex: 1; }

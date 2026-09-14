@@ -1,4 +1,5 @@
 const LIFECYCLE_COPY = Object.freeze({
+  idle: Object.freeze({ eyebrow: "Ready", title: "Ready for your next request", label: "Ready", body: "", tone: "neutral", active: false }),
   queued: Object.freeze({
     eyebrow: "Queued",
     title: "Your request is safely queued",

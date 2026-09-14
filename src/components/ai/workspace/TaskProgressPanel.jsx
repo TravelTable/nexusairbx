@@ -14,7 +14,7 @@ import {
 } from "lib/icons";
 import { formatTaskRuntimeError } from "../../../lib/taskRuntimeApi";
 import StudioTaskApprovalCard from "./StudioTaskApprovalCard";
-import { getRunPresentation } from "../../../lib/runPresentation";
+import { getRunPresentation, getWorkspacePresentation, workspacePresentationAttributes } from "../../../lib/runPresentation";
 import { getLifecyclePresentation } from "../../../lib/productLifecycle";
 import {
   getAuthorizedTaskActions,
@@ -568,6 +568,7 @@ export default function TaskProgressPanel({
   if (!task?.taskId) return null;
 
   const terminal = isTaskTerminal(task);
+  const workspacePresentation = getWorkspacePresentation({ task: { ...task, connectionState }, stopping: busyAction === "cancel" });
   const connectionMessage = connectionPresentation(connectionState, terminal);
   const completedCount = details.completed.length;
   const progressPercent = steps.length
@@ -616,8 +617,8 @@ export default function TaskProgressPanel({
   return (
     <section
       aria-label="Task progress"
-      aria-busy={!terminal}
-      className={`rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-4 space-y-3 ${!terminal ? "nx-soft-depth-active" : ""} ${className}`.trim()}
+      {...workspacePresentationAttributes(workspacePresentation)}
+      className={`nx-task-progress rounded-2xl border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] p-4 space-y-3 ${className}`.trim()}
     >
       <div className="flex items-center gap-2">
         {presentation.tone === "success" ? (
@@ -636,7 +637,7 @@ export default function TaskProgressPanel({
           <span className="ml-auto inline-flex items-center gap-1.5 text-[10px] font-bold text-[var(--ds-accent)]">
             <span
               className="nx-build-signal"
-              data-active="true"
+              data-active={workspacePresentation.showPulse || undefined}
               aria-hidden="true"
             />
             Live
@@ -684,8 +685,8 @@ export default function TaskProgressPanel({
             aria-valuenow={progressPercent}
           >
             <div
-              className="h-full rounded-full bg-[var(--ds-accent)] transition-[width]"
-              style={{ width: `${progressPercent}%` }}
+              className="nx-step-progress-fill h-full rounded-full bg-[var(--ds-accent)]"
+              style={{ transform: `scaleX(${progressPercent / 100})`, transformOrigin: 'left' }}
             />
           </div>
           <ol className="space-y-1.5" aria-label="Plan checklist">
@@ -699,11 +700,12 @@ export default function TaskProgressPanel({
               );
               return (
                 <li
+                  data-step-state={state}
                   key={
                     firstString(step?.planStepId, step?.stepId, step?.id) ||
                     `step-${index + 1}`
                   }
-                  className="flex min-w-0 items-start gap-2.5 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2.5 py-2"
+                  className="nx-task-step flex min-w-0 items-start gap-2.5 rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-2.5 py-2"
                 >
                   <StepIcon
                     className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${itemPresentation.iconClassName}`}
@@ -1059,7 +1061,7 @@ export default function TaskProgressPanel({
             step={1}
             value={priceRobux}
             onChange={(event) => setPriceRobux(event.target.value)}
-            className="min-h-11 w-full rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-3 py-2 text-xs text-[var(--ds-text)] outline-none focus:border-[var(--ds-accent-border)] xl:min-h-0"
+            className="min-h-11 w-full rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-3 py-2 text-xs text-[var(--ds-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ds-focus-ring)] focus:border-[var(--ds-accent-border)] xl:min-h-0"
             placeholder="e.g. 199"
           />
           <p className="text-[11px] text-[var(--ds-warning)] ">
@@ -1086,7 +1088,7 @@ export default function TaskProgressPanel({
             onChange={(event) => setAmendment(event.target.value)}
             rows={3}
             maxLength={2000}
-            className="w-full resize-y rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-3 py-2 text-xs text-[var(--ds-text)] outline-none focus:border-[var(--ds-accent-border)]"
+            className="w-full resize-y rounded-lg border border-[var(--ds-border-subtle)] bg-[var(--ds-fill-subtle)] px-3 py-2 text-xs text-[var(--ds-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--ds-focus-ring)] focus:border-[var(--ds-accent-border)]"
             placeholder="Describe what should change in the remaining plan."
           />
           <div className="flex justify-end gap-2">

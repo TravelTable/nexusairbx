@@ -470,11 +470,11 @@ describe("ChatComposer compact interactions", () => {
     expect(onStop).toHaveBeenCalledTimes(2);
   });
 
-  test("shows brief success feedback when generation completes", () => {
+  test("shows brief success feedback only for verified completion", () => {
     jest.useFakeTimers();
     try {
       const { rerender } = renderComposer({ isGenerating: true, onStop: jest.fn() });
-      rerender(<ChatComposer {...baseProps} isGenerating={false} />);
+      rerender(<ChatComposer {...baseProps} isGenerating={false} presentation={{ state: "complete", motion: "settled", tone: "success", active: false }} />);
 
       const composer = screen.getByRole("textbox", { name: "Prompt input" }).closest("[data-tour='prompt-composer']");
       expect(composer.dataset.state).toBe("success");

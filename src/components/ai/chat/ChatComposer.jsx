@@ -29,7 +29,9 @@ import {
   removeComposerFileReference,
 } from "../../../lib/composerCommands";
 import { messageHasRefineableFiles } from "../../../lib/chatRefine";
-import { BorderBeam } from "../../ui/border-beam";
+import AnimatedStatusText from "./AnimatedStatusText";
+import { getWorkspacePresentation, workspacePresentationAttributes } from "../../../lib/runPresentation";
+import { useWorkspacePresentation } from "../workspace/WorkspacePresentationContext";
 import { AppleStyleDock } from "./AppleStyleDock";
 import {
   AnimatedGenerateIcon,
@@ -358,6 +360,9 @@ export default function ChatComposer({
   onSubmit,
   onStop,
   isGenerating,
+  presentation: providedPresentation,
+  compactStatus = false,
+  generationStage,
   operationState = null,
   onResumeQueue,
   onSendNext,
@@ -451,6 +456,10 @@ export default function ChatComposer({
   const [mentionIndex, setMentionIndex] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const sharedPresentation = useWorkspacePresentation();
+  const presentation = providedPresentation || sharedPresentation || getWorkspacePresentation({ busy: isGenerating, stage: generationStage });
+  const working = presentation.showComposerFlow;
   const textareaRef = useRef(null);
   const wasGeneratingRef = useRef(Boolean(isGenerating));
   const fileInputRef = useRef(null);
@@ -597,11 +606,11 @@ export default function ChatComposer({
       setShowSuccess(false);
       return undefined;
     }
-    if (!wasGenerating || operationFailed) return undefined;
+    if (!wasGenerating || operationFailed || presentation.tone !== "success") return undefined;
     setShowSuccess(true);
     const timer = window.setTimeout(() => setShowSuccess(false), 1400);
     return () => window.clearTimeout(timer);
-  }, [isGenerating, operationFailed]);
+  }, [isGenerating, operationFailed, presentation.tone]);
 
   useEffect(() => {
     if (!controlsOpen && !contextOpen) return undefined;
@@ -883,31 +892,28 @@ export default function ChatComposer({
           />
         </div>
       ) : null}
-      <BorderBeam
-        className="nexus-composer-frame nexus-composer-beam relative z-20 mx-auto"
-        size="md"
-        colorVariant="colorful"
-        theme="dark"
-        strength={disabled ? 0 : isGenerating ? 0.72 : 0}
-        duration={1.9}
-        active={!disabled && isGenerating}
-      >
+      <div className="nexus-composer-frame relative z-20 mx-auto">
         <div
           data-tour="prompt-composer"
           data-expanded={isExpanded ? "true" : "false"}
+          data-generating={working ? "true" : "false"}
+          {...workspacePresentationAttributes(presentation)}
+          data-focused={focused || undefined}
+          onFocus={() => setFocused(true)}
+          onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false); }}
           data-state={disabled ? "disabled" : isGenerating ? "submitting" : operationFailed ? "error" : showSuccess ? "success" : prompt?.trim() ? "typing" : "idle"}
           aria-busy={isGenerating ? "true" : "false"}
-          className={`nexus-composer nx-composer-shine relative w-full overflow-visible rounded-[14px] border border-[var(--ds-border)] bg-[var(--ds-surface-1)] transition-colors duration-150 focus-within:border-[var(--ds-border-strong)] ${isGenerating ? "nx-composer-shine--active" : ""} ${composerClassName}`}
+          className={`nexus-composer relative w-full overflow-visible rounded-[14px] border border-[var(--ds-border)] bg-[var(--ds-surface-1)] transition-colors duration-150 focus-within:border-[var(--ds-border-strong)] ${composerClassName}`}
         >
-        {(activeOperationStatus || queuedOperations.length > 0) && (
+        {((!compactStatus && activeOperationStatus) || queuedOperations.length > 0) && (
           <div className="border-b border-[var(--ds-border-subtle)] px-2 py-1.5" aria-label="Chat operation status">
             <div className="flex items-center gap-2 text-[10px]">
-              {activeOperationStatus ? (
+              {!compactStatus && activeOperationStatus ? (
                 <span className="inline-flex items-center gap-1.5 font-bold text-[var(--ds-text-secondary)]">
-                  {(operationState?.isBusy || activeOperationStatus === "Stopping") && (
+                  {working && (
                     <Loader className="h-3 w-3 animate-spin text-[var(--ds-accent)]" />
                   )}
-                  {activeOperationStatus}
+                  <AnimatedStatusText value={activeOperationStatus} />
                 </span>
               ) : null}
               {queuedOperations.length > 0 ? (
@@ -1177,7 +1183,7 @@ export default function ChatComposer({
                 data-tour="generate-btn"
                 onClick={(event) => (isGenerating ? onStop?.() : submitDraft(event))}
                 disabled={isGenerating ? disabled || !onStop : disabled || !canSendWithContext}
-                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition-[background-color,color,opacity,transform] duration-150 active:scale-95 focus-ring disabled:opacity-40 disabled:active:scale-100 xl:h-9 xl:w-9 ${
+                className={`nx-composer-submit flex h-11 w-11 shrink-0 items-center justify-center rounded-md transition-[background-color,color,opacity,transform] duration-150 active:scale-95 focus-ring disabled:opacity-40 disabled:active:scale-100 xl:h-9 xl:w-9 ${
                   isGenerating
                     ? "border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)] bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] text-[var(--ds-danger)] hover:bg-[color-mix(in_srgb,var(--ds-danger)_20%,transparent)]"
                     : "bg-primary text-primary-foreground hover:opacity-90"
@@ -1199,7 +1205,7 @@ export default function ChatComposer({
           </div>
         </div>
         </div>
-      </BorderBeam>
+      </div>
 
       <AssetLibraryModal
         open={assetLibraryOpen}

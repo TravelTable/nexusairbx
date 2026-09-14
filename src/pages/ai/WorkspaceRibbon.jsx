@@ -9,7 +9,7 @@ export default function WorkspaceRibbon({ mode, onModeChange, uiEnabled = true, 
   onChangeProject, onOpenEvidence, evidenceOpen = false, evidenceButtonRef, isBusy = false, inert = false }) {
   const [expanded, setExpanded] = useState(false);
   const tools = useRef(null), more = useRef(null);
-  useEffect(() => { setExpanded(false); }, [mode]);
+  useEffect(() => { setExpanded(false); }, [mode, inert]);
   useEffect(() => {
     if (!expanded) return undefined;
     const outside = event => {

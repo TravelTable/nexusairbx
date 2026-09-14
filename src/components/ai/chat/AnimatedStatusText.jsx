@@ -1,56 +1,20 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useMotionPresence } from "../../../hooks/useMotionPresence";
 
-export default function AnimatedStatusText({ value, className = "" }) {
-  const normalizedValue = String(value || "");
-  const currentValueRef = useRef(normalizedValue);
-  const cleanupTimerRef = useRef(null);
-  const [display, setDisplay] = useState({
-    current: normalizedValue,
-    previous: "",
-    revision: 0,
-  });
+function StatusValue({ value, current, changed }) {
+  const { present } = useMotionPresence(current, 180);
+  if (!present) return null;
+  return <span aria-hidden={!current || undefined} className={!current ? "nexus-status-text-out" : changed ? "nexus-status-text-in" : ""}>{value}</span>;
+}
 
+export default function AnimatedStatusText({ value, className = "", announce = true }) {
+  const normalized = String(value || "");
+  const [display, setDisplay] = useState({ current: normalized, previous: "" });
   useEffect(() => {
-    if (currentValueRef.current === normalizedValue) return undefined;
-
-    const previous = currentValueRef.current;
-    currentValueRef.current = normalizedValue;
-    window.clearTimeout(cleanupTimerRef.current);
-    setDisplay((state) => ({
-      current: normalizedValue,
-      previous,
-      revision: state.revision + 1,
-    }));
-    cleanupTimerRef.current = window.setTimeout(() => {
-      setDisplay((state) => (
-        state.current === normalizedValue
-          ? { ...state, previous: "" }
-          : state
-      ));
-    }, 140);
-
-    return () => window.clearTimeout(cleanupTimerRef.current);
-  }, [normalizedValue]);
-
-  useEffect(() => () => window.clearTimeout(cleanupTimerRef.current), []);
-
-  return (
-    <span
-      className={`nexus-status-text ${className}`.trim()}
-      aria-live="polite"
-      aria-atomic="true"
-    >
-      {display.previous ? (
-        <span className="nexus-status-text-out" aria-hidden="true">
-          {display.previous}
-        </span>
-      ) : null}
-      <span
-        key={`${display.revision}-${display.current}`}
-        className={display.previous ? "nexus-status-text-in" : ""}
-      >
-        {display.current}
-      </span>
-    </span>
-  );
+    setDisplay(previous => previous.current === normalized ? previous : { current: normalized, previous: previous.current });
+  }, [normalized]);
+  return <span className={`nexus-status-text ${className}`.trim()} aria-live={announce ? "polite" : undefined} aria-atomic="true">
+    {display.previous ? <StatusValue key={display.previous} value={display.previous} current={false} /> : null}
+    <StatusValue key={display.current} value={display.current} current changed={Boolean(display.previous)} />
+  </span>;
 }

@@ -16,12 +16,16 @@ export function useMotionPresence(open, duration = 180) {
     }
 
     setPhase("exit");
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      setPresent(false);
+      return undefined;
+    }
     const timeoutId = setTimeout(() => setPresent(false), duration);
     return () => clearTimeout(timeoutId);
   }, [duration, open]);
 
   return {
-    present,
+    present: open || present,
     phase,
     entering: phase === "enter",
     exiting: phase === "exit",

@@ -10,10 +10,11 @@ import {
 } from "lucide-react";
 
 import useUiPreview from "../../../hooks/useUiPreview";
-import { Shimmer } from "../../../components/ai-elements/shimmer";
+import AnimatedStatusText from "../../../components/ai/chat/AnimatedStatusText";
 import "./UiPreviewPane.css";
 import WorkingDots from "../../../components/ai/chat/WorkingDots";
 import WorkspaceHelp from "../../../components/ai/chat/WorkspaceHelp";
+import { useMotionPresence } from "../../../hooks/useMotionPresence";
 
 function ViewportIcon({ viewport }) {
   const value = `${viewport?.id || ""} ${viewport?.label || ""}`.toLowerCase();
@@ -65,6 +66,8 @@ export default function UiPreviewPane({
 
   const [zoom, setZoom] = useState(1);
   const [fit, setFit] = useState(true);
+  const [loadedImage, setLoadedImage] = useState("");
+  const [failedImage, setFailedImage] = useState("");
 
   const rendererUnavailable =
     capabilities?.previewEnabled === false ||
@@ -118,6 +121,7 @@ export default function UiPreviewPane({
   });
 
   const reportRef = useRef(onRenderStatus);
+  const previousPresence = useMotionPresence(Boolean(data.previousImageUrl && loadedImage !== data.imageUrl), 400);
   reportRef.current = onRenderStatus;
 
   useEffect(() => {
@@ -155,6 +159,7 @@ export default function UiPreviewPane({
 
   const failed =
     Boolean(buildFailure) ||
+    Boolean(data.imageUrl && failedImage === data.imageUrl) ||
     (hasNodes &&
       (rendererUnavailable ||
         data.status === "error" ||
@@ -162,7 +167,7 @@ export default function UiPreviewPane({
 
   const loading =
     !failed &&
-    (Boolean(run) ||
+    (Boolean(run && run.working !== false) ||
       ["loading", "queued", "rendering"].includes(data.status));
 
   const retry = async () => {
@@ -223,14 +228,11 @@ export default function UiPreviewPane({
     <section
       className="nx-ui-preview nx-ui-preview--editor"
       aria-label="Roblox UI preview workspace"
+      data-status={failed ? "error" : loading ? "working" : data.status === "ready" && !data.earlier ? "ready" : "idle"}
     >
       <header className="nx-ui-preview__toolbar nx-ui-preview__toolbar--editor">
         <div className="nx-ui-preview__status" role="status" aria-live="polite">
-          {run && !failed ? (
-            <Shimmer as="span">{status}</Shimmer>
-          ) : (
-            status
-          )}
+          <AnimatedStatusText value={status} />
         </div>
 
         <div
@@ -367,7 +369,7 @@ export default function UiPreviewPane({
         {data.imageUrl ? (
           <figure
             className="nx-ui-preview__frame nx-ui-preview__frame--editor"
-            data-running={run ? "true" : "false"}
+            data-running={loading ? "true" : "false"}
           >
             {loading ? (
               <span
@@ -375,6 +377,7 @@ export default function UiPreviewPane({
                 aria-label="Updating preview"
               >
                 <WorkingDots />
+                <span>Updating…</span>
               </span>
             ) : null}
 
@@ -384,10 +387,15 @@ export default function UiPreviewPane({
               </span>
             ) : null}
 
-            <div className="nx-ui-preview__device-surface">
+            <div className="nx-ui-preview__device-surface"
+              data-status={loadedImage !== data.imageUrl ? "loading" : data.earlier || updatingRevision ? "previous" : "ready"}>
               <img
-                className="nx-ui-preview__image"
+                key={data.imageUrl}
+                className="nx-ui-preview__image nx-preview-image"
+                data-loaded={loadedImage === data.imageUrl}
                 src={data.imageUrl}
+                onLoad={() => setLoadedImage(data.imageUrl)}
+                onError={() => setFailedImage(data.imageUrl)}
                 draggable="false"
                 alt={`${
                   data.preview?.stateLabel || "Default"
@@ -403,6 +411,9 @@ export default function UiPreviewPane({
                       }
                 }
               />
+              {previousPresence.present && data.previousImageUrl ? <img
+                src={data.previousImageUrl} className="nx-preview-previous" data-phase={loadedImage !== data.imageUrl ? "enter" : previousPresence.phase}
+                alt="" aria-hidden="true" draggable="false" /> : null}
             </div>
 
             <figcaption>

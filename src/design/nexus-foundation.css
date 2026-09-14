@@ -4,18 +4,18 @@
 :root[data-nexus-theme="soft-depth"] {
   color-scheme: dark;
 
-  /* Technical/editorial soft-depth. Depth from surfaces + borders, not glow. */
-  --nx-canvas: #090909;
-  --nx-depth: #0c0c0c;
-  --nx-card: #111111;
-  --nx-work: #111111;
-  --nx-muted-surface: #171717;
-  --nx-field: #171717;
-  --nx-raised-surface: #1c1c1c;
-  --nx-field-strong: #1c1c1c;
-  --nx-text: #f5f5f5;
-  --nx-text-secondary: #c7c7c7;
-  --nx-text-muted: #858585;
+  /* Dimensional creative workspace: quiet surfaces and localized activity signals. */
+  --nx-canvas: #07070a;
+  --nx-depth: #0a0910;
+  --nx-card: #111019;
+  --nx-work: #111019;
+  --nx-muted-surface: #16141f;
+  --nx-field: #16141f;
+  --nx-raised-surface: #1c1927;
+  --nx-field-strong: #1c1927;
+  --nx-text: #f7f5fb;
+  --nx-text-secondary: #c8c3d2;
+  --nx-text-muted: #9690a3;
   --nx-text-disabled: #5f5f5f;
   --nx-purple: #a855f7;
   --nx-purple-strong: #c084fc;
@@ -25,8 +25,8 @@
   --nx-purple-border: rgb(168 85 247 / 28%);
   --nx-purple-wash: rgb(168 85 247 / 6%);
   --nx-purple-edge: rgb(192 132 252 / 22%);
-  --nx-purple-glow: none;
-  --nx-inner-highlight: none;
+  --nx-purple-glow: 0 0 24px rgb(168 85 247 / 10%);
+  --nx-inner-highlight: inset 0 1px 0 rgb(255 255 255 / 5%);
   --nx-rule: rgb(255 255 255 / 9%);
   --nx-rule-quiet: rgb(255 255 255 / 6%);
   --nx-rule-strong: rgb(255 255 255 / 14%);
@@ -112,17 +112,10 @@
   --nx-weight-heading: 600;
   --nx-weight-label: 650;
 
-  --nx-motion-color: 150ms;
-  --nx-motion-fast: 150ms;
-  --nx-motion-elevation: 200ms;
-  --nx-motion-state: 200ms;
-  --nx-motion-spatial: 280ms;
-  --nx-ease-state: cubic-bezier(0.22, 0.72, 0.24, 1);
-  --nx-ease-spatial: cubic-bezier(0.2, 0.8, 0.2, 1);
 
-  --nx-shadow-control: none;
-  --nx-shadow-card: none;
-  --nx-shadow-floating: 0 16px 40px rgb(0 0 0 / 40%);
+  --nx-shadow-control: var(--nx-inner-highlight), 0 2px 5px rgb(0 0 0 / 18%);
+  --nx-shadow-card: var(--nx-inner-highlight), 0 12px 32px rgb(0 0 0 / 26%);
+  --nx-shadow-floating: var(--nx-inner-highlight), 0 22px 60px rgb(0 0 0 / 44%);
   --nx-shadow-focus: 0 0 0 3px var(--nx-focus);
 
   /* shadcn compatibility */
@@ -222,19 +215,6 @@
   --ds-space-6: var(--nx-space-6);
   --ds-space-8: var(--nx-space-8);
   --ds-space-12: var(--nx-space-12);
-  --ds-motion-press: var(--nx-motion-color);
-  --ds-motion-reveal: var(--nx-motion-elevation);
-  --ds-motion-dock: var(--nx-motion-spatial);
-  --ds-motion-stage: var(--nx-motion-spatial);
-  --ds-motion-construct: var(--nx-motion-spatial);
-  --ds-ease-spatial: var(--nx-ease-spatial);
-  --motion-instant: var(--nx-motion-color);
-  --motion-fast: var(--nx-motion-color);
-  --motion-standard: var(--nx-motion-elevation);
-  --motion-panel: var(--nx-motion-spatial);
-  --motion-large: 300ms;
-  --ease-product: var(--nx-ease-spatial);
-  --ease-standard: var(--nx-ease-state);
   --ai-bg: var(--nx-depth);
   --ai-surface: var(--nx-card);
   --ai-surface-muted: var(--nx-muted-surface);

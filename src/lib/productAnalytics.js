@@ -1,6 +1,7 @@
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { initAnalytics } from "../firebase";
 import { getExperimentAnalyticsProperties, getExperimentRequestHeaders } from "./experiments";
+import { captureAcquisitionContext, getAcquisitionContext } from "./acquisition";
 
 const ANON_USER_KEY = "nexusrbx:analytics:anon-user-id";
 const FIRST_SEEN_KEY = "nexusrbx:analytics:first-seen-at";
@@ -76,6 +77,8 @@ export const PRODUCT_EVENTS = Object.freeze({
   CHECKOUT_STARTED: "checkout_started",
   PURCHASE_COMPLETED: "purchase_completed",
   PRICING_PLAN_SELECTED: "pricing_plan_selected",
+  PRICING_BUILD_PROFILE_SELECTED: "pricing_build_profile_selected",
+  TEAM_INTEREST_CLICKED: "team_interest_clicked",
   CHECKOUT_INTENT_RESTORED: "checkout_intent_restored",
   DOCS_SEARCHED: "docs_searched",
   SUPPORT_HANDOFF_STARTED: "support_handoff_started",
@@ -100,6 +103,18 @@ const SERVER_CONFIRMED_ONLY = new Set([
 ]);
 
 const FORBIDDEN_PROPERTY_RE = /(code|source|email|project[_-]?name|title|password|token|secret)/i;
+const ALLOWED_CAMPAIGN_KEYS = new Set([
+  "first_touch_utm_source",
+  "first_touch_utm_medium",
+  "first_touch_utm_campaign",
+  "first_touch_utm_content",
+  "first_touch_landing_page",
+  "last_touch_utm_source",
+  "last_touch_utm_medium",
+  "last_touch_utm_campaign",
+  "last_touch_utm_content",
+  "last_touch_landing_page",
+]);
 const PROPERTY_ALIASES = {
   mode: "generator_mode",
   artifactType: "output_type",
@@ -316,6 +331,7 @@ function standardProperties(extra = {}) {
     experiment_variant: undefined,
     ...getExperimentAnalyticsProperties(),
     deployment_version: deploymentVersion(),
+    ...(!shouldRespectOptOut() ? getAcquisitionContext() : {}),
     ...extra,
   };
 }
@@ -325,7 +341,8 @@ export function sanitizeAnalyticsProperties(properties = {}) {
   for (const [rawKey, rawValue] of Object.entries(properties || {})) {
     const key = PROPERTY_ALIASES[rawKey] || rawKey;
     if (key === "prompt_text" || key === "full_prompt" || key === "prompt") continue;
-    if (!key || FORBIDDEN_PROPERTY_RE.test(key)) continue;
+    if (!key) continue;
+    if (FORBIDDEN_PROPERTY_RE.test(key) && !ALLOWED_CAMPAIGN_KEYS.has(key)) continue;
     const value = normalizeScalar(rawValue);
     if (value !== undefined) out[key] = value;
   }
@@ -419,6 +436,9 @@ export function initProductAnalytics() {
 export async function trackProductEvent(eventName, properties = {}, options = {}) {
   try {
     initProductAnalytics();
+    if (!shouldRespectOptOut()) {
+      captureAcquisitionContext();
+    }
     const validation = validateProductEvent(eventName, properties);
     if (!validation.ok) {
       if (isAnalyticsDebugEnabled()) {

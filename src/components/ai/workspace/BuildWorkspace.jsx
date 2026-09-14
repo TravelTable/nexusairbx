@@ -112,7 +112,7 @@ export default function BuildWorkspace({ scopeKey, items = [], readFile, connect
           <div className="flex shrink-0 gap-2 overflow-x-auto border-b border-[var(--ds-border-subtle)] p-2" aria-label="Generated files">
             {files.map(file => <button key={file.id} type="button" onClick={() => setSelectedId(file.id)}
               aria-pressed={selected?.id === file.id} title={file.path}
-              className={`shrink-0 rounded px-2 py-1 text-xs ${selected?.id === file.id ? "bg-[var(--ds-fill-subtle)]" : "text-[var(--ds-text-muted)]"}`}>
+              className={`nx-artifact-arrival shrink-0 rounded px-2 py-1 text-xs ${selected?.id === file.id ? "bg-[var(--ds-fill-subtle)]" : "text-[var(--ds-text-muted)]"}`}>
               {file.path || file.name || "File"}
             </button>)}
           </div>
@@ -145,7 +145,7 @@ export default function BuildWorkspace({ scopeKey, items = [], readFile, connect
           {tab === "change" && studioContent ? <details className="mb-3 text-xs"><summary className="cursor-pointer py-2">Inspect live Studio files</summary>{studioContent}</details> : null}
           {!visible.length ? <p className="text-sm text-[var(--ds-text-muted)]">Nothing recorded here yet.</p> : (
             <ul className="space-y-3">
-              {visible.map(item => <li key={item.id} className="border-b border-[var(--ds-border-subtle)] pb-3 text-sm">
+              {visible.map(item => <li key={item.id} className="nx-artifact-arrival border-b border-[var(--ds-border-subtle)] pb-3 text-sm">
                 {tab === "asset" && /^https:\/\//i.test(item.thumbnailUrl || "") ? <img src={item.thumbnailUrl} alt=""
                   loading="lazy" className="mb-2 h-20 w-20 rounded object-contain" /> : null}
                 <div className="break-all font-medium">{item.name || item.path || item.id}</div>

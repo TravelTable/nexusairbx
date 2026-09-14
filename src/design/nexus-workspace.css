@@ -1,0 +1,271 @@
+/* AI workspace surfaces and hierarchy. Motion lives in nexus-motion.css. */
+.nexus-studio-root {
+  background: radial-gradient(900px 620px at 50% -220px, rgb(168 85 247 / 10%), transparent 68%),
+    radial-gradient(700px 500px at 100% 30%, rgb(85 140 255 / 4%), transparent 72%), var(--nx-canvas);
+  color: var(--nx-text);
+}
+[data-agent-tone] { --nx-agent-signal: var(--nx-text-muted); }
+[data-agent-tone="active"] { --nx-agent-signal: var(--nx-purple); }
+[data-agent-tone="waiting"] { --nx-agent-signal: var(--nx-warning); }
+[data-agent-tone="danger"] { --nx-agent-signal: var(--nx-danger); }
+[data-agent-tone="success"] { --nx-agent-signal: var(--nx-success); }
+
+.nexus-studio-root .workspace-header {
+  border-bottom: 1px solid var(--nx-rule-quiet);
+  background: linear-gradient(180deg, rgb(255 255 255 / 2%), transparent), var(--nx-depth);
+  box-shadow: var(--nx-inner-highlight);
+}
+.nexus-studio-root :where(.nx-panel, .nexus-project-sidebar, .uc-preview-pane) {
+  border-color: var(--nx-rule);
+  background: linear-gradient(180deg, rgb(255 255 255 / 2.5%), transparent 100px), var(--nx-card);
+  box-shadow: var(--nx-shadow-card);
+}
+.nexus-studio-root .nexus-project-sidebar { background-color: var(--nx-depth); }
+.nexus-studio-root :where(.agent-chat-panel, .uc-app) { position: relative; isolation: isolate; background: transparent; }
+.nexus-studio-root :where(.agent-chat-panel, .uc-app)::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: radial-gradient(650px 400px at 50% 100%, rgb(168 85 247 / 8%), transparent 72%);
+  opacity: 0;
+  content: "";
+  pointer-events: none;
+}
+.nexus-studio-root :where(.agent-chat-panel, .uc-app)[data-agent-glow="true"]::before { opacity: 1; }
+.nexus-studio-root :where(.nx-user-message__body, .uc-session-message) {
+  border: 1px solid var(--nx-rule-quiet);
+  border-radius: var(--nx-radius-card);
+  background: linear-gradient(135deg, rgb(255 255 255 / 5%), rgb(255 255 255 / 2%));
+}
+.nexus-studio-root .nexus-composer {
+  isolation: isolate;
+  border: 1px solid var(--nx-rule-strong);
+  border-radius: var(--nx-radius-overlay);
+  background: linear-gradient(180deg, rgb(255 255 255 / 4%), transparent), var(--nx-card);
+  box-shadow: var(--nx-shadow-card);
+}
+.nexus-studio-root .nexus-composer:focus-within {
+  border-color: var(--nx-purple-border);
+  box-shadow: var(--nx-shadow-card), 0 0 0 2px var(--nx-purple-wash);
+}
+.nexus-composer[data-agent-tone="waiting"], .nexus-composer[data-agent-tone="danger"] {
+  border-color: color-mix(in srgb, var(--nx-agent-signal) 48%, transparent);
+}
+.nexus-composer[data-agent-flow="true"]::before {
+  position: absolute;
+  z-index: 4;
+  top: -1px;
+  left: 35%;
+  width: 30%;
+  height: 2px;
+  border-radius: var(--nx-radius-pill);
+  background: linear-gradient(90deg, transparent, var(--nx-purple), var(--nx-info), transparent);
+  content: "";
+  pointer-events: none;
+}
+.agent-status-dot, .nx-build-signal {
+  display: inline-block;
+  position: relative;
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--nx-agent-signal, var(--nx-purple));
+}
+.nexus-run-bar {
+  min-height: 36px;
+  width: calc(100% - 32px);
+  margin: 0 auto 4px;
+  border-radius: var(--nx-radius-control);
+  background: linear-gradient(90deg, var(--nx-purple-wash), transparent);
+}
+.nexus-run-bar button { min-height: 32px; padding-inline: 8px; }
+.nexus-run-bar[data-agent-motion="waiting"] { background: color-mix(in srgb, var(--nx-warning) 5%, transparent); }
+.nexus-studio-root :where(.nx-workspace-drawer, .workspace-stage) {
+  border-left: 1px solid var(--nx-rule-strong);
+  background: linear-gradient(180deg, var(--nx-purple-wash), transparent 140px), var(--nx-card);
+  box-shadow: -16px 0 48px rgb(0 0 0 / 32%), var(--nx-inner-highlight);
+}
+.nexus-studio-root .uc-conversation { background: transparent; }
+.nexus-studio-root .uc-preview-stage {
+  background: radial-gradient(500px 400px at 50% 30%, var(--nx-purple-wash), transparent 75%), var(--nx-depth);
+}
+.nx-task-progress { box-shadow: var(--nx-shadow-card); }
+.nx-task-step[data-step-state="completed"] { border-color: color-mix(in srgb, var(--nx-success) 24%, transparent); }
+.nx-task-step[data-step-state="needs_input"], .nx-task-step[data-step-state="waiting_studio"] { border-color: var(--ds-warning-border); }
+.nx-studio-conflict {
+  border: 1px solid var(--ds-warning-border);
+  border-radius: var(--nx-radius-card);
+  margin: 12px;
+  background: color-mix(in srgb, var(--nx-warning) 7%, var(--nx-card));
+  color: var(--nx-text-secondary);
+}
+.nx-studio-conflict > .font-bold { color: var(--nx-warning); }
+.nx-credit-confirmation {
+  max-width: 760px;
+  margin: 8px auto;
+  padding: 16px;
+  border: 1px solid var(--nx-purple-border);
+  border-radius: var(--nx-radius-card);
+  background: var(--nx-raised-surface);
+  box-shadow: var(--nx-shadow-card);
+  font-size: 12px;
+}
+.nx-credit-confirmation h2 { margin: 0 0 8px; font-size: 14px; }
+.nx-credit-confirmation p { color: var(--nx-text-secondary); }
+.nx-credit-confirmation__actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.nx-credit-confirmation button { min-height: 40px; padding: 8px 16px; border-radius: var(--nx-radius-control); }
+.nx-credit-confirmation__continue { background: var(--nx-purple); color: var(--nx-depth); }
+.uc-build-timeline { padding: 12px; font-size: 12px; color: var(--nx-text-secondary); }
+.uc-build-timeline summary { cursor: pointer; }
+.nx-ui-preview__device-surface { position: relative; }
+.nx-preview-updating { display: inline-flex; align-items: center; gap: 6px; }
+.uc-live-files__tabs button[data-file-state="saved"] { color: var(--nx-text-secondary); }
+.uc-live-files__saved { color: var(--nx-success); flex-shrink: 0; }
+@media (pointer: coarse), (max-width: 700px) {
+  .nexus-run-bar button, .nx-credit-confirmation button { min-height: 44px; }
+  .nx-credit-confirmation { margin-inline: 12px; }
+  .nexus-studio-root :where(.nexus-composer, .uc-preview-pane) { box-shadow: var(--nx-inner-highlight); }
+}
+@media (forced-colors: active) {
+  .nexus-studio-root :where(.nexus-composer, .workspace-stage, .nx-workspace-drawer, .nx-studio-conflict, .nx-credit-confirmation) {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    color: CanvasText;
+  }
+  .agent-status-dot { background: Highlight; }
+  .nexus-studio-root::before, .nexus-composer::before { display: none; }
+}
+.ai-page {
+  background-color: transparent !important;
+  color: var(--nx-text);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  font-family: var(--pc-font-ui);
+}
+
+@media (min-width: 768px) {
+  .ai-page { --pc-gutter: 24px; }
+}
+
+@media (min-width: 1200px) {
+  .ai-page { --pc-gutter: 32px; }
+}
+
+/* Existing display utilities are common in editor chrome. */
+.ai-page .font-display {
+  font-family: var(--pc-font-ui);
+}
+
+.ai-page .pc-display-heading {
+  font-family: var(--pc-font-display);
+  font-weight: 620;
+  letter-spacing: 0;
+}
+
+.ai-page .pc-page-gutter {
+  padding-inline: var(--pc-gutter);
+}
+
+.ai-page .font-black {
+  font-weight: 600;
+}
+
+.ai-page .uppercase {
+  text-transform: none;
+}
+
+.ai-page .tracking-wider,
+.ai-page .tracking-widest,
+.ai-page [class*="tracking-["] {
+  letter-spacing: 0.015em;
+}
+
+/* Workspace utility text must remain legible at the user's browser zoom. */
+.ai-page [class~="text-[7px]"],
+.ai-page [class~="text-[8px]"],
+.ai-page [class~="text-[9px]"],
+.ai-page [class~="text-[10px]"],
+.ai-page [class~="text-[11px]"] {
+  font-size: 0.75rem;
+}
+
+.ai-glow-primary,
+.ai-page[data-nexus-active="true"] .ai-active-signal {
+  background-color: var(--nx-purple-soft);
+}
+
+.ai-glow-secondary {
+  background-color: var(--nx-field);
+}
+
+.ai-surface {
+  background-color: var(--ai-surface);
+}
+
+.ai-border {
+  border-color: var(--ai-border);
+}
+
+.ai-muted {
+  color: var(--ai-text-muted);
+}
+
+.ai-accent {
+  color: var(--ai-accent);
+}
+
+.ai-accent-2 {
+  color: var(--ai-accent-2);
+}
+
+/* Components own their movement and elevation. Keep a shared focus contract. */
+.ai-page :where(button, a, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--nx-purple) 84%, white 16%);
+  outline-offset: 2px;
+}
+
+.ai-page :where(button:disabled, [role="button"][aria-disabled="true"]) {
+  opacity: 0.48;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-page *,
+  .ai-page *::before,
+  .ai-page *::after {
+    scroll-behavior: auto !important;
+  }
+
+  .ai-page :where(button, [role="button"]) {
+    transition: none !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .ai-page [class*="backdrop-blur"] {
+    background-color: var(--nx-work);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .ai-page {
+    --ai-border: var(--nx-rule);
+  }
+
+  .ai-page [class*="border-white"],
+  .ai-page [class*="border-[var(--ds-border-subtle)]"] {
+    border-color: var(--nx-rule);
+  }
+}
+
+.nexus-studio-root .nexus-composer[data-state="success"] { border-color: var(--nx-success); }
+.nexus-studio-root .nexus-composer[data-state="error"] { border-color: var(--nx-danger); }
+.nexus-studio-root .nexus-composer[data-agent-tone="waiting"] { border-color: var(--ds-warning-border); }
+.nexus-studio-root .nexus-composer[data-agent-tone="danger"] { border-color: var(--ds-danger-border); }
+.nexus-studio-root .nexus-composer .nx-composer-submit { box-shadow: var(--nx-shadow-control); }
+.nexus-studio-root .nexus-composer:not([aria-busy="true"]) .nx-composer-submit { background: linear-gradient(135deg, var(--nx-purple-strong), var(--nx-purple)); }

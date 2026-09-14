@@ -22,7 +22,7 @@ describe("AnimatedStatusText", () => {
     expect(screen.getByText("Writing files").classList.contains("nexus-status-text-in")).toBe(true);
 
     act(() => {
-      jest.advanceTimersByTime(140);
+      jest.advanceTimersByTime(180);
     });
 
     expect(screen.queryByText("Thinking")).toBeNull();

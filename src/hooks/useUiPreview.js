@@ -19,6 +19,7 @@ export default function useUiPreview({ userId = '', designId, projectId, sourceR
   const identity = identityOf({ designId, projectId, sourceRevision, snapshotId, stateId, viewportId });
   const [record, setRecord] = useState(null);
   const [image, setImage] = useState(null);
+  const [previousImage, setPreviousImage] = useState(null);
   const [attempt, setAttempt] = useState(0);
   const urlRef = useRef(null);
   const urls = useRef(new Set());
@@ -42,9 +43,9 @@ export default function useUiPreview({ userId = '', designId, projectId, sourceR
     // Release replaced URLs only after React has committed the new image src.
     const visibleUrl = image?.scope === scope ? image.url : null;
     urls.current.forEach(url => {
-      if (url !== visibleUrl) { URL.revokeObjectURL(url); urls.current.delete(url); }
+      if (url !== visibleUrl && !(previousImage?.scope === scope && url === previousImage.url)) { URL.revokeObjectURL(url); urls.current.delete(url); }
     });
-  }, [image, scope]);
+  }, [image, previousImage, scope]);
   useEffect(() => {
     if (urlRef.current && urlRef.current.scope !== scope) {
       urlRef.current = null;
@@ -54,6 +55,7 @@ export default function useUiPreview({ userId = '', designId, projectId, sourceR
   const install = (blob, preview, imageScope) => {
     const next = { scope: imageScope, identity: identityOf(preview), url: URL.createObjectURL(blob), preview };
     urls.current.add(next.url);
+    setPreviousImage(urlRef.current?.scope === imageScope ? urlRef.current : null);
     urlRef.current = next; setImage(next);
   };
   useEffect(() => {
@@ -112,5 +114,6 @@ export default function useUiPreview({ userId = '', designId, projectId, sourceR
   const retained = image?.scope === scope ? image : null;
   return { status: visible?.status || (snapshotId ? 'loading' : 'waiting_capture'),
     preview: retained?.preview || null, imageUrl: retained?.url || '', earlier: Boolean(retained && retained.identity !== identity),
+    previousImageUrl: previousImage?.scope === scope ? previousImage.url : '',
     error: visible?.error || '', retry: () => setAttempt(x => x + 1) };
 }

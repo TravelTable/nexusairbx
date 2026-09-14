@@ -14,6 +14,9 @@ import {
 } from "lucide-react";
 
 import WorkspaceRibbon from "../WorkspaceRibbon";
+import CompactAgentRunBar from "../../../components/ai/workspace/CompactAgentRunBar";
+import { getWorkspacePresentation, workspacePresentationAttributes } from "../../../lib/runPresentation";
+import { useMotionPresence } from "../../../hooks/useMotionPresence";
 import "./UiCreatorChrome.css";
 
 export const UI_TEMPLATES = [
@@ -104,6 +107,7 @@ export default function UiCreatorChrome({
   projectTitle,
   studioReady,
   working,
+  presentation = getWorkspacePresentation({ busy: working }),
   loading,
   status,
   saved,
@@ -158,6 +162,8 @@ export default function UiCreatorChrome({
   });
 
   const [pickerOpen, setPickerOpen] = useState(false);
+  const drawerPresence = useMotionPresence(Boolean(drawer), 280);
+  const pickerPresence = useMotionPresence(pickerOpen, 200);
   const [mobileView, setMobileView] = useState("chat");
   const [renaming, setRenaming] = useState(false);
   const [title, setTitle] = useState("");
@@ -199,7 +205,7 @@ export default function UiCreatorChrome({
   }, []);
 
   useEffect(() => {
-    if (!drawerOpen) return undefined;
+    if (!drawerOpen || !drawerPresence.present) return undefined;
 
     const previous = window.document.activeElement;
     const trigger = inspectTrigger.current;
@@ -256,7 +262,8 @@ export default function UiCreatorChrome({
       let attempts = 0;
 
       const restoreFocus = () => {
-        const target = sharedHeader ? trigger : previous;
+        const target = sharedHeader && trigger?.closest('.workspace-header__actions[data-open="false"]')
+          ? window.document.querySelector('.workspace-header__more') : sharedHeader ? trigger : previous;
 
         if (target?.closest?.("[inert]") && attempts++ < 60) {
           window.requestAnimationFrame(restoreFocus);
@@ -272,7 +279,7 @@ export default function UiCreatorChrome({
         restoreFocus();
       }
     };
-  }, [drawerOpen, sharedHeader]);
+  }, [drawerOpen, drawerPresence.present, sharedHeader]);
 
   useEffect(() => {
     if (!pickerOpen) return undefined;
@@ -356,7 +363,7 @@ export default function UiCreatorChrome({
   );
 
   return (
-    <div className={`uc-app ${sharedHeader ? "uc-app--shared-header" : ""}`}>
+    <div className={`uc-app ${sharedHeader ? "uc-app--shared-header" : ""}`} {...workspacePresentationAttributes(presentation)}>
       {!sharedHeader ? (
         <WorkspaceRibbon
           mode="ui"
@@ -421,9 +428,9 @@ export default function UiCreatorChrome({
           </div>
         ) : null}
 
-        {pickerOpen ? (
+        {pickerPresence.present ? (
           <section
-            ref={picker}
+            ref={picker} data-phase={pickerPresence.phase} aria-hidden={!pickerOpen || undefined} inert={!pickerOpen ? "" : undefined}
             id="ui-design-picker"
             className="uc-picker"
             aria-label="Choose or create a UI"
@@ -562,6 +569,7 @@ export default function UiCreatorChrome({
 
             {conversation}
 
+            <CompactAgentRunBar presentation={presentation} onOpenActivity={() => onDrawer('history')} />
             <div className="uc-composer">{composer}</div>
           </section>
 
@@ -704,10 +712,10 @@ export default function UiCreatorChrome({
         </div>
       </section>
 
-      {drawer ? (
+      {drawerPresence.present ? (
         <>
           <button
-            className="uc-drawer-backdrop"
+            className="uc-drawer-backdrop" data-phase={drawerPresence.phase} aria-hidden={!drawer || undefined} inert={!drawer ? "" : undefined}
             aria-label="Close drawer backdrop"
             tabIndex={-1}
             onClick={onCloseDrawer}
@@ -716,7 +724,7 @@ export default function UiCreatorChrome({
           <aside
             id="ui-build-drawer"
             ref={panel}
-            className="uc-drawer nx-workspace-drawer"
+            className="uc-drawer nx-workspace-drawer" data-phase={drawerPresence.phase} aria-hidden={!drawer || undefined} inert={!drawer ? "" : undefined}
             role="dialog"
             aria-modal={mobile || undefined}
             aria-label={

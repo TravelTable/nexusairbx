@@ -681,7 +681,7 @@ export function useAiWorkspaceController() {
       onCancel: cancelProjectedRun,
     });
   }, [chat.currentChatId, unified, unified.isGenerating, unified.pendingMessage, workspace.agentRun, chat.messages]);
-  const { isGenerating: unifiedIsGenerating, handleSubmit: submitUnifiedPrompt } = unified;
+  const { isGenerating: unifiedIsGenerating } = unified;
 
   const activeModeData = useMemo(
     () => CHAT_MODES.find((m) => m.id === activeConversationMode) || CHAT_MODES[0],
@@ -1920,7 +1920,10 @@ export function useAiWorkspaceController() {
         setAttachments([]);
         setPendingGenerationIntent(null);
         consumeGenerationIntent(intent.id);
-        await submitUnifiedPrompt(intent.prompt, [], workspace.projectArtifactSnapshot, {
+        // Restored intents must use the same admission path as an ordinary
+        // composer submission. That path validates or creates the draft project
+        // before useUnifiedChat constructs any project-scoped Firestore paths.
+        await handlePromptSubmit(null, intent.prompt, {
           mode: intent.mode || "agent",
           source: "generation_intent",
           intentId: intent.id,
@@ -1953,8 +1956,7 @@ export function useAiWorkspaceController() {
     runQuickScript,
     user,
     unifiedIsGenerating,
-    submitUnifiedPrompt,
-    workspace.projectArtifactSnapshot,
+    handlePromptSubmit,
     activeTab,
     isMobile,
     notify,

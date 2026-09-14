@@ -183,6 +183,8 @@ test("live actions use readable labels, never raw backend payloads", async () =>
   await waitFor(() => expect(deliver).toBeDefined());
   const {act}=require("@testing-library/react");
   await act(async()=>deliver({eventId:"stream-1",sequence:1,eventType:"ui_build_progress",payload:{designId:"design-1",stage:"preparing",message:'RAW_BACKEND_PAYLOAD',sourceRevision:"rev-1"}}));
+  expect(screen.queryByLabelText("Build actions")).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Open build activity" }));
   expect(screen.getByLabelText("Build actions")).toHaveTextContent("Saving files");
   expect(screen.queryByText("RAW_BACKEND_PAYLOAD")).not.toBeInTheDocument();
 });

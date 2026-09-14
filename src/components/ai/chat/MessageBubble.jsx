@@ -89,7 +89,7 @@ export default function MessageBubble({
       <div className="group/message flex w-full justify-end">
         <div className="nx-user-message max-w-[88%] sm:max-w-[68%]">
           <MessageAttachments attachments={m.attachments} onPublishAttachment={onPublishAttachment} studioSessionId={studioSessionId} studioConnected={studioConnected} />
-          <div className="rounded-[14px] bg-[var(--ds-fill-hover)] px-3.5 py-[11px]">
+          <div className="nx-user-message__body rounded-[14px] bg-[var(--ds-fill-hover)] px-3.5 py-[11px]">
             <div className="whitespace-pre-wrap text-[15px] font-normal leading-relaxed text-[var(--ds-text)]">
               <UserMessageContent content={m.content} onOpenFile={onOpenFile} />
             </div>

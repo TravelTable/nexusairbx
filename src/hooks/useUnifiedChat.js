@@ -478,6 +478,13 @@ export function useUnifiedChat(user, settings, refreshBilling, notify, options =
       let activeChatId = chat.currentChatId;
       if (!activeChatId) {
         activeChatId = await chat.startNewChat({ projectId, mode: selectedMode });
+        if (!activeChatId) {
+          const projectError = new Error(
+            "A project must be selected or created before starting this chat."
+          );
+          projectError.code = "PROJECT_REQUIRED";
+          throw projectError;
+        }
         const seed = String(titleSeed || "New chat");
         if (activeChatId && seed !== "New chat") {
           await updateDoc(

@@ -17,7 +17,9 @@ export default function VideoShowcase() {
             <video
               className={styles.videoElement}
               src="/assets/videos/p6.mp4"
-              preload="none"
+              preload="auto"
+              autoPlay
+              loop
               muted
               playsInline
               controls
@@ -35,7 +37,9 @@ export default function VideoShowcase() {
             <video
               className={styles.videoElement}
               src="/assets/videos/p8.mp4"
-              preload="none"
+              preload="auto"
+              autoPlay
+              loop
               muted
               playsInline
               controls

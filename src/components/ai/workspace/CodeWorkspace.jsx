@@ -19,8 +19,8 @@ function defineNexusThemes(monaco) {
         { token: "number", foreground: "D8AD65" },
       ],
       colors: {
-        "editor.background": "#0B0B0C",
-        "editor.foreground": "#F5F5F3",
+        "editor.background": "#0A0910",
+        "editor.foreground": "#F7F5FB",
         "editorLineNumber.foreground": "#666970",
         "editorLineNumber.activeForeground": "#D2D3D5",
         "editor.selectionBackground": "#A78BFA4D",
@@ -281,8 +281,9 @@ export default function CodeWorkspace({
       )}
 
       {conflict && (
-        <div className="border-b border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)]  bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] px-4 py-3 text-xs text-[var(--ds-danger)] space-y-3">
-          <div className="font-bold">Source conflict: Studio changed since this file was opened.</div>
+        <div className="nx-studio-conflict px-4 py-3 text-xs space-y-3" role="region" aria-label="Studio source conflict">
+          <div className="font-bold">Studio version changed</div>
+          <p>Your copy and Studio no longer match. Review the changes before choosing which version to keep.</p>
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-2 font-mono text-[11px]">
             <div className="rounded bg-[var(--ds-fill-subtle)] p-2">
               <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-[var(--ds-text-secondary)]">Base</div>

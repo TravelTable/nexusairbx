@@ -12,6 +12,32 @@ const base={userId:'user',designId:'design',projectId:'project',sourceRevision:'
 const waiting={status:'waiting_capture',imageUrl:'',preview:null,error:'',retry:jest.fn()};
 const image={status:'ready',imageUrl:'blob:verified',error:'',retry:jest.fn(),preview:{sourceRevision:'rev',viewportId:'desktop',stateLabel:'Default',snapshotId:'snap',rendererBackend:'private',viewport:{width:1280,height:720},warnings:[]}};
 beforeEach(()=>{jest.clearAllMocks();useUiPreview.mockReturnValue(waiting);});
+test('reveals each loaded result once without replaying on zoom or unrelated renders', () => {
+  useUiPreview.mockReturnValue(image);
+  const { container, rerender } = render(<UiPreviewPane {...base}/>);
+  const surface = () => container.querySelector('.nx-ui-preview__device-surface');
+  expect(surface()).toHaveAttribute('data-status', 'loading');
+  fireEvent.load(screen.getByRole('img'));
+  expect(surface()).toHaveAttribute('data-status', 'ready');
+  const firstSurface = surface();
+  fireEvent.click(screen.getByRole('button', { name: 'Zoom in' }));
+  expect(surface()).toBe(firstSurface);
+  useUiPreview.mockReturnValue({ ...image, imageUrl: 'blob:next' });
+  rerender(<UiPreviewPane {...base}/>);
+  expect(surface()).toBe(firstSurface);
+  expect(surface()).toHaveAttribute('data-status', 'loading');
+  fireEvent.load(screen.getByRole('img'));
+  expect(surface()).toHaveAttribute('data-status', 'ready');
+});
+
+test('an earlier image stays labeled and a paused build has no working dots', () => {
+  useUiPreview.mockReturnValue({ ...image, earlier: true });
+  const { container } = render(<UiPreviewPane {...base} run={{ stage: 'Waiting for Studio', working: false }}/>);
+  fireEvent.load(screen.getByRole('img'));
+  expect(container.querySelector('.nx-ui-preview__device-surface')).toHaveAttribute('data-status', 'previous');
+  expect(screen.getByText('Previous preview')).toBeVisible();
+  expect(screen.queryByLabelText('Updating preview')).not.toBeInTheDocument();
+});
 test('empty preview encourages generation without Studio and shows no fabricated image',()=>{
   render(<UiPreviewPane {...base} hasNodes={false} studioConnected={false} capture={null}/>);
   expect(screen.getByText(/Use the chat to describe a shop/)).toBeVisible();

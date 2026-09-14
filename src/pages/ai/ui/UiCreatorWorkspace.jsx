@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import CreationPromptComposer from '../../../components/ai/chat/CreationPromptComposer';
 import MessageList from '../../../components/ai/chat/MessageList';
 import { Conversation, ConversationContent, ConversationScrollButton } from '../../../components/ai-elements/conversation';
@@ -16,12 +16,9 @@ import { normalizeChatAttachments } from '../../../lib/chatAttachments';
 import { askUiQuestion, watchUiConversation } from '../../../lib/uiConversation';
 import './UiCreatorWorkspace.css';
 
-export const UI_BUILD_LABELS = { generating: 'Writing UI files', preparing: 'Saving files', building_model: 'Building RBXM', applying: 'Checking Studio',
-  awaiting_studio: 'Applying to Studio', capturing: 'Capturing UI', awaiting_capture: 'Capturing UI', design_preview: 'Preparing preview', rendering: 'Rendering preview',
-  awaiting_renders: 'Rendering preview', reviewing: 'Reviewing the render', repairing: 'Refining your UI', complete: 'Visually reviewed', saved: 'Saved',
-  preview_unavailable: 'Preview unavailable', needs_review: 'Review needs attention', renderer_limited: 'Preview limitations',
-  budget_exhausted: 'Review budget reached', failed: 'Build needs attention' };
-const actions = { understanding_request: 'Understanding your request', planning_design: 'Planning the design', resolving_assets: 'Resolving icons and assets', generating_artwork: 'Generating matching artwork', extracting_artwork: 'Preparing individual components', writing_ui: 'Writing your UI', rendering_desktop: 'Rendering desktop', rendering_mobile: 'Rendering mobile', reviewing_design: 'Reviewing design quality', improving_design: 'Improving the design', finding_assets: 'Finding icons and images', uploading_assets: 'Uploading images to Roblox', building_layout: 'Building UI layout', writing_implementation: 'Writing UI implementation', validating_implementation: 'Checking UI implementation' };
+import { getUiWorkspacePresentation, UI_BUILD_LABELS, UI_ACTION_LABELS as actions } from '../../../lib/runPresentation';
+import { WorkspacePresentationContext } from '../../../components/ai/workspace/WorkspacePresentationContext';
+export { UI_BUILD_LABELS } from '../../../lib/runPresentation';
 const ended = new Set(['complete','saved','preview_unavailable','needs_review','renderer_limited','budget_exhausted','failed']);
 const terminalTask = task => ended.has(task?.uiBuild?.stage) || ['cancelled','failed','succeeded'].includes(task?.status);
 const metadata = { workspace: 'ui_creator', displayPolicy: 'ui_build' };
@@ -29,7 +26,7 @@ const metadata = { workspace: 'ui_creator', displayPolicy: 'ui_build' };
 export default function UiCreatorWorkspace({ user, projectId, projectTitle, modelVersion, studio, studioSessionId,
   isStarterOrAbove, onRequireStarter, onRequireAuth, onBillingRefresh, notify, navigateTo,
   modelControl, studioControl, onModeChange, onChangeProject, onOpenEvidence, onOpenStudio,
-  sharedHeader = false, headerActionTarget = null, onHeaderModalChange }) {
+  sharedHeader = false, headerActionTarget = null, onHeaderModalChange, onPresentationChange }) {
   const [designs, setDesigns] = useState([]), [design, setDesign] = useState(null), [task, setTask] = useState(null);
   const [events, setEvents] = useState([]), [history, setHistory] = useState([]), [answer, setAnswer] = useState('');
   const [files, setFiles] = useState([]), [manifest, setManifest] = useState(null), [prompt, setPrompt] = useState('');
@@ -51,6 +48,10 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
   const document = design?.document, build = task?.uiBuild, taskId = task?.taskId;
   const active = Boolean(task && !terminalTask(task) && (task.mode === 'agent' || build));
   const working = Boolean(busy) || active;
+  const [stopping, setStopping] = useState(false);
+  const presentation = useMemo(() => getUiWorkspacePresentation({ task, busy, connection, stopping }), [task, busy, connection, stopping]);
+  useEffect(() => { onPresentationChange?.({ ...presentation, projectId }); }, [presentation, projectId, onPresentationChange]);
+  useEffect(() => () => onPresentationChange?.(null), [onPresentationChange]);
   const studioReady = Boolean(studio?.connected && studioSessionId);
   const nodes = document?.screens?.flatMap(s => s.nodes || []) || [];
   const saved = nodes.length > 0 || Boolean(document?.sourceFiles?.length);
@@ -80,7 +81,7 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
     try { const result = await getUiPreviewManifest(id); if (scopeRef.current === requestScope && designRef.current?.designId === id) setManifest(result); }
     catch (e) { if (scopeRef.current === requestScope && designRef.current?.designId === id) report(e); }
   }, [report]);
-  const resetSession = useCallback(() => { askController.current?.abort(); designRef.current = null; setDesign(null); setTask(null); setEvents([]); setFiles([]); setFilesError(''); setManifest(null); setHistory([]); setAnswer(''); setPendingPrompt(''); setCheckpoints([]); setConnectApply(null); }, []);
+  const resetSession = useCallback(() => { askController.current?.abort(); designRef.current = null; setDesign(null); setTask(null); setEvents([]); setFiles([]); setFilesError(''); setManifest(null); setPreviewIdentity(''); setHistory([]); setAnswer(''); setPendingPrompt(''); setCheckpoints([]); setConnectApply(null); }, []);
   const load = useCallback(async id => {
     const requestScope = scopeRef.current, sequence = ++loadSequence.current;
     const current = () => requestScope === scopeRef.current && sequence === loadSequence.current;
@@ -257,7 +258,7 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
     if (['luau','files'].includes(name) && taskId && (filesError || !files.length)) { const id = document?.designId; try { const output = await getBuildWorkspaceSnapshot(JSON.parse(fileScope)); if (designRef.current?.designId === id) { setFiles(output.items || []); setFilesError(''); } } catch (e) { setFilesError(e.message); } }
     if (name === 'history' && document) { const id = document.designId; try { const result = await listUiCheckpoints(id); if (designRef.current?.designId === id) setCheckpoints(result.checkpoints || []); } catch (e) { report(e); } }
   };
-  const stop = async () => { if (busy === 'Answering') { askController.current?.abort(); return; } if (taskId) try { await cancelTask(taskId); setTask(t => ({ ...t, status: 'cancelled' })); } catch (e) { report(e); } };
+  const stop = async () => { setStopping(true); try { if (busy === 'Answering') { askController.current?.abort(); return; } if (taskId) { await cancelTask(taskId); setTask(t => ({ ...t, status: 'cancelled' })); } } catch (e) { report(e); } finally { setStopping(false); } };
   const newUI = async () => { if (working || !allowed()) return; ++loadSequence.current; resetSession(); try { window.localStorage.removeItem(lastOpenKey); } catch {} setPrompt(''); setAttachments([]); setError(''); setDrawer(''); };
   const checkpoint = async () => { try { await createUiCheckpoint(document.designId, { expectedRevision: document.revision }); await openDrawer('history'); } catch (e) { report(e); } };
   const restore = async c => { try { await restoreUiCheckpoint(document.designId, c.checkpointId, document.revision); await load(document.designId); } catch (e) { report(e); } };
@@ -268,38 +269,39 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
   const livePrompt = pendingPrompt || task?.intent?.original;
   const showPrompt = livePrompt && !messages.some(m => m.role === 'user' && m.content === livePrompt);
   const progress = events.filter(e => e.eventType === 'ui_build_progress').map(e => actions[e.payload?.action] || UI_BUILD_LABELS[e.payload?.stage]).filter(Boolean).filter((label, i, all) => i === 0 || label !== all[i - 1]);
-  const status = busy || connection || (task?.status === 'cancelled' ? 'Stopped · saved work retained' : actions[build?.action] || UI_BUILD_LABELS[build?.stage]) || '';
+  const status = presentation.state === 'idle' ? '' : presentation.label;
   const conversation = <><Conversation className="ui-creator__conversation"><ConversationContent className="ui-creator__messages">
     {messages.length ? <MessageList messages={messages} activeMode="ui" isBusy={working} studioConnected={studioReady} studioSessionId={studioSessionId} notify={notify}/> : null}
     {showPrompt ? <div className="uc-session-message">{livePrompt}</div> : null}
-    {progress.length ? <ol className="uc-live-actions" aria-label="Build actions">{progress.map((label, i) => <li key={i} data-active={active && i === progress.length - 1} data-attention={i === progress.length - 1 && ['failed', 'budget_exhausted', 'preview_unavailable', 'needs_review', 'renderer_limited'].includes(build?.stage)}>{label}</li>)}</ol> : active ? <p className="uc-file-note">Starting your build…</p> : null}
+    {presentation.terminal && !working ? <p className="uc-file-note nx-result-reveal">{status}</p> : null}
+
     {answer ? <MessageList messages={[{ id: 'live-answer', role: 'assistant', content: answer, metadata }]} activeMode="ui" isBusy={working}/> : null}
     {!working && saved && build?.stage === 'failed' && (build.errorCode === 'UI_VISUAL_REVIEW_INCOMPLETE' || build.message === 'Invalid UI visual review.') ? <button type="button" className="uc-button" onClick={retryReview}>Retry review</button> : null}
     {task?.mode === 'plan' && !build ? <div className="uc-session-message"><p>{task.intent?.normalizedGoal}</p><button className="uc-button uc-primary" onClick={async () => { try { const result = await approveTask(taskId, { executionInput: { settings: { modelVersion }, applyMode: 'manual_review', studioEnabled: false } }); setTask(result.task); } catch (e) { report(e); } }}>Build this plan</button></div> : null}
   </ConversationContent><ConversationScrollButton/></Conversation>{active || busy === 'Answering' ? <div className="uc-conversation-footer"><button onClick={stop}>Stop {busy === 'Answering' ? 'response' : 'build'}</button></div> : null}</>;
   const composer = <CreationPromptComposer prompt={prompt} setPrompt={setPrompt} attachments={attachments} setAttachments={setAttachments}
     onFileUpload={attachmentUpload.upload} onRetryAttachment={attachmentUpload.retry} onSubmit={submit} onStop={stop} onCancel={stop}
-    isGenerating={working} disabled={busy === 'Starting build'} placeholder="Describe your UI…" promptAriaLabel="UI prompt" submitLabel="Send prompt"
+    isGenerating={working} presentation={presentation} compactStatus disabled={busy === 'Starting build'} placeholder="Describe your UI…" promptAriaLabel="UI prompt" submitLabel="Send prompt"
     mode={mode} showDock={false} showWorkspaceOptions={false} modeControl={null}
     studioConnectionRequired={false} studioConnected={studioReady} studioConnectionType={studio?.connectionType}/>;
-  const showLiveFiles = active && (['generating', 'repairing', 'preparing', 'building_model', 'design_preview'].includes(build?.stage)
+  const showLiveFiles = active && !previewIdentity && !manifest?.lastSuccessfulPreviewJobId && (['generating', 'repairing', 'preparing', 'building_model', 'design_preview'].includes(build?.stage)
     || Boolean(build?.sourceFiles?.length && previewIdentity !== build?.sourceRevision));
-  const livePreview = <><div hidden={showLiveFiles} style={{ height: '100%' }}><UiPreviewPane userId={user?.uid} designId={document?.designId} projectId={projectId} sourceRevision={document?.revision}
+  const livePreview = <><div hidden={showLiveFiles} className="uc-preview-content"><UiPreviewPane userId={user?.uid} designId={document?.designId} projectId={projectId} sourceRevision={document?.revision}
     capture={manifest?.capture} states={manifest?.states || []} viewports={manifest?.viewports || []} capabilities={manifest?.capabilities}
     lastSuccessfulJobId={manifest?.lastSuccessfulPreviewJobId} renderJobs={build?.sourceRevision === document?.revision && build?.snapshotId === manifest?.capture?.snapshotId ? build?.matrix : []}
     studioConnected={studioReady} hasNodes={saved} studioReceipt={applied} onApplyToStudio={applySaved} onConnectStudio={connect}
     onRefreshCapture={studioReady && !document?.sourceFiles ? sync : undefined} sourceOwned={Boolean(document?.sourceFiles)} onRefreshManifest={refreshManifest} captureBusy={busy === 'Capturing UI'} applyBusy={working}
     updatingRevision={busy === 'Starting build' || (['generating','repairing'].includes(build?.stage) && active)} previewFailed={build?.stage === 'preview_unavailable'} buildFailure={build?.stage === 'failed' ? build.message || 'The UI build could not finish.' : null} pendingStudioCommand={build?.stage === 'awaiting_studio' ? build.commandId : null}
-    onRenderStatus={onRenderStatus} run={active ? { stage: actions[build?.action] || UI_BUILD_LABELS[build?.stage] || 'Starting build' } : null}/></div>
-    {showLiveFiles ? <UiLiveFiles key={taskId} files={build?.sourceFiles || []} stage={build?.stage} action={build?.action}/> : null}</>;
-  return <UiCreatorChrome document={document} designs={designs} projectTitle={projectTitle} studioReady={studioReady} working={working} loading={Boolean(busy)} status={status}
+    onRenderStatus={onRenderStatus} run={active ? { stage: actions[build?.action] || UI_BUILD_LABELS[build?.stage] || 'Starting build', working: presentation.active } : null}/></div>
+    {showLiveFiles ? <UiLiveFiles key={taskId} files={build?.sourceFiles || []} stage={build?.stage} action={build?.action} working={presentation.active}/> : null}</>;
+  return <WorkspacePresentationContext.Provider value={presentation}><UiCreatorChrome document={document} designs={designs} projectTitle={projectTitle} studioReady={studioReady} working={working} presentation={presentation} loading={Boolean(busy)} status={status}
     sharedHeader={sharedHeader} headerActionTarget={headerActionTarget} onHeaderModalChange={onHeaderModalChange}
     saved={saved} applied={applied} applyState={applyState} visuallyReviewed={visuallyReviewed}
     error={error} onDismissError={() => setError('')} modelControl={modelControl} studioControl={studioControl} onModeChange={onModeChange}
     onChangeProject={onChangeProject} onOpenEvidence={onOpenEvidence} onOpenStudio={connect} onAccount={() => navigateTo?.('/settings')}
     onNew={newUI} onLoad={load} onApply={applySaved} onDrawer={openDrawer} onPrompt={setPrompt} onTemplate={t => submit(null, t.prompt, t.title)}
     onRename={rename} onDelete={remove} undo={undo} onUndo={() => recover()} drawer={drawer} onCloseDrawer={closeDrawer}
-    drawerContent={<UiImplementationDrawer tab={drawer} document={document} files={files} readFile={readFile} working={working} build={build} liveFiles={build?.sourceFiles || []} onReview={retryReview}
-      filesError={filesError} onRetryFiles={() => openDrawer(drawer)} deletedDesigns={deletedDesigns} onRecover={recover} checkpoints={checkpoints} onCheckpoint={checkpoint} onRestore={restore} onAssets={() => navigateTo?.('/assets')} onSuggest={setPrompt}/>}
-    composer={composer} conversation={conversation} livePreview={livePreview}/>;
+    drawerContent={<>{progress.length ? <details className="uc-build-timeline" open={drawer === 'history'}><summary>Build activity</summary><ol className="uc-live-actions" aria-label="Build actions">{progress.map((label, i) => <li key={i} data-active={presentation.active && i === progress.length - 1}>{label}</li>)}</ol></details> : null}<UiImplementationDrawer tab={drawer} document={document} files={files} readFile={readFile} working={working} build={build} liveFiles={build?.sourceFiles || []} onReview={retryReview}
+      filesError={filesError} onRetryFiles={() => openDrawer(drawer)} deletedDesigns={deletedDesigns} onRecover={recover} checkpoints={checkpoints} onCheckpoint={checkpoint} onRestore={restore} onAssets={() => navigateTo?.('/assets')} onSuggest={setPrompt}/></>}
+    composer={composer} conversation={conversation} livePreview={livePreview}/></WorkspacePresentationContext.Provider>;
 }

@@ -1,0 +1,446 @@
+
+> nexusrbx-react@0.1.0 test
+> react-scripts test --watchAll=false --runInBand --runTestsByPath src/lib/runPresentation.test.js src/lib/productLifecycle.test.js src/components/ai/workspace/CompactAgentRunBar.test.jsx src/components/ai/workspace/AgentChatPanel.context.test.jsx src/components/ai/chat/ChatComposer.test.jsx src/components/ai/chat/AnimatedStatusText.test.jsx src/pages/ai/ui/UiCreatorWorkspace.test.jsx src/pages/ai/ui/UiPreviewPane.test.jsx src/pages/ai/ui/UiLiveFiles.test.jsx src/hooks/useUiPreview.test.js src/components/ai/workspace/WorkspaceShell.test.jsx src/components/ai/workspace/TaskProgressPanel.test.jsx src/components/ai/workspace/BuildWorkspace.test.jsx
+
+PASS src/components/ai/workspace/AgentChatPanel.context.test.jsx
+FAIL src/components/ai/chat/ChatComposer.test.jsx
+  ● ChatComposer compact interactions › shows brief success feedback when generation completes
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "success"
+    Received: "idle"
+
+      478 |
+      479 |       const composer = screen.getByRole("textbox", { name: "Prompt input" }).closest("[data-tour='prompt-composer']");
+    > 480 |       expect(composer.dataset.state).toBe("success");
+          |                                      ^
+      481 |
+      482 |       act(() => jest.advanceTimersByTime(1400));
+      483 |       expect(composer.dataset.state).toBe("idle");
+
+      at Object.<anonymous> (src/components/ai/chat/ChatComposer.test.jsx:480:38)
+
+PASS src/components/ai/workspace/CompactAgentRunBar.test.jsx
+PASS src/lib/runPresentation.test.js
+FAIL src/pages/ai/ui/UiCreatorWorkspace.test.jsx
+  ● shared header drawer retains focus during streamed updates and restores its trigger
+
+    expect(element).toHaveFocus()
+
+    Expected element with focus:
+      <button aria-label="Close drawer"><svg aria-hidden="true" class="lucide lucide-x" fill="none" height="19" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="19" xmlns="http://www.w3.org/2000/svg"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg></button>
+    Received element with focus:
+      <button aria-controls="ui-build-drawer" aria-expanded="true" type="button"><svg aria-hidden="true" class="lucide lucide-code-xml" fill="none" height="15" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="15" xmlns="http://www.w3.org/2000/svg"><path d="m18 16 4-4-4-4" /><path d="m6 8-4 4 4 4" /><path d="m14.5 4-5 16" /></svg>Inspect</button>
+
+       99 |   trigger.focus();
+      100 |   mounted.rerender(<UiCreatorChrome {...base} drawer="luau" working status="Writing controller" />);
+    > 101 |   expect(screen.getByLabelText('Close drawer')).toHaveFocus();
+          |                                                 ^
+      102 |   mounted.rerender(<UiCreatorChrome {...base} drawer="luau" working status="Saving revision" onCloseDrawer={() => close()} />);
+      103 |   expect(screen.getByLabelText('Close drawer')).toHaveFocus();
+      104 |   mounted.rerender(<UiCreatorChrome {...base} />);
+
+      at Object.<anonymous> (src/pages/ai/ui/UiCreatorWorkspace.test.jsx:101:49)
+
+  ● the files drawer stays inspectable during generation and restores focus
+
+    expect(element).not.toBeInTheDocument()
+
+    expected document not to contain element, found <aside aria-label="Inspect UI" class="uc-drawer nx-workspace-drawer" data-phase="exit" id="ui-build-drawer" inert="" role="dialog"><header><div><svg aria-hidden="true" class="lucide lucide-code-xml" fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg"><path d="m18 16 4-4-4-4" /><path d="m6 8-4 4 4 4" /><path d="m14.5 4-5 16" /></svg><strong>Inspect</strong></div><button aria-label="Close drawer"><svg aria-hidden="true" class="lucide lucide-x" fill="none" height="19" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="19" xmlns="http://www.w3.org/2000/svg"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg></button></header><div class="uc-drawer-content"><div class="uc-inspect-list"><article class="uc-inspect-item"><strong>Current UI</strong><small>Shop</small></article><button class="uc-button" disabled="">Save to history</button><button class="uc-button" disabled="">Review saved UI</button><div class="uc-inspect-empty"><strong>No history yet</strong><p>Save the current UI here when you want a restore point. Restoring it never applies changes to Studio automatically.</p></div></div></div><footer><button class="uc-text-button" disabled="">Move UI to recently deleted</button></footer></aside> instead
+
+      119 |   expect(screen.getByLabelText("AI build conversation")).toBeVisible();
+      120 |   fireEvent.keyDown(screen.getByRole("dialog"),{key:"Escape"});
+    > 121 |   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+          |                                            ^
+      122 |   expect(opener).toHaveFocus();
+      123 | });
+      124 |
+
+      at Object.<anonymous> (src/pages/ai/ui/UiCreatorWorkspace.test.jsx:121:44)
+
+  ● live actions use readable labels, never raw backend payloads
+
+    TestingLibraryElementError: Unable to find a label with the text of: Build actions
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div />
+      <div>
+        <div
+          class="uc-app "
+          data-agent-active="true"
+          data-agent-flow="true"
+          data-agent-glow="true"
+          data-agent-motion="working"
+          data-agent-pulse="true"
+          data-agent-state="generating"
+          data-agent-tone="active"
+        >
+          <header
+            class="workspace-header"
+            data-workspace-ribbon="true"
+          >
+            <div
+              class="workspace-header__identity"
+            >
+              <a
+                aria-label="NexusRBX home"
+                class="brand"
+                href="/"
+              >
+                <img
+                  alt=""
+                  aria-hidden="true"
+                  class="brandIcon"
+                  src="/favicon.png"
+                />
+              </a>
+              <button
+                aria-label="Change game. Current game: Game"
+                class="workspace-header__project"
+                title="Game"
+              >
+                <span>
+                  Game
+                </span>
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-chevron-down"
+                  fill="none"
+                  height="13"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="13"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="m6 9 6 6 6-6"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div
+              aria-label="Workspace mode"
+              class="workspace-header__tabs"
+              data-tour="mode-switcher"
+              role="group"
+            >
+              <button
+                aria-pressed="false"
+                type="button"
+              >
+                Agent
+              </button>
+              <button
+                aria-pressed="true"
+                type="button"
+              >
+                UI
+              </button>
+              <button
+                aria-pressed="false"
+                type="button"
+              >
+                Assets
+              </button>
+            </div>
+            <div
+              class="workspace-header__right"
+            >
+              <div
+                class="workspace-header__tools"
+              >
+                <button
+                  aria-controls="workspace-page-actions"
+                  aria-expanded="false"
+                  aria-label="Page actions"
+                  class="workspace-header__more"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="lucide lucide-ellipsis"
+                    fill="none"
+                    height="18"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="18"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="1"
+                    />
+                    <circle
+                      cx="19"
+                      cy="12"
+                      r="1"
+                    />
+                    <circle
+                      cx="5"
+                      cy="12"
+                      r="1"
+                    />
+                  </svg>
+                </button>
+                <div
+                  class="workspace-header__actions"
+                  data-open="false"
+                  id="workspace-page-actions"
+                >
+                  <div
+                    class="workspace-header__model"
+                  />
+                  <div
+                    class="workspace-header__page-slot"
+                  />
+                </div>
+              </div>
+              <div
+                class="workspace-header__studio"
+                data-tour="studio-pair"
+              />
+              <div
+                class="workspace-header__account"
+              />
+            </div>
+          </header>
+          <section
+            aria-label="UI Creator"
+            class="uc-main"
+          >
+            <header
+              class="uc-local-toolbar"
+            >
+              <div
+                aria-label="UI workspace view"
+                class="uc-view-tabs"
+                role="tablist"
+              >
+                <button
+                  aria-selected="true"
+                  role="tab"
+                  type="button"
+                >
+                  Chat
+                </button>
+                <button
+                  aria-selected="false"
+                  role="tab"
+                  type="button"
+                >
+                 ...
+
+      184 |   const {act}=require("@testing-library/react");
+      185 |   await act(async()=>deliver({eventId:"stream-1",sequence:1,eventType:"ui_build_progress",payload:{designId:"design-1",stage:"preparing",message:'RAW_BACKEND_PAYLOAD',sourceRevision:"rev-1"}}));
+    > 186 |   expect(screen.getByLabelText("Build actions")).toHaveTextContent("Saving files");
+          |                 ^
+      187 |   expect(screen.queryByText("RAW_BACKEND_PAYLOAD")).not.toBeInTheDocument();
+      188 | });
+      189 |
+
+      at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+      at getAllByLabelText (node_modules/@testing-library/dom/dist/queries/label-text.js:111:38)
+      at node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at getByLabelText (node_modules/@testing-library/dom/dist/query-helpers.js:95:19)
+      at Object.<anonymous> (src/pages/ai/ui/UiCreatorWorkspace.test.jsx:186:17)
+
+PASS src/components/ai/workspace/BuildWorkspace.test.jsx
+PASS src/components/ai/workspace/TaskProgressPanel.test.jsx
+FAIL src/pages/ai/ui/UiPreviewPane.test.jsx
+  ● reveals each loaded result once without replaying on zoom or unrelated renders
+
+    expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not <div class="nx-ui-preview__device-surface" data-status="loading"><img alt="Default state of the generated Roblox UI" class="nx-ui-preview__image nx-preview-image" data-loaded="false" draggable="false" height="720" src="blob:next" style="transform: scale(1.1); transform-origin: center center;" width="1280" /></div>
+
+      25 |   useUiPreview.mockReturnValue({ ...image, imageUrl: 'blob:next' });
+      26 |   rerender(<UiPreviewPane {...base}/>);
+    > 27 |   expect(surface()).not.toBe(firstSurface);
+         |                         ^
+      28 |   expect(surface()).toHaveAttribute('data-status', 'loading');
+      29 |   fireEvent.load(screen.getByRole('img'));
+      30 |   expect(surface()).toHaveAttribute('data-status', 'ready');
+
+      at Object.<anonymous> (src/pages/ai/ui/UiPreviewPane.test.jsx:27:25)
+
+PASS src/components/ai/workspace/WorkspaceShell.test.jsx
+FAIL src/pages/ai/ui/UiLiveFiles.test.jsx
+  ● streams the selected real source and follows newly started files
+
+    TestingLibraryElementError: Unable to find an accessible element with the role "tab" and name "View.luau"
+
+    Here are the accessible roles:
+
+      region:
+
+      Name "Generated UI files":
+      <section
+        aria-label="Generated UI files"
+        class="uc-live-files"
+      />
+
+      --------------------------------------------------
+      tablist:
+
+      Name "Source files":
+      <div
+        aria-label="Source files"
+        class="uc-live-files__tabs"
+        role="tablist"
+      />
+
+      --------------------------------------------------
+      tab:
+
+      Name "View.luau Saved":
+      <button
+        aria-selected="false"
+        data-file-state="saved"
+        role="tab"
+        type="button"
+      />
+
+      Name "Controller.client.luau Writing":
+      <button
+        aria-selected="true"
+        data-file-state="writing"
+        role="tab"
+        type="button"
+      />
+
+      --------------------------------------------------
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <section
+          aria-label="Generated UI files"
+          class="uc-live-files"
+        >
+          <div
+            class="uc-live-files__header"
+          >
+            <span>
+              Writing files
+              <span
+                aria-hidden="true"
+                class="nx-working-dots"
+              >
+                <i />
+                <i />
+                <i />
+              </span>
+            </span>
+            <small>
+              1 / 2 files
+            </small>
+          </div>
+          <div
+            aria-label="Source files"
+            class="uc-live-files__tabs"
+            role="tablist"
+          >
+            <button
+              aria-selected="false"
+              data-file-state="saved"
+              role="tab"
+              type="button"
+            >
+              View.luau
+              <svg
+                aria-label="Saved"
+                class="uc-live-files__saved"
+                color="currentColor"
+                fill="none"
+                height="12"
+                stroke="currentColor"
+                stroke-width="1.5"
+                viewBox="0 0 24 24"
+                width="12"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M5 14.5C5 14.5 6.5 14.5 8.5 18C8.5 18 14.0588 8.83333 19 7"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.5"
+                />
+              </svg>
+            </button>
+            <button
+              aria-selected="true"
+              data-file-state="writing"
+              role="tab"
+              type="button"
+            >
+              Controller.client.luau
+              <span
+                aria-label="Writing"
+                class="uc-live-files__dot"
+              />
+            </button>
+          </div>
+          <div
+            class="uc-live-files__editor"
+          >
+            <pre
+              aria-label="Live source"
+            >
+              local root = script.Parent
+            </pre>
+          </div>
+        </section>
+      </div>
+    </body>
+
+      10 |   view.rerender(<UiLiveFiles files={next} stage="generating"/>);
+      11 |   expect(screen.getByLabelText('Live source')).toHaveTextContent('script.Parent');
+    > 12 |   fireEvent.click(screen.getByRole('tab', { name: 'View.luau' }));
+         |                          ^
+      13 |   view.rerender(<UiLiveFiles files={[next[0], { ...next[1], content: 'local root = script.Parent\nroot.Enabled = true' }]} stage="generating"/>);
+      14 |   expect(screen.getByLabelText('Live source')).toHaveTextContent('return UI');
+      15 |   expect(screen.queryByRole('tab', { name: 'JSON' })).not.toBeInTheDocument();
+
+      at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+      at node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at getByRole (node_modules/@testing-library/dom/dist/query-helpers.js:95:19)
+      at Object.<anonymous> (src/pages/ai/ui/UiLiveFiles.test.jsx:12:26)
+
+FAIL src/hooks/useUiPreview.test.js
+  ● switching identity revokes the previous object URL
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "blob:preview-1"
+
+    Number of calls: 0
+
+      240 |   await flush();
+      241 |   await waitFor(() => expect(latest.current.imageUrl).toBe("blob:preview-2"));
+    > 242 |   expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:preview-1");
+          |                               ^
+      243 | });
+      244 |
+      245 | test("the previous image remains visible through a new revision and a failed replacement", async () => {
+
+      at Object.<anonymous> (src/hooks/useUiPreview.test.js:242:31)
+
+PASS src/lib/productLifecycle.test.js
+PASS src/components/ai/chat/AnimatedStatusText.test.jsx
+
+Test Suites: 5 failed, 8 passed, 13 total
+Tests:       7 failed, 149 passed, 156 total
+Snapshots:   0 total
+Time:        13.438 s, estimated 19 s
+Ran all test suites within paths "src/lib/runPresentation.test.js", "src/lib/productLifecycle.test.js", "src/components/ai/workspace/CompactAgentRunBar.test.jsx", "src/components/ai/workspace/AgentChatPanel.context.test.jsx", "src/components/ai/chat/ChatComposer.test.jsx", "src/components/ai/chat/AnimatedStatusText.test.jsx", "src/pages/ai/ui/UiCreatorWorkspace.test.jsx", "src/pages/ai/ui/UiPreviewPane.test.jsx", "src/pages/ai/ui/UiLiveFiles.test.jsx", "src/hooks/useUiPreview.test.js", "src/components/ai/workspace/WorkspaceShell.test.jsx", "src/components/ai/workspace/TaskProgressPanel.test.jsx", "src/components/ai/workspace/BuildWorkspace.test.jsx".

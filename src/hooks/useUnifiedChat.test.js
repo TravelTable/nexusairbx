@@ -375,6 +375,33 @@ describe("useUnifiedChat", () => {
     });
   });
 
+  test("does not construct a Firestore path when a new chat has no project id", async () => {
+    const notify = jest.fn();
+    const startNewChat = jest.fn().mockResolvedValue(null);
+    useAiChat.mockReturnValue({
+      ...useAiChat(),
+      startNewChat,
+    });
+    const user = {
+      uid: "user-1",
+      getIdToken: jest.fn().mockResolvedValue("token"),
+    };
+    const { result } = renderHook(() => useUnifiedChat(user, {}, jest.fn(), notify));
+
+    await act(async () => {
+      await result.current.handleSubmit("Build a lobby system", [], null, {
+        mode: "agent",
+      });
+    });
+
+    expect(startNewChat).toHaveBeenCalledWith({ projectId: null, mode: "agent" });
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({
+      message: "A project must be selected or created before starting this chat.",
+      type: "error",
+    }));
+    expect(setDoc).not.toHaveBeenCalled();
+  });
+
   test("sends the exact selected MCP session and transport type for Ask mode", async () => {
     FEATURE_FLAGS.unifiedAgent = true;
     getStudioEnabledPreference.mockReturnValue(true);

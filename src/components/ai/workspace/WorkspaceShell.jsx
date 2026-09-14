@@ -8,12 +8,7 @@ import React, {
   useState,
 } from "react";
 import {
-  Activity,
   ArrowLeft,
-  Boxes,
-  ClipboardList,
-  FileCode2,
-  FolderTree,
   Maximize2,
   X,
 } from "lib/icons";
@@ -214,7 +209,7 @@ export default function WorkspaceShell({
   const stageTitleId = `workspace-stage-title-${shellId}`;
   const tabPanelId = `workspace-evidence-panel-${shellId}`;
   const stageTabIdPrefix = `workspace-evidence-stage-tab-${shellId}`;
-  const presence = useMotionPresence(Boolean(activePanel), 300);
+  const presence = useMotionPresence(Boolean(activePanel), 280);
   const [containerWidth, setContainerWidth] = useState(null);
   const [fullscreen, setFullscreen] = useState(false);
   const shellRef = useRef(null);

@@ -1,118 +1,254 @@
-:where(a, button, summary, input, textarea, select) {
-  transition-duration: var(--nx-motion-color);
-  transition-property: background-color, border-color, color, opacity;
-  transition-timing-function: var(--nx-ease-state);
+:root {
+  --nx-motion-color: 150ms;
+  --nx-motion-fast: 150ms;
+  --nx-motion-elevation: 200ms;
+  --nx-motion-state: 200ms;
+  --nx-motion-spatial: 280ms;
+  --nx-ease-state: cubic-bezier(0.22, 0.72, 0.24, 1);
+  --nx-ease-spatial: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ds-motion-press: var(--nx-motion-color);
+  --ds-motion-reveal: var(--nx-motion-elevation);
+  --ds-motion-dock: var(--nx-motion-spatial);
+  --ds-motion-stage: var(--nx-motion-spatial);
+  --ds-motion-construct: var(--nx-motion-spatial);
+  --ds-ease-spatial: var(--nx-ease-spatial);
+  --motion-instant: var(--nx-motion-color);
+  --motion-fast: var(--nx-motion-color);
+  --motion-standard: var(--nx-motion-elevation);
+  --motion-panel: var(--nx-motion-spatial);
+  --motion-large: 300ms;
+  --ease-product: var(--nx-ease-spatial);
+  --ease-standard: var(--nx-ease-state);
+  --nx-motion-message: 240ms;
+  --nx-motion-artifact: 300ms;
+  --nx-motion-preview: 400ms;
 }
 
-:where(.card-surface, .nexus-page-card, .nx-modal-surface, .nx-menu-surface) {
-  transition-duration: var(--nx-motion-elevation);
-  transition-property: background-color, border-color, box-shadow, transform;
-  transition-timing-function: var(--nx-ease-state);
+/* Shared entrances, presence, and short feedback. Loops use explicit lifecycle flags. */
+:where(button, a, summary, input, textarea, select) {
+  transition: color var(--nx-motion-color), background-color var(--nx-motion-color), border-color var(--nx-motion-color), opacity var(--nx-motion-color);
+}
+.nexus-studio-root :where(.nx-button, .uc-button, .uc-workspace-actions button, .nx-composer-submit, .nx-credit-confirmation button) {
+  transition: transform var(--nx-motion-fast) var(--nx-ease-state), color var(--nx-motion-color), background-color var(--nx-motion-color), border-color var(--nx-motion-color);
+}
+@media (hover: hover) and (pointer: fine) {
+  .nexus-studio-root :where(.nx-button, .uc-button, .uc-workspace-actions button, .nx-composer-submit, .nx-credit-confirmation button):hover:not(:disabled) { transform: translateY(-1px); }
+}
+.nexus-studio-root :where(.nx-button, .uc-button, .uc-workspace-actions button, .nx-composer-submit, .nx-credit-confirmation button):active:not(:disabled) { transform: translateY(0) scale(.98); }
+.nx-presence, .uc-picker[data-phase] {
+  transition: opacity var(--nx-motion-state) var(--nx-ease-state), transform var(--nx-motion-state) var(--nx-ease-state);
+}
+:where(.nx-presence, .uc-picker)[data-phase="enter"] { opacity: 1; transform: translateY(0); animation: nx-state-enter var(--nx-motion-state) var(--nx-ease-state) backwards; }
+:where(.nx-presence, .uc-picker)[data-phase="exit"] { opacity: 0; transform: translateY(6px); pointer-events: none; }
+.uc-drawer[data-phase] { transition: opacity var(--nx-motion-spatial) var(--nx-ease-spatial), transform var(--nx-motion-spatial) var(--nx-ease-spatial); }
+.uc-drawer[data-phase="enter"] { animation: nx-drawer-enter var(--nx-motion-spatial) var(--nx-ease-spatial) backwards; }
+.uc-drawer[data-phase="exit"] { opacity: 0; transform: translateX(15px); pointer-events: none; }
+.uc-drawer-backdrop[data-phase="exit"] { opacity: 0; pointer-events: none; }
+.nexus-run-bar { animation: nx-state-enter var(--nx-motion-state) var(--nx-ease-state) backwards; }
+.nexus-composer[data-agent-flow="true"]::before { animation: nx-composer-flow 3.4s var(--nx-ease-spatial) infinite; }
+.nexus-studio-root :where(.agent-chat-panel, .uc-app)::before { transition: opacity var(--nx-motion-artifact) var(--nx-ease-state); }
+[data-agent-pulse="true"] > .agent-status-dot, .nx-build-signal[data-active="true"], .uc-live-files__dot { animation: nx-working-pulse 1.8s ease-in-out infinite; }
+.nx-generated-artifact, .generated-artifact, .nx-artifact-arrival { animation: nx-artifact-enter var(--nx-motion-artifact) var(--nx-ease-spatial) backwards; }
+.nx-result-check, .nx-result-reveal, .uc-notice, .nx-task-step[data-step-state="completed"] svg { animation: nx-state-enter var(--nx-motion-state) var(--nx-ease-state) backwards; }
+.nx-task-step { transition: border-color var(--nx-motion-state), background-color var(--nx-motion-state), color var(--nx-motion-state); }
+.nx-step-progress-fill { transition: transform var(--nx-motion-spatial) var(--nx-ease-spatial); }
+.nx-task-step[data-step-state="needs_input"] { animation: nx-attention-once var(--nx-motion-artifact) var(--nx-ease-state); }
+.nx-task-step[data-step-state="failed"] { animation: nexus-tool-error var(--nx-motion-artifact) var(--nx-ease-state); }
+.nx-task-progress:not([data-agent-active="true"]) .animate-spin { animation: none; }
+.uc-live-files__tabs button { animation: nx-state-enter var(--nx-motion-state) var(--nx-ease-state) backwards; transition: color var(--nx-motion-color), background-color var(--nx-motion-color); }
+.uc-live-files__saved { animation: nx-state-enter var(--nx-motion-state) var(--nx-ease-state) backwards; }
+.nx-preview-image[data-loaded="true"] { animation: nx-preview-resolve var(--nx-motion-preview) var(--nx-ease-spatial) backwards; }
+.nx-preview-image[data-loaded="false"] { opacity: 0; }
+.nx-preview-previous { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 1; transition: opacity var(--nx-motion-preview) var(--nx-ease-state); pointer-events: none; }
+.nx-preview-previous[data-phase="exit"] { opacity: 0; }
+.workspace-mode-tab { transition: color var(--nx-motion-state), background-color var(--nx-motion-state); }
+@keyframes nx-state-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes nx-drawer-enter { from { opacity: 0; transform: translateX(15px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes nx-artifact-enter { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes nx-preview-resolve { from { opacity: .4; filter: blur(5px); transform: scale(.99); } to { opacity: 1; filter: blur(0); transform: scale(1); } }
+@keyframes nx-working-pulse { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+@keyframes nx-composer-flow { 0%, 100% { transform: translateX(-75%); opacity: .3; } 50% { transform: translateX(75%); opacity: 1; } }
+@keyframes nx-attention-once { from { background-color: var(--ds-warning-soft); } to { background-color: var(--ds-fill-subtle); } }
+.nexus-chat-switch {
+  animation: nexus-chat-switch-in var(--motion-standard) var(--ease-product) both;
 }
 
-:where(button, [role="button"]):active:not(:disabled, [aria-disabled="true"]) {
-  transform: translateY(1px) scale(0.99);
+.nexus-message-arrival {
+  animation: nexus-message-arrival var(--nx-motion-message) var(--ease-product) both;
 }
 
-.nx-composer-shine {
-  position: relative;
-  isolation: isolate;
+.nexus-status-text {
+  display: inline-grid;
+  min-width: 0;
 }
-.nx-composer-shine::after {
-  position: absolute;
-  z-index: -1;
-  inset: -1px;
-  overflow: hidden;
-  border-radius: inherit;
-  background: linear-gradient(
-    110deg,
-    transparent 15%,
-    rgb(180 92 255 / 18%) 42%,
-    transparent 70%
-  );
-  background-size: 240% 100%;
-  content: "";
-  opacity: 0;
+
+.nexus-status-text > span {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+.nexus-status-text-in {
+  animation: nexus-status-in 180ms var(--ease-product) both;
+}
+
+.nexus-status-text-out {
+  animation: nexus-status-out 180ms var(--ease-standard) both;
   pointer-events: none;
 }
 
-.nx-composer-shine:focus-within::after {
-  inset: -1px 15% auto;
-  height: 2px;
-  border-radius: var(--nx-radius-pill);
-  background: linear-gradient(
-    90deg,
-    transparent 8%,
-    rgb(180 92 255 / 32%) 50%,
-    transparent 92%
-  );
-  background-size: 100% 100%;
-  opacity: 1;
+.nexus-streaming-caret::after {
+  display: inline-block;
+  width: 0.45em;
+  margin-left: 0.12em;
+  color: var(--ds-accent);
+  content: "▍";
+  animation: nexus-caret-blink 900ms steps(1, end) infinite;
 }
 
-.nx-composer-shine--active::after {
-  inset: -1px;
-  height: auto;
-  border-radius: inherit;
-  background: linear-gradient(
-    110deg,
-    transparent 15%,
-    rgb(180 92 255 / 18%) 42%,
-    transparent 70%
-  );
-  background-size: 240% 100%;
-  animation: nx-composer-shine 7s var(--nx-ease-spatial) infinite;
+.nexus-tool-step {
+  transition:
+    color var(--motion-fast) var(--ease-standard),
+    background-color var(--motion-fast) var(--ease-standard);
 }
 
-.nx-build-signal[data-active="true"]::after {
-  position: absolute;
-  inset: -5px;
-  border: 1px solid var(--nx-purple-edge);
-  border-radius: inherit;
-  content: "";
-  animation: nx-signal-pulse 1.8s var(--nx-ease-state) infinite;
+.nexus-tool-step-icon {
+  transition:
+    color var(--motion-fast) var(--ease-standard),
+    transform var(--motion-standard) var(--ease-product);
 }
 
-@keyframes nx-signal-pulse {
-  0% {
-    opacity: 0.85;
-    transform: scale(0.7);
-  }
-  70%,
-  100% {
+.nexus-tool-step[data-motion-status="active"] .nexus-tool-step-icon svg {
+  animation: nexus-tool-spin 850ms linear infinite;
+}
+
+.nexus-tool-step[data-motion-event="complete"] .nexus-tool-step-icon {
+  animation: nexus-tool-complete var(--motion-standard) var(--ease-product) both;
+}
+
+.nexus-tool-step[data-motion-event="file-ready"] {
+  animation: nx-artifact-enter var(--nx-motion-artifact) var(--ease-product) both;
+}
+
+.nexus-tool-step[data-motion-event="error"] {
+  animation: nexus-tool-error var(--motion-standard) var(--ease-standard) both;
+}
+
+.nexus-tool-step[data-step-kind="verification"][data-motion-event="complete"] {
+  animation: nexus-verification-complete var(--motion-standard) var(--ease-standard) both;
+}
+
+@keyframes nexus-chat-switch-in {
+  from {
     opacity: 0;
-    transform: scale(1.55);
+    transform: translateY(2px);
   }
-}
-
-@keyframes nx-composer-shine {
-  0%,
-  64% {
-    background-position: 160% 0;
-    opacity: 0;
-  }
-  70% {
+  to {
     opacity: 1;
+    transform: translateY(0);
   }
+}
+
+@keyframes nexus-message-arrival {
+  from { opacity: 0; transform: translateY(6px); filter: blur(2px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+@keyframes nexus-status-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes nexus-status-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes nexus-caret-blink {
+  0%,
+  48% {
+    opacity: 0.9;
+  }
+  49%,
   100% {
-    background-position: -60% 0;
     opacity: 0;
   }
 }
 
+@keyframes nexus-tool-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes nexus-tool-complete {
+  from {
+    opacity: 0.6;
+    transform: scale(0.82);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes nexus-file-ready {
+  from {
+    opacity: 0.65;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes nexus-tool-error {
+  0% {
+    background-color: transparent;
+  }
+  45% {
+    background-color: color-mix(in srgb, var(--ds-danger) 12%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes nexus-verification-complete {
+  0% {
+    background-color: transparent;
+  }
+  45% {
+    background-color: color-mix(in srgb, var(--ds-success) 8%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+
+@media (pointer: coarse), (max-width: 700px) {
+  .nexus-message-arrival, .nx-generated-artifact, .nx-artifact-arrival, .nx-preview-image[data-loaded="true"] { animation-name: nx-state-enter; }
+}
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     scroll-behavior: auto !important;
-    animation-duration: 0.001ms !important;
+    animation-duration: .001ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
+    transition-duration: .001ms !important;
   }
-  .nx-composer-shine::after {
-    display: none;
-  }
-  .nx-build-signal::after {
-    display: none;
-  }
+  .nexus-composer::before { animation: none !important; }
+  .nexus-studio-root :where(.nx-button, .uc-button, .uc-workspace-actions button, .nx-composer-submit, .nx-credit-confirmation button) { transform: none !important; }
 }

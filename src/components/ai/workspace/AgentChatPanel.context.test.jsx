@@ -1,6 +1,6 @@
 import React from "react";
 import "@testing-library/jest-dom";
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import AgentChatPanel from "./AgentChatPanel";
 
@@ -46,24 +46,45 @@ jest.mock("../../ai-elements/conversation", () => {
   };
 });
 
-test("expensive credit estimates require confirmation before submitting and include project scope", async () => {
+test("expensive estimates wait for inline confirmation and submit the reviewed request once", async () => {
   const onSubmit = jest.fn();
-  const confirmation = jest.spyOn(window, "confirm").mockReturnValue(false);
+  const nativeConfirm = jest.spyOn(window, "confirm");
   mockAuthedFetch.mockResolvedValue({ ok: true, json: async () => ({
     estimatedCreditsMicros: 500000, modelLabel: "Premium", affordable: true,
     balanceSource: "purchased", billingScope: { type: "team" },
   }) });
   render(<AgentChatPanel projectId="team-project" modelVersion="premium-model" prompt="Build a shop"
     messages={[]} includedUsage={{ catalogVersion: "v2" }} onSubmit={onSubmit} />);
-  const submit = mockChatComposer.mock.calls.at(-1)[0].onSubmit;
-  await act(async () => submit({ preventDefault: jest.fn() }));
+  let pending;
+  act(() => { pending = mockChatComposer.mock.calls.at(-1)[0].onSubmit(null, 'Build a shop', { draftRevision: 'reviewed' }); });
+  expect(await screen.findByRole('dialog')).toHaveTextContent('Premium · estimated 0.50 Nexus Credits');
+  expect(screen.getByRole('dialog')).toHaveTextContent('Team pool (purchased credits)');
   expect(onSubmit).not.toHaveBeenCalled();
-  expect(confirmation).toHaveBeenCalledWith(expect.stringContaining("Team pool (purchased credits)"));
-  expect(JSON.parse(mockAuthedFetch.mock.calls.at(-1)[1].body)).toEqual(expect.objectContaining({ projectId: "team-project", model: "premium-model" }));
-  confirmation.mockReturnValue(true);
-  await act(async () => submit({ preventDefault: jest.fn() }));
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+  await act(async () => pending);
+  expect(onSubmit).not.toHaveBeenCalled();
+  act(() => { pending = mockChatComposer.mock.calls.at(-1)[0].onSubmit(null, 'Build a shop', { draftRevision: 'reviewed' }); });
+  await waitFor(() => expect(mockChatComposer.mock.calls.at(-1)[0].disabled).toBe(true));
+  fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+  await act(async () => pending);
   expect(onSubmit).toHaveBeenCalledTimes(1);
-  confirmation.mockRestore();
+  expect(onSubmit).toHaveBeenCalledWith(null, 'Build a shop', { draftRevision: 'reviewed' });
+  expect(nativeConfirm).not.toHaveBeenCalled();
+  expect(JSON.parse(mockAuthedFetch.mock.calls.at(-1)[1].body)).toEqual(expect.objectContaining({ projectId: 'team-project', model: 'premium-model' }));
+  nativeConfirm.mockRestore();
+});
+
+test('changing project invalidates an outstanding credit confirmation', async () => {
+  const onSubmit = jest.fn();
+  mockAuthedFetch.mockResolvedValue({ ok: true, json: async () => ({ estimatedCreditsMicros: 500000, modelLabel: 'Premium', affordable: true, balanceSource: 'included' }) });
+  const props = { projectId: 'one', messages: [], prompt: 'Shop', includedUsage: { catalogVersion: 'v2' }, onSubmit };
+  const { rerender } = render(<AgentChatPanel {...props} />);
+  let pending;
+  act(() => { pending = mockChatComposer.mock.calls.at(-1)[0].onSubmit(null); });
+  await screen.findByRole('dialog');
+  rerender(<AgentChatPanel {...props} projectId="two" />);
+  await act(async () => pending);
+  expect(onSubmit).not.toHaveBeenCalled();
 });
 
 test("failed credit estimates stop paid submission", async () => {

@@ -80,7 +80,8 @@ async function main() {
   console.log("  Local API:      http://localhost:5001");
   console.log("  Roblox redirect http://localhost:5001/api/roblox/oauth/callback");
   console.log("  AI worker:      enabled (real configured provider)");
-  console.log("  Backend reload: nodemon (watches server.js + src)");
+  console.log("  Backend reload: nodemon (watches source, package, and environment files)");
+  console.log("  Stack restart:  enabled for launcher, package, env, and framework config changes");
   console.log("  UI renderer:    http://127.0.0.1:8099 (must already be running)\n");
 
   // Frontend/Next already hot-reload. Backend must run under nodemon so edits
@@ -89,7 +90,9 @@ async function main() {
     nodemonBin,
     "--watch", "server.js",
     "--watch", "src",
-    "--ext", "js,json",
+    "--watch", "package.json",
+    "--watch", ".env",
+    "--ext", "js,cjs,mjs,json,env",
     "--signal", "SIGTERM",
     "server.js",
   ], backendRoot, {

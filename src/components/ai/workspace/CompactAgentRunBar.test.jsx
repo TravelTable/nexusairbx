@@ -31,3 +31,17 @@ test("reports real specialist assignments only", () => {
     { stepId: "ui", role: "ui", title: "HUD", status: "running" },
   ] } })).toEqual([{ id: "ui", name: "ui", detail: "HUD", status: "running" }]);
 });
+
+test.each(["queued", "waiting_user", "waiting_studio", "paused", "cancelled", "failed", "timed_out", "succeeded"])("stops the working signal for %s", status => {
+  const { rerender } = render(<CompactAgentRunBar agentRun={{ ...scope, status: "generating" }} />);
+  expect(screen.getByTestId("compact-agent-run-bar")).toHaveAttribute("data-agent-motion", "working");
+  rerender(<CompactAgentRunBar agentRun={{ ...scope, status }} />);
+  expect(screen.getByTestId("compact-agent-run-bar")).not.toHaveAttribute("data-agent-motion", "working");
+});
+
+test("a reconnect stops the signal and verification alone earns success", () => {
+  const { rerender } = render(<CompactAgentRunBar agentRun={{ ...scope, status: "running", connectionState: "reconnecting" }} />);
+  expect(screen.getByTestId("compact-agent-run-bar")).toHaveAttribute("data-agent-motion", "waiting");
+  rerender(<CompactAgentRunBar agentRun={{ ...scope, status: "succeeded", completion: { canComplete: true } }} />);
+  expect(screen.getByTestId("compact-agent-run-bar")).toHaveAttribute("data-agent-tone", "success");
+});

@@ -288,32 +288,6 @@
   opacity: 0.68;
 }
 
-.nexus-composer[data-state="success"] {
-  border-color: var(--nx-success) !important;
-  box-shadow:
-    var(--nx-shadow-floating),
-    0 0 0 3px color-mix(in srgb, var(--nx-success) 16%, transparent) !important;
-}
-
-.nexus-composer[data-state="error"] {
-  border-color: var(--nx-danger) !important;
-  box-shadow:
-    var(--nx-shadow-floating),
-    0 0 0 3px color-mix(in srgb, var(--nx-danger) 14%, transparent) !important;
-}
-
-.nexus-composer[data-state="disabled"] {
-  box-shadow: none !important;
-}
-
-.nexus-composer:focus-within {
-  border-color: var(--nx-purple) !important;
-  outline: 0;
-  box-shadow:
-    var(--nx-shadow-floating),
-    0 0 0 3px var(--nx-purple-wash) !important;
-}
-
 .nexus-composer__input,
 .nexus-composer__input:hover,
 .nexus-composer__input:focus,

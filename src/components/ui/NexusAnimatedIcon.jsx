@@ -125,7 +125,10 @@ export const NexusAnimatedIcon = React.forwardRef(function NexusAnimatedIcon(
       return () => {
         cancelled = true;
         window.clearInterval(id);
-        handle.stopAnimation?.();
+        // Child animation controls may already be disposed during unmount.
+        // Inspect the live ref deliberately; a captured handle alone is unsafe here.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        if (iconRef.current === handle) handle.stopAnimation?.();
       };
     }
 

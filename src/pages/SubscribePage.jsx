@@ -18,7 +18,7 @@ import {
 import { formatMoney, getPublicPlan } from "../lib/planCatalog";
 import { BILLING_INTERVAL, PLAN } from "../lib/prices";
 import { trackProductEvent } from "../lib/productAnalytics";
-import "./AccountLedger.css";
+import styles from "./SubscribePage.module.css";
 
 function subscribeUntilTerminal(unsubscribersRef, documentRef, onValue, onError) {
   let unsubscribe = null;
@@ -162,6 +162,10 @@ export default function SubscribePage() {
   const monthlyEquivalent = intent?.interval === BILLING_INTERVAL.YEAR && Number.isFinite(billedTotal)
     ? billedTotal / 12
     : null;
+  const displayMonthly = intent?.interval === BILLING_INTERVAL.YEAR ? monthlyEquivalent : billedTotal;
+  const scheduleLabel = intent?.interval === BILLING_INTERVAL.YEAR
+    ? `${formatMoney(billedTotal)} billed yearly`
+    : "Billed monthly";
 
   function watchCheckoutDocument(documentPath) {
     const uid = user?.uid;
@@ -287,18 +291,15 @@ export default function SubscribePage() {
 
   if (!intent || !plan) {
     return (
-      <main id="main-content" className="account-ledger-page account-ledger-page--center">
+      <main id="main-content" className={`${styles.page} ${styles.pageCenter}`}>
         {pageHead}
-        <section className="account-ledger-center-state" aria-labelledby="missing-plan-title">
-          <p className="account-ledger-kicker">Checkout record</p>
-          <h1 id="missing-plan-title" className="account-ledger-title account-ledger-title--compact">Choose a plan first</h1>
-          <p className="account-ledger-intro">
+        <section className={styles.centerCard} aria-labelledby="missing-plan-title">
+          <p className={styles.kicker}>Checkout</p>
+          <h1 id="missing-plan-title" className={styles.title}>Choose a plan first</h1>
+          <p className={styles.intro}>
             Your plan selection is missing or has expired. Return to pricing to create a new checkout review.
           </p>
-          <a
-            href="/pricing"
-            className="account-ledger-link account-ledger-link--primary"
-          >
+          <a href="/pricing" className={styles.changeLink}>
             View pricing
           </a>
         </section>
@@ -308,10 +309,10 @@ export default function SubscribePage() {
 
   if (!authReady || !user) {
     return (
-      <main id="main-content" className="account-ledger-page account-ledger-page--center">
+      <main id="main-content" className={`${styles.page} ${styles.pageCenter}`}>
         {pageHead}
-        <div className="account-ledger-loading" role="status">
-          <Loader2 className="account-ledger-icon animate-spin" aria-hidden="true" />
+        <div className={styles.loading} role="status">
+          <Loader2 className={styles.spin} aria-hidden="true" />
           <p>Taking you to sign in…</p>
         </div>
       </main>
@@ -319,133 +320,152 @@ export default function SubscribePage() {
   }
 
   return (
-    <main id="main-content" className="account-ledger-page">
+    <main id="main-content" className={styles.page}>
       {pageHead}
-      <div className="account-ledger-wrap account-ledger-wrap--narrow account-ledger-charge-layout">
-        <section aria-labelledby="checkout-title">
-          <p className="account-ledger-kicker">Charge record</p>
-          <h1 id="checkout-title" className="account-ledger-title account-ledger-title--compact">
+      <div className={styles.shell}>
+        <section className={styles.story} aria-labelledby="checkout-title">
+          <p className={styles.kicker}>{plan.featured ? "Most popular" : "Checkout"}</p>
+          <h1 id="checkout-title" className={styles.title}>
             Review your {plan.name} plan
           </h1>
-          <p className="account-ledger-intro">
+          <p className={styles.intro}>
             Confirm the plan and billing schedule below. Stripe will securely collect and process your payment details.
           </p>
 
-          <dl className="account-ledger-charge-record">
-            <div className="account-ledger-charge-row">
-              <dt>Monthly credits</dt>
-              <dd>{plan.credits * seatCount} Nexus Credits · refresh monthly, no rollover</dd>
-            </div>
-            <div className="account-ledger-charge-row">
-              <dt>Tax treatment</dt>
-              <dd>USD, plus applicable tax. No free trial—subscribe to start building.</dd>
-            </div>
-            <div className="account-ledger-charge-row">
-              <dt>Plan</dt>
-              <dd>{plan.name}</dd>
-            </div>
-            <div className="account-ledger-charge-row">
+          <div className={styles.priceHero}>
+            <strong>{formatMoney(displayMonthly)}</strong>
+            <span>per month</span>
+          </div>
+          <p className={styles.scheduleNote}>{scheduleLabel}</p>
+
+          <div className={styles.creditsPill}>
+            {plan.credits * seatCount} Nexus Credits · refresh monthly, no rollover
+          </div>
+
+          <dl className={styles.details}>
+            <div className={styles.detailRow}>
               <dt>Best for</dt>
               <dd>{plan.audience}</dd>
             </div>
+            <div className={styles.detailRow}>
+              <dt>Tax treatment</dt>
+              <dd>USD, plus applicable tax. No free trial—subscribe to start building.</dd>
+            </div>
             {intent.plan === PLAN.TEAM && (
-              <div className="account-ledger-charge-row">
+              <div className={styles.detailRow}>
                 <dt>Seats</dt>
                 <dd>{seatCount} paid seats</dd>
               </div>
             )}
-            <div className="account-ledger-charge-row">
-              <dt>Billing schedule</dt>
-              <dd>{intent.interval === BILLING_INTERVAL.YEAR ? `${formatMoney(billedTotal)} billed yearly` : "Billed monthly"}</dd>
-            </div>
             {plan.perSeat && (
-              <div className="account-ledger-charge-row">
+              <div className={styles.detailRow}>
                 <dt>Unit price</dt>
-                <dd>{intent.interval === BILLING_INTERVAL.YEAR ? `${formatMoney(plan.yearly)} per user, per year` : `${formatMoney(plan.monthly)} per user, per month`}</dd>
+                <dd>
+                  {intent.interval === BILLING_INTERVAL.YEAR
+                    ? `${formatMoney(plan.yearly)} per user, per year`
+                    : `${formatMoney(plan.monthly)} per user, per month`}
+                </dd>
               </div>
             )}
-            <div className="account-ledger-charge-row account-ledger-charge-total">
-              <dt>{intent.interval === BILLING_INTERVAL.YEAR ? "Monthly equivalent" : "Recurring charge"}</dt>
-              <dd>{intent.interval === BILLING_INTERVAL.YEAR ? `${formatMoney(monthlyEquivalent)}/month` : `${formatMoney(billedTotal)}/month`}</dd>
-            </div>
-          </dl>
-
-          <ul className="account-ledger-feature-list" aria-label={`${plan.name} plan features`}>
-            {plan.features.map((feature) => (
-              <li key={feature}>
-                <Check className="account-ledger-icon text-[var(--nx-success)]" aria-hidden="true" />
-                <span>{feature}</span>
-              </li>
-            ))}
-          </ul>
-
-          <a href="/pricing" className="account-ledger-link">
-            Change plan or billing schedule
-          </a>
-
-          <dl className="account-ledger-meta">
-            <div>
+            <div className={styles.detailRow}>
               <dt>Account</dt>
               <dd>{user.email || "Signed-in NexusRBX account"}</dd>
             </div>
-            <div>
+            <div className={styles.detailRow}>
               <dt>Processor</dt>
               <dd>Stripe secure checkout</dd>
             </div>
-            <div>
+            <div className={styles.detailRow}>
               <dt>Renewal</dt>
               <dd>Automatic until cancelled</dd>
             </div>
           </dl>
 
+          <ul className={styles.features} aria-label={`${plan.name} plan features`}>
+            {plan.features.map((feature) => (
+              <li key={feature}>
+                <Check className={styles.featureIcon} aria-hidden="true" />
+                <span>{feature}</span>
+              </li>
+            ))}
+          </ul>
+
+          <a href="/pricing" className={styles.changeLink}>
+            Change plan or billing schedule
+          </a>
+
           {(error || entitlementsError) && (
-            <div className="account-ledger-notice account-ledger-notice--danger" role="alert">
+            <div className={`${styles.notice} ${styles.noticeDanger}`} role="alert">
               {error || entitlementsError}
             </div>
           )}
           {status && !error && (
-            <p className="account-ledger-notice" role="status">{status}</p>
+            <p className={styles.notice} role="status">{status}</p>
           )}
         </section>
 
-        <aside className="account-ledger-checkout-action" aria-label="Checkout action">
+        <aside className={styles.summary} aria-label="Checkout action">
+          <span className={styles.summaryGlow} aria-hidden="true" />
           {entitlementsLoading ? (
-            <div className="account-ledger-loading" role="status" aria-label="Checking billing status">
-              <Loader2 className="account-ledger-icon animate-spin" aria-hidden="true" />
+            <div className={styles.loading} role="status" aria-label="Checking billing status">
+              <Loader2 className={styles.spin} aria-hidden="true" />
               <span>Checking billing status…</span>
             </div>
           ) : isSubscriber ? (
             <>
-              <Settings className="account-ledger-icon text-[var(--nx-purple)]" aria-hidden="true" />
-              <h2>You already have an active plan</h2>
-              <p className="account-ledger-section-copy">
+              <Settings className={styles.summaryIcon} aria-hidden="true" />
+              <h2 className={styles.summaryTitle}>You already have an active plan</h2>
+              <p className={styles.summaryCopy}>
                 Open billing settings to change, update, or cancel your current subscription.
               </p>
               <button
                 type="button"
                 onClick={managePlan}
                 disabled={Boolean(busyAction)}
-                className="account-ledger-button account-ledger-button--block"
+                className={`${styles.cta} ${styles.ctaSecondary}`}
               >
-                {busyAction === "portal" ? <Loader2 className="account-ledger-icon animate-spin" aria-hidden="true" /> : "Manage plan"}
+                {busyAction === "portal" ? <Loader2 className={styles.spin} aria-hidden="true" /> : "Manage plan"}
               </button>
             </>
           ) : (
             <>
-              <CreditCard className="account-ledger-icon text-[var(--nx-purple)]" aria-hidden="true" />
-              <h2>Payment comes next</h2>
-              <p className="account-ledger-section-copy">
+              <CreditCard className={styles.summaryIcon} aria-hidden="true" />
+              <h2 className={styles.summaryTitle}>Payment comes next</h2>
+              <p className={styles.summaryCopy}>
                 You will review payment details and the renewal schedule on Stripe before confirming.
               </p>
+
+              <dl className={styles.summaryLines}>
+                <div>
+                  <dt>Plan</dt>
+                  <dd>{plan.name}</dd>
+                </div>
+                <div>
+                  <dt>Billing</dt>
+                  <dd>{intent.interval === BILLING_INTERVAL.YEAR ? "Annual" : "Monthly"}</dd>
+                </div>
+                {intent.plan === PLAN.TEAM && (
+                  <div>
+                    <dt>Seats</dt>
+                    <dd>{seatCount}</dd>
+                  </div>
+                )}
+              </dl>
+
+              <dl className={styles.summaryTotal}>
+                <dt>{intent.interval === BILLING_INTERVAL.YEAR ? "Monthly equivalent" : "Recurring charge"}</dt>
+                <dd>{formatMoney(displayMonthly)}/month</dd>
+              </dl>
+
               <button
                 type="button"
                 onClick={beginCheckout}
                 disabled={Boolean(busyAction) || Boolean(entitlementsError)}
-                className="account-ledger-button account-ledger-button--primary account-ledger-button--block"
+                className={styles.cta}
               >
-                {busyAction === "checkout" ? <Loader2 className="account-ledger-icon animate-spin" aria-hidden="true" /> : "Continue to secure checkout"}
+                {busyAction === "checkout" ? <Loader2 className={styles.spin} aria-hidden="true" /> : "Continue to secure checkout"}
               </button>
-              <p className="account-ledger-detail">
+              <p className={styles.legal}>
                 By continuing, you agree to the Terms of Service. Your subscription renews automatically until cancelled.
               </p>
             </>

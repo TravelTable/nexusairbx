@@ -88,7 +88,8 @@
   "scripts": {
     "postinstall": "node scripts/patch-lobehub-obsidian.js && node scripts/patch-rehype-harden.js",
     "start": "react-scripts start",
-    "dev:local": "node scripts/local-ai-dev.js",
+    "dev:local": "node scripts/watch-local-ai-dev.js",
+    "dev:local:once": "node scripts/local-ai-dev.js",
     "build": "node scripts/verify-studio-download.cjs && node scripts/generate-sitemap.js --best-effort && react-scripts build && npm run public:build && node scripts/merge-public-export.js",
     "build:app": "react-scripts build",
     "public:build": "next build public-frontend",
@@ -145,7 +146,7 @@
       "^.+/ai-elements/message$": "<rootDir>/src/testMocks/aiElementsMessage.jsx"
     },
     "transformIgnorePatterns": [
-      "node_modules/(?!(react-markdown|remark-.*|rehype-.*|unified|bail|is-plain-obj|trough|vfile|unist-.*|mdast-.*|micromark.*|decode-named-character-reference|character-entities|property-information|space-separated-tokens|comma-separated-tokens|hast-util-.*|estree-util-is-identifier-name|html-url-attributes|devlop)/)"
+      "node_modules/(?!(@heroicons-animated/react|react-markdown|remark-.*|rehype-.*|unified|bail|is-plain-obj|trough|vfile|unist-.*|mdast-.*|micromark.*|decode-named-character-reference|character-entities|property-information|space-separated-tokens|comma-separated-tokens|hast-util-.*|estree-util-is-identifier-name|html-url-attributes|devlop)/)"
     ]
   }
 }
