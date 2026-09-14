@@ -56,6 +56,9 @@ import "./AgentWorkspaceLayout.css";
 import "../../design/nexus-workspace.css";
 import { getWorkspacePresentation, workspacePresentationAttributes } from "../../lib/runPresentation";
 import { WorkspacePresentationContext } from "../../components/ai/workspace/WorkspacePresentationContext";
+import useMockRunPlayer from "../../hooks/useMockRunPlayer";
+import MockRunDevConsole from "../../components/ai/dev/MockRunDevConsole";
+import { isLocalDevToolsHost } from "../../lib/localDevTools";
 
 const WORKSPACE_DRAWER_WIDTH_KEY = "nexusrbx:workspace-drawer-width";
 const PROJECT_SIDEBAR_MODAL_QUERY = "(max-width: 1199px)";
@@ -269,6 +272,10 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
   const creationMode = requestedCreationMode === "asset" || (requestedCreationMode === "ui" && uiCreatorEnabled) || (requestedCreationMode === "animate" && animateWorkspaceEnabled)
     ? requestedCreationMode
     : "agent";
+  const mockRuns = useMockRunPlayer({
+    workspace: creationMode === "ui" ? "ui" : "agent",
+    available: isLocalDevToolsHost(),
+  });
 
   useEffect(() => {
     if (generatorMode !== "agent_build") {
@@ -539,12 +546,23 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     && (!taskRuntime.task.projectId || taskRuntime.task.projectId === currentProjectId);
   const [uiPresentation, setUiPresentation] = useState(null);
   const [stoppingWork, setStoppingWork] = useState(false);
+  const mockFrameActive = Boolean(
+    mockRuns.enabled
+    && creationMode === "agent"
+    && (mockRuns.playing || mockRuns.frame.run || mockRuns.frame.assistantContent || mockRuns.frame.busyFlag)
+  );
   const agentPresentation = getWorkspacePresentation({
-    task: taskScopeMatches ? { ...taskRuntime.task, connectionState: taskRuntime.connectionState } : null,
-    run: workspace.agentRun,
+    task: mockFrameActive && mockRuns.frame.task
+      ? mockRuns.frame.task
+      : (taskScopeMatches ? { ...taskRuntime.task, connectionState: taskRuntime.connectionState } : null),
+    run: mockFrameActive && mockRuns.frame.run ? mockRuns.frame.run : workspace.agentRun,
     scope: { chatId: chat.currentChatId, projectId: currentProjectId },
-    busy: Boolean(chatOperationState?.isBusy || unified.isGenerating), stage: unified.generationStage,
-    operationState: chatOperationState, stopping: stoppingWork,
+    busy: mockFrameActive
+      ? mockRuns.frame.busyFlag
+      : Boolean(chatOperationState?.isBusy || unified.isGenerating),
+    stage: mockFrameActive ? mockRuns.frame.stage : unified.generationStage,
+    operationState: mockFrameActive ? null : chatOperationState,
+    stopping: mockFrameActive ? false : stoppingWork,
   });
   const presentation = creationMode === "agent" ? agentPresentation
     : creationMode === "ui" && uiPresentation?.projectId === currentProjectId ? uiPresentation : getWorkspacePresentation();
@@ -1193,12 +1211,23 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         : overridePromptOrOptions && typeof overridePromptOrOptions === "object"
           ? overridePromptOrOptions
           : {};
+      if (mockRuns.enabled && creationMode === "agent") {
+        event?.preventDefault?.();
+        const draft = String(overridePrompt ?? prompt ?? "").trim();
+        if (!draft || mockRuns.playing) return undefined;
+        setPrompt("");
+        return mockRuns.play("agent-happy-path", {
+          chatId: chat.currentChatId,
+          projectId: currentProjectId,
+          prompt: draft,
+        });
+      }
       return handlePromptSubmit(event, overridePrompt, {
         ...taskSubmissionOptions,
         ...planSubmissionOptions,
       });
     },
-    [handlePromptSubmit, taskSubmissionOptions]
+    [chat.currentChatId, creationMode, currentProjectId, handlePromptSubmit, mockRuns, prompt, setPrompt, taskSubmissionOptions]
   );
 
   const onStartRefineCommand = useCallback(() => {
@@ -1347,9 +1376,13 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
   }, [activeAgentRuntime, canonicalTaskActive, chat, notify, stopChatOperation, taskRuntime, unified]);
 
   const handleStopActiveWork = useCallback(async () => {
+    if (mockRuns.enabled && (mockRuns.playing || mockRuns.frame.run || mockRuns.frame.assistantContent)) {
+      mockRuns.stop();
+      return;
+    }
     setStoppingWork(true);
     try { await stopActiveWork(); } finally { setStoppingWork(false); }
-  }, [stopActiveWork]);
+  }, [mockRuns, stopActiveWork]);
 
   const openArtifactOnStage = (message) => {
     setOpenedCodeRequest(null);
@@ -1484,15 +1517,28 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         chatTitle={chat.currentChatMeta?.title || "New chat"}
         projectTitle={workspaceProjectTitle}
         projectId={currentProjectId}
-        messages={guidedChat ? chat.messages.map(message => ({ ...message, guidedLaunch: true })) : chat.messages}
-        pendingMessage={unified.pendingMessage}
-        pendingMessages={unified.pendingMessages}
-        generationStage={unified.generationStage}
+        messages={(() => {
+          const base = guidedChat ? chat.messages.map(message => ({ ...message, guidedLaunch: true })) : chat.messages;
+          if (!mockFrameActive) return base;
+          const next = [...base];
+          if (mockRuns.frame.pendingPrompt && !next.some((message) => message.role === "user" && message.content === mockRuns.frame.pendingPrompt)) {
+            next.push({ id: "mock-user", role: "user", content: mockRuns.frame.pendingPrompt });
+          }
+          if (mockRuns.frame.assistantContent) {
+            next.push({ id: "mock-assistant", role: "assistant", content: mockRuns.frame.assistantContent });
+          }
+          return next;
+        })()}
+        pendingMessage={mockFrameActive ? null : unified.pendingMessage}
+        pendingMessages={mockFrameActive ? [] : unified.pendingMessages}
+        generationStage={mockFrameActive ? mockRuns.frame.stage : unified.generationStage}
         user={user}
         profile={roblox?.connected ? roblox?.status?.connection?.profile || null : null}
         activeMode={chat.activeMode}
-        isBusy={Boolean(chatOperationState?.isBusy || unified.isGenerating || canonicalTaskActive)}
-        operationState={chatOperationState}
+        isBusy={mockFrameActive
+          ? Boolean(mockRuns.playing || mockRuns.frame.busyFlag)
+          : Boolean(chatOperationState?.isBusy || unified.isGenerating || canonicalTaskActive)}
+        operationState={mockFrameActive ? null : chatOperationState}
         onApprovePlan={handleAgentApprovePlan}
         onPlanTaskAccepted={taskRuntime.selectTask}
         executionTask={taskScopeMatches ? { ...taskRuntime.task, connectionState: taskRuntime.connectionState } : null}
@@ -1550,7 +1596,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         themeSecondary={currentTheme.secondary}
         onModeChange={(m) => chat.updateChatMode(chat.currentChatId, m)}
         artifact={workspace.activeArtifact}
-        agentRun={workspace.agentRun}
+        agentRun={mockFrameActive && mockRuns.frame.run ? mockRuns.frame.run : workspace.agentRun}
         activeAgents={activeAgentRuntime.agents.filter((agent) => agent.chatId === chat.currentChatId)}
         onApproveStep={handleApproveStep}
         onRestoreRun={handleRestoreRun}
@@ -1998,6 +2044,16 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         inert={headerInert}
         assetControls={<WorkspaceAssetControls navigateTo={navigateTo} user={user} planKey={planKey} devOverride={devOverride} roblox={roblox} projectId={currentProjectId} onAuthRequired={handleAuthRequired} notify={notify}/>}
         isBusy={presentation.active}
+        devToolsSlot={mockRuns.available ? (
+          <button
+            type="button"
+            aria-label="Open mock run developer console"
+            aria-pressed={mockRuns.open || mockRuns.enabled}
+            onClick={() => mockRuns.setOpen(true)}
+          >
+            Dev
+          </button>
+        ) : null}
         onRenameChat={
           creationMode === "agent" ? (title) => chat.handleRenameChat(chat.currentChatId, title) : undefined
         }
@@ -2040,6 +2096,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
                 onBillingRefresh={refreshBilling}
                 notify={notify}
                 navigateTo={navigateTo}
+                mockRuns={mockRuns}
               />
             ) : creationMode === "asset" ? (
               <IconsMarketWorkspacePanel embedded />
@@ -2082,6 +2139,25 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
           onDismissLong={starterPromo?.handleDismissLong}
         />
 
+        {mockRuns.available ? (
+          <MockRunDevConsole
+            open={mockRuns.open}
+            onOpenChange={mockRuns.setOpen}
+            enabled={mockRuns.enabled}
+            onEnabledChange={mockRuns.setEnabled}
+            playing={mockRuns.playing}
+            scenarios={mockRuns.scenarios}
+            activeScenarioId={mockRuns.scenarioId}
+            onPlay={(scenarioId) => mockRuns.play(scenarioId, {
+              chatId: chat.currentChatId,
+              projectId: currentProjectId,
+              designId: "mock-design",
+              sourceRevision: "mock-rev",
+              prompt: creationMode === "ui" ? "Mock UI request" : "Mock agent request",
+            })}
+            onStop={mockRuns.stop}
+          />
+        ) : null}
 
       </div>
     </div>

@@ -26,3 +26,22 @@ test('UI saved/visual review labels stay distinct from full verification and can
   expect(getUiWorkspacePresentation({ busy: 'Starting build', task: { status: 'succeeded', uiBuild: { stage: 'complete' } } })).toMatchObject({ state: 'sending', active: true });
   expect(getUiWorkspacePresentation({ busy: 'Loading' }).active).toBe(false);
 });
+
+test('UI loading chain marks pipeline steps complete, active, or pending from the shared walk', () => {
+  const { getUiLoadingChainSteps, UI_LOADING_PIPELINE } = require('./runPresentation');
+  const mid = getUiLoadingChainSteps({
+    busy: '',
+    task: { status: 'running', uiBuild: { stage: 'generating', action: 'writing_ui' } },
+  });
+  expect(mid).toHaveLength(UI_LOADING_PIPELINE.length);
+  const activeIndex = mid.findIndex((step) => step.status === 'active');
+  expect(mid[activeIndex].label).toBe('Writing your UI');
+  expect(mid.slice(0, activeIndex).every((step) => step.status === 'complete')).toBe(true);
+  expect(mid.slice(activeIndex + 1).every((step) => step.status === 'pending')).toBe(true);
+
+  const done = getUiLoadingChainSteps({
+    busy: '',
+    task: { status: 'succeeded', uiBuild: { stage: 'complete', outcome: 'visual_review_passed' } },
+  });
+  expect(done.every((step) => step.status === 'complete')).toBe(true);
+});

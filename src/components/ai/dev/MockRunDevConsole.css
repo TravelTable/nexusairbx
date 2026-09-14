@@ -1,0 +1,120 @@
+.mock-run-console {
+  position: fixed;
+  z-index: 1200;
+  width: min(280px, calc(100vw - 16px));
+  color: var(--nx-text, #e8eaed);
+  background: var(--ds-surface-overlay, #1b1d22);
+  border: 1px solid var(--nx-rule-quiet, rgba(255, 255, 255, 0.12));
+  border-radius: var(--nx-radius-panel, 12px);
+  box-shadow: var(--nx-shadow-floating, 0 18px 40px rgba(0, 0, 0, 0.35));
+  font-size: 12px;
+  line-height: 1.4;
+  user-select: none;
+}
+
+.mock-run-console__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 8px 0 6px;
+  border-bottom: 1px solid var(--nx-rule-quiet, rgba(255, 255, 255, 0.1));
+  cursor: grab;
+  touch-action: none;
+}
+
+.mock-run-console__header:active {
+  cursor: grabbing;
+}
+
+.mock-run-console__header strong {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.mock-run-console__grip {
+  display: inline-flex;
+  color: var(--nx-text-muted, #9aa0a6);
+}
+
+.mock-run-console__icon,
+.mock-run-console__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  border: 0;
+  border-radius: var(--nx-radius-control, 8px);
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.mock-run-console__icon {
+  width: 28px;
+  padding: 0;
+}
+
+.mock-run-console__icon:hover,
+.mock-run-console__button:hover:not(:disabled) {
+  background: var(--ds-fill-hover, rgba(255, 255, 255, 0.08));
+}
+
+.mock-run-console__toggle,
+.mock-run-console__body,
+.mock-run-console__hint {
+  padding: 10px 12px;
+}
+
+.mock-run-console__toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--nx-rule-quiet, rgba(255, 255, 255, 0.08));
+  cursor: pointer;
+}
+
+.mock-run-console__hint {
+  margin: 0;
+  color: var(--nx-text-muted, #9aa0a6);
+}
+
+.mock-run-console__body {
+  display: grid;
+  gap: 10px;
+  padding-top: 0;
+}
+
+.mock-run-console__actions {
+  display: grid;
+  gap: 6px;
+}
+
+.mock-run-console__button {
+  justify-content: flex-start;
+  padding: 0 10px;
+  background: var(--ds-fill-subtle, rgba(255, 255, 255, 0.05));
+  text-align: left;
+}
+
+.mock-run-console__button[data-active="true"] {
+  outline: 1px solid var(--ds-accent, #7c9cff);
+}
+
+.mock-run-console__button--quiet {
+  background: transparent;
+  color: var(--nx-text-muted, #9aa0a6);
+}
+
+.mock-run-console__button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mock-run-console * {
+    transition: none !important;
+  }
+}

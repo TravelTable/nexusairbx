@@ -6,7 +6,8 @@ import "./WorkspaceRibbon.css";
 /** One stable header; the active workspace supplies only its action slot. */
 export default function WorkspaceRibbon({ mode, onModeChange, uiEnabled = true, animateEnabled = false,
   projectTitle, modelControl, studioControl, accountControl, actionSlotRef, assetControls,
-  onChangeProject, onOpenEvidence, evidenceOpen = false, evidenceButtonRef, isBusy = false, inert = false }) {
+  onChangeProject, onOpenEvidence, evidenceOpen = false, evidenceButtonRef, isBusy = false, inert = false,
+  devToolsSlot = null }) {
   const [expanded, setExpanded] = useState(false);
   const tools = useRef(null), more = useRef(null);
   useEffect(() => { setExpanded(false); }, [mode, inert]);
@@ -44,6 +45,7 @@ export default function WorkspaceRibbon({ mode, onModeChange, uiEnabled = true, 
         </div>
       </div>
       <div className="workspace-header__studio" data-tour="studio-pair">{studioControl}</div>
+      {devToolsSlot ? <div className="workspace-header__dev">{devToolsSlot}</div> : null}
       <div className="workspace-header__account">{accountControl}</div>
     </div>
   </header>;

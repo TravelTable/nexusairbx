@@ -37,6 +37,31 @@ export const UI_BUILD_LABELS = { generating: 'Writing UI files', preparing: 'Sav
   preview_unavailable: 'Preview unavailable', needs_review: 'Review needs attention', renderer_limited: 'Preview limitations',
   budget_exhausted: 'Review budget reached', failed: 'Build needs attention' };
 export const UI_ACTION_LABELS = { understanding_request: 'Understanding your request', planning_design: 'Planning the design', resolving_assets: 'Resolving icons and assets', generating_artwork: 'Generating matching artwork', extracting_artwork: 'Preparing individual components', writing_ui: 'Writing your UI', rendering_desktop: 'Rendering desktop', rendering_mobile: 'Rendering mobile', reviewing_design: 'Reviewing design quality', improving_design: 'Improving the design', finding_assets: 'Finding icons and images', uploading_assets: 'Uploading images to Roblox', building_layout: 'Building UI layout', writing_implementation: 'Writing UI implementation', validating_implementation: 'Checking UI implementation' };
+
+// Canonical happy-path loading walk for UI creator. Mock runs play this list as-is —
+// add a step here (and its label above) and both production presentation and mock demos pick it up.
+export const UI_LOADING_PIPELINE = Object.freeze([
+  Object.freeze({ delayMs: 450, busy: 'Starting build' }),
+  Object.freeze({ delayMs: 700, stage: 'generating', action: 'understanding_request' }),
+  Object.freeze({ delayMs: 900, stage: 'generating', action: 'planning_design' }),
+  Object.freeze({ delayMs: 1100, stage: 'generating', action: 'writing_ui', withFiles: true }),
+  Object.freeze({ delayMs: 700, stage: 'preparing', action: 'writing_implementation', withFiles: true }),
+  Object.freeze({ delayMs: 700, stage: 'building_model', withFiles: true }),
+  Object.freeze({ delayMs: 800, stage: 'rendering', action: 'rendering_desktop', withFiles: true }),
+  Object.freeze({ delayMs: 800, stage: 'rendering', action: 'rendering_mobile', withFiles: true }),
+  Object.freeze({ delayMs: 900, stage: 'reviewing', action: 'reviewing_design', withFiles: true }),
+  Object.freeze({ delayMs: 0, stage: 'complete', outcome: 'visual_review_passed', terminal: true, withFiles: true }),
+]);
+
+// Canonical agent loading walk for mock demos. Stage strings feed getWorkspacePresentation.
+export const AGENT_LOADING_PIPELINE = Object.freeze([
+  Object.freeze({ delayMs: 400, stage: 'Understanding your request', status: 'queued' }),
+  Object.freeze({ delayMs: 700, stage: 'Planning the change', status: 'running' }),
+  Object.freeze({ delayMs: 900, stage: 'Writing Roblox scripts', status: 'running' }),
+  Object.freeze({ delayMs: 800, stage: 'Checking the result', status: 'running' }),
+  Object.freeze({ delayMs: 0, status: 'succeeded', terminal: true }),
+]);
+
 const uiStageStates = { preparing: 'generating', building_model: 'generating', awaiting_studio: 'waiting_studio', capturing: 'inspecting', awaiting_capture: 'waiting_studio',
   design_preview: 'generating', rendering: 'generating', awaiting_renders: 'waiting_external', reviewing: 'verifying', repairing: 'recovering',
   saved: 'unverified_complete', preview_unavailable: 'unverified_complete', needs_review: 'unverified_complete', renderer_limited: 'unverified_complete', budget_exhausted: 'unverified_complete' };
@@ -57,6 +82,59 @@ export function getUiWorkspacePresentation({ task, busy = '', connection = '', s
   }
   if (connection && !busyStates[busy] && !terminalStates.has(state)) { state = 'reconnecting'; label = ''; }
   return getWorkspacePresentation({ state, label, stopping, verified: task?.completion?.canComplete === true });
+}
+
+function pipelineStepKey(step = {}) {
+  if (step.busy) return `busy:${step.busy}`;
+  return `stage:${step.stage || ''}|action:${step.action || ''}|terminal:${step.terminal ? 1 : 0}`;
+}
+
+function currentUiPipelineKey({ busy = '', task } = {}) {
+  if (busy) return `busy:${busy}`;
+  const build = task?.uiBuild;
+  if (!build) return '';
+  const terminal = build.stage === 'complete' || Boolean(build.outcome);
+  return `stage:${build.stage || ''}|action:${build.action || ''}|terminal:${terminal && build.stage === 'complete' ? 1 : 0}`;
+}
+
+/** Map the shared UI loading pipeline into Chain-of-Thought step statuses. */
+export function getUiLoadingChainSteps({ busy = '', task, pipeline = UI_LOADING_PIPELINE } = {}) {
+  const currentKey = currentUiPipelineKey({ busy, task });
+  let activeIndex = pipeline.findIndex((step) => pipelineStepKey(step) === currentKey);
+  if (activeIndex < 0 && task?.uiBuild?.stage === 'complete') activeIndex = pipeline.length - 1;
+  if (activeIndex < 0 && busy) {
+    activeIndex = pipeline.findIndex((step) => step.busy);
+  }
+  if (activeIndex < 0 && task?.uiBuild) {
+    activeIndex = pipeline.findIndex((step) =>
+      step.stage === task.uiBuild.stage
+      && (!step.action || step.action === task.uiBuild.action)
+      && !step.busy
+    );
+  }
+  const finished = activeIndex >= 0
+    && Boolean(pipeline[activeIndex]?.terminal)
+    && ['succeeded', 'completed', 'complete', 'done'].includes(String(task?.status || '').toLowerCase());
+
+  return pipeline.map((step, index) => {
+    const label = step.busy
+      || UI_ACTION_LABELS[step.action]
+      || UI_BUILD_LABELS[step.stage]
+      || step.stage
+      || 'Working';
+    let status = 'pending';
+    if (activeIndex < 0) status = 'pending';
+    else if (finished || index < activeIndex) status = 'complete';
+    else if (index === activeIndex) status = step.terminal ? 'complete' : 'active';
+    return {
+      id: pipelineStepKey(step),
+      label,
+      status,
+      stage: step.stage || '',
+      action: step.action || '',
+      busy: step.busy || '',
+    };
+  });
 }
 
 export function workspacePresentationAttributes(presentation) {

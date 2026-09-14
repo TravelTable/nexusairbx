@@ -20,6 +20,25 @@
 .workspace-header__account { flex-shrink: 0; }
 .workspace-header__account button[aria-haspopup=menu] { width: 32px; height: 32px; min-height: 32px; padding: 0; }
 .workspace-header__account button[aria-haspopup=menu] > span:first-child { width: 30px; height: 30px; }
+.workspace-header__dev { flex-shrink: 0; }
+.workspace-header__dev > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--nx-radius-control);
+  color: var(--nx-text-muted);
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+}
+.workspace-header__dev > button[aria-pressed="true"] {
+  color: var(--nx-text);
+  background: var(--ds-accent-soft);
+}
 .workspace-header__studio > div > button { position: relative; height: 32px; min-height: 32px; width: 36px; padding: 0; justify-content: center; border: 0; border-radius: var(--nx-radius-control); }
 .workspace-header__studio .workspace-studio-label, .workspace-header__studio .workspace-studio-chevron { display: none; }
 .workspace-header__studio .nx-build-signal { position: absolute; bottom: 4px; right: 4px; width: 5px; height: 5px; }

@@ -19,6 +19,9 @@ jest.mock("../../../components/ai/chat/CreationPromptComposer", () => props => <
   {props.modeControl}<button disabled={props.isGenerating}>Send prompt</button></form>);
 jest.mock("../../../components/ai/chat/MessageList", () => ({ messages }) => <div>{messages.map(m => <p key={m.id}>{m.content}</p>)}</div>);
 jest.mock("../../../components/ai-elements/conversation", () => ({ Conversation: ({children}) => <div>{children}</div>, ConversationContent: ({children}) => <div>{children}</div>, ConversationScrollButton: () => null }));
+jest.mock("./UiLoadingChain", () => ({ busy, task }) => (
+  <div data-testid="ui-loading-chain">{busy || task?.uiBuild?.action || task?.uiBuild?.stage || ""}</div>
+));
 jest.mock("../../../components/ai/workspace/BuildWorkspace", () => () => <div>Saved code workspace</div>);
 jest.mock("./UiPreviewPane", () => ({designId}) => <div data-testid="preview">{designId}</div>);
 
@@ -240,4 +243,26 @@ test("an incomplete visual review retries the saved revision without a generate 
   expect(tasks.createTask.mock.calls[0][0]).toMatchObject({ uiIntent: 'review', baseRevision: 'rev-1', designId: 'design-1', executionInput: { studioEnabled: false } });
   expect(designs.compileUiDesign).not.toHaveBeenCalled();
   expect(previews.requestUiCapture).not.toHaveBeenCalled();
+});
+
+test("mock mode plays the shared UI presentation path without API calls", async () => {
+  const play = jest.fn(async () => true);
+  const mockRuns = {
+    enabled: true,
+    playing: false,
+    frame: {},
+    play,
+    stop: jest.fn(),
+  };
+  render(<UiCreatorWorkspace {...props} mockRuns={mockRuns} />);
+  await screen.findByLabelText("UI prompt");
+  await waitFor(() => expect(screen.getByRole("button", { name: "Send prompt" })).toBeEnabled());
+  fireEvent.change(screen.getByLabelText("UI prompt"), { target: { value: "Build a shop" } });
+  fireEvent.click(screen.getByRole("button", { name: "Send prompt" }));
+  await waitFor(() => expect(play).toHaveBeenCalledWith("ui-happy-path", expect.objectContaining({
+    designId: "design-1",
+    projectId: "project-1",
+    prompt: "Build a shop",
+  })));
+  expect(tasks.createTask).not.toHaveBeenCalled();
 });

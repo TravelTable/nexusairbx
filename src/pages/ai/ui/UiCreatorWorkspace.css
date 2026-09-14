@@ -1,2 +1,6 @@
 .ui-creator__conversation{position:relative;min-height:0;flex:1;overflow:hidden}
 .ui-creator__messages{padding:8px;min-height:100%;gap:14px}
+.uc-loading-chain{margin-top:4px;padding:10px 12px;border:1px solid var(--nx-rule-quiet,rgba(255,255,255,.08));border-radius:var(--nx-radius-panel,12px);background:var(--ds-fill-subtle,rgba(255,255,255,.03))}
+.uc-loading-chain__active .nexus-tool-step-icon svg{animation:uc-chain-spin 1s linear infinite}
+@media (prefers-reduced-motion:reduce){.uc-loading-chain__active .nexus-tool-step-icon svg{animation:none}}
+@keyframes uc-chain-spin{to{transform:rotate(360deg)}}
