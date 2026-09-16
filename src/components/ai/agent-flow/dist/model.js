@@ -135,8 +135,13 @@ export function formatValue(value) {
 }
 /** Reject active-content schemes, credentials, control characters and unsafe data files. */
 export function safeURL(raw, base, image = false, origins = []) {
-    if (!raw || /[\u0000-\u001f\u007f]/.test(raw))
+    if (!raw)
         return null;
+    for (let i = 0; i < raw.length; i++) {
+        const code = raw.charCodeAt(i);
+        if (code <= 0x1f || code === 0x7f)
+            return null;
+    }
     if (/^data:/i.test(raw)) {
         return image && /^data:image\/(png|jpeg|webp|gif|avif);base64,[a-z0-9+/=\s]+$/i.test(raw) ? raw : null;
     }
