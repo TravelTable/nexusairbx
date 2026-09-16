@@ -15,6 +15,7 @@ import "./UiPreviewPane.css";
 import WorkingDots from "../../../components/ai/chat/WorkingDots";
 import WorkspaceHelp from "../../../components/ai/chat/WorkspaceHelp";
 import { useMotionPresence } from "../../../hooks/useMotionPresence";
+import ImageGeneration from "./ImageGeneration";
 
 function ViewportIcon({ viewport }) {
   const value = `${viewport?.id || ""} ${viewport?.label || ""}`.toLowerCase();
@@ -57,6 +58,7 @@ export default function UiPreviewPane({
   previewFailed = false,
   buildFailure = null,
   updatingRevision = false,
+  generationCards = [],
 }) {
   const [selection, setSelection] = useState({
     snapshotId: "",
@@ -366,7 +368,19 @@ export default function UiPreviewPane({
           fit ? "is-fit" : "is-zoomed"
         }`}
       >
-        {data.imageUrl ? (
+        {generationCards.length && !data.imageUrl ? (
+          <div className="nx-ui-preview__generation-grid" aria-label="Generated images">
+            {generationCards.map((card) => (
+              <ImageGeneration key={card.id} state={card.state}>
+                <img
+                  className="aspect-video max-w-md object-cover w-full"
+                  src={card.src}
+                  alt={card.alt || card.label || "Generated image"}
+                />
+              </ImageGeneration>
+            ))}
+          </div>
+        ) : data.imageUrl ? (
           <figure
             className="nx-ui-preview__frame nx-ui-preview__frame--editor"
             data-running={loading ? "true" : "false"}

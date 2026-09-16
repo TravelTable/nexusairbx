@@ -4,6 +4,12 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import UiPreviewPane from './UiPreviewPane';
 import useUiPreview from '../../../hooks/useUiPreview';
 jest.mock('../../../hooks/useUiPreview', () => jest.fn());
+jest.mock('motion/react', () => ({
+  motion: {
+    span: ({ children, ...props }) => <span {...props}>{children}</span>,
+    div: ({ children, ...props }) => <div {...props}>{children}</div>,
+  },
+}));
 const capture={snapshotId:'snap',sourceRevision:'rev',treeHash:'tree',complete:true};
 const base={userId:'user',designId:'design',projectId:'project',sourceRevision:'rev',capture,
   viewports:[{id:'desktop',label:'Desktop',width:1280,height:720},{id:'phone',label:'Phone',width:390,height:844}],
@@ -42,6 +48,18 @@ test('empty preview encourages generation without Studio and shows no fabricated
   render(<UiPreviewPane {...base} hasNodes={false} studioConnected={false} capture={null}/>);
   expect(screen.getByText(/Use the chat to describe a shop/)).toBeVisible();
   expect(screen.queryByRole('img')).not.toBeInTheDocument();
+});
+test('generation cards fill the preview grid while artwork and later edits appear',()=>{
+  render(<UiPreviewPane {...base} hasNodes={false} capture={null} generationCards={[
+    { id: 'art', action: 'generating_artwork', label: 'Generating matching artwork', state: 'completed', src: 'data:image/png;base64,aaa', alt: 'Artwork' },
+    { id: 'edit', action: 'improving_design', label: 'Improving the design', state: 'generating', src: 'data:image/png;base64,bbb', alt: 'Edit pass' },
+  ]}/>);
+  expect(screen.getByLabelText('Generated images')).toBeVisible();
+  expect(screen.getByText('Image created.')).toBeVisible();
+  expect(screen.getByText('Creating image. May take a moment.')).toBeVisible();
+  expect(screen.getByRole('img', { name: 'Artwork' })).toBeVisible();
+  expect(screen.getByRole('img', { name: 'Edit pass' })).toBeVisible();
+  expect(screen.queryByText(/Use the chat to describe a shop/)).not.toBeInTheDocument();
 });
 test('a failed build without a model stops preparing and cannot retry a nonexistent capture',()=>{
   render(<UiPreviewPane {...base} capture={null} buildFailure="A paid plan is required."/>);

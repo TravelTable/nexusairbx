@@ -85,7 +85,6 @@ import {
   Location01Icon,
   Logout01Icon,
   MagicWand01Icon,
-  MagicWand02Icon,
   Mail01Icon,
   MaximizeScreenIcon,
   Menu01Icon,
@@ -120,7 +119,6 @@ import {
   SlidersHorizontalIcon,
   SmartPhone01Icon,
   SourceCodeIcon,
-  SparklesIcon,
   SquareIcon,
   SquareLock01Icon,
   StopCircleIcon,
@@ -277,7 +275,7 @@ export const ShieldCheck = createIcon(SecurityCheckIcon);
 export const Skull = createIcon(SkullIcon);
 export const SlidersHorizontal = createIcon(SlidersHorizontalIcon);
 export const Smartphone = createIcon(SmartPhone01Icon);
-export const Sparkles = createIcon(SparklesIcon);
+export const Sparkles = createIcon(TerminalIcon); // Legacy API alias; tooling glyph only.
 export const Square = createIcon(SquareIcon);
 export const StopCircle = createIcon(StopCircleIcon);
 export const Store = createIcon(Store01Icon);
@@ -297,7 +295,7 @@ export const UserCheck = createIcon(UserCheck01Icon);
 export const Users = createIcon(UserGroupIcon);
 export const Volume2 = createIcon(VolumeHighIcon);
 export const Wand2 = createIcon(MagicWand01Icon);
-export const WandSparkles = createIcon(MagicWand02Icon);
+export const WandSparkles = createIcon(TerminalIcon); // Legacy API alias; tooling glyph only.
 export const Wrench = createIcon(Wrench01Icon);
 export const X = createIcon(Cancel01Icon);
 export const XCircle = createIcon(CancelCircleIcon);

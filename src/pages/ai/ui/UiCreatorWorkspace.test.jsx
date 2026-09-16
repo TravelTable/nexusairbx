@@ -14,9 +14,25 @@ jest.mock("../../../lib/uiPreviewApi", () => Object.fromEntries(["getUiPreviewMa
 jest.mock("../../../lib/buildWorkspaceApi", () => ({ getBuildWorkspaceSnapshot: jest.fn(async () => ({ items: [] })), readBuildWorkspaceFile: jest.fn() }));
 jest.mock("@monaco-editor/react", () => () => <div>Monaco hooks editor</div>);
 jest.mock("../../../hooks/useChatAttachmentUpload", () => () => ({ upload: jest.fn(), retry: jest.fn() }));
+jest.mock("../../../hooks/useRobloxImageUpload", () => ({
+  useRobloxImageUpload: () => ({
+    uploading: false,
+    uploadImages: jest.fn(async () => ({ ok: true, payload: { results: [{ status: "succeeded", assetId: "9001", contentUri: "rbxassetid://9001" }] } })),
+    readiness: { ready: true, message: null },
+  }),
+}));
+jest.mock("motion/react", () => ({
+  motion: {
+    span: ({ children, initial, animate, transition, ...props }) => <span {...props}>{children}</span>,
+    div: ({ children, initial, animate, transition, ...props }) => <div {...props}>{children}</div>,
+  },
+}));
 jest.mock("../../../components/ai/chat/CreationPromptComposer", () => props => <form onSubmit={event => props.onSubmit(event, props.prompt, { attachments: [] })}>
   <textarea aria-label="UI prompt" value={props.prompt} onChange={e => props.setPrompt(e.target.value)} />
-  {props.modeControl}<button disabled={props.isGenerating}>Send prompt</button></form>);
+  {props.modeControl}
+  {props.onOpenAssetLibrary ? <button type="button" onClick={props.onOpenAssetLibrary}>@asset</button> : null}
+  {props.robloxProjectAssets?.map((asset) => <span key={asset.robloxAssetId || asset.id}>{asset.robloxAssetId}</span>)}
+  <button disabled={props.isGenerating}>Send prompt</button></form>);
 jest.mock("../../../components/ai/chat/MessageList", () => ({ messages }) => <div>{messages.map(m => <p key={m.id}>{m.content}</p>)}</div>);
 jest.mock("../../../components/ai-elements/conversation", () => ({ Conversation: ({children}) => <div>{children}</div>, ConversationContent: ({children}) => <div>{children}</div>, ConversationScrollButton: () => null }));
 jest.mock("./UiLoadingChain", () => ({ busy, task }) => (
@@ -42,6 +58,13 @@ beforeEach(() => {
   window.matchMedia = jest.fn(() => ({ matches: false, addEventListener: jest.fn(), removeEventListener: jest.fn() }));
   if (!global.crypto) global.crypto = {};
   if (!global.crypto.randomUUID) global.crypto.randomUUID = () => "test-id";
+  HTMLDialogElement.prototype.showModal = HTMLDialogElement.prototype.showModal || function showModal() {
+    this.setAttribute("open", "");
+  };
+  HTMLDialogElement.prototype.close = HTMLDialogElement.prototype.close || function close() {
+    this.removeAttribute("open");
+    this.dispatchEvent(new Event("close"));
+  };
   designs.listUiDesigns.mockResolvedValue({ designs: [record] });
   designs.getUiDesign.mockResolvedValue({ design: record });
   designs.compileUiDesign.mockResolvedValue({compiled:{generatedLua:"-- Compiled saved UI"}});
@@ -125,6 +148,19 @@ test("the files drawer stays inspectable during generation and restores focus", 
   expect(opener).toHaveFocus();
 });
 
+test("a generated UI with preview limitations stops the composer", async () => {
+  tasks.createTask.mockResolvedValue({task:savedTask("renderer_limited")});
+  tasks.getTaskEvents.mockResolvedValue({task:{...savedTask("renderer_limited"), status:"verifying", uiBuild:{stage:"renderer_limited", outcome:"renderer_limited", sourceRevision:"rev-1"}}, events:[], lastSequence:0});
+  render(<UiCreatorWorkspace {...props} studio={{connected:false}} studioSessionId={null}/>);
+  await waitFor(() => expect(screen.getByRole("button",{name:"Send prompt"})).toBeEnabled());
+  fireEvent.change(screen.getByLabelText("UI prompt"),{target:{value:"Build offline"}});
+  fireEvent.click(screen.getByRole("button",{name:"Send prompt"}));
+  await waitFor(() => expect(tasks.createTask).toHaveBeenCalledTimes(1));
+  await waitFor(() => expect(screen.getByRole("button",{name:"Send prompt"})).toBeEnabled());
+  expect(screen.queryByRole("button",{name:"Stop build"})).not.toBeInTheDocument();
+  expect(screen.getByTestId("ui-loading-chain")).toHaveTextContent("renderer_limited");
+});
+
 test("Studio is not required to generate and Saved does not keep the composer busy", async () => {
   tasks.createTask.mockResolvedValue({task:savedTask("saved")});
   tasks.getTaskEvents.mockResolvedValue({task:savedTask("saved"), events:[], lastSequence:0});
@@ -171,7 +207,7 @@ test("empty project creates no sample design, and a template immediately builds 
   expect(designs.createUiDesign).not.toHaveBeenCalled();
   expect(screen.queryByText("Template scaffold")).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button",{name:"New UI"}));
-  fireEvent.click(screen.getByRole("button",{name:"Shop Menu",exact:true}));
+  fireEvent.click(within(screen.getByLabelText("Choose or create a UI")).getByRole("button",{name:"Shop Menu",exact:true}));
   await waitFor(() => expect(tasks.createTask).toHaveBeenCalledTimes(1));
   expect(designs.createUiDesign).toHaveBeenCalledWith({projectId:"project-1",title:"Shop Menu"});
   expect(tasks.createTask.mock.calls[0][0]).toMatchObject({designId:"fresh",uiIntent:"create",mode:"agent"});
@@ -187,7 +223,7 @@ test("live actions use readable labels, never raw backend payloads", async () =>
   const {act}=require("@testing-library/react");
   await act(async()=>deliver({eventId:"stream-1",sequence:1,eventType:"ui_build_progress",payload:{designId:"design-1",stage:"preparing",message:'RAW_BACKEND_PAYLOAD',sourceRevision:"rev-1"}}));
   expect(screen.queryByLabelText("Build actions")).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Open build activity" }));
+  fireEvent.click(screen.getByRole("button", { name: "History" }));
   expect(screen.getByLabelText("Build actions")).toHaveTextContent("Saving files");
   expect(screen.queryByText("RAW_BACKEND_PAYLOAD")).not.toBeInTheDocument();
 });
@@ -219,7 +255,35 @@ test("entering UI mode only restores an explicitly last-opened design", async ()
   await waitFor(() => expect(designs.listUiDesigns).toHaveBeenCalledWith('project-1'));
   await waitFor(() => expect(screen.getByRole('button', { name: 'Send prompt' })).toBeEnabled());
   expect(designs.getUiDesign).not.toHaveBeenCalled();
-  expect(screen.getByTestId('preview')).toBeEmptyDOMElement();
+  expect(screen.getByRole("heading", { name: /What can I help you ship/i })).toBeVisible();
+  expect(screen.getByLabelText("Drop a screenshot to replicate")).toBeVisible();
+  expect(screen.queryByLabelText("UI preview")).not.toBeInTheDocument();
+});
+
+test("sending a first prompt leaves the landing for the split workspace", async () => {
+  localStorage.removeItem("nexusrbx:ui:last-open:user-1:project-1");
+  designs.listUiDesigns.mockResolvedValue({ designs: [] });
+  const fresh = { ...record, designId: "fresh", document: { ...doc, designId: "fresh", screens: [{ nodes: [] }] } };
+  designs.createUiDesign.mockResolvedValue({ design: fresh });
+  tasks.createTask.mockResolvedValue({ task: { ...savedTask(), intent: { designId: "fresh", workspace: "ui_creator" } } });
+  tasks.getTaskEvents.mockImplementation(() => new Promise(() => {}));
+  render(<UiCreatorWorkspace {...props} />);
+  await waitFor(() => expect(screen.getByRole("button", { name: "Send prompt" })).toBeEnabled());
+  expect(screen.getByRole("heading", { name: /What can I help you ship/i })).toBeVisible();
+  fireEvent.change(screen.getByLabelText("UI prompt"), { target: { value: "Build a shop" } });
+  fireEvent.click(screen.getByRole("button", { name: "Send prompt" }));
+  await waitFor(() => expect(tasks.createTask).toHaveBeenCalledTimes(1));
+  await waitFor(() => expect(screen.getByLabelText("UI preview")).toBeVisible());
+  await waitFor(() => expect(screen.queryByRole("heading", { name: /What can I help you ship/i })).not.toBeInTheDocument());
+});
+
+test("Blank UI returns to the landing screen", async () => {
+  await open();
+  expect(screen.getByLabelText("UI preview")).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "New UI" }));
+  fireEvent.click(screen.getByRole("button", { name: /Blank UI/ }));
+  await waitFor(() => expect(screen.getByRole("heading", { name: /What can I help you ship/i })).toBeVisible());
+  await waitFor(() => expect(screen.queryByLabelText("UI preview")).not.toBeInTheDocument());
 });
 
 test("New UI is an action that opens the library, not a selected navigation item", () => {
@@ -243,6 +307,41 @@ test("an incomplete visual review retries the saved revision without a generate 
   expect(tasks.createTask.mock.calls[0][0]).toMatchObject({ uiIntent: 'review', baseRevision: 'rev-1', designId: 'design-1', executionInput: { studioEnabled: false } });
   expect(designs.compileUiDesign).not.toHaveBeenCalled();
   expect(previews.requestUiCapture).not.toHaveBeenCalled();
+});
+
+test("generated artwork stays in chat after the artwork turn", async () => {
+  let deliver;
+  tasks.streamTaskEvents.mockImplementation((_id, options) => { deliver = options.onEvent; return new Promise(() => {}); });
+  await open();
+  expect(screen.getByRole("button", { name: "Apply this UI to Studio" })).toBeVisible();
+  fireEvent.change(screen.getByLabelText("UI prompt"), { target: { value: "Build a shop" } });
+  fireEvent.click(screen.getByRole("button", { name: "Send prompt" }));
+  await waitFor(() => expect(deliver).toBeDefined());
+  await act(async () => deliver({ eventId: "art-1", sequence: 1, eventType: "ui_build_progress", payload: { designId: "design-1", stage: "generating", action: "generating_artwork", sourceRevision: "rev-1" } }));
+  expect(screen.getByLabelText("Generated artwork")).toBeVisible();
+  await act(async () => deliver({ eventId: "code-1", sequence: 2, eventType: "ui_build_progress", payload: { designId: "design-1", stage: "generating", action: "writing_ui", sourceRevision: "rev-1" } }));
+  expect(screen.getByLabelText("Generated artwork")).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Open Generating matching artwork" }));
+  expect(screen.getByRole("dialog", { name: "Artwork preview" })).toBeVisible();
+  fireEvent.click(screen.getAllByRole("button", { name: "Publish to Roblox" })[0]);
+  await waitFor(() => expect(screen.getAllByText("rbxassetid://9001").length).toBeGreaterThan(0));
+});
+
+test("UI composer can open the asset library and includes selected assets in the task", async () => {
+  const onOpenAssetLibrary = jest.fn();
+  render(<UiCreatorWorkspace
+    {...props}
+    onOpenAssetLibrary={onOpenAssetLibrary}
+    robloxProjectAssets={[{ robloxAssetId: "123456", name: "Shop icon" }]}
+  />);
+  await screen.findByLabelText("UI prompt");
+  await waitFor(() => expect(screen.getByRole("button", { name: "Send prompt" })).toBeEnabled());
+  fireEvent.click(screen.getByRole("button", { name: "@asset" }));
+  expect(onOpenAssetLibrary).toHaveBeenCalledTimes(1);
+  fireEvent.change(screen.getByLabelText("UI prompt"), { target: { value: "Build a shop" } });
+  fireEvent.click(screen.getByRole("button", { name: "Send prompt" }));
+  await waitFor(() => expect(tasks.createTask).toHaveBeenCalled());
+  expect(tasks.createTask.mock.calls[0][0].message).toContain("rbxassetid://123456");
 });
 
 test("mock mode plays the shared UI presentation path without API calls", async () => {

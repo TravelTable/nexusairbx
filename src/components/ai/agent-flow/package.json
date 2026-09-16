@@ -1,0 +1,27 @@
+{
+  "name": "inline-agent-flow",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Minimal inline agent activity, driven by real message parts. No runtime dependencies.",
+  "exports": {
+    ".": {
+      "types": "./dist/agent-flow.d.ts",
+      "import": "./dist/agent-flow.js"
+    },
+    "./model": {
+      "types": "./dist/model.d.ts",
+      "import": "./dist/model.js"
+    },
+    "./react": "./react/AgentFlow.tsx"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/copy-css.mjs && node scripts/bundle.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test tests/model.test.mjs",
+    "test:browser": "python tests/browser_test.py"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3"
+  }
+}

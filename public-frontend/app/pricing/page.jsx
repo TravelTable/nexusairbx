@@ -2,7 +2,6 @@ import catalog from "../../../src/data/billingCatalog.v2.json";
 import { buildPublicMetadata, canonicalUrl } from "../../../src/lib/seo";
 import PricingCatalog from "../../components/PricingCatalog";
 import PublicHeader from "../../components/PublicHeader";
-import HomepageFooter from "../../../src/components/homepage/HomepageFooter";
 
 export const metadata = buildPublicMetadata({
   title: "NexusRBX Pricing | Roblox AI Building Plans",
@@ -34,7 +33,7 @@ const pricingStructuredData = {
 
 export default function PricingPage() {
   return (
-    <div className="min-h-screen bg-[var(--nx-canvas)] text-[var(--nx-text)]">
+    <div className="bg-[var(--nx-canvas)] text-[var(--nx-text)] min-[900px]:overflow-hidden">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -49,7 +48,6 @@ export default function PricingPage() {
       </a>
       <PublicHeader />
       <PricingCatalog />
-      <HomepageFooter />
     </div>
   );
 }

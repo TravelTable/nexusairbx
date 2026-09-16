@@ -1399,6 +1399,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
   const modelControl = (
     <ModelSwitcher
       value={settings.modelVersion}
+      plan={planKey}
       isPremium={isPremium}
       isStarterOrAbove={isStarterOrAbove}
       recommendedModelId={creationMode === "animate" ? "anthropic/claude-sonnet-5" : null}
@@ -2097,6 +2098,15 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
                 notify={notify}
                 navigateTo={navigateTo}
                 mockRuns={mockRuns}
+                robloxStatus={roblox?.status}
+                robloxProjectAssets={roblox?.selectedAssets || []}
+                onOpenAssetLibrary={handleOpenAssetLibrary}
+                assetLibraryOpen={roblox?.assetLibraryOpen}
+                onCloseAssetLibrary={handleCloseAssetLibrary}
+                onConfirmProjectAssets={handleConfirmProjectAssets}
+                onRemoveProjectAsset={handleRemoveProjectAsset}
+                projectAssetSaving={roblox?.projectAssetSaving}
+                robloxSelectedCreator={roblox?.selectedCreator}
               />
             ) : creationMode === "asset" ? (
               <IconsMarketWorkspacePanel embedded />

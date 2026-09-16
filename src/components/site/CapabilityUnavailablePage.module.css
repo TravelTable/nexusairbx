@@ -3,11 +3,9 @@
   overflow: hidden;
   padding: clamp(24px, 6vw, 56px);
   border: 1px solid var(--nx-rule);
-  border-radius: var(--nx-radius-feature);
-  background:
-    radial-gradient(circle at 50% 0, var(--nx-purple-wash), transparent 52%),
-    var(--nx-card);
-  box-shadow: var(--nx-inner-highlight), var(--nx-shadow-card);
+  border-radius: var(--nx-radius-panel);
+  background: var(--nx-card);
+  box-shadow: none;
 }
 
 .signalMap {
@@ -39,7 +37,7 @@
 
 .signalMap small {
   font-size: 0.6875rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .signalMap > i {

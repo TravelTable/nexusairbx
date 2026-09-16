@@ -1,14 +1,17 @@
 import catalog from "../data/billingCatalog.v2.json";
+import { withDisplayCatalogCredits } from './creditDenomination';
 const publicPlanCatalog = catalog.plans;
 export const BILLING_CATALOG = catalog;
-export const CREDIT_PACKS = catalog.packs;
+export const CREDIT_PACKS = Object.freeze(catalog.packs.map(entry => Object.freeze(withDisplayCatalogCredits(entry))));
 
 export const PUBLIC_PLAN_CATALOG = Object.freeze(
-  publicPlanCatalog.map((plan) => Object.freeze({
-    ...plan,
-    features: Object.freeze([...(plan.features || [])]),
-    recommended: plan.featured === true,
-  }))
+  publicPlanCatalog.map((plan) => {
+    const presented = withDisplayCatalogCredits(plan);
+    return Object.freeze({ ...presented,
+      features: Object.freeze([...(presented.features || [])]),
+      recommended: plan.featured === true,
+    });
+  })
 );
 
 export const SUBSCRIPTION_PLANS = PUBLIC_PLAN_CATALOG.filter(

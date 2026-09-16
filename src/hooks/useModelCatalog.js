@@ -1,206 +1,39 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { BACKEND_URL } from "../config";
 import { desktopWorkspace, desktopRequest } from "../lib/workspaceRuntime";
+import { isCatalogModelAvailable } from "../lib/modelProviders";
 
-const CACHE_TTL_MS = 5 * 60 * 1000;
-const STORAGE_KEY = "nexus:model-catalog:v2";
-
-const FALLBACK_MODELS = [
-  {
-    id: "anthropic/claude-opus-5",
-    name: "Claude Opus 5",
-    provider: "anthropic",
-    contextLength: 1_000_000,
-    tier: "pro",
-    billingCategory: "INCLUDED",
-    billingLabel: "Usage",
-    pricingConfigured: true,
-    availableToPaid: true,
-    availableToFree: false,
-    recommended: true,
-    recommendationScore: 101,
-    codingRecommendationScore: 101,
-    capabilities: ["coding", "reasoning", "tools", "vision"],
-    recommendedFor: ["coding", "reasoning"],
-    usageMultiplier: 1.8,
-    creditMultiplier: 1.8,
-    costTier: "premium",
-    costTierLabel: "1.8× usage",
-  },
-  {
-    id: "openai/gpt-5.6-terra",
-    name: "GPT-5.6 Terra",
-    provider: "openai",
-    contextLength: 1_000_000,
-    tier: "pro",
-    billingCategory: "INCLUDED",
-    billingLabel: "Usage",
-    pricingConfigured: true,
-    availableToPaid: true,
-    availableToFree: false,
-    recommended: false,
-    recommendationScore: 99,
-    codingRecommendationScore: 99,
-    capabilities: ["coding", "reasoning", "tools", "vision"],
-    recommendedFor: ["coding", "reasoning"],
-    usageMultiplier: 1.2,
-    creditMultiplier: 1.2,
-    costTier: "standard",
-    costTierLabel: "1.2× usage",
-  },
-  {
-    id: "anthropic/claude-sonnet-5",
-    name: "Claude Sonnet 5",
-    provider: "anthropic",
-    contextLength: 1_000_000,
-    tier: "pro",
-    billingCategory: "INCLUDED",
-    billingLabel: "Usage",
-    pricingConfigured: true,
-    availableToPaid: true,
-    availableToFree: false,
-    recommended: true,
-    recommendationScore: 96,
-    codingRecommendationScore: 96,
-    capabilities: ["coding", "reasoning", "tools", "vision"],
-    recommendedFor: ["coding", "reasoning"],
-    usageMultiplier: 1.2,
-    creditMultiplier: 1.2,
-    costTier: "standard",
-    costTierLabel: "1.2× usage",
-  },
-  {
-    id: "google/gemini-3.1-pro-preview",
-    name: "Gemini 3.1 Pro",
-    provider: "google",
-    contextLength: 1_000_000,
-    tier: "pro",
-    billingCategory: "INCLUDED",
-    billingLabel: "Usage",
-    pricingConfigured: true,
-    availableToPaid: true,
-    availableToFree: false,
-    recommended: true,
-    recommendationScore: 93,
-    codingRecommendationScore: 93,
-    capabilities: ["coding", "reasoning", "tools", "vision"],
-    recommendedFor: ["coding", "reasoning"],
-    usageMultiplier: 1.2,
-    creditMultiplier: 1.2,
-    costTier: "standard",
-    costTierLabel: "1.2× usage",
-  },
-  {
-    id: "google/gemini-3.6-flash",
-    name: "Gemini 3.6 Flash",
-    provider: "google",
-    contextLength: 1_000_000,
-    tier: "free",
-    billingCategory: "INCLUDED",
-    billingLabel: "Usage",
-    pricingConfigured: true,
-    availableToPaid: true,
-    availableToFree: true,
-    recommended: false,
-    recommendationScore: 62,
-    codingRecommendationScore: 62,
-    capabilities: ["fast", "reasoning", "tools", "vision"],
-    recommendedFor: ["general", "coding", "fast"],
-    usageMultiplier: 0.8,
-    creditMultiplier: 0.8,
-    costTier: "economy",
-    costTierLabel: "0.8× usage",
-  },
-  {
-    id: "openai/gpt-5-mini",
-    name: "GPT-5 mini",
-    provider: "openai",
-    contextLength: 256_000,
-    tier: "pro",
-    billingCategory: "INCLUDED",
-    billingLabel: "Usage",
-    pricingConfigured: true,
-    availableToPaid: true,
-    availableToFree: false,
-    recommended: false,
-    recommendationScore: 65,
-    codingRecommendationScore: 65,
-    capabilities: ["fast", "reasoning", "tools"],
-    recommendedFor: ["general", "coding", "fast"],
-    usageMultiplier: 0.8,
-    creditMultiplier: 0.8,
-    costTier: "economy",
-    costTierLabel: "0.8× usage",
-  },
-];
-
-let moduleCache = null;
+export const MODEL_CATALOG_TTL_MS = 5 * 60 * 1000;
+const EMPTY_SNAPSHOT = { models: [], loading: true, refreshing: false, error: null, meta: null, fetchedAt: 0, source: "loading" };
+let snapshot = EMPTY_SNAPSHOT;
 let inFlight = null;
-
-function readStoredCache() {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed?.models) || !parsed.models.length) return null;
-    return { models: parsed.models, fetchedAt: Number(parsed.fetchedAt) || 0, source: "storage", error: null };
-  } catch (_) {
-    return null;
-  }
-}
-
-function writeStoredCache(value) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
-  } catch (_) {
-    // Cache persistence is optional.
-  }
-}
-
-function getInitialCache() {
-  if (moduleCache) return moduleCache;
-  const stored = readStoredCache();
-  if (stored) moduleCache = stored;
-  return stored;
-}
-
-function isFresh(cached) {
-  return Boolean(cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS);
-}
-
-async function fetchCatalog() {
-  const response = await (desktopWorkspace() ? desktopRequest('/api/models') : fetch(`${BACKEND_URL}/api/models`, {
-    headers: { Accept: "application/json" },
-  }));
-  if (!response.ok) throw new Error(`models responded ${response.status}`);
-  const data = await response.json();
-  const models = Array.isArray(data?.models) ? data.models : [];
-  if (!models.length) throw new Error("empty model catalog");
-  return models;
-}
+const listeners = new Set();
+const subscribe = (listener) => { listeners.add(listener); return () => listeners.delete(listener); };
+const publish = (next) => { snapshot = next; listeners.forEach((listener) => listener()); };
+const fresh = () => snapshot.source === "remote" && Date.now() - snapshot.fetchedAt < MODEL_CATALOG_TTL_MS;
 
 async function loadCatalog({ force = false } = {}) {
-  const existing = getInitialCache();
-  if (!force && isFresh(existing)) return existing.models;
   if (inFlight) return inFlight;
-
+  if (!force && fresh()) return snapshot.models;
+  // Browser storage cannot authorize a model or its pricing. Stale rows are
+  // withheld until the server confirms the catalog, including on refresh failure.
+  publish({ ...snapshot, models: [], loading: !snapshot.fetchedAt, refreshing: true, error: null });
   inFlight = (async () => {
     try {
-      const models = await fetchCatalog();
-      moduleCache = { models, fetchedAt: Date.now(), source: "remote", error: null };
-      writeStoredCache(moduleCache);
+      const response = await (desktopWorkspace() ? desktopRequest("/api/models") : fetch(`${BACKEND_URL}/api/models`, {
+        headers: { Accept: "application/json" },
+      }));
+      if (!response.ok) throw new Error("Live model availability could not be checked.");
+      const data = await response.json();
+      if (!Array.isArray(data?.models) || ["fallback", "emergency", "unavailable"].includes(data?.meta?.source)) {
+        throw new Error("A verified live model catalog is unavailable.");
+      }
+      const models = data.models.filter(isCatalogModelAvailable);
+      publish({ models, meta: data.meta || null, fetchedAt: Date.now(), source: "remote", loading: false, refreshing: false, error: null });
       return models;
     } catch (error) {
-      const models = moduleCache?.models?.length ? moduleCache.models : FALLBACK_MODELS;
-      moduleCache = {
-        models,
-        fetchedAt: moduleCache?.fetchedAt || 0,
-        source: moduleCache?.models?.length ? "stale-cache" : "fallback",
-        error,
-      };
-      return models;
+      publish({ ...snapshot, models: [], source: "unavailable", loading: false, refreshing: false, error });
+      return [];
     } finally {
       inFlight = null;
     }
@@ -209,59 +42,31 @@ async function loadCatalog({ force = false } = {}) {
 }
 
 export function useModelCatalog() {
-  const initial = getInitialCache();
-  const [models, setModels] = useState(initial?.models || []);
-  const [loading, setLoading] = useState(!initial?.models?.length);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState(null);
-
-  const refresh = useCallback(async () => {
-    setRefreshing(true);
-    try {
-      const list = await loadCatalog({ force: true });
-      setModels(list);
-      setError(moduleCache?.error || null);
-      return list;
-    } catch (err) {
-      setError(err);
-      return moduleCache?.models || FALLBACK_MODELS;
-    } finally {
-      setRefreshing(false);
-      setLoading(false);
-    }
-  }, []);
-
+  const state = useSyncExternalStore(subscribe, () => snapshot, () => EMPTY_SNAPSHOT);
+  const refresh = useCallback(() => loadCatalog({ force: true }), []);
   useEffect(() => {
-    let active = true;
-    const cached = getInitialCache();
-    if (cached?.models?.length) {
-      setModels(cached.models);
-      setLoading(false);
-    }
-
-    const shouldRefresh = !isFresh(cached);
-    if (shouldRefresh) setRefreshing(Boolean(cached?.models?.length));
-    loadCatalog({ force: shouldRefresh })
-      .then((list) => {
-        if (!active) return;
-        setModels(list);
-        setLoading(false);
-        setRefreshing(false);
-        setError(moduleCache?.error || null);
-      })
-      .catch((err) => {
-        if (!active) return;
-        setError(err);
-        setLoading(false);
-        setRefreshing(false);
-      });
-
+    void loadCatalog();
+    const update = () => { if (document.visibilityState !== "hidden") void loadCatalog(); };
+    window.addEventListener("focus", update);
+    window.addEventListener("online", update);
+    document.addEventListener("visibilitychange", update);
     return () => {
-      active = false;
+      window.removeEventListener("focus", update);
+      window.removeEventListener("online", update);
+      document.removeEventListener("visibilitychange", update);
     };
   }, []);
+  useEffect(() => {
+    if (!state.fetchedAt || state.error) return undefined;
+    const timer = window.setTimeout(() => void loadCatalog(), Math.max(1, MODEL_CATALOG_TTL_MS - (Date.now() - state.fetchedAt)));
+    return () => window.clearTimeout(timer);
+  }, [state.fetchedAt, state.error]);
+  return { ...state, refresh };
+}
 
-  return { models, loading, refreshing, error, refresh, source: moduleCache?.source || "loading" };
+export function resetModelCatalogForTests() {
+  snapshot = EMPTY_SNAPSHOT;
+  inFlight = null;
 }
 
 export default useModelCatalog;

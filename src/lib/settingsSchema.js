@@ -1,6 +1,6 @@
 import {
-  DEFAULT_FREE_MODEL,
   LEGACY_NEXUS_FREE_MODEL,
+  isNexusAutoModelId,
   normalizeModelId,
 } from "./modelProviders";
 import {
@@ -12,7 +12,7 @@ import {
 export const SETTINGS_STORAGE_KEY = "nexusrbx:settings";
 
 export const DEFAULT_SETTINGS = Object.freeze({
-  modelVersion: DEFAULT_FREE_MODEL,
+  modelVersion: LEGACY_NEXUS_FREE_MODEL,
   creativity: 0.7,
   codeStyle: "optimized",
   verbosity: "concise",
@@ -80,7 +80,7 @@ function sanitizeValue(key, value, { strict = false } = {}) {
       if (strict) throw new Error("modelVersion must be a string");
       return DEFAULT_SETTINGS.modelVersion;
     }
-    if (value.trim() === LEGACY_NEXUS_FREE_MODEL) return LEGACY_NEXUS_FREE_MODEL;
+    if (isNexusAutoModelId(value)) return LEGACY_NEXUS_FREE_MODEL;
     return normalizeModelId(value) || DEFAULT_SETTINGS.modelVersion;
   }
 

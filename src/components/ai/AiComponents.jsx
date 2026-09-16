@@ -19,6 +19,7 @@ import {
 } from "lib/icons";
 import PLAN_INFO from "../../lib/planInfo";
 import { dollarsFromMicros, resolveUsagePercent } from "../../lib/billing";
+import { formatNexusCredits } from '../../lib/creditDenomination';
 import { getGravatarUrl, getUserInitials, formatResetDate } from "../../lib/aiUtils";
 
 export const FormatText = React.memo(({ text }) => {
@@ -60,9 +61,12 @@ export function TokenBar({
   const effectiveResetsAt = isFreeUsagePlan && dailyUsage?.resetsAt ? dailyUsage.resetsAt : resetsAt;
   const premiumMicros = Number(premiumBalance?.balanceMicros);
   const showPremiumBalance = !isFreeUsagePlan && Number.isFinite(premiumMicros);
-  const premiumDollars = showPremiumBalance ? dollarsFromMicros(premiumMicros) : null;
+  const premiumLabel = premiumBalance?.currency === 'credits' ? 'Purchased credits' : 'Premium Balance';
+  const premiumDollars = showPremiumBalance
+    ? premiumBalance?.currency === 'credits' ? formatNexusCredits(premiumMicros) : dollarsFromMicros(premiumMicros)
+    : null;
   if (includedUsage?.catalogVersion === "v2" && !unlimitedTokens) {
-    const amount = (Number(includedUsage.creditRemainingMicros || 0)/1e6).toLocaleString(undefined, { maximumFractionDigits: 2 });
+    const amount = formatNexusCredits(includedUsage.creditRemainingMicros);
     const percent = Number(includedUsage.percentUsed || 0);
     const warning = percent >= 100 ? 100 : percent >= 90 ? 90 : percent >= 70 ? 70 : null;
     return <div id="cloud-token-bar" className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--nx-text-muted)]" role="status">
@@ -82,7 +86,7 @@ export function TokenBar({
           </span>
           {premiumDollars && (
             <span>
-              Premium Balance: <span className="font-bold text-[var(--ds-accent)]">{premiumDollars}</span>
+              {premiumLabel}: <span className="font-bold text-[var(--ds-accent)]">{premiumDollars}</span>
             </span>
           )}
           <span className="inline-flex items-center gap-1 text-[var(--ds-accent)]" title="Unlimited usage override is active">
@@ -101,7 +105,7 @@ export function TokenBar({
             </span>
             {premiumDollars && (
               <span>
-                Premium Balance: <span className="font-bold text-[var(--ds-accent)]">{premiumDollars}</span>
+                {premiumLabel}: <span className="font-bold text-[var(--ds-accent)]">{premiumDollars}</span>
               </span>
             )}
           </div>
@@ -145,7 +149,7 @@ export function TokenBar({
           </span>
           {premiumDollars && (
             <span>
-              Premium Balance: <span className="font-bold text-[var(--ds-accent)]">{premiumDollars}</span>
+              {premiumLabel}: <span className="font-bold text-[var(--ds-accent)]">{premiumDollars}</span>
             </span>
           )}
           {!isLow && <span className="text-[var(--ds-text-muted)]">{resetText}</span>}
@@ -190,7 +194,7 @@ export function TokenBar({
           </span>
           {premiumDollars && (
             <span>
-              Premium Balance: <span className="font-bold text-[var(--ds-accent)]">{premiumDollars}</span>
+              {premiumLabel}: <span className="font-bold text-[var(--ds-accent)]">{premiumDollars}</span>
             </span>
           )}
         </div>

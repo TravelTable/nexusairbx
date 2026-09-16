@@ -5,12 +5,13 @@
 }
 
 .contact-ledger-phase {
-  color: var(--nx-purple-muted);
-  letter-spacing: 0.07em;
+  color: var(--nx-text-muted);
+  letter-spacing: 0.08em;
+  font-weight: 500;
 }
 
 .contact-ledger-title {
-  color: var(--nx-purple);
+  color: var(--nx-text);
 }
 
 .contact-ledger-form {

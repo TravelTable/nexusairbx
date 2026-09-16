@@ -17,5 +17,11 @@
     "noEmit": true,
     "jsx": "react-jsx"
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": [
+    "src/components/ai/agent-flow/examples",
+    "src/components/ai/agent-flow/src",
+    "src/components/ai/agent-flow/tests",
+    "src/components/ai/agent-flow/scripts"
+  ]
 }

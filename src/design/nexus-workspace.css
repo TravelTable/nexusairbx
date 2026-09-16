@@ -1,7 +1,6 @@
 /* AI workspace surfaces and hierarchy. Motion lives in nexus-motion.css. */
 .nexus-studio-root {
-  background: radial-gradient(900px 620px at 50% -220px, rgb(168 85 247 / 10%), transparent 68%),
-    radial-gradient(700px 500px at 100% 30%, rgb(85 140 255 / 4%), transparent 72%), var(--nx-canvas);
+  background: radial-gradient(125% 125% at 50% 10%, #000 40%, #63e 100%);
   color: var(--nx-text);
 }
 [data-agent-tone] { --nx-agent-signal: var(--nx-text-muted); }
@@ -15,12 +14,17 @@
   background: linear-gradient(180deg, rgb(255 255 255 / 2%), transparent), var(--nx-depth);
   box-shadow: var(--nx-inner-highlight);
 }
-.nexus-studio-root :where(.nx-panel, .nexus-project-sidebar, .uc-preview-pane) {
+.nexus-studio-root :where(.nx-panel, .nexus-project-sidebar) {
   border-color: var(--nx-rule);
   background: linear-gradient(180deg, rgb(255 255 255 / 2.5%), transparent 100px), var(--nx-card);
   box-shadow: var(--nx-shadow-card);
 }
 .nexus-studio-root .nexus-project-sidebar { background-color: var(--nx-depth); }
+.nexus-studio-root .uc-preview-pane {
+  border-color: var(--nx-rule);
+  background: color-mix(in srgb, var(--nx-card) 42%, transparent);
+  box-shadow: var(--nx-inner-highlight);
+}
 .nexus-studio-root :where(.agent-chat-panel, .uc-app) { position: relative; isolation: isolate; background: transparent; }
 .nexus-studio-root :where(.agent-chat-panel, .uc-app)::before {
   position: absolute;
@@ -86,9 +90,9 @@
   background: linear-gradient(180deg, var(--nx-purple-wash), transparent 140px), var(--nx-card);
   box-shadow: -16px 0 48px rgb(0 0 0 / 32%), var(--nx-inner-highlight);
 }
-.nexus-studio-root .uc-conversation { background: transparent; }
+.nexus-studio-root .uc-conversation { background: color-mix(in srgb, var(--nx-card) 28%, transparent); }
 .nexus-studio-root .uc-preview-stage {
-  background: radial-gradient(500px 400px at 50% 30%, var(--nx-purple-wash), transparent 75%), var(--nx-depth);
+  background: transparent;
 }
 .nx-task-progress { box-shadow: var(--nx-shadow-card); }
 .nx-task-step[data-step-state="completed"] { border-color: color-mix(in srgb, var(--nx-success) 24%, transparent); }

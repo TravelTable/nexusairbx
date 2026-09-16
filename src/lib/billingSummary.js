@@ -75,6 +75,7 @@ export function summarizeEntitlements(e) {
     ...(e?.catalogVersion === "v2" ? { catalogVersion: "v2", billingScope: e.billingScope,
       includedCredits: e.includedCredits, purchasedCredits: e.purchasedCredits,
       totalAvailableCreditsMicros: e.totalAvailableCreditsMicros, usageWindow: e.usageWindow, refreshAt: e.refreshAt } : {}),
+    ...(e?.creditDenomination ? { creditDenomination: e.creditDenomination, totalAvailableCredits: e.totalAvailableCredits } : {}),
     plan,
     cycle,
     subRemaining,

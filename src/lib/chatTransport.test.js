@@ -18,8 +18,17 @@ test("output limit terminal cannot report success", async () => {
 test("malformed events do not become chat text", async () => {
  await expect(readAskEventStream(body(['data: {bad}\n\n']))).rejects.toMatchObject({code:"INVALID_STREAM_EVENT"});
 });
-test("empty stop is not a successful answer", async () => {
- await expect(readAskEventStream(body([frame(stop)]))).rejects.toMatchObject({code:"CHAT_EMPTY"});
+test("SSE parser preserves model routing events without treating them as chat text", async () => {
+  const routing = { modelId: "openai/gpt-5-mini", modelName: "GPT-5 mini", reasons: ["Low-complexity request."] };
+  const onModelRouting = jest.fn();
+  const onText = jest.fn();
+  await expect(readAskEventStream(body([
+    frame({ type: "model_routing", modelRouting: routing, chatId: "c1" }),
+    frame({ type: "delta", text: "RemoteEvents are server-validated." }),
+    frame({ ...stop, modelRouting: routing }),
+  ]), { onText, onModelRouting })).resolves.toBe("RemoteEvents are server-validated.");
+  expect(onModelRouting).toHaveBeenCalledWith(routing);
+  expect(onText).toHaveBeenLastCalledWith("RemoteEvents are server-validated.");
 });
 test("plain transport requires durable completion and does not trust EOF", async () => {
  await expect(readAskResponse({ok:true,status:200,headers:{get:()=>"text/plain"},body:body(["Partial"])})).rejects.toMatchObject({code:"CHAT_INCOMPLETE",partial:"Partial"});

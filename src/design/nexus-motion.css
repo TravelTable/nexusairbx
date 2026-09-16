@@ -1,9 +1,14 @@
 :root {
-  --nx-motion-color: 150ms;
-  --nx-motion-fast: 150ms;
-  --nx-motion-elevation: 200ms;
-  --nx-motion-state: 200ms;
-  --nx-motion-spatial: 280ms;
+  --nx-motion-instant: 100ms;
+  --nx-motion-color: 140ms;
+  --nx-motion-fast: 140ms;
+  --nx-motion-control: 160ms;
+  --nx-motion-elevation: 160ms;
+  --nx-motion-state: 180ms;
+  --nx-motion-menu: 180ms;
+  --nx-motion-dialog: 220ms;
+  --nx-motion-spatial: 240ms;
+  --nx-motion-reveal: 260ms;
   --nx-ease-state: cubic-bezier(0.22, 0.72, 0.24, 1);
   --nx-ease-spatial: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ds-motion-press: var(--nx-motion-color);

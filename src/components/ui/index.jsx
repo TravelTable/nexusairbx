@@ -22,11 +22,11 @@ const BTN_SIZES = {
 
 const BTN_VARIANTS = {
   primary:
-    "border border-transparent bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] font-semibold hover:bg-[var(--ds-accent-hover)] active:bg-[var(--ds-accent-pressed)]",
+    "border border-transparent bg-[var(--ds-accent)] text-[var(--ds-accent-foreground)] font-medium hover:bg-[var(--ds-accent-hover)] active:bg-[var(--ds-accent-pressed)]",
   secondary:
-    "bg-[var(--ds-surface-2)] border border-[var(--ds-border)] text-[var(--ds-text)] font-semibold hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-surface-3)]",
+    "bg-[var(--ds-surface-2)] border border-[var(--ds-border)] text-[var(--ds-text)] font-medium hover:border-[var(--ds-border-strong)] hover:bg-[var(--ds-fill-hover)]",
   ghost:
-    "bg-[var(--ds-fill-subtle)] border border-[var(--ds-border)] text-[var(--ds-text-secondary)] font-semibold hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]",
+    "bg-transparent border border-transparent text-[var(--ds-text-secondary)] font-medium hover:bg-[var(--ds-fill-hover)] hover:text-[var(--ds-text)]",
   danger:
     "bg-[color-mix(in_srgb,var(--ds-danger)_12%,transparent)] border border-[color-mix(in_srgb,var(--ds-danger)_35%,transparent)] text-[var(--ds-danger)] font-semibold hover:bg-[color-mix(in_srgb,var(--ds-danger)_18%,transparent)]",
   subtle:
@@ -54,7 +54,7 @@ export const Button = React.forwardRef(function Button({
       aria-busy={loading || undefined}
       disabled={disabled || loading}
       className={cx(
-        "nx-control inline-flex items-center justify-center rounded-[var(--nx-radius-control)] transition-[background-color,border-color,color] duration-150 focus-ring disabled:opacity-50 disabled:cursor-not-allowed",
+    "nx-control inline-flex items-center justify-center rounded-[var(--nx-radius-field)] font-medium transition-[background-color,border-color,color,transform] duration-150 ease-[cubic-bezier(0.22,0.72,0.24,1)] focus-ring disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99]",
         BTN_SIZES[size] || BTN_SIZES.md,
         BTN_VARIANTS[variant] || BTN_VARIANTS.primary,
         className
@@ -449,7 +449,7 @@ export function ListItem({
       {children || (
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <div className="truncate text-xs font-bold">{title}</div>
+            <div className="truncate text-xs font-medium">{title}</div>
             {subtitle ? (
               <div className="mt-0.5 truncate text-xs text-[var(--ds-text-muted)]">{subtitle}</div>
             ) : null}

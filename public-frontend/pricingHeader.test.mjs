@@ -112,7 +112,7 @@ test("public pricing quotes only plans a visitor can actually buy", () => {
   const plans = read("src/components/billing/FinancialPlans.jsx");
   assert.match(plans, /SUBSCRIPTION_PLANS/);
   assert.doesNotMatch(plans, /plan\.id === "FREE"/);
-  assert.match(plans, /No free trial/);
+  assert.match(plans, /no free AI trial/i);
 
   // Retired tiers may still be honoured for existing subscribers, but they
   // must never be presented as a choice.
@@ -127,20 +127,23 @@ test("public pricing quotes only plans a visitor can actually buy", () => {
 
 test("the pricing page renders the canonical catalog rather than a hardcoded copy", () => {
   const pricing = read("public-frontend/components/PricingCatalog.jsx");
+  const plans = read("src/components/billing/FinancialPlans.jsx");
 
-  assert.match(pricing, /billingCatalog\.v2\.json/, "prices must come from the canonical catalog");
   assert.match(pricing, /FinancialPlans/, "the plan cards are the shared billing component");
   assert.doesNotMatch(pricing, /publicPlanCatalog/, "the retired duplicate catalog is gone");
+  assert.doesNotMatch(pricing, /WorkflowPreview|comparisonRows|differentiators|billingInfo/);
+  assert.doesNotMatch(pricing, /The workflow stays visible from request to Studio/);
+  assert.doesNotMatch(pricing, /Choose based on how much room you need/);
+  assert.doesNotMatch(pricing, /More than a generic code box/);
+  assert.doesNotMatch(pricing, /Keep control of your subscription/);
   assert.doesNotMatch(
     pricing,
     /\$\d/,
     "prices must not be hardcoded into the page",
   );
-  // Grandfathering is a promise to existing subscribers; keep it stated.
-  assert.match(pricing, /grandfathered/i);
-  assert.match(pricing, /href="\/billing"/);
-  assert.doesNotMatch(pricing, /scope="col">Free</);
-  assert.match(pricing, /scope="col">Starter</);
+  assert.match(plans, /SUBSCRIPTION_PLANS|planCatalog/, "prices and displayed credits must come from the canonical catalog adapter");
+  assert.match(plans, /displayCreditsLabel/, "displayed denomination stays on the shared cards");
+  assert.doesNotMatch(plans, /CreditExplainer|PLAN FINDER|BUILD_PROFILES/);
   assert.doesNotMatch(pricing, /gradient|testimonial|priority processing/i);
 });
 
@@ -162,27 +165,27 @@ test("pricing follows the selected reference-card design authority", () => {
   const pricing = read("src/components/billing/FinancialPlans.jsx");
   const styles = read("src/components/billing/FinancialPlans.module.css");
 
-  assert.match(routeMatrix, /`\/pricing`[\s\S]*Reference-inspired pricing cards/);
+  assert.match(routeMatrix, /`\/pricing`[\s\S]*tight tools catalog/);
   assert.match(
     pricing,
     /className=\{styles\.cycleToggle\}[\s\S]*role="group"[\s\S]*aria-label="Billing period"/,
   );
+  assert.match(pricing, /compact \? styles\.section : `\$\{styles\.section\} \$\{styles\.catalog\}`|styles\.catalog/);
   assert.match(
     styles,
-    /\.cycleToggle\s*\{[^}]*border:\s*1px solid var\(--nx-rule-strong\)[^}]*border-radius:\s*var\(--nx-radius-panel\)/,
+    /\.catalog\s+\.cycleToggle\s*\{[^}]*border:\s*1px solid var\(--nx-rule\)[^}]*border-radius:\s*var\(--nx-radius-control\)/,
+  );
+  assert.doesNotMatch(styles, /\.catalog[^{]*\{[^}]*backdrop-filter/);
+  assert.doesNotMatch(styles, /\.catalog[\s\S]{0,400}\.planCard:hover[^{]*\{[^}]*translateY\(-4px\)/);
+  assert.match(
+    styles,
+    /\.catalog\s+\.cycleToggle button\s*\{[^}]*min-height:\s*var\(--nx-touch-target\)[^}]*border-radius:\s*var\(--nx-radius-control\)/,
   );
   assert.match(
     styles,
-    /\.cycleToggle button\s*\{[^}]*min-height:\s*var\(--nx-touch-target\)[^}]*border-radius:\s*var\(--nx-radius-control\)/,
+    /\.catalog\s+\.cycleToggle button\[aria-pressed="true"\]\s*\{[^}]*background:\s*var\(--nx-raised-surface\)/,
   );
-  assert.match(
-    styles,
-    /\.cycleToggle button\[aria-pressed="true"\]\s*\{[^}]*background:\s*var\(--nx-raised-surface\)/,
-  );
-  assert.match(
-    styles,
-    /\.planCard\[data-featured="true"\]\s*\{[^}]*border:\s*2px solid var\(--nx-purple\)/,
-  );
+  assert.match(styles, /\.catalog\s+\.action:active|\.catalog[\s\S]*prefers-reduced-motion/);
 });
 
 test("pricing is indexable while subscribe remains the noindex application bridge", async () => {
@@ -230,7 +233,7 @@ test("pricing page publishes canonical metadata and restrained buyer copy", () =
   assert.match(page, /PricingCatalog/);
   assert.match(page, /PublicHeader/);
   assert.match(page, /Skip to pricing/);
-  assert.match(page, /Build Your Roblox Game/);
+  assert.match(page, /Build with NexusRBX from \$2\/month/);
   assert.match(page, /min-h-11/);
   assert.match(page, /var\(--nx-canvas\)/);
   assert.doesNotMatch(page, /gradient|testimonial|supercharge/i);

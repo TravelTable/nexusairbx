@@ -8,7 +8,7 @@
   min-height: 0;
   overflow: hidden;
   color: var(--ds-text);
-  background: var(--ds-bg-workspace);
+  background: transparent;
   font: 13px/1.5 var(--ds-font-sans);
 }
 
@@ -37,6 +37,31 @@
   gap: var(--ds-space-2);
 }
 
+.uc-stage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.uc-stage > .uc-landing,
+.uc-stage > .uc-session {
+  position: absolute;
+  inset: 0;
+  transition: opacity 220ms ease;
+}
+
+.uc-stage > [data-phase="enter"] {
+  z-index: 1;
+  opacity: 1;
+}
+
+.uc-stage > [data-phase="exit"] {
+  z-index: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .uc-local-toolbar { display: none; align-items: center; justify-content: space-between; gap: var(--ds-space-2); }
 .uc-app:not(.uc-app--shared-header) .uc-local-toolbar { display: flex; justify-content: flex-end; }
 .uc-view-tabs { display: none; align-items: center; padding: 2px; border-radius: var(--nx-radius-control); background: var(--ds-fill-subtle); }
@@ -50,6 +75,7 @@
   font-size: 12px;
 }
 .uc-view-tabs button[aria-selected="true"] { color: var(--ds-text); background: var(--ds-surface-2); }
+.uc-app--landing .uc-view-tabs { display: none; }
 
 .uc-workspace-actions { display: flex; align-items: center; gap: var(--ds-space-1); }
 .uc-workspace-actions button,
@@ -88,7 +114,7 @@
   overflow: hidden;
   border: 1px solid var(--ds-border-subtle);
   border-radius: var(--nx-radius-panel);
-  background: var(--ds-surface-1);
+  background: color-mix(in srgb, var(--ds-surface-1) 42%, transparent);
 }
 
 .uc-pane-header,
@@ -99,6 +125,7 @@
   min-height: 54px;
   padding: 8px 14px;
   border-bottom: 1px solid var(--ds-border-subtle);
+  background: color-mix(in srgb, var(--ds-surface-1) 88%, transparent);
 }
 .uc-pane-header > span,
 .uc-preview-header > div > span {
@@ -153,12 +180,12 @@
 .uc-resize::after { position: absolute; top: 14px; bottom: 14px; left: 4px; width: 2px; border-radius: var(--nx-radius-pill); content: ''; transition: background-color var(--nx-motion-color); }
 .uc-resize:hover::after, .uc-resize:focus-visible::after { background: var(--ds-border-strong); }
 
-.uc-preview-stage { display: flex; flex: 1; min-width: 0; min-height: 0; overflow: hidden; background: var(--ds-bg-workspace); }
+.uc-preview-stage { display: flex; flex: 1; min-width: 0; min-height: 0; overflow: hidden; background: transparent; }
 .uc-preview-stage > .nx-ui-preview { flex: 1; min-height: 0; border: 0 !important; background: transparent !important; }
 .uc-preview-stage .nx-ui-preview__toolbar { gap: 7px; flex-wrap: wrap; padding: 10px 14px; border-bottom: 1px solid var(--ds-border-subtle); background: var(--ds-surface-1); }
 .uc-preview-stage .nx-ui-preview__status { color: var(--ds-text-muted); font-size: 12px; }
 .uc-preview-stage select, .uc-preview-stage .nx-ui-preview__toolbar button { min-height: 30px; padding: 6px 8px; border: 0; border-radius: 8px; color: var(--ds-text-secondary); background: var(--ds-fill-subtle); font-size: 11px; }
-.uc-preview-stage .nx-ui-preview__body { flex: 1; min-height: 180px; padding: var(--ds-space-3); background: var(--ds-bg-workspace); }
+.uc-preview-stage .nx-ui-preview__body { flex: 1; min-height: 180px; padding: var(--ds-space-3); background: transparent; }
 .uc-preview-stage .nx-ui-preview__empty { gap: var(--ds-space-3); color: var(--ds-text-muted); text-align: center; }
 .uc-preview-stage .nx-ui-preview__empty strong { max-width: 310px; color: var(--ds-text); font-size: 16px; font-weight: 500; }
 .uc-preview-stage .nx-ui-preview__empty p { max-width: 390px; font-size: 13px; }
@@ -169,11 +196,16 @@
 .uc-preview-stage .nx-ui-preview__actions button { padding: 8px 14px; border: 0; border-radius: 8px; color: var(--ds-accent-foreground); background: var(--ds-accent); }
 
 .uc-composer { flex: 0 0 auto; padding: 6px 10px 10px; }
-.uc-composer .nexus-composer-region { margin: 0; padding: 3px 0 !important; background: transparent !important; }
-.uc-composer .nexus-composer-frame { width: 100%; max-width: none !important; }
-.uc-composer .nexus-composer.nx-composer-shine { border: 1px solid var(--ds-border) !important; border-radius: var(--nx-radius-panel) !important; background: var(--ds-surface-2) !important; box-shadow: none !important; }
-.uc-composer .nexus-composer.nx-composer-shine:focus-within { border-color: var(--ds-accent-border) !important; }
-.uc-composer .nexus-composer__body { padding: 10px 10px 7px; }
+.uc-composer .nexus-composer-region,
+.uc-landing .nexus-composer-region { margin: 0; padding: 3px 0 !important; background: transparent !important; }
+.uc-composer .nexus-composer-frame,
+.uc-landing .nexus-composer-frame { width: 100%; max-width: none !important; }
+.uc-composer .nexus-composer.nx-composer-shine,
+.uc-landing .nexus-composer.nx-composer-shine { border: 1px solid var(--ds-border) !important; border-radius: var(--nx-radius-panel) !important; background: var(--ds-surface-2) !important; box-shadow: none !important; }
+.uc-composer .nexus-composer.nx-composer-shine:focus-within,
+.uc-landing .nexus-composer.nx-composer-shine:focus-within { border-color: var(--ds-accent-border) !important; }
+.uc-composer .nexus-composer__body,
+.uc-landing .nexus-composer__body { padding: 10px 10px 7px; }
 .uc-composer > p { margin: 0; padding: 0 6px 6px; color: var(--ds-text-muted); font-size: 10px; text-align: center; }
 .uc-composer > p button { border: 0; color: var(--ds-accent); background: transparent; text-decoration: underline; }
 
@@ -298,6 +330,7 @@
   .uc-main { padding: 10px; }
   .uc-local-toolbar { display: flex; }
   .uc-view-tabs { display: flex; }
+  .uc-app--landing .uc-view-tabs { display: none; }
   .uc-app--shared-header .uc-local-toolbar { justify-content: flex-start; }
   .uc-session { display: flex; flex: 1; min-height: 0; }
   .uc-resize { display: none; }
@@ -369,7 +402,7 @@
 
 .uc-resize {
   width: 10px;
-  background: var(--ds-bg-workspace);
+  background: transparent;
 }
 
 .uc-resize::after {
@@ -579,13 +612,7 @@
    ============================================================ */
 
 .uc-preview-stage {
-  background:
-    radial-gradient(
-      circle at 50% 42%,
-      color-mix(in srgb, var(--ds-surface-2) 72%, transparent),
-      transparent 42%
-    ),
-    var(--ds-bg-workspace);
+  background: transparent;
 }
 
 .uc-preview-stage > .nx-ui-preview {

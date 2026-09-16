@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inline Agent Flow · Message Inspector</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#181818;color:#e5e5e5;font:13px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{max-width:734px;margin:auto;padding:20px 27px 60px}header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:24px;color:#a0a0a0}h1{font:500 13px/1.5 inherit;margin:0}button,input,textarea{font:inherit;color:inherit}button{cursor:pointer;background:none;border:1px solid #343434;border-radius:6px;min-height:32px;padding:3px 9px}button:hover{background:#232323}summary{cursor:pointer;color:#a0a0a0;min-height:30px}details{margin-bottom:22px}textarea{display:block;width:100%;min-height:180px;margin:10px 0;resize:vertical;padding:10px;border:1px solid #343434;border-radius:8px;background:#1a1a1a;font:12px/1.6 ui-monospace,Consolas,monospace}.actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}.note{color:#a0a0a0;max-width:580px;font-size:12px}.error{color:#d4a19a;white-space:pre-wrap}.empty{color:#a0a0a0;padding-top:20px}p{margin:0 0 10px}[hidden]{display:none!important}:focus-visible{outline:2px solid #aaa;outline-offset:3px}agent-flow{margin-top:20px}@media(max-width:420px){main{padding:16px}}
+</style>
+</head>
+<body>
+<main>
+<header><h1>Agent flow</h1><button id="clear" type="button">Clear</button></header>
+<details id="loader" open>
+<summary>Load message data</summary>
+<p class="note">Paste an exported assistant UIMessage, an AgentRun, or an envelope containing { message, status }. The component renders that data; it does not generate a sample run.</p>
+<label for="payload" class="note">Message JSON</label>
+<textarea id="payload" spellcheck="false" aria-describedby="import-error"></textarea>
+<div class="actions"><button id="render" type="button">Render message</button><button id="browse" type="button">Open JSON file</button><input id="file" type="file" accept=".json,application/json" hidden></div>
+<p id="import-error" class="error" role="alert"></p>
+</details>
+<p id="empty" class="empty">No message loaded.</p>
+<agent-flow id="activity"></agent-flow>
+</main>
+<script>/* Inline Agent Flow. Independent implementation; see SOURCES.md. */
+(() => {
+'use strict';
+function record(value) {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+const str = (value) => typeof value === 'string' ? value : undefined;
+const states = new Set([
+    'input-streaming', 'input-available', 'approval-requested', 'approval-responded',
+    'output-available', 'output-error', 'output-denied',
+]);
+function fromUIMessage(message, options = {}) {
+    if (!message || typeof message.id !== 'string' || !message.id ||
+        message.role !== 'assistant' || !Array.isArray(message.parts)) {
+        throw new TypeError('Expected an assistant UIMessage with an id and parts array.');
+    }
+    const events = [];
+    const ids = new Map();
+    let step = 0;
+    const add = (event) => {
+        const previous = ids.get(event.id);
+        if (previous === undefined) {
+            ids.set(event.id, events.length);
+            events.push(event);
+        }
+        else
+            events[previous] = event; // Replayed tool snapshots update, never duplicate.
+    };
+    message.parts.forEach((part, index) => {
+        if (!record(part) || typeof part.type !== 'string')
+            return;
+        if (part.type === 'step-start') {
+            step++;
+            return;
+        }
+        const id = `part:${index}`;
+        const duration = options.durations?.[id];
+        const durationMs = Number.isFinite(duration) && duration >= 0 ? duration : undefined;
+        if ((part.type === 'text' || part.type === 'reasoning') && typeof part.text === 'string') {
+            add({ type: part.type, id, step, text: part.text, durationMs, streaming: part.state === 'streaming' });
+        }
+        else if (part.type === 'dynamic-tool' || part.type.startsWith('tool-')) {
+            if (typeof part.toolCallId !== 'string' || !part.toolCallId)
+                return;
+            const name = part.type === 'dynamic-tool' ? str(part.toolName) : part.type.slice(5);
+            if (!name)
+                return;
+            const metric = options.durations?.[part.toolCallId];
+            const approval = record(part.approval) && typeof part.approval.id === 'string'
+                ? { id: part.approval.id, approved: typeof part.approval.approved === 'boolean' ? part.approval.approved : undefined,
+                    reason: str(part.approval.requestReason) ?? str(part.approval.reason) }
+                : undefined;
+            add({
+                type: 'tool', id: part.toolCallId, step, name, title: str(part.title),
+                state: states.has(part.state) ? part.state : 'unknown',
+                input: part.input, output: part.output, errorText: str(part.errorText),
+                preliminary: part.preliminary === true, approval,
+                durationMs: Number.isFinite(metric) && metric >= 0 ? metric : undefined,
+            });
+        }
+        else if (part.type === 'file' && typeof part.url === 'string' && typeof part.mediaType === 'string') {
+            add({ type: 'asset', id, step, asset: {
+                    id, url: part.url, mediaType: part.mediaType, filename: str(part.filename),
+                } });
+        }
+        else if (part.type === 'source-url' && typeof part.url === 'string') {
+            add({ type: 'source', id, step, url: part.url, title: str(part.title) ?? part.url });
+        }
+        else if (part.type === 'source-document' && typeof part.title === 'string') {
+            add({ type: 'source', id, step, title: part.title });
+        }
+        else if (part.type.startsWith('data-')) {
+            const mapped = options.mapDataPart?.(part, index);
+            if (mapped)
+                add(mapped);
+        }
+        // Provider metadata, hidden reasoning files, and unregistered custom parts are not rendered.
+    });
+    return { id: message.id, events, status: options.status ?? 'idle', error: options.error };
+}
+function toolIsPending(tool) {
+    return tool.state === 'input-streaming' || tool.state === 'input-available' ||
+        (tool.state === 'approval-responded' && tool.approval?.approved === true) ||
+        (tool.state === 'output-available' && tool.preliminary === true);
+}
+function toolStatus(tool, run) {
+    if (tool.state === 'output-error')
+        return 'Failed';
+    if (tool.state === 'output-denied' || (tool.state === 'approval-responded' && tool.approval?.approved === false))
+        return 'Denied';
+    if (tool.state === 'approval-requested')
+        return 'Approval required';
+    if (tool.state === 'output-available' && !tool.preliminary)
+        return 'Completed';
+    if (tool.state === 'unknown')
+        return 'Unknown state';
+    if (run === 'interrupted')
+        return 'Interrupted';
+    if (run === 'error')
+        return 'Incomplete';
+    if (tool.state === 'output-available')
+        return run === 'streaming' ? 'Receiving result' : 'Partial result';
+    if (tool.state === 'approval-responded')
+        return 'Approved · awaiting result';
+    if (tool.state === 'input-streaming')
+        return run === 'streaming' ? 'Preparing' : 'Incomplete input';
+    return run === 'streaming' ? 'Running' : 'Awaiting result';
+}
+function durationLabel(ms) {
+    if (ms === undefined || !Number.isFinite(ms) || ms < 0)
+        return '';
+    return ms < 1000 ? `${Math.round(ms)}ms` : `${Number((ms / 1000).toFixed(ms < 10000 ? 1 : 0))}s`;
+}
+/** A display aid, not a security boundary. Redact sensitive material on the server. */
+function formatValue(value) {
+    if (value === undefined)
+        return '';
+    if (typeof value === 'string')
+        return value;
+    const seen = new WeakSet();
+    try {
+        return JSON.stringify(value, (key, item) => {
+            if (/^(password|passwd|secret|clientsecret|token|accesstoken|refreshtoken|apikey|authorization|cookie|setcookie|privatekey)$/i.test(key.replace(/[-_\s]/g, '')))
+                return '[redacted]';
+            if (typeof item === 'bigint')
+                return item.toString();
+            if (typeof item === 'object' && item !== null) {
+                if (seen.has(item))
+                    return '[repeated reference]';
+                seen.add(item);
+            }
+            return item;
+        }, 2) ?? String(value);
+    }
+    catch {
+        return '[Unable to display this value]';
+    }
+}
+/** Reject active-content schemes, credentials, control characters and unsafe data files. */
+function safeURL(raw, base, image = false, origins = []) {
+    if (!raw || /[\u0000-\u001f\u007f]/.test(raw))
+        return null;
+    if (/^data:/i.test(raw)) {
+        return image && /^data:image\/(png|jpeg|webp|gif|avif);base64,[a-z0-9+/=\s]+$/i.test(raw) ? raw : null;
+    }
+    try {
+        const url = new URL(raw, base);
+        const ownOrigin = new URL(base).origin;
+        if (url.username || url.password)
+            return null;
+        if (url.protocol === 'blob:')
+            return url.origin === ownOrigin ? url.href : null;
+        if (!['https:', 'http:'].includes(url.protocol))
+            return null;
+        if (image && url.origin !== ownOrigin && !origins.includes(url.origin))
+            return null;
+        return url.href;
+    }
+    catch {
+        return null;
+    }
+}
+
+const el = (tag, cls = '') => {
+    const node = document.createElement(tag);
+    if (cls)
+        node.className = cls;
+    return node;
+};
+const setText = (node, value) => {
+    if (node.textContent === value)
+        return;
+    // Appending to the existing text node preserves selection while tokens stream.
+    const text = node.firstChild;
+    if (text instanceof Text && node.childNodes.length === 1) {
+        if (value.startsWith(text.data))
+            text.appendData(value.slice(text.length));
+        else
+            text.replaceData(0, text.length, value);
+    }
+    else
+        node.replaceChildren(document.createTextNode(value));
+};
+const button = (label, cls = '') => {
+    const node = el('button', cls);
+    node.type = 'button';
+    node.textContent = label;
+    return node;
+};
+function fold(cls) {
+    const node = el('details', cls);
+    const head = el('summary');
+    const label = el('span', 'label');
+    const meta = el('span', 'meta');
+    const chevron = el('span', 'chevron');
+    chevron.setAttribute('aria-hidden', 'true');
+    head.append(label, meta, chevron);
+    node.append(head);
+    return { node, head, label, meta, chevron };
+}
+/** Keyed reconciliation: no innerHTML, whole-message replacement or automatic scrolling. */
+class KeyedList {
+    parent;
+    create;
+    views = new Map();
+    constructor(parent, create) {
+        this.parent = parent;
+        this.create = create;
+    }
+    update(items) {
+        const keep = new Set();
+        let cursor = this.parent.firstChild;
+        for (const item of items) {
+            if (keep.has(item.id))
+                continue;
+            keep.add(item.id);
+            let view = this.views.get(item.id);
+            if (!view) {
+                view = this.create(item);
+                this.views.set(item.id, view);
+            }
+            view.update(item);
+            if (view.node !== cursor)
+                this.parent.insertBefore(view.node, cursor);
+            cursor = view.node.nextSibling;
+        }
+        for (const [id, view] of this.views) {
+            if (!keep.has(id)) {
+                view.dispose?.();
+                view.node.remove();
+                this.views.delete(id);
+            }
+        }
+    }
+    clear() { for (const view of this.views.values()) {
+        view.dispose?.();
+        view.node.remove();
+    } this.views.clear(); }
+}
+function blocks(events) {
+    const result = [];
+    for (const event of events) {
+        const last = result.at(-1);
+        if (event.type === 'tool') {
+            if (last?.type === 'group' && last.tools.at(-1)?.step === event.step)
+                last.tools.push(event);
+            else
+                result.push({ type: 'group', id: `group:${event.id}`, tools: [event] });
+        }
+        else
+            result.push(event);
+    }
+    return result;
+}
+function presentation(ctx, tool) {
+    return ctx.options().tools?.[tool.name] ?? {};
+}
+function textView() {
+    const node = el('p', 'text');
+    return { node, update(item) { node.hidden = !item.text; setText(node, item.text); } };
+}
+function reasoningView(first, ctx) {
+    const f = fold('reasoning');
+    const body = el('div', 'reasoning-body');
+    f.node.append(body);
+    f.node.open = ctx.options().expandReasoning ?? (ctx.run()?.status === 'streaming' && !!first.streaming);
+    let wasLive = false, startedAt, elapsed, timer, current = first;
+    const drawTime = () => {
+        const duration = durationLabel(current.durationMs ?? (startedAt === undefined ? elapsed : Date.now() - startedAt));
+        setText(f.label, wasLive ? 'Thinking…' : current.streaming ? 'Thinking interrupted' : duration ? `Thought for ${duration}` : 'Thought');
+        setText(f.meta, wasLive ? duration : '');
+    };
+    let hasContent = !!first.text;
+    f.head.addEventListener('click', event => { if (!hasContent)
+        event.preventDefault(); });
+    return { node: f.node, update(item) {
+            const live = ctx.run()?.status === 'streaming' && !!item.streaming;
+            current = item;
+            if (live && !wasLive) {
+                startedAt = Date.now();
+                f.node.open = true;
+                timer = setInterval(drawTime, 1000);
+            } else if (!live && wasLive) {
+                elapsed = Date.now() - startedAt;
+                startedAt = undefined;
+                clearInterval(timer);
+                f.node.open = false;
+            }
+            wasLive = live;
+            hasContent = !!item.text.trim();
+            f.node.hidden = !hasContent && !live && elapsed === undefined && item.durationMs === undefined;
+            f.head.setAttribute('aria-disabled', String(!hasContent));
+            f.head.title = 'Reasoning summary';
+            f.chevron.hidden = !hasContent;
+            f.node.dataset.live = String(live);
+            drawTime();
+            setText(body, item.text);
+        }, dispose() { clearInterval(timer); } };
+}
+function payload(label, ctx) {
+    const node = el('section', 'payload');
+    const head = el('div', 'payload-head');
+    const caption = el('span');
+    caption.textContent = label;
+    const copy = button('Copy', 'quiet-button');
+    const pre = el('pre');
+    pre.tabIndex = 0;
+    pre.setAttribute('aria-label', label);
+    const more = button('Show more', 'quiet-button more');
+    const notice = el('span', 'sr-only');
+    notice.setAttribute('role', 'status');
+    head.append(caption, copy, notice);
+    node.append(head, pre, more);
+    let value = '', limit = 12000;
+    const draw = () => {
+        setText(pre, value.slice(0, limit));
+        more.hidden = value.length <= limit;
+        more.textContent = `Show more (${(value.length - limit).toLocaleString()} characters remaining)`;
+    };
+    copy.addEventListener('click', async () => {
+        try {
+            if (!navigator.clipboard)
+                throw new Error('Clipboard unavailable');
+            await navigator.clipboard.writeText(value);
+            copy.textContent = 'Copied';
+            notice.textContent = `${label} copied`;
+        }
+        catch {
+            notice.textContent = 'Copy failed. Select the output and copy it manually.';
+            copy.textContent = 'Copy failed';
+        }
+    });
+    more.addEventListener('click', () => { limit += 48000; draw(); });
+    return { node, update(text, isError = false) {
+            if (!value)
+                limit = Math.max(1000, ctx.options().outputPreviewChars ?? 12000);
+            if (value !== text) {
+                copy.textContent = 'Copy';
+                notice.textContent = '';
+            }
+            value = text;
+            node.classList.toggle('error', isError);
+            caption.textContent = isError ? 'Error' : label;
+            draw();
+        } };
+}
+function toolView(first, ctx) {
+    const node = el('div', 'tool-event');
+    node.dataset.toolId = first.id;
+    const f = fold('tool');
+    const icon = el('span', 'tool-icon');
+    icon.setAttribute('aria-hidden', 'true');
+    const hint = el('span', 'hint');
+    f.head.prepend(icon);
+    f.head.insertBefore(hint, f.meta);
+    const body = el('div', 'tool-body');
+    const input = payload('Input', ctx), output = payload('Output', ctx);
+    body.append(input.node, output.node);
+    f.node.append(body);
+    const approval = el('div', 'approval');
+    approval.setAttribute('role', 'group');
+    const approvalReason = el('p', 'approval-reason');
+    const actions = el('div', 'approval-actions');
+    const deny = button('Deny', 'action'), allow = button('Allow', 'action');
+    const approvalNote = el('span', 'approval-note');
+    approvalNote.setAttribute('role', 'status');
+    actions.append(deny, allow, approvalNote);
+    approval.append(approvalReason, actions);
+    const assets = el('div', 'artifacts');
+    const assetList = new KeyedList(assets, item => assetView(item, ctx));
+    const formatError = el('p', 'format-error');
+    node.append(f.node, approval, assets, formatError);
+    let current = first;
+    let active = true, busy = false, sent = '', requestId = '', localError = '';
+    const firstState = toolStatus(first, ctx.run()?.status ?? 'idle');
+    f.node.open = firstState === 'Failed' || firstState === 'Approval required' ||
+        (presentation(ctx, first).kind === 'terminal' && ctx.run()?.status === 'streaming');
+    const drawPayload = () => {
+        if (!f.node.open)
+            return; // Do not serialize invisible logs on every token.
+        const ui = presentation(ctx, current);
+        input.node.hidden = current.input === undefined;
+        output.node.hidden = current.output === undefined && current.state !== 'output-error';
+        try {
+            if (!input.node.hidden)
+                input.update(ui.formatInput ? ui.formatInput(current.input) : formatValue(current.input));
+            if (!output.node.hidden)
+                output.update(current.state === 'output-error'
+                    ? current.errorText ?? 'The tool failed without an error description.'
+                    : ui.formatOutput ? ui.formatOutput(current.output) : formatValue(current.output), current.state === 'output-error');
+        }
+        catch {
+            setText(formatError, 'The custom tool formatter failed. Check your presentation callback.');
+            formatError.hidden = false;
+        }
+    };
+    const drawApproval = () => {
+        const requested = current.state === 'approval-requested';
+        approval.hidden = !requested;
+        if (!requested)
+            return;
+        approval.setAttribute('aria-label', `Approval for ${current.title ?? current.name}`);
+        approvalReason.textContent = current.approval?.reason ?? '';
+        approvalReason.hidden = !approvalReason.textContent;
+        const connected = !!ctx.approval();
+        deny.disabled = allow.disabled = !connected || !current.approval?.id || busy || sent === requestId;
+        approvalNote.textContent = localError || (busy ? 'Sending…' : sent === requestId ? 'Decision sent'
+            : !connected ? 'Approval handler not connected' : !current.approval?.id ? 'Approval data unavailable' : '');
+    };
+    const decide = async (approved) => {
+        const handler = ctx.approval();
+        const id = current.approval?.id;
+        if (!handler || !id || busy || sent === id || current.state !== 'approval-requested')
+            return;
+        busy = true;
+        localError = '';
+        drawApproval();
+        try {
+            await handler({ id, approved });
+            if (active && requestId === id)
+                sent = id;
+        }
+        catch (error) {
+            if (active && requestId === id)
+                localError = error instanceof Error ? error.message : 'Could not send the decision.';
+        }
+        finally {
+            if (active && requestId === id) {
+                busy = false;
+                drawApproval();
+            }
+        }
+    };
+    deny.addEventListener('click', () => void decide(false));
+    allow.addEventListener('click', () => void decide(true));
+    f.node.addEventListener('toggle', drawPayload);
+    return { node, update(item) {
+            current = item;
+            const ui = presentation(ctx, item);
+            if (requestId !== (item.approval?.id ?? '')) {
+                requestId = item.approval?.id ?? '';
+                sent = '';
+                busy = false;
+                localError = '';
+            }
+            const state = toolStatus(item, ctx.run()?.status ?? 'idle');
+            const live = ctx.run()?.status === 'streaming' && toolIsPending(item);
+            node.dataset.live = String(live);
+            node.dataset.state = item.state;
+            setText(icon, ui.kind === 'terminal' ? '›_' : ui.kind === 'search' ? '⌕' : '');
+            icon.hidden = !icon.textContent;
+            setText(f.label, item.title ?? ui.label ?? item.name);
+            formatError.hidden = true;
+            try {
+                setText(hint, ui.summary?.(item) ?? '');
+            }
+            catch {
+                setText(hint, '');
+                formatError.hidden = false;
+                setText(formatError, 'The custom summary formatter failed.');
+            }
+            f.head.title = `${f.label.textContent}${hint.textContent ? ` — ${hint.textContent}` : ''}`;
+            const duration = durationLabel(item.durationMs);
+            setText(f.meta, state === 'Completed' ? duration : `${state}${duration ? ` · ${duration}` : ''}`);
+            f.head.setAttribute('aria-label', `${f.label.textContent}. ${state}${duration ? `. ${duration}` : ''}`);
+            drawPayload();
+            drawApproval();
+            try {
+                assetList.update(item.state === 'output-available' ? ui.assets?.(item) ?? [] : []);
+            }
+            catch {
+                formatError.hidden = false;
+                setText(formatError, 'The custom artifact mapper failed.');
+                assetList.update([]);
+            }
+            assets.hidden = !assets.childElementCount;
+        }, dispose() { active = false; assetList.clear(); } };
+}
+function groupView(first, ctx) {
+    const f = fold('group');
+    const body = el('div', 'group-body');
+    f.node.append(body);
+    f.node.open = ctx.options().expandGroups ?? true;
+    const list = new KeyedList(body, item => toolView(item, ctx));
+    f.node.dataset.groupId = first.id;
+    return { node: f.node, update(group) {
+            const live = ctx.run()?.status === 'streaming' && group.tools.some(toolIsPending);
+            const done = group.tools.every(item => (item.state === 'output-available' && !item.preliminary) ||
+                item.state === 'output-error' || item.state === 'output-denied' ||
+                (item.state === 'approval-responded' && item.approval?.approved === false));
+            const searches = group.tools.every(item => presentation(ctx, item).kind === 'search');
+            const count = group.tools.length;
+            const noun = searches ? `search${count === 1 ? '' : 'es'}` : `tool${count === 1 ? '' : 's'}`;
+            const verb = live ? searches ? 'Exploring' : 'Using' : done ? searches ? 'Explored' : 'Used' : 'Activity ·';
+            setText(f.label, group.tools.every(item => presentation(ctx, item).kind === 'activity') ? (live ? 'Building UI' : 'Build activity') : `${verb} ${count} ${noun}`);
+            const failures = group.tools.filter(item => item.state === 'output-error').length;
+            const waiting = group.tools.some(item => item.state === 'approval-requested');
+            const interrupted = ctx.run()?.status === 'interrupted' && group.tools.some(toolIsPending);
+            setText(f.meta, [failures ? `${failures} failed` : '', waiting ? 'Approval required' : '', interrupted ? 'Interrupted' : ''].filter(Boolean).join(' · '));
+            f.node.dataset.live = String(live);
+            list.update(group.tools);
+        }, dispose() { list.clear(); } };
+}
+function assetView(first, ctx) {
+    const node = el('figure', 'artifact');
+    node.dataset.assetId = first.id;
+    const preview = button('', 'asset-preview');
+    const image = el('img');
+    image.loading = 'lazy';
+    image.decoding = 'async';
+    image.referrerPolicy = 'no-referrer';
+    const fallback = el('span', 'asset-fallback');
+    preview.append(image, fallback);
+    const caption = el('figcaption');
+    const link = el('a', 'asset-link');
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.referrerPolicy = 'no-referrer';
+    const dimensions = el('span', 'dimensions');
+    caption.append(link, dimensions);
+    node.append(preview, caption);
+    let current = first, lastURL = null, loaded = false;
+    const imageTitle = () => current.alt ?? current.filename ?? 'Image';
+    image.addEventListener('load', () => {
+        loaded = true;
+        preview.dataset.loaded = 'true';
+        image.hidden = false;
+        fallback.hidden = true;
+        preview.disabled = false;
+        setText(dimensions, `${image.naturalWidth} × ${image.naturalHeight}`);
+    });
+    image.addEventListener('error', () => {
+        loaded = false;
+        image.hidden = true;
+        fallback.hidden = false;
+        preview.disabled = true;
+        setText(fallback, 'Image unavailable');
+        setText(dimensions, '');
+    });
+    preview.addEventListener('click', () => { if (lastURL && loaded)
+        ctx.openAsset(current, lastURL); });
+    return { node, update(asset) {
+            current = asset;
+            const isImage = asset.mediaType === 'image' || asset.mediaType.startsWith('image/');
+            preview.hidden = !isImage;
+            const url = safeURL(asset.url, document.baseURI, isImage, ctx.options().assetOrigins);
+            const externalLink = safeURL(asset.url, document.baseURI);
+            if (externalLink)
+                link.href = externalLink;
+            else
+                link.removeAttribute('href');
+            setText(link, asset.filename ?? (isImage ? 'Image' : 'File'));
+            image.alt = imageTitle();
+            preview.setAttribute('aria-label', `Preview ${imageTitle()}`);
+            if (!isImage) {
+                setText(dimensions, asset.mediaType);
+                return;
+            }
+            if (url !== lastURL || !url) {
+                lastURL = url;
+                loaded = false;
+                preview.dataset.loaded = 'false';
+                image.hidden = !url;
+                fallback.hidden = false;
+                preview.disabled = true;
+                setText(dimensions, '');
+                if (url) {
+                    setText(fallback, 'Loading image…');
+                    image.src = url;
+                }
+                else {
+                    image.removeAttribute('src');
+                    setText(fallback, 'Image preview blocked');
+                }
+            }
+            const hasSize = asset.width && asset.height && asset.width > 0 && asset.height > 0 && Number.isFinite(asset.width / asset.height);
+            preview.style.aspectRatio = hasSize ? `${asset.width} / ${asset.height}` : '4 / 3';
+        } };
+}
+function sourceView() {
+    const node = el('p', 'source');
+    const link = el('a');
+    link.rel = 'noopener noreferrer';
+    link.target = '_blank';
+    link.referrerPolicy = 'no-referrer';
+    node.append(link);
+    return { node, update(item) {
+            setText(link, item.title);
+            const url = item.url ? safeURL(item.url, document.baseURI) : null;
+            if (url)
+                link.href = url;
+            else
+                link.removeAttribute('href');
+        } };
+}
+/** Register explicitly; importing this module is safe during server rendering. */
+function defineAgentFlow(tagName = 'agent-flow') {
+    if (typeof window === 'undefined' || !window.customElements || customElements.get(tagName))
+        return;
+    class Element extends HTMLElement {
+        value = null;
+        settings = {};
+        approvalHandler;
+        list;
+        footer = el('p', 'footer');
+        live = el('p', 'sr-only');
+        dialog = el('dialog', 'image-dialog');
+        fullImage = el('img');
+        imageCaption = el('p');
+        activeRunId = '';
+        constructor() {
+            super();
+            const root = this.attachShadow({ mode: 'open' });
+            const css = el('style');
+const nonce = this.getAttribute('nonce'); if (nonce) css.nonce = nonce;
+css.textContent = ":host {\n  --af-background: #181818;\n  --af-text: #e5e5e5;\n  --af-muted: #a0a0a0;\n  --af-secondary: #929292;\n  --af-border: #343434;\n  --af-hover: #232323;\n  --af-focus: #aaa;\n  --af-error: #d4a19a;\n  display: block;\n  min-width: 0;\n  color: var(--af-text);\n  font: 400 13px/1.6 -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;\n  color-scheme: dark;\n  overflow-wrap: anywhere;\n  -webkit-font-smoothing: antialiased;\n}\n*, *::before, *::after { box-sizing: border-box; }\n[hidden] { display: none !important; }\np, figure { margin: 0; }\na { color: inherit; text-decoration: none; }\na[href]:hover { text-decoration: underline; text-underline-offset: 3px; }\nbutton { font: inherit; color: inherit; cursor: pointer; }\nbutton:disabled { cursor: default; }\nbutton, summary, a, pre { -webkit-tap-highlight-color: transparent; }\n:where(button, summary, a, pre):focus-visible { outline: 2px solid var(--af-focus); outline-offset: 3px; }\n.flow > * + * { margin-top: 14px; }\n.text { white-space: pre-wrap; line-height: 1.7; }\nsummary {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  min-height: 28px;\n  width: fit-content;\n  max-width: 100%;\n  padding: 2px 0;\n  color: var(--af-muted);\n  list-style: none;\n  cursor: pointer;\n  user-select: none;\n  border-radius: 3px;\n}\nsummary::-webkit-details-marker { display: none; }\nsummary::marker { content: \"\"; }\nsummary:hover { color: var(--af-text); }\nsummary[aria-disabled=\"true\"] { cursor: default; }\n.label { min-width: 0; }\n.meta { flex-shrink: 0; color: var(--af-secondary); font-size: 12px; font-variant-numeric: tabular-nums; }\n.meta:empty { display: none; }\n.chevron {\n  flex: 0 0 6px;\n  width: 6px;\n  height: 6px;\n  margin: 0 3px;\n  border-right: 1px solid currentColor;\n  border-bottom: 1px solid currentColor;\n  transform: rotate(-45deg);\n  transition: transform 120ms ease;\n}\ndetails[open] > summary > .chevron { transform: rotate(45deg) translateY(-2px); }\n.reasoning-body { padding-top: 10px; color: var(--af-muted); white-space: pre-wrap; line-height: 1.75; }\n.reasoning[data-live=\"true\"] > summary > .label {\n  background: linear-gradient(100deg, var(--af-muted) 30%, var(--af-text) 50%, var(--af-muted) 70%);\n  background-size: 200% 100%;\n  background-clip: text;\n  -webkit-background-clip: text;\n  color: transparent;\n  animation: af-thinking 2s linear infinite;\n}\n@keyframes af-thinking { from { background-position: 200% 0; } to { background-position: -200% 0; } }\n.group-body { display: grid; gap: 9px; padding-top: 8px; }\n.group > summary > .meta { margin-left: 4px; }\n.tool { border: 1px solid var(--af-border); border-radius: 11px; overflow: clip; }\n.tool > summary { width: 100%; min-height: 37px; padding: 7px 10px; gap: 7px; }\n.tool > summary:hover { background: var(--af-hover); }\n.tool .label { flex-shrink: 1; color: var(--af-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n.tool .hint { min-width: 0; flex: 1; color: var(--af-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n.tool .meta { margin-left: auto; }\n.tool-icon { flex-shrink: 0; color: var(--af-secondary); font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }\n.tool-body { border-top: 1px solid var(--af-border); }\n.payload + .payload { border-top: 1px solid var(--af-border); }\n.payload-head { display: flex; align-items: center; justify-content: space-between; padding: 5px 10px 0; color: var(--af-secondary); font-size: 11px; }\npre {\n  margin: 0;\n  padding: 5px 10px 10px;\n  max-height: 240px;\n  overflow: auto;\n  overscroll-behavior: contain;\n  color: var(--af-muted);\n  font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;\n  white-space: pre-wrap;\n  overflow-wrap: anywhere;\n  scrollbar-width: thin;\n  scrollbar-color: var(--af-border) transparent;\n}\n.quiet-button { padding: 2px 3px; min-height: 24px; border: 0; border-radius: 3px; background: transparent; color: var(--af-muted); font-size: 11px; }\n.quiet-button:hover { color: var(--af-text); background: var(--af-hover); }\n.more { margin: 0 7px 6px; }\n.error pre, [data-state=\"output-error\"] .tool .meta, [data-error=\"true\"], .format-error { color: var(--af-error); }\n.format-error { padding-top: 6px; font-size: 12px; }\n.approval { padding: 9px 0 0; }\n.approval-reason { color: var(--af-muted); margin-bottom: 7px; }\n.approval-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }\n.approval-note { color: var(--af-muted); font-size: 12px; }\n.action { min-height: 30px; padding: 3px 10px; border: 1px solid var(--af-border); border-radius: 6px; background: transparent; }\n.action:hover:not(:disabled) { background: var(--af-hover); }\n.action:disabled { color: var(--af-secondary); }\n.artifacts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }\n.artifact { width: 180px; max-width: 100%; min-width: 0; }\n.asset-preview {\n  width: 100%; aspect-ratio: 4 / 3; padding: 0; display: grid; place-items: center;\n  border: 1px solid var(--af-border); border-radius: 8px; overflow: hidden;\n  background: var(--af-background); cursor: zoom-in;\n}\n.asset-preview > * { grid-area: 1 / 1; }\n.asset-preview[data-loaded=\"false\"] img { opacity: 0; }\n.asset-preview img { width: 100%; height: 100%; object-fit: contain; min-width: 0; min-height: 0; }\n.asset-fallback { color: var(--af-muted); font-size: 11px; padding: 12px; }\nfigcaption { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 8px; padding-top: 5px; font-size: 11px; color: var(--af-muted); }\n.dimensions { color: var(--af-secondary); font-variant-numeric: tabular-nums; }\n.source { color: var(--af-muted); font-size: 12px; }\n.footer { margin-top: 12px; color: var(--af-muted); }\n/* Motion means a real, currently streaming state; not decorative progress. */\n.reasoning[data-live=\"true\"] > summary::before,\n.tool-event[data-live=\"true\"] > .tool > summary::before,\n.footer[data-live=\"true\"]::before {\n  content: \"\"; display: inline-block; flex: 0 0 9px; width: 9px; height: 9px;\n  border: 1px solid var(--af-border); border-top-color: var(--af-muted); border-radius: 50%;\n  animation: af-spin 900ms linear infinite;\n}\n.footer[data-live=\"true\"]::before { margin-right: 7px; }\n.image-dialog {\n  max-width: min(96vw, 1200px); max-height: 94dvh; margin: auto; padding: 12px;\n  border: 1px solid var(--af-border); border-radius: 10px;\n  color: var(--af-text); background: var(--af-background);\n}\n.image-dialog::backdrop { background: rgb(0 0 0 / .76); }\n.image-dialog > button { display: block; margin: 0 0 10px auto; }\n.image-dialog > img { display: block; max-width: 100%; max-height: 74dvh; object-fit: contain; margin: auto; }\n.image-dialog > p { font-size: 12px; color: var(--af-muted); padding-top: 8px; }\n.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }\n@keyframes af-spin { to { transform: rotate(360deg); } }\n@media (prefers-reduced-motion: reduce) {\n  *, *::before, *::after { animation: none !important; transition: none !important; }\n}\n@media (pointer: coarse) { summary, .tool > summary, .action { min-height: 44px; } .quiet-button { min-height: 32px; } }\n@media (max-width: 420px) { .tool .hint { display: none; } .tool .meta { max-width: 42%; white-space: normal; text-align: right; } .artifact { width: calc(50% - 5px); } }\n";
+            const flow = el('div', 'flow');
+            flow.setAttribute('role', 'region');
+            flow.setAttribute('aria-label', 'Agent activity');
+            this.live.setAttribute('role', 'status');
+            this.live.setAttribute('aria-live', 'polite');
+            this.live.setAttribute('aria-atomic', 'true');
+            const close = button('Close', 'action');
+            close.setAttribute('aria-label', 'Close image preview');
+            close.autofocus = false;
+            close.addEventListener('click', () => this.dialog.close());
+            this.fullImage.referrerPolicy = 'no-referrer';
+            this.dialog.setAttribute('aria-label', 'Image preview');
+            this.dialog.append(close, this.fullImage, this.imageCaption);
+            this.dialog.addEventListener('click', event => {
+                if (event.target !== this.dialog)
+                    return;
+                const rect = this.dialog.getBoundingClientRect();
+                if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom)
+                    this.dialog.close();
+            });
+            this.fullImage.addEventListener('error', () => { this.imageCaption.textContent = 'Image unavailable. The file may have expired.'; });
+            root.append(css, flow, this.footer, this.live, this.dialog);
+            const ctx = {
+                run: () => this.value, options: () => this.settings, approval: () => this.approvalHandler,
+                openAsset: (asset, url) => {
+                    this.fullImage.src = url;
+                    this.fullImage.alt = asset.alt ?? asset.filename ?? 'Image';
+                    this.imageCaption.textContent = asset.filename ?? '';
+                    if (!this.dialog.open)
+                        this.dialog.showModal();
+                },
+            };
+            this.list = new KeyedList(flow, block => {
+                if (block.type === 'group')
+                    return groupView(block, ctx);
+                if (block.type === 'reasoning')
+                    return reasoningView(block, ctx);
+                if (block.type === 'source')
+                    return sourceView();
+                if (block.type === 'asset') {
+                    const asset = assetView(block.asset, ctx);
+                    return { node: asset.node, update: item => asset.update(item.asset) };
+                }
+                return textView();
+            });
+        }
+        connectedCallback() {
+            // Upgrade properties assigned before customElements.define().
+            for (const property of ['options', 'onApproval', 'run']) {
+                if (Object.prototype.hasOwnProperty.call(this, property)) {
+                    const value = this[property];
+                    Reflect.deleteProperty(this, property);
+                    Reflect.set(this, property, value);
+                }
+            }
+            this.render();
+        }
+        disconnectedCallback() { this.list.clear(); if (this.dialog.open)
+            this.dialog.close(); }
+        get run() { return this.value; }
+        set run(value) {
+            if (value && (!value.id || !Array.isArray(value.events)))
+                throw new TypeError('Expected an AgentRun with a stable id and events array.');
+            this.value = value;
+            this.render();
+        }
+        get options() { return this.settings; }
+        set options(value) { if (this.settings === value)
+            return; this.settings = value ?? {}; this.render(); }
+        get onApproval() { return this.approvalHandler; }
+        set onApproval(value) {
+            const capabilityChanged = !!value !== !!this.approvalHandler;
+            this.approvalHandler = value;
+            if (capabilityChanged)
+                this.render();
+        }
+        render() {
+            if (!this.list)
+                return;
+            const run = this.value;
+            if (run?.id !== this.activeRunId) {
+                this.list.clear();
+                if (this.dialog.open)
+                    this.dialog.close();
+                this.activeRunId = run?.id ?? '';
+            }
+            this.list.update(blocks(run?.events ?? []));
+            const tools = run?.events.filter((event) => event.type === 'tool') ?? [];
+            const waiting = tools.some(item => item.state === 'approval-requested');
+            const running = run?.status === 'streaming';
+            const hasActivePart = tools.some(toolIsPending) || run?.events.some(event => (event.type === 'text' || event.type === 'reasoning') && event.streaming);
+            const footer = run?.status === 'error' ? run.error || 'The response could not be completed.'
+                : run?.status === 'interrupted' ? 'Stopped'
+                    : running && !hasActivePart && !waiting ? 'Working…' : '';
+            this.footer.hidden = !footer;
+            setText(this.footer, footer);
+            this.footer.dataset.live = String(running);
+            this.footer.dataset.error = String(run?.status === 'error');
+            const last = tools.at(-1);
+            const announcement = !run ? '' : waiting ? 'Approval required'
+                : run.status === 'interrupted' ? 'Agent stopped'
+                    : run.status === 'error' ? footer
+                        : last ? `${tools.length} tool ${tools.length === 1 ? 'call' : 'calls'}. ${last.title ?? last.name}: ${toolStatus(last, run.status)}`
+                            : running ? 'Agent responding' : '';
+            setText(this.live, announcement);
+        }
+    }
+    customElements.define(tagName, Element);
+}
+
+globalThis.AgentFlowUI = Object.freeze({defineAgentFlow, fromUIMessage});
+})();
+</script>
+<script>
+const { defineAgentFlow, fromUIMessage } = AgentFlowUI;
+defineAgentFlow();
+const activity = document.getElementById('activity');
+const payload = document.getElementById('payload');
+const error = document.getElementById('import-error');
+const empty = document.getElementById('empty');
+const loader = document.getElementById('loader');
+const file = document.getElementById('file');
+const statuses = new Set(['streaming','idle','interrupted','error']);
+function load(value) {
+  if (!value || typeof value !== 'object') throw new TypeError('Expected a JSON object.');
+  if (Array.isArray(value.events)) {
+    if (!statuses.has(value.status)) throw new TypeError('AgentRun.status must be streaming, idle, interrupted, or error.');
+    activity.run = value;
+  } else {
+    const status = statuses.has(value.status) ? value.status : 'idle';
+    activity.run = fromUIMessage(value.message || value, { status, error: typeof value.error === 'string' ? value.error : undefined });
+  }
+  error.textContent = ''; empty.hidden = true; loader.open = false;
+}
+document.getElementById('render').addEventListener('click', () => {
+  try { load(JSON.parse(payload.value)); } catch (reason) { error.textContent = reason.message || 'Unable to load message data.'; }
+});
+document.getElementById('browse').addEventListener('click', () => file.click());
+file.addEventListener('change', async () => {
+  const selected = file.files[0]; if (!selected) return;
+  try {
+    if (selected.size > 12 * 1024 * 1024) throw new Error('The inspector accepts JSON files up to 12 MB.');
+    payload.value = await selected.text(); load(JSON.parse(payload.value));
+  } catch (reason) { error.textContent = reason.message || 'Unable to read file.'; }
+  finally { file.value = ''; }
+});
+document.getElementById('clear').addEventListener('click', () => {
+  activity.run = null; payload.value = ''; error.textContent = ''; empty.hidden = false; loader.open = true;
+});
+// Integration hooks: feed actual snapshots from the host application's subscription.
+window.agentFlow = activity;
+window.updateAssistant = (message, status = 'idle') => {
+  activity.run = fromUIMessage(message, { status }); empty.hidden = false;
+  if (activity.run.events.length) { empty.hidden = true; loader.open = false; }
+};
+</script>
+</body></html>

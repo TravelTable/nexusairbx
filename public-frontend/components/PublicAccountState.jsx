@@ -122,9 +122,9 @@ export default function PublicAccountState({
       ? "grid gap-2"
       : "flex items-center gap-3";
   const controlHeightClass = "h-11 md:h-9";
-  const primaryClass = `${focusClass} ${controlHeightClass} inline-flex items-center justify-center rounded-full border border-[var(--nx-purple-muted)] bg-[var(--nx-purple)] px-4 text-[13px] font-bold text-[var(--nx-canvas)] no-underline shadow-[var(--nx-shadow-control)] transition-[background-color,border-color,box-shadow,transform] duration-200 hover:-translate-y-px hover:border-[var(--nx-purple-strong)] hover:bg-[var(--nx-purple-strong)] hover:shadow-[var(--nx-shadow-card)] active:translate-y-0 active:bg-[var(--nx-purple-muted)] motion-reduce:transform-none motion-reduce:transition-none`;
-  const secondaryClass = `${focusClass} ${controlHeightClass} inline-flex items-center justify-center rounded-full border border-transparent bg-transparent px-3 text-[13px] font-semibold text-[var(--nx-text-secondary)] no-underline transition-colors duration-150 hover:border-[var(--nx-rule)] hover:bg-[var(--nx-muted-surface)] hover:text-[var(--nx-text)]`;
-  const menuItemClass = `${focusClass} flex min-h-11 items-center border-b border-[var(--nx-rule-quiet)] px-[9px] text-sm text-[var(--nx-text-secondary)] no-underline hover:text-[var(--nx-purple)]`;
+  const primaryClass = `${focusClass} ${controlHeightClass} inline-flex items-center justify-center rounded-[8px] border border-[var(--nx-purple)] bg-[var(--nx-purple)] px-3.5 text-[13px] font-medium text-[var(--nx-canvas)] no-underline transition-[background-color,border-color,transform] duration-150 hover:bg-[var(--nx-purple-strong)] hover:border-[var(--nx-purple-strong)] active:scale-[0.99] active:bg-[var(--nx-purple-muted)] motion-reduce:transform-none motion-reduce:transition-none`;
+  const secondaryClass = `${focusClass} ${controlHeightClass} inline-flex items-center justify-center rounded-[8px] border border-transparent bg-transparent px-3 text-[13px] font-medium text-[var(--nx-text-muted)] no-underline transition-colors duration-150 hover:bg-[var(--ds-fill-hover)] hover:text-[var(--nx-text)]`;
+  const menuItemClass = `${focusClass} flex min-h-11 items-center border-b border-[var(--nx-rule-quiet)] px-[9px] text-sm text-[var(--nx-text-secondary)] no-underline hover:text-[var(--nx-text)]`;
 
   if (!authReady) {
     return (
@@ -141,7 +141,7 @@ export default function PublicAccountState({
     if (compact) {
       return (
         <a
-          className={`${focusClass} inline-flex h-11 items-center rounded-full border border-[var(--nx-rule)] bg-[var(--nx-card)] px-3 text-xs font-semibold text-[var(--nx-text)] no-underline shadow-[var(--nx-shadow-control)] md:h-9`}
+          className={`${focusClass} inline-flex h-11 items-center rounded-[8px] border border-[var(--nx-rule)] bg-[var(--nx-card)] px-3 text-xs font-medium text-[var(--nx-text)] no-underline md:h-9`}
           href="/signin"
         >
           Sign in
@@ -169,7 +169,7 @@ export default function PublicAccountState({
           Account
           {supportUnreadCount > 0 ? (
             <span
-              className="inline-flex min-w-5 items-center justify-center border border-[var(--nx-rule)] px-1.5 text-[11px] font-bold text-[var(--nx-warning)]"
+              className="inline-flex min-w-5 items-center justify-center border border-[var(--nx-rule)] px-1.5 text-[11px] font-semibold text-[var(--nx-warning)]"
               aria-label={`${supportUnreadCount} unread support ${supportUnreadCount === 1 ? "reply" : "replies"}`}
             >
               {supportUnreadCount > 99 ? "99+" : supportUnreadCount}
@@ -210,7 +210,7 @@ export default function PublicAccountState({
           >
             <span>Support</span>
             {supportUnreadCount > 0 ? (
-              <span className="inline-flex min-w-5 items-center justify-center border border-[var(--nx-rule)] px-1.5 text-[11px] font-bold text-[var(--nx-warning)]">
+              <span className="inline-flex min-w-5 items-center justify-center border border-[var(--nx-rule)] px-1.5 text-[11px] font-semibold text-[var(--nx-warning)]">
                 {supportUnreadCount > 99 ? "99+" : supportUnreadCount}
               </span>
             ) : null}

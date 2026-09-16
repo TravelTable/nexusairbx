@@ -45,21 +45,27 @@
   gap: var(--nx-space-2);
   padding: 0 var(--nx-space-4);
   border: 1px solid var(--nx-rule);
-  border-radius: var(--nx-radius-control);
+  border-radius: var(--nx-radius-field);
   background: var(--nx-card);
   color: var(--nx-text);
   box-shadow: none;
   cursor: pointer;
-  font-weight: 650;
+  font-weight: var(--nx-weight-control);
   text-decoration: none;
+  transition:
+    background-color var(--nx-motion-control) var(--nx-ease-state),
+    border-color var(--nx-motion-control) var(--nx-ease-state),
+    color var(--nx-motion-control) var(--nx-ease-state),
+    transform var(--nx-motion-instant) var(--nx-ease-state);
 }
 
 .nx-text-action:hover {
   border-color: var(--nx-rule-strong);
-  background: var(--nx-muted-surface);
+  background: var(--ds-fill-hover);
 }
 .nx-text-action:active {
-  background: var(--nx-raised-surface);
+  background: var(--ds-fill-active);
+  transform: scale(0.99);
 }
 .nx-text-action:disabled,
 .nx-text-action[aria-disabled="true"] {
@@ -68,8 +74,9 @@
 }
 
 .nx-field-frame {
+  min-height: var(--nx-control-height-normal);
   border: 1px solid var(--nx-rule);
-  border-radius: var(--nx-radius-control);
+  border-radius: var(--nx-radius-field);
   background: var(--nx-muted-surface);
   color: var(--nx-text);
   box-shadow: none;
@@ -92,10 +99,11 @@
   display: grid;
   grid-template-columns: minmax(7rem, 0.38fr) minmax(0, 1fr);
   gap: var(--nx-space-4);
-  padding: var(--nx-space-4);
-  border: 1px solid var(--nx-rule);
-  border-radius: var(--nx-radius-panel);
-  background: var(--nx-card);
+  padding: var(--nx-space-4) 0;
+  border: 0;
+  border-bottom: 1px solid var(--nx-rule-quiet);
+  border-radius: 0;
+  background: transparent;
 }
 
 .nx-state-mark {
@@ -161,7 +169,7 @@
   background: var(--nx-raised-surface);
   color: var(--nx-text);
   box-shadow: var(--nx-shadow-floating);
-  font-weight: 700;
+  font-weight: var(--nx-weight-heading);
   text-decoration: none;
   transition: translate var(--nx-motion-elevation) var(--nx-ease-state);
 }
@@ -189,23 +197,24 @@
 .nx-contact-sheet > * {
   min-width: 0;
   border: 1px solid var(--nx-rule);
-  border-radius: var(--nx-radius-card);
+  border-radius: var(--nx-radius-panel);
   background: var(--nx-card);
-  box-shadow: var(--nx-shadow-card);
+  box-shadow: none;
 }
 
 .glass-panel,
 .card-surface,
 .nexus-page-card {
   border: 1px solid var(--nx-rule) !important;
-  border-radius: var(--nx-radius-card) !important;
+  border-radius: var(--nx-radius-panel) !important;
   background: var(--nx-card) !important;
-  box-shadow: var(--nx-shadow-card) !important;
+  box-shadow: none !important;
 }
 
 .nexus-input,
 .nexus-textarea {
-  border-radius: var(--nx-radius-control) !important;
+  min-height: var(--nx-control-height-normal);
+  border-radius: var(--nx-radius-field) !important;
   background: var(--nx-muted-surface) !important;
   box-shadow: none !important;
 }
@@ -220,13 +229,14 @@
 .media-card {
   overflow: clip;
   border: 1px solid var(--nx-rule);
-  border-radius: var(--nx-radius-card);
+  border-radius: var(--nx-radius-panel);
   background: var(--nx-card);
-  transition: border-color var(--nx-motion-color), background-color var(--nx-motion-color);
+  transition: border-color var(--nx-motion-color), background-color var(--nx-motion-color), transform var(--nx-motion-elevation);
 }
 .media-card:hover {
   border-color: var(--nx-rule-strong);
-  background: var(--nx-muted-surface);
+  background: var(--ds-fill-hover);
+  transform: translateY(-1px);
 }
 
 .nx-build-signal {

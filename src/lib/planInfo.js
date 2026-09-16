@@ -1,3 +1,8 @@
+import { getPublicPlan } from './planCatalog';
+
+const starterCredits = getPublicPlan('STARTER').displayCreditsLabel;
+const proCredits = getPublicPlan('PRO').displayCreditsLabel;
+
 const PLAN_INFO = {
   free: {
     label: "Free",
@@ -7,9 +12,9 @@ const PLAN_INFO = {
     capText: "Subscription required",
     promptCap: 400,
     promptPlaceholder: "Describe a Roblox script (up to 400 chars).",
-    upgradeLine: "NexusRBX is paid only. Starter is $2/mo with 1.5 credits. Pro adds 9 credits a month, longer history, and extra packs.",
+    upgradeLine: `NexusRBX is paid only. Starter is $2/mo with ${starterCredits} credits. Pro adds ${proCredits} credits a month, longer history, and extra packs.`,
     upgradeCta: "Get Starter",
-    upgradeDesc: "Subscribe to Starter for 1.5 Nexus Credits a month, included model selection, and reviewable Studio changes.",
+    upgradeDesc: `Subscribe to Starter for ${starterCredits} Nexus Credits a month, included model selection, and reviewable Studio changes.`,
     badgeClass: "border border-[var(--ds-border-strong)] text-[var(--ds-text-secondary)] bg-transparent",
     badgeFilled: false,
     planNudge: "Subscribe to generate with NexusRBX",
@@ -31,7 +36,7 @@ const PLAN_INFO = {
     toastZero: "A paid plan is required to generate. Subscribe to continue.",
     sidebarCta: "Subscribe",
     sidebarCtaLink: "/subscribe?plan=starter",
-    sidebarCtaDesc: "Starter is $2/mo. Pro adds 9 credits a month and longer history.",
+    sidebarCtaDesc: `Starter is $2/mo. Pro adds ${proCredits} credits a month and longer history.`,
     sidebarCtaColor: "bg-accent text-accent-foreground hover:bg-[var(--ds-accent-hover)]",
     sidebarCtaText: "Get Starter",
     sidebarCtaSub: "Build for $2/mo, upgrade anytime.",
@@ -46,7 +51,7 @@ const PLAN_INFO = {
     promptPlaceholder: "Describe your idea (up to 900 chars).",
     upgradeLine: "Pro unlocks more monthly credits, longer history, and extra credit packs.",
     upgradeCta: "Upgrade to Pro",
-    upgradeDesc: "Upgrade to Pro for 9 Nexus Credits a month, 90 days of history, and extra packs whenever you need them.",
+    upgradeDesc: `Upgrade to Pro for ${proCredits} Nexus Credits a month, 90 days of history, and extra packs whenever you need them.`,
     badgeClass: "bg-[var(--ds-accent-soft)] text-accent border border-[var(--ds-accent-border)]",
     badgeFilled: true,
     planNudge: "Generated with Starter Plan",
@@ -69,7 +74,7 @@ const PLAN_INFO = {
     toastZero: "Included credits reached. Upgrade to Pro or wait for the reset.",
     sidebarCta: "Upgrade",
     sidebarCtaLink: "/subscribe?plan=pro",
-    sidebarCtaDesc: "Upgrade to Pro for 9 credits a month and 90 days of history.",
+    sidebarCtaDesc: `Upgrade to Pro for ${proCredits} credits a month and 90 days of history.`,
     sidebarCtaColor: "bg-gradient-to-r from-[var(--ds-plan)] to-accent text-white",
     sidebarCtaText: "Upgrade to Pro",
     sidebarCtaSub: "More credits, longer history, credit packs.",

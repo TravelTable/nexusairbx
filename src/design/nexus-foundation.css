@@ -4,37 +4,37 @@
 :root[data-nexus-theme="soft-depth"] {
   color-scheme: dark;
 
-  /* Dimensional creative workspace: quiet surfaces and localized activity signals. */
-  --nx-canvas: #07070a;
-  --nx-depth: #0a0910;
-  --nx-card: #111019;
-  --nx-work: #111019;
-  --nx-muted-surface: #16141f;
-  --nx-field: #16141f;
-  --nx-raised-surface: #1c1927;
-  --nx-field-strong: #1c1927;
-  --nx-text: #f7f5fb;
-  --nx-text-secondary: #c8c3d2;
-  --nx-text-muted: #9690a3;
-  --nx-text-disabled: #5f5f5f;
+  /* Linear graphite product surfaces. Purple is accent only. */
+  --nx-canvas: #08090a;
+  --nx-depth: #0a0a0b;
+  --nx-card: #101113;
+  --nx-work: #101113;
+  --nx-muted-surface: #141517;
+  --nx-field: #141517;
+  --nx-raised-surface: #191a1d;
+  --nx-field-strong: #191a1d;
+  --nx-text: #f5f5f6;
+  --nx-text-secondary: #c4c5c7;
+  --nx-text-muted: #8b8d91;
+  --nx-text-disabled: #626469;
   --nx-purple: #a855f7;
   --nx-purple-strong: #c084fc;
   --nx-purple-muted: #9333ea;
   --nx-purple-rgb: 168, 85, 247;
   --nx-purple-soft: rgb(168 85 247 / 10%);
-  --nx-purple-border: rgb(168 85 247 / 28%);
+  --nx-purple-border: rgb(168 85 247 / 16%);
   --nx-purple-wash: rgb(168 85 247 / 6%);
-  --nx-purple-edge: rgb(192 132 252 / 22%);
-  --nx-purple-glow: 0 0 24px rgb(168 85 247 / 10%);
-  --nx-inner-highlight: inset 0 1px 0 rgb(255 255 255 / 5%);
-  --nx-rule: rgb(255 255 255 / 9%);
-  --nx-rule-quiet: rgb(255 255 255 / 6%);
-  --nx-rule-strong: rgb(255 255 255 / 14%);
+  --nx-purple-edge: rgb(192 132 252 / 16%);
+  --nx-purple-glow: none;
+  --nx-inner-highlight: inset 0 1px 0 rgb(255 255 255 / 4%);
+  --nx-rule: rgb(255 255 255 / 8%);
+  --nx-rule-quiet: rgb(255 255 255 / 5%);
+  --nx-rule-strong: rgb(255 255 255 / 13%);
   --nx-info: #7dd3fc;
   --nx-success: #86efac;
   --nx-warning: #fcd34d;
   --nx-danger: #fda4af;
-  --nx-focus: rgb(168 85 247 / 40%);
+  --nx-focus: rgb(168 85 247 / 35%);
   --nx-focus-ring: var(--nx-focus);
 
   /* Product-facing semantic roles. */
@@ -48,13 +48,13 @@
   --nx-surface-overlay: var(--nx-card);
   --nx-text-primary: var(--nx-text);
   --nx-text-inverse: var(--nx-canvas);
-  --nx-text-link: var(--nx-purple-strong);
+  --nx-text-link: var(--nx-text-secondary);
   --nx-text-code: var(--nx-text-secondary);
   --nx-text-status: var(--nx-text-secondary);
   --nx-border-subtle: var(--nx-rule-quiet);
   --nx-border-normal: var(--nx-rule);
   --nx-border-strong: var(--nx-rule-strong);
-  --nx-border-interactive: var(--nx-purple-border);
+  --nx-border-interactive: var(--nx-rule-strong);
   --nx-border-focus: var(--nx-purple);
   --nx-border-error: var(--nx-danger);
   --nx-border-success: var(--nx-success);
@@ -74,9 +74,9 @@
   --nx-space-20: 80px;
   --nx-space-24: 96px;
 
-  --nx-radius-control: 7px;
-  --nx-radius-field: 7px;
-  --nx-radius-panel: 9px;
+  --nx-radius-control: 6px;
+  --nx-radius-field: 8px;
+  --nx-radius-panel: 10px;
   --nx-radius-card: 10px;
   --nx-radius-overlay: 12px;
   --nx-radius-feature: 12px;
@@ -90,7 +90,7 @@
   --nx-control-height-normal: 40px;
   --nx-control-height-large: 48px;
   --nx-touch-target: 44px;
-  --nx-content-compact: 1160px;
+  --nx-content-compact: 1080px;
   --nx-content-reading: 720px;
   --nx-type-interface: 0.9375rem;
   --nx-type-body: 1rem;
@@ -110,35 +110,35 @@
   --nx-weight-body: 400;
   --nx-weight-control: 500;
   --nx-weight-heading: 600;
-  --nx-weight-label: 650;
+  --nx-weight-label: 550;
 
 
-  --nx-shadow-control: var(--nx-inner-highlight), 0 2px 5px rgb(0 0 0 / 18%);
-  --nx-shadow-card: var(--nx-inner-highlight), 0 12px 32px rgb(0 0 0 / 26%);
-  --nx-shadow-floating: var(--nx-inner-highlight), 0 22px 60px rgb(0 0 0 / 44%);
+  --nx-shadow-control: var(--nx-inner-highlight);
+  --nx-shadow-card: 0 1px 2px rgb(0 0 0 / 22%), 0 8px 24px rgb(0 0 0 / 18%);
+  --nx-shadow-floating: 0 8px 28px rgb(0 0 0 / 42%);
   --nx-shadow-focus: 0 0 0 3px var(--nx-focus);
 
   /* shadcn compatibility */
-  --background: 0 0% 4%;
-  --foreground: 0 0% 98%;
-  --card: 0 0% 9%;
-  --card-foreground: 0 0% 98%;
-  --popover: 0 0% 9%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 274 100% 68%;
-  --primary-foreground: 0 0% 4%;
-  --secondary: 0 0% 15%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 0 0% 15%;
-  --muted-foreground: 0 0% 63%;
-  --accent: 274 100% 68%;
-  --accent-foreground: 0 0% 4%;
+  --background: 210 8% 3.5%;
+  --foreground: 240 5% 96%;
+  --card: 220 8% 7%;
+  --card-foreground: 240 5% 96%;
+  --popover: 220 8% 7%;
+  --popover-foreground: 240 5% 96%;
+  --primary: 271 81% 65%;
+  --primary-foreground: 210 8% 3.5%;
+  --secondary: 220 6% 9%;
+  --secondary-foreground: 240 5% 96%;
+  --muted: 220 6% 9%;
+  --muted-foreground: 220 3% 55%;
+  --accent: 271 81% 65%;
+  --accent-foreground: 210 8% 3.5%;
   --destructive: 350 94% 82%;
-  --destructive-foreground: 0 0% 4%;
-  --border: 0 0% 100% / 0.1;
-  --input: 0 0% 100% / 0.1;
-  --ring: 274 100% 68%;
-  --radius: 0.4375rem;
+  --destructive-foreground: 210 8% 3.5%;
+  --border: 0 0% 100% / 0.08;
+  --input: 0 0% 100% / 0.08;
+  --ring: 271 81% 65%;
+  --radius: 0.5rem;
 
   /* Compatibility bridge for existing customer-facing surfaces. */
   --ds-bg-canvas: var(--nx-canvas);
@@ -150,8 +150,8 @@
   --ds-surface-overlay: var(--nx-card);
   --ds-surface-muted: var(--nx-muted-surface);
   --ds-fill-subtle: rgb(255 255 255 / 4%);
-  --ds-fill-hover: rgb(255 255 255 / 8%);
-  --ds-fill-active: rgb(255 255 255 / 12%);
+  --ds-fill-hover: rgb(255 255 255 / 6%);
+  --ds-fill-active: rgb(255 255 255 / 9%);
   --ds-fill-selected: var(--nx-raised-surface);
   --ds-border-subtle: var(--nx-rule-quiet);
   --ds-border: var(--nx-rule);
@@ -171,7 +171,7 @@
   --ds-accent-rgb: var(--nx-purple-rgb);
   --ds-accent-hover: var(--nx-purple-strong);
   --ds-accent-pressed: var(--nx-purple-muted);
-  --ds-accent-foreground: #0a0a0a;
+  --ds-accent-foreground: #08090a;
   --ds-accent-soft: var(--nx-purple-soft);
   --ds-accent-border: var(--nx-purple-border);
   --ds-focus-ring: var(--nx-focus);
@@ -263,7 +263,7 @@ samp,
   font-family: var(--nx-font-code);
 }
 ::selection {
-  background: rgb(168 85 247 / 28%);
+  background: rgb(168 85 247 / 22%);
   color: var(--nx-text);
 }
 button,

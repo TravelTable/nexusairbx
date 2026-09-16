@@ -6,7 +6,7 @@ export default function SiteShell({ variant, children }) {
 
   if (shell === "auth") {
     return (
-      <div className="nx-site-shell" data-shell="auth">
+      <div className="nx-site-shell" data-shell="auth" data-nexus-surface="auth">
         <SkipToMainContent targetId="site-shell-content" />
         <div id="site-shell-content" className="nx-site-shell__content" tabIndex={-1}>{children}</div>
       </div>
@@ -14,7 +14,7 @@ export default function SiteShell({ variant, children }) {
   }
 
   return (
-    <div className="nx-site-shell" data-shell={shell}>
+    <div className="nx-site-shell" data-shell={shell} data-nexus-surface={shell}>
       <SiteHeader variant={shell} skipTargetId="site-shell-content" />
       <div id="site-shell-content" className="nx-site-shell__content" tabIndex={-1}>{children}</div>
     </div>

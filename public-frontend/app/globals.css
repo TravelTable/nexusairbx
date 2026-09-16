@@ -119,9 +119,10 @@ button:disabled {
   position: sticky;
   top: 0;
   z-index: 20;
+  height: var(--nx-header-height);
   border-bottom: 1px solid var(--ds-border);
-  background: var(--ds-surface-overlay);
-  backdrop-filter: none;
+  background: color-mix(in srgb, var(--ds-bg-canvas) 88%, transparent);
+  backdrop-filter: blur(18px);
 }
 
 .public-header-inner,
@@ -132,10 +133,11 @@ button:disabled {
 
 .public-header-inner {
   display: flex;
+  height: var(--nx-header-height);
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding: 14px 0;
+  padding: 0;
 }
 
 .public-header-right {
@@ -208,23 +210,23 @@ button:disabled {
 }
 
 .button {
-  min-height: 44px;
+  min-height: 40px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   border: 1px solid transparent;
-  border-radius: 10px;
-  padding: 0 20px;
-  font-weight: 650;
+  border-radius: 8px;
+  padding: 0 16px;
+  font-weight: 500;
   transition: transform 140ms ease, border-color 140ms ease, background 140ms ease, color 140ms ease;
 }
 
 .button-hero {
-  min-height: 52px;
-  padding: 14px 36px;
-  font-size: 16px;
-  font-weight: 700;
+  min-height: 40px;
+  padding: 0 18px;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .header-actions .button-primary {
@@ -312,7 +314,7 @@ button:disabled {
   background: var(--ds-surface-1);
   color: var(--ds-text-subtle);
   font-size: 14px;
-  font-weight: 950;
+  font-weight: 600;
   text-transform: uppercase;
 }
 
@@ -321,8 +323,8 @@ button:disabled {
   width: 100%;
   min-height: 360px;
   object-fit: cover;
-  border-radius: 16px;
-  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.34);
+  border-radius: 12px;
+  box-shadow: none;
 }
 
 .landing-feature-band {
@@ -462,7 +464,7 @@ button:disabled {
   margin-top: 8px;
   color: var(--ds-text);
   font-style: normal;
-  font-weight: 900;
+  font-weight: 600;
 }
 
 .footer-disclaimer {
@@ -522,7 +524,7 @@ button:disabled {
   margin-top: 24px;
   color: var(--ds-text-secondary);
   font-size: 14px;
-  font-weight: 750;
+  font-weight: 550;
 }
 
 .home-avatar-stack {
@@ -541,7 +543,7 @@ button:disabled {
   background: var(--ds-surface-3);
   color: var(--ds-text);
   font-size: 12px;
-  font-weight: 950;
+  font-weight: 600;
 }
 
 .home-preview-wrap {
@@ -607,7 +609,7 @@ button:disabled {
   background: rgba(var(--ds-accent-rgb), 0.11);
   color: var(--ds-accent);
   font-size: 12px;
-  font-weight: 950;
+  font-weight: 600;
 }
 
 .home-hero .prompt-panel {
@@ -705,7 +707,7 @@ button:disabled {
   padding: 10px 12px;
   color: var(--ds-text-secondary);
   font-size: 14px;
-  font-weight: 750;
+  font-weight: 550;
 }
 
 .public-footer nav a:hover {
@@ -728,7 +730,7 @@ button:disabled {
   padding: 0 12px;
   color: var(--ds-accent);
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
@@ -766,10 +768,10 @@ button:disabled {
   margin-top: 32px;
   scroll-margin-top: 88px;
   border: 1px solid var(--ds-border);
-  border-radius: 14px;
+  border-radius: 8px;
   background: var(--ds-surface-1);
   padding: 8px;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
 }
 
 .prompt-panel input,
@@ -796,7 +798,7 @@ button:disabled {
 .form-error {
   margin-top: 10px;
   color: var(--ds-danger);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .prompt-mode-note {
@@ -804,7 +806,7 @@ button:disabled {
   margin: 0 0 2px;
   color: var(--ds-text-muted);
   font-size: 12px;
-  font-weight: 750;
+  font-weight: 550;
 }
 
 .supporting-grid {
@@ -819,8 +821,8 @@ button:disabled {
 .doc-card,
 .prompt-card {
   border: 1px solid var(--ds-border);
-  border-radius: 12px;
-  background: var(--ds-fill-subtle);
+  border-radius: 10px;
+  background: transparent;
 }
 
 .metric-card,
@@ -831,7 +833,7 @@ button:disabled {
 .metric-value {
   color: var(--ds-accent);
   font-size: 28px;
-  font-weight: 950;
+  font-weight: 600;
 }
 
 .metric-label,
@@ -910,7 +912,7 @@ button:disabled {
   padding: 10px;
   color: var(--ds-text-muted);
   font-size: 14px;
-  font-weight: 750;
+  font-weight: 550;
 }
 
 .docs-nav a:hover {
@@ -966,7 +968,7 @@ button:disabled {
   color: var(--ds-text);
   padding: 0 10px;
   font-size: 12px;
-  font-weight: 850;
+  font-weight: 600;
 }
 
 .landing-hero {
@@ -987,12 +989,23 @@ button:disabled {
   gap: 16px;
 }
 
-.landing-section,
-.example-card,
-.faq-card {
+.landing-section {
   border: 1px solid var(--ds-border);
   border-radius: 8px;
-  background: var(--ds-fill-subtle);
+  background: transparent;
+}
+
+.example-card {
+  border: 1px solid var(--ds-border);
+  border-radius: 8px;
+  background: transparent;
+}
+
+.faq-card {
+  border: 0;
+  border-bottom: 1px solid var(--ds-border);
+  border-radius: 0;
+  background: transparent;
 }
 
 .landing-section {
@@ -1071,7 +1084,7 @@ button:disabled {
   padding: 8px 12px;
   color: var(--ds-warning);
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -1122,7 +1135,7 @@ button:disabled {
 .evidence-file-meta dt {
   color: var(--ds-text-muted);
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -1194,7 +1207,7 @@ button:disabled {
   background: var(--ds-fill-subtle);
   padding: 10px 12px;
   color: var(--ds-text);
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .link-list a::after,
@@ -1227,7 +1240,7 @@ button:disabled {
   margin-bottom: 18px;
   color: var(--ds-text-muted);
   font-size: 13px;
-  font-weight: 750;
+  font-weight: 550;
 }
 
 .breadcrumbs a {
@@ -1308,7 +1321,7 @@ button:disabled {
   border-radius: 8px;
   background: var(--ds-fill-subtle);
   padding: 12px;
-  font-weight: 850;
+  font-weight: 600;
 }
 
 .related-icon-card img {
@@ -1561,7 +1574,7 @@ button:disabled {
 .docs-brand {
   color: var(--ds-text);
   font-size: 15px;
-  font-weight: 900;
+  font-weight: 600;
   letter-spacing: 0;
 }
 
@@ -1574,7 +1587,7 @@ button:disabled {
   border-radius: 8px;
   background: rgba(var(--ds-accent-rgb), 0.11);
   color: var(--ds-accent);
-  font-weight: 950;
+  font-weight: 600;
 }
 
 .docs-topnav {
@@ -1598,7 +1611,7 @@ button:disabled {
   border-radius: 8px;
   background: transparent;
   color: var(--ds-text);
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .docs-topnav a {
@@ -1702,7 +1715,7 @@ button:disabled {
   justify-content: space-between;
   margin-bottom: 12px;
   color: var(--ds-text);
-  font-weight: 900;
+  font-weight: 600;
 }
 
 .docs-nav,
@@ -1729,7 +1742,7 @@ button:disabled {
   color: var(--ds-text);
   padding: 0 8px;
   font-size: 13px;
-  font-weight: 900;
+  font-weight: 600;
   text-align: left;
 }
 
@@ -1754,7 +1767,7 @@ button:disabled {
   color: var(--ds-text-secondary);
   padding: 8px 10px 8px 12px;
   font-size: 13px;
-  font-weight: 750;
+  font-weight: 550;
   line-height: 1.35;
 }
 
@@ -1783,7 +1796,7 @@ button:disabled {
   margin-bottom: 22px;
   color: var(--ds-text-secondary);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .docs-breadcrumbs a:hover,
@@ -1798,7 +1811,7 @@ button:disabled {
 .docs-kicker {
   color: var(--ds-accent);
   font-size: 13px;
-  font-weight: 900;
+  font-weight: 600;
 }
 
 .docs-article-header h1 {
@@ -1838,7 +1851,7 @@ button:disabled {
   padding: 0 10px;
   color: var(--ds-text-secondary);
   font-size: 12px;
-  font-weight: 850;
+  font-weight: 600;
 }
 
 .docs-actions {
@@ -2053,7 +2066,7 @@ a.docs-mini-card:focus-visible {
   gap: 6px;
   color: var(--ds-accent) !important;
   font-size: 13px;
-  font-weight: 900;
+  font-weight: 600;
 }
 
 .docs-step-list {
@@ -2083,7 +2096,7 @@ a.docs-mini-card:focus-visible {
   background: rgba(var(--ds-accent-rgb), 0.12);
   color: var(--ds-accent);
   font-size: 12px;
-  font-weight: 950;
+  font-weight: 600;
 }
 
 .docs-step-list h3,
@@ -2118,7 +2131,7 @@ a.docs-mini-card:focus-visible {
 .docs-code-header > span:first-child {
   margin-right: auto;
   color: var(--ds-text);
-  font-weight: 850;
+  font-weight: 600;
 }
 
 .docs-code-header button {
@@ -2256,7 +2269,7 @@ a.docs-mini-card:focus-visible {
   align-items: center;
   gap: 8px;
   color: var(--ds-text);
-  font-weight: 900;
+  font-weight: 600;
 }
 
 .docs-parameter-list dt span {
@@ -2284,7 +2297,7 @@ a.docs-mini-card:focus-visible {
   color: var(--ds-accent);
   padding: 0 8px;
   font-size: 12px;
-  font-weight: 950;
+  font-weight: 600;
 }
 
 .docs-api-block code,
@@ -2303,7 +2316,7 @@ a.docs-mini-card:focus-visible {
 
 .docs-path li::marker {
   color: var(--ds-accent);
-  font-weight: 900;
+  font-weight: 600;
 }
 
 .docs-accordion {
@@ -2314,7 +2327,7 @@ a.docs-mini-card:focus-visible {
 .docs-accordion summary {
   color: var(--ds-text);
   cursor: pointer;
-  font-weight: 850;
+  font-weight: 600;
 }
 
 .docs-feedback {
@@ -2336,7 +2349,7 @@ a.docs-mini-card:focus-visible {
 
 .docs-feedback span {
   color: var(--ds-text);
-  font-weight: 850;
+  font-weight: 600;
 }
 
 .docs-feedback button {
@@ -2379,7 +2392,7 @@ a.docs-mini-card:focus-visible {
   background: var(--ds-fill-subtle);
   padding: 14px;
   color: var(--ds-text);
-  font-weight: 850;
+  font-weight: 600;
 }
 
 .docs-pager a:last-child {
@@ -2397,7 +2410,7 @@ a.docs-mini-card:focus-visible {
   margin-bottom: 4px;
   color: var(--ds-text-secondary);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .docs-toc {
@@ -2420,7 +2433,7 @@ a.docs-mini-card:focus-visible {
   color: var(--ds-text-secondary);
   padding: 8px 10px;
   font-size: 13px;
-  font-weight: 760;
+  font-weight: 550;
   line-height: 1.35;
 }
 
@@ -2592,7 +2605,7 @@ a.docs-mini-card:focus-visible {
   gap: 9px;
   color: var(--ds-text);
   font-size: 14px;
-  font-weight: 900;
+  font-weight: 600;
 }
 
 .docs-context-title svg {
@@ -2618,7 +2631,7 @@ a.docs-mini-card:focus-visible {
   color: var(--ds-text-muted);
   padding: 7px 9px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   white-space: nowrap;
 }
 
@@ -2897,7 +2910,7 @@ a.docs-mini-card:focus-visible strong {
   color: var(--ds-accent);
   padding: 0 0 2px;
   font-size: 13px;
-  font-weight: 900;
+  font-weight: 600;
 }
 
 .docs-feedback-link:hover,
@@ -2936,7 +2949,7 @@ a.docs-mini-card:focus-visible strong {
   margin: 2px 4px 8px;
   color: var(--ds-text);
   font-size: 13px;
-  font-weight: 900;
+  font-weight: 600;
 }
 
 .docs-search-group {
@@ -2954,7 +2967,7 @@ a.docs-mini-card:focus-visible strong {
   padding: 0 4px 4px;
   color: var(--ds-text-muted);
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -2972,7 +2985,7 @@ a.docs-mini-card:focus-visible strong {
   color: var(--ds-text);
   padding: 12px 14px;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 /* Docs use a restrained editorial system: persistent navigation, a readable
@@ -2990,7 +3003,7 @@ a.docs-mini-card:focus-visible strong {
   color: var(--docs-text);
   padding: 11px 14px;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .docs-skip-link:focus-visible {
@@ -3000,7 +3013,7 @@ a.docs-mini-card:focus-visible strong {
 .docs-shell h1,
 .docs-shell h2 {
   font-family: var(--ds-font-display);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .docs-shell code,
@@ -3039,7 +3052,7 @@ a.docs-mini-card:focus-visible strong {
 .docs-pager > span,
 .docs-search-results-heading,
 .docs-search-group-label {
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .docs-context-categories a,
@@ -3080,7 +3093,7 @@ a.docs-mini-card:focus-visible strong {
 .docs-code-header button,
 .docs-tab-list button,
 .docs-recent-searches button {
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .docs-search-button:hover,
@@ -3123,13 +3136,13 @@ a.docs-mini-card:focus-visible strong {
   border-left-color: var(--docs-accent);
   background: var(--docs-accent-soft);
   color: var(--docs-text);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .docs-article-header h1 {
   max-width: 15ch;
   color: var(--docs-text);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.025em;
 }
 
@@ -3213,7 +3226,7 @@ a.docs-mini-card:focus-visible strong {
 
 .docs-callout strong {
   color: var(--docs-text);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .docs-callout-info {
@@ -3263,13 +3276,13 @@ a.docs-mini-card:focus-visible strong {
 .docs-path h3,
 .docs-tree strong {
   color: var(--docs-text);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .docs-step-number {
   border-color: color-mix(in srgb, var(--docs-accent) 32%, transparent);
   color: var(--docs-accent);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .docs-code-block {
@@ -3383,7 +3396,7 @@ a.docs-mini-card:focus-visible strong {
 .docs-toc-link-active {
   border-left-color: var(--docs-accent);
   color: var(--docs-text);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .docs-inline-toc {
@@ -3401,7 +3414,7 @@ a.docs-mini-card:focus-visible strong {
   color: var(--docs-text);
   cursor: pointer;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   list-style: none;
 }
 
@@ -3439,7 +3452,7 @@ a.docs-mini-card:focus-visible strong {
   border-left-color: var(--docs-accent);
   background: var(--docs-accent-soft);
   color: var(--docs-text);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .docs-feedback,
@@ -3509,7 +3522,7 @@ a.docs-mini-card:focus-visible strong {
   border-color: color-mix(in srgb, var(--docs-accent) 32%, transparent);
   background: var(--docs-surface-raised);
   color: var(--docs-text);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 @media (max-width: 1100px) {

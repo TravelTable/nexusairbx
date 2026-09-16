@@ -71,7 +71,7 @@ test("renders a final review with the annual equivalent and billed total", async
   expect(await screen.findByRole("heading", { name: "Review your Pro plan" })).toBeInTheDocument();
   expect(screen.getByText("$12.74/month")).toBeInTheDocument();
   expect(screen.getByText("$152.90 billed yearly")).toBeInTheDocument();
-  expect(screen.getByText("9 Nexus Credits · refresh monthly, no rollover")).toBeInTheDocument();
+  expect(screen.getByText("1,000 Nexus Credits · refresh monthly, no rollover")).toBeInTheDocument();
   expect(screen.getByText("builder@example.com")).toBeInTheDocument();
   expect(await screen.findByRole("button", { name: "Continue to secure checkout" })).toBeEnabled();
   expect(screen.queryByText("Pro+")).not.toBeInTheDocument();

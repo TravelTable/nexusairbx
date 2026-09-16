@@ -6,6 +6,11 @@ import CompactAgentRunBar from "./CompactAgentRunBar";
 import { getWorkspacePresentation, scopeMatches, workspacePresentationAttributes } from "../../../lib/runPresentation";
 import { useWorkspacePresentation } from "./WorkspacePresentationContext";
 import InlineCreditConfirmation from "./InlineCreditConfirmation";
+import { formatNexusCredits } from "../../../lib/creditDenomination";
+import { useNexusAutoPreferences } from "../../../hooks/useNexusAutoPreferences";
+import { MODEL_ROUTING_EVENT } from "../../../lib/modelRoutingTransport";
+import ModelRoutingNotice from "../ModelRoutingNotice";
+import ModelRequestEstimate from "../ModelRequestEstimate";
 
 // Primary Studio agent surface. Chat drives the workflow; deeper build state
 // lives in the workspace dock so the conversation keeps the available width.
@@ -15,7 +20,7 @@ export default function AgentChatPanel({
   chatTitle = "New chat",
   projectTitle = "Workspace",
   projectId = "",
-  modelVersion = "nexus-auto",
+  modelVersion = "nexus-free-auto",
   messages,
   pendingMessage,
   pendingMessages,
@@ -138,6 +143,18 @@ export default function AgentChatPanel({
   const [creditConfirmation, setCreditConfirmation] = useState(null);
   const [checkingCredits, setCheckingCredits] = useState(false);
   const [creditNotice, setCreditNotice] = useState("");
+  const { autoPreferences } = useNexusAutoPreferences();
+  const [modelRouting, setModelRouting] = useState(null);
+  useEffect(() => {
+    setModelRouting(null);
+    const receive = event => {
+      if (event.detail?.chatId === currentChatId && (!event.detail.projectId || event.detail.projectId === projectId)) {
+        setModelRouting(event.detail.modelRouting);
+      }
+    };
+    window.addEventListener(MODEL_ROUTING_EVENT, receive);
+    return () => window.removeEventListener(MODEL_ROUTING_EVENT, receive);
+  }, [currentChatId, projectId]);
   const scope = { chatId: currentChatId, projectId };
   const visibleRun = executionTask?.taskId && scopeMatches(executionTask, scope) ? executionTask
     : scopeMatches(agentRun, scope) ? agentRun : null;
@@ -171,12 +188,12 @@ export default function AgentChatPanel({
           const text = overridePrompt || prompt || "";
           const contextChars = (messages || []).reduce((n, message) => n + String(message.content || message.text || "").length, text.length);
           const response = await authedFetch("/api/billing/estimate", { method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ model: modelVersion, estimatedInputTokens: Math.max(1, Math.min(1000000, Math.ceil(contextChars / 4))), maxOutputTokens: 8000, projectId: projectId || undefined }) });
+            body: JSON.stringify({ model: modelVersion, autoPreferences, requestCategory: activeMode, prompt: text.slice(0, 16000), estimatedInputTokens: Math.max(1, Math.min(1000000, Math.ceil(contextChars / 4))), maxOutputTokens: 8000, projectId: projectId || undefined }) });
           const quote = await response.json();
           if (sequence !== quoteSequence.current) return;
           if (!response.ok) throw new Error(quote.error || quote.code || "Could not estimate credits.");
           if (!Number.isFinite(quote.estimatedCreditsMicros) || quote.estimatedCreditsMicros < 0) throw new Error("Could not estimate credits. Try again.");
-          const amount = (quote.estimatedCreditsMicros / 1e6).toFixed(2);
+          const amount = formatNexusCredits(quote.estimatedCreditsMicros, { rounding: "ceil" });
           const scope = quote.billingScope?.type === "team" ? "Team pool" : "personal balance";
           const source = quote.balanceSource === "included" ? "included credits" : quote.balanceSource === "purchased" ? "purchased credits" : "included and purchased credits";
           if (!quote.affordable) throw new Error(`Starting estimate: ${amount} Nexus Credits. Your ${scope} needs more credits.`);
@@ -195,7 +212,7 @@ export default function AgentChatPanel({
       }
       return onSubmit?.(event, overridePrompt, composerOptions);
     },
-    [onSubmit, includedUsage, isBusy, prompt, messages, modelVersion, projectId]
+    [onSubmit, includedUsage, isBusy, prompt, messages, modelVersion, projectId, autoPreferences, activeMode]
   );
 
   const handleEditMessage = useCallback(
@@ -280,6 +297,9 @@ export default function AgentChatPanel({
       ) : null}
 
       <div className="shrink-0">
+        <ModelRequestEstimate prompt={prompt} model={modelVersion} projectId={projectId} requestCategory={activeMode}
+          enabled={Boolean(user?.uid) && !isBusy} contextChars={(messages || []).reduce((n, m) => n + String(m.content || "").length, 0)} />
+        <ModelRoutingNotice routing={modelRouting || visibleRun?.modelRouting} />
         <InlineCreditConfirmation confirmation={creditConfirmation} onResolve={resolveConfirmation} />
         {creditNotice && <p className="px-4 py-2 text-xs text-[var(--nx-text-muted)]" role="status">{creditNotice}</p>}
         <ChatComposer

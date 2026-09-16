@@ -19,10 +19,10 @@ export default function StarterPromoModal({ isOpen, onClose, onDismiss, onDismis
           <span className="text-sm"> / month</span>
         </p>
         <p>
-          NexusRBX is paid only—no free trial or free usage. Starter includes {plan.credits} Nexus
+          NexusRBX is paid only—no free trial or free usage. Starter includes {plan.displayCreditsLabel} Nexus
           Credits each month, included model selection, and reviewable Studio changes.
         </p>
-        <p>Need more room later? Upgrade to Pro for 9 credits, longer history, and extra packs.</p>
+        <p>Need more room later? Upgrade to Pro for {getPublicPlan('PRO').displayCreditsLabel} credits, longer history, and extra packs.</p>
         <a
           className="nexus-button inline-flex min-h-11 items-center"
           href="/subscribe?plan=STARTER&interval=month"

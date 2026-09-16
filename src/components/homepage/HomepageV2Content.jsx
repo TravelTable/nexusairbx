@@ -10,6 +10,7 @@ import NexusFeaturesGrid from "./NexusFeaturesGrid";
 import AiProvidersBand from "./AiProvidersBand";
 import FinancialPlans from "../billing/FinancialPlans";
 import { trackProductEvent } from "../../lib/productAnalytics";
+import { getPublicPlan } from '../../lib/planCatalog';
 import styles from "./HomepageCinematic.module.css";
 
 const HERO_WORDS = ["playable", "testable", "reviewable", "real"];
@@ -25,10 +26,10 @@ const STACK_ITEMS = [
 ];
 
 const FAQ_ITEMS = [
-  ["How do Nexus Credits work?", "Pro includes 9 Nexus Credits each month. Nexus Auto uses cost-aware routing to stretch your allowance; premium direct models consume credits faster. Cost also depends on context and output length."],
+  ["How do Nexus Credits work?", `Pro includes ${getPublicPlan('PRO').displayCreditsLabel} Nexus Credits each month. Nexus Auto balances task requirements with your chosen cost preference. Cost also depends on the model, context and output length.`],
   ["Do annual plans refresh credits monthly?", "Yes. You pay annually and receive fresh included credits every month. Included credits do not roll over. Purchased credits do not expire."],
   ["Can I cancel?", "Yes. Cancel in billing settings and keep paid access through the end of your paid subscription period. There is no free trial—subscribe to start building."],
-  ["How will Team usage work?", "Team will pool 15 Nexus Credits per paid seat each month. Team checkout remains closed until invitations, seats, and pooled billing have been verified."],
+  ["How will Team usage work?", `Team will pool ${getPublicPlan('TEAM').displayCreditsLabel} Nexus Credits per paid seat each month. Team checkout remains closed until invitations, seats, and pooled billing have been verified.`],
   [
     "Can Nexus work with an existing Roblox game?",
     "Yes. The Studio workflow reads the current project first, then scopes changes around what already exists.",
@@ -252,17 +253,21 @@ export default function HomepageV2Content({ surface = "homepage", navigate }) {
     return () => window.clearTimeout(timeoutId);
   }, []);
   return (
-    <div className={styles.page} data-nexus-protected-homepage-body="true">
+    <div className={styles.shell}>
       <main id="main-content" tabIndex={-1}>
-        <AiProvidersBand />
-        <Hero surface={surface} navigate={navigate} inputRef={heroPromptRef} />
-        <VideoShowcase />
-        <NexusFeaturesGrid />
-        <FocusedTools />
-        <StackSection />
-        <FinancialPlans compact />
-        <FaqSection />
-        <FinalCta surface={surface} navigate={navigate} />
+        <div className={styles.page} data-nexus-protected-homepage-body="true">
+          <AiProvidersBand />
+          <Hero surface={surface} navigate={navigate} inputRef={heroPromptRef} />
+        </div>
+        <div className={styles.product}>
+          <VideoShowcase />
+          <NexusFeaturesGrid />
+          <FocusedTools />
+          <StackSection />
+          <FinancialPlans compact />
+          <FaqSection />
+          <FinalCta surface={surface} navigate={navigate} />
+        </div>
       </main>
       <HomepageFooter />
     </div>

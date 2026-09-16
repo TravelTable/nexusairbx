@@ -39,9 +39,21 @@ test('UI loading chain marks pipeline steps complete, active, or pending from th
   expect(mid.slice(0, activeIndex).every((step) => step.status === 'complete')).toBe(true);
   expect(mid.slice(activeIndex + 1).every((step) => step.status === 'pending')).toBe(true);
 
+  const artwork = getUiLoadingChainSteps({
+    busy: '',
+    task: { status: 'running', uiBuild: { stage: 'generating', action: 'generating_artwork' } },
+  });
+  expect(artwork.find((step) => step.status === 'active').label).toBe('Generating matching artwork');
+
   const done = getUiLoadingChainSteps({
     busy: '',
     task: { status: 'succeeded', uiBuild: { stage: 'complete', outcome: 'visual_review_passed' } },
   });
   expect(done.every((step) => step.status === 'complete')).toBe(true);
+
+  const limited = getUiLoadingChainSteps({
+    busy: '',
+    task: { status: 'verifying', uiBuild: { stage: 'renderer_limited', outcome: 'renderer_limited' } },
+  });
+  expect(limited.every((step) => step.status === 'complete')).toBe(true);
 });

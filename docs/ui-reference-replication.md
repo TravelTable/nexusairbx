@@ -1,0 +1,15 @@
+# UI reference replication
+
+Image attachments in UI Creator default to **Replicate reference**. **Use as inspiration** removes the strict matching target. The first image is the primary target; other images provide context. This accepts screenshots from any source and does not require a Figma connection.
+
+The backend resolves the original, authorized attachment version, preserving pixels instead of using the compressed chat thumbnail. A vision-capable planner extracts visible elements, pixel bounds, text, typography, colors, borders, artwork descriptions, and uncertainties. The image and persisted spec reach requirements planning, Luau generation, source recovery, and visual review. Printed instructions in an image remain untrusted data. Follow-up edits reuse the saved reference; a new primary image starts a new reference specification.
+
+The pipeline invokes the existing read-only `search_ui_library` and `read_ui_library_entry` contracts, preserving immutable references and content hashes. Up to three records inform implementation. Library records cannot override reference appearance or authorize installation/execution.
+
+The render matrix adds a server-owned `reference` viewport using the saved image dimensions and zero insets. Reference builds compare the default composition and retain the requested default device layouts; they do not invent unseen interaction-state screenshots. Existing renderer limits apply: 160–2560 pixels per side, at most 4 million pixels. Unsupported originals fail before model generation rather than being silently resized.
+
+Review receives original pixels separately from actual generated PNGs and produces targeted repair instructions. A deterministic sRGB RGBA comparison checks every decoded pixel at the same dimensions. `referenceMatch.exact` requires zero differences, independently of the critic's aesthetic scores. The existing two-repair budget applies; remaining differences produce `needs_review`, never an exact-match claim. Missing fonts/artwork and renderer substitutions can prevent exact completion. This gate does not guarantee every screenshot can be reconstructed, and does not verify Roblox runtime behavior.
+
+The existing activity widget uses the new persisted `uiBuild.activity` transitions; it retains its compact layout and collapsible rows. A small reference panel exposes the original, result, extracted spec, saved match result, and library references. Model selection is unchanged. The model must support image input for reference extraction.
+
+Implementation is split between the root frontend repository and its separately versioned `backend` repository. No Studio command protocol changes are required. Automated checks cover original-image loading, model image inputs, saved specs, library revision reads, viewport limits, pixel equality, rejection despite perfect critic scores, device matrix bounds, and existing UI/build flows. Live provider reconstruction and Studio visual fidelity still require an authenticated end-to-end run with a real reference image.

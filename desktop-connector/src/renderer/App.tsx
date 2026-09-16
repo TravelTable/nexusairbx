@@ -4,7 +4,7 @@ import type React from "react";
 import {
   Activity, AlertTriangle, ArrowLeft, Check, CheckCircle2, ChevronDown, CircleHelp, Cloud,
   Copy, ExternalLink, FolderOpen, Info, Link2, Link2Off, LoaderCircle, Maximize2, Minus, Minimize2, MoreHorizontal,
-  Power, RefreshCw, Search, Settings, ShieldCheck, Sparkles, Terminal, Wrench, X,
+  Power, RefreshCw, Search, Settings, ShieldCheck, Terminal, Wrench, X,
 } from "lucide-react";
 import type { CompanionDiagnostics, CompanionPreferences, CompanionSnapshot, ConnectionStage, DegradedReason, PreferenceKey, RendererDestination, ServiceHealth } from "../contracts";
 import { Button } from "./components/ui/button";
@@ -220,7 +220,7 @@ function Footer({ snapshot }: { snapshot: CompanionSnapshot }) { return <footer 
 
 type SettingsSection = "general" | "connection" | "mcp" | "updates" | "diagnostics" | "advanced" | "about";
 const settingSections: Array<{ id: SettingsSection; label: string; icon: React.ReactNode }> = [
-  { id: "general", label: "General", icon: <Settings size={14} /> }, { id: "connection", label: "Connection", icon: <Link2 size={14} /> }, { id: "mcp", label: "Studio MCP", icon: <Sparkles size={14} /> }, { id: "updates", label: "Updates", icon: <RefreshCw size={14} /> }, { id: "diagnostics", label: "Diagnostics", icon: <Activity size={14} /> }, { id: "advanced", label: "Advanced", icon: <Terminal size={14} /> }, { id: "about", label: "About", icon: <CircleHelp size={14} /> },
+  { id: "general", label: "General", icon: <Settings size={14} /> }, { id: "connection", label: "Connection", icon: <Link2 size={14} /> }, { id: "mcp", label: "Studio MCP", icon: <Terminal size={14} /> }, { id: "updates", label: "Updates", icon: <RefreshCw size={14} /> }, { id: "diagnostics", label: "Diagnostics", icon: <Activity size={14} /> }, { id: "advanced", label: "Advanced", icon: <Terminal size={14} /> }, { id: "about", label: "About", icon: <CircleHelp size={14} /> },
 ];
 function SettingsView({ snapshot, diagnostics, section, onSection, onRefreshDiagnostics, run, navigate }: { snapshot: CompanionSnapshot; diagnostics: CompanionDiagnostics | null; section: SettingsSection; onSection: (section: SettingsSection) => void; onRefreshDiagnostics: () => Promise<void>; run: (operation: () => Promise<CompanionSnapshot | void>) => Promise<void>; navigate: (next: RendererDestination) => Promise<void> }) {
   const select = (next: SettingsSection) => { onSection(next); if (next === "diagnostics") void onRefreshDiagnostics(); };

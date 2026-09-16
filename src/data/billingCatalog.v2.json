@@ -2,6 +2,11 @@
   "version": "v2",
   "currency": "usd",
   "microcreditsPerCredit": 1000000,
+  "creditDenomination": {
+    "version": "nexus-credits-v1",
+    "internalMicrosPerCredit": 9000,
+    "providerCostMicrosPerCredit": 3000
+  },
   "providerCostMultiplier": 3,
   "graceDays": 7,
   "plans": [

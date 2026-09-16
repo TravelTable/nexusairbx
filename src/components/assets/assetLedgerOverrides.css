@@ -318,7 +318,7 @@
   background: var(--nx-card);
   color: var(--nx-text-secondary);
   font-size: 0.6875rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 .creator-store-record__body {
   display: grid;
@@ -331,7 +331,7 @@
   margin: 0;
   color: var(--nx-text);
   font-size: 0.875rem;
-  font-weight: 700;
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -355,7 +355,7 @@
   margin-top: var(--nx-space-1);
   color: var(--nx-purple-strong);
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 .creator-store-record__licence svg {
   width: 14px;
@@ -375,7 +375,7 @@
   margin: 0 0 var(--nx-space-1);
   color: var(--nx-purple-strong);
   font-size: 0.6875rem;
-  font-weight: 750;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -399,7 +399,7 @@
   color: var(--nx-text);
   cursor: pointer;
   font-size: 0.8125rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 .creator-store-load-error__retry:hover {
   background: var(--nx-muted-surface);

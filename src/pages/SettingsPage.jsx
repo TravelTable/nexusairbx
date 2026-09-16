@@ -1469,6 +1469,7 @@ export default function SettingsPage() {
             </div>
             <ModelSwitcher
               value={settings.modelVersion}
+              plan={billing.plan}
               isPremium={billing.isPremium}
               isStarterOrAbove={billing.isStarterOrAbove}
               onChange={(modelVersion) => updateSetting({ modelVersion })}

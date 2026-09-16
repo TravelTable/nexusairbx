@@ -1,3 +1,7 @@
+import UiReferenceDetails from './UiReferenceDetails';
+import ModelRequestEstimate from '../../../components/ai/ModelRequestEstimate';
+import ModelRoutingNotice from '../../../components/ai/ModelRoutingNotice';
+import NexusSelect from '../../../components/ui/NexusSelect';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import CreationPromptComposer from '../../../components/ai/chat/CreationPromptComposer';
 import MessageList from '../../../components/ai/chat/MessageList';
@@ -16,22 +20,33 @@ import { normalizeChatAttachments } from '../../../lib/chatAttachments';
 import { askUiQuestion, watchUiConversation } from '../../../lib/uiConversation';
 import './UiCreatorWorkspace.css';
 
-import { getUiWorkspacePresentation, UI_BUILD_LABELS, UI_ACTION_LABELS as actions } from '../../../lib/runPresentation';
+import { getUiWorkspacePresentation, UI_BUILD_LABELS, UI_ACTION_LABELS as actions, UI_BUILD_TERMINAL_STAGES } from '../../../lib/runPresentation';
+import { getUiChatImages, getUiGenerationCards, mergeUiChatImages, publishStateFromUpload } from '../../../lib/uiAgentFlowMessage';
 import { WorkspacePresentationContext } from '../../../components/ai/workspace/WorkspacePresentationContext';
 import UiLoadingChain from './UiLoadingChain';
+import UiGeneratedImageFeed from './UiGeneratedImageFeed';
+import { useRobloxImageUpload } from '../../../hooks/useRobloxImageUpload';
 export { UI_BUILD_LABELS } from '../../../lib/runPresentation';
-const ended = new Set(['complete','saved','preview_unavailable','needs_review','renderer_limited','budget_exhausted','failed']);
-const terminalTask = task => ended.has(task?.uiBuild?.stage) || ['cancelled','failed','succeeded'].includes(task?.status);
+const terminalTask = task => UI_BUILD_TERMINAL_STAGES.has(task?.uiBuild?.stage) || ['cancelled','failed','succeeded'].includes(task?.status);
 const metadata = { workspace: 'ui_creator', displayPolicy: 'ui_build' };
+async function fileFromImageSrc(src, name) {
+  const response = await fetch(src);
+  const blob = await response.blob();
+  const fileName = /\.(png|jpe?g|bmp|tga)$/i.test(name) ? name : `${String(name || 'artwork').replace(/[^\w.-]+/g, '-')}.png`;
+  return new File([blob], fileName, { type: blob.type || 'image/png' });
+}
 
 export default function UiCreatorWorkspace({ user, projectId, projectTitle, modelVersion, studio, studioSessionId,
   isStarterOrAbove, onRequireStarter, onRequireAuth, onBillingRefresh, notify, navigateTo,
   modelControl, studioControl, onModeChange, onChangeProject, onOpenEvidence, onOpenStudio,
   sharedHeader = false, headerActionTarget = null, onHeaderModalChange, onPresentationChange,
-  mockRuns = null }) {
+  mockRuns = null, robloxStatus = null, robloxProjectAssets = [], onOpenAssetLibrary, assetLibraryOpen = false,
+  onCloseAssetLibrary, onConfirmProjectAssets, onRemoveProjectAsset, projectAssetSaving = false,
+  robloxSelectedCreator = null }) {
   const [designs, setDesigns] = useState([]), [design, setDesign] = useState(null), [task, setTask] = useState(null);
   const [events, setEvents] = useState([]), [history, setHistory] = useState([]), [answer, setAnswer] = useState('');
   const [files, setFiles] = useState([]), [manifest, setManifest] = useState(null), [prompt, setPrompt] = useState('');
+  const [referenceMode, setReferenceMode] = useState('replicate');
   const [attachments, setAttachments] = useState([]), [drawer, setDrawer] = useState('');
   const [checkpoints, setCheckpoints] = useState([]), [busy, setBusy] = useState(''), [error, setError] = useState('');
   const [pendingPrompt, setPendingPrompt] = useState(''), [connection, setConnection] = useState(''), [undo, setUndo] = useState(null);
@@ -39,6 +54,8 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
   const [deletedDesigns, setDeletedDesigns] = useState([]);
   const [filesError, setFilesError] = useState('');
   const [previewIdentity, setPreviewIdentity] = useState('');
+  const [chatImages, setChatImages] = useState([]);
+  const [publishingId, setPublishingId] = useState('');
   const onRenderStatus = useCallback(result => { if (result.status === 'ready') setPreviewIdentity(result.sourceRevision); }, []);
   const scope = `${user?.uid || ''}:${projectId || ''}`;
   const lastOpenKey = `nexusrbx:ui:last-open:${scope}`;
@@ -82,6 +99,31 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
   const readFile = useCallback((reference, options) => readBuildWorkspaceFile(JSON.parse(fileScope), reference, options), [fileScope]);
   const attachmentUpload = useChatAttachmentUpload({ attachments, setAttachments, user, notify, enabled: true, modelsEnabled: false });
   const conversationId = design?.chatId || document?.chatId || document?.designId;
+  const robloxUpload = useRobloxImageUpload({ user, robloxStatus, currentChatId: conversationId, notify, onSignInRequired: onRequireAuth });
+  useEffect(() => {
+    const next = getUiChatImages({ busy: liveBusy, task: liveTask });
+    if (!next.length) return;
+    setChatImages((previous) => mergeUiChatImages(previous, next));
+  }, [liveBusy, liveTask]);
+  const publishGeneratedImage = useCallback(async (image) => {
+    if (!image?.src || publishingId) return;
+    if (!robloxUpload.readiness?.ready) {
+      notify?.({ message: robloxUpload.readiness?.message || "Connect Roblox before publishing images.", type: "info" });
+      return;
+    }
+    setPublishingId(image.id);
+    setChatImages((previous) => previous.map((item) => item.id === image.id ? { ...item, publish: { status: "publishing" } } : item));
+    try {
+      const file = await fileFromImageSrc(image.src, `${image.action || image.label || "artwork"}.png`);
+      const result = await robloxUpload.uploadImages([file]);
+      const publish = publishStateFromUpload(result);
+      setChatImages((previous) => previous.map((item) => item.id === image.id ? { ...item, publish } : item));
+    } catch (error) {
+      setChatImages((previous) => previous.map((item) => item.id === image.id ? { ...item, publish: { status: "failed", error: error.message } } : item));
+    } finally {
+      setPublishingId("");
+    }
+  }, [notify, publishingId, robloxUpload]);
   const allowed = () => { if (!user) { onRequireAuth?.(); return false; } if (!isStarterOrAbove) { onRequireStarter?.(); return false; } if (!projectId) { onChangeProject?.(); return false; } return true; };
   const assign = useCallback(record => { designRef.current = record; setDesign(record); setDesigns(all => all.map(d => d.designId === record.designId ? { ...d, title: record.title || record.document?.title, revision: record.revision } : d)); }, []);
   const refreshManifest = useCallback(async () => {
@@ -90,7 +132,7 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
     try { const result = await getUiPreviewManifest(id); if (scopeRef.current === requestScope && designRef.current?.designId === id) setManifest(result); }
     catch (e) { if (scopeRef.current === requestScope && designRef.current?.designId === id) report(e); }
   }, [report]);
-  const resetSession = useCallback(() => { askController.current?.abort(); designRef.current = null; setDesign(null); setTask(null); setEvents([]); setFiles([]); setFilesError(''); setManifest(null); setPreviewIdentity(''); setHistory([]); setAnswer(''); setPendingPrompt(''); setCheckpoints([]); setConnectApply(null); }, []);
+  const resetSession = useCallback(() => { askController.current?.abort(); designRef.current = null; setDesign(null); setTask(null); setEvents([]); setFiles([]); setFilesError(''); setManifest(null); setPreviewIdentity(''); setChatImages([]); setHistory([]); setAnswer(''); setPendingPrompt(''); setCheckpoints([]); setConnectApply(null); }, []);
   const load = useCallback(async id => {
     const requestScope = scopeRef.current, sequence = ++loadSequence.current;
     const current = () => requestScope === scopeRef.current && sequence === loadSequence.current;
@@ -158,7 +200,10 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
       finally { refreshing = false; if (refreshAgain && current()) { refreshAgain = false; void refresh(); } }
     };
     const fallback = async () => { await refresh(); if (current()) timer = setTimeout(fallback, 5000); };
+    const resume = () => { if (current()) void refresh(); };
     void fallback();
+    window.addEventListener('pageshow', resume);
+    window.document?.addEventListener?.('visibilitychange', resume);
     if (typeof streamTaskEvents === 'function') streamTaskEvents(taskId, { afterSequence, signal: controller.signal, onEvent: async event => {
       if (!current() || Number(event.sequence || 0) <= afterSequence) return;
       afterSequence = Math.max(afterSequence, event.sequence || 0); append([event]);
@@ -168,7 +213,11 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
       }
       void refresh();
     } }).catch(() => { if (current()) setConnection('Live updates reconnecting. Your build continues.'); });
-    return () => { stopped = true; clearTimeout(timer); controller.abort(); };
+    return () => {
+      stopped = true; clearTimeout(timer); controller.abort();
+      window.removeEventListener('pageshow', resume);
+      window.document?.removeEventListener?.('visibilitychange', resume);
+    };
   }, [taskId, document?.designId, projectId, assign, onBillingRefresh, mockActive]);
   const createBlank = async (title = 'Untitled UI') => {
     const requestScope = scopeRef.current;
@@ -183,6 +232,8 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
     freshTitle = typeof freshTitle === 'string' ? freshTitle : '';
     if (!allowed() || working || lock.current) return;
     const draft = (typeof override === 'string' ? override : prompt).trim(); if (!draft) return;
+    const assetHint = (robloxProjectAssets || []).map(asset => asset.robloxAssetId || asset.assetId || asset.id).filter(Boolean).map(id => `rbxassetid://${id}`).join(', ');
+    const message = assetHint ? `${draft}\n\nUse these Roblox assets: ${assetHint}` : draft;
     if (mockRuns?.enabled) {
       setPrompt('');
       setError('');
@@ -201,10 +252,10 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
       const target = freshTitle || !designRef.current ? await createBlank(freshTitle || 'Untitled UI') : designRef.current;
       if (!target || requestScope !== scopeRef.current) return;
       const targetDoc = target.document; const selectedMode = freshTitle ? 'agent' : mode;
-      const input = { message: draft, mode: selectedMode, workspace: 'ui_creator', designId: target.designId,
+      const input = { message, mode: selectedMode, workspace: 'ui_creator', designId: target.designId,
         baseRevision: targetDoc.revision, uiIntent: targetDoc.sourceFiles?.length || targetDoc.screens?.some(s => s.nodes?.length) ? 'edit' : 'create', projectId,
         chatId: target.chatId || target.designId, attachments: normalizeChatAttachments(attachments, { includeData: false }),
-        executionInput: { settings: { modelVersion }, applyMode: 'manual_review', studioEnabled: false } };
+        executionInput: { settings: { modelVersion, referenceMode }, applyMode: 'manual_review', studioEnabled: false } };
       const inputKey = JSON.stringify(input);
       if (requestKey.current?.input !== inputKey) requestKey.current = { input: inputKey, key: `ui-task:${crypto.randomUUID()}` };
       setPendingPrompt(draft); setPrompt('');
@@ -302,33 +353,48 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
   const conversation = <><Conversation className="ui-creator__conversation"><ConversationContent className="ui-creator__messages">
     {messages.length ? <MessageList messages={messages} activeMode="ui" isBusy={working} studioConnected={studioReady} studioSessionId={studioSessionId} notify={notify}/> : null}
     {showPrompt ? <div className="uc-session-message">{livePrompt}</div> : null}
-    {showLoadingChain ? <UiLoadingChain busy={liveBusy} task={liveTask} open title={status || 'Building UI'} /> : null}
+    {showLoadingChain ? <UiLoadingChain busy={liveBusy} task={liveTask} /> : null}
+    {chatImages.length ? <UiGeneratedImageFeed images={chatImages} onPublish={publishGeneratedImage} publishingId={publishingId} publishDisabledReason={robloxUpload.readiness?.ready ? '' : robloxUpload.readiness?.message || ''} /> : null}
     {presentation.terminal && !working ? <p className="uc-file-note nx-result-reveal">{mockRuns?.frame?.placeholder || status}</p> : null}
 
     {answer ? <MessageList messages={[{ id: 'live-answer', role: 'assistant', content: answer, metadata }]} activeMode="ui" isBusy={working}/> : null}
+    {!working && saved ? <div className="uc-chat-actions"><button type="button" disabled={working} onClick={studioReady ? applySaved : connect}>{studioReady ? 'Apply this UI to Studio' : 'Connect Studio to apply'}</button></div> : null}
     {!working && saved && build?.stage === 'failed' && (build.errorCode === 'UI_VISUAL_REVIEW_INCOMPLETE' || build.message === 'Invalid UI visual review.') ? <button type="button" className="uc-button" onClick={retryReview}>Retry review</button> : null}
     {liveTask?.mode === 'plan' && !build ? <div className="uc-session-message"><p>{liveTask.intent?.normalizedGoal}</p><button className="uc-button uc-primary" onClick={async () => { try { const result = await approveTask(taskId, { executionInput: { settings: { modelVersion }, applyMode: 'manual_review', studioEnabled: false } }); setTask(result.task); } catch (e) { report(e); } }}>Build this plan</button></div> : null}
   </ConversationContent><ConversationScrollButton/></Conversation>{active || busy === 'Answering' || (mockActive && mockRuns.playing) ? <div className="uc-conversation-footer"><button onClick={stop}>Stop {busy === 'Answering' ? 'response' : 'build'}</button></div> : null}</>;
-  const composer = <CreationPromptComposer prompt={prompt} setPrompt={setPrompt} attachments={attachments} setAttachments={setAttachments}
+  const composer = <>{attachments.some(a => a.isImage || a.kind === 'image' || /\.(png|jpe?g|webp)$/i.test(a.name || '')) && <label className="uc-reference-mode">Reference use
+    <NexusSelect aria-label="Reference use" value={referenceMode} onChange={e => setReferenceMode(e.target.value)} disabled={working}>
+      <option value="replicate">Replicate reference</option><option value="inspiration">Use as inspiration</option>
+    </NexusSelect>
+  </label>}<ModelRoutingNotice routing={build?.modelRouting} /><ModelRequestEstimate prompt={prompt} model={modelVersion} projectId={projectId} requestCategory="ui_generation" enabled={Boolean(user?.uid) && !working} />
+  <CreationPromptComposer prompt={prompt} setPrompt={setPrompt} attachments={attachments} setAttachments={setAttachments}
     onFileUpload={attachmentUpload.upload} onRetryAttachment={attachmentUpload.retry} onSubmit={submit} onStop={stop} onCancel={stop}
     isGenerating={working} presentation={presentation} compactStatus disabled={liveBusy === 'Starting build'} placeholder="Describe your UI…" promptAriaLabel="UI prompt" submitLabel="Send prompt"
     mode={mode} showDock={false} showWorkspaceOptions={false} modeControl={null}
-    studioConnectionRequired={false} studioConnected={studioReady} studioConnectionType={studio?.connectionType}/>;
+    studioConnectionRequired={false} studioConnected={studioReady} studioConnectionType={studio?.connectionType}
+    onStudioConnectionOpen={onOpenStudio} onOpenAssetLibrary={onOpenAssetLibrary} assetLibraryOpen={assetLibraryOpen}
+    onCloseAssetLibrary={onCloseAssetLibrary} onConfirmProjectAssets={onConfirmProjectAssets}
+    onRemoveProjectAsset={onRemoveProjectAsset} robloxProjectAssets={robloxProjectAssets} robloxStatus={robloxStatus}
+    robloxSelectedCreator={robloxSelectedCreator} projectAssetSaving={projectAssetSaving} assetProjectId={projectId}/></>;
   const showLiveFiles = active && !previewIdentity && !manifest?.lastSuccessfulPreviewJobId && (['generating', 'repairing', 'preparing', 'building_model', 'design_preview'].includes(build?.stage)
     || Boolean(build?.sourceFiles?.length && previewIdentity !== build?.sourceRevision));
-  const livePreview = <><div hidden={showLiveFiles} className="uc-preview-content"><UiPreviewPane userId={user?.uid} designId={document?.designId} projectId={projectId} sourceRevision={document?.revision}
+  const generationCards = useMemo(() => getUiGenerationCards({ busy: liveBusy, task: liveTask }), [liveBusy, liveTask]);
+  const showGenerationCards = generationCards.length > 0;
+  const livePreview = <><UiReferenceDetails document={document} build={build}/><div hidden={showLiveFiles && !showGenerationCards} className="uc-preview-content"><UiPreviewPane userId={user?.uid} designId={document?.designId} projectId={projectId} sourceRevision={document?.revision}
     capture={manifest?.capture} states={manifest?.states || []} viewports={manifest?.viewports || []} capabilities={manifest?.capabilities}
     lastSuccessfulJobId={manifest?.lastSuccessfulPreviewJobId} renderJobs={build?.sourceRevision === document?.revision && build?.snapshotId === manifest?.capture?.snapshotId ? build?.matrix : []}
     studioConnected={studioReady} hasNodes={saved} studioReceipt={applied} onApplyToStudio={applySaved} onConnectStudio={connect}
     onRefreshCapture={studioReady && !document?.sourceFiles ? sync : undefined} sourceOwned={Boolean(document?.sourceFiles)} onRefreshManifest={refreshManifest} captureBusy={busy === 'Capturing UI'} applyBusy={working}
     updatingRevision={liveBusy === 'Starting build' || (['generating','repairing'].includes(build?.stage) && active)} previewFailed={build?.stage === 'preview_unavailable'} buildFailure={build?.stage === 'failed' ? build.message || 'The UI build could not finish.' : null} pendingStudioCommand={build?.stage === 'awaiting_studio' ? build.commandId : null}
-    onRenderStatus={onRenderStatus} run={active ? { stage: actions[build?.action] || UI_BUILD_LABELS[build?.stage] || 'Starting build', working: presentation.active } : null}/></div>
-    {showLiveFiles ? <UiLiveFiles key={taskId || 'mock-ui'} files={liveFiles || build?.sourceFiles || []} stage={build?.stage} action={build?.action} working={presentation.active}/> : null}</>;
+    onRenderStatus={onRenderStatus} generationCards={generationCards} run={active ? { stage: actions[build?.action] || UI_BUILD_LABELS[build?.stage] || 'Starting build', working: presentation.active } : null}/></div>
+    {showLiveFiles && !showGenerationCards ? <UiLiveFiles key={taskId || 'mock-ui'} files={liveFiles || build?.sourceFiles || []} stage={build?.stage} action={build?.action} working={presentation.active}/> : null}</>;
   return <WorkspacePresentationContext.Provider value={presentation}><UiCreatorChrome document={document} designs={designs} projectTitle={projectTitle} studioReady={studioReady} working={working} presentation={presentation} loading={Boolean(busy)} status={status}
     sharedHeader={sharedHeader} headerActionTarget={headerActionTarget} onHeaderModalChange={onHeaderModalChange}
     saved={saved} applied={applied} applyState={applyState} visuallyReviewed={visuallyReviewed}
     error={error} onDismissError={() => setError('')} modelControl={modelControl} studioControl={studioControl} onModeChange={onModeChange}
     onChangeProject={onChangeProject} onOpenEvidence={onOpenEvidence} onOpenStudio={connect} onAccount={() => navigateTo?.('/settings')}
+    landing={!document && !livePending && !liveTask && liveBusy !== 'Opening UI'}
+    onFileUpload={attachmentUpload.upload} attachments={attachments}
     onNew={newUI} onLoad={load} onApply={applySaved} onDrawer={openDrawer} onPrompt={setPrompt} onTemplate={t => submit(null, t.prompt, t.title)}
     onRename={rename} onDelete={remove} undo={undo} onUndo={() => recover()} drawer={drawer} onCloseDrawer={closeDrawer}
     drawerContent={<>{progress.length ? <details className="uc-build-timeline" open={drawer === 'history'}><summary>Build activity</summary><ol className="uc-live-actions" aria-label="Build actions">{progress.map((label, i) => <li key={i} data-active={presentation.active && i === progress.length - 1}>{label}</li>)}</ol></details> : null}<UiImplementationDrawer tab={drawer} document={document} files={files} readFile={readFile} working={working} build={build} liveFiles={build?.sourceFiles || []} onReview={retryReview}

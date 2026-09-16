@@ -63,6 +63,29 @@
 .page *::after {
   box-sizing: border-box;
 }
+.shell {
+  min-width: 320px;
+  background: var(--nx-canvas);
+  color: var(--nx-text);
+}
+.product {
+  background: var(--nx-canvas);
+  color: var(--nx-text);
+  font-family: var(--nx-font-body);
+}
+.product *,
+.product *::before,
+.product *::after {
+  box-sizing: border-box;
+}
+.product h2,
+.product h3,
+.product p {
+  margin: 0;
+}
+.product a {
+  color: inherit;
+}
 .page h1,
 .page h2,
 .page h3,
@@ -312,7 +335,7 @@
 .faqSection,
 .finalCta,
 .footer {
-  padding: 72px max(20px, calc((100vw - var(--nx-content-compact)) / 2));
+  padding: 64px max(24px, calc((100vw - var(--nx-content-compact)) / 2));
 }
 .sectionHeading {
   display: grid;
@@ -373,25 +396,28 @@
 }
 .focusedToolsGrid a {
   display: flex;
-  min-height: 64px;
+  min-height: 48px;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 0 20px;
-  border: 1px solid var(--nx-rule);
-  border-radius: var(--nx-radius-card);
-  background: var(--nx-card);
+  padding: 0 4px;
+  border: 0;
+  border-bottom: 1px solid var(--nx-rule-quiet);
+  border-radius: 0;
+  background: transparent;
   color: var(--nx-text-secondary);
   text-decoration: none;
-  transition: border-color var(--nx-motion-color) ease, transform var(--nx-motion-elevation) ease;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  transition: color var(--nx-motion-color) ease, transform var(--nx-motion-elevation) ease;
 }
 .focusedToolsGrid a:hover {
-  border-color: var(--nx-rule-strong);
+  border-color: var(--nx-rule);
   color: var(--nx-text);
-  transform: translateY(-1px);
+  transform: none;
 }
 .focusedToolsGrid span {
-  color: var(--nx-purple-strong);
+  color: var(--nx-text-muted);
 }
 .toolTabs {
   display: grid;
@@ -511,29 +537,38 @@
 .stackGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--nx-space-4);
-  margin-top: 16px;
+  gap: 0;
+  margin-top: 8px;
+  border-top: 1px solid var(--nx-rule);
 }
 .stackGrid article {
-  min-height: 192px;
-  padding: 20px;
-  border: 1px solid var(--nx-rule);
-  border-radius: var(--nx-radius-card);
-  background: var(--nx-card);
+  min-height: 0;
+  padding: 20px 20px 20px 0;
+  border: 0;
+  border-right: 1px solid var(--nx-rule-quiet);
+  border-radius: 0;
+  background: transparent;
+}
+.stackGrid article:nth-child(3n) {
+  padding-right: 0;
+  border-right: 0;
 }
 .stackGrid span {
-  color: var(--nx-purple-strong);
-  font-size: 0.76rem;
-  font-weight: 700;
+  color: var(--nx-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 .stackGrid h3 {
-  margin-top: 28px;
-  font-size: 1.25rem;
+  margin-top: 16px;
+  font-size: 1rem;
   font-weight: 600;
+  letter-spacing: -0.02em;
 }
 .stackGrid p {
-  margin-top: 12px;
+  margin-top: 8px;
   color: var(--nx-text-muted);
+  font-size: 0.875rem;
   line-height: 1.55;
 }
 .faqSection {
@@ -544,33 +579,36 @@
 }
 .faqList {
   display: grid;
-  gap: var(--nx-space-3);
+  gap: 0;
+  border-top: 1px solid var(--nx-rule);
 }
 .faqList details {
   overflow: hidden;
-  border: 1px solid var(--nx-rule);
-  border-radius: var(--nx-radius-panel);
-  background: var(--nx-card);
-  box-shadow: var(--nx-shadow-control);
+  border: 0;
+  border-bottom: 1px solid var(--nx-rule-quiet);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 .faqList summary {
   display: flex;
-  min-height: 56px;
+  min-height: 48px;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding: 0 var(--nx-space-5);
+  padding: 12px 0;
   color: var(--nx-text);
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 500;
+  font-size: 0.9375rem;
   list-style: none;
 }
 .faqList summary::-webkit-details-marker {
   display: none;
 }
 .faqList summary span {
-  color: var(--nx-purple-strong);
-  font-size: 1.35rem;
+  color: var(--nx-text-muted);
+  font-size: 1.15rem;
   font-weight: 400;
 }
 .faqList details[open] summary span {
@@ -578,8 +616,9 @@
 }
 .faqList details p {
   max-width: 680px;
-  padding: 0 var(--nx-space-5) var(--nx-space-5);
+  padding: 0 0 var(--nx-space-4);
   color: var(--nx-text-muted);
+  font-size: 0.875rem;
   line-height: 1.65;
 }
 .finalCta {
@@ -602,9 +641,9 @@
 .footerMain {
   display: grid;
   grid-template-columns: minmax(240px, 0.7fr) minmax(0, 1.3fr);
-  gap: 52px;
-  padding-top: 40px;
-  padding-bottom: 40px;
+  gap: 48px;
+  padding-top: 32px;
+  padding-bottom: 32px;
   border-top: 1px solid var(--nx-rule);
 }
 .footerIdentity p {
@@ -616,9 +655,13 @@
 .footerBrand {
   color: var(--nx-text);
   font-family: var(--nx-font-display);
-  font-size: 1.2rem;
+  font-size: 0.9375rem;
   font-weight: 600;
+  letter-spacing: -0.02em;
   text-decoration: none;
+}
+.footerBrand:hover {
+  color: var(--nx-purple-strong);
 }
 .footerNav {
   display: grid;
@@ -773,36 +816,38 @@
 
 /* Real Video Showcase Section */
 .videoSection {
-  padding: 72px max(20px, calc((100vw - var(--nx-content-compact)) / 2));
+  padding: 64px max(24px, calc((100vw - var(--nx-content-compact)) / 2));
   border-top: 1px solid var(--nx-rule-quiet);
 }
 
 .videoGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px;
+  gap: 32px;
 }
 
 .videoCard {
   overflow: hidden;
-  border: 1px solid var(--nx-rule);
-  border-radius: var(--nx-radius-feature);
-  background: var(--nx-card);
-  box-shadow: var(--nx-shadow-card);
-  transition: transform var(--nx-motion-elevation) ease, border-color var(--nx-motion-color) ease;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  transition: none;
 }
 
 .videoCard:hover {
-  transform: translateY(-2px);
-  border-color: var(--nx-rule-strong);
+  transform: none;
+  border-color: transparent;
 }
 
 .videoWrapper {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  background: #000;
   overflow: hidden;
+  border: 1px solid var(--nx-rule);
+  border-radius: var(--nx-radius-panel);
+  background: #000;
 }
 
 .videoElement {
@@ -813,74 +858,72 @@
 }
 
 .videoMeta {
-  padding: 20px;
+  padding: 14px 0 0;
 }
 
 .videoMeta h3 {
   color: var(--nx-text);
-  font-size: 1.25rem;
+  font-size: 0.9375rem;
   font-weight: 600;
   letter-spacing: -0.02em;
 }
 
 .videoMeta p {
-  margin-top: 8px;
+  margin-top: 6px;
   color: var(--nx-text-muted);
-  font-size: 0.9rem;
+  font-size: 0.8125rem;
   line-height: 1.55;
 }
 
 /* Features Grid Section */
 .featuresSection {
-  padding: 72px max(20px, calc((100vw - var(--nx-content-compact)) / 2));
+  padding: 64px max(24px, calc((100vw - var(--nx-content-compact)) / 2));
   border-top: 1px solid var(--nx-rule-quiet);
 }
 
 .featuresGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 20px;
+  gap: 0;
+  border-top: 1px solid var(--nx-rule);
 }
 
 .featureCard {
   display: flex;
   flex-direction: column;
-  padding: 24px;
-  border: 1px solid var(--nx-rule);
-  border-radius: var(--nx-radius-card);
-  background: var(--nx-card);
-  transition: transform var(--nx-motion-elevation) ease, border-color var(--nx-motion-color) ease;
+  padding: 20px 24px 20px 0;
+  border: 0;
+  border-right: 1px solid var(--nx-rule-quiet);
+  border-radius: 0;
+  background: transparent;
+  transition: none;
+}
+
+.featureCard:nth-child(3n) {
+  padding-right: 0;
+  border-right: 0;
 }
 
 .featureCard:hover {
-  transform: translateY(-2px);
-  border-color: var(--nx-rule-strong);
+  transform: none;
+  border-color: var(--nx-rule-quiet);
 }
 
 .featureIcon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  margin-bottom: 16px;
-  border: 1px solid var(--nx-purple-border);
-  border-radius: 12px;
-  background: var(--nx-purple-soft);
-  font-size: 1.4rem;
+  display: none;
 }
 
 .featureCard h3 {
   color: var(--nx-text);
-  font-size: 1.15rem;
+  font-size: 0.9375rem;
   font-weight: 600;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.02em;
 }
 
 .featureCard p {
   margin-top: 8px;
   color: var(--nx-text-muted);
-  font-size: 0.88rem;
+  font-size: 0.8125rem;
   line-height: 1.6;
 }
 
@@ -888,17 +931,21 @@
   .videoGrid {
     grid-template-columns: 1fr;
   }
-  .featuresGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .featuresGrid,
+  .stackGrid {
+    grid-template-columns: 1fr;
+  }
+  .featureCard,
+  .stackGrid article {
+    padding: 16px 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--nx-rule-quiet);
   }
 }
 
 @media (max-width: 640px) {
   .videoSection, .featuresSection {
-    padding: 52px 16px;
-  }
-  .featuresGrid {
-    grid-template-columns: 1fr;
+    padding: 48px 16px;
   }
 }
 

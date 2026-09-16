@@ -1,0 +1,334 @@
+.billing-page {
+  min-height: calc(100dvh - var(--nx-header-height));
+  padding: clamp(1.5rem, 4vw, 2.75rem) clamp(1rem, 3vw, 2rem) 4rem;
+  background: var(--nx-canvas);
+  color: var(--nx-text);
+  font-family: var(--nx-font-body);
+}
+
+.billing-wrap {
+  display: grid;
+  gap: 1.25rem;
+  width: min(100%, 52rem);
+  margin: 0 auto;
+}
+
+.billing-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+}
+
+.billing-header h1 {
+  margin: 0;
+  font-family: var(--nx-font-display);
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: var(--nx-weight-heading, 600);
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+
+.billing-header-copy {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.billing-plan-badge {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 28px;
+  align-items: center;
+  padding: 0 0.6rem;
+  border: 1px solid var(--nx-rule);
+  border-radius: var(--nx-radius-control);
+  background: var(--nx-muted-surface);
+  color: var(--nx-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.billing-scope {
+  margin: 0;
+  color: var(--nx-text-muted);
+  font-size: 0.8125rem;
+}
+
+.billing-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.billing-health {
+  display: grid;
+  min-height: 64px;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--nx-space-3);
+  padding: var(--nx-space-3) 0;
+  border: 0;
+  border-bottom: 1px solid var(--nx-rule);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.billing-health__icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--nx-rule-strong);
+  border-radius: var(--nx-radius-control);
+  background: var(--nx-card);
+  color: var(--nx-text-muted);
+}
+
+.billing-health__icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.billing-health__copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.billing-health__label {
+  color: var(--nx-text-muted);
+  font-size: 0.6875rem;
+}
+
+.billing-health__copy strong {
+  overflow: hidden;
+  color: var(--nx-text);
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.billing-health__copy small {
+  overflow: hidden;
+  color: var(--nx-text-muted);
+  font-size: 0.6875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.billing-panel {
+  overflow: hidden;
+  border: 0;
+  border-top: 1px solid var(--nx-rule);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.billing-panel-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  padding: var(--nx-space-5) var(--nx-space-6) var(--nx-space-3);
+}
+
+.billing-panel-header h2 {
+  margin: 0;
+  color: var(--nx-text);
+  font-family: var(--nx-font-display);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.billing-panel-header p {
+  max-width: 40rem;
+  margin: 5px 0 0;
+  color: var(--nx-text-secondary);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+.billing-panel-body {
+  display: grid;
+  gap: 0.85rem;
+  padding: var(--nx-space-3) var(--nx-space-6) var(--nx-space-6);
+}
+
+.billing-rows {
+  display: grid;
+  gap: 0;
+}
+
+.billing-rows div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: baseline;
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--nx-rule);
+  font-size: 0.875rem;
+}
+
+.billing-rows dt {
+  color: var(--nx-text-muted);
+}
+
+.billing-rows dd {
+  margin: 0;
+  color: var(--nx-text);
+  text-align: right;
+}
+
+.billing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.billing-packs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.billing-pack {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.9rem;
+  border: 1px solid var(--nx-rule);
+  border-radius: var(--nx-radius-panel);
+  background: var(--nx-card);
+}
+
+.billing-pack h3 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.billing-pack-price {
+  margin: 0;
+  font-family: var(--nx-font-display);
+  font-size: 1.35rem;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+}
+
+.billing-pack p {
+  margin: 0 0 0.5rem;
+  color: var(--nx-text-muted);
+  font-size: 0.75rem;
+}
+
+.billing-pack button {
+  width: 100%;
+}
+
+.billing-note {
+  margin: 0;
+  color: var(--nx-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.billing-disclosure {
+  margin: 0;
+  border-top: 1px solid var(--nx-rule);
+  padding-top: 0.35rem;
+}
+
+.billing-disclosure summary {
+  min-height: var(--nx-touch-target);
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.billing-disclosure p {
+  margin: 0 0 0.7rem;
+  color: var(--nx-text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+.billing-form {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.billing-form-row {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.billing-members {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.billing-members li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.65rem 0;
+  border-top: 1px solid var(--nx-rule);
+  font-size: 0.8125rem;
+}
+
+.billing-page :where(input, textarea) {
+  min-height: var(--nx-control-height-normal);
+  width: 100%;
+  padding: 0 0.75rem;
+  border: 1px solid var(--nx-rule);
+  border-radius: var(--nx-radius-field);
+  background: var(--nx-field);
+  color: var(--nx-text);
+  font: inherit;
+}
+
+.billing-page :where(input, textarea):focus-visible {
+  outline: 2px solid var(--nx-purple);
+  outline-offset: 2px;
+}
+
+.billing-page :where(button, .nx-control, .nx-text-action) {
+  min-height: var(--nx-control-height-normal);
+}
+
+.billing-page a:focus-visible,
+.billing-page button:focus-visible,
+.billing-page summary:focus-visible {
+  outline: 2px solid var(--nx-purple);
+  outline-offset: 3px;
+}
+
+@media (min-width: 900px) {
+  .billing-kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .billing-packs {
+    grid-template-columns: 1fr;
+  }
+
+  .billing-health__copy strong {
+    white-space: normal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .billing-page * {
+    transition: none !important;
+  }
+}

@@ -1,3 +1,4 @@
+import { publishModelRouting } from "./modelRoutingTransport";
 // Browser APIs only. No React, Firebase, provider SDK, or new dependency.
 function abortedError(signal) {
   if (signal?.reason instanceof Error) return signal.reason;
@@ -230,7 +231,7 @@ export async function assertResponseOk(response, fallback = "The request failed.
 }
 
 /** Parse the public Ask SSE contract. Transport EOF is never model success. */
-export async function readAskEventStream(body, { signal, onText, maxEventChars = 1024 * 1024 } = {}) {
+export async function readAskEventStream(body, { signal, onText, onModelRouting, maxEventChars = 1024 * 1024 } = {}) {
   let buffer = "";
   let text = "";
   let terminal = null;
@@ -243,10 +244,18 @@ export async function readAskEventStream(body, { signal, onText, maxEventChars =
       throw Object.assign(new Error("The chat stream contained an invalid event."), { code: "INVALID_STREAM_EVENT", partial: text });
     }
     if (terminal) throw Object.assign(new Error("The chat stream continued after its terminal event."), { code: "INVALID_STREAM_EVENT", partial: text });
-    if (event.type === "delta" && typeof event.text === "string") {
+    if (event.type === "model_routing" && event.modelRouting?.modelId) {
+      onModelRouting?.(event.modelRouting);
+      publishModelRouting(event.modelRouting, { chatId: event.chatId, projectId: event.projectId, requestId: event.requestId });
+    } else if (event.type === "delta" && typeof event.text === "string") {
       text += event.text;
       onText?.(text);
     } else if (event.type === "terminal") {
+      terminal = event;
+      if (event.modelRouting?.modelId) {
+        onModelRouting?.(event.modelRouting);
+        publishModelRouting(event.modelRouting, { chatId: event.chatId, projectId: event.projectId, requestId: event.requestId });
+      }
       terminal = event;
       if (event.complete !== true || event.status !== "completed") {
         throw Object.assign(new Error(event.message || "The response was interrupted. Its partial text is saved."), {
@@ -276,12 +285,12 @@ export async function readAskEventStream(body, { signal, onText, maxEventChars =
 }
 
 export async function readAskResponse(response, {
-  operationId, readOperation, signal, onText, timeoutMs = 170000, pollMs = 500,
+  operationId, readOperation, signal, onText, onModelRouting, timeoutMs = 170000, pollMs = 500,
 } = {}) {
   await assertResponseOk(response, "Ask request failed.");
   if (response.status !== 202) {
     const contentType = response.headers?.get?.("content-type") || "";
-    if (contentType.includes("text/event-stream")) return readAskEventStream(response.body, { signal, onText });
+    if (contentType.includes("text/event-stream")) return readAskEventStream(response.body, { signal, onText, onModelRouting });
     // Compatibility with older deployments: require authoritative persisted
     // completion after plain transport EOF rather than claiming it was a stop.
     const partial = await readTextStream(response.body, { signal, onText });

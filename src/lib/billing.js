@@ -14,6 +14,7 @@ import {
 } from "./apiErrors";
 import { getProductAnalyticsHeaders } from "./productAnalytics";
 import { getFirebaseAppCheckHeaders } from "./appCheck";
+import { withModelRoutingPreferences } from "./modelRoutingTransport";
 
 const API_ORIGIN = BACKEND_URL;
 const TIMEZONE_SUCCESS_THROTTLE_MS = 12 * 60 * 60 * 1000;
@@ -221,8 +222,9 @@ function timezoneStorageKey(uid, timezone, suffix) {
 
 // Core authed fetch. Adds Bearer token, disables caches, retries once on 401.
 export async function authedFetch(path, init = {}) {
-  const { noCache = false, ...requestInit } = init;
+  const { noCache = false, ...rawRequestInit } = init;
   const url = assertSafeNexusApiRequestUrl(path);
+  const requestInit = isNexusApiUrl(url) ? withModelRoutingPreferences(url.pathname, rawRequestInit) : rawRequestInit;
   if (noCache) url.searchParams.set("t", String(Date.now()));
 
   // Absolute and protocol-relative URLs can escape the configured API origin.

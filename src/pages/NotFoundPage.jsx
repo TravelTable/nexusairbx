@@ -20,8 +20,8 @@ export default function NexusRBXNotFoundPage() {
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       <main className="mx-auto flex min-h-[calc(100vh-10rem)] max-w-4xl flex-col justify-center">
-        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--nx-purple-muted)]">ROUTE RECORD / 404</p>
-        <h1 className={`${editorialDisplayClass} mb-6 max-w-3xl text-5xl text-[var(--nx-purple)]`}>This NexusRBX page is not available.</h1>
+        <p className="mb-4 text-xs font-medium uppercase tracking-[0.08em] text-[var(--nx-text-muted)]">404</p>
+        <h1 className={`${editorialDisplayClass} mb-6 max-w-3xl text-5xl text-[var(--nx-text)]`}>This NexusRBX page is not available.</h1>
         <p className="mb-12 max-w-2xl text-base leading-8 text-[var(--ds-text-secondary)] md:text-lg">
           The link may be outdated, private, or mistyped. Choose a tool below instead of starting over at a blank homepage.
         </p>

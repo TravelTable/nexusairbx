@@ -1,4 +1,138 @@
-/* Legacy compatibility aliases only. Canonical values live in src/design/. */
+/* AI workspace isolation. Public Linear tokens must not leak into Agent / UI / Assets.
+   This freeze snapshots the pre-redesign dimensional values. Canonical public tokens
+   live in src/design/nexus-foundation.css. */
+
+.ai-page,
+.nexus-studio-page,
+.nexus-studio-root {
+  --nx-canvas: #07070a;
+  --nx-depth: #0a0910;
+  --nx-card: #111019;
+  --nx-work: #111019;
+  --nx-muted-surface: #16141f;
+  --nx-field: #16141f;
+  --nx-raised-surface: #1c1927;
+  --nx-field-strong: #1c1927;
+  --nx-text: #f7f5fb;
+  --nx-text-secondary: #c8c3d2;
+  --nx-text-muted: #9690a3;
+  --nx-text-disabled: #5f5f5f;
+  --nx-text-primary: var(--nx-text);
+  --nx-text-inverse: var(--nx-canvas);
+  --nx-text-link: var(--nx-purple-strong);
+  --nx-text-code: var(--nx-text-secondary);
+  --nx-text-status: var(--nx-text-secondary);
+  --nx-purple: #a855f7;
+  --nx-purple-strong: #c084fc;
+  --nx-purple-muted: #9333ea;
+  --nx-purple-rgb: 168, 85, 247;
+  --nx-purple-soft: rgb(168 85 247 / 10%);
+  --nx-purple-border: rgb(168 85 247 / 28%);
+  --nx-purple-wash: rgb(168 85 247 / 6%);
+  --nx-purple-edge: rgb(192 132 252 / 22%);
+  --nx-purple-glow: 0 0 24px rgb(168 85 247 / 10%);
+  --nx-inner-highlight: inset 0 1px 0 rgb(255 255 255 / 5%);
+  --nx-rule: rgb(255 255 255 / 9%);
+  --nx-rule-quiet: rgb(255 255 255 / 6%);
+  --nx-rule-strong: rgb(255 255 255 / 14%);
+  --nx-info: #7dd3fc;
+  --nx-success: #86efac;
+  --nx-warning: #fcd34d;
+  --nx-danger: #fda4af;
+  --nx-focus: rgb(168 85 247 / 40%);
+  --nx-focus-ring: var(--nx-focus);
+  --nx-surface-canvas: var(--nx-canvas);
+  --nx-surface: var(--nx-card);
+  --nx-surface-elevated: var(--nx-raised-surface);
+  --nx-surface-interactive: var(--nx-muted-surface);
+  --nx-surface-hover: var(--nx-raised-surface);
+  --nx-surface-selected: var(--nx-purple-soft);
+  --nx-surface-disabled: rgb(255 255 255 / 3%);
+  --nx-surface-overlay: var(--nx-card);
+  --nx-border-subtle: var(--nx-rule-quiet);
+  --nx-border-normal: var(--nx-rule);
+  --nx-border-strong: var(--nx-rule-strong);
+  --nx-border-interactive: var(--nx-purple-border);
+  --nx-border-focus: var(--nx-purple);
+  --nx-border-error: var(--nx-danger);
+  --nx-border-success: var(--nx-success);
+  --nx-radius-control: 7px;
+  --nx-radius-field: 7px;
+  --nx-radius-panel: 9px;
+  --nx-radius-card: 10px;
+  --nx-radius-overlay: 12px;
+  --nx-radius-feature: 12px;
+  --nx-radius-pill: 999px;
+  --nx-content-compact: 1160px;
+  --nx-weight-label: 650;
+  --nx-shadow-control: var(--nx-inner-highlight), 0 2px 5px rgb(0 0 0 / 18%);
+  --nx-shadow-card: var(--nx-inner-highlight), 0 12px 32px rgb(0 0 0 / 26%);
+  --nx-shadow-floating: var(--nx-inner-highlight), 0 22px 60px rgb(0 0 0 / 44%);
+  --nx-shadow-focus: 0 0 0 3px var(--nx-focus);
+  --nx-motion-instant: 150ms;
+  --nx-motion-color: 150ms;
+  --nx-motion-fast: 150ms;
+  --nx-motion-control: 150ms;
+  --nx-motion-elevation: 200ms;
+  --nx-motion-state: 200ms;
+  --nx-motion-menu: 200ms;
+  --nx-motion-dialog: 280ms;
+  --nx-motion-spatial: 280ms;
+  --nx-motion-reveal: 280ms;
+  --ds-bg-canvas: var(--nx-canvas);
+  --ds-bg-workspace: var(--nx-depth);
+  --ds-bg-sidebar: var(--nx-card);
+  --ds-surface-1: var(--nx-card);
+  --ds-surface-2: var(--nx-muted-surface);
+  --ds-surface-3: var(--nx-raised-surface);
+  --ds-surface-overlay: var(--nx-card);
+  --ds-surface-muted: var(--nx-muted-surface);
+  --ds-fill-subtle: rgb(255 255 255 / 4%);
+  --ds-fill-hover: rgb(255 255 255 / 8%);
+  --ds-fill-active: rgb(255 255 255 / 12%);
+  --ds-fill-selected: var(--nx-raised-surface);
+  --ds-border-subtle: var(--nx-rule-quiet);
+  --ds-border: var(--nx-rule);
+  --ds-border-strong: var(--nx-rule-strong);
+  --ds-text: var(--nx-text);
+  --ds-text-secondary: var(--nx-text-secondary);
+  --ds-text-muted: var(--nx-text-muted);
+  --ds-text-subtle: var(--nx-text-muted);
+  --ds-text-disabled: var(--nx-text-disabled);
+  --ds-accent: var(--nx-purple);
+  --ds-accent-rgb: var(--nx-purple-rgb);
+  --ds-accent-hover: var(--nx-purple-strong);
+  --ds-accent-pressed: var(--nx-purple-muted);
+  --ds-accent-foreground: #0a0a0a;
+  --ds-accent-soft: var(--nx-purple-soft);
+  --ds-accent-border: var(--nx-purple-border);
+  --ds-focus-ring: var(--nx-focus);
+  --ds-radius-sm: var(--nx-radius-control);
+  --ds-radius-md: var(--nx-radius-panel);
+  --ds-radius-lg: var(--nx-radius-card);
+  --ds-radius-xl: var(--nx-radius-overlay);
+  --ds-shadow-panel: var(--nx-shadow-card);
+  --ds-shadow-overlay: var(--nx-shadow-floating);
+  --ds-shadow-focus: var(--nx-shadow-focus);
+  --background: 0 0% 4%;
+  --foreground: 0 0% 98%;
+  --card: 0 0% 9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 0 0% 9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 274 100% 68%;
+  --primary-foreground: 0 0% 4%;
+  --secondary: 0 0% 15%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 63%;
+  --accent: 274 100% 68%;
+  --accent-foreground: 0 0% 4%;
+  --border: 0 0% 100% / 0.1;
+  --input: 0 0% 100% / 0.1;
+  --ring: 274 100% 68%;
+  --radius: 0.4375rem;
+}
 
 .ai-page {
   --pc-font-ui: var(--nx-font-body);
@@ -21,4 +155,6 @@
   --ai-control-hover: color-mix(in srgb, var(--nx-field) 84%, var(--nx-purple) 16%);
   --ai-control-active: color-mix(in srgb, var(--nx-field) 72%, var(--nx-purple) 28%);
 
+  width: 100%;
+  height: 100%;
 }

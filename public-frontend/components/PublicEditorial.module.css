@@ -26,9 +26,9 @@
 }
 
 .docsShell :global(.docs-context-title) {
-  color: var(--nx-purple);
+  color: var(--nx-text);
   font-family: var(--nx-font-display);
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .docsShell :global(.docs-context-categories) {
@@ -85,7 +85,7 @@
 }
 
 .docsShell :global(.docs-sidebar-label) {
-  color: var(--nx-purple-muted);
+  color: var(--nx-text-muted);
   font-size: 0.6875rem;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -113,9 +113,9 @@
 
 .docsShell :global(.docs-nav-link-current) {
   border-left-color: var(--nx-purple);
-  background: var(--nx-field);
-  color: var(--nx-purple);
-  font-weight: 650;
+  background: var(--ds-fill-hover);
+  color: var(--nx-text);
+  font-weight: 600;
 }
 
 .docsShell :global(.docs-article) {
@@ -144,12 +144,12 @@
 .docsShell :global(.docs-article-header h1) {
   max-width: 13ch;
   margin-top: var(--nx-space-3);
-  color: var(--nx-purple);
+  color: var(--nx-text);
   font-family: var(--nx-font-display);
   font-size: clamp(2.25rem, 4.5vw, 3rem);
   font-weight: 620;
   line-height: 0.9;
-  letter-spacing: 0;
+  letter-spacing: -0.035em;
 }
 
 .docsShell :global(.docs-article-header p) {
@@ -163,9 +163,9 @@
 .docsShell :global(.docs-kicker),
 .docsShell :global(.docs-meta span) {
   border-radius: 0;
-  color: var(--nx-purple-muted);
+  color: var(--nx-text-muted);
   font-size: 0.6875rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
@@ -191,9 +191,9 @@
 .docsShell :global(.docs-actions a:hover),
 .docsShell :global(.docs-actions button:hover),
 .docsShell :global(.docs-feedback-link:hover) {
-  border-bottom-color: var(--nx-purple);
-  background: transparent;
-  color: var(--nx-purple);
+  border-bottom-color: var(--nx-rule-strong);
+  background: var(--ds-fill-hover);
+  color: var(--nx-text);
 }
 
 .docsShell :global(.docs-section) {
@@ -202,11 +202,11 @@
 }
 
 .docsShell :global(.docs-heading-row h2) {
-  color: var(--nx-purple);
+  color: var(--nx-text);
   font-family: var(--nx-font-display);
   font-size: clamp(1.75rem, 3.5vw, 2.5rem);
   font-weight: 620;
-  letter-spacing: 0;
+  letter-spacing: -0.03em;
   line-height: 0.98;
 }
 
@@ -262,7 +262,7 @@
 }
 
 .docsShell :global(.docs-step-number) {
-  color: var(--nx-purple-muted);
+  color: var(--nx-text-muted);
   font-family: var(--nx-font-code);
 }
 
@@ -321,9 +321,9 @@
   border: 0;
   background: transparent;
   padding: 0;
-  color: var(--nx-purple-muted);
+  color: var(--nx-text-muted);
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.09em;
 }
 
@@ -332,11 +332,11 @@
 .notFoundPage :global(.hero h1) {
   max-width: 12ch;
   margin-top: var(--nx-space-3);
-  color: var(--nx-purple);
+  color: var(--nx-text);
   font-family: var(--nx-font-display);
   font-size: clamp(2.4rem, 6vw, 3.25rem);
   font-weight: 620;
-  letter-spacing: 0;
+  letter-spacing: -0.035em;
   line-height: 0.87;
 }
 
@@ -388,11 +388,11 @@
 
 .searchPage :global(.landing-section h2),
 .iconPage :global(.section-band h2) {
-  color: var(--nx-purple);
+  color: var(--nx-text);
   font-family: var(--nx-font-display);
   font-size: clamp(1.9rem, 3.5vw, 2.75rem);
   font-weight: 620;
-  letter-spacing: 0;
+  letter-spacing: -0.03em;
 }
 
 .searchPage :global(.example-grid),

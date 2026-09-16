@@ -89,13 +89,14 @@
   .nexus-input,
   .nexus-textarea {
     width: 100%;
+    min-height: var(--nx-control-height-normal);
     border: 1px solid var(--ds-border);
-    border-radius: 0.75rem;
+    border-radius: var(--nx-radius-field);
     background: var(--ds-surface-2);
     color: var(--ds-text);
-    padding: 0.75rem 1rem;
+    padding: 0.5rem 0.75rem;
     font-size: 0.875rem;
-    transition: border-color var(--motion-fast), background-color var(--motion-fast), box-shadow var(--motion-fast);
+    transition: border-color var(--nx-motion-control), background-color var(--nx-motion-control), box-shadow var(--nx-motion-control);
   }
   .nexus-textarea { resize: none; line-height: 1.6; }
   .nexus-input::placeholder,
@@ -114,23 +115,25 @@
     }
   }
   .nexus-icon-button {
-    @apply inline-flex items-center justify-center rounded-xl p-2 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center p-2 disabled:cursor-not-allowed disabled:opacity-50;
     border: 1px solid var(--ds-border);
+    border-radius: var(--nx-radius-control);
     background: var(--ds-fill-subtle);
     color: var(--ds-text-secondary);
-    transition: border-color var(--motion-fast), background-color var(--motion-fast), color var(--motion-fast), transform 80ms;
+    transition: border-color var(--nx-motion-control), background-color var(--nx-motion-control), color var(--nx-motion-control), transform var(--nx-motion-instant);
   }
   .nexus-icon-button:hover { border-color: var(--ds-border-strong); background: var(--ds-fill-hover); color: var(--ds-text); }
   .nexus-menu-surface {
     border: 1px solid var(--ds-border);
-    border-radius: 1rem;
+    border-radius: var(--nx-radius-overlay);
     background: var(--ds-surface-overlay);
     box-shadow: var(--ds-shadow-overlay);
   }
   .nexus-menu-item {
-    @apply flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm disabled:cursor-not-allowed disabled:opacity-50;
+    @apply flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm disabled:cursor-not-allowed disabled:opacity-50;
+    border-radius: var(--nx-radius-control);
     color: var(--ds-text-secondary);
-    transition: background-color var(--motion-fast), color var(--motion-fast);
+    transition: background-color var(--nx-motion-control), color var(--nx-motion-control);
   }
   .nexus-menu-item:hover { background: var(--ds-fill-hover); color: var(--ds-text); }
   .nexus-select-pill {
@@ -146,9 +149,9 @@
   }
   .nexus-page-card {
     border: 1px solid var(--ds-border);
-    border-radius: 1rem;
+    border-radius: var(--nx-radius-panel);
     background: var(--ds-surface-1);
-    box-shadow: var(--ds-shadow-panel);
+    box-shadow: none;
   }
 }
 

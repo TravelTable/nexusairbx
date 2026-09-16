@@ -8,35 +8,24 @@
   inset: 0 0 auto;
   height: var(--nx-header-height);
   border-bottom: 1px solid var(--nx-rule);
-  background: rgb(10 10 10 / 82%);
+  background: color-mix(in srgb, var(--nx-canvas) 86%, transparent);
   color: var(--nx-text);
-  -webkit-backdrop-filter: blur(18px) saturate(130%);
-  backdrop-filter: blur(18px) saturate(130%);
+  -webkit-backdrop-filter: blur(18px) saturate(120%);
+  backdrop-filter: blur(18px) saturate(120%);
+  box-shadow: none;
   transition:
-    background-color 150ms ease,
-    box-shadow 200ms ease;
+    background-color var(--nx-motion-color) var(--nx-ease-state),
+    border-color var(--nx-motion-color) var(--nx-ease-state);
 }
 
 .header::after {
-  position: absolute;
-  right: 7%;
-  bottom: -1px;
-  left: 7%;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--nx-purple-edge),
-    transparent
-  );
-  content: "";
-  opacity: 0.42;
-  pointer-events: none;
+  display: none;
+  content: none;
 }
 
 .header[data-scrolled="true"] {
-  background: rgb(10 10 10 / 92%);
-  box-shadow: var(--nx-shadow-card);
+  background: color-mix(in srgb, var(--nx-canvas) 94%, transparent);
+  box-shadow: none;
 }
 
 .frame {
@@ -72,22 +61,22 @@
   align-items: center;
   color: var(--nx-text);
   font-family: var(--nx-font-display);
-  font-size: 0.85rem;
-  font-weight: 750;
+  font-size: 0.8125rem;
+  font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1;
   text-decoration: none;
 }
 
 .brand:hover {
-  color: var(--nx-purple-strong);
+  color: var(--nx-text-secondary);
 }
 .brandMark {
   margin-right: var(--nx-space-2);
   color: var(--nx-purple);
   font-size: 0.625rem;
-  font-weight: 750;
-  letter-spacing: 0.07em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
 }
 
 .brandIcon {
@@ -105,11 +94,14 @@
   align-items: center;
   padding: 0 10px;
   border: 1px solid transparent;
-  border-radius: var(--nx-radius-pill);
+  border-radius: var(--nx-radius-control);
   color: var(--nx-text-muted);
-  font-size: 0.8rem;
-  font-weight: 650;
+  font-size: 0.8125rem;
+  font-weight: 500;
   text-decoration: none;
+  transition:
+    background-color var(--nx-motion-control) var(--nx-ease-state),
+    color var(--nx-motion-control) var(--nx-ease-state);
 }
 
 .navLink:hover {
@@ -117,18 +109,13 @@
   color: var(--nx-text);
 }
 .navLink[aria-current="page"] {
-  border-color: var(--nx-purple-edge);
-  background: var(--nx-purple-wash);
+  border-color: transparent;
+  background: var(--ds-fill-hover);
   color: var(--nx-text);
-  box-shadow: var(--nx-shadow-control), var(--nx-inner-highlight);
+  box-shadow: none;
 }
 .navLink[aria-current="page"]::before {
-  width: 6px;
-  height: 6px;
-  margin-right: 7px;
-  border-radius: var(--nx-radius-pill);
-  background: var(--nx-purple);
-  content: "";
+  display: none;
 }
 
 .searchButton,
@@ -140,19 +127,18 @@
   gap: var(--nx-space-2);
   padding: 0 var(--nx-space-3);
   border: 1px solid var(--nx-rule);
-  border-radius: var(--nx-radius-pill);
+  border-radius: var(--nx-radius-field);
   background: var(--nx-card);
   color: var(--nx-text-muted);
-  box-shadow: var(--nx-shadow-control);
+  box-shadow: none;
   cursor: pointer;
-  font-size: 0.78rem;
-  font-weight: 650;
+  font-size: 0.75rem;
+  font-weight: 500;
   transition:
-    border-color 150ms ease,
-    background-color 150ms ease,
-    color 150ms ease,
-    box-shadow 200ms ease,
-    transform 200ms ease;
+    border-color var(--nx-motion-control) var(--nx-ease-state),
+    background-color var(--nx-motion-control) var(--nx-ease-state),
+    color var(--nx-motion-control) var(--nx-ease-state),
+    transform var(--nx-motion-instant) var(--nx-ease-state);
 }
 
 .searchButton {
@@ -178,7 +164,7 @@
 .indexButton[aria-expanded="true"],
 .searchButton[aria-expanded="true"] {
   border-color: var(--nx-rule-strong);
-  background: var(--nx-muted-surface);
+  background: var(--ds-fill-hover);
   color: var(--nx-text);
   transform: translateY(-1px);
 }
@@ -255,7 +241,7 @@
   box-shadow: var(--nx-shadow-control);
   cursor: pointer;
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .indexClose:hover,
@@ -282,7 +268,7 @@
 .indexEyebrow {
   color: var(--nx-purple-strong);
   font-size: 0.68rem;
-  font-weight: 750;
+  font-weight: 600;
   letter-spacing: 0.11em;
 }
 
@@ -391,7 +377,7 @@
 .featuredCopy small {
   color: var(--nx-purple-strong);
   font-size: 0.63rem;
-  font-weight: 750;
+  font-weight: 600;
   letter-spacing: 0.1em;
 }
 .featuredCopy strong {
@@ -408,7 +394,7 @@
   gap: var(--nx-space-2);
   color: var(--nx-text-secondary);
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .indexSections {
@@ -430,7 +416,7 @@
   margin: 0 0 var(--nx-space-3);
   color: var(--nx-purple-strong);
   font-size: 0.7rem;
-  font-weight: 750;
+  font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -622,7 +608,7 @@
 .commandResult small {
   color: var(--nx-text-muted);
   font-size: 0.68rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.06em;
 }
 .commandResult:hover,

@@ -1,39 +1,20 @@
 import React, { useMemo } from "react";
-import { Check, Loader2, Circle } from "lucide-react";
+import { AgentFlow } from "../../../components/ai/agent-flow/react/AgentFlow.jsx";
 import {
-  ChainOfThought,
-  ChainOfThoughtContent,
-  ChainOfThoughtHeader,
-  ChainOfThoughtStep,
-} from "../../../components/ai-elements/chain-of-thought";
-import { getUiLoadingChainSteps } from "../../../lib/runPresentation";
+  UI_AGENT_FLOW_OPTIONS,
+  buildUiAgentFlowMessage,
+  uiAgentFlowStatus,
+} from "../../../lib/uiAgentFlowMessage";
 
-function stepIcon(status) {
-  if (status === "complete") return Check;
-  if (status === "active") return Loader2;
-  return Circle;
-}
-
-export default function UiLoadingChain({ busy = "", task = null, open = true, title = "Building UI" }) {
-  const steps = useMemo(() => getUiLoadingChainSteps({ busy, task }), [busy, task]);
-  if (!steps.length) return null;
+export default function UiLoadingChain({ busy = "", task = null }) {
+  const message = useMemo(() => buildUiAgentFlowMessage({ busy, task }), [busy, task]);
+  const status = useMemo(() => uiAgentFlowStatus({ busy, task }), [busy, task]);
+  const durations = useMemo(() => Object.fromEntries((task?.uiBuild?.activity || []).flatMap((a, index) => a.finishedAt ? [[a.action === 'understanding_request' ? `part:${index}` : a.id, a.finishedAt - a.startedAt]] : [])), [task]);
+  if (!message.parts.length) return null;
 
   return (
-    <ChainOfThought open={open} className="uc-loading-chain w-full" data-testid="ui-loading-chain">
-      <ChainOfThoughtHeader>{title}</ChainOfThoughtHeader>
-      <ChainOfThoughtContent className="mt-3 space-y-3">
-        {steps.map((step) => (
-          <ChainOfThoughtStep
-            key={step.id}
-            icon={stepIcon(step.status)}
-            label={step.label}
-            status={step.status}
-            motionStatus={step.status}
-            stepKind="tool"
-            className={step.status === "active" ? "uc-loading-chain__active" : undefined}
-          />
-        ))}
-      </ChainOfThoughtContent>
-    </ChainOfThought>
+    <div className="uc-loading-chain" data-testid="ui-loading-chain">
+      <AgentFlow durations={durations} message={message} status={status} options={UI_AGENT_FLOW_OPTIONS} />
+    </div>
   );
 }

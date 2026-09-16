@@ -17,9 +17,21 @@ export const DEFAULT_FREE_MODEL = "google/gemini-3.6-flash";
 export const DEFAULT_PRO_MODEL = "openai/gpt-5-mini";
 export const NEXUS_AGENT_LOGO = "/logo192.png";
 
+export const NEXUS_AUTO_MODEL_IDS = Object.freeze([
+  "auto",
+  "nexus-auto",
+  "nexus auto",
+  "nexus_auto",
+  LEGACY_NEXUS_FREE_MODEL,
+  "deepseek-free",
+]);
+
+export function isNexusAutoModelId(value) {
+  return NEXUS_AUTO_MODEL_IDS.includes(String(value || "").trim().toLowerCase());
+}
+
 export const MODEL_ID_ALIASES = Object.freeze({
-  "nexus-free-auto": DEFAULT_FREE_MODEL,
-  "deepseek-free": DEFAULT_FREE_MODEL,
+  "nexus-free-auto": LEGACY_NEXUS_FREE_MODEL,
   "nexus-4": "openai/gpt-5.4",
   "nexus-3": "openai/gpt-5.4",
   "gpt-4o": "openai/gpt-4o",
@@ -29,8 +41,10 @@ export const MODEL_ID_ALIASES = Object.freeze({
 });
 
 export const MODEL_ALIAS_LABELS = Object.freeze({
-  "nexus-free-auto": "Gemini 3.6 Flash",
-  "deepseek-free": "Gemini 3.6 Flash",
+  "nexus-free-auto": "Nexus Auto",
+  "deepseek-free": "Nexus Auto",
+  "nexus-auto": "Nexus Auto",
+  auto: "Nexus Auto",
   "nexus-4": "Nexus",
   "nexus-3": "Nexus",
   "gpt-4o": "GPT-4o",
@@ -104,7 +118,7 @@ export function resolveLobeProviderKey(provider) {
 export function isNexusAgentModel({ provider, modelId } = {}) {
   const id = String(modelId || "").trim();
   const key = String(provider || "").toLowerCase();
-  return key === "nexus" || id === LEGACY_NEXUS_FREE_MODEL;
+  return key === "nexus" || isNexusAutoModelId(id);
 }
 
 const FREE_MODEL_IDS = new Set([
@@ -120,7 +134,7 @@ export function normalizeModelId(id) {
   // Nexus Auto is a routing preference, not an upstream provider model.
   // Preserve it so the picker/settings can distinguish Auto from selecting
   // the current free model explicitly; the backend resolver owns routing.
-  if (raw === LEGACY_NEXUS_FREE_MODEL) return raw;
+  if (isNexusAutoModelId(raw)) return LEGACY_NEXUS_FREE_MODEL;
   return MODEL_ID_ALIASES[raw] || raw;
 }
 
@@ -135,14 +149,26 @@ export function isFreeDefaultModel(id) {
 
 export function isModelSelectable(
   model,
-  { isPremium, isStarterOrAbove = false } = {}
+  { isPremium, isStarterOrAbove = false, plan } = {}
 ) {
-  if (!model?.id) return false;
-  if (model.status === "deprecated" || model.pricingConfigured === false) return false;
+  if (!isCatalogModelAvailable(model)) return false;
 
   const paid = Boolean(isPremium || isStarterOrAbove);
-  if (paid) return model.availableToPaid !== false;
-  return model.availableToFree === true || model.id === DEFAULT_FREE_MODEL;
+  const selectedPlan = String(plan || (paid ? "PRO" : "FREE")).toUpperCase();
+  const normalizedPlan = ["STARTER", "PREMIUM"].includes(selectedPlan) ? "PRO" : selectedPlan;
+  if (Array.isArray(model.availableTiers) && !model.availableTiers.some((tier) => String(tier).toUpperCase() === normalizedPlan)) return false;
+  if (paid) return model.availableToPaid === true;
+  return model.availableToFree === true;
+}
+
+/** Availability and billing are explicitly granted by the live catalog. */
+export function isCatalogModelAvailable(model) {
+  const inactive = new Set(["deprecated", "disabled", "unavailable", "removed", "retired", "unpriced", "offline"]);
+  return Boolean(model?.id && model.pricingConfigured === true &&
+    model.available !== false && model.enabled !== false && model.disabled !== true &&
+    !inactive.has(String(model.status || "").toLowerCase()) &&
+    !inactive.has(String(model.availability || "").toLowerCase()) &&
+    (model.availableToPaid === true || model.availableToFree === true));
 }
 
 export function sortModelsInGroup(list) {

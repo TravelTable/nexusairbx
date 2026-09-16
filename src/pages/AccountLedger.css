@@ -61,21 +61,22 @@
 
 .account-ledger-kicker {
   margin: 0;
-  color: var(--nx-purple-muted, var(--ds-accent));
-  font-size: 0.875rem;
-  font-weight: 700;
-  letter-spacing: 0.025em;
+  color: var(--nx-text-muted, var(--ds-text-muted));
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .account-ledger-title {
-  max-width: 16ch;
-  margin: 0.75rem 0 0;
-  color: var(--nx-purple, var(--ds-accent));
+  max-width: 18ch;
+  margin: 0.5rem 0 0;
+  color: var(--nx-text, var(--ds-text));
   font-family: var(--nx-font-display, var(--ds-font-display));
-  font-size: clamp(2.25rem, 4.5vw, 3rem);
-  font-weight: 650;
-  letter-spacing: 0.005em;
-  line-height: 0.94;
+  font-size: clamp(1.75rem, 3.5vw, 2.25rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
 }
 
 .account-ledger-title--compact {
@@ -104,7 +105,7 @@
   background: transparent;
   color: var(--nx-text, var(--ds-text));
   font-size: 0.875rem;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.2;
   text-decoration: none;
   cursor: pointer;
@@ -203,11 +204,11 @@
 
 .account-ledger-section-title {
   margin: 0;
-  color: var(--nx-purple, var(--ds-accent));
+  color: var(--nx-text, var(--ds-text));
   font-family: var(--nx-font-display, var(--ds-font-display));
   font-size: clamp(1.55rem, 3vw, 2.35rem);
   font-weight: 650;
-  letter-spacing: 0.01em;
+  letter-spacing: -0.03em;
   line-height: 1;
 }
 
@@ -246,12 +247,12 @@
   margin: 0;
   color: var(--nx-text-secondary, var(--ds-text-secondary));
   font-size: 0.875rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .account-ledger-value {
   margin: 1rem 0 0;
-  color: var(--nx-purple-strong, var(--ds-accent));
+  color: var(--nx-text, var(--ds-text));
   font-family: var(--nx-font-display, var(--ds-font-display));
   font-size: clamp(1.8rem, 4vw, 2.8rem);
   font-weight: 650;
@@ -278,7 +279,7 @@
   background: transparent !important;
   color: var(--nx-text-secondary, var(--ds-text-secondary));
   font-size: 0.8125rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .account-ledger-state::before,
@@ -314,7 +315,7 @@
   gap: 0.45rem;
   color: var(--nx-purple, var(--ds-accent));
   font-size: 0.8125rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .account-ledger-progress {
@@ -352,7 +353,7 @@
   background: transparent;
   color: var(--nx-text-muted, var(--ds-text-muted));
   font-size: 0.875rem;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -395,7 +396,7 @@
 .account-ledger-plan-price {
   color: var(--nx-text, var(--ds-text));
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .account-ledger-plan-fit {
@@ -420,7 +421,7 @@
 .account-ledger-field-label {
   color: var(--nx-text-secondary, var(--ds-text-secondary));
   font-size: 0.8125rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .account-ledger-field,
@@ -493,7 +494,7 @@
   margin: 0;
   color: var(--nx-text, var(--ds-text));
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -555,7 +556,7 @@
 .account-ledger-meta dt {
   color: var(--nx-text-muted, var(--ds-text-muted));
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .account-ledger-meta dd {
@@ -577,7 +578,7 @@
   margin: 0;
   color: var(--nx-purple, var(--ds-accent));
   font-size: 0.875rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .account-ledger-message-time {
@@ -626,7 +627,7 @@
   gap: 0.55rem;
   color: var(--nx-text-secondary, var(--ds-text-secondary));
   font-size: 0.875rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .account-ledger-radio-label--private {
@@ -712,7 +713,7 @@
 
 .account-ledger-case-title {
   margin: 0.5rem 0 0;
-  color: var(--nx-purple, var(--ds-accent));
+  color: var(--nx-text, var(--ds-text));
   font-family: var(--nx-font-display, var(--ds-font-display));
   font-size: clamp(1.65rem, 3vw, 2.5rem);
   font-weight: 650;
@@ -780,14 +781,14 @@
 .account-ledger-charge-row dt {
   color: var(--nx-text-muted, var(--ds-text-muted));
   font-size: 0.8125rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .account-ledger-charge-row dd {
   margin: 0;
   color: var(--nx-text, var(--ds-text));
   font-size: 0.9rem;
-  font-weight: 700;
+  font-weight: 600;
   text-align: right;
 }
 

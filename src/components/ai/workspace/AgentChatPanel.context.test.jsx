@@ -57,7 +57,7 @@ test("expensive estimates wait for inline confirmation and submit the reviewed r
     messages={[]} includedUsage={{ catalogVersion: "v2" }} onSubmit={onSubmit} />);
   let pending;
   act(() => { pending = mockChatComposer.mock.calls.at(-1)[0].onSubmit(null, 'Build a shop', { draftRevision: 'reviewed' }); });
-  expect(await screen.findByRole('dialog')).toHaveTextContent('Premium · estimated 0.50 Nexus Credits');
+  expect(await screen.findByRole('dialog')).toHaveTextContent('Premium · estimated 55.56 Nexus Credits');
   expect(screen.getByRole('dialog')).toHaveTextContent('Team pool (purchased credits)');
   expect(onSubmit).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));

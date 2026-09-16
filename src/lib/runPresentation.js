@@ -36,20 +36,40 @@ export const UI_BUILD_LABELS = { generating: 'Writing UI files', preparing: 'Sav
   awaiting_renders: 'Rendering preview', reviewing: 'Reviewing the render', repairing: 'Refining your UI', complete: 'Visually reviewed', saved: 'Saved',
   preview_unavailable: 'Preview unavailable', needs_review: 'Review needs attention', renderer_limited: 'Preview limitations',
   budget_exhausted: 'Review budget reached', failed: 'Build needs attention' };
-export const UI_ACTION_LABELS = { understanding_request: 'Understanding your request', planning_design: 'Planning the design', resolving_assets: 'Resolving icons and assets', generating_artwork: 'Generating matching artwork', extracting_artwork: 'Preparing individual components', writing_ui: 'Writing your UI', rendering_desktop: 'Rendering desktop', rendering_mobile: 'Rendering mobile', reviewing_design: 'Reviewing design quality', improving_design: 'Improving the design', finding_assets: 'Finding icons and images', uploading_assets: 'Uploading images to Roblox', building_layout: 'Building UI layout', writing_implementation: 'Writing UI implementation', validating_implementation: 'Checking UI implementation' };
+export const UI_BUILD_TERMINAL_STAGES = new Set(["complete", "saved", "preview_unavailable", "needs_review", "renderer_limited", "budget_exhausted", "failed"]);
+export const UI_ACTION_LABELS = { inspecting_reference: 'Inspecting reference', reference_spec_ready: 'Extracted visual spec', searching_ui_library: 'Searching UI library', reading_ui_library: 'Reading library reference', ui_library_ready: 'Library references ready', rendering_reference: 'Rendering reference size', understanding_request: 'Understanding your request', planning_design: 'Planning the design', resolving_assets: 'Resolving icons and assets', generating_artwork: 'Generating matching artwork', extracting_artwork: 'Preparing individual components', writing_ui: 'Writing your UI', rendering_desktop: 'Rendering desktop', rendering_mobile: 'Rendering mobile', reviewing_design: 'Reviewing design quality', improving_design: 'Improving the design', finding_assets: 'Finding icons and images', uploading_assets: 'Uploading images to Roblox', building_layout: 'Building UI layout', writing_implementation: 'Writing UI implementation', validating_implementation: 'Checking UI implementation' };
 
 // Canonical happy-path loading walk for UI creator. Mock runs play this list as-is —
 // add a step here (and its label above) and both production presentation and mock demos pick it up.
+// Optional flow fields drive the inline AgentFlow message (reasoning / tools / images).
 export const UI_LOADING_PIPELINE = Object.freeze([
   Object.freeze({ delayMs: 450, busy: 'Starting build' }),
-  Object.freeze({ delayMs: 700, stage: 'generating', action: 'understanding_request' }),
-  Object.freeze({ delayMs: 900, stage: 'generating', action: 'planning_design' }),
-  Object.freeze({ delayMs: 1100, stage: 'generating', action: 'writing_ui', withFiles: true }),
-  Object.freeze({ delayMs: 700, stage: 'preparing', action: 'writing_implementation', withFiles: true }),
-  Object.freeze({ delayMs: 700, stage: 'building_model', withFiles: true }),
-  Object.freeze({ delayMs: 800, stage: 'rendering', action: 'rendering_desktop', withFiles: true }),
-  Object.freeze({ delayMs: 800, stage: 'rendering', action: 'rendering_mobile', withFiles: true }),
-  Object.freeze({ delayMs: 900, stage: 'reviewing', action: 'reviewing_design', withFiles: true }),
+  Object.freeze({
+    delayMs: 700,
+    stage: 'generating',
+    action: 'understanding_request',
+    reasoning: true,
+  }),
+  Object.freeze({
+    delayMs: 900,
+    stage: 'generating',
+    action: 'planning_design',
+    tool: 'plan_ui',
+    toolInput: { goal: 'Responsive Roblox UI' },
+  }),
+  Object.freeze({
+    delayMs: 900,
+    stage: 'generating',
+    action: 'generating_artwork',
+    tool: 'generate_image',
+    withImage: true,
+  }),
+  Object.freeze({ delayMs: 1100, stage: 'generating', action: 'writing_ui', withFiles: true, tool: 'write_ui' }),
+  Object.freeze({ delayMs: 700, stage: 'preparing', action: 'writing_implementation', withFiles: true, tool: 'write_ui' }),
+  Object.freeze({ delayMs: 700, stage: 'building_model', withFiles: true, tool: 'build_rbxm' }),
+  Object.freeze({ delayMs: 800, stage: 'rendering', action: 'rendering_desktop', withFiles: true, tool: 'render_preview' }),
+  Object.freeze({ delayMs: 800, stage: 'rendering', action: 'rendering_mobile', withFiles: true, tool: 'render_preview' }),
+  Object.freeze({ delayMs: 900, stage: 'reviewing', action: 'reviewing_design', withFiles: true, tool: 'review_ui' }),
   Object.freeze({ delayMs: 0, stage: 'complete', outcome: 'visual_review_passed', terminal: true, withFiles: true }),
 ]);
 
@@ -101,7 +121,7 @@ function currentUiPipelineKey({ busy = '', task } = {}) {
 export function getUiLoadingChainSteps({ busy = '', task, pipeline = UI_LOADING_PIPELINE } = {}) {
   const currentKey = currentUiPipelineKey({ busy, task });
   let activeIndex = pipeline.findIndex((step) => pipelineStepKey(step) === currentKey);
-  if (activeIndex < 0 && task?.uiBuild?.stage === 'complete') activeIndex = pipeline.length - 1;
+  if (activeIndex < 0 && UI_BUILD_TERMINAL_STAGES.has(task?.uiBuild?.stage)) activeIndex = pipeline.length - 1;
   if (activeIndex < 0 && busy) {
     activeIndex = pipeline.findIndex((step) => step.busy);
   }
@@ -114,7 +134,8 @@ export function getUiLoadingChainSteps({ busy = '', task, pipeline = UI_LOADING_
   }
   const finished = activeIndex >= 0
     && Boolean(pipeline[activeIndex]?.terminal)
-    && ['succeeded', 'completed', 'complete', 'done'].includes(String(task?.status || '').toLowerCase());
+    && (['succeeded', 'completed', 'complete', 'done'].includes(String(task?.status || '').toLowerCase())
+      || UI_BUILD_TERMINAL_STAGES.has(task?.uiBuild?.stage));
 
   return pipeline.map((step, index) => {
     const label = step.busy

@@ -7,47 +7,8 @@
 
 .nexus-auth-form::before,
 .nexus-auth-form::after {
-  position: absolute;
-  pointer-events: none;
-  content: "";
-}
-
-.nexus-auth-form::before {
-  z-index: 0;
-  top: 46%;
-  left: 50%;
-  width: min(760px, 90vw);
-  aspect-ratio: 1;
-  translate: -50% -50%;
-  border-radius: var(--nx-radius-pill);
-  background: radial-gradient(
-    circle,
-    rgba(var(--nx-purple-rgb), 0.18) 0,
-    rgba(var(--nx-purple-rgb), 0.07) 38%,
-    transparent 68%
-  );
-}
-
-.nexus-auth-form::after {
-  z-index: 1;
-  inset: -64px 0;
-  opacity: 0.64;
-  background-image: radial-gradient(
-    circle at 50% 50%,
-    transparent 0,
-    transparent 2px,
-    color-mix(in srgb, var(--nx-canvas) 82%, transparent) 2px
-  );
-  background-size: 8px 8px;
-  -webkit-mask-image: radial-gradient(circle at 50% 46%, #000 0, #000 30%, transparent 68%);
-  mask-image: radial-gradient(circle at 50% 46%, #000 0, #000 30%, transparent 68%);
-  animation: nexus-auth-pattern-drift 18s linear infinite;
-  will-change: transform;
-}
-
-@keyframes nexus-auth-pattern-drift {
-  from { transform: translate3d(0, -64px, 0); }
-  to { transform: translate3d(0, 0, 0); }
+  display: none;
+  content: none;
 }
 
 .nexus-auth-layout {
@@ -78,7 +39,7 @@
   width: fit-content;
   align-items: center;
   border-bottom: 1px solid var(--nx-rule);
-  color: var(--nx-purple);
+  color: var(--nx-text);
   text-decoration: none;
 }
 
@@ -90,9 +51,9 @@
 .nexus-auth-record__copy > p:first-child,
 .nexus-auth-form__header > p {
   margin: 0 0 var(--nx-space-3);
-  color: var(--nx-purple-muted);
+  color: var(--nx-text-muted);
   font-size: 0.6875rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.1em;
 }
 
@@ -100,10 +61,10 @@
 .nexus-auth-form__header h1,
 .nexus-auth-form__header h2 {
   margin: 0;
-  color: var(--nx-purple);
+  color: var(--nx-text);
   font-family: var(--nx-font-display);
   font-weight: 620;
-  letter-spacing: 0;
+  letter-spacing: -0.035em;
   line-height: 0.9;
 }
 
@@ -137,7 +98,7 @@
 }
 
 .nexus-auth-record__index span {
-  color: var(--nx-purple-muted);
+  color: var(--nx-text-muted);
   font-family: var(--nx-font-code);
   font-size: 0.625rem;
 }

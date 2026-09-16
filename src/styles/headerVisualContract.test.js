@@ -39,7 +39,7 @@ test("keeps both runtimes on the shared compact purple soft-depth header", () =>
   expect(styles).toContain("backdrop-filter: blur(18px)");
   expect(styles).toContain("width: min(100%, 1440px)");
   expect(styles).toContain('data-scrolled="true"');
-  expect(styles).toContain("var(--nx-purple-wash)");
+  expect(styles).toContain("var(--nx-header-height)");
   expect(styles).toContain("prefers-reduced-transparency: reduce");
 });
 

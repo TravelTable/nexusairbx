@@ -16,6 +16,7 @@ import {
   saveCheckoutIntent,
 } from "../lib/checkoutIntent";
 import { formatMoney, getPublicPlan } from "../lib/planCatalog";
+import { formatNexusCredits } from '../lib/creditDenomination';
 import { BILLING_INTERVAL, PLAN } from "../lib/prices";
 import { trackProductEvent } from "../lib/productAnalytics";
 import styles from "./SubscribePage.module.css";
@@ -339,7 +340,7 @@ export default function SubscribePage() {
           <p className={styles.scheduleNote}>{scheduleLabel}</p>
 
           <div className={styles.creditsPill}>
-            {plan.credits * seatCount} Nexus Credits · refresh monthly, no rollover
+            {formatNexusCredits(plan.creditsMicros * seatCount)} Nexus Credits · refresh monthly, no rollover
           </div>
 
           <dl className={styles.details}>

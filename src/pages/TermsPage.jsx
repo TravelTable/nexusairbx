@@ -171,7 +171,7 @@ function TermsPage({
             </aside>
 
             {/* Main Content */}
-            <div className="min-w-0 flex-grow [&_h1]:font-[var(--ds-font-display)] [&_h1]:font-bold [&_h1]:leading-[1.04] [&_h1]:tracking-[-0.035em] [&_h1]:text-[var(--ds-text)] [&_p]:leading-7">
+            <div className="min-w-0 flex-grow [&_h1]:font-[var(--ds-font-display)] [&_h1]:font-semibold [&_h1]:leading-[1.04] [&_h1]:tracking-[-0.035em] [&_h1]:text-[var(--ds-text)] [&_p]:leading-7">
               {activeSection === "introduction" && <IntroductionContent />}
               {activeSection === "accounts" && <AccountsContent />}
               {activeSection === "usage" && <UsageContent />}
@@ -192,7 +192,7 @@ function TermsPage({
       <footer className={`${editorialGutterClass} border-t border-[var(--ds-border-subtle)] py-8`}>
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between md:flex-row">
           <div className="flex items-center mb-4 md:mb-0">
-            <div className="text-xl font-bold text-accent mr-2">
+            <div className="text-xl font-semibold text-accent mr-2">
               NexusRBX
             </div>
             <div className="text-sm text-[var(--ds-text-muted)]">Legal Documents</div>
@@ -220,7 +220,7 @@ function TermsPage({
 function IntroductionContent() {
   return (
     <div className="prose prose-invert max-w-none">
-      <h1 className="text-3xl font-bold mb-6">Introduction and Acceptance of Terms</h1>
+      <h1 className="text-3xl font-semibold mb-6">Introduction and Acceptance of Terms</h1>
       <p className="text-[var(--ds-text-secondary)] mb-4">
         Welcome to NexusRBX! These Terms and Conditions (the “Terms”) govern your access to and use of the NexusRBX website, applications, and services (collectively, the “Service”) operated by NexusRBX (“we”, “us”, or “our”). Please read these Terms carefully before using the Service. By accessing or using NexusRBX, you agree to be bound by all terms and conditions described here, as well as our Privacy Policy (which is incorporated by reference). If you do not agree with these Terms or the Privacy Policy, you must not use the Service.
       </p>
@@ -238,18 +238,18 @@ function IntroductionContent() {
 function AccountsContent() {
   return (
     <div className="prose prose-invert max-w-none">
-      <h1 className="text-3xl font-bold mb-6">1. Accounts and Eligibility</h1>
+      <h1 className="text-3xl font-semibold mb-6">1. Accounts and Eligibility</h1>
       <div className="space-y-6">
         <section>
-          <h3 className="text-xl font-bold text-accent mb-2">Account Registration</h3>
+          <h3 className="text-xl font-semibold text-accent mb-2">Account Registration</h3>
           <p className="text-[var(--ds-text-muted)]">To use certain features of the Service, you need to create a NexusRBX account. You must provide accurate, current, and complete information during registration (including a valid email). You agree to keep your account information updated. You must be at least 13 years old to create an account. If you are under the age of majority in your jurisdiction (e.g. under 18 in most regions), you may only use the Service under the supervision of a parent or guardian who agrees to these Terms on your behalf.</p>
         </section>
         <section>
-          <h3 className="text-xl font-bold text-accent mb-2">Account Security</h3>
+          <h3 className="text-xl font-semibold text-accent mb-2">Account Security</h3>
           <p className="text-[var(--ds-text-muted)]">You are responsible for maintaining the confidentiality of your account login credentials. Do not share your password or API keys with anyone. Use the contact form immediately if you suspect any unauthorized access to or use of your account. We are not liable for any loss or damage arising from your failure to protect your credentials.</p>
         </section>
         <section>
-          <h3 className="text-xl font-bold text-accent mb-2">Account Termination</h3>
+          <h3 className="text-xl font-semibold text-accent mb-2">Account Termination</h3>
           <p className="text-[var(--ds-text-muted)]">We may suspend or terminate your account immediately and without notice if: (a) you violate these Terms; (b) we detect behavior that is fraudulent, abusive, or illegal; or (c) your account has been inactive for an extended period. You have the right to terminate your own account at any time through your account settings.</p>
         </section>
       </div>
@@ -260,10 +260,10 @@ function AccountsContent() {
 function UsageContent() {
   return (
     <div className="prose prose-invert max-w-none">
-      <h1 className="text-3xl font-bold mb-6">2. Service Usage and Acceptable Use</h1>
+      <h1 className="text-3xl font-semibold mb-6">2. Service Usage and Acceptable Use</h1>
       <p className="text-[var(--ds-text-secondary)] mb-6">NexusRBX provides an AI-assisted platform for generating and testing Roblox scripts. You agree to use the Service only for lawful purposes and in compliance with these Terms, Roblox’s own community rules, and all applicable laws.</p>
       
-      <h3 className="text-xl font-bold text-[var(--ds-danger)] mb-4">Prohibited Content & Activities</h3>
+      <h3 className="text-xl font-semibold text-[var(--ds-danger)] mb-4">Prohibited Content & Activities</h3>
       <ul className="list-disc list-inside text-[var(--ds-text-muted)] space-y-3 mb-8">
         <li><strong>Exploits & Malware:</strong> Developing or distributing exploits, cheats, or malware for Roblox. You may not generate scripts intended to bypass Roblox security features or facilitate hacking.</li>
         <li><strong>Abuse & Harassment:</strong> Engaging in harassment, hate speech, or abusive behavior. Content that is defamatory, threatening, or discriminatory is strictly forbidden.</li>
@@ -272,7 +272,7 @@ function UsageContent() {
       </ul>
 
       <div className="p-4 bg-[var(--ds-accent-soft)] border border-[var(--ds-accent-border)] rounded-lg">
-        <h4 className="font-bold text-[var(--ds-text)] mb-2">Roblox Platform Compliance</h4>
+        <h4 className="font-semibold text-[var(--ds-text)] mb-2">Roblox Platform Compliance</h4>
         <p className="text-sm text-[var(--ds-text-secondary)]">NexusRBX is designed to assist with Roblox scripting, but you are responsible for ensuring that anything you create using our Service complies with Roblox’s Terms of Use and Community Standards. Do not use our Service to create content that would get you banned on Roblox.</p>
       </div>
     </div>
@@ -282,20 +282,20 @@ function UsageContent() {
 function IPContent() {
   return (
     <div className="prose prose-invert max-w-none">
-      <h1 className="text-3xl font-bold mb-6">3. Intellectual Property and Content Ownership</h1>
+      <h1 className="text-3xl font-semibold mb-6">3. Intellectual Property and Content Ownership</h1>
       <div className="space-y-8">
         <section>
-          <h3 className="text-xl font-bold text-accent mb-3">Our Intellectual Property</h3>
+          <h3 className="text-xl font-semibold text-accent mb-3">Our Intellectual Property</h3>
           <p className="text-[var(--ds-text-muted)]">All content and materials available on the Service, including software, text, graphics, logos, and our AI models, are the property of NexusRBX or its licensors. NexusRBX™ and our logos are trademarks of our company. We grant you a limited, revocable, non-transferable license to use the Service for its intended purpose.</p>
         </section>
 
         <section>
-          <h3 className="text-xl font-bold text-accent mb-3">Your Content</h3>
+          <h3 className="text-xl font-semibold text-accent mb-3">Your Content</h3>
           <p className="text-[var(--ds-text-muted)]">You retain ownership of and responsibility for your User Content (prompts and generated scripts). By using our Service, you grant NexusRBX a non-exclusive, worldwide, royalty-free license to host, store, and process your User Content solely for the purposes of operating and improving the Service.</p>
         </section>
 
         <section className="nexus-page-card p-5">
-          <h3 className="text-lg font-bold text-[var(--ds-text)] mb-2">Feedback</h3>
+          <h3 className="text-lg font-semibold text-[var(--ds-text)] mb-2">Feedback</h3>
           <p className="text-sm text-[var(--ds-text-muted)]">If you provide us with suggestions or feedback, you acknowledge that we may use and implement that Feedback without obligation to you. You grant us a perpetual, irrevocable, worldwide license to use the Feedback for any purpose.</p>
         </section>
       </div>
@@ -306,14 +306,14 @@ function IPContent() {
 function LicensingContent() {
   return (
     <div className="prose prose-invert max-w-none">
-      <h1 className="text-3xl font-bold mb-6">4. Licensing of Generated Content (Scripts)</h1>
+      <h1 className="text-3xl font-semibold mb-6">4. Licensing of Generated Content (Scripts)</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="p-5 nexus-page-card">
-          <h3 className="text-lg font-bold text-accent mb-3">Permitted Uses</h3>
+          <h3 className="text-lg font-semibold text-accent mb-3">Permitted Uses</h3>
           <p className="text-sm text-[var(--ds-text-muted)]">You may use, modify, and deploy the AI-generated scripts in your own Roblox games and experiences. You may also share the output with others as long as you do not violate these Terms.</p>
         </div>
         <div className="p-5 nexus-page-card">
-          <h3 className="text-lg font-bold text-[var(--ds-danger)] mb-3">Restrictions</h3>
+          <h3 className="text-lg font-semibold text-[var(--ds-danger)] mb-3">Restrictions</h3>
           <p className="text-sm text-[var(--ds-text-muted)]">You may not sell or redistribute NexusRBX-generated content as a standalone product or service without our permission. You cannot claim our AI code is your proprietary offering.</p>
         </div>
       </div>
@@ -325,26 +325,26 @@ function LicensingContent() {
 function BillingContent() {
   return (
     <div className="prose prose-invert max-w-none">
-      <h1 className="text-3xl font-bold mb-6">5. Subscription Plans, Payments, and Billing</h1>
+      <h1 className="text-3xl font-semibold mb-6">5. Subscription Plans, Payments, and Billing</h1>
       <div className="space-y-6">
         <section>
-          <h3 className="text-xl font-bold text-accent mb-2">Tokens and Usage</h3>
+          <h3 className="text-xl font-semibold text-accent mb-2">Tokens and Usage</h3>
           <p className="text-[var(--ds-text-muted)]">NexusRBX meters paid AI usage through Included Usage and Premium Balance. Included Usage resets at the end of each subscription billing period. Premium Balance is prepaid usage credit for supported Premium Direct models and does not expire automatically.</p>
         </section>
 
         <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="p-4 nexus-page-card">
-            <h4 className="font-bold text-[var(--ds-text)] mb-1">Billing Cycle</h4>
+            <h4 className="font-semibold text-[var(--ds-text)] mb-1">Billing Cycle</h4>
             <p className="text-xs text-[var(--ds-text-subtle)]">Monthly or annual recurring billing. Automatic renewal unless cancelled.</p>
           </div>
           <div className="p-4 nexus-page-card">
-            <h4 className="font-bold text-[var(--ds-text)] mb-1">No Refunds</h4>
+            <h4 className="font-semibold text-[var(--ds-text)] mb-1">No Refunds</h4>
             <p className="text-xs text-[var(--ds-text-subtle)]">All charges are non-refundable. Cancellation stops future billing but doesn't refund current period.</p>
           </div>
         </section>
 
         <section>
-          <h3 className="text-xl font-bold text-accent mb-2">Modifications</h3>
+          <h3 className="text-xl font-semibold text-accent mb-2">Modifications</h3>
           <p className="text-[var(--ds-text-muted)]">We may change features or pricing at any time. Subscription price changes will be notified in advance and apply to the next renewal cycle.</p>
         </section>
       </div>
@@ -355,9 +355,9 @@ function BillingContent() {
 function AIDisclaimerContent() {
   return (
     <div className="prose prose-invert max-w-none">
-      <h1 className="text-3xl font-bold mb-6">7. AI Output and Disclaimer of Warranties</h1>
+      <h1 className="text-3xl font-semibold mb-6">7. AI Output and Disclaimer of Warranties</h1>
       <div className="p-6 bg-[var(--ds-danger-soft)] border border-[var(--ds-danger-border)] rounded-xl mb-8">
-        <h3 className="text-xl font-bold text-[var(--ds-danger)] mb-3 flex items-center">
+        <h3 className="text-xl font-semibold text-[var(--ds-danger)] mb-3 flex items-center">
           <AlertTriangle className="h-6 w-6 mr-2" /> CRITICAL DISCLAIMER
         </h3>
         <p className="text-[var(--ds-text-secondary)] font-medium">AI-generated outputs may be incorrect, incomplete, or non-functional. You are solely responsible for reviewing, testing, and validating any script before use in a live environment.</p>
@@ -365,11 +365,11 @@ function AIDisclaimerContent() {
 
       <div className="space-y-6">
         <section>
-          <h3 className="text-xl font-bold text-[var(--ds-text)] mb-2">No Guarantee</h3>
+          <h3 className="text-xl font-semibold text-[var(--ds-text)] mb-2">No Guarantee</h3>
           <p className="text-[var(--ds-text-muted)]">The Service and all outputs are provided on an “AS IS” and “AS AVAILABLE” basis. NexusRBX disclaims all warranties, including merchantability, fitness for a particular purpose, and accuracy.</p>
         </section>
         <section>
-          <h3 className="text-xl font-bold text-[var(--ds-text)] mb-2">Assumption of Risk</h3>
+          <h3 className="text-xl font-semibold text-[var(--ds-text)] mb-2">Assumption of Risk</h3>
           <p className="text-[var(--ds-text-muted)]">You assume all risk for any damage to your computer system, Roblox account, or game resulting from the use of the Service. We strongly recommend testing scripts in our sandbox first.</p>
         </section>
       </div>
@@ -380,15 +380,15 @@ function AIDisclaimerContent() {
 function LiabilityContent() {
   return (
     <div className="prose prose-invert max-w-none">
-      <h1 className="text-3xl font-bold mb-6">8. Limitation of Liability and Indemnification</h1>
+      <h1 className="text-3xl font-semibold mb-6">8. Limitation of Liability and Indemnification</h1>
       <div className="space-y-8">
         <section>
-          <h3 className="text-xl font-bold text-accent mb-3">Limitation of Liability</h3>
+          <h3 className="text-xl font-semibold text-accent mb-3">Limitation of Liability</h3>
           <p className="text-[var(--ds-text-muted)]">To the maximum extent permitted by law, NexusRBX shall not be liable for any indirect, incidental, or consequential damages. Our total aggregate liability shall not exceed the greater of: (a) the amount you paid in the last 6 months; or (b) $100 USD.</p>
         </section>
 
         <section className="p-6 nexus-page-card">
-          <h3 className="text-xl font-bold text-[var(--ds-text)] mb-3">Indemnification</h3>
+          <h3 className="text-xl font-semibold text-[var(--ds-text)] mb-3">Indemnification</h3>
           <p className="text-sm text-[var(--ds-text-muted)]">You agree to indemnify and hold harmless NexusRBX from any third-party claims arising out of: (a) your use of the Service; (b) your violation of these Terms; or (c) your infringement of any intellectual property rights.</p>
         </section>
       </div>
@@ -399,18 +399,18 @@ function LiabilityContent() {
 function LegalContent() {
   return (
     <div className="prose prose-invert max-w-none">
-      <h1 className="text-3xl font-bold mb-6">9. Governing Law and Dispute Resolution</h1>
+      <h1 className="text-3xl font-semibold mb-6">9. Governing Law and Dispute Resolution</h1>
       <div className="space-y-6">
         <section>
-          <h3 className="text-xl font-bold text-accent mb-2">Governing Law</h3>
+          <h3 className="text-xl font-semibold text-accent mb-2">Governing Law</h3>
           <p className="text-[var(--ds-text-muted)]">These Terms are governed by the laws of New South Wales, Australia. You agree to the exclusive jurisdiction of the courts located in New South Wales.</p>
         </section>
         <section>
-          <h3 className="text-xl font-bold text-accent mb-2">Arbitration</h3>
+          <h3 className="text-xl font-semibold text-accent mb-2">Arbitration</h3>
           <p className="text-[var(--ds-text-muted)]">At our discretion, we may require you to submit any dispute to binding arbitration in Sydney, Australia. You agree that any claim must be brought individually, and not as part of a class action.</p>
         </section>
         <section className="p-4 nexus-page-card">
-          <h4 className="font-bold text-[var(--ds-text)] mb-1">Third-Party Links</h4>
+          <h4 className="font-semibold text-[var(--ds-text)] mb-1">Third-Party Links</h4>
           <p className="text-xs text-[var(--ds-text-subtle)]">Our Service may link to third-party services (Google, Roblox, etc.). We are not responsible for their content or privacy practices.</p>
         </section>
       </div>
@@ -421,18 +421,18 @@ function LegalContent() {
 function TerminationContent() {
   return (
     <div className="prose prose-invert max-w-none">
-      <h1 className="text-3xl font-bold mb-6">10. Termination and Changes</h1>
+      <h1 className="text-3xl font-semibold mb-6">10. Termination and Changes</h1>
       <div className="space-y-6">
         <section>
-          <h3 className="text-xl font-bold text-accent mb-2">Termination</h3>
+          <h3 className="text-xl font-semibold text-accent mb-2">Termination</h3>
           <p className="text-[var(--ds-text-muted)]">You may stop using the Service at any time. We reserve the right to suspend or terminate your access for any reason, including violation of these Terms. Upon termination, your rights to use the Service cease immediately.</p>
         </section>
         <section>
-          <h3 className="text-xl font-bold text-accent mb-2">Changes to Terms</h3>
+          <h3 className="text-xl font-semibold text-accent mb-2">Changes to Terms</h3>
           <p className="text-[var(--ds-text-muted)]">NexusRBX may modify these Terms from time to time. Continued use of the Service after updated Terms are posted constitutes acceptance of those changes. Material changes will be notified via email or in-app notice.</p>
         </section>
         <section className="nexus-page-card p-5">
-          <h3 className="text-lg font-bold text-[var(--ds-text)] mb-2">Miscellaneous</h3>
+          <h3 className="text-lg font-semibold text-[var(--ds-text)] mb-2">Miscellaneous</h3>
           <p className="text-sm text-[var(--ds-text-muted)]">These Terms constitute the entire agreement. Our failure to enforce any right is not a waiver. You may not assign these Terms without our consent.</p>
         </section>
       </div>
@@ -443,15 +443,15 @@ function TerminationContent() {
 function ContactContent() {
   return (
     <div className="prose prose-invert max-w-none">
-      <h1 className="text-3xl font-bold mb-6">11. Contact Us</h1>
+      <h1 className="text-3xl font-semibold mb-6">11. Contact Us</h1>
       <p className="text-[var(--ds-text-secondary)] mb-8">If you have any questions about these Terms, please reach out to our legal team:</p>
       
       <div className="grid grid-cols-1 gap-8">
         <div className="nexus-page-card p-6 flex flex-col items-center text-center">
           <Mail className="h-10 w-10 text-accent mb-4" />
-          <h3 className="text-xl font-bold mb-2">Contact form</h3>
+          <h3 className="text-xl font-semibold mb-2">Contact form</h3>
           <p className="text-sm text-[var(--ds-text-muted)] mb-4">Choose Security / privacy for legal and privacy questions.</p>
-          <a href="/contact?category=security_privacy" className="text-accent font-bold hover:underline">Open contact form</a>
+          <a href="/contact?category=security_privacy" className="text-accent font-semibold hover:underline">Open contact form</a>
         </div>
       </div>
       

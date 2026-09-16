@@ -14,9 +14,9 @@ import {
 } from "lucide-react";
 
 import WorkspaceRibbon from "../WorkspaceRibbon";
-import CompactAgentRunBar from "../../../components/ai/workspace/CompactAgentRunBar";
 import { getWorkspacePresentation, workspacePresentationAttributes } from "../../../lib/runPresentation";
 import { useMotionPresence } from "../../../hooks/useMotionPresence";
+import UiCreatorLanding from "./UiCreatorLanding";
 import "./UiCreatorChrome.css";
 
 export const UI_TEMPLATES = [
@@ -142,6 +142,9 @@ export default function UiCreatorChrome({
   sharedHeader = false,
   headerActionTarget = null,
   onHeaderModalChange,
+  landing = false,
+  onFileUpload,
+  attachments = [],
 }) {
   const session = useRef(null);
   const panel = useRef(null);
@@ -164,6 +167,8 @@ export default function UiCreatorChrome({
   const [pickerOpen, setPickerOpen] = useState(false);
   const drawerPresence = useMotionPresence(Boolean(drawer), 280);
   const pickerPresence = useMotionPresence(pickerOpen, 200);
+  const landingPresence = useMotionPresence(landing, 220);
+  const workspacePresence = useMotionPresence(!landing, 220);
   const [mobileView, setMobileView] = useState("chat");
   const [renaming, setRenaming] = useState(false);
   const [title, setTitle] = useState("");
@@ -363,7 +368,7 @@ export default function UiCreatorChrome({
   );
 
   return (
-    <div className={`uc-app ${sharedHeader ? "uc-app--shared-header" : ""}`} {...workspacePresentationAttributes(presentation)}>
+    <div className={`uc-app ${sharedHeader ? "uc-app--shared-header" : ""} ${landing ? "uc-app--landing" : ""}`} {...workspacePresentationAttributes(presentation)}>
       {!sharedHeader ? (
         <WorkspaceRibbon
           mode="ui"
@@ -390,6 +395,7 @@ export default function UiCreatorChrome({
             className="uc-view-tabs"
             role="tablist"
             aria-label="UI workspace view"
+            hidden={landing || undefined}
           >
             <button
               type="button"
@@ -553,10 +559,28 @@ export default function UiCreatorChrome({
           </section>
         ) : null}
 
+        <div className="uc-stage">
+        {landingPresence.present ? (
+          <UiCreatorLanding
+            composer={landing ? composer : null}
+            onFileUpload={onFileUpload}
+            onTemplate={onTemplate}
+            attachments={attachments}
+            templates={UI_TEMPLATES}
+            data-phase={landingPresence.phase}
+            aria-hidden={!landing || undefined}
+            inert={!landing ? "" : undefined}
+          />
+        ) : null}
+
+        {workspacePresence.present ? (
         <div
           ref={session}
           className="uc-session"
+          data-phase={workspacePresence.phase}
           data-mobile-view={mobileView}
+          aria-hidden={landing || undefined}
+          inert={landing ? "" : undefined}
           style={{ "--uc-chat-width": `${chatWidth}px` }}
         >
           <section
@@ -569,8 +593,7 @@ export default function UiCreatorChrome({
 
             {conversation}
 
-            <CompactAgentRunBar presentation={presentation} onOpenActivity={() => onDrawer('history')} />
-            <div className="uc-composer">{composer}</div>
+            <div className="uc-composer">{landing ? null : composer}</div>
           </section>
 
           <div
@@ -709,6 +732,8 @@ export default function UiCreatorChrome({
 
             <div className="uc-preview-stage">{livePreview}</div>
           </section>
+        </div>
+        ) : null}
         </div>
       </section>
 
