@@ -5,9 +5,12 @@ module.exports = {
   darkMode: ["selector", '[data-theme="dark"]'],
   content: [
     path.join(__dirname, "src/**/*.{js,jsx,ts,tsx}"),
-    path.join(__dirname, "public-frontend/**/*.{js,jsx,ts,tsx}"),
-    `!${path.join(__dirname, "public-frontend/{out,.next}/**/*")}`,
-    `!${path.join(__dirname, "build/**/*")}`,
+    // Keep generated Next export/cache trees outside Tailwind's filesystem walk.
+    // Negated absolute globs are unreliable on Windows because path.join emits
+    // backslashes while fast-glob expects slash-separated patterns.
+    path.join(__dirname, "public-frontend/app/**/*.{js,jsx,ts,tsx}"),
+    path.join(__dirname, "public-frontend/components/**/*.{js,jsx,ts,tsx}"),
+    path.join(__dirname, "public-frontend/data/**/*.{js,jsx,ts,tsx}"),
   ],
   theme: {
     extend: {

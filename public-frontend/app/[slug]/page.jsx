@@ -4,6 +4,8 @@ import SearchLandingPage from "../../components/SearchLandingPage";
 import { getSearchLandingPage, searchLandingPages } from "../../data/searchLandingPages";
 import { buildPublicMetadata } from "../../../src/lib/seo";
 
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return searchLandingPages.map((page) => ({ slug: page.slug }));
 }

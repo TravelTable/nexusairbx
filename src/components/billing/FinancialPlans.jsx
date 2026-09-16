@@ -1,9 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SUBSCRIPTION_PLANS, formatMoney } from "../../lib/planCatalog";
 import { trackProductEvent } from "../../lib/productAnalytics";
 import styles from "./FinancialPlans.module.css";
+
+const CREDIT_TICKS = 12;
+
+function prefersReducedMotion() {
+  return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function ledgerFeatures(plan) {
+  return (plan.features || []).filter((item) => !/Nexus Credits/i.test(item));
+}
 
 function CreditCapacity({ plan, maxCredits }) {
   const percentage = Math.max(0, Math.min(100, (Number(plan.displayCredits || 0) / maxCredits) * 100));
@@ -27,6 +37,54 @@ function CreditCapacity({ plan, maxCredits }) {
       </div>
     </div>
   );
+}
+
+function CreditTicks({ plan, maxCredits }) {
+  const filled = Math.max(
+    1,
+    Math.round((Number(plan.displayCredits || 0) / Math.max(1, maxCredits)) * CREDIT_TICKS)
+  );
+
+  return (
+    <div className={styles.creditTicks} aria-hidden="true">
+      {Array.from({ length: CREDIT_TICKS }, (_, index) => (
+        <span key={index} data-on={index < filled ? "true" : undefined} />
+      ))}
+    </div>
+  );
+}
+
+function CatalogPrice({ amount }) {
+  const [shown, setShown] = useState(amount);
+  const shownRef = useRef(amount);
+
+  useEffect(() => {
+    const from = shownRef.current;
+    const to = amount;
+    if (process.env.NODE_ENV === "test" || prefersReducedMotion() || from === to) {
+      shownRef.current = to;
+      setShown(to);
+      return undefined;
+    }
+
+    const started = performance.now();
+    const duration = 240;
+    let frame = 0;
+
+    const tick = (now) => {
+      const t = Math.min(1, (now - started) / duration);
+      const eased = 1 - (1 - t) ** 3;
+      const next = from + (to - from) * eased;
+      shownRef.current = next;
+      setShown(next);
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [amount]);
+
+  return <span className={styles.priceFigure}>{formatMoney(Math.round(shown * 100) / 100)}</span>;
 }
 
 function CompactPlanCard({ plan, interval, maxCredits, starterCredits }) {
@@ -86,44 +144,49 @@ function CompactPlanCard({ plan, interval, maxCredits, starterCredits }) {
   );
 }
 
-function CatalogPlanCard({ plan, interval }) {
+function CatalogPlanCard({ plan, interval, starterCredits, maxCredits, index }) {
   const annual = interval === "year" && Number.isFinite(plan.yearly);
   const checkoutInterval = annual ? "year" : "month";
   const amount = annual ? plan.yearly / 12 : plan.monthly;
+  const annualSavings = annual ? Math.max(0, plan.monthly * 12 - plan.yearly) : 0;
+  const monthlyOnly = interval === "year" && plan.yearly == null;
+  const creditMultiple =
+    plan.id === "PRO" && starterCredits
+      ? `${Math.round((plan.displayCredits / starterCredits) * 10) / 10}× Starter credits`
+      : null;
+  const features = ledgerFeatures(plan);
 
   return (
     <article
       className={styles.planCard}
       data-featured={plan.featured ? "true" : undefined}
       aria-label={plan.name}
+      style={{ "--enter-delay": `${80 + index * 70}ms` }}
     >
       <div className={styles.cardHeading}>
-        <div>
-          <h2>{plan.name}</h2>
-          {plan.featured ? <p className={styles.recommended}>Recommended</p> : null}
-        </div>
+        <h2>{plan.name}</h2>
+        {plan.featured ? <p className={styles.recommended}>Recommended</p> : null}
       </div>
 
-      <p className={styles.audience}>{plan.audience}</p>
+      <p className={styles.audience}>
+        <span>Best for</span>
+        {plan.audience}
+      </p>
 
       <div className={styles.priceBlock}>
         <p className={styles.price}>
-          {formatMoney(Math.round(amount * 100) / 100)}
+          <CatalogPrice amount={amount} />
           <small>{plan.perSeat ? "/seat/month" : "/month"}</small>
+          {annual ? <span className={styles.priceSave}>Save 15%</span> : null}
         </p>
         <p className={styles.schedule}>
           {annual
-            ? `${formatMoney(plan.yearly)}${plan.perSeat ? " per seat" : ""} billed annually`
-            : interval === "year" && plan.yearly == null
-              ? `${plan.name} stays monthly`
+            ? `${formatMoney(plan.yearly)}${plan.perSeat ? " per seat" : ""} billed annually · save ${formatMoney(annualSavings)}`
+            : monthlyOnly
+              ? "Monthly only"
               : "Billed monthly"}
         </p>
       </div>
-
-      <p className={styles.creditFigure}>
-        <span>Monthly Nexus Credits</span>
-        <strong>{plan.displayCreditsLabel}</strong>
-      </p>
 
       <a
         className={styles.action}
@@ -136,7 +199,26 @@ function CatalogPlanCard({ plan, interval }) {
         }
       >
         {plan.cta}
+        <span aria-hidden="true">→</span>
       </a>
+
+      <div className={styles.creditFigure}>
+        <span className={styles.creditLabel}>Monthly Nexus Credits</span>
+        <strong className={styles.creditValue}>{plan.displayCreditsLabel}</strong>
+        <CreditTicks plan={plan} maxCredits={maxCredits} />
+        {creditMultiple ? <p className={styles.creditMultiple}>{creditMultiple}</p> : null}
+      </div>
+
+      {features.length ? (
+        <div className={styles.inclusions}>
+          <p>Plan includes</p>
+          <ul className={styles.featureList}>
+            {features.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </article>
   );
 }
@@ -211,7 +293,12 @@ export default function FinancialPlans({ compact = false }) {
         </p>
       </header>
 
-      <div className={styles.cycleToggle} role="group" aria-label="Billing period">
+      <div
+        className={styles.cycleToggle}
+        role="group"
+        aria-label="Billing period"
+        data-interval={interval}
+      >
         <button
           type="button"
           aria-pressed={interval === "month"}
@@ -229,7 +316,7 @@ export default function FinancialPlans({ compact = false }) {
       </div>
 
       <div className={styles.cards}>
-        {availablePlans.map((plan) =>
+        {availablePlans.map((plan, index) =>
           compact ? (
             <CompactPlanCard
               key={plan.id}
@@ -239,28 +326,36 @@ export default function FinancialPlans({ compact = false }) {
               starterCredits={starter?.displayCredits}
             />
           ) : (
-            <CatalogPlanCard key={plan.id} plan={plan} interval={interval} />
+            <CatalogPlanCard
+              key={plan.id}
+              plan={plan}
+              interval={interval}
+              starterCredits={starter?.displayCredits}
+              maxCredits={maxCredits}
+              index={index}
+            />
           )
         )}
       </div>
 
-      {!compact ? <TeamPreview plan={teamPlan} /> : null}
-
-      <div className={styles.billingNotes}>
-        {compact ? (
-          <>
-            <p>USD, plus applicable tax. There is no free AI trial; subscribe when you are ready to build.</p>
+      {!compact ? (
+        <div className={styles.dock}>
+          <TeamPreview plan={teamPlan} />
+          <div className={styles.billingNotes}>
             <p>
-              Annual plans charge upfront and refresh included credits monthly. Included credits do not roll over.
+              USD, plus applicable tax. There is no free AI trial; subscribe when you are ready to build. Annual plans
+              charge upfront and refresh included credits monthly. Included credits do not roll over.
             </p>
-          </>
-        ) : (
+          </div>
+        </div>
+      ) : (
+        <div className={styles.billingNotes}>
+          <p>USD, plus applicable tax. There is no free AI trial; subscribe when you are ready to build.</p>
           <p>
-            USD, plus applicable tax. There is no free AI trial; subscribe when you are ready to build. Annual plans
-            charge upfront and refresh included credits monthly. Included credits do not roll over.
+            Annual plans charge upfront and refresh included credits monthly. Included credits do not roll over.
           </p>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 }

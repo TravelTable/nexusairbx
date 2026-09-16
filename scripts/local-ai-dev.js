@@ -132,6 +132,7 @@ async function main() {
 
   startProcess("public frontend", [nextDev, "dev", "-p", "4173"], publicFrontendRoot, {
     NODE_ENV: "development",
+    NEXT_PUBLIC_APP_ORIGIN: "http://localhost:3000",
   });
 
   startProcess("frontend", [reactStart], root, {

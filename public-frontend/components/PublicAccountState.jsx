@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { resolvePublicAppHref } from "../lib/appHref";
 
 const PublicAccountContext = createContext(null);
 
@@ -142,7 +143,7 @@ export default function PublicAccountState({
       return (
         <a
           className={`${focusClass} inline-flex h-11 items-center rounded-[8px] border border-[var(--nx-rule)] bg-[var(--nx-card)] px-3 text-xs font-medium text-[var(--nx-text)] no-underline md:h-9`}
-          href="/signin"
+          href={resolvePublicAppHref("/signin")}
         >
           Sign in
         </a>
@@ -150,10 +151,10 @@ export default function PublicAccountState({
     }
     return (
       <div className={wrapperClass}>
-        <a className={secondaryClass} href="/signin">
+        <a className={secondaryClass} href={resolvePublicAppHref("/signin")}>
           Sign in
         </a>
-        <a className={primaryClass} href="/signup">
+        <a className={primaryClass} href={resolvePublicAppHref("/signup")}>
           Get started
         </a>
       </div>
@@ -195,18 +196,18 @@ export default function PublicAccountState({
           >
             {account.email}
           </p>
-          <a className={`${menuItemClass} mt-1`} href="/settings?tab=roblox">
+          <a className={`${menuItemClass} mt-1`} href={resolvePublicAppHref("/settings?tab=roblox")}>
             Roblox and Studio
           </a>
-          <a className={menuItemClass} href="/billing">
+          <a className={menuItemClass} href={resolvePublicAppHref("/billing")}>
             Billing and usage
           </a>
-          <a className={menuItemClass} href="/settings">
+          <a className={menuItemClass} href={resolvePublicAppHref("/settings")}>
             Settings
           </a>
           <a
             className={`${menuItemClass} justify-between gap-3`}
-            href="/support"
+            href={resolvePublicAppHref("/support")}
           >
             <span>Support</span>
             {supportUnreadCount > 0 ? (
@@ -234,7 +235,7 @@ export default function PublicAccountState({
         </div>
       </details>
       {!compact ? (
-        <a className={primaryClass} href="/ai">
+        <a className={primaryClass} href={resolvePublicAppHref("/ai")}>
           Open Nexus Workspace
         </a>
       ) : null}

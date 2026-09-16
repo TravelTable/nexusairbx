@@ -53,6 +53,23 @@ test('annual billing updates Pro checkout while Starter stays monthly', () => {
   expect(screen.getByRole('link', { name: /Get Pro/i })).toHaveAttribute('href', '/subscribe?plan=PRO&interval=year');
   expect(screen.getByRole('link', { name: /Get Starter/i })).toHaveAttribute('href', '/subscribe?plan=STARTER&interval=month');
   expect(screen.getByText('$12.74')).toBeInTheDocument();
+
+  const starter = screen.getByRole('article', { name: /Starter/i });
+  const pro = screen.getByRole('article', { name: /Pro/i });
+  expect(within(starter).getByText('Monthly only')).toBeInTheDocument();
+  expect(within(pro).getByText('Save 15%')).toBeInTheDocument();
+});
+
+test('catalog credit ledger shows Pro multiple without a progress meter', () => {
+  render(<FinancialPlans />);
+  expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+  const pro = screen.getByRole('article', { name: /Pro/i });
+  const starter = screen.getByRole('article', { name: /Starter/i });
+  expect(within(pro).getByText(/× Starter credits/)).toBeInTheDocument();
+  expect(within(pro).getByText('Recommended')).toBeInTheDocument();
+  expect(within(starter).getByText('3 active projects · 2 builds at a time')).toBeInTheDocument();
+  expect(within(pro).getByText('Add credits whenever you need them')).toBeInTheDocument();
+  expect(screen.queryByText('✓')).not.toBeInTheDocument();
 });
 
 test('plan and team actions keep pricing analytics', () => {
@@ -78,6 +95,7 @@ test('compact homepage catalog keeps credit meters, hides Team, and is not a fea
   expect(screen.getByRole('progressbar', { name: 'Starter monthly credit allowance' })).toHaveAttribute('aria-valuenow', '166.67');
   expect(screen.getByText('1,000')).toBeInTheDocument();
   expect(screen.queryByText('Coming soon')).not.toBeInTheDocument();
+  expect(screen.queryByText('3 active projects · 2 builds at a time')).not.toBeInTheDocument();
   expect(screen.queryByText(/How far do Nexus Credits go/i)).not.toBeInTheDocument();
   expect(screen.queryByText('START BUILDING')).not.toBeInTheDocument();
   expect(screen.queryByText('✓')).not.toBeInTheDocument();

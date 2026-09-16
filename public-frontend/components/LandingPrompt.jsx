@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { track } from "@vercel/analytics";
 import { getExperimentAnalyticsProperties } from "../../src/lib/experiments";
+import { resolvePublicAppHref } from "../lib/appHref";
 
 function categorize(value, fallback) {
   const prompt = String(value || "").toLowerCase();
@@ -104,7 +105,7 @@ export default function LandingPrompt({
         prompt_category: promptCategory,
       });
 
-      window.location.assign("/ai");
+      window.location.assign(resolvePublicAppHref("/ai"));
     } catch (err) {
       setSubmitting(false);
       setError(err?.message || "Could not start generation. Try again.");

@@ -1,5 +1,6 @@
 import PublicHeader from "../components/PublicHeader";
 import styles from "../components/PublicEditorial.module.css";
+import { resolvePublicAppHref } from "../lib/appHref";
 import { buildPublicMetadata } from "../../src/lib/seo";
 
 export const metadata = buildPublicMetadata({
@@ -20,7 +21,7 @@ export default function NotFound() {
         <p>
           <a className="button button-primary" href="/">Home</a>{" "}
           <a className="button button-secondary" href="/docs">Docs</a>{" "}
-          <a className="button button-secondary" href="/ai">AI workspace</a>
+          <a className="button button-secondary" href={resolvePublicAppHref("/ai")}>AI workspace</a>
         </p>
       </main>
     </div>

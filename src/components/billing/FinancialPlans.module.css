@@ -182,6 +182,15 @@
   font-size: 0.8125rem;
 }
 
+.audience span {
+  margin-right: 0.45rem;
+  color: var(--nx-text-secondary);
+  font-size: 0.625rem;
+  font-weight: var(--nx-weight-label);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
 .priceBlock {
   margin-top: var(--nx-space-4);
 }
@@ -189,6 +198,7 @@
 .planCard .price {
   display: flex;
   align-items: baseline;
+  flex-wrap: wrap;
   gap: 0.35rem;
   margin: 0;
   font-size: clamp(1.75rem, 3vw, 2.25rem);
@@ -197,11 +207,30 @@
   line-height: 1;
 }
 
+.priceFigure {
+  font-variant-numeric: tabular-nums;
+}
+
 .price small {
   font-size: 0.8125rem;
   font-weight: 400;
   letter-spacing: normal;
   color: var(--pricing-muted);
+}
+
+.priceSave {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.25rem;
+  padding: 0.15rem 0.45rem;
+  border: 1px solid var(--nx-purple-border);
+  border-radius: 999px;
+  background: var(--nx-purple-wash);
+  color: var(--nx-text-secondary);
+  font-size: 0.625rem;
+  font-weight: var(--nx-weight-control);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .schedule {
@@ -261,31 +290,72 @@
 
 .featureList {
   display: grid;
-  gap: 0.5rem;
+  gap: 0;
   flex: 1;
   padding: 0;
   margin: var(--nx-space-4) 0 0;
   list-style: none;
 }
 
-.featureList li {
-  display: grid;
-  grid-template-columns: 1rem 1fr;
-  gap: 0.4rem;
-  color: var(--nx-text-secondary);
-  font-size: 0.8125rem;
-  line-height: 1.45;
+.inclusions {
+  margin-top: var(--nx-space-4);
 }
 
-.featureList li span {
-  color: var(--nx-text-muted);
+.inclusions > p {
+  margin: 0 0 var(--nx-space-2);
+  color: var(--pricing-muted);
+  font-size: 0.625rem;
+  font-weight: var(--nx-weight-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.inclusions .featureList {
+  margin-top: 0;
+}
+
+.featureList li {
+  display: grid;
+  grid-template-columns: 0.5rem minmax(0, 1fr);
+  gap: 0.55rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--pricing-rule);
+  color: var(--nx-text-secondary);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.featureList li::before {
+  content: "";
+  width: 4px;
+  height: 4px;
+  margin-top: 0.45rem;
+  border-radius: 1px;
+  background: var(--nx-text-muted);
+}
+
+.creditTicks {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 3px;
+  height: 6px;
+  margin-top: 0.2rem;
+}
+
+.creditTicks span {
+  display: block;
+  height: 100%;
+  border-radius: 1px;
+  background: var(--ds-fill-subtle);
+}
+
+.creditTicks span[data-on="true"] {
+  background: var(--nx-text-secondary);
 }
 
 .creditFigure {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1rem;
+  display: grid;
+  gap: 0.35rem;
   margin: var(--nx-space-4) 0 0;
   padding: var(--nx-space-3) 0 0;
   border-top: 1px solid var(--pricing-rule);
@@ -293,11 +363,30 @@
   font-size: 0.75rem;
 }
 
+.creditLabel {
+  font-size: 0.625rem;
+  font-weight: var(--nx-weight-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pricing-muted);
+}
+
+.creditValue,
 .creditFigure strong {
   color: var(--nx-text);
-  font-size: 1rem;
+  font-family: var(--nx-font-code);
+  font-size: 1.25rem;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.creditMultiple {
+  margin: 0 !important;
+  color: var(--pricing-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
 }
 
 .action,
@@ -339,7 +428,16 @@
 
 .action:active,
 .teamAction:active {
-  transform: scale(0.99);
+  transform: scale(0.98);
+}
+
+.dock {
+  display: grid;
+  gap: var(--nx-space-4);
+  width: 100%;
+  margin: 0 auto;
+  padding-top: var(--nx-space-5);
+  border-top: 1px solid var(--pricing-rule);
 }
 
 .teamPreview {
@@ -349,10 +447,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem 1.25rem;
-  margin: var(--nx-space-4) auto 0;
-  padding: var(--nx-space-3) 0;
+  margin: 0 auto;
+  padding: 0;
   border: 0;
-  border-top: 1px solid var(--pricing-rule);
   background: transparent;
 }
 
@@ -406,60 +503,233 @@
   outline-offset: 3px;
 }
 
-/* Dedicated /pricing: fill 100dvh below the header with no desktop page scroll. */
+/* Dedicated /pricing: instrument stage — min-height 100dvh, scroll when needed. */
 .section[data-pricing-layout="catalog"],
 .catalog {
   box-sizing: border-box;
   display: flex;
-  width: min(100% - 32px, 960px);
-  height: calc(100dvh - var(--nx-header-height));
-  max-height: calc(100dvh - var(--nx-header-height));
+  width: min(100% - 32px, var(--nx-content-compact));
+  min-height: calc(100dvh - var(--nx-header-height));
   flex-direction: column;
   justify-content: center;
-  gap: var(--nx-space-3);
+  gap: var(--nx-space-6);
   margin: 0 auto;
-  padding: var(--nx-space-4) 0 var(--nx-space-5);
-  overflow: hidden;
+  padding: var(--nx-space-10) 0 var(--nx-space-12);
+  overflow: visible;
+}
+
+.catalog::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 28%, rgb(255 255 255 / 3.5%), transparent 70%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background-color: transparent;
 }
 
 .catalog .heading {
   margin-bottom: 0;
+  animation: pricing-enter var(--nx-motion-reveal) var(--nx-ease-spatial) both;
 }
 
 .catalog .heading h1 {
-  font-size: clamp(1.5rem, 2.4vw, 2rem);
+  font-size: clamp(1.85rem, 3.2vw, 2.5rem);
+  letter-spacing: -0.04em;
+}
+
+.catalog .heading > p:last-child {
+  font-size: 0.9375rem;
+}
+
+.catalog .cycleToggle {
+  position: relative;
+  margin-bottom: 0;
+  border: 1px solid var(--nx-rule);
+  border-radius: var(--nx-radius-control);
+  background: var(--ds-fill-subtle);
+  padding: 0.125rem;
+  animation: pricing-enter var(--nx-motion-reveal) var(--nx-ease-spatial) both;
+  animation-delay: 50ms;
+}
+
+.catalog .cycleToggle::after {
+  content: "";
+  position: absolute;
+  top: 0.125rem;
+  bottom: 0.125rem;
+  left: 0.125rem;
+  width: calc(50% - 0.125rem);
+  border-radius: var(--nx-radius-control);
+  background: var(--nx-raised-surface);
+  transform: translateX(0);
+  transition: transform var(--nx-motion-control) var(--nx-ease-state);
+  pointer-events: none;
+}
+
+.catalog .cycleToggle[data-interval="year"]::after {
+  transform: translateX(100%);
+}
+
+.catalog .cycleToggle button {
+  position: relative;
+  z-index: 1;
+  min-height: var(--nx-touch-target);
+  border-radius: var(--nx-radius-control);
+  font-size: 0.8125rem;
+  background: transparent;
+}
+
+.catalog .cycleToggle button[aria-pressed="true"] {
+  background: var(--nx-raised-surface);
+  border-color: var(--nx-rule);
+  color: var(--nx-text);
 }
 
 .catalog .cards {
   width: 100%;
   max-width: none;
-  gap: var(--nx-space-3);
+  gap: var(--nx-space-4);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.14fr);
 }
 
 .catalog .planCard {
-  padding: var(--nx-space-4);
+  padding: var(--nx-space-6);
+  animation: pricing-enter var(--nx-motion-reveal) var(--nx-ease-spatial) both;
+  animation-delay: var(--enter-delay, 80ms);
 }
 
 .catalog .planCard[data-featured="true"] {
+  box-shadow: var(--nx-shadow-card);
+  transform: none;
+  background: var(--pricing-raised);
+  border-color: var(--nx-purple-border);
+}
+
+.catalog .planCard::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  pointer-events: none;
+  background: var(--pricing-rule-strong);
+}
+
+.catalog .planCard[data-featured="true"]::before {
+  height: 2px;
+  background: var(--nx-purple);
+}
+
+.catalog .planCard[data-featured="true"]:hover {
+  transform: translateY(-1px);
+  border-color: var(--nx-purple-border);
+}
+
+.catalog .planCard:not([data-featured="true"]) {
+  background: var(--pricing-card);
+  border-color: var(--pricing-rule);
   box-shadow: none;
 }
 
+.catalog .cardHeading h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  letter-spacing: -0.025em;
+}
+
+.catalog .recommended {
+  margin: 0;
+}
+
 .catalog .planCard .price {
-  font-size: clamp(1.65rem, 2.6vw, 2rem);
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
+}
+
+.catalog .price small {
+  font-size: 0.875rem;
+  color: var(--pricing-muted);
+}
+
+.catalog .creditFigure {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: var(--nx-space-5);
+  padding-top: var(--nx-space-4);
+}
+
+.catalog .action {
+  position: relative;
+  z-index: 1;
+  justify-content: space-between;
+  margin-top: var(--nx-space-5);
+  padding: 0 var(--nx-space-4);
+}
+
+.catalog .action span {
+  font-size: 1rem;
+  transition: transform var(--nx-motion-control) var(--nx-ease-state);
+}
+
+.catalog .action:hover span {
+  transform: translateX(2px);
+}
+
+.catalog .planCard[data-featured="true"] .featureList li::before {
+  background: var(--nx-purple);
+}
+
+.catalog .creditValue {
+  font-size: 1.375rem;
+}
+
+.catalog .planCard[data-featured="true"] .creditTicks span[data-on="true"] {
+  background: color-mix(in srgb, var(--nx-purple) 70%, var(--nx-text-secondary));
 }
 
 .catalog .action,
 .catalog .teamAction {
-  margin-top: auto;
-  padding-top: var(--nx-space-4);
+  min-height: var(--nx-touch-target);
+}
+
+.catalog .action:active,
+.catalog .teamAction:active {
+  transform: scale(0.98);
+}
+
+.catalog .dock {
+  max-width: none;
+  animation: pricing-enter var(--nx-motion-reveal) var(--nx-ease-spatial) both;
+  animation-delay: 220ms;
+}
+
+.catalog .teamPreview {
+  max-width: none;
 }
 
 .catalog .billingNotes {
+  margin-top: 0;
   text-align: center;
 }
 
 .catalog .billingNotes p {
   margin: 0 auto;
+  max-width: 40rem;
+}
+
+@keyframes pricing-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Homepage compact: one split selector, not two marketing cards. */
@@ -491,12 +761,17 @@
   transform: none;
 }
 
+.section[data-pricing-layout="compact"] .featureList,
+.section[data-pricing-layout="compact"] .inclusions,
+.section[data-pricing-layout="compact"] .creditTicks,
+.section[data-pricing-layout="compact"] .dock {
+  display: none;
+}
+
 @media (max-width: 900px), (max-height: 700px) {
   .section[data-pricing-layout="catalog"],
   .catalog {
-    height: auto;
-    max-height: none;
-    overflow: visible;
+    min-height: 0;
     padding-block: var(--nx-space-10);
   }
 
@@ -507,6 +782,10 @@
 
   .planCard[data-featured="true"] {
     order: -1;
+    transform: none;
+  }
+
+  .catalog .planCard[data-featured="true"] {
     transform: none;
   }
 
@@ -563,5 +842,11 @@
     animation: none !important;
     transition: none !important;
     transform: none !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .catalog::before {
+    display: none;
   }
 }

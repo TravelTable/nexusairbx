@@ -224,16 +224,14 @@ Mobile/tablet may scroll. Homepage compact `FinancialPlans` is an inline split s
 
 ## Anti-patterns
 
-- Excessive purple (headings, borders, glows, washes, orbs)
+- Excessive purple (headings, orbs)
 - Giant radii (18–24px marketing cards)
 - Unnecessary cards around list/table data
-- Heavy shadows and 40px+ blurs
-- Random gradients and glass everywhere
+- Random gradients
 - Inconsistent spacing (off the 4px scale)
 - Page-specific tokens and leftover `--sub-*` / `--pricing-*` hex
 - Decorative borders around every section
 - Oversized buttons (52px+ marketing CTAs)
-- Slow or exaggerated animation (7s sweeps, 20–50px travel, looping chrome)
 
 ## Acceptance evidence
 

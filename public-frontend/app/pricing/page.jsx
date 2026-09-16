@@ -1,4 +1,5 @@
 import catalog from "../../../src/data/billingCatalog.v2.json";
+import HomepageFooter from "../../../src/components/homepage/HomepageFooter";
 import { buildPublicMetadata, canonicalUrl } from "../../../src/lib/seo";
 import PricingCatalog from "../../components/PricingCatalog";
 import PublicHeader from "../../components/PublicHeader";
@@ -33,7 +34,7 @@ const pricingStructuredData = {
 
 export default function PricingPage() {
   return (
-    <div className="bg-[var(--nx-canvas)] text-[var(--nx-text)] min-[900px]:overflow-hidden">
+    <div className="bg-[var(--nx-canvas)] text-[var(--nx-text)]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -48,6 +49,7 @@ export default function PricingPage() {
       </a>
       <PublicHeader />
       <PricingCatalog />
+      <HomepageFooter />
     </div>
   );
 }

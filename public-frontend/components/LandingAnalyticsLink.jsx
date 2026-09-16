@@ -1,6 +1,7 @@
 "use client";
 
 import { track } from "@vercel/analytics";
+import { resolvePublicAppHref } from "../lib/appHref";
 
 export default function LandingAnalyticsLink({ href, label, slug, category, className = "" }) {
   const handleClick = async () => {
@@ -20,7 +21,7 @@ export default function LandingAnalyticsLink({ href, label, slug, category, clas
   };
 
   return (
-    <a className={className} href={href} onClick={handleClick}>
+    <a className={className} href={resolvePublicAppHref(href)} onClick={handleClick}>
       {label}
     </a>
   );
