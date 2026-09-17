@@ -16,6 +16,8 @@ import WorkingDots from "../../../components/ai/chat/WorkingDots";
 import WorkspaceHelp from "../../../components/ai/chat/WorkspaceHelp";
 import { useMotionPresence } from "../../../hooks/useMotionPresence";
 import ImageGeneration from "./ImageGeneration";
+import UiArtworkFrame from "./UiArtworkFrame";
+import UiReferenceCompare from "./UiReferenceCompare";
 
 function ViewportIcon({ viewport }) {
   const value = `${viewport?.id || ""} ${viewport?.label || ""}`.toLowerCase();
@@ -59,6 +61,8 @@ export default function UiPreviewPane({
   buildFailure = null,
   updatingRevision = false,
   generationCards = [],
+  referenceImage = null,
+  onMatchCloser,
 }) {
   const [selection, setSelection] = useState({
     snapshotId: "",
@@ -70,6 +74,8 @@ export default function UiPreviewPane({
   const [fit, setFit] = useState(true);
   const [loadedImage, setLoadedImage] = useState("");
   const [failedImage, setFailedImage] = useState("");
+  const [paneMode, setPaneMode] = useState("preview");
+  const [comparePosition, setComparePosition] = useState(50);
 
   const rendererUnavailable =
     capabilities?.previewEnabled === false ||
@@ -237,6 +243,23 @@ export default function UiPreviewPane({
           <AnimatedStatusText value={status} />
         </div>
 
+        {referenceImage?.src ? (
+          <div className="nx-ui-preview__modes" role="group" aria-label="Preview source">
+            {["preview", "reference", "compare"].map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                className={paneMode === mode ? "is-active" : undefined}
+                aria-pressed={paneMode === mode}
+                disabled={mode === "compare" && !data.imageUrl}
+                onClick={() => setPaneMode(mode)}
+              >
+                {mode === "preview" ? "Preview" : mode === "reference" ? "Reference" : "Compare"}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
         <div
           className="nx-ui-preview__viewport-buttons"
           role="group"
@@ -368,14 +391,36 @@ export default function UiPreviewPane({
           fit ? "is-fit" : "is-zoomed"
         }`}
       >
-        {generationCards.length && !data.imageUrl ? (
+        {referenceImage?.src && paneMode === "reference" ? (
+          <figure className="nx-ui-preview__frame nx-ui-preview__frame--editor">
+            <img
+              className="nx-ui-preview__image nx-preview-image"
+              src={referenceImage.src}
+              alt={referenceImage.alt || "Uploaded UI reference"}
+              draggable="false"
+            />
+            <figcaption>Reference screenshot</figcaption>
+          </figure>
+        ) : referenceImage?.src && paneMode === "compare" && data.imageUrl ? (
+          <UiReferenceCompare
+            generatedSrc={data.imageUrl}
+            referenceSrc={referenceImage.src}
+            generatedAlt={`${data.preview?.stateLabel || "Default"} state of the generated Roblox UI`}
+            referenceAlt={referenceImage.alt || "Uploaded UI reference"}
+            position={comparePosition}
+            onPosition={setComparePosition}
+          />
+        ) : generationCards.length && !data.imageUrl ? (
           <div className="nx-ui-preview__generation-grid" aria-label="Generated images">
             {generationCards.map((card) => (
               <ImageGeneration key={card.id} state={card.state}>
-                <img
+                <UiArtworkFrame
                   className="aspect-video max-w-md object-cover w-full"
                   src={card.src}
+                  assetId={card.assetId}
+                  projectId={projectId}
                   alt={card.alt || card.label || "Generated image"}
+                  generating={card.state !== "completed"}
                 />
               </ImageGeneration>
             ))}
@@ -471,6 +516,14 @@ export default function UiPreviewPane({
           </div>
         )}
       </div>
+
+      {referenceImage?.src && data.imageUrl ? (
+        <div className="nx-ui-preview__match-closer">
+          <button type="button" className="uc-button uc-primary" onClick={onMatchCloser} disabled={Boolean(run?.working)}>
+            Match closer
+          </button>
+        </div>
+      ) : null}
 
       {data.preview?.warnings?.length ? (
         <details className="nx-ui-preview__warnings">

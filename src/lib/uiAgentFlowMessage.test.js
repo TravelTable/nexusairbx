@@ -60,12 +60,16 @@ test("stops thinking when a build fails or is cancelled mid-stage", () => {
 });
 
 test("keeps generated artwork in the chat feed after the artwork turn", () => {
+  const images = [{ id: "sheet-1", action: "generating_artwork", url: "data:image/jpeg;base64,real" }];
   expect(getUiChatImages({
-    task: { status: "running", uiBuild: { stage: "generating", action: "writing_ui" } },
-  }).map((image) => image.action)).toEqual(["generating_artwork"]);
+    task: { status: "running", uiBuild: { stage: "generating", action: "writing_ui", images } },
+  }).map((image) => image.src)).toEqual(["data:image/jpeg;base64,real"]);
+  expect(getUiChatImages({
+    task: { status: "succeeded", uiBuild: { stage: "complete", outcome: "visual_review_passed", images } },
+  }).map((image) => image.src)).toEqual(["data:image/jpeg;base64,real"]);
   expect(getUiChatImages({
     task: { status: "succeeded", uiBuild: { stage: "complete", outcome: "visual_review_passed" } },
-  }).length).toBeGreaterThan(0);
+  })).toEqual([]);
   expect(mergeUiChatImages(
     [{ id: "ui-image-generating_artwork", publish: { status: "ready", robloxAssetId: "11" } }],
     [{ id: "ui-image-generating_artwork", state: "completed", src: "data:image/png;base64,aaa" }],
@@ -76,7 +80,7 @@ test("keeps generated artwork in the chat feed after the artwork turn", () => {
   })).toEqual({ status: "ready", robloxAssetId: "9001", contentUri: "rbxassetid://9001" });
 });
 
-test("exposes image-generation cards only during the artwork turn, not code or final preview", () => {
+test("generation cards wait for real artwork urls instead of the mock pixel", () => {
   expect(getUiGenerationCards({
     task: { status: "running", uiBuild: { stage: "generating", action: "writing_ui" } },
   })).toEqual([]);
@@ -84,17 +88,29 @@ test("exposes image-generation cards only during the artwork turn, not code or f
     task: { status: "running", uiBuild: { stage: "rendering", action: "rendering_desktop" } },
   })).toEqual([]);
 
-  const artwork = getUiGenerationCards({
+  const pending = getUiGenerationCards({
     task: { status: "running", uiBuild: { stage: "generating", action: "generating_artwork" } },
   });
-  expect(artwork.map((card) => [card.action, card.state])).toEqual([
-    ["generating_artwork", "generating"],
+  expect(pending.map((card) => [card.action, card.state, card.src])).toEqual([
+    ["generating_artwork", "generating", ""],
   ]);
-  expect(artwork[0].src).toBeTruthy();
+  expect(pending[0].src).not.toBe(UI_MOCK_IMAGE_DATA_URL);
+
+  const ready = getUiGenerationCards({
+    task: {
+      status: "running",
+      uiBuild: {
+        stage: "generating",
+        action: "generating_artwork",
+        images: [{ id: "sheet-1", action: "generating_artwork", url: "data:image/jpeg;base64,real" }],
+      },
+    },
+  });
+  expect(ready[0].src).toBe("data:image/jpeg;base64,real");
 });
 
 test("builds AgentFlow UIMessage parts with reasoning, tools, and images from the shared pipeline", () => {
-  const message = buildUiAgentFlowMessage({
+  const pending = buildUiAgentFlowMessage({
     busy: "",
     task: {
       taskId: "task-1",
@@ -103,15 +119,30 @@ test("builds AgentFlow UIMessage parts with reasoning, tools, and images from th
     },
   });
 
-  expect(message.role).toBe("assistant");
-  expect(message.parts.some((part) => part.type === "reasoning")).toBe(true);
-  expect(message.parts.some((part) => part.type === "tool-plan_ui")).toBe(true);
-  const imageTool = message.parts.find((part) => part.type === "tool-generate_image");
-  expect(imageTool).toMatchObject({
+  expect(pending.role).toBe("assistant");
+  expect(pending.parts.some((part) => part.type === "reasoning")).toBe(true);
+  expect(pending.parts.some((part) => part.type === "tool-plan_ui")).toBe(true);
+  const pendingTool = pending.parts.find((part) => part.type === "tool-generate_image");
+  expect(pendingTool).toMatchObject({
     state: "output-available",
     preliminary: true,
   });
-  expect(imageTool.output.images[0].url).toBe(UI_MOCK_IMAGE_DATA_URL);
+  expect(pendingTool.output?.images || []).toEqual([]);
+  expect(JSON.stringify(pending)).not.toContain(UI_MOCK_IMAGE_DATA_URL);
+
+  const ready = buildUiAgentFlowMessage({
+    task: {
+      taskId: "task-1",
+      status: "running",
+      uiBuild: {
+        stage: "generating",
+        action: "generating_artwork",
+        images: [{ id: "sheet-1", action: "generating_artwork", url: "data:image/jpeg;base64,real" }],
+      },
+    },
+  });
+  expect(ready.parts.find((part) => part.type === "tool-generate_image").output.images[0].url)
+    .toBe("data:image/jpeg;base64,real");
   expect(uiAgentFlowStatus({
     task: { status: "running", uiBuild: { stage: "generating", action: "generating_artwork" } },
   })).toBe("streaming");

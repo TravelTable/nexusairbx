@@ -177,6 +177,7 @@ function StackSection() {
   return (
     <section id="context" className={styles.stackSection} aria-labelledby="stack-heading">
       <div className={styles.sectionHeading}>
+        <span className={styles.sectionKicker}>One connected build loop</span>
         <h2 id="stack-heading">One workspace. Your whole Roblox build stack.</h2>
         <p>
           Project context, creation, Studio actions, assets, review, and recovery stay connected to the same body of

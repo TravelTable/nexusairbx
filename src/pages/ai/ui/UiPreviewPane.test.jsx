@@ -61,6 +61,15 @@ test('generation cards fill the preview grid while artwork and later edits appea
   expect(screen.getByRole('img', { name: 'Edit pass' })).toBeVisible();
   expect(screen.queryByText(/Use the chat to describe a shop/)).not.toBeInTheDocument();
 });
+test('pending generation cards do not invent a placeholder image',()=>{
+  render(<UiPreviewPane {...base} hasNodes={false} capture={null} generationCards={[
+    { id: 'art', action: 'generating_artwork', label: 'Generating matching artwork', state: 'generating', src: '', alt: 'Artwork' },
+  ]}/>);
+  expect(screen.getByLabelText('Generated images')).toBeVisible();
+  expect(screen.getByText('Creating image. May take a moment.')).toBeVisible();
+  expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Artwork is generating')).toBeVisible();
+});
 test('a failed build without a model stops preparing and cannot retry a nonexistent capture',()=>{
   render(<UiPreviewPane {...base} capture={null} buildFailure="A paid plan is required."/>);
   expect(screen.getAllByText('Build failed').length).toBeGreaterThan(0);
@@ -111,4 +120,21 @@ test('the retained image keeps its original device and state caption during upda
 test('build render jobs are observed directly instead of starting duplicate renders',()=>{
   render(<UiPreviewPane {...base} renderJobs={[{stateId:'default',viewportId:'desktop',jobId:'build-render'}]} run={{stage:'Rendering preview'}}/>);
   expect(useUiPreview).toHaveBeenLastCalledWith(expect.objectContaining({renderJobId:'build-render',waitForBuild:true}));
+});
+
+const referenceImage = { src: 'blob:reference', alt: 'Uploaded UI reference', width: 1440, height: 900 };
+
+test('a reference exposes Preview, Reference and Compare after a generated result exists', () => {
+  useUiPreview.mockReturnValue(image);
+  const onMatchCloser = jest.fn();
+  render(<UiPreviewPane {...base} referenceImage={referenceImage} onMatchCloser={onMatchCloser} />);
+  fireEvent.load(screen.getByRole('img', { name: /generated Roblox UI/i }));
+  fireEvent.click(screen.getByRole('button', { name: 'Reference' }));
+  expect(screen.getByRole('img', { name: 'Uploaded UI reference' })).toHaveAttribute('src', 'blob:reference');
+  fireEvent.click(screen.getByRole('button', { name: 'Compare' }));
+  const slider = screen.getByLabelText('Compare reference and generated');
+  fireEvent.change(slider, { target: { value: '35' } });
+  expect(slider).toHaveValue('35');
+  fireEvent.click(screen.getByRole('button', { name: 'Match closer' }));
+  expect(onMatchCloser).toHaveBeenCalled();
 });

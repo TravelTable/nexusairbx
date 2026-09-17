@@ -145,6 +145,19 @@ export default function UiCreatorChrome({
   landing = false,
   onFileUpload,
   attachments = [],
+  onBuild,
+  onRemoveReferences,
+  onRemoveReference,
+  referenceMode,
+  onReferenceMode,
+  referenceTarget,
+  onReferenceTarget,
+  referenceBehaviour,
+  onReferenceBehaviour,
+  referenceRoles,
+  onReferenceRole,
+  referencePin = null,
+  findings,
 }) {
   const session = useRef(null);
   const panel = useRef(null);
@@ -565,8 +578,21 @@ export default function UiCreatorChrome({
             composer={landing ? composer : null}
             onFileUpload={onFileUpload}
             onTemplate={onTemplate}
+            onBuild={onBuild}
+            onRemoveReferences={onRemoveReferences}
+            onRemoveReference={onRemoveReference}
             attachments={attachments}
             templates={UI_TEMPLATES}
+            referenceMode={referenceMode}
+            onReferenceMode={onReferenceMode}
+            referenceTarget={referenceTarget}
+            onReferenceTarget={onReferenceTarget}
+            referenceBehaviour={referenceBehaviour}
+            onReferenceBehaviour={onReferenceBehaviour}
+            referenceRoles={referenceRoles}
+            onReferenceRole={onReferenceRole}
+            findings={findings}
+            buildDisabled={working}
             data-phase={landingPresence.phase}
             aria-hidden={!landing || undefined}
             inert={!landing ? "" : undefined}
@@ -587,9 +613,12 @@ export default function UiCreatorChrome({
             className="uc-conversation"
             aria-label="AI build conversation"
           >
-            <header className="uc-pane-header">
-              <span>Assistant</span>
-            </header>
+            <div className="uc-conversation-top">
+              {referencePin}
+              <header className="uc-pane-header">
+                <span>Assistant</span>
+              </header>
+            </div>
 
             {conversation}
 

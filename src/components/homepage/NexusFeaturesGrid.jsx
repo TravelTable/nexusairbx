@@ -44,6 +44,7 @@ export default function NexusFeaturesGrid() {
   return (
     <section id="workflow" className={styles.featuresSection} aria-labelledby="features-heading">
       <div className={styles.sectionHeading}>
+        <span className={styles.sectionKicker}>Studio-connected workflow</span>
         <h2 id="features-heading">Built for serious Roblox developers</h2>
         <p>
           From single script fixes to multi-file game systems, Nexus connects AI generation with live Roblox Studio workflows.
@@ -51,9 +52,12 @@ export default function NexusFeaturesGrid() {
       </div>
 
       <div className={styles.featuresGrid}>
-        {FEATURES.map((feat) => (
+        {FEATURES.map((feat, index) => (
           <article key={feat.title} className={styles.featureCard}>
-            <div className={styles.featureIcon}>{feat.icon}</div>
+            <div className={styles.featureCardRail} aria-hidden="true">
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <span>Capability</span>
+            </div>
             <h3>{feat.title}</h3>
             <p>{feat.description}</p>
           </article>

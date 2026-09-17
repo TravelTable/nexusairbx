@@ -107,29 +107,12 @@ export function buildUiAgentFlowMessage({ busy = "", task = null, pipeline = UI_
         title: label,
       };
       if (!active) {
-        part.output = step.withImage
-          ? {
-              images: [{
-                id: `ui-art-${index}`,
-                url: UI_MOCK_IMAGE_DATA_URL,
-                mediaType: "image/png",
-                filename: "artwork.png",
-                alt: label,
-              }],
-            }
-          : { ok: true, label };
+        const images = step.withImage ? flowArtworkImages(task) : [];
+        part.output = step.withImage && images.length ? { images } : { ok: true, label };
       } else if (step.withImage) {
         part.state = "output-available";
         part.preliminary = true;
-        part.output = {
-          images: [{
-            id: `ui-art-${index}`,
-            url: UI_MOCK_IMAGE_DATA_URL,
-            mediaType: "image/png",
-            filename: "artwork.png",
-            alt: label,
-          }],
-        };
+        part.output = { images: flowArtworkImages(task) };
       }
       parts.push(part);
     } else if (!step.reasoning && !step.terminal) {
@@ -144,12 +127,15 @@ export function buildUiAgentFlowMessage({ busy = "", task = null, pipeline = UI_
     }
 
     if (step.withImage && !step.tool && status === "complete") {
-      parts.push({
-        type: "file",
-        url: UI_MOCK_IMAGE_DATA_URL,
-        mediaType: "image/png",
-        filename: `preview-${index}.png`,
-      });
+      const preview = flowArtworkImages(task)[0];
+      if (preview) {
+        parts.push({
+          type: "file",
+          url: preview.url,
+          mediaType: preview.mediaType,
+          filename: `preview-${index}.png`,
+        });
+      }
     }
 
     if (step.terminal && status === "complete") {
@@ -181,43 +167,53 @@ const ARTWORK_ACTIONS = new Set([
   "improving_design",
 ]);
 
-function cardImage(task, step) {
-  const fromBuild = Array.isArray(task?.uiBuild?.images)
-    ? task.uiBuild.images.find((image) => image?.action === step.action || image?.stage === step.stage)
-    : null;
-  return fromBuild?.url || UI_MOCK_IMAGE_DATA_URL;
-}
-
-function isArtworkStep(step) {
-  return ARTWORK_ACTIONS.has(step.action) || ARTWORK_ACTIONS.has(step.stage);
-}
-
-function artworkCard(task, step, index, status) {
-  const label = labelForStep(step);
-  return {
-    id: `ui-image-${step.action || step.stage || index}`,
-    action: step.action || step.stage || "",
-    label,
-    state: status === "complete" ? "completed" : "generating",
-    src: cardImage(task, step),
-    alt: label,
-  };
-}
-
 function extraBuildImages(task, existingIds) {
   return (Array.isArray(task?.uiBuild?.images) ? task.uiBuild.images : []).flatMap((image, index) => {
     const id = image?.id || `ui-build-image-${index}`;
-    if (!image?.url || existingIds.has(id)) return [];
+    const src = typeof image?.url === "string" ? image.url : "";
+    const assetId = typeof image?.assetId === "string" ? image.assetId : "";
+    if ((!src && !assetId) || existingIds.has(id)) return [];
     const label = image.alt || image.label || image.action || "Generated artwork";
     return [{
       id,
       action: image.action || image.stage || "",
       label,
       state: image.state === "generating" ? "generating" : "completed",
-      src: image.url,
+      src,
+      assetId,
       alt: image.alt || label,
     }];
   });
+}
+
+function flowArtworkImages(task) {
+  return extraBuildImages(task, new Set()).flatMap((image, index) => {
+    if (!image.src) return [];
+    const jpeg = image.src.startsWith("data:image/jpeg");
+    return [{
+      id: image.id || `ui-art-${index}`,
+      url: image.src,
+      mediaType: jpeg ? "image/jpeg" : "image/png",
+      filename: jpeg ? "artwork.jpg" : "artwork.png",
+      alt: image.alt || image.label,
+    }];
+  });
+}
+
+function isArtworkStep(step) {
+  return ARTWORK_ACTIONS.has(step.action) || ARTWORK_ACTIONS.has(step.stage);
+}
+
+function pendingArtworkCard(step) {
+  const label = labelForStep(step);
+  return {
+    id: `ui-image-${step.action || step.stage || "artwork"}`,
+    action: step.action || step.stage || "",
+    label,
+    state: "generating",
+    src: "",
+    alt: label,
+  };
 }
 
 /** Artwork/edit cards only while that phase is the current turn. Hidden once code or the real preview starts. */
@@ -225,22 +221,18 @@ export function getUiGenerationCards({ busy = "", task = null, pipeline = UI_LOA
   const steps = getUiLoadingChainSteps({ busy, task, pipeline });
   const current = pipeline.find((_, index) => steps[index]?.status === "active");
   if (!current || !isArtworkStep(current)) return [];
-  return pipeline.flatMap((step, index) => {
-    const status = steps[index]?.status;
-    if (!status || status === "pending" || !isArtworkStep(step)) return [];
-    return [artworkCard(task, step, index, status)];
-  });
+  const published = extraBuildImages(task, new Set());
+  return published.length ? published : [pendingArtworkCard(current)];
 }
 
 /** Artwork that has started stays in the chat feed after the artwork turn and after the build finishes. */
 export function getUiChatImages({ busy = "", task = null, pipeline = UI_LOADING_PIPELINE } = {}) {
+  const published = extraBuildImages(task, new Set());
+  if (published.length) return published;
   const steps = getUiLoadingChainSteps({ busy, task, pipeline });
-  const fromPipeline = pipeline.flatMap((step, index) => {
-    const status = steps[index]?.status;
-    if (!status || status === "pending" || !isArtworkStep(step)) return [];
-    return [artworkCard(task, step, index, status)];
-  });
-  return [...fromPipeline, ...extraBuildImages(task, new Set(fromPipeline.map((image) => image.id)))];
+  const current = pipeline.find((_, index) => steps[index]?.status === "active");
+  if (current && isArtworkStep(current)) return [pendingArtworkCard(current)];
+  return [];
 }
 
 export function mergeUiChatImages(previous = [], next = []) {
@@ -253,7 +245,11 @@ export function mergeUiChatImages(previous = [], next = []) {
     const current = byId.get(image.id);
     byId.set(image.id, current ? { ...current, ...image, publish: current.publish } : image);
   });
-  return [...byId.values()];
+  const values = [...byId.values()];
+  if (values.some((image) => image.src || image.assetId)) {
+    return values.filter((image) => image.src || image.assetId || image.publish);
+  }
+  return values;
 }
 
 export function publishStateFromUpload(result) {

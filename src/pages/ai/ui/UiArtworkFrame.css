@@ -1,0 +1,9 @@
+.uc-artwork-skeleton {
+  display: block;
+  width: 100%;
+  min-height: 160px;
+  aspect-ratio: 16 / 9;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #fff 6%, transparent), transparent 42%),
+    color-mix(in srgb, #111 82%, #1f1f24);
+}

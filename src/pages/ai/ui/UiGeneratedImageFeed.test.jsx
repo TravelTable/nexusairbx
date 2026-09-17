@@ -22,6 +22,16 @@ const images = [
   { id: "two", label: "Improving the design", alt: "Edit pass", state: "completed", src: "data:image/png;base64,bbb" },
 ];
 
+test("shows a loading surface instead of a fake image while artwork has no url", () => {
+  render(<UiGeneratedImageFeed images={[
+    { id: "one", label: "Generating matching artwork", alt: "Artwork", state: "generating", src: "" },
+  ]} />);
+
+  expect(screen.getByText("Creating image. May take a moment.")).toBeVisible();
+  expect(screen.queryByRole("img")).not.toBeInTheDocument();
+  expect(screen.getByLabelText("Artwork is generating")).toBeVisible();
+});
+
 test("keeps generated images in a slider and opens a full preview", () => {
   const onPublish = jest.fn();
   render(<UiGeneratedImageFeed images={images} onPublish={onPublish} />);

@@ -13,7 +13,31 @@ jest.mock("../../../lib/taskRuntimeApi", () => Object.fromEntries(["createTask",
 jest.mock("../../../lib/uiPreviewApi", () => Object.fromEntries(["getUiPreviewManifest","requestUiCapture","readUiCapture"].map(name => [name, jest.fn()])));
 jest.mock("../../../lib/buildWorkspaceApi", () => ({ getBuildWorkspaceSnapshot: jest.fn(async () => ({ items: [] })), readBuildWorkspaceFile: jest.fn() }));
 jest.mock("@monaco-editor/react", () => () => <div>Monaco hooks editor</div>);
-jest.mock("../../../hooks/useChatAttachmentUpload", () => () => ({ upload: jest.fn(), retry: jest.fn() }));
+jest.mock("../../../hooks/useChatAttachmentUpload", () => ({ setAttachments }) => ({
+  upload: jest.fn((event) => {
+    const files = Array.from(event?.target?.files || event?.dataTransfer?.files || []);
+    if (!files.length) return;
+    setAttachments((previous) => [
+      ...previous,
+      ...files.map((file) => ({
+        localId: file.name,
+        name: file.name,
+        type: file.type || "image/png",
+        isImage: true,
+        kind: "image",
+        status: "ready",
+        id: `att-${file.name}`,
+        versionId: "v1",
+        contentHash: "hash",
+        previewUrl: `blob:${file.name}`,
+        width: /mobile/i.test(file.name) ? 390 : 1440,
+        height: /mobile/i.test(file.name) ? 844 : 900,
+        retryFile: file,
+      })),
+    ]);
+  }),
+  retry: jest.fn(),
+}));
 jest.mock("../../../hooks/useRobloxImageUpload", () => ({
   useRobloxImageUpload: () => ({
     uploading: false,
@@ -27,19 +51,22 @@ jest.mock("motion/react", () => ({
     div: ({ children, initial, animate, transition, ...props }) => <div {...props}>{children}</div>,
   },
 }));
-jest.mock("../../../components/ai/chat/CreationPromptComposer", () => props => <form onSubmit={event => props.onSubmit(event, props.prompt, { attachments: [] })}>
-  <textarea aria-label="UI prompt" value={props.prompt} onChange={e => props.setPrompt(e.target.value)} />
+jest.mock("../../../components/ai/chat/CreationPromptComposer", () => props => <form onSubmit={event => { event.preventDefault(); props.onSubmit(event, props.prompt, { attachments: [] }); }}>
+  <textarea aria-label={props.promptAriaLabel || "UI prompt"} value={props.prompt} placeholder={props.placeholder} onChange={e => props.setPrompt(e.target.value)} />
   {props.modeControl}
   {props.onOpenAssetLibrary ? <button type="button" onClick={props.onOpenAssetLibrary}>@asset</button> : null}
   {props.robloxProjectAssets?.map((asset) => <span key={asset.robloxAssetId || asset.id}>{asset.robloxAssetId}</span>)}
-  <button disabled={props.isGenerating}>Send prompt</button></form>);
+  <button type="submit" disabled={props.isGenerating}>{props.submitLabel || "Send prompt"}</button></form>);
 jest.mock("../../../components/ai/chat/MessageList", () => ({ messages }) => <div>{messages.map(m => <p key={m.id}>{m.content}</p>)}</div>);
 jest.mock("../../../components/ai-elements/conversation", () => ({ Conversation: ({children}) => <div>{children}</div>, ConversationContent: ({children}) => <div>{children}</div>, ConversationScrollButton: () => null }));
 jest.mock("./UiLoadingChain", () => ({ busy, task }) => (
   <div data-testid="ui-loading-chain">{busy || task?.uiBuild?.action || task?.uiBuild?.stage || ""}</div>
 ));
 jest.mock("../../../components/ai/workspace/BuildWorkspace", () => () => <div>Saved code workspace</div>);
-jest.mock("./UiPreviewPane", () => ({designId}) => <div data-testid="preview">{designId}</div>);
+jest.mock("./UiPreviewPane", () => ({designId, referenceImage, onMatchCloser}) => <div data-testid="preview">
+  {designId}
+  {referenceImage ? <button type="button" onClick={onMatchCloser}>Match closer</button> : null}
+</div>);
 
 const props = { user: { uid: "user-1" }, projectId: "project-1", projectTitle: "Game",
   isStarterOrAbove: true, modelVersion: "auto", studio: { connected: true }, studioSessionId: "session-1" };
@@ -317,10 +344,12 @@ test("generated artwork stays in chat after the artwork turn", async () => {
   fireEvent.change(screen.getByLabelText("UI prompt"), { target: { value: "Build a shop" } });
   fireEvent.click(screen.getByRole("button", { name: "Send prompt" }));
   await waitFor(() => expect(deliver).toBeDefined());
-  await act(async () => deliver({ eventId: "art-1", sequence: 1, eventType: "ui_build_progress", payload: { designId: "design-1", stage: "generating", action: "generating_artwork", sourceRevision: "rev-1" } }));
+  await act(async () => deliver({ eventId: "art-1", sequence: 1, eventType: "ui_build_progress", payload: { designId: "design-1", stage: "generating", action: "generating_artwork", sourceRevision: "rev-1", images: [{ id: "sheet-1", action: "generating_artwork", url: "data:image/png;base64,aaa", alt: "Generating matching artwork" }] } }));
   expect(screen.getByLabelText("Generated artwork")).toBeVisible();
+  expect(screen.getByRole("img", { name: "Generating matching artwork" })).toHaveAttribute("src", "data:image/png;base64,aaa");
   await act(async () => deliver({ eventId: "code-1", sequence: 2, eventType: "ui_build_progress", payload: { designId: "design-1", stage: "generating", action: "writing_ui", sourceRevision: "rev-1" } }));
   expect(screen.getByLabelText("Generated artwork")).toBeVisible();
+  expect(screen.getByRole("img", { name: "Generating matching artwork" })).toHaveAttribute("src", "data:image/png;base64,aaa");
   fireEvent.click(screen.getByRole("button", { name: "Open Generating matching artwork" }));
   expect(screen.getByRole("dialog", { name: "Artwork preview" })).toBeVisible();
   fireEvent.click(screen.getAllByRole("button", { name: "Publish to Roblox" })[0]);
@@ -342,6 +371,55 @@ test("UI composer can open the asset library and includes selected assets in the
   fireEvent.click(screen.getByRole("button", { name: "Send prompt" }));
   await waitFor(() => expect(tasks.createTask).toHaveBeenCalled());
   expect(tasks.createTask.mock.calls[0][0].message).toContain("rbxassetid://123456");
+});
+
+test("a screenshot alone starts image-only replication and keeps the reference pinned", async () => {
+  localStorage.removeItem("nexusrbx:ui:last-open:user-1:project-1");
+  designs.listUiDesigns.mockResolvedValue({ designs: [] });
+  const fresh = { ...record, designId: "fresh", document: { ...doc, designId: "fresh", screens: [{ nodes: [] }] } };
+  designs.createUiDesign.mockResolvedValue({ design: fresh });
+  tasks.createTask.mockResolvedValue({ task: { ...savedTask(), intent: { designId: "fresh", workspace: "ui_creator" } } });
+  tasks.getTaskEvents.mockImplementation(() => new Promise(() => {}));
+  render(<UiCreatorWorkspace {...props} />);
+  await waitFor(() => expect(screen.getByRole("button", { name: "Send prompt" })).toBeEnabled());
+  fireEvent.drop(screen.getByLabelText("Drop a screenshot to replicate"), {
+    dataTransfer: { files: [new File(["img"], "shop-desktop.png", { type: "image/png" })] },
+  });
+  fireEvent.click(await screen.findByRole("button", { name: "Build from reference" }));
+  await waitFor(() => expect(tasks.createTask).toHaveBeenCalledTimes(1));
+  expect(tasks.createTask.mock.calls[0][0].message).toMatch(/Reproduce this reference as closely as possible/i);
+  expect(tasks.createTask.mock.calls[0][0].executionInput.settings.referenceMode).toBe("replicate");
+  expect(tasks.createTask.mock.calls[0][0].attachments).toEqual(expect.arrayContaining([
+    expect.objectContaining({ name: "shop-desktop.png", isImage: true }),
+  ]));
+  await waitFor(() => expect(screen.getByLabelText("Pinned reference")).toBeVisible());
+  expect(screen.getByLabelText("Pinned reference")).toHaveTextContent("Replicate closely");
+});
+
+test("Match closer refines against the pinned screenshot after a preview exists", async () => {
+  localStorage.removeItem("nexusrbx:ui:last-open:user-1:project-1");
+  designs.listUiDesigns.mockResolvedValue({ designs: [] });
+  const fresh = { ...record, designId: "fresh", document: { ...doc, designId: "fresh", screens: [{ nodes: [] }] } };
+  const done = { ...savedTask("complete"), status: "succeeded", intent: { designId: "fresh", workspace: "ui_creator" } };
+  designs.createUiDesign.mockResolvedValue({ design: fresh });
+  tasks.createTask
+    .mockResolvedValueOnce({ task: { ...savedTask(), intent: { designId: "fresh", workspace: "ui_creator" } } })
+    .mockResolvedValueOnce({ task: done });
+  tasks.getTaskEvents.mockResolvedValue({ task: done, events: [], lastSequence: 0 });
+  render(<UiCreatorWorkspace {...props} />);
+  await waitFor(() => expect(screen.getByRole("button", { name: "Send prompt" })).toBeEnabled());
+  fireEvent.drop(screen.getByLabelText("Drop a screenshot to replicate"), {
+    dataTransfer: { files: [new File(["img"], "shop-desktop.png", { type: "image/png" })] },
+  });
+  fireEvent.click(await screen.findByRole("button", { name: "Build from reference" }));
+  await waitFor(() => expect(tasks.createTask).toHaveBeenCalledTimes(1));
+  await waitFor(() => expect(screen.getByRole("button", { name: "Send prompt" })).toBeEnabled());
+  fireEvent.click(await screen.findByRole("button", { name: "Match closer" }));
+  await waitFor(() => expect(tasks.createTask).toHaveBeenCalledTimes(2));
+  expect(tasks.createTask.mock.calls[1][0].message).toMatch(/largest visual discrepancies/i);
+  expect(tasks.createTask.mock.calls[1][0].attachments).toEqual(expect.arrayContaining([
+    expect.objectContaining({ name: "shop-desktop.png" }),
+  ]));
 });
 
 test("mock mode plays the shared UI presentation path without API calls", async () => {

@@ -5,6 +5,7 @@ export default function VideoShowcase() {
   return (
     <section id="proof" className={styles.videoSection} aria-labelledby="video-showcase-heading">
       <div className={styles.sectionHeading}>
+        <span className={styles.sectionKicker}>Live project proof</span>
         <h2 id="video-showcase-heading">See what creators build with NexusRBX</h2>
         <p>
           Real gameplay, custom systems, and Roblox Studio project results captured directly from live test environments.
@@ -13,6 +14,10 @@ export default function VideoShowcase() {
 
       <div className={styles.videoGrid}>
         <article className={styles.videoCard}>
+          <div className={styles.videoCardRail} aria-hidden="true">
+            <span>Playtest 01</span>
+            <span>Studio capture</span>
+          </div>
           <div className={styles.videoWrapper}>
             <video
               className={styles.videoElement}
@@ -33,6 +38,10 @@ export default function VideoShowcase() {
         </article>
 
         <article className={styles.videoCard}>
+          <div className={styles.videoCardRail} aria-hidden="true">
+            <span>Playtest 02</span>
+            <span>Studio capture</span>
+          </div>
           <div className={styles.videoWrapper}>
             <video
               className={styles.videoElement}

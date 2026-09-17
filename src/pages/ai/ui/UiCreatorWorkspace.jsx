@@ -1,7 +1,6 @@
 import UiReferenceDetails from './UiReferenceDetails';
 import ModelRequestEstimate from '../../../components/ai/ModelRequestEstimate';
 import ModelRoutingNotice from '../../../components/ai/ModelRoutingNotice';
-import NexusSelect from '../../../components/ui/NexusSelect';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import CreationPromptComposer from '../../../components/ai/chat/CreationPromptComposer';
 import MessageList from '../../../components/ai/chat/MessageList';
@@ -19,6 +18,18 @@ import useChatAttachmentUpload from '../../../hooks/useChatAttachmentUpload';
 import { normalizeChatAttachments } from '../../../lib/chatAttachments';
 import { askUiQuestion, watchUiConversation } from '../../../lib/uiConversation';
 import './UiCreatorWorkspace.css';
+import UiReferencePin from './UiReferencePin';
+import useUiReferencePreview from './useUiReferencePreview';
+import {
+  composeUiReferencePrompt,
+  inferReferenceRole,
+  inferReferenceTarget,
+  isUiReferenceImage,
+  listUiReferenceImages,
+  MATCH_CLOSER_PROMPT,
+  referenceAttachmentKey,
+  referenceRoleLabel,
+} from '../../../lib/uiReferenceSession';
 
 import { getUiWorkspacePresentation, UI_BUILD_LABELS, UI_ACTION_LABELS as actions, UI_BUILD_TERMINAL_STAGES } from '../../../lib/runPresentation';
 import { getUiChatImages, getUiGenerationCards, mergeUiChatImages, publishStateFromUpload } from '../../../lib/uiAgentFlowMessage';
@@ -47,6 +58,10 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
   const [events, setEvents] = useState([]), [history, setHistory] = useState([]), [answer, setAnswer] = useState('');
   const [files, setFiles] = useState([]), [manifest, setManifest] = useState(null), [prompt, setPrompt] = useState('');
   const [referenceMode, setReferenceMode] = useState('replicate');
+  const [referenceTarget, setReferenceTarget] = useState('responsive');
+  const [referenceBehaviour, setReferenceBehaviour] = useState('infer');
+  const [referenceRoles, setReferenceRoles] = useState({});
+  const [pinnedReferences, setPinnedReferences] = useState([]);
   const [attachments, setAttachments] = useState([]), [drawer, setDrawer] = useState('');
   const [checkpoints, setCheckpoints] = useState([]), [busy, setBusy] = useState(''), [error, setError] = useState('');
   const [pendingPrompt, setPendingPrompt] = useState(''), [connection, setConnection] = useState(''), [undo, setUndo] = useState(null);
@@ -149,7 +164,7 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
     } catch (e) { if (current()) report(e); } finally { if (current()) setBusy(''); }
   }, [assign, report, resetSession]);
   useEffect(() => {
-    let stopped = false; ++loadSequence.current; resetSession(); setDesigns([]); setPrompt(''); setAttachments([]); setDrawer(''); setUndo(null); setError(''); setBusy(''); lock.current = false;
+    let stopped = false; ++loadSequence.current; resetSession(); setDesigns([]); setPrompt(''); setAttachments([]); setPinnedReferences([]); setReferenceRoles({}); setReferenceMode('replicate'); setReferenceTarget('responsive'); setReferenceBehaviour('infer'); setDrawer(''); setUndo(null); setError(''); setBusy(''); lock.current = false;
     if (!user?.uid || !isStarterOrAbove || !projectId) return undefined;
     setBusy('Loading project');
     listUiDesigns(projectId).then(async result => {
@@ -208,7 +223,15 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
       if (!current() || Number(event.sequence || 0) <= afterSequence) return;
       afterSequence = Math.max(afterSequence, event.sequence || 0); append([event]);
       if (event.eventType === 'ui_build_progress' && event.payload?.designId === id) {
-        setTask(t => ({ ...t, uiBuild: event.payload })); setConnection('');
+        setTask(t => ({
+          ...t,
+          uiBuild: {
+            ...event.payload,
+            images: Array.isArray(event.payload.images) && event.payload.images.length
+              ? event.payload.images
+              : (t?.uiBuild?.images || []),
+          },
+        })); setConnection('');
         if (['generating', 'repairing'].includes(event.payload.stage) && event.payload.sourceFiles?.length) return;
       }
       void refresh();
@@ -225,25 +248,70 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
     if (requestScope !== scopeRef.current) return null;
     ++loadSequence.current; resetSession(); assign(result.design); setDesigns(all => [result.design, ...all]); return result.design;
   };
+  const targetTouched = useRef(false);
+  useEffect(() => {
+    const images = listUiReferenceImages(attachments);
+    setReferenceRoles((previous) => {
+      const next = {};
+      images.forEach((image, index) => {
+        const key = referenceAttachmentKey(image);
+        next[key] = previous[key] || inferReferenceRole(image, index, images);
+      });
+      return next;
+    });
+    if (!targetTouched.current && images[0]) setReferenceTarget(inferReferenceTarget(images[0]));
+  }, [attachments]);
+  useEffect(() => {
+    const saved = document?.designMemory?.reference;
+    if (!saved?.attachment || pinnedReferences.length) return;
+    setPinnedReferences([{ ...saved.attachment, isImage: true, kind: 'image', width: saved.width, height: saved.height }]);
+  }, [document?.designId, document?.designMemory?.reference, pinnedReferences.length]);
+  const specImages = listUiReferenceImages(attachments).length
+    ? listUiReferenceImages(attachments)
+    : listUiReferenceImages(pinnedReferences);
+  const pinItem = specImages.find((item) => referenceRoles[referenceAttachmentKey(item)] === 'primary') || specImages[0] || null;
+  const pinSrc = useUiReferencePreview(pinItem);
+  const hasReference = specImages.length > 0;
+  const uploadFiles = useCallback((event) => {
+    if (event?.replace) setAttachments((previous) => previous.filter((item) => !isUiReferenceImage(item)));
+    attachmentUpload.upload(event);
+  }, [attachmentUpload]);
   const submit = async (event, override, freshTitle) => {
     event?.preventDefault?.();
     // ChatComposer supplies request options in argument three; only templates
     // provide a title and intentionally start a fresh design.
     freshTitle = typeof freshTitle === 'string' ? freshTitle : '';
     if (!allowed() || working || lock.current) return;
-    const draft = (typeof override === 'string' ? override : prompt).trim(); if (!draft) return;
+    const draft = (typeof override === 'string' ? override : prompt).trim();
+    const liveImages = listUiReferenceImages(attachments);
+    const referenceImages = liveImages.length ? liveImages : listUiReferenceImages(pinnedReferences);
+    if (!draft && !referenceImages.length) return;
+    const roles = referenceImages.map((item, index) => {
+      const key = referenceAttachmentKey(item);
+      const role = referenceRoles[key] || inferReferenceRole(item, index, referenceImages);
+      return { name: item.name, role, roleLabel: referenceRoleLabel(role) };
+    });
+    const composed = composeUiReferencePrompt({
+      prompt: draft,
+      hasReference: referenceImages.length > 0,
+      referenceMode,
+      target: referenceTarget,
+      behaviour: referenceBehaviour,
+      roles,
+    });
     const assetHint = (robloxProjectAssets || []).map(asset => asset.robloxAssetId || asset.assetId || asset.id).filter(Boolean).map(id => `rbxassetid://${id}`).join(', ');
-    const message = assetHint ? `${draft}\n\nUse these Roblox assets: ${assetHint}` : draft;
+    const message = assetHint ? `${composed}\n\nUse these Roblox assets: ${assetHint}` : composed;
+    if (referenceImages.length) setPinnedReferences(referenceImages);
     if (mockRuns?.enabled) {
       setPrompt('');
       setError('');
-      setPendingPrompt(draft);
+      setPendingPrompt(composed);
       await mockRuns.play('ui-happy-path', {
         projectId,
         chatId: designRef.current?.chatId || designRef.current?.designId || 'mock-chat',
         designId: designRef.current?.designId || 'mock-design',
         sourceRevision: designRef.current?.document?.revision || 'mock-rev',
-        prompt: draft,
+        prompt: composed,
       });
       return;
     }
@@ -252,18 +320,19 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
       const target = freshTitle || !designRef.current ? await createBlank(freshTitle || 'Untitled UI') : designRef.current;
       if (!target || requestScope !== scopeRef.current) return;
       const targetDoc = target.document; const selectedMode = freshTitle ? 'agent' : mode;
+      const taskAttachments = liveImages.length ? attachments : [...referenceImages, ...attachments.filter(item => !isUiReferenceImage(item))];
       const input = { message, mode: selectedMode, workspace: 'ui_creator', designId: target.designId,
         baseRevision: targetDoc.revision, uiIntent: targetDoc.sourceFiles?.length || targetDoc.screens?.some(s => s.nodes?.length) ? 'edit' : 'create', projectId,
-        chatId: target.chatId || target.designId, attachments: normalizeChatAttachments(attachments, { includeData: false }),
-        executionInput: { settings: { modelVersion, referenceMode }, applyMode: 'manual_review', studioEnabled: false } };
+        chatId: target.chatId || target.designId, attachments: normalizeChatAttachments(taskAttachments, { includeData: false }),
+        executionInput: { settings: { modelVersion, referenceMode, referenceTarget, referenceBehaviour }, applyMode: 'manual_review', studioEnabled: false } };
       const inputKey = JSON.stringify(input);
       if (requestKey.current?.input !== inputKey) requestKey.current = { input: inputKey, key: `ui-task:${crypto.randomUUID()}` };
-      setPendingPrompt(draft); setPrompt('');
+      setPendingPrompt(composed); setPrompt('');
       const result = await createTask(input, { idempotencyKey: requestKey.current.key });
       if (scopeRef.current !== requestScope || designRef.current?.designId !== input.designId) return;
       if (selectedMode === 'ask') {
         setBusy('Answering'); const controller = new AbortController(); askController.current = controller;
-        await askUiQuestion({ uid: user.uid, chatId: input.chatId, projectId, prompt: draft, modelVersion, attachments: input.attachments,
+        await askUiQuestion({ uid: user.uid, chatId: input.chatId, projectId, prompt: composed, modelVersion, attachments: input.attachments,
           operationId: requestKey.current.key + ':answer', conversation: history, signal: controller.signal,
           onText: text => { if (scopeRef.current === requestScope && designRef.current?.designId === input.designId) setAnswer(text); } });
         setAnswer(''); onBillingRefresh?.();
@@ -338,7 +407,22 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
     }
     setStopping(true); try { if (busy === 'Answering') { askController.current?.abort(); return; } if (taskId) { await cancelTask(taskId); setTask(t => ({ ...t, status: 'cancelled' })); } } catch (e) { report(e); } finally { setStopping(false); }
   };
-  const newUI = async () => { if (working || !allowed()) return; ++loadSequence.current; resetSession(); try { window.localStorage.removeItem(lastOpenKey); } catch {} setPrompt(''); setAttachments([]); setError(''); setDrawer(''); };
+  const newUI = async () => {
+    if (working || !allowed()) return;
+    ++loadSequence.current;
+    resetSession();
+    try { window.localStorage.removeItem(lastOpenKey); } catch {}
+    targetTouched.current = false;
+    setPrompt('');
+    setAttachments([]);
+    setPinnedReferences([]);
+    setReferenceRoles({});
+    setReferenceMode('replicate');
+    setReferenceTarget('responsive');
+    setReferenceBehaviour('infer');
+    setError('');
+    setDrawer('');
+  };
   const checkpoint = async () => { try { await createUiCheckpoint(document.designId, { expectedRevision: document.revision }); await openDrawer('history'); } catch (e) { report(e); } };
   const restore = async c => { try { await restoreUiCheckpoint(document.designId, c.checkpointId, document.revision); await load(document.designId); } catch (e) { report(e); } };
   const rename = async title => { try { await renameUiDesign(document.designId, document.revision, title); await load(document.designId); } catch (e) { report(e); } };
@@ -354,7 +438,7 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
     {messages.length ? <MessageList messages={messages} activeMode="ui" isBusy={working} studioConnected={studioReady} studioSessionId={studioSessionId} notify={notify}/> : null}
     {showPrompt ? <div className="uc-session-message">{livePrompt}</div> : null}
     {showLoadingChain ? <UiLoadingChain busy={liveBusy} task={liveTask} /> : null}
-    {chatImages.length ? <UiGeneratedImageFeed images={chatImages} onPublish={publishGeneratedImage} publishingId={publishingId} publishDisabledReason={robloxUpload.readiness?.ready ? '' : robloxUpload.readiness?.message || ''} /> : null}
+    {chatImages.length ? <UiGeneratedImageFeed images={chatImages} projectId={projectId} onPublish={publishGeneratedImage} publishingId={publishingId} publishDisabledReason={robloxUpload.readiness?.ready ? '' : robloxUpload.readiness?.message || ''} /> : null}
     {presentation.terminal && !working ? <p className="uc-file-note nx-result-reveal">{mockRuns?.frame?.placeholder || status}</p> : null}
 
     {answer ? <MessageList messages={[{ id: 'live-answer', role: 'assistant', content: answer, metadata }]} activeMode="ui" isBusy={working}/> : null}
@@ -362,14 +446,12 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
     {!working && saved && build?.stage === 'failed' && (build.errorCode === 'UI_VISUAL_REVIEW_INCOMPLETE' || build.message === 'Invalid UI visual review.') ? <button type="button" className="uc-button" onClick={retryReview}>Retry review</button> : null}
     {liveTask?.mode === 'plan' && !build ? <div className="uc-session-message"><p>{liveTask.intent?.normalizedGoal}</p><button className="uc-button uc-primary" onClick={async () => { try { const result = await approveTask(taskId, { executionInput: { settings: { modelVersion }, applyMode: 'manual_review', studioEnabled: false } }); setTask(result.task); } catch (e) { report(e); } }}>Build this plan</button></div> : null}
   </ConversationContent><ConversationScrollButton/></Conversation>{active || busy === 'Answering' || (mockActive && mockRuns.playing) ? <div className="uc-conversation-footer"><button onClick={stop}>Stop {busy === 'Answering' ? 'response' : 'build'}</button></div> : null}</>;
-  const composer = <>{attachments.some(a => a.isImage || a.kind === 'image' || /\.(png|jpe?g|webp)$/i.test(a.name || '')) && <label className="uc-reference-mode">Reference use
-    <NexusSelect aria-label="Reference use" value={referenceMode} onChange={e => setReferenceMode(e.target.value)} disabled={working}>
-      <option value="replicate">Replicate reference</option><option value="inspiration">Use as inspiration</option>
-    </NexusSelect>
-  </label>}<ModelRoutingNotice routing={build?.modelRouting} /><ModelRequestEstimate prompt={prompt} model={modelVersion} projectId={projectId} requestCategory="ui_generation" enabled={Boolean(user?.uid) && !working} />
+  const composer = <><ModelRoutingNotice routing={build?.modelRouting} /><ModelRequestEstimate prompt={prompt} model={modelVersion} projectId={projectId} requestCategory="ui_generation" enabled={Boolean(user?.uid) && !working} />
   <CreationPromptComposer prompt={prompt} setPrompt={setPrompt} attachments={attachments} setAttachments={setAttachments}
-    onFileUpload={attachmentUpload.upload} onRetryAttachment={attachmentUpload.retry} onSubmit={submit} onStop={stop} onCancel={stop}
-    isGenerating={working} presentation={presentation} compactStatus disabled={liveBusy === 'Starting build'} placeholder="Describe your UI…" promptAriaLabel="UI prompt" submitLabel="Send prompt"
+    onFileUpload={uploadFiles} onRetryAttachment={attachmentUpload.retry} onSubmit={submit} onStop={stop} onCancel={stop}
+    isGenerating={working} presentation={presentation} compactStatus disabled={liveBusy === 'Starting build'}
+    placeholder={hasReference ? 'What should I change from this reference?' : 'Describe your UI…'}
+    promptAriaLabel="UI prompt" submitLabel="Send prompt"
     mode={mode} showDock={false} showWorkspaceOptions={false} modeControl={null}
     studioConnectionRequired={false} studioConnected={studioReady} studioConnectionType={studio?.connectionType}
     onStudioConnectionOpen={onOpenStudio} onOpenAssetLibrary={onOpenAssetLibrary} assetLibraryOpen={assetLibraryOpen}
@@ -386,7 +468,9 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
     studioConnected={studioReady} hasNodes={saved} studioReceipt={applied} onApplyToStudio={applySaved} onConnectStudio={connect}
     onRefreshCapture={studioReady && !document?.sourceFiles ? sync : undefined} sourceOwned={Boolean(document?.sourceFiles)} onRefreshManifest={refreshManifest} captureBusy={busy === 'Capturing UI'} applyBusy={working}
     updatingRevision={liveBusy === 'Starting build' || (['generating','repairing'].includes(build?.stage) && active)} previewFailed={build?.stage === 'preview_unavailable'} buildFailure={build?.stage === 'failed' ? build.message || 'The UI build could not finish.' : null} pendingStudioCommand={build?.stage === 'awaiting_studio' ? build.commandId : null}
-    onRenderStatus={onRenderStatus} generationCards={generationCards} run={active ? { stage: actions[build?.action] || UI_BUILD_LABELS[build?.stage] || 'Starting build', working: presentation.active } : null}/></div>
+    onRenderStatus={onRenderStatus} generationCards={generationCards} run={active ? { stage: actions[build?.action] || UI_BUILD_LABELS[build?.stage] || 'Starting build', working: presentation.active } : null}
+    referenceImage={pinSrc ? { src: pinSrc, alt: pinItem?.name || 'Uploaded UI reference', width: pinItem?.width, height: pinItem?.height } : null}
+    onMatchCloser={() => submit(null, MATCH_CLOSER_PROMPT)}/></div>
     {showLiveFiles && !showGenerationCards ? <UiLiveFiles key={taskId || 'mock-ui'} files={liveFiles || build?.sourceFiles || []} stage={build?.stage} action={build?.action} working={presentation.active}/> : null}</>;
   return <WorkspacePresentationContext.Provider value={presentation}><UiCreatorChrome document={document} designs={designs} projectTitle={projectTitle} studioReady={studioReady} working={working} presentation={presentation} loading={Boolean(busy)} status={status}
     sharedHeader={sharedHeader} headerActionTarget={headerActionTarget} onHeaderModalChange={onHeaderModalChange}
@@ -394,7 +478,22 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
     error={error} onDismissError={() => setError('')} modelControl={modelControl} studioControl={studioControl} onModeChange={onModeChange}
     onChangeProject={onChangeProject} onOpenEvidence={onOpenEvidence} onOpenStudio={connect} onAccount={() => navigateTo?.('/settings')}
     landing={!document && !livePending && !liveTask && liveBusy !== 'Opening UI'}
-    onFileUpload={attachmentUpload.upload} attachments={attachments}
+    onFileUpload={uploadFiles} attachments={attachments}
+    onBuild={() => submit()}
+    onRemoveReferences={() => setAttachments((previous) => previous.filter((item) => !isUiReferenceImage(item)))}
+    onRemoveReference={(item) => setAttachments((previous) => previous.filter((entry) => referenceAttachmentKey(entry) !== referenceAttachmentKey(item)))}
+    referenceMode={referenceMode} onReferenceMode={setReferenceMode}
+    referenceTarget={referenceTarget} onReferenceTarget={(value) => { targetTouched.current = true; setReferenceTarget(value); }}
+    referenceBehaviour={referenceBehaviour} onReferenceBehaviour={setReferenceBehaviour}
+    referenceRoles={referenceRoles}
+    onReferenceRole={(key, role) => setReferenceRoles((previous) => {
+      const next = { ...previous, [key]: role };
+      if (role === 'primary') {
+        Object.keys(next).forEach((other) => { if (other !== key && next[other] === 'primary') next[other] = 'other'; });
+      }
+      return next;
+    })}
+    referencePin={hasReference ? <UiReferencePin mode={referenceMode} image={{ ...pinItem, src: pinSrc, alt: pinItem?.name }} /> : null}
     onNew={newUI} onLoad={load} onApply={applySaved} onDrawer={openDrawer} onPrompt={setPrompt} onTemplate={t => submit(null, t.prompt, t.title)}
     onRename={rename} onDelete={remove} undo={undo} onUndo={() => recover()} drawer={drawer} onCloseDrawer={closeDrawer}
     drawerContent={<>{progress.length ? <details className="uc-build-timeline" open={drawer === 'history'}><summary>Build activity</summary><ol className="uc-live-actions" aria-label="Build actions">{progress.map((label, i) => <li key={i} data-active={presentation.active && i === progress.length - 1}>{label}</li>)}</ol></details> : null}<UiImplementationDrawer tab={drawer} document={document} files={files} readFile={readFile} working={working} build={build} liveFiles={build?.sourceFiles || []} onReview={retryReview}

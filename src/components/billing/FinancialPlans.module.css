@@ -732,33 +732,57 @@
   }
 }
 
-/* Homepage compact: one split selector, not two marketing cards. */
-.section[data-pricing-layout="compact"] .cards {
-  overflow: hidden;
-  gap: 0;
-  border: 1px solid var(--pricing-rule);
-  border-radius: var(--nx-radius-panel);
+/* Homepage compact: dimensional plan selectors without pointer-following effects. */
+.section[data-pricing-layout="compact"] .cycleToggle {
   background: var(--pricing-card);
+  box-shadow: var(--nx-shadow-control);
 }
 
-.section[data-pricing-layout="compact"] .planCard {
+.section[data-pricing-layout="compact"] .cards {
+  overflow: visible;
+  gap: var(--nx-space-3);
   border: 0;
   border-radius: 0;
   background: transparent;
-  box-shadow: none;
 }
 
-.section[data-pricing-layout="compact"] .planCard + .planCard {
-  border-left: 1px solid var(--pricing-rule);
+.section[data-pricing-layout="compact"] .planCard {
+  border: 1px solid var(--pricing-rule);
+  border-radius: var(--nx-radius-overlay);
+  background: var(--pricing-card);
+  box-shadow: var(--nx-shadow-control);
+}
+
+.section[data-pricing-layout="compact"] .planCard::before {
+  position: absolute;
+  inset: 0 18px auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--pricing-rule-strong), transparent);
+  content: "";
+  pointer-events: none;
 }
 
 .section[data-pricing-layout="compact"] .planCard[data-featured="true"] {
   transform: none;
   background: var(--pricing-raised);
+  border-color: var(--nx-purple-border);
+  box-shadow: var(--nx-shadow-card);
+}
+
+.section[data-pricing-layout="compact"] .planCard[data-featured="true"]::before {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--nx-purple), transparent);
 }
 
 .section[data-pricing-layout="compact"] .planCard:hover {
-  transform: none;
+  border-color: var(--pricing-rule-strong);
+  background: var(--pricing-raised);
+  box-shadow: var(--nx-shadow-floating);
+  transform: translateY(-4px);
+}
+
+.section[data-pricing-layout="compact"] .planCard[data-featured="true"]:hover {
+  border-color: var(--nx-purple-border);
 }
 
 .section[data-pricing-layout="compact"] .featureList,
@@ -797,11 +821,15 @@
   .section[data-pricing-layout="compact"] .planCard,
   .section[data-pricing-layout="compact"] .planCard + .planCard {
     border: 1px solid var(--pricing-rule);
-    border-radius: var(--nx-radius-panel);
+    border-radius: var(--nx-radius-overlay);
   }
 
   .section[data-pricing-layout="compact"] .planCard + .planCard {
-    margin-top: var(--nx-space-3);
+    margin-top: 0;
+  }
+
+  .section[data-pricing-layout="compact"] .planCard[data-featured="true"] {
+    border-color: var(--nx-purple-border);
   }
 }
 

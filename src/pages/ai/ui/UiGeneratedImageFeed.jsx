@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import ImageGeneration from "./ImageGeneration";
+import UiArtworkFrame from "./UiArtworkFrame";
 import "./UiGeneratedImageFeed.css";
 
 function publishCopy(publish) {
@@ -19,6 +20,7 @@ function publishCopy(publish) {
 
 export default function UiGeneratedImageFeed({
   images = [],
+  projectId = "",
   onPublish,
   publishingId = "",
   publishDisabledReason = "",
@@ -86,10 +88,17 @@ export default function UiGeneratedImageFeed({
                 <button
                   type="button"
                   className="uc-image-feed__open"
-                  onClick={() => setOpenId(image.id)}
+                  onClick={() => image.src && setOpenId(image.id)}
+                  disabled={!image.src}
                   aria-label={`Open ${image.alt || image.label || "generated image"}`}
                 >
-                  <img src={image.src} alt={image.alt || image.label || "Generated artwork"} />
+                  <UiArtworkFrame
+                    src={image.src}
+                    assetId={image.assetId}
+                    projectId={projectId}
+                    alt={image.alt || image.label || "Generated artwork"}
+                    generating={image.state !== "completed"}
+                  />
                 </button>
               </ImageGeneration>
               <figcaption>
@@ -135,7 +144,9 @@ export default function UiGeneratedImageFeed({
             <button type="button" className="uc-image-feed__close" aria-label="Close artwork preview" onClick={() => setOpenId("")}>
               <X size={16} />
             </button>
+            {opened?.src ? (
             <img src={opened.src} alt={opened.alt || opened.label || "Generated artwork"} />
+            ) : null}
             <p>{publishCopy(opened.publish) || opened.label}</p>
             {opened.state === "completed" ? (
               <button
