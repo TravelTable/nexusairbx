@@ -7,6 +7,8 @@ const mockTaskProgressPanel = jest.fn();
 const mockAgentChatPanel = jest.fn();
 const mockStudioPairControl = jest.fn();
 const mockCodeWorkspace = jest.fn();
+const mockGetStudioSessionId = jest.fn(() => null);
+const mockSelectedStudioSupportsCommand = jest.fn(() => false);
 jest.mock("../../hooks/useBuildWorkspace", () => ({ __esModule: true, default: () => ({
   scopeKey: "task-scope", items: [], connection: "connected", error: "", readFile: jest.fn(), reconnect: jest.fn(),
 }) }));
@@ -196,7 +198,7 @@ jest.mock("../../components/onboarding/useTutorial", () => ({
 jest.mock("../../components/ai/workspace/studioControlAccess", () => ({
   getActiveStudioCapabilities: () => [],
   isCurrentPluginAutoPushAuthorized: () => false,
-  selectedStudioSupportsCommand: () => false,
+  selectedStudioSupportsCommand: (...args) => mockSelectedStudioSupportsCommand(...args),
 }));
 jest.mock("../../lib/studioBridgeApi", () => ({
   getStudioCommand: jest.fn(),
@@ -210,11 +212,21 @@ jest.mock("../../lib/workspaceApi", () => ({
   getWorkspaceCommand: jest.fn(),
   streamWorkspaceCommandEvents: jest.fn(),
 }));
-jest.mock("../../lib/studioConnection", () => ({ getStudioSessionId: () => null }));
+jest.mock("../../lib/studioConnection", () => ({ getStudioSessionId: (...args) => mockGetStudioSessionId(...args) }));
 
-import AgentWorkspaceLayout from "./AgentWorkspaceLayout";
+import AgentWorkspaceLayout, { hasFreshStudioManifestRevision } from "./AgentWorkspaceLayout";
 
 const noop = jest.fn();
+
+test("only reuses a completed Studio manifest when its completion time is known and recent", () => {
+  const now = 1_700_000_000_000;
+  const revision = { lastCompleteRevision: "revision_1" };
+
+  expect(hasFreshStudioManifestRevision(revision, now)).toBe(false);
+  expect(hasFreshStudioManifestRevision({ ...revision, lastCompleteAt: now - 60_000 }, now)).toBe(true);
+  expect(hasFreshStudioManifestRevision({ ...revision, lastCompleteAt: now - 6 * 60_000 }, now)).toBe(false);
+  expect(hasFreshStudioManifestRevision({ ...revision, lastCompleteAt: now - 60_000, conflicted: true }, now)).toBe(false);
+});
 
 function openStageView(label) {
   fireEvent.click(screen.getByRole("button", { name: 'Code / Files' }));
@@ -306,7 +318,43 @@ function makeController({
 describe("AgentWorkspaceLayout task-runtime wiring", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockGetStudioSessionId.mockImplementation((session) => session?.sessionId || null);
+    mockSelectedStudioSupportsCommand.mockReturnValue(false);
     mockUseActiveAgents.mockReturnValue({ agents: [], cancelRun: jest.fn() });
+  });
+
+  test("does not show a prior Studio session's manifest after switching sessions", async () => {
+    const { getStudioManifest, getStudioManifestStatus } = require("../../lib/studioBridgeApi");
+    let completeOldStatus;
+    const oldStatus = new Promise((resolve) => { completeOldStatus = resolve; });
+    mockSelectedStudioSupportsCommand.mockReturnValue(true);
+    mockUseTaskRuntime.mockReturnValue({ enabled: true, task: null, events: [], connectionState: "idle" });
+    getStudioManifestStatus.mockImplementation(({ sessionId }) => sessionId === "session_old"
+      ? oldStatus
+      : Promise.resolve({ status: {
+          lastCompleteRevision: "revision_new", activeRevision: "revision_new",
+          lastCompleteAt: Date.now(), complete: true,
+        } }));
+    getStudioManifest.mockImplementation(({ sessionId }) => Promise.resolve({ manifest: { items: [{
+      id: sessionId, canonicalPath: `ServerScriptService/${sessionId}`,
+      className: "Script",
+    }] } }));
+    const studioFor = (sessionId) => ({
+      connected: true, pluginConnected: true, manifestSession: { sessionId },
+    });
+    const view = render(<AgentWorkspaceLayout controller={makeController({ studio: studioFor("session_old") })} />);
+    view.rerender(<AgentWorkspaceLayout controller={makeController({ studio: studioFor("session_new") })} />);
+    openStageView("Studio");
+    expect(await screen.findByText("ServerScriptService/session_new")).toBeTruthy();
+    await act(async () => {
+      completeOldStatus({ status: {
+        lastCompleteRevision: "revision_old", activeRevision: "revision_old",
+        lastCompleteAt: Date.now(), complete: true,
+      } });
+      await oldStatus;
+    });
+    expect(screen.queryByText("ServerScriptService/session_old")).toBeNull();
+    expect(screen.getByText("ServerScriptService/session_new")).toBeTruthy();
   });
 
   test("provides an AI workspace skip target and a labelled mode group", () => {
@@ -947,6 +995,33 @@ describe("AgentWorkspaceLayout task-runtime wiring", () => {
 
     expect(openWorkspaceProject).toHaveBeenCalledWith("project_2");
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  test("shows saved games when the header project selector opens", async () => {
+    mockUseTaskRuntime.mockReturnValue({ enabled: false, task: null, events: [], connectionState: "disabled" });
+    const openWorkspaceProject = jest.fn().mockResolvedValue(undefined);
+    const closeProjectSelector = jest.fn();
+    const controller = makeController({
+      currentChatMeta: { projectId: "project_current" },
+      handlers: { openWorkspaceProject, closeProjectSelector },
+    });
+    controller.project = {
+      ...controller.project,
+      activeProjectId: "project_current",
+      selectorOpen: true,
+      projects: [
+        { projectId: "project_current", title: "Current game" },
+        { projectId: "project_other", title: "Critter Courier" },
+      ],
+    };
+
+    render(<AgentWorkspaceLayout controller={controller} locationSearch="?mode=ui" />);
+
+    expect(screen.getByRole("dialog", { name: "Choose a game" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Critter Courier" }));
+    expect(openWorkspaceProject).toHaveBeenCalledWith("project_other");
+    fireEvent.click(screen.getByRole("button", { name: /Current game Current/ }));
+    expect(closeProjectSelector).toHaveBeenCalledTimes(1);
   });
 
   test("does not let Escape close the persistent desktop project navigation", () => {

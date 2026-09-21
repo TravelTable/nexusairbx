@@ -118,6 +118,27 @@ test("Agent starts one durable UI task and cancellation uses the task action", a
   fireEvent.click(await screen.findByRole("button", {name:"Stop build"}));
   await waitFor(() => expect(tasks.cancelTask).toHaveBeenCalledWith("task-1"));
 });
+test('source retry action sends the exact saved request and prior job identity', async () => {
+  const emptyDoc = { ...doc, screens: [{ nodes: [] }], sourceFiles: [] };
+  const emptyRecord = { ...record, document: emptyDoc, activeUiTaskId: 'latest-task' };
+  designs.listUiDesigns.mockResolvedValue({ designs: [emptyRecord] });
+  designs.getUiDesign.mockResolvedValue({ design: emptyRecord });
+  const latest = { ...savedTask('failed'), taskId: 'latest-task', status: 'failed', uiBuild: { stage: 'failed', sourceRevision: 'rev-1' } };
+  const previous = { ...savedTask('generating'), taskId: 'old-task', status: 'cancelled',
+    intent: { ...savedTask().intent, original: 'Exact original assembled request', uiIntent: 'create', attachments: [] },
+    uiBuild: { stage: 'generating', action: 'writing_ui', jobId: 'prior-job', sourceRevision: 'rev-1' } };
+  tasks.getTask.mockImplementation(async id => ({ task: id === 'old-task' ? previous : latest }));
+  tasks.getTaskEvents.mockResolvedValue({ task: latest, events: [], lastSequence: 0 });
+  require('../../../lib/uiConversation').watchUiConversation.mockImplementation((_uid, _chatId, onMessages) => {
+    onMessages([{ id: 'old-prompt', role: 'user', taskId: 'old-task', content: previous.intent.original }]);
+    return () => {};
+  });
+  await open();
+  fireEvent.click(await screen.findByRole('button', { name: 'Retry source with saved plan' }));
+  await waitFor(() => expect(tasks.createTask).toHaveBeenCalledTimes(1));
+  expect(tasks.createTask.mock.calls[0][0]).toMatchObject({ message: previous.intent.original,
+    retryFromJobId: 'prior-job', designId: 'design-1', baseRevision: 'rev-1', uiIntent: 'create' });
+});
 test.each(["generating","awaiting_studio","awaiting_capture","awaiting_renders","repairing"])("reload reconnects to saved %s without another build", async stage => {
   designs.getUiDesign.mockResolvedValue({ design: { ...record, activeUiTaskId: "task-1" } });
   tasks.getTask.mockResolvedValue({ task: savedTask(stage) });
@@ -334,6 +355,74 @@ test("an incomplete visual review retries the saved revision without a generate 
   expect(tasks.createTask.mock.calls[0][0]).toMatchObject({ uiIntent: 'review', baseRevision: 'rev-1', designId: 'design-1', executionInput: { studioEnabled: false } });
   expect(designs.compileUiDesign).not.toHaveBeenCalled();
   expect(previews.requestUiCapture).not.toHaveBeenCalled();
+});
+test.each([
+  ['running', savedTask('design_preview')],
+  ['transport-complete verifying', { ...savedTask('renderer_limited'), status: 'verifying',
+    uiBuild: { ...savedTask('renderer_limited').uiBuild, jobId: 'artifact-job-1', outcome: 'renderer_limited', modelReady: true },
+    legacyJobProjection: { jobId: 'artifact-job-1', jobStatus: 'done' } }],
+])('reopening a newer saved revision ignores its older %s task activity', async (_label, oldTask) => {
+  const newer = { ...doc, revision: 'rev-2' };
+  designs.getUiDesign.mockResolvedValue({ design: { ...record, revision: 'rev-2', document: newer, activeUiTaskId: 'task-1' } });
+  tasks.getTask.mockResolvedValue({ task: oldTask });
+  tasks.getTaskEvents.mockResolvedValue({ task: oldTask, events: [], lastSequence: 0 });
+  render(<UiCreatorWorkspace {...props} />);
+  await waitFor(() => expect(tasks.getTask).toHaveBeenCalledWith('task-1'));
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Send prompt' })).toBeEnabled());
+  expect(screen.queryByRole('button', { name: 'Stop build' })).not.toBeInTheDocument();
+  expect(screen.queryByTestId('ui-loading-chain')).not.toBeInTheDocument();
+  expect(screen.getByLabelText('UI status')).toHaveTextContent('Saved');
+  expect(screen.getByLabelText('UI status')).not.toHaveTextContent('Building');
+  expect(tasks.createTask).not.toHaveBeenCalled();
+});
+test('opening a saved UI shows loading without generation activity or a stop control', async () => {
+  let finishManifest;
+  previews.getUiPreviewManifest.mockImplementation(() => new Promise(resolve => { finishManifest = resolve; }));
+  render(<UiCreatorWorkspace {...props} />);
+  const status = await screen.findByLabelText('UI status');
+  expect(status).toHaveTextContent('Saved');
+  expect(status).not.toHaveTextContent('Building');
+  expect(screen.queryByTestId('ui-loading-chain')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Stop build' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Apply to Studio', exact: true })).toBeDisabled();
+  expect(tasks.createTask).not.toHaveBeenCalled();
+  await act(async () => finishManifest({ capture: null, states: [], viewports: [] }));
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Apply to Studio', exact: true })).toBeEnabled());
+});
+
+test('History review carries a typed repair brief for a source-owned UI', async () => {
+  const sourceDoc = { ...doc, screens: [{ nodes: [] }], sourceFiles: [
+    { path: 'View.luau', content: 'return {}' },
+    { path: 'Controller.client.luau', content: 'local root = script.Parent' },
+  ] };
+  const sourceRecord = { ...record, document: sourceDoc };
+  designs.listUiDesigns.mockResolvedValue({ designs: [sourceRecord] });
+  designs.getUiDesign.mockResolvedValue({ design: sourceRecord });
+  await open();
+  const brief = 'Fix Enum.Font.Montserrat and RequestStateSnapshot as a RemoteEvent.';
+  fireEvent.change(screen.getByLabelText('UI prompt'), { target: { value: brief } });
+  fireEvent.click(screen.getByRole('button', { name: 'History' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Repair saved UI' }));
+  await waitFor(() => expect(tasks.createTask).toHaveBeenCalledTimes(1));
+  expect(tasks.createTask.mock.calls[0][0]).toMatchObject({
+    uiIntent: 'review', baseRevision: 'rev-1', designId: 'design-1', workspace: 'ui_creator',
+  });
+  expect(tasks.createTask.mock.calls[0][0].message).toContain(brief);
+  expect(screen.getByLabelText('UI prompt')).toHaveValue('');
+});
+
+test('History review refreshes a saved UI changed outside the open tab', async () => {
+  const failed = savedTask('failed');
+  failed.uiBuild.errorCode = 'UI_VISUAL_REVIEW_INCOMPLETE';
+  designs.getUiDesign.mockResolvedValueOnce({ design: { ...record, activeUiTaskId: failed.taskId } });
+  tasks.getTask.mockResolvedValue({ task: failed });
+  tasks.getTaskEvents.mockResolvedValue({ task: failed, events: [], lastSequence: 0 });
+  await open();
+  const updatedDoc = { ...doc, revision: 'rev-2' };
+  designs.getUiDesign.mockResolvedValue({ design: { ...record, revision: 'rev-2', document: updatedDoc } });
+  fireEvent.click(screen.getByRole('button', { name: 'Retry review' }));
+  await waitFor(() => expect(tasks.createTask).toHaveBeenCalledTimes(1));
+  expect(tasks.createTask.mock.calls[0][0]).toMatchObject({ uiIntent: 'review', baseRevision: 'rev-2' });
 });
 
 test("generated artwork stays in chat after the artwork turn", async () => {

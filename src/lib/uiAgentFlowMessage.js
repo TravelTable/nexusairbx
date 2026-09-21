@@ -42,10 +42,14 @@ function activityMessage(task, busy) {
   const active = !TASK_ENDED.has(task.status) && !uiBuildEnded(task);
   const parts = task.uiBuild.activity.map(item => {
     const finished = Boolean(item.finishedAt) || uiBuildEnded(task);
+    const failed = ['failed', 'timed_out'].includes(item.action);
+    const errorText = [item.message, task.uiBuild.message, task.error]
+      .find(value => typeof value === 'string' && value.trim());
     return item.action === 'understanding_request' ? { type: 'reasoning', text: '', state: finished ? 'done' : 'streaming' } : ({
       type: 'tool-ui_activity', toolCallId: item.id,
       title: REFERENCE_LABELS[item.action] || UI_ACTION_LABELS[item.action] || UI_BUILD_LABELS[item.action] || item.action.replaceAll('_', ' '),
-      state: ['failed', 'timed_out'].includes(item.action) ? 'output-error' : !finished && (active || task.status === 'cancelled') ? 'input-available' : !finished ? 'output-error' : 'output-available',
+      state: failed ? 'output-error' : !finished && (active || task.status === 'cancelled') ? 'input-available' : !finished ? 'output-error' : 'output-available',
+      ...(failed && errorText ? { errorText } : {}),
       ...(finished ? { output: { completed: true } } : {}),
     });
   });

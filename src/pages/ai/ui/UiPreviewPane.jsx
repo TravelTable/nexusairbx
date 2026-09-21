@@ -187,19 +187,24 @@ export default function UiPreviewPane({
     (viewport) => viewport.id === data.preview?.viewportId
   );
 
+  const stalePreviewWithoutBuild =
+    data.earlier && !currentCapture && !run?.working && !updatingRevision;
+  const settledWithoutCapture =
+    hasNodes && !currentCapture && !run && !updatingRevision && !data.imageUrl && !failed;
+
   const status = buildFailure
     ? "Build failed"
     : failed
       ? "Preview unavailable"
       : run?.stage ||
         (data.earlier
-          ? "Updating preview"
+          ? stalePreviewWithoutBuild ? "Preview from earlier revision" : "Updating preview"
           : data.status === "ready"
             ? "Preview ready"
             : currentCapture
               ? "Rendering preview"
               : hasNodes
-                ? "Preparing preview"
+                ? settledWithoutCapture ? "No preview for this revision" : "Preparing preview"
                 : "Ready to design");
 
   const visibleViewports = useMemo(() => {
@@ -381,7 +386,9 @@ export default function UiPreviewPane({
               Retry Preview
             </button>
           ) : (
-            <span>Saved files are available in Inspect. Send a follow-up to retry the build.</span>
+            <span>{hasNodes
+              ? "Saved files are available in Inspect. Send a follow-up to retry the build."
+              : "No UI source was saved. Send a follow-up to retry the build."}</span>
           )}
         </div>
       ) : null}
@@ -504,7 +511,7 @@ export default function UiPreviewPane({
                     ? run.stage
                     : !hasNodes
                       ? "Describe the interface you want to build"
-                      : "Preparing preview"}
+                      : settledWithoutCapture ? "No preview for this revision" : "Preparing preview"}
             </strong>
 
             {!hasNodes ? (
@@ -516,6 +523,18 @@ export default function UiPreviewPane({
           </div>
         )}
       </div>
+
+      {sourceOwned && data.imageUrl && paneMode !== "reference" ? (
+        <p className="nx-ui-preview__runtime-note">
+          Static source preview. Client controller and responsive scripts do not run here. The state selector shows captured visual transitions, not server-driven carrying, action success, or insufficient-funds outcomes. Test those states, modal items, action availability, and viewport layout in Roblox Play mode with server state.
+        </p>
+      ) : null}
+
+      {stalePreviewWithoutBuild && data.imageUrl && paneMode !== "reference" ? (
+        <p className="nx-ui-preview__runtime-note">
+          This image belongs to an earlier revision. Open History and review the saved UI to refresh the preview.
+        </p>
+      ) : null}
 
       {referenceImage?.src && data.imageUrl ? (
         <div className="nx-ui-preview__match-closer">

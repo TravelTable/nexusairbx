@@ -28,6 +28,7 @@ const SAFE_ERROR_MESSAGES = Object.freeze({
   FILE_CONFLICT: "A Studio file changed while this task was running. Review the latest version before retrying.",
   MANIFEST_MISMATCH: "The Studio project changed while this task was running. Refresh the project before continuing.",
   STALE_MANIFEST: "The saved project manifest is out of date. Refresh it before continuing.",
+  UI_REVISION_CONFLICT: "The saved UI changed. Refresh it before starting another build.",
   IMAGE_GENERATION_FAILED: "The requested image could not be generated.",
   ASSET_GENERATION_FAILED: "The requested asset could not be generated.",
   ASSET_UPLOAD_FAILED: "The generated asset is saved, but its Roblox upload did not finish.",

@@ -228,8 +228,8 @@
 
 /* Components own their movement and elevation. Keep a shared focus contract. */
 .ai-page :where(button, a, input, textarea, select, [tabindex]):focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--nx-purple) 84%, white 16%);
-  outline-offset: 2px;
+  outline: var(--nx-outline-width, 1px) solid color-mix(in srgb, var(--nx-purple) 84%, white 16%);
+  outline-offset: var(--nx-outline-offset, 1px);
 }
 
 .ai-page :where(button:disabled, [role="button"][aria-disabled="true"]) {

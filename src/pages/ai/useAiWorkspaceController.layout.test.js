@@ -61,6 +61,21 @@ describe("AI workspace Studio transport gate", () => {
       .toBe(true);
   });
 
+  test("allows explicitly artifact-only builds while Studio is disconnected", () => {
+    for (const prompt of [
+      "Build a round system. Do not use Studio.",
+      "Create code only for a round system.",
+    ]) {
+      expect(shouldRequireStudioPlaceSelection(prompt)).toBe(true);
+      expect(evaluateIntentAwareStudioSubmissionPreflight({
+        prompt, mode: "agent", studioEnabled: true, executionReady: false,
+      })).toEqual({ status: "ready" });
+    }
+    expect(evaluateIntentAwareStudioSubmissionPreflight({
+      prompt: "Build a round system", mode: "agent", executionReady: false,
+    })).toEqual({ status: "blocked", message: "Connect Studio to apply changes." });
+  });
+
   test("allows Ask and Plan and accepts any execution-ready Studio provider", () => {
     expect(studioPlaceSelectionMessage()).toBe("Connect Studio to apply changes.");
     expect(evaluateIntentAwareStudioSubmissionPreflight({

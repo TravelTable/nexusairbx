@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Activity, Search, RefreshCw } from "lib/icons";
 
 import SidebarContent from "../../components/SidebarContent";
+import Modal from "../../components/Modal";
 import SignInNudgeModal from "../../components/SignInNudgeModal";
 import ProNudgeModal from "../../components/ProNudgeModal";
 import StarterPromoModal from "../../components/StarterPromoModal";
@@ -62,6 +63,15 @@ import { isLocalDevToolsHost } from "../../lib/localDevTools";
 
 const WORKSPACE_DRAWER_WIDTH_KEY = "nexusrbx:workspace-drawer-width";
 const PROJECT_SIDEBAR_MODAL_QUERY = "(max-width: 1199px)";
+
+export function hasFreshStudioManifestRevision(status, now = Date.now(), ttlMs = 5 * 60 * 1000) {
+  const lastCompleteAt = Number(status?.lastCompleteAt || 0);
+  return Boolean(status?.lastCompleteRevision)
+    && !status?.conflicted
+    && Number.isFinite(lastCompleteAt)
+    && lastCompleteAt > 0
+    && now - lastCompleteAt < ttlMs;
+}
 
 function safeOpenedCodeName(title) {
   return (
@@ -263,6 +273,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
     handleRemoveProjectAsset,
     openProjectSelector,
     openWorkspaceProject,
+    closeProjectSelector,
   } = handlers;
 
   const requestedCreationMode = new URLSearchParams(locationSearch).get("mode");
@@ -531,10 +542,18 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
   const [studioConflict, setStudioConflict] = useState(null);
   const [studioBusy, setStudioBusy] = useState(false);
   const manifestRefreshInFlightRef = useRef(null);
+  const manifestSessionRef = useRef(studioCommandSessionId);
   const autoManifestRefreshKeyRef = useRef("");
   const manifestWaitsRef = useRef(new Map());
   /** One automatic conflict recovery per session+revision failure (survives re-renders). */
   const manifestRecoveryAttemptedRef = useRef(new Set());
+  useEffect(() => {
+    manifestSessionRef.current = studioCommandSessionId;
+    setStudioManifest([]);
+    setStudioFiles([]);
+    setActiveStudioFileId(null);
+    setStudioConflict(null);
+  }, [studioCommandSessionId]);
   const taskRuntime = useTaskRuntime({
     user,
     projectId: currentProjectId,
@@ -697,8 +716,8 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
       const force = options?.force === true;
       const cacheOnly = options?.cacheOnly === true;
       const isRecovery = options?.recovery === true;
-      if (manifestRefreshInFlightRef.current) {
-        return manifestRefreshInFlightRef.current;
+      if (manifestRefreshInFlightRef.current?.sessionId === studioCommandSessionId) {
+        return manifestRefreshInFlightRef.current.promise;
       }
 
       const MANIFEST_FRESH_TTL_MS = 5 * 60 * 1000;
@@ -726,17 +745,13 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
           // explicit Rescan (force) or a stale/absent revision triggers a live
           // get_project_manifest. This stops the manifest from being rebuilt on
           // every connect.
-          const lastCompleteAt = Number(previousStatus?.lastCompleteAt || 0);
-          const isFresh =
-            Boolean(previousStatus?.lastCompleteRevision) &&
-            !previousStatus?.conflicted &&
-            (!lastCompleteAt || Date.now() - lastCompleteAt < MANIFEST_FRESH_TTL_MS);
+          const isFresh = hasFreshStudioManifestRevision(previousStatus, Date.now(), MANIFEST_FRESH_TTL_MS);
 
           if (!force && (isFresh || (cacheOnly && previousStatus?.lastCompleteRevision))) {
             const items = await fetchManifestPage(
               previousStatus.lastCompleteRevision || previousStatus.activeRevision || ""
             );
-            setStudioManifest(items);
+            if (manifestSessionRef.current === studioCommandSessionId) setStudioManifest(items);
             return;
           }
 
@@ -755,10 +770,10 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
               limit: 1000,
             });
             if (data.disconnected) {
-              setStudioManifest([]);
+              if (manifestSessionRef.current === studioCommandSessionId) setStudioManifest([]);
               return;
             }
-            setStudioManifest(data.manifest?.items || []);
+            if (manifestSessionRef.current === studioCommandSessionId) setStudioManifest(data.manifest?.items || []);
             return;
           }
 
@@ -785,8 +800,11 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
           ).trim();
           const status = await waitForManifestCompletion(previousRevision, expectedRevision);
           const items = await fetchManifestPage(status.lastCompleteRevision || status.activeRevision || "");
-          setStudioManifest(items);
+          if (manifestSessionRef.current === studioCommandSessionId) setStudioManifest(items);
         } catch (err) {
+          // A previous place must not start conflict recovery after the active
+          // Studio session changes.
+          if (manifestSessionRef.current !== studioCommandSessionId) return;
           const conflictCode = String(err?.code || "");
           const isConflict =
             conflictCode === "STUDIO_MANIFEST_CONFLICTED" ||
@@ -796,26 +814,26 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
           const recoveryKey = `${studioCommandSessionId || "none"}:${previousRevision || "none"}`;
           if (isConflict && !isRecovery && !manifestRecoveryAttemptedRef.current.has(recoveryKey)) {
             manifestRecoveryAttemptedRef.current.add(recoveryKey);
-            setStudioBusy(false);
-            manifestRefreshInFlightRef.current = null;
+            if (manifestSessionRef.current === studioCommandSessionId) setStudioBusy(false);
+            if (manifestRefreshInFlightRef.current?.promise === refreshPromise) manifestRefreshInFlightRef.current = null;
             return refreshStudioManifest({ force: true, recovery: true });
           }
-          notify?.({
+          if (manifestSessionRef.current === studioCommandSessionId) notify?.({
             message: isConflict
               ? "Studio's project index got out of sync while scanning. Rescan the project and try again."
               : err?.message || "Could not refresh Studio manifest",
             type: "error",
           });
         } finally {
-          setStudioBusy(false);
+          if (manifestSessionRef.current === studioCommandSessionId) setStudioBusy(false);
         }
       })();
 
-      manifestRefreshInFlightRef.current = refreshPromise;
+      manifestRefreshInFlightRef.current = { sessionId: studioCommandSessionId, promise: refreshPromise };
       try {
         return await refreshPromise;
       } finally {
-        if (manifestRefreshInFlightRef.current === refreshPromise) {
+        if (manifestRefreshInFlightRef.current?.promise === refreshPromise) {
           manifestRefreshInFlightRef.current = null;
         }
       }
@@ -2129,6 +2147,37 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
             )}
           </main>
         </div>
+
+        <Modal
+          isOpen={Boolean(project?.selectorOpen)}
+          onClose={closeProjectSelector}
+          title="Choose a game"
+          panelClassName="max-w-lg p-6 sm:p-8"
+        >
+          {project?.loading ? (
+            <p role="status">Loading games…</p>
+          ) : project?.projects?.length ? (
+            <div className="max-h-[60vh] space-y-2 overflow-y-auto" aria-label="Your games">
+              {project.projects.map((item) => {
+                const projectId = item.projectId || item.id;
+                const isCurrent = projectId === currentProjectId;
+                return (
+                  <button
+                    key={projectId}
+                    type="button"
+                    className="flex min-h-11 w-full items-center justify-between rounded-lg border border-border px-3 py-2 text-left text-foreground hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    onClick={() => isCurrent ? closeProjectSelector() : openWorkspaceProject(projectId)}
+                  >
+                    <span>{item.title || item.name || "Untitled game"}</span>
+                    {isCurrent ? <span className="text-xs text-muted-foreground">Current</span> : null}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <p role="status">No games available yet.</p>
+          )}
+        </Modal>
 
         <SignInNudgeModal
           isOpen={showSignInNudge}

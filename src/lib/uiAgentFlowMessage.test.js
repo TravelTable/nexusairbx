@@ -35,6 +35,16 @@ test("stops Working after a generated UI even when the task is still verifying",
   }
 });
 
+test("failed build activity shows the actual backend reason", () => {
+  const task = { taskId: 'failed-task', status: 'failed', error: 'Generic failure', uiBuild: {
+    stage: 'failed', message: 'Required artwork is unresolved.',
+    activity: [{ id: 'failure', action: 'failed', startedAt: 10, finishedAt: 10 }],
+  } };
+  expect(buildUiAgentFlowMessage({ task }).parts[0]).toMatchObject({
+    state: 'output-error', errorText: 'Required artwork is unresolved.',
+  });
+});
+
 test("closes the last observed activity item when the UI build has already ended", () => {
   const task = {
     taskId: 'real-task',

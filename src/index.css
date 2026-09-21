@@ -76,8 +76,8 @@
     background-image: none;
   }
   .focus-ring:focus-visible {
-    outline: 2px solid var(--ds-focus-ring);
-    outline-offset: 2px;
+    outline: var(--nx-outline-width, 1px) solid var(--ds-focus-ring);
+    outline-offset: var(--nx-outline-offset, 1px);
   }
   .nexus-field-label {
     display: block;

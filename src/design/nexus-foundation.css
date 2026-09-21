@@ -74,13 +74,15 @@
   --nx-space-20: 80px;
   --nx-space-24: 96px;
 
-  --nx-radius-control: 6px;
-  --nx-radius-field: 8px;
-  --nx-radius-panel: 10px;
-  --nx-radius-card: 10px;
-  --nx-radius-overlay: 12px;
-  --nx-radius-feature: 12px;
+  --nx-radius-control: 8px;
+  --nx-radius-field: 10px;
+  --nx-radius-panel: 12px;
+  --nx-radius-card: 12px;
+  --nx-radius-overlay: 14px;
+  --nx-radius-feature: 14px;
   --nx-radius-pill: 999px;
+  --nx-outline-width: 1px;
+  --nx-outline-offset: 1px;
 
   /* Compact layout and typography roles. */
   --nx-header-height: 48px;
@@ -116,7 +118,7 @@
   --nx-shadow-control: var(--nx-inner-highlight);
   --nx-shadow-card: 0 1px 2px rgb(0 0 0 / 22%), 0 8px 24px rgb(0 0 0 / 18%);
   --nx-shadow-floating: 0 8px 28px rgb(0 0 0 / 42%);
-  --nx-shadow-focus: 0 0 0 3px var(--nx-focus);
+  --nx-shadow-focus: 0 0 0 1px var(--nx-focus);
 
   /* shadcn compatibility */
   --background: 210 8% 3.5%;
@@ -289,8 +291,8 @@ summary,
 }
 
 :where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
-  outline: 2px solid var(--nx-purple);
-  outline-offset: 3px;
+  outline: var(--nx-outline-width) solid var(--nx-purple);
+  outline-offset: var(--nx-outline-offset);
   box-shadow: var(--nx-shadow-focus);
 }
 

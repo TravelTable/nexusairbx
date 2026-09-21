@@ -11,6 +11,7 @@ import UiCreatorChrome from './UiCreatorChrome';
 import UiImplementationDrawer from './UiImplementationDrawer';
 import { createUiDesign, listUiDesigns, getUiDesign, renameUiDesign, deleteUiDesign, recoverUiDesign,
   createUiCheckpoint, listUiCheckpoints, restoreUiCheckpoint } from '../../../lib/uiDesignApi';
+import { preserveFailedUiRequest } from './uiRetryContext';
 import { getUiPreviewManifest, requestUiCapture, readUiCapture } from '../../../lib/uiPreviewApi';
 import { createTask, getTask, getTaskEvents, streamTaskEvents, cancelTask, approveTask } from '../../../lib/taskRuntimeApi';
 import { getBuildWorkspaceSnapshot, readBuildWorkspaceFile } from '../../../lib/buildWorkspaceApi';
@@ -71,6 +72,7 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
   const [previewIdentity, setPreviewIdentity] = useState('');
   const [chatImages, setChatImages] = useState([]);
   const [publishingId, setPublishingId] = useState('');
+  const [sourceRetryCandidate, setSourceRetryCandidate] = useState(null);
   const onRenderStatus = useCallback(result => { if (result.status === 'ready') setPreviewIdentity(result.sourceRevision); }, []);
   const scope = `${user?.uid || ''}:${projectId || ''}`;
   const lastOpenKey = `nexusrbx:ui:last-open:${scope}`;
@@ -87,10 +89,14 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
   const livePending = mockActive && mockRuns.frame?.pendingPrompt ? mockRuns.frame.pendingPrompt : pendingPrompt;
   const liveFiles = mockActive && mockRuns.frame?.sourceFiles ? mockRuns.frame.sourceFiles : null;
   const build = liveTask?.uiBuild, taskId = liveTask?.taskId;
-  const active = Boolean(liveTask && !terminalTask(liveTask) && (liveTask.mode === 'agent' || build));
-  const working = Boolean(liveBusy) || active || Boolean(mockActive && mockRuns.playing);
+  // A saved design can advance while its prior task remains the activeUiTaskId.
+  // Keep that task for history, but never present it as work on this revision.
+  const currentTask = !build?.sourceRevision || !document?.revision || build.sourceRevision === document.revision ? liveTask : null;
+  const active = Boolean(currentTask && !terminalTask(currentTask) && (currentTask.mode === 'agent' || build));
+  const loadingSession = ['Opening UI', 'Loading project'].includes(liveBusy);
+  const working = Boolean(liveBusy && !loadingSession) || active || Boolean(mockActive && mockRuns.playing);
   const [stopping, setStopping] = useState(false);
-  const presentation = useMemo(() => getUiWorkspacePresentation({ task: liveTask, busy: liveBusy, connection: mockActive ? '' : connection, stopping: mockActive ? false : stopping }), [liveTask, liveBusy, connection, stopping, mockActive]);
+  const presentation = useMemo(() => getUiWorkspacePresentation({ task: currentTask, busy: liveBusy, connection: mockActive ? '' : connection, stopping: mockActive ? false : stopping }), [currentTask, liveBusy, connection, stopping, mockActive]);
   useEffect(() => { onPresentationChange?.({ ...presentation, projectId }); }, [presentation, projectId, onPresentationChange]);
   useEffect(() => () => onPresentationChange?.(null), [onPresentationChange]);
   const studioReady = Boolean(studio?.connected && studioSessionId);
@@ -147,7 +153,7 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
     try { const result = await getUiPreviewManifest(id); if (scopeRef.current === requestScope && designRef.current?.designId === id) setManifest(result); }
     catch (e) { if (scopeRef.current === requestScope && designRef.current?.designId === id) report(e); }
   }, [report]);
-  const resetSession = useCallback(() => { askController.current?.abort(); designRef.current = null; setDesign(null); setTask(null); setEvents([]); setFiles([]); setFilesError(''); setManifest(null); setPreviewIdentity(''); setChatImages([]); setHistory([]); setAnswer(''); setPendingPrompt(''); setCheckpoints([]); setConnectApply(null); }, []);
+  const resetSession = useCallback(() => { askController.current?.abort(); designRef.current = null; setDesign(null); setTask(null); setEvents([]); setFiles([]); setFilesError(''); setManifest(null); setPreviewIdentity(''); setChatImages([]); setHistory([]); setAnswer(''); setPendingPrompt(''); setCheckpoints([]); setConnectApply(null); setSourceRetryCandidate(null); }, []);
   const load = useCallback(async id => {
     const requestScope = scopeRef.current, sequence = ++loadSequence.current;
     const current = () => requestScope === scopeRef.current && sequence === loadSequence.current;
@@ -188,6 +194,27 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
     const unsubscribe = watchUiConversation(user.uid, conversationId, setHistory, report);
     return () => { unsubscribe?.(); askController.current?.abort(); };
   }, [user?.uid, conversationId, report]);
+  const retryHistoryIds = useMemo(() => [...new Set(history.filter(entry => entry.role === 'user' && entry.taskId)
+    .map(entry => entry.taskId))].reverse().slice(0, 8), [history]);
+  useEffect(() => {
+    let stale = false;
+    setSourceRetryCandidate(null);
+    if (!document?.designId || saved || !retryHistoryIds.length) return undefined;
+    (async () => {
+      for (const id of retryHistoryIds) {
+        const previous = (await getTask(id).catch(() => null))?.task;
+        if (stale) return;
+        if (previous?.intent?.designId === document.designId && previous.projectId === projectId
+          && ['cancelled', 'failed'].includes(previous.status) && previous.uiBuild?.stage === 'generating'
+          && previous.uiBuild?.action === 'writing_ui' && previous.uiBuild?.sourceRevision === document.revision
+          && previous.uiBuild?.jobId && typeof previous.intent?.original === 'string') {
+          setSourceRetryCandidate(previous);
+          return;
+        }
+      }
+    })();
+    return () => { stale = true; };
+  }, [document?.designId, document?.revision, projectId, saved, retryHistoryIds]);
 
   // One SSE stream per task, with cursor-based polling fallback and guarded refreshes.
   useEffect(() => {
@@ -281,7 +308,7 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
     // ChatComposer supplies request options in argument three; only templates
     // provide a title and intentionally start a fresh design.
     freshTitle = typeof freshTitle === 'string' ? freshTitle : '';
-    if (!allowed() || working || lock.current) return;
+    if (!allowed() || working || loadingSession || lock.current) return;
     const draft = (typeof override === 'string' ? override : prompt).trim();
     const liveImages = listUiReferenceImages(attachments);
     const referenceImages = liveImages.length ? liveImages : listUiReferenceImages(pinnedReferences);
@@ -321,7 +348,8 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
       if (!target || requestScope !== scopeRef.current) return;
       const targetDoc = target.document; const selectedMode = freshTitle ? 'agent' : mode;
       const taskAttachments = liveImages.length ? attachments : [...referenceImages, ...attachments.filter(item => !isUiReferenceImage(item))];
-      const input = { message, mode: selectedMode, workspace: 'ui_creator', designId: target.designId,
+      const retryMessage = preserveFailedUiRequest(message, targetDoc, history);
+      const input = { message: retryMessage, mode: selectedMode, workspace: 'ui_creator', designId: target.designId,
         baseRevision: targetDoc.revision, uiIntent: targetDoc.sourceFiles?.length || targetDoc.screens?.some(s => s.nodes?.length) ? 'edit' : 'create', projectId,
         chatId: target.chatId || target.designId, attachments: normalizeChatAttachments(taskAttachments, { includeData: false }),
         executionInput: { settings: { modelVersion, referenceMode, referenceTarget, referenceBehaviour }, applyMode: 'manual_review', studioEnabled: false } };
@@ -345,9 +373,28 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
     } catch (e) { if (scopeRef.current === requestScope && e.name !== 'AbortError') { report(e); setPrompt(draft); } }
     finally { if (scopeRef.current === requestScope) { setBusy(''); lock.current = false; } }
   };
+  const retrySavedSource = async () => {
+    const previous = sourceRetryCandidate, target = designRef.current;
+    if (!previous || !target || !allowed() || working || lock.current) return;
+    lock.current = true; setBusy('Retrying source'); setError('');
+    try {
+      const input = { message: previous.intent.original, mode: 'agent', workspace: 'ui_creator',
+        designId: target.designId, baseRevision: target.document.revision, uiIntent: previous.intent.uiIntent,
+        retryFromJobId: previous.uiBuild.jobId, projectId, chatId: target.chatId || target.designId,
+        attachments: previous.intent.attachments || [],
+        executionInput: { settings: { modelVersion, referenceMode, referenceTarget, referenceBehaviour },
+          applyMode: 'manual_review', studioEnabled: false } };
+      const result = await createTask(input, { idempotencyKey: `ui-source-retry:${crypto.randomUUID()}` });
+      if (designRef.current?.designId === input.designId && result.task?.taskId) {
+        setPendingPrompt(input.message); setTask(result.task); setEvents([]); setFiles([]); setFilesError('');
+        setSourceRetryCandidate(null);
+      }
+    } catch (e) { report(e); }
+    finally { lock.current = false; setBusy(''); }
+  };
   const applySaved = useCallback(async () => {
     const target = designRef.current;
-    if (mockRuns?.enabled || !target || !studioReady || working || lock.current) return;
+    if (mockRuns?.enabled || !target || !studioReady || working || loadingSession || lock.current) return;
     lock.current = true; const requestScope = scopeRef.current; setBusy('Applying to Studio'); setError('');
     const applyIdentity = JSON.stringify([requestScope, target.designId, target.document.revision]);
     if (applyRequestKey.current?.identity !== applyIdentity) applyRequestKey.current = { identity: applyIdentity, key: `ui-apply:${crypto.randomUUID()}` };
@@ -364,17 +411,23 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
     if (!allowed() || !saved || working || lock.current) return;
     const requestScope = scopeRef.current, target = designRef.current;
     lock.current = true; setBusy('Reviewing the render'); setError('');
-    const input = { message: 'Review the saved UI on desktop and phone, including its declared states. Preserve the implementation unless an observed visual defect requires a repair.',
-      mode: 'agent', workspace: 'ui_creator', designId: target.designId, baseRevision: target.document.revision,
-      uiIntent: 'review', projectId, chatId: target.chatId || target.designId,
-      executionInput: { settings: { modelVersion }, studioEnabled: false } };
-    const identity = JSON.stringify(input);
-    if (requestKey.current?.input !== identity) requestKey.current = { input: identity, key: `ui-review:${crypto.randomUUID()}` };
+    const repairBrief = prompt.trim();
+    const reviewMessage = 'Review the saved UI on desktop and phone, including its declared states. Preserve the implementation unless an observed visual defect requires a repair.';
     try {
+      const latest = (await getUiDesign(target.designId)).design;
+      if (scopeRef.current !== requestScope || designRef.current?.designId !== target.designId) return;
+      if (!latest?.document?.revision) throw new Error('The saved UI could not be refreshed. Try again.');
+      assign(latest);
+      const input = { message: repairBrief ? `${reviewMessage}\n\nTargeted repair brief:\n${repairBrief}` : reviewMessage,
+        mode: 'agent', workspace: 'ui_creator', designId: latest.designId, baseRevision: latest.document.revision,
+        uiIntent: 'review', projectId, chatId: latest.chatId || latest.designId,
+        executionInput: { settings: { modelVersion }, studioEnabled: false } };
+      const identity = JSON.stringify(input);
+      if (requestKey.current?.input !== identity) requestKey.current = { input: identity, key: `ui-review:${crypto.randomUUID()}` };
       const result = await createTask(input, { idempotencyKey: requestKey.current.key });
       if (scopeRef.current !== requestScope || designRef.current?.designId !== target.designId) return;
       if (!result.task?.taskId) throw new Error(result.decision?.message || result.message || 'The review could not start.');
-      setTask(result.task); setEvents([]); requestKey.current = null;
+      setTask(result.task); setEvents([]); setPrompt(''); requestKey.current = null;
     } catch (e) { if (scopeRef.current === requestScope) report(e); }
     finally { if (scopeRef.current === requestScope) { lock.current = false; setBusy(''); } }
   };
@@ -429,27 +482,28 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
   const remove = async () => { const target = design; if (!target || working) return; try { await deleteUiDesign(target.designId); setUndo(target); setDesigns(all => all.filter(d => d.designId !== target.designId)); resetSession(); setDrawer(''); } catch (e) { report(e); } };
   const recover = async (target = undo) => { if (!target?.designId) return; try { await recoverUiDesign(target.designId); setDesigns(all => [target, ...all.filter(d => d.designId !== target.designId)]); await load(target.designId); setDeletedDesigns(all => all.filter(d => d.designId !== target.designId)); setUndo(null); } catch (e) { report(e); } };
   const messages = history.map(m => ({ ...m, metadata: { ...m.metadata, ...metadata } }));
-  const livePrompt = livePending || liveTask?.intent?.original;
+  const livePrompt = livePending || currentTask?.intent?.original;
   const showPrompt = livePrompt && !messages.some(m => m.role === 'user' && m.content === livePrompt);
   const progress = liveEvents.filter(e => e.eventType === 'ui_build_progress').map(e => actions[e.payload?.action] || UI_BUILD_LABELS[e.payload?.stage]).filter(Boolean).filter((label, i, all) => i === 0 || label !== all[i - 1]);
   const status = presentation.state === 'idle' ? '' : presentation.label;
-  const showLoadingChain = Boolean(liveBusy || liveTask?.uiBuild) && (working || presentation.terminal || mockActive);
+  const showLoadingChain = Boolean((liveBusy && !loadingSession) || currentTask?.uiBuild) && (working || presentation.terminal || mockActive);
   const conversation = <><Conversation className="ui-creator__conversation"><ConversationContent className="ui-creator__messages">
     {messages.length ? <MessageList messages={messages} activeMode="ui" isBusy={working} studioConnected={studioReady} studioSessionId={studioSessionId} notify={notify}/> : null}
     {showPrompt ? <div className="uc-session-message">{livePrompt}</div> : null}
-    {showLoadingChain ? <UiLoadingChain busy={liveBusy} task={liveTask} /> : null}
+    {showLoadingChain ? <UiLoadingChain busy={liveBusy} task={currentTask} /> : null}
     {chatImages.length ? <UiGeneratedImageFeed images={chatImages} projectId={projectId} onPublish={publishGeneratedImage} publishingId={publishingId} publishDisabledReason={robloxUpload.readiness?.ready ? '' : robloxUpload.readiness?.message || ''} /> : null}
     {presentation.terminal && !working ? <p className="uc-file-note nx-result-reveal">{mockRuns?.frame?.placeholder || status}</p> : null}
+    {!working && sourceRetryCandidate && !saved ? <div className="uc-chat-actions"><button type="button" onClick={retrySavedSource}>Retry source with saved plan</button></div> : null}
 
     {answer ? <MessageList messages={[{ id: 'live-answer', role: 'assistant', content: answer, metadata }]} activeMode="ui" isBusy={working}/> : null}
-    {!working && saved ? <div className="uc-chat-actions"><button type="button" disabled={working} onClick={studioReady ? applySaved : connect}>{studioReady ? 'Apply this UI to Studio' : 'Connect Studio to apply'}</button></div> : null}
-    {!working && saved && build?.stage === 'failed' && (build.errorCode === 'UI_VISUAL_REVIEW_INCOMPLETE' || build.message === 'Invalid UI visual review.') ? <button type="button" className="uc-button" onClick={retryReview}>Retry review</button> : null}
+    {!working && !loadingSession && saved ? <div className="uc-chat-actions"><button type="button" onClick={studioReady ? applySaved : connect}>{studioReady ? 'Apply this UI to Studio' : 'Connect Studio to apply'}</button></div> : null}
+    {!working && !loadingSession && saved && currentBuild && build?.stage === 'failed' && (build.errorCode === 'UI_VISUAL_REVIEW_INCOMPLETE' || build.message === 'Invalid UI visual review.') ? <button type="button" className="uc-button" onClick={retryReview}>Retry review</button> : null}
     {liveTask?.mode === 'plan' && !build ? <div className="uc-session-message"><p>{liveTask.intent?.normalizedGoal}</p><button className="uc-button uc-primary" onClick={async () => { try { const result = await approveTask(taskId, { executionInput: { settings: { modelVersion }, applyMode: 'manual_review', studioEnabled: false } }); setTask(result.task); } catch (e) { report(e); } }}>Build this plan</button></div> : null}
   </ConversationContent><ConversationScrollButton/></Conversation>{active || busy === 'Answering' || (mockActive && mockRuns.playing) ? <div className="uc-conversation-footer"><button onClick={stop}>Stop {busy === 'Answering' ? 'response' : 'build'}</button></div> : null}</>;
   const composer = <><ModelRoutingNotice routing={build?.modelRouting} /><ModelRequestEstimate prompt={prompt} model={modelVersion} projectId={projectId} requestCategory="ui_generation" enabled={Boolean(user?.uid) && !working} />
   <CreationPromptComposer prompt={prompt} setPrompt={setPrompt} attachments={attachments} setAttachments={setAttachments}
     onFileUpload={uploadFiles} onRetryAttachment={attachmentUpload.retry} onSubmit={submit} onStop={stop} onCancel={stop}
-    isGenerating={working} presentation={presentation} compactStatus disabled={liveBusy === 'Starting build'}
+    isGenerating={working} presentation={presentation} compactStatus disabled={Boolean(liveBusy)}
     placeholder={hasReference ? 'What should I change from this reference?' : 'Describe your UI…'}
     promptAriaLabel="UI prompt" submitLabel="Send prompt"
     mode={mode} showDock={false} showWorkspaceOptions={false} modeControl={null}
@@ -460,14 +514,14 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
     robloxSelectedCreator={robloxSelectedCreator} projectAssetSaving={projectAssetSaving} assetProjectId={projectId}/></>;
   const showLiveFiles = active && !previewIdentity && !manifest?.lastSuccessfulPreviewJobId && (['generating', 'repairing', 'preparing', 'building_model', 'design_preview'].includes(build?.stage)
     || Boolean(build?.sourceFiles?.length && previewIdentity !== build?.sourceRevision));
-  const generationCards = useMemo(() => getUiGenerationCards({ busy: liveBusy, task: liveTask }), [liveBusy, liveTask]);
+  const generationCards = useMemo(() => getUiGenerationCards({ busy: liveBusy, task: currentTask }), [liveBusy, currentTask]);
   const showGenerationCards = generationCards.length > 0;
   const livePreview = <><UiReferenceDetails document={document} build={build}/><div hidden={showLiveFiles && !showGenerationCards} className="uc-preview-content"><UiPreviewPane userId={user?.uid} designId={document?.designId} projectId={projectId} sourceRevision={document?.revision}
     capture={manifest?.capture} states={manifest?.states || []} viewports={manifest?.viewports || []} capabilities={manifest?.capabilities}
     lastSuccessfulJobId={manifest?.lastSuccessfulPreviewJobId} renderJobs={build?.sourceRevision === document?.revision && build?.snapshotId === manifest?.capture?.snapshotId ? build?.matrix : []}
     studioConnected={studioReady} hasNodes={saved} studioReceipt={applied} onApplyToStudio={applySaved} onConnectStudio={connect}
-    onRefreshCapture={studioReady && !document?.sourceFiles ? sync : undefined} sourceOwned={Boolean(document?.sourceFiles)} onRefreshManifest={refreshManifest} captureBusy={busy === 'Capturing UI'} applyBusy={working}
-    updatingRevision={liveBusy === 'Starting build' || (['generating','repairing'].includes(build?.stage) && active)} previewFailed={build?.stage === 'preview_unavailable'} buildFailure={build?.stage === 'failed' ? build.message || 'The UI build could not finish.' : null} pendingStudioCommand={build?.stage === 'awaiting_studio' ? build.commandId : null}
+    onRefreshCapture={studioReady && !document?.sourceFiles ? sync : undefined} sourceOwned={Boolean(document?.sourceFiles)} onRefreshManifest={refreshManifest} captureBusy={busy === 'Capturing UI'} applyBusy={working || loadingSession}
+    updatingRevision={liveBusy === 'Starting build' || (['generating','repairing'].includes(build?.stage) && active)} previewFailed={currentBuild && build?.stage === 'preview_unavailable'} buildFailure={currentBuild && build?.stage === 'failed' ? build.message || 'The UI build could not finish.' : null} pendingStudioCommand={currentBuild && build?.stage === 'awaiting_studio' ? build.commandId : null}
     onRenderStatus={onRenderStatus} generationCards={generationCards} run={active ? { stage: actions[build?.action] || UI_BUILD_LABELS[build?.stage] || 'Starting build', working: presentation.active } : null}
     referenceImage={pinSrc ? { src: pinSrc, alt: pinItem?.name || 'Uploaded UI reference', width: pinItem?.width, height: pinItem?.height } : null}
     onMatchCloser={() => submit(null, MATCH_CLOSER_PROMPT)}/></div>
@@ -496,7 +550,7 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
     referencePin={hasReference ? <UiReferencePin mode={referenceMode} image={{ ...pinItem, src: pinSrc, alt: pinItem?.name }} /> : null}
     onNew={newUI} onLoad={load} onApply={applySaved} onDrawer={openDrawer} onPrompt={setPrompt} onTemplate={t => submit(null, t.prompt, t.title)}
     onRename={rename} onDelete={remove} undo={undo} onUndo={() => recover()} drawer={drawer} onCloseDrawer={closeDrawer}
-    drawerContent={<>{progress.length ? <details className="uc-build-timeline" open={drawer === 'history'}><summary>Build activity</summary><ol className="uc-live-actions" aria-label="Build actions">{progress.map((label, i) => <li key={i} data-active={presentation.active && i === progress.length - 1}>{label}</li>)}</ol></details> : null}<UiImplementationDrawer tab={drawer} document={document} files={files} readFile={readFile} working={working} build={build} liveFiles={build?.sourceFiles || []} onReview={retryReview}
+    drawerContent={<>{progress.length ? <details className="uc-build-timeline" open={drawer === 'history'}><summary>Build activity</summary><ol className="uc-live-actions" aria-label="Build actions">{progress.map((label, i) => <li key={i} data-active={presentation.active && i === progress.length - 1}>{label}</li>)}</ol></details> : null}<UiImplementationDrawer tab={drawer} document={document} files={files} readFile={readFile} working={working} build={build} liveFiles={build?.sourceFiles || []} onReview={retryReview} hasRepairBrief={Boolean(document?.sourceFiles?.length && prompt.trim())}
       filesError={filesError} onRetryFiles={() => openDrawer(drawer)} deletedDesigns={deletedDesigns} onRecover={recover} checkpoints={checkpoints} onCheckpoint={checkpoint} onRestore={restore} onAssets={() => navigateTo?.('/assets')} onSuggest={setPrompt}/></>}
     composer={composer} conversation={conversation} livePreview={livePreview}/></WorkspacePresentationContext.Provider>;
 }

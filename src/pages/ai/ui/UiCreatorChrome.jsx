@@ -159,6 +159,7 @@ export default function UiCreatorChrome({
   referencePin = null,
   findings,
 }) {
+  const controlsBusy = working || loading;
   const session = useRef(null);
   const panel = useRef(null);
   const picker = useRef(null);
@@ -367,7 +368,7 @@ export default function UiCreatorChrome({
       <button
         type="button"
         className="uc-action-primary"
-        disabled={!saved || working}
+        disabled={!saved || controlsBusy}
         onClick={studioReady ? onApply : onOpenStudio}
       >
         {studioReady ? "Apply to Studio" : "Connect Studio"}
@@ -474,7 +475,7 @@ export default function UiCreatorChrome({
                 type="button"
                 className="uc-template-card uc-template-card--blank"
                 aria-label="Blank UI"
-                disabled={working}
+                disabled={controlsBusy}
                 onClick={() => {
                   setPickerOpen(false);
                   onNew();
@@ -499,7 +500,7 @@ export default function UiCreatorChrome({
                     className="uc-template-card"
                     key={template.title}
                     aria-label={template.title}
-                    disabled={working}
+                    disabled={controlsBusy}
                     onClick={() => {
                       setPickerOpen(false);
                       onTemplate(template);
@@ -592,7 +593,7 @@ export default function UiCreatorChrome({
             referenceRoles={referenceRoles}
             onReferenceRole={onReferenceRole}
             findings={findings}
-            buildDisabled={working}
+            buildDisabled={controlsBusy}
             data-phase={landingPresence.phase}
             aria-hidden={!landing || undefined}
             inert={!landing ? "" : undefined}
@@ -736,7 +737,7 @@ export default function UiCreatorChrome({
                       <button
                         type="button"
                         className="uc-rename"
-                        disabled={working}
+                        disabled={controlsBusy}
                         onClick={() => {
                           setTitle(document.title || "");
                           setRenaming(true);
@@ -833,7 +834,7 @@ export default function UiCreatorChrome({
             <footer>
               <button
                 className="uc-text-button"
-                disabled={!document || working}
+                disabled={!document || controlsBusy}
                 onClick={onDelete}
               >
                 Move UI to recently deleted

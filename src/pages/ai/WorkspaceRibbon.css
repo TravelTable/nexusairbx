@@ -9,7 +9,7 @@
 .workspace-header__project span { overflow: hidden; text-overflow: ellipsis; }
 .workspace-header__project svg { flex-shrink: 0; }
 .workspace-header button:hover:not(:disabled) { background-color: var(--ds-fill-hover); color: var(--nx-text); }
-.workspace-header button:focus-visible, .workspace-header a:focus-visible, .workspace-header input:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 3px; }
+.workspace-header button:focus-visible, .workspace-header a:focus-visible, .workspace-header input:focus-visible { outline: var(--nx-outline-width, 1px) solid var(--ds-accent); outline-offset: var(--nx-outline-offset, 1px); }
 .workspace-header__tabs { display: flex; align-self: stretch; gap: 4px; }
 .workspace-header__tabs button { position: relative; min-width: 52px; padding: 0 16px; border: 0; background: transparent; color: var(--nx-text-muted); font-size: 12px; font-weight: 500; }
 .workspace-header__tabs button[aria-pressed=true] { color: var(--nx-text); background: var(--ds-accent-soft); }

@@ -71,9 +71,11 @@ test('pending generation cards do not invent a placeholder image',()=>{
   expect(screen.getByLabelText('Artwork is generating')).toBeVisible();
 });
 test('a failed build without a model stops preparing and cannot retry a nonexistent capture',()=>{
-  render(<UiPreviewPane {...base} capture={null} buildFailure="A paid plan is required."/>);
+  render(<UiPreviewPane {...base} hasNodes={false} capture={null} buildFailure="A paid plan is required."/>);
   expect(screen.getAllByText('Build failed').length).toBeGreaterThan(0);
   expect(screen.getByText(/A paid plan is required/)).toBeVisible();
+  expect(screen.getByText(/No UI source was saved/)).toBeVisible();
+  expect(screen.queryByText(/Saved files are available/)).not.toBeInTheDocument();
   expect(screen.queryByText('Preparing preview')).not.toBeInTheDocument();
   expect(screen.queryByRole('button',{name:'Retry Preview'})).not.toBeInTheDocument();
 });
@@ -82,6 +84,19 @@ test('saved designs request Pinevex automatically without Studio',()=>{
   render(<UiPreviewPane {...base} capture={{...capture,captureKind:'design'}} studioConnected={false} run={{stage:'Building UI layout'}}/>);
   expect(useUiPreview).toHaveBeenLastCalledWith(expect.objectContaining({snapshotId:'snap',enabled:true,waitForBuild:false}));
   expect(screen.queryByRole('button',{name:'Connect Studio'})).not.toBeInTheDocument();
+});
+test('a saved revision without a current capture does not claim to be preparing forever',()=>{
+  render(<UiPreviewPane {...base} capture={{...capture,sourceRevision:'old'}}/>);
+  expect(screen.getAllByText('No preview for this revision').length).toBeGreaterThan(0);
+  expect(screen.queryByText('Preparing preview')).not.toBeInTheDocument();
+});
+
+test('source previews disclose that controller and responsive behavior need Play testing',()=>{
+  useUiPreview.mockReturnValue(image);
+  render(<UiPreviewPane {...base} sourceOwned/>);
+  expect(screen.getByText(/Static source preview\. Client controller and responsive scripts do not run here/)).toBeVisible();
+  expect(screen.getByText(/state selector shows captured visual transitions, not server-driven carrying, action success, or insufficient-funds outcomes/)).toBeVisible();
+  expect(screen.getByText(/Test those states, modal items, action availability, and viewport layout in Roblox Play mode/)).toBeVisible();
 });
 
 test('a previous revision cannot be requested as the current capture',()=>{

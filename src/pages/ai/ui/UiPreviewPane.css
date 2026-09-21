@@ -36,7 +36,7 @@
   color: inherit;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: var(--nx-radius-field, 10px);
   padding: 7px 9px;
   min-height: 32px;
 }
@@ -58,8 +58,8 @@
 
 .nx-ui-preview button:focus-visible,
 .nx-ui-preview select:focus-visible {
-  outline: 2px solid var(--nx-purple, var(--ds-accent));
-  outline-offset: 2px;
+  outline: var(--nx-outline-width, 1px) solid var(--nx-purple, var(--ds-accent));
+  outline-offset: var(--nx-outline-offset, 1px);
 }
 
 .nx-ui-preview button:disabled {
@@ -178,6 +178,13 @@
   overflow: auto;
 }
 
+.nx-ui-preview__runtime-note {
+  margin: 8px 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--nx-text-muted, var(--ds-text-muted));
+}
+
 .nx-ui-preview__sr {
   position: absolute;
   width: 1px;
@@ -246,7 +253,7 @@
   min-height: 30px;
   padding: 0 10px;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--nx-radius-field, 10px);
 }
 
 .nx-ui-preview__modes button.is-active,

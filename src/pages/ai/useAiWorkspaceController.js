@@ -24,7 +24,7 @@ import { useSettings } from "../../context/SettingsContext";
 import { useUnifiedChat } from "../../hooks/useUnifiedChat";
 import { useArtifactWorkspace } from "../../hooks/useArtifactWorkspace";
 import { resolveGameSpecForPrompt } from "../../lib/gameProfile";
-import { classifyUserIntent, isImplementationIntent } from "../../lib/intentClassifier";
+import { classifyExecutionIntent, classifyUserIntent, isImplementationIntent } from "../../lib/intentClassifier";
 import { useAiScripts } from "../../hooks/useAiScripts";
 import { CHAT_MODES } from "../../components/ai/chatConstants";
 import { normalizeChatMode } from "../../lib/chatModes";
@@ -142,6 +142,11 @@ export function shouldRequireStudioPlaceSelection(prompt) {
 export function evaluateIntentAwareStudioSubmissionPreflight({ prompt, ...studioOptions }) {
   const mode = normalizeChatMode(studioOptions.mode);
   if (mode === "ask" || mode === "plan" || !shouldRequireStudioPlaceSelection(prompt)) {
+    return { status: "ready" };
+  }
+  // An explicit artifact-only request stays artifact-only even if Studio were
+  // available. Let it reach generation without requiring a live connection.
+  if (classifyExecutionIntent(prompt, { studioEnabled: true }) === "artifact_only") {
     return { status: "ready" };
   }
   const supportedTransportConnected = Boolean(
@@ -2014,6 +2019,8 @@ export function useAiWorkspaceController() {
         body: JSON.stringify({
           prompt: current,
           gameSpec: resolveGameSpecForPrompt(settings?.gameSpec),
+          projectId: activeProjectId || null,
+          chatId: chat.currentChatId || null,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -2038,7 +2045,7 @@ export function useAiWorkspaceController() {
     } finally {
       setIsImproving(false);
     }
-  }, [prompt, user, isImproving, settings, notify]);
+  }, [prompt, user, isImproving, settings, activeProjectId, chat.currentChatId, notify]);
 
   const handleQuickStart = useCallback(
     async (item) => {
