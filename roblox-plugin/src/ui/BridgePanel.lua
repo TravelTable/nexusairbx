@@ -33,6 +33,8 @@ local pollingActive, lastErrorText, diagnosticsOpen, pendingApproval, selectedSn
 -- bundler's top-level local budget.
 local tabButtons, activeTab, setActiveTab, tabBar = {}, "Tools", nil, nil
 local nexusHeader, UI_HELPERS = nil, {}
+UI_HELPERS.snapshotRefreshGeneration = 0
+UI_HELPERS.snapshotRefreshScheduled = false
 
 -- Keep the dock dark and purple regardless of Studio's editor theme.
 local function themeColor(color)
@@ -1016,7 +1018,10 @@ function UI_HELPERS.refreshApprovalToggle()
 	approvalToggleButton.Text = enabled and "Automatic apply: OFF" or "Automatic apply: ON"
 end
 
-function UI_HELPERS.rebuildSnapshotList()
+function UI_HELPERS.rebuildSnapshotList(refreshGeneration)
+	-- The complete localSnapshots array remains the source of truth for restore
+	-- all and rollback. The panel only materializes the newest 100 rows so a
+	-- large UI replacement cannot create thousands of controls at once.
 	for _, child in ipairs(UI_HELPERS.snapshotList:GetChildren()) do
 		if child:IsA("Frame") then
 			child:Destroy()
@@ -1028,10 +1033,23 @@ function UI_HELPERS.rebuildSnapshotList()
 		return
 	end
 	UI_HELPERS.snapshotScroll.Visible = true
-	for index, snap in ipairs(localSnapshots) do
-		if type(snap) ~= "table" then
-			continue
+	local firstIndex = math.max(1, #localSnapshots - 99)
+	local nextIndex = firstIndex
+	local function renderNextBatch()
+		-- A newer refresh request supersedes this render. Restart from its
+		-- generation so rows never point at a stale array position.
+		if refreshGeneration ~= UI_HELPERS.snapshotRefreshGeneration then
+			task.defer(function()
+				UI_HELPERS.rebuildSnapshotList(UI_HELPERS.snapshotRefreshGeneration)
+			end)
+			return
 		end
+		local batchLastIndex = math.min(#localSnapshots, nextIndex + 19)
+		for index = nextIndex, batchLastIndex do
+			local snap = localSnapshots[index]
+			if type(snap) ~= "table" then
+				continue
+			end
 		local row = Instance.new("Frame")
 		row.Name = "SnapshotRow" .. tostring(index)
 		row.Size = UDim2.new(1, 0, 0, 0)
@@ -1073,7 +1091,27 @@ function UI_HELPERS.rebuildSnapshotList()
 		if snap.id then
 			table.insert(selectedSnapshotIds, snap.id)
 		end
+		end
+		nextIndex = batchLastIndex + 1
+		if nextIndex <= #localSnapshots then
+			task.defer(renderNextBatch)
+		else
+			UI_HELPERS.snapshotRefreshScheduled = false
+		end
 	end
+	renderNextBatch()
+end
+
+function UI_HELPERS.scheduleSnapshotListRefresh()
+	UI_HELPERS.snapshotRefreshGeneration += 1
+	if UI_HELPERS.snapshotRefreshScheduled then
+		return
+	end
+	UI_HELPERS.snapshotRefreshScheduled = true
+	local refreshGeneration = UI_HELPERS.snapshotRefreshGeneration
+	task.defer(function()
+		UI_HELPERS.rebuildSnapshotList(refreshGeneration)
+	end)
 end
 
 local function refreshControls()
@@ -1460,7 +1498,7 @@ end
 
 function updateSnapshotLabel()
 	snapshotLabel.Text = ("Snapshots: %d local"):format(#localSnapshots)
-	UI_HELPERS.rebuildSnapshotList()
+	UI_HELPERS.scheduleSnapshotListRefresh()
 	refreshControls()
 end
 

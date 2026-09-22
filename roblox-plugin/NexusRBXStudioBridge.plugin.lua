@@ -12255,9 +12255,32 @@ local function shouldAutoPull()
 	return setting ~= false
 end
 
+-- Long-lived bridge loops must not disappear after one unexpected local error.
+-- Deliberately discard the error value: request failures can contain server or
+-- transport detail, and a Studio Output warning must never expose credentials.
+function superviseNexusBridgeLoop(loopName, runLoop)
+	task.spawn(function()
+		local consecutiveFailures = 0
+		while true do
+			local startedAt = os.clock()
+			pcall(runLoop)
+			if os.clock() - startedAt >= 60 then
+				consecutiveFailures = 0
+			end
+			consecutiveFailures = math.min(consecutiveFailures + 1, 6)
+			local restartDelay = math.min(0.5 * (2 ^ (consecutiveFailures - 1)), 15)
+			warn(("NexusRBX %s loop stopped unexpectedly; restarting in %.1fs"):format(loopName, restartDelay))
+			pcall(function()
+				setBridgeState("degraded", loopName .. " loop restarting")
+			end)
+			task.wait(restartDelay)
+		end
+	end)
+end
+
 -- Poll loop: continuously long-polls for commands and enqueues them. Polling is
 -- read-only for session credentials; the heartbeat loop owns liveness touches.
-task.spawn(function()
+superviseNexusBridgeLoop("command polling", function()
 	local idleWaitMs = 2000
 	local failureBackoff = 0
 
@@ -12315,7 +12338,7 @@ end)
 -- Executor loop: drains the command queue one command at a time. Runs
 -- independently of polling so long applies / approval prompts can never freeze
 -- the connection.
-task.spawn(function()
+superviseNexusBridgeLoop("command executor", function()
 	while true do
 		if game:GetService("RunService"):IsEdit() and getToken() and compatibilityHandshakeReady and pendingCommandCount() > 0 then
 			local ok = pcall(processNextCommand)
@@ -12332,7 +12355,7 @@ end)
 
 -- Heartbeat loop: one request keeps the session live and returns collaborator
 -- plus companion health summaries. The backend throttles persistence.
-task.spawn(function()
+superviseNexusBridgeLoop("session heartbeat", function()
 	local failureCount = 0
 	local activeWorkspaceProjectId = ""
 	local activeWorkspaceRevision = ""

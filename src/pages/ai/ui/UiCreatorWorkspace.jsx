@@ -396,15 +396,25 @@ export default function UiCreatorWorkspace({ user, projectId, projectTitle, mode
     const target = designRef.current;
     if (mockRuns?.enabled || !target || !studioReady || working || loadingSession || lock.current) return;
     lock.current = true; const requestScope = scopeRef.current; setBusy('Applying to Studio'); setError('');
-    const applyIdentity = JSON.stringify([requestScope, target.designId, target.document.revision]);
+    // The server binds task acceptance to the trusted Studio session as well as
+    // the request body. A reconnect can therefore make the same design revision
+    // a different operation even though its visible payload is unchanged.
+    const applyIdentity = JSON.stringify([requestScope, target.designId, target.document.revision, studioSessionId]);
     if (applyRequestKey.current?.identity !== applyIdentity) applyRequestKey.current = { identity: applyIdentity, key: `ui-apply:${crypto.randomUUID()}` };
     try {
       const result = await createTask({ message: 'Apply this saved UI in Studio and review its appearance.', mode: 'agent', workspace: 'ui_creator',
         designId: target.designId, baseRevision: target.document.revision, uiIntent: 'apply', projectId, chatId: target.chatId || target.designId,
         executionInput: { settings: { modelVersion }, applyMode: 'auto_after_approval', studioEnabled: true } }, { idempotencyKey: applyRequestKey.current.key });
       if (requestScope === scopeRef.current && designRef.current?.designId === target.designId) { setTask(result.task); setEvents([]); setConnectApply(null); applyRequestKey.current = null; }
-    } catch (e) { if (requestScope === scopeRef.current) report(e); } finally { if (requestScope === scopeRef.current) { setBusy(''); lock.current = false; } }
-  }, [mockRuns, studioReady, working, projectId, modelVersion, report]);
+    } catch (e) {
+      if (requestScope === scopeRef.current) {
+        // Reuse the key while a transport failure leaves the outcome unknown,
+        // but do not keep replaying an identity the server explicitly rejected.
+        if (e?.status === 409 || ['DUPLICATE_OPERATION', 'IDEMPOTENCY_CONFLICT'].includes(e?.code)) applyRequestKey.current = null;
+        report(e);
+      }
+    } finally { if (requestScope === scopeRef.current) { setBusy(''); lock.current = false; } }
+  }, [mockRuns, studioReady, studioSessionId, working, loadingSession, projectId, modelVersion, report]);
   useEffect(() => { if (connectApply && connectApply === document?.designId && studioReady && !working) { setConnectApply(null); void applySaved(); } }, [connectApply, document?.designId, studioReady, working, applySaved]);
   const connect = () => { if (saved) setConnectApply(document.designId); onOpenStudio?.(); };
   const retryReview = async () => {

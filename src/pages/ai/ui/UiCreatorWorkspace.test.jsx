@@ -297,6 +297,36 @@ test("application retries reuse the request identity after an uncertain network 
   expect(tasks.createTask.mock.calls[0][1].idempotencyKey).toBe(tasks.createTask.mock.calls[1][1].idempotencyKey);
 });
 
+test("application retries rotate a request identity rejected as a duplicate",async()=>{
+  const duplicate = Object.assign(new Error("Already submitted"), { status: 409, code: "DUPLICATE_OPERATION" });
+  const originalRandomUUID = global.crypto.randomUUID;
+  global.crypto.randomUUID = jest.fn().mockReturnValueOnce("apply-one").mockReturnValueOnce("apply-two");
+  tasks.createTask.mockRejectedValueOnce(duplicate).mockResolvedValueOnce({task:savedTask()});
+  await open();
+  fireEvent.click(screen.getByRole("button",{name:"Apply to Studio",exact:true}));
+  await screen.findByRole("alert");
+  fireEvent.click(screen.getByRole("button",{name:"Apply to Studio",exact:true}));
+  await waitFor(()=>expect(tasks.createTask).toHaveBeenCalledTimes(2));
+  expect(tasks.createTask.mock.calls[0][1].idempotencyKey).toBe("ui-apply:apply-one");
+  expect(tasks.createTask.mock.calls[1][1].idempotencyKey).toBe("ui-apply:apply-two");
+  global.crypto.randomUUID = originalRandomUUID;
+});
+
+test("reconnecting Studio gives the same saved revision a new application identity",async()=>{
+  const originalRandomUUID = global.crypto.randomUUID;
+  global.crypto.randomUUID = jest.fn().mockReturnValueOnce("session-one").mockReturnValueOnce("session-two");
+  tasks.createTask.mockRejectedValueOnce(new Error("Connection interrupted")).mockResolvedValueOnce({task:savedTask()});
+  const view = await open();
+  fireEvent.click(screen.getByRole("button",{name:"Apply to Studio",exact:true}));
+  await screen.findByRole("alert");
+  view.rerender(<UiCreatorWorkspace {...props} studioSessionId="session-2" />);
+  fireEvent.click(screen.getByRole("button",{name:"Apply to Studio",exact:true}));
+  await waitFor(()=>expect(tasks.createTask).toHaveBeenCalledTimes(2));
+  expect(tasks.createTask.mock.calls[0][1].idempotencyKey).toBe("ui-apply:session-one");
+  expect(tasks.createTask.mock.calls[1][1].idempotencyKey).toBe("ui-apply:session-two");
+  global.crypto.randomUUID = originalRandomUUID;
+});
+
 test("entering UI mode only restores an explicitly last-opened design", async () => {
   localStorage.removeItem('nexusrbx:ui:last-open:user-1:project-1');
   render(<UiCreatorWorkspace {...props} />);

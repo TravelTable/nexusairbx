@@ -111,14 +111,17 @@ export default function UiReferenceCard({
   const primary =
     images.find((item) => referenceRoles[referenceAttachmentKey(item)] === "primary") ||
     images[0];
-  const meta = {
-    width: Number(primary?.width) || 0,
-    height: Number(primary?.height) || 0,
-    name: primary?.name || "",
-  };
+  const meta = useMemo(
+    () => ({
+      width: Number(primary?.width) || 0,
+      height: Number(primary?.height) || 0,
+      name: primary?.name || "",
+    }),
+    [primary?.width, primary?.height, primary?.name]
+  );
   const measured = useMemo(
     () => findingsProp || inferReferenceFindings(meta),
-    [findingsProp, meta.width, meta.height, meta.name]
+    [findingsProp, meta]
   );
   const [phase, setPhase] = useState(() =>
     findingsProp || prefersReducedMotion() ? "collapsed" : "analyzing"
@@ -133,7 +136,7 @@ export default function UiReferenceCard({
 
   useEffect(() => {
     setSampled(findingsProp || inferReferenceFindings(meta));
-  }, [findingsProp, meta.width, meta.height, meta.name]);
+  }, [findingsProp, meta]);
 
   useEffect(() => {
     if (findingsProp || prefersReducedMotion()) {

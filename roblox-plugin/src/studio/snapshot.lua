@@ -22,10 +22,10 @@ local function snapshotStateHash(inst)
 	return ok and hashValue or nil
 end
 
-local function recordStudioSnapshotLocally(snap)
+local function recordStudioSnapshotLocally(snap, deferUiRefresh)
 	if type(localSnapshots) == "table" then
 		table.insert(localSnapshots, snap)
-		if type(updateSnapshotLabel) == "function" then
+		if not deferUiRefresh and type(updateSnapshotLabel) == "function" then
 			updateSnapshotLabel()
 		end
 	end
@@ -107,7 +107,14 @@ local function appendSnapshotTree(inst, snapshots)
 	captureTree(inst)
 	for _, snap in ipairs(pending) do
 		table.insert(snapshots, snap)
-		recordStudioSnapshotLocally(snap)
+		recordStudioSnapshotLocally(snap, true)
+	end
+	-- Publishing a large UI tree used to rebuild the recovery panel once per
+	-- node, making replacement O(n^2). Store every snapshot first, then ask the
+	-- panel for one coalesced refresh. Restore and rollback still receive the
+	-- complete snapshot arrays above.
+	if #pending > 0 and type(updateSnapshotLabel) == "function" then
+		updateSnapshotLabel()
 	end
 end
 
