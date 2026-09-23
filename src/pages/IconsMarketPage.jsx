@@ -184,6 +184,7 @@ export default function IconsMarketPage() {
   const [user, setUser] = useState(null);
   const [uploadName, setUploadName] = useState("");
   const [uploadRole, setUploadRole] = useState("");
+  const [uploadKind, setUploadKind] = useState("icon");
   const [uploadFile, setUploadFile] = useState(null);
   const [uploadError, setUploadError] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -522,6 +523,7 @@ export default function IconsMarketPage() {
                     body.set("image", uploadFile);
                     body.set("name", uploadName.trim());
                     body.set("role", (uploadRole || uploadName).trim());
+                    body.set("resourceKind", uploadKind);
                     const res = await fetch(`${API_BASE}/api/icons/uploads`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body });
                     const data = await res.json().catch(() => ({}));
                     if (!res.ok) throw new Error(data?.error || "Could not upload the icon.");
@@ -544,6 +546,13 @@ export default function IconsMarketPage() {
                   </label>
                   <label className="text-sm text-[var(--ds-text-muted)]">Role
                     <input className="mt-1 block rounded-md border border-[var(--ds-border)] bg-[var(--ds-bg-canvas)] px-3 py-2 text-[var(--ds-text)]" value={uploadRole} onChange={(event) => setUploadRole(event.target.value)} placeholder="currency" />
+                  </label>
+                  <label className="text-sm text-[var(--ds-text-muted)]">Kind
+                    <select className="mt-1 block rounded-md border border-[var(--ds-border)] bg-[var(--ds-bg-canvas)] px-3 py-2 text-[var(--ds-text)]" value={uploadKind} onChange={(event) => setUploadKind(event.target.value)}>
+                      {["icon", "button", "panel_skin", "card", "inventory_slot", "badge", "tab", "hud", "decorative_frame", "background", "texture", "recipe"].map(kind => (
+                        <option key={kind} value={kind}>{kind.replace(/_/g, " ")}</option>
+                      ))}
+                    </select>
                   </label>
                   <button className="rounded-md bg-[var(--ds-text)] px-4 py-2 text-sm font-semibold text-[var(--ds-bg-canvas)] disabled:opacity-60" type="submit" disabled={uploading}>{uploading ? "Uploading" : "Upload"}</button>
                   {uploadError ? <p className="w-full text-sm text-red-400">{uploadError}</p> : null}

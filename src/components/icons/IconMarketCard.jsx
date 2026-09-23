@@ -45,7 +45,11 @@ export default function IconMarketCard({
           <p className="creator-store-record__meta">
             <span>{icon.isPro ? "Pro access" : "Included access"}</span>
             <span aria-hidden="true">/</span>
-            <span>Roblox use</span>
+            <span>{String(icon.resourceKind || "icon").replace(/_/g, " ")}</span>
+            <span aria-hidden="true">/</span>
+            <span>{icon.visibility === "private" ? "Private" : "Market"}</span>
+            <span aria-hidden="true">/</span>
+            <span>{icon.representation || "image"}</span>
           </p>
           <span className="creator-store-record__licence" aria-hidden="true">
             View licence record <ArrowRight />
