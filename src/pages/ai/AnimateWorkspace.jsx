@@ -1,4 +1,5 @@
 import NexusSelect from "../../components/ui/NexusSelect";
+import { Segmented } from "components/ui";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Clock3,
@@ -28,6 +29,7 @@ import InfoHint from "./animation/InfoHint";
 import MotionPromptComposer from "./animation/MotionPromptComposer";
 import MotionTaskList from "./animation/MotionTaskList";
 import MotionVariantList from "./animation/MotionVariantList";
+import AnimationSetEditor from "./animation/AnimationSetEditor";
 import "./AnimateWorkspace.css";
 
 const STARTER_PROMPTS = [
@@ -81,7 +83,22 @@ function routingDisclosure(routing) {
   return `Generated with ${modelName(routing.resolved)}`;
 }
 
-export default function AnimateWorkspace({ modelVersion = "", onBillingRefresh = null }) {
+export default function AnimateWorkspace({ projectId = "", ...props }) {
+  const [view, setView] = useState("clips");
+  const [openedSets, setOpenedSets] = useState(false);
+  return <div className="animate-workspace-shell">
+    <nav className="animate-workspace-modes" aria-label="Animation workspace">
+      <Segmented size="sm" ariaLabel="Animation workspace mode" value={view}
+        options={[{ id: "clips", label: "Clip studio" }, { id: "sets", label: "Animation sets" }]}
+        onChange={(next) => { setView(next); if (next === "sets") setOpenedSets(true); }} />
+      <span>Author motion. Connect it to gameplay.</span>
+    </nav>
+    <div className="animate-workspace-view" hidden={view !== "clips"}><ClipWorkspace {...props} active={view === "clips"} /></div>
+    {openedSets && <div className="animate-workspace-view" hidden={view !== "sets"}><AnimationSetEditor projectId={projectId} active={view === "sets"} /></div>}
+  </div>;
+}
+
+function ClipWorkspace({ modelVersion = "", onBillingRefresh = null, active = true }) {
   const [prompt, setPrompt] = useState("");
   const [refinement, setRefinement] = useState("");
   const [animation, setAnimation] = useState(null);
@@ -100,6 +117,8 @@ export default function AnimateWorkspace({ modelVersion = "", onBillingRefresh =
   const promptInputRef = useRef(null);
   const modelInputRef = useRef(null);
   const customModelUrlRef = useRef("");
+
+  useEffect(() => { if (!active) setPlaying(false); }, [active]);
 
   const variants = animation?.variants || [];
   const selectedVariant = variants.find((variant) => variant.variant.id === selectedVariantId) || variants[0] || null;
@@ -148,7 +167,7 @@ export default function AnimateWorkspace({ modelVersion = "", onBillingRefresh =
 
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if (event.code !== "Space") return;
+      if (!active || event.code !== "Space") return;
       const target = event.target;
       if (target instanceof HTMLElement && target.closest("input, textarea, button, select, [contenteditable='true']")) return;
       event.preventDefault();
@@ -156,7 +175,7 @@ export default function AnimateWorkspace({ modelVersion = "", onBillingRefresh =
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [active]);
 
   useEffect(() => () => {
     if (customModelUrlRef.current) URL.revokeObjectURL(customModelUrlRef.current);

@@ -2,12 +2,15 @@ import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import AnimateWorkspace from "./AnimateWorkspace";
 import { generateAnimation, refineAnimation, sendAnimationToStudio } from "lib/animationApi";
+import { listAnimationSets } from "lib/animationSetApi";
 
 jest.mock("lib/animationApi", () => ({
   generateAnimation: jest.fn(),
   refineAnimation: jest.fn(),
   sendAnimationToStudio: jest.fn(),
 }));
+
+jest.mock("lib/animationSetApi", () => ({ listAnimationSets: jest.fn(async () => []) }));
 
 jest.mock("./animation/R15Preview", () => ({ animation, currentTime, modelUrl }) => (
   <div data-testid="r15-preview" data-variant={animation?.variant?.id || "none"} data-time={currentTime} data-model-url={modelUrl} />
@@ -64,6 +67,7 @@ function animationFixture(overrides = {}) {
 describe("AnimateWorkspace", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    listAnimationSets.mockResolvedValue([]);
     window.localStorage.clear();
     URL.createObjectURL = jest.fn(() => "blob:custom-r15");
     URL.revokeObjectURL = jest.fn();
@@ -159,6 +163,20 @@ describe("AnimateWorkspace", () => {
       variantId: "balanced",
       applyMode: "manual_review",
     }));
+  });
+
+  test("keeps the clip draft while opening the set editor and returning", async () => {
+    generateAnimation.mockResolvedValue(animationFixture());
+    render(<AnimateWorkspace projectId="project_one" />);
+    fireEvent.click(screen.getByRole("button", { name: STARTER_BUTTON_NAME }));
+    await screen.findByText(/I built 3 R15 jump variants/i);
+    fireEvent.click(screen.getByRole("button", { name: "Animation sets" }));
+    expect(screen.getByRole("region", { name: "Animation set editor" })).toBeVisible();
+    fireEvent.keyDown(window, { code: "Space" });
+    fireEvent.click(screen.getByRole("button", { name: "Clip studio" }));
+    expect(screen.getByDisplayValue("Hero landing")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Play animation" })).toBeInTheDocument();
+    expect(generateAnimation).toHaveBeenCalledTimes(1);
   });
 });
 

@@ -54,6 +54,10 @@ local TOOL_HANDLERS = {
 		return ImportedAsset.insertTrustedRobloxAsset(payload, "insert_uploaded_roblox_model")
 	end,
 	create_animation_sequence = createAnimationSequence,
+	inspect_animation_rig = AnimationInspection.inspectRig,
+	inspect_animation_asset = AnimationInspection.inspectAsset,
+	probe_animation_asset = AnimationInspection.probeAsset,
+	preview_animation = AnimationInspection.preview,
 	get_project_manifest = inspectPlace,
 	list_children = listChildren,
 	inspect_place = inspectPlace,
@@ -967,22 +971,37 @@ local function verifyCommandOutcome(command, payload, result)
 		local actualHash = sequence and animationSequenceHash(sequence) or nil
 		local expectedHash = result.sequenceHash
 		local keyframeCount = 0
+		local actualMarkers = {}
 		if sequence and sequence:IsA("KeyframeSequence") then
 			for _, child in ipairs(sequence:GetChildren()) do
-				if child:IsA("Keyframe") then keyframeCount = keyframeCount + 1 end
+				if child:IsA("Keyframe") then
+					keyframeCount = keyframeCount + 1
+					for _, marker in ipairs(child:GetMarkers()) do
+						table.insert(actualMarkers, HttpService:JSONEncode({ marker.Name, math.round(child.Time * 1000), marker.Value }))
+					end
+				end
 			end
 		end
+		local expectedMarkers = {}
+		for _, marker in ipairs(payload.markers or {}) do
+			table.insert(expectedMarkers, HttpService:JSONEncode({ marker.name, marker.timeMs, marker.value or "" }))
+		end
+		table.sort(actualMarkers); table.sort(expectedMarkers)
+		local markersMatch = table.concat(actualMarkers, "\n") == table.concat(expectedMarkers, "\n")
 		local verified = sequence ~= nil
 			and sequence:IsA("KeyframeSequence")
 			and expectedHash ~= nil
 			and actualHash == expectedHash
 			and keyframeCount == tonumber(result.keyframeCount or -1)
+			and markersMatch
 			and tostring(sequence:GetAttribute("NexusAnimationContentHash") or "") == tostring(payload.contentHash or "")
 		addCheck("animation_sequence", target, verified, {
 			expectedHash = expectedHash,
 			actualHash = actualHash,
 			expectedKeyframeCount = result.keyframeCount,
 			actualKeyframeCount = keyframeCount,
+			markerCount = #actualMarkers,
+			markersMatch = markersMatch,
 			className = sequence and sequence.ClassName or nil,
 		})
 		evidence.readbackHash = actualHash

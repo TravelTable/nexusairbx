@@ -1,3 +1,9 @@
+.animate-workspace-shell { display: flex; flex-direction: column; height: 100%; min-height: 0; min-width: 0; }
+.animate-workspace-modes { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; padding: 6px 12px; border-bottom: 1px solid var(--ds-border); background: var(--ds-bg-workspace); }
+.animate-workspace-modes > span { color: var(--nx-text-muted); font-size: 11px; }
+.animate-workspace-view { flex: 1; min-height: 0; min-width: 0; }
+.animate-workspace-view[hidden] { display: none; }
+@media (max-width: 640px) { .animate-workspace-modes > span { display: none; } }
 .animate-workspace {
   --animate-panel: rgb(17 17 18 / 96%);
   --animate-panel-raised: rgb(28 27 30 / 96%);

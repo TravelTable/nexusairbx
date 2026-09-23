@@ -2142,7 +2142,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
             ) : creationMode === "asset" ? (
               <IconsMarketWorkspacePanel embedded />
             ) : creationMode === "animate" ? (
-              <AnimateWorkspace modelVersion={settings.modelVersion} onBillingRefresh={refreshBilling} />
+              <AnimateWorkspace projectId={currentProjectId} modelVersion={settings.modelVersion} onBillingRefresh={refreshBilling} />
             ) : (
               <WorkspaceShell
                 buildWorkspace

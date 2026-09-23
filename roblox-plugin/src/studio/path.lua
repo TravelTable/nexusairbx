@@ -129,6 +129,13 @@ SAFE_UI_RESTORE_PROPERTIES = {
 
 local function safeSetProperty(inst, key, value)
 	local ok, err = pcall(function()
+		-- Marker payloads are literal text. Enum-looking values must survive a
+		-- snapshot round trip without the general enum decoder reinterpreting them.
+		if key == "Value" and inst:IsA("KeyframeMarker") then
+			if type(value) ~= "string" then error("KeyframeMarker.Value must be a string") end
+			inst.Value = value
+			return
+		end
 		if typeof(value) == "table" then
 			local valueType = tostring(value.type or value["$type"] or value.__type or "")
 			if valueType == "EnumItem" then

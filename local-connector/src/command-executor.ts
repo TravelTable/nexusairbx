@@ -68,6 +68,11 @@ export class CommandExecutor {
       case "patch_script":
         return await this.mutateScript(command, signal);
       case "get_selection":
+      case "create_animation_sequence":
+      case "inspect_animation_rig":
+      case "inspect_animation_asset":
+      case "preview_animation":
+      case "probe_animation_asset":
       case "get_project_manifest":
       case "create_instance":
       case "update_properties":
@@ -103,7 +108,7 @@ export class CommandExecutor {
     const data = await this.#routines.run(command.type, command.payload, signal);
     // Snapshot creation writes connector-owned state into the place and advances
     // its signature, even though it does not alter the selected user instance.
-    const mutation = !["get_selection", "get_project_manifest"].includes(command.type);
+    const mutation = !["get_selection", "get_project_manifest", "inspect_animation_rig", "inspect_animation_asset"].includes(command.type);
     const snapshotChecks = command.type === "create_snapshot" && Array.isArray(data.snapshots)
       ? data.snapshots.flatMap((snapshot) => isRecord(snapshot) ? [{
           kind: "snapshot_record",
@@ -644,6 +649,14 @@ function extractInspection(result: ToolCallResult, requestedPath: string): JsonO
     const texts = contentTexts(result.content);
     if (texts.length === 0) {
       throw new ConnectorError("MCP_RESPONSE_MALFORMED", "Roblox Studio MCP did not return structured instance data.");
+    }
+    // Current official StudioMCP reports an absent instance as this exact text
+    // with isError=false. Bind it to the requested path; other read failures
+    // must never be treated as permission to create/replace a destination.
+    const missing = /^Error: Could not find any instances at path '([^'\r\n]+)'$/.exec(texts.join("\n"));
+    const canonical = (path: string) => path.trim().replace(/\\/g, "/").replace(/^game[/.]/i, "").replace(/\//g, ".");
+    if (missing && canonical(missing[1]!) === canonical(requestedPath)) {
+      return { path: requestedPath, error: "Instance not found", code: "INSTANCE_NOT_FOUND" };
     }
     try {
       value = JSON.parse(texts.join("\n"));

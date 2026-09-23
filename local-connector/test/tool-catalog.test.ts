@@ -57,6 +57,12 @@ const currentTargeted = (items: DiscoveredTool[]) => [
   ...items.filter((item) => item.name !== "get_studio_state").map(withStudioId),
 ];
 
+test("animation playback probe is exposed only when execute_luau permits Server", () => {
+  assert.equal(new ToolCatalog(targeted([executeLuau])).hasCommand("probe_animation_asset"), false);
+  const server = tool("execute_luau", { code: { type: "string" }, datamodel_type: { type: "string", enum: ["Edit", "Server"] } }, ["code", "datamodel_type"]);
+  assert.equal(new ToolCatalog(targeted([server])).hasCommand("probe_animation_asset"), true);
+});
+
 test("catalog enables only exact, schema-validated Nexus commands", () => {
   const catalog = new ToolCatalog(targeted([read, inspect, search, grep, state, output, sourceMutation]));
   assert.deepEqual(catalog.supportedCommands, [

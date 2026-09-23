@@ -108,11 +108,13 @@ export class ToolCatalog {
       commands.add("create_script");
     }
     if (targetToolsReady && this.executeLuau) {
+      for (const command of ["create_animation_sequence", "inspect_animation_rig", "inspect_animation_asset", "preview_animation"]) commands.add(command);
       commands.add("get_project_manifest");
       commands.add("get_selection");
       for (const command of INSTANCE_COMMANDS) commands.add(command);
       for (const command of SNAPSHOT_COMMANDS) commands.add(command);
     }
+    if (targetToolsReady && compileExactTool(this.#byName.get("execute_luau"), ["code", "datamodel_type"], "Server")) commands.add("probe_animation_asset");
     if (targetToolsReady && this.executeLuau && this.insertAsset) commands.add("insert_creator_store_asset");
     if (targetToolsReady && this.executeLuau && this.startStopPlay && compileNoInput(this.#byName.get("get_console_output"))) {
       for (const command of PLAYTEST_COMMANDS) commands.add(command);
@@ -402,7 +404,7 @@ function findOptionalBoolean(schema: ParsedObjectSchema, candidates: string[]): 
   return null;
 }
 
-function compileExactTool(tool: DiscoveredTool | undefined, required: string[]): BasicToolAdapter | null {
+function compileExactTool(tool: DiscoveredTool | undefined, required: string[], datamodel = "Edit"): BasicToolAdapter | null {
   if (!tool) return null;
   const schema = objectSchema(tool.inputSchema, tool.name !== "set_active_studio");
   if (!schema || !requiredExactly(schema.required, required)) return null;
@@ -411,7 +413,7 @@ function compileExactTool(tool: DiscoveredTool | undefined, required: string[]):
     if (!property) return null;
     if (key === "is_start" && property.type !== "boolean") return null;
     if (key !== "is_start" && property.type !== "string") return null;
-    if (key === "datamodel_type" && Array.isArray(property.enum) && !property.enum.includes("Edit")) return null;
+    if (key === "datamodel_type" && Array.isArray(property.enum) && !property.enum.includes(datamodel)) return null;
   }
   return { toolName: tool.name, args: {} };
 }

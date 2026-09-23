@@ -19,12 +19,12 @@ class RoutineMcp implements McpClientLike {
   async callTool(name: string, args: JsonObject): Promise<ToolCallResult> {
     this.calls += 1;
     assert.equal(name, "execute_luau");
-    assert.equal(args.datamodel_type, "Edit");
     const code = String(args.code || "");
     this.lastCode = code;
     const match = /__nexus_run\(("(?:\\.|[^"\\])*")\)\s*$/.exec(code);
     assert.ok(match?.[1]);
     const input = JSON.parse(JSON.parse(match[1])) as { nonce: string; operation: string; payload: JsonObject };
+    assert.equal(args.datamodel_type, input.operation === "probe_animation_asset" ? "Server" : "Edit");
     if (this.mode === "malformed") return { content: [{ type: "text", text: "not-json" }] };
     const snapshot = { snapshotId: "snapshot-1", path: "Workspace/Part", preHash: "before", postHash: "after" };
     const validData: Record<string, JsonObject> = {
@@ -36,6 +36,11 @@ class RoutineMcp implements McpClientLike {
       record_last_batch: { storedCount: 1, pinnedCount: 1 },
       delete_instance: { snapshots: [{ ...snapshot, postHash: "missing" }], resultingHash: "missing", verified: true },
       duplicate_instance: { instance: { path: "Workspace/Copy" }, snapshots: [snapshot], resultingHash: "after" },
+      preview_animation: { ok: true, action: input.payload.action || "inspect", basePath: input.payload.basePath || "", rigPath: input.payload.rigPath || "",
+        previewOnly: true, published: false, accepted: true,
+        snapshot: { running: input.payload.action !== "stop", previewConnectionCount: input.payload.action === "stop" ? 0 : 1 } },
+      probe_animation_asset: { ok: true, assetId: input.payload.assetId || "", rigPath: input.payload.rigPath || "", universeId: "123", placeId: "456",
+        context: "server_play", running: true, isServer: true, lengthMs: 1000, timePositionMs: 50, played: true, cleanedUp: true },
     };
     return {
       content: [{
@@ -54,6 +59,31 @@ class RoutineMcp implements McpClientLike {
 async function expectCode(promise: Promise<unknown>, code: string): Promise<void> {
   await assert.rejects(promise, (error: unknown) => error instanceof ConnectorError && error.code === code);
 }
+
+test("preview controls require a complete target-specific session receipt", async () => {
+  const mcp = new RoutineMcp();
+  const runner = new FixedRoutineRunner(mcp);
+  const target = { basePath: "ReplicatedStorage/NexusAnimations/Sword_v1", rigPath: "Workspace/Hero" };
+  const result = await runner.run("preview_animation", { ...target, action: "control", operation: "request", event: "attack" });
+  assert.equal(result.accepted, true);
+  assert.equal(result.published, false);
+  await runner.run("preview_animation", { ...target, action: "stop" });
+  mcp.mode = "empty_success";
+  await expectCode(runner.run("preview_animation", { ...target, action: "inspect" }), "ROUTINE_RESULT_INVALID");
+});
+
+test("published playback probe uses Server and rejects incomplete evidence", async () => {
+  const mcp = new RoutineMcp();
+  const runner = new FixedRoutineRunner(mcp);
+  const result = await runner.run("probe_animation_asset", { rigPath: "Workspace/Hero", assetId: "12345" });
+  assert.equal(result.context, "server_play");
+  assert.equal(result.played, true);
+  mcp.mode = "empty_success";
+  await expectCode(runner.run("probe_animation_asset", { rigPath: "Workspace/Hero", assetId: "12345" }), "ROUTINE_RESULT_INVALID");
+  const count = mcp.calls;
+  await expectCode(runner.run("probe_animation_asset", { rigPath: "Workspace/Hero", assetId: "active://temporary" }), "INVALID_ANIMATION_PAYLOAD");
+  assert.equal(mcp.calls, count);
+});
 
 test("fixed routines reject executable, malicious, and oversized inputs before Studio", async () => {
   const mcp = new RoutineMcp();
@@ -169,7 +199,10 @@ test("snapshot conflict hashes cover every mutable property with deterministic s
   assert.ok(safeBlock, "SAFE_PROPERTIES must remain discoverable by the parity gate");
   assert.ok(hashBlock, "HASH_PROPERTIES must remain discoverable by the parity gate");
   const quoted = (value: string) => [...value.matchAll(/"([^"]+)"/g)].map((match) => match[1]).sort();
-  assert.deepEqual(quoted(hashBlock), quoted(safeBlock));
+  // Animation writes have their own validated operation. Its snapshot hash must
+  // cover clip data without granting generic property writes to asset IDs.
+  const animationProperties = ["AnimationId", "Loop", "Priority", "Time", "Weight", "EasingStyle", "EasingDirection"];
+  assert.deepEqual(quoted(hashBlock), [...quoted(safeBlock), ...animationProperties].sort());
   assert.match(source, /string\.format\("%\.17g", number\)/);
   assert.match(source, /local text = HttpService:JSONEncode\(chunks\)/);
   assert.match(source, /if kind == "CFrame" then local values = \{ value:GetComponents\(\) \}/);

@@ -190,6 +190,7 @@ local CREATABLE_CLASSES = {
 	ModuleScript = true,
 	KeyframeSequence = true,
 	Keyframe = true,
+	KeyframeMarker = true,
 	Pose = true,
 }
 

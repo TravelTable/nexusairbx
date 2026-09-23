@@ -13,6 +13,28 @@ import type {
 
 const READ_PATH = "game.ServerScriptService.Main";
 
+test("official missing-instance text is recognized only for the exact requested destination", async () => {
+  for (const [text, expected] of [
+    ["Error: Could not find any instances at path 'game.ReplicatedStorage.NexusAnimations.NewSet'", true],
+    ["Error: Could not find any instances at path 'game.ReplicatedStorage.Other'", false],
+    ["Permission denied while reading game.ReplicatedStorage.NexusAnimations.NewSet", false],
+    ["Error: Could not find any instances at path 'game.ReplicatedStorage.NexusAnimations.NewSet'\nextra", false],
+  ] as const) {
+    class MissingMcp extends FakeMcp {
+      override async callTool(name: string, args: JsonObject): Promise<ToolCallResult> {
+        if (name === "inspect_instance") return { content: [{ type: "text", text }], isError: false };
+        return super.callTool(name, args);
+      }
+    }
+    const result = await new CommandExecutor(new MissingMcp(), new ToolCatalog(tools)).execute(command("inspect_instances", {
+      paths: ["ReplicatedStorage/NexusAnimations/NewSet"], includeSourceHash: false, includeTags: false, includeChildren: false,
+    }));
+    assert.equal(result.ok, expected);
+    if (expected) assert.equal((result.instances as JsonObject[])[0]?.error, "Instance not found");
+    else assert.equal((result.error as JsonObject).code, "MCP_RESPONSE_MALFORMED");
+  }
+});
+
 const tools: DiscoveredTool[] = [
   { name: "list_roblox_studios", inputSchema: { type: "object", properties: {}, required: [] } },
   { name: "set_active_studio", inputSchema: { type: "object", properties: { studio_id: { type: "string" } }, required: ["studio_id"] } },

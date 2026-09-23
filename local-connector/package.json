@@ -16,6 +16,8 @@
     "README.md"
   ],
   "scripts": {
+    "sync:animation": "node scripts/sync-animation-source.cjs",
+    "prebuild": "node scripts/sync-animation-source.cjs --check",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "tsx --test test/*.test.ts",

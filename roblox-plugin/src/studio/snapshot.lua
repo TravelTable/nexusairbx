@@ -8,6 +8,15 @@ local function snapshotStateHash(inst)
 	if SCRIPT_CLASSES[inst.ClassName] then
 		return scriptHash(inst)
 	end
+	if inst:IsA("KeyframeSequence") or (inst:IsA("Folder") and inst.Name == "AnimSaves") then
+		local function treeHash(node)
+			local children = {}
+			for _, child in ipairs(node:GetChildren()) do table.insert(children, treeHash(child)) end
+			table.sort(children)
+			return stableHash(propertyHash(node) .. "\0" .. table.concat(children, "\0"))
+		end
+		return treeHash(inst)
+	end
 	-- Managed UI roots need a whole-tree fingerprint so undo/restore keeps a
 	-- creator's node additions, removals, property edits, and source edits made
 	-- after Nexus applied the artifact. UiArtifact is initialized before any
@@ -66,6 +75,23 @@ local function snapshotInstance(path, deferLocalRecord)
 		tags = CollectionService:GetTags(inst),
 	}
 	snap.properties.ClassName = nil
+	if inst:IsA("KeyframeSequence") then
+		-- Keyframes and repeated markers may share names. Indexed tree snapshots
+		-- preserve those siblings; path-addressed descendant snapshots cannot.
+		snap.animationNodes = {}
+		local function capture(node, parentIndex)
+			if #snap.animationNodes >= 12000 then error("Animation snapshot exceeds its node limit") end
+			if not (node:IsA("KeyframeSequence") or node:IsA("Keyframe") or node:IsA("Pose") or node:IsA("KeyframeMarker")) then
+				error("Animation snapshot contains an unsupported child class: " .. node.ClassName)
+			end
+			local properties = propertiesOf(node); properties.ClassName = nil; properties.Name = nil
+			table.insert(snap.animationNodes, { className = node.ClassName, name = node.Name,
+				parentIndex = parentIndex, properties = properties, attributes = attributesOf(node), tags = CollectionService:GetTags(node) })
+			local index = #snap.animationNodes
+			for _, child in ipairs(node:GetChildren()) do capture(child, index) end
+		end
+		capture(inst, 0)
+	end
 
 	if SCRIPT_CLASSES[inst.ClassName] then
 		local ok, source = readScriptSource(inst)
@@ -93,14 +119,18 @@ local function appendSnapshotTree(inst, snapshots)
 	if not inst then
 		return
 	end
+	if inst:IsA("KeyframeSequence") then
+		table.insert(snapshots, snapshotInstance(fullPath(inst)))
+		return
+	end
 
 	-- Capture the complete tree before publishing any of its snapshots. If one
 	-- descendant script cannot be read, callers fail before mutation and the
 	-- manual recovery list is not polluted with a partial tree.
 	local pending = {}
 	local function captureTree(current)
-		for _, child in ipairs(current:GetChildren()) do
-			captureTree(child)
+		if not current:IsA("KeyframeSequence") then
+			for _, child in ipairs(current:GetChildren()) do captureTree(child) end
 		end
 		table.insert(pending, snapshotInstance(fullPath(current), true))
 	end
@@ -198,6 +228,29 @@ end
 local function restoreSnapshots(payload)
 	local function restoreSnapshotInstance(snap)
 	local inst = resolvePath(snap.path)
+	if snap.animationNodes then
+		local parent, name = ensureParent(snap.path, false)
+		if not parent or not name then error("Animation snapshot parent no longer exists") end
+		local nodes, allowed = {}, { KeyframeSequence = true, Keyframe = true, Pose = true, KeyframeMarker = true }
+		local ok, err = pcall(function()
+			for index, item in ipairs(snap.animationNodes) do
+				if not allowed[item.className] or (index == 1 and item.className ~= "KeyframeSequence") then error("Invalid animation snapshot class") end
+				if index > 1 and not nodes[item.parentIndex] then error("Invalid animation snapshot hierarchy") end
+				local node = Instance.new(item.className); nodes[index] = node; node.Name = item.name
+				for key, value in pairs(item.properties or {}) do
+					local applied, reason = safeSetProperty(node, key, value); if not applied then error(reason) end
+				end
+				for key, value in pairs(item.attributes or {}) do node:SetAttribute(key, value) end
+				for _, tag in ipairs(item.tags or {}) do CollectionService:AddTag(node, tag) end
+				if index > 1 then node.Parent = nodes[item.parentIndex] end
+			end
+			if not nodes[1] then error("Empty animation snapshot") end
+		end)
+		if not ok then for _, node in ipairs(nodes) do node:Destroy() end; error(err) end
+		if inst then inst:Destroy() end
+		nodes[1].Name = name; nodes[1].Parent = parent
+		return nodes[1]
+	end
 	if inst and inst.ClassName ~= snap.className then
 		inst:Destroy()
 		inst = nil
@@ -336,7 +389,8 @@ local function restoreSnapshots(payload)
 				local inst = restoreSnapshotInstance(snap)
 				local restoredHash = snapshotStateHash(inst)
 				if snap.preHash and restoredHash ~= snap.preHash then
-					if inst:IsA("ScreenGui") and type(UiArtifact) == "table" and type(UiArtifact.treeHash) == "function" then
+					if (inst:IsA("ScreenGui") and type(UiArtifact) == "table" and type(UiArtifact.treeHash) == "function")
+						or (inst:IsA("Folder") and inst.Name == "AnimSaves") then
 						-- The root is restored before its descendant snapshots. Verify its
 						-- complete tree after the reverse-order restore has finished.
 						table.insert(deferredHashChecks, snap)
@@ -368,7 +422,7 @@ local function restoreSnapshots(payload)
 			table.insert(errors, {
 				snapshotId = snap.id,
 				path = snap.path or "",
-				message = "Restored UI tree hash does not match the pre-mutation snapshot (expected "
+				message = "Restored tree hash does not match the pre-mutation snapshot (expected "
 					.. tostring(snap.preHash)
 					.. ", got "
 					.. tostring(restoredHash)

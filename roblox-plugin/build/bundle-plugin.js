@@ -28,6 +28,7 @@ const sources = [
   "src/commands/nativeModel.lua",
   "src/commands/importedAsset.lua",
   "src/commands/animation.lua",
+  "src/commands/animationInspection.lua",
   "src/commands/chatModel.lua",
   "src/ui/BridgePanel.lua",
   "src/commands/registry.lua",
@@ -72,6 +73,7 @@ const WRAPPED_SOURCES = new Set([
   "src/commands/nativeModel.lua",
   "src/commands/importedAsset.lua",
   "src/commands/animation.lua",
+  "src/commands/animationInspection.lua",
   "src/ui/BridgePanel.lua",
   "src/commands/registry.lua",
   "src/Main.server.lua",
@@ -277,6 +279,7 @@ const MODULE_EXPORTS = {
   ],
   "src/commands/importedAsset.lua": ["ImportedAsset"],
   "src/commands/animation.lua": ["createAnimationSequence", "animationSequenceHash"],
+  "src/commands/animationInspection.lua": ["AnimationInspection"],
   "src/commands/registry.lua": [
     "pullOnce",
     "executeCommand",
@@ -306,6 +309,7 @@ const EARLY_TOP_LEVEL_LOCALS = [...EARLY_EXPORT_MODULES]
 // sits at MAX_TOP_LEVEL_LOCAL_STATEMENTS, so its exports are promoted to script
 // globals instead of adding another top-level `local` declaration line.
 const SCRIPT_GLOBAL_EXPORT_MODULES = new Set([
+  "src/commands/animationInspection.lua",
   "src/ui/BridgePanel.lua",
   "src/studio/uiSnapshotSerializer.lua",
 ]);

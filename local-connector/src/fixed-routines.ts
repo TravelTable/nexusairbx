@@ -1,5 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { ConnectorError } from "./errors.js";
+import { ANIMATION_STUDIO_SOURCE } from "./animation-studio-source.js";
+import { validateAnimationPayload } from "./animation-payload.js";
 import type { JsonObject, JsonValue, McpClientLike, ToolCallResult } from "./types.js";
 
 const ROUTINE_VERSION = 1;
@@ -28,6 +30,7 @@ const ROUTINE_COMMANDS = new Set([
   "rename_instance", "move_instance", "duplicate_instance", "delete_instance", "batch_operations", "create_snapshot",
   "restore_snapshot", "undo_last_batch", "prepare_asset_quarantine", "finalize_asset_quarantine", "run_test_service",
   "discard_asset_quarantine", "record_last_batch",
+  "create_animation_sequence", "inspect_animation_rig", "inspect_animation_asset", "preview_animation", "probe_animation_asset",
 ]);
 
 export class FixedRoutineRunner {
@@ -46,7 +49,7 @@ export class FixedRoutineRunner {
       throw new ConnectorError("COMMAND_PAYLOAD_TOO_LARGE", "The connector routine input exceeds its limit.");
     }
     const code = `${ROUTINE_SOURCE}\nreturn __nexus_run(${JSON.stringify(input)})`;
-    const result = await this.mcp.callTool("execute_luau", { code, datamodel_type: "Edit" }, signal);
+    const result = await this.mcp.callTool("execute_luau", { code, datamodel_type: operation === "probe_animation_asset" ? "Server" : "Edit" }, signal);
     const envelope = parseEnvelope(result);
     if (envelope.version !== ROUTINE_VERSION || envelope.nonce !== nonce) {
       throw new ConnectorError("ROUTINE_ENVELOPE_INVALID", "The Studio routine response failed nonce validation.");
@@ -59,12 +62,13 @@ export class FixedRoutineRunner {
       );
     }
     const data = isObject(envelope.data) ? envelope.data : { value: toJson(envelope.data) };
-    validateRoutineResult(operation, data);
+    validateRoutineResult(operation, data, payload);
     return data;
   }
 }
 
 function validatePayload(operation: string, payload: JsonObject): void {
+  if (["create_animation_sequence", "inspect_animation_rig", "inspect_animation_asset", "preview_animation", "probe_animation_asset"].includes(operation)) validateAnimationPayload(operation, payload);
   if (operation === "get_project_manifest") {
     if (payload.includeSource === true) throw new ConnectorError("SOURCE_NOT_ALLOWED", "The manifest contains metadata only. Use targeted script reads for source.");
     if (payload.cursor && !/^\d{1,6}$/.test(String(payload.cursor))) throw new ConnectorError("COMMAND_PAYLOAD_INVALID", "Invalid manifest cursor.");
@@ -205,7 +209,7 @@ function validateSnapshotRefs(value: JsonValue): void {
   }
 }
 
-function validateRoutineResult(operation: string, data: JsonObject): void {
+function validateRoutineResult(operation: string, data: JsonObject, payload: JsonObject): void {
   const invalid = (message: string): never => { throw new ConnectorError("ROUTINE_RESULT_INVALID", message); };
   const requireObjects = (value: JsonValue | undefined, field: string, allowEmpty = false): JsonObject[] => {
     if (!Array.isArray(value) || (!allowEmpty && value.length < 1) || value.some((item) => !isObject(item))) {
@@ -232,6 +236,38 @@ function validateRoutineResult(operation: string, data: JsonObject): void {
     }
     return snapshots;
   };
+
+  if (operation === "create_animation_sequence") {
+    requireSnapshots();
+    if (data.ok !== true || typeof data.path !== "string" || typeof data.sequenceHash !== "string" || !/^[a-f0-9]{8}$/.test(data.sequenceHash)
+      || typeof data.markerCount !== "number" || typeof data.keyframeCount !== "number") invalid("Incomplete animation sequence receipt.");
+    return;
+  }
+  if (operation === "probe_animation_asset") {
+    if (data.ok !== true || data.assetId !== payload.assetId || data.rigPath !== payload.rigPath
+      || data.context !== "server_play" || data.running !== true || data.isServer !== true || data.played !== true || data.cleanedUp !== true
+      || typeof data.lengthMs !== "number" || data.lengthMs <= 0 || typeof data.timePositionMs !== "number" || data.timePositionMs <= 0
+      || typeof data.universeId !== "string" || !/^[1-9]\d*$/.test(data.universeId)
+      || typeof data.placeId !== "string" || !/^[1-9]\d*$/.test(data.placeId)) invalid("Incomplete running-server animation playback evidence.");
+    return;
+  }
+  if (["inspect_animation_rig", "inspect_animation_asset", "preview_animation"].includes(operation)) {
+    if (data.ok !== true) invalid("Animation inspection did not succeed.");
+    if (operation === "preview_animation") {
+      if (data.previewOnly !== true || data.published !== false) invalid("Missing local preview scope receipt.");
+      if (payload.action === "register") {
+        if (typeof data.animationId !== "string" || !data.animationId) invalid("Incomplete preview registration receipt.");
+      } else {
+        if (data.action !== payload.action || data.basePath !== payload.basePath || data.rigPath !== payload.rigPath
+          || !isObject(data.snapshot) || typeof data.snapshot.running !== "boolean"
+          || typeof data.snapshot.previewConnectionCount !== "number") invalid("Incomplete preview session receipt.");
+        if (payload.action === "attach_set" && (data.snapshot as JsonObject).running !== true) invalid("Preview did not start.");
+        if (payload.action === "stop" && (data.snapshot as JsonObject).running !== false) invalid("Preview did not stop.");
+        if (payload.action === "control" && typeof data.accepted !== "boolean") invalid("Preview control outcome is missing.");
+      }
+    }
+    return;
+  }
 
   if (operation === "get_project_manifest") {
     requireObjects(data.instances, "manifest", true);
@@ -475,6 +511,7 @@ local function encodeValue(value)
   return kind .. ":" .. HttpService:JSONEncode(tostring(value))
 end
 local HASH_PROPERTIES = {
+  "Loop", "Priority", "Time", "Weight", "EasingStyle", "EasingDirection", "AnimationId",
   "Anchored", "CanCollide", "CanTouch", "CanQuery", "Transparency", "Reflectance", "Material", "Color",
   "BrickColor", "Size", "Position", "Orientation", "CFrame", "PivotOffset", "Massless", "CastShadow", "Shape",
   "CollisionGroup", "Value", "Enabled", "Visible", "Text", "TextColor3", "TextTransparency", "BackgroundColor3",
@@ -718,7 +755,38 @@ local function connectorInternalDestination(inst)
   end
   return false
 end
+local function runAnimationOperation(op, p, nonce)
+  local resolvePath, fullPath = resolve, pathOf
+  local function stableHash(value)
+    local h = 2166136261
+    for i = 1, #value do h = bit32.bxor(h, string.byte(value, i)); h = (h * 16777619) % 4294967296 end
+    return string.format("%08x", h)
+  end
+  local snapshotIndex = 0
+  local function snapshotInstance(path)
+    snapshotIndex += 1
+    return createSnapshots({path}, nonce .. "_animation_" .. tostring(snapshotIndex))[1]
+  end
+  local function appendSnapshotTree(inst, snapshots) table.insert(snapshots, snapshotInstance(pathOf(inst))) end
+  local function rollbackMutation(snapshots, code, message, details)
+    local ok, result = pcall(function() return restoreSnapshots(finishSnapshots(snapshots), true, nonce .. "_animation_rollback") end)
+    return { ok = false, __nexusError = true, code = ok and code or "ROLLBACK_FAILED", message = message, snapshots = snapshots, rolledBack = ok, rollback = result }
+  end
+  ${ANIMATION_STUDIO_SOURCE}
+  local handler = op == "create_animation_sequence" and createAnimationSequence
+    or op == "inspect_animation_rig" and AnimationInspection.inspectRig
+    or op == "inspect_animation_asset" and AnimationInspection.inspectAsset
+    or op == "probe_animation_asset" and AnimationInspection.probeAsset
+    or AnimationInspection.preview
+  local result = handler(p)
+  if not result.ok then result.__nexusError = true; result.message = result.error or result.message; return result end
+  if result.snapshots then result.snapshots = finishSnapshots(result.snapshots) end
+  return result
+end
 local function mutate(op, p, nonce)
+  if op == "create_animation_sequence" or op == "inspect_animation_rig" or op == "inspect_animation_asset" or op == "preview_animation" or op == "probe_animation_asset" then
+    return runAnimationOperation(op, p, nonce)
+  end
   if op == "get_project_manifest" then
     local out, visited, truncated = {}, 0, false
     local maxDepth = math.clamp(tonumber(p.maxDepth) or 12, 1, 32)

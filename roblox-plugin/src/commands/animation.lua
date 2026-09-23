@@ -1,7 +1,7 @@
 local R15_ANIMATION_PARTS = {
-	"Head",
-	"UpperTorso",
 	"LowerTorso",
+	"UpperTorso",
+	"Head",
 	"LeftUpperArm",
 	"LeftLowerArm",
 	"LeftHand",
@@ -125,13 +125,21 @@ local function animationSequenceHash(sequence)
 		return a.Time < b.Time
 	end)
 	for _, keyframe in ipairs(keyframes) do
-		table.insert(pieces, string.format("time:%.6f", keyframe.Time))
+		-- Names are semantic for KeyframeReached, including marker-only frames
+		-- that have no pose path to otherwise contribute their frame name.
+		table.insert(pieces, "frame:" .. HttpService:JSONEncode({ keyframe.Time, keyframe.Name }))
 		local poses = {}
 		for _, descendant in ipairs(keyframe:GetDescendants()) do
 			if descendant:IsA("Pose") then table.insert(poses, descendant) end
 		end
 		table.sort(poses, function(a, b) return fullPath(a) < fullPath(b) end)
 		for _, pose in ipairs(poses) do poseSignature(pose, pieces) end
+		local markers = {}
+		for _, marker in ipairs(keyframe:GetMarkers()) do
+			table.insert(markers, HttpService:JSONEncode({ marker.Name, marker.Value }))
+		end
+		table.sort(markers)
+		for _, marker in ipairs(markers) do table.insert(pieces, "marker:" .. marker) end
 	end
 	return stableHash(table.concat(pieces, "\n"))
 end
@@ -150,12 +158,24 @@ end
 buildKeyframe = function(frame)
 	local keyframe = Instance.new("Keyframe")
 	keyframe.Time = (tonumber(frame.timeMs) or 0) / 1000
+	keyframe.Name = "Frame_" .. tostring(frame.timeMs)
 	local rootPose = Instance.new("Pose")
 	rootPose.Name = "HumanoidRootPart"
 	rootPose.Weight = 0
 	keyframe:AddPose(rootPose)
 	local poses = { HumanoidRootPart = rootPose }
+	-- Only authored channels carry weight. Ancestor poses describe hierarchy;
+	-- identity-keying every limb would erase lower-priority locomotion layers.
+	local needed = {}
+	for name in pairs(frame.joints or {}) do
+		local current = name
+		while current and current ~= "HumanoidRootPart" do
+			needed[current] = true
+			current = R15_POSE_PARENT[current]
+		end
+	end
 	for _, jointName in ipairs(R15_ANIMATION_PARTS) do
+		if not needed[jointName] then continue end
 		local parentName = R15_POSE_PARENT[jointName]
 		local parent = poses[parentName]
 		if not parent then error("Missing R15 pose parent for " .. tostring(jointName)) end
@@ -166,6 +186,7 @@ buildKeyframe = function(frame)
 			tostring(frame.easingStyle or "Cubic"),
 			tostring(frame.easingDirection or "InOut")
 		)
+		if not (frame.joints or {})[jointName] then poses[jointName].Weight = 0 end
 	end
 	return keyframe
 end
@@ -214,8 +235,13 @@ local function createAnimationSequence(payload)
 	local animSavesPath = rigPath .. "/AnimSaves"
 	local sequencePath = animSavesPath .. "/" .. name
 	local snapshots = {}
-	if not animSaves then table.insert(snapshots, snapshotInstance(animSavesPath)) end
-	if existing then appendSnapshotTree(existing, snapshots) else table.insert(snapshots, snapshotInstance(sequencePath)) end
+	if not animSaves then
+		table.insert(snapshots, snapshotInstance(animSavesPath))
+	elseif existing then
+		appendSnapshotTree(existing, snapshots)
+	else
+		table.insert(snapshots, snapshotInstance(sequencePath))
+	end
 
 	local ok, sequenceOrError = pcall(function()
 		if not animSaves then
@@ -232,7 +258,26 @@ local function createAnimationSequence(payload)
 		sequence:SetAttribute("NexusAnimationSchemaVersion", tonumber(payload.animationSchemaVersion) or 1)
 		sequence:SetAttribute("NexusAnimationContentHash", tostring(payload.contentHash or ""))
 		sequence:SetAttribute("NexusSourceAnimationHash", tostring(payload.sourceContentHash or ""))
-		for _, frame in ipairs(payload.keyframes or {}) do sequence:AddKeyframe(buildKeyframe(frame)) end
+		local framesByTime = {}
+		for _, frame in ipairs(payload.keyframes or {}) do
+			local keyframe = buildKeyframe(frame)
+			sequence:AddKeyframe(keyframe)
+			framesByTime[frame.timeMs] = keyframe
+		end
+		for _, item in ipairs(payload.markers or {}) do
+			local keyframe = framesByTime[item.timeMs]
+			if not keyframe then
+				keyframe = Instance.new("Keyframe")
+				keyframe.Time = item.timeMs / 1000
+				keyframe.Name = "Marker_" .. tostring(item.timeMs)
+				sequence:AddKeyframe(keyframe)
+				framesByTime[item.timeMs] = keyframe
+			end
+			local marker = Instance.new("KeyframeMarker")
+			marker.Name = item.name
+			marker.Value = item.value or ""
+			keyframe:AddMarker(marker)
+		end
 		sequence.Parent = animSaves
 		return sequence
 	end)
@@ -248,7 +293,8 @@ local function createAnimationSequence(payload)
 		path = fullPath(sequence),
 		rigPath = rigPath,
 		className = sequence.ClassName,
-		keyframeCount = #(payload.keyframes or {}),
+		keyframeCount = #sequence:GetKeyframes(),
+		markerCount = #(payload.markers or {}),
 		durationMs = tonumber(payload.durationMs) or 0,
 		sequenceHash = animationSequenceHash(sequence),
 		contentHash = tostring(payload.contentHash or ""),

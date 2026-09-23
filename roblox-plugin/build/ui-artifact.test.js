@@ -91,5 +91,5 @@ test("snapshot serialization restores UI decorators, sequences, layout padding, 
   assert.match(snapshots, /inst:IsA\("ScreenGui"\)[\s\S]*UiArtifact\.treeHash/);
   assert.match(snapshots, /if not current then[\s\S]*creator removed or renamed it/);
   assert.match(snapshots, /deferredHashChecks/);
-  assert.match(snapshots, /Restored UI tree hash does not match the pre-mutation snapshot/);
+  assert.match(snapshots, /Restored tree hash does not match the pre-mutation snapshot/);
 });
