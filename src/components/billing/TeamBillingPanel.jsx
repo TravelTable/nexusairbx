@@ -59,12 +59,12 @@ export default function TeamBillingPanel() {
     authedFetch("/api/billing/catalog")
       .then((r) => r.json())
       .then((data) => {
-        if (active && data.teamEnabled) {
-          setEnabled(true);
-          void list().catch((e) => setMessage(e.message));
-        }
+        if (active) setEnabled(Boolean(data.teamEnabled));
       })
       .catch(() => {});
+    list().catch((e) => {
+      if (active) setMessage(e.message);
+    });
     return () => {
       active = false;
     };
@@ -102,21 +102,11 @@ export default function TeamBillingPanel() {
     }
   }
 
-  if (!enabled) {
-    return (
-      <Panel title="Team workspaces">
-        <EmptyState
-          icon={Users}
-          description="Team billing is coming soon. Existing personal plans are unchanged."
-        />
-      </Panel>
-    );
-  }
-
   const canManage = team && ["owner", "admin"].includes(team.role);
+  const pooled = Boolean(team?.pooled && enabled);
 
   return (
-    <Panel title="Team workspace billing" description="Shared seats, pooled credits, and project billing for a studio workspace.">
+    <Panel title="Team workspace billing" description="Members use their own credits unless this workspace has a Team subscription. Existing personal plans are unchanged.">
       {message ? <Alert tone="info">{message}</Alert> : null}
       {token ? (
         <Button
@@ -143,7 +133,7 @@ export default function TeamBillingPanel() {
             await list();
             setSelected(created.id);
             setName("");
-          }, "Workspace created. Review a Team subscription before inviting members.");
+          }, "Workspace created. Invites use your plan's seat cap. A Team subscription adds pooled credits.");
         }}
       >
         <FormField id="new-workspace-name" label="New workspace name" required>
@@ -159,6 +149,9 @@ export default function TeamBillingPanel() {
           Create workspace
         </Button>
       </form>
+      {teams.length === 0 ? (
+        <EmptyState icon={Users} description="Create a team to collaborate. Members use their own credits. Existing personal plans are unchanged." />
+      ) : null}
 
       <FormField id="team-workspace" label="Workspace">
         <NexusSelect id="team-workspace" value={selected} onChange={(e) => setSelected(e.target.value)}>
@@ -174,8 +167,10 @@ export default function TeamBillingPanel() {
       {team ? (
         <>
           <p className="billing-note">
-            {team.name} · your role: {team.role} · {formatNexusCredits(team.credits.totalAvailableCreditsMicros)} pooled
-            Nexus Credits available
+            {team.name} · your role: {team.role} · seats {team.seatUsed || team.members.length} of {team.seatCap || team.members.length}.{" "}
+            {pooled
+              ? `${formatNexusCredits(team.credits?.totalAvailableCreditsMicros)} pooled Nexus Credits available.`
+              : "Members use their own credits. Team adds a pooled wallet and up to 50 seats."}
           </p>
           <ul className="billing-members">
             {team.members.map((member) => (
@@ -201,7 +196,7 @@ export default function TeamBillingPanel() {
               </li>
             ))}
           </ul>
-          {canManage ? (
+          {canManage && pooled ? (
             <>
               <Button
                 type="button"
@@ -251,6 +246,10 @@ export default function TeamBillingPanel() {
               >
                 Update existing subscription seats
               </Button>
+            </>
+          ) : null}
+          {canManage ? (
+            <>
               <form
                 className="billing-form"
                 onSubmit={(e) => {
@@ -280,6 +279,11 @@ export default function TeamBillingPanel() {
                   <input id="invite-link" readOnly value={invite} onFocus={(e) => e.target.select()} />
                 </FormField>
               ) : null}
+              <a className="nx-control nx-text-action" href={"/subscribe?plan=TEAM&interval=month&seats=" + Math.max(2, seats) + "&teamId=" + encodeURIComponent(selected)}>
+                Add pooled credits and more seats
+              </a>
+              {pooled ? (
+              <>
               <form
                 className="billing-form"
                 onSubmit={(e) => {
@@ -323,6 +327,8 @@ export default function TeamBillingPanel() {
                   </Button>
                 ))}
               </div>
+              </>
+              ) : null}
             </>
           ) : null}
         </>

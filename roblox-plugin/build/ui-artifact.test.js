@@ -19,6 +19,8 @@ test("v3 UI artifacts snapshot, conflict-check, apply, and read back managed Scr
   assert.match(source, /snapshotOnce\(existing, snapshots, seenPaths\)[\s\S]*existing:Destroy\(\)/);
   assert.match(source, /UiArtifact\.applyRoot\(rootSpec, payload\.artifactId, snapshots, seenPaths\)/);
   assert.match(source, /node:SetAttribute\("NexusNodeId"/);
+  assert.match(source, /node:SetAttribute\("NexusUiNodeId"/);
+  assert.match(source, /NexusNodeId and NexusUiNodeId disagree/);
   assert.match(source, /ui_readback_failed: expected %d nodes but found %d/);
   assert.match(source, /ui_readback_failed: managed UI node IDs do not match/);
   assert.match(source, /sourceHashes = sourceHashes/);
@@ -66,6 +68,8 @@ test("UI-only artifacts participate in command-bound verification and affected-p
   assert.match(registry, /actualTreeHash = root and UiArtifact\.treeHash\(root\)/);
   assert.match(registry, /storedTreeHash == expectedTreeHash/);
   assert.match(registry, /nodeIdsMatch/);
+  assert.match(registry, /node_id_conflict/);
+  assert.match(registry, /NexusNodeId and NexusUiNodeId disagree|canonicalId ~= aliasId/);
   assert.match(registry, /evidence\.uiRoots = uiEvidence/);
   assert.match(registry, /if result\.uiRoots then[\s\S]*addAffectedPath\(uiRoot\.path\)/);
 });

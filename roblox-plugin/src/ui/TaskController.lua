@@ -262,9 +262,9 @@ function createNexusTaskController(deps)
 		record.undoAvailable = record.undoAvailable or #(result.snapshotIds or {}) > 0
 		publish()
 	end
-	function self:localApproval(label)
+	function self:localApproval(label, diff)
 		if not self.record then self.record = { title = "Incoming Studio change", terminal = true, verifiedPaths = {} } end
-		self.record.approval = label and { kind = "local", label = label } or nil
+		self.record.approval = label and { kind = "local", label = label, diff = type(diff) == "string" and diff or nil } or nil
 		publish()
 	end
 	if self.record then

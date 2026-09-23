@@ -53,6 +53,7 @@ import BrutalAuditor from "../components/ai/BrutalAuditor";
 import ProNudgeModal from "../components/ProNudgeModal";
 import SettingsSignInAction from "../components/settings/SettingsSignInAction";
 import UsageInsights from "../components/settings/UsageInsights";
+import TeamSettingsPanel from "../components/billing/TeamSettingsPanel";
 import { Alert, AlertDescription, AlertTitle } from "../components/shadcn/alert";
 import {
   AlertDialog,
@@ -880,7 +881,6 @@ export default function SettingsPage() {
   const [proNudgeReason, setProNudgeReason] = useState("");
   const [usageState, setUsageState] = useState({ status: "idle", logs: [], chartData: [], error: "" });
   const [teamState, setTeamState] = useState({ status: "idle", teams: [], error: "" });
-  const [teamName, setTeamName] = useState("");
   const [robloxState, setRobloxState] = useState({ status: "idle", operations: [], error: "" });
   const [robloxAction, setRobloxAction] = useState("");
   const [adminState, setAdminState] = useState({ status: "idle", stats: null, users: [], error: "" });
@@ -1158,27 +1158,6 @@ export default function SettingsPage() {
     if (activeTab === "admin") loadAdmin();
     if (activeTab === "roblox") loadRoblox();
   }, [activeTab, loadAdmin, loadRoblox, loadTeams]);
-
-  const createTeam = async (event) => {
-    event.preventDefault();
-    const name = teamName.trim();
-    if (!name) return;
-    setTeamState((state) => ({ ...state, status: "loading", error: "" }));
-    try {
-      await readJson(
-        await authedFetch("/api/user/teams", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name }),
-        }),
-        "Failed to create team."
-      );
-      setTeamName("");
-      await loadTeams();
-    } catch (error) {
-      setTeamState((state) => ({ ...state, status: "error", error: error.message || "Failed to create team." }));
-    }
-  };
 
   const clearUserData = async (type) => {
     try {
@@ -2074,45 +2053,10 @@ export default function SettingsPage() {
   );
 
   const renderTeam = () => (
-    <div className="space-y-6">
-      <Panel title="Team workspace" description="Create a shared team record for collaboration.">
-        <form onSubmit={createTeam} className="flex flex-col gap-3 sm:flex-row">
-          <div className="flex-1 space-y-2">
-            <Label htmlFor="teamName">Team name</Label>
-            <Input id="teamName" value={teamName} onChange={(event) => setTeamName(event.target.value)} placeholder="Creator group name" />
-          </div>
-          <Button type="submit" className="self-end" disabled={!teamName.trim() || teamState.status === "loading"}>
-            {teamState.status === "loading" && <Loader2 className="h-4 w-4 animate-spin" />}
-            {teamState.status === "loading" ? "Creating team…" : "Create team"}
-          </Button>
-        </form>
-        <Separator className="my-6" />
-        <DataStateAlert state={teamState} onRetry={loadTeams} label="Teams" />
-        {teamState.status === "ready" && teamState.teams.length === 0 && (
-          <EmptyState icon={Users} title="No teams yet" description="Create a team to start grouping shared artifacts and collaborators." />
-        )}
-        {teamState.status === "ready" && teamState.teams.length > 0 && (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Members</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {teamState.teams.map((team) => (
-                <TableRow key={team.id}>
-                  <TableCell>{team.name || "Untitled team"}</TableCell>
-                  <TableCell><span className="settings-ledger-state">{team.ownerId === user?.uid ? "Owner" : "Member"}</span></TableCell>
-                  <TableCell>{Array.isArray(team.members) ? team.members.length : 1}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </Panel>
-    </div>
+    <TeamSettingsPanel
+      user={user}
+      onChanged={(teams) => setTeamState({ status: "ready", teams, error: "" })}
+    />
   );
 
   const renderAccount = () => (

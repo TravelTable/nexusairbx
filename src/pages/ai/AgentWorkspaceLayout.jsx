@@ -33,6 +33,7 @@ import WorkspaceShell, {
 import useTaskRuntime from "../../hooks/useTaskRuntime";
 import useActiveAgents from "../../hooks/useActiveAgents";
 import WorkspaceRibbon from "./WorkspaceRibbon";
+import TeamCollaboration from "../../components/ai/workspace/TeamCollaboration";
 import WorkspaceAssetControls from "./WorkspaceAssetControls";
 import WorkspaceAccountControl from "../../components/site/WorkspaceAccountControl";
 import AnimateWorkspace from "./AnimateWorkspace";
@@ -308,6 +309,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
   const [activeDockPanel, setActiveDockPanel] = useState(null);
   const [headerActionTarget, setHeaderActionTarget] = useState(null);
   const [headerInert, setHeaderInert] = useState(false);
+  const [sharedTitle, setSharedTitle] = useState("");
   const [dockBuildOptionsOpen, setDockBuildOptionsOpen] = useState(false);
   const [drawerWidth, setDrawerWidth] = useState(readWorkspaceDrawerWidth);
   const [detailsView, setDetailsView] = useState("summary");
@@ -1409,6 +1411,7 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
   };
 
   const workspaceProjectTitle =
+    sharedTitle ||
     project?.activeProject?.title ||
     projectContext?.name ||
     projectContext?.title ||
@@ -2063,6 +2066,16 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
         inert={headerInert}
         assetControls={<WorkspaceAssetControls navigateTo={navigateTo} user={user} planKey={planKey} devOverride={devOverride} roblox={roblox} projectId={currentProjectId} onAuthRequired={handleAuthRequired} notify={notify}/>}
         isBusy={presentation.active}
+        collaborationSlot={
+          <TeamCollaboration
+            user={user}
+            projectId={currentProjectId}
+            onOpenSharedChat={(session) => {
+              setSharedTitle(session.title || "Shared project");
+              chat.openSharedProjectChat?.(session.chatId, session.ownerUid);
+            }}
+          />
+        }
         devToolsSlot={mockRuns.available ? (
           <button
             type="button"
@@ -2166,7 +2179,11 @@ export default function AgentWorkspaceLayout({ controller, locationSearch = "", 
                     key={projectId}
                     type="button"
                     className="flex min-h-11 w-full items-center justify-between rounded-lg border border-border px-3 py-2 text-left text-foreground hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                    onClick={() => isCurrent ? closeProjectSelector() : openWorkspaceProject(projectId)}
+                    onClick={() => {
+                      setSharedTitle("");
+                      if (isCurrent) closeProjectSelector();
+                      else openWorkspaceProject(projectId);
+                    }}
                   >
                     <span>{item.title || item.name || "Untitled game"}</span>
                     {isCurrent ? <span className="text-xs text-muted-foreground">Current</span> : null}

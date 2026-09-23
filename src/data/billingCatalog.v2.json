@@ -26,11 +26,12 @@
       "features": [
         "No free AI usage or trial",
         "Browse the workspace after signup",
-        "Subscribe to Starter or Pro to generate and apply changes"
+        "Subscribe to Starter or Pro to generate and apply changes",
+        "Team collaboration for 2 seats, using each member's own credits"
       ],
       "limits": {
         "minimumSeats": 1,
-        "maximumSeats": 1,
+        "maximumSeats": 2,
         "concurrentJobs": 0,
         "maxProjects": 1,
         "usageHistoryDays": 7,
@@ -43,7 +44,7 @@
         "nexusAuto": false,
         "directModels": false,
         "studioReview": false,
-        "teamWorkspace": false
+        "teamWorkspace": true
       }
     },
     {
@@ -63,11 +64,12 @@
         "Nexus Auto plus included model selection",
         "Reviewed Studio changes and recovery",
         "3 active projects · 2 builds at a time",
-        "30 days of usage history"
+        "30 days of usage history",
+        "Team collaboration for 3 seats, using each member's own credits"
       ],
       "limits": {
         "minimumSeats": 1,
-        "maximumSeats": 1,
+        "maximumSeats": 3,
         "concurrentJobs": 2,
         "maxProjects": 3,
         "usageHistoryDays": 30
@@ -76,7 +78,7 @@
         "nexusAuto": true,
         "directModels": true,
         "studioReview": true,
-        "teamWorkspace": false
+        "teamWorkspace": true
       }
     },
     {
@@ -96,11 +98,12 @@
         "Model choice for scripts, UI, and game systems",
         "Reviewed Studio changes and recovery",
         "90 days of usage history",
-        "Add credits whenever you need them"
+        "Add credits whenever you need them",
+        "Team collaboration for 5 seats, using each member's own credits"
       ],
       "limits": {
         "minimumSeats": 1,
-        "maximumSeats": 1,
+        "maximumSeats": 5,
         "concurrentJobs": null,
         "maxProjects": null,
         "usageHistoryDays": 90
@@ -109,7 +112,7 @@
         "nexusAuto": true,
         "directModels": true,
         "studioReview": true,
-        "teamWorkspace": false
+        "teamWorkspace": true
       }
     },
     {

@@ -5,6 +5,7 @@ function createNexusTaskResult(parent, ui)
 	view.target = ui.text(parent, "CapturedTarget", "", nil, 11)
 	view.status = ui.text(parent, "TaskStatus", "Starting…", nil, 12, true)
 	view.summary = ui.text(parent, "TaskSummary", "", nil, 13)
+	view.diff = ui.text(parent, "TaskDiff", "", nil, 11)
 	view.paths = ui.text(parent, "VerifiedChanges", "No Studio changes confirmed yet.", nil, 12)
 	view.approval = ui.text(parent, "TaskApproval", "", nil, 12)
 	view.approve = ui.button(parent, "ApproveTask", "Apply", ui.colors.primary)
@@ -23,9 +24,21 @@ function createNexusTaskResult(parent, ui)
 		self.target.Text = record.targetLabel or ""
 		self.status.Text = record.status or "Starting…"
 		self.summary.Text = record.summary or ""
+		local diffText = ""
+		if type(record.approval) == "table" and type(record.approval.diff) == "string" and #record.approval.diff > 0 then
+			diffText = record.approval.diff
+		elseif type(record.diff) == "string" then
+			diffText = record.diff
+		end
+		self.diff.Visible = #diffText > 0
+		self.diff.Text = diffText
 		self.paths.Visible = record.localRead ~= true
 		local paths = record.verifiedPaths or {}
-		self.paths.Text = #paths > 0 and ("Verified Studio changes:\n" .. table.concat(paths, "\n")) or "No Studio changes confirmed. Generated output alone does not mean it was applied."
+		if record.readOnly == true then
+			self.paths.Text = "Read-only: no Studio changes were applied."
+		else
+			self.paths.Text = #paths > 0 and ("Verified Studio changes:\n" .. table.concat(paths, "\n")) or "No Studio changes confirmed. Generated output alone does not mean it was applied."
+		end
 		self.stop.Visible = busy and record.runId ~= nil
 		self.retry.Visible = record.interrupted == true or (busy and record.runId == nil)
 		self.undo.Visible = record.undoAvailable == true and not busy and record.approval == nil

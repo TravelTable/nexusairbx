@@ -709,6 +709,10 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
   const [currentChatId, setCurrentChatId] = useState(null);
   const visibleChatIdRef = useRef(currentChatId);
   visibleChatIdRef.current = currentChatId;
+  const sharedStorageUidRef = useRef(null);
+  const userUidRef = useRef(user?.uid);
+  userUidRef.current = user?.uid;
+  const chatStorageUid = () => sharedStorageUidRef.current || userUidRef.current;
   const [currentChatMeta, setCurrentChatMeta] = useState(null);
   const [activeMode, setActiveMode] = useState(() => normalizeChatMode(settings?.chatMode));
   const [customModes, setCustomModes] = useState([]);
@@ -849,7 +853,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     }
     if (!user?.uid || auth.currentUser?.uid !== user.uid) return true;
     await setDoc(
-      doc(db, "users", user.uid, "chats", targetChatId, "messages", messageId),
+      doc(db, "users", chatStorageUid(), "chats", targetChatId, "messages", messageId),
       sanitizeTranscriptMessagePayload({
         ...payload,
         createdAt: serverTimestamp(),
@@ -960,7 +964,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     if (!persistedEntries.length) return true;
     const writes = await Promise.allSettled(persistedEntries.map((message) => (
       setDoc(
-        doc(db, "users", user.uid, "chats", targetChatId, "messages", message.id),
+        doc(db, "users", chatStorageUid(), "chats", targetChatId, "messages", message.id),
         sanitizeTranscriptMessagePayload({
           ...terminalize(message),
           ...(message?.createdAt ? {} : { createdAt: serverTimestamp() }),
@@ -1030,7 +1034,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
 
       try {
         await assertCanWrite();
-        const msgRef = doc(db, "users", uid, "chats", currentChatId, "messages", messageId);
+        const msgRef = doc(db, "users", chatStorageUid(), "chats", currentChatId, "messages", messageId);
         await updateDoc(msgRef, sanitizeTranscriptMessagePayload({
           code: code,
           updatedAt: serverTimestamp(),
@@ -1093,6 +1097,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
 
   useEffect(() => {
     closeChatSubscriptions();
+    sharedStorageUidRef.current = null;
     restoredActiveChatForUserRef.current = null;
     setCurrentChatId(null);
     setCurrentChatMeta(null);
@@ -1100,9 +1105,11 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     setFirestoreAccessError(null);
   }, [authReady, closeChatSubscriptions, user?.uid]);
 
-  const openChatById = useCallback((chatId) => {
+  const openChatById = useCallback((chatId, options = {}) => {
     const uid = user?.uid;
     if (!authReady || !uid || auth.currentUser?.uid !== uid || !chatId) return;
+    const nextStorage = options.storageUid || null;
+    sharedStorageUidRef.current = nextStorage && nextStorage !== uid ? nextStorage : null;
 
     closeChatSubscriptions();
     const requestId = activeChatRequestRef.current;
@@ -1114,7 +1121,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     setMessages([]);
 
     chatUnsubRef.current = onSnapshot(
-      doc(db, "users", uid, "chats", chatId),
+      doc(db, "users", chatStorageUid(), "chats", chatId),
       (snap) => {
         if (!isActive()) return;
         const data = snap.exists() ? { id: snap.id, ...snap.data() } : null;
@@ -1130,7 +1137,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       }
     );
 
-    const messagesRef = collection(db, "users", uid, "chats", chatId, "messages");
+    const messagesRef = collection(db, "users", chatStorageUid(), "chats", chatId, "messages");
     let cancelled = false;
     let liveUnsub = () => {};
     liveUnsub = onSnapshot(
@@ -1236,8 +1243,8 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     let wallTimerId = null;
     let backgroundHandoffInFlight = false;
     let recoveryController = new AbortController();
-    const pendingRef = doc(db, "users", uid, "chats", currentChatId, "messages", pending.id);
-    const chatRef = doc(db, "users", uid, "chats", currentChatId);
+    const pendingRef = doc(db, "users", chatStorageUid(), "chats", currentChatId, "messages", pending.id);
+    const chatRef = doc(db, "users", chatStorageUid(), "chats", currentChatId);
 
     const clearRecoveryTimers = () => {
       if (intervalId) {
@@ -1917,16 +1924,16 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
         };
         newChatPayload.projectId = selectedProjectId;
         const newChatRef = await addDoc(
-          collection(db, "users", user.uid, "chats"),
+          collection(db, "users", chatStorageUid(), "chats"),
           sanitizeChatWritePayload(newChatPayload)
         );
         activeChatId = newChatRef.id;
-        openChatById(activeChatId);
+        openChatById(activeChatId, { storageUid: sharedStorageUidRef.current });
         beginGenerationState(activeChatId);
       }
 
       if (!existingRequestId) {
-        const userMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-user`);
+        const userMsgRef = doc(db, "users", chatStorageUid(), "chats", activeChatId, "messages", `${requestId}-user`);
         await setDoc(userMsgRef, sanitizeTranscriptMessagePayload({
           role: "user",
           content: displayContent,
@@ -2359,7 +2366,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       }
       const agentRunId = jobData.runId || null;
       const resultUrl = resolveResultUrl(jobId, jobData.resultUrl);
-      const assistantMsgRef = doc(db, "users", user.uid, "chats", activeChatId, "messages", `${requestId}-assistant`);
+      const assistantMsgRef = doc(db, "users", chatStorageUid(), "chats", activeChatId, "messages", `${requestId}-assistant`);
       activeAssistantRef = assistantMsgRef;
       activeGenerationJobId = jobId;
       activeGenerationRunId = agentRunId;
@@ -2843,7 +2850,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
             await updateDoc(assistantMsgRef, sanitizeTranscriptMessagePayload(msgPayload));
             recordChatMessageWrite({ jobId, reason: "assistant_terminal_success" });
 
-            await updateDoc(doc(db, "users", user.uid, "chats", activeChatId), sanitizeChatWritePayload({
+            await updateDoc(doc(db, "users", chatStorageUid(), "chats", activeChatId), sanitizeChatWritePayload({
               updatedAt: serverTimestamp(),
               lastMessage: displayContent.slice(0, 50),
             }));
@@ -3387,7 +3394,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     }
     try {
       await assertCanWrite();
-      await updateDoc(doc(db, "users", user.uid, "chats", chatId), sanitizeChatWritePayload({
+      await updateDoc(doc(db, "users", chatStorageUid(), "chats", chatId), sanitizeChatWritePayload({
         title: nextTitle,
         updatedAt: serverTimestamp(),
       }));
@@ -3408,7 +3415,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     const nextProjectId = String(projectId || "").trim() || null;
     try {
       await assertCanWrite();
-      await updateDoc(doc(db, "users", user.uid, "chats", chatId), sanitizeChatWritePayload({
+      await updateDoc(doc(db, "users", chatStorageUid(), "chats", chatId), sanitizeChatWritePayload({
         projectId: nextProjectId,
         updatedAt: serverTimestamp(),
       }));
@@ -3426,7 +3433,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     try {
       await assertCanWrite();
       const msgsSnap = await getDocs(query(
-        collection(db, "users", user.uid, "chats", currentChatId, "messages"),
+        collection(db, "users", chatStorageUid(), "chats", currentChatId, "messages"),
         orderBy("createdAt", "asc"),
         limitToLast(CLEAR_CHAT_MESSAGE_LIMIT)
       ));
@@ -3453,7 +3460,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     if (!pivotId) throw new Error("Cannot rewind without a message id.");
 
     await assertCanWrite();
-    const messagesRef = collection(db, "users", user.uid, "chats", currentChatId, "messages");
+    const messagesRef = collection(db, "users", chatStorageUid(), "chats", currentChatId, "messages");
 
     let pivot = (messages || []).find((message) => message?.id === pivotId) || null;
     if (!pivot) {
@@ -3550,7 +3557,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
       projectId: selectedProjectId,
     };
     const persistedPayload = sanitizeChatWritePayload(payload);
-    await setDoc(doc(db, "users", user.uid, "chats", chatId), persistedPayload);
+    await setDoc(doc(db, "users", chatStorageUid(), "chats", chatId), persistedPayload);
     rememberActiveChat(user.uid, chatId);
     closeChatSubscriptions();
     setCurrentChatId(chatId);
@@ -3579,7 +3586,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     if (chatId) {
       try {
         await assertCanWrite();
-        await updateDoc(doc(db, "users", uid, "chats", chatId), sanitizeChatWritePayload({
+        await updateDoc(doc(db, "users", chatStorageUid(), "chats", chatId), sanitizeChatWritePayload({
           activeMode: normalizedMode,
           updatedAt: serverTimestamp(),
         }));
@@ -3608,6 +3615,7 @@ export function useAiChat(user, settings, refreshBilling, notify, { authReady = 
     persistPendingCancellation,
     assertCanWrite,
     openChatById,
+    openSharedProjectChat: (chatId, ownerUid) => openChatById(chatId, { storageUid: ownerUid }),
     handleSubmit,
     handleDeleteChat,
     handleRenameChat,

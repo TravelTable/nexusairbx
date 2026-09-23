@@ -57,3 +57,13 @@ test('UI loading chain marks pipeline steps complete, active, or pending from th
   });
   expect(limited.every((step) => step.status === 'complete')).toBe(true);
 });
+
+test('preview limitation codes stay visible on the workspace label', () => {
+  const presentation = getUiWorkspacePresentation({
+    task: {
+      status: 'succeeded',
+      uiBuild: { stage: 'needs_review', outcome: 'needs_review', limitations: ['FONT_SUBSTITUTED', 'IMAGE_UNAVAILABLE'] },
+    },
+  });
+  expect(presentation.label).toBe('Review needs attention: FONT_SUBSTITUTED, IMAGE_UNAVAILABLE');
+});

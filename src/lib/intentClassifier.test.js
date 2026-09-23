@@ -1,8 +1,11 @@
 import {
   classifyExecutionIntent,
   classifyUserIntent,
+  evaluateStudioWriteGate,
   explicitlyDisablesStudioContext,
+  hasNamedStudioWriteTarget,
   isImplementationIntent,
+  isReadOnlyIntent,
 } from "./intentClassifier";
 
 describe("classifyUserIntent", () => {
@@ -163,6 +166,17 @@ describe("classifyExecutionIntent", () => {
       .toBe(true);
     expect(explicitlyDisablesStudioContext("What does Main do?"))
       .toBe(false);
+  });
+
+  test("write gate blocks questions and unnamed script edits", () => {
+    expect(evaluateStudioWriteGate("What does this function do?").allowed).toBe(false);
+    expect(evaluateStudioWriteGate("What does this function do?").code).toBe("READ_ONLY_INTENT");
+    expect(evaluateStudioWriteGate("Fix the inventory bug", { toolType: "patch_script" }).allowed)
+      .toBe(false);
+    expect(evaluateStudioWriteGate("Fix ServerScriptService/Inventory", { toolType: "patch_script" }).allowed)
+      .toBe(true);
+    expect(hasNamedStudioWriteTarget("Fix ServerScriptService/Inventory")).toBe(true);
+    expect(isReadOnlyIntent("EXPLANATION_REQUEST")).toBe(true);
   });
 
   test("recognizes Quick Script as an explicit execution channel", () => {

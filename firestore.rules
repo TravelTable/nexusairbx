@@ -11,6 +11,21 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
+    function isSharedProjectMember(ownerUid, projectId) {
+      return isSignedIn()
+        && projectId is string
+        && exists(/databases/$(database)/documents/project_team_links/$(projectId))
+        && get(/databases/$(database)/documents/project_team_links/$(projectId)).data.ownerUid == ownerUid
+        && get(/databases/$(database)/documents/project_team_links/$(projectId)).data.memberUids.hasAny([request.auth.uid]);
+    }
+
+    function sharedChatMember(ownerUid, chatId) {
+      let chatPath = /databases/$(database)/documents/users/$(ownerUid)/chats/$(chatId);
+      return exists(chatPath)
+        && get(chatPath).data.projectId is string
+        && isSharedProjectMember(ownerUid, get(chatPath).data.projectId);
+    }
+
     // Firebase ID tokens carry this claim after the user reloads their token
     // following email verification.
     function isVerifiedUser(uid) {
@@ -628,32 +643,32 @@ service cloud.firestore {
       allow list, create, update, delete: if false;
 
       match /chats/{chatId} {
-        allow get: if isOwner(uid);
+        allow get: if isOwner(uid) || sharedChatMember(uid, chatId);
 
         allow list: if isOwner(uid)
           && isBoundedList(100);
 
-        allow create: if isVerifiedUser(uid)
+        allow create: if (isVerifiedUser(uid) || isSharedProjectMember(uid, request.resource.data.projectId))
           && validChatCreate();
 
-        allow update: if isVerifiedUser(uid)
+        allow update: if (isVerifiedUser(uid) || sharedChatMember(uid, chatId))
           && validChatUpdate();
 
         allow delete: if isVerifiedUser(uid);
 
         match /messages/{messageId} {
-          allow get: if isOwner(uid);
+          allow get: if isOwner(uid) || sharedChatMember(uid, chatId);
 
-          allow list: if isOwner(uid)
+          allow list: if (isOwner(uid) || sharedChatMember(uid, chatId))
             && isBoundedList(300);
 
-          allow create: if isVerifiedUser(uid)
+          allow create: if (isVerifiedUser(uid) || sharedChatMember(uid, chatId))
             && validMessageCreate();
 
-          allow update: if isVerifiedUser(uid)
+          allow update: if (isVerifiedUser(uid) || sharedChatMember(uid, chatId))
             && validMessageUpdate();
 
-          allow delete: if isVerifiedUser(uid);
+          allow delete: if isVerifiedUser(uid) || sharedChatMember(uid, chatId);
         }
 
         // Project snapshots are created by trusted backend code.

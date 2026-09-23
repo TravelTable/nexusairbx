@@ -12,7 +12,7 @@ export const metadata = buildPublicMetadata({
 });
 
 const selectablePlans = catalog.plans.filter(
-  (plan) => plan.selectable !== false && plan.id !== "TEAM"
+  (plan) => plan.selectable !== false
 );
 
 const pricingStructuredData = {

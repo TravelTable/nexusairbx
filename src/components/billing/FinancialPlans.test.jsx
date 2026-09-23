@@ -39,11 +39,12 @@ test('catalog is a tools list of Starter and Pro with checkout, not a marketing 
   expect(within(starter).getByText('166.67')).toBeInTheDocument();
 });
 
-test('Team stays a coming-soon strip with waitlist, not a competing card', () => {
+test('Team is a checkout card for pooled credits and larger seats', () => {
   render(<FinancialPlans />);
-  expect(screen.getByText('Coming soon')).toBeInTheDocument();
-  expect(screen.getByRole('link', { name: /Team waitlist/i })).toHaveAttribute('href', '/contact?topic=team');
-  expect(screen.queryByRole('link', { name: /Set up Team/i })).not.toBeInTheDocument();
+  expect(screen.queryByText('Coming soon')).not.toBeInTheDocument();
+  expect(screen.getByRole('link', { name: /Set up Team/i })).toHaveAttribute('href', '/subscribe?plan=TEAM&interval=month');
+  expect(screen.getByText('Team collaboration for 5 seats, using each member\'s own credits')).toBeInTheDocument();
+  expect(screen.getByText('1,666.67 credits per seat, pooled monthly')).toBeInTheDocument();
 });
 
 test('annual billing updates Pro checkout while Starter stays monthly', () => {
@@ -80,8 +81,11 @@ test('plan and team actions keep pricing analytics', () => {
     subscription_plan: 'PRO',
     billing_interval: 'month',
   });
-  fireEvent.click(screen.getByRole('link', { name: /Team waitlist/i }));
-  expect(trackProductEvent).toHaveBeenCalledWith('team_interest_clicked', { subscription_plan: 'TEAM' });
+  fireEvent.click(screen.getByRole('link', { name: /Set up Team/i }));
+  expect(trackProductEvent).toHaveBeenCalledWith('pricing_plan_selected', {
+    subscription_plan: 'TEAM',
+    billing_interval: 'month',
+  });
   expect(trackProductEvent).not.toHaveBeenCalledWith(
     'pricing_build_profile_selected',
     expect.anything(),

@@ -4,10 +4,9 @@
   "private": true,
   "author": "NexusRBX",
   "type": "module",
-  "description": "Advanced NexusRBX local connection and Studio MCP diagnostics companion",
+  "description": "NexusRBX local Studio MCP connection companion",
   "main": "dist/main.js",
   "scripts": {
-    "preview:capture": "node scripts/capture-workspace-preview.mjs",
     "package:preview": "npm run build && node scripts/package-preview.mjs",
     "version:check": "node scripts/check-release-version.mjs",
     "build": "npm run version:check && node scripts/clean-dist.mjs && npm --prefix ../local-connector run build && tsc -p tsconfig.json && tsc -p tsconfig.preload.json && vite build",

@@ -79,6 +79,18 @@ const PLAYTEST_RE = /\b(play\s*test|run\s+(?:a\s+)?test|test\s+(?:the\s+)?(?:gam
 const INSPECTION_RE = /\b(inspect|audit|analy[sz]e|review|summari[sz]e|explain|list|show|see|view|visible|read|find|search|diagnose)\b|\bwhat\s+files?\b/i;
 const LIVE_CONTEXT_RE = /\b(studio|current\s+(?:game|place|project|experience)|live\s+(?:game|place|project|experience)|explorer|selection|(?:this|selected|open|current)\s+(?:module\s*)?script|ServerScriptService|ServerStorage|ReplicatedStorage|StarterGui|StarterPlayer|Workspace\.[A-Za-z0-9_]+)\b/i;
 const CONCEPTUAL_RE = /^(how|why)\b|\b(explain|describe|walk me through|how does|how would)\b/i;
+const NAMED_PATH_RE =
+  /\b(?:ServerScriptService|ServerStorage|ReplicatedStorage|StarterGui|StarterPlayer|StarterPack|Workspace|StarterCharacterScripts|StarterPlayerScripts)[/\\.][A-Za-z0-9_./\\-]+\b/i;
+const SELECTION_TARGET_RE =
+  /\b(?:this|selected|selection|open|current)\s+(?:module\s*)?script\b|\b(?:my|the)\s+selection\b|\bselected\s+(?:objects?|instances?)\b/i;
+const READ_ONLY_INTENTS = new Set([
+  "EXPLANATION_REQUEST",
+  "GENERAL_QUESTION",
+  "GREETING",
+  "BRAINSTORMING",
+  "PLANNING_REQUEST",
+  "CANCELLATION",
+]);
 
 /**
  * Classifies how a request is expected to leave the AI workspace. This is a
@@ -96,6 +108,10 @@ export function classifyExecutionIntent(prompt, {
   const implementation = isImplementationIntent(userIntent);
   const mentionsLiveContext = LIVE_CONTEXT_RE.test(text);
   const liveRequested = studioEnabled || mentionsLiveContext;
+  if (isReadOnlyIntent(userIntent)) {
+    if (INSPECTION_RE.test(text) && mentionsLiveContext) return "inspect";
+    return "artifact_only";
+  }
   if (!implementation && INSPECTION_RE.test(text) && mentionsLiveContext) {
     return "inspect";
   }
@@ -105,6 +121,46 @@ export function classifyExecutionIntent(prompt, {
     return userIntent === "MODIFICATION_REQUEST" ? "live_fix" : "live_build";
   }
   return "artifact_only";
+}
+
+export function isReadOnlyIntent(intent) {
+  return READ_ONLY_INTENTS.has(String(intent || "").toUpperCase());
+}
+
+export function hasNamedStudioWriteTarget(prompt, { hasSelection = false, selectionCount = 0 } = {}) {
+  if (hasSelection === true || Number(selectionCount) > 0) return true;
+  const text = normalizePrompt(prompt);
+  if (!text) return false;
+  return NAMED_PATH_RE.test(text) || SELECTION_TARGET_RE.test(text);
+}
+
+export function evaluateStudioWriteGate(prompt, {
+  toolType = "patch_script",
+  hasSelection = false,
+  selectionCount = 0,
+} = {}) {
+  const intent = classifyUserIntent(prompt);
+  if (isReadOnlyIntent(intent)) {
+    return {
+      allowed: false,
+      code: "READ_ONLY_INTENT",
+      summary: "That request is read-only. No Studio instances were created or edited.",
+      intent,
+    };
+  }
+  if (
+    (toolType === "patch_script" || toolType === "write_script")
+    && isImplementationIntent(intent)
+    && !hasNamedStudioWriteTarget(prompt, { hasSelection, selectionCount })
+  ) {
+    return {
+      allowed: false,
+      code: "UNNAMED_WRITE_TARGET",
+      summary: "Name the script path or select it in Explorer before editing.",
+      intent,
+    };
+  }
+  return { allowed: true, code: null, summary: null, intent };
 }
 
 export function explicitlyDisablesStudioContext(prompt) {

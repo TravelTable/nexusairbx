@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { getAutoStart, setAutoStart, validatePreferenceUpdate } from "../src/preferences.js";
+import { mkdtemp, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { DEFAULT_PREFERENCES, getAutoStart, PreferenceStore, setAutoStart, validatePreferenceUpdate } from "../src/preferences.js";
 
 test("updates only the constrained login preference", () => {
   let enabled = false;
@@ -21,4 +24,18 @@ test("preference validation accepts only the renderer allowlist and clamps recon
   assert.throws(() => validatePreferenceUpdate("theme", "purple"), /Invalid theme/);
   assert.throws(() => validatePreferenceUpdate("autoReconnect", "yes"), /boolean/);
   assert.throws(() => validatePreferenceUpdate("mcpCommand", "/tmp/not-allowed"), /Unknown preference/);
+  assert.throws(() => validatePreferenceUpdate("workspaceEnabled", true), /Unknown preference/);
+});
+
+test("loads preferences while ignoring a legacy workspaceEnabled flag", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "nexus-connector-prefs-"));
+  const path = join(directory, "preferences.json");
+  await writeFile(path, JSON.stringify({
+    ...DEFAULT_PREFERENCES,
+    theme: "light",
+    workspaceEnabled: true,
+  }));
+  const loaded = await new PreferenceStore(path).load();
+  assert.equal(loaded.theme, "light");
+  assert.equal("workspaceEnabled" in loaded, false);
 });

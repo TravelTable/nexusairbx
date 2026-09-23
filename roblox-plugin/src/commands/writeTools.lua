@@ -1950,7 +1950,12 @@ local function applyArtifact(payload)
 			local readbackNodeIds = {}
 			local sourceHashes = {}
 			for _, descendant in ipairs(root:GetDescendants()) do
-				local nodeId = tostring(descendant:GetAttribute("NexusNodeId") or "")
+				local canonicalId = descendant:GetAttribute("NexusNodeId")
+				local aliasId = descendant:GetAttribute("NexusUiNodeId")
+				if canonicalId ~= nil and aliasId ~= nil and canonicalId ~= aliasId then
+					error("ui_readback_failed: NexusNodeId and NexusUiNodeId disagree on " .. descendant:GetFullName())
+				end
+				local nodeId = tostring(canonicalId or aliasId or "")
 				if nodeId ~= "" then
 					readbackNodeCount = readbackNodeCount + 1
 					table.insert(readbackNodeIds, nodeId)

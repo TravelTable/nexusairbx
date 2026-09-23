@@ -207,6 +207,7 @@ function CatalogPlanCard({ plan, interval, starterCredits, maxCredits, index }) 
         <strong className={styles.creditValue}>{plan.displayCreditsLabel}</strong>
         <CreditTicks plan={plan} maxCredits={maxCredits} />
         {creditMultiple ? <p className={styles.creditMultiple}>{creditMultiple}</p> : null}
+        {plan.perSeat ? <p className={styles.creditMultiple}>{plan.displayCreditsLabel} credits per seat, pooled monthly</p> : null}
       </div>
 
       {features.length ? (
@@ -223,43 +224,12 @@ function CatalogPlanCard({ plan, interval, starterCredits, maxCredits, index }) 
   );
 }
 
-function TeamPreview({ plan }) {
-  if (!plan) return null;
-
-  return (
-    <aside className={styles.teamPreview} aria-labelledby="team-preview-title">
-      <p>
-        <strong id="team-preview-title">Team</strong>
-        <span>Coming soon</span>
-        {formatMoney(plan.monthly)} / seat / month planned
-        {" · "}
-        <small>{plan.displayCreditsLabel} credits per seat, pooled monthly</small>
-      </p>
-      <a
-        className={styles.teamAction}
-        href="/contact?topic=team"
-        onClick={() =>
-          void trackProductEvent("team_interest_clicked", {
-            subscription_plan: "TEAM",
-          })
-        }
-      >
-        Join the Team waitlist
-      </a>
-    </aside>
-  );
-}
-
 export default function FinancialPlans({ compact = false }) {
   const [interval, setInterval] = useState("month");
 
   const availablePlans = useMemo(
-    () => SUBSCRIPTION_PLANS.filter((plan) => plan.id !== "TEAM"),
-    []
-  );
-  const teamPlan = useMemo(
-    () => SUBSCRIPTION_PLANS.find((plan) => plan.id === "TEAM") || null,
-    []
+    () => SUBSCRIPTION_PLANS.filter((plan) => (compact ? plan.id !== "TEAM" : true)),
+    [compact]
   );
   const starter = availablePlans.find((plan) => plan.id === "STARTER");
   const maxCredits = Math.max(1, ...availablePlans.map((plan) => Number(plan.displayCredits || 0)));
@@ -340,7 +310,6 @@ export default function FinancialPlans({ compact = false }) {
 
       {!compact ? (
         <div className={styles.dock}>
-          <TeamPreview plan={teamPlan} />
           <div className={styles.billingNotes}>
             <p>
               USD, plus applicable tax. There is no free AI trial; subscribe when you are ready to build. Annual plans

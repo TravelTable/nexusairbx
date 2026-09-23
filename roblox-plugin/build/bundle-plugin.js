@@ -138,6 +138,7 @@ const MODULE_EXPORTS = {
     "feedEmptyLabel",
     "approvalCopy",
     "playtestLogsButton",
+    "authorityReviewButton",
     "playtestStrip",
     "setButtonEnabled",
     "collaboratorsLabel",

@@ -1,8 +1,8 @@
-import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeImage, Notification, powerMonitor, safeStorage, shell, Tray } from "electron";
+import { app, BrowserWindow, clipboard, ipcMain, Menu, nativeImage, Notification, safeStorage, shell, Tray } from "electron";
 import electronUpdater from "electron-updater";
-import { appendFile, chmod, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { appendFile, chmod, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { basename, dirname, isAbsolute, join } from "node:path";
+import { dirname, isAbsolute, join } from "node:path";
 import {
   CONNECTOR_VERSION, ConsoleLogger, loadConfig, loginWithBrowser, NexusBackendClient, NexusLocalConnector, RobloxStudioMcpClient,
   type ConnectorLifecycleState, type ConnectorSession, type ConnectorTelemetry,
@@ -16,7 +16,6 @@ import { ConnectionAttemptCoordinator } from "./connection-attempt.js";
 import { completedConnectionPatch, connectionFailureCopy } from "./connection-state.js";
 import { connectionLogSink } from "./connection-log.js";
 import { isTerminalSessionError, resetLocalSession } from "./session-lifecycle.js";
-import { WorkspaceHost } from "./workspace-host.js";
 
 // electron-updater is published as CommonJS. Reading autoUpdater from its default
 // namespace keeps the packaged ESM main process compatible with Node's CJS bridge.
@@ -55,8 +54,6 @@ export function validateWindowMode(value: unknown): WindowMode {
 }
 
 class DesktopController {
-  #workspaceMode = false;
-  #workspaceOpening: Promise<unknown> | null = null;
   #window: BrowserWindow | null = null;
   #attempts = new ConnectionAttemptCoordinator();
   #startupWatchdog: ReturnType<typeof setTimeout> | null = null;
@@ -82,7 +79,6 @@ class DesktopController {
 
   async initialize(): Promise<void> {
     this.#preferences = await this.#preferenceStore.load();
-    this.#workspaceMode = this.#preferences.workspaceEnabled === true;
     this.#preferences.autoStart = getAutoStart(app);
     this.#snapshot = { ...this.#snapshot, autoStart: this.#preferences.autoStart, preferences: { ...this.#preferences } };
   }
@@ -101,12 +97,6 @@ class DesktopController {
   }
 
   async start(): Promise<CompanionSnapshot> {
-    if (this.#workspaceMode) {
-      const saved = await this.#store.load();
-      if (!saved) this.setSignInState();
-      else this.patchSnapshot({ state: "stopped", message: "Open the legacy local workspace to continue. History is available offline." });
-      return this.state;
-    }
     this.clearReconnectTimer();
     if (this.#attempts.active) return this.state;
     const saved = await this.#store.load();
@@ -116,8 +106,6 @@ class DesktopController {
   }
 
   async signIn(): Promise<CompanionSnapshot> {
-    await workspaceHost?.close();
-    this.#workspaceMode = this.#preferences.workspaceEnabled === true;
     if (this.#attempts.active) await this.stop(false);
     const config = this.config();
     const logger = new ConsoleLogger(config.verbose, this.#logSink);
@@ -129,10 +117,7 @@ class DesktopController {
         backend,
         connectorVersion: CONNECTOR_VERSION,
       });
-      if (this.#workspaceMode) {
-        await this.#store.save(session); this.#backend = backend;
-        this.patchSnapshot({ state: "stopped", message: "Signed in. Open the legacy local workspace to continue.", cloudHealth: "connected", connectionStage: null });
-      } else await this.startSession(session, backend, logger);
+      await this.startSession(session, backend, logger);
     } catch (error) {
       await backend.revokeCurrentSession().catch(() => undefined);
       logger.warn("Browser sign-in did not complete.", { error: error instanceof Error ? error.message : "unknown" });
@@ -153,8 +138,6 @@ class DesktopController {
   }
 
   async revokeSession(): Promise<CompanionSnapshot> {
-    await workspaceHost?.close();
-    this.#workspaceMode = this.#preferences.workspaceEnabled === true;
     let backend = this.#backend;
     if (!backend) {
       const saved = await this.#store.load();
@@ -191,16 +174,6 @@ class DesktopController {
     await this.#preferenceStore.save(this.#preferences);
     connectorUpdater?.setAutomaticUpdates(this.#preferences.automaticUpdates);
     this.patchSnapshot({ autoStart: this.#preferences.autoStart, preferences: { ...this.#preferences } });
-    if (update.key === "workspaceEnabled") {
-      await workspaceHost?.close();
-      this.#workspaceMode = normalizedValue === true;
-      if (this.#workspaceMode) {
-        await this.stop(false);
-        this.patchSnapshot({ state: "stopped", message: "Advanced compatibility workspace enabled. Open it from the Connector to continue; normal Connector polling is paused.", cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected", connectionStage: null });
-      } else {
-        await this.retry();
-      }
-    }
     if (update.key === "reconnectDelayMs" || (update.key === "autoReconnect" && normalizedValue === true)) void this.retry();
     return this.state;
   }
@@ -235,35 +208,6 @@ class DesktopController {
   private config() {
     const base = loadConfig([], { ...process.env, NEXUSRBX_API_URL: API_URL });
     return { ...base, reconnectMinMs: this.#preferences.reconnectDelayMs, reconnectMaxMs: Math.max(this.#preferences.reconnectDelayMs, base.reconnectMaxMs) };
-  }
-
-  async workspaceSession() {
-    if (!this.#backend) {
-      const saved = await this.#store.load();
-      if (!saved) throw new Error("Sign in using Connection settings first.");
-      this.#backend = this.createBackend(this.config(), new ConsoleLogger(false, this.#logSink));
-      this.#backend.restoreSession(saved);
-    }
-    return this.#backend.desktopSession();
-  }
-
-  async openWorkspace() {
-    if (this.#workspaceOpening) return this.#workspaceOpening;
-    this.#workspaceOpening = (async () => {
-      const saved = await this.#store.load();
-      if (!saved) throw new Error("Sign in using Connection settings first.");
-      if (!this.#workspaceMode) {
-        await this.stop(false);
-        this.#workspaceMode = true;
-        this.#preferences = { ...this.#preferences, workspaceEnabled: true };
-        await this.#preferenceStore.save(this.#preferences);
-        this.patchSnapshot({ state: "stopped", message: "The legacy local workspace owns this Studio connection. Normal Connector polling is paused.", cloudHealth: "disconnected", runtimeHealth: "disconnected", mcpHealth: "disconnected" });
-      }
-      await workspaceHost.start(saved.userId);
-      mainWindow?.setResizable(true); mainWindow?.setMinimumSize(800, 600); mainWindow?.setSize(1180, 800);
-      return workspaceHost.call("snapshot");
-    })().finally(() => { this.#workspaceOpening = null; });
-    return this.#workspaceOpening;
   }
 
   private createBackend(config: ReturnType<typeof loadConfig>, logger: ConsoleLogger): NexusBackendClient {
@@ -474,7 +418,6 @@ function fileEncryptedStorage(filePath: string): EncryptedStorage {
 }
 
 let controller: DesktopController;
-let workspaceHost: WorkspaceHost;
 let connectorUpdater: ConnectorUpdater | null = null;
 let isQuitting = false;
 let mainWindow: BrowserWindow | null = null;
@@ -494,7 +437,6 @@ type InstalledSmokeReport = {
     contextIsolation: boolean;
     sandbox: boolean;
     nodeIntegrationDisabled: boolean;
-    workspaceWorker?: boolean;
   };
   error?: string;
 };
@@ -542,8 +484,6 @@ function createWindow(): BrowserWindow {
   });
   controller.attachWindow(window);
   window.on("closed", () => { if (mainWindow === window) mainWindow = null; });
-  window.on("show", () => { if (workspaceHost?.accountId) void workspaceHost.call("visible", true); });
-  window.on("hide", () => { if (workspaceHost?.accountId) void workspaceHost.call("visible", false); });
   return window;
 }
 
@@ -555,58 +495,6 @@ function registerIpc(): void {
     });
   };
   handle("connector:get-state", () => controller.state);
-  handle("workspace:open", () => controller.openWorkspace());
-  handle("workspace:snapshot", id => workspaceHost.call("snapshot", typeof id === "string" ? id : undefined));
-  handle("workspace:create-conversation", id => workspaceHost.call("createConversation", id));
-  handle("workspace:list", query => workspaceHost.call("list", query));
-  handle("workspace:get-entity", id => workspaceHost.call("getEntity", id));
-  handle("workspace:save-entity", input => workspaceHost.call("saveEntity", input));
-  handle("workspace:edit-plan", (id, content) => workspaceHost.call("editPlan", id, content));
-  handle("workspace:resolve-conflict", (id, choice) => workspaceHost.call("resolveConflict", id, choice));
-  handle("workspace:studio-action", input => workspaceHost.call("studioAction", input));
-  handle("workspace:request", input => workspaceHost.call("request", input));
-  handle("workspace:open-external", async value => {
-    if (typeof value !== 'string' || value.length > 4000) throw new Error('Invalid account link.');
-    const url = new URL(value);
-    if (url.protocol !== 'https:' || url.username || url.password || !['checkout.stripe.com','billing.stripe.com','nexusrbx.com','www.nexusrbx.com','authorize.roblox.com'].includes(url.hostname)) throw new Error('This account link is not allowed.');
-    await shell.openExternal(url.href);
-  });
-  handle("workspace:submit", input => workspaceHost.call("submit", input));
-  handle("workspace:cancel", () => workspaceHost.call("cancel"));
-  handle("workspace:resume", id => workspaceHost.call("resume", id));
-  handle("workspace:approve-tool", (id, allow) => workspaceHost.call("approveTool", id, allow));
-  handle("workspace:studio", id => {
-    if (id !== undefined && (typeof id !== "string" || id.length > 160)) throw new Error("Invalid Studio target.");
-    return workspaceHost.call("studio", id);
-  });
-  handle("workspace:sync", () => workspaceHost.call("sync"));
-  handle("workspace:approve-plan", id => workspaceHost.call("approvePlan", id));
-  handle("workspace:export", async () => {
-    const result = await dialog.showSaveDialog({ defaultPath: "NexusRBX-history.json", filters: [{ name: "JSON", extensions: ["json"] }] });
-    if (!result.canceled && result.filePath) await writeFile(result.filePath, JSON.stringify(await workspaceHost.call("export"), null, 2), { mode: 0o600 });
-  });
-  handle("workspace:attach-file", async id => {
-    const result = await dialog.showOpenDialog({ properties: ["openFile"] });
-    if (!result.canceled && result.filePaths[0]) {
-      const info = await stat(result.filePaths[0]);
-      if (!info.isFile() || info.size > 10 * 1024 * 1024) throw new Error("Files must be at most 10 MiB.");
-      const bytes = await readFile(result.filePaths[0]);
-      if (bytes.length > 10 * 1024 * 1024) throw new Error("Files must be at most 10 MiB.");
-      await workspaceHost.call("attachFile", id, basename(result.filePaths[0]), bytes);
-    }
-  });
-  handle("workspace:save-file", async id => {
-    const file = await workspaceHost.call("file", id);
-    const result = await dialog.showSaveDialog({ defaultPath: basename(file.name) });
-    if (!result.canceled && result.filePath) await writeFile(result.filePath, file.bytes, { mode: 0o600 });
-  });
-  handle('workspace:download-bytes', async (name, bytes) => {
-    if (typeof name !== 'string' || !name || name.length > 240 || /[\x00-\x1f]/.test(name) || !(bytes instanceof Uint8Array) || bytes.byteLength > 10 * 1024 * 1024) throw new Error('Invalid export or export larger than 10 MiB.');
-    const result = await dialog.showSaveDialog({ defaultPath: basename(name) });
-    if (result.canceled || !result.filePath) return false;
-    await writeFile(result.filePath, bytes, { mode: 0o600 });
-    return true;
-  });
   handle("connector:diagnostics", () => controller.diagnostics());
   handle("connector:sign-in", () => controller.signIn());
   handle("connector:retry", () => controller.retry());
@@ -627,23 +515,15 @@ function registerIpc(): void {
   handle("connector:minimize-window", () => mainWindow?.minimize());
   handle("connector:close-window", () => controller.closeWindow());
   handle("connector:check-updates", () => controller.checkForUpdates());
-  handle("connector:install-update", async () => {
-    if (workspaceHost.accountId && (await workspaceHost.call("snapshot")).activeRunId) throw new Error("Stop the active run before installing an update.");
-    await workspaceHost.close(); connectorUpdater?.install();
+  handle("connector:install-update", () => {
+    connectorUpdater?.install();
   });
   ipcMain.on("connector:renderer-ready", (event) => {
     if (!INSTALLED_SMOKE_MODE || !mainWindow || event.sender.id !== mainWindow.webContents.id) return;
     const finish = () => void (async () => {
       const report = buildInstalledSmokeReport();
       // Smoke mode uses a separate user-data directory and no stored sign-in.
-      // Exercise the packaged worker + SQLite without cloud or Studio calls.
-      try {
-        await workspaceHost.start("nexusrbx-ci-smoke");
-        const id = await workspaceHost.call("createConversation");
-        const snapshot = await workspaceHost.call("snapshot");
-        report.checks.workspaceWorker = snapshot.accountId === "nexusrbx-ci-smoke" && snapshot.conversations.some((item: { id: string }) => item.id === id);
-      } catch (error) { report.checks.workspaceWorker = false; report.error = error instanceof Error ? error.message : "Local worker failed."; }
-      finally { await workspaceHost.close(); }
+      // Confirm the packaged connector shell is ready without Studio or cloud.
       report.ok = Object.values(report.checks).every(Boolean);
       await finishInstalledSmoke(report);
     })().catch((error: unknown) => {
@@ -662,21 +542,15 @@ const singleInstance = app.requestSingleInstanceLock();
 if (!singleInstance) app.quit();
 else {
   app.on("second-instance", () => { if (controller) controller.show(); });
-  app.on("before-quit", event => {
+  app.on("before-quit", () => {
     connectorUpdater?.stop();
-    if (!isQuitting && workspaceHost?.accountId) {
-      event.preventDefault();
-      void workspaceHost.close().finally(() => { isQuitting = true; app.quit(); });
-    } else isQuitting = true;
+    isQuitting = true;
   });
   app.on("activate", () => controller?.show());
   app.whenReady().then(async () => {
     const initializedController = new DesktopController();
     await initializedController.initialize();
     controller = initializedController;
-    workspaceHost = new WorkspaceHost(join(app.getPath("userData"), "workspaces"), API_URL,
-      () => controller.workspaceSession(), () => mainWindow?.webContents.send("workspace:changed"));
-    powerMonitor.on("suspend", () => { if (workspaceHost.accountId) void workspaceHost.call("cancel"); });
     registerIpc(); createWindow(); controller.configureTray();
     if (INSTALLED_SMOKE_MODE) {
       smokeTimeout = setTimeout(() => void finishInstalledSmoke({

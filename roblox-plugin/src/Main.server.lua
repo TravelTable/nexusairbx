@@ -290,12 +290,108 @@ playtestLogsButton.MouseButton1Click:Connect(function()
 		local entry = messages[i]
 		if entry then table.insert(lines, tostring(entry.level or "output") .. ": " .. tostring(entry.message):sub(1, 400)) end
 	end
+	local receiptStatus = "not_run"
+	if total > 0 then
+		receiptStatus = errors > 0 and "failed" or "passed"
+	end
+	if total == 0 then
+		table.insert(lines, 1, "Playtest receipt: not run.")
+	else
+		table.insert(lines, 1, "Playtest receipt: " .. receiptStatus .. ".")
+	end
 	playtestStrip.Visible = true
 	playtestStrip.Text = table.concat(lines, "\n")
+	local runId = UI_HELPERS.controller and UI_HELPERS.controller.record and UI_HELPERS.controller.record.runId or nil
+	local token = getToken()
+	if runId and token then
+		pcall(function()
+			request("POST", "/api/studio/agent/runs/" .. HttpService:UrlEncode(tostring(runId)) .. "/playtest-receipt", {
+				output = result.output or {},
+				summary = summary,
+				scenario = "Check playtest output",
+			}, token)
+		end)
+	elseif not runId then
+		table.insert(lines, "No active run to store this receipt.")
+		playtestStrip.Text = table.concat(lines, "\n")
+	end
 	pushActivity({
 		commandType = "get_output_logs",
-		status = errors > 0 and "failed" or "succeeded",
-		detail = ("%d errors, %d warnings"):format(errors, warnings),
+		status = receiptStatus == "failed" and "failed" or (receiptStatus == "not_run" and "uncertain" or "succeeded"),
+		detail = receiptStatus .. (" (%d errors, %d warnings)"):format(errors, warnings),
+	})
+end)
+
+authorityReviewButton.MouseButton1Click:Connect(function()
+	if authorityReviewButton:GetAttribute("NexusEnabled") == false then
+		return
+	end
+	local selected = {}
+	for _, inst in ipairs(Selection:Get()) do
+		if SCRIPT_CLASSES[inst.ClassName] then
+			table.insert(selected, inst)
+		end
+		if #selected >= 5 then
+			break
+		end
+	end
+	if #selected == 0 then
+		playtestStrip.Visible = true
+		playtestStrip.Text = "Select up to 5 scripts, then review. No Studio changes are made."
+		return
+	end
+	local token = getToken()
+	if not token then
+		playtestStrip.Visible = true
+		playtestStrip.Text = "Pair Studio before reviewing scripts."
+		return
+	end
+	setButtonEnabled(authorityReviewButton, false, "Reviewing...")
+	local scripts = {}
+	for _, inst in ipairs(selected) do
+		local ok, source = readScriptSource(inst)
+		table.insert(scripts, {
+			path = fullPath(inst),
+			className = inst.ClassName,
+			source = ok and source or "",
+		})
+	end
+	local ok, data = request("POST", "/api/studio/script-authority-review", { scripts = scripts }, token)
+	setButtonEnabled(authorityReviewButton, true, "Review selected scripts")
+	if not ok or type(data) ~= "table" or type(data.review) ~= "table" then
+		playtestStrip.Visible = true
+		playtestStrip.Text = "Script review failed. No Studio changes were made."
+		return
+	end
+	local review = data.review or {}
+	local lines = { review.summary or "Review complete.", "Read-only: no Studio changes were applied." }
+	for _, finding in ipairs(review.findings or {}) do
+		if #lines >= 12 then
+			break
+		end
+		table.insert(lines, string.format("[%s/%s] %s — %s", tostring(finding.severity or "info"), tostring(finding.category or "review"), tostring(finding.path or ""), tostring(finding.message or "")))
+	end
+	local summary = table.concat(lines, "\n")
+	playtestStrip.Visible = true
+	playtestStrip.Text = summary
+	if UI_HELPERS.result then
+		UI_HELPERS.localResult = true
+		UI_HELPERS.toolView = "result"
+		UI_HELPERS.result:render({
+			title = "Script authority review",
+			status = "Read only",
+			summary = summary,
+			readOnly = true,
+			localRead = true,
+		}, false)
+		if refreshControls then
+			refreshControls()
+		end
+	end
+	pushActivity({
+		commandType = "script_authority_review",
+		status = "succeeded",
+		detail = tostring(review.findingCount or 0) .. " findings",
 	})
 end)
 

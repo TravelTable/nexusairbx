@@ -14,9 +14,9 @@ export const STUDIO_SAFETY_MODES = Object.freeze([
 ]);
 
 export const DEFAULT_STUDIO_PREFERENCES = Object.freeze({
-  applyPolicy: "after_validation",
+  applyPolicy: "ask_before_applying",
   validationMode: "standard",
-  safetyMode: "developer_mode",
+  safetyMode: "review_destructive",
 });
 
 const APPLY_POLICY_SET = new Set(STUDIO_APPLY_POLICIES);

@@ -97,6 +97,9 @@ export function getUiWorkspacePresentation({ task, busy = '', connection = '', s
     state = uiStageStates[build.stage] || normalizeLifecycleState(build.stage);
     const ended = terminalStates.has(state) || state === 'complete';
     label = (!ended && UI_ACTION_LABELS[build.action]) || UI_BUILD_LABELS[build.stage];
+    if (ended && Array.isArray(build.limitations) && build.limitations.length) {
+      label = `${UI_BUILD_LABELS[build.stage] || 'Review needs attention'}: ${build.limitations.join(', ')}`;
+    }
     if (!ended && !waitingStates.has(state) && UI_ACTION_LABELS[build.action]) state = inferLifecycleState(label);
     if (!ended && waitingStates.has(taskState)) { state = taskState; label = ''; }
   }

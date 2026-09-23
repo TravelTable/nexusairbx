@@ -833,7 +833,16 @@ local function verifyCommandOutcome(command, payload, result)
 			local actualNodeIds = {}
 			if root then
 				for _, descendant in ipairs(root:GetDescendants()) do
-					local nodeId = tostring(descendant:GetAttribute("NexusNodeId") or "")
+					local canonicalId = descendant:GetAttribute("NexusNodeId")
+					local aliasId = descendant:GetAttribute("NexusUiNodeId")
+					if canonicalId ~= nil and aliasId ~= nil and canonicalId ~= aliasId then
+						addCheck("ui_node_identity", path .. "/" .. descendant.Name, false, {
+							reason = "node_id_conflict",
+							nexusNodeId = tostring(canonicalId),
+							nexusUiNodeId = tostring(aliasId),
+						})
+					end
+					local nodeId = tostring(canonicalId or aliasId or "")
 					if nodeId ~= "" then
 						table.insert(actualNodeIds, nodeId)
 					end

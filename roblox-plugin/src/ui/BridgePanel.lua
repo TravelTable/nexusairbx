@@ -639,6 +639,7 @@ activeLabel = makeText(UI_HELPERS.activitySection, "Active", "Active tool: none"
 -- Main.server.lua where the collectOutput handler is in scope. Exported (no local)
 -- so it lands on the bundler's shared export table without a new top-level local.
 playtestLogsButton = makeButton(UI_HELPERS.toolsSection, "PlaytestLogs", "Check playtest output", themeColor(Enum.StudioStyleGuideColor.Button))
+authorityReviewButton = makeButton(UI_HELPERS.toolsSection, "AuthorityReview", "Review selected scripts", themeColor(Enum.StudioStyleGuideColor.Button))
 playtestStrip = makeText(UI_HELPERS.toolsSection, "PlaytestStrip", "", nil, 11, false, themeColor(Enum.StudioStyleGuideColor.DimmedText), true)
 playtestStrip.TextWrapped = true
 playtestStrip.Visible = false
@@ -1008,7 +1009,12 @@ function UI_HELPERS.setBanner(kind, text)
 end
 
 function UI_HELPERS.getApprovalModeEnabled()
-	return plugin:GetSetting("nexusrbxApprovalMode") == true
+	-- Default is review-before-apply. Only an explicit false disables it.
+	local setting = plugin:GetSetting("nexusrbxApprovalMode")
+	if setting == nil then
+		return true
+	end
+	return setting == true
 end
 
 function UI_HELPERS.refreshApprovalToggle()
@@ -1587,6 +1593,42 @@ function UI_HELPERS.describeAffectedPaths(command)
 	return paths
 end
 
+function UI_HELPERS.describeCommandDiff(command)
+	local payload = type(command) == "table" and (command.payload or {}) or {}
+	local lines = {}
+	local path = tostring(payload.path or "")
+	if path ~= "" then
+		table.insert(lines, "Path: " .. path)
+	end
+	local patches = payload.patches
+	if type(patches) == "table" and #patches > 0 then
+		for index = 1, math.min(#patches, 4) do
+			local patch = patches[index]
+			if type(patch) == "table" then
+				local findText = tostring(patch.find or ""):sub(1, 120)
+				local replaceText = tostring(patch.replace or ""):sub(1, 120)
+				table.insert(lines, ("Patch %d before: %s"):format(index, findText))
+				table.insert(lines, ("Patch %d after:  %s"):format(index, replaceText))
+			end
+		end
+		if #patches > 4 then
+			table.insert(lines, ("...and %d more patch(es)"):format(#patches - 4))
+		end
+	end
+	local source = payload.candidateSource or payload.source
+	if type(source) == "string" and #source > 0 then
+		local preview = source:sub(1, 280)
+		if #source > 280 then
+			preview = preview .. "\n…"
+		end
+		table.insert(lines, "After (" .. tostring(#source) .. " chars):\n" .. preview)
+	end
+	if #lines == 0 then
+		return ""
+	end
+	return table.concat(lines, "\n")
+end
+
 function showApprovalGate(command)
 	local approvalId = "approval-" .. tostring(command.id or HttpService:GenerateGUID(false))
 	pendingApproval = {
@@ -1611,14 +1653,23 @@ function showApprovalGate(command)
 		end
 		pathsText = "\n\n<b>Affects:</b>\n" .. table.concat(shown, "\n")
 	end
-	approvalCopy.Text = ("Apply <b>%s</b> (%s)?%s%s%s"):format(label, commandType, runText, stepText, pathsText)
+	local diffText = UI_HELPERS.describeCommandDiff(command)
+	local diffRich = ""
+	if #diffText > 0 then
+		diffRich = "\n\n<b>Review diff:</b>\n" .. diffText:gsub("[<>&]", {
+			["<"] = "&lt;",
+			[">"] = "&gt;",
+			["&"] = "&amp;",
+		})
+	end
+	approvalCopy.Text = ("Apply <b>%s</b> (%s)?%s%s%s%s"):format(label, commandType, runText, stepText, pathsText, diffRich)
 	local summary = "Review before applying " .. label .. "."
 	if #paths > 0 then
 		summary = summary .. " This affects " .. tostring(#paths) .. " item(s)."
 	end
 
 	UI_HELPERS.localResult = false
-	UI_HELPERS.controller:localApproval(summary .. "\n" .. table.concat(paths, "\n"))
+	UI_HELPERS.controller:localApproval(summary .. "\n" .. table.concat(paths, "\n"), diffText)
 	UI_HELPERS.approvalOverlay.Visible = false
 	setActiveTab("Tools")
 end

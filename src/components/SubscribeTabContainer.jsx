@@ -105,7 +105,7 @@ function SubscribeTabUI({
                 className="w-full"
               >
                 <Users className="w-3 h-3" />
-                Upgrade to Team
+                Add Team seats
               </Button>
             )}
           </div>
