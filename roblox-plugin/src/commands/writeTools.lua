@@ -17,6 +17,31 @@ local function getStudioContext()
 	}
 end
 
+	-- Indented so the plugin bundle's column-0 local budget stays unchanged.
+	local SCREEN_INSET_MODES = {
+		None = true,
+		DeviceSafeInsets = true,
+		CoreUISafeInsets = true,
+		TopbarSafeInsets = true,
+	}
+
+	local function applyScreenInsetPolicy(gui, spec)
+		spec = type(spec) == "table" and spec or {}
+		local insets = spec.screenInsets
+		local ignore = spec.ignoreGuiInset ~= false
+		if type(insets) == "string" and SCREEN_INSET_MODES[insets] then
+			ignore = insets == "None"
+		elseif ignore then
+			insets = "None"
+		else
+			insets = "CoreUISafeInsets"
+		end
+		gui.IgnoreGuiInset = ignore
+		pcall(function()
+			gui.ScreenInsets = Enum.ScreenInsets[insets]
+		end)
+	end
+
 local function patchScript(payload)
 	local path = payload.path
 	local inst = resolvePath(path)
@@ -825,9 +850,19 @@ local function applyArtifactLegacy(payload)
 			else
 				appendMissingPathSnapshots(screenPath, snapshots, {})
 			end
+			local insets = screenSpec.screenInsets
+			local ignore = screenSpec.ignoreGuiInset ~= false
+			if type(insets) == "string" and SCREEN_INSET_MODES[insets] then
+				ignore = insets == "None"
+			elseif ignore then
+				insets = "None"
+			else
+				insets = "CoreUISafeInsets"
+			end
 			createOrReplaceInstance(screenPath, "ScreenGui", {
 				ResetOnSpawn = screenSpec.resetOnSpawn ~= false,
-				IgnoreGuiInset = screenSpec.ignoreGuiInset ~= false,
+				IgnoreGuiInset = ignore,
+				ScreenInsets = "Enum.ScreenInsets." .. insets,
 			}, true)
 		end
 	end)
@@ -1459,6 +1494,13 @@ UiArtifact.applyDecorators = function(inst, spec)
 			scale.Scale = tonumber(spec.properties.uiScale)
 			scale.Parent = inst
 		end
+		if spec.selectionGroup == true and inst:IsA("GuiObject") then
+			inst.SelectionGroup = true
+			inst.SelectionBehaviorUp = Enum.SelectionBehavior.Stop
+			inst.SelectionBehaviorDown = Enum.SelectionBehavior.Stop
+			inst.SelectionBehaviorLeft = Enum.SelectionBehavior.Stop
+			inst.SelectionBehaviorRight = Enum.SelectionBehavior.Stop
+		end
 	end)
 	return ok, ok and nil or tostring(err)
 end
@@ -1655,7 +1697,7 @@ UiArtifact.applyRoot = function(rootSpec, artifactId, snapshots, seenPaths)
 	local root = Instance.new("ScreenGui")
 	root.Name = leaf
 	root.ResetOnSpawn = rootSpec.properties and rootSpec.properties.resetOnSpawn ~= false
-	root.IgnoreGuiInset = rootSpec.properties and rootSpec.properties.ignoreGuiInset ~= false
+	applyScreenInsetPolicy(root, rootSpec.properties)
 	root.DisplayOrder = tonumber(rootSpec.properties and rootSpec.properties.displayOrder) or 0
 	root.Enabled = not rootSpec.properties or rootSpec.properties.enabled ~= false
 	root:SetAttribute(AGENT_ARTIFACT_ID_ATTRIBUTE, tostring(artifactId or ""))

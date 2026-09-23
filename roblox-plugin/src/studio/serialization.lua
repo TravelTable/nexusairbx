@@ -315,6 +315,7 @@ local function propertiesOf(inst)
 		"Enabled",
 		"ResetOnSpawn",
 		"IgnoreGuiInset",
+		"ScreenInsets",
 		"DisplayOrder",
 		"Text",
 		"PlaceholderText",

@@ -214,6 +214,22 @@ local function safeSetProperty(inst, key, value)
 			inst.ResetOnSpawn = value ~= false
 		elseif key == "IgnoreGuiInset" and inst:IsA("ScreenGui") then
 			inst.IgnoreGuiInset = value ~= false
+			pcall(function()
+				if inst.IgnoreGuiInset then
+					inst.ScreenInsets = Enum.ScreenInsets.None
+				elseif inst.ScreenInsets == Enum.ScreenInsets.None then
+					inst.ScreenInsets = Enum.ScreenInsets.CoreUISafeInsets
+				end
+			end)
+		elseif key == "ScreenInsets" and inst:IsA("ScreenGui") then
+			local name = tostring(value):gsub("^Enum%.ScreenInsets%.", "")
+			pcall(function()
+				local enumItem = Enum.ScreenInsets[name]
+				if enumItem then
+					inst.ScreenInsets = enumItem
+					inst.IgnoreGuiInset = name == "None"
+				end
+			end)
 		elseif key == "Enabled" and inst:IsA("ScreenGui") then
 			inst.Enabled = value ~= false
 		elseif key == "Text" and (inst:IsA("TextLabel") or inst:IsA("TextButton") or inst:IsA("TextBox")) then
