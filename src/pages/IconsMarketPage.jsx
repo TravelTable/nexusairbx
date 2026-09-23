@@ -182,6 +182,11 @@ function MarketCollections({ collections, onCreate, onDownload, onDelete, signed
 export default function IconsMarketPage() {
   const [initialFilters] = useState(() => new URLSearchParams(window.location.search));
   const [user, setUser] = useState(null);
+  const [uploadName, setUploadName] = useState("");
+  const [uploadRole, setUploadRole] = useState("");
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploadError, setUploadError] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [marketError, setMarketError] = useState(null);
   const [icons, setIcons] = useState([]);
@@ -503,8 +508,46 @@ export default function IconsMarketPage() {
                   <h1 className={`${editorialDisplayClass} text-5xl`}>Creator Store</h1>
                 </div>
                 <p className="max-w-xl text-[var(--ds-text-muted)]">
-                  Browse curated, game-ready icons and UI components. Anyone can browse; sign in to save collections and publish to Roblox.
+                  Browse curated, game-ready icons and UI components. Anyone can browse; sign in to upload your own icons or save collections.
                 </p>
+                <form className="mt-6 flex flex-wrap items-end gap-3" onSubmit={async (event) => {
+                  event.preventDefault();
+                  if (!user) { requestSignIn(); return; }
+                  if (!uploadFile || !uploadName.trim()) { setUploadError("Choose an image and a name."); return; }
+                  setUploadError("");
+                  setUploading(true);
+                  try {
+                    const token = await user.getIdToken();
+                    const body = new FormData();
+                    body.set("image", uploadFile);
+                    body.set("name", uploadName.trim());
+                    body.set("role", (uploadRole || uploadName).trim());
+                    const res = await fetch(`${API_BASE}/api/icons/uploads`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) throw new Error(data?.error || "Could not upload the icon.");
+                    setUploadName("");
+                    setUploadRole("");
+                    setUploadFile(null);
+                    event.currentTarget.reset();
+                    await fetchIcons();
+                  } catch (error) {
+                    setUploadError(error?.message || "Could not upload the icon.");
+                  } finally {
+                    setUploading(false);
+                  }
+                }}>
+                  <label className="text-sm text-[var(--ds-text-muted)]">Your icon
+                    <input className="mt-1 block text-[var(--ds-text)]" type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setUploadFile(event.target.files?.[0] || null)} />
+                  </label>
+                  <label className="text-sm text-[var(--ds-text-muted)]">Name
+                    <input className="mt-1 block rounded-md border border-[var(--ds-border)] bg-[var(--ds-bg-canvas)] px-3 py-2 text-[var(--ds-text)]" value={uploadName} onChange={(event) => setUploadName(event.target.value)} placeholder="Gold coin" />
+                  </label>
+                  <label className="text-sm text-[var(--ds-text-muted)]">Role
+                    <input className="mt-1 block rounded-md border border-[var(--ds-border)] bg-[var(--ds-bg-canvas)] px-3 py-2 text-[var(--ds-text)]" value={uploadRole} onChange={(event) => setUploadRole(event.target.value)} placeholder="currency" />
+                  </label>
+                  <button className="rounded-md bg-[var(--ds-text)] px-4 py-2 text-sm font-semibold text-[var(--ds-bg-canvas)] disabled:opacity-60" type="submit" disabled={uploading}>{uploading ? "Uploading" : "Upload"}</button>
+                  {uploadError ? <p className="w-full text-sm text-red-400">{uploadError}</p> : null}
+                </form>
               </div>
 
               <div className="relative w-full md:w-96">
