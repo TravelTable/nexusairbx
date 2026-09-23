@@ -61,6 +61,11 @@
   ],
   "redirects": [
     {
+      "source": "/studio-plugin/NexusRBXStudioBridge.rbxmx",
+      "destination": "https://create.roblox.com/store/asset/83865885181263/NexusRBX-Ai",
+      "permanent": true
+    },
+    {
       "source": "/",
       "has": [
         {

@@ -4,8 +4,8 @@ import DownloadsContent from "../components/downloads/DownloadsContent";
 import HomepageFooter from "../components/homepage/HomepageFooter";
 import { canonicalUrl } from "../lib/seo";
 
-const title = "Connect NexusRBX to Roblox Studio | Plugin and Connector";
-const description = "Install the recommended NexusRBX Studio Plugin, or download NexusRBX Connector for advanced local Studio MCP workflows on macOS and Windows.";
+const title = "NexusRBX Ai Studio Plugin";
+const description = "Install the NexusRBX Ai plugin from the Roblox Creator Store and open it beside your place in Roblox Studio.";
 
 export default function DownloadsPage() {
   return (

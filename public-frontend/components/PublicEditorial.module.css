@@ -9,79 +9,107 @@
   font-family: var(--nx-font-body);
 }
 
-.docsShell :global(.docs-context-bar) {
-  border-bottom: 1px solid var(--nx-rule);
-  background: var(--nx-depth);
-}
-
-.docsShell :global(.docs-context-inner),
-.docsShell :global(.docs-main-grid) {
-  width: min(100% - 46px, 1440px);
-  margin-inline: auto;
-}
-
-.docsShell :global(.docs-context-inner) {
-  min-height: 48px;
-  gap: var(--nx-space-4);
-}
-
-.docsShell :global(.docs-context-title) {
-  color: var(--nx-text);
-  font-family: var(--nx-font-display);
-  font-weight: 600;
-}
-
-.docsShell :global(.docs-context-categories) {
-  align-self: stretch;
-}
-
-.docsShell :global(.docs-context-categories a),
-.docsShell :global(.docs-search-button),
-.docsShell :global(.docs-icon-button) {
-  min-height: 44px;
-  border-radius: 0;
-}
-
-.docsShell :global(.docs-context-categories a) {
-  display: inline-flex;
-  position: relative;
-  align-items: center;
-  padding-inline: var(--nx-space-3);
-  color: var(--nx-text-muted);
-}
-
-.docsShell :global(.docs-context-categories a:hover) {
-  background: var(--nx-field);
-  color: var(--nx-text);
-}
-
-.docsShell :global(.docs-context-categories .docs-context-category-current) {
-  color: var(--nx-purple);
-  box-shadow: inset 0 -2px var(--nx-purple);
+.docsShell :global(.docs-mobile-toolbar) {
+  display: none;
 }
 
 .docsShell :global(.docs-main-grid) {
-  grid-template-columns: 216px minmax(0, 760px) 176px;
-  gap: var(--nx-space-4);
-  padding-block: var(--nx-space-5) var(--nx-space-6);
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  grid-template-columns: minmax(240px, 268px) minmax(0, 720px) 200px;
+  justify-content: center;
+  column-gap: 40px;
+  padding: 28px 28px 80px;
 }
 
 .docsShell :global(.docs-main-grid-no-toc) {
-  grid-template-columns: 230px minmax(0, 860px);
+  grid-template-columns: minmax(240px, 268px) minmax(0, 720px);
 }
 
 .docsShell :global(.docs-main-grid-sidebar-collapsed) {
-  grid-template-columns: 56px minmax(0, 800px) 190px;
+  grid-template-columns: 56px minmax(0, 720px) 200px;
 }
 
 .docsShell :global(.docs-main-grid-no-toc.docs-main-grid-sidebar-collapsed) {
-  grid-template-columns: 56px minmax(0, 1fr);
+  grid-template-columns: 56px minmax(0, 720px);
+}
+
+.docsShell :global(.docs-sidebar),
+.docsShell :global(.docs-toc) {
+  top: calc(var(--nx-header-height, 48px) + 16px);
+  max-height: calc(100dvh - var(--nx-header-height, 48px) - 32px);
+}
+
+.docsShell :global(.docs-sidebar) {
+  height: calc(100dvh - var(--nx-header-height, 48px) - 32px);
 }
 
 .docsShell :global(.docs-sidebar-panel) {
+  border: 0;
   border-right: 1px solid var(--nx-rule);
+  border-radius: 0;
   background: transparent;
-  padding-right: var(--nx-space-4);
+  padding: 0 var(--nx-space-4) 0 0;
+}
+
+.docsShell :global(.docs-sidebar-collapsed .docs-sidebar-panel) {
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.docsShell :global(.docs-sidebar-search) {
+  display: flex;
+  width: 100%;
+  min-height: 36px;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  margin: 0 0 var(--nx-space-4);
+  border: 1px solid var(--nx-rule);
+  border-radius: var(--nx-radius-field);
+  background: var(--nx-depth);
+  padding: 0 10px;
+  color: var(--nx-text-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.docsShell :global(.docs-sidebar-search span) {
+  flex: 1;
+  text-align: left;
+}
+
+.docsShell :global(.docs-sidebar-search kbd) {
+  margin-left: auto;
+  border: 1px solid var(--nx-rule);
+  border-radius: var(--nx-radius-field);
+  background: var(--nx-canvas);
+  color: var(--nx-text-muted);
+  padding: 1px 6px;
+  font-family: var(--nx-font-code);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.docsShell :global(.docs-sidebar-search:hover),
+.docsShell :global(.docs-sidebar-search:focus-visible) {
+  border-color: var(--nx-purple);
+  background: var(--nx-depth);
+  color: var(--nx-text);
+}
+
+.docsShell :global(.docs-sidebar-collapsed .docs-sidebar-search) {
+  width: 44px;
+  min-width: 44px;
+  justify-content: center;
+  margin-inline: auto;
+  padding: 0;
+}
+
+.docsShell :global(.docs-sidebar-collapsed .docs-sidebar-search span),
+.docsShell :global(.docs-sidebar-collapsed .docs-sidebar-search kbd) {
+  display: none;
 }
 
 .docsShell :global(.docs-sidebar-label) {
@@ -92,30 +120,47 @@
 }
 
 .docsShell :global(.docs-category-button),
-.docsShell :global(.docs-nav-link),
-.docsShell :global(.docs-toc-link),
-.docsShell :global(.docs-inline-toc-link) {
-  min-height: 44px;
+.docsShell :global(.docs-nav-link) {
+  min-height: 32px;
   border-radius: 0;
+  font-size: 14px;
   font-weight: 500;
 }
 
 .docsShell :global(.docs-category-button) {
-  border-top: 1px solid var(--nx-rule-quiet);
-  color: var(--nx-text-secondary);
+  border-top: 0;
+  color: var(--nx-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
 }
 
 .docsShell :global(.docs-nav-link) {
   display: flex;
+  align-items: center;
   border-left: 2px solid transparent;
-  padding: var(--nx-space-2);
+  padding: 4px 8px 4px 12px;
+  color: var(--nx-text-secondary);
+}
+
+.docsShell :global(.docs-nav-link:hover),
+.docsShell :global(.docs-nav-link:focus-visible) {
+  background: transparent;
+  color: var(--nx-text);
 }
 
 .docsShell :global(.docs-nav-link-current) {
   border-left-color: var(--nx-purple);
-  background: var(--ds-fill-hover);
+  background: transparent;
   color: var(--nx-text);
   font-weight: 600;
+}
+
+.docsShell :global(.docs-icon-button) {
+  min-height: 44px;
+  min-width: 44px;
+  border-radius: var(--nx-radius-field);
 }
 
 .docsShell :global(.docs-article) {
@@ -123,51 +168,61 @@
 }
 
 .docsShell :global(.docs-breadcrumbs) {
+  margin-bottom: 20px;
   color: var(--nx-text-muted);
-  font-size: 0.6875rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .docsShell :global(.docs-breadcrumbs a) {
   display: inline-flex;
-  min-width: 44px;
-  min-height: 44px;
+  min-width: 0;
+  min-height: 0;
   align-items: center;
+  color: var(--nx-text-muted);
+}
+
+.docsShell :global(.docs-breadcrumbs a:hover),
+.docsShell :global(.docs-breadcrumbs a:focus-visible) {
+  color: var(--nx-text);
 }
 
 .docsShell :global(.docs-article-header) {
-  padding: var(--nx-space-3) 0 var(--nx-space-6);
+  padding: 0 0 28px;
   border-bottom: 1px solid var(--nx-rule);
 }
 
 .docsShell :global(.docs-article-header h1) {
-  max-width: 13ch;
-  margin-top: var(--nx-space-3);
+  max-width: none;
+  margin-top: 12px;
   color: var(--nx-text);
   font-family: var(--nx-font-display);
-  font-size: clamp(2.25rem, 4.5vw, 3rem);
-  font-weight: 620;
-  line-height: 0.9;
-  letter-spacing: -0.035em;
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
 .docsShell :global(.docs-article-header p) {
   max-width: 66ch;
-  margin-top: var(--nx-space-4);
+  margin-top: 12px;
   color: var(--nx-text-secondary);
-  font-size: 1.0625rem;
+  font-size: 16px;
   line-height: 1.7;
 }
 
 .docsShell :global(.docs-kicker),
 .docsShell :global(.docs-meta span) {
+  border: 0;
   border-radius: 0;
+  background: transparent;
   color: var(--nx-text-muted);
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .docsShell :global(.docs-actions) {
@@ -204,10 +259,10 @@
 .docsShell :global(.docs-heading-row h2) {
   color: var(--nx-text);
   font-family: var(--nx-font-display);
-  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
-  font-weight: 620;
-  letter-spacing: -0.03em;
-  line-height: 0.98;
+  font-size: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
 }
 
 .docsShell :global(.docs-paragraph),
@@ -220,15 +275,32 @@
 .docsShell :global(.docs-tree li),
 .docsShell :global(.docs-parameter-list dd) {
   color: var(--nx-text-secondary);
-  line-height: 1.75;
+  font-size: 16px;
+  line-height: 1.7;
 }
 
 .docsShell :global(.docs-card-grid) {
-  display: block;
-  border-top: 1px solid var(--nx-rule);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  border-top: 0;
 }
 
-.docsShell :global(.docs-mini-card),
+.docsShell :global(.docs-mini-card) {
+  min-height: 0;
+  border: 1px solid var(--nx-rule);
+  border-radius: var(--nx-radius-field);
+  background: var(--nx-work);
+  padding: 16px;
+  box-shadow: none;
+}
+
+.docsShell :global(a.docs-mini-card:hover),
+.docsShell :global(a.docs-mini-card:focus-visible) {
+  border-color: var(--nx-purple);
+  background: var(--nx-work);
+}
+
 .docsShell :global(.docs-step-list li) {
   border: 0;
   border-bottom: 1px solid var(--nx-rule);
@@ -238,7 +310,26 @@
   box-shadow: none;
 }
 
-.docsShell :global(.docs-callout),
+.docsShell :global(.docs-callout) {
+  border-radius: var(--nx-radius-field);
+  border-color: var(--nx-rule);
+  border-left: 3px solid var(--nx-purple);
+  background: var(--nx-work);
+  box-shadow: none;
+}
+
+.docsShell :global(.docs-callout-warning) {
+  border-left-color: var(--nx-warning);
+}
+
+.docsShell :global(.docs-callout-success) {
+  border-left-color: var(--nx-success);
+}
+
+.docsShell :global(.docs-callout-danger) {
+  border-left-color: var(--nx-danger);
+}
+
 .docsShell :global(.docs-code-block),
 .docsShell :global(.docs-tabs),
 .docsShell :global(.docs-table-wrap),
@@ -252,6 +343,11 @@
   border-color: var(--nx-rule);
   background: var(--nx-work);
   box-shadow: none;
+}
+
+.docsShell :global(.docs-code-header) {
+  display: flex;
+  align-items: center;
 }
 
 .docsShell :global(.docs-step-number),
@@ -271,8 +367,46 @@
 }
 
 .docsShell :global(.docs-toc) {
+  border: 0;
   border-left: 1px solid var(--nx-rule);
-  padding-left: var(--nx-space-3);
+  border-radius: 0;
+  background: transparent;
+  padding: 2px 0 2px 16px;
+}
+
+.docsShell :global(.docs-toc strong) {
+  color: var(--nx-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.docsShell :global(.docs-toc-link),
+.docsShell :global(.docs-inline-toc-link) {
+  min-height: 0;
+  border-left: 2px solid transparent;
+  border-radius: 0;
+  padding: 6px 0 6px 12px;
+  color: var(--nx-text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.docsShell :global(.docs-toc-link:hover),
+.docsShell :global(.docs-toc-link:focus-visible),
+.docsShell :global(.docs-inline-toc-link:hover),
+.docsShell :global(.docs-inline-toc-link:focus-visible) {
+  border-left-color: transparent;
+  color: var(--nx-text);
+}
+
+.docsShell :global(.docs-toc-link-active),
+.docsShell :global(.docs-inline-toc-link-active) {
+  border-left-color: var(--nx-purple);
+  color: var(--nx-text);
+  font-weight: 600;
 }
 
 .docsShell :global(.docs-feedback),
@@ -280,11 +414,27 @@
   border-color: var(--nx-rule);
 }
 
+.docsShell :global(.docs-pager) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+  border: 0;
+}
+
 .docsShell :global(.docs-pager a),
 .docsShell :global(.docs-pager > span) {
-  min-height: 96px;
-  border-radius: 0;
-  padding-block: var(--nx-space-4);
+  min-height: 76px;
+  border: 1px solid var(--nx-rule);
+  border-radius: var(--nx-radius-field);
+  background: transparent;
+  padding: 16px;
+}
+
+.docsShell :global(.docs-pager a:hover),
+.docsShell :global(.docs-pager a:focus-visible) {
+  border-color: var(--nx-purple);
+  background: var(--nx-work);
 }
 
 .docsShell :global(.docs-search-backdrop) {
@@ -513,18 +663,19 @@
 }
 
 @media (max-width: 1100px) {
-  .docsShell :global(.docs-main-grid) {
-    grid-template-columns: minmax(210px, 230px) minmax(0, 1fr);
+  .docsShell :global(.docs-main-grid),
+  .docsShell :global(.docs-main-grid-no-toc) {
+    grid-template-columns: minmax(210px, 248px) minmax(0, 720px);
   }
 
   .docsShell :global(.docs-main-grid-sidebar-collapsed),
   .docsShell :global(.docs-main-grid-no-toc.docs-main-grid-sidebar-collapsed) {
-    grid-template-columns: 56px minmax(0, 1fr);
+    grid-template-columns: 56px minmax(0, 720px);
   }
 }
 
 @media (max-width: 820px) {
-  .docsShell :global(.docs-context-inner),
+  .docsShell :global(.docs-mobile-toolbar),
   .docsShell :global(.docs-main-grid),
   .searchPage :global(.section-inner),
   .iconPage :global(.section-inner),
@@ -532,10 +683,72 @@
     width: min(100% - 24px, var(--nx-content-compact));
   }
 
-  .docsShell :global(.docs-main-grid) {
+  .docsShell :global(.docs-mobile-toolbar) {
+    display: flex;
+    position: sticky;
+    top: var(--nx-header-height, 48px);
+    z-index: 15;
+    align-items: center;
+    gap: 8px;
+    margin-inline: auto;
+    padding-block: 8px;
+    background: var(--nx-canvas);
+  }
+
+  .docsShell :global(.docs-mobile-search) {
+    display: flex;
+    flex: 1;
+    width: auto;
+    min-width: 0;
+    min-height: 40px;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    border: 1px solid var(--nx-rule);
+    border-radius: var(--nx-radius-field);
+    background: var(--nx-depth);
+    padding: 0 10px;
+    color: var(--nx-text-muted);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .docsShell :global(.docs-mobile-search span) {
+    display: inline;
+    flex: 1;
+    text-align: left;
+  }
+
+  .docsShell :global(.docs-mobile-search kbd),
+  .docsShell :global(.docs-sidebar-search span),
+  .docsShell :global(.docs-sidebar-search kbd) {
+    display: inline;
+  }
+
+  .docsShell :global(.docs-mobile-menu) {
+    display: inline-flex;
+    width: auto;
+    gap: 6px;
+    padding-inline: 10px;
+  }
+
+  .docsShell :global(.docs-main-grid),
+  .docsShell :global(.docs-main-grid-no-toc),
+  .docsShell :global(.docs-main-grid-sidebar-collapsed),
+  .docsShell :global(.docs-main-grid-no-toc.docs-main-grid-sidebar-collapsed) {
     grid-template-columns: 1fr;
+    justify-content: stretch;
     gap: 0;
-    padding-block: var(--nx-space-5) var(--nx-space-7);
+    padding: var(--nx-space-5) 0 var(--nx-space-7);
+  }
+
+  .docsShell :global(.docs-article-header h1) {
+    font-size: 1.75rem;
+  }
+
+  .docsShell :global(.docs-card-grid),
+  .docsShell :global(.docs-pager) {
+    grid-template-columns: 1fr;
   }
 
   .docsShell :global(.docs-section) {

@@ -219,7 +219,7 @@ function searchOptionId(result) {
   return `docs-search-option-${result.path.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "")}`;
 }
 
-function Sidebar({ categories, page, pages, mode, isOpen, isCollapsed, onClose, onToggleCollapsed, openCategories, onToggleCategory }) {
+function Sidebar({ categories, page, pages, mode, isOpen, isCollapsed, onClose, onOpenSearch, onToggleCollapsed, openCategories, onToggleCategory }) {
   const pageMap = useMemo(() => new Map(pages.map((item) => [item.slug, item])), [pages]);
   const closeButtonRef = useRef(null);
   const panelRef = useRef(null);
@@ -273,6 +273,16 @@ function Sidebar({ categories, page, pages, mode, isOpen, isCollapsed, onClose, 
             </button>
           </div>
         </div>
+        <button
+          aria-label="Search documentation and legal pages"
+          className="docs-search-button docs-sidebar-search"
+          type="button"
+          onClick={(event) => onOpenSearch(event.currentTarget)}
+        >
+          <Search aria-hidden="true" size={16} />
+          <span>Search</span>
+          <kbd>⌘K</kbd>
+        </button>
         <nav className="docs-nav" id="docs-sidebar-navigation" aria-label={mode === "legal" ? "Legal pages" : "Documentation pages"}>
           {categories.map((category) => (
             <div className="docs-category" key={category.id}>
@@ -754,11 +764,6 @@ export default function DocsExplorer({
   const showToc = useMemo(() => (
     page.sections.length >= 5 || collectText(page.sections).length > 3500
   ), [page.sections]);
-  const pageMap = useMemo(() => new Map(pages.map((item) => [item.slug, item])), [pages]);
-  const categoryLinks = useMemo(() => categories.map((category) => {
-    const target = category.pages.map((slug) => pageMap.get(slug)).find(Boolean);
-    return target ? { ...category, path: target.path } : null;
-  }).filter(Boolean), [categories, pageMap]);
   const defaultOpenCategories = useMemo(() => (
     categories.reduce((result, category) => ({
       ...result,
@@ -876,48 +881,29 @@ export default function DocsExplorer({
       <div className="docs-public-header">
         <PublicHeader />
       </div>
-      <div className="docs-context-bar">
-        <div className="docs-context-inner">
-          <a className="docs-context-title" href={mode === "legal" ? "/legal" : "/docs"}>
-            <PageIcon mode={mode} />
-            <span>{mode === "legal" ? "Legal" : "Documentation"}</span>
-          </a>
-          <nav className="docs-context-categories" aria-label={mode === "legal" ? "Legal categories" : "Documentation categories"}>
-            {categoryLinks.map((category) => (
-              <a
-                aria-current={category.id === page.category ? "location" : undefined}
-                className={category.id === page.category ? "docs-context-category-current" : undefined}
-                href={category.path}
-                key={category.id}
-              >
-                {category.title}
-              </a>
-            ))}
-          </nav>
-          <div className="docs-context-actions">
-            <button
-              aria-label="Search documentation and legal pages"
-              className="docs-search-button"
-              type="button"
-              onClick={(event) => openSearch(event.currentTarget)}
-            >
-              <Search aria-hidden="true" size={17} />
-              <span>Search</span>
-              <kbd>⌘K</kbd>
-            </button>
-            <button
-              className="docs-icon-button docs-mobile-menu"
-              type="button"
-              onClick={(event) => {
-                sidebarTriggerRef.current = event.currentTarget;
-                setIsSidebarOpen(true);
-              }}
-              aria-label="Open navigation"
-            >
-              <Menu aria-hidden="true" size={20} />
-            </button>
-          </div>
-        </div>
+      <div className="docs-mobile-toolbar">
+        <button
+          className="docs-icon-button docs-mobile-menu"
+          type="button"
+          onClick={(event) => {
+            sidebarTriggerRef.current = event.currentTarget;
+            setIsSidebarOpen(true);
+          }}
+          aria-label="Open navigation"
+        >
+          <Menu aria-hidden="true" size={18} />
+          <span>Menu</span>
+        </button>
+        <button
+          aria-label="Search documentation and legal pages"
+          className="docs-search-button docs-mobile-search"
+          type="button"
+          onClick={(event) => openSearch(event.currentTarget)}
+        >
+          <Search aria-hidden="true" size={16} />
+          <span>Search</span>
+          <kbd>⌘K</kbd>
+        </button>
       </div>
 
       {isSidebarOpen ? <div aria-hidden="true" className="docs-mobile-backdrop" onClick={closeSidebar} /> : null}
@@ -929,6 +915,7 @@ export default function DocsExplorer({
           isOpen={isSidebarOpen}
           mode={mode}
           onClose={closeSidebar}
+          onOpenSearch={openSearch}
           onToggleCollapsed={() => setIsSidebarCollapsed((current) => !current)}
           onToggleCategory={(categoryId) => setOpenCategories((current) => ({ ...current, [categoryId]: !current[categoryId] }))}
           openCategories={openCategories}

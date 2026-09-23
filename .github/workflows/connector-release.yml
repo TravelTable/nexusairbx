@@ -140,25 +140,58 @@ jobs:
         env:
           CSC_LINK: ${{ secrets.CONNECTOR_WINDOWS_SIGNING_CERTIFICATE }}
           CSC_KEY_PASSWORD: ${{ secrets.CONNECTOR_WINDOWS_SIGNING_CERTIFICATE_PASSWORD }}
+          CONNECTOR_WINDOWS_PUBLISHER_NAME: ${{ secrets.CONNECTOR_WINDOWS_PUBLISHER_NAME }}
         run: |
-          if (-not $env:CSC_LINK -or -not $env:CSC_KEY_PASSWORD) { throw "Windows signing credentials are required for public releases." }
+          if (-not $env:CSC_LINK -or -not $env:CSC_KEY_PASSWORD -or -not $env:CONNECTOR_WINDOWS_PUBLISHER_NAME) {
+            throw "Windows signing credentials and CONNECTOR_WINDOWS_PUBLISHER_NAME are required for public releases."
+          }
       - name: Build signed Windows 10/11 x64 installer
         run: npm run package:win --prefix desktop-connector
         env:
           CSC_LINK: ${{ secrets.CONNECTOR_WINDOWS_SIGNING_CERTIFICATE }}
           CSC_KEY_PASSWORD: ${{ secrets.CONNECTOR_WINDOWS_SIGNING_CERTIFICATE_PASSWORD }}
+          CONNECTOR_WINDOWS_PUBLISHER_NAME: ${{ secrets.CONNECTOR_WINDOWS_PUBLISHER_NAME }}
       - name: Verify Windows release signature
         shell: pwsh
         run: |
+          function Assert-Sha256TimestampedSignature([string]$Path) {
+            $signature = Get-AuthenticodeSignature -LiteralPath $Path
+            if ($signature.Status -ne 'Valid') {
+              throw "Expected a valid Authenticode signature for $Path, got $($signature.Status)."
+            }
+            if (-not $signature.TimeStamperCertificate) {
+              throw "Expected a timestamp countersignature for $Path."
+            }
+            $signtool = @(Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe' -ErrorAction SilentlyContinue |
+              Sort-Object { try { [version]$_.Directory.Parent.Name } catch { [version]'0.0' } } -Descending)
+            if ($signtool.Count -eq 0) { throw "signtool.exe was not found; cannot verify the SHA-256 signature of $Path." }
+            $output = & $signtool[0].FullName verify /pa /tw /v $Path 2>&1 | Out-String
+            if ($LASTEXITCODE -ne 0) { throw "signtool rejected ${Path}: $output" }
+            if ($output -match 'Hash of file \(sha1\)') { throw "Expected a SHA-256-only Authenticode signature for $Path." }
+            if ($output -notmatch 'Hash of file \(sha256\)') { throw "Expected a SHA-256 Authenticode signature for $Path." }
+          }
           $installers = @(Get-ChildItem desktop-connector/release -File -Filter '*.exe')
           if ($installers.Count -ne 1) { throw "Expected one Windows installer, found $($installers.Count)." }
-          $signature = Get-AuthenticodeSignature $installers[0].FullName
-          if ($signature.Status -ne 'Valid') {
-            throw "Expected a valid signed Windows installer, got signature status $($signature.Status)."
-          }
+          Assert-Sha256TimestampedSignature $installers[0].FullName
       - name: Silent install, secure startup smoke, and uninstall
         shell: pwsh
         run: |
+          function Assert-Sha256TimestampedSignature([string]$Path) {
+            $signature = Get-AuthenticodeSignature -LiteralPath $Path
+            if ($signature.Status -ne 'Valid') {
+              throw "Expected a valid Authenticode signature for $Path, got $($signature.Status)."
+            }
+            if (-not $signature.TimeStamperCertificate) {
+              throw "Expected a timestamp countersignature for $Path."
+            }
+            $signtool = @(Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe' -ErrorAction SilentlyContinue |
+              Sort-Object { try { [version]$_.Directory.Parent.Name } catch { [version]'0.0' } } -Descending)
+            if ($signtool.Count -eq 0) { throw "signtool.exe was not found; cannot verify the SHA-256 signature of $Path." }
+            $output = & $signtool[0].FullName verify /pa /tw /v $Path 2>&1 | Out-String
+            if ($LASTEXITCODE -ne 0) { throw "signtool rejected ${Path}: $output" }
+            if ($output -match 'Hash of file \(sha1\)') { throw "Expected a SHA-256-only Authenticode signature for $Path." }
+            if ($output -notmatch 'Hash of file \(sha256\)') { throw "Expected a SHA-256 Authenticode signature for $Path." }
+          }
           $ErrorActionPreference = 'Stop'
           $installer = @(Get-ChildItem desktop-connector/release -File -Filter '*.exe')[0]
           $installDir = Join-Path $env:RUNNER_TEMP 'NexusRBXConnector'
@@ -169,6 +202,10 @@ jobs:
             $appExe = Get-ChildItem $installDir -Recurse -File -Filter 'NexusRBX Connector.exe' |
               Select-Object -First 1
             if (-not $appExe) { throw 'Installed Connector executable was not found.' }
+            $uninstaller = Get-ChildItem $installDir -Recurse -File -Filter 'Uninstall*.exe' | Select-Object -First 1
+            if (-not $uninstaller) { throw 'Installed Connector uninstaller was not found.' }
+            Assert-Sha256TimestampedSignature $appExe.FullName
+            Assert-Sha256TimestampedSignature $uninstaller.FullName
             $env:NEXUS_CONNECTOR_CI_SMOKE = '1'
             $env:NEXUS_CONNECTOR_SMOKE_REPORT = $reportPath
             $smoke = Start-Process $appExe.FullName -ArgumentList '--smoke-test' -Wait -PassThru

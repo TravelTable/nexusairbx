@@ -5,8 +5,8 @@ import PublicHeader from "../../components/PublicHeader";
 import styles from "../../components/PublicEditorial.module.css";
 
 export const metadata = buildPublicMetadata({
-  title: "Connect NexusRBX to Roblox Studio | Plugin and Connector",
-  description: "Install the recommended NexusRBX Studio Plugin, or download NexusRBX Connector for advanced local Studio MCP workflows on macOS and Windows.",
+  title: "NexusRBX Ai Studio Plugin",
+  description: "Install the NexusRBX Ai plugin from the Roblox Creator Store and open it beside your place in Roblox Studio.",
   path: "/downloads",
 });
 

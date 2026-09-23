@@ -90,7 +90,7 @@
     "start": "react-scripts start",
     "dev:local": "node scripts/watch-local-ai-dev.js",
     "dev:local:once": "node scripts/local-ai-dev.js",
-    "build": "node scripts/verify-studio-download.cjs && node scripts/generate-sitemap.js --best-effort && react-scripts build && npm run public:build && node scripts/merge-public-export.js",
+    "build": "node scripts/generate-sitemap.js --best-effort && react-scripts build && npm run public:build && node scripts/merge-public-export.js",
     "build:app": "react-scripts build",
     "public:build": "next build public-frontend",
     "test": "react-scripts test",
