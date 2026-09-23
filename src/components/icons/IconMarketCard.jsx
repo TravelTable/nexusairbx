@@ -50,6 +50,14 @@ export default function IconMarketCard({
             <span>{icon.visibility === "private" ? "Private" : "Market"}</span>
             <span aria-hidden="true">/</span>
             <span>{icon.representation || "image"}</span>
+            <span aria-hidden="true">/</span>
+            <span>{icon.source === "user_upload" ? "Upload" : icon.source === "generated" ? "Generated" : "Catalog"}</span>
+            {icon.uploadStatus || icon.lifecycle ? (
+              <>
+                <span aria-hidden="true">/</span>
+                <span>{String(icon.uploadStatus || icon.lifecycle).replace(/_/g, " ")}</span>
+              </>
+            ) : null}
           </p>
           <span className="creator-store-record__licence" aria-hidden="true">
             View licence record <ArrowRight />

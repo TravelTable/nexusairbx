@@ -185,6 +185,7 @@ export default function IconsMarketPage() {
   const [uploadName, setUploadName] = useState("");
   const [uploadRole, setUploadRole] = useState("");
   const [uploadKind, setUploadKind] = useState("icon");
+  const [resourceKind, setResourceKind] = useState("");
   const [uploadFile, setUploadFile] = useState(null);
   const [uploadError, setUploadError] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -228,6 +229,7 @@ export default function IconsMarketPage() {
       if (style) params.append("style", style);
       if (category) params.append("category", category);
       if (isPro !== null) params.append("isPro", isPro);
+      if (resourceKind) params.append("resourceKind", resourceKind);
       if (loadMore && requestedCursor) params.append("lastDocId", requestedCursor);
       
       const res = await fetch(`${API_BASE}/api/icons/market?${params.toString()}`);
@@ -269,7 +271,7 @@ export default function IconsMarketPage() {
     } finally {
       if (marketRequestRef.current === requestId) setLoading(false);
     }
-  }, [search, style, category, isPro]);
+  }, [search, style, category, isPro, resourceKind]);
 
   const lastIconElementRef = useCallback(node => {
     if (loading || marketError) return;
@@ -560,14 +562,22 @@ export default function IconsMarketPage() {
               </div>
 
               <div className="relative w-full md:w-96">
-                <label htmlFor="icon-market-search" className="sr-only">Search icons</label>
+                <label className="mb-2 block text-sm text-[var(--ds-text-muted)]" htmlFor="resource-kind-filter">Kind
+                  <select id="resource-kind-filter" className="mt-1 block w-full rounded-md border border-[var(--ds-border)] bg-[var(--ds-bg-canvas)] px-3 py-2 text-[var(--ds-text)]" value={resourceKind} onChange={(event) => setResourceKind(event.target.value)}>
+                    <option value="">All resources</option>
+                    {["icon", "button", "panel_skin", "card", "inventory_slot", "badge", "banner", "background", "recipe"].map((kind) => (
+                      <option key={kind} value={kind}>{kind.replace(/_/g, " ")}</option>
+                    ))}
+                  </select>
+                </label>
+                <label htmlFor="icon-market-search" className="sr-only">Search resources</label>
                 <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--ds-text-muted)]" aria-hidden="true" />
                 <input 
                   id="icon-market-search"
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search icons (e.g. 'dragon', 'sword')..."
+                  placeholder="Search resources (icons, panels, banners)..."
                   className="min-h-12 w-full rounded-[10px] border border-[var(--ds-border)] bg-[var(--ds-surface-1)] py-3 pl-12 pr-5 text-sm outline-none placeholder:text-[var(--ds-text-muted)] focus:border-[var(--ds-accent-border)] focus:ring-2 focus:ring-[var(--ds-focus-ring)]"
                 />
               </div>
